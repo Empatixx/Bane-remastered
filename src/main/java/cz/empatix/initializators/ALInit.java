@@ -2,10 +2,13 @@ package cz.empatix.initializators;
 
 import org.lwjgl.openal.*;
 import org.lwjgl.system.MemoryUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.openal.ALC11.*;
 
 public class ALInit implements Initializator{
+    private final static Logger LOGGER = LoggerFactory.getLogger(ALInit.class);
     private static long device;
     @Override
     public void init() {
@@ -15,6 +18,7 @@ public class ALInit implements Initializator{
         }
         device  = alcOpenDevice(defaultDeviceName);
         if(device == MemoryUtil.NULL){
+            LOGGER.error("Failed to open the default device.");
             return;
         }
 

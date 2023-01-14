@@ -1,5 +1,6 @@
 package cz.empatix.common;
 
+import cz.empatix.handlers.WindowHandler;
 import cz.empatix.initializators.ALInit;
 import cz.empatix.initializators.GLFWInit;
 import cz.empatix.initializators.GLInit;
@@ -14,10 +15,11 @@ import java.util.List;
 public class GameInitializator {
 
     private final InputHandler inputHandler;
-
+    private final WindowHandler windowHandler;
     public GameInitializator(final GameLoop gameLoop){
         initializators().forEach(Initializator::init);
         inputHandler = new InputHandler(gameLoop);
+        windowHandler = new WindowHandler();
     }
 
     public void cleanUp(){

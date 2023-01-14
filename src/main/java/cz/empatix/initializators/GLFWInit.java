@@ -4,6 +4,8 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.IntBuffer;
 
@@ -13,6 +15,7 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLFWInit implements Initializator {
+    private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
     private static final int HEIGHT = 600;
     private static final int WIDTH = 800;
     public static long window;
@@ -20,6 +23,7 @@ public class GLFWInit implements Initializator {
     @Override
     public void init() {
         if (!GLFW.glfwInit()) {
+            LOGGER.error("Unable to initialize GLFW");
             throw new IllegalStateException("Unable to initialize GLFW");
         }
         GLFWErrorCallback.createPrint(System.err).set();
@@ -30,6 +34,7 @@ public class GLFWInit implements Initializator {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
         // Create the window
         window = glfwCreateWindow(WIDTH, HEIGHT, "Hello World!", NULL, NULL);

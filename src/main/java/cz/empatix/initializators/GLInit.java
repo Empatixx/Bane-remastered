@@ -4,12 +4,15 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.KHRDebug;
 import org.lwjgl.system.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.opengl.GL43.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLInit implements Initializator {
-    private final static boolean DEBUG_MODE = false;
+    private final static Logger LOGGER = LoggerFactory.getLogger(GLInit.class);
+    private final static boolean DEBUG_MODE = true;
 
     @Override
     public void init() {
@@ -21,12 +24,9 @@ public class GLInit implements Initializator {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
-        glOrtho(0, 1920, 1080, 0, 1, -1);
-        glViewport(0, 0, 1080, 1920); //TODO: make dynamic
-
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         if (DEBUG_MODE) {
-            Configuration.DEBUG_MEMORY_ALLOCATOR.set(true);
+            LOGGER.info("Debug mode enabled");
             enableDebug();
         }
 
@@ -34,14 +34,17 @@ public class GLInit implements Initializator {
 
     private void enableDebug() {
         glEnable(GL_DEBUG_OUTPUT);
-        glEnable(KHRDebug.GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        KHRDebug.glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DEBUG_SEVERITY_HIGH, 0, true);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        Configuration.DEBUG_MEMORY_ALLOCATOR.set(true);
         KHRDebug.glDebugMessageCallback(new GLDebugMessageCallback() {
             @Override
             public void invoke(int source, int type, int id, int severity, int length, long message, long userParam) {
-                if (type == GL_DEBUG_TYPE_PERFORMANCE) {
-                    System.out.println(GLDebugMessageCallback.getMessage(length, message));
-
+                if (type == GL_DEBUG_TYPE_ERROR) {
+                    LOGGER.error("GL error: {}", GLDebugMessageCallback.getMessage(length, message));
+                } else if (type == GL_DEBUG_TYPE_PERFORMANCE){
+                    LOGGER.warn("GL performance warning: {}", GLDebugMessageCallback.getMessage(length, message));
+                } else {
+                    LOGGER.info("GL info: {}", GLDebugMessageCallback.getMessage(length, message));
                 }
             }
         }, NULL);

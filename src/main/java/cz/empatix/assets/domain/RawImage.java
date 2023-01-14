@@ -6,6 +6,7 @@ import static org.lwjgl.stb.STBImage.stbi_image_free;
 
 public record RawImage(int width,
                        int height,
+                       int channels,
                        ByteBuffer data) {
 
     public void destroy() {

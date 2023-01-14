@@ -60,6 +60,9 @@ public class AudioLoader implements AssetLoader<RawAudio> {
                 final IntBuffer sampleRateBuffer = stack.mallocInt(1);
 
                 final ShortBuffer rawAudioBuffer = stb_vorbis_decode_filename(path.toString(), channelsBuffer, sampleRateBuffer);
+                if(rawAudioBuffer == null){
+                    throw new RuntimeException("Failed to load audio file: " + path);
+                }
 
                 //Retreive the extra information that was stored in the buffers by the function
                 final int format;
@@ -78,6 +81,7 @@ public class AudioLoader implements AssetLoader<RawAudio> {
                 return new RawAudio(format, sampleRate, rawAudioBuffer);
             }
         } catch (Exception e) {
+            LOGGER.error("Error while decoding audio file: " + path.toString(), e);
             throw new RuntimeException(e);
         }
     }

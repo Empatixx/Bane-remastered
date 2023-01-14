@@ -32,7 +32,7 @@ public class TexturesLoader implements AssetLoader<RawImage> {
     public int load() {
         try (final Stream<Path> paths = Files.walk(Paths.get(path))) {
             paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".tga"))
+                    .filter(p -> p.toString().endsWith(".tga") || p.toString().endsWith(".png"))
                     .parallel()
                     .map(path -> Map.entry(path.toString(), decodeImage(path)))
                     .forEach(entry -> this.textures.put(entry.getKey(), entry.getValue()));
@@ -64,8 +64,9 @@ public class TexturesLoader implements AssetLoader<RawImage> {
 
             buffer.flip();
 
-            return new RawImage(w.get(0), h.get(0), buffer);
+            return new RawImage(w.get(0), h.get(0), channels.get(0), buffer);
         } catch (Exception e) {
+            LOGGER.error("Failed to load texture: " + path.toString(), e);
             throw new RuntimeException(e);
         }
     }

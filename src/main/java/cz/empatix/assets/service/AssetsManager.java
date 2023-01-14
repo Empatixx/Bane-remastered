@@ -68,6 +68,7 @@ public class AssetsManager {
         return shadersCreator != null && texturesCreator != null && audioCreator != null;
     }
     public static void dispose() {
+        if(!isLoaded()) return;
         List.of(shadersCreator, texturesCreator, audioCreator).forEach(AssetCreator::destroy);
     }
 }

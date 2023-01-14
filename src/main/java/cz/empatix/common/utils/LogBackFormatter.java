@@ -1,11 +1,11 @@
-package cz.empatix;
+package cz.empatix.common.utils;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.pattern.color.ANSIConstants;
 import ch.qos.logback.core.pattern.color.ForegroundCompositeConverterBase;
 
-public class logback extends ForegroundCompositeConverterBase<ILoggingEvent> {
+public class LogBackFormatter extends ForegroundCompositeConverterBase<ILoggingEvent> {
 
     @Override
     protected String getForegroundColorCode(ILoggingEvent event) {
