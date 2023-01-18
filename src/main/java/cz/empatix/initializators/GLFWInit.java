@@ -2,15 +2,19 @@ package cz.empatix.initializators;
 
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.stb.STBImage.stbi_image_free;
+import static org.lwjgl.stb.STBImage.stbi_load;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -37,12 +41,13 @@ public class GLFWInit implements Initializator {
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
         // Create the window
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Hello World!", NULL, NULL);
+        window = glfwCreateWindow(WIDTH, HEIGHT, "Bane", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
         glfwSetWindowAspectRatio(window, WIDTH, HEIGHT);
         centerWindow();
+        setIcon();
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
@@ -70,7 +75,21 @@ public class GLFWInit implements Initializator {
             );
         } // the stack frame is popped automatically
     }
-
+    private void setIcon(){
+        try (final MemoryStack stack = stackPush()) {
+            final IntBuffer width = stack.mallocInt(1);
+            final IntBuffer height = stack.mallocInt(1);
+            final IntBuffer channels = stack.mallocInt(1);
+            final ByteBuffer image = stbi_load("./assets/textures/icon.png", width, height, channels, 4);
+            if (image != null) {
+                final GLFWImage.Buffer icons = GLFWImage.malloc(1);
+                icons.position(0).width(width.get(0)).height(height.get(0)).pixels(image);
+                glfwSetWindowIcon(window, icons);
+                icons.free();
+                stbi_image_free(image);
+            }
+        }
+    }
     @Override
     public void destroy() {
         glfwFreeCallbacks(window);

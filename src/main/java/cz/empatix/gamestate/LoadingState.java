@@ -3,8 +3,11 @@ package cz.empatix.gamestate;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Background;
 import org.lwjgl.opengl.GL30;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoadingState extends GameState{
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoadingState.class);
     private Background loadingBg;
     protected LoadingState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.LOADING);
@@ -21,6 +24,7 @@ public class LoadingState extends GameState{
         AssetsService.createAssets();
         if(AssetsService.isLoaded()){
             setCurrentState(GameStateType.INGAME);
+            LOGGER.info("Assets loaded");
         }
     }
 
