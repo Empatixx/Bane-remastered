@@ -3,19 +3,21 @@ package cz.empatix.gamestate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GameStateManager {
+public class GameStateService {
     private final List<GameState> gameStates;
     private GameState currentState;
-    public GameStateManager() {
+    public GameStateService() {
         this.gameStates = new ArrayList<>();
         gameStates.add(new LoadingState(this));
-        setCurrentState(0);
+        gameStates.add(new InGameState(this));
+        setCurrentState(GameStateType.LOADING);
     }
-    //TODO: redo to enum
-    public void setCurrentState(final int state){
-        currentState = gameStates.get(state);
+    public void setCurrentState(final GameStateType type){
+        currentState = gameStates.stream()
+                .filter(gameState -> gameState.getType() == type)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No such state"));
         currentState.init();
-
     }
     public void update() {
         currentState.update();

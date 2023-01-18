@@ -1,33 +1,40 @@
 package cz.empatix.gamestate;
 
-import cz.empatix.assets.service.AssetsManager;
+import cz.empatix.assets.service.AssetsService;
+import cz.empatix.render.Background;
 import org.lwjgl.opengl.GL30;
 
 public class LoadingState extends GameState{
-    protected LoadingState(final GameStateManager gameStateManager) {
-        super(gameStateManager);
+    private Background loadingBg;
+    protected LoadingState(final GameStateService gameStateService) {
+        super(gameStateService, GameStateType.LOADING);
     }
 
     @Override
     void init() {
-        AssetsManager.loadAssets();
+        AssetsService.loadAssets();
+        loadingBg = new Background("Menu/loading.tga");
     }
 
     @Override
     void update() {
-        AssetsManager.createAssets();
+        AssetsService.createAssets();
+        if(AssetsService.isLoaded()){
+            setCurrentState(GameStateType.INGAME);
+        }
     }
 
     @Override
     void render() {
         GL30.glBegin(GL30.GL_QUADS);
         GL30.glColor3f(1,0,0);
-        GL30.glVertex2f(-0.5f,0.5f);
-        GL30.glVertex2f(0.5f,0.5f);
-        GL30.glVertex2f(0.5f,-0.5f);
-        GL30.glVertex2f(-0.5f,-0.5f);
+        GL30.glVertex2f(0,150);
+        GL30.glVertex2f(150,150);
+        GL30.glVertex2f(150,0);
+        GL30.glVertex2f(0,0);
         GL30.glEnd();
 
+        loadingBg.draw();
     }
 
     @Override

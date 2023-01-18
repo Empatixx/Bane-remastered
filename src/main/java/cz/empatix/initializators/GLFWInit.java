@@ -16,8 +16,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLFWInit implements Initializator {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
-    private static final int HEIGHT = 600;
-    private static final int WIDTH = 800;
+    private static final int HEIGHT = 360;
+    private static final int WIDTH = 640;
     public static long window;
 
     @Override
@@ -41,6 +41,7 @@ public class GLFWInit implements Initializator {
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
+        glfwSetWindowAspectRatio(window, WIDTH, HEIGHT);
         centerWindow();
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);

@@ -1,20 +1,19 @@
 package cz.empatix.common;
 
-import cz.empatix.gamestate.GameStateManager;
+import cz.empatix.gamestate.GameStateService;
 import cz.empatix.handlers.WindowHandler;
 import org.lwjgl.glfw.GLFW;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.*;
 
 public class GameLoop extends Thread {
     private final GameInitializator gameInitializator;
-    private final GameStateManager gsm;
+    private final GameStateService gsm;
 
     public GameLoop() {
         gameInitializator = new GameInitializator(this);
-        gsm = new GameStateManager();
+        gsm = new GameStateService();
     }
 
     @Override
@@ -31,13 +30,14 @@ public class GameLoop extends Thread {
         }
     }
 
-    private void update() {
+    public void update() {
         glfwPollEvents();
         gsm.update();
     }
 
-    private void render() {
+    public void render() {
         glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
         gsm.render();
         glfwSwapBuffers(WindowHandler.WINDOW);
     }

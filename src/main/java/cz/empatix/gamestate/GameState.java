@@ -9,11 +9,14 @@ import java.nio.DoubleBuffer;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 public abstract class GameState {
-    private final GameStateManager gameStateManager;
+    private final GameStateService gameStateService;
+    private final GameStateType type;
     private float mouseX, mouseY;
 
-    protected GameState(final GameStateManager gameStateManager) {
-        this.gameStateManager = gameStateManager;
+    protected GameState(final GameStateService gameStateService,
+                        final GameStateType type) {
+        this.gameStateService = gameStateService;
+        this.type = type;
     }
     private void updateMouse(){
         try (MemoryStack stack = stackPush()) {
@@ -23,6 +26,12 @@ public abstract class GameState {
             this.mouseX = (float) mouseX.get(0);
             this.mouseY = (float) mouseY.get(0);
         }
+    }
+    public void setCurrentState(final GameStateType type){
+        gameStateService.setCurrentState(type);
+    }
+    public GameStateType getType(){
+        return type;
     }
     abstract void init();
     abstract void update();

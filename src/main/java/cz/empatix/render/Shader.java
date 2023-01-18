@@ -1,5 +1,10 @@
 package cz.empatix.render;
 
+import cz.empatix.utils.BufferFactory;
+import org.joml.Matrix4f;
+import org.lwjgl.BufferUtils;
+
+import java.nio.FloatBuffer;
 import java.util.HashMap;
 
 import static org.lwjgl.opengl.GL20.*;
@@ -8,7 +13,7 @@ public class Shader {
     private final int program;
     private final int fragmentShaderId;
     private final int vertexShaderId;
-    private final HashMap<String,Integer> locations;
+    private final HashMap<String, Integer> locations;
 
     public Shader(final String vs, final String fs) {
         program = glCreateProgram();
@@ -17,32 +22,25 @@ public class Shader {
         vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertexShaderId, vs);
         glCompileShader(vertexShaderId);
-        // if vertex shader is compiled wrong
-        if(glGetShaderi(vertexShaderId,GL_COMPILE_STATUS) != 1){
-            throw new RuntimeException(glGetShaderInfoLog(vertexShaderId));
-        }
+        checkForErrors(vertexShaderId);
 
         fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShaderId, fs);
         glCompileShader(fragmentShaderId);
-
-        // if frag shader is compiled wrong
-        if(glGetShaderi(fragmentShaderId,GL_COMPILE_STATUS) != 1){
-            throw new RuntimeException(glGetShaderInfoLog(fragmentShaderId));
-        }
+        checkForErrors(fragmentShaderId);
 
         glAttachShader(program, vertexShaderId);
         glAttachShader(program, fragmentShaderId);
 
-        glBindAttribLocation(program,0,"vertices");
-        glBindAttribLocation(program,1,"textures");
+        glBindAttribLocation(program, 0, "vertices");
+        glBindAttribLocation(program, 1, "textures");
 
         glLinkProgram(program);
-        if(glGetProgrami(program,GL_LINK_STATUS) != 1){
+        if (glGetProgrami(program, GL_LINK_STATUS) != 1) {
             throw new RuntimeException(glGetProgramInfoLog(program));
         }
         glValidateProgram(program);
-        if(glGetProgrami(program,GL_VALIDATE_STATUS) != 1){
+        if (glGetProgrami(program, GL_VALIDATE_STATUS) != 1) {
             throw new RuntimeException(glGetProgramInfoLog(program));
         }
     }
@@ -50,9 +48,41 @@ public class Shader {
     public int getShaderId() {
         return program;
     }
-    public void destroy(){
+
+    public void destroy() {
         glDeleteShader(vertexShaderId);
         glDeleteShader(fragmentShaderId);
         glDeleteProgram(program);
+    }
+
+    private void checkForErrors(final int id) {
+        if (glGetShaderi(id, GL_COMPILE_STATUS) != 1) {
+            throw new RuntimeException(glGetShaderInfoLog(id));
+        }
+    }
+
+    public void bind() {
+        glUseProgram(program);
+    }
+
+    public void unbind() {
+        glUseProgram(0);
+    }
+
+    public void setUniform(final String name, final Matrix4f value) {
+        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
+        final FloatBuffer buffer = BufferFactory.convertMatrix4f(value);
+        if (location == -1) {
+            throw new RuntimeException("Uniform " + name + " not found");
+        }
+        glUniformMatrix4fv(location, false, buffer);
+    }
+
+    public void setUniform(final String name, final int value) {
+        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
+        if (location == -1) {
+            throw new RuntimeException("Uniform " + name + " not found");
+        }
+        glUniform1i(location, value);
     }
 }

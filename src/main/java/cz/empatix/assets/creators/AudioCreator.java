@@ -1,36 +1,51 @@
 package cz.empatix.assets.creators;
 
 import cz.empatix.assets.domain.RawAudio;
+import cz.empatix.assets.loaders.AudioLoader;
 import org.lwjgl.openal.AL10;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioCreator implements AssetCreator<RawAudio, Integer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioCreator.class);
-    private Map<String, Integer> audio;
+    private final AtomicBoolean ready;
+    private final Map<String, Integer> audio;
 
-    @Override
-    public Integer get(final String name) {
-        return audio.get(name);
+    public AudioCreator() {
+        this.audio = new HashMap<>();
+        ready = new AtomicBoolean(false);
     }
 
     @Override
-    public void create(final Map<String, RawAudio> data) {
-        LOGGER.info("Creating audio...");
+    public Integer get(final String name) {
+        return audio.get(AudioLoader.PATH.resolve(name).toString());
+    }
+
+    @Override
+    public void add(final Map<String, RawAudio> data) {
         final long start = System.currentTimeMillis();
-        audio = data.entrySet().stream()
+        final int loaded = audio.size();
+        data.entrySet().stream()
                 .map(entry -> Map.entry(entry.getKey(), createAudio(entry.getValue())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        LOGGER.info("Audio created in {} ms", System.currentTimeMillis() - start);
+                .forEach(entry -> audio.put(entry.getKey(), entry.getValue()));
+        LOGGER.info("Total {} audio vbos created in {} ms", audio.size() - loaded,  System.currentTimeMillis() - start);
     }
     private int createAudio(final RawAudio audio){
         final int buffer = AL10.alGenBuffers();
         AL10.alBufferData(buffer, audio.format(), audio.data(), audio.sampleRate());
         audio.destroy();
         return buffer;
+    }
+    @Override
+    public boolean getReady(){
+        return ready.get();
+    }
+    public void ready(){
+        ready.set(true);
     }
 
     @Override

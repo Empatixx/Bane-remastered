@@ -1,8 +1,8 @@
 package cz.empatix.assets.domain;
 
-import java.nio.ByteBuffer;
+import org.lwjgl.stb.STBImage;
 
-import static org.lwjgl.stb.STBImage.stbi_image_free;
+import java.nio.ByteBuffer;
 
 public record RawImage(int width,
                        int height,
@@ -10,7 +10,7 @@ public record RawImage(int width,
                        ByteBuffer data) {
 
     public void destroy() {
-        stbi_image_free(data);
+        STBImage.stbi_image_free(data);
     }
 }
 
