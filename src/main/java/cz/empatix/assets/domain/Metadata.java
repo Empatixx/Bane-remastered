@@ -6,7 +6,9 @@ import java.util.List;
 
 public record Metadata (
         int verticesVbo,
-        List<List<Integer>> texturesVbos
+        List<List<Integer>> texturesVbos,
+        int width,
+        int height
 ){
     public void destroy() {
         texturesVbos.stream()

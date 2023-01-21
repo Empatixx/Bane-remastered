@@ -1,0 +1,8 @@
+{
+  "name": "btn",
+  "width": 100,
+  "height": 50,
+  "spritesheet": true,
+  "totalRows": "2",
+  "totalColumns": "1"
+}

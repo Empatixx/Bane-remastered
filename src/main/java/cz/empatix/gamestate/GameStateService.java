@@ -1,16 +1,26 @@
 package cz.empatix.gamestate;
 
+import cz.empatix.render.Renderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class GameStateService {
+    private final static Logger LOGGER = LoggerFactory.getLogger(GameStateService.class);
     private final List<GameState> gameStates;
+    private final Renderer renderer;
     private GameState currentState;
+
     public GameStateService() {
         this.gameStates = new ArrayList<>();
         gameStates.add(new LoadingState(this));
         gameStates.add(new InGameState(this));
+        gameStates.add(new MenuState(this));
         setCurrentState(GameStateType.LOADING);
+
+        renderer = new Renderer();
     }
     public void setCurrentState(final GameStateType type){
         currentState = gameStates.stream()
@@ -18,13 +28,15 @@ public class GameStateService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No such state"));
         currentState.init();
+        LOGGER.info("Current state set to {}", type);
     }
-    public void update() {
-        currentState.update();
+    public void update(final double dt) {
+        currentState.updateMouse();
+        currentState.update(dt);
     }
 
-    public void render() {
-        currentState.render();
+    public void render(final double dt) {
+        renderer.render(currentState.toRender(dt));
     }
 
     public void keyPressed(int key) {

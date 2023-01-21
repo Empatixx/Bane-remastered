@@ -1,5 +1,9 @@
 package cz.empatix.gamestate;
 
+import cz.empatix.render.Drawable;
+
+import java.util.List;
+
 public class InGameState extends GameState{
     public InGameState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.INGAME);
@@ -11,13 +15,13 @@ public class InGameState extends GameState{
     }
 
     @Override
-    void update() {
+    void update(final double dt) {
 
     }
 
     @Override
-    void render() {
-
+    List<Drawable> toRender(final double dt) {
+        return List.of();
     }
 
     @Override

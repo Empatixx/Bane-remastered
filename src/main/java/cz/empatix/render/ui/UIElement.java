@@ -1,0 +1,13 @@
+package cz.empatix.render.ui;
+
+import cz.empatix.render.Drawable;
+
+public interface UIElement extends Drawable {
+    void update(double dt, double mouseX, double mouseY);
+    void mousePressed(int button);
+    void mouseReleased(int button);
+    void keyPressed(int key);
+    void keyReleased(int key);
+    void mouseScrolled(double xoffset, double yoffset);
+    boolean isHovered();
+}

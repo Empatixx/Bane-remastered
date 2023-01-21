@@ -1,0 +1,8 @@
+{
+  "name": "test",
+  "width": 640,
+  "height": 360,
+  "spritesheet": true,
+  "totalRows": "1",
+  "totalColumns": "8"
+}

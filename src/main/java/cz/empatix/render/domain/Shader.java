@@ -1,7 +1,8 @@
-package cz.empatix.render;
+package cz.empatix.render.domain;
 
 import cz.empatix.utils.BufferFactory;
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -84,5 +85,13 @@ public class Shader {
             throw new RuntimeException("Uniform " + name + " not found");
         }
         glUniform1i(location, value);
+    }
+
+    public void setUniform(String name, Vector2f value) {
+        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
+        if (location == -1) {
+            throw new RuntimeException("Uniform " + name + " not found");
+        }
+        glUniform2f(location, value.x, value.y);
     }
 }

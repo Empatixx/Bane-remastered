@@ -17,9 +17,8 @@ public class WindowHandler {
     public final static long WINDOW = GLFWInit.window;
     public static int WIDTH;
     public static int HEIGHT;
-
-    public final static int TARGET_WIDTH = 800;
-    public final static int TARGET_HEIGHT = 600;
+    public final static int TARGET_WIDTH = 640;
+    public final static int TARGET_HEIGHT = 360;
 
     public WindowHandler(final GameLoop gameLoop){
         try (final MemoryStack stack = stackPush()){
@@ -43,7 +42,7 @@ public class WindowHandler {
         });
         //todo: remove in new GLFW (fixed)
         GLFW.glfwSetWindowSizeCallback(WINDOW, (window, width, height) -> {
-            gameLoop.render();
+            gameLoop.render(0);
         });
     }
     public static float getAspectRatio(){

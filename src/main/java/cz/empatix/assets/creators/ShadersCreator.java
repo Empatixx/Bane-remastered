@@ -1,8 +1,7 @@
 package cz.empatix.assets.creators;
 
 import cz.empatix.assets.domain.RawShader;
-import cz.empatix.assets.loaders.ShadersLoader;
-import cz.empatix.render.Shader;
+import cz.empatix.render.domain.Shader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,12 +11,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ShadersCreator implements AssetCreator<RawShader, Shader> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShadersCreator.class);
-    private final AtomicBoolean ready;
+    private boolean ready;
     private final Map<String, Shader> shaders;
 
     public ShadersCreator() {
         this.shaders = new HashMap<>();
-        ready = new AtomicBoolean(false);
     }
 
     @Override
@@ -47,12 +45,13 @@ public class ShadersCreator implements AssetCreator<RawShader, Shader> {
     }
 
     @Override
-    public boolean getReady() {
-        return ready.get();
+    public boolean isReady() {
+        return ready;
     }
 
+    @Override
     public void ready() {
-        this.ready.set(true);
+        this.ready = true;
     }
 }
 

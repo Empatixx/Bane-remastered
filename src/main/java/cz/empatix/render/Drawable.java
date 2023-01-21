@@ -1,7 +1,9 @@
 package cz.empatix.render;
 
+import cz.empatix.render.domain.RenderData;
+
 public interface Drawable
 {
-    void draw();
-    boolean shouldDraw();
+    RenderData renderData();
+    boolean shouldRender();
 }

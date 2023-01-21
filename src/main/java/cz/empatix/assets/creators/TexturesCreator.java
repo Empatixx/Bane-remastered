@@ -12,12 +12,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TexturesCreator implements AssetCreator<RawImage, Integer> {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
-    private final AtomicBoolean ready;
+    private boolean ready;
     private final Map<String, Integer> textures;
 
     public TexturesCreator() {
         textures = new HashMap<>();
-        ready = new AtomicBoolean(false);
     }
 
     @Override
@@ -46,7 +45,7 @@ public class TexturesCreator implements AssetCreator<RawImage, Integer> {
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, texture);
         GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_S, GL30.GL_REPEAT);
         GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_T, GL30.GL_REPEAT);
-        GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR);
+        GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR_MIPMAP_LINEAR);
         GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_LINEAR);
         GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, GL30.GL_RGBA, image.width(), image.height(),
                 0, image.channels() == 4 ? GL30.GL_RGBA : GL30.GL_RGB, GL30.GL_UNSIGNED_BYTE, image.data());
@@ -56,12 +55,14 @@ public class TexturesCreator implements AssetCreator<RawImage, Integer> {
         return texture;
     }
 
-    public boolean getReady() {
-        return ready.get();
+    @Override
+    public boolean isReady() {
+        return ready;
     }
 
+    @Override
     public void ready() {
-        this.ready.set(true);
+        this.ready = true;
     }
 }
 

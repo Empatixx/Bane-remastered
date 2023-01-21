@@ -1,10 +1,13 @@
 package cz.empatix.gamestate;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.Background;
-import org.lwjgl.opengl.GL30;
+import cz.empatix.render.Drawable;
+import cz.empatix.render.background.AnimatedBackground;
+import cz.empatix.render.background.Background;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class LoadingState extends GameState{
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadingState.class);
@@ -16,29 +19,21 @@ public class LoadingState extends GameState{
     @Override
     void init() {
         AssetsService.loadAssets();
-        loadingBg = new Background("Menu/loading.tga");
+        loadingBg = new AnimatedBackground("Menu/loading.tga","background-loading.json");
     }
 
     @Override
-    void update() {
+    void update(final double dt) {
+        loadingBg.update();
         AssetsService.createAssets();
         if(AssetsService.isLoaded()){
-            setCurrentState(GameStateType.INGAME);
-            LOGGER.info("Assets loaded");
+            setCurrentState(GameStateType.MENU);
         }
     }
 
     @Override
-    void render() {
-        GL30.glBegin(GL30.GL_QUADS);
-        GL30.glColor3f(1,0,0);
-        GL30.glVertex2f(0,150);
-        GL30.glVertex2f(150,150);
-        GL30.glVertex2f(150,0);
-        GL30.glVertex2f(0,0);
-        GL30.glEnd();
-
-        loadingBg.draw();
+    List<Drawable> toRender(final double dt) {
+        return List.of(loadingBg);
     }
 
     @Override

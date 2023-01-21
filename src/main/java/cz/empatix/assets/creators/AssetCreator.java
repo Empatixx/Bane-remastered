@@ -5,6 +5,7 @@ import java.util.Map;
 public interface AssetCreator<PRE, POST> {
     POST get(final String name);
     void add(Map<String,PRE> data);
-    boolean getReady();
+    boolean isReady();
+    void ready();
     void destroy();
 }

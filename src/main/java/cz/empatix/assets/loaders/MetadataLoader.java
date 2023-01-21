@@ -2,18 +2,14 @@ package cz.empatix.assets.loaders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import cz.empatix.assets.creators.AssetCreator;
 import cz.empatix.assets.creators.MetadataCreator;
-import cz.empatix.assets.domain.Metadata;
 import cz.empatix.assets.domain.RawMetadata;
-import cz.empatix.utils.LinuxPathStringConvertor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +19,7 @@ public class MetadataLoader implements AssetLoader<RawMetadata> {
     private final static Logger LOGGER = LoggerFactory.getLogger(MetadataLoader.class);
     public final static Path PATH = Path.of("./assets/metadata/");
     private final static Path[] PRELOAD_METADATA = {
-            PATH.resolve("background-overlay.json")
+            PATH.resolve("background-loading.json")
     };
     private final MetadataCreator metadataCreator;
     private final Map<String, RawMetadata> metadata;
@@ -38,7 +34,7 @@ public class MetadataLoader implements AssetLoader<RawMetadata> {
     public int load() {
         try (final Stream<Path> paths = Files.walk(PATH)) {
             paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".tga") || p.toString().endsWith(".png"))
+                    .filter(p -> p.toString().endsWith(".json"))
                     .parallel()
                     .filter(path -> !metadata.containsKey(path.toString()))
                     .map(path -> Map.entry(path.toString(), decodeMetadata(path)))

@@ -12,12 +12,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioCreator implements AssetCreator<RawAudio, Integer> {
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioCreator.class);
-    private final AtomicBoolean ready;
+    private boolean ready;
     private final Map<String, Integer> audio;
 
     public AudioCreator() {
         this.audio = new HashMap<>();
-        ready = new AtomicBoolean(false);
     }
 
     @Override
@@ -41,13 +40,14 @@ public class AudioCreator implements AssetCreator<RawAudio, Integer> {
         return buffer;
     }
     @Override
-    public boolean getReady(){
-        return ready.get();
-    }
-    public void ready(){
-        ready.set(true);
+    public boolean isReady() {
+        return ready;
     }
 
+    @Override
+    public void ready() {
+        this.ready = true;
+    }
     @Override
     public void destroy() {
         audio.forEach((s, integer) -> {

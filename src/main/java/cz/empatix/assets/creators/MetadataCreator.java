@@ -20,12 +20,21 @@ import static org.lwjgl.opengl.GL15.*;
 
 public class MetadataCreator implements AssetCreator<RawMetadata, Metadata> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataCreator.class);
-    private final AtomicBoolean ready;
+    private boolean ready;
     private final Map<String, Metadata> metadata;
 
     public MetadataCreator() {
         this.metadata = new HashMap<>();
-        ready = new AtomicBoolean(false);
+    }
+
+    @Override
+    public boolean isReady() {
+        return ready;
+    }
+
+    @Override
+    public void ready() {
+        this.ready = true;
     }
 
     @Override
@@ -64,28 +73,20 @@ public class MetadataCreator implements AssetCreator<RawMetadata, Metadata> {
                     final int verticesVBO = verticesVBOs.get(Map.entry(rawMetadata.width(), rawMetadata.height()));
                     final List<List<Integer>> texturesVBOs = createTextureVBOs(rawMetadata);
 
-                    return Map.entry(entry.getKey(), new Metadata(verticesVBO, texturesVBOs));
+                    return Map.entry(entry.getKey(), new Metadata(verticesVBO, texturesVBOs, rawMetadata.width(), rawMetadata.height()));
                 })
                 .forEach(entry -> metadata.put(entry.getKey(), entry.getValue()));
         LOGGER.info("Total {} Metadata vbos created in {} ms", metadata.size() - loaded, System.currentTimeMillis() - start);
     }
 
-    @Override
-    public boolean getReady() {
-        return ready.get();
-    }
-
-    public void ready() {
-        ready.set(true);
-    }
 
     private int createVerticesVBO(final int width, final int height) {
         final int vboVertices = glGenBuffers();
         final float[] vertices = {
-                -width / 2f, -height / 2f,
-                width / 2f, -height / 2f,
-                width / 2f, height / 2f,
-                -width / 2f, height / 2f
+                0, 0,
+                width , 0,
+                width , height ,
+                0, height
         };
         final FloatBuffer verticesBuffer = BufferFactory.convertFloatArray(vertices);
 
@@ -136,6 +137,7 @@ public class MetadataCreator implements AssetCreator<RawMetadata, Metadata> {
 
                     vboRow.add(vboTextures);
                 }
+                vboList.add(vboRow);
             }
             return vboList;
         }

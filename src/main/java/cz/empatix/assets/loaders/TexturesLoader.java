@@ -2,7 +2,6 @@ package cz.empatix.assets.loaders;
 
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.assets.creators.TexturesCreator;
-import cz.empatix.utils.LinuxPathStringConvertor;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

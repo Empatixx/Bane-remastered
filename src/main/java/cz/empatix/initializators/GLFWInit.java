@@ -20,8 +20,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLFWInit implements Initializator {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
-    private static final int HEIGHT = 360;
-    private static final int WIDTH = 640;
+    private static final int HEIGHT = 720;
+    private static final int WIDTH = 1280;
     public static long window;
 
     @Override
@@ -51,13 +51,13 @@ public class GLFWInit implements Initializator {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
         glfwShowWindow(window);
     }
 
     private void centerWindow() {
         // Get the thread stack and push a new frame
-        try (MemoryStack stack = stackPush()) {
+        try (final MemoryStack stack = stackPush()) {
             final IntBuffer pWidth = stack.mallocInt(1); // int*
             final IntBuffer pHeight = stack.mallocInt(1); // int*
 

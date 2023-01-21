@@ -3,7 +3,7 @@ package cz.empatix.assets.service;
 import cz.empatix.assets.creators.*;
 import cz.empatix.assets.domain.Metadata;
 import cz.empatix.assets.loaders.*;
-import cz.empatix.render.Shader;
+import cz.empatix.render.domain.Shader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 public class AssetsService {
     private static List<Future<AssetLoader<?>>> futures;
+    private static ExecutorService executorService;
 
     private static ShadersCreator shadersCreator;
     private static TexturesCreator texturesCreator;
@@ -25,7 +26,7 @@ public class AssetsService {
     private final static Logger LOGGER = LoggerFactory.getLogger(AssetsService.class);
 
     public static void loadAssets() {
-        final ExecutorService executorService = Executors.newFixedThreadPool(4);
+        executorService = Executors.newFixedThreadPool(4);
 
         final ShadersLoader shadersLoader = new ShadersLoader();
         final TexturesLoader texturesLoader = new TexturesLoader();
@@ -57,17 +58,21 @@ public class AssetsService {
                 if (future.isDone()) {
                     final AssetLoader<?> loader = future.get();
                     loader.submit();
+                    loader.getCreator().ready();
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
         futures.removeIf(Future::isDone);
+        if(isLoaded()){
+            executorService.shutdownNow();
+        }
     }
 
     public static boolean isLoaded() {
         return Stream.of(shadersCreator, texturesCreator, audioCreator, metadataCreator)
-                .allMatch(AssetCreator::getReady);
+                .allMatch(AssetCreator::isReady);
     }
 
     public static void dispose() {

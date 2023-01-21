@@ -10,7 +10,6 @@ public record RawMetadata(
         boolean spritesheet,
         boolean noimage,
         int totalRows,
-        int totalColumns,
-        int totalFrames
+        int totalColumns
 ){
 }
