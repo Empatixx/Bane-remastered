@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TexturesCreator implements AssetCreator<RawImage, Integer> {
+public class TexturesCreator implements AssetCreator {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
     private boolean ready;
     private final Map<String, Integer> textures;
@@ -19,12 +19,10 @@ public class TexturesCreator implements AssetCreator<RawImage, Integer> {
         textures = new HashMap<>();
     }
 
-    @Override
     public Integer get(final String name) {
         return textures.get(TexturesLoader.PATH.resolve(name).toString());
     }
 
-    @Override
     public void add(final Map<String, RawImage> data) {
         final long start = System.currentTimeMillis();
         final int loaded = textures.size();

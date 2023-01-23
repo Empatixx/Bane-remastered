@@ -20,7 +20,7 @@ import static org.lwjgl.openal.AL10.*;
 import static org.lwjgl.stb.STBVorbis.stb_vorbis_decode_filename;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
-public class AudioLoader implements AssetLoader<RawAudio> {
+public class AudioLoader implements AssetLoader{
     private final static Logger LOGGER = LoggerFactory.getLogger(AudioLoader.class);
 
     public final static Path PATH = Path.of("./assets/audio/");
@@ -99,7 +99,6 @@ public class AudioLoader implements AssetLoader<RawAudio> {
         final long start = System.currentTimeMillis();
         final int loaded = load();
         LOGGER.info("Loaded {} audio files in {} ms", loaded, System.currentTimeMillis() - start);
-        audioCreator.ready();
         return this;
     }
 }

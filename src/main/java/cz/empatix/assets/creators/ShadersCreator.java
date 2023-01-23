@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ShadersCreator implements AssetCreator<RawShader, Shader> {
+public class ShadersCreator implements AssetCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShadersCreator.class);
     private boolean ready;
     private final Map<String, Shader> shaders;
@@ -18,12 +18,10 @@ public class ShadersCreator implements AssetCreator<RawShader, Shader> {
         this.shaders = new HashMap<>();
     }
 
-    @Override
     public Shader get(final String name) {
         return shaders.get(name);
     }
 
-    @Override
     public void add(final Map<String, RawShader> data) {
         final long start = System.currentTimeMillis();
         final int loaded = shaders.size();

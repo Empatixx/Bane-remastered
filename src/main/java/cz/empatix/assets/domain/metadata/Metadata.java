@@ -1,4 +1,4 @@
-package cz.empatix.assets.domain;
+package cz.empatix.assets.domain.metadata;
 
 import org.lwjgl.opengl.GL30;
 

@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ShadersLoader implements AssetLoader<RawShader> {
+public class ShadersLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(ShadersLoader.class);
     public final static Path PATH = Path.of("./assets/shaders/");
     private static final Path[] PRELOAD_SHADERS = {
@@ -91,7 +91,6 @@ public class ShadersLoader implements AssetLoader<RawShader> {
         final long start = System.currentTimeMillis();
         final int loaded = load();
         LOGGER.info("Loaded {} shaders in {} ms", loaded, System.currentTimeMillis() - start);
-        shadersCreator.ready();
         return this;
     }
 

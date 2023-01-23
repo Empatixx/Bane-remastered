@@ -1,6 +1,6 @@
 package cz.empatix.render.background;
 
-import cz.empatix.assets.domain.Metadata;
+import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.Animation;

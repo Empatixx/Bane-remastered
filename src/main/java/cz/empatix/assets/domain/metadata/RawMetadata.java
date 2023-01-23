@@ -1,4 +1,4 @@
-package cz.empatix.assets.domain;
+package cz.empatix.assets.domain.metadata;
 
 
 import javax.annotation.Nonnull;

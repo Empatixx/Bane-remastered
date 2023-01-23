@@ -1,9 +1,8 @@
 package cz.empatix.render.hud;
 
-import cz.empatix.assets.domain.Metadata;
+import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Camera;
-import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import org.joml.Vector2f;

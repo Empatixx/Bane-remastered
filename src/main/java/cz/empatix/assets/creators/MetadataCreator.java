@@ -1,10 +1,9 @@
 package cz.empatix.assets.creators;
 
-import cz.empatix.assets.domain.Metadata;
-import cz.empatix.assets.domain.RawMetadata;
+import cz.empatix.assets.domain.metadata.Metadata;
+import cz.empatix.assets.domain.metadata.RawMetadata;
 import cz.empatix.assets.loaders.MetadataLoader;
-import cz.empatix.handlers.WindowHandler;
-import cz.empatix.utils.BufferFactory;
+import cz.empatix.common.utils.BufferFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,12 +12,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL15.*;
 
-public class MetadataCreator implements AssetCreator<RawMetadata, Metadata> {
+public class MetadataCreator implements AssetCreator{
     private static final Logger LOGGER = LoggerFactory.getLogger(MetadataCreator.class);
     private boolean ready;
     private final Map<String, Metadata> metadata;
@@ -37,12 +35,10 @@ public class MetadataCreator implements AssetCreator<RawMetadata, Metadata> {
         this.ready = true;
     }
 
-    @Override
     public Metadata get(final String name) {
         return metadata.get(MetadataLoader.PATH.resolve(name).toString());
     }
 
-    @Override
     public void add(final Map<String, RawMetadata> data) {
         final long start = System.currentTimeMillis();
         final int loaded = metadata.size();

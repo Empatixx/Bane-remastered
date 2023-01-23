@@ -3,7 +3,7 @@ package cz.empatix.assets.loaders;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import cz.empatix.assets.creators.MetadataCreator;
-import cz.empatix.assets.domain.RawMetadata;
+import cz.empatix.assets.domain.metadata.RawMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class MetadataLoader implements AssetLoader<RawMetadata> {
+public class MetadataLoader implements AssetLoader{
     private final static Logger LOGGER = LoggerFactory.getLogger(MetadataLoader.class);
     public final static Path PATH = Path.of("./assets/metadata/");
     private final static Path[] PRELOAD_METADATA = {
@@ -76,7 +76,6 @@ public class MetadataLoader implements AssetLoader<RawMetadata> {
         final long start = System.currentTimeMillis();
         final int loaded = load();
         LOGGER.info("Loaded {} metadata in {} ms", loaded, System.currentTimeMillis() - start);
-        metadataCreator.ready();
         return this;
     }
 }

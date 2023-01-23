@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class AudioCreator implements AssetCreator<RawAudio, Integer> {
+public class AudioCreator implements AssetCreator{
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioCreator.class);
     private boolean ready;
     private final Map<String, Integer> audio;
@@ -19,12 +19,10 @@ public class AudioCreator implements AssetCreator<RawAudio, Integer> {
         this.audio = new HashMap<>();
     }
 
-    @Override
     public Integer get(final String name) {
         return audio.get(AudioLoader.PATH.resolve(name).toString());
     }
 
-    @Override
     public void add(final Map<String, RawAudio> data) {
         final long start = System.currentTimeMillis();
         final int loaded = audio.size();

@@ -1,9 +1,8 @@
 package cz.empatix.render.domain;
 
-import cz.empatix.utils.BufferFactory;
+import cz.empatix.common.utils.BufferFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
-import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.util.HashMap;

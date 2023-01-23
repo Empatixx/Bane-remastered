@@ -1,12 +1,10 @@
 package cz.empatix.render.background;
 
-import cz.empatix.assets.domain.Metadata;
+import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
-
-import static org.lwjgl.opengl.GL20.*;
 
 public class CommonBackground implements Background {
     private final Shader shader;

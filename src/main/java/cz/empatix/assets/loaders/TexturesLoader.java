@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 import static org.lwjgl.stb.STBImage.*;
 
-public class TexturesLoader implements AssetLoader<RawImage> {
+public class TexturesLoader implements AssetLoader{
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesLoader.class);
     public final static Path PATH = Path.of("./assets/textures/");
     private final static Path[] PRELOAD_TEXTURES = {
@@ -92,7 +92,6 @@ public class TexturesLoader implements AssetLoader<RawImage> {
         final long start = System.currentTimeMillis();
         final int loaded = load();
         LOGGER.info("Loaded {} textures in {} ms", loaded, System.currentTimeMillis() - start);
-        texturesCreator.ready();
         return this;
     }
 }

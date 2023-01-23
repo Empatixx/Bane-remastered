@@ -1,15 +1,16 @@
 package cz.empatix.render.ui;
 
-import cz.empatix.assets.domain.Metadata;
+import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
+import cz.empatix.render.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
-import org.joml.Vector4f;
+
+import java.util.List;
 
 public class Button implements UIElement {
     private final Vector2f dimensions;

@@ -3,6 +3,7 @@ package cz.empatix.render;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
@@ -21,7 +22,19 @@ public class Renderer {
         render(List.of(drawable));
     }
     public void render(final List<Drawable> drawable){
-        drawable.stream()
+        final List<Drawable> allDrawables = new ArrayList<>(drawable);
+
+        final List<Drawable> foundSubDrawables = new ArrayList<>();
+        final List<Drawable> searchSubDrawables = new ArrayList<>(drawable);
+        do{
+            foundSubDrawables.clear();
+            searchSubDrawables.forEach(d -> foundSubDrawables.addAll(d.getSubDrawables()));
+            allDrawables.addAll(foundSubDrawables);
+            searchSubDrawables.clear();
+            searchSubDrawables.addAll(foundSubDrawables);
+        } while(!searchSubDrawables.isEmpty());
+
+        allDrawables.stream()
                 .filter(Drawable::shouldRender)
                 .sorted(Comparator.comparing(a -> a.getClass().getName()))
                 .map(Drawable::renderData)
