@@ -71,10 +71,10 @@ public class FontCreator implements AssetCreator {
                 final Glyph glyph = new Glyph(
                         width,
                         height,
-                        bufBearingX.get(),
-                        bufAdvance.get(),
-                        bufAscent.get(),
-                        bufDescent.get(),
+                        (int)(bufBearingX.get() * scale),
+                        (int)(bufAdvance.get() * scale),
+                        (int)(bufAscent.get() * scale),
+                        (int)(bufDescent.get() * scale),
                         bufLineGap.get(),
                         textureID
                 );
