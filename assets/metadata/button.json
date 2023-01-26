@@ -1,8 +1,16 @@
 {
-  "name": "btn",
   "width": 100,
   "height": 50,
-  "spritesheet": true,
   "totalRows": "2",
-  "totalColumns": "1"
+  "totalColumns": "1",
+  "rows": [
+    {
+      "type": "STATIC",
+      "numSprites": 1
+    },
+    {
+      "type": "HOVER",
+      "numSprites": 1
+    }
+  ]
 }

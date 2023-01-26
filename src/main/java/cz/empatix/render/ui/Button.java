@@ -4,30 +4,27 @@ import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
-import cz.empatix.render.Drawable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import org.joml.Vector2f;
-
-import java.util.List;
 
 public class Button implements UIElement {
     private final Vector2f dimensions;
     private final Vector2f position;
     private final String text;
-    private final int verticesVbo;
-    private final int textureId;
+    private final Metadata metadata;
     private final Animation animation;
     private final Shader shader;
+    private final int textureId;
     private boolean hover;
 
     public Button(final String text, final Vector2f position) {
         this.text = text;
         this.shader = AssetsService.getShader("shader");
-        final Metadata metadata = AssetsService.getMetadata("button.json");
-        verticesVbo = metadata.verticesVbo();
-        animation = new Animation(metadata.texturesVbos());
+        metadata = AssetsService.getMetadata("button.json");
+        animation = new Animation(metadata.sprites());
         animation.setDelayBetweenAnimations(-1);
         textureId = AssetsService.getTexture("Menu/Menu_bar.tga");
         dimensions = new Vector2f(metadata.width(), metadata.height());
@@ -37,8 +34,7 @@ public class Button implements UIElement {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                verticesVbo,
-                animation.getCurrentTextureVbo(),
+                metadata.vao(),
                 textureId,
                 shader,
                 this::prepareShader
@@ -49,6 +45,10 @@ public class Button implements UIElement {
         shader.setUniform("sampler", 0);
         shader.setUniform("projection", Camera.getProjection()
                 .translate(position.x,position.y,0));
+        shader.setUniform("totalColumns",metadata.totalColumns());
+        shader.setUniform("totalRows", metadata.totalRows());
+        shader.setUniform("currentRow", animation.getCurrentTextureRow());
+        shader.setUniform("currentColumn", animation.getCurrentTextureColumn());
     }
 
     @Override
@@ -62,7 +62,7 @@ public class Button implements UIElement {
                 .addShape(position, dimensions)
                 .addShape((float) mouseX, (float) mouseY)
                 .resolve();
-        animation.setAnimationState(hover ? 1 : 0);
+        animation.setAnimationState(hover ? AnimationState.HOVER : AnimationState.STATIC);
     }
 
     @Override

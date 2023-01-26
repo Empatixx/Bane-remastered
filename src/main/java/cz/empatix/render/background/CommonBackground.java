@@ -9,21 +9,17 @@ import cz.empatix.render.domain.Shader;
 public class CommonBackground implements Background {
     private final Shader shader;
     private final int texture;
-    private final int verticesVbo;
-    private final int texturesVbo;
+    private final Metadata metadata;
 
     public CommonBackground(final String texture) {
         this.shader = AssetsService.getShader("shader");
         this.texture = AssetsService.getTexture(texture);
-        final Metadata metadata = AssetsService.getMetadata("background-overlay.json");
-        verticesVbo = metadata.verticesVbo();
-        texturesVbo = metadata.getTexturesVbos(0).get(0);
+        metadata = AssetsService.getMetadata("background-overlay.json");
     }
     @Override
     public RenderData renderData() {
         return new RenderData(
-                verticesVbo,
-                texturesVbo,
+                metadata.vao(),
                 texture,
                 shader,
                 this::prepareShader
@@ -32,6 +28,10 @@ public class CommonBackground implements Background {
     private void prepareShader(final Shader shader){
         shader.setUniform("sampler", 0);
         shader.setUniform("projection", Camera.getProjection());
+        shader.setUniform("totalColumns",1);
+        shader.setUniform("totalRows", 1);
+        shader.setUniform("currentRow", 0);
+        shader.setUniform("currentColumn", 0);
     }
     @Override
     public boolean shouldRender() {

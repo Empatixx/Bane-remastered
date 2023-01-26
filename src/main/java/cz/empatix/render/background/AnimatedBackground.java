@@ -8,32 +8,36 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 
 public class AnimatedBackground implements Background {
-    private Animation animation;
+    private final Animation animation;
     private final Shader shader;
     private final int texture;
-    private final int verticesVbo;
+    private final Metadata metadata;
 
     public AnimatedBackground(final String texture, final String metadata) {
         this.shader = AssetsService.getShader("shader");
         this.texture = AssetsService.getTexture(texture);
-        final Metadata meta = AssetsService.getMetadata(metadata);
-        verticesVbo = meta.verticesVbo();
-        animation = new Animation(meta.texturesVbos());
+        this.metadata = AssetsService.getMetadata(metadata);
+        animation = new Animation(this.metadata.sprites());
     }
 
     @Override
     public RenderData renderData() {
         return new RenderData(
-                verticesVbo,
-                animation.getCurrentTextureVbo(),
+                metadata.vao(),
                 texture,
                 shader,
                 this::prepareShader
         );
     }
-    private void prepareShader(final Shader shader){
+
+    private void prepareShader(final Shader shader) {
         shader.setUniform("sampler", 0);
         shader.setUniform("projection", Camera.getProjection());
+        shader.setUniform("totalColumns", metadata.totalColumns());
+        shader.setUniform("totalRows", metadata.totalRows());
+        shader.setUniform("currentRow", animation.getCurrentTextureRow());
+        shader.setUniform("currentColumn", animation.getCurrentTextureColumn());
+
     }
 
     @Override
@@ -41,7 +45,7 @@ public class AnimatedBackground implements Background {
         return true;
     }
 
-    public void update(){
+    public void update() {
         animation.update();
     }
 }

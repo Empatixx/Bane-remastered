@@ -85,7 +85,13 @@ public class Shader {
         }
         glUniform1i(location, value);
     }
-
+    public void setUniform(final String name, final float value) {
+        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
+        if (location == -1) {
+            throw new RuntimeException("Uniform " + name + " not found");
+        }
+        glUniform1f(location, value);
+    }
     public void setUniform(String name, Vector2f value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {

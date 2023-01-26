@@ -8,9 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -57,7 +55,7 @@ public class MetadataCreator implements AssetCreator{
                 .map(dimensions -> {
                     final int width = dimensions.getKey();
                     final int height = dimensions.getValue();
-                    final int vbo = createVerticesVBO(width, height);
+                    final int vbo = getVerticesVbo(width, height);
                     return Map.entry(dimensions, vbo);
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -66,17 +64,18 @@ public class MetadataCreator implements AssetCreator{
                 .filter(entry -> !metadata.containsKey(entry.getKey()))
                 .map(entry -> {
                     final RawMetadata rawMetadata = entry.getValue();
-                    final int verticesVBO = verticesVBOs.get(Map.entry(rawMetadata.width(), rawMetadata.height()));
-                    final List<List<Integer>> texturesVBOs = createTextureVBOs(rawMetadata);
 
-                    return Map.entry(entry.getKey(), new Metadata(verticesVBO, texturesVBOs, rawMetadata.width(), rawMetadata.height()));
+                    final int verticesVBO = verticesVBOs.get(Map.entry(rawMetadata.width(), rawMetadata.height()));
+                    final int texturesVBO = getTexturesVbo();
+
+                    return Map.entry(entry.getKey(), new Metadata(rawMetadata, verticesVBO, texturesVBO));
                 })
                 .forEach(entry -> metadata.put(entry.getKey(), entry.getValue()));
         LOGGER.info("Total {} Metadata vbos created in {} ms", metadata.size() - loaded, System.currentTimeMillis() - start);
     }
 
 
-    private int createVerticesVBO(final int width, final int height) {
+    private int getVerticesVbo(final int width, final int height) {
         final int vboVertices = glGenBuffers();
         final float[] vertices = {
                 0, 0,
@@ -93,54 +92,24 @@ public class MetadataCreator implements AssetCreator{
         return vboVertices;
     }
 
-    private List<List<Integer>> createTextureVBOs(final RawMetadata metadata) {
-
-        if (!metadata.spritesheet()) {
-            if (metadata.noimage()) {
-                LOGGER.debug("No image for metadata {}", metadata.name());
-                return List.of();
-            } else {
-                final float[] textures = {
-                        0, 0,
-                        1, 0,
-                        1, 1,
-                        0, 1
-                };
-                final FloatBuffer texturesBuffer = BufferFactory.convertFloatArray(textures);
-                final int vboTextures = glGenBuffers();
-                glBindBuffer(GL_ARRAY_BUFFER, vboTextures);
-                glBufferData(GL_ARRAY_BUFFER, texturesBuffer, GL_STATIC_DRAW);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                return List.of(List.of(vboTextures));
-            }
-        } else {
-            final List<List<Integer>> vboList = new ArrayList<>();
-            for (int y = 0; y < metadata.totalRows(); y++) {
-                final List<Integer> vboRow = new ArrayList<>();
-                for (int x = 0; x < metadata.totalColumns(); x++) {
-                    final float[] textures = {
-                            (float) x / metadata.totalColumns(), (float) y / metadata.totalRows(),
-                            (float) (x + 1) / metadata.totalColumns(), (float) y / metadata.totalRows(),
-                            (float) (x + 1) / metadata.totalColumns(), (float) (y + 1) / metadata.totalRows(),
-                            (float) x / metadata.totalColumns(), (float) (y + 1) / metadata.totalRows()
-                    };
-                    final FloatBuffer texturesBuffer = BufferFactory.convertFloatArray(textures);
-                    final int vboTextures = glGenBuffers();
-
-                    glBindBuffer(GL_ARRAY_BUFFER, vboTextures);
-                    glBufferData(GL_ARRAY_BUFFER, texturesBuffer, GL_STREAM_DRAW);
-                    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-                    vboRow.add(vboTextures);
-                }
-                vboList.add(vboRow);
-            }
-            return vboList;
-        }
+    private int getTexturesVbo() {
+        final float[] textures = {
+                0, 0,
+                1, 0,
+                1, 1,
+                0, 1
+        };
+        final FloatBuffer texturesBuffer = BufferFactory.convertFloatArray(textures);
+        final int vboTextures = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vboTextures);
+        glBufferData(GL_ARRAY_BUFFER, texturesBuffer, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        return vboTextures;
     }
 
     @Override
     public void destroy() {
-        metadata.values().forEach(Metadata::destroy);
+        metadata.values().forEach(Metadata::destroyVao);
+        metadata.values().forEach(Metadata::destroyVbo);
     }
 }
