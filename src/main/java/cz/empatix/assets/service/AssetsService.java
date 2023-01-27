@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -58,7 +59,13 @@ public class AssetsService {
                 throw new RuntimeException(e);
             }
         });
-        futures.removeIf(Future::isDone);
+        futures.removeIf(future -> {
+            try {
+                return future.isDone() && future.get().getCreator().isReady();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
         if (isLoaded()) {
             executorService.shutdownNow();
         }
