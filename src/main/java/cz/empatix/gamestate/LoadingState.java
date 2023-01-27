@@ -1,7 +1,7 @@
 package cz.empatix.gamestate;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.Drawable;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.background.AnimatedBackground;
 import cz.empatix.render.background.Background;
 import org.slf4j.Logger;

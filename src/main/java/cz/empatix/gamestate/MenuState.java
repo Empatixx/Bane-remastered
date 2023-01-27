@@ -2,14 +2,13 @@ package cz.empatix.gamestate;
 
 import com.google.common.collect.Streams;
 import cz.empatix.render.Camera;
-import cz.empatix.render.Drawable;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.background.Background;
 import cz.empatix.render.background.CommonBackground;
 import cz.empatix.render.hud.HUDElement;
 import cz.empatix.render.hud.Image;
 import cz.empatix.render.ui.Button;
 import cz.empatix.render.ui.UIElement;
-import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;

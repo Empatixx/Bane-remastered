@@ -1,19 +1,18 @@
-package cz.empatix.render;
+package cz.empatix.render.renders;
 
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.Shader;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Consumer;
 
-import static org.lwjgl.opengl.GL30.*;
-
-public class Renderer {
-    final Class<?> lastRenderedClass = null;
-    public void render(final Drawable drawable){
-        render(List.of(drawable));
+public class RenderService {
+    private final List<Renderer> renderers;
+    public RenderService(){
+        renderers = new ArrayList<>();
+        renderers.add(new TextRenderer());
+        renderers.add(new CommonRenderer());
     }
     public void render(final List<Drawable> drawable){
         final List<Drawable> allDrawables = new ArrayList<>(drawable);
@@ -31,24 +30,14 @@ public class Renderer {
         allDrawables.stream()
                 .filter(Drawable::shouldRender)
                 .sorted(Comparator.comparing(a -> a.getClass().getName()))
-                .map(Drawable::renderData)
                 .forEach(this::render);
     }
-    public void render(final RenderData renderData){
-        final Shader shader = renderData.shader();
-        final int vao = renderData.vao();
-        final int textureId = renderData.textureId();
-        final Consumer<Shader> prepareShaderFunc = renderData.prepareShaderFunc();
-
-        shader.bind();
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        prepareShaderFunc.accept(shader);
-
-        glBindVertexArray(vao);
-        glDrawArrays(GL_QUADS, 0, 4);
-        glBindVertexArray(0);
-
-        shader.unbind();
-        glBindTexture(GL_TEXTURE_2D, 0);
+    public void render(final Drawable  drawable){
+        for(final Renderer renderer : renderers){
+            if(renderer.accepts(drawable)){
+                renderer.render(drawable);
+                return;
+            }
+        }
     }
 }

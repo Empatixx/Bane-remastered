@@ -1,6 +1,6 @@
 package cz.empatix.gamestate;
 
-import cz.empatix.render.Drawable;
+import cz.empatix.render.attributes.Drawable;
 
 import java.util.List;
 

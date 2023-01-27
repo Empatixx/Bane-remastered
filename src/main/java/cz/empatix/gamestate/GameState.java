@@ -1,8 +1,7 @@
 package cz.empatix.gamestate;
 
 import cz.empatix.handlers.WindowHandler;
-import cz.empatix.render.Drawable;
-import cz.empatix.render.Renderer;
+import cz.empatix.render.attributes.Drawable;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryStack;
 

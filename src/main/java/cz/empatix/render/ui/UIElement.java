@@ -1,6 +1,6 @@
 package cz.empatix.render.ui;
 
-import cz.empatix.render.Drawable;
+import cz.empatix.render.attributes.Drawable;
 
 public interface UIElement extends Drawable {
     void update(double dt, double mouseX, double mouseY);

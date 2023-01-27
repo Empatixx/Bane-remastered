@@ -1,6 +1,7 @@
 package cz.empatix.gamestate;
 
-import cz.empatix.render.Renderer;
+import cz.empatix.render.renders.CommonRenderer;
+import cz.empatix.render.renders.RenderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +11,7 @@ import java.util.List;
 public class GameStateService {
     private final static Logger LOGGER = LoggerFactory.getLogger(GameStateService.class);
     private final List<GameState> gameStates;
-    private final Renderer renderer;
+    private final RenderService rendererService;
     private GameState currentState;
 
     public GameStateService() {
@@ -20,7 +21,7 @@ public class GameStateService {
         gameStates.add(new MenuState(this));
         setCurrentState(GameStateType.LOADING);
 
-        renderer = new Renderer();
+        rendererService = new RenderService();
     }
     public void setCurrentState(final GameStateType type){
         currentState = gameStates.stream()
@@ -36,7 +37,7 @@ public class GameStateService {
     }
 
     public void render(final double dt) {
-        renderer.render(currentState.toRender(dt));
+        rendererService.render(currentState.toRender(dt));
     }
 
     public void keyPressed(int key) {

@@ -1,4 +1,4 @@
-package cz.empatix.render;
+package cz.empatix.render.attributes;
 
 import cz.empatix.render.domain.RenderData;
 
