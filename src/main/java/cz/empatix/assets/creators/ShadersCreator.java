@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ShadersCreator implements AssetCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShadersCreator.class);
@@ -38,8 +37,8 @@ public class ShadersCreator implements AssetCreator {
 
     @Override
     public void destroy() {
+        LOGGER.info("Destroying shaders");
         shaders.values().forEach(Shader::destroy);
-
     }
 
     @Override

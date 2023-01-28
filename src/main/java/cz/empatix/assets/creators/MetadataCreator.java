@@ -87,6 +87,7 @@ public class MetadataCreator implements AssetCreator {
 
     @Override
     public void destroy() {
+        LOGGER.info("Destroying metadata");
         metadata.values().forEach(Metadata::destroyVao);
         metadata.values().forEach(Metadata::destroyVbo);
     }

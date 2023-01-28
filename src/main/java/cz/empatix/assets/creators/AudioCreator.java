@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioCreator implements AssetCreator{
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioCreator.class);
@@ -48,6 +47,7 @@ public class AudioCreator implements AssetCreator{
     }
     @Override
     public void destroy() {
+        LOGGER.info("Destroying audio");
         audio.forEach((s, integer) -> {
             AL10.alDeleteBuffers(integer);
         });

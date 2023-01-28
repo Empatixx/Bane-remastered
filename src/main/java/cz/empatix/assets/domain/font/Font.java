@@ -13,27 +13,42 @@ public record Font (
         float scale,
         Map<Character,Glyph> glyphs
 ){
-    public Font(final float scale, final Map<Character,Glyph> glyphs){
-        this(0,0,0, scale, glyphs);
-    }
-    public Font(final int vao, final int verticesVbo, final int textureVbo, final float scale, final Map<Character,Glyph> glyphs){
-        this.verticesVbo = VboBuilder.builder()
-                .defaultNormalizedBuffer()
-                .build();
-        this.textureVbo = VboBuilder.builder()
-                .defaultNormalizedBuffer()
-                .build();
-        this.vao = VaoBuilder.builder()
-                .addVbo(0, this.verticesVbo)
-                .addVbo(1, this.textureVbo)
-                .build();
-        this.scale = scale;
-        this.glyphs = glyphs;
-    }
     public void destroy(){
         GL30.glDeleteVertexArrays(vao);
         GL30.glDeleteBuffers(verticesVbo);
         GL30.glDeleteBuffers(textureVbo);
         glyphs.forEach((c,g) -> g.destroy());
+    }
+
+    public static FontBuilder builder(){
+        return new FontBuilder();
+    }
+
+    public static class FontBuilder{
+        private float scale;
+        private Map<Character,Glyph> glyphs;
+
+        public FontBuilder scale(final float scale){
+            this.scale = scale;
+            return this;
+        }
+        public FontBuilder glyphs(final Map<Character,Glyph> glyphs){
+            this.glyphs = glyphs;
+            return this;
+        }
+        public Font build(){
+            final int verticesVbo = VboBuilder.builder()
+                    .defaultNormalizedBuffer()
+                    .dynamic()
+                    .build();
+            final int textureVbo = VboBuilder.builder()
+                    .glDefaultNormalizedBuffer()
+                    .build();
+            final int vao = VaoBuilder.builder()
+                    .addVbo(0, verticesVbo)
+                    .addVbo(1, textureVbo)
+                    .build();
+            return new Font(vao, verticesVbo, textureVbo, scale, glyphs);
+        }
     }
 }

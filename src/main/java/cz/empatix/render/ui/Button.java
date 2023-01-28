@@ -25,7 +25,7 @@ public class Button implements UIElement {
     private boolean hover;
 
     public Button(final String text, final Vector2f position) {
-        this.text = new Text(text,"PixelFJVerdana12pt.ttf",position);
+        this.text = new Text(text,"arial.ttf",position);
         this.shader = AssetsService.getShader("shader");
         metadata = AssetsService.getMetadata("button.json");
         animation = new Animation(metadata.sprites());

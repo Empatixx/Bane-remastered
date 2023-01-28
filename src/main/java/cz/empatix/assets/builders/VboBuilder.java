@@ -33,21 +33,29 @@ public class VboBuilder {
         };
         return buffer(vbo);
     }
-
+    public VboBuilder glDefaultNormalizedBuffer(){
+        final float[] vbo = {
+                0, 1,
+                1, 1,
+                1, 0,
+                0, 0
+        };
+        return buffer(vbo);
+    }
     public VboBuilder dynamic(){
         this.dynamic = true;
         return this;
     }
     public int build(){
         Preconditions.checkNotNull(buffer, "Buffer must be set");
-        final int vboTextures = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vboTextures);
+        final int vbo = glGenBuffers();
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         if (dynamic){
             glBufferData(GL_ARRAY_BUFFER, buffer, GL_DYNAMIC_DRAW);
         } else {
             glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
         }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-        return vboTextures;
+        return vbo;
     }
 }

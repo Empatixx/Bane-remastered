@@ -1,14 +1,12 @@
 package cz.empatix.render.domain.renderdata;
 
-import cz.empatix.assets.domain.font.Glyph;
+import cz.empatix.assets.domain.font.Font;
 import cz.empatix.render.domain.Shader;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 public record TextRenderData(
-        int vao,
-        Map<Character, Glyph> glyphs,
+        Font font,
         String text,
         Shader shader,
         Consumer<Shader> prepareShaderFunc
@@ -17,5 +15,10 @@ public record TextRenderData(
     @Override
     public RenderDataType type() {
         return RenderDataType.TEXT;
+    }
+
+    @Override
+    public int vao() {
+        return font.vao();
     }
 }

@@ -35,6 +35,7 @@ public class TexturesCreator implements AssetCreator {
 
     @Override
     public void destroy() {
+        LOGGER.info("Destroying textures");
         textures.forEach((s, integer) -> GL30.glDeleteTextures(integer));
     }
 
@@ -43,8 +44,8 @@ public class TexturesCreator implements AssetCreator {
                 .width(image.width())
                 .height(image.height())
                 .channels(image.channels())
-                .applyFilters()
-                .applyWraps()
+                .applyLinearFilters()
+                .applyRepeatWrap()
                 .buffer(image.data())
                 .build();
         image.destroy();

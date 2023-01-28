@@ -8,6 +8,7 @@ import cz.empatix.render.Camera;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.renderdata.TextRenderData;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 public class Text implements HUDElement {
     private String text;
@@ -17,8 +18,8 @@ public class Text implements HUDElement {
 
     public Text(final String text, final String font, final Vector2f position) {
         this.text = text;
-        this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_16);
-        this.shader = AssetsService.getShader("shader");
+        this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_42);
+        this.shader = AssetsService.getShader("text");
         this.position = position;
     }
 
@@ -26,8 +27,7 @@ public class Text implements HUDElement {
     @Override
     public TextRenderData renderData() {
         return new TextRenderData(
-                font.vao(),
-                font.glyphs(),
+                font,
                 text,
                 shader,
                 this::prepareShader
@@ -37,12 +37,9 @@ public class Text implements HUDElement {
     private void prepareShader(final Shader shader) {
         shader.setUniform("sampler", 0);
         shader.setUniform("projection", Camera.getProjection()
-                .translate(position.x, position.y, 0)
+                .translate(position.x, position.y, 0).scaleXY(0.5f,0.5f)
         );
-        shader.setUniform("totalColumns", 1);
-        shader.setUniform("totalRows", 1);
-        shader.setUniform("currentRow", 0);
-        shader.setUniform("currentColumn", 0);
+        shader.setUniform("color", new Vector3f(0f, 0f, 0f));
     }
 
     @Override
