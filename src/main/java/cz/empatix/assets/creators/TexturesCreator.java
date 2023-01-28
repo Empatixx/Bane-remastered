@@ -1,5 +1,6 @@
 package cz.empatix.assets.creators;
 
+import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.assets.loaders.TexturesLoader;
 import org.lwjgl.opengl.GL30;
@@ -8,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TexturesCreator implements AssetCreator {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
@@ -39,16 +39,14 @@ public class TexturesCreator implements AssetCreator {
     }
 
     private int createTexture(final RawImage image) {
-        final int texture = GL30.glGenTextures();
-        GL30.glBindTexture(GL30.GL_TEXTURE_2D, texture);
-        GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_S, GL30.GL_REPEAT);
-        GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_T, GL30.GL_REPEAT);
-        GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR_MIPMAP_LINEAR);
-        GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_LINEAR);
-        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, GL30.GL_RGBA, image.width(), image.height(),
-                0, image.channels() == 4 ? GL30.GL_RGBA : GL30.GL_RGB, GL30.GL_UNSIGNED_BYTE, image.data());
-        GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
-        GL30.glBindTexture(GL30.GL_TEXTURE_2D, 0);
+        final int texture = TextureBuilder.builder()
+                .width(image.width())
+                .height(image.height())
+                .channels(image.channels())
+                .applyFilters()
+                .applyWraps()
+                .buffer(image.data())
+                .build();
         image.destroy();
         return texture;
     }

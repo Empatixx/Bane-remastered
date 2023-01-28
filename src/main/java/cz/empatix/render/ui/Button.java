@@ -4,16 +4,20 @@ import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
-import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.renderdata.CommonRenderData;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
+
+import java.util.List;
 
 public class Button implements UIElement {
     private final Vector2f dimensions;
     private final Vector2f position;
-    private final String text;
+    private final Text text;
     private final Metadata metadata;
     private final Animation animation;
     private final Shader shader;
@@ -21,7 +25,7 @@ public class Button implements UIElement {
     private boolean hover;
 
     public Button(final String text, final Vector2f position) {
-        this.text = text;
+        this.text = new Text(text,"PixelFJVerdana12pt.ttf",position);
         this.shader = AssetsService.getShader("shader");
         metadata = AssetsService.getMetadata("button.json");
         animation = new Animation(metadata.sprites());
@@ -32,8 +36,8 @@ public class Button implements UIElement {
     }
 
     @Override
-    public RenderData renderData() {
-        return new RenderData(
+    public CommonRenderData renderData() {
+        return new CommonRenderData(
                 metadata.vao(),
                 textureId,
                 shader,
@@ -49,6 +53,11 @@ public class Button implements UIElement {
         shader.setUniform("totalRows", metadata.totalRows());
         shader.setUniform("currentRow", animation.getCurrentTextureRow());
         shader.setUniform("currentColumn", animation.getCurrentTextureColumn());
+    }
+
+    @Override
+    public List<Drawable> getSubDrawables() {
+        return List.of(text);
     }
 
     @Override

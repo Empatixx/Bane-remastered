@@ -17,7 +17,10 @@ import static org.lwjgl.opengl.GL30.*;
 
 public class FontCreator implements AssetCreator {
     private final Map<String, Map<Integer, Font>> fonts;
-    private final static int[] FONT_SIZES = {16, 32, 42};
+    public final static int FONT_SIZE_16 = 16;
+    public final static int FONT_SIZE_32 = 32;
+    public final static int FONT_SIZE_42 = 42;
+
     private boolean ready;
 
     public FontCreator() {
@@ -34,16 +37,16 @@ public class FontCreator implements AssetCreator {
                     final String path = entry.getKey();
                     final RawFont rawFont = entry.getValue();
 
-                    final Map<Integer, Font> fontSizes = Arrays.stream(FONT_SIZES)
+                    final Map<Integer, Font> fontSizes = Arrays.stream(new int[]{FONT_SIZE_16, FONT_SIZE_32, FONT_SIZE_42})
                             .mapToObj(size -> Map.entry(size, transform(rawFont, size)))
                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                     return Map.entry(path, fontSizes);
-                }).forEach(entry -> fonts.put(entry.getKey(),entry.getValue()));
+                }).forEach(entry -> fonts.put(entry.getKey(), entry.getValue()));
     }
 
     private Font transform(final RawFont font, int size) {
         final STBTTFontinfo fontInfo = font.fontInfo();
-        final Map<Character,Glyph> glyphs = new HashMap<>();
+        final Map<Character, Glyph> glyphs = new HashMap<>();
         final float scale = stbtt_ScaleForPixelHeight(fontInfo, size);
         for (char c = 'A'; c <= 'z'; c++) {
             try (final MemoryStack memoryStack = MemoryStack.stackPush()) {
@@ -71,17 +74,17 @@ public class FontCreator implements AssetCreator {
                 final Glyph glyph = new Glyph(
                         width,
                         height,
-                        (int)(bufBearingX.get() * scale),
-                        (int)(bufAdvance.get() * scale),
-                        (int)(bufAscent.get() * scale),
-                        (int)(bufDescent.get() * scale),
+                        (int) (bufBearingX.get() * scale),
+                        (int) (bufAdvance.get() * scale),
+                        (int) (bufAscent.get() * scale),
+                        (int) (bufDescent.get() * scale),
                         bufLineGap.get(),
                         textureID
                 );
-                glyphs.put(c,glyph);
+                glyphs.put(c, glyph);
             }
         }
-        return new Font(scale,glyphs);
+        return new Font(scale, glyphs);
     }
 
     @Override
@@ -96,6 +99,9 @@ public class FontCreator implements AssetCreator {
 
     @Override
     public void destroy() {
-
+        final List<Font> fonts = this.fonts.values().stream()
+                .flatMap(map -> map.values().stream())
+                .toList();
+        fonts.forEach(Font::destroy);
     }
 }

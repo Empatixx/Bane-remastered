@@ -1,9 +1,8 @@
 package cz.empatix.render.renders;
 
-import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.renderdata.RenderData;
 
 public interface Renderer {
-    boolean accepts(Drawable drawable);
-    void render(Drawable drawable);
+    boolean accepts(RenderData renderData);
+    void render(RenderData renderData);
 }

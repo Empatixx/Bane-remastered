@@ -3,7 +3,7 @@ package cz.empatix.render.background;
 import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Camera;
-import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.renderdata.CommonRenderData;
 import cz.empatix.render.domain.Shader;
 
 public class CommonBackground implements Background {
@@ -17,8 +17,8 @@ public class CommonBackground implements Background {
         metadata = AssetsService.getMetadata("background-overlay.json");
     }
     @Override
-    public RenderData renderData() {
-        return new RenderData(
+    public CommonRenderData renderData() {
+        return new CommonRenderData(
                 metadata.vao(),
                 texture,
                 shader,

@@ -4,7 +4,7 @@ import cz.empatix.assets.domain.metadata.Metadata;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.renderdata.CommonRenderData;
 import cz.empatix.render.domain.Shader;
 
 public class AnimatedBackground implements Background {
@@ -21,8 +21,8 @@ public class AnimatedBackground implements Background {
     }
 
     @Override
-    public RenderData renderData() {
-        return new RenderData(
+    public CommonRenderData renderData() {
+        return new CommonRenderData(
                 metadata.vao(),
                 texture,
                 shader,
