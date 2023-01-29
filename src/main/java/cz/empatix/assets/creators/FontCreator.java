@@ -25,8 +25,8 @@ public class FontCreator implements AssetCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(FontCreator.class);
     private final Map<String, Map<Integer, Font>> fonts;
     public final static int FONT_SIZE_16 = 16;
-    public final static int FONT_SIZE_32 = 32;
-    public final static int FONT_SIZE_42 = 42;
+    public final static int FONT_SIZE_20 = 20;
+    public final static int FONT_SIZE_24 = 24;
 
     private boolean ready;
 
@@ -44,7 +44,7 @@ public class FontCreator implements AssetCreator {
                     final String path = entry.getKey();
                     final RawFont rawFont = entry.getValue();
 
-                    final Map<Integer, Font> fontSizes = Arrays.stream(new int[]{FONT_SIZE_16, FONT_SIZE_32, FONT_SIZE_42})
+                    final Map<Integer, Font> fontSizes = Arrays.stream(new int[]{FONT_SIZE_16, FONT_SIZE_20, FONT_SIZE_24})
                             .mapToObj(size -> Map.entry(size, transform(rawFont, size)))
                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                     return Map.entry(path, fontSizes);
@@ -54,11 +54,12 @@ public class FontCreator implements AssetCreator {
     private Font transform(final RawFont font, int size) {
         final STBTTFontinfo fontInfo = font.fontInfo();
         final Map<Character, Glyph> glyphs = new HashMap<>();
-        final float scaleT = stbtt_ScaleForPixelHeight(fontInfo, size * 1440/360f);
         final float scale = stbtt_ScaleForPixelHeight(fontInfo, size);
-
+        final float scaleForBitmap = stbtt_ScaleForPixelHeight(fontInfo, size * WindowHandler.getMaxHeight() / WindowHandler.TARGET_HEIGHT);
         for (char c = 0; c <= 255; c++) {
             try (final MemoryStack memoryStack = MemoryStack.stackPush()) {
+                final IntBuffer bufBitmapWidth = memoryStack.mallocInt(1);
+                final IntBuffer bufBitmapHeight = memoryStack.mallocInt(1);
                 final IntBuffer bufWidth = memoryStack.mallocInt(1);
                 final IntBuffer bufHeight = memoryStack.mallocInt(1);
                 final IntBuffer bufBearingX = memoryStack.mallocInt(1);
@@ -69,21 +70,21 @@ public class FontCreator implements AssetCreator {
                 final IntBuffer bufDescent = memoryStack.mallocInt(1);
                 final IntBuffer bufAscent = memoryStack.mallocInt(1);
 
+                final ByteBuffer bitmap = stbtt_GetCodepointBitmap(fontInfo, 0, scaleForBitmap, c, bufBitmapWidth, bufBitmapHeight, null, null);
+
+                stbtt_GetCodepointBitmap(fontInfo, 0, scale, c, bufWidth, bufHeight, null, null);
+                stbtt_GetCodepointBox(fontInfo, c, null, bufDescent, null, bufAscent);
                 stbtt_GetCodepointHMetrics(fontInfo, c, bufAdvance, bufBearingX);
                 stbtt_GetFontVMetrics(fontInfo, bufMaxAscent, bufMaxDescent, bufLineGap);
-                final ByteBuffer bitmap = stbtt_GetCodepointBitmap(fontInfo, 0, scaleT, c, bufWidth, bufHeight, null, null);
-                stbtt_GetCodepointBox(fontInfo, c, null, bufDescent, null, bufAscent);
-
-                final int width = bufWidth.get();
-                final int height = bufHeight.get();
 
                 Glyph.GlyphBuilder glyphBuilder = Glyph.builder();
                 if (bitmap != null) {
                     final int textureId = TextureBuilder.builder()
-                            .width(width)
-                            .height(height)
+                            .width(bufBitmapWidth.get())
+                            .height(bufBitmapHeight.get())
                             .channels(1)
-                            .applyNearestFilters()
+                            .applyClampToEdgeWrap()
+                            .applyLinearFilters()
                             .buffer(bitmap)
                             .build();
                     glyphBuilder = glyphBuilder.textureId(textureId);
@@ -91,13 +92,13 @@ public class FontCreator implements AssetCreator {
                     LOGGER.warn("Bitmap for character '{}' is null", c);
                 }
                 final Glyph glyph = glyphBuilder
-                        .width(width)
-                        .height(height)
-                        .bearingX(Math.round(bufBearingX.get() * scale))
-                        .advance(Math.round(bufAdvance.get() * scale))
-                        .ascent(Math.round(bufAscent.get() * scale))
-                        .descent(-Math.round(bufDescent.get() * scale))
-                        .lineGap(bufLineGap.get())
+                        .width(bufWidth.get())
+                        .height(bufHeight.get())
+                        .bearingX((int)Math.ceil(bufBearingX.get() * scale))
+                        .advance((int)Math.ceil(bufAdvance.get() * scale))
+                        .ascent((int)Math.ceil(bufAscent.get() * scale))
+                        .descent(-(int)Math.ceil(bufDescent.get() * scale))
+                        .lineGap((int)Math.ceil(bufLineGap.get() * scale))
                         .build();
                 glyphs.put(c, glyph);
             }

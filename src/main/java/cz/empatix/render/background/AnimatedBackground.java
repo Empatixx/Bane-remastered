@@ -32,7 +32,8 @@ public class AnimatedBackground implements Background {
 
     private void prepareShader(final Shader shader) {
         shader.setUniform("sampler", 0);
-        shader.setUniform("projection", Camera.getProjection());
+        shader.setUniform("projection", Camera.getProjection()
+                .translate(0, 0, 0f));
         shader.setUniform("totalColumns", metadata.totalColumns());
         shader.setUniform("totalRows", metadata.totalRows());
         shader.setUniform("currentRow", animation.getCurrentTextureRow());
@@ -43,6 +44,11 @@ public class AnimatedBackground implements Background {
     @Override
     public boolean shouldRender() {
         return true;
+    }
+
+    @Override
+    public int getZIndex() {
+        return -1;
     }
 
     public void update() {

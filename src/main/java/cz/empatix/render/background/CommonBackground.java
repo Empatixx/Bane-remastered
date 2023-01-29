@@ -27,7 +27,8 @@ public class CommonBackground implements Background {
     }
     private void prepareShader(final Shader shader){
         shader.setUniform("sampler", 0);
-        shader.setUniform("projection", Camera.getProjection());
+        shader.setUniform("projection", Camera.getProjection()
+                .translate(0, 0, 0f));
         shader.setUniform("totalColumns",1);
         shader.setUniform("totalRows", 1);
         shader.setUniform("currentRow", 0);
@@ -36,6 +37,11 @@ public class CommonBackground implements Background {
     @Override
     public boolean shouldRender() {
         return true;
+    }
+
+    @Override
+    public int getZIndex() {
+        return -1;
     }
 
     public void update(){

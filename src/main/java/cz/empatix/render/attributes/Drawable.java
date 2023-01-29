@@ -8,6 +8,7 @@ public interface Drawable
 {
     RenderData renderData();
     boolean shouldRender();
+    int getZIndex();
     default List<Drawable> getSubDrawables() {
         return List.of();
     }

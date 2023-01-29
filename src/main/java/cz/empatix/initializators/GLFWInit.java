@@ -1,5 +1,6 @@
 package cz.empatix.initializators;
 
+import cz.empatix.handlers.WindowHandler;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
@@ -20,8 +21,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLFWInit implements Initializator {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
-    private static final int HEIGHT = 720;
-    private static final int WIDTH = 1280;
+    private static final int HEIGHT = WindowHandler.TARGET_HEIGHT;
+    private static final int WIDTH = WindowHandler.TARGET_WIDTH;
     public static long window;
 
     @Override
@@ -51,7 +52,7 @@ public class GLFWInit implements Initializator {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
         glfwShowWindow(window);
     }
 

@@ -2,15 +2,12 @@ package cz.empatix.handlers;
 
 import cz.empatix.common.GameLoop;
 import cz.empatix.initializators.GLFWInit;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 
-import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL11.glViewport;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class WindowHandler {
@@ -32,6 +29,12 @@ public class WindowHandler {
         }
         addResizeCallback(gameLoop);
     }
+
+    public static int getMaxHeight() {
+        //GLFW get max width of monitor
+        return GLFW.glfwGetVideoMode(GLFW.glfwGetPrimaryMonitor()).height();
+    }
+
     @SuppressWarnings("resource")
     private void addResizeCallback(final GameLoop gameLoop){
         GLFW.glfwSetFramebufferSizeCallback(WINDOW, (window, width, height) -> {
@@ -50,8 +53,5 @@ public class WindowHandler {
     }
     public static float getScaleX(){
         return (float)WIDTH / (float)TARGET_WIDTH;
-    }
-    public static float getScaleY(){
-        return (float)1440 / (float)TARGET_HEIGHT;
     }
 }

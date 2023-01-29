@@ -7,8 +7,8 @@ import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
-import cz.empatix.render.domain.renderdata.CommonRenderData;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.renderdata.CommonRenderData;
 import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
 
@@ -25,9 +25,6 @@ public class Button implements UIElement {
     private boolean hover;
 
     public Button(final String text, final Vector2f position) {
-        //this.text = new Text(text,"retro_computer_personal_use.ttf",position);
-        this.text = new Text(text,"PixelFJVerdana12pt.ttf",position);
-
         this.shader = AssetsService.getShader("shader");
         metadata = AssetsService.getMetadata("button.json");
         animation = new Animation(metadata.sprites());
@@ -35,6 +32,12 @@ public class Button implements UIElement {
         textureId = AssetsService.getTexture("Menu/Menu_bar.tga");
         dimensions = new Vector2f(metadata.width(), metadata.height());
         this.position = position.sub(metadata.width() / 2, metadata.height() / 2);
+
+        final Vector2f textPosition = new Vector2f(position)
+                .add(0, metadata.height() / 2);
+        this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
+        this.text.setCenter(position.x,position.x+metadata.width());
+        this.text.setColorRGB(222,112,38);
     }
 
     @Override
@@ -50,8 +53,8 @@ public class Button implements UIElement {
     private void prepareShader(final Shader shader) {
         shader.setUniform("sampler", 0);
         shader.setUniform("projection", Camera.getProjection()
-                .translate(position.x,position.y,0));
-        shader.setUniform("totalColumns",metadata.totalColumns());
+                .translate(position.x, position.y, 0f));
+        shader.setUniform("totalColumns", metadata.totalColumns());
         shader.setUniform("totalRows", metadata.totalRows());
         shader.setUniform("currentRow", animation.getCurrentTextureRow());
         shader.setUniform("currentColumn", animation.getCurrentTextureColumn());
@@ -65,6 +68,11 @@ public class Button implements UIElement {
     @Override
     public boolean shouldRender() {
         return true;
+    }
+
+    @Override
+    public int getZIndex() {
+        return 1;
     }
 
     @Override

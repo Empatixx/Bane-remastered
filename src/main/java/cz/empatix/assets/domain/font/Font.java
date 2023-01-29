@@ -5,6 +5,7 @@ import cz.empatix.assets.builders.VboBuilder;
 import org.lwjgl.opengl.GL30;
 
 import java.util.Map;
+import java.util.Objects;
 
 public record Font (
         int vao,
@@ -50,5 +51,12 @@ public record Font (
                     .build();
             return new Font(vao, verticesVbo, textureVbo, scale, glyphs);
         }
+    }
+    public float getWidth(final String text){
+        return (float) text.chars()
+                .mapToObj(c -> glyphs.get((char) c))
+                .filter(Objects::nonNull)
+                .mapToDouble(g -> g.width() + g.bearingX())
+                .sum();
     }
 }

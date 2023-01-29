@@ -14,7 +14,7 @@ public class TextureBuilder {
     private int width;
     private int height;
     private int channels;
-    private List<BuildParam> params;
+    private final List<BuildParam> params;
     private ByteBuffer buffer;
 
     public TextureBuilder() {
@@ -52,7 +52,13 @@ public class TextureBuilder {
     }
 
     public TextureBuilder applyRepeatWrap() {
+        Preconditions.checkArgument(!params.contains(BuildParam.WRAP_CLAMP_TO_EDGE), "Cannot apply both clamp and repeat wrap");
         params.add(BuildParam.WRAP_REPEAT);
+        return this;
+    }
+    public TextureBuilder applyClampToEdgeWrap() {
+        Preconditions.checkArgument(!params.contains(BuildParam.WRAP_REPEAT), "Cannot apply both clamp and repeat wrap");
+        params.add(BuildParam.WRAP_CLAMP_TO_EDGE);
         return this;
     }
 
@@ -98,6 +104,10 @@ public class TextureBuilder {
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR_MIPMAP_NEAREST);
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_NEAREST);
                 }
+                case WRAP_CLAMP_TO_EDGE -> {
+                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_S, GL30.GL_CLAMP_TO_EDGE);
+                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_T, GL30.GL_CLAMP_TO_EDGE);
+                }
             }
         }
         GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, GL30.GL_RGBA, width, height,
@@ -111,5 +121,6 @@ public class TextureBuilder {
         WRAP_REPEAT,
         LINEAR_FILTER,
         NEAREST_FILTER,
+        WRAP_CLAMP_TO_EDGE
     }
 }

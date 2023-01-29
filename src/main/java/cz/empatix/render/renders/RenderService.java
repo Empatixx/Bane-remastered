@@ -30,7 +30,8 @@ public class RenderService {
 
         allDrawables.stream()
                 .filter(Drawable::shouldRender)
-                .sorted(Comparator.comparing(a -> a.getClass().getName()))
+                .sorted(Comparator.comparing(Drawable::getZIndex)
+                        .thenComparing(a -> a.getClass().getSimpleName()))
                 .map(Drawable::renderData)
                 .forEach(renderData -> renderers.stream()
                         .filter(renderer -> renderer.accepts(renderData))

@@ -11,7 +11,6 @@ public class Camera {
                 WindowHandler.TARGET_WIDTH,
                 WindowHandler.TARGET_HEIGHT,
                 0);
-
     }
     public static Vector2f centerX(){
         return new Vector2f(WindowHandler.TARGET_WIDTH / 2, 0);

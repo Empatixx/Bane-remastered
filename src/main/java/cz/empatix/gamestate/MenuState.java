@@ -28,9 +28,9 @@ public class MenuState extends GameState {
     @Override
     void init() {
         background = new CommonBackground("Menu/bg.png");
-        uiElements.add(new Button("Moc moc moc", Camera.centerX().add(0,150)));
-        uiElements.add(new Button("te milujii", Camera.centerX().add(0,225)));
-        uiElements.add(new Button("Marketkooo", Camera.centerX().add(0,300)));
+        uiElements.add(new Button("Play", Camera.centerX().add(0,150)));
+        uiElements.add(new Button("Settings", Camera.centerX().add(0,225)));
+        uiElements.add(new Button("Exit", Camera.centerX().add(0,300)));
 
         hudElements.add(new Image("Menu/logo.tga",
                 "image-title.json", Camera.centerX().add(0,62.5f)));

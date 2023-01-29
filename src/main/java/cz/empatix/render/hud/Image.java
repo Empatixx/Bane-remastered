@@ -47,6 +47,11 @@ public class Image implements HUDElement {
     }
 
     @Override
+    public int getZIndex() {
+        return 1;
+    }
+
+    @Override
     public void update(double dt) {
 
     }

@@ -15,14 +15,24 @@ public class Text implements HUDElement {
     private final Shader shader;
     private final Font font;
     private final Vector2f position;
+    private final Vector3f color;
 
-    public Text(final String text, final String font, final Vector2f position) {
+    private final int zIndex;
+
+    public Text(final String text, final String font, final Vector2f position, final int prevZIndex) {
         this.text = text;
-        this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_32);
+        this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_24);
         this.shader = AssetsService.getShader("text");
         this.position = position;
+        zIndex = prevZIndex + 1;
+        color = new Vector3f(1f,1f,1f);
     }
-
+    public void setCenter(final float xMin, final float xMax){
+        position.x = (xMin + xMax) / 2 - font.getWidth(text) / 2;
+    }
+    public void setColorRGB(final float r, final float g, final float b){
+        color.set(r/255f, g/255f, b/255f);
+    }
 
     @Override
     public TextRenderData renderData() {
@@ -37,9 +47,8 @@ public class Text implements HUDElement {
     private void prepareShader(final Shader shader) {
         shader.setUniform("sampler", 0);
         shader.setUniform("projection", Camera.getProjection()
-                .translate(position.x, position.y, 0).scaleXY(1f,1f)
-        );
-        shader.setUniform("color", new Vector3f(1f, 1f, 1f));
+                .translate(position.x, position.y, 0f));
+        shader.setUniform("color", color);
     }
 
     @Override
@@ -54,5 +63,9 @@ public class Text implements HUDElement {
 
     public String getText() {
         return text;
+    }
+    @Override
+    public int getZIndex() {
+        return zIndex;
     }
 }
