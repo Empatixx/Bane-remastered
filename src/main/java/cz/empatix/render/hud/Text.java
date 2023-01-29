@@ -18,7 +18,7 @@ public class Text implements HUDElement {
 
     public Text(final String text, final String font, final Vector2f position) {
         this.text = text;
-        this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_42);
+        this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_32);
         this.shader = AssetsService.getShader("text");
         this.position = position;
     }
@@ -37,9 +37,9 @@ public class Text implements HUDElement {
     private void prepareShader(final Shader shader) {
         shader.setUniform("sampler", 0);
         shader.setUniform("projection", Camera.getProjection()
-                .translate(position.x, position.y, 0).scaleXY(0.5f,0.5f)
+                .translate(position.x, position.y, 0).scaleXY(1f,1f)
         );
-        shader.setUniform("color", new Vector3f(0f, 0f, 0f));
+        shader.setUniform("color", new Vector3f(1f, 1f, 1f));
     }
 
     @Override

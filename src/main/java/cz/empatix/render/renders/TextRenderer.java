@@ -53,10 +53,10 @@ public class TextRenderer implements Renderer {
         for(final Glyph glyph : glyphsToRender){
             glyph.bindTexture();
             final float[] vertices = {
-                    offset+glyph.bearingX(), 0,
-                    offset+glyph.width()+glyph.bearingX(), 0,
-                    offset+glyph.width()+glyph.bearingX(), -glyph.height(),
-                    offset+glyph.bearingX(), -glyph.height()
+                    offset+glyph.bearingX(), glyph.descent(),
+                    offset+glyph.width()+glyph.bearingX(), glyph.descent(),
+                    offset+glyph.width()+glyph.bearingX(), -glyph.ascent(),
+                    offset+glyph.bearingX(), -glyph.ascent()
             };
             offset += glyph.advance();
             glBindBuffer(GL30.GL_ARRAY_BUFFER, textRenderData.font().verticesVbo());

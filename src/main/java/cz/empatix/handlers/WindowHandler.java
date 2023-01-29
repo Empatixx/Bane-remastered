@@ -48,4 +48,10 @@ public class WindowHandler {
     public static float getAspectRatio(){
         return (float)WIDTH / (float)HEIGHT;
     }
+    public static float getScaleX(){
+        return (float)WIDTH / (float)TARGET_WIDTH;
+    }
+    public static float getScaleY(){
+        return (float)1440 / (float)TARGET_HEIGHT;
+    }
 }

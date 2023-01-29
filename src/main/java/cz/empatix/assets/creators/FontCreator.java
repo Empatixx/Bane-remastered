@@ -5,6 +5,7 @@ import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.Glyph;
 import cz.empatix.assets.domain.font.RawFont;
 import cz.empatix.assets.loaders.FontLoader;
+import cz.empatix.handlers.WindowHandler;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
@@ -53,7 +54,9 @@ public class FontCreator implements AssetCreator {
     private Font transform(final RawFont font, int size) {
         final STBTTFontinfo fontInfo = font.fontInfo();
         final Map<Character, Glyph> glyphs = new HashMap<>();
+        final float scaleT = stbtt_ScaleForPixelHeight(fontInfo, size * 1440/360f);
         final float scale = stbtt_ScaleForPixelHeight(fontInfo, size);
+
         for (char c = 0; c <= 255; c++) {
             try (final MemoryStack memoryStack = MemoryStack.stackPush()) {
                 final IntBuffer bufWidth = memoryStack.mallocInt(1);
@@ -68,7 +71,7 @@ public class FontCreator implements AssetCreator {
 
                 stbtt_GetCodepointHMetrics(fontInfo, c, bufAdvance, bufBearingX);
                 stbtt_GetFontVMetrics(fontInfo, bufMaxAscent, bufMaxDescent, bufLineGap);
-                final ByteBuffer bitmap = stbtt_GetCodepointBitmap(fontInfo, 0, scale, c, bufWidth, bufHeight, null, null);
+                final ByteBuffer bitmap = stbtt_GetCodepointBitmap(fontInfo, 0, scaleT, c, bufWidth, bufHeight, null, null);
                 stbtt_GetCodepointBox(fontInfo, c, null, bufDescent, null, bufAscent);
 
                 final int width = bufWidth.get();
@@ -90,10 +93,10 @@ public class FontCreator implements AssetCreator {
                 final Glyph glyph = glyphBuilder
                         .width(width)
                         .height(height)
-                        .bearingX((int) (bufBearingX.get() * scale))
-                        .advance((int) (bufAdvance.get() * scale))
-                        .ascent((int) (-bufAscent.get() * scale))
-                        .descent((int) (bufDescent.get() * scale))
+                        .bearingX(Math.round(bufBearingX.get() * scale))
+                        .advance(Math.round(bufAdvance.get() * scale))
+                        .ascent(Math.round(bufAscent.get() * scale))
+                        .descent(-Math.round(bufDescent.get() * scale))
                         .lineGap(bufLineGap.get())
                         .build();
                 glyphs.put(c, glyph);
