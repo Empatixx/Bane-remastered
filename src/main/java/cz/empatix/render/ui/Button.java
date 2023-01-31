@@ -24,6 +24,8 @@ public class Button implements UIElement {
     private final int textureId;
     private boolean hover;
 
+    private Runnable onClick;
+
     public Button(final String text, final Vector2f position) {
         this.shader = AssetsService.getShader("shader");
         metadata = AssetsService.getMetadata("button.json");
@@ -48,6 +50,10 @@ public class Button implements UIElement {
                 shader,
                 this::prepareShader
         );
+    }
+
+    public void setOnClick(final Runnable onClick) {
+        this.onClick = onClick;
     }
 
     private void prepareShader(final Shader shader) {
@@ -77,20 +83,30 @@ public class Button implements UIElement {
 
     @Override
     public void update(final double dt, final double mouseX, final double mouseY) {
-        hover = IntersectionResolver.newInstance()
-                .addShape(position, dimensions)
-                .addShape((float) mouseX, (float) mouseY)
-                .resolve();
+        hover = mouseIntersectsUI(mouseX, mouseY);
         animation.setAnimationState(hover ? AnimationState.HOVER : AnimationState.STATIC);
     }
 
-    @Override
-    public void mousePressed(final int button) {
-
+    boolean mouseIntersectsUI(final double mouseX, final double mouseY){
+        return IntersectionResolver.newInstance()
+                .addShape(position, dimensions)
+                .addShape((float) mouseX, (float) mouseY)
+                .resolve();
     }
 
     @Override
-    public void mouseReleased(final int button) {
+    public void mousePressed(final int button, double mouseX, double mouseY) {
+        if(onClick == null){
+            return;
+        }
+        if(!mouseIntersectsUI(mouseX, mouseY)){
+            return;
+        }
+        onClick.run();
+    }
+
+    @Override
+    public void mouseReleased(final int button, double mouseX, double mouseY) {
 
     }
 

@@ -1,6 +1,8 @@
 package cz.empatix.handlers;
 
 import cz.empatix.common.GameLoop;
+import cz.empatix.initializators.GLFWInit;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
 import org.lwjgl.glfw.GLFWScrollCallback;
@@ -47,5 +49,8 @@ public class InputHandler{
                 gameLoop.mouseScrolled(xoffset, yoffset);
             }
         };
+        GLFW.glfwSetKeyCallback(GLFWInit.window, keyCallback);
+        GLFW.glfwSetMouseButtonCallback(GLFWInit.window, mouseButtonCallback);
+        GLFW.glfwSetScrollCallback(GLFWInit.window, scrollCallback);
     }
 }
