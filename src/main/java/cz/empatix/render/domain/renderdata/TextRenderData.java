@@ -1,6 +1,6 @@
 package cz.empatix.render.domain.renderdata;
 
-import cz.empatix.assets.domain.font.Font;
+import cz.empatix.common.assets.domain.font.Font;
 import cz.empatix.render.domain.Shader;
 
 import java.util.function.Consumer;

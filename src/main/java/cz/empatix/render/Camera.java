@@ -1,6 +1,6 @@
 package cz.empatix.render;
 
-import cz.empatix.handlers.WindowHandler;
+import cz.empatix.common.handlers.WindowHandler;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 

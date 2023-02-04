@@ -1,6 +1,6 @@
 package cz.empatix.render.domain;
 
-import cz.empatix.assets.domain.metadata.Row;
+import cz.empatix.common.assets.domain.metadata.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

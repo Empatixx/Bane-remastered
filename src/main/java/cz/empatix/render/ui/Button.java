@@ -1,7 +1,7 @@
 package cz.empatix.render.ui;
 
-import cz.empatix.assets.domain.metadata.Metadata;
-import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.assets.domain.metadata.Metadata;
+import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;

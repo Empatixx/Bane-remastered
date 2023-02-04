@@ -1,12 +1,12 @@
 package cz.empatix.common;
 
-import cz.empatix.handlers.WindowHandler;
-import cz.empatix.initializators.ALInit;
-import cz.empatix.initializators.GLFWInit;
-import cz.empatix.initializators.GLInit;
-import cz.empatix.initializators.Initializator;
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.handlers.InputHandler;
+import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.common.initializators.ALInit;
+import cz.empatix.common.initializators.GLFWInit;
+import cz.empatix.common.initializators.GLInit;
+import cz.empatix.common.initializators.Initializator;
+import cz.empatix.common.assets.service.AssetsService;
+import cz.empatix.common.handlers.InputHandler;
 
 import java.util.ArrayList;
 import java.util.Collections;

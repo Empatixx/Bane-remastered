@@ -1,7 +1,7 @@
 package cz.empatix.gamestate;
 
 import com.google.common.collect.Streams;
-import cz.empatix.handlers.WindowHandler;
+import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.background.Background;

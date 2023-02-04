@@ -1,6 +1,6 @@
 package cz.empatix.render.renders;
 
-import cz.empatix.assets.domain.font.Glyph;
+import cz.empatix.common.assets.domain.font.Glyph;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.renderdata.RenderData;
 import cz.empatix.render.domain.renderdata.TextRenderData;

@@ -1,9 +1,9 @@
 package cz.empatix.render.hud;
 
 
-import cz.empatix.assets.creators.FontCreator;
-import cz.empatix.assets.domain.font.Font;
-import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.assets.creators.FontCreator;
+import cz.empatix.common.assets.domain.font.Font;
+import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.renderdata.TextRenderData;

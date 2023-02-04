@@ -1,7 +1,7 @@
 package cz.empatix.common;
 
 import cz.empatix.gamestate.GameStateService;
-import cz.empatix.handlers.WindowHandler;
+import cz.empatix.common.handlers.WindowHandler;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
