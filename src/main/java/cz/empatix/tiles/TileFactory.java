@@ -1,8 +1,14 @@
 package cz.empatix.tiles;
 
+import cz.empatix.common.assets.domain.metadata.Metadata;
+import cz.empatix.common.assets.service.AssetsService;
+import cz.empatix.render.domain.Shader;
 import cz.empatix.tiles.domain.Tile;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class TileFactory {
+    private final static ThreadLocalRandom random = ThreadLocalRandom.current();
     private static final int[] TOP_WALL = {22, 23, 24, 25};
     private static final int[] BOTTOM_WALL = {30, 31};
     private static final int[] LEFT_WALL = {27, 39};
@@ -10,7 +16,7 @@ public class TileFactory {
     private static final int[] WALL = {41};
 
     private static final int[] BOTTOM_LEFT_OUTER_CORNER = {38};
-    private static final int[] BOTTOM_RIGHT_OUTE_CORNER = {35};
+    private static final int[] BOTTOM_RIGHT_OUTER_CORNER = {35};
     private static final int[] TOP_LEFT_OUTER_CORNER = TOP_WALL;
     private static final int[] TOP_RIGHT_OUTER_CORNER = TOP_WALL;
 
@@ -33,7 +39,7 @@ public class TileFactory {
 
     public Tile[][] createTileMap(final boolean[][] map) {
         final Tile[][] tileMap = new Tile[map.length][map[0].length];
-        for(int x = 0;x< map.length;x++) {
+        for (int x = 0; x < map.length; x++) {
             for (int y = 0; y < map[x].length; y++) {
                 final boolean isCollision = isCollision(x, y, map);
 
@@ -47,20 +53,95 @@ public class TileFactory {
                 final boolean bottomLeftCollision = isCollision(x - 1, y + 1, map);
                 final boolean bottomRightCollision = isCollision(x + 1, y + 1, map);
 
-                final Tile tile = createTile();
+                final Tile tile = createTile(isCollision, topCollision, bottomCollision,
+                        leftCollision, rightCollision, topLeftCollision, topRightCollision,
+                        bottomLeftCollision, bottomRightCollision);
                 tileMap[x][y] = tile;
             }
         }
         return tileMap;
     }
-    public boolean isCollision(final int x, final int y, boolean[][] map){
-        try{
+
+    private boolean isCollision(final int x, final int y, boolean[][] map) {
+        try {
             return map[x][y];
-        } catch (ArrayIndexOutOfBoundsException e){
+        } catch (ArrayIndexOutOfBoundsException e) {
             return true;
         }
     }
-    public Tile createTile(){
-        return null;
+
+    private Tile createTile(final boolean current,
+                           final boolean top,
+                           final boolean bottom,
+                           final boolean left,
+                           final boolean right,
+                           final boolean topLeft,
+                           final boolean topRight,
+                           final boolean bottomLeft,
+                           final boolean bottomRight) {
+        if(current && top && bottom && right && left){
+            return createTile(WALL[random.nextInt(WALL.length)]);
+        } else if (current && top && bottom && right && !left){
+            return createTile(RIGHT_WALL[random.nextInt(RIGHT_WALL.length)]);
+        }
+        else if (current && top && bottom && left && !right){
+            return createTile(LEFT_WALL[random.nextInt(LEFT_WALL.length)]);
+        } else if (current && top && right && left && !bottom){
+            return createTile(TOP_WALL[random.nextInt(TOP_WALL.length)]);
+        } else if (current && bottom && right && left && !top){
+            return createTile(BOTTOM_WALL[random.nextInt(BOTTOM_WALL.length)]);
+        } else if (current && top && right && !topRight){
+            return createTile(TOP_RIGHT_INNER_CORNER[random.nextInt(TOP_RIGHT_INNER_CORNER.length)]);
+        } else if (current && top && left && !topLeft){
+            return createTile(TOP_LEFT_INNER_CORNER[random.nextInt(TOP_LEFT_INNER_CORNER.length)]);
+        }else if (current && top && right && !bottomRight){
+            return createTile(BOTTOM_RIGHT_INNER_CORNER[random.nextInt(TOP_RIGHT_INNER_CORNER.length)]);
+        } else if (current && top && left && !bottomLeft){
+            return createTile(BOTTOM_LEFT_INNER_CORNER[random.nextInt(TOP_LEFT_INNER_CORNER.length)]);
+        } else if (current && !top && !left && right && bottom){
+            return createTile(BOTTOM_RIGHT_OUTER_CORNER[random.nextInt(BOTTOM_RIGHT_OUTER_CORNER.length)]);
+        } else if (current && !top && left && !right && bottom){
+            return createTile(BOTTOM_LEFT_OUTER_CORNER[random.nextInt(BOTTOM_LEFT_OUTER_CORNER.length)]);
+        } else if (current && top && left && !right && !bottom){
+            return createTile(TOP_LEFT_OUTER_CORNER[random.nextInt(TOP_LEFT_OUTER_CORNER.length)]);
+        } else if (current && top && !left && right && !bottom){
+            return createTile(TOP_LEFT_OUTER_CORNER[random.nextInt(TOP_LEFT_OUTER_CORNER.length)]);
+        } else if (!current && top && right){
+            return createTile(FLOOR_NEAR_RIGHT_TOP_CORNER[random.nextInt(FLOOR_NEAR_RIGHT_TOP_CORNER.length)]);
+        } else if (!current && top && left){
+            return createTile(FLOOR_NEAR_LEFT_TOP_CORNER[random.nextInt(FLOOR_NEAR_LEFT_TOP_CORNER.length)]);
+        } else if (!current && bottom && right){
+            return createTile(FLOOR_NEAR_RIGHT_BOTTOM_CORNER[random.nextInt(FLOOR_NEAR_RIGHT_BOTTOM_CORNER.length)]);
+        } else if (!current && bottom && left){
+            return createTile(FLOOR_NEAR_LEFT_BOTTOM_CORNER[random.nextInt(FLOOR_NEAR_LEFT_BOTTOM_CORNER.length)]);
+        } else if (!current && bottom){
+            return createTile(FLOOR_NEAR_BOTTOM_WALL[random.nextInt(FLOOR_NEAR_BOTTOM_WALL.length)]);
+        } else if (!current && top){
+            return createTile(FLOOR_NEAR_TOP_WALL[random.nextInt(FLOOR_NEAR_TOP_WALL.length)]);
+        } else if (!current && left){
+            return createTile(FLOOR_NEAR_LEFT_WALL[random.nextInt(FLOOR_NEAR_LEFT_WALL.length)]);
+        } else if (!current && right){
+            return createTile(FLOOR_NEAR_RIGHT_WALL[random.nextInt(FLOOR_NEAR_RIGHT_WALL.length)]);
+        } else {
+            return createTile(FLOOR[random.nextInt(FLOOR.length)]);
+        }
+    }
+    private Tile createTile(final int tileNumber){
+        final Metadata metadata = AssetsService.getMetadata("tilemap");
+        final int textureId = AssetsService.getTexture("tilemap64.tga");
+        final Shader shader = AssetsService.getShader("tilemap");
+
+        final int totalTilesPerRow = metadata.totalColumns();
+
+        final int x = tileNumber % totalTilesPerRow;
+        final int y = tileNumber / totalTilesPerRow;
+
+        return new Tile(
+                metadata.vao(),
+                textureId,
+                shader,
+                x,
+                y
+        );
     }
 }
