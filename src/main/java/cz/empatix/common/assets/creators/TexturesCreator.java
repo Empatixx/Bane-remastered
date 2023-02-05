@@ -44,8 +44,8 @@ public class TexturesCreator implements AssetCreator {
                 .width(image.width())
                 .height(image.height())
                 .channels(image.channels())
-                .applyLinearFilters()
-                .applyRepeatWrap()
+                .applyNearestFilters()
+                .applyClampToEdgeWrap()
                 .buffer(image.data())
                 .build();
         image.destroy();

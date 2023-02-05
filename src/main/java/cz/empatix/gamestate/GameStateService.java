@@ -1,6 +1,6 @@
 package cz.empatix.gamestate;
 
-import cz.empatix.render.renders.CommonRenderer;
+import cz.empatix.render.Camera;
 import cz.empatix.render.renders.RenderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +29,7 @@ public class GameStateService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No such state"));
         currentState.init();
+        Camera.setPosition(0,0);
         LOGGER.info("Current state set to {}", type);
     }
     public void update(final double dt) {
@@ -37,6 +38,7 @@ public class GameStateService {
     }
 
     public void render(final double dt) {
+        Camera.update((float) dt);
         rendererService.render(currentState.toRender(dt));
     }
 

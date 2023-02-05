@@ -116,8 +116,8 @@ public class AssetsService {
                 .map(MetadataCreator.class::cast)
                 .map(creator -> creator.get(name))
                 .orElseGet(() -> {
-                    LOGGER.error("Shader {} not found", name);
-                    throw new RuntimeException("Shader " + name + " not found");
+                    LOGGER.error("Metadata {} not found", name);
+                    throw new RuntimeException("Metadata " + name + " not found");
                 });
     }
     public static Font getFont(final String name, final int size){

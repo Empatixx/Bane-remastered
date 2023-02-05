@@ -15,13 +15,13 @@ public class TileFactory {
     private static final int[] RIGHT_WALL = {28, 40};
     private static final int[] WALL = {41};
 
-    private static final int[] BOTTOM_LEFT_OUTER_CORNER = {38};
-    private static final int[] BOTTOM_RIGHT_OUTER_CORNER = {35};
-    private static final int[] TOP_LEFT_OUTER_CORNER = TOP_WALL;
-    private static final int[] TOP_RIGHT_OUTER_CORNER = TOP_WALL;
+    private static final int[] BOTTOM_LEFT_OUTER_CORNER = TOP_WALL;
+    private static final int[] BOTTOM_RIGHT_OUTER_CORNER = TOP_WALL;
+    private static final int[] TOP_LEFT_OUTER_CORNER = {35};
+    private static final int[] TOP_RIGHT_OUTER_CORNER = {38};
 
-    private static final int[] BOTTOM_RIGHT_INNER_CORNER = {29};
-    private static final int[] BOTTOM_LEFT_INNER_CORNER = {34};
+    private static final int[] BOTTOM_RIGHT_INNER_CORNER = {34};
+    private static final int[] BOTTOM_LEFT_INNER_CORNER = {29};
     private static final int[] TOP_RIGHT_INNER_CORNER = {26};
     private static final int[] TOP_LEFT_INNER_CORNER = {21};
 
@@ -38,6 +38,8 @@ public class TileFactory {
     private static final int[] FLOOR = {5, 6, 6, 6, 6, 6, 12, 13, 14, 15, 16, 17, 18};
 
     public Tile[][] createTileMap(final boolean[][] map) {
+        final int tileSize = AssetsService.getMetadata("tilemap.json").width();
+
         final Tile[][] tileMap = new Tile[map.length][map[0].length];
         for (int x = 0; x < map.length; x++) {
             for (int y = 0; y < map[x].length; y++) {
@@ -56,6 +58,8 @@ public class TileFactory {
                 final Tile tile = createTile(isCollision, topCollision, bottomCollision,
                         leftCollision, rightCollision, topLeftCollision, topRightCollision,
                         bottomLeftCollision, bottomRightCollision);
+                tile.position().x = x * tileSize;
+                tile.position().y = y * tileSize;
                 tileMap[x][y] = tile;
             }
         }
@@ -79,33 +83,32 @@ public class TileFactory {
                            final boolean topRight,
                            final boolean bottomLeft,
                            final boolean bottomRight) {
-        if(current && top && bottom && right && left){
+        if(current && top && bottom && right && left && topLeft && topRight && bottomLeft && bottomRight){
             return createTile(WALL[random.nextInt(WALL.length)]);
         } else if (current && top && bottom && right && !left){
             return createTile(RIGHT_WALL[random.nextInt(RIGHT_WALL.length)]);
-        }
-        else if (current && top && bottom && left && !right){
+        } else if (current && top && bottom && left && !right){
             return createTile(LEFT_WALL[random.nextInt(LEFT_WALL.length)]);
         } else if (current && top && right && left && !bottom){
             return createTile(TOP_WALL[random.nextInt(TOP_WALL.length)]);
         } else if (current && bottom && right && left && !top){
             return createTile(BOTTOM_WALL[random.nextInt(BOTTOM_WALL.length)]);
-        } else if (current && top && right && !topRight){
+        } else if (current && bottom && left && !bottomLeft){
             return createTile(TOP_RIGHT_INNER_CORNER[random.nextInt(TOP_RIGHT_INNER_CORNER.length)]);
-        } else if (current && top && left && !topLeft){
+        } else if (current && bottom && right && !bottomRight){
             return createTile(TOP_LEFT_INNER_CORNER[random.nextInt(TOP_LEFT_INNER_CORNER.length)]);
-        }else if (current && top && right && !bottomRight){
-            return createTile(BOTTOM_RIGHT_INNER_CORNER[random.nextInt(TOP_RIGHT_INNER_CORNER.length)]);
-        } else if (current && top && left && !bottomLeft){
-            return createTile(BOTTOM_LEFT_INNER_CORNER[random.nextInt(TOP_LEFT_INNER_CORNER.length)]);
+        } else if (current && top && left && !topLeft){
+            return createTile(BOTTOM_RIGHT_INNER_CORNER[random.nextInt(BOTTOM_RIGHT_INNER_CORNER.length)]);
+        } else if (current && top && right && !topRight){
+            return createTile(BOTTOM_LEFT_INNER_CORNER[random.nextInt(BOTTOM_LEFT_INNER_CORNER.length)]);
         } else if (current && !top && !left && right && bottom){
-            return createTile(BOTTOM_RIGHT_OUTER_CORNER[random.nextInt(BOTTOM_RIGHT_OUTER_CORNER.length)]);
+            return createTile(TOP_LEFT_OUTER_CORNER[random.nextInt(TOP_LEFT_OUTER_CORNER.length)]);
         } else if (current && !top && left && !right && bottom){
+            return createTile(TOP_RIGHT_OUTER_CORNER[random.nextInt(TOP_RIGHT_OUTER_CORNER.length)]);
+        } else if (current && top && !left && right && !bottom){
             return createTile(BOTTOM_LEFT_OUTER_CORNER[random.nextInt(BOTTOM_LEFT_OUTER_CORNER.length)]);
         } else if (current && top && left && !right && !bottom){
-            return createTile(TOP_LEFT_OUTER_CORNER[random.nextInt(TOP_LEFT_OUTER_CORNER.length)]);
-        } else if (current && top && !left && right && !bottom){
-            return createTile(TOP_LEFT_OUTER_CORNER[random.nextInt(TOP_LEFT_OUTER_CORNER.length)]);
+            return createTile(BOTTOM_RIGHT_OUTER_CORNER[random.nextInt(BOTTOM_RIGHT_OUTER_CORNER.length)]);
         } else if (!current && top && right){
             return createTile(FLOOR_NEAR_RIGHT_TOP_CORNER[random.nextInt(FLOOR_NEAR_RIGHT_TOP_CORNER.length)]);
         } else if (!current && top && left){
@@ -127,9 +130,9 @@ public class TileFactory {
         }
     }
     private Tile createTile(final int tileNumber){
-        final Metadata metadata = AssetsService.getMetadata("tilemap");
-        final int textureId = AssetsService.getTexture("tilemap64.tga");
-        final Shader shader = AssetsService.getShader("tilemap");
+        final Metadata metadata = AssetsService.getMetadata("tilemap.json");
+        final int textureId = AssetsService.getTexture("tileset64.tga");
+        final Shader shader = AssetsService.getShader("shader");
 
         final int totalTilesPerRow = metadata.totalColumns();
 
@@ -141,7 +144,9 @@ public class TileFactory {
                 textureId,
                 shader,
                 x,
-                y
+                y,
+                metadata.totalColumns(),
+                metadata.totalRows()
         );
     }
 }

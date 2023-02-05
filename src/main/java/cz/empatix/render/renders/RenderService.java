@@ -35,7 +35,6 @@ public class RenderService {
                 .map(Drawable::renderData)
                 .forEach(renderData -> renderers.stream()
                         .filter(renderer -> renderer.accepts(renderData))
-                        .findFirst()
-                        .ifPresent(renderer -> renderer.render(renderData)));
+                        .forEach(renderer -> renderer.render(renderData)));
     }
 }

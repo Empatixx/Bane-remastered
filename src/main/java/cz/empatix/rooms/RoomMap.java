@@ -1,5 +1,7 @@
 package cz.empatix.rooms;
 
+import cz.empatix.render.attributes.Drawable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,5 +16,13 @@ public class RoomMap {
     public RoomMap(){
         rooms = new ArrayList<>(TOTAL_ROOMS);
         rooms.add(new CommonRoom());
+        rooms.forEach(Room::init);
+    }
+
+    public List<Drawable> toRender(double dt) {
+        return rooms.stream()
+                .map(Room::toRender)
+                .flatMap(List::stream)
+                .toList();
     }
 }

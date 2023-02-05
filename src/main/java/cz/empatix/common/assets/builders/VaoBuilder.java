@@ -32,6 +32,7 @@ public class VaoBuilder {
             GL30.glVertexAttribPointer(entry.getKey(), 2, GL_FLOAT, false, 0, 0);
             GL30.glEnableVertexAttribArray(entry.getKey());
         }
+        GL30.glBindBuffer(GL_ARRAY_BUFFER, 0);
         GL30.glBindVertexArray(0);
         return vao;
     }

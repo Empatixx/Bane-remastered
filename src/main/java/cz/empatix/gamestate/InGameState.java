@@ -1,27 +1,30 @@
 package cz.empatix.gamestate;
 
+import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.rooms.RoomMap;
 
 import java.util.List;
 
 public class InGameState extends GameState{
+    private RoomMap roomMap;
     public InGameState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.INGAME);
     }
 
     @Override
     void init() {
-
+        roomMap = new RoomMap();
     }
 
     @Override
     void update(final double dt) {
-
+        Camera.setPosition(mouseX/1000,mouseY/1000);
     }
 
     @Override
     List<Drawable> toRender(final double dt) {
-        return List.of();
+        return roomMap.toRender(dt);
     }
 
     @Override

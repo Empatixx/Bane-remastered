@@ -89,7 +89,7 @@ public class FontCreator implements AssetCreator {
                             .build();
                     glyphBuilder = glyphBuilder.textureId(textureId);
                 } else {
-                    LOGGER.warn("Bitmap for character '{}' is null", c);
+                    LOGGER.trace("Bitmap for character '{}' is null", c);
                 }
                 final Glyph glyph = glyphBuilder
                         .width(bufWidth.get())

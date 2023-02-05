@@ -6,5 +6,6 @@ public enum AnimationState {
     WALK,
     DEATH,
     STATIC,
+    COLLISION,
     HOVER
 }

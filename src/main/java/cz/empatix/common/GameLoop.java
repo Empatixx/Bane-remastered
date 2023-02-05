@@ -14,7 +14,7 @@ public class GameLoop extends Thread {
     private final GameInitializator gameInitializator;
     private final GameStateService gsm;
 
-    private final double FIXED_DELTA_TIME = 1.0 / 60.0;
+    public static final double FIXED_DELTA_TIME = 1.0 / 60.0;
 
     public GameLoop() {
         gameInitializator = new GameInitializator(this);

@@ -21,8 +21,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLFWInit implements Initializator {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
-    private static final int HEIGHT = WindowHandler.TARGET_HEIGHT;
-    private static final int WIDTH = WindowHandler.TARGET_WIDTH;
+    private static final int HEIGHT = WindowHandler.TARGET_HEIGHT * 2;
+    private static final int WIDTH = WindowHandler.TARGET_WIDTH * 2;
     public static long window;
 
     @Override
@@ -47,6 +47,7 @@ public class GLFWInit implements Initializator {
             throw new RuntimeException("Failed to create the GLFW window");
         }
         glfwSetWindowAspectRatio(window, WIDTH, HEIGHT);
+        glfwSetWindowSizeLimits(window, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 1920, 1080);
         centerWindow();
         setIcon();
         // Make the OpenGL context current
@@ -76,7 +77,8 @@ public class GLFWInit implements Initializator {
             );
         } // the stack frame is popped automatically
     }
-    private void setIcon(){
+
+    private void setIcon() {
         try (final MemoryStack stack = stackPush()) {
             final IntBuffer width = stack.mallocInt(1);
             final IntBuffer height = stack.mallocInt(1);
@@ -91,6 +93,7 @@ public class GLFWInit implements Initializator {
             }
         }
     }
+
     @Override
     public void destroy() {
         glfwFreeCallbacks(window);
