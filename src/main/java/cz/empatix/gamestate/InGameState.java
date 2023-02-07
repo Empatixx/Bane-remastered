@@ -19,7 +19,7 @@ public class InGameState extends GameState{
 
     @Override
     void update(final double dt) {
-        Camera.setPosition(mouseX/1000,mouseY/1000);
+        Camera.setPosition(mouseX/3000,mouseY/3000);
     }
 
     @Override
