@@ -9,12 +9,15 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
+import org.joml.Vector3i;
 
 import java.util.List;
 
 public class Button implements UIElement {
+    private final static String DEFAULT_TEXTURE = "Menu/Menu_bar.tga";
+    private final static Vector3i DEFAULT_COLOR = new Vector3i(222,112,38);
     private final static int WIDTH = 200;
-    private final static int HEIGHT = 50;
+
     private final Vector2f dimensions;
     private final Vector2f position;
     private final Text text;
@@ -22,13 +25,19 @@ public class Button implements UIElement {
     private final Shader shader;
     private final int textureId;
     private boolean hover;
-
     private Runnable onClick;
 
     public Button(final String text, final Vector2f position) {
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR);
+    }
+    public Button(final String text,
+                  final Vector2f position,
+                  final String texture,
+                  final Vector3i rgb){
         this.shader = AssetsService.getShader("shader");
-
-        animation = new Animation(metadata.sprites());
+        animation = Animation.builder()
+                        .textureDimensions(1,2)
+                                .addAnimationState(AnimationState.STATIC, 0, 1, )
         animation.setDelayBetweenAnimations(-1);
         textureId = AssetsService.getTexture("Menu/Menu_bar.tga");
         dimensions = new Vector2f(metadata.width(), metadata.height());
@@ -38,7 +47,7 @@ public class Button implements UIElement {
                 .add(0, metadata.height() / 2);
         this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
         this.text.setCenter(position.x,position.x+metadata.width());
-        this.text.setColorRGB(222,112,38);
+        this.text.setColorRGB(rgb.x(), rgb.y(), rgb.z());
     }
 
     @Override
