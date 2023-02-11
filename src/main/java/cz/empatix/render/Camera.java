@@ -6,13 +6,14 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
 public class Camera {
+    private static float zoom = 1;
     private static final InterpolatedPosition interpolatedPosition = new InterpolatedPosition();
 
     public static Matrix4f getProjection() {
         return new Matrix4f().ortho2D(
                         0,
-                        WindowHandler.TARGET_WIDTH,
-                        WindowHandler.TARGET_HEIGHT,
+                        WindowHandler.TARGET_WIDTH * zoom,
+                        WindowHandler.TARGET_HEIGHT * zoom,
                         0)
                 .translate(interpolatedPosition.getPosition());
     }
@@ -41,5 +42,12 @@ public class Camera {
 
     public static int getTargetHeight() {
         return WindowHandler.TARGET_HEIGHT;
+    }
+
+    public static void zoomIn(final float zoom){
+        Camera.zoom += zoom;
+    }
+    public static void zoomOut(final float zoom){
+        Camera.zoom -= zoom;
     }
 }

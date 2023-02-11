@@ -1,49 +1,48 @@
 package cz.empatix.render.hud;
 
-import cz.empatix.common.assets.domain.metadata.Metadata;
+import cz.empatix.common.assets.domain.ImageTexture;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.Camera;
-import cz.empatix.render.domain.renderdata.CommonRenderData;
+import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.Vertex;
 import org.joml.Vector2f;
 
 public class Image implements HUDElement {
     private final Shader shader;
-    private final Metadata metadata;
-    private final int textureId;
+    private final ImageTexture texture;
     private final Vector2f position;
 
-    public Image(final String textureName, final String metadataName, final Vector2f position) {
+    public Image(final String textureName, final Vector2f position) {
         this.shader = AssetsService.getShader("shader");
-        metadata = AssetsService.getMetadata(metadataName);
-        textureId = AssetsService.getTexture(textureName);
-        this.position = position.sub(metadata.width() / 2, metadata.height() / 2);
+        this.texture = AssetsService.getTexture(textureName);
+        this.position = new Vector2f(position.add(texture.width()/2f, texture.height()/2f));
     }
 
     @Override
-    public CommonRenderData renderData() {
-        return new CommonRenderData(
-                metadata.vao(),
-                textureId,
+    public RenderData renderData() {
+        return new RenderData(
+                Vertex.builder()
+                        .position(position)
+                        .posDimensions(texture.width(), texture.height())
+                        .textureDimensions(1,1)
+                        .texturePosition(0,0)
+                        .buildQuad(),
+                texture.textureId(),
                 shader,
-                this::prepareShader
+                this::prepareShader,
+                RenderData.RenderDataType.STATIC
         );
     }
 
     private void prepareShader(final Shader shader) {
-        shader.setUniform("sampler", 0);
-        shader.setUniform("projection", Camera.getProjection()
-                .translate(position.x, position.y, 0)
-        );
-        shader.setUniform("totalColumns", 1);
-        shader.setUniform("totalRows", 1);
-        shader.setUniform("currentRow", 0);
-        shader.setUniform("currentColumn", 0);
+        shader.setUniform("projection", Camera.getProjection());
     }
 
     @Override
     public boolean shouldRender() {
-        return true;
+        return position.x() + texture.width() > Camera.getX() && position.x() < Camera.getTargetWidth() + Camera.getX() &&
+                position.y() + texture.height() > Camera.getY() && position.y() < Camera.getTargetHeight() + Camera.getY();
     }
 
     @Override

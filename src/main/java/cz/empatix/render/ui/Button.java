@@ -1,6 +1,5 @@
 package cz.empatix.render.ui;
 
-import cz.empatix.common.assets.domain.metadata.Metadata;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
@@ -8,17 +7,17 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.Shader;
-import cz.empatix.render.domain.renderdata.CommonRenderData;
 import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
 
 import java.util.List;
 
 public class Button implements UIElement {
+    private final static int WIDTH = 200;
+    private final static int HEIGHT = 50;
     private final Vector2f dimensions;
     private final Vector2f position;
     private final Text text;
-    private final Metadata metadata;
     private final Animation animation;
     private final Shader shader;
     private final int textureId;
@@ -28,7 +27,7 @@ public class Button implements UIElement {
 
     public Button(final String text, final Vector2f position) {
         this.shader = AssetsService.getShader("shader");
-        metadata = AssetsService.getMetadata("button.json");
+
         animation = new Animation(metadata.sprites());
         animation.setDelayBetweenAnimations(-1);
         textureId = AssetsService.getTexture("Menu/Menu_bar.tga");

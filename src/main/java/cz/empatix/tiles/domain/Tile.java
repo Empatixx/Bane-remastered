@@ -2,81 +2,70 @@ package cz.empatix.tiles.domain;
 
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
-import cz.empatix.render.domain.renderdata.CommonRenderData;
-import cz.empatix.render.domain.renderdata.RenderData;
+import cz.empatix.render.domain.Vertex;
 import org.joml.Vector2f;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 public record Tile(
-        int vao,
+        List<Vertex> vertices,
         int textureId,
-        Shader Shader,
-        int textureCol,
-        int textureRow,
         Shader shader,
         Consumer<Shader> prepareShaderFunc,
         Vector2f position
 ) implements Drawable {
+    private final static int TILE_SIZE = 64;
+    private final static int TOTAL_ROWS = 2;
+    private final static int TOTAL_COLUMNS = 21;
 
-    public Tile {
-        if (textureCol < 0 || textureRow < 0) {
-            throw new IllegalArgumentException("Texture coordinates must be positive");
-        }
-    }
-
-    public Tile(final int vao,
-                final int textureId,
+    public Tile(final int tCol,
+                final int tRow,
                 final Shader shader,
-                final int textureCol,
-                final int textureRow,
-                final int totalColumns,
-                final int totalRows
-                ) {
-        this(vao, textureId, shader, textureCol, textureRow, totalColumns, totalRows, new Vector2f());
+                final int tilePosX,
+                final int tilePosY,
+                final int textureId) {
+        this(tCol, tRow, shader, new Vector2f(tilePosX * TILE_SIZE, tilePosY * TILE_SIZE), textureId);
     }
 
-    public Tile(final int vao,
-                final int textureId,
+    public Tile(final int tCol,
+                final int tRow,
                 final Shader shader,
-                final int textureCol,
-                final int textureRow,
-                final int totalColumns,
-                final int totalRows,
-                final Vector2f position) {
-        this(vao, textureId, shader, textureCol, textureRow, shader,
-                shader1 -> prepareShader(shader1, totalColumns, totalRows, textureCol, textureRow, position), position);
+                final Vector2f position,
+                final int textureId) {
+        this(Vertex.builder()
+                        .position(new Vector2f(position))
+                        .posDimensions(TILE_SIZE, TILE_SIZE)
+                        .textureDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
+                        .texturePosition(tCol, tRow)
+                        .buildQuad(),
+                textureId,
+                shader,
+                Tile::prepareShader,
+                position);
     }
 
-    private static void prepareShader(final Shader shader,
-                                      final int totalColumns,
-                                      final int totalRows,
-                                      final int textureCol,
-                                      final int textureRow,
-                                      final Vector2f position) {
-        shader.setUniform("sampler", 0);
-        shader.setUniform("totalColumns", totalColumns);
-        shader.setUniform("totalRows", totalRows);
-        shader.setUniform("currentColumn", textureCol);
-        shader.setUniform("currentRow", textureRow);
-        shader.setUniform("projection", Camera.getProjection().translate(position.x,position.y,0));
+    private static void prepareShader(final Shader shader) {
+        shader.setUniform("projection", Camera.getProjection());
     }
 
     @Override
     public RenderData renderData() {
-        return new CommonRenderData(
-                vao,
+        return new RenderData(
+                vertices,
                 textureId,
                 shader,
-                prepareShaderFunc
+                prepareShaderFunc,
+                RenderData.RenderDataType.DYNAMIC
         );
     }
 
     @Override
     public boolean shouldRender() {
-        return position.x + 64 > Camera.getX() && position.x < Camera.getTargetWidth() + Camera.getX() &&
-                position.y + 64 > Camera.getY() && position.y < Camera.getTargetHeight() + Camera.getY();
+        return position.x + TILE_SIZE > Camera.getX() && position.x < Camera.getTargetWidth() + Camera.getX() &&
+                position.y + TILE_SIZE > Camera.getY() && position.y < Camera.getTargetHeight() + Camera.getY();
     }
 
 

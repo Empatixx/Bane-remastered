@@ -1,13 +1,19 @@
 package cz.empatix.gamestate;
 
+import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.RoomMap;
+import org.joml.Vector2f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class InGameState extends GameState{
+public class InGameState extends GameState {
+    private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
     private RoomMap roomMap;
+
     public InGameState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.INGAME);
     }
@@ -19,7 +25,8 @@ public class InGameState extends GameState{
 
     @Override
     void update(final double dt) {
-        Camera.setPosition(mouseX/3000,mouseY/3000);
+        final Vector2f mouseDirection = new Vector2f(WindowHandler.TARGET_WIDTH / 2 - mouseX, WindowHandler.TARGET_HEIGHT / 2 - mouseY);
+        Camera.setPosition(mouseDirection.x / 1500, mouseDirection.y / 1500);
     }
 
     @Override

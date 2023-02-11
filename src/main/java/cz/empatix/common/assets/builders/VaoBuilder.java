@@ -9,10 +9,12 @@ import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
 
 public class VaoBuilder {
-    private Map<Integer, Integer> vboMap;
+    private final Map<Integer, Integer> vboMap;
+    private final Map<Integer, Integer> vboSizeMap;
 
     public VaoBuilder() {
         vboMap = new HashMap<>();
+        vboSizeMap = new HashMap<>();
     }
 
     public static VaoBuilder builder() {
@@ -21,6 +23,12 @@ public class VaoBuilder {
 
     public VaoBuilder addVbo(int index, int vboId) {
         vboMap.put(index, vboId);
+        vboSizeMap.put(index, 2);
+        return this;
+    }
+    public VaoBuilder addVbo(int index, int vboId, int size) {
+        vboMap.put(index, vboId);
+        vboSizeMap.put(index, size);
         return this;
     }
 
@@ -28,8 +36,9 @@ public class VaoBuilder {
         final int vao = GL30.glGenVertexArrays();
         GL30.glBindVertexArray(vao);
         for (Map.Entry<Integer, Integer> entry : vboMap.entrySet()) {
-            GL30.glBindBuffer(GL_ARRAY_BUFFER, entry.getValue());
-            GL30.glVertexAttribPointer(entry.getKey(), 2, GL_FLOAT, false, 0, 0);
+            final int vbo = entry.getValue();
+            GL30.glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            GL30.glVertexAttribPointer(entry.getKey(), vboSizeMap.get(vbo), GL_FLOAT, false, 0, 0);
             GL30.glEnableVertexAttribArray(entry.getKey());
         }
         GL30.glBindBuffer(GL_ARRAY_BUFFER, 0);

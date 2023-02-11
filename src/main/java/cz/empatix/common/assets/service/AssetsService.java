@@ -1,8 +1,8 @@
 package cz.empatix.common.assets.service;
 
 import cz.empatix.common.assets.creators.*;
+import cz.empatix.common.assets.domain.ImageTexture;
 import cz.empatix.common.assets.domain.font.Font;
-import cz.empatix.common.assets.domain.metadata.Metadata;
 import cz.empatix.common.assets.loaders.*;
 import cz.empatix.render.domain.Shader;
 import org.slf4j.Logger;
@@ -29,7 +29,6 @@ public class AssetsService {
                 new ShadersLoader(),
                 new TexturesLoader(),
                 new AudioLoader(),
-                new MetadataLoader(),
                 new FontLoader()
         );
         creators = loaders.stream()
@@ -81,7 +80,7 @@ public class AssetsService {
         creators.forEach(AssetCreator::destroy);
     }
 
-    public static int getTexture(final String name) {
+    public static ImageTexture getTexture(final String name) {
         return Optional.of(getCreator(TexturesCreator.class))
                 .map(TexturesCreator.class::cast)
                 .map(creator -> creator.get(name))
@@ -93,7 +92,7 @@ public class AssetsService {
 
     public static int getAudio(final String name) {
         return Optional.of(getCreator(TexturesCreator.class))
-                .map(TexturesCreator.class::cast)
+                .map(AudioCreator.class::cast)
                 .map(creator -> creator.get(name))
                 .orElseGet(() -> {
                     LOGGER.error("Audio {} not found", name);
@@ -111,15 +110,6 @@ public class AssetsService {
                 });
     }
 
-    public static Metadata getMetadata(final String name) {
-        return Optional.of(getCreator(MetadataCreator.class))
-                .map(MetadataCreator.class::cast)
-                .map(creator -> creator.get(name))
-                .orElseGet(() -> {
-                    LOGGER.error("Metadata {} not found", name);
-                    throw new RuntimeException("Metadata " + name + " not found");
-                });
-    }
     public static Font getFont(final String name, final int size){
         return Optional.of(getCreator(FontCreator.class))
                 .map(FontCreator.class::cast)

@@ -1,19 +1,10 @@
 package cz.empatix.render.renders;
 
-import cz.empatix.common.assets.domain.font.Glyph;
-import cz.empatix.render.domain.Shader;
-import cz.empatix.render.domain.renderdata.RenderData;
-import cz.empatix.render.domain.renderdata.TextRenderData;
-import org.lwjgl.opengl.GL30;
+import cz.empatix.render.domain.RenderData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
-
-import static org.lwjgl.opengl.GL30.*;
 
 public class TextRenderer implements Renderer {
     private final static Logger LOGGER = LoggerFactory.getLogger(TextRenderer.class);
@@ -24,7 +15,7 @@ public class TextRenderer implements Renderer {
 
     @Override
     public void render(final RenderData renderData) {
-        final TextRenderData textRenderData = (TextRenderData) renderData;
+        /*final TextRenderData textRenderData = (TextRenderData) renderData;
 
         final int vao = textRenderData.vao();
         final Map<Character, Glyph> glyphs = textRenderData.font().glyphs();
@@ -67,6 +58,11 @@ public class TextRenderer implements Renderer {
         }
 
         glBindVertexArray(0);
-        shader.unbind();
+        shader.unbind();*/
+    }
+
+    @Override
+    public void batchRender(List<RenderData> renderData) {
+        renderData.forEach(this::render);
     }
 }

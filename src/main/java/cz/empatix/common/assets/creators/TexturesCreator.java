@@ -1,9 +1,9 @@
 package cz.empatix.common.assets.creators;
 
 import cz.empatix.common.assets.builders.TextureBuilder;
+import cz.empatix.common.assets.domain.ImageTexture;
 import cz.empatix.common.assets.domain.RawImage;
 import cz.empatix.common.assets.loaders.TexturesLoader;
-import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,13 +13,13 @@ import java.util.Map;
 public class TexturesCreator implements AssetCreator {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
     private boolean ready;
-    private final Map<String, Integer> textures;
+    private final Map<String, ImageTexture> textures;
 
     public TexturesCreator() {
         textures = new HashMap<>();
     }
 
-    public Integer get(final String name) {
+    public ImageTexture get(final String name) {
         return textures.get(TexturesLoader.PATH.resolve(name).toString());
     }
 
@@ -36,10 +36,10 @@ public class TexturesCreator implements AssetCreator {
     @Override
     public void destroy() {
         LOGGER.info("Destroying textures");
-        textures.forEach((s, integer) -> GL30.glDeleteTextures(integer));
+        textures.forEach((name, img) -> img.destroy());
     }
 
-    private int createTexture(final RawImage image) {
+    private ImageTexture createTexture(final RawImage image) {
         final int texture = TextureBuilder.builder()
                 .width(image.width())
                 .height(image.height())
@@ -49,7 +49,7 @@ public class TexturesCreator implements AssetCreator {
                 .buffer(image.data())
                 .build();
         image.destroy();
-        return texture;
+        return new ImageTexture(texture, image.width(), image.height());
     }
 
     @Override

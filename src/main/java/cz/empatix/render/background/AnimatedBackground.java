@@ -1,54 +1,53 @@
 package cz.empatix.render.background;
 
-import cz.empatix.common.assets.domain.metadata.Metadata;
+import cz.empatix.common.assets.domain.ImageTexture;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.renderdata.CommonRenderData;
+import cz.empatix.render.domain.AnimationState;
+import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
+import org.joml.Vector2f;
 
 public class AnimatedBackground implements Background {
+    private final CommonBackground commonBackground;
     private final Animation animation;
     private final Shader shader;
-    private final int texture;
-    private final Metadata metadata;
+    private final ImageTexture texture;
 
     public AnimatedBackground(final String texture, final String metadata) {
         this.shader = AssetsService.getShader("shader");
         this.texture = AssetsService.getTexture(texture);
-        this.metadata = AssetsService.getMetadata(metadata);
-        animation = new Animation(this.metadata.sprites());
+        this.animation = Animation.builder()
+                .addAnimationState(AnimationState.STATIC, 0,1, this.texture.width(), this.texture.height(), -1)
+                .textureDimensions(1,1)
+                .build();
+        this.commonBackground = new CommonBackground(texture);
     }
 
     @Override
-    public CommonRenderData renderData() {
-        return new CommonRenderData(
-                metadata.vao(),
-                texture,
+    public RenderData renderData() {
+        return new RenderData(
+                animation.getVertices(new Vector2f(0,0)),
+                texture.textureId(),
                 shader,
-                this::prepareShader
+                this::prepareShader,
+                RenderData.RenderDataType.DYNAMIC
         );
     }
 
     private void prepareShader(final Shader shader) {
-        shader.setUniform("sampler", 0);
-        shader.setUniform("projection", Camera.getProjection()
-                .translate(0, 0, 0f));
-        shader.setUniform("totalColumns", metadata.totalColumns());
-        shader.setUniform("totalRows", metadata.totalRows());
-        shader.setUniform("currentRow", animation.getCurrentTextureRow());
-        shader.setUniform("currentColumn", animation.getCurrentTextureColumn());
-
+        shader.setUniform("projection", Camera.getProjection());
     }
 
     @Override
     public boolean shouldRender() {
-        return true;
+        return commonBackground.shouldRender();
     }
 
     @Override
     public int getZIndex() {
-        return -1;
+        return commonBackground.getZIndex();
     }
 
     public void update() {

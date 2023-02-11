@@ -60,5 +60,10 @@ public class GameStateService {
 
     public void mouseScrolled(double xoffset, double yoffset) {
         currentState.mouseScrolled(xoffset, yoffset);
+        if(yoffset > 0){
+            Camera.zoomIn((float)yoffset/100f);
+        } else if(yoffset < 0){
+            Camera.zoomOut((float)-yoffset/100f);
+        }
     }
 }

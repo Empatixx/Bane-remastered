@@ -1,42 +1,22 @@
 package cz.empatix.render.background;
 
-import cz.empatix.common.assets.domain.metadata.Metadata;
-import cz.empatix.common.assets.service.AssetsService;
-import cz.empatix.render.Camera;
-import cz.empatix.render.domain.renderdata.CommonRenderData;
-import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.hud.Image;
+import org.joml.Vector2f;
 
 public class CommonBackground implements Background {
-    private final Shader shader;
-    private final int texture;
-    private final Metadata metadata;
+    private final Image image;
 
     public CommonBackground(final String texture) {
-        this.shader = AssetsService.getShader("shader");
-        this.texture = AssetsService.getTexture(texture);
-        metadata = AssetsService.getMetadata("background-overlay.json");
+        this.image = new Image(texture, new Vector2f(0,0));
     }
     @Override
-    public CommonRenderData renderData() {
-        return new CommonRenderData(
-                metadata.vao(),
-                texture,
-                shader,
-                this::prepareShader
-        );
-    }
-    private void prepareShader(final Shader shader){
-        shader.setUniform("sampler", 0);
-        shader.setUniform("projection", Camera.getProjection()
-                .translate(0, 0, 0f));
-        shader.setUniform("totalColumns",1);
-        shader.setUniform("totalRows", 1);
-        shader.setUniform("currentRow", 0);
-        shader.setUniform("currentColumn", 0);
+    public RenderData renderData() {
+        return image.renderData();
     }
     @Override
     public boolean shouldRender() {
-        return true;
+        return image.shouldRender();
     }
 
     @Override
