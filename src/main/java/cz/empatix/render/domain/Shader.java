@@ -35,6 +35,7 @@ public class Shader {
 
         glBindAttribLocation(program, 0, "vertices");
         glBindAttribLocation(program, 1, "textures");
+        glBindAttribLocation(program, 2, "textureIndex");
 
         glLinkProgram(program);
         if (glGetProgrami(program, GL_LINK_STATUS) != 1) {
@@ -70,7 +71,7 @@ public class Shader {
         glUseProgram(0);
     }
 
-    public void setUniform(final String name, final Matrix4f value) {
+    public void setUniform4x4f(final String name, final Matrix4f value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         final FloatBuffer buffer = BufferFactory.convertMatrix4f(value);
         if (location == -1) {
@@ -79,28 +80,36 @@ public class Shader {
         glUniformMatrix4fv(location, false, buffer);
     }
 
-    public void setUniform(final String name, final int value) {
+    public void setUniform1iv(final String name, final int[] value) {
+        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
+        if (location == -1) {
+            throw new RuntimeException("Uniform " + name + " not found");
+        }
+        glUniform1iv(location, value);
+    }
+
+    public void setUniform1i(final String name, final int value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {
             throw new RuntimeException("Uniform " + name + " not found");
         }
         glUniform1i(location, value);
     }
-    public void setUniform(final String name, final float value) {
+    public void setUniform1f(final String name, final float value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {
             throw new RuntimeException("Uniform " + name + " not found");
         }
         glUniform1f(location, value);
     }
-    public void setUniform(String name, Vector2f value) {
+    public void setUniform2f(String name, Vector2f value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {
             throw new RuntimeException("Uniform " + name + " not found");
         }
         glUniform2f(location, value.x, value.y);
     }
-    public void setUniform(String name, Vector3f value) {
+    public void setUniform3f(String name, Vector3f value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {
             throw new RuntimeException("Uniform " + name + " not found");

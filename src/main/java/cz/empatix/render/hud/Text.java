@@ -5,8 +5,8 @@ import cz.empatix.common.assets.creators.FontCreator;
 import cz.empatix.common.assets.domain.font.Font;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.Camera;
+import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
-import cz.empatix.render.domain.renderdata.TextRenderData;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -35,20 +35,15 @@ public class Text implements HUDElement {
     }
 
     @Override
-    public TextRenderData renderData() {
-        return new TextRenderData(
-                font,
-                text,
-                shader,
-                this::prepareShader
-        );
+    public RenderData renderData() {
+        return null;
     }
 
     private void prepareShader(final Shader shader) {
-        shader.setUniform("sampler", 0);
-        shader.setUniform("projection", Camera.getProjection()
+        shader.setUniform1i("sampler", 0);
+        shader.setUniform4x4f("projection", Camera.getProjection()
                 .translate(position.x, position.y, 0f));
-        shader.setUniform("color", color);
+        shader.setUniform3f("color", color);
     }
 
     @Override

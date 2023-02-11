@@ -1,13 +1,8 @@
 package cz.empatix.render.renders;
 
-import com.google.common.base.Preconditions;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.domain.RenderData;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RenderService {
@@ -42,11 +37,13 @@ public class RenderService {
                 .stream()
                 .map(batchDrawable -> batchDrawable.stream()
                         .map(Drawable::renderData)
+                        .filter(Objects::nonNull)
                         .toList())
+                .filter(drawableBatch -> !drawableBatch.isEmpty())
                 .forEach(drawableBatch -> {
-                    Preconditions.checkArgument(drawableBatch.stream()
+                    /*Preconditions.checkArgument(drawableBatch.stream()
                             .map(RenderData::type)
-                            .collect(Collectors.toSet()).size() == 1, "Batch contains different types of render data");
+                            .collect(Collectors.toSet()).size() == 1, "Batch contains different types of render data");*/
                     renderers.stream()
                             .filter(renderer -> renderer.accepts(drawableBatch.get(0)))
                             .forEach(renderer -> renderer.batchRender(drawableBatch));

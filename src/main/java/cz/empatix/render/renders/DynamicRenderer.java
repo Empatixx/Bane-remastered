@@ -6,6 +6,7 @@ import cz.empatix.render.Camera;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.Vertex;
+import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.util.List;
@@ -25,12 +26,15 @@ public class DynamicRenderer implements Renderer {
 
     public DynamicRenderer() {
         vboPos = VboBuilder.builder()
+                .buffer(new float[MAX_PER_BATCH * 4 * 2])
                 .dynamic()
                 .build();
         vboTex = VboBuilder.builder()
+                .buffer(new float[MAX_PER_BATCH * 4 * 2])
                 .dynamic()
                 .build();
         vboTexIndex = VboBuilder.builder()
+                .buffer(new float[MAX_PER_BATCH * 4])
                 .dynamic()
                 .build();
         vao = VaoBuilder.builder()
@@ -42,7 +46,7 @@ public class DynamicRenderer implements Renderer {
 
     @Override
     public boolean accepts(RenderData renderData) {
-        return renderData.type() == RenderData.RenderDataType.DYNAMIC;
+        return renderData.type() == RenderData.RenderDataType.DYNAMIC || true;
     }
 
     @Override
@@ -67,11 +71,11 @@ public class DynamicRenderer implements Renderer {
         final Map<Integer, Integer> textureToUnit = IntStream.range(0, textures.size())
                 .boxed()
                 .collect(Collectors.toMap(textures::get, unit -> unit));
-        textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
+        //textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
 
-        final FloatBuffer posBuffer = FloatBuffer.allocate(vertices.size() * 2);
-        final FloatBuffer texCoordsBuffer = FloatBuffer.allocate(vertices.size() * 2);
-        final FloatBuffer textureUnitBuffer = FloatBuffer.allocate(renderData.size());
+        final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
+        final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
+        final FloatBuffer textureUnitBuffer = BufferUtils.createFloatBuffer(renderData.size());
 
         vertices.stream()
                 .map(Vertex::position)
@@ -102,13 +106,15 @@ public class DynamicRenderer implements Renderer {
         glBufferSubData(GL_ARRAY_BUFFER, 0, textureUnitBuffer);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        shader.bind();
-        shader.setUniform("projection", Camera.getProjection());
-        shader.setUniform("max_textures", 32);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, renderData.get(0).textureId());
+        shader.bind();
+        shader.setUniform1i("textures[0]", 0);
+        shader.setUniform4x4f("projection", Camera.getProjection());
+
         glBindVertexArray(vao);
 
-        glDrawArrays(GL_QUADS, 0, vertices.size());
+        glDrawArrays(GL_QUADS, 0, 4);
 
         glBindVertexArray(0);
         shader.unbind();
@@ -117,7 +123,7 @@ public class DynamicRenderer implements Renderer {
     }
 
     private void glBindTextureUnit(final int unit, final int texture) {
-        glActiveTexture(GL_TEXTURE0 + unit);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
     }
 }

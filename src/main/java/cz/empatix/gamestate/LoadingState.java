@@ -27,7 +27,7 @@ public class    LoadingState extends GameState{
         loadingBg.update();
         AssetsService.createAssets();
         if(AssetsService.isLoaded()){
-            setCurrentState(GameStateType.MENU);
+            //setCurrentState(GameStateType.MENU);
         }
     }
 

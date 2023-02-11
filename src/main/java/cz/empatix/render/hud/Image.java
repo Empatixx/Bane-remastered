@@ -36,7 +36,7 @@ public class Image implements HUDElement {
     }
 
     private void prepareShader(final Shader shader) {
-        shader.setUniform("projection", Camera.getProjection());
+        shader.setUniform4x4f("projection", Camera.getProjection());
     }
 
     @Override

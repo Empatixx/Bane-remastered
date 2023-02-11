@@ -22,9 +22,7 @@ public class VaoBuilder {
     }
 
     public VaoBuilder addVbo(int index, int vboId) {
-        vboMap.put(index, vboId);
-        vboSizeMap.put(index, 2);
-        return this;
+        return addVbo(index, vboId, 2);
     }
     public VaoBuilder addVbo(int index, int vboId, int size) {
         vboMap.put(index, vboId);
@@ -37,8 +35,9 @@ public class VaoBuilder {
         GL30.glBindVertexArray(vao);
         for (Map.Entry<Integer, Integer> entry : vboMap.entrySet()) {
             final int vbo = entry.getValue();
+            final int index = entry.getKey();
             GL30.glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            GL30.glVertexAttribPointer(entry.getKey(), vboSizeMap.get(vbo), GL_FLOAT, false, 0, 0);
+            GL30.glVertexAttribPointer(entry.getKey(), vboSizeMap.get(index), GL_FLOAT, false, 0, 0);
             GL30.glEnableVertexAttribArray(entry.getKey());
         }
         GL30.glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -1,11 +1,13 @@
 package cz.empatix.render.ui;
 
+import cz.empatix.common.assets.domain.ImageTexture;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
+import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
@@ -15,48 +17,50 @@ import java.util.List;
 
 public class Button implements UIElement {
     private final static String DEFAULT_TEXTURE = "Menu/Menu_bar.tga";
-    private final static Vector3i DEFAULT_COLOR = new Vector3i(222,112,38);
-    private final static int WIDTH = 200;
-
-    private final Vector2f dimensions;
+    private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
     private final Vector2f position;
     private final Text text;
     private final Animation animation;
     private final Shader shader;
-    private final int textureId;
+    private final ImageTexture textureImage;
     private boolean hover;
     private Runnable onClick;
 
     public Button(final String text, final Vector2f position) {
         this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR);
     }
+
     public Button(final String text,
                   final Vector2f position,
                   final String texture,
-                  final Vector3i rgb){
+                  final Vector3i rgb) {
         this.shader = AssetsService.getShader("shader");
+        textureImage = AssetsService.getTexture(DEFAULT_TEXTURE);
+
         animation = Animation.builder()
-                        .textureDimensions(1,2)
-                                .addAnimationState(AnimationState.STATIC, 0, 1, )
-        animation.setDelayBetweenAnimations(-1);
-        textureId = AssetsService.getTexture("Menu/Menu_bar.tga");
-        dimensions = new Vector2f(metadata.width(), metadata.height());
-        this.position = position.sub(metadata.width() / 2, metadata.height() / 2);
+                .textureDimensions(1, 2)
+                .addAnimationState(AnimationState.STATIC, 0, 1, textureImage.width(), textureImage.height(), -1)
+                .addAnimationState(AnimationState.HOVER, 1, 1, textureImage.width(), textureImage.height(), -1)
+                .build();
+        animation.setAnimationState(AnimationState.STATIC);
+
+        this.position = position.sub(textureImage.width() / 2f, textureImage.height() / 2f);
 
         final Vector2f textPosition = new Vector2f(position)
-                .add(0, metadata.height() / 2);
+                .add(0, textureImage.height() / 2f);
         this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
-        this.text.setCenter(position.x,position.x+metadata.width());
+        this.text.setCenter(position.x, position.x + textureImage.width());
         this.text.setColorRGB(rgb.x(), rgb.y(), rgb.z());
     }
 
     @Override
-    public CommonRenderData renderData() {
-        return new CommonRenderData(
-                metadata.vao(),
-                textureId,
+    public RenderData renderData() {
+        return new RenderData(
+                animation.getVertices(position),
+                textureImage.textureId(),
                 shader,
-                this::prepareShader
+                this::prepareShader,
+                RenderData.RenderDataType.STATIC
         );
     }
 
@@ -65,13 +69,7 @@ public class Button implements UIElement {
     }
 
     private void prepareShader(final Shader shader) {
-        shader.setUniform("sampler", 0);
-        shader.setUniform("projection", Camera.getProjection()
-                .translate(position.x, position.y, 0f));
-        shader.setUniform("totalColumns", metadata.totalColumns());
-        shader.setUniform("totalRows", metadata.totalRows());
-        shader.setUniform("currentRow", animation.getCurrentTextureRow());
-        shader.setUniform("currentColumn", animation.getCurrentTextureColumn());
+        shader.setUniform4x4f("projection", Camera.getProjection());
     }
 
     @Override
@@ -95,19 +93,19 @@ public class Button implements UIElement {
         animation.setAnimationState(hover ? AnimationState.HOVER : AnimationState.STATIC);
     }
 
-    boolean mouseIntersectsUI(final double mouseX, final double mouseY){
+    boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
         return IntersectionResolver.newInstance()
-                .addShape(position, dimensions)
+                .addShape(position, new Vector2f(textureImage.width(), textureImage.height()))
                 .addShape((float) mouseX, (float) mouseY)
                 .resolve();
     }
 
     @Override
     public void mousePressed(final int button, double mouseX, double mouseY) {
-        if(onClick == null){
+        if (onClick == null) {
             return;
         }
-        if(!mouseIntersectsUI(mouseX, mouseY)){
+        if (!mouseIntersectsUI(mouseX, mouseY)) {
             return;
         }
         onClick.run();

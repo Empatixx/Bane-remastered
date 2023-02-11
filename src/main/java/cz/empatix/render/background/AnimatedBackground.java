@@ -2,6 +2,7 @@ package cz.empatix.render.background;
 
 import cz.empatix.common.assets.domain.ImageTexture;
 import cz.empatix.common.assets.service.AssetsService;
+import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -19,9 +20,10 @@ public class AnimatedBackground implements Background {
         this.shader = AssetsService.getShader("shader");
         this.texture = AssetsService.getTexture(texture);
         this.animation = Animation.builder()
-                .addAnimationState(AnimationState.STATIC, 0,1, this.texture.width(), this.texture.height(), -1)
+                .addAnimationState(AnimationState.STATIC, 0,1, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, -1)
                 .textureDimensions(1,1)
                 .build();
+        this.animation.setAnimationState(AnimationState.STATIC);
         this.commonBackground = new CommonBackground(texture);
     }
 
@@ -37,17 +39,17 @@ public class AnimatedBackground implements Background {
     }
 
     private void prepareShader(final Shader shader) {
-        shader.setUniform("projection", Camera.getProjection());
+        shader.setUniform4x4f("projection", Camera.getProjection());
     }
 
     @Override
     public boolean shouldRender() {
-        return commonBackground.shouldRender();
+        return true;
     }
 
     @Override
     public int getZIndex() {
-        return commonBackground.getZIndex();
+        return -1;
     }
 
     public void update() {

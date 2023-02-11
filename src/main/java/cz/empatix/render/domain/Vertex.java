@@ -41,14 +41,14 @@ public record Vertex (
         }
         public List<Vertex> buildQuad(){
             return List.of(
-                    new Vertex(new Vector2f(position.x + posWidth, position.y), new Vector2f((float)(textureCol + 1) / totalColumns, (float)textureRow / totalRows)),
                     new Vertex(new Vector2f(position.x, position.y), new Vector2f((float)textureCol / totalColumns, (float)textureRow / totalRows)),
+                    new Vertex(new Vector2f(position.x+posWidth, position.y), new Vector2f((float)(textureCol + 1) / totalColumns, (float)textureRow / totalRows)),
                     new Vertex(new Vector2f(position.x + posWidth, position.y + posHeight), new Vector2f((float)(textureCol + 1) / totalColumns, (float)(textureRow + 1) / totalRows)),
                     new Vertex(new Vector2f(position.x, position.y + posHeight), new Vector2f((float)textureCol / totalColumns, (float)(textureRow + 1) / totalRows)
             ));
         }
     }
-    public static Builder builder(){
+    public static Builder builder() {
         return new Builder();
     }
 }

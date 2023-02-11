@@ -13,7 +13,7 @@ public class StaticRenderer implements Renderer{
     }
     @Override
     public boolean accepts(RenderData renderData) {
-        return renderData.type() == RenderData.RenderDataType.STATIC;
+        return renderData.type() == RenderData.RenderDataType.STATIC && false;
     }
 
     @Override
