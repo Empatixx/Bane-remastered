@@ -1,6 +1,6 @@
 package cz.empatix.tiles;
 
-import cz.empatix.common.assets.domain.ImageTexture;
+import cz.empatix.common.assets.domain.TextureImage;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.tiles.domain.Tile;
@@ -132,7 +132,7 @@ public class TileFactory {
     private Tile createTile(final int tileNumber,
                             final int x,
                             final int y) {
-        final ImageTexture textureId = AssetsService.getTexture("tileset64.tga");
+        final TextureImage texture = AssetsService.getTexture("tileset64.tga");
         final Shader shader = AssetsService.getShader("shader");
 
         final int xTxtCol = tileNumber % TOTAL_COLUMNS;
@@ -144,7 +144,7 @@ public class TileFactory {
                 shader,
                 x,
                 y,
-                textureId.textureId()
+                texture
         );
     }
 }

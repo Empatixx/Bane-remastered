@@ -2,7 +2,7 @@ package cz.empatix.common.assets.domain;
 
 import org.lwjgl.opengl.GL33;
 
-public record ImageTexture(
+public record TextureImage(
         int width,
         int height,
         int textureId

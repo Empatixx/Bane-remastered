@@ -19,7 +19,7 @@ public class    LoadingState extends GameState{
     @Override
     void init() {
         AssetsService.loadAssets();
-        loadingBg = new AnimatedBackground("Menu/loading.tga","background-loading.json");
+        loadingBg = new AnimatedBackground("Menu/loading.tga",8);
     }
 
     @Override
@@ -27,7 +27,7 @@ public class    LoadingState extends GameState{
         loadingBg.update();
         AssetsService.createAssets();
         if(AssetsService.isLoaded()){
-            //setCurrentState(GameStateType.MENU);
+            setCurrentState(GameStateType.MENU);
         }
     }
 

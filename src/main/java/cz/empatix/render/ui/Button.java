@@ -1,6 +1,6 @@
 package cz.empatix.render.ui;
 
-import cz.empatix.common.assets.domain.ImageTexture;
+import cz.empatix.common.assets.domain.TextureImage;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
@@ -11,6 +11,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector3i;
 
 import java.util.List;
@@ -18,38 +19,45 @@ import java.util.List;
 public class Button implements UIElement {
     private final static String DEFAULT_TEXTURE = "Menu/Menu_bar.tga";
     private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
+    private final static int DEFAULT_WIDTH = 100;
+    private final static int DEFAULT_HEIGHT = 50;
     private final Vector2f position;
+    private final Vector2i dimensions;
     private final Text text;
     private final Animation animation;
     private final Shader shader;
-    private final ImageTexture textureImage;
     private boolean hover;
     private Runnable onClick;
 
     public Button(final String text, final Vector2f position) {
-        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR);
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
     public Button(final String text,
                   final Vector2f position,
                   final String texture,
-                  final Vector3i rgb) {
+                  final Vector3i rgb,
+                  final int width,
+                  final int height) {
         this.shader = AssetsService.getShader("shader");
-        textureImage = AssetsService.getTexture(DEFAULT_TEXTURE);
+        this.dimensions = new Vector2i(width, height);
 
+        final TextureImage textureImage = AssetsService.getTexture(texture);
         animation = Animation.builder()
                 .textureDimensions(1, 2)
-                .addAnimationState(AnimationState.STATIC, 0, 1, textureImage.width(), textureImage.height(), -1)
-                .addAnimationState(AnimationState.HOVER, 1, 1, textureImage.width(), textureImage.height(), -1)
+                .addAnimationState(AnimationState.STATIC, 0, 1, dimensions.x(), dimensions.y(), -1)
+                .addAnimationState(AnimationState.HOVER, 1, 1, dimensions.x(), dimensions.y(), -1)
+                .texture(textureImage)
                 .build();
+
         animation.setAnimationState(AnimationState.STATIC);
 
-        this.position = position.sub(textureImage.width() / 2f, textureImage.height() / 2f);
+        this.position = position.sub(new Vector2f(dimensions).div(2f));
 
         final Vector2f textPosition = new Vector2f(position)
-                .add(0, textureImage.height() / 2f);
+                .add(0, dimensions.x() / 2f);
         this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
-        this.text.setCenter(position.x, position.x + textureImage.width());
+        this.text.setCenter(position.x, position.x + dimensions.x());
         this.text.setColorRGB(rgb.x(), rgb.y(), rgb.z());
     }
 
@@ -57,10 +65,10 @@ public class Button implements UIElement {
     public RenderData renderData() {
         return new RenderData(
                 animation.getVertices(position),
-                textureImage.textureId(),
+                animation.getTextureId(),
                 shader,
                 this::prepareShader,
-                RenderData.RenderDataType.STATIC
+                RenderData.RenderDataType.DYNAMIC
         );
     }
 
@@ -95,7 +103,7 @@ public class Button implements UIElement {
 
     boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
         return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(textureImage.width(), textureImage.height()))
+                .addShape(position, new Vector2f(dimensions.x(), dimensions.y()))
                 .addShape((float) mouseX, (float) mouseY)
                 .resolve();
     }

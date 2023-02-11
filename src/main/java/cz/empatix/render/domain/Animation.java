@@ -1,5 +1,6 @@
 package cz.empatix.render.domain;
 
+import cz.empatix.common.assets.domain.TextureImage;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.slf4j.Logger;
@@ -12,13 +13,16 @@ import java.util.Map;
 public class Animation {
     private final static Logger LOGGER = LoggerFactory.getLogger(Animation.class);
     private final Map<AnimationState, AnimationPart> animationParts;
+    private final TextureImage texture;
     private final Vector2i textureDimensions;
     private AnimationState currentState;
     private int currentTextureIndex;
     private long lastAnimation;
 
     public Animation(final Map<AnimationState, AnimationPart> animationParts,
-                     final Vector2i textureDimensions) {
+                     final Vector2i textureDimensions,
+                     final TextureImage texture) {
+        this.texture = texture;
         this.animationParts = animationParts;
         this.textureDimensions = textureDimensions;
         this.currentState = AnimationState.IDLE;
@@ -57,8 +61,13 @@ public class Animation {
                 .textureDimensions(textureDimensions.x(), textureDimensions.y())
                 .position(position)
                 .posDimensions(part.width(), part.height())
+                .offsetTexture(texture.width(), texture.height())
                 .buildQuad();
     }
+    public int getTextureId() {
+        return texture.textureId();
+    }
+
 
     private record AnimationPart(
             Vector2i dimensions,
@@ -82,6 +91,7 @@ public class Animation {
     public static class Builder {
         private final Map<AnimationState, AnimationPart> animationParts;
         private Vector2i textureDimensions;
+        private TextureImage texture;
 
         public Builder() {
             this.animationParts = new HashMap<>();
@@ -105,9 +115,13 @@ public class Animation {
             this.textureDimensions = new Vector2i(totalColumns, totalRows);
             return this;
         }
+        public Builder texture(final TextureImage texture){
+            this.texture = texture;
+            return this;
+        }
 
         public Animation build() {
-            return new Animation(animationParts, textureDimensions);
+            return new Animation(animationParts, textureDimensions, texture);
         }
     }
     public static Builder builder(){

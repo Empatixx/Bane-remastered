@@ -1,22 +1,32 @@
 package cz.empatix.render.hud;
 
-import cz.empatix.common.assets.domain.ImageTexture;
+import cz.empatix.common.assets.domain.TextureImage;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.Vertex;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
 public class Image implements HUDElement {
     private final Shader shader;
-    private final ImageTexture texture;
+    private final TextureImage texture;
+    private final Vector2i dimensions;
     private final Vector2f position;
 
-    public Image(final String textureName, final Vector2f position) {
+    public Image(final String textureName, final Vector2f position, final int width, final int height) {
+        this(textureName, position, width, height, true);
+    }
+
+    public Image(final String textureName, final Vector2f position, final int width, final int height, final boolean centered) {
+        if (centered) {
+            position.sub(new Vector2f(width, height).div(2f));
+        }
         this.shader = AssetsService.getShader("shader");
         this.texture = AssetsService.getTexture(textureName);
-        this.position = new Vector2f(position.add(texture.width()/2f, texture.height()/2f));
+        this.dimensions = new Vector2i(width, height);
+        this.position = new Vector2f(position);
     }
 
     @Override
@@ -24,14 +34,15 @@ public class Image implements HUDElement {
         return new RenderData(
                 Vertex.builder()
                         .position(position)
-                        .posDimensions(texture.width(), texture.height())
-                        .textureDimensions(1,1)
-                        .texturePosition(0,0)
+                        .posDimensions(dimensions.x(), dimensions.y())
+                        .textureDimensions(1, 1)
+                        .texturePosition(0, 0)
+                        .offsetTexture(texture.width(), texture.height())
                         .buildQuad(),
                 texture.textureId(),
                 shader,
                 this::prepareShader,
-                RenderData.RenderDataType.STATIC
+                RenderData.RenderDataType.DYNAMIC
         );
     }
 
@@ -41,8 +52,8 @@ public class Image implements HUDElement {
 
     @Override
     public boolean shouldRender() {
-        return position.x() + texture.width() > Camera.getX() && position.x() < Camera.getTargetWidth() + Camera.getX() &&
-                position.y() + texture.height() > Camera.getY() && position.y() < Camera.getTargetHeight() + Camera.getY();
+        return position.x() + dimensions.x() > Camera.getX() && position.x() < Camera.getTargetWidth() + Camera.getX() &&
+                position.y() + dimensions.y() > Camera.getY() && position.y() < Camera.getTargetHeight() + Camera.getY();
     }
 
     @Override

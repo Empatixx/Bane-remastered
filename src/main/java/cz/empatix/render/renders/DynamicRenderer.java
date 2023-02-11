@@ -1,5 +1,6 @@
 package cz.empatix.render.renders;
 
+import com.google.common.collect.Lists;
 import cz.empatix.common.assets.builders.VaoBuilder;
 import cz.empatix.common.assets.builders.VboBuilder;
 import cz.empatix.render.Camera;
@@ -18,23 +19,25 @@ import java.util.stream.Stream;
 import static org.lwjgl.opengl.GL33.*;
 
 public class DynamicRenderer implements Renderer {
-    private final int MAX_PER_BATCH = 32;
+    private final int maxPerBatch;
     private final int vao;
     private final int vboTex;
     private final int vboPos;
     private final int vboTexIndex;
 
     public DynamicRenderer() {
+        maxPerBatch = Math.min(glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS), 256);
+
         vboPos = VboBuilder.builder()
-                .buffer(new float[MAX_PER_BATCH * 4 * 2])
+                .buffer(new float[maxPerBatch * 4 * 2])
                 .dynamic()
                 .build();
         vboTex = VboBuilder.builder()
-                .buffer(new float[MAX_PER_BATCH * 4 * 2])
+                .buffer(new float[maxPerBatch * 4 * 2])
                 .dynamic()
                 .build();
         vboTexIndex = VboBuilder.builder()
-                .buffer(new float[MAX_PER_BATCH * 4])
+                .buffer(new float[maxPerBatch * 4])
                 .dynamic()
                 .build();
         vao = VaoBuilder.builder()
@@ -46,7 +49,7 @@ public class DynamicRenderer implements Renderer {
 
     @Override
     public boolean accepts(RenderData renderData) {
-        return renderData.type() == RenderData.RenderDataType.DYNAMIC || true;
+        return renderData.type() == RenderData.RenderDataType.DYNAMIC;
     }
 
     @Override
@@ -56,74 +59,77 @@ public class DynamicRenderer implements Renderer {
 
     @Override
     public void batchRender(final List<RenderData> renderData) {
-        final Shader shader = renderData.get(0).shader();
-        final List<Vertex> vertices = renderData.stream()
-                .flatMap(data -> data
-                        .vertices()
-                        .stream())
-                .toList();
+        Lists.partition(renderData, maxPerBatch).forEach(batch -> {
+            final Shader shader = batch.get(0).shader();
+            final List<Vertex> vertices = batch.stream()
+                    .flatMap(data -> data
+                            .vertices()
+                            .stream())
+                    .toList();
 
-        final List<Integer> textures = renderData.stream()
-                .map(RenderData::textureId)
-                .collect(Collectors.toSet())
-                .stream()
-                .toList();
-        final Map<Integer, Integer> textureToUnit = IntStream.range(0, textures.size())
-                .boxed()
-                .collect(Collectors.toMap(textures::get, unit -> unit));
-        //textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
+            final List<Integer> textures = batch.stream()
+                    .map(RenderData::textureId)
+                    .collect(Collectors.toSet())
+                    .stream()
+                    .toList();
+            final Map<Integer, Integer> textureToUnit = IntStream.range(0, textures.size())
+                    .boxed()
+                    .collect(Collectors.toMap(textures::get, unit -> unit));
+            textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
 
-        final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
-        final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
-        final FloatBuffer textureUnitBuffer = BufferUtils.createFloatBuffer(renderData.size());
+            final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
+            final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
+            final FloatBuffer textureUnitBuffer = BufferUtils.createFloatBuffer(batch.size());
 
-        vertices.stream()
-                .map(Vertex::position)
-                .flatMap(p -> Stream.of(p.x, p.y))
-                .forEach(posBuffer::put);
-        vertices.stream()
-                .map(Vertex::texCoords)
-                .flatMap(t -> Stream.of(t.x, t.y))
-                .forEach(texCoordsBuffer::put);
-        renderData.stream()
-                .map(RenderData::textureId)
-                .map(textureToUnit::get)
-                .forEach(textureUnitBuffer::put);
+            vertices.stream()
+                    .map(Vertex::position)
+                    .flatMap(p -> Stream.of(p.x, p.y))
+                    .forEach(posBuffer::put);
+            vertices.stream()
+                    .map(Vertex::texCoords)
+                    .flatMap(t -> Stream.of(t.x, t.y))
+                    .forEach(texCoordsBuffer::put);
+            batch.stream()
+                    .map(RenderData::textureId)
+                    .map(textureToUnit::get)
+                    .forEach(textureUnitBuffer::put);
 
-        posBuffer.flip();
-        texCoordsBuffer.flip();
-        textureUnitBuffer.flip();
+            posBuffer.flip();
+            texCoordsBuffer.flip();
+            textureUnitBuffer.flip();
 
-        glBindBuffer(GL_ARRAY_BUFFER, vboPos);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, posBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, vboPos);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, posBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, vboTex);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, vboTex);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ARRAY_BUFFER, vboTexIndex);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, textureUnitBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, vboTexIndex);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, textureUnitBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, renderData.get(0).textureId());
-        shader.bind();
-        shader.setUniform1i("textures[0]", 0);
-        shader.setUniform4x4f("projection", Camera.getProjection());
+            shader.bind();
+            shader.setUniform1iv("textures", textureToUnit
+                    .values()
+                    .stream()
+                    .mapToInt(i -> i)
+                    .toArray());
+            shader.setUniform4x4f("projection", Camera.getProjection());
 
-        glBindVertexArray(vao);
+            glBindVertexArray(vao);
 
-        glDrawArrays(GL_QUADS, 0, 4);
+            glDrawArrays(GL_QUADS, 0, vertices.size());
 
-        glBindVertexArray(0);
-        shader.unbind();
-        glBindTexture(GL_TEXTURE_2D, 0);
-
+            glBindVertexArray(0);
+            shader.unbind();
+            glBindTexture(GL_TEXTURE_2D, 0);
+        });
     }
 
     private void glBindTextureUnit(final int unit, final int texture) {
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, texture);
     }
 }

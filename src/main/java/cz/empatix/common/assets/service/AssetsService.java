@@ -1,7 +1,7 @@
 package cz.empatix.common.assets.service;
 
 import cz.empatix.common.assets.creators.*;
-import cz.empatix.common.assets.domain.ImageTexture;
+import cz.empatix.common.assets.domain.TextureImage;
 import cz.empatix.common.assets.domain.font.Font;
 import cz.empatix.common.assets.loaders.*;
 import cz.empatix.render.domain.Shader;
@@ -80,7 +80,7 @@ public class AssetsService {
         creators.forEach(AssetCreator::destroy);
     }
 
-    public static ImageTexture getTexture(final String name) {
+    public static TextureImage getTexture(final String name) {
         return Optional.of(getCreator(TexturesCreator.class))
                 .map(TexturesCreator.class::cast)
                 .map(creator -> creator.get(name))

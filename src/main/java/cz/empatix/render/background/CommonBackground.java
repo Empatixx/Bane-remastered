@@ -1,5 +1,6 @@
 package cz.empatix.render.background;
 
+import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.hud.Image;
 import org.joml.Vector2f;
@@ -8,7 +9,7 @@ public class CommonBackground implements Background {
     private final Image image;
 
     public CommonBackground(final String texture) {
-        this.image = new Image(texture, new Vector2f(0,0));
+        this.image = new Image(texture, new Vector2f(0,0), WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT,false);
     }
     @Override
     public RenderData renderData() {
@@ -16,7 +17,7 @@ public class CommonBackground implements Background {
     }
     @Override
     public boolean shouldRender() {
-        return image.shouldRender();
+        return true;
     }
 
     @Override

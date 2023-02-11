@@ -1,5 +1,6 @@
 package cz.empatix.tiles.domain;
 
+import cz.empatix.common.assets.domain.TextureImage;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -17,7 +18,7 @@ public record Tile(
         Consumer<Shader> prepareShaderFunc,
         Vector2f position
 ) implements Drawable {
-    private final static int TILE_SIZE = 64;
+    private final static int TILE_SIZE = 32;
     private final static int TOTAL_ROWS = 2;
     private final static int TOTAL_COLUMNS = 21;
 
@@ -26,22 +27,23 @@ public record Tile(
                 final Shader shader,
                 final int tilePosX,
                 final int tilePosY,
-                final int textureId) {
-        this(tCol, tRow, shader, new Vector2f(tilePosX * TILE_SIZE, tilePosY * TILE_SIZE), textureId);
+                final TextureImage texture) {
+        this(tCol, tRow, shader, new Vector2f(tilePosX * TILE_SIZE, tilePosY * TILE_SIZE), texture);
     }
 
     public Tile(final int tCol,
                 final int tRow,
                 final Shader shader,
                 final Vector2f position,
-                final int textureId) {
+                final TextureImage texture) {
         this(Vertex.builder()
                         .position(new Vector2f(position))
                         .posDimensions(TILE_SIZE, TILE_SIZE)
                         .textureDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
                         .texturePosition(tCol, tRow)
+                        .offsetTexture(texture.width(), texture.height())
                         .buildQuad(),
-                textureId,
+                texture.textureId(),
                 shader,
                 Tile::prepareShader,
                 position);

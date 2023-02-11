@@ -43,7 +43,7 @@ public class MenuState extends GameState {
         uiElements.add(exitButton);
 
 
-        hudElements.add(new Image("Menu/logo.tga", Camera.centerX().add(0, 62.5f)));
+        hudElements.add(new Image("Menu/logo.tga", Camera.centerX().add(0, 62.5f), 200, 100));
     }
 
     @Override

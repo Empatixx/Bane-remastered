@@ -1,7 +1,7 @@
 package cz.empatix.common.assets.creators;
 
 import cz.empatix.common.assets.builders.TextureBuilder;
-import cz.empatix.common.assets.domain.ImageTexture;
+import cz.empatix.common.assets.domain.TextureImage;
 import cz.empatix.common.assets.domain.RawImage;
 import cz.empatix.common.assets.loaders.TexturesLoader;
 import org.slf4j.Logger;
@@ -13,13 +13,13 @@ import java.util.Map;
 public class TexturesCreator implements AssetCreator {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
     private boolean ready;
-    private final Map<String, ImageTexture> textures;
+    private final Map<String, TextureImage> textures;
 
     public TexturesCreator() {
         textures = new HashMap<>();
     }
 
-    public ImageTexture get(final String name) {
+    public TextureImage get(final String name) {
         return textures.get(TexturesLoader.PATH.resolve(name).toString());
     }
 
@@ -39,7 +39,7 @@ public class TexturesCreator implements AssetCreator {
         textures.forEach((name, img) -> img.destroy());
     }
 
-    private ImageTexture createTexture(final RawImage image) {
+    private TextureImage createTexture(final RawImage image) {
         final int texture = TextureBuilder.builder()
                 .width(image.width())
                 .height(image.height())
@@ -49,7 +49,7 @@ public class TexturesCreator implements AssetCreator {
                 .buffer(image.data())
                 .build();
         image.destroy();
-        return new ImageTexture(texture, image.width(), image.height());
+        return new TextureImage(image.width(), image.height(), texture);
     }
 
     @Override
