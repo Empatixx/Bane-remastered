@@ -4,6 +4,7 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.InterpolatedPosition;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 public class Camera {
     private static float zoom = 1;
@@ -15,7 +16,7 @@ public class Camera {
                         WindowHandler.TARGET_WIDTH * zoom,
                         WindowHandler.TARGET_HEIGHT * zoom,
                         0)
-                .translate(interpolatedPosition.getPosition());
+                .translate(new Vector3f(interpolatedPosition.getPosition(), 0));
     }
 
     public static void update(final float dt) {
@@ -31,17 +32,19 @@ public class Camera {
     public static float getY() {
         return interpolatedPosition.getY();
     }
-
+    public static Vector2f getPosition() {
+        return new Vector2f(-interpolatedPosition.getX(), -interpolatedPosition.getY());
+    }
     public static Vector2f centerX() {
         return new Vector2f(WindowHandler.TARGET_WIDTH / 2, 0);
     }
 
-    public static int getTargetWidth() {
-        return WindowHandler.TARGET_WIDTH;
+    public static float getTargetWidth() {
+        return WindowHandler.TARGET_WIDTH * zoom;
     }
 
-    public static int getTargetHeight() {
-        return WindowHandler.TARGET_HEIGHT;
+    public static float getTargetHeight() {
+        return WindowHandler.TARGET_HEIGHT * zoom;
     }
 
     public static void zoomIn(final float zoom){
@@ -50,4 +53,5 @@ public class Camera {
     public static void zoomOut(final float zoom){
         Camera.zoom -= zoom;
     }
+
 }

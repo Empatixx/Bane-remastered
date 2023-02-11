@@ -1,6 +1,7 @@
 package cz.empatix.tiles.domain;
 
 import cz.empatix.common.assets.domain.TextureImage;
+import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -66,8 +67,10 @@ public record Tile(
 
     @Override
     public boolean shouldRender() {
-        return position.x + TILE_SIZE > Camera.getX() && position.x < Camera.getTargetWidth() + Camera.getX() &&
-                position.y + TILE_SIZE > Camera.getY() && position.y < Camera.getTargetHeight() + Camera.getY();
+        return IntersectionResolver.newInstance()
+                .addShape(position, new Vector2f(TILE_SIZE, TILE_SIZE))
+                .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
+                .resolve();
     }
 
 
