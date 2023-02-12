@@ -26,7 +26,7 @@ public class DynamicRenderer implements Renderer {
     private final int vboTexIndex;
 
     public DynamicRenderer() {
-        maxPerBatch = Math.min(glGetInteger(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS), 256);
+        maxPerBatch = 256;
 
         vboPos = VboBuilder.builder()
                 .buffer(new float[maxPerBatch * 4 * 2])
@@ -60,7 +60,6 @@ public class DynamicRenderer implements Renderer {
     @Override
     public void batchRender(final List<RenderData> renderData) {
         Lists.partition(renderData, maxPerBatch).forEach(batch -> {
-            final Shader shader = batch.get(0).shader();
             final List<Vertex> vertices = batch.stream()
                     .flatMap(data -> data
                             .vertices()
@@ -110,14 +109,12 @@ public class DynamicRenderer implements Renderer {
             glBufferSubData(GL_ARRAY_BUFFER, 0, textureUnitBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            shader.bind();
+            final Shader shader = renderData.get(0).shaderBinding().apply();
             shader.setUniform1iv("textures", textureToUnit
                     .values()
                     .stream()
                     .mapToInt(i -> i)
                     .toArray());
-            shader.setUniform4x4f("projection", Camera.getProjection());
-
             glBindVertexArray(vao);
 
             glDrawArrays(GL_QUADS, 0, vertices.size());

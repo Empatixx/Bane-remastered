@@ -5,18 +5,15 @@ import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.Shader;
+import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.render.domain.Vertex;
 import org.joml.Vector2f;
 
 import java.util.List;
-import java.util.function.Consumer;
 
 public record Tile(
         List<Vertex> vertices,
         int textureId,
-        Shader shader,
-        Consumer<Shader> prepareShaderFunc,
         Vector2f position
 ) implements Drawable {
     private final static int TILE_SIZE = 32;
@@ -25,16 +22,14 @@ public record Tile(
 
     public Tile(final int tCol,
                 final int tRow,
-                final Shader shader,
                 final int tilePosX,
                 final int tilePosY,
                 final TextureImage texture) {
-        this(tCol, tRow, shader, new Vector2f(tilePosX * TILE_SIZE, tilePosY * TILE_SIZE), texture);
+        this(tCol, tRow, new Vector2f(tilePosX * TILE_SIZE, tilePosY * TILE_SIZE), texture);
     }
 
     public Tile(final int tCol,
                 final int tRow,
-                final Shader shader,
                 final Vector2f position,
                 final TextureImage texture) {
         this(Vertex.builder()
@@ -45,22 +40,14 @@ public record Tile(
                         .offsetTexture(texture.width(), texture.height())
                         .buildQuad(),
                 texture.textureId(),
-                shader,
-                Tile::prepareShader,
                 position);
     }
-
-    private static void prepareShader(final Shader shader) {
-        shader.setUniform4x4f("projection", Camera.getProjection());
-    }
-
     @Override
     public RenderData renderData() {
         return new RenderData(
                 vertices,
                 textureId,
-                shader,
-                prepareShaderFunc,
+                new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
         );
     }

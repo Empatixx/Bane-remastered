@@ -12,7 +12,6 @@ import org.joml.Vector3f;
 
 public class Text implements HUDElement {
     private String text;
-    private final Shader shader;
     private final Font font;
     private final Vector2f position;
     private final Vector3f color;
@@ -22,7 +21,6 @@ public class Text implements HUDElement {
     public Text(final String text, final String font, final Vector2f position, final int prevZIndex) {
         this.text = text;
         this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_24);
-        this.shader = AssetsService.getShader("text");
         this.position = position;
         zIndex = prevZIndex + 1;
         color = new Vector3f(1f,1f,1f);
@@ -36,7 +34,7 @@ public class Text implements HUDElement {
 
     @Override
     public RenderData renderData() {
-        return null;
+        throw new IllegalStateException("Text component should not be rendered directly");
     }
 
     private void prepareShader(final Shader shader) {
@@ -48,7 +46,7 @@ public class Text implements HUDElement {
 
     @Override
     public boolean shouldRender() {
-        return true;
+        return false;
     }
 
     @Override

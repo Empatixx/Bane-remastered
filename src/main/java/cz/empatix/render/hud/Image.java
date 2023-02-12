@@ -4,13 +4,13 @@ import cz.empatix.common.assets.domain.TextureImage;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.Vertex;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 public class Image implements HUDElement {
-    private final Shader shader;
     private final TextureImage texture;
     private final Vector2i dimensions;
     private final Vector2f position;
@@ -23,7 +23,6 @@ public class Image implements HUDElement {
         if (centered) {
             position.sub(new Vector2f(width, height).div(2f));
         }
-        this.shader = AssetsService.getShader("shader");
         this.texture = AssetsService.getTexture(textureName);
         this.dimensions = new Vector2i(width, height);
         this.position = new Vector2f(position);
@@ -40,14 +39,9 @@ public class Image implements HUDElement {
                         .offsetTexture(texture.width(), texture.height())
                         .buildQuad(),
                 texture.textureId(),
-                shader,
-                this::prepareShader,
+                new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
         );
-    }
-
-    private void prepareShader(final Shader shader) {
-        shader.setUniform4x4f("projection", Camera.getProjection());
     }
 
     @Override

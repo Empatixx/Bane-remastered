@@ -1,5 +1,5 @@
 #version 330
-#define MAX_TEXTURES 256
+#define MAX_TEXTURES 32
 
 uniform sampler2D textures[MAX_TEXTURES];
 

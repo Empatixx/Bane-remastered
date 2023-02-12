@@ -16,8 +16,8 @@ public class ShadersLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(ShadersLoader.class);
     public final static Path PATH = Path.of("./assets/shaders/");
     private static final Path[] PRELOAD_SHADERS = {
-            PATH.resolve("shader-vs.glsl"),
-            PATH.resolve("shader-fs.glsl")
+            PATH.resolve("common-vs.glsl"),
+            PATH.resolve("common-fs.glsl")
     };
     private final ShadersCreator shadersCreator;
     private final Map<String, RawShader> shaders;

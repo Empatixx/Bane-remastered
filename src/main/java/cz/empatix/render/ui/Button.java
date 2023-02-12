@@ -8,6 +8,7 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
@@ -25,7 +26,6 @@ public class Button implements UIElement {
     private final Vector2i dimensions;
     private final Text text;
     private final Animation animation;
-    private final Shader shader;
     private boolean hover;
     private Runnable onClick;
 
@@ -39,7 +39,6 @@ public class Button implements UIElement {
                   final Vector3i rgb,
                   final int width,
                   final int height) {
-        this.shader = AssetsService.getShader("shader");
         this.dimensions = new Vector2i(width, height);
 
         final TextureImage textureImage = AssetsService.getTexture(texture);
@@ -66,18 +65,13 @@ public class Button implements UIElement {
         return new RenderData(
                 animation.getVertices(position),
                 animation.getTextureId(),
-                shader,
-                this::prepareShader,
+                new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
         );
     }
 
     public void setOnClick(final Runnable onClick) {
         this.onClick = onClick;
-    }
-
-    private void prepareShader(final Shader shader) {
-        shader.setUniform4x4f("projection", Camera.getProjection());
     }
 
     @Override
