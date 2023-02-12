@@ -1,18 +1,18 @@
 package cz.empatix.render.renders;
 
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.domain.RenderData;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class RenderService {
-    private final List<Renderer> renderers;
+    private final Map<RenderData.RenderDataType, Renderer> renderers;
 
     public RenderService() {
-        renderers = new ArrayList<>();
-        renderers.add(new TextRenderer());
-        renderers.add(new StaticRenderer());
-        renderers.add(new DynamicRenderer());
+        renderers = new HashMap<>();
+        renderers.put(RenderData.RenderDataType.DYNAMIC, new DynamicRenderer());
+        renderers.put(RenderData.RenderDataType.STATIC, new StaticRenderer());
     }
 
     public void render(final List<Drawable> drawable) {
@@ -30,20 +30,18 @@ public class RenderService {
 
         allDrawables.stream()
                 .filter(Drawable::shouldRender)
-                .sorted(Comparator.comparing(Drawable::getZIndex)
-                        .thenComparing(a -> a.getClass().getSimpleName()))
-                .collect(Collectors.groupingBy(Object::getClass, LinkedHashMap::new, Collectors.toList()))
-                .values()
-                .stream()
-                .map(batchDrawable -> batchDrawable.stream()
-                        .map(Drawable::renderData)
-                        .filter(Objects::nonNull)
-                        .toList())
-                .filter(drawableBatch -> !drawableBatch.isEmpty())
-                .forEach(drawableBatch -> {
-                    renderers.stream()
-                            .filter(renderer -> renderer.accepts(drawableBatch.get(0)))
-                            .forEach(renderer -> renderer.batchRender(drawableBatch));
+                .collect(Collectors.groupingBy(d -> d.renderData().type()))
+                .forEach((type, drawables) -> {
+                    final Renderer renderer = renderers.get(type);
+
+                    drawables.stream()
+                            .collect(Collectors.groupingBy(Drawable::getZIndex))
+                            .entrySet()
+                            .stream()
+                            .sorted(Map.Entry.comparingByKey())
+                            .forEach(entry -> renderer.batchRender(entry.getValue().stream()
+                                    .map(Drawable::renderData)
+                                    .collect(Collectors.toList())));
                 });
     }
 }

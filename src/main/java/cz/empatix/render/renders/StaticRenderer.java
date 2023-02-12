@@ -12,11 +12,6 @@ public class StaticRenderer implements Renderer{
         renderDataMap = new HashMap<>();
     }
     @Override
-    public boolean accepts(RenderData renderData) {
-        return renderData.type() == RenderData.RenderDataType.STATIC && false;
-    }
-
-    @Override
     public void render(RenderData renderData) {
         batchRender(List.of(renderData));
     }

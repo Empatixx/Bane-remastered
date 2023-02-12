@@ -56,6 +56,7 @@ public record Vertex(
         public Builder offsetTexture(final int textureWidth, final int textureHeight) {
             this.texOffset.x = 2f / textureWidth;
             this.texOffset.y = 2f / textureHeight;
+
             return this;
         }
 

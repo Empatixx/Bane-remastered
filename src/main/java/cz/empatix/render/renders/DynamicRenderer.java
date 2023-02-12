@@ -49,11 +49,6 @@ public class DynamicRenderer implements Renderer {
     }
 
     @Override
-    public boolean accepts(RenderData renderData) {
-        return renderData.type() == RenderData.RenderDataType.DYNAMIC;
-    }
-
-    @Override
     public void render(RenderData renderData) {
         batchRender(List.of(renderData));
     }
