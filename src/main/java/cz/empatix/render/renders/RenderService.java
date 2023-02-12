@@ -41,9 +41,6 @@ public class RenderService {
                         .toList())
                 .filter(drawableBatch -> !drawableBatch.isEmpty())
                 .forEach(drawableBatch -> {
-                    /*Preconditions.checkArgument(drawableBatch.stream()
-                            .map(RenderData::type)
-                            .collect(Collectors.toSet()).size() == 1, "Batch contains different types of render data");*/
                     renderers.stream()
                             .filter(renderer -> renderer.accepts(drawableBatch.get(0)))
                             .forEach(renderer -> renderer.batchRender(drawableBatch));

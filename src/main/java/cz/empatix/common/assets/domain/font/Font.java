@@ -1,58 +1,57 @@
 package cz.empatix.common.assets.domain.font;
 
-import cz.empatix.common.assets.builders.VaoBuilder;
-import cz.empatix.common.assets.builders.VboBuilder;
-import org.lwjgl.opengl.GL30;
 
+import cz.empatix.render.attributes.Drawable;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public record Font (
-        int vao,
-        int verticesVbo,
-        int textureVbo,
-        float scale,
-        Map<Character,Glyph> glyphs
-){
-    public void destroy(){
-        GL30.glDeleteVertexArrays(vao);
-        GL30.glDeleteBuffers(verticesVbo);
-        GL30.glDeleteBuffers(textureVbo);
-        glyphs.forEach((c,g) -> g.destroy());
+public record Font(
+        Map<Character, Glyph> glyphs
+) {
+    public void destroy() {
+        glyphs.forEach((c, g) -> g.destroy());
     }
 
-    public static FontBuilder builder(){
+    public static FontBuilder builder() {
         return new FontBuilder();
     }
 
-    public static class FontBuilder{
-        private float scale;
-        private Map<Character,Glyph> glyphs;
-
-        public FontBuilder scale(final float scale){
-            this.scale = scale;
-            return this;
+    public List<Drawable> getDrawables(final String text,
+                                       final Vector2f position,
+                                       final Vector3f color,
+                                       final int zDepth) {
+        final List<Drawable> glyphDrawables = new ArrayList<>();
+        final Vector2f positionShifting = new Vector2f(position);
+        for(final char c : text.toCharArray()){
+            if(!glyphs.containsKey(c)){
+                throw new IllegalArgumentException("Font does not contain glyph for character: " + c);
+            }
+            final Glyph glyph = glyphs.get(c);
+            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth));
+            positionShifting.x += glyph.advance();
         }
-        public FontBuilder glyphs(final Map<Character,Glyph> glyphs){
+        return glyphDrawables;
+    }
+
+    public static class FontBuilder {
+        private Map<Character, Glyph> glyphs;
+
+        public FontBuilder glyphs(final Map<Character, Glyph> glyphs) {
             this.glyphs = glyphs;
             return this;
         }
-        public Font build(){
-            final int verticesVbo = VboBuilder.builder()
-                    .defaultNormalizedBuffer()
-                    .dynamic()
-                    .build();
-            final int textureVbo = VboBuilder.builder()
-                    .glDefaultNormalizedBuffer()
-                    .build();
-            final int vao = VaoBuilder.builder()
-                    .addVbo(0, verticesVbo)
-                    .addVbo(1, textureVbo)
-                    .build();
-            return new Font(vao, verticesVbo, textureVbo, scale, glyphs);
+
+        public Font build() {
+            return new Font(glyphs);
         }
     }
-    public float getWidth(final String text){
+
+    public float getWidth(final String text) {
         return (float) text.chars()
                 .mapToObj(c -> glyphs.get((char) c))
                 .filter(Objects::nonNull)

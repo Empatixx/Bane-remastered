@@ -104,7 +104,6 @@ public class FontCreator implements AssetCreator {
             }
         }
         return Font.builder()
-                .scale(scale)
                 .glyphs(glyphs)
                 .build();
     }

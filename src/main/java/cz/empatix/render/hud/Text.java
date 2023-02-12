@@ -5,17 +5,19 @@ import cz.empatix.common.assets.creators.FontCreator;
 import cz.empatix.common.assets.domain.font.Font;
 import cz.empatix.common.assets.service.AssetsService;
 import cz.empatix.render.Camera;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.util.List;
+
 public class Text implements HUDElement {
-    private String text;
+    private final String text;
     private final Font font;
     private final Vector2f position;
     private final Vector3f color;
-
     private final int zIndex;
 
     public Text(final String text, final String font, final Vector2f position, final int prevZIndex) {
@@ -37,11 +39,9 @@ public class Text implements HUDElement {
         throw new IllegalStateException("Text component should not be rendered directly");
     }
 
-    private void prepareShader(final Shader shader) {
-        shader.setUniform1i("sampler", 0);
-        shader.setUniform4x4f("projection", Camera.getProjection()
-                .translate(position.x, position.y, 0f));
-        shader.setUniform3f("color", color);
+    @Override
+    public List<Drawable> getSubDrawables() {
+        return font.getDrawables(text, position, color, zIndex);
     }
 
     @Override

@@ -53,7 +53,7 @@ public class GLFWInit implements Initializator {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
         glfwShowWindow(window);
     }
 

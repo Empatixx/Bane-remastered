@@ -10,6 +10,7 @@ import cz.empatix.render.domain.Vertex;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,7 +27,7 @@ public class DynamicRenderer implements Renderer {
     private final int vboTexIndex;
 
     public DynamicRenderer() {
-        maxPerBatch = 256;
+        maxPerBatch = 32;
 
         vboPos = VboBuilder.builder()
                 .buffer(new float[maxPerBatch * 4 * 2])
@@ -60,12 +61,6 @@ public class DynamicRenderer implements Renderer {
     @Override
     public void batchRender(final List<RenderData> renderData) {
         Lists.partition(renderData, maxPerBatch).forEach(batch -> {
-            final List<Vertex> vertices = batch.stream()
-                    .flatMap(data -> data
-                            .vertices()
-                            .stream())
-                    .toList();
-
             final List<Integer> textures = batch.stream()
                     .map(RenderData::textureId)
                     .collect(Collectors.toSet())
@@ -76,9 +71,15 @@ public class DynamicRenderer implements Renderer {
                     .collect(Collectors.toMap(textures::get, unit -> unit));
             textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
 
+            final List<Vertex> vertices = batch.stream()
+                    .flatMap(data -> data
+                            .vertices()
+                            .stream())
+                    .toList();
+
             final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
             final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
-            final FloatBuffer textureUnitBuffer = BufferUtils.createFloatBuffer(batch.size());
+            final FloatBuffer textureUnitBuffer = BufferUtils.createFloatBuffer(vertices.size());
 
             vertices.stream()
                     .map(Vertex::position)
@@ -89,7 +90,10 @@ public class DynamicRenderer implements Renderer {
                     .flatMap(t -> Stream.of(t.x, t.y))
                     .forEach(texCoordsBuffer::put);
             batch.stream()
-                    .map(RenderData::textureId)
+                    .flatMap(rd -> {
+                        final List<Vertex> v = rd.vertices();
+                        return Collections.nCopies(v.size(), rd.textureId()).stream();
+                    })
                     .map(textureToUnit::get)
                     .forEach(textureUnitBuffer::put);
 
