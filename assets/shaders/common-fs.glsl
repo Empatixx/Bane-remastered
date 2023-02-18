@@ -1,7 +1,7 @@
 #version 330
 #define MAX_TEXTURES 32
 
-uniform sampler2D textures[MAX_TEXTURES];
+uniform sampler2D textures[32];
 
 in vec2 tex_coords;
 in float tex_index;

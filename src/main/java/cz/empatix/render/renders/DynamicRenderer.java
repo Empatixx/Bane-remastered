@@ -3,10 +3,11 @@ package cz.empatix.render.renders;
 import com.google.common.collect.Lists;
 import cz.empatix.common.assets.builders.VaoBuilder;
 import cz.empatix.common.assets.builders.VboBuilder;
-import cz.empatix.render.Camera;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -27,8 +28,7 @@ public class DynamicRenderer implements Renderer {
     private final int vboTexIndex;
 
     public DynamicRenderer() {
-        maxPerBatch = 32;
-
+        maxPerBatch = 255;
         vboPos = VboBuilder.builder()
                 .buffer(new float[maxPerBatch * 4 * 2])
                 .dynamic()
@@ -47,14 +47,12 @@ public class DynamicRenderer implements Renderer {
                 .addVbo(2, vboTexIndex, 1)
                 .build();
     }
-
     @Override
-    public void render(RenderData renderData) {
-        batchRender(List.of(renderData));
-    }
-
-    @Override
-    public void batchRender(final List<RenderData> renderData) {
+    public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
+        final List<RenderData> renderData = drawables.stream()
+                .filter(Drawable::shouldRender)
+                .map(Drawable::renderData)
+                .toList();
         Lists.partition(renderData, maxPerBatch).forEach(batch -> {
             final List<Integer> textures = batch.stream()
                     .map(RenderData::textureId)
@@ -108,7 +106,7 @@ public class DynamicRenderer implements Renderer {
             glBufferSubData(GL_ARRAY_BUFFER, 0, textureUnitBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            final Shader shader = renderData.get(0).shaderBinding().apply();
+            final Shader shader = shaderBinding.apply();
             shader.setUniform1iv("textures", textureToUnit
                     .values()
                     .stream()

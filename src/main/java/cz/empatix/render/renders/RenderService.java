@@ -27,21 +27,21 @@ public class RenderService {
             searchSubDrawables.clear();
             searchSubDrawables.addAll(foundSubDrawables);
         } while (!searchSubDrawables.isEmpty());
-
         allDrawables.stream()
-                .filter(Drawable::shouldRender)
-                .collect(Collectors.groupingBy(d -> d.renderData().type()))
-                .forEach((type, drawables) -> {
-                    final Renderer renderer = renderers.get(type);
-
+                .sorted(Comparator.comparingInt(Drawable::getZIndex))
+                .collect(Collectors.groupingBy(Drawable::getZIndex, LinkedHashMap::new, Collectors.toList()))
+                .forEach((depth, drawables) -> {
                     drawables.stream()
-                            .collect(Collectors.groupingBy(Drawable::getZIndex))
-                            .entrySet()
-                            .stream()
-                            .sorted(Map.Entry.comparingByKey())
-                            .forEach(entry -> renderer.batchRender(entry.getValue().stream()
-                                    .map(Drawable::renderData)
-                                    .collect(Collectors.toList())));
+                            .filter(d -> d.renderData() != null)
+                            .collect(Collectors.groupingBy(d -> d.renderData().type()))
+                            .forEach((type, drawablesOfType) -> {
+                                final Renderer renderer = renderers.get(type);
+                                drawablesOfType.stream()
+                                        .collect(Collectors.groupingBy(d -> d.renderData().shaderBinding()))
+                                        .forEach((shaderBinding, drawablesOfShader) -> {
+                                            renderer.render(drawablesOfShader, shaderBinding, depth);
+                                        });
+                            });
                 });
     }
 }

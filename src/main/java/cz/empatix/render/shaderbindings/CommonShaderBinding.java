@@ -17,5 +17,12 @@ public class CommonShaderBinding implements ShaderBinding{
         return shader;
     }
 
-
+    @Override
+    public int hashCode() {
+        return "common".hashCode();
+    }
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof CommonShaderBinding;
+    }
 }

@@ -1,10 +1,10 @@
 package cz.empatix.render.renders;
 
-import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.shaderbindings.ShaderBinding;
 
 import java.util.List;
 
 public interface Renderer {
-    void render(RenderData renderData);
-    void batchRender(List<RenderData> renderData);
+    void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth);
 }

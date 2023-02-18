@@ -4,10 +4,8 @@ package cz.empatix.render.hud;
 import cz.empatix.common.assets.creators.FontCreator;
 import cz.empatix.common.assets.domain.font.Font;
 import cz.empatix.common.assets.service.AssetsService;
-import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.Shader;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -36,7 +34,7 @@ public class Text implements HUDElement {
 
     @Override
     public RenderData renderData() {
-        throw new IllegalStateException("Text component should not be rendered directly");
+        return null;
     }
 
     @Override

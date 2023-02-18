@@ -10,6 +10,7 @@ import static org.lwjgl.opengl.GL15.*;
 public class VboBuilder {
     private FloatBuffer buffer;
     private boolean dynamic;
+    private boolean streaming;
 
     public static VboBuilder builder(){
         return new VboBuilder();
@@ -43,7 +44,13 @@ public class VboBuilder {
         return buffer(vbo);
     }
     public VboBuilder dynamic(){
+        Preconditions.checkState(!streaming, "Cannot be both dynamic and streaming");
         this.dynamic = true;
+        return this;
+    }
+    public VboBuilder streaming(){
+        Preconditions.checkState(!dynamic, "Cannot be both dynamic and streaming");
+        this.streaming = true;
         return this;
     }
     public int build(){
@@ -52,6 +59,8 @@ public class VboBuilder {
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         if (dynamic){
             glBufferData(GL_ARRAY_BUFFER, buffer, GL_DYNAMIC_DRAW);
+        } else if (streaming) {
+            glBufferData(GL_ARRAY_BUFFER, buffer, GL_STREAM_DRAW);
         } else {
             glBufferData(GL_ARRAY_BUFFER, buffer, GL_STATIC_DRAW);
         }
