@@ -14,10 +14,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_QUADS;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL15.glDeleteBuffers;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL30.glDeleteVertexArrays;
 
 public class StaticRenderer implements Renderer {
     private final Map<Integer, Map<ShaderBinding, StaticRenderData>> staticRenderData;
@@ -29,48 +31,47 @@ public class StaticRenderer implements Renderer {
     @Override
     public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
         final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth, HashMap::new)
-                .computeIfAbsent(shaderBinding, s -> createNewStatic(drawables));
+                .computeIfAbsent(shaderBinding, s -> createNewStatic(drawables.size()));
         if(renderData.size() < drawables.size()) {
             staticRenderData.get(zDepth).put(shaderBinding, renderData.resize(drawables.size()));
-            final List<Integer> textures = drawables.stream()
-                    .map(Drawable::renderData)
-                    .map(RenderData::textureId)
-                    .collect(Collectors.toSet())
-                    .stream()
-                    .toList();
-            final Map<Integer, Integer> textureToUnit = IntStream.range(0, renderData.size())
-                    .boxed()
-                    .collect(Collectors.toMap(textures::get, unit -> unit));
-            textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
-
-
-            final Shader shader = shaderBinding.apply();
-            shader.setUniform1iv("textures", textureToUnit
-                    .values()
-                    .stream()
-                    .mapToInt(i -> i)
-                    .toArray());
-
-            glBindVertexArray(renderData.vao());
-            glDrawArrays(GL_QUADS, 0, renderData.size() * 4);
-            glBindVertexArray(0);
-            shader.unbind();
-            glBindTexture(GL_TEXTURE_2D, 0);
         }
+        final List<Integer> textures = drawables.stream()
+                .map(Drawable::renderData)
+                .map(RenderData::textureId)
+                .collect(Collectors.toSet())
+                .stream()
+                .toList();
+        final Map<Integer, Integer> textureToUnit = IntStream.range(0, renderData.size())
+                .boxed()
+                .collect(Collectors.toMap(textures::get, unit -> unit));
+        textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
+
+        final Shader shader = shaderBinding.apply();
+        shader.setUniform1iv("textures", textureToUnit
+                .values()
+                .stream()
+                .mapToInt(i -> i)
+                .toArray());
+
+        glBindVertexArray(renderData.vao());
+        glDrawArrays(GL_QUADS, 0, renderData.size() * 4);
+        glBindVertexArray(0);
+        shader.unbind();
+        glBindTexture(GL_TEXTURE_2D, 0);
 
     }
 
-    public StaticRenderData createNewStatic(final List<Drawable> drawables) {
+    private static StaticRenderData createNewStatic(final int size) {
         final int vboPos = VboBuilder.builder()
-                .buffer(new float[drawables.size() * 4 * 2])
+                .buffer(new float[size * 4 * 2])
                 .dynamic()
                 .build();
         final int vboTex = VboBuilder.builder()
-                .buffer(new float[drawables.size() * 4 * 2])
+                .buffer(new float[size * 4 * 2])
                 .dynamic()
                 .build();
         final int vboTexIndex = VboBuilder.builder()
-                .buffer(new float[drawables.size() * 4])
+                .buffer(new float[size * 4])
                 .dynamic()
                 .build();
         final int vao = VaoBuilder.builder()
@@ -78,7 +79,7 @@ public class StaticRenderer implements Renderer {
                 .addVbo(1, vboTex)
                 .addVbo(2, vboTexIndex, 1)
                 .build();
-        return new StaticRenderData(vao, vboPos, vboTex, vboTexIndex, drawables.size());
+        return new StaticRenderData(vao, vboPos, vboTex, vboTexIndex, size);
     }
 
     private record StaticRenderData(
@@ -89,7 +90,14 @@ public class StaticRenderer implements Renderer {
             int size
     ) {
         public StaticRenderData resize(final int newSize) {
-            return new StaticRenderData(vao, vboPos, vboTex, vboTexIndex, newSize);
+            destroy();
+            return createNewStatic(newSize);
+        }
+        public void destroy(){
+            glDeleteVertexArrays(vao);
+            glDeleteBuffers(vboPos);
+            glDeleteBuffers(vboTex);
+            glDeleteBuffers(vboTexIndex);
         }
     }
     private void glBindTextureUnit(final int unit, final int texture) {

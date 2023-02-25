@@ -19,10 +19,15 @@ public class CommonShaderBinding implements ShaderBinding{
 
     @Override
     public int hashCode() {
-        return "common".hashCode();
+        return projectionMatrix.hashCode();
     }
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof CommonShaderBinding;
+        if(this == obj) return true;
+        if(obj instanceof CommonShaderBinding){
+            final CommonShaderBinding other = (CommonShaderBinding) obj;
+            return other.projectionMatrix.equals(projectionMatrix);
+        }
+        return false;
     }
 }

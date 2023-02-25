@@ -22,11 +22,11 @@ public class TextShaderBinding implements ShaderBinding{
         return shader;
     }
     @Override
-    public int hashCode() {
-        return "text".hashCode();
-    }
-    @Override
     public boolean equals(Object obj) {
-        return obj instanceof TextShaderBinding;
+        if(obj instanceof TextShaderBinding){
+            final TextShaderBinding other = (TextShaderBinding) obj;
+            return other.color.equals(color) && other.projection.equals(projection);
+        }
+        return false;
     }
 }
