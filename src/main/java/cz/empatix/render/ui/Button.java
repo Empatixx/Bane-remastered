@@ -1,7 +1,7 @@
 package cz.empatix.render.ui;
 
-import cz.empatix.common.assets.domain.TextureImage;
-import cz.empatix.common.assets.service.AssetsService;
+import cz.empatix.assets.domain.TextureImage;
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
@@ -9,7 +9,6 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.hud.Text;
 import org.joml.Vector2f;
 import org.joml.Vector2i;

@@ -1,6 +1,6 @@
 package cz.empatix.tiles.domain;
 
-import cz.empatix.common.assets.domain.TextureImage;
+import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;

@@ -1,6 +1,6 @@
 package cz.empatix.render.domain;
 
-import cz.empatix.common.assets.domain.TextureImage;
+import cz.empatix.assets.domain.TextureImage;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.slf4j.Logger;

@@ -1,7 +1,7 @@
 package cz.empatix.render.background;
 
-import cz.empatix.common.assets.domain.TextureImage;
-import cz.empatix.common.assets.service.AssetsService;
+import cz.empatix.assets.domain.TextureImage;
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.Animation;

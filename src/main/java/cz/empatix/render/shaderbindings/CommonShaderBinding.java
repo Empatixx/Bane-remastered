@@ -1,6 +1,6 @@
 package cz.empatix.render.shaderbindings;
 
-import cz.empatix.common.assets.service.AssetsService;
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Shader;
 import org.joml.Matrix4f;
 

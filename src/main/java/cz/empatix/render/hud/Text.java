@@ -1,9 +1,9 @@
 package cz.empatix.render.hud;
 
 
-import cz.empatix.common.assets.creators.FontCreator;
-import cz.empatix.common.assets.domain.font.Font;
-import cz.empatix.common.assets.service.AssetsService;
+import cz.empatix.assets.creators.FontCreator;
+import cz.empatix.assets.domain.font.Font;
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
