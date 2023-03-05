@@ -126,9 +126,4 @@ public class FontCreator implements AssetCreator {
                 .toList();
         fonts.forEach(Font::destroy);
     }
-
-    private TextureAtlas createTextureAtlas(final List<RawFont> rawFonts) {
-        return null;
-       // textureAtlasBuffer.flip();
-    }
 }

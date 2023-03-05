@@ -2,6 +2,7 @@ package cz.empatix.textureatlas.factory;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.assets.domain.RawImage;
+import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.SortingMethod;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.service.TextureAtlasPacker;
@@ -13,7 +14,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TextureAtlasFactory {
-    private static final int AREA_STEP = 128;
     private final TextureAtlasPacker packer;
 
     public TextureAtlasFactory() {
@@ -22,11 +22,15 @@ public class TextureAtlasFactory {
 
     public TextureAtlas createAtlas(final Map<String, RawImage> images) {
         final List<SortingMethod> sortingMethods = List.of(SortingMethod.values());
-        final List<TextureAtlas> textureAtlases = sortingMethods
+        final List<RawTextureAtlas> textureAtlases = sortingMethods
                 .stream()
                 .map(method -> createAtlas(images, method))
                 .toList();
-
+        final RawTextureAtlas smallest = textureAtlases
+                .stream()
+                .min(Comparator.comparingInt(atlas -> atlas.pixels().length))
+                .orElseThrow(() -> new IllegalStateException("No texture atlas was created"));
+        return TextureAtlas.from(smallest);
     }
 
     private Comparator<Map.Entry<String, RawImage>> sortByField(final SortingMethod method) {
@@ -40,8 +44,8 @@ public class TextureAtlasFactory {
         });
     }
 
-    private TextureAtlas createAtlas(final Map<String, RawImage> images,
-                                     final SortingMethod method) {
+    private RawTextureAtlas createAtlas(final Map<String, RawImage> images,
+                                        final SortingMethod method) {
         final Comparator<Map.Entry<String, RawImage>> comparator = sortByField(method);
         final LinkedHashMap<String, RawImage> sorted = Map.copyOf(images)
                 .entrySet()
