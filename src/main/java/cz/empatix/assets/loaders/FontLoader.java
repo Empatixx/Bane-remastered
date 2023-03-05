@@ -75,7 +75,7 @@ public class FontLoader implements AssetLoader {
             if (!STBTruetype.stbtt_InitFont(info, buffer,0)) {
                 throw new IllegalStateException("Failed to initialize font information.");
             }
-            return new RawFont(info);
+            return new RawFont(info, buffer);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
