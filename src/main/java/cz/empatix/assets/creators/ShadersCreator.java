@@ -26,11 +26,7 @@ public class ShadersCreator implements AssetCreator {
         final int loaded = shaders.size();
         data.entrySet().stream()
                 .filter(entry -> !shaders.containsKey(entry.getKey()))
-                .map(entry -> {
-                    final RawShader rawShader = entry.getValue();
-                    final Shader shader = new Shader(rawShader.vertex(), rawShader.fragment());
-                    return Map.entry(entry.getKey(), shader);
-                })
+                .map(entry -> Map.entry(entry.getKey(), Shader.from(entry.getValue())))
                 .forEach(entry -> shaders.put(entry.getKey(), entry.getValue()));
         LOGGER.info("Total {} shaders vbos created in {} ms", shaders.size() - loaded, System.currentTimeMillis() - start);
     }

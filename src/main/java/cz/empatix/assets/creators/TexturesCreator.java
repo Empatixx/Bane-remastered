@@ -1,12 +1,17 @@
 package cz.empatix.assets.creators;
 
 import cz.empatix.assets.builders.TextureBuilder;
-import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.domain.RawImage;
+import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.loaders.TexturesLoader;
+import cz.empatix.textureatlas.domain.RawTextureAtlas;
+import cz.empatix.textureatlas.factory.TextureAtlasFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +31,17 @@ public class TexturesCreator implements AssetCreator {
     public void add(final Map<String, RawImage> data) {
         final long start = System.currentTimeMillis();
         final int loaded = textures.size();
+
+        try{
+            final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
+            byte[] atlasData = atlas.pixels();
+            BufferedImage image = new BufferedImage(atlas.width(), atlas.height(), BufferedImage.TYPE_4BYTE_ABGR);
+            image.getRaster().setDataElements(0, 0, atlas.width(), atlas.height(), atlasData);
+            ImageIO.write(image, "png", new File("atlas.png"));
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+
         data.entrySet().stream()
                 .filter(entry -> !textures.containsKey(entry.getKey()))
                 .map(entry -> Map.entry(entry.getKey(), createTexture(entry.getValue())))
@@ -46,9 +62,8 @@ public class TexturesCreator implements AssetCreator {
                 .channels(image.channels())
                 .applyNearestFilters()
                 .applyClampToEdgeWrap()
-                .buffer(image.data())
+                .buffer(image.pixels())
                 .build();
-        image.destroy();
         return new TextureImage(image.width(), image.height(), texture);
     }
 

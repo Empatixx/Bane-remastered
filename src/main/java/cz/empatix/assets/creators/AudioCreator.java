@@ -33,7 +33,6 @@ public class AudioCreator implements AssetCreator{
     private int createAudio(final RawAudio audio){
         final int buffer = AL10.alGenBuffers();
         AL10.alBufferData(buffer, audio.format(), audio.data(), audio.sampleRate());
-        audio.destroy();
         return buffer;
     }
     @Override

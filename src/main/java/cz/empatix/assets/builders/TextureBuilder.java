@@ -1,6 +1,7 @@
 package cz.empatix.assets.builders;
 
 import com.google.common.base.Preconditions;
+import cz.empatix.common.utils.BufferFactory;
 import org.lwjgl.opengl.GL30;
 
 import java.nio.ByteBuffer;
@@ -82,6 +83,11 @@ public class TextureBuilder {
     public TextureBuilder buffer(final ByteBuffer buffer) {
         Preconditions.checkNotNull(buffer, "Buffer must not be null");
         this.buffer = buffer;
+        return this;
+    }
+    public TextureBuilder buffer(final byte[] buffer) {
+        Preconditions.checkNotNull(buffer, "Buffer must not be null");
+        this.buffer = BufferFactory.convertByteArray(buffer);
         return this;
     }
 

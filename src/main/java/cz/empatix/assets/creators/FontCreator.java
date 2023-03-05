@@ -126,4 +126,5 @@ public class FontCreator implements AssetCreator {
                 .toList();
         fonts.forEach(Font::destroy);
     }
+
 }

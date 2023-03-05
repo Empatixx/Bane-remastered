@@ -1,5 +1,6 @@
 package cz.empatix.render.domain;
 
+import cz.empatix.assets.domain.RawShader;
 import cz.empatix.common.utils.BufferFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -10,23 +11,30 @@ import java.util.HashMap;
 
 import static org.lwjgl.opengl.GL20.*;
 
-public class Shader {
-    private final int program;
-    private final int fragmentShaderId;
-    private final int vertexShaderId;
-    private final HashMap<String, Integer> locations;
+public record Shader (
+        int program,
+        int fragmentShaderId,
+        int vertexShaderId,
+        HashMap<String, Integer> locations
+){
+    public Shader(final int program,
+                  final int fragmentShaderId,
+                  final int vertexShaderId){
+        this(program, fragmentShaderId, vertexShaderId, new HashMap<>());
+    }
+    public static Shader from(final RawShader rawShader){
+        final String vertex = rawShader.vertex();
+        final String fragment = rawShader.fragment();
 
-    public Shader(final String vs, final String fs) {
-        program = glCreateProgram();
-        locations = new HashMap<>();
+        final int program = glCreateProgram();
 
-        vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShaderId, vs);
+        final int vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShaderId, vertex);
         glCompileShader(vertexShaderId);
         checkForErrors(vertexShaderId);
 
-        fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShaderId, fs);
+        final int fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShaderId, fragment);
         glCompileShader(fragmentShaderId);
         checkForErrors(fragmentShaderId);
 
@@ -45,22 +53,18 @@ public class Shader {
         if (glGetProgrami(program, GL_VALIDATE_STATUS) != 1) {
             throw new RuntimeException(glGetProgramInfoLog(program));
         }
+        return new Shader(program, fragmentShaderId, vertexShaderId);
     }
-
-    public int getShaderId() {
-        return program;
+    private static void checkForErrors(final int id) {
+        if (glGetShaderi(id, GL_COMPILE_STATUS) != 1) {
+            throw new RuntimeException(glGetShaderInfoLog(id));
+        }
     }
 
     public void destroy() {
         glDeleteShader(vertexShaderId);
         glDeleteShader(fragmentShaderId);
         glDeleteProgram(program);
-    }
-
-    private void checkForErrors(final int id) {
-        if (glGetShaderi(id, GL_COMPILE_STATUS) != 1) {
-            throw new RuntimeException(glGetShaderInfoLog(id));
-        }
     }
 
     public void bind() {

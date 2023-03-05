@@ -1,14 +1,9 @@
 package cz.empatix.assets.domain;
 
-import java.nio.ShortBuffer;
-import static org.lwjgl.system.libc.LibCStdlib.free;
 
 public record RawAudio (
         int format,
         int sampleRate,
-        ShortBuffer data
+        short[] data
 ){
-    public void destroy() {
-        free(data);
-    }
 }

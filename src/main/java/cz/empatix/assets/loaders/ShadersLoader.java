@@ -81,6 +81,7 @@ public class ShadersLoader implements AssetLoader {
                     try {
                         return new String(Files.readAllBytes(p));
                     } catch (IOException e) {
+                        LOGGER.error("Error while reading shader file: {}", p);
                         throw new RuntimeException(e);
                     }
                 });

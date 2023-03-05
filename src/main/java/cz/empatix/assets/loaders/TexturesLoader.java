@@ -1,8 +1,9 @@
 package cz.empatix.assets.loaders;
 
-import cz.empatix.assets.domain.RawImage;
 import cz.empatix.assets.creators.TexturesCreator;
+import cz.empatix.assets.domain.RawImage;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +19,12 @@ import java.util.stream.Stream;
 
 import static org.lwjgl.stb.STBImage.*;
 
-public class TexturesLoader implements AssetLoader{
+public class TexturesLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesLoader.class);
     public final static Path PATH = Path.of("./assets/textures/");
     private final static Path[] PRELOAD_TEXTURES = {
             PATH.resolve("Menu/loading.tga")
-};
+    };
     private final TexturesCreator texturesCreator;
     private final Map<String, RawImage> textures;
 
@@ -67,20 +68,27 @@ public class TexturesLoader implements AssetLoader{
 
     protected RawImage decodeImage(final Path path) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            final IntBuffer w = stack.mallocInt(1);
-            final IntBuffer h = stack.mallocInt(1);
-            final IntBuffer channels = stack.mallocInt(1);
+            final IntBuffer pWidth = stack.mallocInt(1);
+            final IntBuffer pHeight = stack.mallocInt(1);
+            final IntBuffer pChannels = stack.mallocInt(1);
 
             /* Load image */
-            final ByteBuffer buffer = stbi_load(path.toAbsolutePath().toString(), w, h, channels, 0);
+            final ByteBuffer buffer = stbi_load(path.toAbsolutePath().toString(), pWidth, pHeight, pChannels, 0);
 
             if (buffer == null) {
                 throw new RuntimeException("Failed to load a texture file!" + System.lineSeparator() + stbi_failure_reason());
             }
+            try{
+                final int width = pWidth.get();
+                final int height = pHeight.get();
+                final int channels = pChannels.get();
+                final byte[] pixels = new byte[width * height * channels];
+                buffer.get(pixels);
 
-            buffer.flip();
-
-            return new RawImage(w.get(0), h.get(0), channels.get(0), buffer);
+                return new RawImage(width, height, channels, pixels);
+            } finally {
+                MemoryUtil.memFree(buffer);
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to load texture: " + path.toString(), e);
             throw new RuntimeException(e);

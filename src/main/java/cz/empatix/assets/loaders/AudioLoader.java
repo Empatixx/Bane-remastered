@@ -3,6 +3,7 @@ package cz.empatix.assets.loaders;
 import cz.empatix.assets.creators.AudioCreator;
 import cz.empatix.assets.domain.RawAudio;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,20 +16,23 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.lwjgl.openal.AL10.*;
+import static org.lwjgl.openal.AL10.AL_FORMAT_MONO16;
+import static org.lwjgl.openal.AL10.AL_FORMAT_STEREO16;
 import static org.lwjgl.stb.STBVorbis.stb_vorbis_decode_filename;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
-public class AudioLoader implements AssetLoader{
+public class AudioLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(AudioLoader.class);
 
     public final static Path PATH = Path.of("./assets/audio/");
     private final Map<String, RawAudio> audio;
     private final AudioCreator audioCreator;
-    public AudioLoader(){
+
+    public AudioLoader() {
         audio = new HashMap<>();
         audioCreator = new AudioCreator();
     }
+
     @Override
     public int load() {
         try (final Stream<Path> paths = Files.walk(PATH)) {
@@ -60,32 +64,31 @@ public class AudioLoader implements AssetLoader{
 
 
     private RawAudio decodeAudio(final Path path) {
-        try{
+        try {
             try (MemoryStack stack = stackPush()) {
                 //Allocate space to store return information from the function
-                final IntBuffer channelsBuffer   = stack.mallocInt(1);
+                final IntBuffer channelsBuffer = stack.mallocInt(1);
                 final IntBuffer sampleRateBuffer = stack.mallocInt(1);
 
                 final ShortBuffer rawAudioBuffer = stb_vorbis_decode_filename(path.toString(), channelsBuffer, sampleRateBuffer);
-                if(rawAudioBuffer == null){
+                if (rawAudioBuffer == null) {
                     throw new RuntimeException("Failed to load audio file: " + path);
                 }
+                try{
+                    final int sampleRate = sampleRateBuffer.get();
+                    final int channels = channelsBuffer.get();
+                    final int format = switch (channels) {
+                        case 1 -> AL_FORMAT_MONO16;
+                        case 2 -> AL_FORMAT_STEREO16;
+                        default -> throw new RuntimeException("Audio file has unsupported number of channels: " + channels);
+                    };
+                    final short[] audioData = new short[rawAudioBuffer.remaining()];
+                    rawAudioBuffer.get(audioData);
 
-                //Retreive the extra information that was stored in the buffers by the function
-                final int format;
-                final int sampleRate = sampleRateBuffer.get(0);
-                final int channels   = channelsBuffer.get(0);
-                switch (channels) {
-                    case 1:
-                        format = AL_FORMAT_MONO16;
-                        break;
-                    case 2:
-                        format = AL_FORMAT_STEREO16;
-                        break;
-                    default:
-                        throw new RuntimeException("Audio file has unsupported number of channels: " + channels);
+                    return new RawAudio(format, sampleRate, audioData);
+                } finally {
+                    MemoryUtil.memFree(rawAudioBuffer);
                 }
-                return new RawAudio(format, sampleRate, rawAudioBuffer);
             }
         } catch (Exception e) {
             LOGGER.error("Error while decoding audio file: " + path.toString(), e);
