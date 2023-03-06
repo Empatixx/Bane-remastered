@@ -36,7 +36,8 @@ public class TextureAtlasFactory {
 
     private static RawTextureAtlas createAtlas(final Map<String, RawImage> images,
                                      final SortingMethod method) {
-        final Comparator<Map.Entry<String, RawImage>> comparator = sortByField(method);
+        final Comparator<Map.Entry<String, RawImage>> comparator = sortByField(method)
+                .reversed();
         final LinkedHashMap<String, RawImage> sorted = Map.copyOf(images)
                 .entrySet()
                 .stream()

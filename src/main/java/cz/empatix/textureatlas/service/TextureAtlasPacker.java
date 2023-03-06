@@ -7,10 +7,7 @@ import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.lwjgl.opengl.GL11C.GL_MAX_TEXTURE_SIZE;
 
@@ -68,7 +65,7 @@ public class TextureAtlasPacker {
             final Rect rect = emptyRects
                     .stream()
                     .filter(r -> r.canBeFilled(image))
-                    .findFirst()
+                    .min(Comparator.comparingInt(Rect::height).thenComparing(Rect::width))
                     .orElseThrow(() -> new IllegalStateException("No empty rect found"));
             textureStartPositions.put(name, new Vector2i(rect.x, rect.y));
             textureDimensions.put(name, new Vector2i(image.width(), image.height()));
@@ -79,11 +76,11 @@ public class TextureAtlasPacker {
             final int textureHeight = image.height();
             final int remainingWidth = rect.width - textureWidth;
             final int remainingHeight = rect.height - textureHeight;
-            if (remainingWidth > 0) {
-                emptyRects.add(new Rect(x + textureWidth, y, remainingWidth, rect.height));
-            }
             if (remainingHeight > 0) {
-                emptyRects.add(new Rect(x, y + textureHeight, rect.width, remainingHeight));
+                emptyRects.add(new Rect(x, y + textureHeight, textureWidth, remainingHeight));
+            }
+            if (remainingWidth > 0) {
+                emptyRects.add(new Rect(x + textureWidth, y, remainingWidth, textureHeight));
             }
             addImageToAtlas(data, targetSize, image, x, y);
         });

@@ -4,14 +4,9 @@ import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.loaders.TexturesLoader;
-import cz.empatix.textureatlas.domain.RawTextureAtlas;
-import cz.empatix.textureatlas.factory.TextureAtlasFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,11 +28,13 @@ public class TexturesCreator implements AssetCreator {
         final int loaded = textures.size();
 
         try{
-            final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
+            /*final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
             byte[] atlasData = atlas.pixels();
             BufferedImage image = new BufferedImage(atlas.width(), atlas.height(), BufferedImage.TYPE_4BYTE_ABGR);
             image.getRaster().setDataElements(0, 0, atlas.width(), atlas.height(), atlasData);
-            ImageIO.write(image, "png", new File("atlas.png"));
+            ImageIO.write(image, "png", new File("atlas.png"));*/
+                        //final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
+
         } catch (Exception e){
             throw new RuntimeException(e);
         }
