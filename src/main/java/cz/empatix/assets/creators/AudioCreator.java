@@ -8,27 +8,29 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AudioCreator implements AssetCreator{
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioCreator.class);
-    private boolean ready;
     private final Map<String, Integer> audio;
+    private final Map<String, RawAudio> rawAudio;
+    private final AudioLoader audioLoader;
 
     public AudioCreator() {
         this.audio = new HashMap<>();
+        this.rawAudio = new ConcurrentHashMap<>();
+        audioLoader = new AudioLoader(rawAudio);
     }
 
     public Integer get(final String name) {
         return audio.get(AudioLoader.PATH.resolve(name).toString());
     }
-
-    public void add(final Map<String, RawAudio> data) {
-        final long start = System.currentTimeMillis();
-        final int loaded = audio.size();
-        data.entrySet().stream()
+    @Override
+    public void create(){
+        rawAudio.entrySet().stream()
                 .map(entry -> Map.entry(entry.getKey(), createAudio(entry.getValue())))
                 .forEach(entry -> audio.put(entry.getKey(), entry.getValue()));
-        LOGGER.info("Total {} audio vbos created in {} ms", audio.size() - loaded,  System.currentTimeMillis() - start);
     }
     private int createAudio(final RawAudio audio){
         final int buffer = AL10.alGenBuffers();
@@ -36,14 +38,10 @@ public class AudioCreator implements AssetCreator{
         return buffer;
     }
     @Override
-    public boolean isReady() {
-        return ready;
+    public Callable<Void> load() {
+        return audioLoader;
     }
 
-    @Override
-    public void ready() {
-        this.ready = true;
-    }
     @Override
     public void destroy() {
         LOGGER.info("Destroying audio");

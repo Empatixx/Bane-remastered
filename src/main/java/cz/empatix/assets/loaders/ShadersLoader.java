@@ -19,12 +19,10 @@ public class ShadersLoader implements AssetLoader {
             PATH.resolve("common-vs.glsl"),
             PATH.resolve("common-fs.glsl")
     };
-    private final ShadersCreator shadersCreator;
     private final Map<String, RawShader> shaders;
 
-    public ShadersLoader() {
-        shaders = new HashMap<>();
-        this.shadersCreator = new ShadersCreator();
+    public ShadersLoader(final Map<String, RawShader> shaders) {
+        this.shaders = shaders;
     }
 
     @Override
@@ -63,16 +61,6 @@ public class ShadersLoader implements AssetLoader {
         return Map.entry(entry.getKey(), new RawShader(vs, fs));
     }
 
-    @Override
-    public void submit() {
-        shadersCreator.add(shaders);
-    }
-
-    @Override
-    public ShadersCreator getCreator() {
-        return shadersCreator;
-    }
-
     private Optional<String> getShaderText(final List<Path> paths, final String suffix) {
         return paths.stream()
                 .filter(p -> p.toString().endsWith(suffix))
@@ -88,11 +76,10 @@ public class ShadersLoader implements AssetLoader {
     }
 
     @Override
-    public ShadersLoader call() throws Exception {
+    public Void call() {
         final long start = System.currentTimeMillis();
         final int loaded = load();
         LOGGER.info("Loaded {} shaders in {} ms", loaded, System.currentTimeMillis() - start);
-        return this;
     }
 
 }

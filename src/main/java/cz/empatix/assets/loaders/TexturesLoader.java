@@ -2,6 +2,7 @@ package cz.empatix.assets.loaders;
 
 import cz.empatix.assets.creators.TexturesCreator;
 import cz.empatix.assets.domain.RawImage;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
@@ -12,12 +13,12 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.lwjgl.stb.STBImage.*;
+import static org.lwjgl.stb.STBImage.stbi_failure_reason;
+import static org.lwjgl.stb.STBImage.stbi_load;
 
 public class TexturesLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesLoader.class);
@@ -26,39 +27,40 @@ public class TexturesLoader implements AssetLoader {
             PATH.resolve("Menu/loading.tga")
     };
     private final TexturesCreator texturesCreator;
-    private final Map<String, RawImage> textures;
+    private final List<TextureAtlas> textureAtlases;
 
     public TexturesLoader() {
-        textures = new HashMap<>();
+        textureAtlases = new ArrayList<>();
         this.texturesCreator = new TexturesCreator();
     }
 
     @Override
     public int load() {
         try (final Stream<Path> paths = Files.walk(PATH)) {
-            paths.filter(Files::isRegularFile)
+            final Map<String, RawImage> textures = paths.filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".tga") || p.toString().endsWith(".png"))
                     .parallel()
-                    .filter(path -> !textures.containsKey(path.toString()))
                     .map(path -> Map.entry(path.toString(), decodeImage(path)))
-                    .forEach(entry -> this.textures.put(entry.getKey(), entry.getValue()));
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         } catch (IOException e) {
+            LOGGER.error("Failed to load textures", e);
             throw new RuntimeException(e);
         }
-        return textures.size();
+        return textureAtlases.size();
     }
 
     @Override
     public int preload() {
         Arrays.stream(PRELOAD_TEXTURES)
                 .map(path -> Map.entry(path.toString(), decodeImage(path)))
-                .forEach(entry -> this.textures.put(entry.getKey(), entry.getValue()));
+                .forEach(entry -> this.textureAtlases.put(entry.getKey(), entry.getValue()));
         return PRELOAD_TEXTURES.length;
     }
 
     @Override
     public void submit() {
-        texturesCreator.add(textures);
+        texturesCreator.add(textureAtlases);
     }
 
     @Override

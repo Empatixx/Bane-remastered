@@ -1,8 +1,10 @@
 package cz.empatix.assets.creators;
 
 
+import java.util.concurrent.Callable;
+
 public interface AssetCreator {
-    boolean isReady();
-    void ready();
+    void create();
+    Callable<Void> load();
     void destroy();
 }

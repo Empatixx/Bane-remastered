@@ -3,7 +3,6 @@ package cz.empatix.textureatlas.domain;
 import com.google.common.base.Preconditions;
 import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.assets.domain.TextureImage;
-import cz.empatix.common.utils.BufferFactory;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2i;
 
@@ -28,7 +27,7 @@ public record TextureAtlas(
     }
     public static TextureAtlas from(final RawTextureAtlas raw){
         final int textureId = TextureBuilder.builder()
-                .buffer(BufferFactory.convertByteArray(raw.pixels()))
+                .buffer(raw.pixels())
                 .width(raw.width())
                 .height(raw.height())
                 .channels(RGBA_CHANNELS)

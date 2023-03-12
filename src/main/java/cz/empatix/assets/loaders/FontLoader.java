@@ -1,7 +1,5 @@
 package cz.empatix.assets.loaders;
 
-import cz.empatix.assets.creators.AssetCreator;
-import cz.empatix.assets.creators.FontCreator;
 import cz.empatix.assets.domain.font.RawFont;
 import cz.empatix.common.utils.BufferFactory;
 import org.lwjgl.stb.STBTTFontinfo;
@@ -13,20 +11,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
 public class FontLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(FontLoader.class);
-
     public final static Path PATH = Path.of("./assets/fonts/");
     private final Map<String, RawFont> fonts;
-    private final FontCreator fontCreator;
 
-    public FontLoader() {
-        fonts = new HashMap<>();
-        fontCreator = new FontCreator();
+    public FontLoader(final Map<String, RawFont> fonts) {
+        this.fonts = fonts;
     }
 
     @Override
@@ -49,21 +43,11 @@ public class FontLoader implements AssetLoader {
     }
 
     @Override
-    public void submit() {
-        fontCreator.add(fonts);
-    }
-
-    @Override
-    public AssetCreator getCreator() {
-        return fontCreator;
-    }
-
-    @Override
-    public AssetLoader call() throws Exception {
+    public Void call() {
         final long start = System.currentTimeMillis();
         final int loaded = load();
         LOGGER.info("Loaded {} fonts files in {} ms", loaded, System.currentTimeMillis() - start);
-        return this;
+        return null;
     }
 
     private RawFont decodeFont(final Path path) {

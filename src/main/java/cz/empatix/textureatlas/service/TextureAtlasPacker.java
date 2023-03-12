@@ -56,16 +56,16 @@ public class TextureAtlasPacker {
         final Map<String, Vector2i> textureDimensions = new HashMap<>();
         final byte[] data = new byte[targetSize * targetSize * 4];
 
-        final List<Rect> emptyRects = new ArrayList<>();
+        final Queue<Rect> emptyRects = new PriorityQueue<>(images.size(), Comparator.comparingInt(Rect::height).thenComparing(Rect::width));
         emptyRects.add(new Rect(0, 0, targetSize, targetSize));
         images.forEach((name, image) -> {
-            if(image.channels() == 3){
+            if (image.channels() == 3) { //todo: transform all txts to 4 channels
                 return;
             }
             final Rect rect = emptyRects
                     .stream()
                     .filter(r -> r.canBeFilled(image))
-                    .min(Comparator.comparingInt(Rect::height).thenComparing(Rect::width))
+                    .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No empty rect found"));
             textureStartPositions.put(name, new Vector2i(rect.x, rect.y));
             textureDimensions.put(name, new Vector2i(image.width(), image.height()));
@@ -77,13 +77,15 @@ public class TextureAtlasPacker {
             final int remainingWidth = rect.width - textureWidth;
             final int remainingHeight = rect.height - textureHeight;
             if (remainingHeight > 0) {
-                emptyRects.add(new Rect(x, y + textureHeight, textureWidth, remainingHeight));
+                emptyRects.add(new Rect(x, y + textureHeight, rect.width, remainingHeight));
             }
             if (remainingWidth > 0) {
                 emptyRects.add(new Rect(x + textureWidth, y, remainingWidth, textureHeight));
             }
             addImageToAtlas(data, targetSize, image, x, y);
+
         });
+
         return new RawTextureAtlas(data, targetSize, targetSize, textureStartPositions, textureDimensions);
     }
 
@@ -102,7 +104,13 @@ public class TextureAtlasPacker {
     }
 
 
-    private record Rect(int x, int y, int width, int height) {
+    private record Rect(
+            int x,
+            int y,
+            int width,
+            int height
+    ) {
+
         public boolean canBeFilled(final RawImage rawImage) {
             return rawImage.width() <= width && rawImage.height() <= height;
         }

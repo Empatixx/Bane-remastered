@@ -4,6 +4,7 @@ import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.Glyph;
 import cz.empatix.assets.domain.font.RawFont;
+import cz.empatix.assets.loaders.AssetLoader;
 import cz.empatix.assets.loaders.FontLoader;
 import cz.empatix.common.handlers.WindowHandler;
 import org.lwjgl.stb.STBTTFontinfo;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.lwjgl.stb.STBTruetype.*;
@@ -24,22 +26,25 @@ import static org.lwjgl.stb.STBTruetype.*;
 public class FontCreator implements AssetCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(FontCreator.class);
     private final Map<String, Map<Integer, Font>> fonts;
+    private final Map<String, RawFont> rawFonts;
     public final static int FONT_SIZE_16 = 16;
     public final static int FONT_SIZE_20 = 20;
     public final static int FONT_SIZE_24 = 24;
-
-    private boolean ready;
+    private final FontLoader fontLoader;
 
     public FontCreator() {
         fonts = new HashMap<>();
+        rawFonts = new ConcurrentHashMap<>();
+        fontLoader = new FontLoader(rawFonts);
     }
 
     public Font get(final String name, final int size) {
         return fonts.get(FontLoader.PATH.resolve(name).toString()).get(size);
     }
 
-    public void add(final Map<String, RawFont> data) {
-        data.entrySet().stream()
+    @Override
+    public void create() {
+        rawFonts.entrySet().stream()
                 .map(entry -> {
                     final String path = entry.getKey();
                     final RawFont rawFont = entry.getValue();
@@ -108,14 +113,10 @@ public class FontCreator implements AssetCreator {
                 .build();
     }
 
-    @Override
-    public boolean isReady() {
-        return ready;
-    }
 
     @Override
-    public void ready() {
-        ready = true;
+    public AssetLoader load() {
+        return fontLoader;
     }
 
     @Override

@@ -1,15 +1,9 @@
 package cz.empatix.assets.loaders;
 
 
-import cz.empatix.assets.creators.AssetCreator;
-
 import java.util.concurrent.Callable;
 
-public interface AssetLoader extends Callable<AssetLoader> {
+public interface AssetLoader extends Callable<Void> {
     int load();
     int preload();
-    void submit();
-
-    AssetCreator getCreator();
-
 }

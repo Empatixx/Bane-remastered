@@ -1,6 +1,5 @@
 package cz.empatix.assets.loaders;
 
-import cz.empatix.assets.creators.AudioCreator;
 import cz.empatix.assets.domain.RawAudio;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -12,7 +11,6 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -26,19 +24,19 @@ public class AudioLoader implements AssetLoader {
 
     public final static Path PATH = Path.of("./assets/audio/");
     private final Map<String, RawAudio> audio;
-    private final AudioCreator audioCreator;
 
-    public AudioLoader() {
-        audio = new HashMap<>();
-        audioCreator = new AudioCreator();
+    public AudioLoader(final Map<String, RawAudio> audio) {
+        this.audio = audio;
     }
+
 
     @Override
     public int load() {
         try (final Stream<Path> paths = Files.walk(PATH)) {
-            paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".ogg"))
+            paths
                     .parallel()
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".ogg"))
                     .map(path -> Map.entry(path.toString(), decodeAudio(path)))
                     .forEach(entry -> this.audio.put(entry.getKey(), entry.getValue()));
             return audio.size();
@@ -51,17 +49,6 @@ public class AudioLoader implements AssetLoader {
     public int preload() {
         return 0;
     }
-
-    @Override
-    public void submit() {
-        audioCreator.add(audio);
-    }
-
-    @Override
-    public AudioCreator getCreator() {
-        return audioCreator;
-    }
-
 
     private RawAudio decodeAudio(final Path path) {
         try {
@@ -97,10 +84,10 @@ public class AudioLoader implements AssetLoader {
     }
 
     @Override
-    public AudioLoader call() throws Exception {
+    public Integer call(){
         final long start = System.currentTimeMillis();
         final int loaded = load();
         LOGGER.info("Loaded {} audio files in {} ms", loaded, System.currentTimeMillis() - start);
-        return this;
+        return loaded;
     }
 }

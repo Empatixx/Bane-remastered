@@ -4,6 +4,8 @@ import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.loaders.TexturesLoader;
+import cz.empatix.textureatlas.domain.RawTextureAtlas;
+import cz.empatix.textureatlas.factory.TextureAtlasFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,21 +30,18 @@ public class TexturesCreator implements AssetCreator {
         final int loaded = textures.size();
 
         try{
-            /*final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
-            byte[] atlasData = atlas.pixels();
-            BufferedImage image = new BufferedImage(atlas.width(), atlas.height(), BufferedImage.TYPE_4BYTE_ABGR);
-            image.getRaster().setDataElements(0, 0, atlas.width(), atlas.height(), atlasData);
-            ImageIO.write(image, "png", new File("atlas.png"));*/
-                        //final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
-
+            final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
+            LOGGER.info("Total {} textures assets vbos created in {} ms", textures.size() - loaded, System.currentTimeMillis() - start);
+            return atlas;
         } catch (Exception e){
+            LOGGER.error("Failed to create texture atlas", e);
             throw new RuntimeException(e);
         }
 
-        data.entrySet().stream()
+        /*data.entrySet().stream()
                 .filter(entry -> !textures.containsKey(entry.getKey()))
                 .map(entry -> Map.entry(entry.getKey(), createTexture(entry.getValue())))
-                .forEach(entry -> textures.put(entry.getKey(), entry.getValue()));
+                .forEach(entry -> textures.put(entry.getKey(), entry.getValue()));*/
         LOGGER.info("Total {} textures assets vbos created in {} ms", textures.size() - loaded, System.currentTimeMillis() - start);
     }
 
