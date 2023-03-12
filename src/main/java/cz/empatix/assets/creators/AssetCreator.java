@@ -5,6 +5,7 @@ import java.util.concurrent.Callable;
 
 public interface AssetCreator {
     void create();
-    Callable<Void> load();
+    Callable<Integer> load();
+    void preload();
     void destroy();
 }

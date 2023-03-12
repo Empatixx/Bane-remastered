@@ -7,14 +7,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ShadersCreator implements AssetCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShadersCreator.class);
-    private final Map<String, RawShader> rawShaders;
     private final Map<String, Shader> shaders;
+    private final Map<String, RawShader> rawShaders;
     private final ShadersLoader shadersLoader;
 
     public ShadersCreator() {
@@ -29,13 +30,12 @@ public class ShadersCreator implements AssetCreator {
 
     @Override
     public void create() {
-        final long start = System.currentTimeMillis();
-        final int loaded = shaders.size();
-        rawShaders.entrySet().stream()
-                .filter(entry -> !shaders.containsKey(entry.getKey()))
-                .map(entry -> Map.entry(entry.getKey(), Shader.from(entry.getValue())))
-                .forEach(entry -> shaders.put(entry.getKey(), entry.getValue()));
-        LOGGER.info("Total {} shaders vbos created in {} ms", shaders.size() - loaded, System.currentTimeMillis() - start);
+        final Iterator<Map.Entry<String, RawShader>> iterator = rawShaders.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<String, RawShader> entry = iterator.next();
+            shaders.put(entry.getKey(), Shader.from(entry.getValue()));
+            iterator.remove();
+        }
     }
 
     @Override
@@ -44,8 +44,13 @@ public class ShadersCreator implements AssetCreator {
         shaders.values().forEach(Shader::destroy);
     }
     @Override
-    public Callable<Void> load() {
-        return null;
+    public Callable<Integer> load() {
+        return shadersLoader::load;
+    }
+
+    @Override
+    public void preload() {
+        shadersLoader.preload();
     }
 }
 

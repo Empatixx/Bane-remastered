@@ -1,12 +1,12 @@
 package cz.empatix.tiles.domain;
 
-import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -24,14 +24,14 @@ public record Tile(
                 final int tRow,
                 final int tilePosX,
                 final int tilePosY,
-                final TextureImage texture) {
+                final TextureAtlas.Entry texture) {
         this(tCol, tRow, new Vector2f(tilePosX * TILE_SIZE, tilePosY * TILE_SIZE), texture);
     }
 
     public Tile(final int tCol,
                 final int tRow,
                 final Vector2f position,
-                final TextureImage texture) {
+                final TextureAtlas.Entry texture) {
         this(Vertex.builder()
                         .position(new Vector2f(position))
                         .posDimensions(TILE_SIZE, TILE_SIZE)

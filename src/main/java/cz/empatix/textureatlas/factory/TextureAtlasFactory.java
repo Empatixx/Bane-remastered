@@ -14,16 +14,15 @@ import java.util.stream.Collectors;
 public class TextureAtlasFactory {
     private static final TextureAtlasPacker packer = new TextureAtlasPacker();
 
-    public static RawTextureAtlas createAtlas(final Map<String, RawImage> images) {
+    public RawTextureAtlas createAtlas(final Map<String, RawImage> images) {
         final List<SortingMethod> sortingMethods = List.of(SortingMethod.values());
-        return sortingMethods
-                .stream()
+        return sortingMethods.stream()
                 .map(method -> createAtlas(images, method))
                 .min(Comparator.comparingInt(RawTextureAtlas::area))
                 .orElseThrow(() -> new IllegalStateException("No atlas created"));
     }
 
-    private static Comparator<Map.Entry<String, RawImage>> sortByField(final SortingMethod method) {
+    private Comparator<Map.Entry<String, RawImage>> sortByField(final SortingMethod method) {
         return Comparator.comparingInt(entry -> {
             final RawImage image = entry.getValue();
             return switch (method) {
@@ -34,7 +33,7 @@ public class TextureAtlasFactory {
         });
     }
 
-    private static RawTextureAtlas createAtlas(final Map<String, RawImage> images,
+    private RawTextureAtlas createAtlas(final Map<String, RawImage> images,
                                      final SortingMethod method) {
         final Comparator<Map.Entry<String, RawImage>> comparator = sortByField(method)
                 .reversed();

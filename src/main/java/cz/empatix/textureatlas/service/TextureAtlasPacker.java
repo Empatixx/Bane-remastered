@@ -2,6 +2,8 @@ package cz.empatix.textureatlas.service;
 
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
+import cz.empatix.textureatlas.domain.TextureAtlas;
+import cz.empatix.textureatlas.domain.TextureAtlasInfo;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
@@ -52,23 +54,18 @@ public class TextureAtlasPacker {
 
     private RawTextureAtlas tryPack(final Map<String, RawImage> images,
                                     final int targetSize) {
-        final Map<String, Vector2i> textureStartPositions = new HashMap<>();
-        final Map<String, Vector2i> textureDimensions = new HashMap<>();
+        final Map<String, TextureAtlasInfo> textureInfos = new HashMap<>();
         final byte[] data = new byte[targetSize * targetSize * 4];
 
         final Queue<Rect> emptyRects = new PriorityQueue<>(images.size(), Comparator.comparingInt(Rect::height).thenComparing(Rect::width));
         emptyRects.add(new Rect(0, 0, targetSize, targetSize));
         images.forEach((name, image) -> {
-            if (image.channels() == 3) { //todo: transform all txts to 4 channels
-                return;
-            }
             final Rect rect = emptyRects
                     .stream()
                     .filter(r -> r.canBeFilled(image))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No empty rect found"));
-            textureStartPositions.put(name, new Vector2i(rect.x, rect.y));
-            textureDimensions.put(name, new Vector2i(image.width(), image.height()));
+            textureInfos.put(name, new TextureAtlasInfo(rect.x, rect.y, image.width(), image.height()));
             emptyRects.remove(rect);
             final int x = rect.x;
             final int y = rect.y;
@@ -82,24 +79,46 @@ public class TextureAtlasPacker {
             if (remainingWidth > 0) {
                 emptyRects.add(new Rect(x + textureWidth, y, remainingWidth, textureHeight));
             }
-            addImageToAtlas(data, targetSize, image, x, y);
+            addImageToAtlas(data, image.channels(), targetSize, image, x, y);
 
         });
 
-        return new RawTextureAtlas(data, targetSize, targetSize, textureStartPositions, textureDimensions);
+        return new RawTextureAtlas(data, targetSize, targetSize, textureInfos);
     }
 
     private void addImageToAtlas(final byte[] data,
+                                 final int channels,
                                  final int targetSize,
                                  final RawImage image,
                                  final int x,
                                  final int y) {
-        final int width = image.width();
-        final int height = image.height();
-        final byte[] imageData = image.pixels();
+        switch (channels){
+            case TextureAtlas.RGBA_CHANNELS -> {
+                final int width = image.width();
+                final int height = image.height();
+                final byte[] imageData = image.pixels();
 
-        for (int i = 0; i < height; i++) {
-            System.arraycopy(imageData, i * width * 4, data, ((y + i) * targetSize + x) * 4, width * 4);
+                for (int i = 0; i < height; i++) {
+                    System.arraycopy(imageData, i * width * 4, data, ((y + i) * targetSize + x) * 4, width * 4);
+                }
+            }
+            case TextureAtlas.RGB_CHANNELS -> {
+                final int width = image.width();
+                final int height = image.height();
+                final byte[] imageData = image.pixels();
+
+                for (int i = 0; i < height; i++) {
+                    int sourceOffset = i * width * 3;
+                    int targetOffset = ((y + i) * targetSize + x) * 4;
+
+                    System.arraycopy(imageData, sourceOffset, targetSize, targetOffset, width * 3);
+
+                    for (int j = 0; j < width; j++) {
+                        data[targetOffset + j * 4 + 3] = (byte) 255;
+                    }
+                }
+            }
+            default -> throw new IllegalStateException("Unsupported image channels: " + channels);
         }
     }
 

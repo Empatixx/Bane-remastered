@@ -2,30 +2,28 @@ package cz.empatix.textureatlas.domain;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.assets.builders.TextureBuilder;
-import cz.empatix.assets.domain.TextureImage;
-import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2i;
+import org.lwjgl.opengl.GL33;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public record TextureAtlas(
-        TextureImage image,
-        Map<String, Vector2i> textureStartPositions,
-        Map<String, Vector2i> textureDimensions
+        int textureId,
+        Map<String, Entry> texturesInfos
 ) {
     public final static int RGBA_CHANNELS = 4;
+    public final static int RGB_CHANNELS = 3;
+
     public TextureAtlas {
-        Preconditions.checkArgument(image.width() > 0, "Width must be positive");
-        Preconditions.checkArgument(image.height() > 0, "Height must be positive");
-        Preconditions.checkArgument(image.textureId() != RenderData.NO_TEXTURE, "Texture id must be valid");
-        Preconditions.checkArgument(!textureStartPositions.isEmpty(), "Texture start positions must not be empty");
-        Preconditions.checkArgument(!textureDimensions.isEmpty(), "Texture dimensions must not be empty");
+        Preconditions.checkArgument(!texturesInfos.isEmpty(), "Textures info must not be empty");
     }
 
     public void destroy() {
-        image.destroy();
+        GL33.glDeleteTextures(textureId);
     }
-    public static TextureAtlas from(final RawTextureAtlas raw){
+
+    public static TextureAtlas from(final RawTextureAtlas raw) {
         final int textureId = TextureBuilder.builder()
                 .buffer(raw.pixels())
                 .width(raw.width())
@@ -34,6 +32,30 @@ public record TextureAtlas(
                 .applyNearestFilters()
                 .applyClampToEdgeWrap()
                 .build();
-        return new TextureAtlas(new TextureImage(raw.width(), raw.height(), textureId), raw.textureStartPositions(), raw.textureDimensions());
+        final Vector2i atlasDimensions = new Vector2i(raw.width(), raw.height());
+        final Map<String, Entry> texturesInfos = raw.texturesInfos().entrySet().stream()
+                .map(entry -> Map.entry(entry.getKey(), new Entry(textureId, atlasDimensions, entry.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return new TextureAtlas(textureId, texturesInfos);
     }
+
+    public record Entry(
+            int textureId,
+            Vector2i atlasDimensions,
+            TextureAtlasInfo info
+    ) {
+        public int atlasWidth() {
+            return atlasDimensions.x();
+        }
+        public int atlasHeight() {
+            return atlasDimensions.y();
+        }
+        public int width(){
+            return info.textureDimensions().x();
+        }
+        public int height(){
+            return info.textureDimensions().y();
+        }
+    }
+
 }

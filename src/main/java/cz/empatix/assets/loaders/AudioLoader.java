@@ -12,6 +12,7 @@ import java.nio.ShortBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static org.lwjgl.openal.AL10.AL_FORMAT_MONO16;
@@ -21,7 +22,6 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class AudioLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(AudioLoader.class);
-
     public final static Path PATH = Path.of("./assets/audio/");
     private final Map<String, RawAudio> audio;
 
@@ -32,16 +32,24 @@ public class AudioLoader implements AssetLoader {
 
     @Override
     public int load() {
+        LOGGER.info("Loading audio files from {}", PATH);
+        final long start = System.currentTimeMillis();
+        final AtomicInteger total = new AtomicInteger();
         try (final Stream<Path> paths = Files.walk(PATH)) {
             paths
                     .parallel()
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".ogg"))
                     .map(path -> Map.entry(path.toString(), decodeAudio(path)))
-                    .forEach(entry -> this.audio.put(entry.getKey(), entry.getValue()));
-            return audio.size();
+                    .forEach(entry -> {
+                        this.audio.put(entry.getKey(), entry.getValue());
+                        total.incrementAndGet();
+                    });
+            return total.get();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            LOGGER.info("Loaded {} audio files in {} ms", total.get(), System.currentTimeMillis() - start);
         }
     }
 
@@ -81,13 +89,5 @@ public class AudioLoader implements AssetLoader {
             LOGGER.error("Error while decoding audio file: " + path.toString(), e);
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public Integer call(){
-        final long start = System.currentTimeMillis();
-        final int loaded = load();
-        LOGGER.info("Loaded {} audio files in {} ms", loaded, System.currentTimeMillis() - start);
-        return loaded;
     }
 }

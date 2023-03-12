@@ -4,7 +4,6 @@ import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.Glyph;
 import cz.empatix.assets.domain.font.RawFont;
-import cz.empatix.assets.loaders.AssetLoader;
 import cz.empatix.assets.loaders.FontLoader;
 import cz.empatix.common.handlers.WindowHandler;
 import org.lwjgl.stb.STBTTFontinfo;
@@ -14,10 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -44,16 +41,19 @@ public class FontCreator implements AssetCreator {
 
     @Override
     public void create() {
-        rawFonts.entrySet().stream()
-                .map(entry -> {
-                    final String path = entry.getKey();
-                    final RawFont rawFont = entry.getValue();
+        final Iterator<Map.Entry<String, RawFont>> iterator = rawFonts.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<String, RawFont> entry = iterator.next();
+            final String path = entry.getKey();
+            final RawFont rawFont = entry.getValue();
 
-                    final Map<Integer, Font> fontSizes = Arrays.stream(new int[]{FONT_SIZE_16, FONT_SIZE_20, FONT_SIZE_24})
-                            .mapToObj(size -> Map.entry(size, transform(rawFont, size)))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                    return Map.entry(path, fontSizes);
-                }).forEach(entry -> fonts.put(entry.getKey(), entry.getValue()));
+            final Map<Integer, Font> fontSizes = Arrays.stream(new int[]{FONT_SIZE_16, FONT_SIZE_20, FONT_SIZE_24})
+                    .mapToObj(size -> Map.entry(size, transform(rawFont, size)))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            fonts.put(path, fontSizes);
+
+            iterator.remove();
+        }
     }
 
     private Font transform(final RawFont font, int size) {
@@ -115,8 +115,13 @@ public class FontCreator implements AssetCreator {
 
 
     @Override
-    public AssetLoader load() {
-        return fontLoader;
+    public Callable<Integer> load() {
+        return fontLoader::load;
+    }
+
+    @Override
+    public void preload() {
+        fontLoader.preload();
     }
 
     @Override

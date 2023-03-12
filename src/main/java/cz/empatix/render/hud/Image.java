@@ -1,16 +1,16 @@
 package cz.empatix.render.hud;
 
-import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 public class Image implements HUDElement {
-    private final TextureImage texture;
+    private final TextureAtlas.Entry texture;
     private final Vector2i dimensions;
     private final Vector2f position;
 

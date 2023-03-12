@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 public class FontLoader implements AssetLoader {
@@ -25,29 +26,30 @@ public class FontLoader implements AssetLoader {
 
     @Override
     public int load() {
+        LOGGER.info("Loading font files from {}", PATH);
+        final long start = System.currentTimeMillis();
+        final AtomicInteger total = new AtomicInteger();
         try (final Stream<Path> paths = Files.walk(PATH)) {
-            paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".ttf"))
+            paths
                     .parallel()
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".ttf"))
                     .map(path -> Map.entry(path.toString(), decodeFont(path)))
-                    .forEach(entry -> this.fonts.put(entry.getKey(), entry.getValue()));
-            return fonts.size();
+                    .forEach(entry -> {
+                        this.fonts.put(entry.getKey(), entry.getValue());
+                        total.incrementAndGet();
+                    });
+            return total.get();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            LOGGER.info("Loaded {} font files in {} ms", total.get(), System.currentTimeMillis() - start);
         }
     }
 
     @Override
     public int preload() {
         return 0;
-    }
-
-    @Override
-    public Void call() {
-        final long start = System.currentTimeMillis();
-        final int loaded = load();
-        LOGGER.info("Loaded {} fonts files in {} ms", loaded, System.currentTimeMillis() - start);
-        return null;
     }
 
     private RawFont decodeFont(final Path path) {

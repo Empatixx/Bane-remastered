@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,17 +28,25 @@ public class ShadersLoader implements AssetLoader {
 
     @Override
     public int load() {
+        LOGGER.info("Loading shader files from {}", PATH);
+        final long start = System.currentTimeMillis();
+        final AtomicInteger total = new AtomicInteger();
         try (final Stream<Path> paths = Files.walk(PATH)) {
-            paths.filter(Files::isRegularFile)
+            paths
+                    .parallel()
+                    .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".glsl"))
                     .collect(Collectors.groupingBy(p -> p.getFileName().toString().replaceAll("(-vs)*(-fs)*(\\.glsl)", "")))
                     .entrySet()
                     .stream()
                     .filter(entry -> !shaders.containsKey(entry.getKey()))
+                    .parallel()
                     .map(this::createRawShader)
                     .forEach(entry -> shaders.put(entry.getKey(), entry.getValue()));
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } finally {
+            LOGGER.info("Loaded {} shaders in {} ms", total.get(), System.currentTimeMillis() - start);
         }
         return shaders.size();
     }
@@ -73,13 +82,6 @@ public class ShadersLoader implements AssetLoader {
                         throw new RuntimeException(e);
                     }
                 });
-    }
-
-    @Override
-    public Void call() {
-        final long start = System.currentTimeMillis();
-        final int loaded = load();
-        LOGGER.info("Loaded {} shaders in {} ms", loaded, System.currentTimeMillis() - start);
     }
 
 }

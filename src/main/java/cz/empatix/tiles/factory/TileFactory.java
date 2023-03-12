@@ -1,7 +1,7 @@
 package cz.empatix.tiles.factory;
 
-import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.tiles.domain.Tile;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -131,7 +131,7 @@ public class TileFactory {
     private Tile createTile(final int tileNumber,
                             final int x,
                             final int y) {
-        final TextureImage texture = AssetsService.getTexture("tileset64.tga");
+        final TextureAtlas.Entry texture = AssetsService.getTexture("tileset64.tga");
 
         final int xTxtCol = tileNumber % TOTAL_COLUMNS;
         final int yTxtRow = tileNumber / TOTAL_COLUMNS;

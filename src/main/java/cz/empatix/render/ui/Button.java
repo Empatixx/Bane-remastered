@@ -1,6 +1,5 @@
 package cz.empatix.render.ui;
 
-import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.render.Camera;
@@ -10,6 +9,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.render.hud.Text;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
@@ -40,7 +40,7 @@ public class Button implements UIElement {
                   final int height) {
         this.dimensions = new Vector2i(width, height);
 
-        final TextureImage textureImage = AssetsService.getTexture(texture);
+        final TextureAtlas.Entry textureImage = AssetsService.getTexture(texture);
         animation = Animation.builder()
                 .textureDimensions(1, 2)
                 .addAnimationState(AnimationState.STATIC, 0, 1, dimensions.x(), dimensions.y(), -1)

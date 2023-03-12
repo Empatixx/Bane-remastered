@@ -1,76 +1,65 @@
 package cz.empatix.assets.creators;
 
-import cz.empatix.assets.builders.TextureBuilder;
-import cz.empatix.assets.domain.RawImage;
-import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.loaders.TexturesLoader;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
-import cz.empatix.textureatlas.factory.TextureAtlasFactory;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TexturesCreator implements AssetCreator {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
-    private boolean ready;
-    private final Map<String, TextureImage> textures;
+    public final static Path PATH = Path.of("./assets/textures/");
+    private final TexturesLoader texturesLoader;
+    private final List<TextureAtlas> textureAtlases;
+    private final Queue<RawTextureAtlas> rawTextureAtlases;
 
     public TexturesCreator() {
-        textures = new HashMap<>();
+        textureAtlases = new ArrayList<>();
+        rawTextureAtlases = new ConcurrentLinkedQueue<>();
+        texturesLoader = new TexturesLoader(rawTextureAtlases);
     }
 
-    public TextureImage get(final String name) {
-        return textures.get(TexturesLoader.PATH.resolve(name).toString());
+    public TextureAtlas.Entry get(final String name) {
+        final String key = PATH.resolve(name).toString();
+        return textureAtlases
+                .stream()
+                .parallel()
+                .filter(atlas -> atlas.texturesInfos().containsKey(key))
+                .findAny()
+                .map(atlas -> atlas.texturesInfos().get(key))
+                .orElseThrow(() -> new IllegalArgumentException("Texture " + key + " not found"));
     }
 
-    public void add(final Map<String, RawImage> data) {
-        final long start = System.currentTimeMillis();
-        final int loaded = textures.size();
-
-        try{
-            final RawTextureAtlas atlas = TextureAtlasFactory.createAtlas(data);
-            LOGGER.info("Total {} textures assets vbos created in {} ms", textures.size() - loaded, System.currentTimeMillis() - start);
-            return atlas;
-        } catch (Exception e){
-            LOGGER.error("Failed to create texture atlas", e);
-            throw new RuntimeException(e);
+    @Override
+    public void create() {
+        final Iterator<RawTextureAtlas> iterator = rawTextureAtlases.iterator();
+        while (iterator.hasNext()){
+            final RawTextureAtlas rawAtlas = iterator.next();
+            textureAtlases.add(TextureAtlas.from(rawAtlas));
+            iterator.remove();
         }
+    }
 
-        /*data.entrySet().stream()
-                .filter(entry -> !textures.containsKey(entry.getKey()))
-                .map(entry -> Map.entry(entry.getKey(), createTexture(entry.getValue())))
-                .forEach(entry -> textures.put(entry.getKey(), entry.getValue()));*/
-        LOGGER.info("Total {} textures assets vbos created in {} ms", textures.size() - loaded, System.currentTimeMillis() - start);
+    @Override
+    public Callable<Integer> load() {
+        return texturesLoader::load;
+    }
+
+    @Override
+    public void preload() {
+        texturesLoader.preload();
     }
 
     @Override
     public void destroy() {
         LOGGER.info("Destroying textures");
-        textures.forEach((name, img) -> img.destroy());
-    }
-
-    private TextureImage createTexture(final RawImage image) {
-        final int texture = TextureBuilder.builder()
-                .width(image.width())
-                .height(image.height())
-                .channels(image.channels())
-                .applyNearestFilters()
-                .applyClampToEdgeWrap()
-                .buffer(image.pixels())
-                .build();
-        return new TextureImage(image.width(), image.height(), texture);
-    }
-
-    @Override
-    public boolean isReady() {
-        return ready;
-    }
-
-    @Override
-    public void ready() {
-        this.ready = true;
+        textureAtlases.forEach(TextureAtlas::destroy);
     }
 }
 

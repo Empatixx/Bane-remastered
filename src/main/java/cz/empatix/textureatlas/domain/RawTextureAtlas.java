@@ -11,15 +11,13 @@ public record RawTextureAtlas(
         byte[] pixels,
         int width,
         int height,
-        Map<String, Vector2i> textureStartPositions,
-        Map<String, Vector2i> textureDimensions
+        Map<String, TextureAtlasInfo> texturesInfos
 ) {
     public RawTextureAtlas {
         Preconditions.checkArgument(width > 0, "Width must be positive");
         Preconditions.checkArgument(height > 0, "Height must be positive");
         Preconditions.checkArgument(pixels.length == width * height * RGBA_CHANNELS, "Pixels must match width and height");
-        Preconditions.checkArgument(!textureStartPositions.isEmpty(), "Texture start positions must not be empty");
-        Preconditions.checkArgument(!textureDimensions.isEmpty(), "Texture dimensions must not be empty");
+        Preconditions.checkArgument(!texturesInfos.isEmpty(), "Textures info must not be empty");
     }
     public int area() {
         return width * height;

@@ -1,9 +1,8 @@
 package cz.empatix.assets.loaders;
 
 
-import java.util.concurrent.Callable;
 
-public interface AssetLoader extends Callable<Void> {
+public interface AssetLoader {
     int load();
     int preload();
 }

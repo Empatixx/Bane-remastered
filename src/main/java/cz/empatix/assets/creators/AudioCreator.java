@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,9 +29,12 @@ public class AudioCreator implements AssetCreator{
     }
     @Override
     public void create(){
-        rawAudio.entrySet().stream()
-                .map(entry -> Map.entry(entry.getKey(), createAudio(entry.getValue())))
-                .forEach(entry -> audio.put(entry.getKey(), entry.getValue()));
+        final Iterator<Map.Entry<String, RawAudio>> iterator = rawAudio.entrySet().iterator();
+        while (iterator.hasNext()){
+            final Map.Entry<String, RawAudio> entry = iterator.next();
+            audio.put(entry.getKey(), createAudio(entry.getValue()));
+            iterator.remove();
+        }
     }
     private int createAudio(final RawAudio audio){
         final int buffer = AL10.alGenBuffers();
@@ -38,8 +42,13 @@ public class AudioCreator implements AssetCreator{
         return buffer;
     }
     @Override
-    public Callable<Void> load() {
-        return audioLoader;
+    public Callable<Integer> load() {
+        return audioLoader::load;
+    }
+
+    @Override
+    public void preload() {
+        audioLoader.preload();
     }
 
     @Override

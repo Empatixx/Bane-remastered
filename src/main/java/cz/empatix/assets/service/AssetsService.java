@@ -1,78 +1,57 @@
 package cz.empatix.assets.service;
 
 import cz.empatix.assets.creators.*;
-import cz.empatix.assets.domain.TextureImage;
 import cz.empatix.assets.domain.font.Font;
-import cz.empatix.assets.loaders.*;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 public class AssetsService {
-    private static List<Future<AssetLoader>> futures;
-    private static List<AssetCreator> creators;
-    private static ExecutorService executorService;
     private final static Logger LOGGER = LoggerFactory.getLogger(AssetsService.class);
+    private static List<AssetCreator> creators;
+    private static List<Future<Integer>> loadProcesses;
+    private static ExecutorService executorService;
+    private static boolean loaded;
 
     public static void loadAssets() {
         executorService = Executors.newFixedThreadPool(4);
-
-        final List<AssetLoader> loaders = List.of(
-                new ShadersLoader(),
-                new TexturesLoader(),
-                new AudioLoader(),
-                new FontLoader()
+        creators = List.of(
+                new TexturesCreator(),
+                new AudioCreator(),
+                new ShadersCreator(),
+                new FontCreator()
         );
-        creators = loaders.stream()
-                .map(AssetLoader::getCreator)
-                .toList();
         LOGGER.info("Preloading assets...");
         final long start = System.currentTimeMillis();
-        loaders.forEach(loader -> {
-            loader.preload();
-            loader.submit();
-        });
+        creators.parallelStream()
+                .peek(AssetCreator::preload)
+                .sequential()
+                .forEach(AssetCreator::create);
         LOGGER.info("Preloading assets done in {} ms", System.currentTimeMillis() - start);
-        futures = loaders.stream()
-                .map(executorService::submit)
-                .collect(Collectors.toList());
+        LOGGER.info("Loading assets...");
+        loadProcesses = creators.stream()
+                .map(creator -> executorService.submit(creator.load()))
+                .toList();
     }
 
     public static void createAssets() {
-        futures.forEach(future -> {
-            try {
-                if (future.isDone()) {
-                    final AssetLoader loader = future.get();
-                    loader.submit();
-                    loader.getCreator().ready();
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-        futures.removeIf(future -> {
-            try {
-                return future.isDone() && future.get().getCreator().isReady();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        if (isLoaded()) {
+        loaded = loadProcesses.stream().allMatch(Future::isDone);
+        creators.forEach(AssetCreator::create);
+        if (loaded) {
             executorService.shutdownNow();
         }
     }
 
     public static boolean isLoaded() {
-        return creators.stream()
-                .allMatch(AssetCreator::isReady);
+        return loaded;
     }
 
     public static void dispose() {
@@ -80,7 +59,7 @@ public class AssetsService {
         creators.forEach(AssetCreator::destroy);
     }
 
-    public static TextureImage getTexture(final String name) {
+    public static TextureAtlas.Entry getTexture(final String name) {
         return Optional.of(getCreator(TexturesCreator.class))
                 .map(TexturesCreator.class::cast)
                 .map(creator -> creator.get(name))
@@ -110,7 +89,7 @@ public class AssetsService {
                 });
     }
 
-    public static Font getFont(final String name, final int size){
+    public static Font getFont(final String name, final int size) {
         return Optional.of(getCreator(FontCreator.class))
                 .map(FontCreator.class::cast)
                 .map(creator -> creator.get(name, size))
@@ -119,6 +98,7 @@ public class AssetsService {
                     throw new RuntimeException("Font " + name + " not found");
                 });
     }
+
     private static AssetCreator getCreator(final Class<?> clazz) {
         return creators.stream()
                 .filter(clazz::isInstance)
