@@ -47,8 +47,14 @@ public class TexturesCreator implements AssetCreator {
     }
 
     @Override
-    public Callable<Integer> load() {
-        return texturesLoader::load;
+    public Runnable load() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                texturesLoader.load();
+                LOGGER.info("HUH");
+            }
+        };
     }
 
     @Override

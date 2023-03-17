@@ -115,7 +115,7 @@ public class FontCreator implements AssetCreator {
 
 
     @Override
-    public Callable<Integer> load() {
+    public Runnable load() {
         return fontLoader::load;
     }
 

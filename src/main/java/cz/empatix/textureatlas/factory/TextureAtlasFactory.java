@@ -1,5 +1,6 @@
 package cz.empatix.textureatlas.factory;
 
+import com.google.common.base.Preconditions;
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.SortingMethod;
@@ -15,6 +16,8 @@ public class TextureAtlasFactory {
     private static final TextureAtlasPacker packer = new TextureAtlasPacker();
 
     public RawTextureAtlas createAtlas(final Map<String, RawImage> images) {
+        Preconditions.checkNotNull(images);
+        Preconditions.checkArgument(!images.isEmpty());
         final List<SortingMethod> sortingMethods = List.of(SortingMethod.values());
         return sortingMethods.stream()
                 .map(method -> createAtlas(images, method))

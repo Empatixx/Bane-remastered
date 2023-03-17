@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class AssetsService {
     private final static Logger LOGGER = LoggerFactory.getLogger(AssetsService.class);
     private static List<AssetCreator> creators;
-    private static List<Future<Integer>> loadProcesses;
+    private static List<? extends Future<?>> loadProcesses;
     private static ExecutorService executorService;
     private static boolean loaded;
 

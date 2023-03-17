@@ -50,7 +50,7 @@ public class TexturesLoader implements AssetLoader {
             final RawTextureAtlas textureAtlas = textureAtlasFactory.createAtlas(textures);
             rawTextureAtlases.add(textureAtlas);
             total.addAndGet(textures.size());
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOGGER.error("Failed to load textures", e);
             throw new RuntimeException(e);
         } finally {

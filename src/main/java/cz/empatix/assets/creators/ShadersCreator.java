@@ -44,7 +44,7 @@ public class ShadersCreator implements AssetCreator {
         shaders.values().forEach(Shader::destroy);
     }
     @Override
-    public Callable<Integer> load() {
+    public Runnable load() {
         return shadersLoader::load;
     }
 

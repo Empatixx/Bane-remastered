@@ -111,10 +111,9 @@ public class TextureAtlasPacker {
                     int sourceOffset = i * width * 3;
                     int targetOffset = ((y + i) * targetSize + x) * 4;
 
-                    System.arraycopy(imageData, sourceOffset, targetSize, targetOffset, width * 3);
-
+                    System.arraycopy(imageData, sourceOffset, data, targetOffset, width * 3);
                     for (int j = 0; j < width; j++) {
-                        data[targetOffset + j * 4 + 3] = (byte) 255;
+                        data[targetOffset + j * 4 + 3] = (byte) 127;
                     }
                 }
             }

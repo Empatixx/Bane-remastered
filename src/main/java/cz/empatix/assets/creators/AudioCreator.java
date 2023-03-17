@@ -42,8 +42,14 @@ public class AudioCreator implements AssetCreator{
         return buffer;
     }
     @Override
-    public Callable<Integer> load() {
-        return audioLoader::load;
+    public Runnable load() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                audioLoader.load();
+                LOGGER.info("WTF");
+            }
+        };
     }
 
     @Override
