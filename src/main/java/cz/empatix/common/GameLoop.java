@@ -1,6 +1,6 @@
 package cz.empatix.common;
 
-import cz.empatix.gamestate.GameStateService;
+import cz.empatix.gamestate.service.GameStateService;
 import cz.empatix.common.handlers.WindowHandler;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -36,12 +36,13 @@ public class GameLoop extends Thread {
 
                 accumulator += dt;
                 lastTime = currentTime;
-
                 while(accumulator >= FIXED_DELTA_TIME){
-                    update(FIXED_DELTA_TIME);
+                    fixedUpdate();
                     accumulator -= FIXED_DELTA_TIME;
                     ups++;
                 }
+                LOGGER.info("DRAW");
+                update(dt);
                 render(dt);
                 fps++;
 
@@ -59,7 +60,10 @@ public class GameLoop extends Thread {
         }
     }
 
-    public void update(final double dt) {
+    private void fixedUpdate() {
+        gsm.fixedUpdate(FIXED_DELTA_TIME);
+    }
+    private void update(final double dt){
         glfwPollEvents();
         gsm.update(dt);
     }

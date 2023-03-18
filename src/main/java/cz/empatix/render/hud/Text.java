@@ -3,6 +3,7 @@ package cz.empatix.render.hud;
 
 import cz.empatix.assets.creators.FontCreator;
 import cz.empatix.assets.domain.font.Font;
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -20,7 +21,7 @@ public class Text implements HUDElement {
 
     public Text(final String text, final String font, final Vector2f position, final int prevZIndex) {
         this.text = text;
-        this.font = AssetsService.getFont(font, FontCreator.FONT_SIZE_24);
+        this.font = AssetsService.getFont(font, FontSize.FONTSIZE_16);
         this.position = position;
         zIndex = prevZIndex + 1;
         color = new Vector3f(1f,1f,1f);

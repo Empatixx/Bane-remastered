@@ -4,7 +4,6 @@ import cz.empatix.assets.domain.RawImage;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlasInfo;
-import org.joml.Vector2i;
 import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,7 +98,7 @@ public class TextureAtlasPacker {
                 final byte[] imageData = image.pixels();
 
                 for (int i = 0; i < height; i++) {
-                    System.arraycopy(imageData, i * width * 4, data, ((y + i) * targetSize + x) * 4, width * 4);
+                    System.arraycopy(imageData, i * width * TextureAtlas.RGBA_CHANNELS, data, ((y + i) * targetSize + x) * TextureAtlas.RGBA_CHANNELS, width * TextureAtlas.RGBA_CHANNELS);
                 }
             }
             case TextureAtlas.RGB_CHANNELS -> {
@@ -111,9 +110,12 @@ public class TextureAtlasPacker {
                     int sourceOffset = i * width * 3;
                     int targetOffset = ((y + i) * targetSize + x) * 4;
 
-                    System.arraycopy(imageData, sourceOffset, data, targetOffset, width * 3);
                     for (int j = 0; j < width; j++) {
-                        data[targetOffset + j * 4 + 3] = (byte) 127;
+                        System.arraycopy(imageData, sourceOffset + j * TextureAtlas.RGB_CHANNELS, data, targetOffset + j * TextureAtlas.RGBA_CHANNELS, TextureAtlas.RGB_CHANNELS);
+                    }
+
+                    for (int j = 0; j < width; j++) {
+                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS + TextureAtlas.RGB_CHANNELS] = (byte) 255;
                     }
                 }
             }

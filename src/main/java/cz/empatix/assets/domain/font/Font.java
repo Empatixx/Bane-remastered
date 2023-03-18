@@ -9,16 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public record Font(
         Map<Character, Glyph> glyphs
 ) {
     public void destroy() {
         glyphs.forEach((c, g) -> g.destroy());
-    }
-
-    public static FontBuilder builder() {
-        return new FontBuilder();
     }
 
     public List<Drawable> getDrawables(final String text,
@@ -38,24 +35,20 @@ public record Font(
         return glyphDrawables;
     }
 
-    public static class FontBuilder {
-        private Map<Character, Glyph> glyphs;
-
-        public FontBuilder glyphs(final Map<Character, Glyph> glyphs) {
-            this.glyphs = glyphs;
-            return this;
-        }
-
-        public Font build() {
-            return new Font(glyphs);
-        }
-    }
-
     public float getWidth(final String text) {
         return (float) text.chars()
                 .mapToObj(c -> glyphs.get((char) c))
                 .filter(Objects::nonNull)
                 .mapToDouble(g -> g.width() + g.bearingX())
                 .sum();
+    }
+    public static Font from(final RawFont font){
+        final Map<Character, Glyph> glyphs = font
+                .glyphs()
+                .entrySet()
+                .stream()
+                .map(e -> Map.entry(e.getKey(), Glyph.from(e.getValue())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return new Font(glyphs);
     }
 }

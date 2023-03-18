@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AudioCreator implements AssetCreator{
@@ -47,7 +46,6 @@ public class AudioCreator implements AssetCreator{
             @Override
             public void run() {
                 audioLoader.load();
-                LOGGER.info("WTF");
             }
         };
     }

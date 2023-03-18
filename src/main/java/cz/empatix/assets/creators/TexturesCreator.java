@@ -7,10 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class TexturesCreator implements AssetCreator {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
@@ -52,7 +53,6 @@ public class TexturesCreator implements AssetCreator {
             @Override
             public void run() {
                 texturesLoader.load();
-                LOGGER.info("HUH");
             }
         };
     }

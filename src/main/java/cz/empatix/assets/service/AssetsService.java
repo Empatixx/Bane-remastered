@@ -2,6 +2,7 @@ package cz.empatix.assets.service;
 
 import cz.empatix.assets.creators.*;
 import cz.empatix.assets.domain.font.Font;
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.slf4j.Logger;
@@ -12,7 +13,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AssetsService {
     private final static Logger LOGGER = LoggerFactory.getLogger(AssetsService.class);
@@ -37,12 +38,12 @@ public class AssetsService {
                 .forEach(AssetCreator::create);
         LOGGER.info("Preloading assets done in {} ms", System.currentTimeMillis() - start);
         LOGGER.info("Loading assets...");
-        loadProcesses = creators.stream()
+        loadProcesses = Stream.of(creators.get(0),creators.get(1),creators.get(2),creators.get(3))
                 .map(creator -> executorService.submit(creator.load()))
                 .toList();
     }
 
-    public static void createAssets() {
+    public static void  createAssets() {
         loaded = loadProcesses.stream().allMatch(Future::isDone);
         creators.forEach(AssetCreator::create);
         if (loaded) {
@@ -89,7 +90,7 @@ public class AssetsService {
                 });
     }
 
-    public static Font getFont(final String name, final int size) {
+    public static Font getFont(final String name, final FontSize size){
         return Optional.of(getCreator(FontCreator.class))
                 .map(FontCreator.class::cast)
                 .map(creator -> creator.get(name, size))

@@ -1,5 +1,6 @@
 package cz.empatix.assets.domain.font;
 
+import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -25,8 +26,26 @@ public record Glyph(
         GL30.glDeleteTextures(textureId);
     }
 
-    public static GlyphBuilder builder() {
-        return new GlyphBuilder();
+    public static Glyph from(final RawGlyph rawGlyph) {
+        final int textureId = rawGlyph.bitmap() != null ? TextureBuilder.builder()
+                .width(rawGlyph.width())
+                .height(rawGlyph.height())
+                .channels(1)
+                .applyClampToEdgeWrap()
+                .applyLinearFilters()
+                .buffer(rawGlyph.bitmap())
+                .build() : RenderData.NO_TEXTURE;
+        return new Glyph(
+                rawGlyph.width(),
+                rawGlyph.height(),
+                rawGlyph.bearingX(),
+                rawGlyph.advance(),
+                rawGlyph.ascent(),
+                rawGlyph.descent(),
+                rawGlyph.lineGap(),
+                textureId
+        );
+
     }
 
     public void bindTexture() {
@@ -37,65 +56,6 @@ public record Glyph(
                                     final Vector3f color,
                                     final int zDepth) {
         return new GlyphDrawable(this, position, color, zDepth);
-    }
-
-    public static class GlyphBuilder {
-        private int width;
-        private int height;
-        private int bearingX;
-        private int advance;
-        private int ascent;
-        private int descent;
-        private int lineGap;
-        private int textureId;
-
-        public GlyphBuilder() {
-            textureId = RenderData.NO_TEXTURE;
-        }
-
-        public GlyphBuilder width(final int width) {
-            this.width = width;
-            return this;
-        }
-
-        public GlyphBuilder height(final int height) {
-            this.height = height;
-            return this;
-        }
-
-        public GlyphBuilder bearingX(final int bearingX) {
-            this.bearingX = bearingX;
-            return this;
-        }
-
-        public GlyphBuilder advance(final int advance) {
-            this.advance = advance;
-            return this;
-        }
-
-        public GlyphBuilder ascent(final int ascent) {
-            this.ascent = ascent;
-            return this;
-        }
-
-        public GlyphBuilder descent(final int descent) {
-            this.descent = descent;
-            return this;
-        }
-
-        public GlyphBuilder lineGap(final int lineGap) {
-            this.lineGap = lineGap;
-            return this;
-        }
-
-        public GlyphBuilder textureId(final int textureId) {
-            this.textureId = textureId;
-            return this;
-        }
-
-        public Glyph build() {
-            return new Glyph(width, height, bearingX, advance, ascent, descent, lineGap, textureId);
-        }
     }
 
     public record GlyphDrawable(
@@ -116,11 +76,11 @@ public record Glyph(
 
         private List<Vertex> vertices() {
             return Vertex.builder()
-                    .textureDimensions(1,1)
-                    .texturePosition(0,0)
+                    .textureDimensions(1, 1)
+                    .texturePosition(0, 0)
                     .position(position)
                     .offsetPosition(glyph.bearingX(), glyph.descent())
-                    .posDimensions(glyph.width(), -glyph.ascent()-glyph.descent())
+                    .posDimensions(glyph.width(), -glyph.ascent() - glyph.descent())
                     .reverseTextureY()
                     .buildQuad();
         }
