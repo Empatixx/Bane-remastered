@@ -33,6 +33,8 @@ public record Tile(
                 final Vector2f position,
                 final TextureAtlas.Entry texture) {
         this(Vertex.builder()
+                        .texPosition(tCol, tRow)
+                        .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
                         .position(new Vector2f(position))
                         .posDimensions(TILE_SIZE, TILE_SIZE)
                         .texture(texture)
