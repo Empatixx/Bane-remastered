@@ -1,4 +1,4 @@
-package cz.empatix.render.ui;
+package cz.empatix.ui;
 
 import cz.empatix.render.attributes.Drawable;
 

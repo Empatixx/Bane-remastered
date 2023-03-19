@@ -1,7 +1,6 @@
-package cz.empatix.render.hud;
+package cz.empatix.hud;
 
 
-import cz.empatix.assets.creators.FontCreator;
 import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;

@@ -42,7 +42,10 @@ public class ShadersLoader implements AssetLoader {
                     .filter(entry -> !shaders.containsKey(entry.getKey()))
                     .parallel()
                     .map(this::createRawShader)
-                    .forEach(entry -> shaders.put(entry.getKey(), entry.getValue()));
+                    .forEach(entry -> {
+                        shaders.put(entry.getKey(), entry.getValue());
+                        total.getAndIncrement();
+                    });
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {

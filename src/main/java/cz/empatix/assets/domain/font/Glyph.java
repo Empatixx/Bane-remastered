@@ -76,8 +76,6 @@ public record Glyph(
 
         private List<Vertex> vertices() {
             return Vertex.builder()
-                    .textureDimensions(1, 1)
-                    .texturePosition(0, 0)
                     .position(position)
                     .offsetPosition(glyph.bearingX(), glyph.descent())
                     .posDimensions(glyph.width(), -glyph.ascent() - glyph.descent())
@@ -87,7 +85,7 @@ public record Glyph(
 
         @Override
         public boolean shouldRender() {
-            return true;
+            return false; //Todo: remove
         }
 
         @Override

@@ -29,7 +29,8 @@ public record Font(
                 throw new IllegalArgumentException("Font does not contain glyph for character: " + c);
             }
             final Glyph glyph = glyphs.get(c);
-            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth));
+            //glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth));
+            //todo: fix
             positionShifting.x += glyph.advance();
         }
         return glyphDrawables;

@@ -62,7 +62,6 @@ public class AssetsService {
 
     public static TextureAtlas.Entry getTexture(final String name) {
         return Optional.of(getCreator(TexturesCreator.class))
-                .map(TexturesCreator.class::cast)
                 .map(creator -> creator.get(name))
                 .orElseGet(() -> {
                     LOGGER.error("Texture {} not found", name);
@@ -71,8 +70,7 @@ public class AssetsService {
     }
 
     public static int getAudio(final String name) {
-        return Optional.of(getCreator(TexturesCreator.class))
-                .map(AudioCreator.class::cast)
+        return Optional.of(getCreator(AudioCreator.class))
                 .map(creator -> creator.get(name))
                 .orElseGet(() -> {
                     LOGGER.error("Audio {} not found", name);
@@ -82,7 +80,6 @@ public class AssetsService {
 
     public static Shader getShader(final String name) {
         return Optional.of(getCreator(ShadersCreator.class))
-                .map(ShadersCreator.class::cast)
                 .map(creator -> creator.get(name))
                 .orElseGet(() -> {
                     LOGGER.error("Shader {} not found", name);
@@ -92,7 +89,6 @@ public class AssetsService {
 
     public static Font getFont(final String name, final FontSize size){
         return Optional.of(getCreator(FontCreator.class))
-                .map(FontCreator.class::cast)
                 .map(creator -> creator.get(name, size))
                 .orElseGet(() -> {
                     LOGGER.error("Font {} not found", name);
@@ -100,10 +96,11 @@ public class AssetsService {
                 });
     }
 
-    private static AssetCreator getCreator(final Class<?> clazz) {
+    private static <E extends AssetCreator> E getCreator(final Class<E> clazz) {
         return creators.stream()
                 .filter(clazz::isInstance)
                 .findFirst()
+                .map(clazz::cast)
                 .orElseThrow(() -> new RuntimeException("AssetCreator " + clazz + " not found"));
     }
 }

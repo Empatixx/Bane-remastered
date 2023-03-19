@@ -5,6 +5,7 @@ import cz.empatix.assets.builders.TextureBuilder;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL33;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -57,5 +58,4 @@ public record TextureAtlas(
             return info.textureDimensions().y();
         }
     }
-
 }

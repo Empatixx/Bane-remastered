@@ -1,4 +1,4 @@
-package cz.empatix.render.hud;
+package cz.empatix.hud;
 
 import cz.empatix.render.attributes.Drawable;
 

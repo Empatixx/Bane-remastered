@@ -96,8 +96,17 @@ public class TextureBuilder {
         Preconditions.checkArgument(height > 0, "Height must be set");
         Preconditions.checkArgument(channels > 0, "Channels must be set");
         Preconditions.checkNotNull(buffer, "Buffer must be set");
+
+        final int pbo = GL30.glGenTextures();
         final int texture = GL30.glGenTextures();
+
+        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
+        GL30.glBufferData(GL30.GL_PIXEL_UNPACK_BUFFER, buffer, GL30.GL_STREAM_DRAW);
+        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
+
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, texture);
+
+        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
         if (channels == GL30.GL_RED) {
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         }
@@ -125,8 +134,9 @@ public class TextureBuilder {
                 }
             }
         }
-        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, GL30.GL_RGBA, width, height,
-                0, channels, GL30.GL_UNSIGNED_BYTE, buffer);
+        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, GL30.GL_RGBA, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE, 0);
+        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
+
         GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, 0);
         return texture;

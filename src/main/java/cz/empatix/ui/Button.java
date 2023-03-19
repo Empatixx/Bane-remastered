@@ -1,4 +1,4 @@
-package cz.empatix.render.ui;
+package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
@@ -8,7 +8,7 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
-import cz.empatix.render.hud.Text;
+import cz.empatix.hud.Text;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -42,7 +42,6 @@ public class Button implements UIElement {
 
         final TextureAtlas.Entry textureImage = AssetsService.getTexture(texture);
         animation = Animation.builder()
-                .textureDimensions(1, 2)
                 .addAnimationState(AnimationState.STATIC, 0, 1, dimensions.x(), dimensions.y(), -1)
                 .addAnimationState(AnimationState.HOVER, 1, 1, dimensions.x(), dimensions.y(), -1)
                 .texture(textureImage)

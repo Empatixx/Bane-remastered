@@ -3,8 +3,8 @@ package cz.empatix.gamestate.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.gamestate.service.GameStateService;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.background.AnimatedBackground;
-import cz.empatix.render.background.Background;
+import cz.empatix.background.AnimatedBackground;
+import cz.empatix.background.Background;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

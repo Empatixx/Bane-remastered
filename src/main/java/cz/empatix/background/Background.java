@@ -1,4 +1,4 @@
-package cz.empatix.render.background;
+package cz.empatix.background;
 
 import cz.empatix.render.attributes.Drawable;
 

@@ -14,17 +14,14 @@ public class Animation {
     private final static Logger LOGGER = LoggerFactory.getLogger(Animation.class);
     private final Map<AnimationState, AnimationPart> animationParts;
     private final TextureAtlas.Entry texture;
-    private final Vector2i textureDimensions;
     private AnimationState currentState;
     private int currentTextureIndex;
     private long lastAnimation;
 
     public Animation(final Map<AnimationState, AnimationPart> animationParts,
-                     final Vector2i textureDimensions,
                      final TextureAtlas.Entry texture) {
         this.texture = texture;
         this.animationParts = animationParts;
-        this.textureDimensions = textureDimensions;
         this.currentState = AnimationState.IDLE;
         this.currentTextureIndex = 0;
         this.lastAnimation = System.currentTimeMillis();
@@ -57,11 +54,11 @@ public class Animation {
     public List<Vertex> getVertices(final Vector2f position) {
         final AnimationPart part = animationParts.get(currentState);
         return Vertex.builder()
-                .texturePosition(currentTextureIndex, part.row())
-                .textureDimensions(textureDimensions.x(), textureDimensions.y())
+                .texture(texture)
+                .texPosition(currentTextureIndex, part.row())
+                .texPositionsDimensions(part.numSprites(), animationParts.size())
                 .position(position)
                 .posDimensions(part.width(), part.height())
-                .offsetTexture(texture.width(), texture.height())
                 .buildQuad();
     }
     public int getTextureId() {
@@ -90,7 +87,6 @@ public class Animation {
 
     public static class Builder {
         private final Map<AnimationState, AnimationPart> animationParts;
-        private Vector2i textureDimensions;
         private TextureAtlas.Entry texture;
 
         public Builder() {
@@ -111,17 +107,13 @@ public class Animation {
             animationParts.put(state, part);
             return this;
         }
-        public Builder textureDimensions(final int totalColumns, final int totalRows){
-            this.textureDimensions = new Vector2i(totalColumns, totalRows);
-            return this;
-        }
         public Builder texture(final TextureAtlas.Entry texture){
             this.texture = texture;
             return this;
         }
 
         public Animation build() {
-            return new Animation(animationParts, textureDimensions, texture);
+            return new Animation(animationParts, texture);
         }
     }
     public static Builder builder(){

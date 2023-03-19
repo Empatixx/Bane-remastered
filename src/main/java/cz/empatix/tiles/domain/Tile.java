@@ -35,13 +35,12 @@ public record Tile(
         this(Vertex.builder()
                         .position(new Vector2f(position))
                         .posDimensions(TILE_SIZE, TILE_SIZE)
-                        .textureDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
-                        .texturePosition(tCol, tRow)
-                        .offsetTexture(texture.width(), texture.height())
+                        .texture(texture)
                         .buildQuad(),
                 texture.textureId(),
                 position);
     }
+
     @Override
     public RenderData renderData() {
         return new RenderData(

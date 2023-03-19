@@ -1,8 +1,8 @@
-package cz.empatix.render.background;
+package cz.empatix.background;
 
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.hud.Image;
+import cz.empatix.hud.Image;
 import org.joml.Vector2f;
 
 public class CommonBackground implements Background {

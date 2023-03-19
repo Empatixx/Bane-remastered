@@ -1,4 +1,4 @@
-package cz.empatix.render.hud;
+package cz.empatix.hud;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.Camera;
@@ -33,9 +33,7 @@ public class Image implements HUDElement {
                 Vertex.builder()
                         .position(position)
                         .posDimensions(dimensions.x(), dimensions.y())
-                        .textureDimensions(1, 1)
-                        .texturePosition(0, 0)
-                        .offsetTexture(texture.width(), texture.height())
+                        .texture(texture)
                         .buildQuad(),
                 texture.textureId(),
                 new CommonShaderBinding(Camera.getProjection()),

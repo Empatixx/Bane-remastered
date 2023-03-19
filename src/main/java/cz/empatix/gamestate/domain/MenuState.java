@@ -5,12 +5,12 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.service.GameStateService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.background.Background;
-import cz.empatix.render.background.CommonBackground;
-import cz.empatix.render.hud.HUDElement;
-import cz.empatix.render.hud.Image;
-import cz.empatix.render.ui.Button;
-import cz.empatix.render.ui.UIElement;
+import cz.empatix.background.Background;
+import cz.empatix.background.CommonBackground;
+import cz.empatix.hud.HUDElement;
+import cz.empatix.hud.Image;
+import cz.empatix.ui.Button;
+import cz.empatix.ui.UIElement;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
