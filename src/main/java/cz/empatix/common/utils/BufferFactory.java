@@ -5,6 +5,7 @@ import org.lwjgl.BufferUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 public class BufferFactory {
     public static FloatBuffer convertMatrix4f(final Matrix4f matrix4f){
@@ -14,6 +15,12 @@ public class BufferFactory {
     }
     public static FloatBuffer convertFloatArray(final float[] array){
         final FloatBuffer buffer = BufferUtils.createFloatBuffer(array.length);
+        buffer.put(array);
+        buffer.flip();
+        return buffer;
+    }
+    public static IntBuffer convertIntArray(final int[] array){
+        final IntBuffer buffer = BufferUtils.createIntBuffer(array.length);
         buffer.put(array);
         buffer.flip();
         return buffer;

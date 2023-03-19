@@ -12,7 +12,7 @@ public class RenderService {
     public RenderService() {
         renderers = new HashMap<>();
         renderers.put(RenderData.RenderDataType.DYNAMIC, new DynamicRenderer());
-        renderers.put(RenderData.RenderDataType.STATIC, new StaticRenderer());
+        //renderers.put(RenderData.RenderDataType.STATIC, new StaticRenderer());
     }
 
     public void render(final List<Drawable> drawable) {

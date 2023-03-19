@@ -5,24 +5,21 @@ import cz.empatix.common.utils.BufferFactory;
 import org.lwjgl.opengl.GL30;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.lwjgl.opengl.GL11.GL_UNPACK_ALIGNMENT;
-import static org.lwjgl.opengl.GL11.glPixelStorei;
+import java.util.HashSet;
+import java.util.Set;
 
 public class TextureBuilder {
     private int width;
     private int height;
     private int channels;
-    private final List<BuildParam> params;
+    private final Set<BuildParam> params;
     private ByteBuffer buffer;
 
     public TextureBuilder() {
         this.width = -1;
         this.height = -1;
         this.channels = -1;
-        params = new ArrayList<>();
+        params = new HashSet<>();
     }
 
     public static TextureBuilder builder() {
@@ -100,15 +97,17 @@ public class TextureBuilder {
         final int pbo = GL30.glGenTextures();
         final int texture = GL30.glGenTextures();
 
+        if(channels == GL30.GL_RED){
+            return 0;
+        }
+
         GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
         GL30.glBufferData(GL30.GL_PIXEL_UNPACK_BUFFER, buffer, GL30.GL_STREAM_DRAW);
         GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
 
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, texture);
-
-        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
         if (channels == GL30.GL_RED) {
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            GL30.glPixelStorei(GL30.GL_UNPACK_ALIGNMENT, 1);
         }
         for (final BuildParam param : params) {
             switch (param) {
@@ -134,7 +133,9 @@ public class TextureBuilder {
                 }
             }
         }
-        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, GL30.GL_RGBA, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE, 0);
+
+        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
+        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, channels, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE, 0);
         GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
 
         GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);

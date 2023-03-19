@@ -14,6 +14,7 @@ public class CommonShaderBinding implements ShaderBinding{
         final Shader shader = AssetsService.getShader("common");
         shader.bind();
         shader.setUniform4x4f("projection", projectionMatrix);
+        shader.setUniform1i("texSampler", 0);
         return shader;
     }
 

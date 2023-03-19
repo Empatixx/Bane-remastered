@@ -41,7 +41,6 @@ public class GameLoop extends Thread {
                     accumulator -= FIXED_DELTA_TIME;
                     ups++;
                 }
-                LOGGER.info("DRAW");
                 update(dt);
                 render(dt);
                 fps++;

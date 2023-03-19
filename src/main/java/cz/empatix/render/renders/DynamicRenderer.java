@@ -9,16 +9,12 @@ import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.FloatBuffer;
-import java.util.Collections;
+import java.nio.IntBuffer;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.lwjgl.opengl.GL33.*;
@@ -29,10 +25,11 @@ public class DynamicRenderer implements Renderer {
     private final int vao;
     private final int vboTex;
     private final int vboPos;
+    private final int ebo;
 
 
     public DynamicRenderer() {
-        maxPerBatch = 16;
+        maxPerBatch = 255;
         vboPos = VboBuilder.builder()
                 .buffer(new float[maxPerBatch * 6 * 2])
                 .dynamic()
@@ -40,6 +37,9 @@ public class DynamicRenderer implements Renderer {
         vboTex = VboBuilder.builder()
                 .buffer(new float[maxPerBatch * 6 * 2])
                 .dynamic()
+                .build();
+        ebo = VboBuilder.builder()
+                .buffer(new int[maxPerBatch * 6])
                 .build();
         vao = VaoBuilder.builder()
                 .addVbo(0, vboPos)
@@ -52,8 +52,10 @@ public class DynamicRenderer implements Renderer {
                 .filter(Drawable::shouldRender)
                 .map(Drawable::renderData)
                 .toList();
+        glBindTextureUnit(0, renderData.get(0).textureId());
+        final Shader shader = shaderBinding.apply();
+
         Lists.partition(renderData, maxPerBatch).forEach(batch -> {
-            glBindTextureUnit(0, batch.get(0).textureId());
             final List<Vertex> vertices = batch.stream()
                     .flatMap(data -> data
                             .vertices()
@@ -62,6 +64,7 @@ public class DynamicRenderer implements Renderer {
 
             final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
             final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
+            final IntBuffer elementIndices = BufferUtils.createIntBuffer(vertices.size() * 6);
 
             vertices.stream()
                     .map(Vertex::position)
@@ -72,32 +75,54 @@ public class DynamicRenderer implements Renderer {
                     .flatMap(t -> Stream.of(t.x, t.y))
                     .forEach(texCoordsBuffer::put);
 
+            final int[] indices = createIndices(batch.size());
+            elementIndices.put(indices);
+
+
+            elementIndices.flip();
             posBuffer.flip();
             texCoordsBuffer.flip();
 
-            LOGGER.info("Rendering {} pos vertices", posBuffer.limit());
             glBindBuffer(GL_ARRAY_BUFFER, vboPos);
             glBufferSubData(GL_ARRAY_BUFFER, 0, posBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            LOGGER.info("Rendering {} texCoords vertices", texCoordsBuffer.limit());
             glBindBuffer(GL_ARRAY_BUFFER, vboTex);
             glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            final Shader shader = shaderBinding.apply();
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
             glBindVertexArray(vao);
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, vertices.size());
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
+            glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             glBindVertexArray(0);
-            shader.unbind();
-            glBindTexture(GL_TEXTURE_2D, 0);
         });
+        glBindTexture(GL_TEXTURE_2D, 0);
+        shader.unbind();
     }
 
     private void glBindTextureUnit(final int unit, final int texture) {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, texture);
+    }
+    private int[] createIndices(final int count) {
+        final int[] indices = new int[count * 6];
+        for (int i = 0; i < count; i++) {
+            final int offset = i * 6;
+            final int vertexOffset = i * 6;
+            indices[offset] = vertexOffset;
+            indices[offset + 1] = vertexOffset + 1;
+            indices[offset + 2] = vertexOffset + 2;
+            indices[offset + 3] = vertexOffset + 3;
+            indices[offset + 4] = vertexOffset + 4;
+            indices[offset + 5] = vertexOffset + 5;
+        }
+        return indices;
     }
 }

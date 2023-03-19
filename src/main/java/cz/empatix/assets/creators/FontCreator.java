@@ -18,7 +18,6 @@ public class FontCreator implements AssetCreator {
     private final Map<String, Map<FontSize, Font>> fonts;
     private final Map<String, Map<FontSize, RawFont>> rawFonts;
     private final FontLoader fontLoader;
-    private long delayCheck = 0;
 
     public FontCreator() {
         fonts = new HashMap<>();
