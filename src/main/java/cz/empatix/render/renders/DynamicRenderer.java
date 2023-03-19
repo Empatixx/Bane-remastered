@@ -21,6 +21,8 @@ import static org.lwjgl.opengl.GL33.*;
 
 public class DynamicRenderer implements Renderer {
     private final static Logger LOGGER = LoggerFactory.getLogger(DynamicRenderer.class);
+    private final FloatBuffer posBuffer;
+    private final FloatBuffer texCoordsBuffer;
     private final int maxPerBatch;
     private final int vao;
     private final int vboTex;
@@ -31,11 +33,11 @@ public class DynamicRenderer implements Renderer {
     public DynamicRenderer() {
         maxPerBatch = 255;
         vboPos = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 6 * 2])
+                .buffer(new float[maxPerBatch * 4 * 2])
                 .dynamic()
                 .build();
         vboTex = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 6 * 2])
+                .buffer(new float[maxPerBatch * 4 * 2])
                 .dynamic()
                 .build();
         ebo = VboBuilder.builder()
@@ -45,6 +47,17 @@ public class DynamicRenderer implements Renderer {
                 .addVbo(0, vboPos)
                 .addVbo(1, vboTex)
                 .build();
+
+        posBuffer = BufferUtils.createFloatBuffer(maxPerBatch * 4 * 2);
+        texCoordsBuffer = BufferUtils.createFloatBuffer(maxPerBatch * 4 * 2);
+
+        final IntBuffer elementIndices = BufferUtils.createIntBuffer(maxPerBatch * 6);
+        elementIndices.put(createIndices(maxPerBatch));
+        elementIndices.flip();
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     @Override
     public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
@@ -56,16 +69,13 @@ public class DynamicRenderer implements Renderer {
         final Shader shader = shaderBinding.apply();
 
         Lists.partition(renderData, maxPerBatch).forEach(batch -> {
+            posBuffer.clear();
+            texCoordsBuffer.clear();
             final List<Vertex> vertices = batch.stream()
                     .flatMap(data -> data
                             .vertices()
                             .stream())
                     .toList();
-
-            final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
-            final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
-            final IntBuffer elementIndices = BufferUtils.createIntBuffer(vertices.size() * 6);
-
             vertices.stream()
                     .map(Vertex::position)
                     .flatMap(p -> Stream.of(p.x, p.y))
@@ -74,12 +84,6 @@ public class DynamicRenderer implements Renderer {
                     .map(Vertex::texCoords)
                     .flatMap(t -> Stream.of(t.x, t.y))
                     .forEach(texCoordsBuffer::put);
-
-            final int[] indices = createIndices(batch.size());
-            elementIndices.put(indices);
-
-
-            elementIndices.flip();
             posBuffer.flip();
             texCoordsBuffer.flip();
 
@@ -91,14 +95,10 @@ public class DynamicRenderer implements Renderer {
             glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
             glBindVertexArray(vao);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-            glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, batch.size() * 6, GL_UNSIGNED_INT, 0);
 
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
             glBindVertexArray(0);
@@ -115,13 +115,13 @@ public class DynamicRenderer implements Renderer {
         final int[] indices = new int[count * 6];
         for (int i = 0; i < count; i++) {
             final int offset = i * 6;
-            final int vertexOffset = i * 6;
+            final int vertexOffset = i * 4;
             indices[offset] = vertexOffset;
             indices[offset + 1] = vertexOffset + 1;
             indices[offset + 2] = vertexOffset + 2;
-            indices[offset + 3] = vertexOffset + 3;
-            indices[offset + 4] = vertexOffset + 4;
-            indices[offset + 5] = vertexOffset + 5;
+            indices[offset + 3] = vertexOffset;
+            indices[offset + 4] = vertexOffset + 2;
+            indices[offset + 5] = vertexOffset + 3;
         }
         return indices;
     }

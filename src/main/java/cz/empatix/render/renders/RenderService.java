@@ -16,32 +16,36 @@ public class RenderService {
     }
 
     public void render(final List<Drawable> drawable) {
-        final List<Drawable> allDrawables = new ArrayList<>(drawable);
-
-        final List<Drawable> foundSubDrawables = new ArrayList<>();
-        final List<Drawable> searchSubDrawables = new ArrayList<>(drawable);
-        do {
-            foundSubDrawables.clear();
-            searchSubDrawables.forEach(d -> foundSubDrawables.addAll(d.getSubDrawables()));
-            allDrawables.addAll(foundSubDrawables);
-            searchSubDrawables.clear();
-            searchSubDrawables.addAll(foundSubDrawables);
-        } while (!searchSubDrawables.isEmpty());
+        final Set<Drawable> allDrawables = findAllDrawables(drawable);
         allDrawables.stream()
                 .sorted(Comparator.comparingInt(Drawable::getZIndex))
                 .collect(Collectors.groupingBy(Drawable::getZIndex, LinkedHashMap::new, Collectors.toList()))
-                .forEach((depth, drawables) -> {
-                    drawables.stream()
-                            .filter(d -> d.renderData() != null)
-                            .collect(Collectors.groupingBy(d -> d.renderData().type()))
-                            .forEach((type, drawablesOfType) -> {
-                                final Renderer renderer = renderers.get(type);
-                                drawablesOfType.stream()
-                                        .collect(Collectors.groupingBy(d -> d.renderData().shaderBinding()))
-                                        .forEach((shaderBinding, drawablesOfShader) -> {
-                                            renderer.render(drawablesOfShader, shaderBinding, depth);
-                                        });
-                            });
-                });
+                .forEach(this::renderDrawablesByZIndex);
+    }
+
+    private Set<Drawable> findAllDrawables(List<Drawable> drawable) {
+        final Set<Drawable> allDrawables = new HashSet<>(drawable);
+        Queue<Drawable> drawableQueue = new LinkedList<>(drawable);
+
+        while (!drawableQueue.isEmpty()) {
+            final Drawable current = drawableQueue.poll();
+            final List<Drawable> subDrawables = current.getSubDrawables();
+            allDrawables.addAll(subDrawables);
+            drawableQueue.addAll(subDrawables);
+        }
+
+        return allDrawables;
+    }
+    private void renderDrawablesByZIndex(int zIndex, List<Drawable> drawables) {
+        drawables.stream()
+                .filter(d -> d.renderData() != null)
+                .collect(Collectors.groupingBy(d -> d.renderData().type()))
+                .forEach((type, drawablesOfType) -> renderDrawablesByType(type, drawablesOfType, zIndex));
+    }
+    private void renderDrawablesByType(RenderData.RenderDataType type, List<Drawable> drawablesOfType, int zIndex) {
+        var renderer = renderers.get(type);
+        drawablesOfType.stream()
+                .collect(Collectors.groupingBy(d -> d.renderData().shaderBinding()))
+                .forEach((shaderBinding, drawablesOfShader) -> renderer.render(drawablesOfShader, shaderBinding, zIndex));
     }
 }

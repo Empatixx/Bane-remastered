@@ -73,7 +73,7 @@ public class VboBuilder{
             glDeleteBuffers(vbo);
             throw e;
         } finally {
-            LOGGER.info("VBO built sucessfully with id {}, usage {}, buffer type {}", vbo, usage, bufferType);
+            LOGGER.info("VBO built successfully with id {}, usage {}, buffer type {}", vbo, usage, bufferType);
         }
     }
     private enum BuildParam{

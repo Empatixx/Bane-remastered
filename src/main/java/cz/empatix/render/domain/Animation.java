@@ -59,7 +59,7 @@ public class Animation {
                 .texPositionsDimensions(part.numSprites(), animationParts.size())
                 .position(position)
                 .posDimensions(part.width(), part.height())
-                .buildQuadTriangles();
+                .buildQuad();
     }
     public int getTextureId() {
         return texture.textureId();
