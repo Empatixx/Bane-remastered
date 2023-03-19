@@ -1,5 +1,6 @@
 package cz.empatix.render.domain;
 
+import com.google.common.base.Preconditions;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlasInfo;
 import org.joml.Vector2f;
@@ -19,7 +20,6 @@ public record Vertex(
         private final Vector2i texPosition;
         private final Vector2i texPositionDimensions;
         private boolean reverseTexY;
-
         private TextureAtlas.Entry texture;
 
         public Builder() {
@@ -63,6 +63,11 @@ public record Vertex(
             final float bottom = (info.textureStartPositions().y() + texPosition.y() * baseTexHeight)/ (float) texture.atlasHeight();
             final float left = (info.textureStartPositions().x() + texPosition.x() * baseTexWidth) / (float) texture.atlasWidth();
             final float right = (info.textureStartPositions().x() + (texPosition.x() + 1) * baseTexWidth) / (float) texture.atlasWidth();
+
+            Preconditions.checkArgument(top <= 1);
+            Preconditions.checkArgument(bottom >= 0);
+            Preconditions.checkArgument(left >= 0);
+            Preconditions.checkArgument(right <= 1);
 
             final Vector2f texBottomLeft = new Vector2f(left + texOffsetX, bottom + texOffsetY);
             final Vector2f texBottomRight = new Vector2f(right - texOffsetX, bottom + texOffsetY);

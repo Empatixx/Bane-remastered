@@ -9,6 +9,9 @@ import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL30;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.FloatBuffer;
 import java.util.Collections;
@@ -21,30 +24,26 @@ import java.util.stream.Stream;
 import static org.lwjgl.opengl.GL33.*;
 
 public class DynamicRenderer implements Renderer {
+    private final static Logger LOGGER = LoggerFactory.getLogger(DynamicRenderer.class);
     private final int maxPerBatch;
     private final int vao;
     private final int vboTex;
     private final int vboPos;
-    private final int vboTexIndex;
+
 
     public DynamicRenderer() {
-        maxPerBatch = 255;
+        maxPerBatch = 16;
         vboPos = VboBuilder.builder()
                 .buffer(new float[maxPerBatch * 4 * 2])
                 .dynamic()
                 .build();
         vboTex = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 4 * 2])
-                .dynamic()
-                .build();
-        vboTexIndex = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 4])
+                .buffer(new float[maxPerBatch * 2 * 4 * 2])
                 .dynamic()
                 .build();
         vao = VaoBuilder.builder()
                 .addVbo(0, vboPos)
                 .addVbo(1, vboTex)
-                .addVbo(2, vboTexIndex, 1)
                 .build();
     }
     @Override
@@ -54,16 +53,7 @@ public class DynamicRenderer implements Renderer {
                 .map(Drawable::renderData)
                 .toList();
         Lists.partition(renderData, maxPerBatch).forEach(batch -> {
-            final List<Integer> textures = batch.stream()
-                    .map(RenderData::textureId)
-                    .collect(Collectors.toSet())
-                    .stream()
-                    .toList();
-            final Map<Integer, Integer> textureToUnit = IntStream.range(0, textures.size())
-                    .boxed()
-                    .collect(Collectors.toMap(textures::get, unit -> unit));
-            textureToUnit.forEach((txt, unit) -> glBindTextureUnit(unit, txt));
-
+            glBindTextureUnit(0, batch.get(0).textureId());
             final List<Vertex> vertices = batch.stream()
                     .flatMap(data -> data
                             .vertices()
@@ -72,7 +62,6 @@ public class DynamicRenderer implements Renderer {
 
             final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
             final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(vertices.size() * 2);
-            final FloatBuffer textureUnitBuffer = BufferUtils.createFloatBuffer(vertices.size());
 
             vertices.stream()
                     .map(Vertex::position)
@@ -82,38 +71,23 @@ public class DynamicRenderer implements Renderer {
                     .map(Vertex::texCoords)
                     .flatMap(t -> Stream.of(t.x, t.y))
                     .forEach(texCoordsBuffer::put);
-            batch.stream()
-                    .flatMap(rd -> {
-                        final List<Vertex> v = rd.vertices();
-                        return Collections.nCopies(v.size(), rd.textureId()).stream();
-                    })
-                    .map(textureToUnit::get)
-                    .forEach(textureUnitBuffer::put);
 
             posBuffer.flip();
             texCoordsBuffer.flip();
-            textureUnitBuffer.flip();
 
+            LOGGER.info("Rendering {} pos vertices", posBuffer.limit());
             glBindBuffer(GL_ARRAY_BUFFER, vboPos);
             glBufferSubData(GL_ARRAY_BUFFER, 0, posBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+            LOGGER.info("Rendering {} texCoords vertices", texCoordsBuffer.limit());
             glBindBuffer(GL_ARRAY_BUFFER, vboTex);
             glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glBindBuffer(GL_ARRAY_BUFFER, vboTexIndex);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, textureUnitBuffer);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-
             final Shader shader = shaderBinding.apply();
-            shader.setUniform1iv("textures", textureToUnit
-                    .values()
-                    .stream()
-                    .mapToInt(i -> i)
-                    .toArray());
-            glBindVertexArray(vao);
 
+            glBindVertexArray(vao);
             glDrawArrays(GL_QUADS, 0, vertices.size());
 
             glBindVertexArray(0);
