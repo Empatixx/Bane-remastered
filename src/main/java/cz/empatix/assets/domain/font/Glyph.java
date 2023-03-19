@@ -80,7 +80,7 @@ public record Glyph(
                     .offsetPosition(glyph.bearingX(), glyph.descent())
                     .posDimensions(glyph.width(), -glyph.ascent() - glyph.descent())
                     .reverseTextureY()
-                    .buildQuad();
+                    .buildQuadTriangles();
         }
 
         @Override

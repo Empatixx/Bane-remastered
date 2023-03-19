@@ -54,7 +54,7 @@ public class TextureAtlasPacker {
     private RawTextureAtlas tryPack(final Map<String, RawImage> images,
                                     final int targetSize) {
         final Map<String, TextureAtlasInfo> textureInfos = new HashMap<>();
-        final byte[] data = new byte[targetSize * targetSize * 4];
+        final byte[] data = new byte[targetSize * targetSize * TextureAtlas.RGBA_CHANNELS];
 
         final Queue<Rect> emptyRects = new PriorityQueue<>(images.size(), Comparator.comparingInt(Rect::height).thenComparing(Rect::width));
         emptyRects.add(new Rect(0, 0, targetSize, targetSize));

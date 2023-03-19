@@ -34,7 +34,7 @@ public class Image implements HUDElement {
                         .position(position)
                         .posDimensions(dimensions.x(), dimensions.y())
                         .texture(texture)
-                        .buildQuad(),
+                        .buildQuadTriangles(),
                 texture.textureId(),
                 new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC

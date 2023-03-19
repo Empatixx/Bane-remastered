@@ -87,6 +87,56 @@ public record Vertex(
                     new Vertex(posTopRight, texTopRight),
                     new Vertex(posTopLeft, texTopLeft));
         }
+        public List<Vertex> buildQuadTriangles() {
+            final Vector2f posBottomLeft = new Vector2f(position.x() + posOffset.x(), position.y() + posOffset.y());
+            final Vector2f posBottomRight = new Vector2f(position.x() + posDimensions.x() + posOffset.x(), position.y() + posOffset.y());
+            final Vector2f posTopRight = new Vector2f(position.x() + posDimensions.x() + posOffset.x(), position.y() + posDimensions.y() + posOffset.y());
+            final Vector2f posTopLeft = new Vector2f(position.x() + posOffset.x(), position.y() + posDimensions.y() + posOffset.y());
+
+            final int baseTexWidth = texture.width() / texPositionDimensions.x();
+            final int baseTexHeight = texture.height() / texPositionDimensions.y();
+
+            //final float texOffsetX = 2f / (float) baseTexWidth;
+            //final float texOffsetY = 2f / (float) baseTexHeight;
+            final float texOffsetX = 0;
+            final float texOffsetY = 0;
+
+            final TextureAtlasInfo info = texture.info();
+
+            final float top = (info.textureStartPositions().y() + (texPosition.y() + 1) * baseTexHeight) / (float) texture.atlasHeight();
+            final float bottom = (info.textureStartPositions().y() + texPosition.y() * baseTexHeight)/ (float) texture.atlasHeight();
+            final float left = (info.textureStartPositions().x() + texPosition.x() * baseTexWidth) / (float) texture.atlasWidth();
+            final float right = (info.textureStartPositions().x() + (texPosition.x() + 1) * baseTexWidth) / (float) texture.atlasWidth();
+
+            Preconditions.checkArgument(top <= 1);
+            Preconditions.checkArgument(bottom >= 0);
+            Preconditions.checkArgument(left >= 0);
+            Preconditions.checkArgument(right <= 1);
+
+            final Vector2f texBottomLeft = new Vector2f(left + texOffsetX, bottom + texOffsetY);
+            final Vector2f texBottomRight = new Vector2f(right - texOffsetX, bottom + texOffsetY);
+            final Vector2f texTopRight = new Vector2f(right - texOffsetX, top - texOffsetY);
+            final Vector2f texTopLeft = new Vector2f(left + texOffsetX, top - texOffsetY);
+
+            if (reverseTexY) {
+                return List.of(
+                        new Vertex(posBottomLeft, texTopLeft),
+                        new Vertex(posBottomRight, texTopRight),
+                        new Vertex(posTopRight, texBottomRight),
+
+                        new Vertex(posBottomLeft, texTopLeft),
+                        new Vertex(posTopLeft, texBottomLeft),
+                        new Vertex(posTopRight, texBottomRight));
+            }
+            return List.of(
+                    new Vertex(posBottomLeft, texBottomLeft),
+                    new Vertex(posBottomRight, texBottomRight),
+                    new Vertex(posTopRight, texTopRight),
+
+                    new Vertex(posBottomLeft, texBottomLeft),
+                    new Vertex(posTopLeft, texTopLeft),
+                    new Vertex(posTopRight, texTopRight));
+        }
 
         public Builder texture(TextureAtlas.Entry texture) {
             this.texture = texture;

@@ -38,7 +38,7 @@ public record Tile(
                         .position(new Vector2f(position))
                         .posDimensions(TILE_SIZE, TILE_SIZE)
                         .texture(texture)
-                        .buildQuad(),
+                        .buildQuadTriangles(),
                 texture.textureId(),
                 position);
     }

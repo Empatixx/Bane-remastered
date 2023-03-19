@@ -34,11 +34,11 @@ public class DynamicRenderer implements Renderer {
     public DynamicRenderer() {
         maxPerBatch = 16;
         vboPos = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 4 * 2])
+                .buffer(new float[maxPerBatch * 6 * 2])
                 .dynamic()
                 .build();
         vboTex = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 2 * 4 * 2])
+                .buffer(new float[maxPerBatch * 6 * 2])
                 .dynamic()
                 .build();
         vao = VaoBuilder.builder()
@@ -88,7 +88,7 @@ public class DynamicRenderer implements Renderer {
             final Shader shader = shaderBinding.apply();
 
             glBindVertexArray(vao);
-            glDrawArrays(GL_QUADS, 0, vertices.size());
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, vertices.size());
 
             glBindVertexArray(0);
             shader.unbind();
