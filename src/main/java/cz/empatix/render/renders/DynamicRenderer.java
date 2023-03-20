@@ -52,7 +52,7 @@ public class DynamicRenderer implements Renderer {
         texCoordsBuffer = BufferUtils.createFloatBuffer(maxPerBatch * 4 * 2);
 
         final IntBuffer elementIndices = BufferUtils.createIntBuffer(maxPerBatch * 6);
-        elementIndices.put(createIndices(maxPerBatch));
+        elementIndices.put(createElementIndices(maxPerBatch));
         elementIndices.flip();
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -65,8 +65,14 @@ public class DynamicRenderer implements Renderer {
                 .filter(Drawable::shouldRender)
                 .map(Drawable::renderData)
                 .toList();
+        if(renderData.isEmpty()) {
+            return;
+        }
         glBindTextureUnit(0, renderData.get(0).textureId());
         final Shader shader = shaderBinding.apply();
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
         Lists.partition(renderData, maxPerBatch).forEach(batch -> {
             posBuffer.clear();
@@ -95,14 +101,10 @@ public class DynamicRenderer implements Renderer {
             glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glBindVertexArray(vao);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-
             glDrawElements(GL_TRIANGLES, batch.size() * 6, GL_UNSIGNED_INT, 0);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            glBindVertexArray(0);
         });
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
         shader.unbind();
     }
@@ -111,7 +113,7 @@ public class DynamicRenderer implements Renderer {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, texture);
     }
-    private int[] createIndices(final int count) {
+    private int[] createElementIndices(final int count) {
         final int[] indices = new int[count * 6];
         for (int i = 0; i < count; i++) {
             final int offset = i * 6;

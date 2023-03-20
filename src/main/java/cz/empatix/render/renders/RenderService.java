@@ -12,7 +12,7 @@ public class RenderService {
     public RenderService() {
         renderers = new HashMap<>();
         renderers.put(RenderData.RenderDataType.DYNAMIC, new DynamicRenderer());
-        //renderers.put(RenderData.RenderDataType.STATIC, new StaticRenderer());
+        renderers.put(RenderData.RenderDataType.STATIC, new StaticRenderer());
     }
 
     public void render(final List<Drawable> drawable) {
@@ -25,7 +25,7 @@ public class RenderService {
 
     private Set<Drawable> findAllDrawables(List<Drawable> drawable) {
         final Set<Drawable> allDrawables = new HashSet<>(drawable);
-        Queue<Drawable> drawableQueue = new LinkedList<>(drawable);
+        final Queue<Drawable> drawableQueue = new LinkedList<>(drawable);
 
         while (!drawableQueue.isEmpty()) {
             final Drawable current = drawableQueue.poll();
