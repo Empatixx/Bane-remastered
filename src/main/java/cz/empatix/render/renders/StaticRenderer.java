@@ -3,17 +3,17 @@ package cz.empatix.render.renders;
 import cz.empatix.assets.builders.VaoBuilder;
 import cz.empatix.assets.builders.VboBuilder;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
-import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
@@ -32,76 +32,59 @@ public class StaticRenderer implements Renderer {
 
     private static final class StaticRenderData {
         private final int vao;
-        private final int vboPos;
-        private final int vboTex;
+        private final int vbo;
         private final int ebo;
         private long lastRendered;
 
         private StaticRenderData(
                 int vao,
-                int vboPos,
-                int vboTex,
+                int vbo,
                 int ebo
 
         ) {
             this.vao = vao;
-            this.vboPos = vboPos;
-            this.vboTex = vboTex;
+            this.vbo = vbo;
             this.ebo = ebo;
             lastRendered = System.currentTimeMillis();
         }
 
         public static StaticRenderData from(final List<Drawable> drawables) {
             final int size = drawables.size();
-            final int vboPos = VboBuilder.builder()
-                    .buffer(new float[size * 4 * 2])
-                    .build();
-            final int vboTex = VboBuilder.builder()
-                    .buffer(new float[size * 4 * 2])
-                    .build();
-            final int vao = VaoBuilder.builder()
-                    .addVbo(0, vboPos)
-                    .addVbo(1, vboTex)
+            final int vbo = VboBuilder.builder()
+                    .buffer(new float[size * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
+                    .dynamic()
                     .build();
             final int ebo = VboBuilder.builder()
-                    .buffer(new int[size * 6])
+                    .buffer(new int[size * TOTAL_ELEMENT_VERTICES_PER_QUAD])
+                    .build();
+            final int vao = VaoBuilder.builder()
+                    .addVbo(0, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 0)
+                    .addVbo(1, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 2 * Float.BYTES)
                     .build();
 
-            final List<Vertex> vertices = drawables.stream()
+            final FloatBuffer vertexBuffer = BufferUtils.createFloatBuffer(size * TOTAL_VERTICES_PER_QUAD * (2 + 2));
+            drawables
+                    .stream()
                     .map(Drawable::renderData)
-                    .map(RenderData::vertices)
-                    .flatMap(List::stream)
-                    .toList();
+                    .flatMap(r -> r.vertices().stream())
+                            .forEach(v -> {
+                                vertexBuffer.put(v.position().x());
+                                vertexBuffer.put(v.position().y());
+                                vertexBuffer.put(v.texCoords().x());
+                                vertexBuffer.put(v.texCoords().y());
+                            });
+            vertexBuffer.flip();
 
-            final FloatBuffer posBuffer = BufferUtils.createFloatBuffer(size * 4 * 2);
-            final FloatBuffer texCoordsBuffer = BufferUtils.createFloatBuffer(size * 4 * 2);
-
-            vertices.stream()
-                    .map(Vertex::position)
-                    .flatMap(p -> Stream.of(p.x, p.y))
-                    .forEach(posBuffer::put);
-            vertices.stream()
-                    .map(Vertex::texCoords)
-                    .flatMap(t -> Stream.of(t.x, t.y))
-                    .forEach(texCoordsBuffer::put);
-            posBuffer.flip();
-            texCoordsBuffer.flip();
-
-            glBindBuffer(GL_ARRAY_BUFFER, vboPos);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, posBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vertexBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glBindBuffer(GL_ARRAY_BUFFER, vboTex);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-            return new StaticRenderData(vao, vboPos, vboTex, ebo);
+            return new StaticRenderData(vao, vbo, ebo);
         }
 
         public void destroy() {
             glDeleteVertexArrays(vao);
-            glDeleteBuffers(vboPos);
-            glDeleteBuffers(vboTex);
+            glDeleteBuffers(vbo);
             glDeleteBuffers(ebo);
         }
 
@@ -140,7 +123,7 @@ public class StaticRenderer implements Renderer {
         final Shader shader = shaderBinding.apply();
         glBindTextureUnit(0, drawables.get(0).renderData().textureId());
 
-        final IntBuffer elementIndices = BufferUtils.createIntBuffer(drawables.size() * 6);
+        final IntBuffer elementIndices = BufferUtils.createIntBuffer(drawables.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD);
         final int[] indices = createElementIndices(drawables);
 
         elementIndices.put(indices);
@@ -170,7 +153,7 @@ public class StaticRenderer implements Renderer {
         return IntStream.range(0, drawables.size())
                 .filter(i -> drawables.get(i).shouldRender())
                 .mapToObj(i -> {
-                    int[] indices = new int[6];
+                    int[] indices = new int[TOTAL_ELEMENT_VERTICES_PER_QUAD];
                     indices[0] = i * 4;
                     indices[1] = i * 4 + 1;
                     indices[2] = i * 4 + 2;

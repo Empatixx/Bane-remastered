@@ -6,53 +6,39 @@ import cz.empatix.assets.builders.VboBuilder;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
-import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.lwjgl.opengl.GL33.*;
 
 public class DynamicRenderer implements Renderer {
-    private final static Logger LOGGER = LoggerFactory.getLogger(DynamicRenderer.class);
-    private final FloatBuffer posBuffer;
-    private final FloatBuffer texCoordsBuffer;
-    private final int maxPerBatch;
+    private final FloatBuffer vertexBuffer;
+    private static final int MAX_PER_BATCH = 400;
     private final int vao;
-    private final int vboTex;
-    private final int vboPos;
+    private final int vbo;
     private final int ebo;
 
-
     public DynamicRenderer() {
-        maxPerBatch = 400;
-        vboPos = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 4 * 2])
-                .dynamic()
-                .build();
-        vboTex = VboBuilder.builder()
-                .buffer(new float[maxPerBatch * 4 * 2])
+        vbo = VboBuilder.builder()
+                .buffer(new float[MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
                 .dynamic()
                 .build();
         ebo = VboBuilder.builder()
-                .buffer(new int[maxPerBatch * 6])
+                .buffer(new int[MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD])
                 .build();
         vao = VaoBuilder.builder()
-                .addVbo(0, vboPos)
-                .addVbo(1, vboTex)
+                .addVbo(0, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 0)
+                .addVbo(1, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 2 * Float.BYTES)
                 .build();
 
-        posBuffer = BufferUtils.createFloatBuffer(maxPerBatch * 4 * 2);
-        texCoordsBuffer = BufferUtils.createFloatBuffer(maxPerBatch * 4 * 2);
+        vertexBuffer = BufferUtils.createFloatBuffer(MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2));
 
-        final IntBuffer elementIndices = BufferUtils.createIntBuffer(maxPerBatch * 6);
-        elementIndices.put(createElementIndices(maxPerBatch));
+        final IntBuffer elementIndices = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
+        elementIndices.put(createElementIndices(MAX_PER_BATCH));
         elementIndices.flip();
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -74,34 +60,25 @@ public class DynamicRenderer implements Renderer {
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-        Lists.partition(renderData, maxPerBatch).forEach(batch -> {
-            posBuffer.clear();
-            texCoordsBuffer.clear();
-            final List<Vertex> vertices = batch.stream()
+        Lists.partition(renderData, MAX_PER_BATCH).forEach(batch -> {
+            vertexBuffer.clear();
+            batch.stream()
                     .flatMap(data -> data
                             .vertices()
                             .stream())
-                    .toList();
-            vertices.stream()
-                    .map(Vertex::position)
-                    .flatMap(p -> Stream.of(p.x, p.y))
-                    .forEach(posBuffer::put);
-            vertices.stream()
-                    .map(Vertex::texCoords)
-                    .flatMap(t -> Stream.of(t.x, t.y))
-                    .forEach(texCoordsBuffer::put);
-            posBuffer.flip();
-            texCoordsBuffer.flip();
+                    .forEach(vertex -> {
+                        vertexBuffer.put(vertex.position().x());
+                        vertexBuffer.put(vertex.position().y());
+                        vertexBuffer.put(vertex.texCoords().x());
+                        vertexBuffer.put(vertex.texCoords().y());
+                    });
+            vertexBuffer.flip();
 
-            glBindBuffer(GL_ARRAY_BUFFER, vboPos);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, posBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vertexBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-            glBindBuffer(GL_ARRAY_BUFFER, vboTex);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, texCoordsBuffer);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-            glDrawElements(GL_TRIANGLES, batch.size() * 6, GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, batch.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD, GL_UNSIGNED_INT, 0);
         });
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
@@ -114,9 +91,9 @@ public class DynamicRenderer implements Renderer {
         glBindTexture(GL_TEXTURE_2D, texture);
     }
     private int[] createElementIndices(final int count) {
-        final int[] indices = new int[count * 6];
+        final int[] indices = new int[count * TOTAL_ELEMENT_VERTICES_PER_QUAD];
         for (int i = 0; i < count; i++) {
-            final int offset = i * 6;
+            final int offset = i * TOTAL_ELEMENT_VERTICES_PER_QUAD;
             final int vertexOffset = i * 4;
             indices[offset] = vertexOffset;
             indices[offset + 1] = vertexOffset + 1;
