@@ -1,35 +1,42 @@
 package cz.empatix.assets.loaders;
 
-        import cz.empatix.assets.domain.font.FontSize;
-        import cz.empatix.assets.domain.font.RawFont;
-        import cz.empatix.assets.domain.font.RawGlyph;
-        import cz.empatix.common.handlers.WindowHandler;
-        import cz.empatix.common.utils.BufferFactory;
-        import org.lwjgl.stb.STBTTFontinfo;
-        import org.lwjgl.stb.STBTruetype;
-        import org.lwjgl.system.MemoryStack;
-        import org.slf4j.Logger;
-        import org.slf4j.LoggerFactory;
+import cz.empatix.assets.domain.RawImage;
+import cz.empatix.assets.domain.font.FontSize;
+import cz.empatix.assets.domain.font.RawFont;
+import cz.empatix.assets.domain.font.RawGlyph;
+import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.common.utils.BufferFactory;
+import cz.empatix.textureatlas.domain.RawTextureAtlas;
+import cz.empatix.textureatlas.domain.TextureAtlas;
+import cz.empatix.textureatlas.factory.TextureAtlasFactory;
+import org.lwjgl.stb.STBTTFontinfo;
+import org.lwjgl.stb.STBTruetype;
+import org.lwjgl.system.MemoryStack;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-        import java.io.IOException;
-        import java.nio.ByteBuffer;
-        import java.nio.IntBuffer;
-        import java.nio.file.Files;
-        import java.nio.file.Path;
-        import java.util.HashMap;
-        import java.util.Map;
-        import java.util.concurrent.atomic.AtomicInteger;
-        import java.util.stream.Stream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-        import static org.lwjgl.stb.STBTruetype.*;
+import static org.lwjgl.stb.STBTruetype.*;
 
 public class FontLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(FontLoader.class);
     public final static Path PATH = Path.of("./assets/fonts/");
     private final Map<String, Map<FontSize, RawFont>> fonts;
+    private final TextureAtlasFactory textureAtlasFactory;
 
     public FontLoader(final Map<String, Map<FontSize, RawFont>> fonts) {
         this.fonts = fonts;
+        this.textureAtlasFactory = new TextureAtlasFactory();
     }
 
     @Override
@@ -111,10 +118,24 @@ public class FontLoader implements AssetLoader {
                     glyphs.put(c, glyph);
                 }
             }
-            return new RawFont(glyphs);
+            final RawTextureAtlas atlas = getAtlas(glyphs);
+            return new RawFont(glyphs, atlas);
         } catch (Exception e) {
+            LOGGER.error("Failed to load font file {}", path);
             throw new RuntimeException(e);
         }
     }
 
+    private RawTextureAtlas getAtlas(final Map<Character, RawGlyph> glyphs) {
+        final Map<String, RawImage> images = glyphs
+                .entrySet()
+                .stream()
+                .map(e -> {
+                    final RawGlyph glyph = e.getValue();
+                    final RawImage rawTexture = new RawImage(glyph.bitmapWidth(), glyph.bitmapHeight(), TextureAtlas.R_CHANNELS, glyph.bitmap());
+                    return Map.entry(String.valueOf(e.getKey()), rawTexture);
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return textureAtlasFactory.createAtlas(images);
+    }
 }

@@ -3,12 +3,15 @@ package cz.empatix.assets.builders;
 import com.google.common.base.Preconditions;
 import cz.empatix.common.utils.BufferFactory;
 import org.lwjgl.opengl.GL30;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
 public class TextureBuilder {
+    private final static Logger LOGGER = LoggerFactory.getLogger(TextureBuilder.class);
     private int width;
     private int height;
     private int channels;
@@ -140,6 +143,9 @@ public class TextureBuilder {
 
         GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, 0);
+
+        LOGGER.info("Texture built: {} with params {}", texture, params);
+
         return texture;
     }
 

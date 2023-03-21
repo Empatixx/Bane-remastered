@@ -13,7 +13,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TextureAtlasFactory {
-    private static final TextureAtlasPacker packer = new TextureAtlasPacker();
+    private final TextureAtlasPacker packer;
+    public TextureAtlasFactory(){
+        packer = new TextureAtlasPacker();
+    }
 
     public RawTextureAtlas createAtlas(final Map<String, RawImage> images) {
         Preconditions.checkNotNull(images);
@@ -36,7 +39,7 @@ public class TextureAtlasFactory {
         });
     }
 
-    private RawTextureAtlas createAtlas(final Map<String, RawImage> images,
+    public RawTextureAtlas createAtlas(final Map<String, RawImage> images,
                                      final SortingMethod method) {
         final Comparator<Map.Entry<String, RawImage>> comparator = sortByField(method)
                 .reversed();

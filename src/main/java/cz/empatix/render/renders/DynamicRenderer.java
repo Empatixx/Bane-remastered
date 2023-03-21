@@ -38,7 +38,7 @@ public class DynamicRenderer implements Renderer {
         vertexBuffer = BufferUtils.createFloatBuffer(MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2));
 
         final IntBuffer elementIndices = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
-        elementIndices.put(createElementIndices(MAX_PER_BATCH));
+        elementIndices.put(createElementIndices());
         elementIndices.flip();
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -90,11 +90,11 @@ public class DynamicRenderer implements Renderer {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, texture);
     }
-    private int[] createElementIndices(final int count) {
-        final int[] indices = new int[count * TOTAL_ELEMENT_VERTICES_PER_QUAD];
-        for (int i = 0; i < count; i++) {
+    private int[] createElementIndices() {
+        final int[] indices = new int[DynamicRenderer.MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD];
+        for (int i = 0; i < DynamicRenderer.MAX_PER_BATCH; i++) {
             final int offset = i * TOTAL_ELEMENT_VERTICES_PER_QUAD;
-            final int vertexOffset = i * 4;
+            final int vertexOffset = i * TOTAL_VERTICES_PER_QUAD;
             indices[offset] = vertexOffset;
             indices[offset + 1] = vertexOffset + 1;
             indices[offset + 2] = vertexOffset + 2;

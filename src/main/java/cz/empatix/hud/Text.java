@@ -44,7 +44,7 @@ public class Text implements HUDElement {
 
     @Override
     public boolean shouldRender() {
-        return false;
+        return true;
     }
 
     @Override

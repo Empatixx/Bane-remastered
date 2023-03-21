@@ -119,6 +119,24 @@ public class TextureAtlasPacker {
                     }
                 }
             }
+            case TextureAtlas.R_CHANNELS -> {
+                final int width = image.width();
+                final int height = image.height();
+                final byte[] imageData = image.pixels();
+
+                for (int i = 0; i < height; i++) {
+                    final int sourceOffset = i * width;
+                    int targetOffset = ((y + i) * targetSize + x) * TextureAtlas.RGBA_CHANNELS;
+
+                    for (int j = 0; j < width; j++) {
+                        byte redValue = imageData[sourceOffset + j];
+                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS] = redValue; // R
+                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS + 1] = 0; // G
+                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS + 2] = 0; // B
+                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS + 3] = (byte) 255; // A
+                    }
+                }
+            }
             default -> throw new IllegalStateException("Unsupported image channels: " + channels);
         }
     }
