@@ -1,0 +1,30 @@
+package cz.empatix.background;
+
+import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.render.domain.RenderData;
+import cz.empatix.hud.Image;
+import org.joml.Vector2f;
+
+public class CommonBackground implements Background {
+    private final Image image;
+
+    public CommonBackground(final String texture) {
+        this.image = new Image(texture, new Vector2f(0,0), WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT,false);
+    }
+    @Override
+    public RenderData renderData() {
+        return image.renderData();
+    }
+    @Override
+    public boolean shouldRender() {
+        return true;
+    }
+
+    @Override
+    public int getZIndex() {
+        return -1;
+    }
+
+    public void update(){
+    }
+}

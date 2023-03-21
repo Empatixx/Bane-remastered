@@ -1,0 +1,107 @@
+package cz.empatix.render.renders;
+
+import com.google.common.collect.Lists;
+import cz.empatix.assets.builders.VaoBuilder;
+import cz.empatix.assets.builders.VboBuilder;
+import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.Shader;
+import cz.empatix.render.shaderbindings.ShaderBinding;
+import org.lwjgl.BufferUtils;
+
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.List;
+
+import static org.lwjgl.opengl.GL33.*;
+
+public class DynamicRenderer implements Renderer {
+    private final FloatBuffer vertexBuffer;
+    private static final int MAX_PER_BATCH = 400;
+    private final int vao;
+    private final int vbo;
+    private final int ebo;
+
+    public DynamicRenderer() {
+        vbo = VboBuilder.builder()
+                .buffer(new float[MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
+                .dynamic()
+                .build();
+        ebo = VboBuilder.builder()
+                .buffer(new int[MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD])
+                .build();
+        vao = VaoBuilder.builder()
+                .addVbo(0, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 0)
+                .addVbo(1, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 2 * Float.BYTES)
+                .build();
+
+        vertexBuffer = BufferUtils.createFloatBuffer(MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2));
+
+        final IntBuffer elementIndices = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
+        elementIndices.put(createElementIndices(MAX_PER_BATCH));
+        elementIndices.flip();
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+    @Override
+    public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
+        final List<RenderData> renderData = drawables.stream()
+                .filter(Drawable::shouldRender)
+                .map(Drawable::renderData)
+                .toList();
+        if(renderData.isEmpty()) {
+            return;
+        }
+        glBindTextureUnit(0, renderData.get(0).textureId());
+        final Shader shader = shaderBinding.apply();
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+
+        Lists.partition(renderData, MAX_PER_BATCH).forEach(batch -> {
+            vertexBuffer.clear();
+            batch.stream()
+                    .flatMap(data -> data
+                            .vertices()
+                            .stream())
+                    .forEach(vertex -> {
+                        vertexBuffer.put(vertex.position().x());
+                        vertexBuffer.put(vertex.position().y());
+                        vertexBuffer.put(vertex.texCoords().x());
+                        vertexBuffer.put(vertex.texCoords().y());
+                    });
+            vertexBuffer.flip();
+
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vertexBuffer);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+            glDrawElements(GL_TRIANGLES, batch.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD, GL_UNSIGNED_INT, 0);
+        });
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        shader.unbind();
+    }
+
+    private void glBindTextureUnit(final int unit, final int texture) {
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(GL_TEXTURE_2D, texture);
+    }
+    private int[] createElementIndices(final int count) {
+        final int[] indices = new int[count * TOTAL_ELEMENT_VERTICES_PER_QUAD];
+        for (int i = 0; i < count; i++) {
+            final int offset = i * TOTAL_ELEMENT_VERTICES_PER_QUAD;
+            final int vertexOffset = i * 4;
+            indices[offset] = vertexOffset;
+            indices[offset + 1] = vertexOffset + 1;
+            indices[offset + 2] = vertexOffset + 2;
+            indices[offset + 3] = vertexOffset;
+            indices[offset + 4] = vertexOffset + 2;
+            indices[offset + 5] = vertexOffset + 3;
+        }
+        return indices;
+    }
+}

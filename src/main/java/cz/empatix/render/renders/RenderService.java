@@ -1,40 +1,51 @@
 package cz.empatix.render.renders;
 
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.domain.RenderData;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class RenderService {
-    private final List<Renderer> renderers;
+    private final Map<RenderData.RenderDataType, Renderer> renderers;
 
     public RenderService() {
-        renderers = new ArrayList<>();
-        renderers.add(new TextRenderer());
-        renderers.add(new CommonRenderer());
+        renderers = new HashMap<>();
+        renderers.put(RenderData.RenderDataType.DYNAMIC, new DynamicRenderer());
+        renderers.put(RenderData.RenderDataType.STATIC, new StaticRenderer());
     }
 
     public void render(final List<Drawable> drawable) {
-        final List<Drawable> allDrawables = new ArrayList<>(drawable);
-
-        final List<Drawable> foundSubDrawables = new ArrayList<>();
-        final List<Drawable> searchSubDrawables = new ArrayList<>(drawable);
-        do {
-            foundSubDrawables.clear();
-            searchSubDrawables.forEach(d -> foundSubDrawables.addAll(d.getSubDrawables()));
-            allDrawables.addAll(foundSubDrawables);
-            searchSubDrawables.clear();
-            searchSubDrawables.addAll(foundSubDrawables);
-        } while (!searchSubDrawables.isEmpty());
-
+        final Set<Drawable> allDrawables = findAllDrawables(drawable);
         allDrawables.stream()
-                .filter(Drawable::shouldRender)
-                .sorted(Comparator.comparing(Drawable::getZIndex)
-                        .thenComparing(a -> a.getClass().getSimpleName()))
-                .map(Drawable::renderData)
-                .forEach(renderData -> renderers.stream()
-                        .filter(renderer -> renderer.accepts(renderData))
-                        .forEach(renderer -> renderer.render(renderData)));
+                .sorted(Comparator.comparingInt(Drawable::getZIndex))
+                .collect(Collectors.groupingBy(Drawable::getZIndex, LinkedHashMap::new, Collectors.toList()))
+                .forEach(this::renderDrawablesByZIndex);
+    }
+
+    private Set<Drawable> findAllDrawables(List<Drawable> drawable) {
+        final Set<Drawable> allDrawables = new HashSet<>(drawable);
+        final Queue<Drawable> drawableQueue = new LinkedList<>(drawable);
+
+        while (!drawableQueue.isEmpty()) {
+            final Drawable current = drawableQueue.poll();
+            final List<Drawable> subDrawables = current.getSubDrawables();
+            allDrawables.addAll(subDrawables);
+            drawableQueue.addAll(subDrawables);
+        }
+
+        return allDrawables;
+    }
+    private void renderDrawablesByZIndex(int zIndex, List<Drawable> drawables) {
+        drawables.stream()
+                .filter(d -> d.renderData() != null)
+                .collect(Collectors.groupingBy(d -> d.renderData().type()))
+                .forEach((type, drawablesOfType) -> renderDrawablesByType(type, drawablesOfType, zIndex));
+    }
+    private void renderDrawablesByType(RenderData.RenderDataType type, List<Drawable> drawablesOfType, int zIndex) {
+        var renderer = renderers.get(type);
+        drawablesOfType.stream()
+                .collect(Collectors.groupingBy(d -> d.renderData().shaderBinding()))
+                .forEach((shaderBinding, drawablesOfShader) -> renderer.render(drawablesOfShader, shaderBinding, zIndex));
     }
 }

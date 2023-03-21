@@ -1,20 +1,20 @@
 package cz.empatix.render.domain;
 
 import cz.empatix.common.GameLoop;
-import org.joml.Vector3f;
+import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class InterpolatedPosition {
     private final static Logger LOGGER = LoggerFactory.getLogger(InterpolatedPosition.class);
-    private final Vector3f currentPosition;
-    private final Vector3f nextPosition;
-    private final Vector3f previousPosition;
+    private final Vector2f currentPosition;
+    private final Vector2f nextPosition;
+    private final Vector2f previousPosition;
     private float t = 0;
     public InterpolatedPosition() {
-        this.currentPosition = new Vector3f();
-        this.nextPosition = new Vector3f();
-        this.previousPosition = new Vector3f();
+        this.currentPosition = new Vector2f();
+        this.nextPosition = new Vector2f();
+        this.previousPosition = new Vector2f();
     }
 
     public void setPosition(final float x, final float y) {
@@ -33,7 +33,7 @@ public class InterpolatedPosition {
     public float getY() {
         return currentPosition.y;
     }
-    public Vector3f getPosition(){
+    public Vector2f getPosition(){
         return currentPosition;
     }
 

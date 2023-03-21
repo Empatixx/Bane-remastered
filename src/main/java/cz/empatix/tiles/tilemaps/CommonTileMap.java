@@ -1,7 +1,7 @@
 package cz.empatix.tiles.tilemaps;
 
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.tiles.TileFactory;
+import cz.empatix.tiles.factory.TileFactory;
 import cz.empatix.tiles.domain.Tile;
 
 import java.util.Arrays;

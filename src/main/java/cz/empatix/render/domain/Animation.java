@@ -1,40 +1,34 @@
 package cz.empatix.render.domain;
 
-import cz.empatix.common.assets.domain.metadata.Row;
+import cz.empatix.textureatlas.domain.TextureAtlas;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Animation {
     private final static Logger LOGGER = LoggerFactory.getLogger(Animation.class);
-    private final Map<AnimationState, Integer> numSprites;
-    private final Map<AnimationState,Integer> rowSprites;
+    private final Map<AnimationState, AnimationPart> animationParts;
+    private final TextureAtlas.Entry texture;
     private AnimationState currentState;
     private int currentTextureIndex;
     private long lastAnimation;
-    private long delayBetweenAnimations;
 
-    public Animation(final List<Row> sprites) {
-        numSprites = sprites.stream()
-                .map(row -> Map.entry(row.type(), row.numSprites()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        rowSprites = IntStream.range(0, sprites.size())
-                .mapToObj(i -> Map.entry(sprites.get(i).type(), i))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        delayBetweenAnimations = 100;
-
-        sprites.stream()
-                .map(Row::type)
-                .findFirst()
-                .ifPresentOrElse(this::setAnimationState, () -> LOGGER.error("No animation states found for {}", this));
+    public Animation(final Map<AnimationState, AnimationPart> animationParts,
+                     final TextureAtlas.Entry texture) {
+        this.texture = texture;
+        this.animationParts = animationParts;
+        this.currentState = AnimationState.IDLE;
+        this.currentTextureIndex = 0;
+        this.lastAnimation = System.currentTimeMillis();
     }
 
     public void setAnimationState(final AnimationState state) {
-        if(!numSprites.containsKey(state)){
+        if (!animationParts.containsKey(state)) {
             LOGGER.error("Animation state {} not found for {}", state, this);
         }
         currentState = state;
@@ -43,26 +37,87 @@ public class Animation {
     }
 
     public void update() {
+        final AnimationPart part = animationParts.get(currentState);
+        final long delayBetweenAnimations = part.delayBetweenAnimations();
         if (delayBetweenAnimations == -1) {
             return;
         }
         if (System.currentTimeMillis() - lastAnimation > delayBetweenAnimations) {
             lastAnimation = System.currentTimeMillis();
             currentTextureIndex++;
-            if (currentTextureIndex >= numSprites.get(currentState)) {
+            if (currentTextureIndex >= part.numSprites()) {
                 currentTextureIndex = 0;
             }
         }
     }
-    public int getCurrentTextureRow(){
-        return rowSprites.get(currentState);
+
+    public List<Vertex> getVertices(final Vector2f position) {
+        final AnimationPart part = animationParts.get(currentState);
+        return Vertex.builder()
+                .texture(texture)
+                .texPosition(currentTextureIndex, part.row())
+                .texPositionsDimensions(part.numSprites(), animationParts.size())
+                .position(position)
+                .posDimensions(part.width(), part.height())
+                .buildQuad();
     }
-    public int getCurrentTextureColumn(){
-        return currentTextureIndex;
+    public int getTextureId() {
+        return texture.textureId();
     }
 
-    public void setDelayBetweenAnimations(long delayBetweenAnimations) {
-        this.delayBetweenAnimations = delayBetweenAnimations;
+
+    private record AnimationPart(
+            Vector2i dimensions,
+            Vector2i animationDimensions,
+            int delayBetweenAnimations
+    ) {
+        public int numSprites(){
+            return animationDimensions.y();
+        }
+        public int row(){
+            return animationDimensions.x();
+        }
+        public int width(){
+            return dimensions.x();
+        }
+        public int height(){
+            return dimensions.y();
+        }
+    }
+
+    public static class Builder {
+        private final Map<AnimationState, AnimationPart> animationParts;
+        private TextureAtlas.Entry texture;
+
+        public Builder() {
+            this.animationParts = new HashMap<>();
+        }
+
+        public Builder addAnimationState(final AnimationState state,
+                                         final int row,
+                                         final int numSprites,
+                                         final int width,
+                                         final int height,
+                                         final int delayBetweenAnimations) {
+            final AnimationPart part = new AnimationPart(
+                    new Vector2i(width, height),
+                    new Vector2i(row, numSprites),
+                    delayBetweenAnimations
+            );
+            animationParts.put(state, part);
+            return this;
+        }
+        public Builder texture(final TextureAtlas.Entry texture){
+            this.texture = texture;
+            return this;
+        }
+
+        public Animation build() {
+            return new Animation(animationParts, texture);
+        }
+    }
+    public static Builder builder(){
+        return new Builder();
     }
 
 }
