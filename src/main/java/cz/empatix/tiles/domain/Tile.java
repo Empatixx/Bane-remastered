@@ -49,7 +49,7 @@ public record Tile(
                 vertices,
                 textureId,
                 new CommonShaderBinding(Camera.getProjection()),
-                RenderData.RenderDataType.DYNAMIC
+                RenderData.RenderDataType.STATIC
         );
     }
 

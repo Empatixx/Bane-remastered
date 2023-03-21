@@ -21,6 +21,7 @@ public class TextShaderBinding implements ShaderBinding{
         shader.setUniform3f("color", color);
         return shader;
     }
+
     @Override
     public boolean equals(Object obj) {
         if(obj instanceof TextShaderBinding){

@@ -31,7 +31,7 @@ public class DynamicRenderer implements Renderer {
 
 
     public DynamicRenderer() {
-        maxPerBatch = 255;
+        maxPerBatch = 400;
         vboPos = VboBuilder.builder()
                 .buffer(new float[maxPerBatch * 4 * 2])
                 .dynamic()
