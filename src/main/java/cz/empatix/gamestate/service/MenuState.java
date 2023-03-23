@@ -1,14 +1,15 @@
-package cz.empatix.gamestate.domain;
+package cz.empatix.gamestate.service;
 
 import com.google.common.collect.Streams;
-import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.gamestate.service.GameStateService;
-import cz.empatix.render.Camera;
-import cz.empatix.render.attributes.Drawable;
 import cz.empatix.background.Background;
 import cz.empatix.background.CommonBackground;
+import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.gamestate.domain.GameState;
+import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.HUDElement;
 import cz.empatix.hud.Image;
+import cz.empatix.render.Camera;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.ui.Button;
 import cz.empatix.ui.UIElement;
 import org.lwjgl.glfw.GLFW;

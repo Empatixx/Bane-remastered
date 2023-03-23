@@ -1,7 +1,8 @@
-package cz.empatix.gamestate.domain;
+package cz.empatix.gamestate.service;
 
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.gamestate.service.GameStateService;
+import cz.empatix.gamestate.domain.GameState;
+import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.RoomMap;

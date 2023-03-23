@@ -1,4 +1,4 @@
-package cz.empatix.assets.builders;
+package cz.empatix.render.builders;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.common.utils.BufferFactory;
@@ -94,17 +94,17 @@ public class TextureBuilder {
         Preconditions.checkArgument(channels > 0, "Channels must be set");
         Preconditions.checkNotNull(buffer, "Buffer must be set");
 
-        final int pbo = GL30.glGenTextures();
         final int texture = GL30.glGenTextures();
 
         if(channels == GL30.GL_RED){
             return 0;
         }
 
-        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
+        //TODO - shared context, async loading
+        /*GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo.pboId());
         GL30.glBufferData(GL30.GL_PIXEL_UNPACK_BUFFER, buffer, GL30.GL_STREAM_DRAW);
         GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
-
+*/
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, texture);
         if (channels == GL30.GL_RED) {
             GL30.glPixelStorei(GL30.GL_UNPACK_ALIGNMENT, 1);
@@ -134,16 +134,16 @@ public class TextureBuilder {
             }
         }
 
-        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
-        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, channels, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE, 0);
-        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
+        //GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo.pboId());
+        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, channels, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE,buffer);
+        //GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
 
         GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, 0);
         return texture;
     }
 
-    private enum BuildParam {
+    public enum BuildParam {
         WRAP_REPEAT,
         LINEAR_FILTER,
         NEAREST_FILTER,

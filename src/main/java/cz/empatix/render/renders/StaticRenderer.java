@@ -1,7 +1,7 @@
 package cz.empatix.render.renders;
 
-import cz.empatix.assets.builders.VaoBuilder;
-import cz.empatix.assets.builders.VboBuilder;
+import cz.empatix.render.builders.VaoBuilder;
+import cz.empatix.render.builders.VboBuilder;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.shaderbindings.ShaderBinding;

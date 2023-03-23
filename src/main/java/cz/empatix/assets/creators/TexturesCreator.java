@@ -30,7 +30,6 @@ public class TexturesCreator implements AssetCreator {
         final String key = PATH.resolve(name).toString();
         return textureAtlases
                 .stream()
-                .parallel()
                 .filter(atlas -> atlas.texturesInfos().containsKey(key))
                 .findAny()
                 .map(atlas -> atlas.texturesInfos().get(key))
@@ -48,13 +47,8 @@ public class TexturesCreator implements AssetCreator {
     }
 
     @Override
-    public Runnable load() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                texturesLoader.load();
-            }
-        };
+    public void load() {
+        texturesLoader.load();
     }
 
     @Override
