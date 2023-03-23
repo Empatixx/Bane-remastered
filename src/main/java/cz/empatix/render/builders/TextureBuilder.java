@@ -116,11 +116,11 @@ public class TextureBuilder {
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_T, GL30.GL_REPEAT);
                 }
                 case LINEAR_FILTER -> {
-                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR_MIPMAP_LINEAR);
+                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR);
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_LINEAR);
                 }
                 case NEAREST_FILTER -> {
-                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR_MIPMAP_NEAREST);
+                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_NEAREST);
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_NEAREST);
                 }
                 case WRAP_CLAMP_TO_EDGE -> {
@@ -138,7 +138,7 @@ public class TextureBuilder {
         GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, channels, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE,buffer);
         //GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
 
-        GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
+        //GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, 0);
         return texture;
     }
