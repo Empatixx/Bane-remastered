@@ -27,22 +27,19 @@ public class DynamicRenderer implements Renderer {
                 .buffer(new float[MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
                 .dynamic()
                 .build();
-        ebo = VboBuilder.builder()
-                .buffer(new int[MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD])
-                .build();
         vao = VaoBuilder.builder()
                 .addVbo(0, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 0)
                 .addVbo(1, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 2 * Float.BYTES)
                 .build();
-
         vertexBuffer = BufferUtils.createFloatBuffer(MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2));
 
-        final IntBuffer elementIndices = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
-        elementIndices.put(createElementIndices());
-        elementIndices.flip();
+        final IntBuffer elementIndexes = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
+        elementIndexes.put(createElementIndices());
+        elementIndexes.flip();
 
+        ebo = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementIndexes, GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     @Override
