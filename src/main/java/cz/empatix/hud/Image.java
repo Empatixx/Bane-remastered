@@ -38,7 +38,7 @@ public class Image implements HUDElement {
                         .buildQuad(),
                 texture.textureId(),
                 new CommonShaderBinding(Camera.getProjection()),
-                RenderData.RenderDataType.DYNAMIC
+                RenderData.RenderDataType.STATIC
         );
     }
 

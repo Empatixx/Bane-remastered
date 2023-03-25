@@ -104,7 +104,10 @@ public class StaticRenderer implements Renderer {
 
     @Override
     public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
-        final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth, HashMap::new)
+        if(drawables.isEmpty()){
+            return;
+        }
+        final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth,i -> new HashMap<>())
                 .computeIfAbsent(drawables.hashCode(), s -> StaticRenderData.from(drawables));
         render(drawables, shaderBinding, renderData);
         renderData.updateLastRendered();

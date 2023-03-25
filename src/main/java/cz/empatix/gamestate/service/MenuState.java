@@ -1,11 +1,10 @@
 package cz.empatix.gamestate.service;
 
 import com.google.common.collect.Streams;
-import cz.empatix.background.Background;
-import cz.empatix.background.CommonBackground;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.hud.CommonBackground;
 import cz.empatix.hud.HUDElement;
 import cz.empatix.hud.Image;
 import cz.empatix.render.Camera;
@@ -19,7 +18,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class MenuState extends GameState {
-    private Background background;
+    private HUDElement background;
     private final List<UIElement> uiElements;
     private final List<HUDElement> hudElements;
 
@@ -31,7 +30,7 @@ public class MenuState extends GameState {
 
     @Override
     public void init() {
-        background = new CommonBackground("Menu/bg.png");
+        background = new CommonBackground("menu/bg.png");
 
         final Button playButton = new Button("Play", Camera.centerX().add(0, 150));
         playButton.setOnClick(() -> setCurrentState(GameStateType.INGAME));
@@ -45,7 +44,7 @@ public class MenuState extends GameState {
         uiElements.add(exitButton);
 
 
-        hudElements.add(new Image("Menu/logo.tga", Camera.centerX().add(0, 62.5f), 200, 100));
+        hudElements.add(new Image("menu/logo.tga", Camera.centerX().add(0, 62.5f), 200, 100));
     }
 
     @Override

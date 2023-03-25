@@ -26,7 +26,8 @@ public class TexturesLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesLoader.class);
     public final static Path PATH = Path.of("./assets/textures/");
     private final static Path[] PRELOAD_TEXTURES = {
-            PATH.resolve("Menu/loading.tga")
+            PATH.resolve("loading/loading.tga"),
+            PATH.resolve("loading/loading_image.tga")
     };
     private final Queue<RawTextureAtlas> rawTextureAtlases;
     private final TextureAtlasFactory textureAtlasFactory;

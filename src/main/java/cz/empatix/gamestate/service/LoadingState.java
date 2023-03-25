@@ -3,9 +3,11 @@ package cz.empatix.gamestate.service;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.hud.AnimatedImage;
+import cz.empatix.hud.CommonBackground;
+import cz.empatix.hud.HUDElement;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.background.AnimatedBackground;
-import cz.empatix.background.Background;
+import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +15,8 @@ import java.util.List;
 
 public class LoadingState extends GameState {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadingState.class);
-    private Background loadingBg;
+    private HUDElement loadingBg;
+    private HUDElement loadingCircle;
     public LoadingState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.LOADING);
     }
@@ -21,12 +24,15 @@ public class LoadingState extends GameState {
     @Override
     public void init() {
         AssetsService.loadAssets();
-        loadingBg = new AnimatedBackground("Menu/loading.tga",8);
+        loadingBg = new CommonBackground("loading/loading.tga");
+        loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(480,270), 8, false);
+
     }
 
     @Override
     public void update(final double dt) {
-        loadingBg.update();
+        loadingBg.update(dt);
+        loadingCircle.update(dt);
         AssetsService.createAssets();
         if(AssetsService.isLoaded()){
             setCurrentState(GameStateType.MENU);
@@ -39,7 +45,7 @@ public class LoadingState extends GameState {
 
     @Override
     public List<Drawable> toRender(final double dt) {
-        return List.of(loadingBg);
+        return List.of(loadingBg, loadingCircle);
     }
 
     @Override
