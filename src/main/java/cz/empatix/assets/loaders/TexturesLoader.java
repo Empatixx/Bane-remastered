@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,10 +24,7 @@ import static org.lwjgl.stb.STBImage.stbi_load;
 public class TexturesLoader implements AssetLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesLoader.class);
     public final static Path PATH = Path.of("./assets/textures/");
-    private final static Path[] PRELOAD_TEXTURES = {
-            PATH.resolve("loading/loading.tga"),
-            PATH.resolve("loading/loading_image.tga")
-    };
+    private final static Path PRELOAD_DIRECTORY = PATH.resolve("loading");
     private final Queue<RawTextureAtlas> rawTextureAtlases;
     private final TextureAtlasFactory textureAtlasFactory;
 
@@ -42,33 +38,47 @@ public class TexturesLoader implements AssetLoader {
         LOGGER.info("Loading textures from {}", PATH);
         final AtomicInteger total = new AtomicInteger();
         final long start = System.currentTimeMillis();
-        try (final Stream<Path> paths = Files.walk(PATH)) {
-            final Map<String, RawImage> textures = paths
-                    .parallel()
-                    .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".tga") || p.toString().endsWith(".png"))
-                    .map(path -> Map.entry(path.toString(), decodeImage(path)))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            final RawTextureAtlas textureAtlas = textureAtlasFactory.createAtlas(textures);
-            rawTextureAtlases.add(textureAtlas);
-            total.addAndGet(textures.size());
+        try (final Stream<Path> dirPaths = Files.list(PATH).filter(Files::isDirectory)) {
+            dirPaths.filter(p -> !p.equals(PRELOAD_DIRECTORY))
+                    .forEach(dirPath -> {
+                        final RawTextureAtlas textureAtlas = atlasFromDirectory(dirPath);
+                        rawTextureAtlases.add(textureAtlas);
+                        total.addAndGet(1);
+                    });
         } catch (Exception e) {
             LOGGER.error("Failed to load textures", e);
             throw new RuntimeException(e);
         } finally {
-            LOGGER.info("Loaded {} textures in {} ms", total.get(), System.currentTimeMillis() - start);
+            LOGGER.info("Loaded {} textures atlases in {} ms", total.get(), System.currentTimeMillis() - start);
         }
         return rawTextureAtlases.size();
     }
 
     @Override
     public int preload() {
-        final Map<String, RawImage> loadingAtlas = Arrays.stream(PRELOAD_TEXTURES)
-                .map(path -> Map.entry(path.toString(), decodeImage(path)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        final RawTextureAtlas textureAtlas = textureAtlasFactory.createAtlas(loadingAtlas);
-        rawTextureAtlases.add(textureAtlas);
-        return PRELOAD_TEXTURES.length;
+        try{
+            final RawTextureAtlas atlas = atlasFromDirectory(PRELOAD_DIRECTORY);
+            rawTextureAtlases.add(atlas);
+            return 1;
+        } catch (Exception e) {
+            LOGGER.error("Failed to preload textures", e);
+            throw new RuntimeException(e);
+        }
+    }
+    private RawTextureAtlas atlasFromDirectory(final Path dir){
+        try(final Stream<Path> paths = Files.walk(dir)){
+            final Map<String, RawImage> textures = paths
+                    .parallel()
+                    .filter(Files::isRegularFile)
+                    .filter(p -> p.toString().endsWith(".tga") || p.toString().endsWith(".png"))
+                    .map(path -> Map.entry(path.toString(), decodeImage(path)))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            LOGGER.info("Loaded {} textures from {}", textures.size(), dir);
+            return textureAtlasFactory.createAtlas(textures);
+        } catch (Exception e) {
+            LOGGER.error("Failed to load textures", e);
+            throw new RuntimeException(e);
+        }
     }
     private RawImage decodeImage(final Path path) {
         try (MemoryStack stack = MemoryStack.stackPush()) {

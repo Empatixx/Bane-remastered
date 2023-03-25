@@ -7,6 +7,7 @@ import cz.empatix.tiles.domain.Tile;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TileFactory {
+    private final static String TEXTURE_NAME = "ingame/tileset.tga";
     private final static ThreadLocalRandom random = ThreadLocalRandom.current();
     private static final int[] TOP_WALL = {22, 23, 24, 25};
     private static final int[] BOTTOM_WALL = {30, 31};
@@ -131,7 +132,7 @@ public class TileFactory {
     private Tile createTile(final int tileNumber,
                             final int x,
                             final int y) {
-        final TextureAtlas.Entry texture = AssetsService.getTexture("tileset64.tga");
+        final TextureAtlas.Entry texture = AssetsService.getTexture(TEXTURE_NAME);
 
         final int xTxtCol = tileNumber % TOTAL_COLUMNS;
         final int yTxtRow = tileNumber / TOTAL_COLUMNS;
