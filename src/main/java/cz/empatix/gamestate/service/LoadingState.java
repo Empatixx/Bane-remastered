@@ -25,7 +25,7 @@ public class LoadingState extends GameState {
     public void init() {
         AssetsService.loadAssets();
         loadingBg = new CommonBackground("loading/loading.tga");
-        loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(480,270), 8, false);
+        loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(320,280), 8, true);
 
     }
 
