@@ -60,7 +60,9 @@ public class DynamicRenderer implements Renderer {
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-        Lists.partition(renderData, MAX_PER_BATCH).forEach(batch -> {
+        final List<List<RenderData>> batches = Lists.partition(renderData, MAX_PER_BATCH);
+
+        for(final List<RenderData> batch : batches){
             vertexBuffer.clear();
             batch.stream()
                     .flatMap(data -> data
@@ -79,7 +81,8 @@ public class DynamicRenderer implements Renderer {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             glDrawElements(GL_TRIANGLES, batch.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD, GL_UNSIGNED_INT, 0);
-        });
+        }
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -92,15 +95,15 @@ public class DynamicRenderer implements Renderer {
     }
     private int[] createElementIndices(final int count) {
         final int[] indices = new int[count * TOTAL_ELEMENT_VERTICES_PER_QUAD];
+        int offset = 0;
         for (int i = 0; i < count; i++) {
-            final int offset = i * TOTAL_ELEMENT_VERTICES_PER_QUAD;
             final int vertexOffset = i * 4;
-            indices[offset] = vertexOffset;
-            indices[offset + 1] = vertexOffset + 1;
-            indices[offset + 2] = vertexOffset + 2;
-            indices[offset + 3] = vertexOffset;
-            indices[offset + 4] = vertexOffset + 2;
-            indices[offset + 5] = vertexOffset + 3;
+            indices[offset++] = vertexOffset;
+            indices[offset++] = vertexOffset + 1;
+            indices[offset++] = vertexOffset + 2;
+            indices[offset++] = vertexOffset;
+            indices[offset++] = vertexOffset + 2;
+            indices[offset++] = vertexOffset + 3;
         }
         return indices;
     }

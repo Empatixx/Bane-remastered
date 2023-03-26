@@ -17,6 +17,7 @@ public class LoadingState extends GameState {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadingState.class);
     private HUDElement loadingBg;
     private HUDElement loadingCircle;
+    private long startTime;
     public LoadingState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.LOADING);
     }
@@ -26,7 +27,7 @@ public class LoadingState extends GameState {
         AssetsService.loadAssets();
         loadingBg = new CommonBackground("loading/loading.tga");
         loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(320,280), 8, true);
-
+        startTime = System.currentTimeMillis();
     }
 
     @Override
@@ -35,6 +36,7 @@ public class LoadingState extends GameState {
         loadingCircle.update(dt);
         AssetsService.createAssets();
         if(AssetsService.isLoaded()){
+            LOGGER.info("Loading took {} ms", System.currentTimeMillis() - startTime);
             setCurrentState(GameStateType.MENU);
         }
     }

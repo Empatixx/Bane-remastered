@@ -1,19 +1,15 @@
 package cz.empatix.render.renders;
 
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.builders.VaoBuilder;
 import cz.empatix.render.builders.VboBuilder;
-import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
+import java.util.*;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
@@ -67,12 +63,12 @@ public class StaticRenderer implements Renderer {
                     .stream()
                     .map(Drawable::renderData)
                     .flatMap(r -> r.vertices().stream())
-                            .forEach(v -> {
-                                vertexBuffer.put(v.position().x());
-                                vertexBuffer.put(v.position().y());
-                                vertexBuffer.put(v.texCoords().x());
-                                vertexBuffer.put(v.texCoords().y());
-                            });
+                    .forEach(v -> {
+                        vertexBuffer.put(v.position().x());
+                        vertexBuffer.put(v.position().y());
+                        vertexBuffer.put(v.texCoords().x());
+                        vertexBuffer.put(v.texCoords().y());
+                    });
             vertexBuffer.flip();
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -91,12 +87,15 @@ public class StaticRenderer implements Renderer {
         public int vao() {
             return vao;
         }
+
         public int ebo() {
             return ebo;
         }
+
         public void updateLastRendered() {
             lastRendered = System.currentTimeMillis();
         }
+
         public boolean shouldDestroy() {
             return System.currentTimeMillis() - lastRendered > MAX_LIFETIME_WITHOUT_RENDER;
         }
@@ -104,23 +103,25 @@ public class StaticRenderer implements Renderer {
 
     @Override
     public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
-        if(drawables.isEmpty()){
+        if (drawables.isEmpty()) {
             return;
         }
-        final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth,i -> new HashMap<>())
+        final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth, i -> new HashMap<>())
                 .computeIfAbsent(drawables.hashCode(), s -> StaticRenderData.from(drawables));
         render(drawables, shaderBinding, renderData);
         renderData.updateLastRendered();
 
-        staticRenderData.entrySet()
-                .stream()
-                .filter(e -> e.getKey() != zDepth)
-                .flatMap(e -> e.getValue().entrySet().stream())
-                .filter(e -> e.getValue().shouldDestroy())
-                .forEach(e -> {
-                    staticRenderData.get(zDepth).remove(e.getValue().hashCode());
-                    e.getValue().destroy();
-                });
+        staticRenderData.forEach((z, map) -> {
+                    final Iterator<Map.Entry<Integer, StaticRenderData>> iterator = map.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        Map.Entry<Integer, StaticRenderData> entry = iterator.next();
+                        if (entry.getValue().shouldDestroy()) {
+                            entry.getValue().destroy();
+                            iterator.remove();
+                        }
+                    }
+                }
+        );
     }
 
     private void render(final List<Drawable> drawables,
@@ -135,12 +136,14 @@ public class StaticRenderer implements Renderer {
         elementIndices.put(indices);
         elementIndices.flip();
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderData.ebo());
+        /*glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderData.ebo());
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);*/
 
         glBindVertexArray(renderData.vao());
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderData.ebo());
+
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
 
         glDrawElements(GL_TRIANGLES, indices.length, GL_UNSIGNED_INT, 0);
 
@@ -156,19 +159,22 @@ public class StaticRenderer implements Renderer {
     }
 
     private int[] createElementIndices(final List<Drawable> drawables) {
-        return IntStream.range(0, drawables.size())
-                .filter(i -> drawables.get(i).shouldRender())
-                .mapToObj(i -> {
-                    int[] indices = new int[TOTAL_ELEMENT_VERTICES_PER_QUAD];
-                    indices[0] = i * 4;
-                    indices[1] = i * 4 + 1;
-                    indices[2] = i * 4 + 2;
-                    indices[3] = i * 4;
-                    indices[4] = i * 4 + 2;
-                    indices[5] = i * 4 + 3;
-                    return indices;
-                })
-                .flatMapToInt(Arrays::stream)
-                .toArray();
+        final int size = drawables.size();
+        int[] indices = new int[size * 6];
+        int currentIndex = 0;
+
+        for (int i = 0; i < size; i++) {
+            if (drawables.get(i).shouldRender()) {
+                int base = i * 4;
+                indices[currentIndex++] = base;
+                indices[currentIndex++] = base + 1;
+                indices[currentIndex++] = base + 2;
+                indices[currentIndex++] = base;
+                indices[currentIndex++] = base + 2;
+                indices[currentIndex++] = base + 3;
+            }
+        }
+
+        return Arrays.copyOf(indices, currentIndex);
     }
 }
