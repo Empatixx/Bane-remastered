@@ -64,11 +64,6 @@ public record TextureAtlas(
                 .applyNearestFilters()
                 .applyClampToEdgeWrap()
                 .build();
-        final Vector2i atlasDimensions = new Vector2i(raw.width(), raw.height());
-        final Map<String, Entry> texturesInfos = raw.texturesInfos().entrySet().stream()
-                .map(entry -> Map.entry(entry.getKey(), new Entry(textureId, atlasDimensions, entry.getValue())))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new TextureAtlas(textureId, texturesInfos);
     }
 
     public record Entry(

@@ -27,19 +27,22 @@ public class DynamicRenderer implements Renderer {
                 .buffer(new float[MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
                 .dynamic()
                 .build();
+        ebo = VboBuilder.builder()
+                .buffer(new int[MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD])
+                .build();
         vao = VaoBuilder.builder()
                 .addVbo(0, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 0)
                 .addVbo(1, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 2 * Float.BYTES)
                 .build();
+
         vertexBuffer = BufferUtils.createFloatBuffer(MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2));
 
-        final IntBuffer elementIndexes = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
-        elementIndexes.put(createElementIndices());
-        elementIndexes.flip();
+        final IntBuffer elementIndices = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
+        elementIndices.put(createElementIndices(MAX_PER_BATCH));
+        elementIndices.flip();
 
-        ebo = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, elementIndexes, GL_STATIC_DRAW);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     @Override
@@ -87,11 +90,11 @@ public class DynamicRenderer implements Renderer {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, texture);
     }
-    private int[] createElementIndices() {
-        final int[] indices = new int[DynamicRenderer.MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD];
-        for (int i = 0; i < DynamicRenderer.MAX_PER_BATCH; i++) {
+    private int[] createElementIndices(final int count) {
+        final int[] indices = new int[count * TOTAL_ELEMENT_VERTICES_PER_QUAD];
+        for (int i = 0; i < count; i++) {
             final int offset = i * TOTAL_ELEMENT_VERTICES_PER_QUAD;
-            final int vertexOffset = i * TOTAL_VERTICES_PER_QUAD;
+            final int vertexOffset = i * 4;
             indices[offset] = vertexOffset;
             indices[offset + 1] = vertexOffset + 1;
             indices[offset + 2] = vertexOffset + 2;
