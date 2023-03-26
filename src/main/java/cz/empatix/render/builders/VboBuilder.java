@@ -1,4 +1,4 @@
-package cz.empatix.assets.builders;
+package cz.empatix.render.builders;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.common.utils.BufferFactory;

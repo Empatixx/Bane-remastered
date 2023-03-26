@@ -17,7 +17,7 @@ import org.joml.Vector3i;
 import java.util.List;
 
 public class Button implements UIElement {
-    private final static String DEFAULT_TEXTURE = "Menu/Menu_bar.tga";
+    private final static String DEFAULT_TEXTURE = "menu/Menu_bar.tga";
     private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
     private final static int DEFAULT_WIDTH = 100;
     private final static int DEFAULT_HEIGHT = 50;

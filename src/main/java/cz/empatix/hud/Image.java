@@ -34,10 +34,11 @@ public class Image implements HUDElement {
                         .position(position)
                         .posDimensions(dimensions.x(), dimensions.y())
                         .texture(texture)
+                        .offset(dimensions.x(), dimensions.y())
                         .buildQuad(),
                 texture.textureId(),
                 new CommonShaderBinding(Camera.getProjection()),
-                RenderData.RenderDataType.DYNAMIC
+                RenderData.RenderDataType.STATIC
         );
     }
 

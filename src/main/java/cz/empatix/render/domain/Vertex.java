@@ -19,6 +19,8 @@ public record Vertex(
         private final Vector2f posOffset;
         private final Vector2i texPosition;
         private final Vector2i texPositionDimensions;
+        float texOffsetX;
+        float texOffsetY;
         private boolean reverseTexY;
         private TextureAtlas.Entry texture;
 
@@ -41,7 +43,11 @@ public record Vertex(
             this.posDimensions.y = height;
             return this;
         }
-
+        public Builder offset(final int width, final int height) {
+            this.posOffset.x = 3f / width;
+            this.posOffset.y = 3f / height;
+            return this;
+        }
 
         public List<Vertex> buildQuad() {
             final Vector2f posBottomLeft = new Vector2f(position.x() + posOffset.x(), position.y() + posOffset.y());
@@ -51,9 +57,6 @@ public record Vertex(
 
             final int baseTexWidth = texture.width() / texPositionDimensions.x();
             final int baseTexHeight = texture.height() / texPositionDimensions.y();
-
-            final float texOffsetX = 3f;
-            final float texOffsetY = 3f;
 
             final TextureAtlasInfo info = texture.info();
 

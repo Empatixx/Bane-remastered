@@ -46,13 +46,8 @@ public class FontCreator implements AssetCreator {
     }
 
     @Override
-    public Runnable load() {
-        return new Runnable() {
-            @Override
-            public void run() {
-                fontLoader.load();
-            }
-        };
+    public void load() {
+        fontLoader.load();
     }
 
     @Override

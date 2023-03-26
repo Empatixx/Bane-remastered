@@ -1,14 +1,13 @@
 package cz.empatix.assets.domain.font;
 
-import cz.empatix.assets.builders.TextureBuilder;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.shaderbindings.TextShaderBinding;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GL30;
 
 import java.util.List;
 
@@ -20,21 +19,10 @@ public record Glyph(
         int ascent,
         int descent,
         int lineGap,
-        int textureId
+        TextureAtlas.Entry texture
 ) {
-    public void destroy() {
-        GL30.glDeleteTextures(textureId);
-    }
 
-    public static Glyph from(final RawGlyph rawGlyph) {
-        final int textureId = rawGlyph.bitmap() != null ? TextureBuilder.builder()
-                .width(rawGlyph.width())
-                .height(rawGlyph.height())
-                .channels(1)
-                .applyClampToEdgeWrap()
-                .applyLinearFilters()
-                .buffer(rawGlyph.bitmap())
-                .build() : RenderData.NO_TEXTURE;
+    public static Glyph from(final RawGlyph rawGlyph, final TextureAtlas.Entry texture) {
         return new Glyph(
                 rawGlyph.width(),
                 rawGlyph.height(),
@@ -43,14 +31,11 @@ public record Glyph(
                 rawGlyph.ascent(),
                 rawGlyph.descent(),
                 rawGlyph.lineGap(),
-                textureId
+                texture
         );
 
     }
 
-    public void bindTexture() {
-        GL30.glBindTexture(GL30.GL_TEXTURE_2D, textureId);
-    }
 
     public GlyphDrawable toDrawable(final Vector2f position,
                                     final Vector3f color,
@@ -68,7 +53,7 @@ public record Glyph(
         public RenderData renderData() {
             return new RenderData(
                     vertices(),
-                    glyph.textureId(),
+                    glyph.texture().textureId(),
                     new TextShaderBinding(color, Camera.getProjection()),
                     RenderData.RenderDataType.DYNAMIC
             );
@@ -76,8 +61,11 @@ public record Glyph(
 
         private List<Vertex> vertices() {
             return Vertex.builder()
-                    .position(position)
+                    .texture(glyph.texture())
                     .offsetPosition(glyph.bearingX(), glyph.descent())
+                    .texPosition(0, 0)
+                    .texPositionsDimensions(1, 1)
+                    .position(position)
                     .posDimensions(glyph.width(), -glyph.ascent() - glyph.descent())
                     .reverseTextureY()
                     .buildQuad();
@@ -85,7 +73,7 @@ public record Glyph(
 
         @Override
         public boolean shouldRender() {
-            return false; //Todo: remove
+            return true; //Todo: remove
         }
 
         @Override

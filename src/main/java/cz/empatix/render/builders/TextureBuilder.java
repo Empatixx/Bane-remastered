@@ -1,14 +1,17 @@
-package cz.empatix.assets.builders;
+package cz.empatix.render.builders;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.common.utils.BufferFactory;
 import org.lwjgl.opengl.GL30;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
 public class TextureBuilder {
+    private final static Logger LOGGER = LoggerFactory.getLogger(TextureBuilder.class);
     private int width;
     private int height;
     private int channels;
@@ -94,17 +97,17 @@ public class TextureBuilder {
         Preconditions.checkArgument(channels > 0, "Channels must be set");
         Preconditions.checkNotNull(buffer, "Buffer must be set");
 
-        final int pbo = GL30.glGenTextures();
         final int texture = GL30.glGenTextures();
 
         if(channels == GL30.GL_RED){
             return 0;
         }
 
-        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
+        //TODO - shared context, async loading
+        /*GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo.pboId());
         GL30.glBufferData(GL30.GL_PIXEL_UNPACK_BUFFER, buffer, GL30.GL_STREAM_DRAW);
         GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
-
+*/
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, texture);
         if (channels == GL30.GL_RED) {
             GL30.glPixelStorei(GL30.GL_UNPACK_ALIGNMENT, 1);
@@ -116,11 +119,11 @@ public class TextureBuilder {
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_WRAP_T, GL30.GL_REPEAT);
                 }
                 case LINEAR_FILTER -> {
-                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR_MIPMAP_LINEAR);
+                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR);
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_LINEAR);
                 }
                 case NEAREST_FILTER -> {
-                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_LINEAR_MIPMAP_NEAREST);
+                    GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MIN_FILTER, GL30.GL_NEAREST);
                     GL30.glTexParameteri(GL30.GL_TEXTURE_2D, GL30.GL_TEXTURE_MAG_FILTER, GL30.GL_NEAREST);
                 }
                 case WRAP_CLAMP_TO_EDGE -> {
@@ -134,16 +137,19 @@ public class TextureBuilder {
             }
         }
 
-        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo);
-        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, channels, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE, 0);
-        GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
+        //GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, pbo.pboId());
+        GL30.glTexImage2D(GL30.GL_TEXTURE_2D, 0, channels, width, height, 0, channels, GL30.GL_UNSIGNED_BYTE,buffer);
+        //GL30.glBindBuffer(GL30.GL_PIXEL_UNPACK_BUFFER, 0);
 
-        GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
+        //GL30.glGenerateMipmap(GL30.GL_TEXTURE_2D);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, 0);
+
+        LOGGER.info("Texture built: {} with params {}", texture, params);
+
         return texture;
     }
 
-    private enum BuildParam {
+    public enum BuildParam {
         WRAP_REPEAT,
         LINEAR_FILTER,
         NEAREST_FILTER,

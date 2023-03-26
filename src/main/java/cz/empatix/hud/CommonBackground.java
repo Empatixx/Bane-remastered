@@ -1,11 +1,10 @@
-package cz.empatix.background;
+package cz.empatix.hud;
 
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.hud.Image;
 import org.joml.Vector2f;
 
-public class CommonBackground implements Background {
+public class CommonBackground implements HUDElement {
     private final Image image;
 
     public CommonBackground(final String texture) {
@@ -25,6 +24,8 @@ public class CommonBackground implements Background {
         return -1;
     }
 
-    public void update(){
+    @Override
+    public void update(double dt) {
+
     }
 }

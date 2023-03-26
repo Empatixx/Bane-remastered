@@ -13,7 +13,6 @@ public record RenderData (
     public final static int NO_TEXTURE = -1;
     public enum RenderDataType{
         STATIC,
-        TEXT,
         DYNAMIC
     }
 
