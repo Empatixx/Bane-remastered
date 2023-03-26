@@ -2,6 +2,7 @@ package cz.empatix.assets.domain.font;
 
 
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.builders.TextureBuilder;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -46,7 +47,7 @@ public record Font(
     }
 
     public static Font from(final RawFont font) {
-        final TextureAtlas atlas = TextureAtlas.from(font.atlas());
+        final TextureAtlas atlas = TextureAtlas.from(font.atlas(), TextureBuilder.BuildParam.NEAREST_FILTER);
         final Map<Character, Glyph> glyphs = font
                 .glyphs()
                 .entrySet()

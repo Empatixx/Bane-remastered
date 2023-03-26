@@ -1,33 +1,26 @@
 package cz.empatix.textureatlas.service;
 
 import cz.empatix.assets.domain.RawImage;
+import cz.empatix.common.initializators.GLInit;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlasInfo;
-import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static org.lwjgl.opengl.GL11C.GL_MAX_TEXTURE_SIZE;
-
 public class TextureAtlasPacker {
     private final Logger LOGGER = LoggerFactory.getLogger(TextureAtlasPacker.class);
     private static final int TEXTURE_MINSTEPSIZE = 128;
     private static final int MAX_TEXTURE_SIZE = 23170;
-    private final int maxAtlasSize;
-
-    public TextureAtlasPacker() {
-        final int maxGraphicsTextureSize = GL30.glGetInteger(GL_MAX_TEXTURE_SIZE);
-        this.maxAtlasSize = Math.min(maxGraphicsTextureSize, MAX_TEXTURE_SIZE);
-    }
+    private static final int BORDER_SIZE = 1; // Added border size constant
 
     public RawTextureAtlas pack(final Map<String, RawImage> images) {
         RawTextureAtlas lastSmallestAtlas = null;
-        int targetSize = maxAtlasSize;
+        int targetSize = Math.min(GLInit.TEXTURE2D_MAX_SIZE, MAX_TEXTURE_SIZE);
         boolean failed;
-        for (int stepSize = maxAtlasSize / 2; stepSize >= TEXTURE_MINSTEPSIZE; stepSize = stepSize / 2) {
+        for (int stepSize = targetSize / 2; stepSize >= TEXTURE_MINSTEPSIZE; stepSize = stepSize / 2) {
             try {
                 final long startTime = System.currentTimeMillis();
                 lastSmallestAtlas = tryPack(images, targetSize);
@@ -39,8 +32,8 @@ public class TextureAtlasPacker {
             }
 
             if (failed) {
-                if (maxAtlasSize <= targetSize) {
-                    throw new IllegalStateException("Failed to pack images into atlas, graphics card limit is " + maxAtlasSize + "x" + maxAtlasSize);
+                if (GLInit.TEXTURE2D_MAX_SIZE <= targetSize) {
+                    throw new IllegalStateException("Failed to pack images into atlas, graphics card limit is " + GLInit.TEXTURE2D_MAX_SIZE + "x" + GLInit.TEXTURE2D_MAX_SIZE);
                 }
                 targetSize += stepSize;
             } else {
@@ -61,7 +54,7 @@ public class TextureAtlasPacker {
         images.forEach((name, image) -> {
             final Rect rect = emptyRects
                     .stream()
-                    .filter(r -> r.canBeFilled(image))
+                    .filter(r -> r.canBeFilled(image, BORDER_SIZE))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No empty rect found"));
             textureInfos.put(name, new TextureAtlasInfo(rect.x, rect.y, image.width(), image.height()));
@@ -70,13 +63,15 @@ public class TextureAtlasPacker {
             final int y = rect.y;
             final int textureWidth = image.width();
             final int textureHeight = image.height();
-            final int remainingWidth = rect.width - textureWidth;
-            final int remainingHeight = rect.height - textureHeight;
+            final int remainingWidth = rect.width - textureWidth - BORDER_SIZE;
+            final int remainingHeight = rect.height - textureHeight - BORDER_SIZE;
+
+            // Add the remaining empty rects with the border size included
             if (remainingHeight > 0) {
-                emptyRects.add(new Rect(x, y + textureHeight, rect.width, remainingHeight));
+                emptyRects.add(new Rect(x, y + textureHeight + BORDER_SIZE, rect.width, remainingHeight));
             }
             if (remainingWidth > 0) {
-                emptyRects.add(new Rect(x + textureWidth, y, remainingWidth, textureHeight));
+                emptyRects.add(new Rect(x + textureWidth + BORDER_SIZE, y, remainingWidth, textureHeight));
             }
             addImageToAtlas(data, image.channels(), targetSize, image, x, y);
 
@@ -119,24 +114,6 @@ public class TextureAtlasPacker {
                     }
                 }
             }
-            case TextureAtlas.R_CHANNELS -> {
-                final int width = image.width();
-                final int height = image.height();
-                final byte[] imageData = image.pixels();
-
-                for (int i = 0; i < height; i++) {
-                    final int sourceOffset = i * width;
-                    int targetOffset = ((y + i) * targetSize + x) * TextureAtlas.RGBA_CHANNELS;
-
-                    for (int j = 0; j < width; j++) {
-                        byte redValue = imageData[sourceOffset + j];
-                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS] = redValue; // R
-                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS + 1] = 0; // G
-                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS + 2] = 0; // B
-                        data[targetOffset + j * TextureAtlas.RGBA_CHANNELS + 3] = (byte) 255; // A
-                    }
-                }
-            }
             default -> throw new IllegalStateException("Unsupported image channels: " + channels);
         }
     }
@@ -149,8 +126,8 @@ public class TextureAtlasPacker {
             int height
     ) {
 
-        public boolean canBeFilled(final RawImage rawImage) {
-            return rawImage.width() <= width && rawImage.height() <= height;
+        public boolean canBeFilled(final RawImage rawImage, final int borderSize) {
+            return rawImage.width() <= width - borderSize && rawImage.height() <= height - borderSize;
         }
     }
 

@@ -37,6 +37,7 @@ public record Tile(
                         .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
                         .position(new Vector2f(position))
                         .posDimensions(TILE_SIZE, TILE_SIZE)
+                        .offset(TILE_SIZE, TILE_SIZE)
                         .texture(texture)
                         .buildQuad(),
                 texture.textureId(),

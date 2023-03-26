@@ -1,7 +1,7 @@
 package cz.empatix.render.renders;
 
-import cz.empatix.assets.builders.VaoBuilder;
-import cz.empatix.assets.builders.VboBuilder;
+import cz.empatix.render.builders.VaoBuilder;
+import cz.empatix.render.builders.VboBuilder;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.shaderbindings.ShaderBinding;
@@ -104,7 +104,10 @@ public class StaticRenderer implements Renderer {
 
     @Override
     public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
-        final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth, HashMap::new)
+        if(drawables.isEmpty()){
+            return;
+        }
+        final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth,i -> new HashMap<>())
                 .computeIfAbsent(drawables.hashCode(), s -> StaticRenderData.from(drawables));
         render(drawables, shaderBinding, renderData);
         renderData.updateLastRendered();
@@ -114,7 +117,10 @@ public class StaticRenderer implements Renderer {
                 .filter(e -> e.getKey() != zDepth)
                 .flatMap(e -> e.getValue().entrySet().stream())
                 .filter(e -> e.getValue().shouldDestroy())
-                .forEach(e -> e.getValue().destroy());
+                .forEach(e -> {
+                    staticRenderData.get(zDepth).remove(e.getValue().hashCode());
+                    e.getValue().destroy();
+                });
     }
 
     private void render(final List<Drawable> drawables,

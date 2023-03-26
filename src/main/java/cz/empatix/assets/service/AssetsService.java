@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Stream;
 
 public class AssetsService {
     private final static Logger LOGGER = LoggerFactory.getLogger(AssetsService.class);
@@ -38,9 +37,14 @@ public class AssetsService {
                 .forEach(AssetCreator::create);
         LOGGER.info("Preloading assets done in {} ms", System.currentTimeMillis() - start);
         LOGGER.info("Loading assets...");
-        loadProcesses = Stream.of(creators.get(0),creators.get(1),creators.get(2),creators.get(3))
-                .map(creator -> executorService.submit(creator.load()))
+        loadProcesses = creators
+                .stream()
+                .map(creator -> executorService.submit(creator.loadAsync()))
                 .toList();
+        /*creators.forEach(AssetCreator::load);
+        creators.forEach(AssetCreator::create);
+        loaded = true;
+        loadProcesses = List.of();*/
     }
 
     public static void  createAssets() {

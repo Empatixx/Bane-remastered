@@ -1,4 +1,4 @@
-package cz.empatix.background;
+package cz.empatix.hud;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
@@ -10,8 +10,7 @@ import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 
-public class AnimatedBackground implements Background {
-    private final CommonBackground commonBackground;
+public class AnimatedBackground implements HUDElement {
     private final Animation animation;
 
     public AnimatedBackground(final String texture, final int frames) {
@@ -21,7 +20,6 @@ public class AnimatedBackground implements Background {
                 .texture(textureImage)
                 .build();
         this.animation.setAnimationState(AnimationState.STATIC);
-        this.commonBackground = new CommonBackground(texture);
     }
 
     @Override
@@ -45,7 +43,9 @@ public class AnimatedBackground implements Background {
         return -1;
     }
 
-    public void update() {
+
+    @Override
+    public void update(double dt) {
         animation.update();
     }
 }

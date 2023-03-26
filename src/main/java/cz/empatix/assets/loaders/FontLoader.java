@@ -138,4 +138,5 @@ public class FontLoader implements AssetLoader {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return textureAtlasFactory.createAtlas(images);
     }
+
 }

@@ -20,7 +20,7 @@ public class Text implements HUDElement {
 
     public Text(final String text, final String font, final Vector2f position, final int prevZIndex) {
         this.text = text;
-        this.font = AssetsService.getFont(font, FontSize.FONTSIZE_16);
+        this.font = AssetsService.getFont(font, FontSize.FONTSIZE_20);
         this.position = position;
         zIndex = prevZIndex + 1;
         color = new Vector3f(1f,1f,1f);

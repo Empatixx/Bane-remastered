@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ShadersCreator implements AssetCreator {
@@ -44,8 +43,8 @@ public class ShadersCreator implements AssetCreator {
         shaders.values().forEach(Shader::destroy);
     }
     @Override
-    public Runnable load() {
-        return shadersLoader::load;
+    public void load() {
+        shadersLoader.load();
     }
 
     @Override

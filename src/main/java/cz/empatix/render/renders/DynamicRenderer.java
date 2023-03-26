@@ -1,8 +1,8 @@
 package cz.empatix.render.renders;
 
 import com.google.common.collect.Lists;
-import cz.empatix.assets.builders.VaoBuilder;
-import cz.empatix.assets.builders.VboBuilder;
+import cz.empatix.render.builders.VaoBuilder;
+import cz.empatix.render.builders.VboBuilder;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;

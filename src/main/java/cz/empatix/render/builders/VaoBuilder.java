@@ -1,4 +1,4 @@
-package cz.empatix.assets.builders;
+package cz.empatix.render.builders;
 
 import org.lwjgl.opengl.GL30;
 
