@@ -3,6 +3,7 @@ package cz.empatix.gamestate.service;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.player.Player;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.RoomMap;
@@ -11,10 +12,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
     private RoomMap roomMap;
+    private Player player;
 
     public InGameState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.INGAME);
@@ -23,21 +26,27 @@ public class InGameState extends GameState {
     @Override
     public void init() {
         roomMap = new RoomMap();
+        player = new Player();
     }
 
     @Override
     public void update(final double dt) {
         final Vector2f mouseDirection = new Vector2f(WindowHandler.TARGET_WIDTH / 2 - mouseX, WindowHandler.TARGET_HEIGHT / 2 - mouseY);
         Camera.setPosition(mouseDirection.x / 1500, mouseDirection.y / 1500);
+        player.update(dt);
     }
 
     @Override
     public void fixedUpdate(double dt) {
+        player.fixedUpdate(dt);
     }
 
     @Override
     public List<Drawable> toRender(final double dt) {
-        return roomMap.toRender(dt);
+        return Stream.concat(
+                roomMap.toRender(dt).stream(),
+                Stream.of(player)
+        ).toList();
     }
 
     @Override
@@ -47,12 +56,12 @@ public class InGameState extends GameState {
 
     @Override
     public void keyPressed(int key) {
-
+        player.keyPressed(key);
     }
 
     @Override
     public void keyReleased(int key) {
-
+        player.keyReleased(key);
     }
 
     @Override

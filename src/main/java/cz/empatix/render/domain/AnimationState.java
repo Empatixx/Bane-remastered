@@ -7,5 +7,9 @@ public enum AnimationState {
     DEATH,
     STATIC,
     COLLISION,
-    HOVER
+    HOVER,
+    RIGHT_MOVE,
+    LEFT_MOVE,
+    TOP_MOVE,
+    BOTTOM_MOVE
 }
