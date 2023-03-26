@@ -117,7 +117,10 @@ public class StaticRenderer implements Renderer {
                 .filter(e -> e.getKey() != zDepth)
                 .flatMap(e -> e.getValue().entrySet().stream())
                 .filter(e -> e.getValue().shouldDestroy())
-                .forEach(e -> e.getValue().destroy());
+                .forEach(e -> {
+                    staticRenderData.get(zDepth).remove(e.getValue().hashCode());
+                    e.getValue().destroy();
+                });
     }
 
     private void render(final List<Drawable> drawables,
