@@ -18,23 +18,32 @@ public class InterpolatedPosition {
     }
 
     public void setPosition(final float x, final float y) {
-        this.nextPosition.x += x;
-        this.nextPosition.y += y;
+        this.nextPosition.x = x;
+        this.nextPosition.y = y;
 
         this.previousPosition.x = currentPosition.x;
         this.previousPosition.y = currentPosition.y;
         t = 0;
     }
 
-    public float getX() {
+    public float getInterpolatedX() {
         return currentPosition.x;
     }
 
-    public float getY() {
+    public float getInterpolatedY() {
         return currentPosition.y;
     }
-    public Vector2f getPosition(){
+    public Vector2f getInterpolatedPosition(){
         return currentPosition;
+    }
+    public float getY(){
+        return nextPosition.y;
+    }
+    public float getX(){
+        return nextPosition.x;
+    }
+    public Vector2f getPosition(){
+        return nextPosition;
     }
 
     public void update(final float dt) {

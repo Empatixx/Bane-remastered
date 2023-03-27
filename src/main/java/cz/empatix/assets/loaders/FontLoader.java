@@ -46,7 +46,6 @@ public class FontLoader implements AssetLoader {
         final AtomicInteger total = new AtomicInteger();
         try (final Stream<Path> paths = Files.walk(PATH)) {
             paths
-                    .parallel()
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".ttf"))
                     .forEach(p -> {

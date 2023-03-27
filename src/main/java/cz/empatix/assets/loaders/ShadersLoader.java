@@ -1,6 +1,5 @@
 package cz.empatix.assets.loaders;
 
-import cz.empatix.assets.creators.ShadersCreator;
 import cz.empatix.assets.domain.RawShader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +7,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,14 +35,12 @@ public class ShadersLoader implements AssetLoader {
         final AtomicInteger total = new AtomicInteger();
         try (final Stream<Path> paths = Files.walk(PATH)) {
             paths
-                    .parallel()
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".glsl"))
                     .collect(Collectors.groupingBy(p -> p.getFileName().toString().replaceAll("(-vs)*(-fs)*(\\.glsl)", "")))
                     .entrySet()
                     .stream()
                     .filter(entry -> !shaders.containsKey(entry.getKey()))
-                    .parallel()
                     .map(this::createRawShader)
                     .forEach(entry -> {
                         shaders.put(entry.getKey(), entry.getValue());

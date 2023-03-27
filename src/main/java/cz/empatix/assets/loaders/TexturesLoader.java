@@ -68,7 +68,6 @@ public class TexturesLoader implements AssetLoader {
     private RawTextureAtlas atlasFromDirectory(final Path dir){
         try(final Stream<Path> paths = Files.walk(dir)){
             final Map<String, RawImage> textures = paths
-                    .parallel()
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".tga") || p.toString().endsWith(".png"))
                     .map(path -> Map.entry(path.toString(), decodeImage(path)))

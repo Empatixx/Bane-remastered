@@ -7,6 +7,7 @@ import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
+import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import org.joml.Vector2f;
@@ -28,7 +29,7 @@ public class Player implements Drawable, Moveable {
     private int armor;
 
     private final Animation animation;
-    private final Vector2f position;
+    private final InterpolatedPosition position;
 
     public Player(){
         maxHealth = DEFAULT_MAX_HEALTH;
@@ -40,17 +41,19 @@ public class Player implements Drawable, Moveable {
         animation = Animation.builder()
                 .addAnimationState(AnimationState.IDLE, 0, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addAnimationState(AnimationState.RIGHT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
+                .addAnimationState(AnimationState.LEFT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100, true)
                 .addAnimationState(AnimationState.BOTTOM_MOVE, 2, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addAnimationState(AnimationState.TOP_MOVE, 3, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/player.tga"))
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
 
-        position = new Vector2f();
+        position = new InterpolatedPosition();
     }
 
     public void update(final double dt){
         animation.update();
+        position.update((float)dt);
     }
 
     public void fixedUpdate(final double dt){
@@ -73,7 +76,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(position),
+                animation.getVertices(position.getInterpolatedPosition()),
                 animation.getTextureId(),
                 new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
@@ -83,7 +86,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public boolean shouldRender() {
         return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
+                .addShape(position.getInterpolatedPosition(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
                 .resolve();
     }
@@ -96,21 +99,21 @@ public class Player implements Drawable, Moveable {
 
     public void keyPressed(final int key){
         switch (key){
-            case GLFW.GLFW_KEY_W -> {
+            case GLFW.GLFW_KEY_W ->{
                 top = true;
-                animation.setAnimationState(AnimationState.TOP_MOVE);
+                bottom = false;
             }
-            case GLFW.GLFW_KEY_S -> {
+            case GLFW.GLFW_KEY_S ->{
                 bottom = true;
-                animation.setAnimationState(AnimationState.BOTTOM_MOVE);
+                top = false;
             }
-            case GLFW.GLFW_KEY_A -> {
+            case GLFW.GLFW_KEY_A ->{
                 left = true;
-                animation.setAnimationState(AnimationState.RIGHT_MOVE);
+                right = false;
             }
-            case GLFW.GLFW_KEY_D -> {
+            case GLFW.GLFW_KEY_D ->{
                 right = true;
-                animation.setAnimationState(AnimationState.RIGHT_MOVE);
+                left = false;
             }
         }
     }
@@ -122,24 +125,36 @@ public class Player implements Drawable, Moveable {
             case GLFW.GLFW_KEY_A -> left = false;
             case GLFW.GLFW_KEY_D -> right = false;
         }
-        if(!top && !bottom && !left && !right){
-            animation.setAnimationState(AnimationState.IDLE);
-        }
     }
 
     @Override
     public void move(double dt) {
+        float x = 0, y = 0;
         if(top){
-            position.y -= BASE_SPEED * dt;
+            y -= BASE_SPEED * dt;
         }
         if(bottom){
-            position.y += BASE_SPEED * dt;
+            y += BASE_SPEED * dt;
         }
         if(left){
-            position.x -= BASE_SPEED * dt;
+            x -= BASE_SPEED * dt;
         }
         if(right){
-            position.x += BASE_SPEED * dt;
+            x += BASE_SPEED * dt;
         }
+
+        if (left) {
+            animation.setAnimationState(AnimationState.LEFT_MOVE);
+        } else if (right){
+            animation.setAnimationState(AnimationState.RIGHT_MOVE);
+        }
+        else if (top) {
+            animation.setAnimationState(AnimationState.TOP_MOVE);
+        } else if (bottom){
+            animation.setAnimationState(AnimationState.BOTTOM_MOVE);
+        }
+
+
+        position.setPosition(position.getX() + x, position.getY() + y);
     }
 }

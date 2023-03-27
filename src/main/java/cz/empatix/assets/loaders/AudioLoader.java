@@ -37,7 +37,6 @@ public class AudioLoader implements AssetLoader {
         final AtomicInteger total = new AtomicInteger();
         try (final Stream<Path> paths = Files.walk(PATH)) {
             paths
-                    .parallel()
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".ogg"))
                     .map(path -> Map.entry(path.toString(), decodeAudio(path)))

@@ -41,10 +41,6 @@ public class AssetsService {
                 .stream()
                 .map(creator -> executorService.submit(creator.loadAsync()))
                 .toList();
-        /*creators.forEach(AssetCreator::load);
-        creators.forEach(AssetCreator::create);
-        loaded = true;
-        loadProcesses = List.of();*/
     }
 
     public static void  createAssets() {

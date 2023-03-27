@@ -18,7 +18,7 @@ public class Camera {
                         TARGET_WIDTH - (TARGET_WIDTH * (1 - zoom)) / 2,
                         TARGET_HEIGHT - (TARGET_HEIGHT * (1 - zoom)) / 2,
                         WindowHandler.TARGET_HEIGHT * (1 - zoom) / 2)
-                .translate(new Vector3f(interpolatedPosition.getPosition(), 0));
+                .translate(new Vector3f(interpolatedPosition.getInterpolatedPosition(), 0));
     }
 
     public static void update(final float dt) {
@@ -26,19 +26,19 @@ public class Camera {
     }
 
     public static void setPosition(final float x, final float y) {
-        interpolatedPosition.setPosition(x, y);
+        interpolatedPosition.setPosition(Camera.getX() + x,Camera.getY() +  y);
     }
 
     public static float getX() {
-        return interpolatedPosition.getX();
+        return interpolatedPosition.getInterpolatedX();
     }
 
     public static float getY() {
-        return interpolatedPosition.getY();
+        return interpolatedPosition.getInterpolatedY();
     }
 
     public static Vector2f getPosition() {
-        return new Vector2f(-interpolatedPosition.getX(), -interpolatedPosition.getY())
+        return new Vector2f(-interpolatedPosition.getInterpolatedX(), -interpolatedPosition.getInterpolatedY())
                 .sub(-TARGET_WIDTH * (1 - zoom) / 2, -WindowHandler.TARGET_HEIGHT * (1 - zoom) / 2);
     }
 

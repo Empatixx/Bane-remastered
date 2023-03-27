@@ -19,9 +19,8 @@ public record Vertex(
         private final Vector2f posOffset;
         private final Vector2i texPosition;
         private final Vector2i texPositionDimensions;
-        float texOffsetX;
-        float texOffsetY;
         private boolean reverseTexY;
+        private boolean rotatedX;
         private TextureAtlas.Entry texture;
 
         public Builder() {
@@ -60,10 +59,10 @@ public record Vertex(
 
             final TextureAtlasInfo info = texture.info();
 
-            final float top = (info.textureStartPositions().y() + (texPosition.y() + 1) * baseTexHeight - texOffsetY) / (float) texture.atlasHeight();
-            final float bottom = (info.textureStartPositions().y() + texPosition.y() * baseTexHeight + texOffsetY) / (float) texture.atlasHeight();
-            final float left = (info.textureStartPositions().x() + texPosition.x() * baseTexWidth + texOffsetX) / (float) texture.atlasWidth();
-            final float right = (info.textureStartPositions().x() + (texPosition.x() + 1) * baseTexWidth - texOffsetX) / (float) texture.atlasWidth();
+            final float top = (info.textureStartPositions().y() + (texPosition.y() + 1) * baseTexHeight) / (float) texture.atlasHeight();
+            final float bottom = (info.textureStartPositions().y() + texPosition.y() * baseTexHeight) / (float) texture.atlasHeight();
+            final float left = (info.textureStartPositions().x() + texPosition.x() * baseTexWidth) / (float) texture.atlasWidth();
+            final float right = (info.textureStartPositions().x() + (texPosition.x() + 1) * baseTexWidth) / (float) texture.atlasWidth();
 
             Preconditions.checkArgument(top <= 1);
             Preconditions.checkArgument(bottom >= 0);
@@ -81,6 +80,13 @@ public record Vertex(
                         new Vertex(posBottomRight, texTopRight),
                         new Vertex(posTopRight, texBottomRight),
                         new Vertex(posTopLeft, texBottomLeft));
+            }
+            if(rotatedX){
+                return List.of(
+                        new Vertex(posBottomLeft, texBottomRight),
+                        new Vertex(posBottomRight, texBottomLeft),
+                        new Vertex(posTopRight, texTopLeft),
+                        new Vertex(posTopLeft, texTopRight));
             }
             return List.of(
                     new Vertex(posBottomLeft, texBottomLeft),
@@ -115,6 +121,11 @@ public record Vertex(
         public Builder texPositionsDimensions(final int maxColumns, final int maxRows) {
             this.texPositionDimensions.x = maxColumns;
             this.texPositionDimensions.y = maxRows;
+            return this;
+        }
+
+        public Builder rotatedX(final boolean rotateX) {
+            this.rotatedX = rotateX;
             return this;
         }
     }

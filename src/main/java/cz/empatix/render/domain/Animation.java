@@ -9,10 +9,12 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Animation {
     private final static Logger LOGGER = LoggerFactory.getLogger(Animation.class);
     private final Map<AnimationState, AnimationPart> animationParts;
+    private final int totalRows;
     private final TextureAtlas.Entry texture;
     private AnimationState currentState;
     private int currentTextureIndex;
@@ -25,9 +27,17 @@ public class Animation {
         this.currentState = AnimationState.IDLE;
         this.currentTextureIndex = 0;
         this.lastAnimation = System.currentTimeMillis();
+        this.totalRows = animationParts.values()
+                .stream()
+                .map(AnimationPart::row)
+                .collect(Collectors.toSet())
+                .size();
     }
 
     public void setAnimationState(final AnimationState state) {
+        if(currentState == state){
+            return;
+        }
         if (!animationParts.containsKey(state)) {
             LOGGER.error("Animation state {} not found for {}", state, this);
         }
@@ -56,10 +66,11 @@ public class Animation {
         return Vertex.builder()
                 .texture(texture)
                 .texPosition(currentTextureIndex, part.row())
-                .texPositionsDimensions(part.numSprites(), animationParts.size())
+                .texPositionsDimensions(part.numSprites(), totalRows)
                 .position(position)
                 .posDimensions(part.width(), part.height())
                 .offset(part.width(), part.height())
+                .rotatedX(part.rotatedX())
                 .buildQuad();
     }
     public int getTextureId() {
@@ -70,7 +81,8 @@ public class Animation {
     private record AnimationPart(
             Vector2i dimensions,
             Vector2i animationDimensions,
-            int delayBetweenAnimations
+            int delayBetweenAnimations,
+            boolean rotatedX
     ) {
         public int numSprites(){
             return animationDimensions.y();
@@ -100,10 +112,20 @@ public class Animation {
                                          final int width,
                                          final int height,
                                          final int delayBetweenAnimations) {
+            return addAnimationState(state, row, numSprites, width, height, delayBetweenAnimations, false);
+        }
+        public Builder addAnimationState(final AnimationState state,
+                                         final int row,
+                                         final int numSprites,
+                                         final int width,
+                                         final int height,
+                                         final int delayBetweenAnimations,
+                                         final boolean rotatedX) {
             final AnimationPart part = new AnimationPart(
                     new Vector2i(width, height),
                     new Vector2i(row, numSprites),
-                    delayBetweenAnimations
+                    delayBetweenAnimations,
+                    rotatedX
             );
             animationParts.put(state, part);
             return this;
