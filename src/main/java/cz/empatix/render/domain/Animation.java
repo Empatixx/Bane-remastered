@@ -15,14 +15,17 @@ public class Animation {
     private final static Logger LOGGER = LoggerFactory.getLogger(Animation.class);
     private final Map<AnimationState, AnimationPart> animationParts;
     private final int totalRows;
+    private final int scale;
     private final TextureAtlas.Entry texture;
     private AnimationState currentState;
     private int currentTextureIndex;
     private long lastAnimation;
 
     public Animation(final Map<AnimationState, AnimationPart> animationParts,
-                     final TextureAtlas.Entry texture) {
+                     final TextureAtlas.Entry texture,
+                     final int scale) {
         this.texture = texture;
+        this.scale = scale;
         this.animationParts = animationParts;
         this.currentState = AnimationState.IDLE;
         this.currentTextureIndex = 0;
@@ -71,6 +74,7 @@ public class Animation {
                 .posDimensions(part.width(), part.height())
                 .offset(part.width(), part.height())
                 .rotatedX(part.rotatedX())
+                .scale(scale)
                 .buildQuad();
     }
     public int getTextureId() {
@@ -101,9 +105,11 @@ public class Animation {
     public static class Builder {
         private final Map<AnimationState, AnimationPart> animationParts;
         private TextureAtlas.Entry texture;
+        private int scale;
 
         public Builder() {
             this.animationParts = new HashMap<>();
+            scale = 1;
         }
 
         public Builder addAnimationState(final AnimationState state,
@@ -134,9 +140,13 @@ public class Animation {
             this.texture = texture;
             return this;
         }
+        public Builder scale(final int scale){
+            this.scale = scale;
+            return this;
+        }
 
         public Animation build() {
-            return new Animation(animationParts, texture);
+            return new Animation(animationParts, texture, scale);
         }
     }
     public static Builder builder(){

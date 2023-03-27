@@ -32,19 +32,19 @@ public class MenuState extends GameState {
     public void init() {
         background = new CommonBackground("menu/bg.png");
 
-        final Button playButton = new Button("Play", Camera.centerX().add(0, 150));
+        final Button playButton = new Button("Play", Camera.centerX().add(0, 225), 1.5f);
         playButton.setOnClick(() -> setCurrentState(GameStateType.INGAME));
         uiElements.add(playButton);
 
-        final Button settingsButton = new Button("Settings", Camera.centerX().add(0, 225));
+        final Button settingsButton = new Button("Settings", Camera.centerX().add(0, 325), 1.5f);
         uiElements.add(settingsButton);
 
-        final Button exitButton = new Button("Exit", Camera.centerX().add(0, 300));
+        final Button exitButton = new Button("Exit", Camera.centerX().add(0, 425), 1.5f);
         exitButton.setOnClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
         uiElements.add(exitButton);
 
 
-        hudElements.add(new Image("menu/logo.tga", Camera.centerX().add(0, 62.5f), 200, 100));
+        hudElements.add(new Image("menu/logo.tga", Camera.centerX().add(0, 80), 200, 100, 1.5f));
     }
 
     @Override

@@ -19,13 +19,14 @@ public record Tile(
     private final static int TILE_SIZE = 32;
     private final static int TOTAL_ROWS = 2;
     private final static int TOTAL_COLUMNS = 21;
+    private final static int SCALE = 2;
 
     public Tile(final int tCol,
                 final int tRow,
                 final int tilePosX,
                 final int tilePosY,
                 final TextureAtlas.Entry texture) {
-        this(tCol, tRow, new Vector2f(tilePosX * TILE_SIZE, tilePosY * TILE_SIZE), texture);
+        this(tCol, tRow, new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE), texture);
     }
 
     public Tile(final int tCol,
@@ -39,6 +40,7 @@ public record Tile(
                         .posDimensions(TILE_SIZE, TILE_SIZE)
                         .offset(TILE_SIZE, TILE_SIZE)
                         .texture(texture)
+                        .scale(SCALE)
                         .buildQuad(),
                 texture.textureId(),
                 position);
@@ -57,7 +59,7 @@ public record Tile(
     @Override
     public boolean shouldRender() {
         return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(TILE_SIZE, TILE_SIZE))
+                .addShape(position, new Vector2f(TILE_SIZE * SCALE, TILE_SIZE * SCALE))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
                 .resolve();
     }

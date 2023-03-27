@@ -14,8 +14,8 @@ public class WindowHandler {
     public final static long WINDOW = GLFWInit.window;
     public static int WIDTH;
     public static int HEIGHT;
-    public final static int TARGET_WIDTH = 640;
-    public final static int TARGET_HEIGHT = 360;
+    public final static int TARGET_WIDTH = 960;
+    public final static int TARGET_HEIGHT = 540;
 
     public WindowHandler(final GameLoop gameLoop){
         try (final MemoryStack stack = stackPush()){

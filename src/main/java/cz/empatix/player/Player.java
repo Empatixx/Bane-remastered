@@ -14,10 +14,11 @@ import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
 public class Player implements Drawable, Moveable {
+    private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
-    private final static int DIMENSION_WIDTH = 32;
-    private final static int DIMENSION_HEIGHT = 76;
+    private final static int DIMENSION_WIDTH = 16;
+    private final static int DIMENSION_HEIGHT = 38;
     private final static int BASE_SPEED = 200;
 
     private boolean left, right, top, bottom;
@@ -45,6 +46,7 @@ public class Player implements Drawable, Moveable {
                 .addAnimationState(AnimationState.BOTTOM_MOVE, 2, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addAnimationState(AnimationState.TOP_MOVE, 3, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/player.tga"))
+                .scale(SCALE)
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
 
@@ -147,11 +149,12 @@ public class Player implements Drawable, Moveable {
             animation.setAnimationState(AnimationState.LEFT_MOVE);
         } else if (right){
             animation.setAnimationState(AnimationState.RIGHT_MOVE);
-        }
-        else if (top) {
+        } else if (top) {
             animation.setAnimationState(AnimationState.TOP_MOVE);
         } else if (bottom){
             animation.setAnimationState(AnimationState.BOTTOM_MOVE);
+        } else {
+            animation.setAnimationState(AnimationState.IDLE);
         }
 
 

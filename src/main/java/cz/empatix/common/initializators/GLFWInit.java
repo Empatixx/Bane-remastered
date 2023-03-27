@@ -47,7 +47,7 @@ public class GLFWInit implements Initializator {
             throw new RuntimeException("Failed to create the GLFW window");
         }
         glfwSetWindowAspectRatio(window, WIDTH, HEIGHT);
-        glfwSetWindowSizeLimits(window, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 1920, 1080);
+        glfwSetWindowSizeLimits(window, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 2540, 1440);
         centerWindow();
         setIcon();
         // Make the OpenGL context current

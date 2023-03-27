@@ -75,24 +75,31 @@ public record Vertex(
             final Vector2f texTopLeft = new Vector2f(left, top);
 
             if (reverseTexY) {
-                return List.of(
-                        new Vertex(posBottomLeft, texTopLeft),
-                        new Vertex(posBottomRight, texTopRight),
-                        new Vertex(posTopRight, texBottomRight),
-                        new Vertex(posTopLeft, texBottomLeft));
+                return getVertices(posBottomLeft, posBottomRight, posTopRight, posTopLeft, texBottomLeft, texBottomRight, texTopRight, texTopLeft);
             }
+            return getVertices(posBottomLeft, posBottomRight, posTopRight, posTopLeft, texTopLeft, texTopRight, texBottomRight, texBottomLeft);
+        }
+
+        private List<Vertex> getVertices(final Vector2f posBottomLeft,
+                                         final Vector2f posBottomRight,
+                                         final Vector2f posTopRight,
+                                         final Vector2f posTopLeft,
+                                         final Vector2f texBottomLeft,
+                                         final Vector2f texBottomRight,
+                                         final Vector2f texTopRight,
+                                         final Vector2f texTopLeft) {
             if(rotatedX){
                 return List.of(
-                        new Vertex(posBottomLeft, texBottomRight),
-                        new Vertex(posBottomRight, texBottomLeft),
-                        new Vertex(posTopRight, texTopLeft),
-                        new Vertex(posTopLeft, texTopRight));
+                        new Vertex(posBottomLeft, texTopRight),
+                        new Vertex(posBottomRight, texTopLeft),
+                        new Vertex(posTopRight, texBottomLeft),
+                        new Vertex(posTopLeft, texBottomRight));
             }
             return List.of(
-                    new Vertex(posBottomLeft, texBottomLeft),
-                    new Vertex(posBottomRight, texBottomRight),
-                    new Vertex(posTopRight, texTopRight),
-                    new Vertex(posTopLeft, texTopLeft));
+                    new Vertex(posBottomLeft, texTopLeft),
+                    new Vertex(posBottomRight, texTopRight),
+                    new Vertex(posTopRight, texBottomRight),
+                    new Vertex(posTopLeft, texBottomLeft));
         }
 
         public Builder texture(TextureAtlas.Entry texture) {
@@ -126,6 +133,11 @@ public record Vertex(
 
         public Builder rotatedX(final boolean rotateX) {
             this.rotatedX = rotateX;
+            return this;
+        }
+        public Builder scale(final float scale){
+            this.posDimensions.x *= scale;
+            this.posDimensions.y *= scale;
             return this;
         }
     }

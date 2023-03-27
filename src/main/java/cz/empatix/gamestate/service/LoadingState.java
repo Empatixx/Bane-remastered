@@ -1,6 +1,7 @@
 package cz.empatix.gamestate.service;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.AnimatedImage;
@@ -26,7 +27,7 @@ public class LoadingState extends GameState {
     public void init() {
         AssetsService.loadAssets();
         loadingBg = new CommonBackground("loading/loading.tga");
-        loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(320,280), 8, true);
+        loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(WindowHandler.TARGET_WIDTH/2,380), 8, true);
         startTime = System.currentTimeMillis();
     }
 

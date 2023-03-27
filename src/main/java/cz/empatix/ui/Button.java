@@ -29,7 +29,10 @@ public class Button implements UIElement {
     private Runnable onClick;
 
     public Button(final String text, final Vector2f position) {
-        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, 1);
+    }
+    public Button(final String text, final Vector2f position, final float scale) {
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale);
     }
 
     public Button(final String text,
@@ -37,8 +40,11 @@ public class Button implements UIElement {
                   final String texture,
                   final Vector3i rgb,
                   final int width,
-                  final int height) {
+                  final int height,
+                  final float scale) {
         this.dimensions = new Vector2i(width, height);
+        this.dimensions.x *= scale;
+        this.dimensions.y *= scale;
 
         final TextureAtlas.Entry textureImage = AssetsService.getTexture(texture);
         animation = Animation.builder()
@@ -50,7 +56,6 @@ public class Button implements UIElement {
         animation.setAnimationState(AnimationState.STATIC);
 
         this.position = position.sub(new Vector2f(dimensions).div(2f));
-
         final Vector2f textPosition = new Vector2f(position)
                 .add(0, dimensions.y() / 2f);
         this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
