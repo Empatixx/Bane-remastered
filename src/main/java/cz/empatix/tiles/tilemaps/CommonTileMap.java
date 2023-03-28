@@ -36,4 +36,12 @@ public class CommonTileMap implements TileMap {
         tiles = tileFactory.createTileMap(map);
 
     }
+    @Override
+    public int getWidth(){
+        return tiles[0].length * Tile.TILE_SIZE * Tile.SCALE;
+    }
+    @Override
+    public int getHeight(){
+        return tiles.length * Tile.TILE_SIZE * Tile.SCALE;
+    }
 }

@@ -10,4 +10,6 @@ public interface Room {
     void init();
     void update();
     List<Drawable> toRender();
+    int getWidth();
+    int getHeight();
 }

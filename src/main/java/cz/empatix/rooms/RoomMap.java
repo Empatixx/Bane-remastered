@@ -1,5 +1,6 @@
 package cz.empatix.rooms;
 
+import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 
 import java.util.ArrayList;
@@ -17,6 +18,9 @@ public class RoomMap {
         rooms = new ArrayList<>(TOTAL_ROOMS);
         rooms.add(new CommonRoom());
         rooms.forEach(Room::init);
+
+        Camera.setMinDimensions(0,0);
+        Camera.setMaxDimensions(rooms.get(0).getWidth(), rooms.get(0).getHeight());
     }
 
     public List<Drawable> toRender(double dt) {

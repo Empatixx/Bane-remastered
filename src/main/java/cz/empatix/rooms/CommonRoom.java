@@ -37,4 +37,14 @@ public class CommonRoom implements Room{
     public List<Drawable> toRender() {
         return tileMap.toRender();
     }
+
+    @Override
+    public int getWidth() {
+        return tileMap.getWidth();
+    }
+
+    @Override
+    public int getHeight() {
+        return tileMap.getHeight();
+    }
 }

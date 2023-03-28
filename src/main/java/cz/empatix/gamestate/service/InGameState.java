@@ -31,14 +31,16 @@ public class InGameState extends GameState {
 
     @Override
     public void update(final double dt) {
-        final Vector2f mouseDirection = new Vector2f(WindowHandler.TARGET_WIDTH / 2 - mouseX, WindowHandler.TARGET_HEIGHT / 2 - mouseY);
-        Camera.setPosition(mouseDirection.x / 100, mouseDirection.y / 100);
+        final Vector2f mouseDirection = new Vector2f(WindowHandler.TARGET_WIDTH / 2f - mouseX, WindowHandler.TARGET_HEIGHT / 2f - mouseY);
         player.update(dt);
     }
 
     @Override
     public void fixedUpdate(double dt) {
         player.fixedUpdate(dt);
+
+        final Vector2f mouseDirection = new Vector2f((mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f, (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f);
+        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirection.x(),player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirection.y());
     }
 
     @Override

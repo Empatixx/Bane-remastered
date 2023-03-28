@@ -16,10 +16,10 @@ public record Tile(
         int textureId,
         Vector2f position
 ) implements Drawable {
-    private final static int TILE_SIZE = 32;
+    public final static int TILE_SIZE = 32;
     private final static int TOTAL_ROWS = 2;
     private final static int TOTAL_COLUMNS = 21;
-    private final static int SCALE = 2;
+    public final static int SCALE = 2;
 
     public Tile(final int tCol,
                 final int tRow,

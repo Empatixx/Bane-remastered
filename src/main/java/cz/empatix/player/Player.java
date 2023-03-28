@@ -160,4 +160,16 @@ public class Player implements Drawable, Moveable {
 
         position.setPosition(position.getX() + x, position.getY() + y);
     }
+    public float getX(){
+        return position.getX();
+    }
+    public float getY(){
+        return position.getY();
+    }
+    public int getWidth(){
+        return DIMENSION_WIDTH;
+    }
+    public int getHeight(){
+        return DIMENSION_HEIGHT;
+    }
 }

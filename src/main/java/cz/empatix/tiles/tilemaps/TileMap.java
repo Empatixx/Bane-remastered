@@ -7,4 +7,6 @@ import java.util.List;
 public interface TileMap {
     List<Drawable> toRender();
     void init();
+    int getWidth();
+    int getHeight();
 }
