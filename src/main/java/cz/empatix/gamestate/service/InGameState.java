@@ -7,7 +7,6 @@ import cz.empatix.player.Player;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.RoomMap;
-import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +30,6 @@ public class InGameState extends GameState {
 
     @Override
     public void update(final double dt) {
-        final Vector2f mouseDirection = new Vector2f(WindowHandler.TARGET_WIDTH / 2f - mouseX, WindowHandler.TARGET_HEIGHT / 2f - mouseY);
         player.update(dt);
     }
 
@@ -39,8 +37,9 @@ public class InGameState extends GameState {
     public void fixedUpdate(double dt) {
         player.fixedUpdate(dt);
 
-        final Vector2f mouseDirection = new Vector2f((mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f, (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f);
-        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirection.x(),player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirection.y());
+        final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
+        final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
+        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirectionX,player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirectionY);
     }
 
     @Override
