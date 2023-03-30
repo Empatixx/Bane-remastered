@@ -1,6 +1,7 @@
 package cz.empatix.gamestate.service;
 
 import cz.empatix.gamestate.domain.*;
+import cz.empatix.physics.PhysicsEngine;
 import cz.empatix.render.Camera;
 import cz.empatix.render.renders.RenderService;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ public class GameStateService {
     private final static Logger LOGGER = LoggerFactory.getLogger(GameStateService.class);
     private final List<GameState> gameStates;
     private final RenderService rendererService;
+    private final PhysicsEngine physicsEngine;
     private GameState currentState;
 
     public GameStateService() {
@@ -22,6 +24,7 @@ public class GameStateService {
         gameStates.add(new MenuState(this));
         setCurrentState(GameStateType.LOADING);
 
+        physicsEngine = new PhysicsEngine();
         rendererService = new RenderService();
     }
     public void setCurrentState(final GameStateType type){
@@ -39,6 +42,7 @@ public class GameStateService {
     public void fixedUpdate(final double dt) {
         currentState.updateMouse();
         currentState.fixedUpdate(dt);
+        physicsEngine.update(dt);
     }
     public void render(final double dt) {
         Camera.update((float) dt);

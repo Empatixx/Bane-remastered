@@ -7,13 +7,14 @@ import cz.empatix.player.Player;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.RoomMap;
+import org.dyn4j.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-public class InGameState extends GameState {
+public class    InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
     private RoomMap roomMap;
     private Player player;

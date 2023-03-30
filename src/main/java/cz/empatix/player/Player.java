@@ -3,6 +3,8 @@ package cz.empatix.player;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.IntersectionResolver;
 import cz.empatix.physics.Moveable;
+import cz.empatix.physics.PhysicsBody;
+import cz.empatix.physics.PhysicsEngine;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -10,6 +12,8 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import org.dyn4j.dynamics.Body;
+import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
@@ -19,7 +23,7 @@ public class Player implements Drawable, Moveable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 38;
-    private final static int BASE_SPEED = 200;
+    private final static int BASE_SPEED = 300;
 
     private boolean left, right, top, bottom;
 
@@ -28,9 +32,8 @@ public class Player implements Drawable, Moveable {
 
     private int maxArmor;
     private int armor;
-
     private final Animation animation;
-    private final InterpolatedPosition position;
+    private final PhysicsBody physicsBody;
 
     public Player(){
         maxHealth = DEFAULT_MAX_HEALTH;
@@ -50,12 +53,17 @@ public class Player implements Drawable, Moveable {
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
 
-        position = new InterpolatedPosition();
+        physicsBody = new PhysicsBody(new InterpolatedPosition());
+        physicsBody.setMass(MassType.NORMAL);
+        physicsBody.setLinearDamping(0.1f);
+
+        //physicsBody.setPosition(0,0);
+        PhysicsEngine.addBody(physicsBody);
     }
 
     public void update(final double dt){
         animation.update();
-        position.update((float)dt);
+        physicsBody.updatePosition((float)dt);
     }
 
     public void fixedUpdate(final double dt){
@@ -78,7 +86,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(position.getInterpolatedPosition()),
+                animation.getVertices(physicsBody.getInterpolatedPosition()),
                 animation.getTextureId(),
                 new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
@@ -88,7 +96,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public boolean shouldRender() {
         return IntersectionResolver.newInstance()
-                .addShape(position.getInterpolatedPosition(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
+                .addShape(physicsBody.getInterpolatedPosition(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
                 .resolve();
     }
@@ -133,16 +141,16 @@ public class Player implements Drawable, Moveable {
     public void move(double dt) {
         float x = 0, y = 0;
         if(top){
-            y -= BASE_SPEED * dt;
+            y -= BASE_SPEED;
         }
         if(bottom){
-            y += BASE_SPEED * dt;
+            y += BASE_SPEED;
         }
         if(left){
-            x -= BASE_SPEED * dt;
+            x -= BASE_SPEED;
         }
         if(right){
-            x += BASE_SPEED * dt;
+            x += BASE_SPEED;
         }
 
         if (left) {
@@ -156,15 +164,13 @@ public class Player implements Drawable, Moveable {
         } else {
             animation.setAnimationState(AnimationState.IDLE);
         }
-
-
-        position.setPosition(position.getX() + x, position.getY() + y);
+        physicsBody.setVelocity(x, y);
     }
     public float getX(){
-        return position.getX();
+        return physicsBody.getX();
     }
     public float getY(){
-        return position.getY();
+        return physicsBody.getY();
     }
     public int getWidth(){
         return DIMENSION_WIDTH;
