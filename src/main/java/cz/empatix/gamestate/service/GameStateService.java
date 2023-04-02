@@ -47,6 +47,7 @@ public class GameStateService {
     public void render(final double dt) {
         Camera.update((float) dt);
         rendererService.render(currentState.toRender(dt));
+        physicsEngine.debugRender();
     }
 
     public void keyPressed(int key) {

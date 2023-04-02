@@ -12,6 +12,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
@@ -21,7 +22,7 @@ public class Player implements Drawable, Moveable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 38;
-    private final static int BASE_SPEED_METERS = 200;
+    private final static int MOVE_FORCE = 5000;
 
     private boolean left, right, top, bottom;
 
@@ -136,18 +137,17 @@ public class Player implements Drawable, Moveable {
 
     @Override
     public void move(double dt) {
-        float x = 0, y = 0;
         if(top){
-            y -= BASE_SPEED_METERS;
+            collisionObject.applyForce(new Vector2(0, -MOVE_FORCE), collisionObject.getWorldCenter());
         }
         if(bottom){
-            y += BASE_SPEED_METERS;
+            collisionObject.applyForce(new Vector2(0, MOVE_FORCE), collisionObject.getWorldCenter());
         }
         if(left){
-            x -= BASE_SPEED_METERS;
+            collisionObject.applyForce(new Vector2(-MOVE_FORCE, 0), collisionObject.getWorldCenter());
         }
         if(right){
-            x += BASE_SPEED_METERS;
+            collisionObject.applyForce(new Vector2(MOVE_FORCE, 0), collisionObject.getWorldCenter());
         }
 
         if (left) {
@@ -161,7 +161,6 @@ public class Player implements Drawable, Moveable {
         } else {
             animation.setAnimationState(AnimationState.IDLE);
         }
-        collisionObject.setVelocity(x, y);
     }
 
     @Override

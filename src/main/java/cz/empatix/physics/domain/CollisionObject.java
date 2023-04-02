@@ -15,7 +15,6 @@ public class CollisionObject extends Body {
         });
     }
     public CollisionObject(final Consumer<CollisionObject> postPhysicsUpdate) {
-        setAtRestDetectionEnabled(false);
         this.postPhysicsUpdate = postPhysicsUpdate;
     }
     public CollisionObject(){
