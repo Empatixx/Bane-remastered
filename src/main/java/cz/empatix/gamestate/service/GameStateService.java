@@ -1,7 +1,7 @@
 package cz.empatix.gamestate.service;
 
 import cz.empatix.gamestate.domain.*;
-import cz.empatix.physics.PhysicsEngine;
+import cz.empatix.physics.service.PhysicsEngine;
 import cz.empatix.render.Camera;
 import cz.empatix.render.renders.RenderService;
 import org.slf4j.Logger;

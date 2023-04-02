@@ -1,11 +1,13 @@
 package cz.empatix.tiles.domain;
 
-import cz.empatix.physics.IntersectionResolver;
+import cz.empatix.physics.domain.CollisionObject;
+import cz.empatix.physics.service.CollisionObjectFactory;
+import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 
@@ -14,36 +16,36 @@ import java.util.List;
 public record Tile(
         List<Vertex> vertices,
         int textureId,
-        Vector2f position
+        Vector2f position,
+        CollisionObject collision
 ) implements Drawable {
     public final static int TILE_SIZE = 32;
     private final static int TOTAL_ROWS = 2;
     private final static int TOTAL_COLUMNS = 21;
     public final static int SCALE = 2;
 
-    public Tile(final int tCol,
-                final int tRow,
-                final int tilePosX,
-                final int tilePosY,
-                final TextureAtlas.Entry texture) {
-        this(tCol, tRow, new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE), texture);
-    }
+    public static Tile from(final int tileNumber,
+                            final int tilePosX,
+                            final int tilePosY,
+                            final TextureAtlas.Entry texture) {
+        final int tCol = tileNumber % TOTAL_COLUMNS;
+        final int tRow = tileNumber / TOTAL_COLUMNS;
 
-    public Tile(final int tCol,
-                final int tRow,
-                final Vector2f position,
-                final TextureAtlas.Entry texture) {
-        this(Vertex.builder()
-                        .texPosition(tCol, tRow)
-                        .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
-                        .position(new Vector2f(position))
-                        .posDimensions(TILE_SIZE, TILE_SIZE)
-                        .offset(TILE_SIZE, TILE_SIZE)
-                        .texture(texture)
-                        .scale(SCALE)
-                        .buildQuad(),
+        final Vector2f pos = new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE);
+        final CollisionObject collision = tRow > 0 ? CollisionObjectFactory.createStaticObject(TILE_SIZE * SCALE, TILE_SIZE * SCALE, pos) : null;
+
+        return new Tile(Vertex.builder()
+                .texPosition(tCol, tRow)
+                .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
+                .position(new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE))
+                .posDimensions(TILE_SIZE, TILE_SIZE)
+                .offset(TILE_SIZE, TILE_SIZE)
+                .texture(texture)
+                .scale(SCALE)
+                .buildQuad(),
                 texture.textureId(),
-                position);
+                pos,
+                collision);
     }
 
     @Override

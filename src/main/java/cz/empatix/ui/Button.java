@@ -1,7 +1,7 @@
 package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.IntersectionResolver;
+import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;

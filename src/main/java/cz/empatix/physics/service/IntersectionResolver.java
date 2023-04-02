@@ -1,4 +1,4 @@
-package cz.empatix.physics;
+package cz.empatix.physics.service;
 
 import org.joml.Vector2f;
 

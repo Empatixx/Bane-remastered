@@ -127,22 +127,10 @@ public class TileFactory {
             return createTile(FLOOR[random.nextInt(FLOOR.length)], x , y);
         }
     }
-    private final static int TOTAL_COLUMNS = 21;
-    private final static int TOTAL_ROWS = 2;
     private Tile createTile(final int tileNumber,
                             final int x,
                             final int y) {
         final TextureAtlas.Entry texture = AssetsService.getTexture(TEXTURE_NAME);
-
-        final int xTxtCol = tileNumber % TOTAL_COLUMNS;
-        final int yTxtRow = tileNumber / TOTAL_COLUMNS;
-
-        return new Tile(
-                xTxtCol,
-                yTxtRow,
-                x,
-                y,
-                texture
-        );
+        return Tile.from(tileNumber, x, y, texture);
     }
 }

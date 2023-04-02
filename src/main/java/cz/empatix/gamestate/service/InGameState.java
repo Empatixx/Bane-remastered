@@ -7,7 +7,6 @@ import cz.empatix.player.Player;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.RoomMap;
-import org.dyn4j.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +26,7 @@ public class    InGameState extends GameState {
     public void init() {
         roomMap = new RoomMap();
         player = new Player();
+
     }
 
     @Override

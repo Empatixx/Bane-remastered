@@ -1,10 +1,10 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.IntersectionResolver;
-import cz.empatix.physics.Moveable;
-import cz.empatix.physics.PhysicsBody;
-import cz.empatix.physics.PhysicsEngine;
+import cz.empatix.physics.domain.CollisionObject;
+import cz.empatix.physics.domain.Moveable;
+import cz.empatix.physics.service.CollisionObjectFactory;
+import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -12,8 +12,6 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
-import org.dyn4j.dynamics.Body;
-import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
@@ -23,7 +21,7 @@ public class Player implements Drawable, Moveable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 38;
-    private final static int BASE_SPEED = 300;
+    private final static int BASE_SPEED_METERS = 200;
 
     private boolean left, right, top, bottom;
 
@@ -33,7 +31,8 @@ public class Player implements Drawable, Moveable {
     private int maxArmor;
     private int armor;
     private final Animation animation;
-    private final PhysicsBody physicsBody;
+    private final CollisionObject collisionObject;
+    private final InterpolatedPosition interpolatedPosition;
 
     public Player(){
         maxHealth = DEFAULT_MAX_HEALTH;
@@ -53,17 +52,15 @@ public class Player implements Drawable, Moveable {
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
 
-        physicsBody = new PhysicsBody(new InterpolatedPosition());
-        physicsBody.setMass(MassType.NORMAL);
-        physicsBody.setLinearDamping(0.1f);
+        interpolatedPosition = new InterpolatedPosition();
+        collisionObject = CollisionObjectFactory.createDynamicObject(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE, interpolatedPosition);
 
-        //physicsBody.setPosition(0,0);
-        PhysicsEngine.addBody(physicsBody);
+        collisionObject.setPosition(150,150);
     }
 
     public void update(final double dt){
         animation.update();
-        physicsBody.updatePosition((float)dt);
+        interpolatedPosition.update((float)dt);
     }
 
     public void fixedUpdate(final double dt){
@@ -86,7 +83,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getInterpolatedPosition()),
+                animation.getVertices(interpolatedPosition.getInterpolatedPosition()),
                 animation.getTextureId(),
                 new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
@@ -96,7 +93,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public boolean shouldRender() {
         return IntersectionResolver.newInstance()
-                .addShape(physicsBody.getInterpolatedPosition(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
+                .addShape(interpolatedPosition.getInterpolatedPosition(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
                 .resolve();
     }
@@ -141,16 +138,16 @@ public class Player implements Drawable, Moveable {
     public void move(double dt) {
         float x = 0, y = 0;
         if(top){
-            y -= BASE_SPEED;
+            y -= BASE_SPEED_METERS;
         }
         if(bottom){
-            y += BASE_SPEED;
+            y += BASE_SPEED_METERS;
         }
         if(left){
-            x -= BASE_SPEED;
+            x -= BASE_SPEED_METERS;
         }
         if(right){
-            x += BASE_SPEED;
+            x += BASE_SPEED_METERS;
         }
 
         if (left) {
@@ -164,13 +161,19 @@ public class Player implements Drawable, Moveable {
         } else {
             animation.setAnimationState(AnimationState.IDLE);
         }
-        physicsBody.setVelocity(x, y);
+        collisionObject.setVelocity(x, y);
     }
+
+    @Override
+    public void postPhysicsUpdate(float x, float y) {
+        collisionObject.setPosition(x, y);
+    }
+
     public float getX(){
-        return physicsBody.getX();
+        return interpolatedPosition.getX();
     }
     public float getY(){
-        return physicsBody.getY();
+        return interpolatedPosition.getY();
     }
     public int getWidth(){
         return DIMENSION_WIDTH;
