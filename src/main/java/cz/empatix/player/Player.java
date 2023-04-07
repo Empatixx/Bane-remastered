@@ -1,9 +1,7 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.domain.CollisionObject;
 import cz.empatix.physics.domain.Moveable;
-import cz.empatix.physics.service.CollisionObjectFactory;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
@@ -12,7 +10,6 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
-import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
@@ -28,11 +25,9 @@ public class Player implements Drawable, Moveable {
 
     private int maxHealth;
     private int health;
-
     private int maxArmor;
     private int armor;
     private final Animation animation;
-    private final CollisionObject collisionObject;
     private final InterpolatedPosition interpolatedPosition;
 
     public Player(){
@@ -54,9 +49,6 @@ public class Player implements Drawable, Moveable {
         animation.setAnimationState(AnimationState.IDLE);
 
         interpolatedPosition = new InterpolatedPosition();
-        collisionObject = CollisionObjectFactory.createDynamicObject(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE, interpolatedPosition);
-
-        collisionObject.setPosition(150,150);
     }
 
     public void update(final double dt){
@@ -137,19 +129,6 @@ public class Player implements Drawable, Moveable {
 
     @Override
     public void move(double dt) {
-        if(top){
-            collisionObject.applyForce(new Vector2(0, -MOVE_FORCE), collisionObject.getWorldCenter());
-        }
-        if(bottom){
-            collisionObject.applyForce(new Vector2(0, MOVE_FORCE), collisionObject.getWorldCenter());
-        }
-        if(left){
-            collisionObject.applyForce(new Vector2(-MOVE_FORCE, 0), collisionObject.getWorldCenter());
-        }
-        if(right){
-            collisionObject.applyForce(new Vector2(MOVE_FORCE, 0), collisionObject.getWorldCenter());
-        }
-
         if (left) {
             animation.setAnimationState(AnimationState.LEFT_MOVE);
         } else if (right){
@@ -161,11 +140,6 @@ public class Player implements Drawable, Moveable {
         } else {
             animation.setAnimationState(AnimationState.IDLE);
         }
-    }
-
-    @Override
-    public void postPhysicsUpdate(float x, float y) {
-        collisionObject.setPosition(x, y);
     }
 
     public float getX(){

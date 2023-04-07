@@ -1,7 +1,5 @@
 package cz.empatix.tiles.domain;
 
-import cz.empatix.physics.domain.CollisionObject;
-import cz.empatix.physics.service.CollisionObjectFactory;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;

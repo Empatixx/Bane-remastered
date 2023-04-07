@@ -1,38 +1,39 @@
 package cz.empatix.physics.service;
 
-import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.physics.domain.CollisionObject;
+import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.render.Camera;
-import org.dyn4j.geometry.Rectangle;
-import org.dyn4j.geometry.Vector2;
-import org.dyn4j.world.PhysicsWorld;
-import org.dyn4j.world.World;
 import org.lwjgl.opengl.GL30;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PhysicsEngine {
-    private static World<CollisionObject> world;
+    private final static int MAX_ITERATIONS = 5;
+    private static List<PhysicsBody> physicsBodies;
 
     public PhysicsEngine() {
-        world = new World<>();
-        world.setGravity(PhysicsWorld.ZERO_GRAVITY);
-        world.getSettings().setStepFrequency(1/60.0);
-        world.getSettings().setMaximumTranslation(5);
-        world.getSettings().setLinearTolerance(0.01);
-        world.getSettings().setMaximumRotation(0);
-        world.getSettings().setVelocityConstraintSolverIterations(30);
-        world.getSettings().setPositionConstraintSolverIterations(30);
-        GL30.glOrtho(0, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 0, -1, 1);
-
+        physicsBodies = new ArrayList<>();
     }
     public void update(final double dt){
-        world.step(1);
-        world.getBodies().forEach(CollisionObject::postPhysicsUpdate);
-    }
-    public void reset(){
-        world.removeAllBodies();
+        physicsBodies.forEach(body -> body.update((float)dt));
+        for(int k = 0;k< MAX_ITERATIONS;k++){
+            boolean collision = false;
+            for(int i = 0; i < physicsBodies.size(); i++){
+                for(int j = i + 1; j < physicsBodies.size(); j++){
+                    if(physicsBodies.get(i).isIntersecting(physicsBodies.get(j))){
+                        physicsBodies.get(i).collision(physicsBodies.get(j));
+                        physicsBodies.get(j).collision(physicsBodies.get(i));
+                        collision = true;
+                    }
+                }
+            }
+            if(!collision){
+                break;
+            }
+        }
     }
     public void debugRender(){
-        world.getBodies().forEach(body -> {
+       /* world.getBodies().forEach(body -> {
             body.getFixtures().forEach(fixture -> {
                 Vector2[] vertices = ((Rectangle) fixture.getShape()).getVertices();
                 GL30.glBegin(GL30.GL_LINE_LOOP);
@@ -41,9 +42,6 @@ public class PhysicsEngine {
                 }
                 GL30.glEnd();
             });
-        });
-    }
-    public static void addBody(final CollisionObject body){
-        world.addBody(body);
+        });*/
     }
 }

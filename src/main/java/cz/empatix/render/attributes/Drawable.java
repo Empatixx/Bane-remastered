@@ -12,4 +12,6 @@ public interface Drawable
     default List<Drawable> getSubDrawables() {
         return List.of();
     }
+
+    void move(double dt);
 }
