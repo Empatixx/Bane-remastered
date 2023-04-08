@@ -1,19 +1,20 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.domain.Moveable;
+import cz.empatix.physics.domain.PhysicsBody;
+import cz.empatix.physics.domain.Rectangle;
+import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
-import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonShaderBinding;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
-public class Player implements Drawable, Moveable {
+public class Player implements Drawable {
     private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
@@ -28,7 +29,7 @@ public class Player implements Drawable, Moveable {
     private int maxArmor;
     private int armor;
     private final Animation animation;
-    private final InterpolatedPosition interpolatedPosition;
+    private final PhysicsBody physicsBody;
 
     public Player(){
         maxHealth = DEFAULT_MAX_HEALTH;
@@ -47,13 +48,11 @@ public class Player implements Drawable, Moveable {
                 .scale(SCALE)
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
-
-        interpolatedPosition = new InterpolatedPosition();
+        physicsBody = PhysicsBody.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
     }
 
     public void update(final double dt){
         animation.update();
-        interpolatedPosition.update((float)dt);
     }
 
     public void fixedUpdate(final double dt){
@@ -76,7 +75,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(interpolatedPosition.getInterpolatedPosition()),
+                animation.getVertices(physicsBody.getTranslation()),
                 animation.getTextureId(),
                 new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
@@ -86,7 +85,7 @@ public class Player implements Drawable, Moveable {
     @Override
     public boolean shouldRender() {
         return IntersectionResolver.newInstance()
-                .addShape(interpolatedPosition.getInterpolatedPosition(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
+                .addShape(physicsBody.getTranslation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
                 .resolve();
     }
@@ -127,26 +126,30 @@ public class Player implements Drawable, Moveable {
         }
     }
 
-    @Override
-    public void move(double dt) {
+    private void move(double dt) {
         if (left) {
             animation.setAnimationState(AnimationState.LEFT_MOVE);
+            physicsBody.setVelocity(-100,0);
         } else if (right){
             animation.setAnimationState(AnimationState.RIGHT_MOVE);
+            physicsBody.setVelocity(100,0);
         } else if (top) {
             animation.setAnimationState(AnimationState.TOP_MOVE);
+            physicsBody.setVelocity(0,-100);
         } else if (bottom){
             animation.setAnimationState(AnimationState.BOTTOM_MOVE);
+            physicsBody.setVelocity(0,100);
         } else {
             animation.setAnimationState(AnimationState.IDLE);
         }
     }
 
+
     public float getX(){
-        return interpolatedPosition.getX();
+        return physicsBody.getPhysicsTranslationX();
     }
     public float getY(){
-        return interpolatedPosition.getY();
+        return physicsBody.getPhysicsTranslationY();
     }
     public int getWidth(){
         return DIMENSION_WIDTH;

@@ -1,9 +1,5 @@
 package cz.empatix.physics.service;
 
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.render.Camera;
-import org.lwjgl.opengl.GL30;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +10,8 @@ public class PhysicsEngine {
     public PhysicsEngine() {
         physicsBodies = new ArrayList<>();
     }
-    public void update(final double dt){
-        physicsBodies.forEach(body -> body.update((float)dt));
+    public void fixedUpdate(final double dt){
+        physicsBodies.forEach(body -> body.fixedUpdate((float)dt));
         for(int k = 0;k< MAX_ITERATIONS;k++){
             boolean collision = false;
             for(int i = 0; i < physicsBodies.size(); i++){
@@ -31,6 +27,9 @@ public class PhysicsEngine {
                 break;
             }
         }
+    }
+    public void update(final double dt){
+        physicsBodies.forEach(body -> body.update((float)dt));
     }
     public void debugRender(){
        /* world.getBodies().forEach(body -> {

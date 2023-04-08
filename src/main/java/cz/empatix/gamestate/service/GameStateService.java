@@ -42,7 +42,7 @@ public class GameStateService {
     public void fixedUpdate(final double dt) {
         currentState.updateMouse();
         currentState.fixedUpdate(dt);
-        physicsEngine.update(dt);
+        physicsEngine.fixedUpdate(dt);
     }
     public void render(final double dt) {
         Camera.update((float) dt);

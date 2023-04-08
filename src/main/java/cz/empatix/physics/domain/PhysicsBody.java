@@ -1,62 +1,71 @@
 package cz.empatix.physics.domain;
 
+import cz.empatix.physics.domain.transform.InterpolatedTransform;
+import cz.empatix.physics.domain.transform.Transform;
 import cz.empatix.physics.service.CollisionListener;
 import org.joml.Vector2f;
 
-public class PhysicsBody implements Moveable {
-    private final CollisionListener collisionListener;
-    private final Geometry geometry;
-    private final Vector2f transform;
-    private final Vector2f velocity;
-    private int mass;
-
-    public PhysicsBody(final Geometry geometry) {
-        this.collisionListener = new CollisionListener();
-        this.geometry = geometry;
-        this.transform = new Vector2f();
-        this.velocity = new Vector2f();
-        this.mass = geometry.getMass();
-
+public record PhysicsBody(
+        CollisionListener collisionListener,
+        Geometry geometry,
+        Transform transform,
+        Vector2f velocity,
+        int mass
+) implements Moveable {
+    public static PhysicsBody createDynamic(final Geometry geometry) {
+        return new PhysicsBody(
+                new CollisionListener(),
+                geometry,
+                new InterpolatedTransform(),
+                new Vector2f(),
+                geometry.getMass()
+        );
     }
-
-    public void setMass(int mass) {
-        this.mass = mass;
+    public static PhysicsBody createStatic(final Geometry geometry){
+        return new PhysicsBody(
+                new CollisionListener(),
+                geometry,
+                new InterpolatedTransform(),
+                new Vector2f(),
+                geometry.getMass()
+        );
     }
-
-    public int getMass() {
-        return mass;
+    public void fixedUpdate(final float dt) {
+        move(dt);
     }
-
-    public void translate(final int x, final int y) {
-        this.transform.add(x, y);
-    }
-
-    public void setTranslation(final int x, final int y) {
-        this.transform.set(x, y);
-    }
-
-    public Vector2f getTranslation() {
-        return transform;
-    }
-
-    public boolean isIntersecting(final PhysicsBody other) {
-        return this.geometry.isIntersecting(other.geometry);
-    }
-
     public void update(final float dt) {
-        this.move(dt);
+        transform.update(dt);
     }
-
     @Override
-    public void move(double dt) {
-        this.transform.add(this.velocity.mul((float) dt));
+    public void move(float dt) {
+        transform.translate(this.velocity.x() * dt, this.velocity.y() * dt);
     }
-    public void collision(final PhysicsBody body){
-        collisionListener.onCollision(body);
-    }
-
     @Override
     public Vector2f getVelocity() {
-        return velocity;
+        return velocity();
+    }
+    public void collision(final PhysicsBody body) {
+        collisionListener.onCollision(body);
+    }
+    public boolean isIntersecting(final PhysicsBody other) {
+        return this.geometry.isIntersecting(other.geometry());
+    }
+    public float translationX(){
+        return translation().x();
+    }
+    public float translationY(){
+        return translation().y();
+    }
+    public float physicsTranslationX(){
+        return physicsTranslation().x();
+    }
+    public float physicsTranslationY(){
+        return physicsTranslation().y();
+    }
+    public Vector2f translation(){
+        return transform.getTranslationToRender();
+    }
+    public Vector2f physicsTranslation(){
+        return transform.getTranslation();
     }
 }

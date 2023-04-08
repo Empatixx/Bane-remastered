@@ -15,7 +15,7 @@ public record Tile(
         List<Vertex> vertices,
         int textureId,
         Vector2f position,
-        CollisionObject collision
+        PhysicsBody collision
 ) implements Drawable {
     public final static int TILE_SIZE = 32;
     private final static int TOTAL_ROWS = 2;
@@ -31,6 +31,7 @@ public record Tile(
 
         final Vector2f pos = new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE);
         final CollisionObject collision = tRow > 0 ? CollisionObjectFactory.createStaticObject(TILE_SIZE * SCALE, TILE_SIZE * SCALE, pos) : null;
+
 
         return new Tile(Vertex.builder()
                 .texPosition(tCol, tRow)
