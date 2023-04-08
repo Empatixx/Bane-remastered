@@ -1,6 +1,9 @@
 package cz.empatix.tiles.domain;
 
+import cz.empatix.physics.domain.PhysicsBody;
+import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
+import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -30,9 +33,10 @@ public record Tile(
         final int tRow = tileNumber / TOTAL_COLUMNS;
 
         final Vector2f pos = new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE);
-        final CollisionObject collision = tRow > 0 ? CollisionObjectFactory.createStaticObject(TILE_SIZE * SCALE, TILE_SIZE * SCALE, pos) : null;
-
-
+        final PhysicsBody collision = tRow > 0 ? PhysicsBodyFactory.createStatic(Rectangle.from(TILE_SIZE * SCALE, TILE_SIZE * SCALE)) : null;
+        if(collision != null){
+            collision.setTranslation(pos.x(), pos.y());
+        }
         return new Tile(Vertex.builder()
                 .texPosition(tCol, tRow)
                 .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)

@@ -1,5 +1,7 @@
 package cz.empatix.physics.service;
 
+import cz.empatix.physics.domain.PhysicsBody;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +12,11 @@ public class PhysicsEngine {
     public PhysicsEngine() {
         physicsBodies = new ArrayList<>();
     }
+
+    public static void add(final PhysicsBody physicsBody) {
+        physicsBodies.add(physicsBody);
+    }
+
     public void fixedUpdate(final double dt){
         physicsBodies.forEach(body -> body.fixedUpdate((float)dt));
         for(int k = 0;k< MAX_ITERATIONS;k++){

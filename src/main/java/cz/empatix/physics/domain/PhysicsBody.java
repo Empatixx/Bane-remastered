@@ -10,6 +10,7 @@ public record PhysicsBody(
         Geometry geometry,
         Transform transform,
         Vector2f velocity,
+        Vector2f maxVelocity,
         int mass
 ) implements Moveable {
     public static PhysicsBody createDynamic(final Geometry geometry) {
@@ -17,6 +18,7 @@ public record PhysicsBody(
                 new CollisionListener(),
                 geometry,
                 new InterpolatedTransform(),
+                new Vector2f(),
                 new Vector2f(),
                 geometry.getMass()
         );
@@ -26,6 +28,7 @@ public record PhysicsBody(
                 new CollisionListener(),
                 geometry,
                 new InterpolatedTransform(),
+                new Vector2f(),
                 new Vector2f(),
                 geometry.getMass()
         );
@@ -67,5 +70,13 @@ public record PhysicsBody(
     }
     public Vector2f physicsTranslation(){
         return transform.getTranslation();
+    }
+
+    public void setVelocity(final float x, final float y) {
+        this.velocity.x = x;
+        this.velocity.y = y;
+    }
+    public void setTranslation(final float x, final float y) {
+        this.transform.setTranslation(x, y);
     }
 }

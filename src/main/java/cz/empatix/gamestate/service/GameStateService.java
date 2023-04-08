@@ -38,6 +38,7 @@ public class GameStateService {
     }
     public void update(final double dt) {
         currentState.update(dt);
+        physicsEngine.update(dt);
     }
     public void fixedUpdate(final double dt) {
         currentState.updateMouse();

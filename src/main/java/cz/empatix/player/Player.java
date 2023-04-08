@@ -3,8 +3,8 @@ package cz.empatix.player;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
-import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.physics.service.IntersectionResolver;
+import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -48,7 +48,7 @@ public class Player implements Drawable {
                 .scale(SCALE)
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
-        physicsBody = PhysicsBody.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
     }
 
     public void update(final double dt){
@@ -75,7 +75,7 @@ public class Player implements Drawable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation()),
+                animation.getVertices(physicsBody.translation()),
                 animation.getTextureId(),
                 new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
@@ -85,7 +85,7 @@ public class Player implements Drawable {
     @Override
     public boolean shouldRender() {
         return IntersectionResolver.newInstance()
-                .addShape(physicsBody.getTranslation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
+                .addShape(physicsBody.translation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
                 .resolve();
     }
@@ -146,10 +146,10 @@ public class Player implements Drawable {
 
 
     public float getX(){
-        return physicsBody.getPhysicsTranslationX();
+        return physicsBody.physicsTranslationX();
     }
     public float getY(){
-        return physicsBody.getPhysicsTranslationY();
+        return physicsBody.physicsTranslationY();
     }
     public int getWidth(){
         return DIMENSION_WIDTH;
