@@ -20,10 +20,21 @@ public record Rectangle(
     public int getMass() {
         return width * height;
     }
+
+    @Override
+    public boolean canAABB() {
+        return true;
+    }
+
+    @Override
+    public boolean canSAT() {
+        return true;
+    }
+
     private boolean isIntersecting(final Rectangle other){
-        return this.width <= other.width + other.height &&
-                this.width + this.height >= other.width &&
-                this.height <= other.height + other.height &&
-                this.height + this.height >= other.height;
+        return this.width < other.width + other.height &&
+                this.width + this.height > other.width &&
+                this.height < other.height + other.height &&
+                this.height + this.height > other.height;
     }
 }

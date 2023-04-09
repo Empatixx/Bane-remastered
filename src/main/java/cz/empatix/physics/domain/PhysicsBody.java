@@ -1,39 +1,60 @@
 package cz.empatix.physics.domain;
 
+import cz.empatix.physics.domain.transform.CommonTransform;
 import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.physics.domain.transform.Transform;
+import cz.empatix.physics.service.AABB;
 import cz.empatix.physics.service.CollisionListener;
+import cz.empatix.physics.service.IntersectionResolver;
 import org.joml.Vector2f;
 
-public record PhysicsBody(
-        CollisionListener collisionListener,
-        Geometry geometry,
-        Transform transform,
-        Vector2f velocity,
-        Vector2f maxVelocity,
-        int mass
-) implements Moveable {
+public class PhysicsBody implements Moveable {
+    private final CollisionListener collisionListener;
+    private final Geometry geometry;
+    private final Transform transform;
+    private final Vector2f velocity;
+    private final Vector2f force;
+    private final float linearDamping;
+    private final float restitution;
+    private final int mass;
+    public PhysicsBody(final Geometry geometry,
+                       final Transform transform,
+                       final int mass){
+        collisionListener = new CollisionListener(this);
+        this.geometry = geometry;
+        this.transform = transform;
+        velocity = new Vector2f();
+        force = new Vector2f();
+        linearDamping = 0.9f;
+        restitution = 0.5f;
+        this.mass = mass;
+    }
+    public PhysicsBody(final Geometry geometry,
+                       final Transform transform){
+        this(geometry, transform, geometry.getMass());
+    }
     public static PhysicsBody createDynamic(final Geometry geometry) {
         return new PhysicsBody(
-                new CollisionListener(),
                 geometry,
-                new InterpolatedTransform(),
-                new Vector2f(),
-                new Vector2f(),
-                geometry.getMass()
+                new InterpolatedTransform()
         );
     }
     public static PhysicsBody createStatic(final Geometry geometry){
         return new PhysicsBody(
-                new CollisionListener(),
                 geometry,
-                new InterpolatedTransform(),
-                new Vector2f(),
-                new Vector2f(),
-                geometry.getMass()
+                new CommonTransform(),
+                Integer.MAX_VALUE
         );
     }
     public void fixedUpdate(final float dt) {
+        this.velocity.x += (force.x / mass) * dt;
+        this.velocity.y += (force.y / mass) * dt;
+
+        this.force.set(0, 0);
+
+        this.velocity.x *= linearDamping;
+        this.velocity.y *= linearDamping;
+
         move(dt);
     }
     public void update(final float dt) {
@@ -45,30 +66,35 @@ public record PhysicsBody(
     }
     @Override
     public Vector2f getVelocity() {
-        return velocity();
+        return velocity;
     }
     public void collision(final PhysicsBody body) {
         collisionListener.onCollision(body);
     }
     public boolean isIntersecting(final PhysicsBody other) {
-        return this.geometry.isIntersecting(other.geometry());
+        if(geometry.canAABB() && other.geometry.canAABB()){
+            return AABB.isIntersecting(geometry, other.geometry, getTranslation(), other.getTranslation());
+        } else {
+            //todo: SAT
+            return false;
+        }
     }
-    public float translationX(){
-        return translation().x();
+    public float getTranslationX(){
+        return getTranslation().x();
     }
-    public float translationY(){
-        return translation().y();
+    public float getTranslationY(){
+        return getTranslation().y();
     }
-    public float physicsTranslationX(){
-        return physicsTranslation().x();
+    public float getPhysicsTranslationX(){
+        return getPhysicsTranslation().x();
     }
-    public float physicsTranslationY(){
-        return physicsTranslation().y();
+    public float getPhysicsTranslationY(){
+        return getPhysicsTranslation().y();
     }
-    public Vector2f translation(){
+    public Vector2f getTranslation(){
         return transform.getTranslationToRender();
     }
-    public Vector2f physicsTranslation(){
+    public Vector2f getPhysicsTranslation(){
         return transform.getTranslation();
     }
 
@@ -78,5 +104,14 @@ public record PhysicsBody(
     }
     public void setTranslation(final float x, final float y) {
         this.transform.setTranslation(x, y);
+    }
+    public void applyForce(final float x, final float y){
+        this.force.add(x,y);
+    }
+    public int getMass(){
+        return mass;
+    }
+    public float getRestitution(){
+        return restitution;
     }
 }

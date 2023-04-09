@@ -20,7 +20,7 @@ public class Player implements Drawable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 38;
-    private final static int MOVE_FORCE = 5000;
+    private final static int MOVE_FORCE = 3000000;
 
     private boolean left, right, top, bottom;
 
@@ -49,6 +49,7 @@ public class Player implements Drawable {
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
+        physicsBody.setTranslation(300,300);
     }
 
     public void update(final double dt){
@@ -75,7 +76,7 @@ public class Player implements Drawable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.translation()),
+                animation.getVertices(physicsBody.getTranslation()),
                 animation.getTextureId(),
                 new CommonShaderBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
@@ -85,7 +86,7 @@ public class Player implements Drawable {
     @Override
     public boolean shouldRender() {
         return IntersectionResolver.newInstance()
-                .addShape(physicsBody.translation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
+                .addShape(physicsBody.getTranslation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
                 .resolve();
     }
@@ -127,18 +128,25 @@ public class Player implements Drawable {
     }
 
     private void move(double dt) {
+        if(left){
+            physicsBody.applyForce(-MOVE_FORCE,0);
+        } else if (right){
+            physicsBody.applyForce(MOVE_FORCE,0);
+        }
+        if (top) {
+            physicsBody.applyForce(0,-MOVE_FORCE);
+        } else if (bottom){
+            physicsBody.applyForce(0,MOVE_FORCE);
+        }
+
         if (left) {
             animation.setAnimationState(AnimationState.LEFT_MOVE);
-            physicsBody.setVelocity(-100,0);
         } else if (right){
             animation.setAnimationState(AnimationState.RIGHT_MOVE);
-            physicsBody.setVelocity(100,0);
         } else if (top) {
             animation.setAnimationState(AnimationState.TOP_MOVE);
-            physicsBody.setVelocity(0,-100);
         } else if (bottom){
             animation.setAnimationState(AnimationState.BOTTOM_MOVE);
-            physicsBody.setVelocity(0,100);
         } else {
             animation.setAnimationState(AnimationState.IDLE);
         }
@@ -146,10 +154,10 @@ public class Player implements Drawable {
 
 
     public float getX(){
-        return physicsBody.physicsTranslationX();
+        return physicsBody.getPhysicsTranslationX();
     }
     public float getY(){
-        return physicsBody.physicsTranslationY();
+        return physicsBody.getPhysicsTranslationY();
     }
     public int getWidth(){
         return DIMENSION_WIDTH;
