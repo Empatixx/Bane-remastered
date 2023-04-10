@@ -5,7 +5,6 @@ import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.physics.domain.transform.Transform;
 import cz.empatix.physics.service.AABB;
 import cz.empatix.physics.service.CollisionListener;
-import cz.empatix.physics.service.IntersectionResolver;
 import org.joml.Vector2f;
 
 public class PhysicsBody implements Moveable {
@@ -54,8 +53,6 @@ public class PhysicsBody implements Moveable {
 
         this.velocity.x *= linearDamping;
         this.velocity.y *= linearDamping;
-
-        move(dt);
     }
     public void update(final float dt) {
         transform.update(dt);
@@ -71,9 +68,10 @@ public class PhysicsBody implements Moveable {
     public void collision(final PhysicsBody body) {
         collisionListener.onCollision(body);
     }
-    public boolean isIntersecting(final PhysicsBody other) {
-        if(geometry.canAABB() && other.geometry.canAABB()){
-            return AABB.isIntersecting(geometry, other.geometry, getTranslation(), other.getTranslation());
+    public boolean isIntersecting(final PhysicsBody other,
+                                  final float dt) {
+        if(getGeometry().canAABB() && other.getGeometry().canAABB()){
+            return AABB.isIntersecting(this, other, dt);
         } else {
             //todo: SAT
             return false;
@@ -113,5 +111,8 @@ public class PhysicsBody implements Moveable {
     }
     public float getRestitution(){
         return restitution;
+    }
+    public Geometry getGeometry() {
+        return geometry;
     }
 }

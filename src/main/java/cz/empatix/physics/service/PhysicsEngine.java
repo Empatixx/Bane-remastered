@@ -23,7 +23,7 @@ public class PhysicsEngine {
             boolean collision = false;
             for(int i = 0; i < physicsBodies.size(); i++){
                 for(int j = i + 1; j < physicsBodies.size(); j++){
-                    if(physicsBodies.get(i).isIntersecting(physicsBodies.get(j))){
+                    if(physicsBodies.get(i).isIntersecting(physicsBodies.get(j), (float)dt)){
                         physicsBodies.get(i).collision(physicsBodies.get(j));
                         physicsBodies.get(j).collision(physicsBodies.get(i));
                         collision = true;
@@ -34,6 +34,7 @@ public class PhysicsEngine {
                 break;
             }
         }
+        physicsBodies.forEach(body -> body.move((float)dt));
     }
     public void update(final double dt){
         physicsBodies.forEach(body -> body.update((float)dt));

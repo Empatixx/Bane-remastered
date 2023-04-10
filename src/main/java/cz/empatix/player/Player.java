@@ -49,7 +49,9 @@ public class Player implements Drawable {
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
-        physicsBody.setTranslation(300,300);
+        physicsBody.setTranslation(500,500);
+        physicsBody.setTranslation(500,500);
+
     }
 
     public void update(final double dt){

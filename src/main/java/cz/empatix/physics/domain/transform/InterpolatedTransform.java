@@ -10,8 +10,8 @@ public class InterpolatedTransform implements Transform {
     private float t = 0;
     @Override
     public void translate(float x, float y) {
-        this.nextPosition.x = currentPosition.x + x;
-        this.nextPosition.y = currentPosition.y + y;
+        this.nextPosition.x = nextPosition.x + x;
+        this.nextPosition.y = nextPosition.y + y;
 
         this.previousPosition.x = currentPosition.x;
         this.previousPosition.y = currentPosition.y;
