@@ -7,7 +7,7 @@ import cz.empatix.physics.service.AABB;
 import cz.empatix.physics.service.CollisionListener;
 import org.joml.Vector2f;
 
-public class PhysicsBody implements Moveable {
+public class PhysicsBody {
     private final CollisionListener collisionListener;
     private final Geometry geometry;
     private final Transform transform;
@@ -45,7 +45,7 @@ public class PhysicsBody implements Moveable {
                 Integer.MAX_VALUE
         );
     }
-    public void fixedUpdate(final float dt) {
+    public void updateVelocity(final float dt) {
         this.velocity.x += (force.x / mass) * dt;
         this.velocity.y += (force.y / mass) * dt;
 
@@ -57,16 +57,14 @@ public class PhysicsBody implements Moveable {
     public void update(final float dt) {
         transform.update(dt);
     }
-    @Override
-    public void move(float dt) {
+    public void updateTranslation(float dt) {
         transform.translate(this.velocity.x() * dt, this.velocity.y() * dt);
     }
-    @Override
     public Vector2f getVelocity() {
         return velocity;
     }
-    public void collision(final PhysicsBody body) {
-        collisionListener.onCollision(body);
+    public void collision(final PhysicsBody body,final float dt) {
+        collisionListener.onCollision(body, dt);
     }
     public boolean isIntersecting(final PhysicsBody other,
                                   final float dt) {
@@ -99,6 +97,10 @@ public class PhysicsBody implements Moveable {
     public void setVelocity(final float x, final float y) {
         this.velocity.x = x;
         this.velocity.y = y;
+    }
+    public void setVelocity(final Vector2f velocity){
+        this.velocity.x = velocity.x();
+        this.velocity.y = velocity.y();
     }
     public void setTranslation(final float x, final float y) {
         this.transform.setTranslation(x, y);

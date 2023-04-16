@@ -48,10 +48,10 @@ public class StaticRenderer implements Renderer {
             final int size = drawables.size();
             final int vbo = VboBuilder.builder()
                     .buffer(new float[size * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
-                    .dynamic()
                     .build();
             final int ebo = VboBuilder.builder()
                     .buffer(new int[size * TOTAL_ELEMENT_VERTICES_PER_QUAD])
+                    .dynamic()
                     .build();
             final int vao = VaoBuilder.builder()
                     .addVbo(0, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 0)

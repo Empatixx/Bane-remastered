@@ -23,6 +23,7 @@ public class GLFWInit implements Initializator {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
     private static final int HEIGHT = WindowHandler.TARGET_HEIGHT * 2;
     private static final int WIDTH = WindowHandler.TARGET_WIDTH * 2;
+    private static final boolean VSYNC = true;
     public static long window;
 
     @Override
@@ -53,7 +54,7 @@ public class GLFWInit implements Initializator {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(0);
+        glfwSwapInterval(VSYNC ? 1 : 0);
         glfwShowWindow(window);
     }
 

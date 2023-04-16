@@ -10,7 +10,8 @@ public class CollisionListener {
         this.body = body;
     }
 
-    public void onCollision(final PhysicsBody other) {
+    public void onCollision(final PhysicsBody other,
+                            final float dt) {
         // Calculate the direction from body to other
         final Vector2f direction = new Vector2f(other.getPhysicsTranslation()).sub(body.getPhysicsTranslation()).normalize();
 

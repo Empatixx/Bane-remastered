@@ -18,23 +18,35 @@ public class PhysicsEngine {
     }
 
     public void fixedUpdate(final double dt){
-        physicsBodies.forEach(body -> body.fixedUpdate((float)dt));
-        for(int k = 0;k< MAX_ITERATIONS;k++){
+        physicsBodies.forEach(body -> body.updateVelocity((float) dt));
+
+        for (int k = 0; k < MAX_ITERATIONS; k++) {
             boolean collision = false;
-            for(int i = 0; i < physicsBodies.size(); i++){
-                for(int j = i + 1; j < physicsBodies.size(); j++){
-                    if(physicsBodies.get(i).isIntersecting(physicsBodies.get(j), (float)dt)){
-                        physicsBodies.get(i).collision(physicsBodies.get(j));
-                        physicsBodies.get(j).collision(physicsBodies.get(i));
+            for (int i = 0; i < physicsBodies.size(); i++) {
+                for (int j = i + 1; j < physicsBodies.size(); j++) {
+                    final PhysicsBody bodyA = physicsBodies.get(i);
+                    final PhysicsBody bodyB = physicsBodies.get(j);
+
+                    if (bodyA.isIntersecting(bodyB, (float) dt)) {
+                        bodyA.collision(bodyB, (float) dt);
+                        bodyB.collision(bodyA, (float) dt);
+
+                        // Move the collided bodies with the updated velocities
+                        bodyA.updateTranslation((float) dt);
+                        bodyB.updateTranslation((float) dt);
+
                         collision = true;
                     }
                 }
             }
-            if(!collision){
+
+            if (!collision) {
                 break;
             }
         }
-        physicsBodies.forEach(body -> body.move((float)dt));
+
+        // Update the position of all bodies only once
+        physicsBodies.forEach(body -> body.updateTranslation((float) dt));
     }
     public void update(final double dt){
         physicsBodies.forEach(body -> body.update((float)dt));
