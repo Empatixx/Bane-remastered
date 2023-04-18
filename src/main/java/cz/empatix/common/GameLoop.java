@@ -12,13 +12,13 @@ import static org.lwjgl.opengl.GL11.*;
 public class GameLoop extends Thread {
     private static final Logger LOGGER = LoggerFactory.getLogger(GameLoop.class);
     private final GameInitializator gameInitializator;
-    private final GameStateService gsm;
+    private final GameStateService gss;
 
     public static final double FIXED_DELTA_TIME = 1.0 / 60.0;
 
     public GameLoop() {
         gameInitializator = new GameInitializator(this);
-        gsm = new GameStateService();
+        gss = new GameStateService();
     }
 
     @Override
@@ -60,37 +60,37 @@ public class GameLoop extends Thread {
     }
 
     private void fixedUpdate() {
-        gsm.fixedUpdate(FIXED_DELTA_TIME);
+        gss.fixedUpdate(FIXED_DELTA_TIME);
     }
     private void update(final double dt){
         glfwPollEvents();
-        gsm.update(dt);
+        gss.update(dt);
     }
 
     public void render(final double dt) {
         glClear(GL_COLOR_BUFFER_BIT);
         glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-        gsm.render(dt);
+        gss.render(dt);
         glfwSwapBuffers(WindowHandler.WINDOW);
     }
 
     public void keyPressed(final int key) {
-        gsm.keyPressed(key);
+        gss.keyPressed(key);
     }
 
     public void keyReleased(final int key) {
-        gsm.keyReleased(key);
+        gss.keyReleased(key);
     }
 
     public void mousePressed(final int button) {
-        gsm.mousePressed(button);
+        gss.mousePressed(button);
     }
 
     public void mouseReleased(final int button) {
-        gsm.mouseReleased(button);
+        gss.mouseReleased(button);
     }
 
     public void mouseScrolled(final double xoffset, final double yoffset) {
-        gsm.mouseScrolled(xoffset, yoffset);
+        gss.mouseScrolled(xoffset, yoffset);
     }
 }

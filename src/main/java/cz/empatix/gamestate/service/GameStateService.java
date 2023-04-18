@@ -2,6 +2,7 @@ package cz.empatix.gamestate.service;
 
 import cz.empatix.gamestate.domain.*;
 import cz.empatix.physics.service.PhysicsEngine;
+import cz.empatix.postprocessing.service.PostprocessService;
 import cz.empatix.render.Camera;
 import cz.empatix.render.renders.RenderService;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ public class GameStateService {
     private final List<GameState> gameStates;
     private final RenderService rendererService;
     private final PhysicsEngine physicsEngine;
+    private final PostprocessService postprocessService;
     private GameState currentState;
 
     public GameStateService() {
@@ -26,6 +28,7 @@ public class GameStateService {
 
         physicsEngine = new PhysicsEngine();
         rendererService = new RenderService();
+        postprocessService = new PostprocessService();
     }
     public void setCurrentState(final GameStateType type){
         currentState = gameStates.stream()
@@ -48,6 +51,7 @@ public class GameStateService {
     public void render(final double dt) {
         Camera.update((float) dt);
         rendererService.render(currentState.toRender(dt));
+        postprocessService.renderPostprocessing(dt);
         physicsEngine.debugRender();
     }
 
