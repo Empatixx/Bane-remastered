@@ -15,7 +15,7 @@ public class Fade implements Postprocess{
 
     @Override
     public boolean shouldApply() {
-        return false;
+        return transparency != MIN_TRANSPARENCY && transparency != MAX_TRANSPARENCY;
     }
 
     private void fixBounds(){
@@ -26,7 +26,12 @@ public class Fade implements Postprocess{
         }
     }
 
-    public void startTransition(){
+    public static void fadeIn(){
+        transparency = MIN_TRANSPARENCY;
+        incremental = true;
+    }
+    public static void fadeOut(){
         transparency = MAX_TRANSPARENCY;
+        incremental = false;
     }
 }

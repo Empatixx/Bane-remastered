@@ -2,7 +2,7 @@ package cz.empatix.postprocessing.domain;
 
 public class MotionBlur implements Postprocess{
     @Override
-    public void apply() {
+    public void apply(final float dt) {
 
     }
 
