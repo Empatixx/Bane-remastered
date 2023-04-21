@@ -14,6 +14,7 @@ public class RenderService {
         renderers = new EnumMap<>(RenderData.RenderDataType.class) {{
             put(RenderData.RenderDataType.DYNAMIC, new DynamicRenderer());
             put(RenderData.RenderDataType.STATIC, new StaticRenderer());
+            put(RenderData.RenderDataType.POSTPROCESS, new PostprocessingRenderer());
         }};
     }
 

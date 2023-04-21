@@ -1,14 +1,21 @@
 package cz.empatix.postprocessing.domain;
 
-public class Fade implements Postprocess{
+import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.shaderbindings.FadeShaderBinding;
+
+public class Fade implements Postprocess {
+
+    private final Framebuffer framebuffer = Framebuffer.create();
+    private final FadeShaderBinding shaderBinding = new FadeShaderBinding();
     private final static float MAX_TRANSPARENCY = 1f;
     private final static float MIN_TRANSPARENCY = 0f;
     private final static float DEFAULT_TWEEN = 0.01f;
     private static float transparency = MIN_TRANSPARENCY;
     private static float tween = DEFAULT_TWEEN;
     private static boolean incremental = true;
+
     @Override
-    public void apply(final float dt) {
+    public void apply(float dt) {
         transparency += incremental ? transparency * tween : -transparency * tween;
         fixBounds();
     }
@@ -18,20 +25,37 @@ public class Fade implements Postprocess{
         return transparency != MIN_TRANSPARENCY && transparency != MAX_TRANSPARENCY;
     }
 
-    private void fixBounds(){
-        if(transparency > MAX_TRANSPARENCY){
+
+    private void fixBounds() {
+        if (transparency > MAX_TRANSPARENCY) {
             transparency = MAX_TRANSPARENCY;
-        } else if(transparency < MIN_TRANSPARENCY){
+        } else if (transparency < MIN_TRANSPARENCY) {
             transparency = MIN_TRANSPARENCY;
         }
     }
 
-    public static void fadeIn(){
+    public static void fadeIn() {
         transparency = MIN_TRANSPARENCY;
         incremental = true;
     }
-    public static void fadeOut(){
+
+    public static void fadeOut() {
         transparency = MAX_TRANSPARENCY;
         incremental = false;
+    }
+
+    @Override
+    public RenderData renderData() {
+        return new RenderData(Framebuffer.VERTICES, framebuffer.textureId(), shaderBinding, RenderData.RenderDataType.POSTPROCESS);
+    }
+
+    @Override
+    public boolean shouldRender() {
+        return true;
+    }
+
+    @Override
+    public int getZIndex() {
+        return 1;
     }
 }

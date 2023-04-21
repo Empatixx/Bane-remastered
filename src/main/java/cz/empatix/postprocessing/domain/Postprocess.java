@@ -1,6 +1,10 @@
 package cz.empatix.postprocessing.domain;
 
-public interface Postprocess {
+import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.domain.RenderData;
+
+public interface Postprocess extends Drawable {
     void apply(final float dt);
+
     boolean shouldApply();
 }
