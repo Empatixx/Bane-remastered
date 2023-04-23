@@ -14,7 +14,6 @@ public record RenderData (
     public enum RenderDataType{
         STATIC,
         DYNAMIC,
-        POSTPROCESS,
     }
 
 }

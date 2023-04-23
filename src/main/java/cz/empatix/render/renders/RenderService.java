@@ -10,14 +10,15 @@ public class RenderService {
     private final Map<RenderData.RenderDataType, Renderer> renderers;
 
     public RenderService() {
-
-        renderers = new EnumMap<>(RenderData.RenderDataType.class) {{
+        final EnumMap<RenderData.RenderDataType, Renderer> map = new EnumMap<>(RenderData.RenderDataType.class) {{
             put(RenderData.RenderDataType.DYNAMIC, new DynamicRenderer());
             put(RenderData.RenderDataType.STATIC, new StaticRenderer());
-            put(RenderData.RenderDataType.POSTPROCESS, new PostprocessingRenderer());
         }};
+        renderers = Collections.unmodifiableMap(map);
     }
-
+    public void render(final Drawable drawable){
+        render(List.of(drawable));
+    }
     public void render(final List<Drawable> drawable) {
         final List<Drawable> allDrawables = findAllDrawables(drawable);
         allDrawables.sort(Comparator.comparingInt(Drawable::getZIndex));

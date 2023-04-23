@@ -1,10 +1,10 @@
 package cz.empatix.assets.domain.font;
 
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Vertex;
-import cz.empatix.render.shaderbindings.TextShaderBinding;
+import cz.empatix.render.shaderbindings.TextBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -54,7 +54,7 @@ public record Glyph(
             return new RenderData(
                     vertices(),
                     glyph.texture().textureId(),
-                    new TextShaderBinding(color, Camera.getProjection()),
+                    new TextBinding(color, Camera.getProjection()),
                     RenderData.RenderDataType.DYNAMIC
             );
         }

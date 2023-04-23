@@ -2,11 +2,11 @@ package cz.empatix.hud;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 
@@ -27,7 +27,7 @@ public class AnimatedBackground implements HUDElement {
         return new RenderData(
                 animation.getVertices(new Vector2f(0, 0)),
                 animation.getTextureId(),
-                new CommonShaderBinding(Camera.getProjection()),
+                new CommonBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
         );
     }

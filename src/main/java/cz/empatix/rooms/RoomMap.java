@@ -1,6 +1,6 @@
 package cz.empatix.rooms;
 
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 
 import java.util.ArrayList;

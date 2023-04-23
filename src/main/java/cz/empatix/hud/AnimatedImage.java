@@ -1,11 +1,11 @@
 package cz.empatix.hud;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -42,7 +42,7 @@ public class AnimatedImage implements HUDElement {
         return new RenderData(
                 animation.getVertices(position),
                 texture.textureId(),
-                new CommonShaderBinding(Camera.getProjection()),
+                new CommonBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
         );
     }

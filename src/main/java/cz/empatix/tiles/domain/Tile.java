@@ -4,11 +4,11 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Vertex;
-import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 
@@ -56,7 +56,7 @@ public record Tile(
         return new RenderData(
                 vertices,
                 textureId,
-                new CommonShaderBinding(Camera.getProjection()),
+                new CommonBinding(Camera.getProjection()),
                 RenderData.RenderDataType.STATIC
         );
     }

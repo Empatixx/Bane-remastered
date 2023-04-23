@@ -2,12 +2,12 @@ package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.service.IntersectionResolver;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.hud.Text;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -68,7 +68,7 @@ public class Button implements UIElement {
         return new RenderData(
                 animation.getVertices(position),
                 animation.getTextureId(),
-                new CommonShaderBinding(Camera.getProjection()),
+                new CommonBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
         );
     }

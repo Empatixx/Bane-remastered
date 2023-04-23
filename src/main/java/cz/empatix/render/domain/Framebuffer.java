@@ -1,7 +1,6 @@
-package cz.empatix.postprocessing.domain;
+package cz.empatix.render.domain;
 
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.render.domain.Vertex;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +11,13 @@ import static org.lwjgl.opengl.GL30.*;
 
 public record Framebuffer (
         int fbo,
-        int textureId
+        int colorAttachment
 ){
     public static final List<Vertex> VERTICES = List.of(
-            new Vertex(new Vector2f(0, 0), new Vector2f(0, 0)),
-            new Vertex(new Vector2f(0, WindowHandler.TARGET_HEIGHT), new Vector2f(0, 1)),
-            new Vertex(new Vector2f(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT), new Vector2f(1, 1)),
-            new Vertex(new Vector2f(WindowHandler.TARGET_WIDTH, 0), new Vector2f(1, 0))
+            new Vertex(new Vector2f(0, 0), new Vector2f(0, 1)),
+            new Vertex(new Vector2f(WindowHandler.TARGET_WIDTH, 0), new Vector2f(1, 1)),
+            new Vertex(new Vector2f(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT), new Vector2f(1, 0)),
+            new Vertex(new Vector2f(0, WindowHandler.TARGET_HEIGHT), new Vector2f(0,0))
     );
     private final static Logger LOGGER = LoggerFactory.getLogger(Framebuffer.class);
     public void destroy(){
@@ -31,7 +30,7 @@ public record Framebuffer (
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
             glBindTexture(GL_TEXTURE_2D, textureId);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WindowHandler.WIDTH, WindowHandler.HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -56,4 +55,7 @@ public record Framebuffer (
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
+    public int getColorAttachment() {
+        return colorAttachment;
+    }
 }

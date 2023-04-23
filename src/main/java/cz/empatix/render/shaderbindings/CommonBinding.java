@@ -4,9 +4,9 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Shader;
 import org.joml.Matrix4f;
 
-public class CommonShaderBinding implements ShaderBinding{
+public class CommonBinding implements ShaderBinding{
     private final Matrix4f projectionMatrix;
-    public CommonShaderBinding(final Matrix4f projection){
+    public CommonBinding(final Matrix4f projection){
         this.projectionMatrix = projection;
     }
     @Override
@@ -25,8 +25,8 @@ public class CommonShaderBinding implements ShaderBinding{
     @Override
     public boolean equals(Object obj) {
         if(this == obj) return true;
-        if(obj instanceof CommonShaderBinding){
-            final CommonShaderBinding other = (CommonShaderBinding) obj;
+        if(obj instanceof CommonBinding){
+            final CommonBinding other = (CommonBinding) obj;
             return other.projectionMatrix.equals(projectionMatrix);
         }
         return false;

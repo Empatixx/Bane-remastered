@@ -7,7 +7,7 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.CommonBackground;
 import cz.empatix.hud.HUDElement;
 import cz.empatix.hud.Image;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.ui.Button;
 import cz.empatix.ui.UIElement;

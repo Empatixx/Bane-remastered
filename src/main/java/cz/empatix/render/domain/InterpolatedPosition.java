@@ -48,6 +48,9 @@ public class InterpolatedPosition {
 
     public void update(final float dt) {
         t += dt / (float)GameLoop.FIXED_DELTA_TIME;
+        if (t > 1) {
+            t = 1;
+        }
         this.previousPosition.lerp(nextPosition, t, currentPosition);
     }
 

@@ -1,18 +1,18 @@
 package cz.empatix.postprocessing.domain;
 
+import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.FadeShaderBinding;
+import cz.empatix.render.shaderbindings.FadeBinding;
 
 public class Fade implements Postprocess {
-
-    private final Framebuffer framebuffer = Framebuffer.create();
-    private final FadeShaderBinding shaderBinding = new FadeShaderBinding();
+    private final FadeBinding shaderBinding = new FadeBinding();
     private final static float MAX_TRANSPARENCY = 1f;
     private final static float MIN_TRANSPARENCY = 0f;
     private final static float DEFAULT_TWEEN = 0.01f;
     private static float transparency = MIN_TRANSPARENCY;
     private static float tween = DEFAULT_TWEEN;
     private static boolean incremental = true;
+    private int textureId;
 
     @Override
     public void apply(float dt) {
@@ -21,8 +21,8 @@ public class Fade implements Postprocess {
     }
 
     @Override
-    public boolean shouldApply() {
-        return transparency != MIN_TRANSPARENCY && transparency != MAX_TRANSPARENCY;
+    public void setInput(Framebuffer inputFBO) {
+        textureId = inputFBO.colorAttachment();
     }
 
 
@@ -46,16 +46,11 @@ public class Fade implements Postprocess {
 
     @Override
     public RenderData renderData() {
-        return new RenderData(Framebuffer.VERTICES, framebuffer.textureId(), shaderBinding, RenderData.RenderDataType.POSTPROCESS);
+        return new RenderData(Framebuffer.VERTICES, textureId, shaderBinding, RenderData.RenderDataType.DYNAMIC);
     }
 
     @Override
     public boolean shouldRender() {
-        return true;
-    }
-
-    @Override
-    public int getZIndex() {
-        return 1;
+        return false;
     }
 }

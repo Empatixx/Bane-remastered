@@ -4,7 +4,7 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.player.Player;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.RoomMap;
 import org.slf4j.Logger;

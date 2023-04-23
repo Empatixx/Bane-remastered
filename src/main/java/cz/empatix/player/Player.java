@@ -5,12 +5,12 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
@@ -80,7 +80,7 @@ public class Player implements Drawable {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation()),
                 animation.getTextureId(),
-                new CommonShaderBinding(Camera.getProjection()),
+                new CommonBinding(Camera.getProjection()),
                 RenderData.RenderDataType.DYNAMIC
         );
     }

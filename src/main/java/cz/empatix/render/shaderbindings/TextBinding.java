@@ -5,11 +5,11 @@ import cz.empatix.render.domain.Shader;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-public class TextShaderBinding implements ShaderBinding{
+public class TextBinding implements ShaderBinding{
     private final Vector3f color;
     private final Matrix4f projection;
-    public TextShaderBinding(final Vector3f color,
-                             final Matrix4f projection){
+    public TextBinding(final Vector3f color,
+                       final Matrix4f projection){
         this.color = color;
         this.projection = projection;
     }
@@ -24,8 +24,8 @@ public class TextShaderBinding implements ShaderBinding{
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof TextShaderBinding){
-            final TextShaderBinding other = (TextShaderBinding) obj;
+        if(obj instanceof TextBinding){
+            final TextBinding other = (TextBinding) obj;
             return other.color.equals(color) && other.projection.equals(projection);
         }
         return false;

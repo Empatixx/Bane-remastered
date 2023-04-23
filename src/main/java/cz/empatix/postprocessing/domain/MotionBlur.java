@@ -1,5 +1,6 @@
 package cz.empatix.postprocessing.domain;
 
+import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
 
 public class MotionBlur implements Postprocess{
@@ -12,10 +13,9 @@ public class MotionBlur implements Postprocess{
     public void apply(float dt) {
 
     }
-
     @Override
-    public boolean shouldApply() {
-        return false;
+    public void setInput(Framebuffer inputFBO) {
+
     }
 
     @Override
@@ -28,8 +28,4 @@ public class MotionBlur implements Postprocess{
         return false;
     }
 
-    @Override
-    public int getZIndex() {
-        return 0;
-    }
 }

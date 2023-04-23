@@ -1,4 +1,4 @@
-package cz.empatix.render;
+package cz.empatix.render.service;
 
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.InterpolatedPosition;
@@ -18,12 +18,14 @@ public class Camera {
 
     public static Matrix4f getProjection() {
         final Vector2f position = interpolatedPosition.getInterpolatedPosition();
+        return getOriginProjection().translate(new Vector3f(-position.x(), -position.y(), 0));
+    }
+    public static Matrix4f getOriginProjection(){
         return new Matrix4f().ortho2D(
                         TARGET_WIDTH * (1 - zoom) / 2,
                         TARGET_WIDTH - (TARGET_WIDTH * (1 - zoom)) / 2,
                         TARGET_HEIGHT - (TARGET_HEIGHT * (1 - zoom)) / 2,
-                        WindowHandler.TARGET_HEIGHT * (1 - zoom) / 2)
-                .translate(new Vector3f(-position.x(), -position.y(), 0));
+                        TARGET_HEIGHT * (1 - zoom) / 2);
     }
 
     public static void update(final float dt) {

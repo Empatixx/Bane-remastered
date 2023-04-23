@@ -1,9 +1,9 @@
 package cz.empatix.hud;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.Camera;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonShaderBinding;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -44,7 +44,7 @@ public class Image implements HUDElement {
                         .offset(dimensions.x(), dimensions.y())
                         .buildQuad(),
                 texture.textureId(),
-                new CommonShaderBinding(Camera.getProjection()),
+                new CommonBinding(Camera.getProjection()),
                 RenderData.RenderDataType.STATIC
         );
     }
