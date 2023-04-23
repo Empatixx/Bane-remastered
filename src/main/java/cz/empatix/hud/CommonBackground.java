@@ -15,7 +15,7 @@ public class CommonBackground implements HUDElement {
         return image.renderData();
     }
     @Override
-    public boolean shouldRender() {
+    public boolean canRender() {
         return true;
     }
 

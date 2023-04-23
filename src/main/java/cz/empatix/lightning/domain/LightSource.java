@@ -2,35 +2,45 @@ package cz.empatix.lightning.domain;
 
 import com.google.common.base.Preconditions;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import java.util.Objects;
 
 
 public final class LightSource {
     private final Vector2f position;
+    private final Vector3f color;
     private final float radius;
     private final float intensity;
     private boolean isDestroyed = false;
 
-    public LightSource(Vector2f position, float radius, float intensity) {
+    public LightSource(final Vector2f position,
+                       final Vector3f color,
+                       final float radius,
+                       final float intensity) {
         Preconditions.checkArgument(radius > 0, "Radius must be greater than 0");
         Preconditions.checkArgument(intensity > 0, "Intensity must be greater than 0");
         Preconditions.checkNotNull(position, "Position must not be null");
         this.position = position;
         this.radius = radius;
         this.intensity = intensity;
+        this.color = color;
     }
 
-    public Vector2f position() {
+    public Vector2f getPosition() {
         return position;
     }
 
-    public float radius() {
+    public float getRadius() {
         return radius;
     }
 
-    public float intensity() {
+    public float getIntensity() {
         return intensity;
+    }
+
+    public Vector3f getColor() {
+        return color;
     }
 
     @Override
@@ -63,4 +73,13 @@ public final class LightSource {
                 "intensity=" + intensity + ']';
     }
 
+    public void setPosition(final Vector2f translation) {
+        setPosition(translation.x, translation.y);
+    }
+    public void setPosition(final float x, final float y){
+        this.position.set(x, y);
+    }
+    public boolean canDisplay(){
+        return !isDestroyed;
+    }
 }

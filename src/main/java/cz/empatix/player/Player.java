@@ -1,6 +1,8 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.lightning.domain.LightSource;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
@@ -12,9 +14,11 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 public class Player implements Drawable {
+    private final LightSource lightSource;
     private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
@@ -31,7 +35,7 @@ public class Player implements Drawable {
     private final Animation animation;
     private final PhysicsBody physicsBody;
 
-    public Player(){
+    public Player() {
         maxHealth = DEFAULT_MAX_HEALTH;
         health = maxHealth;
 
@@ -49,28 +53,32 @@ public class Player implements Drawable {
                 .build();
         animation.setAnimationState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
-        physicsBody.setTranslation(500,500);
-        physicsBody.setTranslation(500,500);
+        physicsBody.setTranslation(500, 500);
+        physicsBody.setTranslation(500, 500);
 
+        lightSource = LightningService.getInstance().createLightSource(new Vector3f(216,156,36), 500f, 0.5f);
     }
 
-    public void update(final double dt){
+    public void update(final double dt) {
         animation.update();
+        lightSource.setPosition(physicsBody.getTranslationX() + DIMENSION_WIDTH * SCALE / 2,
+                physicsBody.getTranslationY() + DIMENSION_HEIGHT * SCALE / 2);
     }
 
-    public void fixedUpdate(final double dt){
+    public void fixedUpdate(final double dt) {
         move(dt);
     }
 
-    public void setHealth(final int health){
+    public void setHealth(final int health) {
         this.health = health;
-        if(this.health > maxHealth){
+        if (this.health > maxHealth) {
             this.health = maxHealth;
         }
     }
-    public void setArmor(final int armor){
+
+    public void setArmor(final int armor) {
         this.armor = armor;
-        if(this.armor > maxArmor){
+        if (this.armor > maxArmor) {
             this.armor = maxArmor;
         }
     }
@@ -86,7 +94,7 @@ public class Player implements Drawable {
     }
 
     @Override
-    public boolean shouldRender() {
+    public boolean canRender() {
         return IntersectionResolver.newInstance()
                 .addShape(physicsBody.getTranslation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
@@ -99,21 +107,21 @@ public class Player implements Drawable {
     }
 
 
-    public void keyPressed(final int key){
-        switch (key){
-            case GLFW.GLFW_KEY_W ->{
+    public void keyPressed(final int key) {
+        switch (key) {
+            case GLFW.GLFW_KEY_W -> {
                 top = true;
                 bottom = false;
             }
-            case GLFW.GLFW_KEY_S ->{
+            case GLFW.GLFW_KEY_S -> {
                 bottom = true;
                 top = false;
             }
-            case GLFW.GLFW_KEY_A ->{
+            case GLFW.GLFW_KEY_A -> {
                 left = true;
                 right = false;
             }
-            case GLFW.GLFW_KEY_D ->{
+            case GLFW.GLFW_KEY_D -> {
                 right = true;
                 left = false;
             }
@@ -121,7 +129,7 @@ public class Player implements Drawable {
     }
 
     public void keyReleased(final int key) {
-        switch (key){
+        switch (key) {
             case GLFW.GLFW_KEY_W -> top = false;
             case GLFW.GLFW_KEY_S -> bottom = false;
             case GLFW.GLFW_KEY_A -> left = false;
@@ -130,24 +138,24 @@ public class Player implements Drawable {
     }
 
     private void move(double dt) {
-        if(left){
-            physicsBody.applyForce(-MOVE_FORCE,0);
-        } else if (right){
-            physicsBody.applyForce(MOVE_FORCE,0);
+        if (left) {
+            physicsBody.applyForce(-MOVE_FORCE, 0);
+        } else if (right) {
+            physicsBody.applyForce(MOVE_FORCE, 0);
         }
         if (top) {
-            physicsBody.applyForce(0,-MOVE_FORCE);
-        } else if (bottom){
-            physicsBody.applyForce(0,MOVE_FORCE);
+            physicsBody.applyForce(0, -MOVE_FORCE);
+        } else if (bottom) {
+            physicsBody.applyForce(0, MOVE_FORCE);
         }
 
         if (left) {
             animation.setAnimationState(AnimationState.LEFT_MOVE);
-        } else if (right){
+        } else if (right) {
             animation.setAnimationState(AnimationState.RIGHT_MOVE);
         } else if (top) {
             animation.setAnimationState(AnimationState.TOP_MOVE);
-        } else if (bottom){
+        } else if (bottom) {
             animation.setAnimationState(AnimationState.BOTTOM_MOVE);
         } else {
             animation.setAnimationState(AnimationState.IDLE);
@@ -155,16 +163,19 @@ public class Player implements Drawable {
     }
 
 
-    public float getX(){
+    public float getX() {
         return physicsBody.getPhysicsTranslationX();
     }
-    public float getY(){
+
+    public float getY() {
         return physicsBody.getPhysicsTranslationY();
     }
-    public int getWidth(){
+
+    public int getWidth() {
         return DIMENSION_WIDTH;
     }
-    public int getHeight(){
+
+    public int getHeight() {
         return DIMENSION_HEIGHT;
     }
 }

@@ -72,7 +72,7 @@ public record Glyph(
         }
 
         @Override
-        public boolean shouldRender() {
+        public boolean canRender() {
             return true; //Todo: remove
         }
 

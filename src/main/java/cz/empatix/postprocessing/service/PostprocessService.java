@@ -29,7 +29,7 @@ public class PostprocessService {
     public void process(final Framebuffer sceneFbo,
                         final float dt) {
         final List<Postprocess> postprocesses = this.postprocesses.stream()
-                .filter(Postprocess::shouldRender)
+                .filter(Postprocess::canRender)
                 .toList();
 
         if(postprocesses.isEmpty()){

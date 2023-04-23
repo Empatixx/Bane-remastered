@@ -5,7 +5,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.FadeBinding;
 
 public class Fade implements Postprocess {
-    private final FadeBinding shaderBinding = new FadeBinding();
+
     private final static float MAX_TRANSPARENCY = 1f;
     private final static float MIN_TRANSPARENCY = 0f;
     private final static float DEFAULT_TWEEN = 0.01f;
@@ -46,11 +46,12 @@ public class Fade implements Postprocess {
 
     @Override
     public RenderData renderData() {
-        return new RenderData(Framebuffer.VERTICES, textureId, shaderBinding, RenderData.RenderDataType.DYNAMIC);
+        return new RenderData(Framebuffer.VERTICES, textureId,
+                new FadeBinding(transparency), RenderData.RenderDataType.DYNAMIC);
     }
 
     @Override
-    public boolean shouldRender() {
+    public boolean canRender() {
         return false;
     }
 }

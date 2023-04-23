@@ -62,7 +62,7 @@ public record Tile(
     }
 
     @Override
-    public boolean shouldRender() {
+    public boolean canRender() {
         return IntersectionResolver.newInstance()
                 .addShape(position, new Vector2f(TILE_SIZE * SCALE, TILE_SIZE * SCALE))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))

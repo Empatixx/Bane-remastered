@@ -83,7 +83,7 @@ public class Button implements UIElement {
     }
 
     @Override
-    public boolean shouldRender() {
+    public boolean canRender() {
         return true;
     }
 

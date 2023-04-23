@@ -48,7 +48,7 @@ public class DynamicRenderer implements Renderer {
     @Override
     public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
         final List<RenderData> renderData = drawables.stream()
-                .filter(Drawable::shouldRender)
+                .filter(Drawable::canRender)
                 .map(Drawable::renderData)
                 .toList();
         if(renderData.isEmpty()) {

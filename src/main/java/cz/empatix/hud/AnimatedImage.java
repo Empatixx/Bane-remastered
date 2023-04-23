@@ -48,7 +48,7 @@ public class AnimatedImage implements HUDElement {
     }
 
     @Override
-    public boolean shouldRender() {
+    public boolean canRender() {
         return position.x() + dimensions.x() > Camera.getX() && position.x() < Camera.getTargetWidth() + Camera.getX() &&
                 position.y() + dimensions.y() > Camera.getY() && position.y() < Camera.getTargetHeight() + Camera.getY();
     }

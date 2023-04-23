@@ -4,7 +4,10 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Shader;
 
 public class FadeBinding implements ShaderBinding{
-    private float transparency;
+    private final float transparency;
+    public FadeBinding(final float transparency){
+        this.transparency = transparency;
+    }
     @Override
     public Shader apply() {
         final Shader shader = AssetsService.getShader("fade");
@@ -13,7 +16,4 @@ public class FadeBinding implements ShaderBinding{
         return shader;
     }
 
-    public void setTransparency(float transparency) {
-        this.transparency = transparency;
-    }
 }

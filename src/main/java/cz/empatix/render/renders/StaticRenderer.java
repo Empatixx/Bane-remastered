@@ -96,7 +96,7 @@ public class StaticRenderer implements Renderer {
             lastRendered = System.currentTimeMillis();
         }
 
-        public boolean shouldDestroy() {
+        public boolean canDestroy() {
             return System.currentTimeMillis() - lastRendered > MAX_LIFETIME_WITHOUT_RENDER;
         }
     }
@@ -115,7 +115,7 @@ public class StaticRenderer implements Renderer {
                     final Iterator<Map.Entry<Integer, StaticRenderData>> iterator = map.entrySet().iterator();
                     while (iterator.hasNext()) {
                         Map.Entry<Integer, StaticRenderData> entry = iterator.next();
-                        if (entry.getValue().shouldDestroy()) {
+                        if (entry.getValue().canDestroy()) {
                             entry.getValue().destroy();
                             iterator.remove();
                         }
@@ -164,7 +164,7 @@ public class StaticRenderer implements Renderer {
         int currentIndex = 0;
 
         for (int i = 0; i < size; i++) {
-            if (drawables.get(i).shouldRender()) {
+            if (drawables.get(i).canRender()) {
                 int base = i * 4;
                 indices[currentIndex++] = base;
                 indices[currentIndex++] = base + 1;

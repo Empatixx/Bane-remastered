@@ -22,7 +22,7 @@ public class NoPostprocessing implements Postprocess{
     }
 
     @Override
-    public boolean shouldRender() {
+    public boolean canRender() {
         return true;
     }
 }

@@ -3,13 +3,15 @@ package cz.empatix.postprocessing.domain;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.service.Camera;
+import cz.empatix.render.shaderbindings.ForwardLightningBinding;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 
 
 public class ForwardLightning implements Postprocess {
     private final LightningService lightningService = LightningService.getInstance();
-    private final ForwardLightningBinding shaderBinding = new ForwardLightningBinding(lightningService);
     private int textureId;
+
     @Override
     public void apply(float dt) {
     }
@@ -21,12 +23,14 @@ public class ForwardLightning implements Postprocess {
 
     @Override
     public RenderData renderData() {
-        return new RenderData(Framebuffer.VERTICES, textureId, shaderBinding, RenderData.RenderDataType.DYNAMIC);
+        return new RenderData(Framebuffer.VERTICES, textureId,
+                new ForwardLightningBinding(lightningService.getLightSources(), Camera.getOriginProjection()),
+                RenderData.RenderDataType.DYNAMIC);
     }
 
     @Override
-    public boolean shouldRender() {
-        return false;
+    public boolean canRender() {
+        return !lightningService.getLightSources().isEmpty();
     }
 
 }

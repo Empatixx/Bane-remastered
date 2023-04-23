@@ -7,7 +7,7 @@ import java.util.List;
 public interface Drawable
 {
     RenderData renderData();
-    boolean shouldRender();
+    boolean canRender();
     int getZIndex();
     default List<Drawable> getSubDrawables() {
         return List.of();
