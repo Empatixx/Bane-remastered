@@ -56,7 +56,7 @@ public class Player implements Drawable {
         physicsBody.setTranslation(500, 500);
         physicsBody.setTranslation(500, 500);
 
-        lightSource = LightningService.getInstance().createLightSource(new Vector3f(216,156,36), 500f, 0.5f);
+        lightSource = LightningService.getInstance().createLightSource(new Vector3f(216,156,36), 300f, 0.5f);
     }
 
     public void update(final double dt) {
