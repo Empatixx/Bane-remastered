@@ -2,6 +2,7 @@ package cz.empatix.render.domain;
 
 import cz.empatix.common.handlers.WindowHandler;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +12,8 @@ import static org.lwjgl.opengl.GL30.*;
 
 public record Framebuffer (
         int fbo,
-        int colorAttachment
+        int colorAttachment,
+        Vector2i size
 ){
     public static final List<Vertex> VERTICES = List.of(
             new Vertex(new Vector2f(0, 0), new Vector2f(0, 1)),
@@ -46,10 +48,20 @@ public record Framebuffer (
             glDeleteFramebuffers(fbo);
             glDeleteTextures(textureId);
         }
-        return new Framebuffer(fbo, textureId);
+        return new Framebuffer(fbo, textureId, new Vector2i(WindowHandler.WIDTH, WindowHandler.HEIGHT));
     }
     public void bind(){
+        resize();
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    }
+    public void resize(){
+        if(size.x() == WindowHandler.WIDTH && size.y() == WindowHandler.HEIGHT){
+            return;
+        }
+        size.set(WindowHandler.WIDTH, WindowHandler.HEIGHT);
+        glBindTexture(GL_TEXTURE_2D, colorAttachment);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WindowHandler.WIDTH, WindowHandler.HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
     public void unbind(){
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
