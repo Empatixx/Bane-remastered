@@ -22,7 +22,7 @@ public class GLFWInit implements Initializator {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
     private static final int HEIGHT = WindowHandler.TARGET_HEIGHT * 2;
     private static final int WIDTH = WindowHandler.TARGET_WIDTH * 2;
-    private static final boolean VSYNC = true;
+    private static final boolean VSYNC = false;
     public static long window;
 
     @Override

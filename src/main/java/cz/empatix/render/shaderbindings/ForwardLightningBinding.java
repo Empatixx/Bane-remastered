@@ -3,12 +3,10 @@ package cz.empatix.render.shaderbindings;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.lightning.domain.LightSource;
-import cz.empatix.lightning.service.LightningService;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.service.Camera;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
-import org.joml.Vector3f;
 
 import java.util.List;
 

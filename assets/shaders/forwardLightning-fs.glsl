@@ -1,8 +1,8 @@
 #version 330 core
 #define AMBIENT_LIGHT 0.6
 #define MAX_LIGHTS 10
-#define BLOCK_SIZE 24.0
-#define NOISE_INTENSITY 0.2
+#define BLOCK_SIZE 8.0
+#define NOISE_INTENSITY 0.15
 
 uniform sampler2D texSampler; // framebuffer texture
 uniform vec2 lightPosition[MAX_LIGHTS]; // array of light positions in screen space
@@ -15,10 +15,11 @@ uniform vec2 cameraPosition; // camera position in world space
 
 in vec2 tex_coords;
 
-// function to calculate the diffuse lighting
 float calcDiffuse(vec2 lightDir, float lightRadius, float lightIntensity) {
     float dist = length(lightDir);
-    float gradient = 1.0 - clamp(floor(dist / BLOCK_SIZE) * BLOCK_SIZE / lightRadius, 0.0, 1.0); // radial gradient with circular transition
+    float normalizedDist = dist / lightRadius;
+    float attenuation = 1.0 / (1.0 + normalizedDist * normalizedDist); // Inverse square law for light attenuation
+    float gradient = clamp(attenuation, 0.0, 1.0); // Clamp the attenuation to avoid negative values
     return gradient * lightIntensity;
 }
 float random(vec2 st) {
@@ -35,11 +36,17 @@ void main() {
     vec3 finalLightColor = vec3(0.0, 0.0, 0.0);
 
     for (int i = 0; i < numLights; ++i) {
-        vec2 calcLightPosition = vec2(lightPosition[i].x - cameraPosition.x, resolution.y - lightPosition[i].y + cameraPosition.y); // flip Y-axis of light position
-        vec2 pixelatedLightPosition = floor(calcLightPosition / BLOCK_SIZE) * BLOCK_SIZE;
+        vec2 lightPositionInScreenSpace = lightPosition[i] / resolution;
+        vec2 cameraPositionInScreenSpace = cameraPosition / resolution;
 
-        vec2 lightDir = pixelatedLightPosition - pixelatedScreenSpaceTexCoord;
-        float diffuse = calcDiffuse(lightDir, lightRadius[i], lightIntensity[i]); // calculate diffuse lighting
+        vec2 calcLightPosition = vec2(lightPositionInScreenSpace.x - cameraPositionInScreenSpace.x, 1.0 - lightPositionInScreenSpace.y + cameraPositionInScreenSpace.y); // Updated calculation
+        vec2 worldSpaceLightPosition = calcLightPosition * resolution;
+
+        vec2 worldSpacePixelatedLightPosition = floor(worldSpaceLightPosition / BLOCK_SIZE) * BLOCK_SIZE;
+        vec2 screenSpacePixelatedLightPosition = worldSpacePixelatedLightPosition / resolution;
+
+        vec2 lightDirWorldSpace = screenSpacePixelatedLightPosition * resolution - pixelatedScreenSpaceTexCoord;
+        float diffuse = calcDiffuse(lightDirWorldSpace, lightRadius[i], lightIntensity[i]); // calculate diffuse lighting
         finalLightColor += diffuse * lightColor[i];
     }
 
