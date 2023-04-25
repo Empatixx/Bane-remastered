@@ -6,7 +6,7 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.player.Player;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.rooms.RoomMap;
+import cz.empatix.map.service.MapService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 public class    InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
-    private RoomMap roomMap;
+    private MapService mapService;
     private Player player;
 
     public InGameState(final GameStateService gameStateService) {
@@ -24,7 +24,7 @@ public class    InGameState extends GameState {
 
     @Override
     public void init() {
-        roomMap = new RoomMap();
+        mapService = new MapService();
         player = new Player();
 
     }
@@ -46,7 +46,7 @@ public class    InGameState extends GameState {
     @Override
     public List<Drawable> toRender(final double dt) {
         return Stream.concat(
-                roomMap.toRender(dt).stream(),
+                mapService.toRender(dt).stream(),
                 Stream.of(player)
         ).toList();
     }

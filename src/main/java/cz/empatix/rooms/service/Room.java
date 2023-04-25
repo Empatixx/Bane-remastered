@@ -1,4 +1,4 @@
-package cz.empatix.rooms;
+package cz.empatix.rooms.service;
 
 import cz.empatix.render.attributes.Drawable;
 

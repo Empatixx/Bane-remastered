@@ -1,18 +1,10 @@
-package cz.empatix.rooms;
+package cz.empatix.rooms.service;
 
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.tiles.tilemaps.CommonTileMap;
-import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.List;
 
-public class CommonRoom implements Room{
-    private final TileMap tileMap;
-
-    public CommonRoom(){
-        tileMap = new CommonTileMap();
-    }
-
+public class StartRoom implements Room{
     @Override
     public void enterEvent() {
 
@@ -25,7 +17,7 @@ public class CommonRoom implements Room{
 
     @Override
     public void init() {
-        tileMap.init();
+
     }
 
     @Override
@@ -35,16 +27,16 @@ public class CommonRoom implements Room{
 
     @Override
     public List<Drawable> toRender() {
-        return tileMap.toRender();
+        return null;
     }
 
     @Override
     public int getWidth() {
-        return tileMap.getWidth();
+        return 0;
     }
 
     @Override
     public int getHeight() {
-        return tileMap.getHeight();
+        return 0;
     }
 }
