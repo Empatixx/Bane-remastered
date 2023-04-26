@@ -9,6 +9,12 @@ import java.util.List;
 
 public class CommonTileMap implements TileMap {
     private Tile[][] tiles;
+    private final int rows;
+    private final int cols;
+    public CommonTileMap(final int rows, final int cols){
+        this.rows = rows;
+        this.cols = cols;
+    }
     @Override
     public List<Drawable> toRender() {
         final List<Tile> tiles = Arrays.stream(this.tiles)
@@ -20,10 +26,10 @@ public class CommonTileMap implements TileMap {
     @Override
     public void init() {
         final TileFactory tileFactory = new TileFactory();
-        boolean[][] map = new boolean[20][20];
-        for(int i = 0;i<20;i++){
-            for(int j = 0;j<20;j++){
-                if(i == 0 || j == 0 || i == 19 || j == 19) {
+        boolean[][] map = new boolean[rows][cols];
+        for(int i = 0;i<rows;i++){
+            for(int j = 0;j<cols;j++){
+                if(i == 0 || j == 0 || i == rows-1 || j == cols-1) {
                     map[i][j] = true;
                 }
             }
@@ -38,10 +44,10 @@ public class CommonTileMap implements TileMap {
     }
     @Override
     public int getWidth(){
-        return tiles[0].length * Tile.TILE_SIZE * Tile.SCALE;
+        return cols * Tile.TILE_SIZE * Tile.SCALE;
     }
     @Override
     public int getHeight(){
-        return tiles.length * Tile.TILE_SIZE * Tile.SCALE;
+        return rows * Tile.TILE_SIZE * Tile.SCALE;
     }
 }

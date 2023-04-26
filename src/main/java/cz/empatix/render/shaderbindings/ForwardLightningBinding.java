@@ -1,7 +1,6 @@
 package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.service.Camera;
@@ -30,7 +29,7 @@ public class ForwardLightningBinding implements ShaderBinding {
         shader.bind();
         shader.setUniform1i("texSampler", 0);
         shader.setUniform4x4f("projection", projectionMatrix);
-        shader.setUniform2f("resolution", new Vector2f(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT));
+        shader.setUniform2f("resolution", new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()));
         shader.setUniform2f("cameraPosition", Camera.getPosition());
         for(int i = 0;i<lightSources.size();i++) {
             shader.setUniform2f("lightPosition[" + i + "]", lightSources.get(i).getPosition());

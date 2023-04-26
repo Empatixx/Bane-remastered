@@ -20,6 +20,7 @@ public class TextureAtlasFactory {
         Preconditions.checkArgument(!images.isEmpty());
         final List<SortingMethod> sortingMethods = List.of(SortingMethod.values());
         return sortingMethods.stream()
+                .parallel()
                 .map(method -> createAtlas(images, method))
                 .min(Comparator.comparingInt(RawTextureAtlas::area))
                 .orElseThrow(() -> new IllegalStateException("No atlas created"));

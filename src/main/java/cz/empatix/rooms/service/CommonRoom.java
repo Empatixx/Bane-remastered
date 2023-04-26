@@ -8,9 +8,12 @@ import java.util.List;
 
 public class CommonRoom implements Room {
     private final TileMap tileMap;
+    private final int xOffset, yOffset;
 
-    public CommonRoom(){
-        tileMap = new CommonTileMap();
+    public CommonRoom(final int rows, final int cols, final int xOffset, final int yOffset) {
+        tileMap = new CommonTileMap(rows, cols);
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
     }
 
     @Override
@@ -40,11 +43,11 @@ public class CommonRoom implements Room {
 
     @Override
     public int getWidth() {
-        return tileMap.getWidth();
+        return tileMap.getWidth() + xOffset;
     }
 
     @Override
     public int getHeight() {
-        return tileMap.getHeight();
+        return tileMap.getHeight() + yOffset;
     }
 }
