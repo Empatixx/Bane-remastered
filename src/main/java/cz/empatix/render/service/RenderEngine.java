@@ -28,5 +28,7 @@ public class RenderEngine {
 
         postprocessService.process(sceneFbo, (float) dt);
 
+        postprocessService.flushFramebuffers();
+        sceneFbo.flush();
     }
 }

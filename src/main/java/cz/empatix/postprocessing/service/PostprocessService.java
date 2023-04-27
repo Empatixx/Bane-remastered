@@ -69,5 +69,9 @@ public class PostprocessService {
             return i % 2 == 0 ? fbo1 : fbo2;
         }
     }
+    public void flushFramebuffers(){
+        fbo1.flush();
+        fbo2.flush();
+    }
 
 }

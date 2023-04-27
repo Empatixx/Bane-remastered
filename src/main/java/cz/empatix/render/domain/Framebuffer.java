@@ -70,4 +70,10 @@ public record Framebuffer (
     public int getColorAttachment() {
         return colorAttachment;
     }
+
+    public void flush() {
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
 }
