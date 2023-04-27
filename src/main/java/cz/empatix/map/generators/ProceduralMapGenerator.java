@@ -68,21 +68,14 @@ public class ProceduralMapGenerator implements MapGenerator {
     private void setPositionForRooms(final RoomGenInfo parent,
                                      final List<RoomGenInfo> neighbours,
                                      final Set<RoomGenInfo> usedRooms) {
-        final float widthCenter = parent.getWidthCenter();
-        final float heightCenter = parent.getHeightCenter();
         usedRooms.add(parent);
         for (final RoomGenInfo info : neighbours) {
             if (usedRooms.contains(info)) {
                 continue;
             }
-
-            final float x = widthCenter - info.getWidthCenter();
-            final float y = heightCenter - info.getHeightCenter();
-
-            // this code offset everytime room at bottom of center parent room
-            info.setCoordinates((int) x + parent.getXOffset(), parent.getYOffset());
-            //todo: do some logics that there would be random that it sets room on top or left/right or bottom position
-            //todo: filter if it wont intersects another rooms
+            do{
+                info.setOrientationAround(parent);
+            } while(usedRooms.stream().anyMatch(usedRoom -> usedRoom.intersects(info)));
             setPositionForRooms(info, info.getNeighbours(), usedRooms);
         }
     }
