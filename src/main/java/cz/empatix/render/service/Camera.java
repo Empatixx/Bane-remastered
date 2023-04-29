@@ -27,7 +27,13 @@ public class Camera {
                         TARGET_HEIGHT - (TARGET_HEIGHT * (1 - zoom)) / 2,
                         TARGET_HEIGHT * (1 - zoom) / 2);
     }
-
+    public static Matrix4f getOriginWithoutZoomProjection(){
+        return new Matrix4f().ortho2D(
+                0,
+                TARGET_WIDTH,
+                TARGET_HEIGHT,
+                0);
+    }
     public static void update(final float dt) {
         interpolatedPosition.update(dt);
     }
@@ -61,6 +67,9 @@ public class Camera {
 
     public static float getTargetWidth() {
         return TARGET_WIDTH * zoom;
+    }
+    public static float getZoom() {
+        return zoom;
     }
 
     public static float getTargetHeight() {

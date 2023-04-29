@@ -5,7 +5,6 @@ import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.ForwardLightningBinding;
-import cz.empatix.render.shaderbindings.ShaderBinding;
 
 
 public class ForwardLightning implements Postprocess {
@@ -24,7 +23,7 @@ public class ForwardLightning implements Postprocess {
     @Override
     public RenderData renderData() {
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new ForwardLightningBinding(lightningService.getLightSources(), Camera.getOriginProjection()),
+                new ForwardLightningBinding(lightningService.getLightSources(), Camera.getOriginWithoutZoomProjection()),
                 RenderData.RenderDataType.DYNAMIC);
     }
 
