@@ -65,4 +65,12 @@ public record AudioSource (
     public void setRolloffFactor(float factor){
         AL10.alSourcef(idSource, AL10.AL_ROLLOFF_FACTOR, factor);
     }
+    public float getGain(){
+        return AL10.alGetSourcef(idSource, AL10.AL_GAIN);
+    }
+    public void play(int buffer){
+        stop();
+        AL10.alSourcei(idSource, AL10.AL_BUFFER, buffer);
+        play();
+    }
 }

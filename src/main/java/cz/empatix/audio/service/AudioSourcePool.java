@@ -24,4 +24,12 @@ public class AudioSourcePool {
                 .findAny()
                 .orElse(null);
     }
+    public AudioSource reserveAudioSource(){
+        final AudioSource audioSource = getAudioSource();
+        if(audioSource == null){
+            return null;
+        }
+        audioSources.remove(audioSource);
+        return audioSource;
+    }
 }
