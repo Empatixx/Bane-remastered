@@ -19,7 +19,7 @@ public class PostprocessService {
     public PostprocessService(final RenderService renderService) {
         postprocesses = new ArrayList<>();
         postprocesses.add(new Fade());
-        postprocesses.add(new MotionBlur());
+        postprocesses.add(new GaussianBlur());
         postprocesses.add(new ForwardLightning());
 
         fallbackPostprocess = new NoPostprocessing();

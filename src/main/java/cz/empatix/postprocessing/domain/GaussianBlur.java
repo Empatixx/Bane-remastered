@@ -1,0 +1,33 @@
+package cz.empatix.postprocessing.domain;
+
+import cz.empatix.render.domain.Framebuffer;
+import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.service.Camera;
+import cz.empatix.render.shaderbindings.ForwardLightningBinding;
+import cz.empatix.render.shaderbindings.GaussianBlurBinding;
+
+public class GaussianBlur implements Postprocess{
+    private int textureId;
+    private float blurAmount = 10f;
+    @Override
+    public void apply(final float dt) {
+
+    }
+    @Override
+    public void setInput(final Framebuffer inputFBO) {
+        textureId = inputFBO.getColorAttachment();
+    }
+
+    @Override
+    public RenderData renderData() {
+        return new RenderData(Framebuffer.VERTICES, textureId,
+                new GaussianBlurBinding(blurAmount, Camera.getOriginWithoutZoomProjection()),
+                RenderData.RenderDataType.DYNAMIC);
+    }
+
+    @Override
+    public boolean canRender() {
+        return true;
+    }
+
+}
