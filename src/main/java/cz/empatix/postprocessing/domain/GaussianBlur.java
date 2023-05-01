@@ -3,7 +3,6 @@ package cz.empatix.postprocessing.domain;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.ForwardLightningBinding;
 import cz.empatix.render.shaderbindings.GaussianBlurBinding;
 
 public class GaussianBlur implements Postprocess{
@@ -27,7 +26,7 @@ public class GaussianBlur implements Postprocess{
 
     @Override
     public boolean canRender() {
-        return true;
+        return false;
     }
 
 }

@@ -81,13 +81,15 @@ public class ProceduralMapGenerator implements MapGenerator {
     }
 
 
-    private void setNeighboursForRooms(final StartRoomGenInfo startRoomGenInfo,
+    private List<PathRoomGenInfo> setNeighboursForRooms(final StartRoomGenInfo startRoomGenInfo,
                                        final List<CommonRoomGenInfo> normalRooms,
                                        final List<ShopRoomGenInfo> shopRooms,
                                        final List<BossRoomGenInfo> bossRooms,
                                        final List<TreasureRoomGenInfo> treasureRooms) {
         final List<RoomGenInfo> usedRooms = new ArrayList<>(TOTAL_ROOMS);
         final Queue<RoomGenInfo> availableRooms = new ArrayDeque<>(TOTAL_ROOMS);
+
+        final List<PathRoomGenInfo> paths = new ArrayList<>(TOTAL_ROOMS-1);
 
         availableRooms.addAll(normalRooms);
         availableRooms.addAll(treasureRooms);
@@ -113,6 +115,7 @@ public class ProceduralMapGenerator implements MapGenerator {
                         throw new IllegalStateException("Fatal error! No room can create neighbours");
                     });
         } while (usedRooms.size() < TOTAL_ROOMS);
+        return paths;
     }
 
 }

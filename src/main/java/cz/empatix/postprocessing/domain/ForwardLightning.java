@@ -16,7 +16,7 @@ public class ForwardLightning implements Postprocess {
     }
 
     @Override
-    public void setInput(Framebuffer inputFBO) {
+    public void setInput(final Framebuffer inputFBO) {
         textureId = inputFBO.getColorAttachment();
     }
 

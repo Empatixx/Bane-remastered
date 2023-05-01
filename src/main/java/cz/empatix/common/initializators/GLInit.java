@@ -12,8 +12,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLInit implements Initializator {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLInit.class);
-    public static int TEXTURE2D_MAX_SIZE;
     private final static boolean DEBUG_MODE = true;
+    public static int TEXTURE2D_MAX_SIZE;
 
     @Override
     public void init() {
