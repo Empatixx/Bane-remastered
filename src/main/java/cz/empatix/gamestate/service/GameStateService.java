@@ -1,5 +1,6 @@
 package cz.empatix.gamestate.service;
 
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.physics.service.PhysicsEngine;
@@ -16,6 +17,7 @@ public class GameStateService {
     private final List<GameState> gameStates;
     private final PhysicsEngine physicsEngine;
     private final RenderEngine renderEngine;
+    private final AudioService audioService;
     private GameState currentState;
 
     public GameStateService() {
@@ -27,6 +29,7 @@ public class GameStateService {
 
         physicsEngine = new PhysicsEngine();
         renderEngine = new RenderEngine();
+        audioService = AudioService.getInstance();
     }
     public void setCurrentState(final GameStateType type){
         currentState = gameStates.stream()
@@ -40,6 +43,7 @@ public class GameStateService {
     public void update(final double dt) {
         currentState.update(dt);
         physicsEngine.update(dt);
+        audioService.update((float)dt);
     }
     public void fixedUpdate(final double dt) {
         currentState.updateMouse();

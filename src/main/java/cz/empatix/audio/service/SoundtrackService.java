@@ -43,6 +43,7 @@ public class SoundtrackService {
             nextAudioSource = currentAudioSource == audioSources[0] ? audioSources[1] : audioSources[0];
             final int buffer = AssetsService.getAudio(soundtrack.getPath());
             nextAudioSource.play(buffer);
+            nextAudioSource.setGain(0);
         }
     }
 }

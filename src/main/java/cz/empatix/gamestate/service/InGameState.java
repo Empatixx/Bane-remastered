@@ -35,7 +35,7 @@ public class    InGameState extends GameState {
         mapService = staticMapGenerator.generate();
         player = new Player();
 
-        AudioService.getInstance().play(Soundtrack.MAIN_MENU);
+        AudioService.getInstance().play(Soundtrack.INGAME);
     }
 
     @Override
