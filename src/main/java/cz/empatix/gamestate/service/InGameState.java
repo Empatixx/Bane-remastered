@@ -1,5 +1,7 @@
 package cz.empatix.gamestate.service;
 
+import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
@@ -33,6 +35,7 @@ public class    InGameState extends GameState {
         mapService = staticMapGenerator.generate();
         player = new Player();
 
+        AudioService.getInstance().play(Soundtrack.MAIN_MENU);
     }
 
     @Override

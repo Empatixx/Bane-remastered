@@ -1,10 +1,10 @@
 package cz.empatix.audio.domain;
 
 public enum Soundtrack {
-    MAIN_MENU("main_menu.ogg"),
-    INGAME("ingame.ogg"),
-    PROGRESS_ROOM("progress_room.ogg"),
-    BOSS_ROOM("boss_room.ogg");
+    MAIN_MENU("intro.ogg"),
+    INGAME("audio.ogg"),
+    PROGRESS_ROOM("ambient.ogg"),
+    BOSS_ROOM("boss.ogg");
     private final String path;
     Soundtrack(final String path) {
         this.path = path;

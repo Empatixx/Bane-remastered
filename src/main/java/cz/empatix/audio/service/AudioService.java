@@ -5,6 +5,13 @@ import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.common.initializators.ALInit;
 
 public class AudioService {
+    private static AudioService instance;
+    public static AudioService getInstance(){
+        if(instance == null){
+            instance = new AudioService();
+        }
+        return instance;
+    }
     private final SoundtrackService soundtrackService;
     private final SoundEffectService soundEffectService;
     public AudioService() {

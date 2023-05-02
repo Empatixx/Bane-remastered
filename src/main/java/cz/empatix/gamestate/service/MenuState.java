@@ -1,6 +1,8 @@
 package cz.empatix.gamestate.service;
 
 import com.google.common.collect.Streams;
+import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
@@ -43,8 +45,9 @@ public class MenuState extends GameState {
         exitButton.setOnClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
         uiElements.add(exitButton);
 
-
         hudElements.add(new Image("menu/logo.tga", Camera.centerX().add(0, 80), 200, 100, 1.5f));
+
+        AudioService.getInstance().play(Soundtrack.MAIN_MENU);
     }
 
     @Override

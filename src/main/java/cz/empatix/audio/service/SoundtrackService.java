@@ -3,9 +3,12 @@ package cz.empatix.audio.service;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.AudioSource;
 import cz.empatix.audio.domain.Soundtrack;
-import cz.empatix.common.initializators.ALInit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class SoundtrackService {
+    private final static Logger LOGGER = LoggerFactory.getLogger(SoundtrackService.class);
     private final static float TWEEN = 0.5f;
     private final AudioSource[] audioSources;
     private AudioSource currentAudioSource;
@@ -31,6 +34,7 @@ public class SoundtrackService {
         }
     }
     public void play(final Soundtrack soundtrack) {
+        LOGGER.info("Playing soundtrack {}.", soundtrack.name());
         if(currentAudioSource == null){
             currentAudioSource = audioSources[0];
             final int buffer = AssetsService.getAudio(soundtrack.getPath());

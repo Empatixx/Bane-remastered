@@ -13,6 +13,7 @@ public class SoundEffectService {
         this.audioSourcePool = audioSourcePool;
     }
     public void play(final SoundEffect soundEffect) {
+        LOGGER.info("Playing sound effect {}.", soundEffect.name());
         final AudioSource audioSource = audioSourcePool.getAudioSource();
         if(audioSource == null){
             LOGGER.warn("No audio source available for sound effect {}.", soundEffect.name());
