@@ -7,7 +7,11 @@ import java.util.List;
 
 public class MapService {
     private final List<Room> rooms;
-    public MapService(final List<Room> rooms){
+    private final List<Room> pathRooms;
+
+    public MapService(final List<Room> rooms,
+                      final List<Room> pathRooms) {
+        this.pathRooms = pathRooms;
         this.rooms = rooms;
     }
 

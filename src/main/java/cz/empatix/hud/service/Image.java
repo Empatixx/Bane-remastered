@@ -1,4 +1,4 @@
-package cz.empatix.hud;
+package cz.empatix.hud.service;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.service.Camera;

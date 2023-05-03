@@ -9,7 +9,6 @@ import java.util.List;
 public class PathRoom implements Room{
     private final TileMap tileMap;
     private final int xOffset, yOffset;
-
     public PathRoom(final int xOffset,
                     final int yOffset) {
         tileMap = new PathTileMap();

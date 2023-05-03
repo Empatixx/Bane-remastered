@@ -4,7 +4,10 @@ import cz.empatix.rooms.service.PathRoom;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.tilemaps.PathTileMap;
 
+import java.util.List;
+
 public class PathRoomGenInfo extends RoomGenInfo{
+
     @Override
     public void initDimensions() {
         cols = PathTileMap.COLS;

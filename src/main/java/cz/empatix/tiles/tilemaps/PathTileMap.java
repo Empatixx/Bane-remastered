@@ -8,7 +8,6 @@ import java.util.List;
 
 public class PathTileMap implements TileMap{
     private Tile[][] tiles;
-
     public final static int ROWS = 4;
     public final static int COLS = 4;
 
@@ -22,7 +21,6 @@ public class PathTileMap implements TileMap{
 
     @Override
     public void init() {
-
     }
 
     @Override

@@ -3,6 +3,7 @@ package cz.empatix.map.generators;
 import com.google.common.base.Preconditions;
 import cz.empatix.map.domain.*;
 import cz.empatix.map.service.MapService;
+import cz.empatix.rooms.service.PathRoom;
 import cz.empatix.rooms.service.Room;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +29,6 @@ public class ProceduralMapGenerator implements MapGenerator {
 
     @Override
     public MapService generate() {
-        final List<? extends RoomGenInfo> roomGenInfos = generateRoomInfos();
-        final List<Room> rooms = roomGenInfos.stream()
-                .map(RoomGenInfo::constructRoom)
-                .toList();
-        return new MapService(rooms);
-    }
-
-    private List<? extends RoomGenInfo> generateRoomInfos() {
         final StartRoomGenInfo startRoomGenInfo = new StartRoomGenInfo();
         final List<CommonRoomGenInfo> normalRooms = Stream.generate(CommonRoomGenInfo::new)
                 .limit(TOTAL_NORMAL_ROOMS)
@@ -50,15 +43,48 @@ public class ProceduralMapGenerator implements MapGenerator {
                 .limit(TOTAL_LOOT_ROOMS)
                 .toList();
 
-        setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
+        normalRooms.forEach(RoomGenInfo::initDimensions);
+        shopRooms.forEach(RoomGenInfo::initDimensions);
+        bossRooms.forEach(RoomGenInfo::initDimensions);
+        treasureRooms.forEach(RoomGenInfo::initDimensions);
 
+        setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
+        setPositionsForRooms(startRoomGenInfo);
+
+        final List<PathRoomGenInfo> pathsRoom = generatePaths(startRoomGenInfo);
         final List<? extends RoomGenInfo> allRooms = Stream.of(List.of(startRoomGenInfo), normalRooms, shopRooms, bossRooms, treasureRooms)
                 .flatMap(List::stream)
                 .toList();
+        final List<Room> rooms = allRooms.stream()
+                .map(RoomGenInfo::constructRoom)
+                .toList();
+        final List<Room> pathRooms = pathsRoom.stream()
+                .map(RoomGenInfo::constructRoom)
+                .toList();
+        return new MapService(rooms, pathRooms);
+    }
 
-        allRooms.forEach(RoomGenInfo::initDimensions);
-        setPositionsForRooms(startRoomGenInfo);
-        return allRooms;
+    private List<PathRoomGenInfo> generatePaths(final StartRoomGenInfo startRoomGenInfo) {
+        final List<PathRoomGenInfo> paths = new ArrayList<>();
+
+        final Queue<RoomGenInfo> queue = new ArrayDeque<>(TOTAL_ROOMS);
+        final Set<RoomGenInfo> alreadyTraversed = new HashSet<>(TOTAL_ROOMS);
+
+        queue.add(startRoomGenInfo);
+        while(!queue.isEmpty()){
+            final RoomGenInfo room = queue.poll();
+            final List<RoomGenInfo> availableNeighbours = room.getNeighbours().stream()
+                    .filter(neighbour -> !alreadyTraversed.contains(neighbour))
+                    .toList();
+            for(final RoomGenInfo neighbour : availableNeighbours) {
+                final PathRoomGenInfo pathRoom = new PathRoomGenInfo();
+                pathRoom.addNeighbour(room);
+                pathRoom.addNeighbour(neighbour);
+                paths.add(pathRoom);
+            }
+            alreadyTraversed.add(room);
+        }
+        return paths;
     }
 
     private void setPositionsForRooms(final RoomGenInfo start) {
@@ -81,15 +107,13 @@ public class ProceduralMapGenerator implements MapGenerator {
     }
 
 
-    private List<PathRoomGenInfo> setNeighboursForRooms(final StartRoomGenInfo startRoomGenInfo,
+    private void setNeighboursForRooms(final StartRoomGenInfo startRoomGenInfo,
                                        final List<CommonRoomGenInfo> normalRooms,
                                        final List<ShopRoomGenInfo> shopRooms,
                                        final List<BossRoomGenInfo> bossRooms,
                                        final List<TreasureRoomGenInfo> treasureRooms) {
         final List<RoomGenInfo> usedRooms = new ArrayList<>(TOTAL_ROOMS);
         final Queue<RoomGenInfo> availableRooms = new ArrayDeque<>(TOTAL_ROOMS);
-
-        final List<PathRoomGenInfo> paths = new ArrayList<>(TOTAL_ROOMS-1);
 
         availableRooms.addAll(normalRooms);
         availableRooms.addAll(treasureRooms);
@@ -115,7 +139,6 @@ public class ProceduralMapGenerator implements MapGenerator {
                         throw new IllegalStateException("Fatal error! No room can create neighbours");
                     });
         } while (usedRooms.size() < TOTAL_ROOMS);
-        return paths;
     }
 
 }
