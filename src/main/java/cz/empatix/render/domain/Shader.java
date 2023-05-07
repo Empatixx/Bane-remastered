@@ -5,24 +5,26 @@ import cz.empatix.common.utils.BufferFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import java.nio.FloatBuffer;
 import java.util.HashMap;
 
 import static org.lwjgl.opengl.GL20.*;
 
-public record Shader (
+public record Shader(
         int program,
         int fragmentShaderId,
         int vertexShaderId,
         HashMap<String, Integer> locations
-){
+) {
     public Shader(final int program,
                   final int fragmentShaderId,
-                  final int vertexShaderId){
+                  final int vertexShaderId) {
         this(program, fragmentShaderId, vertexShaderId, new HashMap<>());
     }
-    public static Shader from(final RawShader rawShader){
+
+    public static Shader from(final RawShader rawShader) {
         final String vertex = rawShader.vertex();
         final String fragment = rawShader.fragment();
 
@@ -55,6 +57,7 @@ public record Shader (
         }
         return new Shader(program, fragmentShaderId, vertexShaderId);
     }
+
     private static void checkForErrors(final int id) {
         if (glGetShaderi(id, GL_COMPILE_STATUS) != 1) {
             throw new RuntimeException(glGetShaderInfoLog(id));
@@ -99,6 +102,7 @@ public record Shader (
         }
         glUniform1i(location, value);
     }
+
     public void setUniform1f(final String name, final float value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {
@@ -106,18 +110,28 @@ public record Shader (
         }
         glUniform1f(location, value);
     }
-    public void setUniform2f(String name, Vector2f value) {
+
+    public void setUniform2f(final String name, final Vector2f value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {
             throw new RuntimeException("Uniform " + name + " not found");
         }
         glUniform2f(location, value.x, value.y);
     }
-    public void setUniform3f(String name, Vector3f value) {
+
+    public void setUniform3f(final String name, final Vector3f value) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
         if (location == -1) {
             throw new RuntimeException("Uniform " + name + " not found");
         }
         glUniform3f(location, value.x, value.y, value.z);
+    }
+
+    public void setUniform4f(final String name, final Vector4f value) {
+        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
+        if (location == -1) {
+            throw new RuntimeException("Uniform " + name + " not found");
+        }
+        glUniform4f(location, value.x, value.y, value.z, value.w);
     }
 }

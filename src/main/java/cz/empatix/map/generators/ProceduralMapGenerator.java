@@ -49,7 +49,7 @@ public class ProceduralMapGenerator implements MapGenerator {
         treasureRooms.forEach(RoomGenInfo::initDimensions);
 
         setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
-        setPositionsForRooms(startRoomGenInfo);
+        setPositionForRooms(startRoomGenInfo);
 
         final List<PathRoomGenInfo> pathsRoom = generatePaths(startRoomGenInfo);
         final List<? extends RoomGenInfo> allRooms = Stream.of(List.of(startRoomGenInfo), normalRooms, shopRooms, bossRooms, treasureRooms)
@@ -86,26 +86,24 @@ public class ProceduralMapGenerator implements MapGenerator {
         }
         return paths;
     }
-
-    private void setPositionsForRooms(final RoomGenInfo start) {
-        setPositionForRooms(start, start.getNeighbours(), new HashSet<>(TOTAL_ROOMS));
-    }
-
-    private void setPositionForRooms(final RoomGenInfo parent,
-                                     final List<RoomGenInfo> neighbours,
-                                     final Set<RoomGenInfo> usedRooms) {
-        usedRooms.add(parent);
-        for (final RoomGenInfo info : neighbours) {
-            if (usedRooms.contains(info)) {
-                continue;
+    private void setPositionForRooms(final RoomGenInfo parent){
+        final Queue<RoomGenInfo> queue = new ArrayDeque<>(TOTAL_ROOMS);
+        final Set<RoomGenInfo> usedRooms = new HashSet<>(TOTAL_ROOMS);
+        queue.add(parent);
+        while(!queue.isEmpty()){
+            final RoomGenInfo room = queue.poll();
+            usedRooms.add(room);
+            for(final RoomGenInfo neighbour : room.getNeighbours()){
+                if(usedRooms.contains(neighbour)){
+                    continue;
+                }
+                do{
+                    neighbour.setOrientationAround(room);
+                } while(usedRooms.stream().anyMatch(usedRoom -> usedRoom.intersects(neighbour)));
+                queue.add(neighbour);
             }
-            do{
-                info.setOrientationAround(parent);
-            } while(usedRooms.stream().anyMatch(usedRoom -> usedRoom.intersects(info)));
-            setPositionForRooms(info, info.getNeighbours(), usedRooms);
         }
     }
-
 
     private void setNeighboursForRooms(final StartRoomGenInfo startRoomGenInfo,
                                        final List<CommonRoomGenInfo> normalRooms,

@@ -1,6 +1,8 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.hud.domain.StatusBarType;
+import cz.empatix.hud.service.StatusBar;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
@@ -18,6 +20,9 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 public class Player implements Drawable {
+    private final StatusBar statusBar;
+    private final Animation animation;
+    private final PhysicsBody physicsBody;
     private final LightSource lightSource;
     private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;
@@ -32,8 +37,6 @@ public class Player implements Drawable {
     private int health;
     private int maxArmor;
     private int armor;
-    private final Animation animation;
-    private final PhysicsBody physicsBody;
 
     public Player() {
         maxHealth = DEFAULT_MAX_HEALTH;
@@ -57,12 +60,15 @@ public class Player implements Drawable {
         physicsBody.setTranslation(500, 500);
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216,156,36), 150f, 0.5f);
+
+        statusBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH);
     }
 
     public void update(final double dt) {
         animation.update();
         lightSource.setPosition(physicsBody.getTranslationX() + DIMENSION_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + DIMENSION_HEIGHT * SCALE / 2);
+        statusBar.update(dt);
     }
 
     public void fixedUpdate(final double dt) {
@@ -177,5 +183,13 @@ public class Player implements Drawable {
 
     public int getHeight() {
         return DIMENSION_HEIGHT;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
     }
 }

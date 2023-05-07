@@ -5,6 +5,7 @@ import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.hud.service.StatusBar;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.player.Player;
@@ -17,10 +18,11 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class    InGameState extends GameState {
+public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
     private MapService mapService;
     private Player player;
+    private StatusBar statusBar;
 
     public InGameState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.INGAME);

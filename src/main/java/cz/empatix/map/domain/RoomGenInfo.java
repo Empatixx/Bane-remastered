@@ -49,11 +49,11 @@ public abstract class RoomGenInfo {
     }
 
     public int getWidth() {
-        return cols * Tile.TILE_SIZE;
+        return cols * Tile.TILE_SIZE * Tile.SCALE;
     }
 
     public int getHeight() {
-        return rows * Tile.TILE_SIZE;
+        return rows * Tile.TILE_SIZE * Tile.SCALE;
     }
 
     public int getXOffset() {
@@ -65,6 +65,7 @@ public abstract class RoomGenInfo {
     }
 
     public void setOrientationAround(final RoomGenInfo parent) {
+        setCoordinates(0,0);
         final int orientation = ThreadLocalRandom.current().nextInt(MAX_ROOM_NEIGHBOURS);
 
         final int parentWidthCenter = parent.getWidthCenter();
@@ -101,7 +102,7 @@ public abstract class RoomGenInfo {
             LOGGER.warn("Cannot check intersection with null room");
             return false;
         }
-        return this.getXOffset()< other.getXOffset() + other.getWidth() &&
+        return this.getXOffset() < other.getXOffset() + other.getWidth() &&
                 this.getXOffset() + this.getWidth() > other.getXOffset() &&
                 this.getYOffset() < other.getYOffset() + other.getHeight() &&
                 this.getYOffset() + this.getHeight() > other.getYOffset();
