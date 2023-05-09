@@ -1,6 +1,7 @@
 package cz.empatix.render.renders;
 
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 
@@ -16,20 +17,25 @@ public class RenderService {
         }};
         renderers = Collections.unmodifiableMap(map);
     }
-    public void render(final Drawable drawable){
+
+    public void render(final Drawable drawable) {
         render(List.of(drawable));
     }
-    public void render(final List<Drawable> drawable) {
-        final List<Drawable> allDrawables = findAllDrawables(drawable);
-        allDrawables.sort(Comparator.comparingInt(Drawable::getZIndex));
 
-        final LinkedHashMap <Integer, List<Drawable>> drawablesByZIndex = new LinkedHashMap<>();
-        for(final Drawable d : allDrawables){
-            drawablesByZIndex.computeIfAbsent(d.getZIndex(), k -> new ArrayList<>()).add(d);
+    public void render(final List<Drawable> drawable) {
+        final List<DrawableData> allDrawables = findAllDrawables(drawable)
+                .stream()
+                .map(DrawableData::fromDrawable)
+                .sorted(Comparator.comparingInt(DrawableData::zIndex))
+                .toList();
+
+        final LinkedHashMap<Integer, List<DrawableData>> dataByZIndex = new LinkedHashMap<>();
+        for (final DrawableData d : allDrawables) {
+            dataByZIndex.computeIfAbsent(d.zIndex(), k -> new ArrayList<>()).add(d);
         }
 
-        for(final Map.Entry<Integer, List<Drawable>> drawablesPerZ : drawablesByZIndex.entrySet()){
-            renderDrawablesByZIndex(drawablesPerZ.getKey(), drawablesPerZ.getValue());
+        for (final Map.Entry<Integer, List<DrawableData>> dataPerZ : dataByZIndex.entrySet()) {
+            renderDataByZIndex(dataPerZ.getKey(), dataPerZ.getValue());
         }
     }
 
@@ -46,30 +52,32 @@ public class RenderService {
 
         return allDrawables;
     }
-    private void renderDrawablesByZIndex(int zIndex, List<Drawable> drawables) {
-        final Map<RenderData.RenderDataType, List<Drawable>> drawablesByType = new EnumMap<>(RenderData.RenderDataType.class);
 
-        for (final Drawable d : drawables) {
+    private void renderDataByZIndex(int zIndex, List<DrawableData> drawables) {
+        final Map<RenderData.RenderDataType, List<DrawableData>> dataByType = new EnumMap<>(RenderData.RenderDataType.class);
+
+        for (final DrawableData d : drawables) {
             if (d.renderData() != null) {
                 final RenderData.RenderDataType type = d.renderData().type();
-                drawablesByType.computeIfAbsent(type, k -> new ArrayList<>()).add(d);
+                dataByType.computeIfAbsent(type, k -> new ArrayList<>()).add(d);
             }
         }
 
-        for (Map.Entry<RenderData.RenderDataType, List<Drawable>> typeEntry : drawablesByType.entrySet()) {
-            renderDrawablesByType(typeEntry.getKey(), typeEntry.getValue(), zIndex);
+        for (Map.Entry<RenderData.RenderDataType, List<DrawableData>> typeEntry : dataByType.entrySet()) {
+            renderDataByType(typeEntry.getKey(), typeEntry.getValue(), zIndex);
         }
     }
-    private void renderDrawablesByType(RenderData.RenderDataType type, List<Drawable> drawablesOfType, int zIndex) {
-        final Renderer renderer = renderers.get(type);
-        final Map<ShaderBinding, List<Drawable>> drawablesByShader = new HashMap<>();
 
-        for (final Drawable d : drawablesOfType) {
+    private void renderDataByType(RenderData.RenderDataType type, List<DrawableData> drawablesOfType, int zIndex) {
+        final Renderer renderer = renderers.get(type);
+        final Map<ShaderBinding, List<DrawableData>> dataByShader = new HashMap<>();
+
+        for (final DrawableData d : drawablesOfType) {
             final ShaderBinding shaderBinding = d.renderData().shaderBinding();
-            drawablesByShader.computeIfAbsent(shaderBinding, k -> new ArrayList<>()).add(d);
+            dataByShader.computeIfAbsent(shaderBinding, k -> new ArrayList<>()).add(d);
         }
 
-        for (final Map.Entry<ShaderBinding, List<Drawable>> shaderEntry : drawablesByShader.entrySet()) {
+        for (final Map.Entry<ShaderBinding, List<DrawableData>> shaderEntry : dataByShader.entrySet()) {
             renderer.render(shaderEntry.getValue(), shaderEntry.getKey(), zIndex);
         }
     }

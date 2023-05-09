@@ -2,7 +2,6 @@ package cz.empatix.render.service;
 
 import cz.empatix.postprocessing.service.PostprocessService;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.renders.RenderService;
 
@@ -25,21 +24,14 @@ public class RenderEngine {
                        final double dt) {
         Camera.update((float) dt);
 
-        final List<Drawable> hudDrawables = drawables.stream()
-                .filter(drawable -> drawable.targetScene() == RenderScene.HUD)
-                .toList();
-        final List<Drawable> sceneDrawables = drawables.stream()
-                .filter(drawable -> drawable.targetScene() == RenderScene.SCENE)
-                .toList();
-
         sceneFbo.bind();
-        renderService.render(sceneDrawables);
+        renderService.render(drawables);
         sceneFbo.unbind();
 
         postprocessService.process(sceneFbo, (float) dt);
 
         //hudFbo.bind();
-        renderService.render(hudDrawables);
+        //renderService.render(hudDrawables);
         //hudFbo.unbind();
 
         postprocessService.flushFramebuffers();

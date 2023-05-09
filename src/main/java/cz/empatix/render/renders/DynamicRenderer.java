@@ -3,7 +3,7 @@ package cz.empatix.render.renders;
 import com.google.common.collect.Lists;
 import cz.empatix.render.builders.VaoBuilder;
 import cz.empatix.render.builders.VboBuilder;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.shaderbindings.ShaderBinding;
@@ -46,10 +46,10 @@ public class DynamicRenderer implements Renderer {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     @Override
-    public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
-        final List<RenderData> renderData = drawables.stream()
-                .filter(Drawable::canRender)
-                .map(Drawable::renderData)
+    public void render(final List<DrawableData> data, final ShaderBinding shaderBinding, final int zDepth) {
+        final List<RenderData> renderData = data.stream()
+                .filter(DrawableData::canRender)
+                .map(DrawableData::renderData)
                 .toList();
         if(renderData.isEmpty()) {
             return;
@@ -65,7 +65,7 @@ public class DynamicRenderer implements Renderer {
         for(final List<RenderData> batch : batches){
             vertexBuffer.clear();
             batch.stream()
-                    .flatMap(data -> data
+                    .flatMap(d -> d
                             .vertices()
                             .stream())
                     .forEach(vertex -> {

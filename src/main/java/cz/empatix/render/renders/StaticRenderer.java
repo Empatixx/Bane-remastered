@@ -1,8 +1,8 @@
 package cz.empatix.render.renders;
 
-import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.builders.VaoBuilder;
 import cz.empatix.render.builders.VboBuilder;
+import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
@@ -44,8 +44,8 @@ public class StaticRenderer implements Renderer {
             lastRendered = System.currentTimeMillis();
         }
 
-        public static StaticRenderData from(final List<Drawable> drawables) {
-            final int size = drawables.size();
+        public static StaticRenderData from(final List<DrawableData> data) {
+            final int size = data.size();
             final int vbo = VboBuilder.builder()
                     .buffer(new float[size * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
                     .build();
@@ -59,9 +59,9 @@ public class StaticRenderer implements Renderer {
                     .build();
 
             final FloatBuffer vertexBuffer = BufferUtils.createFloatBuffer(size * TOTAL_VERTICES_PER_QUAD * (2 + 2));
-            drawables
+            data
                     .stream()
-                    .map(Drawable::renderData)
+                    .map(DrawableData::renderData)
                     .flatMap(r -> r.vertices().stream())
                     .forEach(v -> {
                         vertexBuffer.put(v.position().x());
@@ -102,13 +102,13 @@ public class StaticRenderer implements Renderer {
     }
 
     @Override
-    public void render(final List<Drawable> drawables, final ShaderBinding shaderBinding, final int zDepth) {
-        if (drawables.isEmpty()) {
+    public void render(final List<DrawableData> data, final ShaderBinding shaderBinding, final int zDepth) {
+        if (data.isEmpty()) {
             return;
         }
         final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth, i -> new HashMap<>())
-                .computeIfAbsent(drawables.hashCode(), s -> StaticRenderData.from(drawables));
-        render(drawables, shaderBinding, renderData);
+                .computeIfAbsent(data.hashCode(), s -> StaticRenderData.from(data));
+        render(data, shaderBinding, renderData);
         renderData.updateLastRendered();
 
         staticRenderData.forEach((z, map) -> {
@@ -124,14 +124,14 @@ public class StaticRenderer implements Renderer {
         );
     }
 
-    private void render(final List<Drawable> drawables,
+    private void render(final List<DrawableData> data,
                         final ShaderBinding shaderBinding,
                         final StaticRenderData renderData) {
         final Shader shader = shaderBinding.apply();
-        glBindTextureUnit(0, drawables.get(0).renderData().textureId());
+        glBindTextureUnit(0, data.get(0).renderData().textureId());
 
-        final IntBuffer elementIndices = BufferUtils.createIntBuffer(drawables.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD);
-        final int[] indices = createElementIndices(drawables);
+        final IntBuffer elementIndices = BufferUtils.createIntBuffer(data.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD);
+        final int[] indices = createElementIndices(data);
 
         elementIndices.put(indices);
         elementIndices.flip();
@@ -158,13 +158,13 @@ public class StaticRenderer implements Renderer {
         glBindTexture(GL_TEXTURE_2D, texture);
     }
 
-    private int[] createElementIndices(final List<Drawable> drawables) {
-        final int size = drawables.size();
+    private int[] createElementIndices(final List<DrawableData> data) {
+        final int size = data.size();
         int[] indices = new int[size * 6];
         int currentIndex = 0;
 
         for (int i = 0; i < size; i++) {
-            if (drawables.get(i).canRender()) {
+            if (data.get(i).canRender()) {
                 int base = i * 4;
                 indices[currentIndex++] = base;
                 indices[currentIndex++] = base + 1;
