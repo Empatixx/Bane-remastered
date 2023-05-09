@@ -5,8 +5,8 @@ import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector3f;
 
 public enum StatusBarType {
-    HEALTH(0, 0, 20, 20, 3,
-            new Vector3f(1, 0, 0), "ingame/healthBar.tga"),
+    HEALTH(19, 8, 56, 4, 3,
+            new Vector3f(0.529f, 0.298f, 0.262f), "ingame/healthBar.tga"),
     ARMOR(0, 0, 20, 20, 2,
             new Vector3f(0, 0, 1), "ingame/armorBar.tga");
     private final TextureAtlas.Entry tex;
@@ -34,19 +34,19 @@ public enum StatusBarType {
     }
 
     public float getNormalizedXOffset() {
-        return (float) xOffset / tex.atlasWidth();
+        return ((float) tex.info().textureStartPositions().x() + xOffset) / tex.atlasWidth();
     }
 
     public float getNormalizedYOffset() {
-        return (float) yOffset / tex.atlasHeight();
+        return ((float) tex.info().textureStartPositions().y() + yOffset) / tex.atlasHeight();
     }
 
     public float getNormalizedWidth() {
-        return (float) getWidth() / tex.width();
+        return (float) getWidth() / tex.atlasWidth();
     }
 
     public float getNormalizedHeight() {
-        return (float) getHeight() / tex.height();
+        return (float) getHeight() / tex.atlasHeight();
     }
 
     public int getWidth() {
@@ -63,5 +63,9 @@ public enum StatusBarType {
 
     public int getScale() {
         return scale;
+    }
+
+    public Vector3f getBarColor() {
+        return color;
     }
 }

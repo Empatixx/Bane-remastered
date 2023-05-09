@@ -12,6 +12,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.map.service.MapService;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +80,12 @@ public class InGameState extends GameState {
 
     @Override
     public void mousePressed(int button) {
-
+        if(GLFW.GLFW_MOUSE_BUTTON_1 == button){
+            player.setHealth(player.getHealth() - 1);
+        }
+        if(GLFW.GLFW_MOUSE_BUTTON_2 == button){
+            player.setHealth(player.getHealth() + 1);
+        }
     }
 
     @Override

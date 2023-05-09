@@ -82,12 +82,18 @@ public class Player implements Drawable {
         if (this.health > maxHealth) {
             this.health = maxHealth;
         }
+        if (this.health < 0){
+            this.health = 0;
+        }
     }
 
     public void setArmor(final int armor) {
         this.armor = armor;
         if (this.armor > maxArmor) {
             this.armor = maxArmor;
+        }
+        if (this.armor < 0){
+            this.armor = 0;
         }
     }
 

@@ -28,6 +28,7 @@ public class StatusBar implements HUDElement {
         this.currentValueSupplier = currentValueSupplier;
         this.maxValueSupplier = maxValueSupplier;
         this.statusController = new StatusController();
+        this.statusController.update(0, currentValueSupplier.get(), maxValueSupplier.get());
         this.statusBarType = statusBarType;
         this.position = position;
     }
@@ -35,20 +36,24 @@ public class StatusBar implements HUDElement {
     @Override
     public void update(double dt) {
         statusController.update(dt, currentValueSupplier.get(), maxValueSupplier.get());
+        System.out.println(statusController.delayedDelta());
     }
 
     @Override
     public RenderData renderData() {
         final float fillAmount = statusController.delta();
+        final float delayedFillAmount = statusController.delayedDelta();
+
         final float normXOffset = statusBarType.getNormalizedXOffset();
         final float normYOffset = statusBarType.getNormalizedYOffset();
         final float normWidth = statusBarType.getNormalizedWidth();
         final float normHeight = statusBarType.getNormalizedHeight();
-        final Vector3f color = new Vector3f();
+        final Vector3f color = statusBarType.getBarColor();
+
         final Matrix4f projection = Camera.getOriginWithoutZoomProjection();
         return new RenderData(vertices(),
                 statusBarType.getTexture().textureId(),
-                new StatusBarBinding(projection, color, fillAmount, normXOffset, normYOffset, normWidth, normHeight),
+                new StatusBarBinding(projection, color, fillAmount, delayedFillAmount, normXOffset, normYOffset, normWidth, normHeight),
                 RenderData.RenderDataType.DYNAMIC);
     }
 

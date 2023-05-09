@@ -1,37 +1,31 @@
 package cz.empatix.hud.domain;
 
 public class StatusController {
+    private final double TWEEN = 0.05;
     private int maxValue;
     private int currentValue;
-    private float elapsedTime;
-    private float accumulatedDelta;
+    private float delayedDelta;
 
     public StatusController() {
-        elapsedTime = 0;
-        accumulatedDelta = 0;
+        delayedDelta = 1;
     }
 
     public float delta(){
+        if(maxValue == 0){
+            return 1;
+        }
         return (float)currentValue / (float)maxValue;
     }
-
-    public float timeChangeRatio(){
-        if (elapsedTime == 0) {
-            return 0;
-        }
-        return accumulatedDelta / elapsedTime;
+    public float delayedDelta(){
+        return delayedDelta;
     }
 
     public void update(final double dt,
                        final int currentValue,
                        final int maxValue){
-        float prevDelta = delta();
-        setValues(currentValue, maxValue);
-        float currentDelta = delta();
-        float deltaChange = Math.abs(currentDelta - prevDelta);
-
-        accumulatedDelta += deltaChange;
-        elapsedTime += dt;
+        delayedDelta = (delayedDelta - delta()) * (float)Math.pow(TWEEN, dt) + delta();
+        this.currentValue = currentValue;
+        this.maxValue = maxValue;
     }
     private void setValues(final int currentValue,
                            final int maxValue){
