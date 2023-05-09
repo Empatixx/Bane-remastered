@@ -7,8 +7,8 @@ import org.joml.Vector3f;
 public enum StatusBarType {
     HEALTH(19, 8, 56, 4, 3,
             new Vector3f(0.529f, 0.298f, 0.262f), "ingame/healthBar.tga"),
-    ARMOR(0, 0, 20, 20, 2,
-            new Vector3f(0, 0, 1), "ingame/armorBar.tga");
+    ARMOR(21, 12, 55, 4, 3,
+            new Vector3f(0.603f, 0.670f, 0.709f), "ingame/armorBar.tga");
     private final TextureAtlas.Entry tex;
     private final Vector3f color;
     private final int xOffset;

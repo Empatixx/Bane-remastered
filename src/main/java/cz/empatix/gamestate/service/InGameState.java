@@ -82,9 +82,11 @@ public class InGameState extends GameState {
     public void mousePressed(int button) {
         if(GLFW.GLFW_MOUSE_BUTTON_1 == button){
             player.setHealth(player.getHealth() - 1);
+            player.setArmor(player.getArmor() - 1);
         }
         if(GLFW.GLFW_MOUSE_BUTTON_2 == button){
             player.setHealth(player.getHealth() + 1);
+            player.setArmor(player.getArmor() + 1);
         }
     }
 

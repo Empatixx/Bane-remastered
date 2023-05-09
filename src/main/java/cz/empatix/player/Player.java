@@ -23,6 +23,7 @@ import java.util.List;
 
 public class Player implements Drawable {
     private final StatusBar healthBar;
+    private final StatusBar armorBar;
     private final Animation animation;
     private final PhysicsBody physicsBody;
     private final LightSource lightSource;
@@ -61,9 +62,18 @@ public class Player implements Drawable {
         physicsBody.setTranslation(500, 500);
         physicsBody.setTranslation(500, 500);
 
-        lightSource = LightningService.getInstance().createLightSource(new Vector3f(216,156,36), 150f, 0.5f);
+        lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
 
-        healthBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH, new Vector2f(200,200));
+        healthBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH, new Vector2f(200, 200));
+        armorBar = new StatusBar(this::getArmor, this::getMaxArmor, StatusBarType.ARMOR, new Vector2f(200, 350));
+    }
+
+    public int getArmor() {
+        return armor;
+    }
+
+    public int getMaxArmor() {
+        return maxArmor;
     }
 
     public void update(final double dt) {
@@ -71,6 +81,7 @@ public class Player implements Drawable {
         lightSource.setPosition(physicsBody.getTranslationX() + DIMENSION_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + DIMENSION_HEIGHT * SCALE / 2);
         healthBar.update(dt);
+        armorBar.update(dt);
     }
 
     public void fixedUpdate(final double dt) {
@@ -82,7 +93,7 @@ public class Player implements Drawable {
         if (this.health > maxHealth) {
             this.health = maxHealth;
         }
-        if (this.health < 0){
+        if (this.health < 0) {
             this.health = 0;
         }
     }
@@ -92,14 +103,14 @@ public class Player implements Drawable {
         if (this.armor > maxArmor) {
             this.armor = maxArmor;
         }
-        if (this.armor < 0){
+        if (this.armor < 0) {
             this.armor = 0;
         }
     }
 
     @Override
     public List<Drawable> getSubDrawables() {
-        return List.of(healthBar);
+        return List.of(healthBar, armorBar);
     }
 
     @Override
