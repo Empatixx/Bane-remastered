@@ -1,7 +1,6 @@
 package cz.empatix.postprocessing.service;
 
 import cz.empatix.postprocessing.domain.*;
-import cz.empatix.postprocessing.domain.ForwardLightning;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.renders.RenderService;
 
@@ -19,8 +18,8 @@ public class PostprocessService {
     public PostprocessService(final RenderService renderService) {
         postprocesses = new ArrayList<>();
         postprocesses.add(new Fade());
-        postprocesses.add(new GaussianBlur());
         postprocesses.add(new ForwardLightning());
+        postprocesses.add(new GaussianBlur());
 
         fallbackPostprocess = new NoPostprocessing();
         this.renderService = renderService;

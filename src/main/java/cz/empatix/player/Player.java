@@ -64,8 +64,8 @@ public class Player implements Drawable {
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
 
-        healthBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH, new Vector2f(200, 200));
-        armorBar = new StatusBar(this::getArmor, this::getMaxArmor, StatusBarType.ARMOR, new Vector2f(200, 350));
+        healthBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH, new Vector2f(25, 25));
+        armorBar = new StatusBar(this::getArmor, this::getMaxArmor, StatusBarType.ARMOR, new Vector2f(75, 62.5f));
     }
 
     public int getArmor() {
