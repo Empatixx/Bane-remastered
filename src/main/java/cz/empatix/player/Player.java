@@ -19,8 +19,10 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.List;
+
 public class Player implements Drawable {
-    private final StatusBar statusBar;
+    private final StatusBar healthBar;
     private final Animation animation;
     private final PhysicsBody physicsBody;
     private final LightSource lightSource;
@@ -61,14 +63,14 @@ public class Player implements Drawable {
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216,156,36), 150f, 0.5f);
 
-        statusBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH);
+        healthBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH, new Vector2f(200,200));
     }
 
     public void update(final double dt) {
         animation.update();
         lightSource.setPosition(physicsBody.getTranslationX() + DIMENSION_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + DIMENSION_HEIGHT * SCALE / 2);
-        statusBar.update(dt);
+        healthBar.update(dt);
     }
 
     public void fixedUpdate(final double dt) {
@@ -87,6 +89,11 @@ public class Player implements Drawable {
         if (this.armor > maxArmor) {
             this.armor = maxArmor;
         }
+    }
+
+    @Override
+    public List<Drawable> getSubDrawables() {
+        return List.of(healthBar);
     }
 
     @Override

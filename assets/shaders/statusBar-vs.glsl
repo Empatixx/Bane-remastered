@@ -1,10 +1,13 @@
 #version 330
 
-uniform sampler2D texSampler;
+uniform mat4 projection;
 
-in vec2 tex_coords;
+layout (location = 0) in vec2 vertices;
+layout (location = 1) in vec2 textures;
+
+out vec2 tex_coords;
 
 void main() {
-    gl_FragColor = texture2D(texSampler, tex_coords);
+    tex_coords = textures;
+    gl_Position = projection * vec4(vertices, 0.0f, 1.0f);
 }
-```
