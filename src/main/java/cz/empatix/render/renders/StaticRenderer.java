@@ -3,6 +3,7 @@ package cz.empatix.render.renders;
 import cz.empatix.render.builders.VaoBuilder;
 import cz.empatix.render.builders.VboBuilder;
 import cz.empatix.render.domain.DrawableData;
+import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
@@ -106,8 +107,15 @@ public class StaticRenderer implements Renderer {
         if (data.isEmpty()) {
             return;
         }
+        final int hash = data
+                .stream()
+                .map(DrawableData::renderData)
+                .map(RenderData::vertices)
+                .toList()
+                .hashCode();
+
         final StaticRenderData renderData = staticRenderData.computeIfAbsent(zDepth, i -> new HashMap<>())
-                .computeIfAbsent(data.hashCode(), s -> StaticRenderData.from(data));
+                .computeIfAbsent(hash, s -> StaticRenderData.from(data));
         render(data, shaderBinding, renderData);
         renderData.updateLastRendered();
 

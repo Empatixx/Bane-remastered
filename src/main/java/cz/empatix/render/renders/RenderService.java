@@ -3,31 +3,27 @@ package cz.empatix.render.renders;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 
 import java.util.*;
 
 public class RenderService {
-    private final Map<RenderData.RenderDataType, Renderer> renderers;
+    private final Map<RenderDataType, Renderer> renderers;
 
     public RenderService() {
-        final EnumMap<RenderData.RenderDataType, Renderer> map = new EnumMap<>(RenderData.RenderDataType.class) {{
-            put(RenderData.RenderDataType.DYNAMIC, new DynamicRenderer());
-            put(RenderData.RenderDataType.STATIC, new StaticRenderer());
+        final EnumMap<RenderDataType, Renderer> map = new EnumMap<>(RenderDataType.class) {{
+            put(RenderDataType.DYNAMIC, new DynamicRenderer());
+            put(RenderDataType.STATIC, new StaticRenderer());
         }};
         renderers = Collections.unmodifiableMap(map);
     }
 
-    public void render(final Drawable drawable) {
-        render(List.of(drawable));
-    }
-
-    public void render(final List<Drawable> drawable) {
-        final List<DrawableData> allDrawables = findAllDrawables(drawable)
+    public void render(final List<DrawableData> drawableData) {
+        drawableData
                 .stream()
-                .map(DrawableData::fromDrawable)
                 .sorted(Comparator.comparingInt(DrawableData::zIndex))
-                .toList();
+
 
         final LinkedHashMap<Integer, List<DrawableData>> dataByZIndex = new LinkedHashMap<>();
         for (final DrawableData d : allDrawables) {

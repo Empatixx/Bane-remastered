@@ -2,10 +2,13 @@ package cz.empatix.render.service;
 
 import cz.empatix.postprocessing.service.PostprocessService;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.renders.RenderService;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class RenderEngine {
     private final Framebuffer sceneFbo;
@@ -22,20 +25,37 @@ public class RenderEngine {
 
     public void render(final List<Drawable> drawables,
                        final double dt) {
+        final Map<RenderScene, List<DrawableData>> drawableData = drawables
+                .stream()
+                .map(DrawableData::fromDrawable)
+                .collect(Collectors.groupingBy(DrawableData::targetScene));
         Camera.update((float) dt);
 
         sceneFbo.bind();
-        renderService.render(drawables);
+        renderService.render(drawableData.get(RenderScene.SCENE));
         sceneFbo.unbind();
 
-        postprocessService.process(sceneFbo, (float) dt);
+        hudFbo.bind();
+        renderService.render(drawableData.get(RenderScene.HUD));
+        hudFbo.unbind();
 
-        //hudFbo.bind();
-        //renderService.render(hudDrawables);
-        //hudFbo.unbind();
+        postprocessService.process(sceneFbo, (float) dt);
 
         postprocessService.flushFramebuffers();
         sceneFbo.flush();
         hudFbo.flush();
+    }
+    private List<Drawable> findAllDrawables(final List<Drawable> drawable) {
+        final List<Drawable> allDrawables = new ArrayList<>(drawable);
+        final Queue<Drawable> drawableQueue = new LinkedList<>(drawable);
+
+        while (!drawableQueue.isEmpty()) {
+            final Drawable current = drawableQueue.poll();
+            final List<Drawable> subDrawables = current.getSubDrawables();
+            allDrawables.addAll(subDrawables);
+            drawableQueue.addAll(subDrawables);
+        }
+
+        return allDrawables;
     }
 }
