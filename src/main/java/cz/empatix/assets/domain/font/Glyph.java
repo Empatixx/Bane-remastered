@@ -1,5 +1,7 @@
 package cz.empatix.assets.domain.font;
 
+import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -54,9 +56,18 @@ public record Glyph(
             return new RenderData(
                     vertices(),
                     glyph.texture().textureId(),
-                    new TextBinding(color, Camera.getProjection()),
-                    RenderData.RenderDataType.DYNAMIC
+                    new TextBinding(color, Camera.getProjection())
             );
+        }
+
+        @Override
+        public RenderScene renderScene() {
+            return RenderScene.HUD;
+        }
+
+        @Override
+        public RenderDataType renderType() {
+            return RenderDataType.DYNAMIC;
         }
 
         private List<Vertex> vertices() {

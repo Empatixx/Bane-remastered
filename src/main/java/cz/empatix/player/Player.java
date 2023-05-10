@@ -9,6 +9,8 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -118,9 +120,18 @@ public class Player implements Drawable {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection()),
-                RenderData.RenderDataType.DYNAMIC
+                new CommonBinding(Camera.getProjection())
         );
+    }
+
+    @Override
+    public RenderScene renderScene() {
+        return RenderScene.SCENE;
+    }
+
+    @Override
+    public RenderDataType renderType() {
+        return RenderDataType.DYNAMIC;
     }
 
     @Override

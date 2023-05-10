@@ -27,8 +27,7 @@ public class AnimatedBackground implements HUDElement {
         return new RenderData(
                 animation.getVertices(new Vector2f(0, 0)),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection()),
-                RenderData.RenderDataType.DYNAMIC
+                new CommonBinding(Camera.getProjection())
         );
     }
 

@@ -1,6 +1,8 @@
 package cz.empatix.postprocessing.service;
 
 import cz.empatix.postprocessing.domain.*;
+import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.renders.RenderService;
 
@@ -26,14 +28,16 @@ public class PostprocessService {
     }
 
     public void process(final Framebuffer sceneFbo,
+                        final RenderScene scene,
                         final float dt) {
         final List<Postprocess> postprocesses = this.postprocesses.stream()
                 .filter(Postprocess::canRender)
+                .filter(p -> p.accepts(scene))
                 .toList();
 
         if(postprocesses.isEmpty()){
             fallbackPostprocess.setInput(sceneFbo);
-            renderService.render(fallbackPostprocess);
+            renderService.render(DrawableData.from(fallbackPostprocess));
             return;
         }
 
@@ -50,7 +54,7 @@ public class PostprocessService {
             }
 
             postprocess.apply(dt);
-            renderService.render(postprocess);
+            renderService.render(DrawableData.from(postprocess));
 
             if (outputFBO != null) {
                 outputFBO.unbind();

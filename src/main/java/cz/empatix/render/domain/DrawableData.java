@@ -5,11 +5,12 @@ import cz.empatix.render.attributes.RenderScene;
 
 public record DrawableData(
         RenderData renderData,
-        RenderScene targetScene,
+        RenderDataType type,
+        RenderScene target,
         boolean canRender,
         int zIndex
 ){
-    public static DrawableData fromDrawable(Drawable d){
-        return new DrawableData(d.renderData(), RenderScene.SCENE, d.canRender(), d.getZIndex());
+    public static DrawableData from(final Drawable drawable){
+        return new DrawableData(drawable.renderData(), drawable.renderType(), drawable.renderScene(), drawable.canRender(), drawable.getZIndex());
     }
 }

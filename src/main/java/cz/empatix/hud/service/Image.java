@@ -44,8 +44,7 @@ public class Image implements HUDElement {
                         .offset(dimensions.x(), dimensions.y())
                         .buildQuad(),
                 texture.textureId(),
-                new CommonBinding(Camera.getProjection()),
-                RenderData.RenderDataType.STATIC
+                new CommonBinding(Camera.getProjection())
         );
     }
 

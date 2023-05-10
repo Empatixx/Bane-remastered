@@ -42,8 +42,7 @@ public class AnimatedImage implements HUDElement {
         return new RenderData(
                 animation.getVertices(position),
                 texture.textureId(),
-                new CommonBinding(Camera.getProjection()),
-                RenderData.RenderDataType.DYNAMIC
+                new CommonBinding(Camera.getProjection())
         );
     }
 

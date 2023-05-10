@@ -4,6 +4,8 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -56,9 +58,18 @@ public record Tile(
         return new RenderData(
                 vertices,
                 textureId,
-                new CommonBinding(Camera.getProjection()),
-                RenderData.RenderDataType.STATIC
+                new CommonBinding(Camera.getProjection())
         );
+    }
+
+    @Override
+    public RenderScene renderScene() {
+        return RenderScene.SCENE;
+    }
+
+    @Override
+    public RenderDataType renderType() {
+        return RenderDataType.STATIC;
     }
 
     @Override

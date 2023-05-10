@@ -25,10 +25,10 @@ public class RenderEngine {
 
     public void render(final List<Drawable> drawables,
                        final double dt) {
-        final Map<RenderScene, List<DrawableData>> drawableData = drawables
+        final Map<RenderScene, List<DrawableData>> drawableData = findAllDrawables(drawables)
                 .stream()
-                .map(DrawableData::fromDrawable)
-                .collect(Collectors.groupingBy(DrawableData::targetScene));
+                .map(DrawableData::from)
+                .collect(Collectors.groupingBy(DrawableData::target));
         Camera.update((float) dt);
 
         sceneFbo.bind();
@@ -39,12 +39,14 @@ public class RenderEngine {
         renderService.render(drawableData.get(RenderScene.HUD));
         hudFbo.unbind();
 
-        postprocessService.process(sceneFbo, (float) dt);
+        postprocessService.process(sceneFbo, RenderScene.SCENE, (float) dt);
+        postprocessService.process(hudFbo, RenderScene.HUD, (float) dt);
 
         postprocessService.flushFramebuffers();
         sceneFbo.flush();
         hudFbo.flush();
     }
+
     private List<Drawable> findAllDrawables(final List<Drawable> drawable) {
         final List<Drawable> allDrawables = new ArrayList<>(drawable);
         final Queue<Drawable> drawableQueue = new LinkedList<>(drawable);

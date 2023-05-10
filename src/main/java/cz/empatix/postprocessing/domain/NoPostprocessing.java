@@ -1,5 +1,6 @@
 package cz.empatix.postprocessing.domain;
 
+import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
@@ -12,13 +13,18 @@ public class NoPostprocessing implements Postprocess{
     }
 
     @Override
+    public boolean accepts(final RenderScene scene) {
+        return true;
+    }
+
+    @Override
     public void setInput(final Framebuffer inputFBO) {
         textureId = inputFBO.colorAttachment();
     }
 
     @Override
     public RenderData renderData() {
-        return new RenderData(Framebuffer.VERTICES, textureId, new CommonBinding(Camera.getOriginProjection()), RenderData.RenderDataType.DYNAMIC);
+        return new RenderData(Framebuffer.VERTICES, textureId, new CommonBinding(Camera.getOriginProjection()));
     }
 
     @Override

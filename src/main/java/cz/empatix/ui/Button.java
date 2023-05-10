@@ -68,8 +68,7 @@ public class Button implements UIElement {
         return new RenderData(
                 animation.getVertices(position),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection()),
-                RenderData.RenderDataType.DYNAMIC
+                new CommonBinding(Camera.getProjection())
         );
     }
 

@@ -53,8 +53,7 @@ public class StatusBar implements HUDElement {
         final Matrix4f projection = Camera.getOriginWithoutZoomProjection();
         return new RenderData(vertices(),
                 statusBarType.getTexture().textureId(),
-                new StatusBarBinding(projection, color, fillAmount, delayedFillAmount, normXOffset, normYOffset, normWidth, normHeight),
-                RenderData.RenderDataType.DYNAMIC);
+                new StatusBarBinding(projection, color, fillAmount, delayedFillAmount, normXOffset, normYOffset, normWidth, normHeight));
     }
 
     private List<Vertex> vertices() {

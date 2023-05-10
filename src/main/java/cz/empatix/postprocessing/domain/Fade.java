@@ -1,11 +1,14 @@
 package cz.empatix.postprocessing.domain;
 
+import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.FadeBinding;
 
-public class Fade implements Postprocess {
+import java.util.Set;
 
+public class Fade implements Postprocess {
+    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE, RenderScene.HUD);
     private final static float MAX_TRANSPARENCY = 1f;
     private final static float MIN_TRANSPARENCY = 0f;
     private final static float DEFAULT_TWEEN = 0.01f;
@@ -18,6 +21,11 @@ public class Fade implements Postprocess {
     public void apply(float dt) {
         transparency += incremental ? transparency * tween : -transparency * tween;
         fixBounds();
+    }
+
+    @Override
+    public boolean accepts(final RenderScene scene) {
+        return SUPPORTED.contains(scene);
     }
 
     @Override
@@ -47,7 +55,7 @@ public class Fade implements Postprocess {
     @Override
     public RenderData renderData() {
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new FadeBinding(transparency), RenderData.RenderDataType.DYNAMIC);
+                new FadeBinding(transparency));
     }
 
     @Override
