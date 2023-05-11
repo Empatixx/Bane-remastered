@@ -14,8 +14,8 @@ public class PostprocessService {
     private final List<Postprocess> postprocesses;
     private final Postprocess fallbackPostprocess;
 
-    private final Framebuffer fbo1 = Framebuffer.create();
-    private final Framebuffer fbo2 = Framebuffer.create();
+    private final Framebuffer fbo1 = Framebuffer.createRgb();
+    private final Framebuffer fbo2 = Framebuffer.createRgb();
 
     public PostprocessService(final RenderService renderService) {
         postprocesses = new ArrayList<>();

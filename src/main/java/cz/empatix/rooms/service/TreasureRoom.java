@@ -32,7 +32,7 @@ public class TreasureRoom implements Room {
     }
 
     @Override
-    public void update() {
+    public void update(double dt) {
 
     }
 
@@ -43,11 +43,18 @@ public class TreasureRoom implements Room {
 
     @Override
     public int getWidth() {
-        return 0;
+        return tileMap.getWidth();
     }
 
     @Override
     public int getHeight() {
-        return 0;
+        return tileMap.getHeight();
     }
-}
+    @Override
+    public int getX(){
+        return xOffset;
+    }
+    @Override
+    public int getY(){
+        return yOffset;
+    }}

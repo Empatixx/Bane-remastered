@@ -1,7 +1,7 @@
 package cz.empatix.hud.domain;
 
 public class StatusController {
-    private final double TWEEN = 0.05;
+    private static final double TWEEN = 0.05;
     private int maxValue;
     private int currentValue;
     private float delayedDelta;

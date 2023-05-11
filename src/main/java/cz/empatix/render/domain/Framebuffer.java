@@ -6,6 +6,7 @@ import org.joml.Vector2i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL30.*;
@@ -15,6 +16,8 @@ public record Framebuffer (
         int colorAttachment,
         Vector2i size
 ){
+    private final static int RGBA_CHANNELS = 4;
+    private final static int RGB_CHANNELS = 3;
     public static final List<Vertex> VERTICES = List.of(
             new Vertex(new Vector2f(0, 0), new Vector2f(0, 1)),
             new Vertex(new Vector2f(WindowHandler.TARGET_WIDTH, 0), new Vector2f(1, 1)),
@@ -25,14 +28,27 @@ public record Framebuffer (
     public void destroy(){
         glDeleteFramebuffers(fbo);
     }
-    public static Framebuffer create(){
+    public static Framebuffer createRgb(){
+        return create(RGB_CHANNELS);
+    }
+    public static Framebuffer createRgba(){
+        return create(RGBA_CHANNELS);
+    }
+    private static Framebuffer create(final int channels){
         final int fbo = glGenFramebuffers();
         final int textureId = glGenTextures();
         try{
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
             glBindTexture(GL_TEXTURE_2D, textureId);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WindowHandler.WIDTH, WindowHandler.HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+            switch(channels){
+                case RGBA_CHANNELS -> {
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WindowHandler.WIDTH, WindowHandler.HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+                }
+                case RGB_CHANNELS -> {
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WindowHandler.WIDTH, WindowHandler.HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+                }
+            }
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -73,6 +89,7 @@ public record Framebuffer (
 
     public void flush() {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }

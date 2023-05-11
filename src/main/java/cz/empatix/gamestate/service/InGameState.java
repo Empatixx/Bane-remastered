@@ -81,7 +81,7 @@ public class InGameState extends GameState {
     @Override
     public void mousePressed(int button) {
         if(GLFW.GLFW_MOUSE_BUTTON_1 == button){
-            player.setHealth(player.getHealth() - 1);
+            player.setHealth(player.getHealth() - 3);
             player.setArmor(player.getArmor() - 1);
         }
         if(GLFW.GLFW_MOUSE_BUTTON_2 == button){

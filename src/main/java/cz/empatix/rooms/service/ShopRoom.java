@@ -32,7 +32,7 @@ public class ShopRoom implements Room {
     }
 
     @Override
-    public void update() {
+    public void update(double dt) {
 
     }
 
@@ -43,11 +43,19 @@ public class ShopRoom implements Room {
 
     @Override
     public int getWidth() {
-        return tileMap.getWidth() + xOffset;
+        return tileMap.getWidth();
     }
 
     @Override
     public int getHeight() {
-        return tileMap.getHeight() + yOffset;
+        return tileMap.getHeight();
+    }
+    @Override
+    public int getX(){
+        return xOffset;
+    }
+    @Override
+    public int getY(){
+        return yOffset;
     }
 }

@@ -17,8 +17,8 @@ public class RenderEngine {
     private final PostprocessService postprocessService;
 
     public RenderEngine() {
-        this.sceneFbo = Framebuffer.create();
-        this.hudFbo = Framebuffer.create();
+        this.sceneFbo = Framebuffer.createRgb();
+        this.hudFbo = Framebuffer.createRgba();
         this.renderService = new RenderService();
         this.postprocessService = new PostprocessService(renderService);
     }
