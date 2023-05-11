@@ -21,6 +21,7 @@ public class PathTileMap implements TileMap{
 
     @Override
     public void init() {
+        tiles = new Tile[0][0];
     }
 
     @Override

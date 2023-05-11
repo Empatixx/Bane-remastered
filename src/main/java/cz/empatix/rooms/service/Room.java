@@ -21,7 +21,7 @@ public interface Room {
         final int width = getWidth();
         final int height = getHeight();
 
-        return x <= xStart && y <= yStart &&
+        return x >= xStart && y >= yStart &&
                 xStart + width >= x && yStart + height >= y;
     }
 

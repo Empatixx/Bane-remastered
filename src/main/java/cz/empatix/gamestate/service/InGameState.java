@@ -32,10 +32,8 @@ public class InGameState extends GameState {
     @Override
     public void init() {
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-        final StaticMapGenerator staticMapGenerator = new StaticMapGenerator();
 
-        proceduralMapGenerator.generate();
-        mapService = staticMapGenerator.generate();
+        mapService = proceduralMapGenerator.generate();
         player = new Player();
 
         AudioService.getInstance().play(Soundtrack.INGAME);
@@ -43,16 +41,17 @@ public class InGameState extends GameState {
 
     @Override
     public void update(final double dt) {
+        final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
+        final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
+        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirectionX,player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirectionY);
+
         player.update(dt);
+        mapService.update(dt, player.getPosition());
     }
 
     @Override
     public void fixedUpdate(double dt) {
         player.fixedUpdate(dt);
-
-        final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
-        final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirectionX,player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirectionY);
     }
 
     @Override

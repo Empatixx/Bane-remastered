@@ -28,6 +28,7 @@ public class ShopRoom implements Room {
 
     @Override
     public void init() {
+        tileMap.init();
 
     }
 

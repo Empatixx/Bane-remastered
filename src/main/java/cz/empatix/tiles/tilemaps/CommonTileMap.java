@@ -27,18 +27,18 @@ public class CommonTileMap implements TileMap {
     public void init() {
         final TileFactory tileFactory = new TileFactory();
         boolean[][] map = new boolean[rows][cols];
-        for(int i = 0;i<rows;i++){
-            for(int j = 0;j<cols;j++){
-                if(i == 0 || j == 0 || i == rows-1 || j == cols-1) {
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (i == 0 || j == 0 || i == rows - 1 || j == cols - 1) {
                     map[i][j] = true;
                 }
             }
         }
-        map[5][5] = true;
+    /*map[5][5] = true;
         map[6][5] = true;
         map[5][6] = true;
         map[6][6] = true;
-
+*/
         tiles = tileFactory.createTileMap(map);
 
     }

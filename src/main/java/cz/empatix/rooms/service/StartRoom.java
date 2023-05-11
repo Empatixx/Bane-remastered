@@ -28,7 +28,7 @@ public class StartRoom implements Room {
 
     @Override
     public void init() {
-
+        tileMap.init();
     }
 
     @Override
@@ -50,12 +50,14 @@ public class StartRoom implements Room {
     public int getHeight() {
         return tileMap.getHeight();
     }
+
     @Override
-    public int getX(){
+    public int getX() {
         return xOffset;
     }
+
     @Override
-    public int getY(){
+    public int getY() {
         return yOffset;
     }
 }

@@ -43,6 +43,7 @@ public class ProceduralMapGenerator implements MapGenerator {
                 .limit(TOTAL_LOOT_ROOMS)
                 .toList();
 
+        startRoomGenInfo.initDimensions();
         normalRooms.forEach(RoomGenInfo::initDimensions);
         shopRooms.forEach(RoomGenInfo::initDimensions);
         bossRooms.forEach(RoomGenInfo::initDimensions);
@@ -61,6 +62,10 @@ public class ProceduralMapGenerator implements MapGenerator {
         final List<Room> pathRooms = pathsRoom.stream()
                 .map(RoomGenInfo::constructRoom)
                 .toList();
+
+        rooms.forEach(Room::init);
+        pathRooms.forEach(Room::init);
+
         return new MapService(rooms, pathRooms);
     }
 

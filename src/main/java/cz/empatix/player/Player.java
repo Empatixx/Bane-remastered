@@ -22,6 +22,7 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
+import java.util.Vector;
 
 public class Player implements Drawable {
     private final StatusBar healthBar;
@@ -202,8 +203,9 @@ public class Player implements Drawable {
             animation.setAnimationState(AnimationState.IDLE);
         }
     }
-
-
+    public Vector2f getPosition(){
+        return physicsBody.getPhysicsTranslation();
+    }
     public float getX() {
         return physicsBody.getPhysicsTranslationX();
     }
@@ -227,4 +229,5 @@ public class Player implements Drawable {
     public int getMaxHealth() {
         return maxHealth;
     }
+
 }

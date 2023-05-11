@@ -28,6 +28,7 @@ public class TreasureRoom implements Room {
 
     @Override
     public void init() {
+        tileMap.init();
 
     }
 

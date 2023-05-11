@@ -36,7 +36,6 @@ public class StatusBar implements HUDElement {
     @Override
     public void update(double dt) {
         statusController.update(dt, currentValueSupplier.get(), maxValueSupplier.get());
-        System.out.println(statusController.delayedDelta());
     }
 
     @Override

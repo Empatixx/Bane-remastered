@@ -26,6 +26,7 @@ public class BossRoom implements Room {
 
     @Override
     public void init() {
+        tileMap.init();
 
     }
 
