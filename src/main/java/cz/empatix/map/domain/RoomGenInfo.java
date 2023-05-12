@@ -79,18 +79,18 @@ public abstract class RoomGenInfo {
         switch (orientation) {
             case ROOM_ORIENTATION_TOP -> {
                 newOffsetX = parentWidthCenter - selfWidthCenter + parent.getXOffset();
-                newOffsetY = parent.getYOffset() - parent.getHeight();
+                newOffsetY = parent.getYOffset() - parent.getHeight() - PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;;
             }
             case ROOM_ORIENTATION_BOTTOM -> {
                 newOffsetX = parentWidthCenter - selfWidthCenter + parent.getXOffset();
-                newOffsetY = parent.getYOffset() + parent.getHeight();
+                newOffsetY = parent.getYOffset() + parent.getHeight() + PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;;
             }
             case ROOM_ORIENTATION_LEFT -> {
-                newOffsetX = parent.getXOffset() - parent.getWidth();
+                newOffsetX = parent.getXOffset() - parent.getWidth() - PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;
                 newOffsetY = parentHeightCenter - selfHeightCenter + parent.getYOffset();
             }
             case ROOM_ORIENTATION_RIGHT -> {
-                newOffsetX = parent.getXOffset() + parent.getWidth();
+                newOffsetX = parent.getXOffset() + parent.getWidth() - PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;;
                 newOffsetY = parentHeightCenter - selfHeightCenter + parent.getYOffset();
             }
             default -> throw new IllegalStateException("Unexpected value: " + orientation);
