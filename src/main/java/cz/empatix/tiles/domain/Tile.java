@@ -2,14 +2,13 @@ package cz.empatix.tiles.domain;
 
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
-import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
-import cz.empatix.render.attributes.RenderScene;
-import cz.empatix.render.domain.RenderDataType;
-import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -30,19 +29,21 @@ public record Tile(
     public static Tile from(final int tileNumber,
                             final int tilePosX,
                             final int tilePosY,
+                            final int xOff,
+                            final int yOff,
                             final TextureAtlas.Entry texture) {
         final int tCol = tileNumber % TOTAL_COLUMNS;
         final int tRow = tileNumber / TOTAL_COLUMNS;
 
-        final Vector2f pos = new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE);
+        final Vector2f pos = new Vector2f(xOff + tilePosX * TILE_SIZE * SCALE, yOff + tilePosY * TILE_SIZE * SCALE);
         final PhysicsBody collision = tRow > 0 ? PhysicsBodyFactory.createStatic(Rectangle.from(TILE_SIZE * SCALE, TILE_SIZE * SCALE)) : null;
-        if(collision != null){
+        if (collision != null) {
             collision.setTranslation(pos.x(), pos.y());
         }
         return new Tile(Vertex.builder()
                 .texPosition(tCol, tRow)
                 .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
-                .position(new Vector2f(tilePosX * TILE_SIZE * SCALE, tilePosY * TILE_SIZE * SCALE))
+                .position(pos)
                 .posDimensions(TILE_SIZE, TILE_SIZE)
                 .offset(TILE_SIZE, TILE_SIZE)
                 .texture(texture)
@@ -69,15 +70,18 @@ public record Tile(
 
     @Override
     public RenderDataType renderType() {
-        return RenderDataType.STATIC;
+        return RenderDataType.DYNAMIC;
     }
 
     @Override
     public boolean canRender() {
-        return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(TILE_SIZE * SCALE, TILE_SIZE * SCALE))
-                .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
-                .resolve();
+        final Vector2f cameraPos = Camera.getPosition();
+        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
+
+        return position.x() + TILE_SIZE * SCALE > cameraPos.x()
+                && position.x() < cameraPos.x() + cameraDimensions.x()
+                && position.y() + TILE_SIZE * SCALE > cameraPos.y()
+                && position.y() < cameraPos.y() + cameraDimensions.y();
     }
 
 

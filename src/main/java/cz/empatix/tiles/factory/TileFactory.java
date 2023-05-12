@@ -37,10 +37,10 @@ public class TileFactory {
 
     private static final int[] FLOOR = {5, 6, 6, 6, 6, 6, 12, 13, 14, 15, 16, 17, 18};
 
-    public Tile[][] createTileMap(final boolean[][] map) {
+    public Tile[][] createTileMap(final boolean[][] map, final int xOffset, final int yOffset) {
         final Tile[][] tileMap = new Tile[map.length][map[0].length];
-        for (int x = 0; x < map.length; x++) {
-            for (int y = 0; y < map[x].length; y++) {
+        for (int y = 0; y < map.length; y++) {
+            for (int x = 0; x < map[y].length; x++) {
                 final boolean isCollision = isCollision(x, y, map);
 
                 final boolean topCollision = isCollision(x, y - 1, map);
@@ -55,8 +55,8 @@ public class TileFactory {
 
                 final Tile tile = createTile(isCollision, topCollision, bottomCollision,
                         leftCollision, rightCollision, topLeftCollision, topRightCollision,
-                        bottomLeftCollision, bottomRightCollision, x, y);
-                tileMap[x][y] = tile;
+                        bottomLeftCollision, bottomRightCollision, x, y, xOffset, yOffset);
+                tileMap[y][x] = tile;
             }
         }
         return tileMap;
@@ -64,7 +64,7 @@ public class TileFactory {
 
     private boolean isCollision(final int x, final int y, boolean[][] map) {
         try {
-            return map[x][y];
+            return map[y][x];
         } catch (ArrayIndexOutOfBoundsException e) {
             return true;
         }
@@ -80,57 +80,62 @@ public class TileFactory {
                             final boolean bottomLeft,
                             final boolean bottomRight,
                             final int x,
-                            final int y) {
+                            final int y,
+                            final int xOffset,
+                            final int yOffset) {
         if (current && top && bottom && right && left && topLeft && topRight && bottomLeft && bottomRight) {
-            return createTile(WALL[random.nextInt(WALL.length)], x , y);
+            return createTile(WALL[random.nextInt(WALL.length)], x, y, xOffset, yOffset);
         } else if (current && top && bottom && right && !left) {
-            return createTile(RIGHT_WALL[random.nextInt(RIGHT_WALL.length)], x , y);
+            return createTile(RIGHT_WALL[random.nextInt(RIGHT_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && top && bottom && left && !right) {
-            return createTile(LEFT_WALL[random.nextInt(LEFT_WALL.length)], x , y);
+            return createTile(LEFT_WALL[random.nextInt(LEFT_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && top && right && left && !bottom) {
-            return createTile(TOP_WALL[random.nextInt(TOP_WALL.length)], x , y);
+            return createTile(TOP_WALL[random.nextInt(TOP_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && bottom && right && left && !top) {
-            return createTile(BOTTOM_WALL[random.nextInt(BOTTOM_WALL.length)], x , y);
+            return createTile(BOTTOM_WALL[random.nextInt(BOTTOM_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && bottom && left && !bottomLeft) {
-            return createTile(TOP_RIGHT_INNER_CORNER[random.nextInt(TOP_RIGHT_INNER_CORNER.length)], x , y);
+            return createTile(TOP_RIGHT_INNER_CORNER[random.nextInt(TOP_RIGHT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && bottom && right && !bottomRight) {
-            return createTile(TOP_LEFT_INNER_CORNER[random.nextInt(TOP_LEFT_INNER_CORNER.length)], x , y);
+            return createTile(TOP_LEFT_INNER_CORNER[random.nextInt(TOP_LEFT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && left && !topLeft) {
-            return createTile(BOTTOM_RIGHT_INNER_CORNER[random.nextInt(BOTTOM_RIGHT_INNER_CORNER.length)], x , y);
+            return createTile(BOTTOM_RIGHT_INNER_CORNER[random.nextInt(BOTTOM_RIGHT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && right && !topRight) {
-            return createTile(BOTTOM_LEFT_INNER_CORNER[random.nextInt(BOTTOM_LEFT_INNER_CORNER.length)], x , y);
+            return createTile(BOTTOM_LEFT_INNER_CORNER[random.nextInt(BOTTOM_LEFT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && !top && !left && right && bottom) {
-            return createTile(TOP_LEFT_OUTER_CORNER[random.nextInt(TOP_LEFT_OUTER_CORNER.length)], x , y);
+            return createTile(TOP_LEFT_OUTER_CORNER[random.nextInt(TOP_LEFT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && !top && left && !right && bottom) {
-            return createTile(TOP_RIGHT_OUTER_CORNER[random.nextInt(TOP_RIGHT_OUTER_CORNER.length)], x , y);
+            return createTile(TOP_RIGHT_OUTER_CORNER[random.nextInt(TOP_RIGHT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && !left && right && !bottom) {
-            return createTile(BOTTOM_LEFT_OUTER_CORNER[random.nextInt(BOTTOM_LEFT_OUTER_CORNER.length)], x , y);
+            return createTile(BOTTOM_LEFT_OUTER_CORNER[random.nextInt(BOTTOM_LEFT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && left && !right && !bottom) {
-            return createTile(BOTTOM_RIGHT_OUTER_CORNER[random.nextInt(BOTTOM_RIGHT_OUTER_CORNER.length)], x , y);
+            return createTile(BOTTOM_RIGHT_OUTER_CORNER[random.nextInt(BOTTOM_RIGHT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && top && right) {
-            return createTile(FLOOR_NEAR_RIGHT_TOP_CORNER[random.nextInt(FLOOR_NEAR_RIGHT_TOP_CORNER.length)], x , y);
+            return createTile(FLOOR_NEAR_RIGHT_TOP_CORNER[random.nextInt(FLOOR_NEAR_RIGHT_TOP_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && top && left) {
-            return createTile(FLOOR_NEAR_LEFT_TOP_CORNER[random.nextInt(FLOOR_NEAR_LEFT_TOP_CORNER.length)], x , y);
+            return createTile(FLOOR_NEAR_LEFT_TOP_CORNER[random.nextInt(FLOOR_NEAR_LEFT_TOP_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && bottom && right) {
-            return createTile(FLOOR_NEAR_RIGHT_BOTTOM_CORNER[random.nextInt(FLOOR_NEAR_RIGHT_BOTTOM_CORNER.length)], x , y);
+            return createTile(FLOOR_NEAR_RIGHT_BOTTOM_CORNER[random.nextInt(FLOOR_NEAR_RIGHT_BOTTOM_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && bottom && left) {
-            return createTile(FLOOR_NEAR_LEFT_BOTTOM_CORNER[random.nextInt(FLOOR_NEAR_LEFT_BOTTOM_CORNER.length)], x , y);
+            return createTile(FLOOR_NEAR_LEFT_BOTTOM_CORNER[random.nextInt(FLOOR_NEAR_LEFT_BOTTOM_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && bottom) {
-            return createTile(FLOOR_NEAR_BOTTOM_WALL[random.nextInt(FLOOR_NEAR_BOTTOM_WALL.length)], x , y);
+            return createTile(FLOOR_NEAR_BOTTOM_WALL[random.nextInt(FLOOR_NEAR_BOTTOM_WALL.length)], x, y, xOffset, yOffset);
         } else if (!current && top) {
-            return createTile(FLOOR_NEAR_TOP_WALL[random.nextInt(FLOOR_NEAR_TOP_WALL.length)], x , y);
+            return createTile(FLOOR_NEAR_TOP_WALL[random.nextInt(FLOOR_NEAR_TOP_WALL.length)], x, y, xOffset, yOffset);
         } else if (!current && left) {
-            return createTile(FLOOR_NEAR_LEFT_WALL[random.nextInt(FLOOR_NEAR_LEFT_WALL.length)], x , y);
+            return createTile(FLOOR_NEAR_LEFT_WALL[random.nextInt(FLOOR_NEAR_LEFT_WALL.length)], x, y, xOffset, yOffset);
         } else if (!current && right) {
-            return createTile(FLOOR_NEAR_RIGHT_WALL[random.nextInt(FLOOR_NEAR_RIGHT_WALL.length)], x , y);
+            return createTile(FLOOR_NEAR_RIGHT_WALL[random.nextInt(FLOOR_NEAR_RIGHT_WALL.length)], x, y, xOffset, yOffset);
         } else {
-            return createTile(FLOOR[random.nextInt(FLOOR.length)], x , y);
+            return createTile(FLOOR[random.nextInt(FLOOR.length)], x, y, xOffset, yOffset);
         }
     }
+
     private Tile createTile(final int tileNumber,
                             final int x,
-                            final int y) {
+                            final int y,
+                            final int xOffset,
+                            final int yOffset) {
         final TextureAtlas.Entry texture = AssetsService.getTexture(TEXTURE_NAME);
-        return Tile.from(tileNumber, x, y, texture);
+        return Tile.from(tileNumber, x, y, xOffset, yOffset, texture);
     }
 }

@@ -11,9 +11,14 @@ public class CommonTileMap implements TileMap {
     private Tile[][] tiles;
     private final int rows;
     private final int cols;
-    public CommonTileMap(final int rows, final int cols){
+    private final int xOffset;
+    private final int yOffset;
+    public CommonTileMap(final int rows, final int cols,
+                         final int xOffset, final int yOffset){
         this.rows = rows;
         this.cols = cols;
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
     }
     @Override
     public List<Drawable> toRender() {
@@ -39,7 +44,7 @@ public class CommonTileMap implements TileMap {
         map[5][6] = true;
         map[6][6] = true;
 */
-        tiles = tileFactory.createTileMap(map);
+        tiles = tileFactory.createTileMap(map, xOffset, yOffset);
 
     }
     @Override
@@ -49,5 +54,15 @@ public class CommonTileMap implements TileMap {
     @Override
     public int getHeight(){
         return rows * Tile.TILE_SIZE * Tile.SCALE;
+    }
+
+    @Override
+    public int getX() {
+        return xOffset;
+    }
+
+    @Override
+    public int getY() {
+        return yOffset;
     }
 }

@@ -119,6 +119,7 @@ public class StaticRenderer implements Renderer {
         render(data, shaderBinding, renderData);
         renderData.updateLastRendered();
 
+
         staticRenderData.forEach((z, map) -> {
                     final Iterator<Map.Entry<Integer, StaticRenderData>> iterator = map.entrySet().iterator();
                     while (iterator.hasNext()) {

@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Vector;
 import java.util.stream.Stream;
 
 public class MapService {
@@ -24,7 +23,7 @@ public class MapService {
     }
 
     public List<Drawable> toRender(double dt) {
-        return Stream.of(pathRooms, rooms)
+            return Stream.of(pathRooms, rooms)
                 .flatMap(List::stream)
                 .map(Room::toRender)
                 .flatMap(List::stream)

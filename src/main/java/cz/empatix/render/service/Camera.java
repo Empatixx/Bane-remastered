@@ -10,32 +10,40 @@ import static cz.empatix.common.handlers.WindowHandler.TARGET_HEIGHT;
 import static cz.empatix.common.handlers.WindowHandler.TARGET_WIDTH;
 
 public class Camera {
-    private static final float TWEEN = 0.1f;
     private static float zoom = 1;
+    private static final float TWEEN = 0.1f;
     private final static Vector2f minDimensions = new Vector2f(0, 0);
     private static final Vector2f maxDimensions = new Vector2f(0, 0);
     private static final InterpolatedPosition interpolatedPosition = new InterpolatedPosition();
 
+    // optimization so it is always one reference to shaderbindings!
+    private final static Matrix4f originWithoutZoomProjection = new Matrix4f().ortho2D(
+            0,
+            TARGET_WIDTH,
+            TARGET_HEIGHT,
+            0);
+    private final static Matrix4f originProjection = new Matrix4f().ortho2D(
+            TARGET_WIDTH * (1 - zoom) / 2,
+            TARGET_WIDTH - (TARGET_WIDTH * (1 - zoom)) / 2,
+            TARGET_HEIGHT - (TARGET_HEIGHT * (1 - zoom)) / 2,
+            TARGET_HEIGHT * (1 - zoom) / 2);
+    private final static Matrix4f projection = new Matrix4f(originProjection);
+
     public static Matrix4f getProjection() {
-        final Vector2f position = interpolatedPosition.getInterpolatedPosition();
-        return getOriginProjection().translate(new Vector3f(-position.x(), -position.y(), 0));
+        return projection;
     }
     public static Matrix4f getOriginProjection(){
-        return new Matrix4f().ortho2D(
-                        TARGET_WIDTH * (1 - zoom) / 2,
-                        TARGET_WIDTH - (TARGET_WIDTH * (1 - zoom)) / 2,
-                        TARGET_HEIGHT - (TARGET_HEIGHT * (1 - zoom)) / 2,
-                        TARGET_HEIGHT * (1 - zoom) / 2);
+        return originProjection;
     }
     public static Matrix4f getOriginWithoutZoomProjection(){
-        return new Matrix4f().ortho2D(
-                0,
-                TARGET_WIDTH,
-                TARGET_HEIGHT,
-                0);
+        return originWithoutZoomProjection;
     }
     public static void update(final float dt) {
         interpolatedPosition.update(dt);
+
+        final Vector2f position = interpolatedPosition.getInterpolatedPosition();
+        Matrix4f translate = getOriginProjection().translate(new Vector3f(-position.x(), -position.y(), 0), new Matrix4f());
+        projection.set(translate);
     }
 
     public static void setPosition(final float x, final float y) {
@@ -78,10 +86,27 @@ public class Camera {
 
     public static void zoomIn(final float zoom) {
         Camera.zoom += zoom;
+        zoomProjection();
     }
 
     public static void zoomOut(final float zoom) {
         Camera.zoom -= zoom;
+        zoomProjection();
+    }
+    private static void zoomProjection(){
+        final Matrix4f originWithoutZoomProjection = new Matrix4f().ortho2D(
+                0,
+                TARGET_WIDTH,
+                TARGET_HEIGHT,
+                0);
+        Camera.originWithoutZoomProjection.set(originWithoutZoomProjection);
+
+        final Matrix4f originProjection = new Matrix4f().ortho2D(
+                TARGET_WIDTH * (1 - zoom) / 2,
+                TARGET_WIDTH - (TARGET_WIDTH * (1 - zoom)) / 2,
+                TARGET_HEIGHT - (TARGET_HEIGHT * (1 - zoom)) / 2,
+                TARGET_HEIGHT * (1 - zoom) / 2);
+        Camera.originProjection.set(originProjection);
     }
     public static void setMinDimensions(final float x, final float y){
         minDimensions.x = x;

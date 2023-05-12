@@ -9,4 +9,6 @@ public interface TileMap {
     void init();
     int getWidth();
     int getHeight();
+    int getX();
+    int getY();
 }

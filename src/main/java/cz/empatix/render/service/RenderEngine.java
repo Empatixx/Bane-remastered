@@ -5,7 +5,6 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.Framebuffer;
-import cz.empatix.render.renders.RenderService;
 
 import java.util.*;
 import java.util.stream.Collectors;

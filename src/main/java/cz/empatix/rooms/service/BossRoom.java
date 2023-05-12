@@ -8,11 +8,8 @@ import java.util.List;
 
 public class BossRoom implements Room {
     private final TileMap tileMap;
-    private final int xOffset, yOffset;
     public BossRoom(final int rows,final int cols,final int xOffset,final int yOffset) {
-        tileMap = new CommonTileMap(rows, cols);
-        this.xOffset = xOffset;
-        this.yOffset = yOffset;
+        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset);
     }
     @Override
     public void enterEvent() {
@@ -50,11 +47,12 @@ public class BossRoom implements Room {
         return tileMap.getHeight();
     }
     @Override
-    public int getX(){
-        return xOffset;
+    public int getX() {
+        return tileMap.getX();
     }
+
     @Override
-    public int getY(){
-        return yOffset;
+    public int getY() {
+        return tileMap.getY();
     }
 }

@@ -8,12 +8,11 @@ import java.util.List;
 
 public class PathRoom implements Room{
     private final TileMap tileMap;
-    private final int xOffset, yOffset;
     public PathRoom(final int xOffset,
-                    final int yOffset) {
-        tileMap = new PathTileMap();
-        this.xOffset = xOffset;
-        this.yOffset = yOffset;
+                    final int yOffset,
+                    final int rows,
+                    final int cols) {
+        tileMap = new PathTileMap(xOffset, yOffset, rows, cols);
     }
 
     @Override
@@ -46,11 +45,12 @@ public class PathRoom implements Room{
         return tileMap.getHeight();
     }
     @Override
-    public int getX(){
-        return xOffset;
+    public int getX() {
+        return tileMap.getX();
     }
+
     @Override
-    public int getY(){
-        return yOffset;
+    public int getY() {
+        return tileMap.getY();
     }
 }

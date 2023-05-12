@@ -7,10 +7,21 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PathTileMap implements TileMap{
+    private final int cols;
+    private final int rows;
+    private final int xOffset;
+    private final int yOffset;
     private Tile[][] tiles;
-    public final static int ROWS = 4;
-    public final static int COLS = 4;
 
+    public PathTileMap(final int xOffset,
+                       final int yOffset,
+                       final int rows,
+                       final int cols) {
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+        this.cols = cols;
+        this.rows = rows;
+    }
     @Override
     public List<Drawable> toRender() {
         final List<Tile> tiles = Arrays.stream(this.tiles)
@@ -26,10 +37,20 @@ public class PathTileMap implements TileMap{
 
     @Override
     public int getWidth(){
-        return COLS * Tile.TILE_SIZE * Tile.SCALE;
+        return cols * Tile.TILE_SIZE * Tile.SCALE;
     }
     @Override
     public int getHeight(){
-        return ROWS * Tile.TILE_SIZE * Tile.SCALE;
+        return rows * Tile.TILE_SIZE * Tile.SCALE;
+    }
+
+    @Override
+    public int getX() {
+        return xOffset;
+    }
+
+    @Override
+    public int getY() {
+        return yOffset;
     }
 }

@@ -4,7 +4,7 @@ import cz.empatix.postprocessing.domain.*;
 import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.Framebuffer;
-import cz.empatix.render.renders.RenderService;
+import cz.empatix.render.service.RenderService;
 
 import java.util.ArrayList;
 import java.util.List;
