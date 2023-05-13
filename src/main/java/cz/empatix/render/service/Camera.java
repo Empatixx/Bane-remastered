@@ -11,7 +11,7 @@ import static cz.empatix.common.handlers.WindowHandler.TARGET_WIDTH;
 
 public class Camera {
     private static float zoom = 1f;
-    private static final float TWEEN = 0.1f;
+    private static final float TWEEN = 0.025f;
     private final static InterpolatedPosition minDimensions = new InterpolatedPosition();
     private static final InterpolatedPosition maxDimensions = new InterpolatedPosition();
     private static final InterpolatedPosition interpolatedPosition = new InterpolatedPosition();
@@ -114,7 +114,7 @@ public class Camera {
         minDimensions.setPosition((x - minDimensions.getX()) * TWEEN + minDimensions.getX(), (y - minDimensions.getY()) * TWEEN + minDimensions.getY());
     }
     public static void setSmoothlyMaxDimensions(final int x,final int y) {
-        maxDimensions.setPosition((x - maxDimensions.getX()) * TWEEN + maxDimensions.getX(), (y - maxDimensions.getY()) * TWEEN + maxDimensions.getY());
+        maxDimensions.setPosition((x - maxDimensions.getX() - TARGET_WIDTH) * TWEEN + maxDimensions.getX(), (y - maxDimensions.getY() - TARGET_HEIGHT) * TWEEN + maxDimensions.getY());
     }
     public static void setMinDimensions(final int x,final int y) {
         minDimensions.setPosition(x, y);

@@ -53,8 +53,8 @@ public class MapService {
             final int xMax = currentRoom.getMaxX();
             final int yMax = currentRoom.getMaxY();
 
-            Camera.setMinDimensions(xMin, yMin);
-            Camera.setMaxDimensions(xMax, yMax);
+            Camera.setSmoothlyMinDimensions(xMin, yMin);
+            Camera.setSmoothlyMaxDimensions(xMax, yMax);
         } catch (RuntimeException e){
             LOGGER.error("No room found!", e);
         }

@@ -63,12 +63,12 @@ public class PathRoomGenInfo extends RoomGenInfo {
                 minX = parent.getXOffset();
                 maxX = parent.getXOffset() + parent.getWidth();
 
-                minY = -Integer.MAX_VALUE;
-                maxY = Integer.MAX_VALUE;
+                minY = Math.min(parent.getYOffset(), child.getYOffset());
+                maxY = Math.max(parent.getYOffset() + parent.getHeight(), child.getYOffset() + child.getHeight());
             }
             case LEFT, RIGHT -> {
-                minX = -Integer.MAX_VALUE;
-                maxX = Integer.MAX_VALUE;
+                minX = Math.min(parent.getXOffset(), child.getXOffset());
+                maxX = Math.max(parent.getXOffset() + parent.getWidth(), child.getXOffset() + child.getWidth());
 
                 minY = parent.getYOffset();
                 maxY = parent.getYOffset() + parent.getHeight();
