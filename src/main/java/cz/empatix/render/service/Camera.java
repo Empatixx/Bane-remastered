@@ -10,7 +10,7 @@ import static cz.empatix.common.handlers.WindowHandler.TARGET_HEIGHT;
 import static cz.empatix.common.handlers.WindowHandler.TARGET_WIDTH;
 
 public class Camera {
-    private static float zoom = 1;
+    private static float zoom = 10f;
     private static final float TWEEN = 0.1f;
     private final static Vector2f minDimensions = new Vector2f(0, 0);
     private static final Vector2f maxDimensions = new Vector2f(0, 0);

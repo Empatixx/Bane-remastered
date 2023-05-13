@@ -11,8 +11,9 @@ public class PathRoom implements Room{
     public PathRoom(final int xOffset,
                     final int yOffset,
                     final int rows,
-                    final int cols) {
-        tileMap = new PathTileMap(xOffset, yOffset, rows, cols);
+                    final int cols,
+                    boolean isHorizontal) {
+        tileMap = new PathTileMap(xOffset, yOffset, rows, cols, isHorizontal);
     }
 
     @Override

@@ -12,14 +12,10 @@ import java.util.concurrent.ThreadLocalRandom;
 public abstract class RoomGenInfo {
     private final static Logger LOGGER = LoggerFactory.getLogger(RoomGenInfo.class);
     protected final static int MAX_ROOM_NEIGHBOURS = 4;
-    protected final static int ROOM_ORIENTATION_TOP = 0;
-    protected final static int ROOM_ORIENTATION_BOTTOM = 1;
-    protected final static int ROOM_ORIENTATION_LEFT = 2;
-    protected final static int ROOM_ORIENTATION_RIGHT = 3;
 
     protected int xOffset, yOffset;
     protected int cols, rows;
-    protected List<RoomGenInfo> neighbours = new ArrayList<>(MAX_ROOM_NEIGHBOURS);
+    protected List<RoomGenConnection> connections = new ArrayList<>(MAX_ROOM_NEIGHBOURS);
 
     public abstract void initDimensions();
 
@@ -32,12 +28,22 @@ public abstract class RoomGenInfo {
         this.yOffset = yOffset;
     }
 
-    public void addNeighbour(final RoomGenInfo neighbour) {
-        neighbours.add(neighbour);
+    public void addNeighbour(final RoomGenInfo neighbour, final RoomDirection dir) {
+        connections.add(new RoomGenConnection(neighbour, dir));
     }
 
     public List<RoomGenInfo> getNeighbours() {
-        return neighbours;
+        return connections.stream()
+                .map(RoomGenConnection::roomGenInfo)
+                .toList();
+    }
+    public List<RoomGenConnection> getConnections() {
+        return connections;
+    };
+    public boolean hasNeighbourInDirection(final RoomDirection dir) {
+        return connections
+                .stream()
+                .anyMatch(connection -> connection.direction() == dir);
     }
 
     public int getWidthCenter() {
@@ -76,21 +82,24 @@ public abstract class RoomGenInfo {
 
         final int newOffsetX, newOffsetY;
 
-        switch (orientation) {
-            case ROOM_ORIENTATION_TOP -> {
+        final int pathWidth = PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;
+        final int pathHeight = PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;
+
+        switch (RoomDirection.getRandom()) {
+            case TOP -> {
                 newOffsetX = parentWidthCenter - selfWidthCenter + parent.getXOffset();
-                newOffsetY = parent.getYOffset() - parent.getHeight() - PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;;
+                newOffsetY = parent.getYOffset() - parent.getHeight() - pathHeight;
             }
-            case ROOM_ORIENTATION_BOTTOM -> {
+            case BOTTOM -> {
                 newOffsetX = parentWidthCenter - selfWidthCenter + parent.getXOffset();
-                newOffsetY = parent.getYOffset() + parent.getHeight() + PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;;
+                newOffsetY = parent.getYOffset() + parent.getHeight() + pathHeight;
             }
-            case ROOM_ORIENTATION_LEFT -> {
-                newOffsetX = parent.getXOffset() - parent.getWidth() - PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;
+            case LEFT -> {
+                newOffsetX = parent.getXOffset() - parent.getWidth() - pathWidth;
                 newOffsetY = parentHeightCenter - selfHeightCenter + parent.getYOffset();
             }
-            case ROOM_ORIENTATION_RIGHT -> {
-                newOffsetX = parent.getXOffset() + parent.getWidth() - PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;;
+            case RIGHT -> {
+                newOffsetX = parent.getXOffset() + parent.getWidth() - pathWidth;
                 newOffsetY = parentHeightCenter - selfHeightCenter + parent.getYOffset();
             }
             default -> throw new IllegalStateException("Unexpected value: " + orientation);
@@ -106,5 +115,11 @@ public abstract class RoomGenInfo {
                 this.getXOffset() + this.getWidth() > other.getXOffset() &&
                 this.getYOffset() < other.getYOffset() + other.getHeight() &&
                 this.getYOffset() + this.getHeight() > other.getYOffset();
+    }
+
+    public List<RoomDirection> getAvailableDirections() {
+        final List<RoomDirection> availableDirections = new ArrayList<>(List.of(RoomDirection.values()));
+        availableDirections.removeIf(this::hasNeighbourInDirection);
+        return availableDirections;
     }
 }

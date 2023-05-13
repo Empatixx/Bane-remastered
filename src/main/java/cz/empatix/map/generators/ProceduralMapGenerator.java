@@ -3,8 +3,8 @@ package cz.empatix.map.generators;
 import com.google.common.base.Preconditions;
 import cz.empatix.map.domain.*;
 import cz.empatix.map.service.MapService;
-import cz.empatix.rooms.service.PathRoom;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.tiles.domain.Tile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +50,10 @@ public class ProceduralMapGenerator implements MapGenerator {
         treasureRooms.forEach(RoomGenInfo::initDimensions);
 
         setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
-        setPositionForRooms(startRoomGenInfo);
-
         final List<PathRoomGenInfo> pathsRoom = generatePaths(startRoomGenInfo);
+
+        pathsRoom.forEach(RoomGenInfo::initDimensions);
+
         final List<? extends RoomGenInfo> allRooms = Stream.of(List.of(startRoomGenInfo), normalRooms, shopRooms, bossRooms, treasureRooms)
                 .flatMap(List::stream)
                 .toList();
@@ -73,41 +74,60 @@ public class ProceduralMapGenerator implements MapGenerator {
         final List<PathRoomGenInfo> paths = new ArrayList<>();
 
         final Queue<RoomGenInfo> queue = new ArrayDeque<>(TOTAL_ROOMS);
-        final Set<RoomGenInfo> alreadyTraversed = new HashSet<>(TOTAL_ROOMS);
+        final Set<RoomGenInfo> usedRooms = new HashSet<>(TOTAL_ROOMS);
 
         queue.add(startRoomGenInfo);
-        while(!queue.isEmpty()){
+        while (!queue.isEmpty()) {
             final RoomGenInfo room = queue.poll();
-            final List<RoomGenInfo> availableNeighbours = room.getNeighbours().stream()
-                    .filter(neighbour -> !alreadyTraversed.contains(neighbour))
+            final List<RoomGenConnection> toCreate = room.getConnections()
+                    .stream()
+                    .filter(connection -> !usedRooms.contains(connection.roomGenInfo()))
                     .toList();
-            for(final RoomGenInfo neighbour : availableNeighbours) {
+            for (final RoomGenConnection connection : toCreate) {
                 final PathRoomGenInfo pathRoom = new PathRoomGenInfo();
-                pathRoom.addNeighbour(room);
-                pathRoom.addNeighbour(neighbour);
+                pathRoom.addNeighbour(room, connection.direction());
+                pathRoom.addNeighbour(connection.roomGenInfo(), connection.direction().getOpposite());
                 paths.add(pathRoom);
+                queue.add(connection.roomGenInfo());
             }
-            alreadyTraversed.add(room);
+            usedRooms.add(room);
         }
         return paths;
     }
-    private void setPositionForRooms(final RoomGenInfo parent){
-        final Queue<RoomGenInfo> queue = new ArrayDeque<>(TOTAL_ROOMS);
-        final Set<RoomGenInfo> usedRooms = new HashSet<>(TOTAL_ROOMS);
-        queue.add(parent);
-        while(!queue.isEmpty()){
-            final RoomGenInfo room = queue.poll();
-            usedRooms.add(room);
-            for(final RoomGenInfo neighbour : room.getNeighbours()){
-                if(usedRooms.contains(neighbour)){
-                    continue;
-                }
-                do{
-                    neighbour.setOrientationAround(room);
-                } while(usedRooms.stream().anyMatch(usedRoom -> usedRoom.intersects(neighbour)));
-                queue.add(neighbour);
+
+    private void setOrientationAround(final RoomGenInfo parent,
+                                      final RoomGenInfo child,
+                                      final RoomDirection direction) {
+        child.setCoordinates(0, 0);
+
+        final int newOffsetX, newOffsetY;
+
+        final int pathWidth = PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;
+        final int pathHeight = PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;
+
+        final int centerWidthOffset = (parent.getWidth() - child.getWidth())/2;
+        final int centerHeightOffset = (parent.getHeight() - child.getHeight())/2;
+
+        switch (direction) {
+            case TOP -> {
+                newOffsetX = centerWidthOffset + parent.getXOffset();
+                newOffsetY = parent.getYOffset() - parent.getHeight() - pathHeight;
             }
+            case BOTTOM -> {
+                newOffsetX = centerWidthOffset + parent.getXOffset();
+                newOffsetY = parent.getYOffset() + parent.getHeight() + pathHeight;
+            }
+            case LEFT -> {
+                newOffsetX = parent.getXOffset() - parent.getWidth() - pathWidth;
+                newOffsetY = centerHeightOffset + parent.getYOffset();
+            }
+            case RIGHT -> {
+                newOffsetX = parent.getXOffset() + parent.getWidth() + pathWidth;
+                newOffsetY = centerHeightOffset + parent.getYOffset();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + direction);
         }
+        child.setCoordinates(newOffsetX, newOffsetY);
     }
 
     private void setNeighboursForRooms(final StartRoomGenInfo startRoomGenInfo,
@@ -131,12 +151,28 @@ public class ProceduralMapGenerator implements MapGenerator {
             usedRooms
                     .stream()
                     .filter(RoomGenInfo::canCreateNeighbours)
-                    .min(Comparator.comparingInt(room -> random.nextInt(room.getNeighbours().size())))
+                    .min(Comparator.comparingDouble(room -> random.nextFloat() + 0.3f * room.getConnections().size()))
                     .ifPresentOrElse(room -> {
-                        final RoomGenInfo neighbour = availableRooms.remove();
-                        room.addNeighbour(neighbour);
-                        neighbour.addNeighbour(room);
-                        usedRooms.add(neighbour);
+                        final RoomGenInfo neighbour = availableRooms.peek();
+                        final List<RoomDirection> availableDirections = room.getAvailableDirections();
+                        while(!availableDirections.isEmpty()){
+                            final RoomDirection direction = availableDirections.get(random.nextInt(availableDirections.size()));
+
+                            setOrientationAround(room, neighbour, direction);
+
+                            if(usedRooms
+                                    .stream()
+                                    .anyMatch(r -> r.intersects(neighbour))){
+                                availableDirections.remove(direction);
+                            } else {
+                                room.addNeighbour(neighbour, direction);
+                                neighbour.addNeighbour(room, direction.getOpposite());
+
+                                availableRooms.remove();
+                                usedRooms.add(neighbour);
+                                return;
+                            }
+                        }
                     }, () -> {
                         LOGGER.error("Fatal error! No room can create neighbours");
                         throw new IllegalStateException("Fatal error! No room can create neighbours");

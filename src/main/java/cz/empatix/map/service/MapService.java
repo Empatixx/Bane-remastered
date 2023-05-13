@@ -15,6 +15,7 @@ public class MapService {
     private final List<Room> rooms;
     private final List<Room> pathRooms;
     private Room currentRoom;
+    private boolean isPathRoom = false;
 
     public MapService(final List<Room> rooms,
                       final List<Room> pathRooms) {
@@ -54,8 +55,8 @@ public class MapService {
             final int width = currentRoom.getWidth();
             final int height = currentRoom.getHeight();
 
-            Camera.setMinDimensions(x,y);
-            Camera.setMaxDimensions(x+width, y+height);
+            Camera.setMinDimensions(x-10000,y-10000);
+            Camera.setMaxDimensions(x+width+10000, y+height+10000);
         } catch (RuntimeException e){
             LOGGER.error("No room found!", e);
         }

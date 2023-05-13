@@ -9,20 +9,19 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
-import cz.empatix.render.attributes.RenderScene;
-import cz.empatix.render.domain.RenderDataType;
-import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderDataType;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
-import java.util.Vector;
 
 public class Player implements Drawable {
     private final StatusBar healthBar;
@@ -35,7 +34,7 @@ public class Player implements Drawable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 38;
-    private final static int MOVE_FORCE = 3000000;
+    private final static int MOVE_FORCE = 30000000;
 
     private boolean left, right, top, bottom;
 

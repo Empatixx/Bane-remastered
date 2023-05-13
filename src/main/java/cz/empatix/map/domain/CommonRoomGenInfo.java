@@ -17,6 +17,6 @@ public class CommonRoomGenInfo extends RoomGenInfo{
 
     @Override
     public boolean canCreateNeighbours() {
-        return neighbours.size() < MAX_ROOM_NEIGHBOURS;
+        return connections.size() < MAX_ROOM_NEIGHBOURS;
     }
 }
