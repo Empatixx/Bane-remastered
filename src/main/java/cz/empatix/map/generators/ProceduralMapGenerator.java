@@ -13,6 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class ProceduralMapGenerator implements MapGenerator {
+    private final static float ROOMS_DENSITY = 0.15f;
     private final static Logger LOGGER = LoggerFactory.getLogger(ProceduralMapGenerator.class);
     private final static int TOTAL_NORMAL_ROOMS = 5;
     private final static int TOTAL_BOSS_ROOMS = 1;
@@ -151,7 +152,7 @@ public class ProceduralMapGenerator implements MapGenerator {
             usedRooms
                     .stream()
                     .filter(RoomGenInfo::canCreateNeighbours)
-                    .min(Comparator.comparingDouble(room -> random.nextFloat() + 0.3f * room.getConnections().size()))
+                    .min(Comparator.comparingDouble(room -> random.nextFloat() + ROOMS_DENSITY * room.getConnections().size()))
                     .ifPresentOrElse(room -> {
                         final RoomGenInfo neighbour = availableRooms.peek();
                         final List<RoomDirection> availableDirections = room.getAvailableDirections();

@@ -15,7 +15,6 @@ public class MapService {
     private final List<Room> rooms;
     private final List<Room> pathRooms;
     private Room currentRoom;
-    private boolean isPathRoom = false;
 
     public MapService(final List<Room> rooms,
                       final List<Room> pathRooms) {
@@ -49,14 +48,13 @@ public class MapService {
                             .findFirst()
                             .orElseThrow(() -> new RuntimeException("Could not match any room for player")));
 
-            final int x = currentRoom.getX();
-            final int y = currentRoom.getY();
+            final int xMin = currentRoom.getMinX();
+            final int yMin = currentRoom.getMinY();
+            final int xMax = currentRoom.getMaxX();
+            final int yMax = currentRoom.getMaxY();
 
-            final int width = currentRoom.getWidth();
-            final int height = currentRoom.getHeight();
-
-            Camera.setMinDimensions(x-10000,y-10000);
-            Camera.setMaxDimensions(x+width+10000, y+height+10000);
+            Camera.setMinDimensions(xMin, yMin);
+            Camera.setMaxDimensions(xMax, yMax);
         } catch (RuntimeException e){
             LOGGER.error("No room found!", e);
         }

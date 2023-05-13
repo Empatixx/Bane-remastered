@@ -1,7 +1,7 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.tiles.tilemaps.CommonTileMap;
+import cz.empatix.tiles.tilemaps.ShopTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.List;
@@ -10,7 +10,7 @@ public class ShopRoom implements Room {
     private final TileMap tileMap;
 
     public ShopRoom(final int rows, final int cols, final int xOffset, final int yOffset) {
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset);
+        tileMap = new ShopTileMap(rows, cols, xOffset, yOffset);
     }
 
     @Override

@@ -33,29 +33,50 @@ public class PathRoomGenInfo extends RoomGenInfo {
         final int newOffsetX, newOffsetY;
 
         final int centerX = (parent.getWidth() - this.getWidth()) / 2;
+        final int centerY = (parent.getHeight() - this.getHeight()) / 2;
 
 
         switch (direction) {
             case TOP -> {
-                newOffsetX = parent.getXOffset() + (parent.getWidth() - this.getWidth()) / 2;
+                newOffsetX = parent.getXOffset() + centerX;
                 newOffsetY = parent.getYOffset() - this.getHeight();
             }
             case BOTTOM -> {
-                newOffsetX = parent.getXOffset() + (parent.getWidth() - this.getWidth()) / 2;
+                newOffsetX = parent.getXOffset() + centerX;
                 newOffsetY = child.getYOffset() - this.getHeight();
             }
             case LEFT -> {
                 newOffsetX = parent.getXOffset() - this.getWidth();
-                newOffsetY = parent.getYOffset() + (parent.getHeight() - this.getHeight()) / 2;
+                newOffsetY = parent.getYOffset() + centerY;
             }
             case RIGHT -> {
                 newOffsetX = child.getXOffset() - this.getWidth();
-                newOffsetY = parent.getYOffset() + (parent.getHeight() - this.getHeight()) / 2;
+                newOffsetY = parent.getYOffset() + centerY;
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + direction);
+        }
+
+        // room dimensions for Camera
+        final int minX, minY, maxX, maxY;
+        switch (direction){
+            case TOP, BOTTOM -> {
+                minX = parent.getXOffset();
+                maxX = parent.getXOffset() + parent.getWidth();
+
+                minY = -Integer.MAX_VALUE;
+                maxY = Integer.MAX_VALUE;
+            }
+            case LEFT, RIGHT -> {
+                minX = -Integer.MAX_VALUE;
+                maxX = Integer.MAX_VALUE;
+
+                minY = parent.getYOffset();
+                maxY = parent.getYOffset() + parent.getHeight();
             }
             default -> throw new IllegalStateException("Unexpected value: " + direction);
         }
         setCoordinates(newOffsetX, newOffsetY);
-        return new PathRoom(xOffset, yOffset, rows, cols, !isHorizontal);
+        return new PathRoom(xOffset, yOffset, rows, cols, minX, minY, maxX, maxY, !isHorizontal);
     }
 
     @Override

@@ -14,6 +14,18 @@ public interface Room {
     int getHeight();
     int getX();
     int getY();
+    default int getMinX(){
+        return getX();
+    }
+    default int getMinY(){
+        return getY();
+    }
+    default int getMaxX(){
+        return getX() + getWidth();
+    }
+    default int getMaxY(){
+        return getY() + getHeight();
+    }
     default boolean isInRoom(final float x, final float y){
         final int xStart = getX();
         final int yStart = getY();

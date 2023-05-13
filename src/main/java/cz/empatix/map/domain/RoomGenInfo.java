@@ -40,7 +40,7 @@ public abstract class RoomGenInfo {
     public List<RoomGenConnection> getConnections() {
         return connections;
     };
-    public boolean hasNeighbourInDirection(final RoomDirection dir) {
+    private boolean hasNeighbourInDirection(final RoomDirection dir) {
         return connections
                 .stream()
                 .anyMatch(connection -> connection.direction() == dir);
