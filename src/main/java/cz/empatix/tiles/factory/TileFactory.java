@@ -37,6 +37,23 @@ public class TileFactory {
 
     private static final int[] FLOOR = {5, 6, 6, 6, 6, 6, 12, 13, 14, 15, 16, 17, 18};
 
+    public Tile[][] createTilemapWithClamp(final boolean[][] clampedMap,
+                                           final int xOffset,
+                                           final int yOffset) {
+        final Tile[][] tileMap = createTileMap(clampedMap, xOffset, yOffset);
+
+        final int cols = tileMap[0].length;
+        final int rows = tileMap.length;
+
+        final Tile[][] tileMapWithoutClamp = new Tile[rows][cols];
+        for(int y = 1; y < rows + 1; y++){
+            for(int x = 1; x < cols + 1; x++){
+                tileMapWithoutClamp[y - 1][x - 1] = tileMap[y][x];
+            }
+        }
+        return tileMapWithoutClamp;
+    }
+
     public Tile[][] createTileMap(final boolean[][] map, final int xOffset, final int yOffset) {
         final Tile[][] tileMap = new Tile[map.length][map[0].length];
         for (int y = 0; y < map.length; y++) {

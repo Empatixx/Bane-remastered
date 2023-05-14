@@ -2,14 +2,11 @@ package cz.empatix.tiles.tilemaps;
 
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
-import cz.empatix.tiles.factory.TileFactory;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class PathTileMap implements TileMap{
-    private static final int WRAPPER = 2;
-    private static final int WRAPPER_START = 0;
     private final int cols;
     private final int rows;
     private final int xOffset;
@@ -38,33 +35,17 @@ public class PathTileMap implements TileMap{
 
     @Override
     public void init() {
-        final boolean[][] map = new boolean[rows+WRAPPER][cols+WRAPPER];
-
-        final int wrapperSize = WRAPPER / 2;
-        final int wrapperStart = 0;
-
-        for(int i = wrapperStart; i < rows+WRAPPER; i++){
-            for(int j = wrapperStart; j < cols+WRAPPER; j++){
-                if(horizontal){
-                    if(i == wrapperStart || i == 1 || i == rows+WRAPPER-1 || i == rows+WRAPPER-2){
-                        map[i][j] = true;
-                    }
-                } else {
-                    if(j == wrapperStart || j == 1 || j == cols+WRAPPER-1 || j == cols+WRAPPER-2){
-                        map[i][j] = true;
-                    }
-                }
+        final boolean[][] map = new boolean[rows][cols];
+        if(horizontal){
+            for(int i = 0; i < rows; i++){
+                map[i][0] = true;
+            }
+        } else {
+            for(int i = 0; i < cols; i++){
+                map[0][i] = true;
             }
         }
-        final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
-        final Tile[][] tileMap = new TileFactory().createTileMap(map, xOffset-tileSize, yOffset-tileSize);
-
-        this.tiles = new Tile[rows][cols];
-        for(int i = wrapperSize; i < rows+wrapperSize; i++){
-            for(int j = wrapperSize; j < cols+wrapperSize; j++){
-                this.tiles[i-wrapperSize][j-wrapperSize] = tileMap[i][j];
-            }
-        }
+        tiles = tileFactory.createTileMap(map, xOffset, yOffset);
     }
 
     @Override

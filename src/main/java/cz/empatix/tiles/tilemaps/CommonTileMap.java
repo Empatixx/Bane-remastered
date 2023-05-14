@@ -4,6 +4,7 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.factory.TileFactory;
+import cz.empatix.tiles.service.BooleanMapUtil;
 
 import java.util.Arrays;
 import java.util.List;
@@ -46,14 +47,7 @@ public class CommonTileMap implements TileMap {
     @Override
     public void init() {
         final TileFactory tileFactory = new TileFactory();
-        boolean[][] map = new boolean[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                if (i == 0 || j == 0 || i == rows - 1 || j == cols - 1) {
-                    map[i][j] = true;
-                }
-            }
-        }
+        final boolean[][] map = BooleanMapUtil.createEmptyMap(rows, cols);
         for (final RoomDirection dir : roomDirections) {
             switch (dir) {
                 case BOTTOM -> {
@@ -78,13 +72,7 @@ public class CommonTileMap implements TileMap {
                 }
             }
         }
-    /*map[5][5] = true;
-        map[6][5] = true;
-        map[5][6] = true;
-        map[6][6] = true;
-*/
-        tiles = tileFactory.createTileMap(map, xOffset, yOffset);
-
+        tileFactory.createTilemapWithClamp(BooleanMapUtil.edgeClamp(map), xOffset - TILE_SIZE, yOffset - TILE_SIZE);
     }
 
     @Override

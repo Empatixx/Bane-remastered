@@ -1,7 +1,6 @@
 package cz.empatix.tiles.tilemaps;
 
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.tiles.factory.TileFactory;
 import cz.empatix.tiles.domain.Tile;
 
 import java.util.Arrays;
@@ -30,9 +29,7 @@ public class ShopTileMap implements TileMap {
 
     @Override
     public void init() {
-        final TileFactory tileFactory = new TileFactory();
         boolean[][] map = new boolean[rows][cols];
-
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
                 if (i == 0 || j == 0 || i == rows - 1 || j == cols - 1) {
