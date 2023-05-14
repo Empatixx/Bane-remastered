@@ -7,11 +7,10 @@ import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.service.StatusBar;
 import cz.empatix.map.generators.ProceduralMapGenerator;
-import cz.empatix.map.generators.StaticMapGenerator;
-import cz.empatix.player.Player;
-import cz.empatix.render.service.Camera;
-import cz.empatix.render.attributes.Drawable;
 import cz.empatix.map.service.MapService;
+import cz.empatix.player.Player;
+import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.service.Camera;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +42,7 @@ public class InGameState extends GameState {
     public void update(final double dt) {
         final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
         final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirectionX,player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirectionY);
+        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirectionX,player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirectionY, (float)dt);
 
         player.update(dt);
         mapService.update(dt, player.getPosition());

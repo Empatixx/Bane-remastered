@@ -23,7 +23,7 @@ public class MapService {
     }
 
     public List<Drawable> toRender(double dt) {
-            return Stream.of(pathRooms, rooms)
+        return Stream.of(pathRooms, rooms)
                 .flatMap(List::stream)
                 .map(Room::toRender)
                 .flatMap(List::stream)
@@ -33,11 +33,11 @@ public class MapService {
     public void update(final double dt,
                        final Vector2f playerPosition) {
         rooms.forEach(room -> room.update(dt));
-        updateCurrentRoom(playerPosition);
+        updateCurrentRoom(playerPosition, (float) dt);
     }
 
-    private void updateCurrentRoom(final Vector2f position) {
-        try{
+    private void updateCurrentRoom(final Vector2f position, float dt) {
+        try {
             currentRoom = pathRooms
                     .stream()
                     .filter(r -> r.isInRoom(position.x(), position.y()))
@@ -53,9 +53,9 @@ public class MapService {
             final int xMax = currentRoom.getMaxX();
             final int yMax = currentRoom.getMaxY();
 
-            Camera.setSmoothlyMinDimensions(xMin, yMin);
-            Camera.setSmoothlyMaxDimensions(xMax, yMax);
-        } catch (RuntimeException e){
+            Camera.setSmoothlyMinDimensions(xMin, yMin, dt);
+            Camera.setSmoothlyMaxDimensions(xMax, yMax, dt);
+        } catch (RuntimeException e) {
             LOGGER.error("No room found!", e);
         }
     }

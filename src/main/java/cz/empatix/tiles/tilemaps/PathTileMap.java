@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PathTileMap implements TileMap{
+    private static final int WRAPPER = 2;
+    private static final int WRAPPER_START = 0;
     private final int cols;
     private final int rows;
     private final int xOffset;
@@ -36,17 +38,33 @@ public class PathTileMap implements TileMap{
 
     @Override
     public void init() {
-        final boolean[][] map = new boolean[rows][cols];
-        for (int i = 0; i < rows; i++) {
-            if (horizontal) {
-                map[i][0] = true;
-                map[i][cols - 1] = true;
-            } else {
-                map[0][i] = true;
-                map[rows - 1][i] = true;
+        final boolean[][] map = new boolean[rows+WRAPPER][cols+WRAPPER];
+
+        final int wrapperSize = WRAPPER / 2;
+        final int wrapperStart = 0;
+
+        for(int i = wrapperStart; i < rows+WRAPPER; i++){
+            for(int j = wrapperStart; j < cols+WRAPPER; j++){
+                if(horizontal){
+                    if(i == wrapperStart || i == 1 || i == rows+WRAPPER-1 || i == rows+WRAPPER-2){
+                        map[i][j] = true;
+                    }
+                } else {
+                    if(j == wrapperStart || j == 1 || j == cols+WRAPPER-1 || j == cols+WRAPPER-2){
+                        map[i][j] = true;
+                    }
+                }
             }
         }
-        tiles = new TileFactory().createTileMap(map, xOffset, yOffset);
+        final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
+        final Tile[][] tileMap = new TileFactory().createTileMap(map, xOffset-tileSize, yOffset-tileSize);
+
+        this.tiles = new Tile[rows][cols];
+        for(int i = wrapperSize; i < rows+wrapperSize; i++){
+            for(int j = wrapperSize; j < cols+wrapperSize; j++){
+                this.tiles[i-wrapperSize][j-wrapperSize] = tileMap[i][j];
+            }
+        }
     }
 
     @Override

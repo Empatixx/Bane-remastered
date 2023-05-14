@@ -12,7 +12,7 @@ public class CommonRoomGenInfo extends RoomGenInfo{
 
     @Override
     public Room constructRoom() {
-       return new CommonRoom(rows, cols, xOffset, yOffset);
+       return new CommonRoom(rows, cols, xOffset, yOffset, getDirections());
     }
 
     @Override

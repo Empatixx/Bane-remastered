@@ -10,7 +10,7 @@ public class StaticMapGenerator implements MapGenerator {
 
     @Override
     public MapService generate() {
-        final CommonRoom commonRoom = new CommonRoom(20, 20, 0, 0);
+        final CommonRoom commonRoom = new CommonRoom(20, 20, 0, 0, List.of());
         commonRoom.init();
         Camera.setMinDimensions(0, 0);
         Camera.setMaxDimensions(commonRoom.getWidth(), commonRoom.getHeight());

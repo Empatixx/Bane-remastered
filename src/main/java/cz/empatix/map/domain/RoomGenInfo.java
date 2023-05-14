@@ -31,7 +31,16 @@ public abstract class RoomGenInfo {
     public void addNeighbour(final RoomGenInfo neighbour, final RoomDirection dir) {
         connections.add(new RoomGenConnection(neighbour, dir));
     }
-
+    public List<RoomDirection> getAvailableDirections() {
+        final List<RoomDirection> availableDirections = new ArrayList<>(List.of(RoomDirection.values()));
+        availableDirections.removeIf(this::hasNeighbourInDirection);
+        return availableDirections;
+    }
+    public List<RoomDirection> getDirections() {
+        return connections.stream()
+                .map(RoomGenConnection::direction)
+                .toList();
+    }
     public List<RoomGenInfo> getNeighbours() {
         return connections.stream()
                 .map(RoomGenConnection::roomGenInfo)
@@ -115,11 +124,5 @@ public abstract class RoomGenInfo {
                 this.getXOffset() + this.getWidth() > other.getXOffset() &&
                 this.getYOffset() < other.getYOffset() + other.getHeight() &&
                 this.getYOffset() + this.getHeight() > other.getYOffset();
-    }
-
-    public List<RoomDirection> getAvailableDirections() {
-        final List<RoomDirection> availableDirections = new ArrayList<>(List.of(RoomDirection.values()));
-        availableDirections.removeIf(this::hasNeighbourInDirection);
-        return availableDirections;
     }
 }

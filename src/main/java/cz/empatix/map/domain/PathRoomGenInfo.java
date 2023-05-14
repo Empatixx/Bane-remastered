@@ -3,6 +3,7 @@ package cz.empatix.map.domain;
 import com.google.common.base.Preconditions;
 import cz.empatix.rooms.service.PathRoom;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.tiles.domain.Tile;
 
 public class PathRoomGenInfo extends RoomGenInfo {
     public final static int MIN_ROWS = 4;
@@ -35,23 +36,28 @@ public class PathRoomGenInfo extends RoomGenInfo {
         final int centerX = (parent.getWidth() - this.getWidth()) / 2;
         final int centerY = (parent.getHeight() - this.getHeight()) / 2;
 
+        final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
+
+        // to tile based sizes
+        final int shiftCenterX = centerX % tileSize;
+        final int shiftCenterY = centerY % tileSize;
 
         switch (direction) {
             case TOP -> {
-                newOffsetX = parent.getXOffset() + centerX;
+                newOffsetX = parent.getXOffset() - shiftCenterX + centerX;
                 newOffsetY = parent.getYOffset() - this.getHeight();
             }
             case BOTTOM -> {
-                newOffsetX = parent.getXOffset() + centerX;
+                newOffsetX = parent.getXOffset() - shiftCenterX + centerX;
                 newOffsetY = child.getYOffset() - this.getHeight();
             }
             case LEFT -> {
                 newOffsetX = parent.getXOffset() - this.getWidth();
-                newOffsetY = parent.getYOffset() + centerY;
+                newOffsetY = parent.getYOffset() - shiftCenterY + centerY;
             }
             case RIGHT -> {
                 newOffsetX = child.getXOffset() - this.getWidth();
-                newOffsetY = parent.getYOffset() + centerY;
+                newOffsetY = parent.getYOffset() - shiftCenterY + centerY;
             }
             default -> throw new IllegalStateException("Unexpected value: " + direction);
         }
@@ -76,7 +82,7 @@ public class PathRoomGenInfo extends RoomGenInfo {
             default -> throw new IllegalStateException("Unexpected value: " + direction);
         }
         setCoordinates(newOffsetX, newOffsetY);
-        return new PathRoom(xOffset, yOffset, rows, cols, minX, minY, maxX, maxY, !isHorizontal);
+        return new PathRoom(xOffset, yOffset, rows, cols, minX, minY, maxX, maxY, isHorizontal);
     }
 
     @Override

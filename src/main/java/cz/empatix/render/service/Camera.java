@@ -11,9 +11,9 @@ import static cz.empatix.common.handlers.WindowHandler.TARGET_WIDTH;
 
 public class Camera {
     private static float zoom = 1f;
-    private static final float TWEEN = 0.025f;
-    private final static InterpolatedPosition minDimensions = new InterpolatedPosition();
-    private static final InterpolatedPosition maxDimensions = new InterpolatedPosition();
+    private static final float TWEEN = 5f;
+    private final static Vector2f minDimensions = new Vector2f();
+    private static final Vector2f maxDimensions = new Vector2f();
     private static final InterpolatedPosition interpolatedPosition = new InterpolatedPosition();
 
     // optimization so it is always one reference to shaderbindings!
@@ -32,16 +32,17 @@ public class Camera {
     public static Matrix4f getProjection() {
         return projection;
     }
-    public static Matrix4f getOriginProjection(){
+
+    public static Matrix4f getOriginProjection() {
         return originProjection;
     }
-    public static Matrix4f getOriginWithoutZoomProjection(){
+
+    public static Matrix4f getOriginWithoutZoomProjection() {
         return originWithoutZoomProjection;
     }
+
     public static void update(final float dt) {
         interpolatedPosition.update(dt);
-        minDimensions.update(dt);
-        maxDimensions.update(dt);
 
         final Vector2f position = interpolatedPosition.getInterpolatedPosition();
         Matrix4f translate = getOriginProjection().translate(new Vector3f(-position.x(), -position.y(), 0), new Matrix4f());
@@ -49,21 +50,17 @@ public class Camera {
     }
 
     public static void setPosition(final float x, final float y) {
-        final Vector2f minDimensions = Camera.minDimensions.getInterpolatedPosition();
-        final Vector2f maxDimensions = Camera.maxDimensions.getInterpolatedPosition();
-
         final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), x));
         final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), y));
         interpolatedPosition.setPosition(newX, newY);
     }
-    public static void setSmoothlyPosition(final float x, final float y) {
-        final Vector2f minDimensions = Camera.minDimensions.getInterpolatedPosition();
-        final Vector2f maxDimensions = Camera.maxDimensions.getInterpolatedPosition();
 
-        final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), (x - interpolatedPosition.getX()) * TWEEN + interpolatedPosition.getX()));
-        final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), (y - interpolatedPosition.getY()) * TWEEN + interpolatedPosition.getY()));
+    public static void setSmoothlyPosition(final float x, final float y, final float dt) {
+        final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), (x - interpolatedPosition.getX()) * TWEEN * dt + interpolatedPosition.getX()));
+        final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), (y - interpolatedPosition.getY()) * TWEEN * dt + interpolatedPosition.getY()));
         interpolatedPosition.setPosition(newX, newY);
     }
+
     public static float getX() {
         return interpolatedPosition.getInterpolatedX();
     }
@@ -84,6 +81,7 @@ public class Camera {
     public static float getTargetWidth() {
         return TARGET_WIDTH * zoom;
     }
+
     public static float getZoom() {
         return zoom;
     }
@@ -101,7 +99,8 @@ public class Camera {
         Camera.zoom -= zoom;
         zoomProjection();
     }
-    private static void zoomProjection(){
+
+    private static void zoomProjection() {
         final Matrix4f originProjection = new Matrix4f().ortho2D(
                 TARGET_WIDTH * (1 - zoom) / 2,
                 TARGET_WIDTH - (TARGET_WIDTH * (1 - zoom)) / 2,
@@ -110,16 +109,21 @@ public class Camera {
         Camera.originProjection.set(originProjection);
     }
 
-    public static void setSmoothlyMinDimensions(final int x,final int y) {
-        minDimensions.setPosition((x - minDimensions.getX()) * TWEEN + minDimensions.getX(), (y - minDimensions.getY()) * TWEEN + minDimensions.getY());
+    public static void setSmoothlyMinDimensions(final int x, final int y, final float dt) {
+        minDimensions.x = (x - minDimensions.x) * TWEEN * dt + minDimensions.x;
+        minDimensions.y = (y - minDimensions.y) * TWEEN * dt + minDimensions.y;
     }
-    public static void setSmoothlyMaxDimensions(final int x,final int y) {
-        maxDimensions.setPosition((x - maxDimensions.getX() - TARGET_WIDTH) * TWEEN + maxDimensions.getX(), (y - maxDimensions.getY() - TARGET_HEIGHT) * TWEEN + maxDimensions.getY());
+
+    public static void setSmoothlyMaxDimensions(final int x, final int y, final float dt) {
+        maxDimensions.x = (x - maxDimensions.x - TARGET_WIDTH) * TWEEN * dt + maxDimensions.x;
+        maxDimensions.y = (y - maxDimensions.y - TARGET_HEIGHT) * TWEEN * dt + maxDimensions.y;
     }
-    public static void setMinDimensions(final int x,final int y) {
-        minDimensions.setPosition(x, y);
+
+    public static void setMinDimensions(final int x, final int y) {
+        minDimensions.set(x, y);
     }
-    public static void setMaxDimensions(final int x,final int y) {
-        maxDimensions.setPosition(x, y);
+
+    public static void setMaxDimensions(final int x, final int y) {
+        maxDimensions.set(x, y);
     }
 }
