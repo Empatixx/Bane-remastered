@@ -8,11 +8,13 @@ import cz.empatix.tiles.tilemaps.TileMap;
 import java.util.List;
 
 public class CommonRoom implements Room {
+    private final List<RoomDirection> neighbors;
     private final TileMap tileMap;
 
     public CommonRoom(final int rows, final int cols, final int xOffset, final int yOffset,
                       final List<RoomDirection> roomDirections) {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
+        neighbors = roomDirections;
     }
 
     @Override
@@ -27,7 +29,6 @@ public class CommonRoom implements Room {
 
     @Override
     public void init() {
-        tileMap.init();
     }
 
     @Override

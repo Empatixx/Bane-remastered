@@ -46,6 +46,7 @@ public class AudioLoader implements AssetLoader {
                     });
             return total.get();
         } catch (IOException e) {
+            LOGGER.error("Failed to load audio files", e);
             throw new RuntimeException(e);
         } finally {
             LOGGER.info("Loaded {} audio files in {} ms", total.get(), System.currentTimeMillis() - start);

@@ -58,6 +58,7 @@ public class FontLoader implements AssetLoader {
                     });
             return total.get();
         } catch (IOException e) {
+            LOGGER.error("Failed to load font files from {}", PATH);
             throw new RuntimeException(e);
         } finally {
             LOGGER.info("Loaded {} font files in {} ms", total.get(), System.currentTimeMillis() - start);

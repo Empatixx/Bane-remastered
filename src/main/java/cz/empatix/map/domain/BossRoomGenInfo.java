@@ -12,7 +12,7 @@ public class BossRoomGenInfo extends RoomGenInfo{
 
     @Override
     public Room constructRoom() {
-        return new BossRoom(rows, cols, xOffset, yOffset);
+        return new BossRoom(rows, cols, xOffset, yOffset, getDirections());
     }
 
     @Override

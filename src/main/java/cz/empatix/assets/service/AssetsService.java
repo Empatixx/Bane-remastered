@@ -22,7 +22,7 @@ public class AssetsService {
     private static boolean loaded;
 
     public static void loadAssets() {
-        executorService = Executors.newFixedThreadPool(4);
+        executorService = Executors.newWorkStealingPool();
         creators = List.of(
                 new TexturesCreator(),
                 new AudioCreator(),

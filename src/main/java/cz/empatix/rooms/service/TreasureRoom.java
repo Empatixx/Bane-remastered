@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -7,10 +8,13 @@ import cz.empatix.tiles.tilemaps.TileMap;
 import java.util.List;
 
 public class TreasureRoom implements Room {
+    private final List<RoomDirection> neighbors;
     private final TileMap tileMap;
 
-    public TreasureRoom(final int rows, final int cols, final int xOffset, final int yOffset) {
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset);
+    public TreasureRoom(final int rows, final int cols, final int xOffset, final int yOffset,
+                        final List<RoomDirection> roomDirections) {
+        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
+        neighbors = roomDirections;
     }
 
     @Override
@@ -25,7 +29,6 @@ public class TreasureRoom implements Room {
 
     @Override
     public void init() {
-        tileMap.init();
 
     }
 

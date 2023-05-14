@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -7,9 +8,12 @@ import cz.empatix.tiles.tilemaps.TileMap;
 import java.util.List;
 
 public class BossRoom implements Room {
+    private final List<RoomDirection> neighbors;
     private final TileMap tileMap;
-    public BossRoom(final int rows,final int cols,final int xOffset,final int yOffset) {
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset);
+    public BossRoom(final int rows,final int cols,final int xOffset,final int yOffset,
+                    final List<RoomDirection> roomDirections) {
+        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
+        neighbors = roomDirections;
     }
     @Override
     public void enterEvent() {
@@ -23,8 +27,6 @@ public class BossRoom implements Room {
 
     @Override
     public void init() {
-        tileMap.init();
-
     }
 
     @Override

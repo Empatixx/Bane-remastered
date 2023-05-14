@@ -12,7 +12,7 @@ public class ShopRoomGenInfo extends RoomGenInfo {
 
     @Override
     public Room constructRoom() {
-        return new ShopRoom(rows, cols, xOffset, yOffset);
+        return new ShopRoom(rows, cols, xOffset, yOffset, getDirections());
     }
 
     @Override

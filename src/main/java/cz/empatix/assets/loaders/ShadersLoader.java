@@ -47,6 +47,7 @@ public class ShadersLoader implements AssetLoader {
                         total.getAndIncrement();
                     });
         } catch (IOException e) {
+            LOGGER.error("Failed to load shader files", e);
             throw new RuntimeException(e);
         } finally {
             LOGGER.info("Loaded {} shaders in {} ms", total.get(), System.currentTimeMillis() - start);

@@ -12,7 +12,7 @@ public class StartRoomGenInfo extends RoomGenInfo {
 
     @Override
     public Room constructRoom() {
-        return new StartRoom(rows, cols, xOffset, yOffset);
+        return new StartRoom(rows, cols, xOffset, yOffset, getDirections());
     }
 
     @Override

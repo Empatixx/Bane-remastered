@@ -39,7 +39,6 @@ public class PathRoom implements Room {
 
     @Override
     public void init() {
-        tileMap.init();
 
     }
 

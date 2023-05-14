@@ -12,7 +12,7 @@ public class TreasureRoomGenInfo extends RoomGenInfo{
 
     @Override
     public Room constructRoom() {
-        return new TreasureRoom(rows, cols, xOffset, yOffset);
+        return new TreasureRoom(rows, cols, xOffset, yOffset, getDirections());
     }
 
     @Override
