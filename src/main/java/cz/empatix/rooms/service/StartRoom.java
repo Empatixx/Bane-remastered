@@ -1,6 +1,7 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.map.domain.RoomDirection;
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -18,12 +19,12 @@ public class StartRoom implements Room {
     }
 
     @Override
-    public void enterEvent() {
+    public void enterEvent(final Player p) {
 
     }
 
     @Override
-    public void leaveEvent() {
+    public void leaveEvent(final Player p) {
 
     }
 

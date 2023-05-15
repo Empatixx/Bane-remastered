@@ -48,12 +48,13 @@ public class Button implements UIElement {
 
         final TextureAtlas.Entry textureImage = AssetsService.getTexture(texture);
         animation = Animation.builder()
-                .addAnimationState(AnimationState.STATIC, 0, 1, dimensions.x(), dimensions.y(), -1)
-                .addAnimationState(AnimationState.HOVER, 1, 1, dimensions.x(), dimensions.y(), -1)
+                .setTotal(2,1)
+                .addState(AnimationState.STATIC, 0, 1, dimensions.x(), dimensions.y(), -1)
+                .addState(AnimationState.HOVER, 1, 1, dimensions.x(), dimensions.y(), -1)
                 .texture(textureImage)
                 .build();
 
-        animation.setAnimationState(AnimationState.STATIC);
+        animation.setState(AnimationState.STATIC);
 
         this.position = position.sub(new Vector2f(dimensions).div(2f));
         final Vector2f textPosition = new Vector2f(position)
@@ -94,7 +95,7 @@ public class Button implements UIElement {
     @Override
     public void update(final double dt, final double mouseX, final double mouseY) {
         hover = mouseIntersectsUI(mouseX, mouseY);
-        animation.setAnimationState(hover ? AnimationState.HOVER : AnimationState.STATIC);
+        animation.setState(hover ? AnimationState.HOVER : AnimationState.STATIC);
     }
 
     boolean mouseIntersectsUI(final double mouseX, final double mouseY) {

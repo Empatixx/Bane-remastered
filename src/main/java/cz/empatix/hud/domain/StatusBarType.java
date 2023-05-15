@@ -5,10 +5,9 @@ import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector3f;
 
 public enum StatusBarType {
-    HEALTH(19, 8, 56, 4, 3,
-            new Vector3f(0.529f, 0.298f, 0.262f), "ingame/healthBar.tga"),
-    ARMOR(21, 12, 55, 4, 2,
-            new Vector3f(0.603f, 0.670f, 0.709f), "ingame/armorBar.tga");
+    HEALTH(19, 8, 56, 4, 3, new Vector3f(0.529f, 0.298f, 0.262f), "ingame/healthBar.tga"),
+    ARMOR(21, 12, 55, 4, 2, new Vector3f(0.603f, 0.670f, 0.709f), "ingame/armorBar.tga"),
+    BOSS_HEALTH(19, 8,56,4, 4,  new Vector3f(0.529f, 0.298f, 0.262f),  "ingame/bosshealthbar.tga");
     private final TextureAtlas.Entry tex;
     private final Vector3f color;
     private final int xOffset;
@@ -68,4 +67,5 @@ public enum StatusBarType {
     public Vector3f getBarColor() {
         return color;
     }
+
 }

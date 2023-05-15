@@ -16,10 +16,11 @@ public class AnimatedBackground implements HUDElement {
     public AnimatedBackground(final String texture, final int frames) {
         final TextureAtlas.Entry textureImage = AssetsService.getTexture(texture);
         this.animation = Animation.builder()
-                .addAnimationState(AnimationState.STATIC, 0, frames, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 100)
+                .setTotal(1,frames)
+                .addState(AnimationState.STATIC, 0, frames, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 100)
                 .texture(textureImage)
                 .build();
-        this.animation.setAnimationState(AnimationState.STATIC);
+        this.animation.setState(AnimationState.STATIC);
     }
 
     @Override

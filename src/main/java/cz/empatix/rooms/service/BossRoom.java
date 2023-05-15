@@ -1,27 +1,38 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.map.domain.RoomDirection;
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class BossRoom implements Room {
+    private final EnemyService enemyService;
     private final List<RoomDirection> neighbors;
     private final TileMap tileMap;
+    private boolean visited;
     public BossRoom(final int rows,final int cols,final int xOffset,final int yOffset,
                     final List<RoomDirection> roomDirections) {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
         neighbors = roomDirections;
+        enemyService = new EnemyService();
+        visited = false;
     }
     @Override
-    public void enterEvent() {
-
+    public void enterEvent(final Player p) {
+        if(!visited){
+            enemyService.spawnBoss(this);
+            visited = true;
+        }
+        enemyService.setTarget(p);
     }
 
     @Override
-    public void leaveEvent() {
+    public void leaveEvent(final Player p) {
 
     }
 
@@ -31,12 +42,14 @@ public class BossRoom implements Room {
 
     @Override
     public void update(double dt) {
-
+        enemyService.update(dt);
     }
 
     @Override
     public List<Drawable> toRender() {
-        return tileMap.toRender();
+        return Stream.of(tileMap.toRender(), enemyService.toRender())
+                .flatMap(List::stream)
+                .toList();
     }
 
     @Override

@@ -51,15 +51,16 @@ public class Player implements Drawable {
         armor = maxArmor;
 
         animation = Animation.builder()
-                .addAnimationState(AnimationState.IDLE, 0, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
-                .addAnimationState(AnimationState.RIGHT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
-                .addAnimationState(AnimationState.LEFT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100, true)
-                .addAnimationState(AnimationState.BOTTOM_MOVE, 2, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
-                .addAnimationState(AnimationState.TOP_MOVE, 3, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
+                .setTotal(4,6)
+                .addState(AnimationState.IDLE, 0, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
+                .addState(AnimationState.RIGHT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
+                .addState(AnimationState.LEFT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100, true)
+                .addState(AnimationState.BOTTOM_MOVE, 2, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
+                .addState(AnimationState.TOP_MOVE, 3, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/player.tga"))
                 .scale(SCALE)
                 .build();
-        animation.setAnimationState(AnimationState.IDLE);
+        animation.setState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
         physicsBody.setTranslation(500, 500);
         physicsBody.setTranslation(500, 500);
@@ -191,15 +192,15 @@ public class Player implements Drawable {
         }
 
         if (left) {
-            animation.setAnimationState(AnimationState.LEFT_MOVE);
+            animation.setState(AnimationState.LEFT_MOVE);
         } else if (right) {
-            animation.setAnimationState(AnimationState.RIGHT_MOVE);
+            animation.setState(AnimationState.RIGHT_MOVE);
         } else if (top) {
-            animation.setAnimationState(AnimationState.TOP_MOVE);
+            animation.setState(AnimationState.TOP_MOVE);
         } else if (bottom) {
-            animation.setAnimationState(AnimationState.BOTTOM_MOVE);
+            animation.setState(AnimationState.BOTTOM_MOVE);
         } else {
-            animation.setAnimationState(AnimationState.IDLE);
+            animation.setState(AnimationState.IDLE);
         }
     }
     public Vector2f getPosition(){

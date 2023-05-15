@@ -1,5 +1,6 @@
 package cz.empatix.map.service;
 
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
@@ -31,13 +32,15 @@ public class MapService {
     }
 
     public void update(final double dt,
-                       final Vector2f playerPosition) {
+                       final Player player) {
         rooms.forEach(room -> room.update(dt));
-        updateCurrentRoom(playerPosition, (float) dt);
+        updateCurrentRoom(player, (float) dt);
     }
 
-    private void updateCurrentRoom(final Vector2f position, float dt) {
+    private void updateCurrentRoom(final Player p, float dt) {
         try {
+            final Vector2f position = p.getPosition();
+            final Room previousRoom = currentRoom;
             currentRoom = pathRooms
                     .stream()
                     .filter(r -> r.isInRoom(position.x(), position.y()))
@@ -55,6 +58,12 @@ public class MapService {
 
             Camera.setSmoothlyMinDimensions(xMin, yMin, dt);
             Camera.setSmoothlyMaxDimensions(xMax, yMax, dt);
+
+            if(previousRoom != null && previousRoom != currentRoom) {
+                LOGGER.info("Player entered room: {}", currentRoom);
+                currentRoom.enterEvent(p);
+                previousRoom.leaveEvent(p);
+            }
         } catch (RuntimeException e) {
             LOGGER.error("No room found!", e);
         }

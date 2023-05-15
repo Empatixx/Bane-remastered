@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.tilemaps.PathTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -30,11 +31,11 @@ public class PathRoom implements Room {
     }
 
     @Override
-    public void enterEvent() {
+    public void enterEvent(final Player p) {
     }
 
     @Override
-    public void leaveEvent() {
+    public void leaveEvent(final Player p) {
     }
 
     @Override

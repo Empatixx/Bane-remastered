@@ -1,9 +1,35 @@
 package cz.empatix.enemies.domain;
 
-public interface Enemy {
+import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderDataType;
+
+public interface Enemy extends Drawable {
     void update(double dt);
+    void fixedUpdate(double dt);
     void onDeath();
     void onHit();
+    void hit(final int damage);
+    void heal(final int health);
     void onCollision();
     void onSpawn();
+    boolean isDead();
+    @Override
+    default RenderDataType renderType(){
+        return RenderDataType.DYNAMIC;
+    }
+
+    @Override
+    default RenderScene renderScene(){
+        return RenderScene.SCENE;
+    }
+    @Override
+    default int getZIndex(){
+        return 2;
+    }
+    float getX();
+    float getY();
+    int getWidth();
+    int getHeight();
+    void setPosition(float x, float y);
 }

@@ -9,12 +9,12 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class Animation {
     private final static Logger LOGGER = LoggerFactory.getLogger(Animation.class);
     private final Map<AnimationState, AnimationPart> animationParts;
     private final int totalRows;
+    private final int totalSprites;
     private final int scale;
     private final TextureAtlas.Entry texture;
     private AnimationState currentState;
@@ -23,6 +23,8 @@ public class Animation {
 
     public Animation(final Map<AnimationState, AnimationPart> animationParts,
                      final TextureAtlas.Entry texture,
+                     final int totalRows,
+                     final int totalSprites,
                      final int scale) {
         this.texture = texture;
         this.scale = scale;
@@ -30,15 +32,12 @@ public class Animation {
         this.currentState = AnimationState.IDLE;
         this.currentTextureIndex = 0;
         this.lastAnimation = System.currentTimeMillis();
-        this.totalRows = animationParts.values()
-                .stream()
-                .map(AnimationPart::row)
-                .collect(Collectors.toSet())
-                .size();
+        this.totalRows = totalRows;
+        this.totalSprites = totalSprites;
     }
 
-    public void setAnimationState(final AnimationState state) {
-        if(currentState == state){
+    public void setState(final AnimationState state) {
+        if (currentState == state) {
             return;
         }
         if (!animationParts.containsKey(state)) {
@@ -69,7 +68,7 @@ public class Animation {
         return Vertex.builder()
                 .texture(texture)
                 .texPosition(currentTextureIndex, part.row())
-                .texPositionsDimensions(part.numSprites(), totalRows)
+                .texPositionsDimensions(totalSprites, totalRows)
                 .position(position)
                 .posDimensions(part.width(), part.height())
                 .offset(part.width(), part.height())
@@ -77,6 +76,7 @@ public class Animation {
                 .scale(scale)
                 .buildQuad();
     }
+
     public int getTextureId() {
         return texture.textureId();
     }
@@ -88,16 +88,19 @@ public class Animation {
             int delayBetweenAnimations,
             boolean rotatedX
     ) {
-        public int numSprites(){
+        public int numSprites() {
             return animationDimensions.y();
         }
-        public int row(){
+
+        public int row() {
             return animationDimensions.x();
         }
-        public int width(){
+
+        public int width() {
             return dimensions.x();
         }
-        public int height(){
+
+        public int height() {
             return dimensions.y();
         }
     }
@@ -105,6 +108,7 @@ public class Animation {
     public static class Builder {
         private final Map<AnimationState, AnimationPart> animationParts;
         private TextureAtlas.Entry texture;
+        private int totalRows, totalSprites;
         private int scale;
 
         public Builder() {
@@ -112,21 +116,28 @@ public class Animation {
             scale = 1;
         }
 
-        public Builder addAnimationState(final AnimationState state,
-                                         final int row,
-                                         final int numSprites,
-                                         final int width,
-                                         final int height,
-                                         final int delayBetweenAnimations) {
-            return addAnimationState(state, row, numSprites, width, height, delayBetweenAnimations, false);
+        public Builder setTotal(final int totalRows, final int totalSprites) {
+            this.totalRows = totalRows;
+            this.totalSprites = totalSprites;
+            return this;
         }
-        public Builder addAnimationState(final AnimationState state,
-                                         final int row,
-                                         final int numSprites,
-                                         final int width,
-                                         final int height,
-                                         final int delayBetweenAnimations,
-                                         final boolean rotatedX) {
+
+        public Builder addState(final AnimationState state,
+                                final int row,
+                                final int numSprites,
+                                final int width,
+                                final int height,
+                                final int delayBetweenAnimations) {
+            return addState(state, row, numSprites, width, height, delayBetweenAnimations, false);
+        }
+
+        public Builder addState(final AnimationState state,
+                                final int row,
+                                final int numSprites,
+                                final int width,
+                                final int height,
+                                final int delayBetweenAnimations,
+                                final boolean rotatedX) {
             final AnimationPart part = new AnimationPart(
                     new Vector2i(width, height),
                     new Vector2i(row, numSprites),
@@ -136,20 +147,23 @@ public class Animation {
             animationParts.put(state, part);
             return this;
         }
-        public Builder texture(final TextureAtlas.Entry texture){
+
+        public Builder texture(final TextureAtlas.Entry texture) {
             this.texture = texture;
             return this;
         }
-        public Builder scale(final int scale){
+
+        public Builder scale(final int scale) {
             this.scale = scale;
             return this;
         }
 
         public Animation build() {
-            return new Animation(animationParts, texture, scale);
+            return new Animation(animationParts, texture, totalRows, totalSprites, scale);
         }
     }
-    public static Builder builder(){
+
+    public static Builder builder() {
         return new Builder();
     }
 

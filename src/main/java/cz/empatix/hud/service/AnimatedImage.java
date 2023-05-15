@@ -30,10 +30,11 @@ public class AnimatedImage implements HUDElement {
             position.sub(new Vector2f(dimensions.x(), dimensions.y()).div(2f));
         }
         this.animation = Animation.builder()
-                .addAnimationState(AnimationState.STATIC, 0, frames, dimensions.x(), dimensions.y(), 100)
+                .setTotal(1,frames)
+                .addState(AnimationState.STATIC, 0, frames, dimensions.x(), dimensions.y(), 100)
                 .texture(texture)
                 .build();
-        this.animation.setAnimationState(AnimationState.STATIC);
+        this.animation.setState(AnimationState.STATIC);
         this.position = position;
     }
 
