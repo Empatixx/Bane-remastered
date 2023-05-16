@@ -78,6 +78,7 @@ public class InGameState extends GameState {
 
     @Override
     public void mousePressed(int button) {
+        player.setHealth(player.getHealth() - 1);
     }
 
     @Override

@@ -8,7 +8,7 @@ import cz.empatix.render.domain.RenderData;
 public class Snake implements Enemy{
     private final static int DIMENSION_WIDTH = 64;
     private final static int DIMENSION_HEIGHT = 64;
-    private final static int SCALE = 3;
+    private final static int SCALE = 2;
     private final static int DEFAULT_HEALTH = 8;
     private final Animation animation;
     private final Enemy enemyImpl;

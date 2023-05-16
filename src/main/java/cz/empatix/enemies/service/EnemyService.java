@@ -33,23 +33,25 @@ public class EnemyService {
     }
     public void spawnEnemy(final Room room) {
         final Enemy e = enemyFactory.createEnemy();
-        addToRoom(room, e);
-    }
 
-    public void spawnBoss(final Room room) {
-        final Enemy e = enemyFactory.createBoss();
-        addToRoom(room, e);
-    }
-
-    private void addToRoom(Room room, Enemy e) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
-
         final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
 
         final float x = room.getX() + tileSize + random.nextInt(room.getWidth() - e.getWidth() - tileSize*2);
         final float y = room.getY() + tileSize + random.nextInt(room.getHeight() - e.getHeight() - tileSize*2);
-
         e.setPosition(x, y);
+
         enemies.add(e);
     }
+
+    public void spawnBoss(final Room room) {
+        final Enemy e = enemyFactory.createBoss();
+
+        final float x = room.getX() + room.getWidth()/2f - e.getWidth()/2f;
+        final float y = room.getY() + room.getHeight()/2f - e.getHeight()/2f;
+        e.setPosition(x, y);
+
+        enemies.add(e);
+    }
+
 }

@@ -9,6 +9,7 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.postprocessing.domain.RedVignette;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.RenderScene;
 import cz.empatix.render.domain.Animation;
@@ -99,6 +100,7 @@ public class Player implements Drawable {
         if (this.health < 0) {
             this.health = 0;
         }
+        RedVignette.setMaxVignette();
     }
 
     public void setArmor(final int armor) {

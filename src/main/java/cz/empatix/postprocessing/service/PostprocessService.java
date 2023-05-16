@@ -22,6 +22,7 @@ public class PostprocessService {
         postprocesses.add(new Fade());
         postprocesses.add(new ForwardLightning());
         postprocesses.add(new GaussianBlur());
+        postprocesses.add(new RedVignette());
 
         fallbackPostprocess = new NoPostprocessing();
         this.renderService = renderService;
