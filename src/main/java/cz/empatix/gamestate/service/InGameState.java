@@ -74,6 +74,8 @@ public class InGameState extends GameState {
     @Override
     public void keyReleased(int key) {
         player.keyReleased(key);
+        player.setHealth(player.getHealth() + 1);
+
     }
 
     @Override
@@ -83,7 +85,6 @@ public class InGameState extends GameState {
 
     @Override
     public void mouseReleased(int button) {
-
     }
 
     @Override

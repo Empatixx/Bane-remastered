@@ -25,18 +25,18 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
 public class Player implements Drawable {
-    private final StatusBar healthBar;
-    private final StatusBar armorBar;
-    private final Animation animation;
-    private final PhysicsBody physicsBody;
-    private final LightSource lightSource;
     private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 38;
     private final static int MOVE_FORCE = 30000000;
-
+    private final static float LOW_HP_THRESHOLD = 0.3f;
+    private final StatusBar healthBar;
+    private final StatusBar armorBar;
+    private final Animation animation;
+    private final PhysicsBody physicsBody;
+    private final LightSource lightSource;
     private boolean left, right, top, bottom;
 
     private int maxHealth;
@@ -86,6 +86,12 @@ public class Player implements Drawable {
                 physicsBody.getTranslationY() + DIMENSION_HEIGHT * SCALE / 2);
         healthBar.update(dt);
         armorBar.update(dt);
+
+        if((float) health / maxHealth < LOW_HP_THRESHOLD) {
+            RedVignette.setTimeBased(true);
+        } else {
+            RedVignette.setTimeBased(false);
+        }
     }
 
     public void fixedUpdate(final double dt) {
@@ -100,7 +106,6 @@ public class Player implements Drawable {
         if (this.health < 0) {
             this.health = 0;
         }
-        RedVignette.setMaxVignette();
     }
 
     public void setArmor(final int armor) {

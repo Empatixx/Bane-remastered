@@ -30,8 +30,7 @@ public class RenderService {
         drawableData
                 .stream()
                 .filter(d -> Objects.nonNull(d.renderData()))
-                .sorted(Comparator.comparingInt(DrawableData::zIndex))
-                .collect(Collectors.groupingBy(DrawableData::zIndex, LinkedHashMap::new, Collectors.toList()))
+                .collect(Collectors.groupingBy(DrawableData::zIndex))
                 .forEach(this::renderDataByZIndex);
     }
 
