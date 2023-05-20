@@ -1,4 +1,4 @@
-package cz.empatix.render.attributes;
+package cz.empatix.render.domain;
 
 public enum RenderScene {
     SCENE,

@@ -4,7 +4,7 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.domain.Vertex;

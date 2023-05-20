@@ -1,10 +1,11 @@
 package cz.empatix.render.service;
 
 import cz.empatix.postprocessing.service.PostprocessService;
-import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.RenderScene;
-import cz.empatix.render.domain.DrawableData;
+import cz.empatix.render.attributes.*;
 import cz.empatix.render.domain.Framebuffer;
+import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.grouping.RenderableGroup;
+import cz.empatix.render.domain.grouping.SingleRenderableGroup;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,20 +23,20 @@ public class RenderEngine {
         this.postprocessService = new PostprocessService(renderService);
     }
 
-    public void render(final List<Drawable> drawables,
+    public void render(final List<Renderable> renderables,
                        final double dt) {
-        final Map<RenderScene, List<DrawableData>> drawableData = findAllDrawables(drawables)
+        final Map<RenderScene, List<RenderableGroup>> renderScenes = findAllDrawables(renderables)
                 .stream()
-                .map(DrawableData::from)
-                .collect(Collectors.groupingBy(DrawableData::target));
+                .map(Renderable::getRenderableGroup)
+                .collect(Collectors.groupingBy(RenderableGroup::getRenderScene));
         Camera.update((float) dt);
 
         sceneFbo.bind();
-        renderService.render(drawableData.get(RenderScene.SCENE));
+        renderService.render(renderScenes.get(RenderScene.SCENE));
         sceneFbo.unbind();
 
         hudFbo.bind();
-        renderService.render(drawableData.get(RenderScene.HUD));
+        renderService.render(renderScenes.get(RenderScene.HUD));
         hudFbo.unbind();
 
         postprocessService.process(sceneFbo, RenderScene.SCENE, (float) dt);
@@ -46,13 +47,13 @@ public class RenderEngine {
         hudFbo.flush();
     }
 
-    private List<Drawable> findAllDrawables(final List<Drawable> drawable) {
-        final List<Drawable> allDrawables = new ArrayList<>(drawable);
-        final Queue<Drawable> drawableQueue = new LinkedList<>(drawable);
+    private List<Renderable> findAllDrawables(final List<Renderable> renderables) {
+        final List<Renderable> allDrawables = new ArrayList<>(renderables);
+        final Queue<Renderable> drawableQueue = new LinkedList<>(renderables);
 
         while (!drawableQueue.isEmpty()) {
-            final Drawable current = drawableQueue.poll();
-            final List<Drawable> subDrawables = current.getSubDrawables();
+            final Renderable current = drawableQueue.poll();
+            final List<Renderable> subDrawables = current.getSubRenderables();
             allDrawables.addAll(subDrawables);
             drawableQueue.addAll(subDrawables);
         }

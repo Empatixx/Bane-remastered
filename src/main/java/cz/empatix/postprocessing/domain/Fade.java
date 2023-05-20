@@ -1,6 +1,6 @@
 package cz.empatix.postprocessing.domain;
 
-import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.FadeBinding;

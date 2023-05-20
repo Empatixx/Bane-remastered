@@ -1,7 +1,7 @@
 package cz.empatix.ui;
 
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.RenderDataType;
 
 public interface UIElement extends Drawable {

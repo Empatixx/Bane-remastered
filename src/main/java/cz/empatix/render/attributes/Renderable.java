@@ -1,5 +1,10 @@
 package cz.empatix.render.attributes;
 
-public interface Renderable {
+import cz.empatix.render.domain.grouping.RenderableGroup;
 
+import java.util.List;
+
+public interface Renderable {
+    RenderableGroup getRenderableGroup();
+    List<Renderable> getSubRenderables();
 }

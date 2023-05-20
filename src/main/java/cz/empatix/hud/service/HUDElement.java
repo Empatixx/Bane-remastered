@@ -1,7 +1,7 @@
 package cz.empatix.hud.service;
 
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.RenderDataType;
 
 public interface HUDElement extends Drawable {

@@ -1,6 +1,6 @@
 package cz.empatix.assets.domain.font;
 
-import cz.empatix.render.attributes.RenderScene;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;

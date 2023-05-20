@@ -2,6 +2,7 @@ package cz.empatix.render.service;
 
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderDataType;
+import cz.empatix.render.domain.grouping.RenderableGroup;
 import cz.empatix.render.renders.DynamicRenderer;
 import cz.empatix.render.renders.Renderer;
 import cz.empatix.render.renders.StaticRenderer;
@@ -23,11 +24,11 @@ public class RenderService {
     public void render(final DrawableData drawableData){
         render(List.of(drawableData));
     }
-    public void render(final List<DrawableData> drawableData) {
-        if(drawableData == null || drawableData.isEmpty()){
+    public void render(final List<RenderableGroup> renderableGroups) {
+        if(renderableGroups == null || renderableGroups.isEmpty()){
             return;
         }
-        drawableData
+        renderableGroups
                 .stream()
                 .filter(d -> Objects.nonNull(d.renderData()))
                 .collect(Collectors.groupingBy(DrawableData::zIndex))
