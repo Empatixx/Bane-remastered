@@ -2,7 +2,6 @@ package cz.empatix.ui;
 
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.RenderDataType;
 
 public interface UIElement extends Drawable {
     void update(double dt, double mouseX, double mouseY);
@@ -16,10 +15,6 @@ public interface UIElement extends Drawable {
     @Override
     default RenderScene renderScene() {
         return RenderScene.HUD;
-    }
-    @Override
-    default RenderDataType renderType() {
-        return RenderDataType.DYNAMIC;
     }
 
 }

@@ -11,11 +11,11 @@ import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
@@ -119,7 +119,7 @@ public class Player implements Drawable {
     }
 
     @Override
-    public List<Drawable> getSubDrawables() {
+    public List<Renderable> getSubRenderables() {
         return List.of(healthBar, armorBar);
     }
 
@@ -137,10 +137,6 @@ public class Player implements Drawable {
         return RenderScene.SCENE;
     }
 
-    @Override
-    public RenderDataType renderType() {
-        return RenderDataType.DYNAMIC;
-    }
 
     @Override
     public boolean canRender() {

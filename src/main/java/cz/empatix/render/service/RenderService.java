@@ -1,57 +1,44 @@
 package cz.empatix.render.service;
 
 import cz.empatix.render.domain.DrawableData;
-import cz.empatix.render.domain.RenderDataType;
 import cz.empatix.render.domain.grouping.RenderableGroup;
 import cz.empatix.render.renders.DynamicRenderer;
-import cz.empatix.render.renders.Renderer;
-import cz.empatix.render.renders.StaticRenderer;
 
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class RenderService {
-    private final Map<RenderDataType, Renderer> renderers;
+    private final DynamicRenderer renderer = new DynamicRenderer();
 
-    public RenderService() {
-        final EnumMap<RenderDataType, Renderer> map = new EnumMap<>(RenderDataType.class) {{
-            put(RenderDataType.DYNAMIC, new DynamicRenderer());
-            put(RenderDataType.STATIC, new StaticRenderer());
-        }};
-        renderers = Collections.unmodifiableMap(map);
-    }
-
-    public void render(final DrawableData drawableData){
+    public void render(final RenderableGroup drawableData) {
         render(List.of(drawableData));
     }
+
     public void render(final List<RenderableGroup> renderableGroups) {
-        if(renderableGroups == null || renderableGroups.isEmpty()){
+        if (renderableGroups == null || renderableGroups.isEmpty()) {
+            return;
+        }
+        if (renderableGroups.size() == 1){
+            renderer.render(renderableGroups.get(0).getDrawableData(), renderableGroups.get(0).getShaderBinding(), renderableGroups.get(0).getZIndex());
             return;
         }
         renderableGroups
                 .stream()
-                .filter(d -> Objects.nonNull(d.renderData()))
-                .collect(Collectors.groupingBy(DrawableData::zIndex))
+                .collect(Collectors.groupingBy(RenderableGroup::getZIndex))
                 .forEach(this::renderDataByZIndex);
     }
 
     private void renderDataByZIndex(final int zIndex,
-                                    final List<DrawableData> drawableData) {
+                                    final List<RenderableGroup> drawableData) {
         drawableData
                 .stream()
-                .collect(Collectors.groupingBy(DrawableData::type))
-                .forEach((renderDataType, drawablesOfType) -> renderDataByType(renderDataType, zIndex, drawablesOfType));
-    }
-
-    private void renderDataByType(final RenderDataType renderDataType,
-                                  final int zIndex,
-                                  final List<DrawableData> drawableData) {
-        final Renderer renderer = renderers.get(renderDataType);
-        drawableData
-                .stream()
-                .collect(Collectors.groupingBy(d -> d.renderData().shaderBinding()))
+                .collect(Collectors.groupingBy(RenderableGroup::getShaderBinding))
                 .forEach((shaderBinding, drawablesOfType) -> {
-                    renderer.render(drawablesOfType, shaderBinding, zIndex);
+                    final List<DrawableData> drawables = drawablesOfType
+                            .stream()
+                            .flatMap(renderableGroup -> renderableGroup.getDrawableData().stream())
+                            .toList();
+                    renderer.render(drawables, shaderBinding, zIndex);
                 });
     }
 }

@@ -2,7 +2,6 @@ package cz.empatix.enemies.domain;
 
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.RenderDataType;
 
 public interface Enemy extends Drawable {
     void update(double dt);
@@ -14,10 +13,6 @@ public interface Enemy extends Drawable {
     void onCollision();
     void onSpawn();
     boolean isDead();
-    @Override
-    default RenderDataType renderType(){
-        return RenderDataType.DYNAMIC;
-    }
 
     @Override
     default RenderScene renderScene(){

@@ -1,7 +1,7 @@
 package cz.empatix.assets.domain.font;
 
 
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.builders.TextureBuilder;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -21,11 +21,11 @@ public record Font(
         atlas.destroy();
     }
 
-    public List<Drawable> getDrawables(final String text,
-                                       final Vector2f position,
-                                       final Vector3f color,
-                                       final int zDepth) {
-        final List<Drawable> glyphDrawables = new ArrayList<>();
+    public List<Renderable> getDrawables(final String text,
+                                           final Vector2f position,
+                                           final Vector3f color,
+                                           final int zDepth) {
+        final List<Renderable> glyphDrawables = new ArrayList<>();
         final Vector2f positionShifting = new Vector2f(position);
         for (final char c : text.toCharArray()) {
             if (!glyphs.containsKey(c)) {

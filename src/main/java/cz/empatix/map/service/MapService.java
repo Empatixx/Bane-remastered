@@ -2,6 +2,8 @@ package cz.empatix.map.service;
 
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.DrawableBatch;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
 import org.joml.Vector2f;
@@ -9,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MapService {
@@ -23,12 +26,13 @@ public class MapService {
         this.rooms = rooms;
     }
 
-    public List<Drawable> toRender(double dt) {
-        return Stream.of(pathRooms, rooms)
+    public Renderable toRender(double dt) {
+        final List<Drawable> drawables = Stream.of(pathRooms, rooms)
                 .flatMap(List::stream)
                 .map(Room::toRender)
                 .flatMap(List::stream)
-                .toList();
+                .collect(Collectors.toList());
+        return (DrawableBatch) () -> drawables;
     }
 
     public void update(final double dt,

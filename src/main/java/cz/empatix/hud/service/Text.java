@@ -4,7 +4,7 @@ package cz.empatix.hud.service;
 import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -34,17 +34,17 @@ public class Text implements HUDElement {
 
     @Override
     public RenderData renderData() {
-        return null;
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override
-    public List<Drawable> getSubDrawables() {
+    public List<Renderable> getSubRenderables() {
         return font.getDrawables(text, position, color, zIndex);
     }
 
     @Override
     public boolean canRender() {
-        return true;
+        throw new UnsupportedOperationException("Should not be called");
     }
 
     @Override

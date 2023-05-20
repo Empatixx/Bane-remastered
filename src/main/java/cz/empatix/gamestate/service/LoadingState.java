@@ -7,7 +7,7 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.service.AnimatedImage;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ public class LoadingState extends GameState {
     }
 
     @Override
-    public List<Drawable> toRender(final double dt) {
+    public List<Renderable> toRender(final double dt) {
         return List.of(loadingBg, loadingCircle);
     }
 

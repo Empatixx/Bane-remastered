@@ -2,7 +2,7 @@ package cz.empatix.gamestate.domain;
 
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.service.GameStateService;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryStack;
 
@@ -39,7 +39,7 @@ public abstract class GameState {
     public abstract void init();
     public abstract void update(final double dt);
     public abstract void fixedUpdate(double dt);
-    public abstract List<Drawable> toRender(final double dt);
+    public abstract List<Renderable> toRender(final double dt);
     public abstract void cleanUp();
     public abstract void keyPressed(int key);
     public abstract void keyReleased(int key);

@@ -1,6 +1,5 @@
 package cz.empatix.gamestate.service;
 
-import com.google.common.collect.Streams;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
@@ -9,13 +8,14 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.hud.service.Image;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.attributes.Drawable;
 import cz.empatix.ui.Button;
 import cz.empatix.ui.UIElement;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -61,12 +61,15 @@ public class MenuState extends GameState {
     }
 
     @Override
-    public List<Drawable> toRender(final double dt) {
-        return Streams.concat(
-                Stream.of(background),
-                hudElements.stream(),
-                uiElements.stream()
-        ).toList();
+    public List<Renderable> toRender(final double dt) {
+        final List<? extends Renderable> renderable = Stream.of(
+                        List.of(background),
+                        uiElements,
+                        hudElements
+                )
+                .flatMap(Collection::stream)
+                .toList();
+        return List.copyOf(renderable);
     }
 
     @Override

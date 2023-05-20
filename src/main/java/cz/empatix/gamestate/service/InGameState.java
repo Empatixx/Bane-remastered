@@ -9,13 +9,12 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
@@ -54,11 +53,8 @@ public class InGameState extends GameState {
     }
 
     @Override
-    public List<Drawable> toRender(final double dt) {
-        return Stream.concat(
-                mapService.toRender(dt).stream(),
-                Stream.of(player)
-        ).toList();
+    public List<Renderable> toRender(final double dt) {
+        return List.of(mapService.toRender(dt), player);
     }
 
     @Override

@@ -1,9 +1,8 @@
 package cz.empatix.postprocessing.service;
 
 import cz.empatix.postprocessing.domain.*;
-import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.Framebuffer;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.RenderService;
 
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ public class PostprocessService {
 
         if(postprocesses.isEmpty()){
             fallbackPostprocess.setInput(sceneFbo);
-            renderService.render(DrawableData.from(fallbackPostprocess));
+            renderService.render(fallbackPostprocess.getRenderableGroup());
             return;
         }
 
@@ -55,7 +54,7 @@ public class PostprocessService {
             }
 
             postprocess.apply(dt);
-            renderService.render(DrawableData.from(postprocess));
+            renderService.render(postprocess.getRenderableGroup());
 
             if (outputFBO != null) {
                 outputFBO.unbind();

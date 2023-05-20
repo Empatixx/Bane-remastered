@@ -7,7 +7,7 @@ import cz.empatix.hud.service.StatusBar;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
@@ -120,7 +120,7 @@ public class BossImpl implements Enemy {
     }
 
     @Override
-    public List<Drawable> getSubDrawables() {
+    public List<Renderable> getSubRenderables() {
         return List.of(healthBar);
     }
 

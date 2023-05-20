@@ -2,7 +2,7 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -67,8 +67,8 @@ public class KingSlime implements Enemy {
     }
 
     @Override
-    public List<Drawable> getSubDrawables() {
-        return bossImpl.getSubDrawables();
+    public List<Renderable> getSubRenderables() {
+        return bossImpl.getSubRenderables();
     }
 
     @Override

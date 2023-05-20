@@ -1,11 +1,10 @@
 package cz.empatix.assets.domain.font;
 
-import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.RenderDataType;
-import cz.empatix.render.service.Camera;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.TextBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -63,11 +62,6 @@ public record Glyph(
         @Override
         public RenderScene renderScene() {
             return RenderScene.HUD;
-        }
-
-        @Override
-        public RenderDataType renderType() {
-            return RenderDataType.DYNAMIC;
         }
 
         private List<Vertex> vertices() {

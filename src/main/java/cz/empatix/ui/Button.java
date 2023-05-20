@@ -1,14 +1,14 @@
 package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.hud.service.Text;
 import cz.empatix.physics.service.IntersectionResolver;
-import cz.empatix.render.service.Camera;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import cz.empatix.hud.service.Text;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -78,10 +78,9 @@ public class Button implements UIElement {
     }
 
     @Override
-    public List<Drawable> getSubDrawables() {
-        return List.of(text);
+    public List<Renderable> getSubRenderables(){
+        return text.getSubRenderables();
     }
-
     @Override
     public boolean canRender() {
         return true;
