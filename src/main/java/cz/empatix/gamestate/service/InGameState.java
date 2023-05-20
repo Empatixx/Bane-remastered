@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
@@ -54,7 +56,9 @@ public class InGameState extends GameState {
 
     @Override
     public List<Renderable> toRender(final double dt) {
-        return List.of(mapService.toRender(dt), player);
+        return Stream.of(mapService.toRender(dt), List.of(player))
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
     @Override

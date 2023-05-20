@@ -1,11 +1,10 @@
 package cz.empatix.render.service;
 
 import cz.empatix.postprocessing.service.PostprocessService;
-import cz.empatix.render.attributes.*;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.grouping.RenderableGroup;
-import cz.empatix.render.domain.grouping.SingleRenderableGroup;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,6 +27,7 @@ public class RenderEngine {
         final Map<RenderScene, List<RenderableGroup>> renderScenes = findAllDrawables(renderables)
                 .stream()
                 .map(Renderable::getRenderableGroup)
+                .filter(RenderableGroup::isRenderable)
                 .collect(Collectors.groupingBy(RenderableGroup::getRenderScene));
         Camera.update((float) dt);
 

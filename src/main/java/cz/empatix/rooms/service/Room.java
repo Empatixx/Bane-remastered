@@ -1,7 +1,7 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 
 import java.util.List;
 
@@ -10,7 +10,7 @@ public interface Room {
     void leaveEvent(final Player p);
     void init();
     void update(double dt);
-    List<Drawable> toRender();
+    List<Renderable> toRender();
     int getWidth();
     int getHeight();
     int getX();

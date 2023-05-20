@@ -2,7 +2,6 @@ package cz.empatix.render.attributes;
 
 import cz.empatix.render.domain.grouping.BatchRenderableGroup;
 import cz.empatix.render.domain.grouping.RenderableGroup;
-import cz.empatix.render.shaderbindings.ShaderBinding;
 
 import java.util.List;
 
@@ -14,6 +13,8 @@ public interface DrawableBatch extends Renderable {
     }
     @Override
     default List<Renderable> getSubRenderables() {
-        return List.of();
+        return getDrawables().stream()
+                .flatMap(drawable -> drawable.getSubRenderables().stream())
+                .toList();
     }
 }

@@ -18,10 +18,6 @@ public class RenderService {
         if (renderableGroups == null || renderableGroups.isEmpty()) {
             return;
         }
-        if (renderableGroups.size() == 1){
-            renderer.render(renderableGroups.get(0).getDrawableData(), renderableGroups.get(0).getShaderBinding(), renderableGroups.get(0).getZIndex());
-            return;
-        }
         renderableGroups
                 .stream()
                 .collect(Collectors.groupingBy(RenderableGroup::getZIndex))

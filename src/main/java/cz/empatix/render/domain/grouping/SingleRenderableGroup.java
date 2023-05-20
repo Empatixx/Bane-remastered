@@ -32,4 +32,9 @@ public record SingleRenderableGroup(
     public List<DrawableData> getDrawableData() {
         return List.of(drawableData);
     }
+
+    @Override
+    public boolean isRenderable() {
+        return drawableData.canRender();
+    }
 }

@@ -11,4 +11,5 @@ public interface RenderableGroup {
     ShaderBinding getShaderBinding();
     RenderScene getRenderScene();
     List<DrawableData> getDrawableData();
+    boolean isRenderable();
 }

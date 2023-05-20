@@ -1,5 +1,6 @@
 package cz.empatix.render.domain.grouping;
 
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderScene;
@@ -13,6 +14,7 @@ public record BatchRenderableGroup(
     public BatchRenderableGroup(DrawableBatch batch) {
         this(batch.getDrawables()
                 .stream()
+                .filter(Drawable::canRender)
                 .map(DrawableData::from)
                 .toList());
     }
@@ -35,6 +37,11 @@ public record BatchRenderableGroup(
     @Override
     public List<DrawableData> getDrawableData() {
         return drawableData;
+    }
+
+    @Override
+    public boolean isRenderable() {
+        return !drawableData.isEmpty();
     }
 
 }

@@ -2,7 +2,8 @@ package cz.empatix.rooms.service;
 
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.DrawableBatch;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -38,8 +39,8 @@ public class StartRoom implements Room {
     }
 
     @Override
-    public List<Drawable> toRender() {
-        return tileMap.toRender();
+    public List<Renderable> toRender() {
+        return List.of((DrawableBatch) tileMap::toRender);
     }
 
     @Override

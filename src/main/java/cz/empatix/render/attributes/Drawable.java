@@ -2,7 +2,6 @@ package cz.empatix.render.attributes;
 
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.grouping.BatchRenderableGroup;
 import cz.empatix.render.domain.grouping.RenderableGroup;
 import cz.empatix.render.domain.grouping.SingleRenderableGroup;
 
@@ -12,8 +11,8 @@ public interface Drawable extends Renderable
 {
     RenderData renderData();
     RenderScene renderScene();
-    boolean canRender();
     int getZIndex();
+    boolean canRender();
     @Override
     default RenderableGroup getRenderableGroup() {
         return new SingleRenderableGroup(this);

@@ -3,12 +3,12 @@ package cz.empatix.rooms.service;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.DrawableBatch;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 public class CommonRoom implements Room {
     private static final int MAX_ENEMIES = 5;
@@ -50,10 +50,10 @@ public class CommonRoom implements Room {
     }
 
     @Override
-    public List<Drawable> toRender() {
-        return Stream.of(tileMap.toRender(), enemyService.toRender())
-                .flatMap(List::stream)
-                .toList();
+    public List<Renderable> toRender() {
+        final Renderable tiles = (DrawableBatch) tileMap::toRender;
+        final Renderable enemies = (DrawableBatch) enemyService::toRender;
+        return List.of(tiles, enemies);
     }
 
     @Override

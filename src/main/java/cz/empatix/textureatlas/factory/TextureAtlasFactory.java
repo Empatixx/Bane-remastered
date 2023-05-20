@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.SortingMethod;
+import cz.empatix.textureatlas.domain.TextureAtlasBlueprint;
 import cz.empatix.textureatlas.service.TextureAtlasPacker;
 
 import java.util.Comparator;
@@ -19,10 +20,11 @@ public class TextureAtlasFactory {
         Preconditions.checkNotNull(images);
         Preconditions.checkArgument(!images.isEmpty());
         final List<SortingMethod> sortingMethods = List.of(SortingMethod.values());
-        return sortingMethods.stream()
-                .map(method -> createAtlas(images, method))
-                .min(Comparator.comparingInt(RawTextureAtlas::area))
+        final TextureAtlasBlueprint blueprint = sortingMethods.stream()
+                .map(method -> createBlueprint(images, method))
+                .min(Comparator.comparingInt(TextureAtlasBlueprint::area))
                 .orElseThrow(() -> new IllegalStateException("No atlas created"));
+        return packer.pack(images, blueprint);
     }
 
     private Comparator<Map.Entry<String, RawImage>> sortByField(final SortingMethod method) {
@@ -36,8 +38,8 @@ public class TextureAtlasFactory {
         });
     }
 
-    private RawTextureAtlas createAtlas(final Map<String, RawImage> images,
-                                     final SortingMethod method) {
+    private TextureAtlasBlueprint createBlueprint(final Map<String, RawImage> images,
+                                                   final SortingMethod method) {
         final Comparator<Map.Entry<String, RawImage>> comparator = sortByField(method)
                 .reversed();
         final LinkedHashMap<String, RawImage> sorted = Map.copyOf(images)

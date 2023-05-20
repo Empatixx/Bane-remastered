@@ -1,8 +1,6 @@
 package cz.empatix.map.service;
 
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
@@ -26,13 +24,12 @@ public class MapService {
         this.rooms = rooms;
     }
 
-    public Renderable toRender(double dt) {
-        final List<Drawable> drawables = Stream.of(pathRooms, rooms)
+    public List<Renderable> toRender(double dt) {
+        return Stream.of(pathRooms, rooms)
                 .flatMap(List::stream)
                 .map(Room::toRender)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        return (DrawableBatch) () -> drawables;
     }
 
     public void update(final double dt,

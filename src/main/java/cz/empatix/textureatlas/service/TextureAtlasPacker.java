@@ -4,6 +4,7 @@ import cz.empatix.assets.domain.RawImage;
 import cz.empatix.common.initializators.GLInit;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlas;
+import cz.empatix.textureatlas.domain.TextureAtlasBlueprint;
 import cz.empatix.textureatlas.domain.TextureAtlasInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +17,8 @@ public class TextureAtlasPacker {
     private static final int MAX_TEXTURE_SIZE = 23170;
     private static final int BORDER_SIZE = 1; // Added border size constant
 
-    public RawTextureAtlas pack(final Map<String, RawImage> images) {
-        RawTextureAtlas lastSmallestAtlas = null;
+    public TextureAtlasBlueprint pack(final Map<String, RawImage> images) {
+        TextureAtlasBlueprint lastSmallestAtlas = null;
         int targetSize = Math.min(GLInit.TEXTURE2D_MAX_SIZE, MAX_TEXTURE_SIZE);
         boolean failed;
         for (int stepSize = targetSize / 2; stepSize >= TEXTURE_MINSTEPSIZE; stepSize = stepSize / 2) {
@@ -44,11 +45,22 @@ public class TextureAtlasPacker {
         return lastSmallestAtlas;
     }
 
-    private RawTextureAtlas tryPack(final Map<String, RawImage> images,
-                                    final int targetSize) {
-        final Map<String, TextureAtlasInfo> textureInfos = new HashMap<>();
-        final byte[] data = new byte[targetSize * targetSize * TextureAtlas.RGBA_CHANNELS];
+    public RawTextureAtlas pack(final Map<String, RawImage> images,
+                                final TextureAtlasBlueprint blueprint) {
+        final byte[] atlas = new byte[blueprint.targetSize() * blueprint.targetSize() * 4];
+        final Map<String, TextureAtlasInfo> atlasInfoMap = new HashMap<>();
+        images.forEach((name, image) -> {
+            final int x = blueprint.getX(name);
+            final int y = blueprint.getY(name);
+            addImageToAtlas(atlas, image.channels(), blueprint.targetSize(), image, x, y);
+            atlasInfoMap.put(name, new TextureAtlasInfo(x, y, image.width(), image.height()));
+        });
+        return new RawTextureAtlas(atlas, blueprint.targetSize(), blueprint.targetSize(), atlasInfoMap);
+    }
 
+    private TextureAtlasBlueprint tryPack(final Map<String, RawImage> images,
+                                          final int targetSize) {
+        final TextureAtlasBlueprint blueprint = new TextureAtlasBlueprint(targetSize);
         final Queue<Rect> emptyRects = new PriorityQueue<>(images.size(), Comparator.comparingInt(Rect::height).thenComparing(Rect::width));
         emptyRects.add(new Rect(0, 0, targetSize, targetSize));
         images.forEach((name, image) -> {
@@ -57,7 +69,7 @@ public class TextureAtlasPacker {
                     .filter(r -> r.canBeFilled(image, BORDER_SIZE))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No empty rect found"));
-            textureInfos.put(name, new TextureAtlasInfo(rect.x, rect.y, image.width(), image.height()));
+            blueprint.addTexture(name, rect.x, rect.y);
             emptyRects.remove(rect);
             final int x = rect.x;
             final int y = rect.y;
@@ -73,11 +85,8 @@ public class TextureAtlasPacker {
             if (remainingWidth > 0) {
                 emptyRects.add(new Rect(x + textureWidth + BORDER_SIZE, y, remainingWidth, textureHeight));
             }
-            addImageToAtlas(data, image.channels(), targetSize, image, x, y);
-
         });
-
-        return new RawTextureAtlas(data, targetSize, targetSize, textureInfos);
+        return blueprint;
     }
 
     private void addImageToAtlas(final byte[] data,
@@ -86,7 +95,7 @@ public class TextureAtlasPacker {
                                  final RawImage image,
                                  final int x,
                                  final int y) {
-        switch (channels){
+        switch (channels) {
             case TextureAtlas.RGBA_CHANNELS -> {
                 final int width = image.width();
                 final int height = image.height();
