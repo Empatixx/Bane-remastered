@@ -16,22 +16,27 @@ public class ALInit implements Initializator{
     private long device;
     @Override
     public void init() {
-        final String defaultDeviceName = ALC10.alcGetString(0, ALC10.ALC_DEFAULT_DEVICE_SPECIFIER);
-        if(defaultDeviceName == null){
-            return;
-        }
-        device  = alcOpenDevice(defaultDeviceName);
-        if(device == MemoryUtil.NULL){
-            LOGGER.error("Failed to open the default device.");
+        try{
+            final String defaultDeviceName = ALC10.alcGetString(0, ALC10.ALC_DEFAULT_DEVICE_SPECIFIER);
+            if(defaultDeviceName == null){
+                return;
+            }
+            device  = alcOpenDevice(defaultDeviceName);
+            if(device == MemoryUtil.NULL){
+                LOGGER.error("Failed to open the default device.");
+                canUseAL = false;
+                return;
+            }
+
+
+            final long context = alcCreateContext(device, (int[]) null);
+            alcMakeContextCurrent(context);
+            final ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
+            AL.createCapabilities(alcCapabilities);
+        } catch (Exception e){
+            LOGGER.error("Failed to initialize OpenAL.", e);
             canUseAL = false;
-            return;
         }
-
-
-        final long context = alcCreateContext(device, (int[]) null);
-        alcMakeContextCurrent(context);
-        final ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
-        AL.createCapabilities(alcCapabilities);
     }
 
     @Override
