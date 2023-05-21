@@ -1,3 +1,4 @@
+#version 330
 // Inputs
 in vec2 tex_coords;
 

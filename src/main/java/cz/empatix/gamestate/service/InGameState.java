@@ -6,6 +6,7 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.guns.service.GunService;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.player.Player;
@@ -20,8 +21,8 @@ import java.util.stream.Stream;
 
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
-    private EnemyService enemyService;
     private MapService mapService;
+    private GunService gunService;
     private Player player;
 
     public InGameState(final GameStateService gameStateService) {
@@ -34,7 +35,7 @@ public class InGameState extends GameState {
 
         mapService = proceduralMapGenerator.generate();
         player = new Player();
-
+        gunService = new GunService();
 
         AudioService.getInstance().play(Soundtrack.INGAME);
     }
@@ -43,20 +44,22 @@ public class InGameState extends GameState {
     public void update(final double dt) {
         final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
         final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH/2f + mouseDirectionX,player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT/2f + mouseDirectionY, (float)dt);
+        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
 
         player.update(dt);
         mapService.update(dt, player);
+        gunService.update(dt);
     }
 
     @Override
     public void fixedUpdate(double dt) {
         player.fixedUpdate(dt);
+        gunService.fixedUpdate(player.getX(), player.getY(), Camera.getX() + mouseX, Camera.getY() + mouseY, dt);
     }
 
     @Override
     public List<Renderable> toRender(final double dt) {
-        return Stream.of(mapService.toRender(dt), List.of(player))
+        return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }
@@ -80,11 +83,13 @@ public class InGameState extends GameState {
 
     @Override
     public void mousePressed(int button) {
+        gunService.setShooting(true);
         player.setHealth(player.getHealth() - 1);
     }
 
     @Override
     public void mouseReleased(int button) {
+        gunService.setShooting(false);
     }
 
     @Override

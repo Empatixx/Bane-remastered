@@ -13,8 +13,8 @@ public class PhysicsBody {
     private final Transform transform;
     private final Vector2f velocity;
     private final Vector2f force;
-    private final float linearDamping;
-    private final float restitution;
+    private float linearDamping;
+    private float restitution;
     private final int mass;
     public PhysicsBody(final Geometry geometry,
                        final Transform transform,
@@ -54,6 +54,11 @@ public class PhysicsBody {
         this.velocity.x *= linearDamping;
         this.velocity.y *= linearDamping;
     }
+
+    public void setLinearDamping(final float linearDamping) {
+        this.linearDamping = linearDamping;
+    }
+
     public void update(final float dt) {
         transform.update(dt);
     }
