@@ -1,10 +1,10 @@
 package cz.empatix.hud.service;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.service.Camera;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.render.service.Camera;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -33,6 +33,13 @@ public class Image implements HUDElement {
         this.texture = AssetsService.getTexture(textureName);
         this.position = new Vector2f(position);
     }
+    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale){
+        this.dimensions = new Vector2i(texture.width(), texture.height());
+        this.dimensions.x *= scale;
+        this.dimensions.y *= scale;
+        this.texture = texture;
+        this.position = position;
+    }
 
     @Override
     public RenderData renderData() {
@@ -44,14 +51,13 @@ public class Image implements HUDElement {
                         .offset(dimensions.x(), dimensions.y())
                         .buildQuad(),
                 texture.textureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getOriginWithoutZoomProjection())
         );
     }
 
     @Override
     public boolean canRender() {
-        return position.x() + dimensions.x() > Camera.getX() && position.x() < Camera.getTargetWidth() + Camera.getX() &&
-                position.y() + dimensions.y() > Camera.getY() && position.y() < Camera.getTargetHeight() + Camera.getY();
+        return true;
     }
 
     @Override

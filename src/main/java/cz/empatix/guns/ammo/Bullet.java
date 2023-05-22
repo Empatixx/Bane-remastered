@@ -69,10 +69,12 @@ public class Bullet implements Drawable {
                 && position.y() + BULLET_HEIGHT * SCALE > cameraPos.y()
                 && position.y() < cameraPos.y() + cameraDimensions.y();
     }
-    public void setPosition(final float x, final float y){
-        physicsBody.setTranslation(x,y);
+
+    public void setPosition(final float x, final float y) {
+        physicsBody.setTranslation(x, y);
     }
-    public void setDirection(float shooterX, float shooterY, float targetX, float targetY, float inaccuracy) {
+
+    public void setDirection(final float shooterX, final float shooterY, final float targetX, final float targetY, final float inaccuracy) {
         float angleToTarget = (float) Math.atan2(targetY - shooterY, targetX - shooterX);
 
         float randomInaccuracy = inaccuracy * (ThreadLocalRandom.current().nextFloat() - 0.5f);

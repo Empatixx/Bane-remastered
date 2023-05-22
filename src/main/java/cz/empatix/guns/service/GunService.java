@@ -1,14 +1,21 @@
 package cz.empatix.guns.service;
 
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.guns.domain.GunSlots;
 import cz.empatix.guns.domain.Pistol;
+import cz.empatix.hud.service.Image;
+import cz.empatix.hud.service.Text;
 import cz.empatix.render.attributes.Renderable;
+import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GunService {
+    private final Image weaponSlotHud;
+    private final Text ammoCounter;
     private final List<Gun> guns;
     private final GunSlots slots;
 
@@ -18,10 +25,13 @@ public class GunService {
         );
         slots = new GunSlots();
         slots.addGun(guns.get(0));
+        weaponSlotHud = new Image(AssetsService.getTexture("ingame/weaponslot.tga"), new Vector2f(715, 450), 1.5f);
+        ammoCounter = new Text(slots.getCurrentGun().getAmmoCounter(), "PixelFJVerdana12pt.ttf", new Vector2f(885, 515), 10);
     }
 
     public void update(final double dt) {
         guns.forEach(gun -> gun.update(dt));
+        ammoCounter.setText(slots.getCurrentGun().getAmmoCounter());
     }
 
     public void fixedUpdate(final float shooterX, final float shooterY,
@@ -59,13 +69,17 @@ public class GunService {
     }
 
     public List<Renderable> toRender(final double dt) {
-        return guns.stream()
+        final List<Renderable> gunsRenderable = guns.stream()
                 .flatMap(gun -> gun.toRender().stream())
                 .toList();
+        final List<Renderable> renderables = new ArrayList<>(gunsRenderable);
+        renderables.add(weaponSlotHud);
+        renderables.addAll(ammoCounter.getSubRenderables());
+        return renderables;
     }
 
     public void keyPressed(final int button) {
-        if(GLFW.GLFW_KEY_R == button){
+        if (GLFW.GLFW_KEY_R == button) {
             reload();
         }
     }

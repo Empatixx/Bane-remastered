@@ -12,7 +12,7 @@ import org.joml.Vector3f;
 import java.util.List;
 
 public class Text implements HUDElement {
-    private final String text;
+    private String text;
     private final Font font;
     private final Vector2f position;
     private final Vector3f color;
@@ -58,5 +58,9 @@ public class Text implements HUDElement {
     @Override
     public int getZIndex() {
         return zIndex;
+    }
+
+    public void setText(final String text) {
+        this.text = text;
     }
 }

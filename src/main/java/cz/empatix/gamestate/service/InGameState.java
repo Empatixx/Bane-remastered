@@ -53,7 +53,7 @@ public class InGameState extends GameState {
     @Override
     public void fixedUpdate(double dt) {
         player.fixedUpdate(dt);
-        gunService.fixedUpdate(player.getX(), player.getY(), Camera.getX() + mouseX, Camera.getY() + mouseY, dt);
+        gunService.fixedUpdate(player.getX() + player.getWidth()/2f, player.getY() + player.getHeight()/2f, Camera.getX() + mouseX, Camera.getY() + mouseY, dt);
     }
 
     @Override

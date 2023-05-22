@@ -55,7 +55,7 @@ public record Glyph(
             return new RenderData(
                     vertices(),
                     glyph.texture().textureId(),
-                    new TextBinding(color, Camera.getProjection())
+                    new TextBinding(color, Camera.getOriginWithoutZoomProjection())
             );
         }
 

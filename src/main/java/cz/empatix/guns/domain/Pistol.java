@@ -78,4 +78,9 @@ public class Pistol extends AbstractGun implements Gun{
     public List<Renderable> toRender() {
         return new ArrayList<>(bullets);
     }
+
+    @Override
+    public String getAmmoCounter() {
+        return currentClip + "/" + ammo;
+    }
 }
