@@ -93,6 +93,18 @@ public class Player implements Drawable {
             RedVignette.setTimeBased(false);
         }
     }
+    public void hit(final int damage){
+        if(armor > 0){
+            armor -= damage;
+            if(armor < 0){
+                health += armor;
+                armor = 0;
+            }
+        } else {
+            health -= damage;
+        }
+        RedVignette.setMaxVignette();
+    }
 
     public void fixedUpdate(final double dt) {
         move(dt);

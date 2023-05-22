@@ -3,7 +3,6 @@ package cz.empatix.gamestate.service;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
@@ -77,14 +76,11 @@ public class InGameState extends GameState {
     @Override
     public void keyReleased(int key) {
         player.keyReleased(key);
-        player.setHealth(player.getHealth() + 1);
-
     }
 
     @Override
     public void mousePressed(int button) {
         gunService.setShooting(true);
-        player.setHealth(player.getHealth() - 1);
     }
 
     @Override
