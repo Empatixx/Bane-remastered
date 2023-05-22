@@ -7,6 +7,7 @@ public class InterpolatedTransform implements Transform {
     private final Vector2f currentPosition = new Vector2f();
     private final Vector2f nextPosition = new Vector2f();
     private final Vector2f previousPosition = new Vector2f();
+
     private float t = 0;
     @Override
     public void translate(float x, float y) {
@@ -25,7 +26,10 @@ public class InterpolatedTransform implements Transform {
 
         this.previousPosition.x = currentPosition.x;
         this.previousPosition.y = currentPosition.y;
-        t = 0;
+
+        this.currentPosition.x = x;
+        this.currentPosition.y = y;
+        t = 1;
     }
 
     @Override
@@ -41,6 +45,9 @@ public class InterpolatedTransform implements Transform {
     @Override
     public void update(final float dt) {
         t += dt / (float) GameLoop.FIXED_DELTA_TIME;
+        if(t > 1){
+            t = 1;
+        }
         this.previousPosition.lerp(nextPosition, t, currentPosition);
     }
 }

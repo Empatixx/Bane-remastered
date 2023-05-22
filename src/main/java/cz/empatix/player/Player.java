@@ -64,7 +64,6 @@ public class Player implements Drawable {
         animation.setState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
         physicsBody.setTranslation(500, 500);
-        physicsBody.setTranslation(500, 500);
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
 

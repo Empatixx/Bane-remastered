@@ -8,7 +8,7 @@ import cz.empatix.render.domain.RenderData;
 public class Rat implements Enemy{
     private final static int DIMENSION_WIDTH = 85;
     private final static int DIMENSION_HEIGHT = 37;
-    private final static int SCALE = 2;
+    private final static float SCALE = 1.5f;
     private final static int DEFAULT_HEALTH = 12;
     private final Animation animation;
     private final Enemy enemyImpl;

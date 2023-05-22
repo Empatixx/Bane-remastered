@@ -70,6 +70,7 @@ public class InGameState extends GameState {
 
     @Override
     public void keyPressed(int key) {
+        gunService.keyPressed(key);
         player.keyPressed(key);
     }
 

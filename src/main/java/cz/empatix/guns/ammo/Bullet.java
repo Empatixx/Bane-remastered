@@ -17,8 +17,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Bullet implements Drawable {
     private final static int MOVE_FORCE = 1_000_0000;
-    private final static int BULLET_WIDTH = 64;
-    private final static int BULLET_HEIGHT = 64;
+    private final static int BULLET_WIDTH = 16;
+    private final static int BULLET_HEIGHT = 16;
     private final static int SCALE = 1;
     private final PhysicsBody physicsBody;
     private final Animation animation;

@@ -8,7 +8,7 @@ import cz.empatix.render.domain.RenderData;
 public class Slime implements Enemy{
     private final static int DIMENSION_WIDTH = 64;
     private final static int DIMENSION_HEIGHT = 48;
-    private final static int SCALE = 2;
+    private final static float SCALE = 1.5f;
     private final static int DEFAULT_HEALTH = 9;
     private final Animation animation;
     private final Enemy enemyImpl;

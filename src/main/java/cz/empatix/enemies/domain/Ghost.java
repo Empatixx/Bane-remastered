@@ -8,7 +8,7 @@ import cz.empatix.render.domain.RenderData;
 public class Ghost implements Enemy{
     private final static int DIMENSION_WIDTH = 22;
     private final static int DIMENSION_HEIGHT = 28;
-    private final static int SCALE = 5;
+    private final static int SCALE = 4;
     private final static int DEFAULT_HEALTH = 11;
     private final Animation animation;
     private final Enemy enemyImpl;

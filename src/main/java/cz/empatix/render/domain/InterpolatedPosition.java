@@ -10,6 +10,8 @@ public class InterpolatedPosition {
     private final Vector2f currentPosition;
     private final Vector2f nextPosition;
     private final Vector2f previousPosition;
+    private boolean isInitialPositionSet;
+
     private float t = 0;
     public InterpolatedPosition() {
         this.currentPosition = new Vector2f();
@@ -17,13 +19,22 @@ public class InterpolatedPosition {
         this.previousPosition = new Vector2f();
     }
 
-    public void setPosition(final float x, final float y) {
-        this.nextPosition.x = x;
-        this.nextPosition.y = y;
 
-        this.previousPosition.x = currentPosition.x;
-        this.previousPosition.y = currentPosition.y;
-        t = 0;
+    public void setPosition(final float x, final float y) {
+        if (!isInitialPositionSet) {
+            this.currentPosition.x = x;
+            this.currentPosition.y = y;
+            this.previousPosition.x = x;
+            this.previousPosition.y = y;
+            this.isInitialPositionSet = true;
+        } else {
+            this.nextPosition.x = x;
+            this.nextPosition.y = y;
+
+            this.previousPosition.x = currentPosition.x;
+            this.previousPosition.y = currentPosition.y;
+            t = 0;
+        }
     }
 
     public float getInterpolatedX() {

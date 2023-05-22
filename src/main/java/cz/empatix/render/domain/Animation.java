@@ -15,7 +15,7 @@ public class Animation {
     private final Map<AnimationState, AnimationPart> animationParts;
     private final int totalRows;
     private final int totalSprites;
-    private final int scale;
+    private final float scale;
     private final TextureAtlas.Entry texture;
     private AnimationState currentState;
     private int currentTextureIndex;
@@ -25,7 +25,7 @@ public class Animation {
                      final TextureAtlas.Entry texture,
                      final int totalRows,
                      final int totalSprites,
-                     final int scale) {
+                     final float scale) {
         this.texture = texture;
         this.scale = scale;
         this.animationParts = animationParts;
@@ -109,7 +109,7 @@ public class Animation {
         private final Map<AnimationState, AnimationPart> animationParts;
         private TextureAtlas.Entry texture;
         private int totalRows, totalSprites;
-        private int scale;
+        private float scale;
 
         public Builder() {
             this.animationParts = new HashMap<>();
@@ -153,7 +153,7 @@ public class Animation {
             return this;
         }
 
-        public Builder scale(final int scale) {
+        public Builder scale(final float scale) {
             this.scale = scale;
             return this;
         }

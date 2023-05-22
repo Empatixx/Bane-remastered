@@ -4,6 +4,7 @@ import cz.empatix.guns.domain.Gun;
 import cz.empatix.guns.domain.GunSlots;
 import cz.empatix.guns.domain.Pistol;
 import cz.empatix.render.attributes.Renderable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class GunService {
         slots.switchPreviousSlot();
     }
 
-    public void reload() {
+    private void reload() {
         slots.getCurrentGun().reload();
     }
 
@@ -61,5 +62,11 @@ public class GunService {
         return guns.stream()
                 .flatMap(gun -> gun.toRender().stream())
                 .toList();
+    }
+
+    public void keyPressed(final int button) {
+        if(GLFW.GLFW_KEY_R == button){
+            reload();
+        }
     }
 }

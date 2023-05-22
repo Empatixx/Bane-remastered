@@ -14,21 +14,21 @@ public class EnemyImpl implements Enemy {
     private final PhysicsBody physicsBody;
     private final int width;
     private final int height;
-    private final int scale;
+    private final float scale;
     private final int maxHealth;
     private int health;
 
     public EnemyImpl(final int width,
                      final int height,
                      final int maxHealth,
-                     final int scale,
+                     final float scale,
                      final Animation animation) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
         this.scale = scale;
         this.animation = animation;
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(width * scale, height * scale));
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int)(width * scale), (int)(height * scale)));
     }
 
     @Override
@@ -95,12 +95,12 @@ public class EnemyImpl implements Enemy {
 
     @Override
     public int getWidth() {
-        return width * scale;
+        return (int)(width * scale);
     }
 
     @Override
     public int getHeight() {
-        return height * scale;
+        return (int)(height * scale);
     }
 
     @Override
