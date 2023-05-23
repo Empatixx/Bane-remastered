@@ -1,9 +1,7 @@
 package cz.empatix.guns.service;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.guns.domain.Gun;
-import cz.empatix.guns.domain.GunSlots;
-import cz.empatix.guns.domain.Pistol;
+import cz.empatix.guns.domain.*;
 import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.Text;
 import cz.empatix.render.attributes.Renderable;
@@ -21,10 +19,16 @@ public class GunService {
 
     public GunService() {
         guns = List.of(
-                new Pistol()
+                new Pistol(),
+                new Shotgun(),
+                new Luger(),
+                new Revolver(),
+                new M4(),
+                new Uzi(),
+                new Thompson()
         );
         slots = new GunSlots();
-        slots.addGun(guns.get(0));
+        slots.addGun(guns.get(4));
         weaponSlotHud = new Image(AssetsService.getTexture("ingame/weaponslot.tga"), new Vector2f(715, 450), 1.5f);
         ammoCounter = new Text(slots.getCurrentGun().getAmmoCounter(), "PixelFJVerdana12pt.ttf", new Vector2f(885, 515), 10);
     }

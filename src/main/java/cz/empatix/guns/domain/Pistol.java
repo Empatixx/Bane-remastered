@@ -44,6 +44,7 @@ public class Pistol extends AbstractGun implements Gun{
         if (currentClip > 0) {
             LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
             final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
+            float inaccuracy = this.inaccuracy * (ThreadLocalRandom.current().nextFloat() - 0.5f);
             final Bullet bullet = new Bullet();
             bullet.setPosition(shooterX, shooterY);
             bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracy);

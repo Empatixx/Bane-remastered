@@ -18,7 +18,7 @@ public class Shotgun extends AbstractGun implements Gun {
         this.minDamage = 2;
         this.maxDamage = 3;
 
-        this.inaccuracy = 0.3f;
+        this.inaccuracy = 0.15f;
         this.fireRate = 0.5f;
 
         this.clipSize = 6;
@@ -46,16 +46,14 @@ public class Shotgun extends AbstractGun implements Gun {
         if (currentClip > 0) {
             LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
             currentClip--;
-
             for(int i = 0;i<BULLETS_PER_SHOT;i++){
-
+                final float inaccuracy = this.inaccuracy * (float) Math.pow(-1, i) * (i + 1) / BULLETS_PER_SHOT;
+                final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
+                final Bullet bullet = new Bullet();
+                bullet.setPosition(shooterX, shooterY);
+                bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracy);
+                bullets.add(bullet);
             }
-            final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
-            final Bullet bullet = new Bullet();
-            bullet.setPosition(shooterX, shooterY);
-            bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracy);
-            bullets.add(bullet);
-            currentClip--;
             shooting = false;
             return true;
         }

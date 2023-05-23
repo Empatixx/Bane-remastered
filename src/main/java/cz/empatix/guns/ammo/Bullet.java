@@ -77,8 +77,7 @@ public class Bullet implements Drawable {
     public void setDirection(final float shooterX, final float shooterY, final float targetX, final float targetY, final float inaccuracy) {
         float angleToTarget = (float) Math.atan2(targetY - shooterY, targetX - shooterX);
 
-        float randomInaccuracy = inaccuracy * (ThreadLocalRandom.current().nextFloat() - 0.5f);
-        float finalAngle = angleToTarget + randomInaccuracy;
+        float finalAngle = angleToTarget + inaccuracy;
 
         float forceX = (float) Math.cos(finalAngle) * MOVE_FORCE;
         float forceY = (float) Math.sin(finalAngle) * MOVE_FORCE;
