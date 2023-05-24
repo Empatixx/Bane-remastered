@@ -15,13 +15,18 @@ public class M4 extends AbstractGun implements Gun{
     private final static int BURST_BULLET_DELAY = 50;
     private final List<Bullet> bullets;
     private int bulletsToShoot;
-    private long lastShootTime;
+    private float lastTargetX;
+    private float lastTargetY;
+    private float lastShooterX;
+    private float lastShooterY;
+
     public M4() {
         this.minDamage = 2;
         this.maxDamage = 2;
 
         this.inaccuracy = 0.f;
-        this.fireRate = 750;
+        this.fireRateTime = 750;
+        this.reloadTime = 1300;
 
         this.clipSize = 32;
         this.currentClip = clipSize;
@@ -42,17 +47,18 @@ public class M4 extends AbstractGun implements Gun{
     @Override
     public boolean shoot(float shooterX, float shooterY, float targetX, float targetY
     ) {
-        if(!shooting){
-            return false;
-        }
         if (bulletsToShoot > 0) {
             if (System.currentTimeMillis() - lastShootTime > BURST_BULLET_DELAY) {
+                if(currentClip <= 0){
+                    bulletsToShoot = 0;
+                    return false;
+                }
                 lastShootTime = System.currentTimeMillis();
                 LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
                 final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
                 final Bullet bullet = new Bullet();
                 bullet.setPosition(shooterX, shooterY);
-                bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracy);
+                bullet.setDirection(this.lastShooterX, this.lastShooterY, this.lastTargetX, this.lastTargetY, inaccuracy);
                 bullets.add(bullet);
                 bulletsToShoot--;
                 currentClip--;
@@ -60,7 +66,10 @@ public class M4 extends AbstractGun implements Gun{
             }
             return false;
         }
-        if(System.currentTimeMillis() - lastShootTime < fireRate){
+        if(!shooting){
+            return false;
+        }
+        if(System.currentTimeMillis() - lastShootTime < fireRateTime){
             return false;
         }
         if (currentClip > 0) {
@@ -74,6 +83,11 @@ public class M4 extends AbstractGun implements Gun{
             currentClip--;
             bulletsToShoot = BULLETS_PER_SHOT - 1;
             lastShootTime = System.currentTimeMillis();
+
+            lastTargetX = targetX;
+            lastTargetY = targetY;
+            lastShooterX = shooterX;
+            lastShooterY = shooterY;
             return true;
         }
         return false;
@@ -81,22 +95,30 @@ public class M4 extends AbstractGun implements Gun{
 
     @Override
     public void reload() {
+        if(reloading){
+            return;
+        }
+        if(bulletsToShoot > 0){
+            return;
+        }
         if (ammo > 0 && currentClip < clipSize) {
-            final int ammoToReload = clipSize - currentClip;
-            if (ammoToReload <= ammo) {
-                currentClip += ammoToReload;
-                ammo -= ammoToReload;
-            } else {
-                currentClip += ammo;
-                ammo = 0;
-            }
+            LOGGER.info("Reloading pistol clip: {}, ammo: {}", currentClip, ammo);
+            reloading = true;
+            lastReloadTime = System.currentTimeMillis();
         }
     }
 
     @Override
     public void update(final double dt) {
         bullets.forEach(b -> b.update(dt));
+        if(reloading){
+            if(System.currentTimeMillis() - lastReloadTime > reloadTime){
+                reloading = false;
+                reloadAmmo();
+            }
+        }
     }
+
 
     @Override
     public List<Renderable> toRender() {
@@ -105,6 +127,9 @@ public class M4 extends AbstractGun implements Gun{
 
     @Override
     public String getAmmoCounter() {
+        if(reloading){
+            return "R";
+        }
         return currentClip + "/" + ammo;
     }
 }

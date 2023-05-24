@@ -19,7 +19,8 @@ public class Shotgun extends AbstractGun implements Gun {
         this.maxDamage = 3;
 
         this.inaccuracy = 0.15f;
-        this.fireRate = 0.5f;
+        this.fireRateTime = 500;
+        this.reloadTime = 700;
 
         this.clipSize = 6;
         this.currentClip = clipSize;
@@ -43,6 +44,9 @@ public class Shotgun extends AbstractGun implements Gun {
         if(!shooting){
             return false;
         }
+        if(System.currentTimeMillis() - lastShootTime < fireRateTime){
+            return false;
+        }
         if (currentClip > 0) {
             LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
             currentClip--;
@@ -54,6 +58,7 @@ public class Shotgun extends AbstractGun implements Gun {
                 bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracy);
                 bullets.add(bullet);
             }
+            lastShootTime = System.currentTimeMillis();
             shooting = false;
             return true;
         }
@@ -62,21 +67,25 @@ public class Shotgun extends AbstractGun implements Gun {
 
     @Override
     public void reload() {
+        if(reloading){
+            return;
+        }
         if (ammo > 0 && currentClip < clipSize) {
-            final int ammoToReload = clipSize - currentClip;
-            if (ammoToReload <= ammo) {
-                currentClip += ammoToReload;
-                ammo -= ammoToReload;
-            } else {
-                currentClip += ammo;
-                ammo = 0;
-            }
+            LOGGER.info("Reloading clip: {}, ammo: {}", currentClip, ammo);
+            reloading = true;
+            lastReloadTime = System.currentTimeMillis();
         }
     }
 
     @Override
     public void update(final double dt) {
         bullets.forEach(b -> b.update(dt));
+        if(reloading){
+            if(System.currentTimeMillis() - lastReloadTime > reloadTime){
+                reloading = false;
+                reloadAmmo();
+            }
+        }
     }
 
     @Override

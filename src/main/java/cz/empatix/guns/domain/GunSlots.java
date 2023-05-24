@@ -1,49 +1,72 @@
 package cz.empatix.guns.domain;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
 public class GunSlots {
+    private final Logger LOGGER = LoggerFactory.getLogger(GunSlots.class);
     private final static int DEFAULT_MAX_SLOTS = 2;
-    private final List<Gun> slots;
+    private final ArrayList<Gun> slots;
     private int maxSlots;
     private int currentSlot;
 
     public GunSlots() {
-        slots = new ArrayList<>(DEFAULT_MAX_SLOTS);
+        slots = new ArrayList<>(Collections.nCopies(DEFAULT_MAX_SLOTS, null));
         maxSlots = DEFAULT_MAX_SLOTS;
         currentSlot = 0;
     }
 
-    public Gun getCurrentGun() {
+    public Gun getCurrentGun() throws IllegalStateException {
+
+        if (slots.get(currentSlot) == null) {
+            LOGGER.warn("No gun in slot {}", currentSlot);
+            throw new IllegalStateException("No gun in slot " + currentSlot);
+        }
         return slots.get(currentSlot);
     }
 
     public void addGun(final Gun gun) {
-        slots.add(gun);
+        for(int i = 0; i < maxSlots; i++){
+            if(slots.get(i) == null){
+                slots.set(i, gun);
+                return;
+            }
+        }
     }
 
     public boolean hasFullSlots() {
-        return slots.size() == maxSlots;
-    }
-    public void switchSlot(final int slot){
-        if(slot < maxSlots && slot >= 0){
-            return;
-        }
-        currentSlot = slot;
-    }
-    public void switchNextSlot(){
-        currentSlot = (currentSlot + 1) % maxSlots;
-    }
-    public void switchPreviousSlot(){
-        currentSlot = (currentSlot - 1) % maxSlots;
+        return !slots.contains(null);
     }
 
-    public Gun dropCurrentGun() {
-        final Gun remove = slots.remove(currentSlot);
-        if (currentSlot >= slots.size()) {
-            currentSlot = slots.size() - 1;
+    public void switchSlot(final int slot) {
+        LOGGER.info("Switching slot to {}", slot);
+        if (slot < maxSlots && slot >= 0) {
+            currentSlot = slot;
         }
+    }
+
+    public void switchNextSlot() {
+        currentSlot = (currentSlot + 1) % maxSlots;
+    }
+
+    public void switchPreviousSlot() {
+        if (currentSlot == 0) {
+            currentSlot = maxSlots - 1;
+        } else {
+            currentSlot = (currentSlot - 1) % maxSlots;
+        }
+    }
+
+    public Gun dropCurrentGun() throws IllegalStateException {
+        if (slots.get(currentSlot) == null) {
+            LOGGER.warn("No gun in slot {}", currentSlot);
+            throw new IllegalStateException("No gun in slot " + currentSlot);
+        }
+        final Gun remove = slots.get(currentSlot);
+        slots.set(currentSlot, null);
         return remove;
     }
 }

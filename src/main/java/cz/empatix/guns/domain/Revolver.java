@@ -17,7 +17,8 @@ public class Revolver extends AbstractGun implements Gun {
         this.maxDamage = 6;
 
         this.inaccuracy = 0.2f;
-        this.fireRate = 0.5f;
+        this.fireRateTime = 450;
+        this.reloadTime = 700;
 
         this.clipSize = 6;
         this.currentClip = clipSize;
@@ -31,13 +32,16 @@ public class Revolver extends AbstractGun implements Gun {
     }
 
     @Override
-    public void setShooting(boolean shooting) {
-
+    public void setShooting(final boolean shooting) {
+        this.shooting = shooting;
     }
 
     @Override
-    public boolean shoot(float shooterX, float shooterY, float targetX, float targetY) {
+    public boolean shoot(final float shooterX,final  float shooterY,final float targetX,final float targetY) {
         if(!shooting){
+            return false;
+        }
+        if(System.currentTimeMillis() - lastShootTime < fireRateTime){
             return false;
         }
         if (currentClip > 0) {
@@ -50,6 +54,7 @@ public class Revolver extends AbstractGun implements Gun {
             bullets.add(bullet);
             currentClip--;
             shooting = false;
+            lastShootTime = System.currentTimeMillis();
             return true;
         }
         return false;
@@ -57,22 +62,25 @@ public class Revolver extends AbstractGun implements Gun {
 
     @Override
     public void reload() {
+        if(reloading){
+            return;
+        }
         if (ammo > 0 && currentClip < clipSize) {
-            final int ammoToReload = clipSize - currentClip;
-            if (ammoToReload <= ammo) {
-                currentClip += ammoToReload;
-                ammo -= ammoToReload;
-            } else {
-                currentClip += ammo;
-                ammo = 0;
-            }
+            LOGGER.info("Reloading clip: {}, ammo: {}", currentClip, ammo);
+            reloading = true;
+            lastReloadTime = System.currentTimeMillis();
         }
     }
 
     @Override
     public void update(double dt) {
         bullets.forEach(b -> b.update(dt));
-
+        if(reloading){
+            if(System.currentTimeMillis() - lastReloadTime > reloadTime){
+                reloading = false;
+                reloadAmmo();
+            }
+        }
     }
 
     @Override
@@ -82,6 +90,6 @@ public class Revolver extends AbstractGun implements Gun {
 
     @Override
     public String getAmmoCounter() {
-        return null;
+        return currentClip + "/" + ammo;
     }
 }
