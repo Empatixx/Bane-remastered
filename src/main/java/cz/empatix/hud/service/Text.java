@@ -8,6 +8,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 
 import java.util.List;
 
@@ -28,13 +29,15 @@ public class Text implements HUDElement {
     public void setCenter(final float xMin, final float xMax){
         position.x = (xMin + xMax) / 2 - font.getWidth(text) / 2;
     }
-    public void setColorRGB(final float r, final float g, final float b){
+    public void setColorRGB(final int r, final int g, final int b){
         color.set(r/255f, g/255f, b/255f);
     }
-
+    public void setColorRGB(final Vector3i rgb){
+        color.set(rgb.x()/255f, rgb.y()/255f, rgb.z()/255f);
+    }
     @Override
     public RenderData renderData() {
-        throw new UnsupportedOperationException("Should not be called");
+        throw new UnsupportedOperationException("Should not be called, call getSubRenderables instead");
     }
 
     @Override

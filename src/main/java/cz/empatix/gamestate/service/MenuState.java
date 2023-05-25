@@ -45,7 +45,7 @@ public class MenuState extends GameState {
         exitButton.setOnClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
         uiElements.add(exitButton);
 
-        hudElements.add(new Image("menu/logo.tga", Camera.centerX().add(0, 80), 200, 100, 1.5f));
+        hudElements.add(new Image("menu/logo.tga", Camera.centerX().add(-114,50), 3f));
 
         AudioService.getInstance().play(Soundtrack.MAIN_MENU);
     }

@@ -1,5 +1,4 @@
 #version 330
-#define MAX_TEXTURES 32
 
 uniform sampler2D texSampler;
 uniform vec3 color;

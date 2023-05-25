@@ -1,10 +1,14 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.render.attributes.Renderable;
+import org.joml.Vector2f;
+import org.joml.Vector3i;
 
 import java.util.List;
 
 public interface Gun {
+    Vector3i AMMO_COUNTER_COLOR = new Vector3i(226,153, 117);
+    Vector2f AMMO_COUNTER_POSITION = new Vector2f(885, 515);
     void setShooting(final boolean shooting);
 
     boolean shoot(final float shooterX, final float shooterY, final float targetX, final float targetY);
@@ -15,5 +19,4 @@ public interface Gun {
 
     List<Renderable> toRender();
 
-    String getAmmoCounter();
 }

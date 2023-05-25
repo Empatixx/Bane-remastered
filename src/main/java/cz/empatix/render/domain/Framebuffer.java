@@ -96,8 +96,8 @@ public record Framebuffer(
 
     public void flush() {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }

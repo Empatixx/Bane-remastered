@@ -1,16 +1,26 @@
 package cz.empatix.guns.domain;
 
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.guns.ammo.Bullet;
+import cz.empatix.guns.service.GunService;
+import cz.empatix.hud.service.Image;
+import cz.empatix.hud.service.Text;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.textureatlas.domain.TextureAtlas;
+import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
 public class Pistol extends AbstractGun implements Gun{
     private final static Logger LOGGER = LoggerFactory.getLogger(Pistol.class);
+    private final Image gunHud;
+    private final Text ammoHud;
     private final List<Bullet> bullets;
     public Pistol() {
         this.minDamage = 1;
@@ -29,6 +39,11 @@ public class Pistol extends AbstractGun implements Gun{
         this.shooting = false;
 
         this.bullets = new ArrayList<>(clipSize);
+
+        final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/guns/pistol.tga");
+        this.gunHud = new Image(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
+        this.ammoHud = new Text("", "PixelFJVerdana12pt.ttf", AMMO_COUNTER_POSITION, 10);
+        this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
     }
 
     @Override
@@ -86,11 +101,9 @@ public class Pistol extends AbstractGun implements Gun{
 
     @Override
     public List<Renderable> toRender() {
-        return new ArrayList<>(bullets);
-    }
-
-    @Override
-    public String getAmmoCounter() {
-        return currentClip + "/" + ammo;
+        ammoHud.setText(String.format("%d/%d", currentClip, ammo));
+        return Stream.of(bullets, List.of(gunHud), ammoHud.getSubRenderables())
+                .flatMap(Collection::stream)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

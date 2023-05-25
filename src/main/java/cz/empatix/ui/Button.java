@@ -61,7 +61,7 @@ public class Button implements UIElement {
                 .add(0, dimensions.y() / 2f);
         this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
         this.text.setCenter(position.x, position.x + dimensions.x());
-        this.text.setColorRGB(rgb.x(), rgb.y(), rgb.z());
+        this.text.setColorRGB(rgb);
     }
 
     @Override

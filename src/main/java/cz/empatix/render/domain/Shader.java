@@ -6,9 +6,12 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.FloatBuffer;
 import java.util.HashMap;
+import java.util.Optional;
 
 import static org.lwjgl.opengl.GL20.*;
 
@@ -18,6 +21,8 @@ public record Shader(
         int vertexShaderId,
         HashMap<String, Integer> locations
 ) {
+    private final static Logger LOGGER = LoggerFactory.getLogger(Shader.class);
+    private final static int SHADER_UNIFORM_NOT_FOUND = -1;
     public Shader(final int program,
                   final int fragmentShaderId,
                   final int vertexShaderId) {
@@ -78,60 +83,41 @@ public record Shader(
         glUseProgram(0);
     }
 
-    public void setUniform4x4f(final String name, final Matrix4f value) {
+    private Optional<Integer> getLocation(final String name) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        final FloatBuffer buffer = BufferFactory.convertMatrix4f(value);
-        if (location == -1) {
-            throw new RuntimeException("Uniform " + name + " not found");
+        if(location == SHADER_UNIFORM_NOT_FOUND){
+            LOGGER.warn("Uniform {} not found", name);
+            return Optional.empty();
         }
-        glUniformMatrix4fv(location, false, buffer);
+        return Optional.of(location);
+    }
+
+    public void setUniform4x4f(final String name, final Matrix4f value) {
+        final FloatBuffer buffer = BufferFactory.convertMatrix4f(value);
+        getLocation(name).ifPresent(location -> glUniformMatrix4fv(location, false, buffer));
     }
 
     public void setUniform1iv(final String name, final int[] value) {
-        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        if (location == -1) {
-            throw new RuntimeException("Uniform " + name + " not found");
-        }
-        glUniform1iv(location, value);
+        getLocation(name).ifPresent(location -> glUniform1iv(location, value));
     }
 
     public void setUniform1i(final String name, final int value) {
-        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        if (location == -1) {
-            throw new RuntimeException("Uniform " + name + " not found");
-        }
-        glUniform1i(location, value);
+        getLocation(name).ifPresent(location -> glUniform1i(location, value));
     }
 
     public void setUniform1f(final String name, final float value) {
-        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        if (location == -1) {
-            throw new RuntimeException("Uniform " + name + " not found");
-        }
-        glUniform1f(location, value);
+        getLocation(name).ifPresent(location -> glUniform1f(location, value));
     }
 
     public void setUniform2f(final String name, final Vector2f value) {
-        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        if (location == -1) {
-            throw new RuntimeException("Uniform " + name + " not found");
-        }
-        glUniform2f(location, value.x, value.y);
+        getLocation(name).ifPresent(location -> glUniform2f(location, value.x, value.y));
     }
 
     public void setUniform3f(final String name, final Vector3f value) {
-        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        if (location == -1) {
-            throw new RuntimeException("Uniform " + name + " not found");
-        }
-        glUniform3f(location, value.x, value.y, value.z);
+        getLocation(name).ifPresent(location -> glUniform3f(location, value.x, value.y, value.z));
     }
 
     public void setUniform4f(final String name, final Vector4f value) {
-        final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        if (location == -1) {
-            throw new RuntimeException("Uniform " + name + " not found");
-        }
-        glUniform4f(location, value.x, value.y, value.z, value.w);
+        getLocation(name).ifPresent(location -> glUniform4f(location, value.x, value.y, value.z, value.w));
     }
 }

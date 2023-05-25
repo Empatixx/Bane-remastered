@@ -15,23 +15,12 @@ public class Image implements HUDElement {
     private final Vector2f position;
 
     public Image(final String textureName, final Vector2f position, final int width, final int height) {
-        this(textureName, position, width, height, true, 1);
-    }
-    public Image(final String textureName, final Vector2f position, final int width, final int height, final float scale) {
-        this(textureName, position, width, height, true, scale);
-    }
-    public Image(final String textureName, final Vector2f position, final int width, final int height, final boolean centered) {
-        this(textureName, position, width, height, centered, 1);
-    }
-    public Image(final String textureName, final Vector2f position, final int width, final int height, final boolean centered, final float scale) {
         this.dimensions = new Vector2i(width, height);
-        this.dimensions.x *= scale;
-        this.dimensions.y *= scale;
-        if (centered) {
-            position.sub(new Vector2f(dimensions.x(), dimensions.y()).div(2f));
-        }
         this.texture = AssetsService.getTexture(textureName);
         this.position = new Vector2f(position);
+    }
+    public Image(final String textureName, final Vector2f position, final float scale) {
+        this(AssetsService.getTexture(textureName), position, scale);
     }
     public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale){
         this.dimensions = new Vector2i(texture.width(), texture.height());
