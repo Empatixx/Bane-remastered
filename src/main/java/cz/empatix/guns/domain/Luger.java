@@ -43,7 +43,7 @@ public class Luger extends AbstractGun implements Gun{
         this.bullets = new ArrayList<>(clipSize);
         final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/guns/luger.tga");
         this.gunHud = new Image(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
-        this.ammoHud = new Text("", "PixelFJVerdana12pt.ttf", AMMO_COUNTER_POSITION, 10);
+        this.ammoHud = new Text("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
     }
 
@@ -111,6 +111,7 @@ public class Luger extends AbstractGun implements Gun{
     @Override
     public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
+        ammoHud.setPosition(AMMO_COUNTER_POSITION.x() - ammoHud.getWidth(), AMMO_COUNTER_POSITION.y());
         return Stream.of(List.of(gunHud), ammoHud.getSubRenderables())
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());

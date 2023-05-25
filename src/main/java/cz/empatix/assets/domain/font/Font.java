@@ -40,9 +40,8 @@ public record Font(
 
     public float getWidth(final String text) {
         return (float) text.chars()
-                .mapToObj(c -> glyphs.get((char) c))
-                .filter(Objects::nonNull)
-                .mapToDouble(g -> g.width() + g.bearingX())
+                .mapToObj(c -> glyphs.getOrDefault((char) c, null))
+                .mapToDouble(g -> g.advance() + g.bearingX())
                 .sum();
     }
 

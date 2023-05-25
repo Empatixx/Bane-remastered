@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface Gun {
     Vector3i AMMO_COUNTER_COLOR = new Vector3i(226,153, 117);
-    Vector2f AMMO_COUNTER_POSITION = new Vector2f(885, 515);
+    Vector2f AMMO_COUNTER_POSITION = new Vector2f(925, 515);
     void setShooting(final boolean shooting);
 
     boolean shoot(final float shooterX, final float shooterY, final float targetX, final float targetY);
