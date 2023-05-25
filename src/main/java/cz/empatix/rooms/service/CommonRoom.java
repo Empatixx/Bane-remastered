@@ -5,6 +5,7 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -13,6 +14,7 @@ import java.util.List;
 public class CommonRoom implements Room {
     private static final int MAX_ENEMIES = 5;
     private final EnemyService enemyService;
+    private final RoomObjectService roomObjectService;
     private final List<RoomDirection> neighbors;
     private final TileMap tileMap;
     private boolean visited;
@@ -22,6 +24,7 @@ public class CommonRoom implements Room {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
         neighbors = roomDirections;
         enemyService = new EnemyService();
+        roomObjectService = new RoomObjectService();
         visited = false;
     }
 
@@ -53,7 +56,8 @@ public class CommonRoom implements Room {
     public List<Renderable> toRender() {
         final Renderable tiles = (DrawableBatch) tileMap::toRender;
         final Renderable enemies = (DrawableBatch) enemyService::toRender;
-        return List.of(tiles, enemies);
+        final Renderable roomObjects = (DrawableBatch) roomObjectService::toRender;
+        return List.of(tiles, enemies, roomObjects);
     }
 
     @Override

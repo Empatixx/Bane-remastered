@@ -4,18 +4,23 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.Chest;
+import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
+import cz.empatix.tiles.tilemaps.TreasureTileMap;
 
 import java.util.List;
 
 public class TreasureRoom implements Room {
+    private final RoomObjectService roomObjectService;
     private final List<RoomDirection> neighbors;
     private final TileMap tileMap;
 
     public TreasureRoom(final int rows, final int cols, final int xOffset, final int yOffset,
                         final List<RoomDirection> roomDirections) {
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
+        tileMap = new TreasureTileMap(rows, cols, xOffset, yOffset, roomDirections);
+        roomObjectService = new RoomObjectService();
         neighbors = roomDirections;
     }
 
@@ -31,17 +36,22 @@ public class TreasureRoom implements Room {
 
     @Override
     public void init() {
-
+        final Chest chest = new Chest();
+        chest.setPosition((getMaxX()+getMinX())/2f - chest.getWidth()/2f,
+                (getMaxY()+getMinY())/2f - chest.getHeight()/2f);
+        roomObjectService.addRoomObject(chest);
     }
 
     @Override
     public void update(double dt) {
-
+        roomObjectService.update(dt);
     }
 
     @Override
     public List<Renderable> toRender() {
-        return List.of((DrawableBatch) tileMap::toRender);
+        final Renderable tiles = (DrawableBatch) tileMap::toRender;
+        final Renderable roomObjects = (DrawableBatch) roomObjectService::toRender;
+        return List.of(tiles, roomObjects);
     }
 
     @Override

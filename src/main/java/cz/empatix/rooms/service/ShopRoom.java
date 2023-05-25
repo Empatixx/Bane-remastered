@@ -4,7 +4,8 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.tiles.tilemaps.ShopTileMap;
+import cz.empatix.tiles.tilemaps.CommonTileMap;
+import cz.empatix.tiles.tilemaps.TreasureTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.List;
@@ -15,7 +16,7 @@ public class ShopRoom implements Room {
 
     public ShopRoom(final int rows, final int cols, final int xOffset, final int yOffset,
                     final List<RoomDirection> roomDirections) {
-        tileMap = new ShopTileMap(rows, cols, xOffset, yOffset, roomDirections);
+        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
         neighbors = roomDirections;
     }
 

@@ -8,16 +8,16 @@ import cz.empatix.tiles.service.BooleanMapUtil;
 import java.util.Arrays;
 import java.util.List;
 
-public class ShopTileMap implements TileMap {
+public class TreasureTileMap implements TileMap {
     private Tile[][] tiles;
     private final int rows;
     private final int cols;
     private final int xOffset;
     private final int yOffset;
 
-    public ShopTileMap(final int rows, final int cols,
-                       final int xOffset, final int yOffset,
-                       final List<RoomDirection> directions) {
+    public TreasureTileMap(final int rows, final int cols,
+                           final int xOffset, final int yOffset,
+                           final List<RoomDirection> directions) {
         this.rows = rows;
         this.cols = cols;
         this.xOffset = xOffset;
