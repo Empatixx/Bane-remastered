@@ -22,7 +22,7 @@ public class GLInit implements Initializator {
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_BLEND);
         glEnable(GL_LINE_SMOOTH);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);

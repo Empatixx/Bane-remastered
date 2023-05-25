@@ -39,7 +39,7 @@ public class Thompson extends AbstractGun implements Gun{
         this.shooting = false;
 
         this.bullets = new ArrayList<>(clipSize);
-        final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/guns/pistol.tga");
+        final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/guns/thompson.tga");
         this.gunHud = new Image(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
         this.ammoHud = new Text("", "PixelFJVerdana12pt.ttf", AMMO_COUNTER_POSITION, 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
@@ -100,8 +100,13 @@ public class Thompson extends AbstractGun implements Gun{
 
     @Override
     public List<Renderable> toRender() {
+        return List.copyOf(bullets);
+    }
+
+    @Override
+    public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
-        return Stream.of(bullets, List.of(gunHud), ammoHud.getSubRenderables())
+        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables())
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }

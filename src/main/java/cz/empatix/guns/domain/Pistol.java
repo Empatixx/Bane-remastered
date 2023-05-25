@@ -101,8 +101,13 @@ public class Pistol extends AbstractGun implements Gun{
 
     @Override
     public List<Renderable> toRender() {
+        return List.copyOf(bullets);
+    }
+
+    @Override
+    public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
-        return Stream.of(bullets, List.of(gunHud), ammoHud.getSubRenderables())
+        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables())
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }

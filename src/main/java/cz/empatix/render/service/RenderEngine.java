@@ -34,7 +34,6 @@ public class RenderEngine {
         sceneFbo.bind();
         renderService.render(renderScenes.get(RenderScene.SCENE));
         sceneFbo.unbind();
-
         hudFbo.bind();
         renderService.render(renderScenes.get(RenderScene.HUD));
         hudFbo.unbind();

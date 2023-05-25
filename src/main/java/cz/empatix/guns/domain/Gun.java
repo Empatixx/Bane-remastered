@@ -18,5 +18,6 @@ public interface Gun {
     void update(double dt);
 
     List<Renderable> toRender();
+    List<Renderable> hudToRender();
 
 }

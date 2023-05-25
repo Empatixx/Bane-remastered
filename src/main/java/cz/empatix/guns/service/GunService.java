@@ -16,7 +16,6 @@ import java.util.stream.Stream;
 
 public class GunService {
     private final static Vector2f HUD_SLOT_POSITION = new Vector2f(715, 450);
-    private final static Vector2f HUD_AMMO_COUNTER_POSITION = new Vector2f(885, 515);
     private final static float HUD_SLOT_SCALE = 1.5f;
     public final static int HUD_SLOT_CENTER_X;
     public final static int HUD_SLOT_CENTER_Y;
@@ -44,7 +43,8 @@ public class GunService {
                 new Thompson()
         );
         slots = new GunSlots();
-        slots.addGun(guns.get(0));
+        slots.addGun(guns.get(4));
+        slots.addGun(guns.get(5));
         weaponSlotHud = new Image(AssetsService.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE);
     }
 
@@ -89,10 +89,15 @@ public class GunService {
 
     public List<Renderable> toRender(final double dt) {
         try {
-            final List<? extends Renderable> renderables = Stream.of(List.of(weaponSlotHud), slots.getCurrentGun().toRender())
-                    .flatMap(List::stream)
-                    .toList();
-            return List.copyOf(renderables);
+            return Stream.concat(
+                    this.guns.stream()
+                            .map(Gun::toRender)
+                            .flatMap(List::stream),
+                    Stream.concat(
+                            Stream.of(weaponSlotHud),
+                            slots.getCurrentGun().hudToRender().stream()
+                    )
+            ).toList();
         } catch (Exception e) {
             LOGGER.warn("Could not render gun renderables..");
             return List.of(weaponSlotHud);
