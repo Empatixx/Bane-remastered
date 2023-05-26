@@ -23,7 +23,7 @@ public class Chest implements RoomObject {
         animation = Animation.builder()
                 .setTotal(2, 4)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
-                .addState(AnimationState.RIGHT_MOVE, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
+                .addState(AnimationState.DEATH, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .texture(AssetsService.getTexture("ingame/chest.tga"))
                 .scale(SCALE)
                 .build();
