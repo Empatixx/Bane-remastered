@@ -40,7 +40,10 @@ public class LightningService {
         lightSources.removeIf(LightSource::isDestroyed);
     }
 
-    public List<LightSource> getLightSources() {
-        return lightSources;
+    public List<LightSource> lightsOnCamera(){
+        return lightSources
+                .stream()
+                .filter(LightSource::isOnCamera)
+                .toList();
     }
 }

@@ -1,6 +1,6 @@
 #version 330 core
 #define AMBIENT_LIGHT 0.6
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 100
 #define BLOCK_SIZE 8.0
 #define NOISE_INTENSITY 0.15
 

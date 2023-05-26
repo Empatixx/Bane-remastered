@@ -20,6 +20,7 @@ public class Animation {
     private AnimationState currentState;
     private int currentTextureIndex;
     private long lastAnimation;
+    private boolean playedOnce;
 
     public Animation(final Map<AnimationState, AnimationPart> animationParts,
                      final TextureAtlas.Entry texture,
@@ -46,6 +47,18 @@ public class Animation {
         currentState = state;
         currentTextureIndex = 0;
         lastAnimation = System.currentTimeMillis();
+        playedOnce = false;
+    }
+    public boolean hasPlayedOnce(){
+        return playedOnce;
+    }
+
+    public int getCurrentTextureIndex() {
+        return currentTextureIndex;
+    }
+
+    public AnimationState getCurrentState() {
+        return currentState;
     }
 
     public void update() {
@@ -56,9 +69,18 @@ public class Animation {
         }
         if (System.currentTimeMillis() - lastAnimation > delayBetweenAnimations) {
             lastAnimation = System.currentTimeMillis();
-            currentTextureIndex++;
-            if (currentTextureIndex >= part.numSprites()) {
-                currentTextureIndex = 0;
+            if(part.reverse()){
+                currentTextureIndex--;
+                if(currentTextureIndex < 0){
+                    currentTextureIndex = part.numSprites() - 1;
+                    playedOnce = true;
+                }
+            } else {
+                currentTextureIndex++;
+                if (currentTextureIndex >= part.numSprites()) {
+                    currentTextureIndex = 0;
+                    playedOnce = true;
+                }
             }
         }
     }
@@ -72,7 +94,7 @@ public class Animation {
                 .position(position)
                 .posDimensions(part.width(), part.height())
                 .offset(part.width(), part.height())
-                .rotatedX(part.rotatedX())
+                .rotatedX(part.rotated())
                 .scale(scale)
                 .buildQuad();
     }
@@ -86,7 +108,8 @@ public class Animation {
             Vector2i dimensions,
             Vector2i animationDimensions,
             int delayBetweenAnimations,
-            boolean rotatedX
+            boolean rotated,
+            boolean reverse
     ) {
         public int numSprites() {
             return animationDimensions.y();
@@ -128,22 +151,31 @@ public class Animation {
                                 final int width,
                                 final int height,
                                 final int delayBetweenAnimations) {
-            return addState(state, row, numSprites, width, height, delayBetweenAnimations, false);
+            return addState(state, row, numSprites, width, height, delayBetweenAnimations, false, false);
         }
-
         public Builder addState(final AnimationState state,
                                 final int row,
                                 final int numSprites,
                                 final int width,
                                 final int height,
                                 final int delayBetweenAnimations,
-                                final boolean rotatedX) {
+                                final boolean rotated) {
+            return this.addState(state, row, numSprites, width, height, delayBetweenAnimations, rotated, false);
+        }
+        public Builder addState(final AnimationState state,
+                                final int row,
+                                final int numSprites,
+                                final int width,
+                                final int height,
+                                final int delayBetweenAnimations,
+                                final boolean rotated,
+                                final boolean reverse) {
             final AnimationPart part = new AnimationPart(
                     new Vector2i(width, height),
                     new Vector2i(row, numSprites),
                     delayBetweenAnimations,
-                    rotatedX
-            );
+                    rotated,
+                    reverse);
             animationParts.put(state, part);
             return this;
         }

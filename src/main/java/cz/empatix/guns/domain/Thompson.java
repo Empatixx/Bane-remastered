@@ -1,8 +1,8 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.service.GunService;
+import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.Text;
 import cz.empatix.render.attributes.Renderable;

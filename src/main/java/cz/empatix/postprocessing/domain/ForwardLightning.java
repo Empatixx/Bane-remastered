@@ -32,12 +32,12 @@ public class ForwardLightning implements Postprocess {
     @Override
     public RenderData renderData() {
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new ForwardLightningBinding(lightningService.getLightSources(), Camera.getOriginWithoutZoomProjection()));
+                new ForwardLightningBinding(lightningService.lightsOnCamera(), Camera.getOriginWithoutZoomProjection()));
     }
 
     @Override
     public boolean canRender() {
-        return !lightningService.getLightSources().isEmpty();
+        return !lightningService.lightsOnCamera().isEmpty();
     }
 
 }

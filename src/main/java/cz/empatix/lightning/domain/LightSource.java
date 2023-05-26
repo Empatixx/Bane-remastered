@@ -1,6 +1,7 @@
 package cz.empatix.lightning.domain;
 
 import com.google.common.base.Preconditions;
+import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -81,5 +82,12 @@ public final class LightSource {
     }
     public boolean canDisplay(){
         return !isDestroyed;
+    }
+
+    public boolean isOnCamera() {
+        return Camera.getX() < position.x + radius * intensity &&
+                Camera.getX() + Camera.getTargetWidth() > position.x - radius * intensity &&
+                Camera.getY() < position.y + radius * intensity &&
+                Camera.getY() + Camera.getTargetHeight() > position.y - radius * intensity;
     }
 }

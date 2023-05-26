@@ -28,8 +28,8 @@ public class RoomLockService {
 
         final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
 
-        final int correctionX = centerX % (tileSize);
-        final int correctionY = centerY % (tileSize);
+        final int correctionX = Math.abs(centerX % (tileSize));
+        final int correctionY = Math.abs(centerY % (tileSize));
 
         switch (roomDirection) {
             case BOTTOM -> {

@@ -5,11 +5,13 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+
+import static cz.empatix.render.domain.AnimationState.CLOSE;
+import static cz.empatix.render.domain.AnimationState.OPEN;
 
 public class PathGate implements RoomObject {
     private final static int SCALE = 1;
@@ -17,16 +19,15 @@ public class PathGate implements RoomObject {
     private final static int DIMENSION_HEIGHT = 64;
     private final Animation animation;
     private final PhysicsBody physicsBody;
-
     public PathGate() {
         animation = Animation.builder()
                 .setTotal(1, 4)
-                .addState(AnimationState.OPEN, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75)
-                .addState(AnimationState.CLOSE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, true)
+                .addState(OPEN, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, true)
+                .addState(CLOSE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, false)
                 .texture(AssetsService.getTexture("ingame/pathgate.tga"))
                 .scale(SCALE)
                 .build();
-        animation.setState(AnimationState.OPEN);
+        animation.setState(OPEN);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
     }
 
@@ -56,7 +57,18 @@ public class PathGate implements RoomObject {
 
     @Override
     public void update(double dt) {
-        animation.update();
+        switch (animation.getCurrentState()) {
+            case CLOSE:
+                if (animation.getCurrentTextureIndex() != 3) {
+                    animation.update();
+                }
+                break;
+            case OPEN:
+                if (animation.getCurrentTextureIndex() != 0) {
+                    animation.update();
+                }
+                break;
+        }
     }
 
     @Override
@@ -78,9 +90,15 @@ public class PathGate implements RoomObject {
 
     public void setState(final boolean closed) {
         if (closed) {
-            animation.setState(AnimationState.CLOSE);
+            if(animation.getCurrentState() == CLOSE){
+                return;
+            }
+            animation.setState(CLOSE);
         } else {
-            animation.setState(AnimationState.OPEN);
+            if(animation.getCurrentState() == OPEN){
+                return;
+            }
+            animation.setState(OPEN);
         }
     }
 }

@@ -1,5 +1,6 @@
 package cz.empatix.tiles.service;
 
+import cz.empatix.map.domain.PathRoomGenInfo;
 import cz.empatix.map.domain.RoomDirection;
 
 import java.util.List;
@@ -44,22 +45,22 @@ public class BooleanMapUtil {
         for (final RoomDirection dir : directions) {
             switch (dir) {
                 case BOTTOM -> {
-                    final int centerCols = (cols - 4) / 2;
+                    final int centerCols = (cols - PathRoomGenInfo.MIN_COLS) / 2;
                     map[rows - 1][centerCols + 1] = false;
                     map[rows - 1][centerCols + 2] = false;
                 }
                 case TOP -> {
-                    final int centerCols = (cols - 4) / 2;
+                    final int centerCols = (cols - PathRoomGenInfo.MIN_COLS) / 2;
                     map[0][centerCols + 1] = false;
                     map[0][centerCols + 2] = false;
                 }
                 case LEFT -> {
-                    final int centerRows = (rows - 4) / 2;
+                    final int centerRows = (rows - PathRoomGenInfo.MIN_ROWS) / 2;
                     map[centerRows + 1][0] = false;
                     map[centerRows + 2][0] = false;
                 }
                 case RIGHT -> {
-                    final int centerRows = (rows - 4) / 2;
+                    final int centerRows = (rows - PathRoomGenInfo.MIN_ROWS) / 2;
                     map[centerRows + 1][cols - 1] = false;
                     map[centerRows + 2][cols - 1] = false;
                 }

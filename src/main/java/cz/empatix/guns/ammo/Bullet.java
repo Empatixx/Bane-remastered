@@ -1,6 +1,8 @@
 package cz.empatix.guns.ammo;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.lightning.domain.LightSource;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
@@ -12,8 +14,7 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
-
-import java.util.concurrent.ThreadLocalRandom;
+import org.joml.Vector3f;
 
 public class Bullet implements Drawable {
     private final static int MOVE_FORCE = 1_000_0000;
@@ -22,7 +23,7 @@ public class Bullet implements Drawable {
     private final static int SCALE = 1;
     private final PhysicsBody physicsBody;
     private final Animation animation;
-
+    private final LightSource lightSource;
     public Bullet() {
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
         physicsBody.setLinearDamping(1.0f);
@@ -33,6 +34,7 @@ public class Bullet implements Drawable {
                 .texture(AssetsService.getTexture("ingame/bullet.tga"))
                 .scale(SCALE)
                 .build();
+        lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
     }
 
     @Override
@@ -46,6 +48,8 @@ public class Bullet implements Drawable {
 
     public void update(final double dt) {
         animation.update();
+        lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
+                physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
     }
 
     @Override
@@ -83,5 +87,8 @@ public class Bullet implements Drawable {
         float forceY = (float) Math.sin(finalAngle) * MOVE_FORCE;
 
         physicsBody.applyForce(forceX, forceY);
+    }
+    public boolean shouldRemove(){
+        return physicsBody.getVelocity().x() == 0 || physicsBody.getVelocity().y() == 0;
     }
 }

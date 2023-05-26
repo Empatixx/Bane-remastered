@@ -62,11 +62,11 @@ public class Camera {
     }
 
     public static float getX() {
-        return interpolatedPosition.getInterpolatedX();
+        return interpolatedPosition.getInterpolatedX() + TARGET_WIDTH * (1 - zoom) / 2;
     }
 
     public static float getY() {
-        return interpolatedPosition.getInterpolatedY();
+        return interpolatedPosition.getInterpolatedY() + TARGET_HEIGHT * (1 - zoom) / 2;
     }
 
     public static Vector2f getPosition() {
