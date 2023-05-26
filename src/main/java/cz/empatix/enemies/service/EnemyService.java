@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class EnemyService {
     private final EnemyFactory enemyFactory;
-    public final List<Enemy> enemies;
+    private final List<Enemy> enemies;
 
     public EnemyService() {
         enemies = new ArrayList<>();
@@ -52,6 +52,9 @@ public class EnemyService {
         e.setPosition(x, y);
 
         enemies.add(e);
+    }
+    public boolean areEnemiesAlive() {
+        return enemies.size() > 0;
     }
 
 }

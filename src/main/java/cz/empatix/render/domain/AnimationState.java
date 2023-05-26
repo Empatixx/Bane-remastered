@@ -3,6 +3,8 @@ package cz.empatix.render.domain;
 public enum AnimationState {
     IDLE,
     ATTACK,
+    OPEN,
+    CLOSE,
     WALK,
     DEATH,
     STATIC,
