@@ -6,7 +6,6 @@ import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.Chest;
 import cz.empatix.roomobjects.service.RoomObjectService;
-import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 import cz.empatix.tiles.tilemaps.TreasureTileMap;
 
@@ -39,7 +38,7 @@ public class TreasureRoom implements Room {
         final Chest chest = new Chest();
         chest.setPosition((getMaxX()+getMinX())/2f - chest.getWidth()/2f,
                 (getMaxY()+getMinY())/2f - chest.getHeight()/2f);
-        roomObjectService.addRoomObject(chest);
+        roomObjectService.add(chest);
     }
 
     @Override

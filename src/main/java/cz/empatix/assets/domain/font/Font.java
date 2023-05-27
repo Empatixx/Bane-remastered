@@ -10,7 +10,6 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public record Font(
@@ -38,8 +37,15 @@ public record Font(
         return glyphDrawables;
     }
 
+    public int getHeight(final String text){
+        return (int) text.chars()
+                .mapToObj(c -> glyphs.getOrDefault((char) c, null))
+                .mapToDouble(g -> g.ascent() + g.descent())
+                .max()
+                .orElse(0);
+    }
     public float getWidth(final String text) {
-        return (float) text.chars()
+        return (int) text.chars()
                 .mapToObj(c -> glyphs.getOrDefault((char) c, null))
                 .mapToDouble(g -> g.advance() + g.bearingX())
                 .sum();

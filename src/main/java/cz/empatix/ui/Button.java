@@ -60,7 +60,7 @@ public class Button implements UIElement {
         final Vector2f textPosition = new Vector2f(position)
                 .add(0, dimensions.y() / 2f);
         this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
-        this.text.setCenter(position.x, position.x + dimensions.x());
+        this.text.setCenterX(position.x, position.x + dimensions.x());
         this.text.setColorRGB(rgb);
     }
 

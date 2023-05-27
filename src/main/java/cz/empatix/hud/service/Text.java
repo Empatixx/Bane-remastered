@@ -27,8 +27,11 @@ public class Text implements HUDElement {
         color = new Vector3f(1f, 1f, 1f);
     }
 
-    public void setCenter(final float xMin, final float xMax) {
+    public void setCenterX(final float xMin, final float xMax) {
         position.x = (xMin + xMax) / 2 - font.getWidth(text) / 2;
+    }
+    public void setCenterY(final float yMin, final float yMax) {
+        position.y = (yMin + yMax) / 2 + font.getHeight(text) / 2;
     }
 
     public void setColorRGB(final int r, final int g, final int b) {

@@ -1,8 +1,11 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.domain.StatusBarType;
+import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.StatusBar;
+import cz.empatix.hud.service.Text;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
@@ -12,20 +15,23 @@ import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Player implements Drawable {
     private final static int SCALE = 2;
+    private final static int COIN_HUD_OFFSET = 25;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
@@ -34,6 +40,8 @@ public class Player implements Drawable {
     private final static float LOW_HP_THRESHOLD = 0.3f;
     private final StatusBar healthBar;
     private final StatusBar armorBar;
+    private final Image coinHud;
+    private final Text coinText;
     private final Animation animation;
     private final PhysicsBody physicsBody;
     private final LightSource lightSource;
@@ -43,6 +51,7 @@ public class Player implements Drawable {
     private int health;
     private int maxArmor;
     private int armor;
+    private int coins;
 
     public Player() {
         maxHealth = DEFAULT_MAX_HEALTH;
@@ -50,6 +59,8 @@ public class Player implements Drawable {
 
         maxArmor = DEFAULT_MAX_ARMOR;
         armor = maxArmor;
+
+        coins = 0;
 
         animation = Animation.builder()
                 .setTotal(4,6)
@@ -69,6 +80,13 @@ public class Player implements Drawable {
 
         healthBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH, new Vector2f(25, 25));
         armorBar = new StatusBar(this::getArmor, this::getMaxArmor, StatusBarType.ARMOR, new Vector2f(75, 62.5f));
+
+        final TextureAtlas.Entry coinTxt = AssetsService.getTexture("ingame/banecoin.tga");
+        coinHud = new Image(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT-COIN_HUD_OFFSET-coinTxt.height()), 1f);
+        coinText = new Text(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET+coinTxt.width()+15, 0f), coinHud.getZIndex());
+
+        coinText.setCenterY(WindowHandler.TARGET_HEIGHT-COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT-COIN_HUD_OFFSET-coinTxt.height());
+        coinText.setColorRGB(255,216, 0);
     }
 
     public int getArmor() {
@@ -131,7 +149,10 @@ public class Player implements Drawable {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return List.of(healthBar, armorBar);
+        List<? extends Renderable> renderables = Stream.of(coinText.getSubRenderables(), List.of(healthBar, armorBar, coinHud))
+                .flatMap(List::stream)
+                .toList();
+        return List.copyOf(renderables);
     }
 
     @Override

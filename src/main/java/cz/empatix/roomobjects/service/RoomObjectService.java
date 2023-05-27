@@ -1,7 +1,6 @@
 package cz.empatix.roomobjects.service;
 
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.RoomObject;
 
 import java.util.ArrayList;
@@ -12,7 +11,7 @@ public class RoomObjectService {
     public RoomObjectService(){
         roomObjects = new ArrayList<>();
     }
-    public void addRoomObject(final RoomObject roomObject){
+    public void add(final RoomObject roomObject){
         roomObjects.add(roomObject);
     }
     public List<Drawable> toRender(){

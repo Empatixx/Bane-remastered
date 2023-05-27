@@ -54,7 +54,7 @@ public class Uzi extends AbstractGun implements Gun{
     @Override
     public boolean shoot(float shooterX, float shooterY, float targetX, float targetY
     ) {
-        if(!shooting){
+        if(!shooting || reloading){
             return false;
         }
         if(System.currentTimeMillis() - lastShootTime < fireRateTime){

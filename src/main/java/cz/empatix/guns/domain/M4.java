@@ -80,7 +80,7 @@ public class M4 extends AbstractGun implements Gun{
             }
             return false;
         }
-        if(!shooting){
+        if(!shooting || reloading){
             return false;
         }
         if(System.currentTimeMillis() - lastShootTime < fireRateTime){

@@ -67,12 +67,11 @@ public record Glyph(
         private List<Vertex> vertices() {
             return Vertex.builder()
                     .texture(glyph.texture())
-                    .offsetPosition(glyph.bearingX(), glyph.descent())
+                    .offsetPosition(glyph.bearingX(), -glyph.ascent())
                     .texPosition(0, 0)
                     .texPositionsDimensions(1, 1)
                     .position(position)
-                    .posDimensions(glyph.width(), -glyph.ascent() - glyph.descent())
-                    .reverseTextureY()
+                    .posDimensions(glyph.width(), glyph.ascent() + glyph.descent())
                     .buildQuad();
         }
 

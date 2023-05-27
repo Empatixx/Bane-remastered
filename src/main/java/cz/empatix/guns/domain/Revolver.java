@@ -53,7 +53,7 @@ public class Revolver extends AbstractGun implements Gun {
 
     @Override
     public boolean shoot(final float shooterX,final  float shooterY,final float targetX,final float targetY) {
-        if(!shooting){
+        if(!shooting || reloading){
             return false;
         }
         if(System.currentTimeMillis() - lastShootTime < fireRateTime){

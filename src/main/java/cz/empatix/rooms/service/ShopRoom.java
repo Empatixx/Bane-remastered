@@ -4,19 +4,24 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.ShopTable;
+import cz.empatix.roomobjects.domain.Shopkeeper;
+import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
-import cz.empatix.tiles.tilemaps.TreasureTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.List;
 
 public class ShopRoom implements Room {
+    private final static int TOTAL_TABLES = 3;
     private final List<RoomDirection> neighbors;
+    private final RoomObjectService roomObjectService;
     private final TileMap tileMap;
 
     public ShopRoom(final int rows, final int cols, final int xOffset, final int yOffset,
                     final List<RoomDirection> roomDirections) {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
+        roomObjectService = new RoomObjectService();
         neighbors = roomDirections;
     }
 
@@ -32,16 +37,27 @@ public class ShopRoom implements Room {
 
     @Override
     public void init() {
+        final Shopkeeper shopkeeper = new Shopkeeper();
+        shopkeeper.setPosition(getMinX() + tileMap.getWidth()/2f - shopkeeper.getWidth() / 2f, getMinY() + tileMap.getHeight() / 4f - shopkeeper.getHeight() / 2f);
+        roomObjectService.add(shopkeeper);
+
+        for (int i = 0; i < TOTAL_TABLES; i++) {
+            final ShopTable shopTable = new ShopTable();
+            shopTable.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopTable.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopTable.getHeight() / 2f);
+            roomObjectService.add(shopTable);
+        }
     }
 
     @Override
     public void update(double dt) {
-
+        roomObjectService.update(dt);
     }
 
     @Override
     public List<Renderable> toRender() {
-        return List.of((DrawableBatch) tileMap::toRender);
+        final Renderable tileMapBatch = (DrawableBatch) tileMap::toRender;
+        final Renderable roomObjectsBatch = (DrawableBatch) roomObjectService::toRender;
+        return List.of(tileMapBatch, roomObjectsBatch);
     }
 
     @Override
@@ -53,6 +69,7 @@ public class ShopRoom implements Room {
     public int getHeight() {
         return tileMap.getHeight();
     }
+
     @Override
     public int getX() {
         return tileMap.getX();
