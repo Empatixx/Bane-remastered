@@ -4,7 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.Rectangle;
+import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -58,7 +58,10 @@ public class Bullet implements Drawable {
         updateCollisionLightning();
     }
     public void updateCollisionLightning(){
-        if(animation.getCurrentState() == AnimationState.COLLISION && animation.hasPlayedOnce()){
+        if(animation.getCurrentState() != AnimationState.COLLISION){
+            return;
+        }
+        if(animation.hasPlayedOnce()){
             lightSource.destroy();
             physicsBody.destroy();
         }

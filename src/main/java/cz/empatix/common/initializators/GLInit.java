@@ -1,5 +1,6 @@
 package cz.empatix.common.initializators;
 
+import cz.empatix.common.handlers.WindowHandler;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.KHRDebug;
@@ -24,6 +25,8 @@ public class GLInit implements Initializator {
         glEnable(GL_LINE_SMOOTH);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+        glOrtho(0, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 0, 1, -1);
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         if (DEBUG_MODE) {

@@ -1,7 +1,7 @@
 package cz.empatix.tiles.domain;
 
 import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.Rectangle;
+import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;

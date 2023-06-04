@@ -9,7 +9,7 @@ import cz.empatix.hud.service.Text;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.Rectangle;
+import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;

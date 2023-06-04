@@ -1,4 +1,4 @@
-package cz.empatix.physics.service;
+package cz.empatix.physics.domain;
 
 public record AABB (
         float xMin,

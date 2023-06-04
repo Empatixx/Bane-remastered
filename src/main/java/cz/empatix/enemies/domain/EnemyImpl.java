@@ -1,7 +1,7 @@
 package cz.empatix.enemies.domain;
 
 import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.Rectangle;
+import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
