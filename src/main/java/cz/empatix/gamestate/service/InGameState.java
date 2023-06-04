@@ -9,6 +9,7 @@ import cz.empatix.guns.service.GunService;
 import cz.empatix.map.generators.MapGenerator;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapService;
+import cz.empatix.pause.service.PauseService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
@@ -21,6 +22,7 @@ import java.util.stream.Stream;
 
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
+    private PauseService pauseService;
     private MapService mapService;
     private GunService gunService;
     private Player player;
@@ -36,6 +38,7 @@ public class InGameState extends GameState {
         mapService = proceduralMapGenerator.generate();
         player = new Player();
         gunService = new GunService();
+        pauseService = new PauseService();
 
         AudioService.getInstance().play(Soundtrack.INGAME);
     }
@@ -49,6 +52,7 @@ public class InGameState extends GameState {
         player.update(dt);
         mapService.update(dt, player);
         gunService.update(dt);
+        pauseService.update(dt, mouseX, mouseY);
     }
 
     @Override
@@ -59,7 +63,7 @@ public class InGameState extends GameState {
 
     @Override
     public List<Renderable> toRender(final double dt) {
-        return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt))
+        return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }
@@ -73,6 +77,7 @@ public class InGameState extends GameState {
     public void keyPressed(int key) {
         gunService.keyPressed(key);
         player.keyPressed(key);
+        pauseService.keyPressed(key);
     }
 
     @Override

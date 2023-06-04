@@ -10,9 +10,11 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 public class Image implements HUDElement {
+    private final static int DEFAULT_Z_DEPTH = 1;
     private final TextureAtlas.Entry texture;
     private final Vector2i dimensions;
     private final Vector2f position;
+    private int zDepth;
 
     public Image(final String textureName, final Vector2f position, final int width, final int height) {
         this.dimensions = new Vector2i(width, height);
@@ -20,14 +22,21 @@ public class Image implements HUDElement {
         this.position = new Vector2f(position);
     }
     public Image(final String textureName, final Vector2f position, final float scale) {
-        this(AssetsService.getTexture(textureName), position, scale);
+        this(AssetsService.getTexture(textureName), position, scale, DEFAULT_Z_DEPTH);
+    }
+    public Image(final String textureName, final Vector2f position, final float scale, final int zDepth) {
+        this(AssetsService.getTexture(textureName), position, scale, zDepth);
     }
     public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale){
+        this(texture, position, scale, DEFAULT_Z_DEPTH);
+    }
+    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth){
         this.dimensions = new Vector2i(texture.width(), texture.height());
         this.dimensions.x *= scale;
         this.dimensions.y *= scale;
         this.texture = texture;
         this.position = position;
+        this.zDepth = zDepth;
     }
 
     @Override
@@ -51,7 +60,7 @@ public class Image implements HUDElement {
 
     @Override
     public int getZIndex() {
-        return 1;
+        return zDepth;
     }
 
     @Override
