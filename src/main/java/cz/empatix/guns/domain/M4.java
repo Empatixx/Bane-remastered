@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class M4 extends AbstractGun implements Gun{
-    private final static Logger LOGGER = LoggerFactory.getLogger(Pistol.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(M4.class);
     private final static int BULLETS_PER_SHOT = 4;
     private final static int BURST_BULLET_DELAY = 50;
     private final Image gunHud;
@@ -68,7 +68,7 @@ public class M4 extends AbstractGun implements Gun{
                     return false;
                 }
                 lastShootTime = System.currentTimeMillis();
-                LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
+                LOGGER.info("Shooting from M4 clip: {}, ammo: {}", currentClip, ammo);
                 final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
                 final Bullet bullet = new Bullet();
                 bullet.setPosition(shooterX, shooterY);
@@ -125,6 +125,7 @@ public class M4 extends AbstractGun implements Gun{
     @Override
     public void update(final double dt) {
         bullets.forEach(b -> b.update(dt));
+        bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
                 reloading = false;

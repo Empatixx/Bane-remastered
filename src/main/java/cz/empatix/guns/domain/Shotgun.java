@@ -63,7 +63,7 @@ public class Shotgun extends AbstractGun implements Gun {
             return false;
         }
         if (currentClip > 0) {
-            LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
+            LOGGER.info("Shooting from shotgun clip: {}, ammo: {}", currentClip, ammo);
             currentClip--;
             for(int i = 0;i<BULLETS_PER_SHOT;i++){
                 final float inaccuracy = this.inaccuracy * (float) Math.pow(-1, i) * (i + 1) / BULLETS_PER_SHOT;
@@ -95,6 +95,7 @@ public class Shotgun extends AbstractGun implements Gun {
     @Override
     public void update(final double dt) {
         bullets.forEach(b -> b.update(dt));
+        bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
                 reloading = false;

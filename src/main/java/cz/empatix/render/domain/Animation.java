@@ -49,12 +49,16 @@ public class Animation {
         lastAnimation = System.currentTimeMillis();
         playedOnce = false;
     }
-    public boolean hasPlayedOnce(){
+
+    public boolean hasPlayedOnce() {
         return playedOnce;
     }
 
     public int getCurrentTextureIndex() {
         return currentTextureIndex;
+    }
+    public int getCurrentStateNumSprites() {
+        return animationParts.get(currentState).numSprites();
     }
 
     public AnimationState getCurrentState() {
@@ -69,9 +73,9 @@ public class Animation {
         }
         if (System.currentTimeMillis() - lastAnimation > delayBetweenAnimations) {
             lastAnimation = System.currentTimeMillis();
-            if(part.reverse()){
+            if (part.reverse()) {
                 currentTextureIndex--;
-                if(currentTextureIndex < 0){
+                if (currentTextureIndex < 0) {
                     currentTextureIndex = part.numSprites() - 1;
                     playedOnce = true;
                 }
@@ -153,6 +157,7 @@ public class Animation {
                                 final int delayBetweenAnimations) {
             return addState(state, row, numSprites, width, height, delayBetweenAnimations, false, false);
         }
+
         public Builder addState(final AnimationState state,
                                 final int row,
                                 final int numSprites,
@@ -162,6 +167,7 @@ public class Animation {
                                 final boolean rotated) {
             return this.addState(state, row, numSprites, width, height, delayBetweenAnimations, rotated, false);
         }
+
         public Builder addState(final AnimationState state,
                                 final int row,
                                 final int numSprites,

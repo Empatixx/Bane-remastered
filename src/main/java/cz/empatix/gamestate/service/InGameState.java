@@ -6,7 +6,8 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
-import cz.empatix.map.generators.ProceduralMapGenerator;
+import cz.empatix.map.generators.MapGenerator;
+import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -30,7 +31,7 @@ public class InGameState extends GameState {
 
     @Override
     public void init() {
-        final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
+        final MapGenerator proceduralMapGenerator = new StaticMapGenerator();
 
         mapService = proceduralMapGenerator.generate();
         player = new Player();

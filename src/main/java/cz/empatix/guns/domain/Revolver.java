@@ -60,7 +60,7 @@ public class Revolver extends AbstractGun implements Gun {
             return false;
         }
         if (currentClip > 0) {
-            LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
+            LOGGER.info("Shooting from revolver clip: {}, ammo: {}", currentClip, ammo);
             final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
             float inaccuracy = this.inaccuracy * (ThreadLocalRandom.current().nextFloat() - 0.5f);
             final Bullet bullet = new Bullet();
@@ -90,6 +90,7 @@ public class Revolver extends AbstractGun implements Gun {
     @Override
     public void update(double dt) {
         bullets.forEach(b -> b.update(dt));
+        bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
                 reloading = false;

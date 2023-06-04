@@ -12,7 +12,7 @@ public final class LightSource {
     private final Vector2f position;
     private final Vector3f color;
     private final float radius;
-    private final float intensity;
+    private float intensity;
     private boolean isDestroyed = false;
 
     public LightSource(final Vector2f position,
@@ -89,5 +89,9 @@ public final class LightSource {
                 Camera.getX() + Camera.getTargetWidth() > position.x - radius * intensity &&
                 Camera.getY() < position.y + radius * intensity &&
                 Camera.getY() + Camera.getTargetHeight() > position.y - radius * intensity;
+    }
+
+    public void setIntensity(final float intensity) {
+        this.intensity = intensity;
     }
 }

@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class Uzi extends AbstractGun implements Gun{
-    private final static Logger LOGGER = LoggerFactory.getLogger(Pistol.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(Uzi.class);
     private final Image gunHud;
     private final Text ammoHud;
     private final List<Bullet> bullets;
@@ -61,7 +61,7 @@ public class Uzi extends AbstractGun implements Gun{
             return false;
         }
         if (currentClip > 0) {
-            LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
+            LOGGER.info("Shooting from uzi clip: {}, ammo: {}", currentClip, ammo);
             final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
             float inaccuracy = this.inaccuracy * (ThreadLocalRandom.current().nextFloat() - 0.5f);
             final Bullet bullet = new Bullet();
@@ -90,6 +90,7 @@ public class Uzi extends AbstractGun implements Gun{
     @Override
     public void update(final double dt) {
         bullets.forEach(b -> b.update(dt));
+        bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
                 reloading = false;

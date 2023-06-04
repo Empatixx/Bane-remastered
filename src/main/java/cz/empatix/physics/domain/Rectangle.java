@@ -1,5 +1,8 @@
 package cz.empatix.physics.domain;
 
+import cz.empatix.physics.service.AABB;
+import org.joml.Vector2f;
+
 public record Rectangle(
         int width,
         int height
@@ -7,15 +10,6 @@ public record Rectangle(
     public static Rectangle from(final int width, final int height){
         return new Rectangle(width, height);
     }
-    @Override
-    public boolean isIntersecting(final Geometry other) {
-        if(other instanceof Rectangle){
-            return this.isIntersecting((Rectangle) other);
-        } else {
-            throw new IllegalArgumentException("Unsupported geometry type");
-        }
-    }
-
     @Override
     public int getMass() {
         return width * height;
@@ -31,10 +25,14 @@ public record Rectangle(
         return true;
     }
 
-    private boolean isIntersecting(final Rectangle other){
-        return this.width < other.width + other.height &&
-                this.width + this.height > other.width &&
-                this.height < other.height + other.height &&
-                this.height + this.height > other.height;
+    @Override
+    public AABB getAABB(final Vector2f translation) {
+        return new AABB(
+                translation.x,
+                translation.x + width,
+                translation.y,
+                translation.y + height
+        );
     }
+
 }

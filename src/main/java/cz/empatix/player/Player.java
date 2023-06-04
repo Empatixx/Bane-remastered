@@ -36,7 +36,7 @@ public class Player implements Drawable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 38;
-    private final static int MOVE_FORCE = 30000000;
+    private final static int MOVE_FORCE = 10000000;
     private final static float LOW_HP_THRESHOLD = 0.3f;
     private final StatusBar healthBar;
     private final StatusBar armorBar;

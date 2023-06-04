@@ -3,7 +3,6 @@ package cz.empatix.physics.domain;
 import cz.empatix.physics.domain.transform.CommonTransform;
 import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.physics.domain.transform.Transform;
-import cz.empatix.physics.service.AABB;
 import cz.empatix.physics.service.CollisionListener;
 import org.joml.Vector2f;
 
@@ -16,6 +15,7 @@ public class PhysicsBody {
     private float linearDamping;
     private float restitution;
     private final int mass;
+    private boolean remove;
     public PhysicsBody(final Geometry geometry,
                        final Transform transform,
                        final int mass){
@@ -74,7 +74,7 @@ public class PhysicsBody {
     public boolean isIntersecting(final PhysicsBody other,
                                   final float dt) {
         if(getGeometry().canAABB() && other.getGeometry().canAABB()){
-            return AABB.isIntersecting(this, other, dt);
+            return AABBb.isIntersecting(this, other, dt);
         } else {
             //todo: SAT
             return false;
@@ -121,5 +121,12 @@ public class PhysicsBody {
     }
     public Geometry getGeometry() {
         return geometry;
+    }
+
+    public void destroy() {
+        remove = true;
+    }
+    public boolean canBeRemoved(){
+        return remove;
     }
 }

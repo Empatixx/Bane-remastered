@@ -50,6 +50,19 @@ public class Bullet implements Drawable {
         animation.update();
         lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
+        final Vector2f velocity = physicsBody.getVelocity();
+        if(velocity.x() == 0 || velocity.y() == 0) {
+            animation.setState(AnimationState.COLLISION);
+            physicsBody.setVelocity(0,0);
+        }
+        updateCollisionLightning();
+    }
+    public void updateCollisionLightning(){
+        if(animation.getCurrentState() == AnimationState.COLLISION && animation.hasPlayedOnce()){
+            lightSource.destroy();
+            physicsBody.destroy();
+        }
+        lightSource.setIntensity(0.75f * (1 - (float)animation.getCurrentTextureIndex()/animation.getCurrentStateNumSprites()));
     }
 
     @Override
@@ -89,6 +102,6 @@ public class Bullet implements Drawable {
         physicsBody.applyForce(forceX, forceY);
     }
     public boolean shouldRemove(){
-        return physicsBody.getVelocity().x() == 0 || physicsBody.getVelocity().y() == 0;
+        return animation.getCurrentState() == AnimationState.COLLISION && animation.hasPlayedOnce();
     }
 }
