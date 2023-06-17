@@ -49,6 +49,11 @@ public class PathRoom implements Room {
     }
 
     @Override
+    public void fixedUpdate(double dt) {
+
+    }
+
+    @Override
     public List<Renderable> toRender() {
         return List.of((DrawableBatch) tileMap::toRender);
     }

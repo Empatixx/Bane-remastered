@@ -37,6 +37,9 @@ public class MapService {
         rooms.forEach(room -> room.update(dt));
         updateCurrentRoom(player, (float) dt);
     }
+    public void fixedUpdate(final double dt) {
+        rooms.forEach(room -> room.fixedUpdate(dt));
+    }
 
     private void updateCurrentRoom(final Player p, float dt) {
         try {

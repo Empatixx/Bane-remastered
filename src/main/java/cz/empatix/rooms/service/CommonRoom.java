@@ -62,6 +62,11 @@ public class CommonRoom implements Room {
     }
 
     @Override
+    public void fixedUpdate(double dt) {
+        enemyService.fixedUpdate(dt);
+    }
+
+    @Override
     public List<Renderable> toRender() {
         final Renderable tiles = (DrawableBatch) tileMap::toRender;
         final Renderable enemies = (DrawableBatch) enemyService::toRender;

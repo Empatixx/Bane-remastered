@@ -45,6 +45,9 @@ public class PhysicsEngine {
                 if (bodyA.isImmmovable() && bodyB.isImmmovable()) {
                     continue;
                 }
+                if (!bodyA.isImmmovable() && !bodyB.isImmmovable()) {
+                    continue;
+                }
 
                 final CollisionResult result = collisionResolver.resolve(bodyA, bodyB);
 

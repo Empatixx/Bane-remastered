@@ -10,6 +10,7 @@ public interface Room {
     void leaveEvent(final Player p);
     void init();
     void update(double dt);
+    void fixedUpdate(double dt);
     List<Renderable> toRender();
     int getWidth();
     int getHeight();

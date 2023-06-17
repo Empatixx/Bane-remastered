@@ -19,9 +19,12 @@ public class EnemyService {
         enemyFactory = new EnemyFactory();
     }
 
-    public void update(double dt) {
+    public void update(final double dt) {
         enemies.removeIf(Enemy::isDead);
         enemies.forEach(enemy -> enemy.update(dt));
+    }
+    public void fixedUpdate(final double dt) {
+        enemies.forEach(enemy -> enemy.fixedUpdate(dt));
     }
 
     public List<Drawable> toRender() {

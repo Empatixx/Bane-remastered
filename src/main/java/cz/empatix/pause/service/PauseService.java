@@ -19,9 +19,9 @@ public class PauseService {
 
     public PauseService() {
         background = new Image("ingame/pausemenu.tga", new Vector2f(0, 0), 1f, 2);
-        final Button resumeButton = new Button("Resume", new Vector2f(0, 225), 1.5f);
-        final Button settingsButton = new Button("Settings", new Vector2f(0, 325), 1.5f);
-        final Button exitButton = new Button("Exit", new Vector2f(0, 425), 1.5f);
+        final Button resumeButton = new Button("Resume", new Vector2f(0, 225), 1.5f, 3);
+        final Button settingsButton = new Button("Settings", new Vector2f(0, 325), 1.5f, 3);
+        final Button exitButton = new Button("Exit", new Vector2f(0, 425), 1.5f, 3);
 
         buttons = List.of(resumeButton, settingsButton, exitButton);
 
@@ -38,7 +38,7 @@ public class PauseService {
         if(!pause){
             return List.of();
         }
-        final List<? extends Drawable> drawables = Stream.of(List.of(background), buttons)
+        final List<? extends Drawable> drawables = Stream.of(buttons, List.of(background))
                 .flatMap(Collection::stream)
                 .toList();
         return List.copyOf(drawables);

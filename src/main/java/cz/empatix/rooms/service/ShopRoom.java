@@ -54,6 +54,10 @@ public class ShopRoom implements Room {
     }
 
     @Override
+    public void fixedUpdate(double dt) {
+    }
+
+    @Override
     public List<Renderable> toRender() {
         final Renderable tileMapBatch = (DrawableBatch) tileMap::toRender;
         final Renderable roomObjectsBatch = (DrawableBatch) roomObjectService::toRender;

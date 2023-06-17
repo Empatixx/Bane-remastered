@@ -2,12 +2,16 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.enemies.skills.KingSlimeArmageddon;
+import cz.empatix.enemies.skills.SlimeSmash;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import org.joml.Vector2f;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class KingSlime implements Enemy {
     private final static int DIMENSION_WIDTH = 64;
@@ -16,9 +20,12 @@ public class KingSlime implements Enemy {
     private final static int DEFAULT_HEALTH = 90;
     private final Animation animation;
     private final Enemy bossImpl;
-    public KingSlime(){
+    private final KingSlimeArmageddon armageddon;
+    private final SlimeSmash slimeSmash;
+
+    public KingSlime() {
         animation = Animation.builder()
-                .setTotal(2,6)
+                .setTotal(2, 6)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .addState(AnimationState.DEATH, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
                 .texture(AssetsService.getTexture("ingame/kingslime.tga"))
@@ -26,15 +33,21 @@ public class KingSlime implements Enemy {
                 .build();
         animation.setState(AnimationState.IDLE);
         bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
+        armageddon = new KingSlimeArmageddon(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2));
+        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2), 25);
     }
+
     @Override
     public void update(double dt) {
         animation.update();
+        armageddon.update((float) dt);
+        slimeSmash.update((float) dt);
     }
 
     @Override
     public void fixedUpdate(double dt) {
-
+        armageddon.activate();
+        slimeSmash.activate();
     }
 
     @Override
@@ -68,7 +81,10 @@ public class KingSlime implements Enemy {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return bossImpl.getSubRenderables();
+        final List<Renderable> bossImpl = this.bossImpl.getSubRenderables();
+        final List<Renderable> armageddon = this.armageddon.getSubRenderables();
+        final List<Renderable> slimeSmash = this.slimeSmash.getSubRenderables();
+        return Stream.of(bossImpl, armageddon, slimeSmash).flatMap(List::stream).toList();
     }
 
     @Override
@@ -80,10 +96,12 @@ public class KingSlime implements Enemy {
     public RenderData renderData() {
         return bossImpl.renderData();
     }
+
     @Override
     public boolean canRender() {
         return bossImpl.canRender();
     }
+
     @Override
     public float getX() {
         return bossImpl.getX();

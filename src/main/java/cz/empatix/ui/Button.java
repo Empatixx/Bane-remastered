@@ -17,6 +17,7 @@ import org.joml.Vector3i;
 import java.util.List;
 
 public class Button implements UIElement {
+    private static final int DEFAULT_Z_DEPTH = 1;
     private final static String DEFAULT_TEXTURE = "menu/Menu_bar.tga";
     private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
     private final static int DEFAULT_WIDTH = 100;
@@ -26,22 +27,27 @@ public class Button implements UIElement {
     private final Text text;
     private final Animation animation;
     private boolean hover;
+    private int zDepth;
     private Runnable onClick;
 
     public Button(final String text, final Vector2f position) {
-        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, 1);
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, 1, DEFAULT_Z_DEPTH);
     }
     public Button(final String text, final Vector2f position, final float scale) {
-        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale);
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, DEFAULT_Z_DEPTH);
     }
-
+    public Button(final String text, final Vector2f position, final float scale, final int zDepth) {
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, zDepth);
+    }
     public Button(final String text,
                   final Vector2f position,
                   final String texture,
                   final Vector3i rgb,
                   final int width,
                   final int height,
-                  final float scale) {
+                  final float scale,
+                  final int zDepth) {
+        this.zDepth = zDepth;
         this.dimensions = new Vector2i(width, height);
         this.dimensions.x *= scale;
         this.dimensions.y *= scale;
@@ -59,7 +65,7 @@ public class Button implements UIElement {
         this.position = position.sub(new Vector2f(dimensions).div(2f));
         final Vector2f textPosition = new Vector2f(position)
                 .add(0, dimensions.y() / 2f);
-        this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, 1);
+        this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, zDepth);
         this.text.setCenterX(position.x, position.x + dimensions.x());
         this.text.setColorRGB(rgb);
     }
@@ -88,7 +94,7 @@ public class Button implements UIElement {
 
     @Override
     public int getZIndex() {
-        return 1;
+        return zDepth;
     }
 
     @Override

@@ -13,6 +13,7 @@ import cz.empatix.pause.service.PauseService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +59,7 @@ public class InGameState extends GameState {
     @Override
     public void fixedUpdate(double dt) {
         player.fixedUpdate(dt);
+        mapService.fixedUpdate(dt);
         gunService.fixedUpdate(player.getX() + player.getWidth()/2f, player.getY() + player.getHeight()/2f, Camera.getX() + mouseX, Camera.getY() + mouseY, dt);
     }
 
@@ -78,6 +80,12 @@ public class InGameState extends GameState {
         gunService.keyPressed(key);
         player.keyPressed(key);
         pauseService.keyPressed(key);
+        if(GLFW.GLFW_KEY_E == key){
+            player.setHealth(player.getHealth() - 1);
+        }
+        if(GLFW.GLFW_KEY_R == key){
+            player.setHealth(player.getHealth() + 1);
+        }
     }
 
     @Override

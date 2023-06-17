@@ -1,6 +1,8 @@
 package cz.empatix.enemies.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.enemies.skills.Dash;
+import cz.empatix.enemies.skills.Skill;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -12,6 +14,9 @@ public class Ghost implements Enemy{
     private final static int DEFAULT_HEALTH = 11;
     private final Animation animation;
     private final Enemy enemyImpl;
+    private final Skill dash;
+    private int moveForce = 10000000;
+
     public Ghost(){
         animation = Animation.builder()
                 .setTotal(2,5)
@@ -22,10 +27,13 @@ public class Ghost implements Enemy{
                 .build();
         animation.setState(AnimationState.IDLE);
         enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
+        dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);
     }
     @Override
     public void update(double dt) {
         animation.update();
+        dash.update((float)dt);
+        dash.activate();
     }
 
     @Override
