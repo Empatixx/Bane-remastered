@@ -6,10 +6,12 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.generators.MapGenerator;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.pause.service.PauseService;
+import cz.empatix.physics.service.PhysicsEngine;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
@@ -39,7 +41,7 @@ public class InGameState extends GameState {
         mapService = proceduralMapGenerator.generate();
         player = new Player();
         gunService = new GunService();
-        pauseService = new PauseService();
+        pauseService = new PauseService(() -> setCurrentState(GameStateType.MENU));
 
         AudioService.getInstance().play(Soundtrack.INGAME);
     }
@@ -72,14 +74,18 @@ public class InGameState extends GameState {
 
     @Override
     public void cleanUp() {
-
+        PhysicsEngine.clear();
+        LightningService.getInstance().clear();
     }
 
     @Override
-    public void keyPressed(int key) {
+    public void keyPressed(final int key) {
+        pauseService.keyPressed(key);
+        if(pauseService.isPause()){
+            return;
+        }
         gunService.keyPressed(key);
         player.keyPressed(key);
-        pauseService.keyPressed(key);
         if(GLFW.GLFW_KEY_E == key){
             player.setHealth(player.getHealth() - 1);
         }
@@ -89,22 +95,38 @@ public class InGameState extends GameState {
     }
 
     @Override
-    public void keyReleased(int key) {
+    public void keyReleased(final int key) {
+        if(pauseService.isPause()){
+            return;
+        }
         player.keyReleased(key);
     }
 
     @Override
-    public void mousePressed(int button) {
+    public void mousePressed(final int button) {
+        if(pauseService.isPause()){
+            pauseService.mousePressed(button, mouseX, mouseY);
+            return;
+        }
         gunService.setShooting(true);
     }
 
     @Override
     public void mouseReleased(int button) {
+        if(pauseService.isPause()){
+            return;
+        }
         gunService.setShooting(false);
     }
 
     @Override
     public void mouseScrolled(double xoffset, double yoffset) {
 
+    }
+
+    @Override
+    public void setCurrentState(GameStateType type) {
+        super.setCurrentState(type);
+        cleanUp();
     }
 }

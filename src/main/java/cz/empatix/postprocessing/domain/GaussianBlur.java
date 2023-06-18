@@ -12,6 +12,7 @@ public class GaussianBlur implements Postprocess{
     private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE, RenderScene.HUD);
     private int textureId;
     private float blurAmount = 10f;
+    private static boolean enabled = false;
     @Override
     public void apply(final float dt) {
 
@@ -35,7 +36,10 @@ public class GaussianBlur implements Postprocess{
 
     @Override
     public boolean canRender() {
-        return false;
+        return enabled;
     }
 
+    public static void setEnabled(final boolean enabled) {
+        GaussianBlur.enabled = enabled;
+    }
 }

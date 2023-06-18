@@ -46,4 +46,8 @@ public class LightningService {
                 .filter(LightSource::isOnCamera)
                 .toList();
     }
+
+    public void clear() {
+        lightSources.clear();
+    }
 }

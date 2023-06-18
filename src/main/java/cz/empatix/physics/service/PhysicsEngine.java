@@ -33,6 +33,10 @@ public class PhysicsEngine {
         physicsBodies.add(physicsBody);
     }
 
+    public static void clear() {
+        physicsBodies.clear();
+    }
+
     public void fixedUpdate(final double dt) {
         physicsBodies.forEach(body -> bodyUpdater.update(body, (float) dt));
         for (int i = 0; i < physicsBodies.size(); i++) {

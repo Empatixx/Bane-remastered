@@ -16,10 +16,10 @@ import org.joml.Vector3i;
 
 import java.util.List;
 
-public class Button implements UIElement {
+public class CommonButton implements UIElement {
     private static final int DEFAULT_Z_DEPTH = 1;
     private final static String DEFAULT_TEXTURE = "menu/Menu_bar.tga";
-    private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
+    private final static Vector3i DEFAULT_COLOR = new Vector3i(200, 92, 18);
     private final static int DEFAULT_WIDTH = 100;
     private final static int DEFAULT_HEIGHT = 50;
     private final Vector2f position;
@@ -27,26 +27,26 @@ public class Button implements UIElement {
     private final Text text;
     private final Animation animation;
     private boolean hover;
-    private int zDepth;
+    private final int zDepth;
     private Runnable onClick;
 
-    public Button(final String text, final Vector2f position) {
+    public CommonButton(final String text, final Vector2f position) {
         this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, 1, DEFAULT_Z_DEPTH);
     }
-    public Button(final String text, final Vector2f position, final float scale) {
+    public CommonButton(final String text, final Vector2f position, final float scale) {
         this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, DEFAULT_Z_DEPTH);
     }
-    public Button(final String text, final Vector2f position, final float scale, final int zDepth) {
+    public CommonButton(final String text, final Vector2f position, final float scale, final int zDepth) {
         this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, zDepth);
     }
-    public Button(final String text,
-                  final Vector2f position,
-                  final String texture,
-                  final Vector3i rgb,
-                  final int width,
-                  final int height,
-                  final float scale,
-                  final int zDepth) {
+    public CommonButton(final String text,
+                        final Vector2f position,
+                        final String texture,
+                        final Vector3i rgb,
+                        final int width,
+                        final int height,
+                        final float scale,
+                        final int zDepth) {
         this.zDepth = zDepth;
         this.dimensions = new Vector2i(width, height);
         this.dimensions.x *= scale;
@@ -75,11 +75,11 @@ public class Button implements UIElement {
         return new RenderData(
                 animation.getVertices(position),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getOriginProjection())
         );
     }
 
-    public void setOnClick(final Runnable onClick) {
+    public void onClick(final Runnable onClick) {
         this.onClick = onClick;
     }
 

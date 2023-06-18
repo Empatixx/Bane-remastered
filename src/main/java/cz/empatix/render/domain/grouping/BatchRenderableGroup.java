@@ -11,7 +11,7 @@ import java.util.List;
 public record BatchRenderableGroup(
         List<DrawableData> drawableData
 ) implements RenderableGroup {
-    public BatchRenderableGroup(DrawableBatch batch) {
+    public BatchRenderableGroup(final DrawableBatch batch) {
         this(batch.getDrawables()
                 .stream()
                 .filter(Drawable::canRender)

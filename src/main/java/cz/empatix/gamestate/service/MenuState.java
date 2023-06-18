@@ -10,44 +10,46 @@ import cz.empatix.hud.service.HUDElement;
 import cz.empatix.hud.service.Image;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
-import cz.empatix.ui.Button;
+import cz.empatix.ui.CommonButton;
 import cz.empatix.ui.UIElement;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class MenuState extends GameState {
     private HUDElement background;
-    private final List<UIElement> uiElements;
-    private final List<HUDElement> hudElements;
+    private List<UIElement> uiElements;
+    private List<HUDElement> hudElements;
+    private boolean loadedOnce = false;
 
     public MenuState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.MENU);
-        uiElements = new ArrayList<>();
-        hudElements = new ArrayList<>();
     }
 
     @Override
     public void init() {
+        if (loadedOnce) {
+            return;
+        }
+
         background = new CommonBackground("menu/bg.png");
 
-        final Button playButton = new Button("Play", Camera.centerX().add(0, 225), 1.5f);
-        playButton.setOnClick(() -> setCurrentState(GameStateType.INGAME));
-        uiElements.add(playButton);
+        final CommonButton playButton = new CommonButton("Play", Camera.centerX().add(0, 225), 1.5f);
+        final CommonButton settingsButton = new CommonButton("Settings", Camera.centerX().add(0, 325), 1.5f);
+        final CommonButton exitButton = new CommonButton("Exit", Camera.centerX().add(0, 425), 1.5f);
 
-        final Button settingsButton = new Button("Settings", Camera.centerX().add(0, 325), 1.5f);
-        uiElements.add(settingsButton);
+        playButton.onClick(() -> setCurrentState(GameStateType.INGAME));
+        exitButton.onClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
 
-        final Button exitButton = new Button("Exit", Camera.centerX().add(0, 425), 1.5f);
-        exitButton.setOnClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
-        uiElements.add(exitButton);
+        final Image title = new Image("menu/logo.tga", Camera.centerX().add(-114, 50), 3f);
 
-        hudElements.add(new Image("menu/logo.tga", Camera.centerX().add(-114,50), 3f));
+        uiElements = List.of(playButton, settingsButton, exitButton);
+        hudElements = List.of(title);
 
         AudioService.getInstance().play(Soundtrack.MAIN_MENU);
+        loadedOnce = true;
     }
 
     @Override
