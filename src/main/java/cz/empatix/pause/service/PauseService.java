@@ -23,9 +23,9 @@ public class PauseService {
         final TextureAtlas.Entry pauseBgTxt = AssetsService.getTexture("ingame/pausebg.tga");
         background = new Image(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2);
 
-        final TransparentButton resumeButton = new TransparentButton("Resume", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 225), 100, 25, 3);
-        final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 275), 100, 25, 3);
-        final TransparentButton exitButton = new TransparentButton("Exit", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 325), 100, 25, 3);
+        final TransparentButton resumeButton = new TransparentButton("Resume", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 225), 3);
+        final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 275), 3);
+        final TransparentButton exitButton = new TransparentButton("Exit", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 325), 3);
 
         resumeButton.onClick(() -> pause = false);
         settingsButton.onClick(() -> System.out.println("Statistics"));

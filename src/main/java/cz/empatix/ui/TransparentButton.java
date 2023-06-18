@@ -22,18 +22,17 @@ public class TransparentButton implements UIElement{
 
     public TransparentButton(final String text,
                         final Vector2f position,
-                        final int width,
-                        final int height,
                         final int zDepth) {
         this.zDepth = zDepth;
-        this.dimensions = new Vector2i(width, height);
 
-        this.position = position.sub(new Vector2f(dimensions).div(2f));
-        final Vector2f textPosition = new Vector2f(position)
-                .add(0, dimensions.y() / 2f);
-        this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, zDepth);
-        this.text.setCenterX(position.x, position.x + dimensions.x());
+        this.text = new Text(text, "PixelFJVerdana12pt.ttf", new Vector2f(), zDepth);
         this.text.setColorRGB(DEFAULT_COLOR);
+
+        this.dimensions = new Vector2i((int)this.text.getWidth(), (int)this.text.getHeight());
+        this.position = position.sub(new Vector2f(dimensions).div(2f));
+
+        this.text.setPosition(position.x(), position.y() + dimensions.y() / 2f);
+        this.text.setCenterX(position.x, position.x + dimensions.x());
     }
 
     @Override
