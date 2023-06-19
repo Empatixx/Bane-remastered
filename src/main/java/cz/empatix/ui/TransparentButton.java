@@ -1,9 +1,9 @@
 package cz.empatix.ui;
 
 import cz.empatix.hud.service.Text;
-import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
@@ -11,6 +11,8 @@ import org.joml.Vector3i;
 import java.util.List;
 
 public class TransparentButton implements UIElement{
+    private final static RenderScene DEFAULT_SCENE = RenderScene.OVERLAYS;
+    private final static int DIMENSIONS_BONUS_OFFSET = 10;
     private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
     private final static Vector3i DEFAULT_HOVER_COLOR = new Vector3i(255, 255, 0);
     private final Vector2f position;
@@ -21,18 +23,17 @@ public class TransparentButton implements UIElement{
     private Runnable onClick;
 
     public TransparentButton(final String text,
-                        final Vector2f position,
-                        final int zDepth) {
+                             final Vector2f position,
+                             final int zDepth) {
         this.zDepth = zDepth;
-
         this.text = new Text(text, "PixelFJVerdana12pt.ttf", new Vector2f(), zDepth);
         this.text.setColorRGB(DEFAULT_COLOR);
-
         this.dimensions = new Vector2i((int)this.text.getWidth(), (int)this.text.getHeight());
-        this.position = position.sub(new Vector2f(dimensions).div(2f));
+        this.position = position;
+        this.position.sub(dimensions.x() / 2f, 0);
+        this.text.setPosition(this.position.x(), this.position.y());
 
-        this.text.setPosition(position.x(), position.y() + dimensions.y() / 2f);
-        this.text.setCenterX(position.x, position.x + dimensions.x());
+        this.dimensions.add(DIMENSIONS_BONUS_OFFSET, DIMENSIONS_BONUS_OFFSET);
     }
 
     @Override
@@ -43,7 +44,6 @@ public class TransparentButton implements UIElement{
     public void onClick(final Runnable onClick) {
         this.onClick = onClick;
     }
-
     @Override
     public List<Renderable> getSubRenderables(){
         return text.getSubRenderables();
@@ -66,10 +66,8 @@ public class TransparentButton implements UIElement{
     }
 
     boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
-        return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(dimensions.x(), dimensions.y()))
-                .addShape((float) mouseX, (float) mouseY)
-                .resolve();
+        return mouseX > position.x - DIMENSIONS_BONUS_OFFSET && mouseX < position.x + dimensions.x()  &&
+                mouseY > position.y - dimensions.y() && mouseY < position.y + DIMENSIONS_BONUS_OFFSET;
     }
 
     @Override
@@ -106,5 +104,10 @@ public class TransparentButton implements UIElement{
     @Override
     public boolean isHovered() {
         return hover;
+    }
+
+    @Override
+    public RenderScene renderScene() {
+        return DEFAULT_SCENE;
     }
 }

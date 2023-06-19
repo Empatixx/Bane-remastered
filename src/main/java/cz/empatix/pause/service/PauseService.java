@@ -3,7 +3,9 @@ package cz.empatix.pause.service;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.service.Image;
+import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.ui.TransparentButton;
 import org.joml.Vector2f;
@@ -21,7 +23,7 @@ public class PauseService {
 
     public PauseService(final Runnable menuAction) {
         final TextureAtlas.Entry pauseBgTxt = AssetsService.getTexture("ingame/pausebg.tga");
-        background = new Image(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2);
+        background = new Image(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2, RenderScene.OVERLAYS);
 
         final TransparentButton resumeButton = new TransparentButton("Resume", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 225), 3);
         final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 275), 3);
@@ -51,7 +53,7 @@ public class PauseService {
     public void keyPressed(final int key) {
         if (key == GLFW.GLFW_KEY_ESCAPE) {
             pause = !pause;
-            //GaussianBlur.setEnabled(pause);
+            GaussianBlur.setEnabled(pause);
         }
     }
 

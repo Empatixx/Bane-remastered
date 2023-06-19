@@ -10,14 +10,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class RenderEngine {
-    private final Framebuffer sceneFbo;
-    private final Framebuffer hudFbo;
+    private final Framebuffer fbo;
     private final RenderService renderService;
     private final PostprocessService postprocessService;
 
     public RenderEngine() {
-        this.sceneFbo = Framebuffer.createRgb();
-        this.hudFbo = Framebuffer.createRgba();
+        this.fbo = Framebuffer.createRgba();
         this.renderService = new RenderService();
         this.postprocessService = new PostprocessService(renderService);
     }
@@ -31,19 +29,21 @@ public class RenderEngine {
                 .collect(Collectors.groupingBy(RenderableGroup::getRenderScene));
         Camera.update((float) dt);
 
-        sceneFbo.bind();
-        renderService.render(renderScenes.get(RenderScene.SCENE));
-        sceneFbo.unbind();
-        hudFbo.bind();
-        renderService.render(renderScenes.get(RenderScene.HUD));
-        hudFbo.unbind();
-
-        postprocessService.process(sceneFbo, RenderScene.SCENE, (float) dt);
-        postprocessService.process(hudFbo, RenderScene.HUD, (float) dt);
+        render(renderScenes, RenderScene.SCENE, (float) dt);
+        render(renderScenes, RenderScene.HUD, (float) dt);
+        render(renderScenes, RenderScene.OVERLAYS, (float) dt);
 
         postprocessService.flushFramebuffers();
-        sceneFbo.flush();
-        hudFbo.flush();
+    }
+
+    private void render(Map<RenderScene, List<RenderableGroup>> renderScenes,
+                        final RenderScene scene,
+                        final float dt) {
+        fbo.bind();
+        renderService.render(renderScenes.get(scene));
+        fbo.unbind();
+        postprocessService.process(fbo, scene, dt);
+        fbo.flush();
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {

@@ -2,6 +2,7 @@ package cz.empatix.hud.service;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
@@ -10,16 +11,20 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 public class Image implements HUDElement {
+    private final static RenderScene DEFAULT_SCENE = RenderScene.HUD;
     private final static int DEFAULT_Z_DEPTH = 1;
     private final TextureAtlas.Entry texture;
     private final Vector2i dimensions;
     private final Vector2f position;
-    private int zDepth;
+    private final RenderScene scene;
+    private final int zDepth;
 
     public Image(final String textureName, final Vector2f position, final int width, final int height) {
         this.dimensions = new Vector2i(width, height);
         this.texture = AssetsService.getTexture(textureName);
         this.position = new Vector2f(position);
+        this.zDepth = DEFAULT_Z_DEPTH;
+        this.scene = DEFAULT_SCENE;
     }
     public Image(final String textureName, final Vector2f position, final float scale) {
         this(AssetsService.getTexture(textureName), position, scale, DEFAULT_Z_DEPTH);
@@ -37,8 +42,17 @@ public class Image implements HUDElement {
         this.texture = texture;
         this.position = position;
         this.zDepth = zDepth;
+        this.scene = DEFAULT_SCENE;
     }
-
+    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene){
+        this.dimensions = new Vector2i(texture.width(), texture.height());
+        this.dimensions.x *= scale;
+        this.dimensions.y *= scale;
+        this.texture = texture;
+        this.position = position;
+        this.zDepth = zDepth;
+        this.scene = scene;
+    }
     @Override
     public RenderData renderData() {
         return new RenderData(
@@ -66,5 +80,10 @@ public class Image implements HUDElement {
     @Override
     public void update(double dt) {
 
+    }
+
+    @Override
+    public RenderScene renderScene() {
+        return scene;
     }
 }

@@ -37,7 +37,7 @@ public record Font(
         return glyphDrawables;
     }
 
-    public int getHeight(final String text){
+    public float getHeight(final String text){
         return (int) text.chars()
                 .mapToObj(c -> glyphs.getOrDefault((char) c, null))
                 .mapToDouble(g -> g.ascent() + g.descent())
