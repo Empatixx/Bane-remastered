@@ -1,5 +1,6 @@
 package cz.empatix.render.domain;
 
+import com.google.common.base.Preconditions;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -48,6 +49,10 @@ public class Animation {
         currentTextureIndex = 0;
         lastAnimation = System.currentTimeMillis();
         playedOnce = false;
+    }
+    public void setCurrentFrame(final int frame){
+        Preconditions.checkArgument(frame >= 0 && frame < animationParts.get(currentState).numSprites());
+        currentTextureIndex = frame;
     }
 
     public boolean hasPlayedOnce() {

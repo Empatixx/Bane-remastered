@@ -8,6 +8,7 @@ import cz.empatix.tiles.service.BooleanMapUtil;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class CommonTileMap implements TileMap {
     private final Tile[][] tiles;
@@ -18,7 +19,7 @@ public class CommonTileMap implements TileMap {
 
     public CommonTileMap(final int rows, final int cols,
                          final int xOffset, final int yOffset,
-                         final List<RoomDirection> directions) {
+                         final Set<RoomDirection> directions) {
         this.rows = rows;
         this.cols = cols;
         this.xOffset = xOffset;
@@ -27,7 +28,7 @@ public class CommonTileMap implements TileMap {
         tiles = createTiles(rows, cols, xOffset, yOffset, directions);
     }
 
-    private Tile[][] createTiles(int rows, int cols, int xOffset, int yOffset, List<RoomDirection> directions) {
+    private Tile[][] createTiles(int rows, int cols, int xOffset, int yOffset, Set<RoomDirection> directions) {
         final Tile[][] tiles;
         final TileFactory tileFactory = new TileFactory();
         final boolean[][] map = BooleanMapUtil.createEmptyMap(rows, cols);

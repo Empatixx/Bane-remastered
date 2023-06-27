@@ -7,6 +7,7 @@ import cz.empatix.tiles.service.BooleanMapUtil;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class TreasureTileMap implements TileMap {
     private Tile[][] tiles;
@@ -17,7 +18,7 @@ public class TreasureTileMap implements TileMap {
 
     public TreasureTileMap(final int rows, final int cols,
                            final int xOffset, final int yOffset,
-                           final List<RoomDirection> directions) {
+                           final Set<RoomDirection> directions) {
         this.rows = rows;
         this.cols = cols;
         this.xOffset = xOffset;

@@ -2,10 +2,7 @@ package cz.empatix.render.domain;
 
 import cz.empatix.assets.domain.RawShader;
 import cz.empatix.common.utils.BufferFactory;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,5 +116,8 @@ public record Shader(
 
     public void setUniform4f(final String name, final Vector4f value) {
         getLocation(name).ifPresent(location -> glUniform4f(location, value.x, value.y, value.z, value.w));
+    }
+    public void setUniform2i(final String name, final Vector2i value) {
+        getLocation(name).ifPresent(location -> glUniform2i(location, value.x, value.y));
     }
 }

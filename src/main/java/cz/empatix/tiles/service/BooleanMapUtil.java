@@ -3,7 +3,7 @@ package cz.empatix.tiles.service;
 import cz.empatix.map.domain.PathRoomGenInfo;
 import cz.empatix.map.domain.RoomDirection;
 
-import java.util.List;
+import java.util.Set;
 
 public class BooleanMapUtil {
     public static boolean[][] edgeClamp(final boolean[][] original) {
@@ -38,7 +38,7 @@ public class BooleanMapUtil {
         }
         return map;
     }
-    public static void setPaths(final boolean[][] map, List<RoomDirection> directions){
+    public static void setPaths(final boolean[][] map, Set<RoomDirection> directions){
         final int rows = map.length;
         final int cols = map[0].length;
 

@@ -9,13 +9,23 @@ import cz.empatix.render.shaderbindings.GaussianBlurBinding;
 import java.util.Set;
 
 public class GaussianBlur implements Postprocess{
+    private final static int MAX_BLUR_AMOUNT = 5;
+    private final static float MAX_DARKEN_AMOUNT = 0.3f;
+    private final static float BLUR_STEP = 5f;
+    private final static float DARKNESS_STEP = 0.5f;
     private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE, RenderScene.HUD);
     private int textureId;
-    private float blurAmount = 10f;
+    private static float blurAmount = 0;
+    private static float darkness = 0;
     private static boolean enabled = false;
     @Override
     public void apply(final float dt) {
-
+        if (blurAmount < MAX_BLUR_AMOUNT) {
+            blurAmount += BLUR_STEP * dt;
+        }
+        if (darkness < MAX_DARKEN_AMOUNT) {
+            darkness += DARKNESS_STEP * dt;
+        }
     }
 
     @Override
@@ -31,7 +41,7 @@ public class GaussianBlur implements Postprocess{
     @Override
     public RenderData renderData() {
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new GaussianBlurBinding(blurAmount, Camera.getOriginWithoutZoomProjection()));
+                new GaussianBlurBinding(blurAmount, 1f - darkness, Camera.getOriginWithoutZoomProjection()));
     }
 
     @Override
@@ -41,5 +51,9 @@ public class GaussianBlur implements Postprocess{
 
     public static void setEnabled(final boolean enabled) {
         GaussianBlur.enabled = enabled;
+        if(!enabled) {
+            blurAmount = 0;
+            darkness = 0;
+        }
     }
 }

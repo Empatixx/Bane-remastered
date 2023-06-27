@@ -5,6 +5,9 @@ import cz.empatix.rooms.service.PathRoom;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 
+import java.util.List;
+import java.util.Map;
+
 public class PathRoomGenInfo extends RoomGenInfo {
     public final static int MIN_ROWS = 4;
     public final static int MIN_COLS = 4;
@@ -17,20 +20,25 @@ public class PathRoomGenInfo extends RoomGenInfo {
 
     @Override
     public Room constructRoom() {
-        Preconditions.checkArgument(connections.size() == 2, "Path room must have 2 connections");
-        final RoomGenConnection parentConn = connections.get(0);
-        final RoomGenConnection childConn = connections.get(1);
+        Preconditions.checkArgument(neighbours.size() == 2, "Path room must have 2 connections");
+        final List<Map.Entry<RoomDirection, RoomGenInfo>> entries = List.copyOf(neighbours.entrySet());
 
-        final boolean isVertical = parentConn.direction().isVertical() && childConn.direction().isVertical();
-        final boolean isHorizontal = parentConn.direction().isHorizontal() && childConn.direction().isHorizontal();
+        final Map.Entry<RoomDirection, RoomGenInfo> parentNeighbour = entries.get(0);
+        final Map.Entry<RoomDirection, RoomGenInfo> childNeighbour = entries.get(1);
+
+        final RoomDirection parentDirection = parentNeighbour.getKey();
+        final RoomGenInfo parent = parentNeighbour.getValue();
+
+        final RoomDirection childDirection = childNeighbour.getKey();
+        final RoomGenInfo child = childNeighbour.getValue();
+
+        final boolean isVertical = parentDirection.isVertical() && childDirection.isVertical();
+        final boolean isHorizontal = parentDirection.isHorizontal() && childDirection.isHorizontal();
 
         Preconditions.checkArgument(isVertical || isHorizontal,
                 "Path room must have connections in the same direction");
 
-        final RoomGenInfo parent = parentConn.roomGenInfo();
-        final RoomGenInfo child = childConn.roomGenInfo();
 
-        final RoomDirection direction = parentConn.direction();
         final int newOffsetX, newOffsetY;
 
         final int centerX = (parent.getWidth() - this.getWidth()) / 2;
@@ -42,7 +50,7 @@ public class PathRoomGenInfo extends RoomGenInfo {
         final int shiftCenterX = centerX % tileSize;
         final int shiftCenterY = centerY % tileSize;
 
-        switch (direction) {
+        switch (parentDirection) {
             case TOP -> {
                 newOffsetX = parent.getXOffset() - shiftCenterX + centerX;
                 newOffsetY = parent.getYOffset() - this.getHeight();
@@ -59,12 +67,12 @@ public class PathRoomGenInfo extends RoomGenInfo {
                 newOffsetX = child.getXOffset() - this.getWidth();
                 newOffsetY = parent.getYOffset() - shiftCenterY + centerY;
             }
-            default -> throw new IllegalStateException("Unexpected value: " + direction);
+            default -> throw new IllegalStateException("Unexpected value: " + parentDirection);
         }
 
         // room dimensions for Camera
         final int minX, minY, maxX, maxY;
-        switch (direction){
+        switch (parentDirection){
             case TOP, BOTTOM -> {
                 minX = parent.getXOffset();
                 maxX = parent.getXOffset() + parent.getWidth();
@@ -79,7 +87,7 @@ public class PathRoomGenInfo extends RoomGenInfo {
                 minY = parent.getYOffset();
                 maxY = parent.getYOffset() + parent.getHeight();
             }
-            default -> throw new IllegalStateException("Unexpected value: " + direction);
+            default -> throw new IllegalStateException("Unexpected value: " + parentDirection);
         }
         setCoordinates(newOffsetX, newOffsetY);
         return new PathRoom(xOffset, yOffset, rows, cols, minX, minY, maxX, maxY, isHorizontal);

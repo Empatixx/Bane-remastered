@@ -1,9 +1,12 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface Room {
     void enterEvent(final Player p);
@@ -39,4 +42,10 @@ public interface Room {
                 xStart + width >= x && yStart + height >= y;
     }
 
+    void addNeighbour(final RoomDirection direction, final Room room);
+
+    default Collection<Room> getNeighbours(){
+        return getNeighboursMap().values();
+    }
+    Map<RoomDirection, Room> getNeighboursMap();
 }

@@ -5,8 +5,7 @@ import cz.empatix.tiles.domain.Tile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class RoomGenInfo {
@@ -15,7 +14,7 @@ public abstract class RoomGenInfo {
 
     protected int xOffset, yOffset;
     protected int cols, rows;
-    protected List<RoomGenConnection> connections = new ArrayList<>(MAX_ROOM_NEIGHBOURS);
+    protected Map<RoomDirection, RoomGenInfo> neighbours = new EnumMap<>(RoomDirection.class);
 
     public abstract void initDimensions();
 
@@ -29,30 +28,12 @@ public abstract class RoomGenInfo {
     }
 
     public void addNeighbour(final RoomGenInfo neighbour, final RoomDirection dir) {
-        connections.add(new RoomGenConnection(neighbour, dir));
+        neighbours.put(dir, neighbour);
     }
     public List<RoomDirection> getAvailableDirections() {
         final List<RoomDirection> availableDirections = new ArrayList<>(List.of(RoomDirection.values()));
-        availableDirections.removeIf(this::hasNeighbourInDirection);
+        availableDirections.removeIf(direction -> neighbours.containsKey(direction));
         return availableDirections;
-    }
-    public List<RoomDirection> getDirections() {
-        return connections.stream()
-                .map(RoomGenConnection::direction)
-                .toList();
-    }
-    public List<RoomGenInfo> getNeighbours() {
-        return connections.stream()
-                .map(RoomGenConnection::roomGenInfo)
-                .toList();
-    }
-    public List<RoomGenConnection> getConnections() {
-        return connections;
-    };
-    private boolean hasNeighbourInDirection(final RoomDirection dir) {
-        return connections
-                .stream()
-                .anyMatch(connection -> connection.direction() == dir);
     }
 
     public int getWidthCenter() {
@@ -124,5 +105,9 @@ public abstract class RoomGenInfo {
                 this.getXOffset() + this.getWidth() > other.getXOffset() &&
                 this.getYOffset() < other.getYOffset() + other.getHeight() &&
                 this.getYOffset() + this.getHeight() > other.getYOffset();
+    }
+
+    public Map<RoomDirection, RoomGenInfo> getNeighbours() {
+        return neighbours;
     }
 }

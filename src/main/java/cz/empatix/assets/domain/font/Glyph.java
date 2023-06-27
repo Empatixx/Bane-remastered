@@ -40,15 +40,17 @@ public record Glyph(
 
     public GlyphDrawable toDrawable(final Vector2f position,
                                     final Vector3f color,
-                                    final int zDepth) {
-        return new GlyphDrawable(this, position, color, zDepth);
+                                    final int zDepth,
+                                    final RenderScene scene) {
+        return new GlyphDrawable(this, position, color, zDepth, scene);
     }
 
     public record GlyphDrawable(
             Glyph glyph,
             Vector2f position,
             Vector3f color,
-            int zDepth
+            int zDepth,
+            RenderScene scene
     ) implements Drawable {
         @Override
         public RenderData renderData() {
@@ -61,7 +63,7 @@ public record Glyph(
 
         @Override
         public RenderScene renderScene() {
-            return RenderScene.HUD;
+            return scene;
         }
 
         private List<Vertex> vertices() {

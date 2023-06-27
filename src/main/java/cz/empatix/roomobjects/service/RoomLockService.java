@@ -7,12 +7,13 @@ import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 
 import java.util.List;
+import java.util.Set;
 
 public class RoomLockService {
     private final List<PathGate> pathGates;
     private boolean locked;
 
-    public RoomLockService(final Room room, final List<RoomDirection> directions) {
+    public RoomLockService(final Room room, final Set<RoomDirection> directions) {
         pathGates = directions.stream()
                 .map(d -> getPathGates(room, d))
                 .flatMap(List::stream)

@@ -10,25 +10,25 @@ import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
-import java.util.List;
+import java.util.*;
 
 public class CommonRoom implements Room {
     private static final int MAX_ENEMIES = 5;
     private final EnemyService enemyService;
     private final RoomObjectService roomObjectService;
     private final RoomLockService roomLockService;
-    private final List<RoomDirection> neighbors;
+    private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
     private boolean visited;
 
     public CommonRoom(final int rows, final int cols, final int xOffset, final int yOffset,
-                      final List<RoomDirection> roomDirections) {
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
-        neighbors = roomDirections;
+                      final Set<RoomDirection> neighbors) {
+        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         enemyService = new EnemyService();
         roomObjectService = new RoomObjectService();
-        roomLockService = new RoomLockService(this, roomDirections);
+        roomLockService = new RoomLockService(this, neighbors);
         visited = false;
+        this.neighbors = new HashMap<>(neighbors.size());
     }
 
     @Override
@@ -93,4 +93,13 @@ public class CommonRoom implements Room {
     public int getY() {
         return tileMap.getY();
     }
+    @Override
+    public void addNeighbour(RoomDirection direction, Room room) {
+        neighbors.put(direction, room);
+    }
+    @Override
+    public Map<RoomDirection, Room> getNeighboursMap() {
+        return neighbors;
+    }
+
 }

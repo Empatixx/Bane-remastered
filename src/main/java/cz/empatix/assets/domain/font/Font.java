@@ -3,6 +3,7 @@ package cz.empatix.assets.domain.font;
 
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.builders.TextureBuilder;
+import cz.empatix.render.domain.RenderScene;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -21,9 +22,10 @@ public record Font(
     }
 
     public List<Renderable> getDrawables(final String text,
-                                           final Vector2f position,
-                                           final Vector3f color,
-                                           final int zDepth) {
+                                         final Vector2f position,
+                                         final Vector3f color,
+                                         final int zDepth,
+                                         final RenderScene renderScene) {
         final List<Renderable> glyphDrawables = new ArrayList<>();
         final Vector2f positionShifting = new Vector2f(position);
         for (final char c : text.toCharArray()) {
@@ -31,7 +33,7 @@ public record Font(
                 throw new IllegalArgumentException("Font does not contain glyph for character: " + c);
             }
             final Glyph glyph = glyphs.get(c);
-            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth));
+            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth, renderScene));
             positionShifting.x += glyph.advance();
         }
         return glyphDrawables;

@@ -1,5 +1,6 @@
 package cz.empatix.map.service;
 
+import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
@@ -8,7 +9,9 @@ import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,17 +19,19 @@ public class MapService {
     private final static Logger LOGGER = LoggerFactory.getLogger(MapService.class);
     private final List<Room> rooms;
     private final List<Room> pathRooms;
+    private final Consumer<Room> minimapRoomConsumer;
     private Room currentRoom;
 
-    public MapService(final List<Room> rooms,
-                      final List<Room> pathRooms) {
-        this.pathRooms = pathRooms;
-        this.rooms = rooms;
+    public MapService(final MapGenerationResult mapGenerationResult,
+                      final Consumer<Room> minimapRoomConsumer) {
+        this.pathRooms = mapGenerationResult.paths();
+        this.rooms = mapGenerationResult.rooms();
+        this.minimapRoomConsumer = minimapRoomConsumer;
     }
 
-    public List<Renderable> toRender(double dt) {
+    public List<Renderable> toRender(final double dt) {
         return Stream.of(pathRooms, rooms)
-                .flatMap(List::stream)
+                .flatMap(Collection::stream)
                 .map(Room::toRender)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -53,7 +58,7 @@ public class MapService {
                             .stream()
                             .filter(r -> r.isInRoom(position.x(), position.y()))
                             .findFirst()
-                            .orElseThrow(() -> new RuntimeException("Could not match any room for player")));
+                            .orElseThrow(() -> new IllegalStateException("Could not match any room for player")));
 
             final int xMin = currentRoom.getMinX();
             final int yMin = currentRoom.getMinY();
@@ -67,8 +72,9 @@ public class MapService {
                 LOGGER.info("Player entered room: {}", currentRoom);
                 currentRoom.enterEvent(p);
                 previousRoom.leaveEvent(p);
+                minimapRoomConsumer.accept(currentRoom);
             }
-        } catch (RuntimeException e) {
+        } catch (final IllegalStateException e) {
             LOGGER.error("No room found!", e);
         }
     }

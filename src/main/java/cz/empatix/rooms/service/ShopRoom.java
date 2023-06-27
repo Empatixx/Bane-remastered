@@ -10,19 +10,19 @@ import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
-import java.util.List;
+import java.util.*;
 
 public class ShopRoom implements Room {
     private final static int TOTAL_TABLES = 3;
-    private final List<RoomDirection> neighbors;
+    private final Map<RoomDirection, Room> neighbors;
     private final RoomObjectService roomObjectService;
     private final TileMap tileMap;
 
     public ShopRoom(final int rows, final int cols, final int xOffset, final int yOffset,
-                    final List<RoomDirection> roomDirections) {
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
+                    final Set<RoomDirection> neighbors) {
+        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
-        neighbors = roomDirections;
+        this.neighbors = new HashMap<>(neighbors.size());
     }
 
     @Override
@@ -82,5 +82,13 @@ public class ShopRoom implements Room {
     @Override
     public int getY() {
         return tileMap.getY();
+    }
+    @Override
+    public void addNeighbour(RoomDirection direction, Room room) {
+        neighbors.put(direction, room);
+    }
+    @Override
+    public Map<RoomDirection, Room> getNeighboursMap() {
+        return neighbors;
     }
 }

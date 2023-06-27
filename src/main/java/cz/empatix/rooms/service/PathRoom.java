@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
@@ -93,5 +94,12 @@ public class PathRoom implements Room {
     @Override
     public int getMaxY() {
         return yMax;
+    }
+    @Override
+    public void addNeighbour(RoomDirection direction, Room room) {
+    }
+    @Override
+    public java.util.Map<RoomDirection, Room> getNeighboursMap() {
+        throw new IllegalStateException("PathRoom does not have neighbors");
     }
 }

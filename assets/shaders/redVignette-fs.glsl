@@ -5,7 +5,7 @@ in vec2 tex_coords;
 // Uniforms
 uniform sampler2D u_texture;
 uniform float u_vignetteAmount; // Value from 0.0 (no health) to 1.0 (full health)
-uniform float u_time; // Time in seconds
+uniform float u_time;
 uniform int u_timeBased; // 1 for time-based, 0 for hit-based
 
 void main() {

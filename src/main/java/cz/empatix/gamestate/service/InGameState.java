@@ -7,9 +7,11 @@ import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.lightning.service.LightningService;
+import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.MapGenerator;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapService;
+import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.pause.service.PauseService;
 import cz.empatix.physics.service.PhysicsEngine;
 import cz.empatix.player.Player;
@@ -26,6 +28,7 @@ import java.util.stream.Stream;
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
     private PauseService pauseService;
+    private MinimapService minimapService;
     private MapService mapService;
     private GunService gunService;
     private Player player;
@@ -37,8 +40,10 @@ public class InGameState extends GameState {
     @Override
     public void init() {
         final MapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
+        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
 
-        mapService = proceduralMapGenerator.generate();
+        minimapService = new MinimapService(mapGenerationResult);
+        mapService = new MapService(mapGenerationResult, room -> minimapService.visit(room));
         player = new Player();
         gunService = new GunService();
         pauseService = new PauseService(() -> setCurrentState(GameStateType.MENU));
@@ -67,7 +72,8 @@ public class InGameState extends GameState {
 
     @Override
     public List<Renderable> toRender(final double dt) {
-        return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt))
+        return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
+                        minimapService.toRender(dt))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

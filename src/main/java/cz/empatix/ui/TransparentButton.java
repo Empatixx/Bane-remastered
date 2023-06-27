@@ -26,7 +26,7 @@ public class TransparentButton implements UIElement{
                              final Vector2f position,
                              final int zDepth) {
         this.zDepth = zDepth;
-        this.text = new Text(text, "PixelFJVerdana12pt.ttf", new Vector2f(), zDepth);
+        this.text = new Text(text, "PixelFJVerdana12pt.ttf", new Vector2f(), zDepth, RenderScene.OVERLAYS);
         this.text.setColorRGB(DEFAULT_COLOR);
         this.dimensions = new Vector2i((int)this.text.getWidth(), (int)this.text.getHeight());
         this.position = position;

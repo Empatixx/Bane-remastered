@@ -9,25 +9,27 @@ import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
-import java.util.List;
+import java.util.*;
 
 public class BossRoom implements Room {
     private final EnemyService enemyService;
     private final RoomLockService roomLockService;
-    private final List<RoomDirection> neighbors;
+    private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
     private boolean visited;
-    public BossRoom(final int rows,final int cols,final int xOffset,final int yOffset,
-                    final List<RoomDirection> roomDirections) {
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, roomDirections);
-        roomLockService = new RoomLockService(this, roomDirections);
-        neighbors = roomDirections;
+
+    public BossRoom(final int rows, final int cols, final int xOffset, final int yOffset,
+                    final Set<RoomDirection> neighbors) {
+        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
+        roomLockService = new RoomLockService(this, neighbors);
         enemyService = new EnemyService();
         visited = false;
+        this.neighbors = new HashMap<>(neighbors.size());
     }
+
     @Override
     public void enterEvent(final Player p) {
-        if(!visited){
+        if (!visited) {
             enemyService.spawnBoss(this);
             visited = true;
             roomLockService.setState(true);
@@ -49,7 +51,7 @@ public class BossRoom implements Room {
     public void update(double dt) {
         enemyService.update(dt);
         roomLockService.update(dt);
-        if(!enemyService.areEnemiesAlive() && !roomLockService.isLocked()){
+        if (!enemyService.areEnemiesAlive() && !roomLockService.isLocked()) {
             roomLockService.setState(false);
         }
     }
@@ -76,6 +78,7 @@ public class BossRoom implements Room {
     public int getHeight() {
         return tileMap.getHeight();
     }
+
     @Override
     public int getX() {
         return tileMap.getX();
@@ -84,5 +87,15 @@ public class BossRoom implements Room {
     @Override
     public int getY() {
         return tileMap.getY();
+    }
+
+    @Override
+    public void addNeighbour(RoomDirection direction, Room room) {
+        neighbors.put(direction, room);
+    }
+
+    @Override
+    public Map<RoomDirection, Room> getNeighboursMap() {
+        return neighbors;
     }
 }

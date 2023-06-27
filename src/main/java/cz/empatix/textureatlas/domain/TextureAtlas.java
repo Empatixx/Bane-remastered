@@ -2,6 +2,7 @@ package cz.empatix.textureatlas.domain;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.render.builders.TextureBuilder;
+import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL33;
 import org.slf4j.Logger;
@@ -78,10 +79,30 @@ public record TextureAtlas(
             return atlasDimensions.y();
         }
         public int width(){
-            return info.textureDimensions().x();
+            return dimensions().x();
         }
         public int height(){
-            return info.textureDimensions().y();
+            return dimensions().y();
+        }
+        public Vector2i dimensions(){
+            return info.textureDimensions();
+        }
+        public Vector2i startPositions(){
+            return info.textureStartPositions();
+        }
+        public Vector2f normalizedDimensions(){
+            final Vector2i dimensions = dimensions();
+            return new Vector2f(
+                    (float)dimensions.x() / atlasWidth(),
+                    (float)dimensions.y() / atlasHeight()
+            );
+        }
+        public Vector2f normalizedStartPositions(){
+            final Vector2i startPositions = startPositions();
+            return new Vector2f(
+                    (float) startPositions.x() / atlasWidth(),
+                    (float) startPositions.y() / atlasHeight()
+            );
         }
     }
 }

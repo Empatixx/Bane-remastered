@@ -2,7 +2,6 @@ package cz.empatix.map.generators;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.map.domain.*;
-import cz.empatix.map.service.MapService;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import org.slf4j.Logger;
@@ -10,6 +9,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ProceduralMapGenerator implements MapGenerator {
@@ -29,7 +30,7 @@ public class ProceduralMapGenerator implements MapGenerator {
     }
 
     @Override
-    public MapService generate() {
+    public MapGenerationResult generate() {
         final StartRoomGenInfo startRoomGenInfo = new StartRoomGenInfo();
         final List<CommonRoomGenInfo> normalRooms = Stream.generate(CommonRoomGenInfo::new)
                 .limit(TOTAL_NORMAL_ROOMS)
@@ -43,7 +44,6 @@ public class ProceduralMapGenerator implements MapGenerator {
         final List<TreasureRoomGenInfo> treasureRooms = Stream.generate(TreasureRoomGenInfo::new)
                 .limit(TOTAL_LOOT_ROOMS)
                 .toList();
-
         startRoomGenInfo.initDimensions();
         normalRooms.forEach(RoomGenInfo::initDimensions);
         shopRooms.forEach(RoomGenInfo::initDimensions);
@@ -51,24 +51,17 @@ public class ProceduralMapGenerator implements MapGenerator {
         treasureRooms.forEach(RoomGenInfo::initDimensions);
 
         setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
-        final List<PathRoomGenInfo> pathsRoom = generatePaths(startRoomGenInfo);
 
+        final List<PathRoomGenInfo> pathsRoom = generatePaths(startRoomGenInfo);
         pathsRoom.forEach(RoomGenInfo::initDimensions);
 
-        final List<? extends RoomGenInfo> allRooms = Stream.of(List.of(startRoomGenInfo), normalRooms, shopRooms, bossRooms, treasureRooms)
-                .flatMap(List::stream)
-                .toList();
-        final List<Room> rooms = allRooms.stream()
-                .map(RoomGenInfo::constructRoom)
-                .toList();
-        final List<Room> pathRooms = pathsRoom.stream()
-                .map(RoomGenInfo::constructRoom)
-                .toList();
-
-        rooms.forEach(Room::init);
+        final List<Room> pathRooms = pathsRoom.stream().map(RoomGenInfo::constructRoom).toList();
         pathRooms.forEach(Room::init);
 
-        return new MapService(rooms, pathRooms);
+        final List<Room> allRooms = transform(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
+        allRooms.forEach(Room::init);
+
+        return new MapGenerationResult(allRooms, pathRooms);
     }
 
     private List<PathRoomGenInfo> generatePaths(final StartRoomGenInfo startRoomGenInfo) {
@@ -80,17 +73,15 @@ public class ProceduralMapGenerator implements MapGenerator {
         queue.add(startRoomGenInfo);
         while (!queue.isEmpty()) {
             final RoomGenInfo room = queue.poll();
-            final List<RoomGenConnection> toCreate = room.getConnections()
-                    .stream()
-                    .filter(connection -> !usedRooms.contains(connection.roomGenInfo()))
-                    .toList();
-            for (final RoomGenConnection connection : toCreate) {
-                final PathRoomGenInfo pathRoom = new PathRoomGenInfo();
-                pathRoom.addNeighbour(room, connection.direction());
-                pathRoom.addNeighbour(connection.roomGenInfo(), connection.direction().getOpposite());
-                paths.add(pathRoom);
-                queue.add(connection.roomGenInfo());
-            }
+            room.getNeighbours().forEach((direction, neighbour) -> {
+                if (!usedRooms.contains(neighbour)) {
+                    final PathRoomGenInfo pathRoom = new PathRoomGenInfo();
+                    pathRoom.addNeighbour(room, direction);
+                    pathRoom.addNeighbour(neighbour, direction.getOpposite());
+                    paths.add(pathRoom);
+                    queue.add(neighbour);
+                }
+            });
             usedRooms.add(room);
         }
         return paths;
@@ -106,8 +97,8 @@ public class ProceduralMapGenerator implements MapGenerator {
         final int pathWidth = PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;
         final int pathHeight = PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;
 
-        final int centerWidthOffset = (parent.getWidth() - child.getWidth())/2;
-        final int centerHeightOffset = (parent.getHeight() - child.getHeight())/2;
+        final int centerWidthOffset = (parent.getWidth() - child.getWidth()) / 2;
+        final int centerHeightOffset = (parent.getHeight() - child.getHeight()) / 2;
 
         switch (direction) {
             case TOP -> {
@@ -152,18 +143,18 @@ public class ProceduralMapGenerator implements MapGenerator {
             usedRooms
                     .stream()
                     .filter(RoomGenInfo::canCreateNeighbours)
-                    .min(Comparator.comparingDouble(room -> random.nextFloat() + ROOMS_DENSITY * room.getConnections().size()))
+                    .min(Comparator.comparingDouble(room -> random.nextFloat() + ROOMS_DENSITY * room.getNeighbours().size()))
                     .ifPresentOrElse(room -> {
                         final RoomGenInfo neighbour = availableRooms.peek();
                         final List<RoomDirection> availableDirections = room.getAvailableDirections();
-                        while(!availableDirections.isEmpty()){
+                        while (!availableDirections.isEmpty()) {
                             final RoomDirection direction = availableDirections.get(random.nextInt(availableDirections.size()));
 
                             setOrientationAround(room, neighbour, direction);
 
-                            if(usedRooms
+                            if (usedRooms
                                     .stream()
-                                    .anyMatch(r -> r.intersects(neighbour))){
+                                    .anyMatch(r -> r.intersects(neighbour))) {
                                 availableDirections.remove(direction);
                             } else {
                                 room.addNeighbour(neighbour, direction);
@@ -171,6 +162,7 @@ public class ProceduralMapGenerator implements MapGenerator {
 
                                 availableRooms.remove();
                                 usedRooms.add(neighbour);
+
                                 return;
                             }
                         }
@@ -179,6 +171,33 @@ public class ProceduralMapGenerator implements MapGenerator {
                         throw new IllegalStateException("Fatal error! No room can create neighbours");
                     });
         } while (usedRooms.size() < TOTAL_ROOMS);
+    }
+
+    private List<Room> transform(final StartRoomGenInfo startRoomGenInfo,
+                                 final List<CommonRoomGenInfo> normalRooms,
+                                 final List<ShopRoomGenInfo> shopRooms,
+                                 final List<BossRoomGenInfo> bossRooms,
+                                 final List<TreasureRoomGenInfo> treasureRooms) {
+        final List<RoomGenInfo> rooms = new ArrayList<>(TOTAL_ROOMS);
+
+        rooms.add(startRoomGenInfo);
+        rooms.addAll(normalRooms);
+        rooms.addAll(shopRooms);
+        rooms.addAll(bossRooms);
+        rooms.addAll(treasureRooms);
+
+        final Map<RoomGenInfo, Room> roomMap = rooms.stream()
+                .collect(Collectors.toMap(Function.identity(), RoomGenInfo::constructRoom));
+        roomMap.forEach((gen, room) -> {
+            gen.getNeighbours()
+                    .entrySet()
+                    .stream()
+                    .map(entry -> Map.entry(entry.getKey(), roomMap.get(entry.getValue())))
+                    .forEach(entry -> room.addNeighbour(entry.getKey(), entry.getValue()));
+        });
+        return roomMap.values()
+                .stream()
+                .toList();
     }
 
 }

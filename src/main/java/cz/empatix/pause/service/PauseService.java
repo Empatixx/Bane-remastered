@@ -26,12 +26,15 @@ public class PauseService {
         background = new Image(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2, RenderScene.OVERLAYS);
 
         final TransparentButton resumeButton = new TransparentButton("Resume", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 225), 3);
-        final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 275), 3);
+        final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 275), 3); //todo;
         final TransparentButton exitButton = new TransparentButton("Exit", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 325), 3);
 
-        resumeButton.onClick(() -> pause = false);
+        resumeButton.onClick(() -> setPause(false));
         settingsButton.onClick(() -> System.out.println("Statistics"));
-        exitButton.onClick(menuAction);
+        exitButton.onClick(() -> {
+            setPause(false);
+            menuAction.run();
+        });
 
         buttons = List.of(resumeButton, settingsButton, exitButton);
     }
@@ -52,9 +55,13 @@ public class PauseService {
 
     public void keyPressed(final int key) {
         if (key == GLFW.GLFW_KEY_ESCAPE) {
-            pause = !pause;
-            GaussianBlur.setEnabled(pause);
+            setPause(!pause);
         }
+    }
+
+    public void setPause(final boolean pause){
+        this.pause = pause;
+        GaussianBlur.setEnabled(this.pause);
     }
 
     public void mousePressed(final int button, final float mouseX, final float mouseY) {

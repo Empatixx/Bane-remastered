@@ -12,11 +12,11 @@ public class StartRoomGenInfo extends RoomGenInfo {
 
     @Override
     public Room constructRoom() {
-        return new StartRoom(rows, cols, xOffset, yOffset, getDirections());
+        return new StartRoom(rows, cols, xOffset, yOffset,  neighbours.keySet());
     }
 
     @Override
     public boolean canCreateNeighbours() {
-        return connections.size() < MAX_ROOM_NEIGHBOURS;
+        return neighbours.size() < MAX_ROOM_NEIGHBOURS;
     }
 }

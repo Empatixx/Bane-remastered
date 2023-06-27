@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PhysicsEngine {
-    private final static boolean RENDER_COLLISIONS = true;
+    private final static boolean RENDER_COLLISIONS = false;
     private final static Logger LOGGER = LoggerFactory.getLogger(PhysicsEngine.class);
     private static List<PhysicsBody> physicsBodies;
     private final CollisionResolver collisionResolver;
