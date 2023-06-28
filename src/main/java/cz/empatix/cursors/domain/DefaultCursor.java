@@ -6,9 +6,10 @@ import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
 
 public class DefaultCursor implements Cursor {
-    private final static int X_OFFSET = 12;
-    private final static int Y_OFFSET = 7;
-    private final Image image = new Image("ingame/cursor.tga", new Vector2f(),1f, Integer.MAX_VALUE, RenderScene.OVERLAYS);
+    private final static float SCALE = 0.5f;
+    private final static float X_OFFSET = 12 * SCALE;
+    private final static float Y_OFFSET = 7 * SCALE;
+    private final Image image = new Image("ingame/cursor.tga", new Vector2f(),SCALE, Integer.MAX_VALUE, RenderScene.OVERLAYS);
     @Override
     public RenderData renderData() {
         return image.renderData();

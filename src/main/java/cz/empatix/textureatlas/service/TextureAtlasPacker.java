@@ -15,7 +15,7 @@ public class TextureAtlasPacker {
     private final Logger LOGGER = LoggerFactory.getLogger(TextureAtlasPacker.class);
     private static final int TEXTURE_MINSTEPSIZE = 128;
     private static final int MAX_TEXTURE_SIZE = 23170;
-    private static final int BORDER_SIZE = 0; // Added border size constant
+    private static final int BORDER_SIZE = 1; // Added border size constant
 
     public TextureAtlasBlueprint pack(final Map<String, RawImage> images) {
         TextureAtlasBlueprint lastSmallestAtlas = null;

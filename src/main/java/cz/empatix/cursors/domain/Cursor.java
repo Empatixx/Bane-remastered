@@ -11,7 +11,7 @@ public interface Cursor extends Drawable {
 
     @Override
     default int getZIndex() {
-        return Integer.MAX_VALUE;
+        return 200;
     }
 
     void updateMouse(final float x, final float y);
