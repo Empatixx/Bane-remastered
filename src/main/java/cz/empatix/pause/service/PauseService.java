@@ -2,6 +2,8 @@ package cz.empatix.pause.service;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.cursors.domain.CursorType;
+import cz.empatix.cursors.service.CursorService;
 import cz.empatix.hud.service.Image;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
@@ -62,6 +64,9 @@ public class PauseService {
     public void setPause(final boolean pause){
         this.pause = pause;
         GaussianBlur.setEnabled(this.pause);
+
+        final CursorType cursorType = this.pause ? CursorType.DEFAULT : CursorType.CROSSHAIR;
+        CursorService.setCursor(cursorType);
     }
 
     public void mousePressed(final int button, final float mouseX, final float mouseY) {

@@ -4,7 +4,6 @@ import cz.empatix.cursors.domain.AimCursor;
 import cz.empatix.cursors.domain.Cursor;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.domain.DefaultCursor;
-import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 
 import java.util.Map;
@@ -16,7 +15,7 @@ public class CursorService {
         cursors = Map.of(
                 CursorType.DEFAULT, new DefaultCursor(),
                 CursorType.DISABLED, new DefaultCursor(),
-                CursorType.AIM, new AimCursor()
+                CursorType.CROSSHAIR, new AimCursor()
         );
         currentCursor = cursors.get(CursorType.DISABLED);
     }

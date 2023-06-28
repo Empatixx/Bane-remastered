@@ -6,6 +6,8 @@ import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
 
 public class DefaultCursor implements Cursor {
+    private final static int X_OFFSET = 12;
+    private final static int Y_OFFSET = 7;
     private final Image image = new Image("ingame/cursor.tga", new Vector2f(),1f, Integer.MAX_VALUE, RenderScene.OVERLAYS);
     @Override
     public RenderData renderData() {
@@ -19,6 +21,6 @@ public class DefaultCursor implements Cursor {
 
     @Override
     public void updateMouse(float x, float y) {
-        image.setPosition(x - image.getWidth()/2f, y - image.getHeight()/2f);
+        image.setPosition(x - X_OFFSET, y - Y_OFFSET);
     }
 }

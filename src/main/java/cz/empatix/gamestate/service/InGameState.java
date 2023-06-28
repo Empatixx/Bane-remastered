@@ -3,7 +3,6 @@ package cz.empatix.gamestate.service;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.cursors.domain.Cursor;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameState;
@@ -42,7 +41,7 @@ public class InGameState extends GameState {
 
     @Override
     public void init() {
-        CursorService.setCursor(CursorType.AIM);
+        CursorService.setCursor(CursorType.CROSSHAIR);
 
         final MapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
