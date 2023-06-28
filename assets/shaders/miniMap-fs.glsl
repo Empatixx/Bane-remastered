@@ -9,8 +9,12 @@
 #define VERTICAL_OSCILLATION_FACTOR 0.25
 #define FOG_COLOR vec3(0.05)
 #define OUTLINE_COLOR vec4(1.0, 0.25, 0.0, 1.0)
-#define OUTLINE_WIDTH 0.05
+#define OUTLINE_WIDTH 0.0625
 #define GLOW_SPEED 2.0
+#define DEFAULT_COLOR vec4(1.0, 1.0, 1.0, 1.0)
+#define GATES_WIDTH 0.21625
+#define GATE_UV_START 0.5-GATES_WIDTH
+#define GATE_UV_END 0.5+GATES_WIDTH
 
 uniform sampler2D uTexSampler;
 uniform int uVisited;
@@ -21,6 +25,7 @@ uniform float uTime;
 uniform vec2 uAtlasSize;
 uniform vec2 uSubImagePos;
 uniform vec2 uSpriteSize;
+uniform ivec4 uConnections; // left, right, up, down
 
 in vec2 tex_coords;
 
@@ -63,13 +68,25 @@ float fbm(vec2 uv, float seed_h, float seed_v) {
 
 void main() {
     vec4 baseColor = texture2D(uTexSampler, tex_coords);
+    vec2 shift = vec2(uSpriteShift, 0.0);
+    // normalizing from subimage coords to [0, 1]
+    vec2 uv = (tex_coords - uSubImagePos - shift) / uSpriteSize;
+    if (uConnections.x == 1 && uv.x < OUTLINE_WIDTH && uv.y > GATE_UV_START && uv.y < GATE_UV_END) {
+        baseColor = DEFAULT_COLOR;
+    }
+    if (uConnections.y == 1 && uv.x > 1.0 - OUTLINE_WIDTH && uv.y > GATE_UV_START && uv.y < GATE_UV_END) {
+        baseColor = DEFAULT_COLOR;
+    }
+    if (uConnections.z == 1 && uv.y < OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
+        baseColor = DEFAULT_COLOR;
+    }
+    if (uConnections.w == 1 && uv.y > 1.0 - OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
+        baseColor = DEFAULT_COLOR;
+    }
+
     if (uVisited == 0) {
         float horizontal_seed = uTime * HORIZONTAL_OSCILLATION_FACTOR;
         float vertical_seed = uTime * VERTICAL_OSCILLATION_FACTOR;
-
-        // normalizing from subimage coords to [0, 1]
-        vec2 uv = (tex_coords - uSubImagePos - uSpriteShift) / uSpriteSize;
-
         // noise
         uv.x = uv.x - uTime * HORIZONTAL_SPEED;
         uv.y = uv.y + uTime * HORIZONTAL_SPEED;
@@ -79,8 +96,6 @@ void main() {
         vec4 fogColor = vec4(col, 1.0);
         gl_FragColor = mix(baseColor, fogColor, noise);
     } else if (uCurrent == 1) {
-        vec2 uv = (tex_coords - uSubImagePos - uSpriteShift) / uSpriteSize;
-
         float pulse = (sin(uTime * GLOW_SPEED) + 1.0) * 0.5;
         vec4 outlineColor = OUTLINE_COLOR * pulse;
 

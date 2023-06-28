@@ -20,6 +20,7 @@ public record Shader(
 ) {
     private final static Logger LOGGER = LoggerFactory.getLogger(Shader.class);
     private final static int SHADER_UNIFORM_NOT_FOUND = -1;
+
     public Shader(final int program,
                   final int fragmentShaderId,
                   final int vertexShaderId) {
@@ -82,7 +83,7 @@ public record Shader(
 
     private Optional<Integer> getLocation(final String name) {
         final int location = locations.computeIfAbsent(name, k -> glGetUniformLocation(program, name));
-        if(location == SHADER_UNIFORM_NOT_FOUND){
+        if (location == SHADER_UNIFORM_NOT_FOUND) {
             LOGGER.warn("Uniform {} not found", name);
             return Optional.empty();
         }
@@ -117,7 +118,14 @@ public record Shader(
     public void setUniform4f(final String name, final Vector4f value) {
         getLocation(name).ifPresent(location -> glUniform4f(location, value.x, value.y, value.z, value.w));
     }
+
     public void setUniform2i(final String name, final Vector2i value) {
         getLocation(name).ifPresent(location -> glUniform2i(location, value.x, value.y));
+    }
+
+    public void setUniform4i(final String uConnections, final Vector4i connections) {
+        getLocation(uConnections).ifPresent(location -> {
+            glUniform4i(location, connections.x, connections.y, connections.z, connections.w);
+        });
     }
 }

@@ -10,6 +10,7 @@ import java.util.*;
 
 public class MinimapService {
     private final Map<Room, MinimapRoom> minimapRooms;
+    private MinimapRoom currentRoom;
 
     public MinimapService(final MapGenerationResult mapGenerationResult) {
         this.minimapRooms = createMinimap(mapGenerationResult.rooms());
@@ -19,8 +20,13 @@ public class MinimapService {
         final Queue<Room> roomsToVisit = new ArrayDeque<>(rooms.size());
         final Map<Room, MinimapRoom> minimapRooms = new HashMap<>(rooms.size());
 
-        final Room startRoom = rooms.stream().filter(r -> r instanceof StartRoom).findFirst().orElseThrow(); //todo: make enums to rooms, this is not fancy
-        final MinimapRoom startMinimapRoom = new MinimapRoom(0, 0,startRoom);
+        final Room startRoom = rooms
+                .stream()
+                .filter(r -> r instanceof StartRoom)
+                .findFirst().orElseThrow(); //todo: make enums to rooms, this is not fancy
+        final MinimapRoom startMinimapRoom = new MinimapRoom(0, 0, startRoom);
+        currentRoom = startMinimapRoom;
+        currentRoom.setCurrent(true);
 
         roomsToVisit.add(startRoom);
         minimapRooms.put(startRoom, startMinimapRoom);
@@ -41,8 +47,12 @@ public class MinimapService {
                         case TOP -> minimapRoomParent.getY() - 1;
                     };
                     final MinimapRoom minimapRoom = new MinimapRoom(xNeighbour, yNeighbour, neighbour);
+                    minimapRoom.setConnection(direction.getOpposite());
                     minimapRooms.put(neighbour, minimapRoom);
                     roomsToVisit.add(neighbour);
+                } else {
+                    final MinimapRoom minimapRoom = minimapRooms.get(neighbour);
+                    minimapRoom.setConnection(direction.getOpposite());
                 }
             });
         }
@@ -51,14 +61,18 @@ public class MinimapService {
     }
 
     public void visit(final Room room) {
-        final MinimapRoom minimapRoom =  minimapRooms.get(room);
-        if(minimapRoom != null){
-            final MinimapRoom currentCenteringRoom = minimapRooms.get(room);
-            currentCenteringRoom.visit();
+        final MinimapRoom minimapRoom = minimapRooms.get(room);
+        if (minimapRoom != null) {
+            currentRoom.setCurrent(false);
 
-            minimapRooms.values().forEach(miniRoom -> miniRoom.setOffset(currentCenteringRoom.getX(), currentCenteringRoom.getY()));
+            currentRoom = minimapRoom;
+            currentRoom.visit();
+            currentRoom.setCurrent(true);
+
+            minimapRooms.values().forEach(miniRoom -> miniRoom.setOffset(currentRoom.getX(), currentRoom.getY()));
         }
     }
+
     public List<Renderable> toRender(final double dt) {
         final Collection<MinimapRoom> values = minimapRooms.values();
         return List.copyOf(values);
