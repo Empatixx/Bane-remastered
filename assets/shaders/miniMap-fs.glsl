@@ -7,11 +7,11 @@
 #define VERTICAL_SPEED 0.0
 #define HORIZONTAL_OSCILLATION_FACTOR 0.25
 #define VERTICAL_OSCILLATION_FACTOR 0.25
-#define FOG_COLOR vec3(0.05)
-#define OUTLINE_COLOR vec4(1.0, 0.25, 0.0, 1.0)
+#define FOG_COLOR vec3(0.25)
+#define OUTLINE_COLOR vec4(1, 0.25, 0.25, 1.0)
 #define OUTLINE_WIDTH 0.0625
 #define GLOW_SPEED 2.0
-#define DEFAULT_COLOR vec4(1.0, 1.0, 1.0, 1.0)
+#define DEFAULT_COLOR vec4(0.8196, 0.5333, 0.4117, 1.0)
 #define GATES_WIDTH 0.21625
 #define GATE_UV_START 0.5-GATES_WIDTH
 #define GATE_UV_END 0.5+GATES_WIDTH
@@ -71,18 +71,25 @@ void main() {
     vec2 shift = vec2(uSpriteShift, 0.0);
     // normalizing from subimage coords to [0, 1]
     vec2 uv = (tex_coords - uSubImagePos - shift) / uSpriteSize;
+
+    bool isGate = false;
     if (uConnections.x == 1 && uv.x < OUTLINE_WIDTH && uv.y > GATE_UV_START && uv.y < GATE_UV_END) {
         baseColor = DEFAULT_COLOR;
+        isGate = true;
     }
     if (uConnections.y == 1 && uv.x > 1.0 - OUTLINE_WIDTH && uv.y > GATE_UV_START && uv.y < GATE_UV_END) {
         baseColor = DEFAULT_COLOR;
+        isGate = true;
     }
     if (uConnections.z == 1 && uv.y < OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
         baseColor = DEFAULT_COLOR;
+        isGate = true;
     }
     if (uConnections.w == 1 && uv.y > 1.0 - OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
         baseColor = DEFAULT_COLOR;
+        isGate = true;
     }
+
 
     if (uVisited == 0) {
         float horizontal_seed = uTime * HORIZONTAL_OSCILLATION_FACTOR;
@@ -95,7 +102,7 @@ void main() {
 
         vec4 fogColor = vec4(col, 1.0);
         gl_FragColor = mix(baseColor, fogColor, noise);
-    } else if (uCurrent == 1) {
+    } else if (uCurrent == 1 && !isGate) {
         float pulse = (sin(uTime * GLOW_SPEED) + 1.0) * 0.5;
         vec4 outlineColor = OUTLINE_COLOR * pulse;
 

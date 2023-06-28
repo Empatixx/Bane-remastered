@@ -17,7 +17,7 @@ import org.joml.Vector4i;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MinimapRoom implements Drawable {
-    private final static float ALPHA_DECREASE = 0.4f;
+    private final static float ALPHA_DECREASE = 0.25f;
     private final static int MINIMAP_X_START = 800;
     private final static int MINIMAP_Y_START = 100;
     private final static int DIMENSIONS = 16;
@@ -36,6 +36,7 @@ public class MinimapRoom implements Drawable {
     // these are used for centering by current center room
     private int offsetX = 0;
     private int offsetY = 0;
+    private int roomsAwayFromCenter;
 
     public MinimapRoom(final int x, final int y, final Room room) {
         this.x = x;
@@ -104,12 +105,16 @@ public class MinimapRoom implements Drawable {
     }
 
     private float calculateAlpha() {
-        return (1 - ALPHA_DECREASE * (Math.abs(x - offsetX) + Math.abs(y - offsetY)));
+        return 1 - ALPHA_DECREASE * roomsAwayFromCenter - (roomsAwayFromCenter > 1 && !visited ? 0.35f : 0);
     }
 
     public void setOffset(final int x, final int y) {
         this.offsetX = x;
         this.offsetY = y;
+    }
+
+    public void setRoomsAwayFromCenter(int roomsAwayFromCenter) {
+        this.roomsAwayFromCenter = roomsAwayFromCenter;
     }
 
     @Override

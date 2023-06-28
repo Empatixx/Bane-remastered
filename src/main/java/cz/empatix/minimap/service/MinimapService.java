@@ -13,20 +13,19 @@ public class MinimapService {
     private MinimapRoom currentRoom;
 
     public MinimapService(final MapGenerationResult mapGenerationResult) {
-        this.minimapRooms = createMinimap(mapGenerationResult.rooms());
-    }
-
-    private Map<Room, MinimapRoom> createMinimap(final List<Room> rooms) {
-        final Queue<Room> roomsToVisit = new ArrayDeque<>(rooms.size());
-        final Map<Room, MinimapRoom> minimapRooms = new HashMap<>(rooms.size());
-
-        final Room startRoom = rooms
+        final Room startRoom = mapGenerationResult.rooms()
                 .stream()
                 .filter(r -> r instanceof StartRoom)
                 .findFirst().orElseThrow(); //todo: make enums to rooms, this is not fancy
+        this.minimapRooms = createMinimap(mapGenerationResult.rooms(), startRoom);
+        visit(startRoom);
+    }
+
+    private Map<Room, MinimapRoom> createMinimap(final List<Room> rooms, final Room startRoom) {
+        final Queue<Room> roomsToVisit = new ArrayDeque<>(rooms.size());
+        final Map<Room, MinimapRoom> minimapRooms = new HashMap<>(rooms.size());
+
         final MinimapRoom startMinimapRoom = new MinimapRoom(0, 0, startRoom);
-        currentRoom = startMinimapRoom;
-        currentRoom.setCurrent(true);
 
         roomsToVisit.add(startRoom);
         minimapRooms.put(startRoom, startMinimapRoom);
@@ -56,20 +55,41 @@ public class MinimapService {
                 }
             });
         }
-        startMinimapRoom.visit();
         return minimapRooms;
     }
 
     public void visit(final Room room) {
         final MinimapRoom minimapRoom = minimapRooms.get(room);
         if (minimapRoom != null) {
-            currentRoom.setCurrent(false);
+            if(currentRoom != null) {
+                currentRoom.setCurrent(false);
+            }
 
             currentRoom = minimapRoom;
             currentRoom.visit();
             currentRoom.setCurrent(true);
 
-            minimapRooms.values().forEach(miniRoom -> miniRoom.setOffset(currentRoom.getX(), currentRoom.getY()));
+            final Queue<Room> roomsToVisit = new ArrayDeque<>(minimapRooms.size());
+            final Map<Room, Integer> levels = new HashMap<>(minimapRooms.size());
+            final List<Room> visited = new ArrayList<>(minimapRooms.size());
+
+            roomsToVisit.add(room);
+            levels.put(room, 0);
+
+            while(!roomsToVisit.isEmpty()){
+                final Room r = roomsToVisit.poll();
+                final int level = levels.get(r);
+                final MinimapRoom minimapRoomNeighbour = minimapRooms.get(r);
+                minimapRoomNeighbour.setOffset(currentRoom.getX(), currentRoom.getY());
+                minimapRoomNeighbour.setRoomsAwayFromCenter(level);
+                visited.add(r);
+                r.getNeighboursMap().forEach((direction, neighbour) -> {
+                    if(!visited.contains(neighbour)){
+                        roomsToVisit.add(neighbour);
+                        levels.put(neighbour, level + 1);
+                    }
+                });
+            }
         }
     }
 
