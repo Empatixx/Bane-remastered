@@ -7,7 +7,7 @@
 #define VERTICAL_SPEED 0.0
 #define HORIZONTAL_OSCILLATION_FACTOR 0.25
 #define VERTICAL_OSCILLATION_FACTOR 0.25
-#define FOG_COLOR vec3(0.25)
+#define FOG_COLOR vec3(0.1)
 #define OUTLINE_COLOR vec4(1, 0.25, 0.25, 1.0)
 #define OUTLINE_WIDTH 0.0625
 #define GLOW_SPEED 2.0
@@ -22,6 +22,7 @@ uniform int uCurrent;
 uniform float uSpriteShift;
 uniform float uAlpha;
 uniform float uTime;
+uniform float uTimeWithOffset;
 uniform vec2 uAtlasSize;
 uniform vec2 uSubImagePos;
 uniform vec2 uSpriteSize;
@@ -92,8 +93,8 @@ void main() {
 
 
     if (uVisited == 0) {
-        float horizontal_seed = uTime * HORIZONTAL_OSCILLATION_FACTOR;
-        float vertical_seed = uTime * VERTICAL_OSCILLATION_FACTOR;
+        float horizontal_seed = uTimeWithOffset * HORIZONTAL_OSCILLATION_FACTOR;
+        float vertical_seed = uTimeWithOffset * VERTICAL_OSCILLATION_FACTOR;
         // noise
         uv.x = uv.x - uTime * HORIZONTAL_SPEED;
         uv.y = uv.y + uTime * HORIZONTAL_SPEED;

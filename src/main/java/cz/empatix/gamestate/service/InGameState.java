@@ -3,6 +3,9 @@ package cz.empatix.gamestate.service;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.cursors.domain.Cursor;
+import cz.empatix.cursors.domain.CursorType;
+import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
@@ -39,6 +42,8 @@ public class InGameState extends GameState {
 
     @Override
     public void init() {
+        CursorService.setCursor(CursorType.AIM);
+
         final MapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
 
@@ -49,6 +54,7 @@ public class InGameState extends GameState {
         pauseService = new PauseService(() -> setCurrentState(GameStateType.MENU));
 
         AudioService.getInstance().play(Soundtrack.INGAME);
+        Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
     }
 
     @Override
@@ -59,6 +65,7 @@ public class InGameState extends GameState {
 
         player.update(dt);
         mapService.update(dt, player);
+        minimapService.update(dt);
         gunService.update(dt);
         pauseService.update(dt, mouseX, mouseY);
     }

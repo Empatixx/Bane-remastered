@@ -2,6 +2,8 @@ package cz.empatix.minimap.domain;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.map.domain.RoomDirection;
+import cz.empatix.minimap.service.MinimapService;
+import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -17,9 +19,8 @@ import org.joml.Vector4i;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MinimapRoom implements Drawable {
+    private final static int TWEEN = 10;
     private final static float ALPHA_DECREASE = 0.25f;
-    private final static int MINIMAP_X_START = 800;
-    private final static int MINIMAP_Y_START = 100;
     private final static int DIMENSIONS = 16;
     private final static int SCALE = 2;
     private final int x;
@@ -32,17 +33,14 @@ public class MinimapRoom implements Drawable {
     private final Vector2f normSubImagePos;
     private final Vector4i connections; // left, right, top, bottom, 1 if connected, 0 if not
     private final float randomOffset = ThreadLocalRandom.current().nextFloat(10);
-
-    // these are used for centering by current center room
-    private int offsetX = 0;
-    private int offsetY = 0;
+    private final InterpolatedTransform transform;
     private int roomsAwayFromCenter;
 
     public MinimapRoom(final int x, final int y, final Room room) {
         this.x = x;
         this.y = y;
         this.visited = false;
-        final TextureAtlas.Entry entry = AssetsService.getTexture("test/minimap_icons.tga");
+        final TextureAtlas.Entry entry = AssetsService.getTexture("ingame/minimap_icons.tga");
         this.animation = Animation.builder()
                 .addState(AnimationState.IDLE, 0, 5, DIMENSIONS, DIMENSIONS, -1)
                 .setTotal(1, 5)
@@ -53,6 +51,7 @@ public class MinimapRoom implements Drawable {
         this.normSpriteSize = new Vector2f(16f / entry.atlasWidth(), 16f / entry.atlasHeight());
         this.normSubImagePos = entry.normalizedStartPositions();
         this.connections = new Vector4i(0, 0, 0, 0);
+        this.transform = new InterpolatedTransform();
     }
 
     public void setConnection(final RoomDirection direction) {
@@ -95,22 +94,40 @@ public class MinimapRoom implements Drawable {
         return y;
     }
 
+    public void update(final MinimapRoom room, final float dt) {
+        transform.update(dt);
+        setPositionToCenterRoom(dt, room.getX(), room.getY());
+    }
+
     @Override
     public RenderData renderData() {
-        return new RenderData(animation.getVertices(new Vector2f(MINIMAP_X_START + (x - offsetX) * DIMENSIONS * SCALE, MINIMAP_Y_START + (y - offsetY) * DIMENSIONS * SCALE)),
+        return new RenderData(animation.getVertices(transform.getTranslationToRender()),
                 animation.getTextureId(),
                 new MiniMapBinding(Camera.getOriginWithoutZoomProjection(), normSubImagePos, normSpriteSize,
-                        System.currentTimeMillis() % 1000000 / 1000f + randomOffset, visited, current,
+                        System.currentTimeMillis() % 1000000 / 1000f, randomOffset, visited, current,
                         calculateAlpha(), animation.getCurrentTextureIndex(), connections));
     }
 
     private float calculateAlpha() {
-        return 1 - ALPHA_DECREASE * roomsAwayFromCenter - (roomsAwayFromCenter > 1 && !visited ? 0.35f : 0);
+        return 1 - ALPHA_DECREASE * (float) Math.pow(roomsAwayFromCenter, 1.25) - (roomsAwayFromCenter > 1 && !visited ? 0.35f : 0);
     }
 
-    public void setOffset(final int x, final int y) {
-        this.offsetX = x;
-        this.offsetY = y;
+    public void setPositionToCenterRoom(final float dt, final int x, final int y) {
+        final float nextX = MinimapService.MINIMAP_POSITION_X + (this.x - x) * DIMENSIONS * SCALE;
+        final float nextY = MinimapService.MINIMAP_POSITION_Y + (this.y - y) * DIMENSIONS * SCALE;
+
+        final float currentX = transform.getTranslation().x();
+        final float currentY = transform.getTranslation().y();
+
+        float tween = TWEEN * dt;
+        if(tween > 1){
+            tween = 1;
+        }
+
+        final float newX = (nextX - currentX) * tween + currentX;
+        final float newY = (nextY - currentY) * tween + currentY;
+
+        transform.setTranslation(newX, newY);
     }
 
     public void setRoomsAwayFromCenter(int roomsAwayFromCenter) {

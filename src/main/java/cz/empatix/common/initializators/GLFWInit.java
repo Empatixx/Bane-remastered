@@ -55,6 +55,9 @@ public class GLFWInit implements Initializator {
         // Enable v-sync
         glfwSwapInterval(VSYNC ? 1 : 0);
         glfwShowWindow(window);
+
+        // hide cursor
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     }
 
     private void centerWindow() {

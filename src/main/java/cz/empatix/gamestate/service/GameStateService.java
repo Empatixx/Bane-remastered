@@ -1,6 +1,7 @@
 package cz.empatix.gamestate.service;
 
 import cz.empatix.audio.service.AudioService;
+import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.physics.service.PhysicsEngine;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class GameStateService {
     private final static Logger LOGGER = LoggerFactory.getLogger(GameStateService.class);
@@ -51,7 +53,7 @@ public class GameStateService {
         physicsEngine.fixedUpdate(dt);
     }
     public void render(final double dt) {
-        renderEngine.render(currentState.toRender(dt), dt);
+        renderEngine.render(Stream.concat(currentState.toRender(dt).stream(), Stream.of(CursorService.getCursor())).toList(), dt);
         physicsEngine.debugRender();
     }
 

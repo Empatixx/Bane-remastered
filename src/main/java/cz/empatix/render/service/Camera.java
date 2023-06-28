@@ -56,8 +56,12 @@ public class Camera {
     }
 
     public static void setSmoothlyPosition(final float x, final float y, final float dt) {
-        final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), (x - interpolatedPosition.getX()) * TWEEN * dt + interpolatedPosition.getX()));
-        final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), (y - interpolatedPosition.getY()) * TWEEN * dt + interpolatedPosition.getY()));
+        float tween = TWEEN * dt;
+        if(tween > 1){
+            tween = 1;
+        }
+        final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), (x - interpolatedPosition.getX()) * tween + interpolatedPosition.getX()));
+        final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), (y - interpolatedPosition.getY()) * tween + interpolatedPosition.getY()));
         interpolatedPosition.setPosition(newX, newY);
     }
 
@@ -110,13 +114,21 @@ public class Camera {
     }
 
     public static void setSmoothlyMinDimensions(final int x, final int y, final float dt) {
-        minDimensions.x = (x - minDimensions.x) * TWEEN * dt + minDimensions.x;
-        minDimensions.y = (y - minDimensions.y) * TWEEN * dt + minDimensions.y;
+        float tween = TWEEN * dt;
+        if(tween > 1){
+            tween = 1;
+        }
+        minDimensions.x = (x - minDimensions.x) * tween + minDimensions.x;
+        minDimensions.y = (y - minDimensions.y) * tween + minDimensions.y;
     }
 
     public static void setSmoothlyMaxDimensions(final int x, final int y, final float dt) {
-        maxDimensions.x = (x - maxDimensions.x - TARGET_WIDTH) * TWEEN * dt + maxDimensions.x;
-        maxDimensions.y = (y - maxDimensions.y - TARGET_HEIGHT) * TWEEN * dt + maxDimensions.y;
+        float tween = TWEEN * dt;
+        if(tween > 1){
+            tween = 1;
+        }
+        maxDimensions.x = (x - maxDimensions.x - TARGET_WIDTH) * tween + maxDimensions.x;
+        maxDimensions.y = (y - maxDimensions.y - TARGET_HEIGHT) * tween + maxDimensions.y;
     }
 
     public static void setMinDimensions(final int x, final int y) {

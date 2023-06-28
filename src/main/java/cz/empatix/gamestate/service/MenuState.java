@@ -3,6 +3,8 @@ package cz.empatix.gamestate.service;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.cursors.domain.CursorType;
+import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.service.CommonBackground;
@@ -30,6 +32,7 @@ public class MenuState extends GameState {
 
     @Override
     public void init() {
+        CursorService.setCursor(CursorType.DEFAULT);
         if (loadedOnce) {
             return;
         }

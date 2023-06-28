@@ -26,25 +26,28 @@ public class Image implements HUDElement {
         this.zDepth = DEFAULT_Z_DEPTH;
         this.scene = DEFAULT_SCENE;
     }
+
     public Image(final String textureName, final Vector2f position, final float scale) {
         this(AssetsService.getTexture(textureName), position, scale, DEFAULT_Z_DEPTH);
     }
+
     public Image(final String textureName, final Vector2f position, final float scale, final int zDepth) {
         this(AssetsService.getTexture(textureName), position, scale, zDepth);
     }
-    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale){
+
+    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale) {
         this(texture, position, scale, DEFAULT_Z_DEPTH);
     }
-    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth){
-        this.dimensions = new Vector2i(texture.width(), texture.height());
-        this.dimensions.x *= scale;
-        this.dimensions.y *= scale;
-        this.texture = texture;
-        this.position = position;
-        this.zDepth = zDepth;
-        this.scene = DEFAULT_SCENE;
+
+    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth) {
+        this(texture, position, scale, zDepth, DEFAULT_SCENE);
     }
-    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene){
+
+    public Image(final String texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene) {
+        this(AssetsService.getTexture(texture), position, scale, zDepth, scene);
+    }
+
+    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene) {
         this.dimensions = new Vector2i(texture.width(), texture.height());
         this.dimensions.x *= scale;
         this.dimensions.y *= scale;
@@ -53,6 +56,7 @@ public class Image implements HUDElement {
         this.zDepth = zDepth;
         this.scene = scene;
     }
+
     @Override
     public RenderData renderData() {
         return new RenderData(
@@ -79,11 +83,20 @@ public class Image implements HUDElement {
 
     @Override
     public void update(double dt) {
-
+    }
+    public int getWidth() {
+        return dimensions.x;
+    }
+    public int getHeight() {
+        return dimensions.y;
     }
 
     @Override
     public RenderScene renderScene() {
         return scene;
+    }
+
+    public void setPosition(final float x, final float y) {
+        this.position.set(x, y);
     }
 }

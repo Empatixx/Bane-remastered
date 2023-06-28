@@ -1,6 +1,7 @@
 package cz.empatix.gamestate.domain;
 
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.service.GameStateService;
 import cz.empatix.render.attributes.Renderable;
 import org.lwjgl.glfw.GLFW;
@@ -22,12 +23,14 @@ public abstract class GameState {
         this.type = type;
     }
     public void updateMouse(){
-        try (MemoryStack stack = stackPush()) {
+        try (final MemoryStack stack = stackPush()) {
             final DoubleBuffer mouseX = stack.mallocDouble(1);
             final DoubleBuffer mouseY = stack.mallocDouble(1);
-            GLFW.glfwGetCursorPos(WindowHandler.WINDOW, mouseX, mouseY);
+                GLFW.glfwGetCursorPos(WindowHandler.WINDOW, mouseX, mouseY);
             this.mouseX = (float) mouseX.get(0) * WindowHandler.TARGET_WIDTH / WindowHandler.WIDTH;
             this.mouseY = (float) mouseY.get(0) * WindowHandler.TARGET_HEIGHT / WindowHandler.HEIGHT;
+
+            CursorService.updateMouse(this.mouseX, this.mouseY);
         }
     }
     public void setCurrentState(final GameStateType type){

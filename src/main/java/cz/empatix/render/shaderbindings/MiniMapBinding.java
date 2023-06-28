@@ -16,10 +16,11 @@ public class MiniMapBinding implements ShaderBinding {
     private final boolean current;
     private final float alpha;
     private final float time;
+    private final float timeWithOffset;
 
 
     public MiniMapBinding(final Matrix4f projection, final Vector2f normSubImagePos, final Vector2f normSpriteSize,
-                          final float time, final boolean visited,
+                          final float time, final float randomOffset, final boolean visited,
                           final boolean current, final float alpha, final int spriteColumn,
                           final Vector4i connections) {
         this.normSpriteSize = normSpriteSize;
@@ -28,6 +29,7 @@ public class MiniMapBinding implements ShaderBinding {
         this.time = time;
         this.visited = visited;
         this.current = current;
+        this.timeWithOffset = time + randomOffset;
         this.alpha = alpha;
         this.connections = connections;
         this.normSpriteShift = normSpriteSize.x * spriteColumn;
@@ -43,6 +45,7 @@ public class MiniMapBinding implements ShaderBinding {
         shader.setUniform1i("uCurrent", current ? 1 : 0);
         shader.setUniform1f("uAlpha", alpha);
         shader.setUniform1f("uTime", time);
+        shader.setUniform1f("uTimeWithOffset", timeWithOffset);
         shader.setUniform4i("uConnections", connections);
         shader.setUniform2f("uSpriteSize", normSpriteSize);
         shader.setUniform2f("uSubImagePos", normSubImagePos);

@@ -1,14 +1,21 @@
 package cz.empatix.minimap.service;
 
+import cz.empatix.hud.service.Image;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.minimap.domain.MinimapRoom;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.rooms.service.StartRoom;
+import org.joml.Vector2f;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class MinimapService {
+    public final static int MINIMAP_POSITION_X = 834;
+    public final static int MINIMAP_POSITION_Y = 100;
+    private final Image minimapLayout;
     private final Map<Room, MinimapRoom> minimapRooms;
     private MinimapRoom currentRoom;
 
@@ -18,7 +25,9 @@ public class MinimapService {
                 .filter(r -> r instanceof StartRoom)
                 .findFirst().orElseThrow(); //todo: make enums to rooms, this is not fancy
         this.minimapRooms = createMinimap(mapGenerationResult.rooms(), startRoom);
+        this.minimapLayout = new Image("ingame/minimap_layout.tga", new Vector2f(766, 32), 1.5f, 4);
         visit(startRoom);
+        update(1);
     }
 
     private Map<Room, MinimapRoom> createMinimap(final List<Room> rooms, final Room startRoom) {
@@ -58,10 +67,14 @@ public class MinimapService {
         return minimapRooms;
     }
 
+    public void update(final double dt){
+        minimapRooms.values().forEach(room -> room.update(currentRoom, (float)dt));
+    }
+
     public void visit(final Room room) {
         final MinimapRoom minimapRoom = minimapRooms.get(room);
         if (minimapRoom != null) {
-            if(currentRoom != null) {
+            if (currentRoom != null) {
                 currentRoom.setCurrent(false);
             }
 
@@ -76,15 +89,14 @@ public class MinimapService {
             roomsToVisit.add(room);
             levels.put(room, 0);
 
-            while(!roomsToVisit.isEmpty()){
+            while (!roomsToVisit.isEmpty()) {
                 final Room r = roomsToVisit.poll();
                 final int level = levels.get(r);
                 final MinimapRoom minimapRoomNeighbour = minimapRooms.get(r);
-                minimapRoomNeighbour.setOffset(currentRoom.getX(), currentRoom.getY());
                 minimapRoomNeighbour.setRoomsAwayFromCenter(level);
                 visited.add(r);
                 r.getNeighboursMap().forEach((direction, neighbour) -> {
-                    if(!visited.contains(neighbour)){
+                    if (!visited.contains(neighbour)) {
                         roomsToVisit.add(neighbour);
                         levels.put(neighbour, level + 1);
                     }
@@ -94,7 +106,9 @@ public class MinimapService {
     }
 
     public List<Renderable> toRender(final double dt) {
-        final Collection<MinimapRoom> values = minimapRooms.values();
-        return List.copyOf(values);
+        final List<? extends Drawable> drawables = Stream.of(List.of(minimapLayout), minimapRooms.values())
+                .flatMap(Collection::stream)
+                .toList();
+        return List.copyOf(drawables);
     }
 }
