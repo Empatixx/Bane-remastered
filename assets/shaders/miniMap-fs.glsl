@@ -78,15 +78,15 @@ void main() {
         baseColor = DEFAULT_COLOR;
         isGate = true;
     }
-    if (uConnections.y == 1 && uv.x > 1.0 - OUTLINE_WIDTH && uv.y > GATE_UV_START && uv.y < GATE_UV_END) {
+    if (uConnections.y == 1 && !isGate && uv.x > 1.0 - OUTLINE_WIDTH && uv.y > GATE_UV_START && uv.y < GATE_UV_END) {
         baseColor = DEFAULT_COLOR;
         isGate = true;
     }
-    if (uConnections.z == 1 && uv.y < OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
+    if (uConnections.z == 1 && !isGate && uv.y < OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
         baseColor = DEFAULT_COLOR;
         isGate = true;
     }
-    if (uConnections.w == 1 && uv.y > 1.0 - OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
+    if (uConnections.w == 1 && !isGate && uv.y > 1.0 - OUTLINE_WIDTH && uv.x > GATE_UV_START && uv.x < GATE_UV_END) {
         baseColor = DEFAULT_COLOR;
         isGate = true;
     }
