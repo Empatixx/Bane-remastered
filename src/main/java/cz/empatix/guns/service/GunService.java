@@ -2,6 +2,8 @@ package cz.empatix.guns.service;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.utils.PositionUtils;
+import cz.empatix.cursors.domain.CursorType;
+import cz.empatix.cursors.service.CursorService;
 import cz.empatix.guns.domain.*;
 import cz.empatix.hud.service.Image;
 import cz.empatix.render.attributes.Renderable;
@@ -50,6 +52,15 @@ public class GunService {
 
     public void update(final double dt) {
         guns.forEach(gun -> gun.update(dt));
+        try{
+            if (slots.getCurrentGun().isReloading()) {
+                CursorService.setCursor(CursorType.RELOAD);
+            } else {
+                CursorService.setCursor(CursorType.CROSSHAIR);
+            }
+        } catch (IllegalStateException e) {
+            LOGGER.debug("Could not set cursor..");
+        }
     }
 
     public void fixedUpdate(final float shooterX, final float shooterY,
@@ -57,8 +68,7 @@ public class GunService {
         try {
             slots.getCurrentGun().shoot(shooterX, shooterY, targetX, targetY);
         } catch (IllegalStateException e) {
-            LOGGER.warn("Could not shoot gun..");
-
+            LOGGER.debug("Could not shoot gun..");
         }
     }
 
@@ -66,7 +76,7 @@ public class GunService {
         try {
             slots.getCurrentGun().setShooting(shooting);
         } catch (IllegalStateException e) {
-            LOGGER.warn("Could not set shooting..");
+            LOGGER.debug("Could not set shooting..");
         }
     }
 

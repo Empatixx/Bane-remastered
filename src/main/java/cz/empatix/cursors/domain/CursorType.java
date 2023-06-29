@@ -4,4 +4,5 @@ public enum CursorType {
     DEFAULT,
     DISABLED,
     CROSSHAIR,
+    RELOAD
 }

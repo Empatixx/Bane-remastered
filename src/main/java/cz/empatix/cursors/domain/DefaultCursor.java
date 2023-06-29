@@ -21,7 +21,7 @@ public class DefaultCursor implements Cursor {
     }
 
     @Override
-    public void updateMouse(float x, float y) {
+    public void updateMouse(float x, float y, final float dt) {
         image.setPosition(x - X_OFFSET, y - Y_OFFSET);
     }
 }

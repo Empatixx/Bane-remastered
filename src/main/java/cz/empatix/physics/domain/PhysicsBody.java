@@ -55,15 +55,6 @@ public class PhysicsBody {
                 true
         );
     }
-    public void updateVelocity(final float dt) {
-        this.velocity.x += (force.x / mass) * dt;
-        this.velocity.y += (force.y / mass) * dt;
-
-        this.force.set(0, 0);
-
-        this.velocity.x *= linearDamping;
-        this.velocity.y *= linearDamping;
-    }
 
     public void setLinearDamping(final float linearDamping) {
         this.linearDamping = linearDamping;

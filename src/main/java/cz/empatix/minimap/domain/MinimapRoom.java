@@ -21,8 +21,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class MinimapRoom implements Drawable {
     private final static int TWEEN = 10;
     private final static float ALPHA_DECREASE = 0.25f;
-    private final static int DIMENSIONS = 16;
-    private final static int SCALE = 2;
+    public final static int DIMENSIONS = 16;
+    private final static int SCALE = 1;
     private final int x;
     private final int y;
     private boolean visited;

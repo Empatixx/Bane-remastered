@@ -14,5 +14,5 @@ public interface Cursor extends Drawable {
         return 200;
     }
 
-    void updateMouse(final float x, final float y);
+    void updateMouse(final float x, final float y, final float dt);
 }

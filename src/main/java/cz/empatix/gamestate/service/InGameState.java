@@ -79,7 +79,7 @@ public class InGameState extends GameState {
     @Override
     public List<Renderable> toRender(final double dt) {
         return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
-                        minimapService.toRender(dt))
+                        minimapService.toRender(dt), List.of(CursorService.getCursor()))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

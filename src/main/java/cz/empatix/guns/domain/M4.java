@@ -148,5 +148,8 @@ public class M4 extends AbstractGun implements Gun{
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }
-
+    @Override
+    public boolean isReloading(){
+        return reloading;
+    }
 }

@@ -5,7 +5,8 @@ public class DisabledCursor extends DefaultCursor {
     public boolean canRender() {
         return false;
     }
+
     @Override
-    public void updateMouse(float x, float y) {
+    public void updateMouse(float x, float y, final float dt) {
     }
 }

@@ -1,32 +1,35 @@
 package cz.empatix.cursors.service;
 
-import cz.empatix.cursors.domain.AimCursor;
-import cz.empatix.cursors.domain.Cursor;
-import cz.empatix.cursors.domain.CursorType;
-import cz.empatix.cursors.domain.DefaultCursor;
+import cz.empatix.cursors.domain.*;
 import cz.empatix.render.attributes.Renderable;
 
+import java.util.EnumMap;
 import java.util.Map;
 
 public class CursorService {
     private final static Map<CursorType, Cursor> cursors;
     private static Cursor currentCursor;
+
     static {
-        cursors = Map.of(
-                CursorType.DEFAULT, new DefaultCursor(),
-                CursorType.DISABLED, new DefaultCursor(),
-                CursorType.CROSSHAIR, new AimCursor()
-        );
+        cursors = new EnumMap<>(CursorType.class);
+        cursors.put(CursorType.DEFAULT, new DefaultCursor());
+        cursors.put(CursorType.DISABLED, new DefaultCursor());
+        cursors.put(CursorType.CROSSHAIR, new AimCursor());
+        cursors.put(CursorType.RELOAD, new ReloadCursor());
+
         currentCursor = cursors.get(CursorType.DISABLED);
     }
-    public static void setCursor(CursorType cursorType){
+
+    public static void setCursor(CursorType cursorType) {
         currentCursor = cursors.get(cursorType);
     }
-    public static Renderable getCursor(){
+
+    public static Renderable getCursor() {
         return currentCursor;
     }
-    public static void updateMouse(final float x, final float y){
-        currentCursor.updateMouse(x, y);
+
+    public static void updateMouse(final float x, final float y, final float dt) {
+        currentCursor.updateMouse(x, y, dt);
     }
 
 }

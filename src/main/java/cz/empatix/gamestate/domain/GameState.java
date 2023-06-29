@@ -1,5 +1,6 @@
 package cz.empatix.gamestate.domain;
 
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.service.GameStateService;
@@ -22,7 +23,7 @@ public abstract class GameState {
         this.gameStateService = gameStateService;
         this.type = type;
     }
-    public void updateMouse(){
+    public void updateMouse(final float dt){
         try (final MemoryStack stack = stackPush()) {
             final DoubleBuffer mouseX = stack.mallocDouble(1);
             final DoubleBuffer mouseY = stack.mallocDouble(1);
@@ -30,7 +31,9 @@ public abstract class GameState {
             this.mouseX = (float) mouseX.get(0) * WindowHandler.TARGET_WIDTH / WindowHandler.WIDTH;
             this.mouseY = (float) mouseY.get(0) * WindowHandler.TARGET_HEIGHT / WindowHandler.HEIGHT;
 
-            CursorService.updateMouse(this.mouseX, this.mouseY);
+            if(AssetsService.isLoaded()){
+                CursorService.updateMouse(this.mouseX, this.mouseY, dt);
+            }
         }
     }
     public void setCurrentState(final GameStateType type){

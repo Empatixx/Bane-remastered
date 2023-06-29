@@ -13,8 +13,11 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class MinimapService {
-    public final static int MINIMAP_POSITION_X = 834;
-    public final static int MINIMAP_POSITION_Y = 100;
+    private final static int OFFSET_FROM_BORDER = 32;
+    public final static int MINIMAP_POSITION_X = 860 - OFFSET_FROM_BORDER + 50 - MinimapRoom.DIMENSIONS/2;
+    public final static int MINIMAP_POSITION_Y = OFFSET_FROM_BORDER + 50 - MinimapRoom.DIMENSIONS/2;
+    private final static int MINIMAP_LAYOUT_POSITION_X = 860 - OFFSET_FROM_BORDER;
+    private final static int MINIMAP_LAYOUT_POSITION_Y = OFFSET_FROM_BORDER;
     private final Image minimapLayout;
     private final Map<Room, MinimapRoom> minimapRooms;
     private MinimapRoom currentRoom;
@@ -25,7 +28,7 @@ public class MinimapService {
                 .filter(r -> r instanceof StartRoom)
                 .findFirst().orElseThrow(); //todo: make enums to rooms, this is not fancy
         this.minimapRooms = createMinimap(mapGenerationResult.rooms(), startRoom);
-        this.minimapLayout = new Image("ingame/minimap_layout.tga", new Vector2f(766, 32), 1.5f, 4);
+        this.minimapLayout = new Image("ingame/minimap_layout.tga", new Vector2f(MINIMAP_LAYOUT_POSITION_X, MINIMAP_LAYOUT_POSITION_Y), 1f, 4);
         visit(startRoom);
         update(1);
     }

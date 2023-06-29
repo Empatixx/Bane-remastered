@@ -69,6 +69,7 @@ public class MenuState extends GameState {
     public List<Renderable> toRender(final double dt) {
         final List<? extends Renderable> renderable = Stream.of(
                         List.of(background),
+                        List.of(CursorService.getCursor()),
                         uiElements,
                         hudElements
                 )

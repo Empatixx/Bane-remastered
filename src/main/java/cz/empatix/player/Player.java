@@ -8,6 +8,7 @@ import cz.empatix.hud.service.StatusBar;
 import cz.empatix.hud.service.Text;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
+import cz.empatix.particles.service.GazewindService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.service.IntersectionResolver;
@@ -34,10 +35,12 @@ public class Player implements Drawable {
     private final static int COIN_HUD_OFFSET = 25;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
-    private final static int DIMENSION_WIDTH = 16;
-    private final static int DIMENSION_HEIGHT = 38;
+    private final static int DIMENSION_WIDTH = 16 * SCALE;
+    private final static int DIMENSION_HEIGHT = 38 * SCALE;
     private final static int MOVE_FORCE = 10000000;
     private final static float LOW_HP_THRESHOLD = 0.3f;
+    private final static int GAZE_OFFSET = 16;
+    private final static int GAZE_SPEED_PRELIMIT = 400;
     private final StatusBar healthBar;
     private final StatusBar armorBar;
     private final Image coinHud;
@@ -45,6 +48,7 @@ public class Player implements Drawable {
     private final Animation animation;
     private final PhysicsBody physicsBody;
     private final LightSource lightSource;
+    private final GazewindService gazewindService;
     private boolean left, right, top, bottom;
 
     private int maxHealth;
@@ -63,17 +67,16 @@ public class Player implements Drawable {
         coins = 0;
 
         animation = Animation.builder()
-                .setTotal(4,6)
+                .setTotal(4, 6)
                 .addState(AnimationState.IDLE, 0, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addState(AnimationState.RIGHT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addState(AnimationState.LEFT_MOVE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100, true)
                 .addState(AnimationState.BOTTOM_MOVE, 2, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addState(AnimationState.TOP_MOVE, 3, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/player.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
         physicsBody.setTranslation(500, 500);
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
@@ -82,11 +85,13 @@ public class Player implements Drawable {
         armorBar = new StatusBar(this::getArmor, this::getMaxArmor, StatusBarType.ARMOR, new Vector2f(75, 62.5f));
 
         final TextureAtlas.Entry coinTxt = AssetsService.getTexture("ingame/banecoin.tga");
-        coinHud = new Image(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT-COIN_HUD_OFFSET-coinTxt.height()), 1f);
-        coinText = new Text(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET+coinTxt.width()+15, 0f), coinHud.getZIndex());
+        coinHud = new Image(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height()), 1f);
+        coinText = new Text(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET + coinTxt.width() + 15, 0f), coinHud.getZIndex());
 
-        coinText.setCenterY(WindowHandler.TARGET_HEIGHT-COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT-COIN_HUD_OFFSET-coinTxt.height());
-        coinText.setColorRGB(255,216, 0);
+        coinText.setCenterY(WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height());
+        coinText.setColorRGB(255, 216, 0);
+
+        gazewindService = new GazewindService();
     }
 
     public int getArmor() {
@@ -99,21 +104,23 @@ public class Player implements Drawable {
 
     public void update(final double dt) {
         animation.update();
-        lightSource.setPosition(physicsBody.getTranslationX() + DIMENSION_WIDTH * SCALE / 2,
-                physicsBody.getTranslationY() + DIMENSION_HEIGHT * SCALE / 2);
+        lightSource.setPosition(physicsBody.getTranslationX() + DIMENSION_WIDTH / 2,
+                physicsBody.getTranslationY() + DIMENSION_HEIGHT / 2);
         healthBar.update(dt);
         armorBar.update(dt);
 
-        if((float) health / maxHealth < LOW_HP_THRESHOLD) {
+        if ((float) health / maxHealth < LOW_HP_THRESHOLD) {
             RedVignette.setTimeBased(true);
         } else {
             RedVignette.setTimeBased(false);
         }
+        gazewindService.update((float) dt);
     }
-    public void hit(final int damage){
-        if(armor > 0){
+
+    public void hit(final int damage) {
+        if (armor > 0) {
             armor -= damage;
-            if(armor < 0){
+            if (armor < 0) {
                 health += armor;
                 armor = 0;
             }
@@ -125,6 +132,22 @@ public class Player implements Drawable {
 
     public void fixedUpdate(final double dt) {
         move(dt);
+        final Vector2f velocity = physicsBody.getVelocity();
+        if(Math.abs(velocity.x()) >= GAZE_SPEED_PRELIMIT || Math.abs(velocity.y()) >= GAZE_SPEED_PRELIMIT) {
+            final float nextGazeX;
+            final float nextGazeY;
+            if((top || bottom) && !left && !right){
+                nextGazeX = getX() + DIMENSION_WIDTH / 2 + GAZE_OFFSET * (float) Math.sin(2 * Math.PI * ((System.currentTimeMillis() % 1000) / 1000d));
+                nextGazeY = getY() + DIMENSION_HEIGHT;
+            } else if ((right || left) && !top && !bottom) {
+                nextGazeX = getX() + DIMENSION_WIDTH / 2;
+                nextGazeY = getY() + DIMENSION_HEIGHT + GAZE_OFFSET * (float) Math.sin(Math.PI * (1 + ((System.currentTimeMillis() % 1000) / 1000d)));
+            } else {
+                nextGazeX = getX() + DIMENSION_WIDTH / 2;
+                nextGazeY = getY() + DIMENSION_HEIGHT;
+            }
+            gazewindService.spawn(nextGazeX, nextGazeY);
+        }
     }
 
     public void setHealth(final int health) {
@@ -149,7 +172,7 @@ public class Player implements Drawable {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        List<? extends Renderable> renderables = Stream.of(coinText.getSubRenderables(), List.of(healthBar, armorBar, coinHud))
+        List<? extends Renderable> renderables = Stream.of(coinText.getSubRenderables(), List.of(healthBar, armorBar, coinHud), gazewindService.toRender())
                 .flatMap(List::stream)
                 .toList();
         return List.copyOf(renderables);
@@ -238,9 +261,11 @@ public class Player implements Drawable {
             animation.setState(AnimationState.IDLE);
         }
     }
-    public Vector2f getPosition(){
+
+    public Vector2f getPosition() {
         return physicsBody.getPhysicsTranslation();
     }
+
     public float getX() {
         return physicsBody.getPhysicsTranslationX();
     }
