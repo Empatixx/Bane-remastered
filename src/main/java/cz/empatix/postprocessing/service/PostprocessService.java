@@ -18,10 +18,10 @@ public class PostprocessService {
 
     public PostprocessService(final RenderService renderService) {
         postprocesses = new ArrayList<>();
-        postprocesses.add(new Fade());
         postprocesses.add(new ForwardLightning());
         postprocesses.add(new GaussianBlur());
         postprocesses.add(new RedVignette());
+        postprocesses.add(new Fade());
 
         fallbackPostprocess = new NoPostprocessing();
         this.renderService = renderService;

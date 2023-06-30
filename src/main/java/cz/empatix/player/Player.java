@@ -290,4 +290,7 @@ public class Player implements Drawable {
         return maxHealth;
     }
 
+    public boolean isDead() {
+        return health <= 0;
+    }
 }

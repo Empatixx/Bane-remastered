@@ -36,8 +36,8 @@ public class GameStateService {
                 .filter(gameState -> gameState.getType() == type)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No such state"));
-        currentState.init();
         Camera.setPosition(0,0);
+        currentState.init();
         LOGGER.info("Current state set to {}", type);
     }
     public void update(final double dt) {

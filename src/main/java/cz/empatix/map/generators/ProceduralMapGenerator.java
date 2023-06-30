@@ -3,6 +3,7 @@ package cz.empatix.map.generators;
 import com.google.common.base.Preconditions;
 import cz.empatix.map.domain.*;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.rooms.service.StartRoom;
 import cz.empatix.tiles.domain.Tile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +62,12 @@ public class ProceduralMapGenerator implements MapGenerator {
         final List<Room> allRooms = transform(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
         allRooms.forEach(Room::init);
 
-        return new MapGenerationResult(allRooms, pathRooms);
+        final Room startRoom = allRooms.stream()
+                .filter(room -> room instanceof StartRoom) //todo; enums
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Start room not found"));
+
+        return new MapGenerationResult(startRoom, allRooms, pathRooms);
     }
 
     private List<PathRoomGenInfo> generatePaths(final StartRoomGenInfo startRoomGenInfo) {

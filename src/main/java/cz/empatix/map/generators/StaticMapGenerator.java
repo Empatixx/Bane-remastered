@@ -15,6 +15,6 @@ public class StaticMapGenerator implements MapGenerator {
         commonRoom.init();
         Camera.setMinDimensions(0, 0);
         Camera.setMaxDimensions(commonRoom.getWidth(), commonRoom.getHeight());
-        return new MapGenerationResult(List.of(commonRoom), List.of());
+        return new MapGenerationResult(commonRoom, List.of(commonRoom), List.of());
     }
 }

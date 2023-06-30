@@ -6,7 +6,6 @@ import cz.empatix.minimap.domain.MinimapRoom;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.rooms.service.StartRoom;
 import org.joml.Vector2f;
 
 import java.util.*;
@@ -23,13 +22,9 @@ public class MinimapService {
     private MinimapRoom currentRoom;
 
     public MinimapService(final MapGenerationResult mapGenerationResult) {
-        final Room startRoom = mapGenerationResult.rooms()
-                .stream()
-                .filter(r -> r instanceof StartRoom)
-                .findFirst().orElseThrow(); //todo: make enums to rooms, this is not fancy
-        this.minimapRooms = createMinimap(mapGenerationResult.rooms(), startRoom);
+        this.minimapRooms = createMinimap(mapGenerationResult.rooms(), mapGenerationResult.startRoom());
         this.minimapLayout = new Image("ingame/minimap_layout.tga", new Vector2f(MINIMAP_LAYOUT_POSITION_X, MINIMAP_LAYOUT_POSITION_Y), 1f, 4);
-        visit(startRoom);
+        visit(mapGenerationResult.startRoom());
         update(1);
     }
 

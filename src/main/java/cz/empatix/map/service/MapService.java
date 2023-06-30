@@ -27,6 +27,14 @@ public class MapService {
         this.pathRooms = mapGenerationResult.paths();
         this.rooms = mapGenerationResult.rooms();
         this.minimapRoomConsumer = minimapRoomConsumer;
+
+        final int xMin = mapGenerationResult.startRoom().getMinX();
+        final int yMin = mapGenerationResult.startRoom().getMinY();
+        final int xMax = mapGenerationResult.startRoom().getMaxX();
+        final int yMax = mapGenerationResult.startRoom().getMaxY();
+
+        Camera.setMinDimensions(xMin, yMin);
+        Camera.setMaxDimensions(xMax, yMax);
     }
 
     public List<Renderable> toRender(final double dt) {
@@ -78,4 +86,5 @@ public class MapService {
             LOGGER.error("No room found!", e);
         }
     }
+
 }
