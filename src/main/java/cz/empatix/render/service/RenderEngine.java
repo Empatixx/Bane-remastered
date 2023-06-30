@@ -33,7 +33,6 @@ public class RenderEngine {
         render(renderScenes, RenderScene.HUD, (float) dt);
         render(renderScenes, RenderScene.OVERLAYS, (float) dt);
 
-        postprocessService.flushFramebuffers();
     }
 
     private void render(Map<RenderScene, List<RenderableGroup>> renderScenes,
@@ -44,6 +43,8 @@ public class RenderEngine {
         fbo.unbind();
         postprocessService.process(fbo, scene, dt);
         fbo.flush();
+
+        postprocessService.flushFramebuffers();
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {

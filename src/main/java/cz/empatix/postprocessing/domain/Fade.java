@@ -9,7 +9,7 @@ import cz.empatix.render.shaderbindings.FadeBinding;
 import java.util.Set;
 
 public class Fade implements Postprocess {
-    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE, RenderScene.HUD);
+    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.HUD, RenderScene.SCENE);
     private final static float MAX_VALUE = 5f;
     private final static float MIN_VALUE = 0f;
     private final static float DEFAULT_TWEEN = 0f;
@@ -19,7 +19,7 @@ public class Fade implements Postprocess {
 
     @Override
     public void apply(final float dt) {
-        //value += tween * dt;
+        value += tween * dt;
         fixBounds();
     }
 

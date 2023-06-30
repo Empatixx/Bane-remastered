@@ -13,15 +13,15 @@ public class PostprocessService {
     private final List<Postprocess> postprocesses;
     private final Postprocess fallbackPostprocess;
 
-    private final Framebuffer fbo1 = Framebuffer.createRgb();
-    private final Framebuffer fbo2 = Framebuffer.createRgb();
+    private final Framebuffer fbo1 = Framebuffer.createRgba();
+    private final Framebuffer fbo2 = Framebuffer.createRgba();
 
     public PostprocessService(final RenderService renderService) {
         postprocesses = new ArrayList<>();
         postprocesses.add(new ForwardLightning());
         postprocesses.add(new GaussianBlur());
-        postprocesses.add(new RedVignette());
         postprocesses.add(new Fade());
+        postprocesses.add(new RedVignette());
 
         fallbackPostprocess = new NoPostprocessing();
         this.renderService = renderService;
