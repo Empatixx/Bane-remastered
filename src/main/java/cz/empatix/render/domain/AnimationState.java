@@ -15,5 +15,8 @@ public enum AnimationState {
     STATIC,
     COLLISION,
     HOVER,
+    LEFT_SIDE,
+    RIGHT_SIDE,
+    TOP,
     SPELL0, SPELL1, SPELL2, SPELL3, SPELL4,
 }
