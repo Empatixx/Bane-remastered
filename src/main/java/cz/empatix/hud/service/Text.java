@@ -14,6 +14,7 @@ import org.joml.Vector3i;
 import java.util.List;
 
 public class Text implements HUDElement {
+    private final static FontSize DEFAULT_FONT_SIZE = FontSize.FONTSIZE_20;
     private final static RenderScene DEFAULT_SCENE = RenderScene.HUD;
     private String text;
     private final Font font;
@@ -21,19 +22,16 @@ public class Text implements HUDElement {
     private final Vector3f color;
     private final int zIndex;
     private final RenderScene renderScene;
-
+    public Text(final String text, final String font, final Vector2f position, final int prevZIndex, final RenderScene renderScene) {
+        this(text, font, position, prevZIndex, renderScene, DEFAULT_FONT_SIZE);
+    }
     public Text(final String text, final String font, final Vector2f position, final int prevZIndex) {
-        this.text = text;
-        this.font = AssetsService.getFont(font, FontSize.FONTSIZE_20);
-        this.position = position;
-        zIndex = prevZIndex + 1;
-        color = new Vector3f(1f, 1f, 1f);
-        renderScene = DEFAULT_SCENE;
+        this(text, font, position, prevZIndex, DEFAULT_SCENE, DEFAULT_FONT_SIZE);
     }
     public Text(final String text, final String font, final Vector2f position, final int prevZIndex,
-                final RenderScene renderScene) {
+                final RenderScene renderScene, final FontSize fontSize) {
         this.text = text;
-        this.font = AssetsService.getFont(font, FontSize.FONTSIZE_20);
+        this.font = AssetsService.getFont(font, fontSize);
         this.position = position;
         this.renderScene = renderScene;
         zIndex = prevZIndex + 1;

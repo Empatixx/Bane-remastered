@@ -13,7 +13,7 @@ public class CursorService {
     static {
         cursors = new EnumMap<>(CursorType.class);
         cursors.put(CursorType.DEFAULT, new DefaultCursor());
-        cursors.put(CursorType.DISABLED, new DefaultCursor());
+        cursors.put(CursorType.DISABLED, new DisabledCursor());
         cursors.put(CursorType.CROSSHAIR, new AimCursor());
         cursors.put(CursorType.RELOAD, new ReloadCursor());
 

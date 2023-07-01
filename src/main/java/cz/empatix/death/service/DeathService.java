@@ -1,5 +1,9 @@
 package cz.empatix.death.service;
 
+import cz.empatix.assets.domain.font.FontSize;
+import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.cursors.domain.CursorType;
+import cz.empatix.cursors.service.CursorService;
 import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.Text;
 import cz.empatix.postprocessing.domain.Fade;
@@ -9,8 +13,6 @@ import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DeathService {
     private final static int SKULL_INDEX = 4;
@@ -22,14 +24,16 @@ public class DeathService {
     private final static int LABEL_POS_OFFSET = 50;
     private final static float LABEL_TRANSITION_TIME = .5f;
     private final static int LABEL_START_POSITION_Y = 250;
-    private final static int LABEL_TEXT_START_POSITION_Y = 275;
     private final static int LABEL_END_POSITION_Y = 200;
     private final static int LABEL_DIFFERENCE_Y = LABEL_START_POSITION_Y - LABEL_END_POSITION_Y;
-    private final static float REWARD_TRANSITION_TIME = 0.25f;
+    private static final int LABEL_TEXT_END_POSITION_Y = 225;
+    private static final int LABEL_TEXT_START_POSITION_Y = LABEL_TEXT_END_POSITION_Y + LABEL_DIFFERENCE_Y;
+    private final static float REWARD_TRANSITION_TIME = 0.5f;
     private final List<Image> icons;
     private final List<Text> texts;
     private final List<Text> rewardTexts;
     private final Text continueText;
+    private final Text gameOverText;
     private final Runnable menuStateAction;
     private boolean active = false;
     private boolean continuePressed = false;
@@ -52,10 +56,13 @@ public class DeathService {
         final Text lootText = new Text("Loot: 0", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + 2 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
         final Text floorText = new Text("Floor: 1", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
 
-        final Text accuracyCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, 225), 2, RenderScene.OVERLAYS);
-        final Text killsCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, 275), 2, RenderScene.OVERLAYS);
-        final Text lootCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, 325), 2, RenderScene.OVERLAYS);
-        final Text floorCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, 375), 2, RenderScene.OVERLAYS);
+        final Text accuracyCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y), 2, RenderScene.OVERLAYS);
+        final Text killsCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final Text lootCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 2 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final Text floorCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+
+        gameOverText = new Text("Game Over", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONTSIZE_24);
+        gameOverText.setCenterX(0, WindowHandler.TARGET_WIDTH);
 
         continueText = new Text("Press any key to continue...", "PixelFJVerdana12pt.ttf", new Vector2f(700, 500), 2, RenderScene.OVERLAYS);
 
@@ -71,6 +78,7 @@ public class DeathService {
 
     public void update(final float dt, final boolean isPlayerDead) {
         if (isPlayerDead && !active) {
+            CursorService.setCursor(CursorType.DISABLED);
             Fade.setTween(0.2f);
             active = true;
         }
@@ -94,8 +102,15 @@ public class DeathService {
                 break;
             }
         }
-        for (int i = 0; i < TOTAL_LABELS;i++){
-            if (accumulator > i * )
+        for (int i = 0; i < TOTAL_LABELS; i++) {
+            if (accumulator > i * REWARD_TRANSITION_TIME + TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
+                final Text text = rewardTexts.get(i);
+                final float offsetAccumulator = accumulator - i * REWARD_TRANSITION_TIME - TOTAL_LABELS * LABEL_TRANSITION_TIME - SKULL_TRANSITION_TIME;
+                final float delta = Math.min(REWARD_TRANSITION_TIME, offsetAccumulator) / REWARD_TRANSITION_TIME;
+                text.setText("+" + (int) ((i * 100) * delta));
+            } else {
+                break;
+            }
         }
         if (!continuePressed && Fade.getValue() > 1) {
             Fade.setTween(0);
@@ -111,6 +126,9 @@ public class DeathService {
         }
         final ArrayList<Renderable> renderables = new ArrayList<>(100);
         renderables.add(icons.get(SKULL_INDEX));
+        if(accumulator > SKULL_TRANSITION_TIME) {
+            renderables.addAll(gameOverText.getSubRenderables());
+        }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
                 renderables.addAll(texts.get(i).getSubRenderables());
@@ -119,14 +137,21 @@ public class DeathService {
                 break;
             }
         }
-        if (System.currentTimeMillis() / 200 % 2 == 0 && accumulator > TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
+        for (int i = 0; i < TOTAL_LABELS; i++) {
+            if (accumulator > i * REWARD_TRANSITION_TIME + TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
+                renderables.addAll(rewardTexts.get(i).getSubRenderables());
+            } else {
+                break;
+            }
+        }
+        if (System.currentTimeMillis() / 200 % 2 == 0 && accumulator > TOTAL_LABELS * (REWARD_TRANSITION_TIME + LABEL_TRANSITION_TIME) + SKULL_TRANSITION_TIME) {
             renderables.addAll(continueText.getSubRenderables());
         }
         return List.copyOf(renderables);
     }
 
     public void keyPressed(final int key) {
-        if (active && !continuePressed && accumulator > TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
+        if (active && !continuePressed && accumulator > TOTAL_LABELS * (REWARD_TRANSITION_TIME + LABEL_TRANSITION_TIME) + SKULL_TRANSITION_TIME) {
             continuePressed = true;
             Fade.setTween(1);
         }

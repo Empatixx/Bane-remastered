@@ -35,8 +35,8 @@ public class SlimeSmash implements Skill {
         final Vector2f shooterPosition = shooterPositionSupplier.get();
         for (int i = 0; i < totalBulletsPerSmash; i++) {
             final Slimebullet bullet = new Slimebullet();
-            bullet.setPosition(shooterPosition.x, shooterPosition.y);
-            bullet.setDirection(shooterPosition.x, shooterPosition.y, shooterPosition.x, shooterPosition.y, (float)(Math.PI * 2 * (i+1)) / totalBulletsPerSmash);
+            bullet.setPosition(shooterPosition.x(), shooterPosition.y());
+            bullet.setDirection(shooterPosition.x(), shooterPosition.y(), shooterPosition.x(), shooterPosition.y(), (float)(Math.PI * 2 * (i+1)) / totalBulletsPerSmash);
             bullets.add(bullet);
         }
     }
