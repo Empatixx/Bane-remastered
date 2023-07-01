@@ -23,7 +23,7 @@ void main() {
 
     // Determine whether to use the texture color or black based on transparency and distance
     if (normalizedDistance > (1.0 - uValue)) {
-        float alpha = min(1.0, (normalizedDistance - (1.0 - uValue)) * 1.5);  // Adjust the 10.0 factor as needed
+        float alpha = min(1.0, (normalizedDistance - (1.0 - uValue)) * 1.25);  // Adjust the 10.0 factor as needed
         vec4 black = vec4(0.0, 0.0, 0.0, alpha);
         gl_FragColor = mix(color, black, alpha);
     }

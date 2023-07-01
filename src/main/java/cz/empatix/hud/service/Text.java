@@ -98,4 +98,12 @@ public class Text implements HUDElement {
     public float getHeight(){
         return font.getHeight(text);
     }
+
+    public float getX() {
+        return position.x();
+    }
+    public float getY(){
+        return position.y();
+    }
+
 }

@@ -13,6 +13,7 @@ import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.MapGenerator;
 import cz.empatix.map.generators.ProceduralMapGenerator;
+import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.pause.service.PauseService;
@@ -70,7 +71,6 @@ public class InGameState extends GameState {
         final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
         final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
         Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
-
         player.update(dt);
         mapService.update(dt, player);
         minimapService.update(dt);
@@ -116,6 +116,12 @@ public class InGameState extends GameState {
         }
         if(GLFW.GLFW_KEY_R == key){
             player.setHealth(player.getHealth() + 1);
+        }
+        if(GLFW.GLFW_KEY_T == key){
+            Camera.setPosition(0,0);
+        }
+        if (GLFW.GLFW_KEY_I == key) {
+            Camera.setPosition(500,240);
         }
     }
 

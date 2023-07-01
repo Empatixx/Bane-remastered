@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 public class Player implements Drawable {
     private final static int SCALE = 2;
     private final static int COIN_HUD_OFFSET = 25;
-    private final static int DEFAULT_MAX_HEALTH = 10;
+    private final static int DEFAULT_MAX_HEALTH = 0;
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 38 * SCALE;

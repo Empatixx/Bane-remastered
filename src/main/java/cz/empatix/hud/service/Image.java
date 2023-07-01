@@ -99,4 +99,10 @@ public class Image implements HUDElement {
     public void setPosition(final float x, final float y) {
         this.position.set(x, y);
     }
+    public float getX() {
+        return position.x();
+    }
+    public float getY() {
+        return position.y();
+    }
 }

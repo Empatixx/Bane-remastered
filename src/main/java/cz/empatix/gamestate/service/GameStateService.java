@@ -51,6 +51,7 @@ public class GameStateService {
         physicsEngine.fixedUpdate(dt);
     }
     public void render(final double dt) {
+        Camera.update((float) dt);
         renderEngine.render(currentState.toRender(dt), dt);
         physicsEngine.debugRender();
     }

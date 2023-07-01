@@ -27,8 +27,6 @@ public class RenderEngine {
                 .map(Renderable::getRenderableGroup)
                 .filter(RenderableGroup::isRenderable)
                 .collect(Collectors.groupingBy(RenderableGroup::getRenderScene));
-        Camera.update((float) dt);
-
         render(renderScenes, RenderScene.SCENE, (float) dt);
         render(renderScenes, RenderScene.HUD, (float) dt);
         render(renderScenes, RenderScene.OVERLAYS, (float) dt);

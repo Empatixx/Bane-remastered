@@ -10,9 +10,9 @@ public class InterpolatedPosition {
     private final Vector2f currentPosition;
     private final Vector2f nextPosition;
     private final Vector2f previousPosition;
-    private boolean isInitialPositionSet;
 
     private float t = 0;
+
     public InterpolatedPosition() {
         this.currentPosition = new Vector2f();
         this.nextPosition = new Vector2f();
@@ -21,20 +21,12 @@ public class InterpolatedPosition {
 
 
     public void setPosition(final float x, final float y) {
-        if (!isInitialPositionSet) {
-            this.currentPosition.x = x;
-            this.currentPosition.y = y;
-            this.previousPosition.x = x;
-            this.previousPosition.y = y;
-            this.isInitialPositionSet = true;
-        } else {
-            this.nextPosition.x = x;
-            this.nextPosition.y = y;
+        this.nextPosition.x = x;
+        this.nextPosition.y = y;
 
-            this.previousPosition.x = currentPosition.x;
-            this.previousPosition.y = currentPosition.y;
-            t = 0;
-        }
+        this.previousPosition.x = currentPosition.x;
+        this.previousPosition.y = currentPosition.y;
+        t = 0;
     }
 
     public float getInterpolatedX() {
@@ -44,21 +36,25 @@ public class InterpolatedPosition {
     public float getInterpolatedY() {
         return currentPosition.y;
     }
-    public Vector2f getInterpolatedPosition(){
+
+    public Vector2f getInterpolatedPosition() {
         return currentPosition;
     }
-    public float getY(){
+
+    public float getY() {
         return nextPosition.y;
     }
-    public float getX(){
+
+    public float getX() {
         return nextPosition.x;
     }
-    public Vector2f getPosition(){
+
+    public Vector2f getPosition() {
         return nextPosition;
     }
 
     public void update(final float dt) {
-        t += dt / (float)GameLoop.FIXED_DELTA_TIME;
+        t += dt / (float) GameLoop.FIXED_DELTA_TIME;
         if (t > 1) {
             t = 1;
         }
