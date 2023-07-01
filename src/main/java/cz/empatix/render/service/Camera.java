@@ -122,8 +122,8 @@ public class Camera {
         if(tween > 1){
             tween = 1;
         }
-        maxDimensions.x = (x - maxDimensions.x - TARGET_WIDTH) * tween + maxDimensions.x;
-        maxDimensions.y = (y - maxDimensions.y - TARGET_HEIGHT) * tween + maxDimensions.y;
+        maxDimensions.x = (x - maxDimensions.x - WindowHandler.TARGET_WIDTH) * tween + maxDimensions.x;
+        maxDimensions.y = (y - maxDimensions.y - WindowHandler.TARGET_HEIGHT) * tween + maxDimensions.y;
     }
 
     public static void setMinDimensions(final int x, final int y) {
@@ -131,6 +131,6 @@ public class Camera {
     }
 
     public static void setMaxDimensions(final int x, final int y) {
-        maxDimensions.set(x, y);
+        maxDimensions.set(x - WindowHandler.TARGET_WIDTH, y - WindowHandler.TARGET_HEIGHT);
     }
 }

@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MapService {
@@ -42,7 +41,7 @@ public class MapService {
                 .flatMap(Collection::stream)
                 .map(Room::toRender)
                 .flatMap(List::stream)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void update(final double dt,

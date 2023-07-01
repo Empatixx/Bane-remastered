@@ -28,14 +28,12 @@ public class CommonTileMap implements TileMap {
         tiles = createTiles(rows, cols, xOffset, yOffset, directions);
     }
 
-    private Tile[][] createTiles(int rows, int cols, int xOffset, int yOffset, Set<RoomDirection> directions) {
-        final Tile[][] tiles;
+    private Tile[][] createTiles(final int rows, final int cols, final int xOffset, final int yOffset,
+                                 final Set<RoomDirection> directions) {
         final TileFactory tileFactory = new TileFactory();
         final boolean[][] map = BooleanMapUtil.createEmptyMap(rows, cols);
         BooleanMapUtil.setPaths(map, directions);
-
-        tiles = tileFactory.createTilemapFromClamp(BooleanMapUtil.edgeClamp(map), xOffset, yOffset);
-        return tiles;
+        return tileFactory.createTilemapFromClamp(BooleanMapUtil.edgeClamp(map), xOffset, yOffset);
     }
 
     @Override

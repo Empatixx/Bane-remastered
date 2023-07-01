@@ -25,6 +25,7 @@ public class GameStateService {
         gameStates.add(new LoadingState(this));
         gameStates.add(new InGameState(this));
         gameStates.add(new MenuState(this));
+        gameStates.add(new LobbyState(this));
         setCurrentState(GameStateType.LOADING);
 
         physicsEngine = new PhysicsEngine();

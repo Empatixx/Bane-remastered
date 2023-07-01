@@ -7,12 +7,13 @@ import java.util.Set;
 
 public class BooleanMapUtil {
     public static boolean[][] edgeClamp(final boolean[][] original) {
-        int originalHeight = original.length;
-        int originalWidth = original[0].length;
-        int newHeight = originalHeight + 2;
-        int newWidth = originalWidth + 2;
+        final int originalHeight = original.length;
+        final int originalWidth = original[0].length;
 
-        boolean[][] expanded = new boolean[newHeight][newWidth];
+        final int newHeight = originalHeight + 2;
+        final int newWidth = originalWidth + 2;
+
+        final boolean[][] expanded = new boolean[newHeight][newWidth];
 
         for (int i = 0; i < newHeight; i++) {
             for (int j = 0; j < newWidth; j++) {
