@@ -3,10 +3,7 @@ package cz.empatix.render.domain;
 public enum AnimationState {
     IDLE,
     ATTACK,
-    RIGHT_MOVE,
-    LEFT_MOVE,
-    TOP_MOVE,
-    BOTTOM_MOVE,
+    RIGHT_MOVE, LEFT_MOVE, TOP_MOVE, BOTTOM_MOVE,
     OPEN,
     CLOSE,
     WALK,
@@ -15,8 +12,9 @@ public enum AnimationState {
     STATIC,
     COLLISION,
     HOVER,
-    LEFT_SIDE,
-    RIGHT_SIDE,
+    LEFT_SIDE, RIGHT_SIDE,
     TOP,
+
+    TYPE0, TYPE1, TYPE2, TYPE3, TYPE4,
     SPELL0, SPELL1, SPELL2, SPELL3, SPELL4,
 }

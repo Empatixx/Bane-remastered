@@ -1,7 +1,6 @@
 #version 330 core
 #define AMBIENT_LIGHT 0.6
 #define MAX_LIGHTS 100
-#define BLOCK_SIZE 8.0
 #define NOISE_INTENSITY 0.15
 
 uniform sampler2D texSampler; // framebuffer texture
@@ -31,8 +30,6 @@ void main() {
     vec4 albedo = texture2D(texSampler, tex_coords);
     vec2 screenSpaceTexCoord = tex_coords * resolution;
 
-    vec2 pixelatedScreenSpaceTexCoord = floor(screenSpaceTexCoord / BLOCK_SIZE) * BLOCK_SIZE;
-
     vec3 finalLightColor = vec3(0.0, 0.0, 0.0);
 
     for (int i = 0; i < numLights; ++i) {
@@ -42,10 +39,9 @@ void main() {
         vec2 calcLightPosition = vec2(lightPositionInScreenSpace.x - cameraPositionInScreenSpace.x, 1.0 - lightPositionInScreenSpace.y + cameraPositionInScreenSpace.y); // Updated calculation
         vec2 worldSpaceLightPosition = calcLightPosition * resolution;
 
-        vec2 worldSpacePixelatedLightPosition = floor(worldSpaceLightPosition / BLOCK_SIZE) * BLOCK_SIZE;
-        vec2 screenSpacePixelatedLightPosition = worldSpacePixelatedLightPosition / resolution;
+        vec2 screenSpacePixelatedLightPosition = worldSpaceLightPosition / resolution;
 
-        vec2 lightDirWorldSpace = screenSpacePixelatedLightPosition * resolution - pixelatedScreenSpaceTexCoord;
+        vec2 lightDirWorldSpace = screenSpacePixelatedLightPosition * resolution - screenSpaceTexCoord;
         float diffuse = calcDiffuse(lightDirWorldSpace, lightRadius[i], lightIntensity[i]); // calculate diffuse lighting
         finalLightColor += diffuse * lightColor[i];
     }

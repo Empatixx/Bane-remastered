@@ -5,8 +5,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.AnimationState;
-import cz.empatix.roomobjects.domain.Portal;
-import cz.empatix.roomobjects.domain.Torch;
+import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.LobbyTileMap;
@@ -37,26 +36,91 @@ public class LobbyRoom implements Room {
 
     @Override
     public void init() {
-        final Portal portal = new Portal(new Vector2f((getMinX() + getMaxX()) / 2f - 96, Tile.SCALE * Tile.TILE_SIZE/2f));
-        roomObjectService.add(portal);
+        {
+            final Portal portal = new Portal(new Vector2f((getMinX() + getMaxX()) / 2f - 96, Tile.SCALE * Tile.TILE_SIZE / 2f));
+            roomObjectService.add(portal);
+        }
+        {
+            final Torch torch1 = new Torch();
+            final Torch torch2 = new Torch();
+            final Torch torch3 = new Torch();
+            final Torch torch4 = new Torch();
 
-        final Torch torch1 = new Torch();
-        final Torch torch2 = new Torch();
-        final Torch torch3 = new Torch();
-        final Torch torch4 = new Torch();
+            torch1.setPosition(Tile.TILE_SIZE * Tile.SCALE, Tile.TILE_SIZE * Tile.SCALE * 2);
+            torch2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 10, Tile.TILE_SIZE * Tile.SCALE * 2);
+            torch3.setPosition(Tile.TILE_SIZE * Tile.SCALE * 18, Tile.TILE_SIZE * Tile.SCALE * 2);
+            torch4.setPosition(Tile.TILE_SIZE * Tile.SCALE * 27, Tile.TILE_SIZE * Tile.SCALE * 2);
 
-        torch1.setPosition(Tile.TILE_SIZE * Tile.SCALE, Tile.TILE_SIZE * Tile.SCALE * 2);
-        torch2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 10, Tile.TILE_SIZE * Tile.SCALE * 2);
-        torch3.setPosition(Tile.TILE_SIZE * Tile.SCALE * 18, Tile.TILE_SIZE * Tile.SCALE * 2);
-        torch4.setPosition(Tile.TILE_SIZE * Tile.SCALE * 27, Tile.TILE_SIZE * Tile.SCALE * 2);
+            torch2.setState(AnimationState.RIGHT_SIDE);
+            torch4.setState(AnimationState.RIGHT_SIDE);
 
-        torch2.setState(AnimationState.RIGHT_SIDE);
-        torch4.setState(AnimationState.RIGHT_SIDE);
+            roomObjectService.add(torch1);
+            roomObjectService.add(torch2);
+            roomObjectService.add(torch3);
+            roomObjectService.add(torch4);
+        }
+        {
+            final Bones bones1 = new Bones();
+            final Bones bones2 = new Bones();
 
-        roomObjectService.add(torch1);
-        roomObjectService.add(torch2);
-        roomObjectService.add(torch3);
-        roomObjectService.add(torch4);
+            bones1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 4, Tile.TILE_SIZE * Tile.SCALE);
+            bones2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 25, Tile.TILE_SIZE * Tile.SCALE * 6);
+
+            bones1.setState(AnimationState.TYPE1);
+            bones2.setState(AnimationState.TYPE0);
+
+            roomObjectService.add(bones1);
+            roomObjectService.add(bones2);
+        }
+        {
+            final Cobweb cobweb1 = new Cobweb();
+            final Cobweb cobweb2 = new Cobweb();
+
+            cobweb1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 10, Tile.TILE_SIZE * Tile.SCALE);
+            cobweb2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 18, Tile.TILE_SIZE * Tile.SCALE * 8);
+
+            cobweb1.setState(AnimationState.TYPE1);
+            cobweb2.setState(AnimationState.TYPE0);
+
+            roomObjectService.add(cobweb1);
+            roomObjectService.add(cobweb2);
+        }
+        {
+            final Armorstand armorstand1 = new Armorstand();
+            final Armorstand armorstand2 = new Armorstand();
+
+            armorstand1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 11.5f, Tile.TILE_SIZE * Tile.SCALE * 1.75f);
+            armorstand2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 16.5f, Tile.TILE_SIZE * Tile.SCALE * 1.75f);
+
+            roomObjectService.add(armorstand1);
+            roomObjectService.add(armorstand2);
+
+        }
+        {
+            final TaskBoard taskBoard = new TaskBoard();
+            taskBoard.setPosition(Tile.TILE_SIZE * Tile.SCALE * 19, 0);
+            roomObjectService.add(taskBoard);
+        }
+        {
+            final Chest chest = new Chest();
+            chest.setPosition(Tile.TILE_SIZE * Tile.SCALE * 24, Tile.TILE_SIZE * Tile.SCALE * 2 - 16);
+            roomObjectService.add(chest);
+        }
+        {
+            final CraftingTable craftingTable = new CraftingTable();
+            craftingTable.setPosition(Tile.TILE_SIZE * Tile.SCALE * 6, Tile.TILE_SIZE * Tile.SCALE);
+            roomObjectService.add(craftingTable);
+        }
+        {
+            final Scientist scientist = new Scientist();
+            scientist.setPosition(Tile.TILE_SIZE * Tile.SCALE * 4, Tile.TILE_SIZE * Tile.SCALE * 2);
+            roomObjectService.add(scientist);
+        }
+        {
+            final Box box = new Box();
+            box.setPosition(Tile.TILE_SIZE * Tile.SCALE * 5, Tile.TILE_SIZE * Tile.SCALE * 2);
+            roomObjectService.add(box);
+        }
     }
 
     @Override
@@ -80,7 +144,7 @@ public class LobbyRoom implements Room {
     public int getWidth() {
         return tileMap.getWidth();
     }
-
+    
     @Override
     public int getHeight() {
         return tileMap.getHeight();

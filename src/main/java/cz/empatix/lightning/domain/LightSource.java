@@ -9,6 +9,7 @@ import java.util.Objects;
 
 
 public final class LightSource {
+    private final static int ADDITIONAL_FRUSTRUM = 300;
     private final Vector2f position;
     private final Vector3f color;
     private final float radius;
@@ -85,10 +86,10 @@ public final class LightSource {
     }
 
     public boolean isOnCamera() {
-        return Camera.getX() < position.x + radius * intensity &&
-                Camera.getX() + Camera.getTargetWidth() > position.x - radius * intensity &&
-                Camera.getY() < position.y + radius * intensity &&
-                Camera.getY() + Camera.getTargetHeight() > position.y - radius * intensity;
+        return Camera.getX() < position.x + radius * intensity + ADDITIONAL_FRUSTRUM &&
+                Camera.getX() + Camera.getTargetWidth() > position.x - radius * intensity - ADDITIONAL_FRUSTRUM &&
+                Camera.getY() < position.y + radius * intensity + ADDITIONAL_FRUSTRUM &&
+                Camera.getY() + Camera.getTargetHeight() > position.y - radius * intensity - ADDITIONAL_FRUSTRUM;
     }
 
     public void setIntensity(final float intensity) {

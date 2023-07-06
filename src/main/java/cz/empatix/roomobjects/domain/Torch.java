@@ -63,7 +63,8 @@ public class Torch implements RoomObject {
     public void update(double dt) {
         animation.update();
         lightSource.setPosition(position.x() + DIMENSION_WIDTH / 2,
-                position.y() + DIMENSION_HEIGHT / 2);    }
+                position.y() + DIMENSION_HEIGHT / 2);
+    }
 
     @Override
     public boolean canRemove() {
