@@ -1,10 +1,11 @@
 package cz.empatix.physics.service;
 
-import cz.empatix.physics.domain.CollisionResult;
+import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Circle;
 import cz.empatix.physics.domain.geometry.Geometry;
-import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
+import cz.empatix.physics.events.domain.CollisionEvent;
+import cz.empatix.physics.events.suppliers.CollisionSupplier;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL30;
@@ -18,15 +19,10 @@ public class PhysicsEngine {
     private final static boolean RENDER_COLLISIONS = false;
     private final static Logger LOGGER = LoggerFactory.getLogger(PhysicsEngine.class);
     private static List<PhysicsBody> physicsBodies;
-    private final CollisionResolver collisionResolver;
-    private final CollisionHandler collisionHandler;
-    private final BodyUpdater bodyUpdater;
+    private final CollisionSupplier collisionSupplier = new CollisionSupplier();
 
     public PhysicsEngine() {
         physicsBodies = new ArrayList<>();
-        collisionResolver = new CollisionResolver();
-        collisionHandler = new CollisionHandler();
-        bodyUpdater = new BodyUpdater();
     }
 
     public static void add(final PhysicsBody physicsBody) {
@@ -38,7 +34,22 @@ public class PhysicsEngine {
     }
 
     public void fixedUpdate(final double dt) {
-        physicsBodies.forEach(body -> bodyUpdater.update(body, (float) dt));
+        physicsBodies.forEach(body -> {
+            final Vector2f velocity = body.getVelocity();
+            final Vector2f force = body.getForce();
+            final float mass = body.getMass();
+            final float linearDamping = body.getLinearDamping();
+
+            velocity.x += (force.x / mass) * dt;
+            velocity.y += (force.y / mass) * dt;
+
+            body.translate(new Vector2f(velocity).mul((float) dt));
+
+            force.zero();
+
+            velocity.x *= linearDamping;
+            velocity.y *= linearDamping;
+        });
         for (int i = 0; i < physicsBodies.size(); i++) {
 
             final PhysicsBody bodyA = physicsBodies.get(i);
@@ -49,26 +60,17 @@ public class PhysicsEngine {
                 if (bodyA.isImmmovable() && bodyB.isImmmovable()) {
                     continue;
                 }
-                if (!bodyA.isImmmovable() && !bodyB.isImmmovable()) {
+                final CollisionEvent event = collisionSupplier.supply(bodyA, bodyB);
+
+                if(event == null){
                     continue;
                 }
 
-                final CollisionResult result = collisionResolver.resolve(bodyA, bodyB);
+                bodyA.consumeEvents(List.of(event));
+                bodyB.consumeEvents(List.of(event));
 
-                if (result != null) {
-                    final Vector2f normal = result.normal();
-
-                    final Vector2f translateA = new Vector2f(normal).mul(-result.depth() / 2);
-                    final Vector2f translateB = new Vector2f(normal).mul(result.depth() / 2);
-
-                    if (!bodyA.isImmmovable()) {
-                        bodyA.translate(translateA);
-                    }
-                    if (!bodyB.isImmmovable()) {
-                        bodyB.translate(translateB);
-                    }
-                    collisionHandler.handle(bodyA, bodyB, result);
-                }
+                bodyA.consumeEvents(bodyB.produceEvents(bodyA, bodyB));
+                bodyB.consumeEvents(bodyA.produceEvents(bodyA, bodyB));
             }
         }
     }

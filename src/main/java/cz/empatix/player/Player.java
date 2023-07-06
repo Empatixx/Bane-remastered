@@ -11,6 +11,7 @@ import cz.empatix.lightning.service.LightningService;
 import cz.empatix.particles.service.GazewindService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
+import cz.empatix.physics.events.consumers.DamageConsumer;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
@@ -33,7 +34,7 @@ import java.util.stream.Stream;
 public class Player implements Drawable {
     private final static int SCALE = 2;
     private final static int COIN_HUD_OFFSET = 25;
-    private final static int DEFAULT_MAX_HEALTH = 0;
+    private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 38 * SCALE;
@@ -41,6 +42,7 @@ public class Player implements Drawable {
     private final static float LOW_HP_THRESHOLD = 0.3f;
     private final static int GAZE_OFFSET = 16;
     private final static int GAZE_SPEED_PRELIMIT = 400;
+    private final static int INVULNERABLE_TIME = 1000;
     private final StatusBar healthBar;
     private final StatusBar armorBar;
     private final Image coinHud;
@@ -56,6 +58,7 @@ public class Player implements Drawable {
     private int maxArmor;
     private int armor;
     private int coins;
+    private long lastHitTime;
 
     public Player() {
         maxHealth = DEFAULT_MAX_HEALTH;
@@ -78,6 +81,7 @@ public class Player implements Drawable {
         animation.setState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
         physicsBody.setTranslation(500, 500);
+        physicsBody.addEventConsumer(new DamageConsumer(this::hit));
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
 
@@ -118,6 +122,17 @@ public class Player implements Drawable {
     }
 
     public void hit(final int damage) {
+        if (isDead()){
+            right = false;
+            left = false;
+            top = false;
+            bottom = false;
+            physicsBody.setVelocity(0, 0);
+            return;
+        }
+        if (System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME){
+            return;
+        }
         if (armor > 0) {
             armor -= damage;
             if (armor < 0) {
@@ -128,6 +143,7 @@ public class Player implements Drawable {
             health -= damage;
         }
         RedVignette.setMaxVignette();
+        lastHitTime = System.currentTimeMillis();
     }
 
     public void fixedUpdate(final double dt) {
@@ -192,6 +208,9 @@ public class Player implements Drawable {
         return RenderScene.SCENE;
     }
 
+    public void cleanUp(){
+        RedVignette.reset();
+    }
 
     @Override
     public boolean canRender() {

@@ -64,7 +64,7 @@ public class CollisionResolver {
 
     public CollisionResult resolveCircleXRectangle() {
         //throw new UnsupportedOperationException("Not implemented yet");
-    return null;
+        return null;
     }
 
     public CollisionResult resolveRectangleXRectangle(final PhysicsBody a, final PhysicsBody b) {

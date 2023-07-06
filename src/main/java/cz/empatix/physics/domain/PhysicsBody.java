@@ -4,7 +4,13 @@ import cz.empatix.physics.domain.geometry.Geometry;
 import cz.empatix.physics.domain.transform.CommonTransform;
 import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.physics.domain.transform.Transform;
+import cz.empatix.physics.events.consumers.EventConsumer;
+import cz.empatix.physics.events.domain.Event;
+import cz.empatix.physics.events.suppliers.EventSupplier;
 import org.joml.Vector2f;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PhysicsBody {
     private final Geometry geometry;
@@ -16,10 +22,13 @@ public class PhysicsBody {
     private final int mass;
     private final float inversedMass;
     private boolean remove;
-    private boolean immmovable;
+    private final boolean immmovable;
+    private final List<EventConsumer> eventConsumers;
+    private final List<EventSupplier> eventSuppliers;
+
     public PhysicsBody(final Geometry geometry,
                        final Transform transform,
-                       final boolean immmovable){
+                       final boolean immmovable) {
         this.geometry = geometry;
         this.transform = transform;
         velocity = new Vector2f();
@@ -27,7 +36,7 @@ public class PhysicsBody {
         linearDamping = 0.9f;
         restitution = 0f;
         this.immmovable = immmovable;
-        if(this.immmovable){
+        if (this.immmovable) {
             inversedMass = 0;
             mass = Integer.MAX_VALUE;
         } else {
@@ -35,7 +44,30 @@ public class PhysicsBody {
             mass = area;
             inversedMass = 1f / area;
         }
+        eventConsumers = new ArrayList<>();
+        eventSuppliers = new ArrayList<>();
     }
+
+    public void addEventConsumer(final EventConsumer eventConsumer) {
+        eventConsumers.add(eventConsumer);
+    }
+
+    public void addEventSupplier(final EventSupplier eventSupplier) {
+        eventSuppliers.add(eventSupplier);
+    }
+
+    public void consumeEvents(final List<Event> events) {
+        events.forEach(event -> eventConsumers.stream()
+                .filter(c -> c.accepts(event.getType()))
+                .findFirst()
+                .ifPresent(c -> c.consume(event)));
+    }
+    public List<Event> produceEvents(final PhysicsBody a, final PhysicsBody b) {
+        return eventSuppliers.stream()
+                .map(s -> s.supply(a, b))
+                .toList();
+    }
+
     public static PhysicsBody createDynamic(final Geometry geometry) {
         return new PhysicsBody(
                 geometry,
@@ -48,7 +80,7 @@ public class PhysicsBody {
         return immmovable;
     }
 
-    public static PhysicsBody createStatic(final Geometry geometry){
+    public static PhysicsBody createStatic(final Geometry geometry) {
         return new PhysicsBody(
                 geometry,
                 new CommonTransform(),
@@ -59,34 +91,44 @@ public class PhysicsBody {
     public void setLinearDamping(final float linearDamping) {
         this.linearDamping = linearDamping;
     }
-    public void translate(final Vector2f translation){
+
+    public void translate(final Vector2f translation) {
         transform.translate(translation.x, translation.y);
     }
+
     public void update(final float dt) {
         transform.update(dt);
     }
+
     public void updateTranslation(float dt) {
         transform.translate(this.velocity.x() * dt, this.velocity.y() * dt);
     }
+
     public Vector2f getVelocity() {
         return velocity;
     }
-    public float getTranslationX(){
+
+    public float getTranslationX() {
         return getTranslation().x();
     }
-    public float getTranslationY(){
+
+    public float getTranslationY() {
         return getTranslation().y();
     }
-    public float getPhysicsTranslationX(){
+
+    public float getPhysicsTranslationX() {
         return getPhysicsTranslation().x();
     }
-    public float getPhysicsTranslationY(){
+
+    public float getPhysicsTranslationY() {
         return getPhysicsTranslation().y();
     }
-    public Vector2f getTranslation(){
+
+    public Vector2f getTranslation() {
         return transform.getTranslationToRender();
     }
-    public Vector2f getPhysicsTranslation(){
+
+    public Vector2f getPhysicsTranslation() {
         return transform.getTranslation();
     }
 
@@ -94,19 +136,24 @@ public class PhysicsBody {
         this.velocity.x = x;
         this.velocity.y = y;
     }
+
     public void setTranslation(final float x, final float y) {
         this.transform.setTranslation(x, y);
     }
-    public void applyForce(final float x, final float y){
-        this.force.add(x,y);
+
+    public void applyForce(final float x, final float y) {
+        this.force.add(x, y);
     }
-    public int getMass(){
+
+    public int getMass() {
         return mass;
     }
+
     public void destroy() {
         remove = true;
     }
-    public boolean canBeRemoved(){
+
+    public boolean canBeRemoved() {
         return remove;
     }
 

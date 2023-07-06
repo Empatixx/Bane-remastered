@@ -15,6 +15,11 @@ public class RedVignette implements Postprocess {
     private static boolean timeBased;
     private int textureId;
 
+    public static void reset() {
+        vignetteAmount = 0;
+        timeBased = false;
+    }
+
     @Override
     public void apply(final float dt) {
         if (timeBased) {

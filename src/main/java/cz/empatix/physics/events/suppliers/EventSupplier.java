@@ -1,0 +1,8 @@
+package cz.empatix.physics.events.suppliers;
+
+import cz.empatix.physics.domain.PhysicsBody;
+import cz.empatix.physics.events.domain.Event;
+
+public interface EventSupplier {
+    Event supply(final PhysicsBody bodyA, final PhysicsBody bodyB);
+}
