@@ -121,6 +121,11 @@ public class LobbyRoom implements Room {
             box.setPosition(Tile.TILE_SIZE * Tile.SCALE * 5, Tile.TILE_SIZE * Tile.SCALE * 2);
             roomObjectService.add(box);
         }
+        {
+            final PotionStation potionStation = new PotionStation();
+            potionStation.setPosition(Tile.TILE_SIZE * Tile.SCALE * 2 - 16, Tile.TILE_SIZE * Tile.SCALE * 3 - 16);
+            roomObjectService.add(potionStation);
+        }
     }
 
     @Override
