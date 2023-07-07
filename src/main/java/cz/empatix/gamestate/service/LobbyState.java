@@ -71,6 +71,7 @@ public class LobbyState extends GameState {
 
     @Override
     public void cleanUp() {
+        player.cleanUp();
         PhysicsEngine.clear();
         LightningService.getInstance().clear();
     }

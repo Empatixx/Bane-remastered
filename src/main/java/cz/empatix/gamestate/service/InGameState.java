@@ -20,7 +20,6 @@ import cz.empatix.physics.service.PhysicsEngine;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,8 +51,8 @@ public class InGameState extends GameState {
         mapService = new MapService(mapGenerationResult, room -> minimapService.visit(room));
         player = new Player();
         gunService = new GunService();
-        pauseService = new PauseService(() -> setCurrentState(GameStateType.MENU));
-        deathService = new DeathService(() -> setCurrentState(GameStateType.MENU));
+        pauseService = new PauseService();
+        deathService = new DeathService();
 
         AudioService.getInstance().play(Soundtrack.INGAME);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
@@ -111,18 +110,6 @@ public class InGameState extends GameState {
         }
         gunService.keyPressed(key);
         player.keyPressed(key);
-        if(GLFW.GLFW_KEY_E == key){
-            player.setHealth(player.getHealth() - 1);
-        }
-        if(GLFW.GLFW_KEY_R == key){
-            player.setHealth(player.getHealth() + 1);
-        }
-        if(GLFW.GLFW_KEY_T == key){
-            Camera.setPosition(0,0);
-        }
-        if (GLFW.GLFW_KEY_I == key) {
-            Camera.setPosition(500,240);
-        }
     }
 
     @Override
@@ -162,11 +149,5 @@ public class InGameState extends GameState {
     @Override
     public void mouseScrolled(double xoffset, double yoffset) {
 
-    }
-
-    @Override
-    public void setCurrentState(GameStateType type) {
-        super.setCurrentState(type);
-        cleanUp();
     }
 }

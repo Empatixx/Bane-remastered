@@ -4,6 +4,8 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
+import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.gamestate.service.GameStateController;
 import cz.empatix.hud.service.Image;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
@@ -23,7 +25,7 @@ public class PauseService {
     private final List<TransparentButton> buttons;
     private boolean pause;
 
-    public PauseService(final Runnable menuAction) {
+    public PauseService() {
         final TextureAtlas.Entry pauseBgTxt = AssetsService.getTexture("ingame/pausebg.tga");
         background = new Image(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2, RenderScene.OVERLAYS);
 
@@ -35,7 +37,7 @@ public class PauseService {
         settingsButton.onClick(() -> System.out.println("Statistics"));
         exitButton.onClick(() -> {
             setPause(false);
-            menuAction.run();
+            GameStateController.getInstance().setCurrentState(GameStateType.MENU);
         });
 
         buttons = List.of(resumeButton, settingsButton, exitButton);

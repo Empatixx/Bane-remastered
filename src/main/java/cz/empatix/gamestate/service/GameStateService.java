@@ -26,13 +26,19 @@ public class GameStateService {
         gameStates.add(new InGameState(this));
         gameStates.add(new MenuState(this));
         gameStates.add(new LobbyState(this));
-        setCurrentState(GameStateType.LOADING);
 
         physicsEngine = new PhysicsEngine();
         renderEngine = new RenderEngine();
         audioService = AudioService.getInstance();
+
+        GameStateController.init(this::setCurrentState);
+
+        setCurrentState(GameStateType.LOADING);
     }
     public void setCurrentState(final GameStateType type){
+        if(currentState != null) {
+            currentState.cleanUp();
+        }
         currentState = gameStates.stream()
                 .filter(gameState -> gameState.getType() == type)
                 .findFirst()

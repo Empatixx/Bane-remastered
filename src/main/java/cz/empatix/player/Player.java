@@ -12,6 +12,7 @@ import cz.empatix.particles.service.GazewindService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.events.consumers.DamageConsumer;
+import cz.empatix.physics.events.suppliers.KeyPressSupplier;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
@@ -82,6 +83,7 @@ public class Player implements Drawable {
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
         physicsBody.setTranslation(500, 500);
         physicsBody.addEventConsumer(new DamageConsumer(this::hit));
+        physicsBody.addEventSupplier(new KeyPressSupplier());
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
 
@@ -245,6 +247,7 @@ public class Player implements Drawable {
                 left = false;
             }
         }
+        physicsBody.keyPressed(key);
     }
 
     public void keyReleased(final int key) {

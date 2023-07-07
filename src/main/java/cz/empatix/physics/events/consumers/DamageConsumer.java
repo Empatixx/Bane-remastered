@@ -18,7 +18,7 @@ public class DamageConsumer implements EventConsumer {
     }
 
     @Override
-    public boolean accepts(EventType eventType) {
-        return eventType == EventType.DAMAGE;
+    public EventType getType() {
+        return EventType.DAMAGE;
     }
 }

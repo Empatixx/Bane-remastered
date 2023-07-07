@@ -5,14 +5,19 @@ import cz.empatix.physics.domain.transform.CommonTransform;
 import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.physics.domain.transform.Transform;
 import cz.empatix.physics.events.consumers.EventConsumer;
+import cz.empatix.physics.events.consumers.FallbackConsumer;
 import cz.empatix.physics.events.domain.Event;
+import cz.empatix.physics.events.domain.EventType;
 import cz.empatix.physics.events.suppliers.EventSupplier;
+import cz.empatix.physics.events.suppliers.KeyPressSupplier;
 import org.joml.Vector2f;
 
-import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 public class PhysicsBody {
+    private final static FallbackConsumer FALLBACK_CONSUMER = new FallbackConsumer();
     private final Geometry geometry;
     private final Transform transform;
     private final Vector2f velocity;
@@ -23,8 +28,8 @@ public class PhysicsBody {
     private final float inversedMass;
     private boolean remove;
     private final boolean immmovable;
-    private final List<EventConsumer> eventConsumers;
-    private final List<EventSupplier> eventSuppliers;
+    private final Map<EventType, EventConsumer> eventConsumers;
+    private final Map<EventType, EventSupplier> eventSuppliers;
 
     public PhysicsBody(final Geometry geometry,
                        final Transform transform,
@@ -44,26 +49,25 @@ public class PhysicsBody {
             mass = area;
             inversedMass = 1f / area;
         }
-        eventConsumers = new ArrayList<>();
-        eventSuppliers = new ArrayList<>();
+        eventConsumers = new EnumMap<>(EventType.class);
+        eventSuppliers = new EnumMap<>(EventType.class);
     }
 
     public void addEventConsumer(final EventConsumer eventConsumer) {
-        eventConsumers.add(eventConsumer);
+        eventConsumers.put(eventConsumer.getType(), eventConsumer);
     }
 
     public void addEventSupplier(final EventSupplier eventSupplier) {
-        eventSuppliers.add(eventSupplier);
+        eventSuppliers.put(eventSupplier.getType(), eventSupplier);
     }
 
     public void consumeEvents(final List<Event> events) {
-        events.forEach(event -> eventConsumers.stream()
-                .filter(c -> c.accepts(event.getType()))
-                .findFirst()
-                .ifPresent(c -> c.consume(event)));
+        events.forEach(event -> eventConsumers.getOrDefault(event.getType(), FALLBACK_CONSUMER).consume(event));
     }
+
     public List<Event> produceEvents(final PhysicsBody a, final PhysicsBody b) {
-        return eventSuppliers.stream()
+        return eventSuppliers.values()
+                .stream()
                 .map(s -> s.supply(a, b))
                 .toList();
     }
@@ -179,5 +183,9 @@ public class PhysicsBody {
 
     public float getInversedMass() {
         return inversedMass;
+    }
+
+    public void keyPressed(final int key) {
+        ((KeyPressSupplier) eventSuppliers.get(EventType.KEY_PRESS)).addKey(key);
     }
 }

@@ -48,8 +48,8 @@ public class CollisionConsumer implements EventConsumer {
     }
 
     @Override
-    public boolean accepts(final EventType eventType) {
-        return eventType == EventType.COLLISION;
+    public EventType getType() {
+        return EventType.COLLISION;
     }
 
 }

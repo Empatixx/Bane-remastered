@@ -20,4 +20,11 @@ public class PhysicsBodyFactory {
         PhysicsEngine.add(physicsBody);
         return physicsBody;
     }
+    public static PhysicsBody createStaticWithoutCollision(final Geometry geometry){
+        final PhysicsBody physicsBody = PhysicsBody.createStatic(geometry);
+        physicsBody.setRestitution(0);
+        Preconditions.checkArgument(physicsBody.getMass() > 0, "Mass must be greater than 0");
+        PhysicsEngine.add(physicsBody);
+        return physicsBody;
+    }
 }

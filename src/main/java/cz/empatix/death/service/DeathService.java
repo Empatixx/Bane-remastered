@@ -4,6 +4,8 @@ import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
+import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.gamestate.service.GameStateController;
 import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.Text;
 import cz.empatix.postprocessing.domain.Fade;
@@ -34,13 +36,11 @@ public class DeathService {
     private final List<Text> rewardTexts;
     private final Text continueText;
     private final Text gameOverText;
-    private final Runnable menuStateAction;
     private boolean active = false;
     private boolean continuePressed = false;
     private float accumulator = 0f;
 
-    public DeathService(final Runnable menuStateAction) {
-        this.menuStateAction = menuStateAction;
+    public DeathService() {
 
         final Image accuracyIcon = new Image("ingame/accuracy_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y), 1f, 2, RenderScene.OVERLAYS);
         final Image killsIcon = new Image("ingame/kills_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
@@ -115,7 +115,7 @@ public class DeathService {
         if (!continuePressed && Fade.getValue() > 1) {
             Fade.setTween(0);
         } else if (continuePressed && Fade.getValue() > 2) {
-            menuStateAction.run();
+            GameStateController.getInstance().setCurrentState(GameStateType.MENU);
             Fade.setTween(-1);
         }
     }

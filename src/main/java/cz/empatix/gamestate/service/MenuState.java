@@ -43,7 +43,7 @@ public class MenuState extends GameState {
         final CommonButton settingsButton = new CommonButton("Settings", Camera.centerX().add(0, 325), 1.5f);
         final CommonButton exitButton = new CommonButton("Exit", Camera.centerX().add(0, 425), 1.5f);
 
-        playButton.onClick(() -> setCurrentState(GameStateType.INGAME));
+        playButton.onClick(() -> setCurrentState(GameStateType.LOBBY));
         exitButton.onClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
 
         final Image title = new Image("menu/logo.tga", Camera.centerX().add(-114, 50), 3f);
@@ -80,7 +80,6 @@ public class MenuState extends GameState {
 
     @Override
     public void cleanUp() {
-
     }
 
     @Override
