@@ -9,15 +9,10 @@ import org.joml.Vector2f;
 
 import java.util.List;
 
-public class ForwardLightningBinding implements ShaderBinding {
-    private final Matrix4f projectionMatrix;
-    private final List<LightSource> lightSources;
-
-    public ForwardLightningBinding(final List<LightSource> lightSources,
-                                   final Matrix4f projection) {
-        this.lightSources = lightSources;
-        this.projectionMatrix = projection;
-    }
+public record ForwardLightningBinding(
+        List<LightSource> lightSources,
+        Matrix4f projectionMatrix
+) implements ShaderBinding {
 
     @Override
     public Shader apply() {

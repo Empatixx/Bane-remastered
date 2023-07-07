@@ -6,12 +6,13 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-public class StatusBarBinding implements ShaderBinding {
-    private final Matrix4f projection;
-    private final float fillAmount;
-    private final float delayedFillAmount;
-    private final Vector4f barRect;
-    private final Vector3f barColor;
+public record StatusBarBinding(
+        Matrix4f projection,
+        float fillAmount,
+        float delayedFillAmount,
+        Vector4f barRect,
+        Vector3f barColor
+) implements ShaderBinding {
 
     public StatusBarBinding(final Matrix4f projection,
                             final Vector3f barColor,
@@ -21,11 +22,7 @@ public class StatusBarBinding implements ShaderBinding {
                             final float normYOffset,
                             final float normWidth,
                             final float normHeight) {
-        this.fillAmount = fillAmount;
-        this.delayedFillAmount = delayedFillAmount;
-        this.projection = projection;
-        this.barColor = barColor;
-        this.barRect = new Vector4f(normXOffset, normYOffset, normWidth, normHeight);
+        this(projection, fillAmount, delayedFillAmount, new Vector4f(normXOffset, normYOffset, normWidth, normHeight), barColor);
     }
 
     @Override

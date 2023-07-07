@@ -2,6 +2,7 @@ package cz.empatix.enemies.domain;
 
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
+import cz.empatix.physics.events.consumers.DamageConsumer;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.domain.Animation;
@@ -31,6 +32,7 @@ public class EnemyImpl implements Enemy {
         this.animation = animation;
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int)(width * scale), (int)(height * scale)));
         physicsBody.addEventSupplier(new DamageSupplier(() -> 1));
+        physicsBody.addEventConsumer(new DamageConsumer(this::hit));
     }
 
     @Override

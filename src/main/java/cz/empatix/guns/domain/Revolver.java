@@ -1,8 +1,9 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.guns.service.GunService;
 import cz.empatix.guns.ammo.Bullet;
+import cz.empatix.guns.factory.BulletFactory;
+import cz.empatix.guns.service.GunService;
 import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.Text;
 import cz.empatix.render.attributes.Renderable;
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class Revolver extends AbstractGun implements Gun {
@@ -61,11 +61,7 @@ public class Revolver extends AbstractGun implements Gun {
         }
         if (currentClip > 0) {
             LOGGER.info("Shooting from revolver clip: {}, ammo: {}", currentClip, ammo);
-            final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
-            float inaccuracy = this.inaccuracy * (ThreadLocalRandom.current().nextFloat() - 0.5f);
-            final Bullet bullet = new Bullet();
-            bullet.setPosition(shooterX, shooterY);
-            bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracy);
+            final Bullet bullet = BulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
             bullets.add(bullet);
             currentClip--;
             shooting = false;

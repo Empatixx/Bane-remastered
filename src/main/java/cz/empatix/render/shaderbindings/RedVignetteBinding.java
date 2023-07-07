@@ -9,7 +9,7 @@ public record RedVignetteBinding (
         float vignetteAmount,
         boolean timeBased,
         float time
-) implements ShaderBinding{
+) implements ShaderBinding {
 
     @Override
     public Shader apply() {

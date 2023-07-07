@@ -1,6 +1,7 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.hud.service.Image;
@@ -70,7 +71,7 @@ public class M4 extends AbstractGun implements Gun{
                 lastShootTime = System.currentTimeMillis();
                 LOGGER.info("Shooting from M4 clip: {}, ammo: {}", currentClip, ammo);
                 final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
-                final Bullet bullet = new Bullet();
+                final Bullet bullet = new Bullet(damage);
                 bullet.setPosition(shooterX, shooterY);
                 bullet.setDirection(this.lastShooterX, this.lastShooterY, this.lastTargetX, this.lastTargetY, inaccuracy);
                 bullets.add(bullet);
@@ -88,11 +89,7 @@ public class M4 extends AbstractGun implements Gun{
         }
         if (currentClip > 0) {
             LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
-            final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
-            float inaccuracy = this.inaccuracy * (ThreadLocalRandom.current().nextFloat() - 0.5f);
-            final Bullet bullet = new Bullet();
-            bullet.setPosition(shooterX, shooterY);
-            bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracy);
+            final Bullet bullet = BulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
             bullets.add(bullet);
             currentClip--;
             bulletsToShoot = BULLETS_PER_SHOT - 1;
