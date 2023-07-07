@@ -9,7 +9,6 @@ import cz.empatix.physics.events.consumers.FallbackConsumer;
 import cz.empatix.physics.events.domain.Event;
 import cz.empatix.physics.events.domain.EventType;
 import cz.empatix.physics.events.suppliers.EventSupplier;
-import cz.empatix.physics.events.suppliers.KeyPressSupplier;
 import org.joml.Vector2f;
 
 import java.util.EnumMap;
@@ -183,9 +182,5 @@ public class PhysicsBody {
 
     public float getInversedMass() {
         return inversedMass;
-    }
-
-    public void keyPressed(final int key) {
-        ((KeyPressSupplier) eventSuppliers.get(EventType.KEY_PRESS)).addKey(key);
     }
 }

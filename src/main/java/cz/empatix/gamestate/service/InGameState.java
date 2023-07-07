@@ -16,7 +16,7 @@ import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.pause.service.PauseService;
-import cz.empatix.physics.service.PhysicsEngine;
+import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
@@ -94,7 +94,7 @@ public class InGameState extends GameState {
     @Override
     public void cleanUp() {
         player.cleanUp();
-        PhysicsEngine.clear();
+        PhysicsService.getInstance().clear();
         LightningService.getInstance().clear();
     }
 

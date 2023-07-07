@@ -6,13 +6,14 @@ import cz.empatix.hud.domain.StatusBarType;
 import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.StatusBar;
 import cz.empatix.hud.service.Text;
+import cz.empatix.interaction.domain.InteractionEntity;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.particles.service.GazewindService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.events.consumers.DamageConsumer;
-import cz.empatix.physics.events.suppliers.KeyPressSupplier;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
@@ -50,6 +51,7 @@ public class Player implements Drawable {
     private final Text coinText;
     private final Animation animation;
     private final PhysicsBody physicsBody;
+    private final InteractionEntity interactionEntity;
     private final LightSource lightSource;
     private final GazewindService gazewindService;
     private boolean left, right, top, bottom;
@@ -83,7 +85,9 @@ public class Player implements Drawable {
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
         physicsBody.setTranslation(500, 500);
         physicsBody.addEventConsumer(new DamageConsumer(this::hit));
-        physicsBody.addEventSupplier(new KeyPressSupplier());
+
+        interactionEntity = new InteractionEntity(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH, DIMENSION_HEIGHT);
+        InteractionService.getInstance().addEntity(interactionEntity);
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
 
@@ -166,6 +170,7 @@ public class Player implements Drawable {
             }
             gazewindService.spawn(nextGazeX, nextGazeY);
         }
+        interactionEntity.setPosition(physicsBody.getPhysicsTranslation());
     }
 
     public void setHealth(final int health) {
@@ -247,7 +252,7 @@ public class Player implements Drawable {
                 left = false;
             }
         }
-        physicsBody.keyPressed(key);
+        interactionEntity.keyPress(key);
     }
 
     public void keyReleased(final int key) {
@@ -314,5 +319,9 @@ public class Player implements Drawable {
 
     public boolean isDead() {
         return health <= 0;
+    }
+
+    public void setPosition(final float x, final float y) {
+        physicsBody.setTranslation(x, y);
     }
 }

@@ -9,27 +9,27 @@ import cz.empatix.physics.events.suppliers.CollisionSupplier;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL30;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PhysicsEngine {
+public class PhysicsService {
     private final static boolean RENDER_COLLISIONS = false;
-    private final static Logger LOGGER = LoggerFactory.getLogger(PhysicsEngine.class);
-    private static List<PhysicsBody> physicsBodies;
+    private static PhysicsService instance;
+    public static PhysicsService getInstance() {
+        if (instance == null) {
+            instance = new PhysicsService();
+        }
+        return instance;
+    }
+    private final List<PhysicsBody> physicsBodies = new ArrayList<>(2000);
     private final CollisionSupplier collisionSupplier = new CollisionSupplier();
 
-    public PhysicsEngine() {
-        physicsBodies = new ArrayList<>();
-    }
-
-    public static void add(final PhysicsBody physicsBody) {
+    public void add(final PhysicsBody physicsBody) {
         physicsBodies.add(physicsBody);
     }
 
-    public static void clear() {
+    public void clear() {
         physicsBodies.clear();
     }
 

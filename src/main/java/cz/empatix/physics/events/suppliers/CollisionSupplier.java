@@ -4,14 +4,12 @@ import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Circle;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.events.domain.CollisionEvent;
-import cz.empatix.physics.service.CollisionResolver;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CollisionSupplier{
-    private final static Logger LOGGER = LoggerFactory.getLogger(CollisionResolver.class.getName());
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(CollisionSupplier.class);
     public CollisionEvent supply(final PhysicsBody bodyA, final PhysicsBody bodyB) {
         switch (bodyA.getGeometry().getType()) {
             case RECT -> {

@@ -3,7 +3,8 @@ package cz.empatix.gamestate.service;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
-import cz.empatix.physics.service.PhysicsEngine;
+import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderEngine;
 import org.slf4j.Logger;
@@ -15,8 +16,9 @@ import java.util.List;
 public class GameStateService {
     private final static Logger LOGGER = LoggerFactory.getLogger(GameStateService.class);
     private final List<GameState> gameStates;
-    private final PhysicsEngine physicsEngine;
+    private final PhysicsService physicsService;
     private final RenderEngine renderEngine;
+    private final InteractionService interactionService;
     private final AudioService audioService;
     private GameState currentState;
 
@@ -27,7 +29,8 @@ public class GameStateService {
         gameStates.add(new MenuState(this));
         gameStates.add(new LobbyState(this));
 
-        physicsEngine = new PhysicsEngine();
+        physicsService = PhysicsService.getInstance();
+        interactionService = InteractionService.getInstance();
         renderEngine = new RenderEngine();
         audioService = AudioService.getInstance();
 
@@ -50,17 +53,18 @@ public class GameStateService {
     public void update(final double dt) {
         currentState.updateMouse((float)dt);
         currentState.update(dt);
-        physicsEngine.update(dt);
+        physicsService.update(dt);
         audioService.update((float)dt);
     }
     public void fixedUpdate(final double dt) {
+        interactionService.fixedUpdate((float)dt);
         currentState.fixedUpdate(dt);
-        physicsEngine.fixedUpdate(dt);
+        physicsService.fixedUpdate(dt);
     }
     public void render(final double dt) {
         Camera.update((float) dt);
         renderEngine.render(currentState.toRender(dt), dt);
-        physicsEngine.debugRender();
+        physicsService.debugRender();
     }
 
     public void keyPressed(int key) {

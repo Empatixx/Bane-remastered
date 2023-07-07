@@ -7,12 +7,13 @@ import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.MapGenerator;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
-import cz.empatix.physics.service.PhysicsEngine;
+import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
@@ -39,6 +40,7 @@ public class LobbyState extends GameState {
         mapService = new MapService(mapGenerationResult, room -> {
         });
         player = new Player();
+        player.setPosition(mapGenerationResult.startRoom().getMaxX() / 2f, mapGenerationResult.startRoom().getMaxY() / 2f);
 
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
@@ -72,7 +74,8 @@ public class LobbyState extends GameState {
     @Override
     public void cleanUp() {
         player.cleanUp();
-        PhysicsEngine.clear();
+        PhysicsService.getInstance().clear();
+        InteractionService.getInstance().clean();
         LightningService.getInstance().clear();
     }
 
