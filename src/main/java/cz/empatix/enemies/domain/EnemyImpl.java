@@ -3,6 +3,7 @@ package cz.empatix.enemies.domain;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.events.consumers.DamageConsumer;
+import cz.empatix.physics.events.domain.DamageSource;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.domain.Animation;
@@ -30,9 +31,9 @@ public class EnemyImpl implements Enemy {
         this.height = height;
         this.scale = scale;
         this.animation = animation;
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int)(width * scale), (int)(height * scale)));
-        physicsBody.addEventSupplier(new DamageSupplier(() -> 1));
-        physicsBody.addEventConsumer(new DamageConsumer(this::hit));
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> 1));
+        physicsBody.addEventConsumer(new DamageConsumer(DamageSource.ENEMY, this::hit));
     }
 
     @Override
@@ -84,7 +85,7 @@ public class EnemyImpl implements Enemy {
 
     @Override
     public boolean isDead() {
-        return health < 0;
+        return health <= 0;
     }
 
     @Override
@@ -99,12 +100,12 @@ public class EnemyImpl implements Enemy {
 
     @Override
     public int getWidth() {
-        return (int)(width * scale);
+        return (int) (width * scale);
     }
 
     @Override
     public int getHeight() {
-        return (int)(height * scale);
+        return (int) (height * scale);
     }
 
     @Override

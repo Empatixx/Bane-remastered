@@ -5,7 +5,9 @@ import cz.empatix.physics.domain.PhysicsBody;
 public record DamageEvent(
         PhysicsBody bodyA,
         PhysicsBody bodyB,
-        int damage
+        DamageSource source,
+        int damage,
+        Runnable onDamageCallback
 ) implements Event{
     @Override
     public EventType getType() {

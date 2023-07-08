@@ -8,6 +8,7 @@ import cz.empatix.physics.events.consumers.EventConsumer;
 import cz.empatix.physics.events.consumers.FallbackConsumer;
 import cz.empatix.physics.events.domain.Event;
 import cz.empatix.physics.events.domain.EventType;
+import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.events.suppliers.EventSupplier;
 import org.joml.Vector2f;
 
@@ -58,6 +59,9 @@ public class PhysicsBody {
 
     public void addEventSupplier(final EventSupplier eventSupplier) {
         eventSuppliers.put(eventSupplier.getType(), eventSupplier);
+    }
+    public void removeEventConsumer(final EventType eventType) {
+        eventConsumers.remove(eventType);
     }
 
     public void consumeEvents(final List<Event> events) {
@@ -183,4 +187,5 @@ public class PhysicsBody {
     public float getInversedMass() {
         return inversedMass;
     }
+
 }

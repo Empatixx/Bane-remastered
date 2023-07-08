@@ -14,6 +14,7 @@ import cz.empatix.particles.service.GazewindService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.events.consumers.DamageConsumer;
+import cz.empatix.physics.events.domain.DamageSource;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
@@ -84,7 +85,7 @@ public class Player implements Drawable {
         animation.setState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
         physicsBody.setTranslation(500, 500);
-        physicsBody.addEventConsumer(new DamageConsumer(this::hit));
+        physicsBody.addEventConsumer(new DamageConsumer(DamageSource.PLAYER, this::hit));
 
         interactionEntity = new InteractionEntity(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH, DIMENSION_HEIGHT);
         InteractionService.getInstance().addEntity(interactionEntity);
@@ -128,7 +129,7 @@ public class Player implements Drawable {
     }
 
     public void hit(final int damage) {
-        if (isDead()){
+        if (isDead()) {
             right = false;
             left = false;
             top = false;
@@ -136,7 +137,7 @@ public class Player implements Drawable {
             physicsBody.setVelocity(0, 0);
             return;
         }
-        if (System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME){
+        if (System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME) {
             return;
         }
         if (armor > 0) {
@@ -155,10 +156,10 @@ public class Player implements Drawable {
     public void fixedUpdate(final double dt) {
         move(dt);
         final Vector2f velocity = physicsBody.getVelocity();
-        if(Math.abs(velocity.x()) >= GAZE_SPEED_PRELIMIT || Math.abs(velocity.y()) >= GAZE_SPEED_PRELIMIT) {
+        if (Math.abs(velocity.x()) >= GAZE_SPEED_PRELIMIT || Math.abs(velocity.y()) >= GAZE_SPEED_PRELIMIT) {
             final float nextGazeX;
             final float nextGazeY;
-            if((top || bottom) && !left && !right){
+            if ((top || bottom) && !left && !right) {
                 nextGazeX = getX() + DIMENSION_WIDTH / 2 + GAZE_OFFSET * (float) Math.sin(2 * Math.PI * ((System.currentTimeMillis() % 1000) / 1000d));
                 nextGazeY = getY() + DIMENSION_HEIGHT;
             } else if ((right || left) && !top && !bottom) {
@@ -215,7 +216,7 @@ public class Player implements Drawable {
         return RenderScene.SCENE;
     }
 
-    public void cleanUp(){
+    public void cleanUp() {
         RedVignette.reset();
     }
 

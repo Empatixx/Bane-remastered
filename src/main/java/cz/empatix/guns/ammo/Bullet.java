@@ -5,6 +5,8 @@ import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
+import cz.empatix.physics.events.domain.DamageSource;
+import cz.empatix.physics.events.domain.EventType;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.attributes.Drawable;
@@ -25,10 +27,8 @@ public class Bullet implements Drawable {
     private final PhysicsBody physicsBody;
     private final Animation animation;
     private final LightSource lightSource;
+
     public Bullet(final int damage) {
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
-        physicsBody.setLinearDamping(1.0f);
-        physicsBody.addEventSupplier(new DamageSupplier(() -> damage));
         animation = Animation.builder()
                 .setTotal(2, 4)
                 .addState(AnimationState.IDLE, 0, 4, BULLET_WIDTH, BULLET_HEIGHT, 70)
@@ -37,6 +37,13 @@ public class Bullet implements Drawable {
                 .scale(SCALE)
                 .build();
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
+        physicsBody.setLinearDamping(1.0f);
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.PLAYER, () -> damage, () -> {
+            physicsBody.removeEventConsumer(EventType.DAMAGE);
+            animation.setState(AnimationState.COLLISION);
+            physicsBody.setVelocity(0, 0);
+        }));
     }
 
     @Override
@@ -53,21 +60,22 @@ public class Bullet implements Drawable {
         lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
         final Vector2f velocity = physicsBody.getVelocity();
-        if(velocity.x() == 0 || velocity.y() == 0) {
+        if (velocity.x() == 0 || velocity.y() == 0) {
             animation.setState(AnimationState.COLLISION);
-            physicsBody.setVelocity(0,0);
+            physicsBody.setVelocity(0, 0);
         }
         updateCollisionLightning();
     }
-    public void updateCollisionLightning(){
-        if(animation.getCurrentState() != AnimationState.COLLISION){
+
+    public void updateCollisionLightning() {
+        if (animation.getCurrentState() != AnimationState.COLLISION) {
             return;
         }
-        if(animation.hasPlayedOnce()){
+        if (animation.hasPlayedOnce()) {
             lightSource.destroy();
             physicsBody.destroy();
         }
-        lightSource.setIntensity(0.75f * (1 - (float)animation.getCurrentTextureIndex()/animation.getCurrentStateNumSprites()));
+        lightSource.setIntensity(0.75f * (1 - (float) animation.getCurrentTextureIndex() / animation.getCurrentStateNumSprites()));
     }
 
     @Override
@@ -106,7 +114,8 @@ public class Bullet implements Drawable {
 
         physicsBody.applyForce(forceX, forceY);
     }
-    public boolean shouldRemove(){
+
+    public boolean shouldRemove() {
         return animation.getCurrentState() == AnimationState.COLLISION && animation.hasPlayedOnce();
     }
 }
