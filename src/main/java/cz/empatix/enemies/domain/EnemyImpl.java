@@ -25,7 +25,8 @@ public class EnemyImpl implements Enemy {
                      final int height,
                      final int maxHealth,
                      final float scale,
-                     final Animation animation) {
+                     final Animation animation,
+                     final int damage) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;

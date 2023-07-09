@@ -10,6 +10,7 @@ public class Rat implements Enemy{
     private final static int DIMENSION_HEIGHT = 37;
     private final static float SCALE = 1.5f;
     private final static int DEFAULT_HEALTH = 12;
+    private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
     private final Enemy enemyImpl;
     public Rat(){
@@ -21,7 +22,7 @@ public class Rat implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE);
     }
     @Override
     public void update(double dt) {
