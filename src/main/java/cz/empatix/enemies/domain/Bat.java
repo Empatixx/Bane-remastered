@@ -36,7 +36,7 @@ public class Bat implements Enemy{
 
     @Override
     public void onDeath() {
-
+        enemyImpl.onDeath();
     }
 
     @Override

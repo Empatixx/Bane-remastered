@@ -36,6 +36,7 @@ public class Rat implements Enemy{
 
     @Override
     public void onDeath() {
+        enemyImpl.onDeath();
 
     }
 

@@ -36,6 +36,7 @@ public class Snake implements Enemy{
 
     @Override
     public void onDeath() {
+        enemyImpl.onDeath();
 
     }
 

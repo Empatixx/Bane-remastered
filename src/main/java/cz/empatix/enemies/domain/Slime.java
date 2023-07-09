@@ -45,6 +45,7 @@ public class Slime implements Enemy{
 
     @Override
     public void onDeath() {
+        enemyImpl.onDeath();
 
     }
 

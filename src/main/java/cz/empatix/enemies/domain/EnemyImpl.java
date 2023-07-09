@@ -49,8 +49,7 @@ public class EnemyImpl implements Enemy {
 
     @Override
     public void onDeath() {
-        throw new UnsupportedOperationException();
-
+        physicsBody.destroy();
     }
 
     @Override

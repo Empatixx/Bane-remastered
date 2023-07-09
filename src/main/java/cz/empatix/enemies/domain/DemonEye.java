@@ -35,6 +35,7 @@ public class DemonEye implements Enemy{
 
     @Override
     public void onDeath() {
+        enemyImpl.onDeath();
 
     }
 

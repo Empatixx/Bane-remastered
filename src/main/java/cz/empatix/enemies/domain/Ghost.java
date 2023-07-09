@@ -44,6 +44,7 @@ public class Ghost implements Enemy{
 
     @Override
     public void onDeath() {
+        enemyImpl.onDeath();
 
     }
 

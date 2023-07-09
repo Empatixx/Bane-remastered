@@ -38,7 +38,7 @@ public class Slimebullet implements Drawable {
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
         physicsBody.setLinearDamping(1.0f);
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.PLAYER, () -> 1, () -> {
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> 1, () -> {
             physicsBody.removeEventSupplier(EventType.DAMAGE);
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);

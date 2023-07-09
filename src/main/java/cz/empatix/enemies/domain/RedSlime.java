@@ -36,6 +36,7 @@ public class RedSlime implements Enemy{
 
     @Override
     public void onDeath() {
+        enemyImpl.onDeath();
 
     }
 
