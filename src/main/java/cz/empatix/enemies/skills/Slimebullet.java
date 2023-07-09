@@ -5,6 +5,9 @@ import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
+import cz.empatix.physics.events.domain.DamageSource;
+import cz.empatix.physics.events.domain.EventType;
+import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -25,8 +28,6 @@ public class Slimebullet implements Drawable {
     private final Animation animation;
     private final LightSource lightSource;
     public Slimebullet() {
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
-        physicsBody.setLinearDamping(1.0f);
         animation = Animation.builder()
                 .setTotal(2, 4)
                 .addState(AnimationState.IDLE, 0, 4, BULLET_WIDTH, BULLET_HEIGHT, 70)
@@ -35,6 +36,13 @@ public class Slimebullet implements Drawable {
                 .scale(SCALE)
                 .build();
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
+        physicsBody.setLinearDamping(1.0f);
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.PLAYER, () -> 1, () -> {
+            physicsBody.removeEventSupplier(EventType.DAMAGE);
+            animation.setState(AnimationState.COLLISION);
+            physicsBody.setVelocity(0, 0);
+        }));
     }
 
     @Override

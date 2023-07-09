@@ -40,7 +40,7 @@ public class Bullet implements Drawable {
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
         physicsBody.setLinearDamping(1.0f);
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.PLAYER, () -> damage, () -> {
-            physicsBody.removeEventConsumer(EventType.DAMAGE);
+            physicsBody.removeEventSupplier(EventType.DAMAGE);
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
         }));

@@ -60,8 +60,8 @@ public class PhysicsBody {
     public void addEventSupplier(final EventSupplier eventSupplier) {
         eventSuppliers.put(eventSupplier.getType(), eventSupplier);
     }
-    public void removeEventConsumer(final EventType eventType) {
-        eventConsumers.remove(eventType);
+    public void removeEventSupplier(final EventType eventType) {
+        eventSuppliers.remove(eventType);
     }
 
     public void consumeEvents(final List<Event> events) {
