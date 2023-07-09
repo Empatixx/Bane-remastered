@@ -56,8 +56,8 @@ public class EnemyService {
 
         enemies.add(e);
     }
-    public boolean areEnemiesAlive() {
-        return enemies.size() > 0;
+    public boolean areEnemiesDead() {
+        return enemies.size() <= 0;
     }
 
 }

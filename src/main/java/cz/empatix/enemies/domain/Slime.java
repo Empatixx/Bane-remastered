@@ -15,6 +15,7 @@ public class Slime implements Enemy{
     private final static int DIMENSION_HEIGHT = 48;
     private final static float SCALE = 1.5f;
     private final static int DEFAULT_HEALTH = 9;
+    private final static int DEFAULT_DAMAGE = 1;
     private final Animation animation;
     private final Enemy enemyImpl;
     private final SlimeSmash slimeSmash;
@@ -27,7 +28,7 @@ public class Slime implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE);
         slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2));
     }
     @Override

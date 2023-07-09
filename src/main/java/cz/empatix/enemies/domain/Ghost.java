@@ -12,6 +12,7 @@ public class Ghost implements Enemy{
     private final static int DIMENSION_HEIGHT = 28;
     private final static int SCALE = 4;
     private final static int DEFAULT_HEALTH = 11;
+    private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
     private final Enemy enemyImpl;
     private final Skill dash;
@@ -26,7 +27,7 @@ public class Ghost implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation,DEFAULT_DAMAGE);
         dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);
     }
     @Override

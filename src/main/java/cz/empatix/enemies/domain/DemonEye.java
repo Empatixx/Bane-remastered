@@ -10,6 +10,7 @@ public class DemonEye implements Enemy{
     private final static int DIMENSION_HEIGHT = 64;
     private final static float SCALE = 1.5f;
     private final static int DEFAULT_HEALTH = 11;
+    private final static int DEFAULT_DAMAGE = 3;
     private final Animation animation;
     private final Enemy enemyImpl;
     public DemonEye(){
@@ -20,7 +21,7 @@ public class DemonEye implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE);
     }
     @Override
     public void update(double dt) {

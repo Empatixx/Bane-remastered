@@ -30,4 +30,5 @@ public class TextBinding implements ShaderBinding{
         }
         return false;
     }
+    //todo; fix hashcode
 }
