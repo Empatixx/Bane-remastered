@@ -21,7 +21,7 @@ public class DemonEye implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
     }
     @Override
     public void update(double dt) {
@@ -45,7 +45,13 @@ public class DemonEye implements Enemy{
 
     @Override
     public void hit(final int damage) {
+        if(isDead()){
+            return;
+        }
         enemyImpl.hit(damage);
+        if(isDead()){
+            onDeath();
+        }
     }
 
     @Override
@@ -66,6 +72,11 @@ public class DemonEye implements Enemy{
     @Override
     public boolean isDead() {
         return enemyImpl.isDead();
+    }
+
+    @Override
+    public boolean canRemove() {
+        return isDead();
     }
 
     @Override

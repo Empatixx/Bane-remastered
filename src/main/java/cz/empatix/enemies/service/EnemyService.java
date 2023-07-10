@@ -20,14 +20,8 @@ public class EnemyService {
     }
 
     public void update(final double dt) {
-        enemies.removeIf(e -> {
-            if (e.isDead()) {
-                e.onDeath();
-                return true;
-            }
-            return false;
-        });
         enemies.forEach(enemy -> enemy.update(dt));
+        enemies.removeIf(Enemy::canRemove);
     }
     public void fixedUpdate(final double dt) {
         enemies.forEach(enemy -> enemy.fixedUpdate(dt));

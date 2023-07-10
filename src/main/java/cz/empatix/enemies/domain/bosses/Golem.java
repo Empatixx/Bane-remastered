@@ -79,6 +79,11 @@ public class Golem implements Enemy {
     }
 
     @Override
+    public boolean canRemove() {
+        return false;
+    }
+
+    @Override
     public RenderData renderData() {
         return bossImpl.renderData();
     }

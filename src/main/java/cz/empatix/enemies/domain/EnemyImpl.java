@@ -12,6 +12,8 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
+import java.util.function.Consumer;
+
 public class EnemyImpl implements Enemy {
     private final Animation animation;
     private final PhysicsBody physicsBody;
@@ -26,15 +28,16 @@ public class EnemyImpl implements Enemy {
                      final int maxHealth,
                      final float scale,
                      final Animation animation,
-                     final int damage) {
+                     final int damage,
+                     final Consumer<Integer> hitCallback) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
         this.scale = scale;
         this.animation = animation;
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> 1));
-        physicsBody.addEventConsumer(new DamageConsumer(DamageSource.ENEMY, this::hit));
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
+        physicsBody.addEventConsumer(new DamageConsumer(DamageSource.ENEMY, hitCallback));
     }
 
     @Override
@@ -86,6 +89,11 @@ public class EnemyImpl implements Enemy {
     @Override
     public boolean isDead() {
         return health <= 0;
+    }
+
+    @Override
+    public boolean canRemove() {
+        return isDead();
     }
 
     @Override

@@ -55,7 +55,6 @@ public class BossImpl implements Enemy {
     @Override
     public void onDeath() {
         throw new UnsupportedOperationException();
-
     }
 
     @Override
@@ -92,6 +91,11 @@ public class BossImpl implements Enemy {
     @Override
     public boolean isDead() {
         return health <= 0;
+    }
+
+    @Override
+    public boolean canRemove() {
+        return false;
     }
 
     @Override

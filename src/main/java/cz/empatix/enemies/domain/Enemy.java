@@ -13,6 +13,7 @@ public interface Enemy extends Drawable {
     void onCollision();
     void onSpawn();
     boolean isDead();
+    boolean canRemove();
     @Override
     default RenderScene renderScene(){
         return RenderScene.SCENE;

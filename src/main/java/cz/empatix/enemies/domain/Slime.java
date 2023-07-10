@@ -28,7 +28,7 @@ public class Slime implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
         slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2));
     }
     @Override
@@ -45,8 +45,8 @@ public class Slime implements Enemy{
 
     @Override
     public void onDeath() {
+        animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
-
     }
 
     @Override
@@ -55,7 +55,13 @@ public class Slime implements Enemy{
 
     @Override
     public void hit(final int damage) {
+        if(isDead()){
+            return;
+        }
         enemyImpl.hit(damage);
+        if(isDead()){
+            onDeath();
+        }
     }
 
     @Override
@@ -79,6 +85,11 @@ public class Slime implements Enemy{
     }
 
     @Override
+    public boolean canRemove() {
+        return isDead() && animation.hasPlayedOnce();
+    }
+
+    @Override
     public RenderData renderData() {
         return enemyImpl.renderData();
     }
@@ -90,7 +101,7 @@ public class Slime implements Enemy{
 
     @Override
     public boolean canRender() {
-        return enemyImpl.canRender();
+        return !canRemove();
     }
     @Override
     public float getX() {

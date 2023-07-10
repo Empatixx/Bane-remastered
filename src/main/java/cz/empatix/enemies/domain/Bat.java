@@ -22,7 +22,7 @@ public class Bat implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
     }
     @Override
     public void update(double dt) {
@@ -36,6 +36,7 @@ public class Bat implements Enemy{
 
     @Override
     public void onDeath() {
+        animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
     }
 
@@ -45,7 +46,13 @@ public class Bat implements Enemy{
 
     @Override
     public void hit(final int damage) {
+        if(isDead()){
+            return;
+        }
         enemyImpl.hit(damage);
+        if(isDead()){
+            onDeath();
+        }
     }
 
     @Override
@@ -66,6 +73,11 @@ public class Bat implements Enemy{
     @Override
     public boolean isDead() {
         return enemyImpl.isDead();
+    }
+
+    @Override
+    public boolean canRemove() {
+        return isDead() && animation.hasPlayedOnce();
     }
 
     @Override
