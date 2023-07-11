@@ -85,7 +85,7 @@ public class Player implements Drawable {
         animation.setState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
         physicsBody.setTranslation(500, 500);
-        physicsBody.addEventConsumer(new DamageConsumer(DamageSource.PLAYER, this::hit));
+        physicsBody.addEventConsumer(new DamageConsumer(this::hit, this::canHit));
 
         interactionEntity = new InteractionEntity(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH, DIMENSION_HEIGHT);
         InteractionService.getInstance().addEntity(interactionEntity);
@@ -103,6 +103,10 @@ public class Player implements Drawable {
         coinText.setColorRGB(255, 216, 0);
 
         gazewindService = new GazewindService();
+    }
+
+    private boolean canHit(final DamageSource source, final int damage) {
+        return source != DamageSource.PLAYER &&System.currentTimeMillis() - lastHitTime > INVULNERABLE_TIME;
     }
 
     public int getArmor() {

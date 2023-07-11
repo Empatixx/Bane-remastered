@@ -37,7 +37,11 @@ public class EnemyImpl implements Enemy {
         this.animation = animation;
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
-        physicsBody.addEventConsumer(new DamageConsumer(DamageSource.ENEMY, hitCallback));
+        physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
+    }
+
+    private boolean canHit(final DamageSource source,final int damage) {
+        return source != DamageSource.ENEMY;
     }
 
     @Override
