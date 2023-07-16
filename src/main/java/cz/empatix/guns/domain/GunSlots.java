@@ -69,4 +69,9 @@ public class GunSlots {
         slots.set(currentSlot, null);
         return remove;
     }
+    public boolean hasNotFullAmmo(final GunType type){
+        return slots
+                .stream()
+                .anyMatch(gun -> gun != null && gun.getType() == type && !gun.hasFullAmmo());
+    }
 }

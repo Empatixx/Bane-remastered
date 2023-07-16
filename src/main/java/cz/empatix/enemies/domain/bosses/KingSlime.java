@@ -50,14 +50,6 @@ public class KingSlime implements Enemy {
         slimeSmash.activate();
     }
 
-    @Override
-    public void onDeath() {
-
-    }
-
-    @Override
-    public void onHit() {
-    }
 
     @Override
     public void hit(final int damage) {
@@ -77,6 +69,11 @@ public class KingSlime implements Enemy {
     @Override
     public void onSpawn() {
 
+    }
+
+    @Override
+    public boolean canDropItems() {
+        return bossImpl.canDropItems();
     }
 
     @Override

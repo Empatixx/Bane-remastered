@@ -12,7 +12,7 @@ public class Bat implements Enemy{
     private final static int DEFAULT_HEALTH = 9;
     private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
-    private final Enemy enemyImpl;
+    private final EnemyImpl enemyImpl;
     public Bat(){
         animation = Animation.builder()
                 .setTotal(2,4)
@@ -22,7 +22,7 @@ public class Bat implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
     }
     @Override
     public void update(double dt) {
@@ -34,14 +34,9 @@ public class Bat implements Enemy{
 
     }
 
-    @Override
-    public void onDeath() {
+    private void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
-    }
-
-    @Override
-    public void onHit() {
     }
 
     @Override
@@ -53,6 +48,7 @@ public class Bat implements Enemy{
         if(isDead()){
             onDeath();
         }
+
     }
 
     @Override
@@ -78,6 +74,11 @@ public class Bat implements Enemy{
     @Override
     public boolean canRemove() {
         return isDead() && animation.hasPlayedOnce();
+    }
+
+    @Override
+    public boolean canDropItems() {
+        return enemyImpl.canDropItems();
     }
 
     @Override

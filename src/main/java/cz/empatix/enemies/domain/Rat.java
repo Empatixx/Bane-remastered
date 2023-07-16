@@ -12,7 +12,7 @@ public class Rat implements Enemy{
     private final static int DEFAULT_HEALTH = 12;
     private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
-    private final Enemy enemyImpl;
+    private final EnemyImpl enemyImpl;
     public Rat(){
         animation = Animation.builder()
                 .setTotal(2,4)
@@ -22,7 +22,7 @@ public class Rat implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
     }
     @Override
     public void update(double dt) {
@@ -34,14 +34,9 @@ public class Rat implements Enemy{
 
     }
 
-    @Override
-    public void onDeath() {
+    private void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
-    }
-
-    @Override
-    public void onHit() {
     }
 
     @Override
@@ -68,6 +63,10 @@ public class Rat implements Enemy{
     @Override
     public void onSpawn() {
 
+    }
+    @Override
+    public boolean canDropItems() {
+        return enemyImpl.canDropItems();
     }
 
     @Override

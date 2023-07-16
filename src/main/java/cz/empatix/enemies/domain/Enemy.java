@@ -6,14 +6,13 @@ import cz.empatix.render.domain.RenderScene;
 public interface Enemy extends Drawable {
     void update(double dt);
     void fixedUpdate(double dt);
-    void onDeath();
-    void onHit();
     void hit(final int damage);
     void heal(final int health);
     void onCollision();
     void onSpawn();
     boolean isDead();
     boolean canRemove();
+    boolean canDropItems();
     @Override
     default RenderScene renderScene(){
         return RenderScene.SCENE;

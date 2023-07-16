@@ -1,6 +1,7 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.enemies.service.EnemyService;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
@@ -16,6 +17,7 @@ public class CommonRoom implements Room {
     private static final int MAX_ENEMIES = 5;
     private final EnemyService enemyService;
     private final RoomObjectService roomObjectService;
+    private final ItemService itemService;
     private final RoomLockService roomLockService;
     private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
@@ -24,7 +26,8 @@ public class CommonRoom implements Room {
     public CommonRoom(final int rows, final int cols, final int xOffset, final int yOffset,
                       final Set<RoomDirection> neighbors) {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
-        enemyService = new EnemyService();
+        itemService = new ItemService();
+        enemyService = new EnemyService(itemService);
         roomObjectService = new RoomObjectService();
         roomLockService = new RoomLockService(this, neighbors);
         visited = false;
@@ -72,7 +75,8 @@ public class CommonRoom implements Room {
         final Renderable enemies = (DrawableBatch) enemyService::toRender;
         final Renderable roomObjects = (DrawableBatch) roomObjectService::toRender;
         final Renderable roomLocker = (DrawableBatch) this.roomLockService::toRender;
-        return List.of(tiles, enemies, roomObjects, roomLocker);
+        final Renderable items = (DrawableBatch) itemService::toRender;
+        return List.of(tiles, enemies, roomObjects, roomLocker, items);
     }
 
     @Override

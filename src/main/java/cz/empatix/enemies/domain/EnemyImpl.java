@@ -1,5 +1,6 @@
 package cz.empatix.enemies.domain;
 
+import cz.empatix.items.service.DroppableState;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.events.consumers.DamageConsumer;
@@ -13,10 +14,12 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class EnemyImpl implements Enemy {
     private final Animation animation;
     private final PhysicsBody physicsBody;
+    private final DroppableState droppableState;
     private final int width;
     private final int height;
     private final float scale;
@@ -29,7 +32,8 @@ public class EnemyImpl implements Enemy {
                      final float scale,
                      final Animation animation,
                      final int damage,
-                     final Consumer<Integer> hitCallback) {
+                     final Consumer<Integer> hitCallback,
+                     final Supplier<Boolean> droppableCondition) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
@@ -38,6 +42,7 @@ public class EnemyImpl implements Enemy {
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
         physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
+        droppableState = new DroppableState(droppableCondition);
     }
 
     private boolean canHit(final DamageSource source,final int damage) {
@@ -54,14 +59,8 @@ public class EnemyImpl implements Enemy {
         throw new UnsupportedOperationException();
     }
 
-    @Override
     public void onDeath() {
         physicsBody.destroy();
-    }
-
-    @Override
-    public void onHit() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -98,6 +97,11 @@ public class EnemyImpl implements Enemy {
     @Override
     public boolean canRemove() {
         return isDead();
+    }
+
+    @Override
+    public boolean canDropItems() {
+        return droppableState.canDrop();
     }
 
     @Override

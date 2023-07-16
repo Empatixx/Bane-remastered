@@ -12,7 +12,7 @@ public class Snake implements Enemy{
     private final static int DEFAULT_HEALTH = 8;
     private final static int DEFAULT_DAMAGE = 3;
     private final Animation animation;
-    private final Enemy enemyImpl;
+    private final EnemyImpl enemyImpl;
     public Snake(){
         animation = Animation.builder()
                 .setTotal(2,9)
@@ -22,7 +22,7 @@ public class Snake implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
     }
     @Override
     public void update(double dt) {
@@ -34,16 +34,12 @@ public class Snake implements Enemy{
 
     }
 
-    @Override
     public void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
 
     }
 
-    @Override
-    public void onHit() {
-    }
 
     @Override
     public void hit(final int damage) {
@@ -70,6 +66,11 @@ public class Snake implements Enemy{
     public void onSpawn() {
 
     }
+    @Override
+    public boolean canDropItems() {
+        return enemyImpl.canDropItems();
+    }
+
 
     @Override
     public boolean isDead() {

@@ -9,6 +9,7 @@ import cz.empatix.death.service.DeathService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.MapGenerator;
@@ -33,6 +34,7 @@ public class InGameState extends GameState {
     private MinimapService minimapService;
     private MapService mapService;
     private GunService gunService;
+    private ItemService itemService;
     private Player player;
     private DeathService deathService;
 
@@ -44,15 +46,17 @@ public class InGameState extends GameState {
     public void init() {
         CursorService.setCursor(CursorType.CROSSHAIR);
 
+        itemService = new ItemService();
+        player = new Player();
+        pauseService = new PauseService();
+        deathService = new DeathService();
+        gunService = new GunService();
+
         final MapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
 
         minimapService = new MinimapService(mapGenerationResult);
         mapService = new MapService(mapGenerationResult, room -> minimapService.visit(room));
-        player = new Player();
-        gunService = new GunService();
-        pauseService = new PauseService();
-        deathService = new DeathService();
 
         AudioService.getInstance().play(Soundtrack.INGAME);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
@@ -86,7 +90,7 @@ public class InGameState extends GameState {
     @Override
     public List<Renderable> toRender(final double dt) {
         return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
-                        minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender())
+                        minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

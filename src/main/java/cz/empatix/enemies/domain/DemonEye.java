@@ -12,7 +12,7 @@ public class DemonEye implements Enemy{
     private final static int DEFAULT_HEALTH = 11;
     private final static int DEFAULT_DAMAGE = 3;
     private final Animation animation;
-    private final Enemy enemyImpl;
+    private final EnemyImpl enemyImpl;
     public DemonEye(){
         animation = Animation.builder()
                 .setTotal(1,4)
@@ -21,7 +21,7 @@ public class DemonEye implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, this::isDead);
     }
     @Override
     public void update(double dt) {
@@ -33,14 +33,8 @@ public class DemonEye implements Enemy{
 
     }
 
-    @Override
-    public void onDeath() {
+    private void onDeath() {
         enemyImpl.onDeath();
-
-    }
-
-    @Override
-    public void onHit() {
     }
 
     @Override
@@ -110,5 +104,9 @@ public class DemonEye implements Enemy{
     @Override
     public void setPosition(float x, float y) {
         enemyImpl.setPosition(x, y);
+    }
+    @Override
+    public boolean canDropItems() {
+        return enemyImpl.canDropItems();
     }
 }

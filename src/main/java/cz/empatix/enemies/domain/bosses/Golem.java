@@ -44,14 +44,6 @@ public class Golem implements Enemy {
 
     }
 
-    @Override
-    public void onDeath() {
-
-    }
-
-    @Override
-    public void onHit() {
-    }
 
     @Override
     public void hit(final int damage) {
@@ -81,6 +73,11 @@ public class Golem implements Enemy {
     @Override
     public boolean canRemove() {
         return false;
+    }
+
+    @Override
+    public boolean canDropItems() {
+        return bossImpl.canDropItems();
     }
 
     @Override

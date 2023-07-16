@@ -112,8 +112,19 @@ public class Luger extends AbstractGun implements Gun{
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }
+
     @Override
     public boolean isReloading(){
         return reloading;
+    }
+
+    @Override
+    public GunType getType() {
+        return gunType;
+    }
+
+    @Override
+    public boolean hasFullAmmo() {
+        return ammo == maxAmmo;
     }
 }

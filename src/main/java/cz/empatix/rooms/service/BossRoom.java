@@ -1,6 +1,7 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.enemies.service.EnemyService;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
@@ -12,6 +13,7 @@ import cz.empatix.tiles.tilemaps.TileMap;
 import java.util.*;
 
 public class BossRoom implements Room {
+    private final ItemService itemService;
     private final EnemyService enemyService;
     private final RoomLockService roomLockService;
     private final Map<RoomDirection, Room> neighbors;
@@ -22,7 +24,8 @@ public class BossRoom implements Room {
                     final Set<RoomDirection> neighbors) {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomLockService = new RoomLockService(this, neighbors);
-        enemyService = new EnemyService();
+        itemService = new ItemService();
+        enemyService = new EnemyService(itemService);
         visited = false;
         this.neighbors = new HashMap<>(neighbors.size());
     }

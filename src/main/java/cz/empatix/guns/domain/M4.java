@@ -149,4 +149,13 @@ public class M4 extends AbstractGun implements Gun{
     public boolean isReloading(){
         return reloading;
     }
+    @Override
+    public GunType getType() {
+        return gunType;
+    }
+
+    @Override
+    public boolean hasFullAmmo() {
+        return ammo == maxAmmo;
+    }
 }

@@ -53,16 +53,6 @@ public class BossImpl implements Enemy {
     }
 
     @Override
-    public void onDeath() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void onHit() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void hit(final int damage) {
         this.health -= damage;
         if (this.health < 0) {
@@ -95,6 +85,11 @@ public class BossImpl implements Enemy {
 
     @Override
     public boolean canRemove() {
+        return false;
+    }
+
+    @Override
+    public boolean canDropItems() {
         return false;
     }
 

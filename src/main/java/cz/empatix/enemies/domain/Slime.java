@@ -17,7 +17,7 @@ public class Slime implements Enemy{
     private final static int DEFAULT_HEALTH = 9;
     private final static int DEFAULT_DAMAGE = 1;
     private final Animation animation;
-    private final Enemy enemyImpl;
+    private final EnemyImpl enemyImpl;
     private final SlimeSmash slimeSmash;
     public Slime(){
         animation = Animation.builder()
@@ -28,7 +28,7 @@ public class Slime implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
         slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2));
     }
     @Override
@@ -43,14 +43,9 @@ public class Slime implements Enemy{
 
     }
 
-    @Override
     public void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
-    }
-
-    @Override
-    public void onHit() {
     }
 
     @Override
@@ -78,6 +73,11 @@ public class Slime implements Enemy{
     public void onSpawn() {
 
     }
+    @Override
+    public boolean canDropItems() {
+        return enemyImpl.canDropItems();
+    }
+
 
     @Override
     public boolean isDead() {

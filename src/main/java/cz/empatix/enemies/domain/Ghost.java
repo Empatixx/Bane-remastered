@@ -14,7 +14,7 @@ public class Ghost implements Enemy{
     private final static int DEFAULT_HEALTH = 11;
     private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
-    private final Enemy enemyImpl;
+    private final EnemyImpl enemyImpl;
     private final Skill dash;
     private int moveForce = 10000000;
 
@@ -27,7 +27,7 @@ public class Ghost implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation,DEFAULT_DAMAGE, this::hit);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation,DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
         dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);
     }
     @Override
@@ -42,15 +42,11 @@ public class Ghost implements Enemy{
 
     }
 
-    @Override
-    public void onDeath() {
+    private void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
     }
 
-    @Override
-    public void onHit() {
-    }
 
     @Override
     public void hit(final int damage) {
@@ -86,6 +82,11 @@ public class Ghost implements Enemy{
     @Override
     public boolean canRemove() {
         return isDead() && animation.hasPlayedOnce();
+    }
+
+    @Override
+    public boolean canDropItems() {
+        return enemyImpl.canDropItems();
     }
 
     @Override

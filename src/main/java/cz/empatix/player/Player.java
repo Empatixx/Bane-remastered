@@ -133,12 +133,7 @@ public class Player implements Drawable {
     }
 
     public void hit(final int damage) {
-        if (isDead()) {
-            right = false;
-            left = false;
-            top = false;
-            bottom = false;
-            physicsBody.setVelocity(0, 0);
+        if (isDead()){
             return;
         }
         if (System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME) {
@@ -152,6 +147,14 @@ public class Player implements Drawable {
             }
         } else {
             health -= damage;
+        }
+        if (isDead()) {
+            right = false;
+            left = false;
+            top = false;
+            bottom = false;
+            physicsBody.setVelocity(0, 0);
+            return;
         }
         RedVignette.setMaxVignette();
         lastHitTime = System.currentTimeMillis();

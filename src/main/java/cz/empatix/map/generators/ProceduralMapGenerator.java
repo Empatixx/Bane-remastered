@@ -29,7 +29,6 @@ public class ProceduralMapGenerator implements MapGenerator {
         Preconditions.checkArgument(TOTAL_START_ROOMS == 1, "Total start rooms must be 1");
         Preconditions.checkArgument(TOTAL_BOSS_ROOMS == 1, "Total boss rooms must be 1");
     }
-
     @Override
     public MapGenerationResult generate() {
         final StartRoomGenInfo startRoomGenInfo = new StartRoomGenInfo();

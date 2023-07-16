@@ -6,6 +6,7 @@ import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.guns.domain.*;
 import cz.empatix.hud.service.Image;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -30,6 +31,7 @@ public class GunService {
     }
 
     private final static Logger LOGGER = LoggerFactory.getLogger(GunService.class);
+    private final ItemService itemService;
     private final Image weaponSlotHud;
     private final List<Gun> guns;
     private final GunSlots slots;
@@ -48,6 +50,7 @@ public class GunService {
         slots.addGun(guns.get(4));
         slots.addGun(guns.get(5));
         weaponSlotHud = new Image(AssetsService.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE);
+        itemService = new ItemService();
     }
 
     public void update(final double dt) {

@@ -9,18 +9,16 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 public class EnemyFactory {
-    private final List<Supplier<Enemy>> commonEnemiesSuppliers;
-    private final List<Supplier<Enemy>> bossEnemiesSuppliers;
-    public EnemyFactory(){
-        this.commonEnemiesSuppliers = List.of(Bat::new, Slime::new, DemonEye::new, Ghost::new, RedSlime::new, Snake::new, Rat::new);
-        this.bossEnemiesSuppliers = List.of(Golem::new, KingSlime::new);
-    }
-    public Enemy createEnemy(){
+    private final List<Supplier<Enemy>> commonEnemiesSuppliers = List.of(Bat::new, Slime::new, DemonEye::new, Ghost::new, RedSlime::new, Snake::new, Rat::new);
+    private final List<Supplier<Enemy>> bossEnemiesSuppliers = List.of(Golem::new, KingSlime::new);
+
+    public Enemy createEnemy() {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
         final int index = random.nextInt(commonEnemiesSuppliers.size());
         return commonEnemiesSuppliers.get(index).get();
     }
-    public Enemy createBoss(){
+
+    public Enemy createBoss() {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
         final int index = random.nextInt(bossEnemiesSuppliers.size());
         return bossEnemiesSuppliers.get(index).get();
