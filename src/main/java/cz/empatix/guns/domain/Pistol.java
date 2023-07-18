@@ -122,4 +122,11 @@ public class Pistol extends AbstractGun implements Gun{
     public boolean hasFullAmmo() {
         return ammo == maxAmmo;
     }
+    @Override
+    public void addPercentAmmo(float percent) {
+         ammo += maxAmmo * percent;
+        if(ammo > maxAmmo){
+            ammo = maxAmmo;
+        }
+    }
 }

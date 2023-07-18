@@ -8,6 +8,7 @@ import java.util.List;
 
 public class ItemService {
     private final List<ItemDrop> itemDrops = new ArrayList<>(10);
+    private ItemFactory itemFactory;
     public void update(final float dt){
         itemDrops.forEach(itemDrop -> itemDrop.update(dt));
         itemDrops.removeIf(ItemDrop::canRemove);
@@ -16,6 +17,13 @@ public class ItemService {
         itemDrops.add(itemDrop);
     }
     public List<Drawable> toRender(){
-        return List.of();
+        return List.copyOf(itemDrops);
+    }
+    public void setFactory(final ItemFactory itemFactory) {
+        this.itemFactory = itemFactory;
+    }
+
+    public ItemDrop randomDrop() {
+        return itemFactory.createItemDrop();
     }
 }

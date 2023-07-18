@@ -31,12 +31,13 @@ public class GunService {
     }
 
     private final static Logger LOGGER = LoggerFactory.getLogger(GunService.class);
-    private final ItemService itemService;
     private final Image weaponSlotHud;
     private final List<Gun> guns;
     private final GunSlots slots;
+    private final ItemService itemService;
 
-    public GunService() {
+    public GunService(final ItemService itemService) {
+        this.itemService = itemService;
         guns = List.of(
                 new Pistol(),
                 new Shotgun(),
@@ -46,11 +47,12 @@ public class GunService {
                 new Uzi(),
                 new Thompson()
         );
-        slots = new GunSlots();
-        slots.addGun(guns.get(4));
-        slots.addGun(guns.get(5));
+        {
+            slots = new GunSlots();
+            slots.addGun(guns.get(4));
+            slots.addGun(guns.get(5));
+        }
         weaponSlotHud = new Image(AssetsService.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE);
-        itemService = new ItemService();
     }
 
     public void update(final double dt) {
@@ -124,5 +126,13 @@ public class GunService {
         if (GLFW.GLFW_KEY_R == button) {
             reload();
         }
+    }
+
+    public boolean hasNotFullAmmo(final GunType gunType){
+        return slots.hasNotFullAmmo(gunType);
+    }
+
+    public void addAmmo(final GunType gunType, final float percent) {
+        slots.addAmmo(gunType, percent);
     }
 }

@@ -46,6 +46,9 @@ public class SlimeSmash implements Skill {
         bullets.forEach(bullet -> bullet.update(dt));
         bullets.removeIf(Slimebullet::shouldRemove);
     }
+    public boolean noBullets() {
+        return bullets.isEmpty();
+    }
 
     @Override
     public List<Renderable> getSubRenderables() {

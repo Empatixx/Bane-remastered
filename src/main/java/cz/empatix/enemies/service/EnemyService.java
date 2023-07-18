@@ -2,7 +2,6 @@ package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.domain.ItemDrop;
-import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
@@ -17,7 +16,6 @@ public class EnemyService {
     private final EnemyFactory enemyFactory = new EnemyFactory();
     private final List<Enemy> enemies = new ArrayList<>(10);
     private final ItemService itemService;
-    private final ItemFactory itemFactory = new ItemFactory();
     public EnemyService(final ItemService itemService) {
         this.itemService = itemService;
     }
@@ -27,8 +25,8 @@ public class EnemyService {
         enemies.stream()
                 .filter(Enemy::canDropItems)
                 .forEach(e -> {
-                    final ItemDrop item = itemFactory.createItemDrop();
-                    item.setPosition(e.getX(), e.getY());
+                    final ItemDrop item = itemService.randomDrop();
+                    item.setPosition(e.getX() + e.getWidth()/2f - item.getWidth()/2f, e.getY() + e.getHeight()/2f - item.getHeight()/2f);
                     itemService.add(item);
                 });
         enemies.removeIf(Enemy::canRemove);

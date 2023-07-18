@@ -20,11 +20,12 @@ public class BossRoom implements Room {
     private final TileMap tileMap;
     private boolean visited;
 
-    public BossRoom(final int rows, final int cols, final int xOffset, final int yOffset,
+    public BossRoom(final ItemService itemService,
+                    final int rows, final int cols, final int xOffset, final int yOffset,
                     final Set<RoomDirection> neighbors) {
+        this.itemService = itemService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomLockService = new RoomLockService(this, neighbors);
-        itemService = new ItemService();
         enemyService = new EnemyService(itemService);
         visited = false;
         this.neighbors = new HashMap<>(neighbors.size());

@@ -27,4 +27,6 @@ public interface Gun {
     List<Renderable> hudToRender();
 
     GunType getType();
+
+    void addPercentAmmo(final float percent);
 }

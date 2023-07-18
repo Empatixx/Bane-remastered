@@ -1,9 +1,16 @@
 package cz.empatix.map.domain;
 
+import cz.empatix.items.service.ItemService;
 import cz.empatix.rooms.service.BossRoom;
 import cz.empatix.rooms.service.Room;
 
-public class BossRoomGenInfo extends RoomGenInfo{
+public class BossRoomGenInfo extends RoomGenInfo {
+    private final ItemService itemService;
+
+    public BossRoomGenInfo(final ItemService itemService) {
+        this.itemService = itemService;
+    }
+
     @Override
     public void initDimensions() {
         rows = 15;
@@ -12,7 +19,7 @@ public class BossRoomGenInfo extends RoomGenInfo{
 
     @Override
     public Room constructRoom() {
-        return new BossRoom(rows, cols, xOffset, yOffset, neighbours.keySet());
+        return new BossRoom(itemService, rows, cols, xOffset, yOffset, neighbours.keySet());
     }
 
     @Override

@@ -23,10 +23,11 @@ public class CommonRoom implements Room {
     private final TileMap tileMap;
     private boolean visited;
 
-    public CommonRoom(final int rows, final int cols, final int xOffset, final int yOffset,
+    public CommonRoom(final ItemService itemService, final int rows, final int cols, final int xOffset, final int yOffset,
                       final Set<RoomDirection> neighbors) {
+
+        this.itemService = itemService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
-        itemService = new ItemService();
         enemyService = new EnemyService(itemService);
         roomObjectService = new RoomObjectService();
         roomLockService = new RoomLockService(this, neighbors);
@@ -59,6 +60,7 @@ public class CommonRoom implements Room {
         enemyService.update(dt);
         roomObjectService.update(dt);
         roomLockService.update(dt);
+        itemService.update((float)dt);
         if(enemyService.areEnemiesDead() && !roomLockService.isLocked()){
             roomLockService.setState(false);
         }

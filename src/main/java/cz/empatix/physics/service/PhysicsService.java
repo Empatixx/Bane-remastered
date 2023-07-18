@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PhysicsService {
-    private final static boolean RENDER_COLLISIONS = false;
+    private final static boolean RENDER_COLLISIONS = true;
     private static PhysicsService instance;
     public static PhysicsService getInstance() {
         if (instance == null) {
@@ -34,6 +34,7 @@ public class PhysicsService {
     }
 
     public void fixedUpdate(final double dt) {
+
         physicsBodies.forEach(body -> {
             final Vector2f velocity = body.getVelocity();
             final Vector2f force = body.getForce();

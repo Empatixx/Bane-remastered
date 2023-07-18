@@ -9,10 +9,10 @@ import cz.empatix.death.service.DeathService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
+import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
-import cz.empatix.map.generators.MapGenerator;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.minimap.service.MinimapService;
@@ -46,14 +46,17 @@ public class InGameState extends GameState {
     public void init() {
         CursorService.setCursor(CursorType.CROSSHAIR);
 
-        itemService = new ItemService();
         player = new Player();
         pauseService = new PauseService();
         deathService = new DeathService();
-        gunService = new GunService();
+        itemService = new ItemService();
+        gunService = new GunService(itemService);
 
-        final MapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
+        itemService.setFactory(new ItemFactory(gunService, player));
+
+
+        final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
+        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService);
 
         minimapService = new MinimapService(mapGenerationResult);
         mapService = new MapService(mapGenerationResult, room -> minimapService.visit(room));
@@ -104,12 +107,12 @@ public class InGameState extends GameState {
 
     @Override
     public void keyPressed(final int key) {
-        pauseService.keyPressed(key);
-        if(pauseService.isPause()){
-            return;
-        }
         if(deathService.isActive()){
             deathService.keyPressed(key);
+            return;
+        }
+        pauseService.keyPressed(key);
+        if(pauseService.isPause()){
             return;
         }
         gunService.keyPressed(key);
@@ -118,10 +121,10 @@ public class InGameState extends GameState {
 
     @Override
     public void keyReleased(final int key) {
-        if(pauseService.isPause()){
+        if(deathService.isActive()){
             return;
         }
-        if(deathService.isActive()){
+        if(pauseService.isPause()){
             return;
         }
         player.keyReleased(key);

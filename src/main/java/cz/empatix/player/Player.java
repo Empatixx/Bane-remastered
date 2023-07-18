@@ -181,6 +181,19 @@ public class Player implements Drawable {
         interactionEntity.setPosition(physicsBody.getPhysicsTranslation());
     }
 
+    public void addHealth(final int health){
+        setHealth(getHealth() + health);
+    }
+    public boolean hasFullHealth(){
+        return getHealth() == getMaxHealth();
+    }
+    public void addArmor(final int armor){
+        setArmor(getArmor() + armor);
+    }
+    public boolean hasFullArmor() {
+        return getArmor() == getMaxArmor();
+    }
+
     public void setHealth(final int health) {
         this.health = health;
         if (this.health > maxHealth) {
@@ -332,4 +345,5 @@ public class Player implements Drawable {
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
+
 }

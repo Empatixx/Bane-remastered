@@ -5,9 +5,8 @@ import cz.empatix.rooms.service.LobbyRoom;
 
 import java.util.List;
 
-public class StaticMapGenerator implements MapGenerator {
+public class StaticMapGenerator {
 
-    @Override
     public MapGenerationResult generate() {
         final LobbyRoom lobbyRoom = new LobbyRoom();
         lobbyRoom.init();

@@ -74,4 +74,11 @@ public class GunSlots {
                 .stream()
                 .anyMatch(gun -> gun != null && gun.getType() == type && !gun.hasFullAmmo());
     }
+
+    public void addAmmo(final GunType gunType,final float percent) {
+        slots
+                .stream()
+                .filter(gun -> gun != null && gun.getType() == gunType)
+                .forEach(gun -> gun.addPercentAmmo(percent));
+    }
 }

@@ -39,6 +39,9 @@ public class Slime implements Enemy{
 
     @Override
     public void fixedUpdate(double dt) {
+        if (isDead()) {
+            return;
+        }
         slimeSmash.activate();
 
     }
@@ -86,7 +89,7 @@ public class Slime implements Enemy{
 
     @Override
     public boolean canRemove() {
-        return isDead() && animation.hasPlayedOnce();
+        return isDead() && animation.hasPlayedOnce() && slimeSmash.noBullets();
     }
 
     @Override
@@ -101,7 +104,7 @@ public class Slime implements Enemy{
 
     @Override
     public boolean canRender() {
-        return !canRemove();
+        return !isDead() || !animation.hasPlayedOnce();
     }
     @Override
     public float getX() {

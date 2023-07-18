@@ -10,7 +10,6 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
-import cz.empatix.map.generators.MapGenerator;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.physics.service.PhysicsService;
@@ -34,7 +33,7 @@ public class LobbyState extends GameState {
     public void init() {
         CursorService.setCursor(CursorType.DEFAULT);
 
-        final MapGenerator proceduralMapGenerator = new StaticMapGenerator();
+        final StaticMapGenerator  proceduralMapGenerator = new StaticMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
 
         mapService = new MapService(mapGenerationResult, room -> {
