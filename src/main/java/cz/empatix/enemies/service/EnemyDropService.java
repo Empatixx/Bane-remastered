@@ -1,0 +1,25 @@
+package cz.empatix.enemies.service;
+
+import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.service.ItemService;
+
+import java.util.concurrent.ThreadLocalRandom;
+
+public class EnemyDropService {
+    private final ItemService itemService;
+    private int enemiesKilledWithoutDrops = 0;
+
+    public EnemyDropService(final ItemService itemService){
+        this.itemService = itemService;
+    }
+    public void tryDrop(final Enemy e){
+        enemiesKilledWithoutDrops++;
+        if(enemiesKilledWithoutDrops + ThreadLocalRandom.current().nextInt(6) % 5 == 0){
+            final ItemDrop item = itemService.randomDrop();
+            item.setPosition(e.getX() + e.getWidth()/2f - item.getWidth()/2f, e.getY() + e.getHeight()/2f - item.getHeight()/2f);
+            itemService.add(item);
+            enemiesKilledWithoutDrops = 0;
+        }
+    }
+}

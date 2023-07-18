@@ -1,7 +1,6 @@
 package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.Enemy;
-import cz.empatix.items.domain.ItemDrop;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
@@ -15,20 +14,16 @@ import java.util.concurrent.ThreadLocalRandom;
 public class EnemyService {
     private final EnemyFactory enemyFactory = new EnemyFactory();
     private final List<Enemy> enemies = new ArrayList<>(10);
-    private final ItemService itemService;
+    private final EnemyDropService enemyDropService;
     public EnemyService(final ItemService itemService) {
-        this.itemService = itemService;
+        this.enemyDropService = new EnemyDropService(itemService);
     }
 
     public void update(final double dt) {
         enemies.forEach(enemy -> enemy.update(dt));
         enemies.stream()
                 .filter(Enemy::canDropItems)
-                .forEach(e -> {
-                    final ItemDrop item = itemService.randomDrop();
-                    item.setPosition(e.getX() + e.getWidth()/2f - item.getWidth()/2f, e.getY() + e.getHeight()/2f - item.getHeight()/2f);
-                    itemService.add(item);
-                });
+                .forEach(enemyDropService::tryDrop);
         enemies.removeIf(Enemy::canRemove);
     }
 
