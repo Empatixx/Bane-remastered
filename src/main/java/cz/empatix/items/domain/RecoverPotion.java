@@ -16,10 +16,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class RecoverPotion implements ItemDrop{
-    private final static float SCALE = 1f;
-    private final static int DIMENSION_WIDTH = (int)(32 * SCALE);
-    private final static int DIMENSION_HEIGHT = (int)(32 * SCALE);
-    private static final int DEFAULT_AMOUNT = 2;
+    private final static float SCALE = 2.5f;
+    private final static int DIMENSION_WIDTH = (int)(16 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int)(16 * SCALE);
     private final RecoverType type;
     private final InteractionZone interactionZone;
     private final Animation animation;
@@ -30,20 +29,34 @@ public class RecoverPotion implements ItemDrop{
                          final Supplier<Boolean> hasFull,
                          final Consumer<Integer> add) {
         this.type = type;
-        amount = DEFAULT_AMOUNT;
+        this.amount = getDefaultAmount();
         this.animation = Animation.builder()
-                .setTotal(1,1)
-                .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .setTotal(2,1)
+                .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .texture(AssetsService.getTexture("ingame/healing_pot.tga"))
                 .build();
-        animation.setState(AnimationState.IDLE);
+        animation.setState(getAnimationState());
         this.interactionZone = new InteractionZone(new Vector2f(), new Vector2i(DIMENSION_WIDTH, DIMENSION_HEIGHT), pressedKeys -> {
-            if(!hasFull.get()){
+            if(!pickedUp && !hasFull.get()){
                 add.accept(amount);
                 pickedUp = true;
             }
         });
         InteractionService.getInstance().addZone(interactionZone);
+    }
+
+    private AnimationState getAnimationState(){
+        return switch (type){
+            case HEALTH -> AnimationState.TYPE0;
+            case ARMOR -> AnimationState.TYPE1;
+        };
+    }
+    private int getDefaultAmount(){
+        return switch (type){
+            case HEALTH -> 2;
+            case ARMOR -> 1;
+        };
     }
 
     public RecoverType getType() {
@@ -77,6 +90,11 @@ public class RecoverPotion implements ItemDrop{
     @Override
     public int getHeight() {
         return DIMENSION_HEIGHT;
+    }
+
+    @Override
+    public void destroy() {
+        InteractionService.getInstance().removeZone(interactionZone);
     }
 
     @Override

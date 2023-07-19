@@ -74,7 +74,7 @@ public class LobbyState extends GameState {
     public void cleanUp() {
         player.cleanUp();
         PhysicsService.getInstance().clear();
-        InteractionService.getInstance().clean();
+        InteractionService.getInstance().clear();
         LightningService.getInstance().clear();
     }
 

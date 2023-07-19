@@ -11,6 +11,7 @@ public class ItemService {
     private ItemFactory itemFactory;
     public void update(final float dt){
         itemDrops.forEach(itemDrop -> itemDrop.update(dt));
+        System.out.println("removing");
         itemDrops.removeIf(ItemDrop::canRemove);
     }
     public void add(final ItemDrop itemDrop){

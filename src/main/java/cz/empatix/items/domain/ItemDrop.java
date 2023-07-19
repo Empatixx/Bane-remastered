@@ -8,4 +8,5 @@ public interface ItemDrop extends Drawable {
     void setPosition(final float x, final float y);
     int getWidth();
     int getHeight();
+    void destroy();
 }

@@ -11,9 +11,12 @@ public record InteractionZone(
         Vector2i dimensions,
         Consumer<Set<Integer>> action
 ) {
-    public boolean intersects(final Vector2f point) {
-        return point.x >= position.x && point.x <= position.x + dimensions.x
-                && point.y >= position.y && point.y <= position.y + dimensions.y;
+    public boolean intersects(final InteractionEntity entity){
+        final Vector2f entityPosition = entity.position();
+        final Vector2i entityDims = entity.dimensions();
+
+        return entityPosition.x() + entityDims.x() >= position.x() && entityPosition.x() <= position.x() + dimensions.x()
+                && entityPosition.y() + entityDims.y() >= position.y() && entityPosition.y() <= position.y() + dimensions.y();
     }
 
     public void interact(final Set<Integer> keys) {

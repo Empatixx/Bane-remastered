@@ -38,7 +38,7 @@ public class AmmoItem implements ItemDrop{
                 .build();
         animation.setState(AnimationState.IDLE);
         this.interactionZone = new InteractionZone(new Vector2f(), new Vector2i(DIMENSION_WIDTH, DIMENSION_HEIGHT), pressedKeys -> {
-            if(canPickUp.apply(type)){
+            if(!pickedUp && canPickUp.apply(type)){
                 pickUp.accept(type, percentAmount);
                 pickedUp = true;
             }
@@ -68,6 +68,11 @@ public class AmmoItem implements ItemDrop{
     @Override
     public int getHeight() {
         return DIMENSION_HEIGHT;
+    }
+
+    @Override
+    public void destroy() {
+        InteractionService.getInstance().removeZone(interactionZone);
     }
 
     @Override

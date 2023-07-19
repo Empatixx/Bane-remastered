@@ -20,7 +20,7 @@ public class InteractionService {
     public void fixedUpdate(final float dt) {
         A: for (final InteractionEntity entity : interactionEntities) {
             for (final InteractionZone interactionZone : interactionZones) {
-                if (interactionZone.intersects(entity.position())) {
+                if (interactionZone.intersects(entity)) {
                     interactionZone.interact(entity.pressedKeys());
                     break A;
                 }
@@ -28,7 +28,7 @@ public class InteractionService {
             entity.pressedKeys().clear();
         }
     }
-    public void clean() {
+    public void clear() {
         interactionEntities.clear();
         interactionZones.clear();
     }

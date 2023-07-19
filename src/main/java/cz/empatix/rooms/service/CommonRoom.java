@@ -60,7 +60,6 @@ public class CommonRoom implements Room {
         enemyService.update(dt);
         roomObjectService.update(dt);
         roomLockService.update(dt);
-        itemService.update((float)dt);
         if(enemyService.areEnemiesDead() && !roomLockService.isLocked()){
             roomLockService.setState(false);
         }

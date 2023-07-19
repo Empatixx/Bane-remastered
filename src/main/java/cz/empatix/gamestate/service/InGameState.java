@@ -80,6 +80,7 @@ public class InGameState extends GameState {
         mapService.update(dt, player);
         minimapService.update(dt);
         gunService.update(dt);
+        itemService.update((float)dt);
         pauseService.update(dt, mouseX, mouseY);
     }
 
