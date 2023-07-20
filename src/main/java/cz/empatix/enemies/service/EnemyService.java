@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class EnemyService {
+    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final EnemyFactory enemyFactory = new EnemyFactory();
     private final List<Enemy> enemies = new ArrayList<>(10);
     private final EnemyDropService enemyDropService;
@@ -42,11 +43,10 @@ public class EnemyService {
     public void spawnEnemy(final Room room) {
         final Enemy e = enemyFactory.createEnemy();
 
-        final ThreadLocalRandom random = ThreadLocalRandom.current();
         final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
 
-        final float x = room.getX() + tileSize + random.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
-        final float y = room.getY() + tileSize + random.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
+        final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
+        final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
         e.setPosition(x, y);
 
         enemies.add(e);

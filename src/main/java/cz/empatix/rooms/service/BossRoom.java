@@ -55,7 +55,7 @@ public class BossRoom implements Room {
     public void update(double dt) {
         enemyService.update(dt);
         roomLockService.update(dt);
-        if (enemyService.areEnemiesDead() && !roomLockService.isLocked()) {
+        if (enemyService.areEnemiesDead() && roomLockService.isLocked()) {
             roomLockService.setState(false);
         }
     }

@@ -22,7 +22,7 @@ public class PathGate implements RoomObject {
     public PathGate() {
         animation = Animation.builder()
                 .setTotal(1, 4)
-                .addState(OPEN, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, true)
+                .addState(OPEN, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, false, true)
                 .addState(CLOSE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, false)
                 .texture(AssetsService.getTexture("ingame/pathgate.tga"))
                 .scale(SCALE)
@@ -58,16 +58,16 @@ public class PathGate implements RoomObject {
     @Override
     public void update(double dt) {
         switch (animation.getCurrentState()) {
-            case CLOSE:
+            case CLOSE -> {
                 if (animation.getCurrentTextureIndex() != 3) {
                     animation.update();
                 }
-                break;
-            case OPEN:
+            }
+            case OPEN -> {
                 if (animation.getCurrentTextureIndex() != 0) {
                     animation.update();
                 }
-                break;
+            }
         }
     }
 
@@ -90,15 +90,10 @@ public class PathGate implements RoomObject {
 
     public void setState(final boolean closed) {
         if (closed) {
-            if(animation.getCurrentState() == CLOSE){
-                return;
-            }
             animation.setState(CLOSE);
         } else {
-            if(animation.getCurrentState() == OPEN){
-                return;
-            }
             animation.setState(OPEN);
+            animation.setCurrentFrame(3);
         }
     }
 }

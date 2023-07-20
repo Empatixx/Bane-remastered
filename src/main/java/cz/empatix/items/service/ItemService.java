@@ -11,7 +11,6 @@ public class ItemService {
     private ItemFactory itemFactory;
     public void update(final float dt){
         itemDrops.forEach(itemDrop -> itemDrop.update(dt));
-        System.out.println("removing");
         itemDrops.removeIf(ItemDrop::canRemove);
     }
     public void add(final ItemDrop itemDrop){
@@ -24,7 +23,7 @@ public class ItemService {
         this.itemFactory = itemFactory;
     }
 
-    public ItemDrop randomDrop() {
-        return itemFactory.createItemDrop();
+    public ItemFactory getItemFactory(){
+        return itemFactory;
     }
 }

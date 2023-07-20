@@ -3,7 +3,8 @@ package cz.empatix.roomobjects.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.gamestate.service.GameStateController;
-import cz.empatix.interaction.domain.InteractionZone;
+import cz.empatix.interaction.domain.CommonInteractable;
+import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -17,14 +18,15 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Portal implements RoomObject {
+import java.util.Set;
+
+public class Portal implements RoomObject, Interactable {
     private final static Logger LOGGER = LoggerFactory.getLogger(Portal.class);
     private final static int SCALE = 2;
     private final static int DIMENSION_WIDTH = 96;
     private final static int DIMENSION_HEIGHT = 90;
     private final Animation animation;
     private final Vector2f position;
-    private final InteractionZone interactionZone;
     public Portal(final Vector2f position) {
         animation = Animation.builder()
                 .setTotal(1, 8)
@@ -34,13 +36,7 @@ public class Portal implements RoomObject {
                 .build();
         animation.setState(AnimationState.IDLE);
         this.position = position;
-        interactionZone = new InteractionZone(position, new Vector2i(getWidth(), getHeight()), keys -> {
-            if(keys.contains(GLFW.GLFW_KEY_E)){
-                LOGGER.info("Portal interaction");
-                GameStateController.getInstance().setCurrentState(GameStateType.INGAME);
-            }
-        });
-        InteractionService.getInstance().addZone(interactionZone);
+        InteractionService.getInstance().addInteractable(this);
     }
 
     @Override
@@ -75,6 +71,23 @@ public class Portal implements RoomObject {
     @Override
     public boolean canRemove() {
         return false;
+    }
+
+    @Override
+    public void interact(final Set<Integer> keys) {
+        if(keys.contains(GLFW.GLFW_KEY_E)){
+            GameStateController.getInstance().setCurrentState(GameStateType.INGAME);
+        }
+    }
+
+    @Override
+    public boolean canInteract() {
+        return true;
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return position;
     }
 
     public int getWidth() {

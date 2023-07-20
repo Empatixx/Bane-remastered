@@ -1,12 +1,10 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.domain.StatusBarType;
-import cz.empatix.hud.service.Image;
 import cz.empatix.hud.service.StatusBar;
-import cz.empatix.hud.service.Text;
-import cz.empatix.interaction.domain.InteractionEntity;
+import cz.empatix.interaction.domain.CommonInteractEntity;
+import cz.empatix.interaction.domain.InteractEntity;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
@@ -26,17 +24,16 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
-public class Player implements Drawable {
+public class Player implements Drawable, InteractEntity {
     private final static int SCALE = 2;
-    private final static int COIN_HUD_OFFSET = 25;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
@@ -48,20 +45,17 @@ public class Player implements Drawable {
     private final static int INVULNERABLE_TIME = 1000;
     private final StatusBar healthBar;
     private final StatusBar armorBar;
-    private final Image coinHud;
-    private final Text coinText;
     private final Animation animation;
     private final PhysicsBody physicsBody;
-    private final InteractionEntity interactionEntity;
+    private final CommonInteractEntity interactEntity;
     private final LightSource lightSource;
     private final GazewindService gazewindService;
+    private final CoinService coinService;
     private boolean left, right, top, bottom;
-
     private int maxHealth;
     private int health;
     private int maxArmor;
     private int armor;
-    private int coins;
     private long lastHitTime;
 
     public Player() {
@@ -70,8 +64,6 @@ public class Player implements Drawable {
 
         maxArmor = DEFAULT_MAX_ARMOR;
         armor = maxArmor;
-
-        coins = 0;
 
         animation = Animation.builder()
                 .setTotal(4, 6)
@@ -87,26 +79,23 @@ public class Player implements Drawable {
         physicsBody.setTranslation(500, 500);
         physicsBody.addEventConsumer(new DamageConsumer(this::hit, this::canHit));
 
-        interactionEntity = new InteractionEntity(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH, DIMENSION_HEIGHT);
-        InteractionService.getInstance().addEntity(interactionEntity);
+        interactEntity = new CommonInteractEntity(getWidth(), getHeight(), physicsBody.getPhysicsTranslation());
+        InteractionService.getInstance().addEntity(this);
 
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(216, 156, 36), 150f, 0.5f);
 
         healthBar = new StatusBar(this::getHealth, this::getMaxHealth, StatusBarType.HEALTH, new Vector2f(25, 25));
         armorBar = new StatusBar(this::getArmor, this::getMaxArmor, StatusBarType.ARMOR, new Vector2f(75, 62.5f));
 
-        final TextureAtlas.Entry coinTxt = AssetsService.getTexture("ingame/banecoin.tga");
-        coinHud = new Image(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height()), 1f);
-        coinText = new Text(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET + coinTxt.width() + 15, 0f), coinHud.getZIndex());
-
-        coinText.setCenterY(WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height());
-        coinText.setColorRGB(255, 216, 0);
-
         gazewindService = new GazewindService();
+        coinService = new CoinService();
     }
 
     private boolean canHit(final DamageSource source, final int damage) {
-        return source != DamageSource.PLAYER &&System.currentTimeMillis() - lastHitTime > INVULNERABLE_TIME;
+        return source != DamageSource.PLAYER && !isInvulnerable() && !isDead();
+    }
+    private boolean isInvulnerable(){
+        return System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME;
     }
 
     public int getArmor() {
@@ -124,7 +113,7 @@ public class Player implements Drawable {
         healthBar.update(dt);
         armorBar.update(dt);
 
-        if ((float) health / maxHealth < LOW_HP_THRESHOLD) {
+        if ((float) health / maxHealth < LOW_HP_THRESHOLD && !isDead()) {
             RedVignette.setTimeBased(true);
         } else {
             RedVignette.setTimeBased(false);
@@ -136,7 +125,7 @@ public class Player implements Drawable {
         if (isDead()){
             return;
         }
-        if (System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME) {
+        if (isInvulnerable()) {
             return;
         }
         if (armor > 0) {
@@ -178,11 +167,15 @@ public class Player implements Drawable {
             }
             gazewindService.spawn(nextGazeX, nextGazeY);
         }
-        interactionEntity.setPosition(physicsBody.getPhysicsTranslation());
     }
-    public void addCoins(final int amount){
-        coins += amount;
-        coinText.setText(String.valueOf(coins));
+    public void addCoins(final int coins){
+        coinService.addCoins(coins);
+    }
+    public void removeCoins(final int coins){
+        coinService.removeCoins(coins);
+    }
+    public boolean hasEnoughCoins(final int requiredCoins){
+        return coinService.hasEnoughCoins(requiredCoins);
     }
     public void addHealth(final int health){
         setHealth(getHealth() + health);
@@ -219,10 +212,10 @@ public class Player implements Drawable {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        List<? extends Renderable> renderables = Stream.of(coinText.getSubRenderables(), List.of(healthBar, armorBar, coinHud), gazewindService.toRender())
-                .flatMap(List::stream)
-                .toList();
-        return List.copyOf(renderables);
+        final List<Renderable> renderables = coinService.toRender();
+        renderables.addAll(List.of(healthBar, armorBar));
+        renderables.addAll(gazewindService.toRender());
+        return renderables;
     }
 
     @Override
@@ -245,6 +238,9 @@ public class Player implements Drawable {
 
     @Override
     public boolean canRender() {
+        if(isInvulnerable() && System.currentTimeMillis() / 100 % 2 == 0){
+            return false;
+        }
         return IntersectionResolver.newInstance()
                 .addShape(physicsBody.getTranslation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
                 .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
@@ -276,7 +272,7 @@ public class Player implements Drawable {
                 left = false;
             }
         }
-        interactionEntity.keyPress(key);
+        interactEntity.addKey(key);
     }
 
     public void keyReleased(final int key) {
@@ -313,6 +309,11 @@ public class Player implements Drawable {
         }
     }
 
+    @Override
+    public Set<Integer> getInteractKeys() {
+        return interactEntity.getInteractKeys();
+    }
+
     public Vector2f getPosition() {
         return physicsBody.getPhysicsTranslation();
     }
@@ -327,6 +328,11 @@ public class Player implements Drawable {
 
     public int getWidth() {
         return DIMENSION_WIDTH;
+    }
+
+    @Override
+    public boolean canRemove() {
+        return isDead();
     }
 
     public int getHeight() {

@@ -1,7 +1,7 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.interaction.domain.InteractionZone;
+import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -12,31 +12,33 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
+import java.util.Set;
 import java.util.function.Consumer;
 
-public class CoinItem implements ItemDrop{
+public class CoinItem implements ItemDrop {
     private final static float SCALE = 0.75f;
-    private final static int DIMENSION_WIDTH = (int)(33 * SCALE);
-    private final static int DIMENSION_HEIGHT = (int)(33 * SCALE);
-    private final InteractionZone interactionZone;
+    private final static int DIMENSION_WIDTH = (int) (33 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (33 * SCALE);
+    private final CommonInteractable interactable;
+    private final Vector2f position;
     private final Animation animation;
     private final int amount;
     private boolean pickedUp = false;
-    public CoinItem(final Consumer<Integer> coinAdd){
+
+    public CoinItem(final Consumer<Integer> coinAdd) {
         this.amount = 1;
         this.animation = Animation.builder()
-                .setTotal(1,10)
+                .setTotal(1, 10)
                 .addState(AnimationState.IDLE, 0, 10, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75)
                 .texture(AssetsService.getTexture("ingame/banecoin_anim.tga"))
                 .build();
-        this.interactionZone = new InteractionZone(new Vector2f(), new Vector2i(DIMENSION_WIDTH,DIMENSION_HEIGHT), pressedKeys -> {
-            if(!pickedUp){
-                pickedUp = true;
-                coinAdd.accept(amount);
-            }
-        });
-        InteractionService.getInstance().addZone(interactionZone);
+        position = new Vector2f();
+        interactable = new CommonInteractable(pressedKeys -> {
+            pickedUp = true;
+            coinAdd.accept(amount);
+        }, () -> !pickedUp, this::canRemove, position, getHeight(), getWidth());
     }
+
     @Override
     public void update(float dt) {
         animation.update();
@@ -49,7 +51,22 @@ public class CoinItem implements ItemDrop{
 
     @Override
     public void setPosition(float x, float y) {
-        interactionZone.position().set(x, y);
+        position.set(x, y);
+    }
+
+    @Override
+    public void interact(Set<Integer> keys) {
+        interactable.interact(keys);
+    }
+
+    @Override
+    public boolean canInteract() {
+        return interactable.canInteract();
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return position;
     }
 
     @Override
@@ -64,13 +81,17 @@ public class CoinItem implements ItemDrop{
 
     @Override
     public void destroy() {
-        InteractionService.getInstance().removeZone(interactionZone);
+    }
+
+    @Override
+    public ItemRarity getRarity() {
+        return ItemRarity.COMMON;
     }
 
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(interactionZone.position()),
+                animation.getVertices(position),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

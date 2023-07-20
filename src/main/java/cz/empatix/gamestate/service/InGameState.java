@@ -54,7 +54,6 @@ public class InGameState extends GameState {
 
         itemService.setFactory(new ItemFactory(gunService, player));
 
-
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService);
 

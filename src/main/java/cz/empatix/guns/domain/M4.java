@@ -32,8 +32,8 @@ public class M4 extends AbstractGun implements Gun{
     private float lastShooterY;
 
     public M4() {
-        this.minDamage = 2;
-        this.maxDamage = 2;
+        this.minDamage = 200;
+        this.maxDamage = 200;
 
         this.inaccuracy = 0.f;
         this.fireRateTime = 750;

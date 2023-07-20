@@ -1,7 +1,7 @@
 package cz.empatix.interaction.service;
 
-import cz.empatix.interaction.domain.InteractionEntity;
-import cz.empatix.interaction.domain.InteractionZone;
+import cz.empatix.interaction.domain.InteractEntity;
+import cz.empatix.interaction.domain.Interactable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,35 +14,38 @@ public class InteractionService {
         }
         return instance;
     }
-    private final List<InteractionZone> interactionZones = new ArrayList<>(20);
-    private final List<InteractionEntity> interactionEntities = new ArrayList<>();
+    private final List<Interactable> interactables = new ArrayList<>(20);
+    private final List<InteractEntity> interactionEntities = new ArrayList<>();
 
     public void fixedUpdate(final float dt) {
-        A: for (final InteractionEntity entity : interactionEntities) {
-            for (final InteractionZone interactionZone : interactionZones) {
-                if (interactionZone.intersects(entity)) {
-                    interactionZone.interact(entity.pressedKeys());
+        interactables.removeIf(Interactable::canRemove);
+        interactionEntities.removeIf(InteractEntity::canRemove);
+
+        A: for (final InteractEntity entity : interactionEntities) {
+            for (final Interactable interactable : interactables) {
+                if (interactable.intersects(entity) && interactable.canInteract()) {
+                    interactable.interact(entity.getInteractKeys());
                     break A;
                 }
             }
-            entity.pressedKeys().clear();
+            entity.getInteractKeys().clear();
         }
     }
     public void clear() {
         interactionEntities.clear();
-        interactionZones.clear();
+        interactables.clear();
+    }
+    public void addEntity(final InteractEntity entity){
+        interactionEntities.add(entity);
     }
 
-    public void addEntity(final InteractionEntity interactionEntity) {
-        interactionEntities.add(interactionEntity);
+    public void removeEntity(final InteractEntity entity) {
+        interactionEntities.remove(entity);
     }
-    public void removeEntity(final InteractionEntity interactionEntity) {
-        interactionEntities.remove(interactionEntity);
+    public void addInteractable(final Interactable interactable){
+        interactables.add(interactable);
     }
-    public void addZone(final InteractionZone interactionZone) {
-        interactionZones.add(interactionZone);
-    }
-    public void removeZone(final InteractionZone interactionZone) {
-        interactionZones.remove(interactionZone);
+    public void removeInteractable(final Interactable interactable){
+        interactables.remove(interactable);
     }
 }

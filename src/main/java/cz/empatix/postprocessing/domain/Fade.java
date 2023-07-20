@@ -50,7 +50,7 @@ public class Fade implements Postprocess {
 
     @Override
     public boolean canRender() {
-        return true;
+        return tween != 0 || MIN_VALUE < value;
     }
     public static float getValue() {
         return value;

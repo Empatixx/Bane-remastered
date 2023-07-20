@@ -60,7 +60,7 @@ public class CommonRoom implements Room {
         enemyService.update(dt);
         roomObjectService.update(dt);
         roomLockService.update(dt);
-        if(enemyService.areEnemiesDead() && !roomLockService.isLocked()){
+        if(enemyService.areEnemiesDead() && roomLockService.isLocked()){
             roomLockService.setState(false);
         }
     }
@@ -76,8 +76,7 @@ public class CommonRoom implements Room {
         final Renderable enemies = (DrawableBatch) enemyService::toRender;
         final Renderable roomObjects = (DrawableBatch) roomObjectService::toRender;
         final Renderable roomLocker = (DrawableBatch) this.roomLockService::toRender;
-        final Renderable items = (DrawableBatch) itemService::toRender;
-        return List.of(tiles, enemies, roomObjects, roomLocker, items);
+        return List.of(tiles, enemies, roomObjects, roomLocker);
     }
 
     @Override

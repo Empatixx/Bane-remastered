@@ -1,7 +1,7 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.interaction.domain.InteractionZone;
+import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -12,16 +12,18 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class RecoverPotion implements ItemDrop{
+public class RecoverPotion implements ItemDrop {
     private final static float SCALE = 2.5f;
-    private final static int DIMENSION_WIDTH = (int)(16 * SCALE);
-    private final static int DIMENSION_HEIGHT = (int)(16 * SCALE);
+    private final static int DIMENSION_WIDTH = (int) (16 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (16 * SCALE);
     private final RecoverType type;
-    private final InteractionZone interactionZone;
+    private final CommonInteractable interactable;
     private final Animation animation;
+    private final Vector2f position;
     private final int amount;
     private boolean pickedUp = false;
 
@@ -31,29 +33,28 @@ public class RecoverPotion implements ItemDrop{
         this.type = type;
         this.amount = getDefaultAmount();
         this.animation = Animation.builder()
-                .setTotal(2,1)
+                .setTotal(2, 1)
                 .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .texture(AssetsService.getTexture("ingame/healing_pot.tga"))
                 .build();
         animation.setState(getAnimationState());
-        this.interactionZone = new InteractionZone(new Vector2f(), new Vector2i(DIMENSION_WIDTH, DIMENSION_HEIGHT), pressedKeys -> {
-            if(!pickedUp && !hasFull.get()){
-                add.accept(amount);
-                pickedUp = true;
-            }
-        });
-        InteractionService.getInstance().addZone(interactionZone);
+        position = new Vector2f();
+        interactable = new CommonInteractable(pressedKeys -> {
+            add.accept(amount);
+            pickedUp = true;
+        },() -> !pickedUp && !hasFull.get(), this::canRemove, position, getHeight(), getWidth());
     }
 
-    private AnimationState getAnimationState(){
-        return switch (type){
+    private AnimationState getAnimationState() {
+        return switch (type) {
             case HEALTH -> AnimationState.TYPE0;
             case ARMOR -> AnimationState.TYPE1;
         };
     }
-    private int getDefaultAmount(){
-        return switch (type){
+
+    private int getDefaultAmount() {
+        return switch (type) {
             case HEALTH -> 2;
             case ARMOR -> 1;
         };
@@ -79,7 +80,22 @@ public class RecoverPotion implements ItemDrop{
 
     @Override
     public void setPosition(float x, float y) {
-        interactionZone.position().set(x, y);
+        interactable.setPosition(x, y);
+    }
+
+    @Override
+    public void interact(final Set<Integer> keys) {
+        interactable.interact(keys);
+    }
+
+    @Override
+    public boolean canInteract() {
+        return interactable.canInteract();
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return position;
     }
 
     @Override
@@ -94,13 +110,17 @@ public class RecoverPotion implements ItemDrop{
 
     @Override
     public void destroy() {
-        InteractionService.getInstance().removeZone(interactionZone);
+    }
+
+    @Override
+    public ItemRarity getRarity() {
+        return ItemRarity.UNCOMMON;
     }
 
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(interactionZone.position()),
+                animation.getVertices(position),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

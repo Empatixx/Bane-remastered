@@ -11,11 +11,12 @@ public enum SoundEffect {
     CLICK("menuclick.ogg"),
     PICKUP("pickup.ogg"),
     PLAYER_HURT("playerhurt_1.ogg", "playerhurt_2.ogg");
+    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final List<String> paths;
     SoundEffect(final String... path) {
         this.paths = List.of(path);
     }
     public String getPath(){
-        return paths.get(ThreadLocalRandom.current().nextInt(paths.size()));
+        return paths.get(RANDOM.nextInt(paths.size()));
     }
 }
