@@ -9,4 +9,9 @@ public class DisabledCursor extends DefaultCursor {
     @Override
     public void updateMouse(float x, float y, final float dt) {
     }
+
+    @Override
+    public CursorType getType() {
+        return CursorType.DISABLED;
+    }
 }

@@ -3,7 +3,7 @@ package cz.empatix.items.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.guns.domain.GunType;
 import cz.empatix.interaction.domain.CommonInteractable;
-import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -11,7 +11,6 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
-import org.joml.Vector2i;
 
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -24,6 +23,7 @@ public class AmmoItem implements ItemDrop {
     private final static int DIMENSION_WIDTH = (int) (32 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (32 * SCALE);
     private final CommonInteractable interactable;
+    private final ItemDespawnService itemDespawnService;
     private final GunType type;
     private final Animation animation;
     private final Vector2f position;
@@ -45,6 +45,7 @@ public class AmmoItem implements ItemDrop {
             pickUp.accept(type, percentAmount);
             pickedUp = true;
         }, () -> !pickedUp && canPickUp.apply(type), this::canRemove, position, getHeight(), getWidth());
+        itemDespawnService = new ItemDespawnService();
     }
 
     @Override
@@ -54,7 +55,7 @@ public class AmmoItem implements ItemDrop {
 
     @Override
     public boolean canRemove() {
-        return pickedUp;
+        return pickedUp || itemDespawnService.canDespawn();
     }
 
     @Override
@@ -117,6 +118,9 @@ public class AmmoItem implements ItemDrop {
 
     @Override
     public boolean canRender() {
+        if(itemDespawnService.canBlink()){
+            return System.currentTimeMillis() / 100 % 2 == 0;
+        }
         return true;
     }
 }

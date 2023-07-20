@@ -2,6 +2,7 @@ package cz.empatix.cursors.domain;
 
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderScene;
+import org.joml.Vector2f;
 
 public interface Cursor extends Drawable {
     @Override
@@ -15,4 +16,5 @@ public interface Cursor extends Drawable {
     }
 
     void updateMouse(final float x, final float y, final float dt);
+    CursorType getType();
 }

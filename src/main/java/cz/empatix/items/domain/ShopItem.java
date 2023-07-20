@@ -31,7 +31,6 @@ public class ShopItem implements ItemDrop {
         this.removeCoinsConsumer = removeCoinsConsumer;
         this.drop = itemDrop;
         this.price = RANDOM.nextInt(10) + 3;
-
     }
 
     @Override

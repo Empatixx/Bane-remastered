@@ -54,6 +54,10 @@ public class AnimatedImage implements HUDElement {
         this.position.set(x, y);
     }
 
+    public Vector2f getPosition() {
+        return position;
+    }
+
     @Override
     public RenderData renderData() {
         return new RenderData(

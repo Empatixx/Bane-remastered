@@ -26,4 +26,8 @@ public class ReloadCursor implements Cursor {
         image.update(dt);
         image.setPosition(x - X_OFFSET, y - Y_OFFSET);
     }
+    @Override
+    public CursorType getType() {
+        return CursorType.RELOAD;
+    }
 }
