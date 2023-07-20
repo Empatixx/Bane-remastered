@@ -180,7 +180,10 @@ public class Player implements Drawable {
         }
         interactionEntity.setPosition(physicsBody.getPhysicsTranslation());
     }
-
+    public void addCoins(final int amount){
+        coins += amount;
+        coinText.setText(String.valueOf(coins));
+    }
     public void addHealth(final int health){
         setHealth(getHealth() + health);
     }
