@@ -7,6 +7,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -60,7 +61,8 @@ public class Text implements HUDElement {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return font.getDrawables(text, position, color, zIndex, renderScene);
+        return font.getDrawables(text, position, color, zIndex, renderScene,
+                renderScene == RenderScene.SCENE ? Camera.getProjection() : Camera.getOriginProjection());
     }
 
     @Override

@@ -19,7 +19,6 @@ public class ItemFactory {
 
     public ItemFactory(final GunService gunService,
                        final Player player) {
-        itemDropSuppliers = new EnumMap<>(ItemRarity.class);
         final List<Supplier<ItemDrop>> commonItemsSuppliers = List.of(
                 () -> new CoinItem(player::addCoins)
         );
@@ -30,6 +29,7 @@ public class ItemFactory {
         final List<Supplier<ItemDrop>> rareItemsSuppliers = List.of(
                 () -> new AmmoItem(gunService::hasNotFullAmmo, gunService::addAmmo)
         );
+        itemDropSuppliers = new EnumMap<>(ItemRarity.class);
         itemDropSuppliers.put(ItemRarity.COMMON, commonItemsSuppliers);
         itemDropSuppliers.put(ItemRarity.UNCOMMON, uncommonItemsSuppliers);
         itemDropSuppliers.put(ItemRarity.RARE, rareItemsSuppliers);

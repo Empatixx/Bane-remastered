@@ -1,8 +1,7 @@
 package cz.empatix.items.domain;
 
-import cz.empatix.interaction.domain.Interactable;
-import cz.empatix.interaction.service.InteractionService;
-import cz.empatix.items.service.ItemDespawnService;
+import cz.empatix.hud.service.Text;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
@@ -10,11 +9,11 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 public class ShopItem implements ItemDrop {
     private final static Logger LOGGER = LoggerFactory.getLogger(ShopItem.class);
@@ -23,6 +22,7 @@ public class ShopItem implements ItemDrop {
     private final Predicate<Integer> hasEnoughCoinsPredicate;
     private final Consumer<Integer> removeCoinsConsumer;
     private final int price;
+    private final Text text;
     private boolean bought = false;
 
     public ShopItem(final ItemDrop itemDrop,
@@ -32,6 +32,16 @@ public class ShopItem implements ItemDrop {
         this.removeCoinsConsumer = removeCoinsConsumer;
         this.drop = itemDrop;
         this.price = RANDOM.nextInt(10) + 3;
+
+        this.text = new Text(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, RenderScene.SCENE);
+        this.text.setColorRGB(212, 168, 8);
+        this.text.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.text.getWidth() / 2f,
+                drop.getPosition().y() + drop.getHeight() + 10);
+    }
+
+    @Override
+    public List<Renderable> getSubRenderables() {
+        return text.getSubRenderables();
     }
 
     @Override
@@ -47,6 +57,8 @@ public class ShopItem implements ItemDrop {
     @Override
     public void setPosition(float x, float y) {
         drop.setPosition(x, y);
+        this.text.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.text.getWidth() / 2f,
+                drop.getPosition().y() - drop.getHeight()/2f);
     }
 
     @Override
