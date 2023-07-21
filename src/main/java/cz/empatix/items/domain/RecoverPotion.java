@@ -114,11 +114,6 @@ public class RecoverPotion implements ItemDrop {
     }
 
     @Override
-    public ItemRarity getRarity() {
-        return ItemRarity.UNCOMMON;
-    }
-
-    @Override
     public RenderData renderData() {
         return new RenderData(
                 animation.getVertices(position),
@@ -144,4 +139,9 @@ public class RecoverPotion implements ItemDrop {
         }
         return true;
     }
+    @Override
+    public void setDespawnable(final boolean despawn) {
+        itemDespawnService.setDespawnTime(despawn ? ItemDespawnService.DEFAULT_ITEM_DESPAWN_TIME : Long.MAX_VALUE);
+    }
+
 }

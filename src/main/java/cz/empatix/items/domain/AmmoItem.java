@@ -64,6 +64,11 @@ public class AmmoItem implements ItemDrop {
     }
 
     @Override
+    public void setDespawnable(final boolean despawn) {
+        itemDespawnService.setDespawnTime(despawn ? ItemDespawnService.DEFAULT_ITEM_DESPAWN_TIME : Long.MAX_VALUE);
+    }
+
+    @Override
     public void interact(Set<Integer> keys) {
 
     }
@@ -90,11 +95,6 @@ public class AmmoItem implements ItemDrop {
 
     @Override
     public void destroy() {
-    }
-
-    @Override
-    public ItemRarity getRarity() {
-        return ItemRarity.COMMON;
     }
 
     @Override

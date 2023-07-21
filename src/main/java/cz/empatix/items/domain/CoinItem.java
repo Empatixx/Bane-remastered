@@ -85,11 +85,6 @@ public class CoinItem implements ItemDrop {
     }
 
     @Override
-    public ItemRarity getRarity() {
-        return ItemRarity.COMMON;
-    }
-
-    @Override
     public RenderData renderData() {
         return new RenderData(
                 animation.getVertices(position),
@@ -114,5 +109,9 @@ public class CoinItem implements ItemDrop {
             return System.currentTimeMillis() / 100 % 2 == 0;
         }
         return true;
+    }
+    @Override
+    public void setDespawnable(final boolean despawn) {
+        itemDespawnService.setDespawnTime(despawn ? ItemDespawnService.DEFAULT_ITEM_DESPAWN_TIME : Long.MAX_VALUE);
     }
 }

@@ -58,6 +58,9 @@ public class GunService {
     public void update(final double dt) {
         guns.forEach(gun -> gun.update(dt));
         try{
+            if(CursorService.getType() == CursorType.DEFAULT){
+                return;
+            }
             if (slots.getCurrentGun().isReloading()) {
                 CursorService.setCursor(CursorType.RELOAD);
             } else {

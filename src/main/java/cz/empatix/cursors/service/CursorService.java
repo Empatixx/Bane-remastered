@@ -33,7 +33,9 @@ public class CursorService {
         currentCursor = cursors.get(cursorType);
         currentCursor.updateMouse(lastMousePosition.x(), lastMousePosition.y(), 0);
     }
-
+    public static CursorType getType(){
+        return currentCursor.getType();
+    }
     public static Renderable getCursor() {
         return currentCursor;
     }

@@ -2,6 +2,7 @@ package cz.empatix.items.domain;
 
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
@@ -50,11 +51,11 @@ public class ShopItem implements ItemDrop {
 
     @Override
     public void interact(final Set<Integer> keys) {
-        if (!bought && keys.contains(GLFW.GLFW_KEY_E)) {
+        if (!bought && !keys.contains(GLFW.GLFW_KEY_E)) {
             return;
         }
         if (!hasEnoughCoinsPredicate.test(price)) {
-            LOGGER.info("Unsuccessfully bought {} , do no have {} coins", drop, price);
+            LOGGER.info("Unsuccessfully bought {}, do no have {} coins", drop, price);
             return;
         }
         LOGGER.info("Successfully bought {} for {}", drop, price);
@@ -92,11 +93,6 @@ public class ShopItem implements ItemDrop {
     }
 
     @Override
-    public ItemRarity getRarity() {
-        return ItemRarity.UNDEFINED;
-    }
-
-    @Override
     public RenderData renderData() {
         return drop.renderData();
     }
@@ -113,6 +109,11 @@ public class ShopItem implements ItemDrop {
 
     @Override
     public boolean canRender() {
-        return drop.canRender();
+        return true;
+    }
+
+    @Override
+    public void setDespawnable(final boolean despawn) {
+        drop.setDespawnable(despawn);
     }
 }

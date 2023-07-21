@@ -25,6 +25,7 @@ public class InteractionService {
             for (final Interactable interactable : interactables) {
                 if (interactable.intersects(entity) && interactable.canInteract()) {
                     interactable.interact(entity.getInteractKeys());
+                    entity.getInteractKeys().clear();
                     break A;
                 }
             }

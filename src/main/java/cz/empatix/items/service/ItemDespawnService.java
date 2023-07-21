@@ -1,15 +1,20 @@
 package cz.empatix.items.service;
 
 public class ItemDespawnService {
-    private final static long ITEM_DESPAWN_TIME = 10000L;
+    public final static long DEFAULT_ITEM_DESPAWN_TIME = 10000L;
+    private long despawnTime;
     private final long spawnTime;
     public ItemDespawnService(){
         spawnTime = System.currentTimeMillis();
+        despawnTime = DEFAULT_ITEM_DESPAWN_TIME;
     }
     public boolean canDespawn(){
-        return System.currentTimeMillis() - spawnTime > ITEM_DESPAWN_TIME;
+        return System.currentTimeMillis() - spawnTime > despawnTime;
     }
     public boolean canBlink(){
-        return System.currentTimeMillis() - spawnTime > ITEM_DESPAWN_TIME - 2000L;
+        return System.currentTimeMillis() - spawnTime > despawnTime - 2000L;
+    }
+    public void setDespawnTime(final long despawnTime){
+        this.despawnTime = despawnTime;
     }
 }
