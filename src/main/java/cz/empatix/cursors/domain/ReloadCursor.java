@@ -1,6 +1,6 @@
 package cz.empatix.cursors.domain;
 
-import cz.empatix.hud.service.AnimatedImage;
+import cz.empatix.hud.service.image.AnimatedImage;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;

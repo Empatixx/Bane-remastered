@@ -4,8 +4,8 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.guns.service.GunService;
-import cz.empatix.hud.service.Image;
-import cz.empatix.hud.service.Text;
+import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -19,8 +19,8 @@ import java.util.stream.Stream;
 
 public class Luger extends AbstractGun implements Gun{
     private final static Logger LOGGER = LoggerFactory.getLogger(Luger.class);
-    private final Image gunHud;
-    private final Text ammoHud;
+    private final CommonImage gunHud;
+    private final CommonText ammoHud;
     private final List<Bullet> bullets;
     private int bulletsToShoot;
 
@@ -42,8 +42,8 @@ public class Luger extends AbstractGun implements Gun{
 
         this.bullets = new ArrayList<>(clipSize);
         final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/guns/luger.tga");
-        this.gunHud = new Image(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
-        this.ammoHud = new Text("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
+        this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
+        this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
     }
 

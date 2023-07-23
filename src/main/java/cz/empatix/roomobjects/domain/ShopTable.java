@@ -74,4 +74,10 @@ public class ShopTable implements RoomObject {
     public int getHeight(){
         return (int)(TABLE_HEIGHT * SCALE);
     }
+    public float getX(){
+        return position.x();
+    }
+    public float getY(){
+        return position.y();
+    }
 }

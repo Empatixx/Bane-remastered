@@ -9,7 +9,7 @@ import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
-import cz.empatix.hud.service.Image;
+import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.ui.CommonButton;
@@ -46,7 +46,7 @@ public class MenuState extends GameState {
         playButton.onClick(() -> setCurrentState(GameStateType.LOBBY));
         exitButton.onClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
 
-        final Image title = new Image("menu/logo.tga", Camera.centerX().add(-114, 50), 3f);
+        final CommonImage title = new CommonImage("menu/logo.tga", Camera.centerX().add(-114, 50), 3f);
 
         uiElements = List.of(playButton, settingsButton, exitButton);
         hudElements = List.of(title);

@@ -4,7 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
-import cz.empatix.hud.service.AnimatedImage;
+import cz.empatix.hud.service.image.AnimatedImage;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.attributes.Renderable;

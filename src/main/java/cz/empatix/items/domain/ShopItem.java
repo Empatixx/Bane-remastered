@@ -1,9 +1,12 @@
 package cz.empatix.items.domain;
 
-import cz.empatix.hud.service.Text;
+import cz.empatix.assets.domain.font.FontSize;
+import cz.empatix.hud.service.image.AlternativeViewImage;
+import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -16,13 +19,15 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ShopItem implements ItemDrop {
+    private final static int ITEM_OFFSET = 15;
     private final static Logger LOGGER = LoggerFactory.getLogger(ShopItem.class);
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final ItemDrop drop;
     private final Predicate<Integer> hasEnoughCoinsPredicate;
     private final Consumer<Integer> removeCoinsConsumer;
+    private final AlternativeViewText text;
+    private final AlternativeViewImage image;
     private final int price;
-    private final Text text;
     private boolean bought = false;
 
     public ShopItem(final ItemDrop itemDrop,
@@ -31,17 +36,24 @@ public class ShopItem implements ItemDrop {
         this.hasEnoughCoinsPredicate = hasEnoughCoinsPredicate;
         this.removeCoinsConsumer = removeCoinsConsumer;
         this.drop = itemDrop;
-        this.price = RANDOM.nextInt(10) + 3;
-
-        this.text = new Text(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, RenderScene.SCENE);
+        this.price = 1;
+        this.text = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_16, Camera.getProjection());
         this.text.setColorRGB(212, 168, 8);
         this.text.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.text.getWidth() / 2f,
+                drop.getPosition().y() + drop.getHeight() + 10);
+        this.image = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1,2, RenderScene.HUD, Camera.getProjection());
+        this.image.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.image.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
     }
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return text.getSubRenderables();
+        if(bought){
+           return List.of();
+        }
+        final List<Renderable> textRenderables = text.getSubRenderables();
+        textRenderables.add(image);
+        return textRenderables;
     }
 
     @Override
@@ -56,9 +68,13 @@ public class ShopItem implements ItemDrop {
 
     @Override
     public void setPosition(float x, float y) {
-        drop.setPosition(x, y);
-        this.text.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.text.getWidth() / 2f,
-                drop.getPosition().y() - drop.getHeight()/2f);
+        drop.setPosition(x, y - ITEM_OFFSET);
+    }
+    public void setHudPosition(final float x, final float y) {
+        //this.text.setPosition(x, y - image.getHeight()/2f + text.getHeight()/2f - ITEM_OFFSET);
+        this.text.setCenterX(x - image.getWidth()/2f, x + image.getWidth()/2f);
+        this.text.setCenterY(y - image.getHeight() - ITEM_OFFSET, y - ITEM_OFFSET);
+        this.image.setPosition(x - image.getWidth()/2f, y - image.getHeight() - ITEM_OFFSET);
     }
 
     @Override
@@ -66,7 +82,7 @@ public class ShopItem implements ItemDrop {
         if (!bought && !keys.contains(GLFW.GLFW_KEY_E)) {
             return;
         }
-        if (!hasEnoughCoinsPredicate.test(price)) {
+        if (!bought && !hasEnoughCoinsPredicate.test(price)) {
             LOGGER.info("Unsuccessfully bought {}, do no have {} coins", drop, price);
             return;
         }

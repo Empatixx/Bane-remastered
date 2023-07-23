@@ -1,6 +1,6 @@
 package cz.empatix.ui;
 
-import cz.empatix.hud.service.Text;
+import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -17,7 +17,7 @@ public class TransparentButton implements UIElement{
     private final static Vector3i DEFAULT_HOVER_COLOR = new Vector3i(255, 255, 0);
     private final Vector2f position;
     private final Vector2i dimensions;
-    private final Text text;
+    private final CommonText text;
     private boolean hover;
     private final int zDepth;
     private Runnable onClick;
@@ -26,7 +26,7 @@ public class TransparentButton implements UIElement{
                              final Vector2f position,
                              final int zDepth) {
         this.zDepth = zDepth;
-        this.text = new Text(text, "PixelFJVerdana12pt.ttf", new Vector2f(), zDepth, RenderScene.OVERLAYS);
+        this.text = new CommonText(text, "PixelFJVerdana12pt.ttf", new Vector2f(), zDepth, RenderScene.OVERLAYS);
         this.text.setColorRGB(DEFAULT_COLOR);
         this.dimensions = new Vector2i((int)this.text.getWidth(), (int)this.text.getHeight());
         this.position = position;

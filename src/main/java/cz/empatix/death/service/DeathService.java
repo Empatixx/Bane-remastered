@@ -6,8 +6,8 @@ import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.gamestate.service.GameStateController;
-import cz.empatix.hud.service.Image;
-import cz.empatix.hud.service.Text;
+import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.postprocessing.domain.Fade;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
@@ -31,40 +31,40 @@ public class DeathService {
     private static final int LABEL_TEXT_END_POSITION_Y = 225;
     private static final int LABEL_TEXT_START_POSITION_Y = LABEL_TEXT_END_POSITION_Y + LABEL_DIFFERENCE_Y;
     private final static float REWARD_TRANSITION_TIME = 0.5f;
-    private final List<Image> icons;
-    private final List<Text> texts;
-    private final List<Text> rewardTexts;
-    private final Text continueText;
-    private final Text gameOverText;
+    private final List<CommonImage> icons;
+    private final List<CommonText> texts;
+    private final List<CommonText> rewardTexts;
+    private final CommonText continueText;
+    private final CommonText gameOverText;
     private boolean active = false;
     private boolean continuePressed = false;
     private float accumulator = 0f;
 
     public DeathService() {
 
-        final Image accuracyIcon = new Image("ingame/accuracy_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y), 1f, 2, RenderScene.OVERLAYS);
-        final Image killsIcon = new Image("ingame/kills_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
-        final Image lootIcon = new Image("ingame/loot_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + 2 * LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
-        final Image floorIcon = new Image("ingame/floor_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + 3 * LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
+        final CommonImage accuracyIcon = new CommonImage("ingame/accuracy_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y), 1f, 2, RenderScene.OVERLAYS);
+        final CommonImage killsIcon = new CommonImage("ingame/kills_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
+        final CommonImage lootIcon = new CommonImage("ingame/loot_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + 2 * LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
+        final CommonImage floorIcon = new CommonImage("ingame/floor_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + 3 * LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
 
-        final Image skullImage = new Image("ingame/skull.tga", new Vector2f(429, SKULL_START_POSITION_Y), 6f, 2, RenderScene.OVERLAYS);
+        final CommonImage skullImage = new CommonImage("ingame/skull.tga", new Vector2f(429, SKULL_START_POSITION_Y), 6f, 2, RenderScene.OVERLAYS);
 
         icons = List.of(accuracyIcon, killsIcon, lootIcon, floorIcon, skullImage);
 
-        final Text accuracyText = new Text("Accuracy: 100%", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y), 2, RenderScene.OVERLAYS);
-        final Text killsText = new Text("Kills: 0", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
-        final Text lootText = new Text("Loot: 0", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + 2 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
-        final Text floorText = new Text("Floor: 1", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final CommonText accuracyText = new CommonText("Accuracy: 100%", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y), 2, RenderScene.OVERLAYS);
+        final CommonText killsText = new CommonText("Kills: 0", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final CommonText lootText = new CommonText("Loot: 0", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + 2 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final CommonText floorText = new CommonText("Floor: 1", "PixelFJVerdana12pt.ttf", new Vector2f(300, LABEL_TEXT_START_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
 
-        final Text accuracyCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y), 2, RenderScene.OVERLAYS);
-        final Text killsCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
-        final Text lootCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 2 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
-        final Text floorCoins = new Text("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final CommonText accuracyCoins = new CommonText("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y), 2, RenderScene.OVERLAYS);
+        final CommonText killsCoins = new CommonText("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final CommonText lootCoins = new CommonText("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 2 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
+        final CommonText floorCoins = new CommonText("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
 
-        gameOverText = new Text("Game Over", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONTSIZE_24);
+        gameOverText = new CommonText("Game Over", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONTSIZE_24);
         gameOverText.setCenterX(0, WindowHandler.TARGET_WIDTH);
 
-        continueText = new Text("Press any key to continue...", "PixelFJVerdana12pt.ttf", new Vector2f(700, 500), 2, RenderScene.OVERLAYS);
+        continueText = new CommonText("Press any key to continue...", "PixelFJVerdana12pt.ttf", new Vector2f(700, 500), 2, RenderScene.OVERLAYS);
 
         accuracyCoins.setColorRGB(212, 168, 8);
         killsCoins.setColorRGB(212, 168, 8);
@@ -87,13 +87,13 @@ public class DeathService {
         }
         accumulator += dt;
         if (accumulator > 0f) {
-            final Image skullImage = icons.get(SKULL_INDEX);
+            final CommonImage skullImage = icons.get(SKULL_INDEX);
             skullImage.setPosition(skullImage.getX(), SKULL_START_POSITION_Y - SKULL_DIFFERENCE_Y * Math.min(SKULL_TRANSITION_TIME, accumulator) / SKULL_TRANSITION_TIME);
         }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
-                final Text text = texts.get(i);
-                final Image icon = icons.get(i);
+                final CommonText text = texts.get(i);
+                final CommonImage icon = icons.get(i);
 
                 final float offsetAccumulator = accumulator - i * LABEL_TRANSITION_TIME - SKULL_TRANSITION_TIME;
                 text.setPosition(text.getX(), LABEL_TEXT_START_POSITION_Y + i * LABEL_POS_OFFSET - LABEL_DIFFERENCE_Y * Math.min(LABEL_TRANSITION_TIME, offsetAccumulator) / LABEL_TRANSITION_TIME);
@@ -104,7 +104,7 @@ public class DeathService {
         }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * REWARD_TRANSITION_TIME + TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
-                final Text text = rewardTexts.get(i);
+                final CommonText text = rewardTexts.get(i);
                 final float offsetAccumulator = accumulator - i * REWARD_TRANSITION_TIME - TOTAL_LABELS * LABEL_TRANSITION_TIME - SKULL_TRANSITION_TIME;
                 final float delta = Math.min(REWARD_TRANSITION_TIME, offsetAccumulator) / REWARD_TRANSITION_TIME;
                 text.setText("+" + (int) ((i * 100) * delta));

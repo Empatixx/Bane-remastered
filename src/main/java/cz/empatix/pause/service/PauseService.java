@@ -6,7 +6,7 @@ import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.gamestate.service.GameStateController;
-import cz.empatix.hud.service.Image;
+import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
@@ -21,13 +21,13 @@ import java.util.stream.Stream;
 
 public class PauseService {
     private final static int BACKGROUND_SCALE = 3;
-    private final Image background;
+    private final CommonImage background;
     private final List<TransparentButton> buttons;
     private boolean pause;
 
     public PauseService() {
         final TextureAtlas.Entry pauseBgTxt = AssetsService.getTexture("ingame/pausebg.tga");
-        background = new Image(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2, RenderScene.OVERLAYS);
+        background = new CommonImage(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2, RenderScene.OVERLAYS);
 
         final TransparentButton resumeButton = new TransparentButton("Resume", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 225), 3);
         final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 275), 3); //todo;

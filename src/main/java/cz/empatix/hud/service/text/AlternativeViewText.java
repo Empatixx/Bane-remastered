@@ -1,42 +1,34 @@
-package cz.empatix.hud.service;
+package cz.empatix.hud.service.text;
 
 
 import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.service.Camera;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 
 import java.util.List;
 
-public class Text implements HUDElement {
-    private final static FontSize DEFAULT_FONT_SIZE = FontSize.FONTSIZE_20;
-    private final static RenderScene DEFAULT_SCENE = RenderScene.HUD;
+public class AlternativeViewText implements HUDElement {
     private String text;
     private final Font font;
     private final Vector2f position;
     private final Vector3f color;
     private final int zIndex;
-    private final RenderScene renderScene;
-    public Text(final String text, final String font, final Vector2f position, final int prevZIndex, final RenderScene renderScene) {
-        this(text, font, position, prevZIndex, renderScene, DEFAULT_FONT_SIZE);
-    }
-    public Text(final String text, final String font, final Vector2f position, final int prevZIndex) {
-        this(text, font, position, prevZIndex, DEFAULT_SCENE, DEFAULT_FONT_SIZE);
-    }
-    public Text(final String text, final String font, final Vector2f position, final int prevZIndex,
-                final RenderScene renderScene, final FontSize fontSize) {
+    private final Matrix4f cameraProjection;
+    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize, final Matrix4f cameraProjection) {
         this.text = text;
         this.font = AssetsService.getFont(font, fontSize);
         this.position = position;
-        this.renderScene = renderScene;
         zIndex = prevZIndex + 1;
         color = new Vector3f(1f, 1f, 1f);
+        this.cameraProjection = cameraProjection;
     }
 
     public void setCenterX(final float xMin, final float xMax) {
@@ -61,8 +53,7 @@ public class Text implements HUDElement {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return font.getDrawables(text, position, color, zIndex, renderScene,
-                renderScene == RenderScene.SCENE ? Camera.getProjection() : Camera.getOriginProjection());
+        return font.getDrawables(text, position, color, zIndex, RenderScene.HUD, cameraProjection);
     }
 
     @Override
@@ -73,10 +64,6 @@ public class Text implements HUDElement {
     @Override
     public void update(double dt) {
 
-    }
-
-    public String getText() {
-        return text;
     }
 
     @Override

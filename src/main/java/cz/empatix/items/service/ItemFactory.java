@@ -10,12 +10,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class ItemFactory {
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final Map<ItemRarity, List<Supplier<ItemDrop>>> itemDropSuppliers;
-    private final Supplier<ItemDrop> shopDropSupplier;
+    private final Supplier<ShopItem> shopDropSupplier;
 
     public ItemFactory(final GunService gunService,
                        final Player player) {
@@ -41,8 +40,8 @@ public class ItemFactory {
         };
     }
 
-    public ItemDrop createShopDrop() {
-        final ItemDrop drop = shopDropSupplier.get();
+    public ShopItem createShopDrop() {
+        final ShopItem drop = shopDropSupplier.get();
         drop.setDespawnable(false);
         InteractionService.getInstance().addInteractable(drop);
         return drop;

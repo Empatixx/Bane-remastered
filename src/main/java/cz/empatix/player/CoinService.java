@@ -1,12 +1,10 @@
 package cz.empatix.player;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.hud.service.Image;
-import cz.empatix.hud.service.Text;
-import cz.empatix.render.attributes.Drawable;
+import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -20,14 +18,14 @@ import java.util.stream.Stream;
 public class CoinService {
     private final static int COIN_HUD_OFFSET = 25;
     private final static Logger LOGGER = LoggerFactory.getLogger(CoinService.class);
-    private final Image coinHud;
-    private final Text coinText;
+    private final CommonImage coinHud;
+    private final CommonText coinText;
     private int coins = 0;
 
     public CoinService(){
         final TextureAtlas.Entry coinTxt = AssetsService.getTexture("ingame/banecoin.tga");
-        coinHud = new Image(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height()), 1f);
-        coinText = new Text(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET + coinTxt.width() + 15, 0f), coinHud.getZIndex());
+        coinHud = new CommonImage(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height()), 1f);
+        coinText = new CommonText(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET + coinTxt.width() + 15, 0f), coinHud.getZIndex());
 
         coinText.setCenterY(WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height());
         coinText.setColorRGB(255, 216, 0);

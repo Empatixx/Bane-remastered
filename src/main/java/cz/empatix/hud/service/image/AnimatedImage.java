@@ -1,6 +1,7 @@
-package cz.empatix.hud.service;
+package cz.empatix.hud.service.image;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.domain.Animation;

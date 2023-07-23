@@ -1,6 +1,7 @@
-package cz.empatix.hud.service;
+package cz.empatix.hud.service.image;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Vertex;
@@ -10,7 +11,7 @@ import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
-public class Image implements HUDElement {
+public class CommonImage implements HUDElement {
     private final static RenderScene DEFAULT_SCENE = RenderScene.HUD;
     private final static int DEFAULT_Z_DEPTH = 1;
     private final TextureAtlas.Entry texture;
@@ -19,7 +20,7 @@ public class Image implements HUDElement {
     private final RenderScene scene;
     private final int zDepth;
 
-    public Image(final String textureName, final Vector2f position, final int width, final int height) {
+    public CommonImage(final String textureName, final Vector2f position, final int width, final int height) {
         this.dimensions = new Vector2i(width, height);
         this.texture = AssetsService.getTexture(textureName);
         this.position = new Vector2f(position);
@@ -27,27 +28,27 @@ public class Image implements HUDElement {
         this.scene = DEFAULT_SCENE;
     }
 
-    public Image(final String textureName, final Vector2f position, final float scale) {
+    public CommonImage(final String textureName, final Vector2f position, final float scale) {
         this(AssetsService.getTexture(textureName), position, scale, DEFAULT_Z_DEPTH);
     }
 
-    public Image(final String textureName, final Vector2f position, final float scale, final int zDepth) {
+    public CommonImage(final String textureName, final Vector2f position, final float scale, final int zDepth) {
         this(AssetsService.getTexture(textureName), position, scale, zDepth);
     }
 
-    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale) {
+    public CommonImage(final TextureAtlas.Entry texture, final Vector2f position, final float scale) {
         this(texture, position, scale, DEFAULT_Z_DEPTH);
     }
 
-    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth) {
+    public CommonImage(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth) {
         this(texture, position, scale, zDepth, DEFAULT_SCENE);
     }
 
-    public Image(final String texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene) {
+    public CommonImage(final String texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene) {
         this(AssetsService.getTexture(texture), position, scale, zDepth, scene);
     }
 
-    public Image(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene) {
+    public CommonImage(final TextureAtlas.Entry texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene) {
         this.dimensions = new Vector2i(texture.width(), texture.height());
         this.dimensions.x *= scale;
         this.dimensions.y *= scale;

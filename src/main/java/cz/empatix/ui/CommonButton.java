@@ -1,7 +1,7 @@
 package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.hud.service.Text;
+import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
@@ -24,7 +24,7 @@ public class CommonButton implements UIElement {
     private final static int DEFAULT_HEIGHT = 50;
     private final Vector2f position;
     private final Vector2i dimensions;
-    private final Text text;
+    private final CommonText text;
     private final Animation animation;
     private boolean hover;
     private final int zDepth;
@@ -65,7 +65,7 @@ public class CommonButton implements UIElement {
         this.position = position.sub(new Vector2f(dimensions).div(2f));
         final Vector2f textPosition = new Vector2f(position)
                 .add(0, dimensions.y() / 2f);
-        this.text = new Text(text, "PixelFJVerdana12pt.ttf", textPosition, zDepth);
+        this.text = new CommonText(text, "PixelFJVerdana12pt.ttf", textPosition, zDepth);
         this.text.setCenterX(position.x, position.x + dimensions.x());
         this.text.setColorRGB(rgb);
     }

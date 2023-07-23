@@ -1,6 +1,6 @@
 package cz.empatix.rooms.service;
 
-import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.domain.ShopItem;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -13,29 +13,25 @@ import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ShopRoom implements Room {
-    private final static int ITEM_TABLE_OFFSET = 15 ;
     private final static int TOTAL_TABLES = 3;
     private final Map<RoomDirection, Room> neighbors;
+    private final ItemService itemService;
     private final RoomObjectService roomObjectService;
     private final TileMap tileMap;
 
     public ShopRoom(final ItemService itemService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
                     final Set<RoomDirection> neighbors) {
+        this.itemService = itemService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
-
-        final ItemFactory itemFactory = itemService.getItemFactory();
-        for (int i = 0; i < TOTAL_TABLES; i++){
-            final ItemDrop shopItem = itemFactory.createShopDrop();
-            shopItem.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopItem.getWidth()/2f,
-                    getMinY()+ tileMap.getHeight() / 2f - shopItem.getHeight() / 2f - ITEM_TABLE_OFFSET);
-            itemService.add(shopItem);
-        }
     }
 
     @Override
@@ -53,10 +49,19 @@ public class ShopRoom implements Room {
         final Shopkeeper shopkeeper = new Shopkeeper();
         shopkeeper.setPosition(getMinX() + tileMap.getWidth()/2f - shopkeeper.getWidth() / 2f, getMinY() + tileMap.getHeight() / 4f - shopkeeper.getHeight() / 2f);
         roomObjectService.add(shopkeeper);
+
+        final ItemFactory itemFactory = itemService.getItemFactory();
         for (int i = 0; i < TOTAL_TABLES; i++) {
-            final ShopTable shopTable = new ShopTable();
-            shopTable.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopTable.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopTable.getHeight() / 2f);
-            roomObjectService.add(shopTable);
+            {
+                final ShopTable shopTable = new ShopTable();
+                shopTable.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopTable.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopTable.getHeight() / 2f);
+                roomObjectService.add(shopTable);
+
+                final ShopItem shopItem = itemFactory.createShopDrop();
+                shopItem.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopItem.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopItem.getHeight() / 2f);
+                shopItem.setHudPosition(shopTable.getX() + shopTable.getWidth()/2f, shopTable.getY());
+                itemService.add(shopItem);
+            }
         }
 
     }
