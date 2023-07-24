@@ -21,14 +21,15 @@ public class CollisionConsumer implements EventConsumer {
         final Vector2f normal = collisionEvent.normal();
         final float depth = collisionEvent.depth();
 
-        final Vector2f translateA = new Vector2f(normal).mul(depth / 2);
-        final Vector2f translateB = new Vector2f(normal).mul(depth / 2);
+        final Vector2f translate = !bodyA.isImmovable() && !bodyB.isImmovable() ?
+                new Vector2f(normal).mul(depth / 2f) :
+                new Vector2f(normal).mul(depth);
 
-        if (!bodyA.isImmmovable()) {
-            bodyA.translate(translateA);
+        if (!bodyA.isImmovable()) {
+            bodyA.translate(translate);
         }
-        if (!bodyB.isImmmovable()) {
-            bodyB.translate(translateB);
+        if (!bodyB.isImmovable()) {
+            bodyB.translate(translate);
         }
 
         final Vector2f relativeVelocity = bodyB.getVelocity().sub(bodyA.getVelocity(), new Vector2f());

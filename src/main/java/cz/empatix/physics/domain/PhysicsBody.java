@@ -8,7 +8,6 @@ import cz.empatix.physics.events.consumers.EventConsumer;
 import cz.empatix.physics.events.consumers.FallbackConsumer;
 import cz.empatix.physics.events.domain.Event;
 import cz.empatix.physics.events.domain.EventType;
-import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.events.suppliers.EventSupplier;
 import org.joml.Vector2f;
 
@@ -27,21 +26,21 @@ public class PhysicsBody {
     private final int mass;
     private final float inversedMass;
     private boolean remove;
-    private final boolean immmovable;
+    private final boolean immovable;
     private final Map<EventType, EventConsumer> eventConsumers;
     private final Map<EventType, EventSupplier> eventSuppliers;
 
     public PhysicsBody(final Geometry geometry,
                        final Transform transform,
-                       final boolean immmovable) {
+                       final boolean immovable) {
         this.geometry = geometry;
         this.transform = transform;
         velocity = new Vector2f();
         force = new Vector2f();
         linearDamping = 0.9f;
         restitution = 0f;
-        this.immmovable = immmovable;
-        if (this.immmovable) {
+        this.immovable = immovable;
+        if (this.immovable) {
             inversedMass = 0;
             mass = Integer.MAX_VALUE;
         } else {
@@ -83,8 +82,8 @@ public class PhysicsBody {
         );
     }
 
-    public boolean isImmmovable() {
-        return immmovable;
+    public boolean isImmovable() {
+        return immovable;
     }
 
     public static PhysicsBody createStatic(final Geometry geometry) {

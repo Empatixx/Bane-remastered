@@ -84,9 +84,15 @@ public class CollisionSupplier{
 
             if (overlapX < overlapY) {
                 float sign = (positionA.x < positionB.x) ? 1.0f : -1.0f;
+                if (!a.isImmovable() && b.isImmovable()) {
+                    sign = -sign;
+                }
                 return new CollisionEvent(a, b, new Vector2f(sign, 0.0f), overlapX);
             } else {
                 float sign = (positionA.y < positionB.y) ? 1.0f : -1.0f;
+                if (!a.isImmovable() && b.isImmovable()) {
+                    sign = -sign;
+                }
                 return new CollisionEvent(a, b, new Vector2f(0.0f, sign), overlapY);
             }
         }

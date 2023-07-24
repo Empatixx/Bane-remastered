@@ -58,7 +58,8 @@ public class PhysicsService {
             for (int j = i + 1; j < physicsBodies.size(); j++) {
                 final PhysicsBody bodyB = physicsBodies.get(j);
 
-                if (bodyA.isImmmovable() && bodyB.isImmmovable()) {
+
+                if (bodyA.isImmovable() && bodyB.isImmovable()) {
                     continue;
                 }
                 final CollisionEvent event = collisionSupplier.supply(bodyA, bodyB);
@@ -70,7 +71,7 @@ public class PhysicsService {
                 bodyA.consumeEvents(List.of(event));
                 bodyB.consumeEvents(List.of(event));
 
-                bodyA.consumeEvents(bodyB.produceEvents(bodyA, bodyB));
+                bodyA.consumeEvents(bodyB.produceEvents(bodyB, bodyA));
                 bodyB.consumeEvents(bodyA.produceEvents(bodyA, bodyB));
             }
         }
