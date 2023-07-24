@@ -1,11 +1,14 @@
 package cz.empatix.roomobjects.domain;
 
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.gamestate.service.GameStateController;
-import cz.empatix.interaction.domain.CommonInteractable;
+import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.interaction.service.InteractionTracker;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -13,11 +16,11 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
-import org.joml.Vector2i;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 
 public class Portal implements RoomObject, Interactable {
@@ -27,7 +30,10 @@ public class Portal implements RoomObject, Interactable {
     private final static int DIMENSION_HEIGHT = 90;
     private final Animation animation;
     private final Vector2f position;
+    private final InteractionTracker interactionTracker = new InteractionTracker();
+    private final AlternativeViewText alternativeViewText;
     public Portal(final Vector2f position) {
+        this.position = position;
         animation = Animation.builder()
                 .setTotal(1, 8)
                 .addState(AnimationState.IDLE, 0, 8, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
@@ -35,8 +41,18 @@ public class Portal implements RoomObject, Interactable {
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        this.position = position;
         InteractionService.getInstance().addInteractable(this);
+        alternativeViewText = new AlternativeViewText("Press E to enter the portal", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE),1,FontSize.FONTSIZE_20,Camera.getProjection());
+        alternativeViewText.setCenterX(position.x(),position.x() + DIMENSION_WIDTH*SCALE);
+        alternativeViewText.setColorRGB(222, 112, 38);
+    }
+
+    @Override
+    public List<Renderable> getSubRenderables() {
+        if(!interactionTracker.isInteracting()){
+            return List.of();
+        }
+        return alternativeViewText.getSubRenderables();
     }
 
     @Override
@@ -75,6 +91,7 @@ public class Portal implements RoomObject, Interactable {
 
     @Override
     public void interact(final Set<Integer> keys) {
+        interactionTracker.interaction();
         if(keys.contains(GLFW.GLFW_KEY_E)){
             GameStateController.getInstance().setCurrentState(GameStateType.INGAME);
         }

@@ -3,6 +3,7 @@ package cz.empatix.items.domain;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
+import cz.empatix.interaction.service.InteractionTracker;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -20,6 +21,7 @@ import java.util.function.Predicate;
 
 public class ShopItem implements ItemDrop {
     private final static int ITEM_OFFSET = 15;
+    private static final int INTERACTION_TEXT_OFFSET = 20;
     private final static Logger LOGGER = LoggerFactory.getLogger(ShopItem.class);
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final ItemDrop drop;
@@ -27,6 +29,8 @@ public class ShopItem implements ItemDrop {
     private final Consumer<Integer> removeCoinsConsumer;
     private final AlternativeViewText text;
     private final AlternativeViewImage image;
+    private final InteractionTracker interactionTracker = new InteractionTracker();
+    private final AlternativeViewText interactionText;
     private final int price;
     private boolean bought = false;
 
@@ -44,6 +48,8 @@ public class ShopItem implements ItemDrop {
         this.image = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1,2, RenderScene.HUD, Camera.getProjection());
         this.image.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.image.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
+        this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_20, Camera.getProjection());
+        this.interactionText.setColorRGB(222, 112, 38);
     }
 
     @Override
@@ -53,6 +59,9 @@ public class ShopItem implements ItemDrop {
         }
         final List<Renderable> textRenderables = text.getSubRenderables();
         textRenderables.add(image);
+        if (interactionTracker.isInteracting()) {
+            textRenderables.addAll(interactionText.getSubRenderables());
+        }
         return textRenderables;
     }
 
@@ -71,14 +80,17 @@ public class ShopItem implements ItemDrop {
         drop.setPosition(x, y - ITEM_OFFSET);
     }
     public void setHudPosition(final float x, final float y) {
-        //this.text.setPosition(x, y - image.getHeight()/2f + text.getHeight()/2f - ITEM_OFFSET);
         this.text.setCenterX(x - image.getWidth()/2f, x + image.getWidth()/2f);
         this.text.setCenterY(y - image.getHeight() - ITEM_OFFSET, y - ITEM_OFFSET);
         this.image.setPosition(x - image.getWidth()/2f, y - image.getHeight() - ITEM_OFFSET);
+
+        this.interactionText.setCenterY(y - ITEM_OFFSET, y - ITEM_OFFSET);
+        this.interactionText.setCenterX(x,x);
     }
 
     @Override
     public void interact(final Set<Integer> keys) {
+        interactionTracker.interaction();
         if (!bought && !keys.contains(GLFW.GLFW_KEY_E)) {
             return;
         }
@@ -143,5 +155,10 @@ public class ShopItem implements ItemDrop {
     @Override
     public void setDespawnable(final boolean despawn) {
         drop.setDespawnable(despawn);
+    }
+
+    public void setInteractionText(final float xMin, final float xMax, final float y) {
+        this.interactionText.setCenterX(xMin, xMax);
+        this.interactionText.setPosition(interactionText.getX(), y + INTERACTION_TEXT_OFFSET);
     }
 }

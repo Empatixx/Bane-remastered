@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 
 public class RecoverPotion implements ItemDrop {
     private final static float SCALE = 2.5f;
-    private final static int DIMENSION_WIDTH = (int) (16 * SCALE);
+    private final static int DIMENSION_WIDTH = (int) (15 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (16 * SCALE);
     private final RecoverType type;
     private final CommonInteractable interactable;

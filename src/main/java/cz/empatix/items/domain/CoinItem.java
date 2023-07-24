@@ -56,7 +56,7 @@ public class CoinItem implements ItemDrop {
     }
 
     @Override
-    public void interact(Set<Integer> keys) {
+    public void interact(final Set<Integer> keys) {
         interactable.interact(keys);
     }
 

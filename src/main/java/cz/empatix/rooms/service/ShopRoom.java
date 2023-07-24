@@ -60,6 +60,7 @@ public class ShopRoom implements Room {
                 final ShopItem shopItem = itemFactory.createShopDrop();
                 shopItem.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopItem.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopItem.getHeight() / 2f);
                 shopItem.setHudPosition(shopTable.getX() + shopTable.getWidth()/2f, shopTable.getY());
+                shopItem.setInteractionText(shopTable.getX(), shopTable.getX() + shopTable.getWidth(), shopTable.getY() + shopTable.getHeight());
                 itemService.add(shopItem);
             }
         }
