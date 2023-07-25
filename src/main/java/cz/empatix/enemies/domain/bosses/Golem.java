@@ -6,6 +6,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import org.joml.Vector2f;
 
 import java.util.List;
 
@@ -101,6 +102,11 @@ public class Golem implements Enemy {
     @Override
     public float getY() {
         return bossImpl.getY();
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return bossImpl.getPosition();
     }
 
     @Override

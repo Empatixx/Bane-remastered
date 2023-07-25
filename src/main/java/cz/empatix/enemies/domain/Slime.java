@@ -115,7 +115,10 @@ public class Slime implements Enemy{
     public float getY() {
         return enemyImpl.getY();
     }
-
+    @Override
+    public Vector2f getPosition() {
+        return enemyImpl.getPosition();
+    }
     @Override
     public int getWidth() {
         return enemyImpl.getWidth();

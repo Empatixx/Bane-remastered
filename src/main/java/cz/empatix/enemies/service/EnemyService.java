@@ -37,7 +37,7 @@ public class EnemyService {
     }
 
     public void setTarget(final Player p) {
-        //enemies.forEach(enemy -> enemy.setTarget(p));
+        enemies.forEach(enemy -> enemy.setTarget(p));
     }
 
     public void spawnEnemy(final Room room) {

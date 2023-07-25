@@ -8,4 +8,7 @@ public record PathCell(
         int f,
         PathCell parent
 ) {
+    public PathCell(final int x, final int y, final int g, final int h, final PathCell parent) {
+        this(x, y, g, h, g + h, parent);
+    }
 }

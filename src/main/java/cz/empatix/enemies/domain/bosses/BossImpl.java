@@ -104,6 +104,11 @@ public class BossImpl implements Enemy {
     }
 
     @Override
+    public Vector2f getPosition() {
+        return physicsBody.getTranslation();
+    }
+
+    @Override
     public int getWidth() {
         return width * scale;
     }

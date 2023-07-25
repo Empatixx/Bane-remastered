@@ -4,6 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import org.joml.Vector2f;
 
 public class Rat implements Enemy{
     private final static int DIMENSION_WIDTH = 85;
@@ -97,6 +98,10 @@ public class Rat implements Enemy{
         return enemyImpl.getY();
     }
 
+    @Override
+    public Vector2f getPosition() {
+        return enemyImpl.getPosition();
+    }
     @Override
     public int getWidth() {
         return enemyImpl.getWidth();

@@ -115,6 +115,11 @@ public class KingSlime implements Enemy {
     }
 
     @Override
+    public Vector2f getPosition() {
+        return bossImpl.getPosition();
+    }
+
+    @Override
     public int getWidth() {
         return bossImpl.getWidth();
     }

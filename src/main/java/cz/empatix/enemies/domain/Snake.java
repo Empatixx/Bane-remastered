@@ -4,6 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import org.joml.Vector2f;
 
 public class Snake implements Enemy{
     private final static int DIMENSION_WIDTH = 64;
@@ -94,7 +95,10 @@ public class Snake implements Enemy{
     public float getX() {
         return enemyImpl.getX();
     }
-
+    @Override
+    public Vector2f getPosition() {
+        return enemyImpl.getPosition();
+    }
     @Override
     public float getY() {
         return enemyImpl.getY();

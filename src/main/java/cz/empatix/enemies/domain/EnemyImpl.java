@@ -129,6 +129,10 @@ public class EnemyImpl implements Enemy {
         physicsBody.setTranslation(x, y);
     }
 
+    @Override
+    public Vector2f getPosition() {
+        return physicsBody.getTranslation();
+    }
 
     @Override
     public RenderData renderData() {
