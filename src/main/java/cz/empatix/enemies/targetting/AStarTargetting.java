@@ -96,14 +96,32 @@ public class AStarTargetting {
     }
 
     public void update(final float dt) {
+        if (path.isEmpty()) {
+            return;
+        }
+        final PathCell target = path.peek();
+        final float x = position.x();
+        final float y = position.y();
+        final float targetX = target.x();
+        final float targetY = target.y();
 
+        final float dx = targetX - x;
+        final float dy = targetY - y;
+
+        final float distance = (float) Math.sqrt(dx * dx + dy * dy);
+        if (distance <= 1) {
+            path.poll();
+        }
     }
-
-    public float getTargetX() {
-        return path.peek().x();
-    }
-
-    public float getTargetY() {
-        return path.peek().y();
+    public Vector2f getDirectionTarget() {
+        if (path.isEmpty()){
+            return new Vector2f().zero();
+        }
+        final PathCell target = path.peek();
+        final float x = position.x();
+        final float y = position.y();
+        final float targetX = target.x();
+        final float targetY = target.y();
+        return new Vector2f(targetX - x, targetY - y).normalize();
     }
 }

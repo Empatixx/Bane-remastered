@@ -42,6 +42,8 @@ public class Bat implements Enemy{
     @Override
     public void fixedUpdate(double dt) {
         aStarTargetting.updatePath();
+        aStarTargetting.update((float)dt);
+        
     }
 
     private void onDeath() {
