@@ -4,6 +4,7 @@ import cz.empatix.common.GameLoop;
 
 public class BaneApplication {
     public static void main(String[] args) {
-        new GameLoop().run();
+        final GameLoop gameLoop = new GameLoop();
+        gameLoop.run();
     }
 }

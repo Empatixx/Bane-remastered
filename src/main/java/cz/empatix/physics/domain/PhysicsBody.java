@@ -99,7 +99,10 @@ public class PhysicsBody {
     }
 
     public void translate(final Vector2f translation) {
-        transform.translate(translation.x, translation.y);
+        translate(translation.x(), translation.y());
+    }
+    public void translate(final float x, final float y) {
+        transform.translate(x, y);
     }
 
     public void update(final float dt) {

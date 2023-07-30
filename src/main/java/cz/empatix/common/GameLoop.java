@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
-public class GameLoop extends Thread {
+public class GameLoop{
     private static final Logger LOGGER = LoggerFactory.getLogger(GameLoop.class);
     private final GameInitializator gameInitializator;
     private final GameStateService gss;
@@ -21,7 +21,6 @@ public class GameLoop extends Thread {
         gss = new GameStateService();
     }
 
-    @Override
     public void run() {
         try {
             int fps = 0;

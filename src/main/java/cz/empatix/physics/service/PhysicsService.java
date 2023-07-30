@@ -38,13 +38,13 @@ public class PhysicsService {
         physicsBodies.forEach(body -> {
             final Vector2f velocity = body.getVelocity();
             final Vector2f force = body.getForce();
-            final float mass = body.getMass();
+            final float mass = body.getInversedMass();
             final float linearDamping = body.getLinearDamping();
 
-            velocity.x += (force.x / mass) * dt;
-            velocity.y += (force.y / mass) * dt;
+            velocity.x += (float) (force.x * mass * dt);
+            velocity.y += (float) (force.y * mass * dt);
 
-            body.translate(new Vector2f(velocity).mul((float) dt));
+            body.translate(velocity.x() * (float) dt, velocity.y() * (float) dt);
 
             force.zero();
 
