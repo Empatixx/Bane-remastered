@@ -1,6 +1,7 @@
 package cz.empatix.enemies.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -28,11 +29,17 @@ public class RedSlime implements Enemy{
     @Override
     public void update(double dt) {
         animation.update();
+        enemyImpl.update(dt);
+    }
+
+    @Override
+    public void setTarget(final Player player) {
+        enemyImpl.setTarget(player);
     }
 
     @Override
     public void fixedUpdate(double dt) {
-
+        enemyImpl.fixedUpdate(dt);
     }
 
     private void onDeath() {

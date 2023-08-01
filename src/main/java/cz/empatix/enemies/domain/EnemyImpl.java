@@ -1,5 +1,6 @@
 package cz.empatix.enemies.domain;
 
+import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.items.service.DroppableState;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
@@ -7,6 +8,7 @@ import cz.empatix.physics.events.consumers.DamageConsumer;
 import cz.empatix.physics.events.domain.DamageSource;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
@@ -16,10 +18,11 @@ import org.joml.Vector2f;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class EnemyImpl implements Enemy {
+public class EnemyImpl {
     private final Animation animation;
     private final PhysicsBody physicsBody;
     private final DroppableState droppableState;
+    private final AStarTargetting aStarTargetting;
     private final int width;
     private final int height;
     private final float scale;
@@ -43,27 +46,17 @@ public class EnemyImpl implements Enemy {
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
         physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
         droppableState = new DroppableState(droppableCondition);
+        aStarTargetting = new AStarTargetting(physicsBody.getTranslation(), (int) (width * scale), (int) (height * scale));
     }
 
     private boolean canHit(final DamageSource source,final int damage) {
         return source != DamageSource.ENEMY;
     }
 
-    @Override
-    public void update(double dt) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void fixedUpdate(double dt) {
-        throw new UnsupportedOperationException();
-    }
-
     public void onDeath() {
         physicsBody.destroy();
     }
 
-    @Override
     public void hit(final int damage) {
         this.health -= damage;
         if (this.health < 0) {
@@ -71,7 +64,6 @@ public class EnemyImpl implements Enemy {
         }
     }
 
-    @Override
     public void heal(final int health) {
         this.health += health;
         if (this.health > maxHealth) {
@@ -79,62 +71,42 @@ public class EnemyImpl implements Enemy {
         }
     }
 
-    @Override
-    public void onCollision() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void onSpawn() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean isDead() {
         return health <= 0;
     }
 
-    @Override
     public boolean canRemove() {
         return isDead();
     }
 
-    @Override
     public boolean canDropItems() {
         return droppableState.canDrop();
     }
 
-    @Override
     public float getX() {
         return physicsBody.getPhysicsTranslationX();
     }
 
-    @Override
     public float getY() {
         return physicsBody.getPhysicsTranslationY();
     }
 
-    @Override
     public int getWidth() {
         return (int) (width * scale);
     }
 
-    @Override
     public int getHeight() {
         return (int) (height * scale);
     }
 
-    @Override
     public void setPosition(float x, float y) {
         physicsBody.setTranslation(x, y);
     }
 
-    @Override
     public Vector2f getPosition() {
         return physicsBody.getTranslation();
     }
 
-    @Override
     public RenderData renderData() {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation()),
@@ -143,7 +115,6 @@ public class EnemyImpl implements Enemy {
         );
     }
 
-    @Override
     public boolean canRender() {
         final Vector2f cameraPos = Camera.getPosition();
         final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
@@ -153,5 +124,20 @@ public class EnemyImpl implements Enemy {
                 && position.x() < cameraPos.x() + cameraDimensions.x()
                 && position.y() + getHeight() > cameraPos.y()
                 && position.y() < cameraPos.y() + cameraDimensions.y();
+    }
+
+    public void setTarget(final Player player) {
+        aStarTargetting.target(player);
+    }
+
+    public void fixedUpdate(final double dt) {
+        aStarTargetting.updatePath();
+        aStarTargetting.update((float)dt);
+        final Vector2f force = aStarTargetting.getDirectionTarget().mul(5000000,5000000);
+        physicsBody.applyForce(force.x(), force.y());
+    }
+
+    public void update(final double dt) {
+        aStarTargetting.update((float)dt);
     }
 }

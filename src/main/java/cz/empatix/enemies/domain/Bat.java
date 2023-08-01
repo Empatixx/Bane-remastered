@@ -1,7 +1,6 @@
 package cz.empatix.enemies.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -16,7 +15,6 @@ public class Bat implements Enemy{
     private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
     private final EnemyImpl enemyImpl;
-    private final AStarTargetting aStarTargetting;
     public Bat(){
         animation = Animation.builder()
                 .setTotal(2,4)
@@ -27,7 +25,6 @@ public class Bat implements Enemy{
                 .build();
         animation.setState(AnimationState.IDLE);
         enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
-        aStarTargetting = new AStarTargetting(enemyImpl.getPosition());
     }
     @Override
     public void update(double dt) {
@@ -36,14 +33,12 @@ public class Bat implements Enemy{
 
     @Override
     public void setTarget(final Player player) {
-        aStarTargetting.target(player);
+        enemyImpl.setTarget(player);
     }
 
     @Override
     public void fixedUpdate(double dt) {
-        aStarTargetting.updatePath();
-        aStarTargetting.update((float)dt);
-        
+        enemyImpl.fixedUpdate(dt);
     }
 
     private void onDeath() {

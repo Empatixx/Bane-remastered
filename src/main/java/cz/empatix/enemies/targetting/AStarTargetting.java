@@ -15,9 +15,15 @@ public class AStarTargetting {
     private Player target;
     private int lastTargetX;
     private int lastTargetY;
+    private final int selfWidth;
+    private final int selfHeight;
 
-    public AStarTargetting(final Vector2f position) {
+    public AStarTargetting(final Vector2f position,
+                           final int selfWidth,
+                           final int selfHeight){
         this.position = position;
+        this.selfWidth = selfWidth;
+        this.selfHeight = selfHeight;
     }
 
     public void target(final Player player) {
@@ -31,14 +37,14 @@ public class AStarTargetting {
         if (Math.abs(target.getX() - lastTargetX) <= CELL_SIZE && Math.abs(target.getY() - lastTargetY) <= CELL_SIZE) {
             return;
         }
-        final int startX = (int) position.x();
-        final int startY = (int) position.y();
+        final int startX = (int) position.x() + selfWidth / 2;
+        final int startY = (int) position.y() + selfHeight / 2;
 
-        final int targetX = (int) target.getX();
-        final int targetY = (int) target.getY();
+        final int targetX = (int) target.getX() + target.getWidth() / 2;
+        final int targetY = (int) target.getY() + target.getHeight() / 2;
 
-        lastTargetX = targetX;
-        lastTargetY = targetY;
+        lastTargetX = (int) target.getX();
+        lastTargetY = (int) target.getY();
 
         LOGGER.info("Starting A* for player {} at {},{} to {},{}", target, startX, startY, targetX, targetY);
         this.path.clear();
@@ -47,7 +53,7 @@ public class AStarTargetting {
 
     private List<PathCell> aStar(final int startX, final int startY,
                                  final int targetX, final int targetY) {
-        final PriorityQueue<PathCell> openSet = new PriorityQueue<>(100, Comparator.comparingInt(PathCell::f));
+        final PriorityQueue<PathCell> openSet = new PriorityQueue<>(100, Comparator.comparingDouble(PathCell::f));
         final Set<PathCell> openSetLookup = new HashSet<>(100);
 
         final Set<PathCell> closedSet = new HashSet<>(100);
@@ -81,13 +87,18 @@ public class AStarTargetting {
         }
         return List.of();
     }
+
     private List<PathCell> createCells(final PathCell cell,
                                        final int targetX, final int targetY) {
         return List.of(
                 new PathCell(cell.x() + CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() + CELL_SIZE, cell.y(), targetX, targetY), cell),
                 new PathCell(cell.x() - CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() - CELL_SIZE, cell.y(), targetX, targetY), cell),
                 new PathCell(cell.x(), cell.y() + CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() + CELL_SIZE, targetX, targetY), cell),
-                new PathCell(cell.x(), cell.y() - CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() - CELL_SIZE, targetX, targetY), cell)
+                new PathCell(cell.x(), cell.y() - CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() - CELL_SIZE, targetX, targetY), cell),
+                new PathCell(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
+                new PathCell(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell),
+                new PathCell(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
+                new PathCell(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell)
         );
     }
 
@@ -100,8 +111,8 @@ public class AStarTargetting {
             return;
         }
         final PathCell target = path.peek();
-        final float x = position.x();
-        final float y = position.y();
+        final float x = position.x() + selfWidth / 2;
+        final float y = position.y() + selfHeight / 2;
         final float targetX = target.x();
         final float targetY = target.y();
 
@@ -109,19 +120,29 @@ public class AStarTargetting {
         final float dy = targetY - y;
 
         final float distance = (float) Math.sqrt(dx * dx + dy * dy);
-        if (distance <= 1) {
+        if (distance <= CELL_SIZE / 2) {
             path.poll();
         }
     }
+
     public Vector2f getDirectionTarget() {
-        if (path.isEmpty()){
-            return new Vector2f().zero();
+        if (path.isEmpty()) {
+            final Vector2f direction = new Vector2f(target.getX() + target.getWidth()/2f - position.x() - selfWidth/2f, target.getY() + target.getHeight()/2f - position.y() - selfHeight/2f);
+            if (direction.length() > 0) {
+                direction.normalize();
+            }
+            return direction;
         }
         final PathCell target = path.peek();
-        final float x = position.x();
-        final float y = position.y();
+        final float x = position.x() + selfWidth / 2;
+        final float y = position.y() + selfHeight / 2;
         final float targetX = target.x();
         final float targetY = target.y();
-        return new Vector2f(targetX - x, targetY - y).normalize();
+
+        final Vector2f direction = new Vector2f(targetX - x, targetY - y);
+        if (direction.length() > 0) {
+            direction.normalize();
+        }
+        return direction;
     }
 }
