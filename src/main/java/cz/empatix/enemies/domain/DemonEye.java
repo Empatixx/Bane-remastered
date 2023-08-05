@@ -8,6 +8,7 @@ import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
 public class DemonEye implements Enemy{
+    private final static int MOVE_FORCE = 15000000;
     private final static int DIMENSION_WIDTH = 76;
     private final static int DIMENSION_HEIGHT = 64;
     private final static float SCALE = 1.5f;
@@ -23,7 +24,8 @@ public class DemonEye implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, this::isDead);
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, this::isDead,
+                () -> MOVE_FORCE);
     }
     @Override
     public void update(double dt) {

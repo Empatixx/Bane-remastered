@@ -6,9 +6,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class Dash implements Skill {
-    private final static int DASH_COOLDOWN = 10000;
-    private final static int DASH_DURATION = 2000;
-    private final static int ADDITIONAL_FORCE = 100000;
+    private final static int DASH_COOLDOWN = 3000;
+    private final static int DASH_DURATION = 1000;
+    private final static int ADDITIONAL_FORCE = 30000000;
+
     private final Runnable activate;
     private final Runnable deactivate;
     private final Consumer<Integer> forceConsumer;

@@ -2,8 +2,8 @@ package cz.empatix.render.attributes;
 
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.grouping.RenderableGroup;
-import cz.empatix.render.domain.grouping.SingleRenderableGroup;
+import cz.empatix.render.attributes.grouping.RenderableGroup;
+import cz.empatix.render.attributes.grouping.SingleRenderableGroup;
 
 import java.util.List;
 

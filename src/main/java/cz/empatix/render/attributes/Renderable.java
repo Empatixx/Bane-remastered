@@ -1,6 +1,6 @@
 package cz.empatix.render.attributes;
 
-import cz.empatix.render.domain.grouping.RenderableGroup;
+import cz.empatix.render.attributes.grouping.RenderableGroup;
 
 import java.util.List;
 

@@ -97,14 +97,14 @@ public class ShopItem implements ItemDrop {
         if (!bought && !hasEnoughCoinsPredicate.test(price)) {
             LOGGER.info("Unsuccessfully bought {}, do no have {} coins", drop, price);
             return;
+        } else {
+            LOGGER.info("Successfully bought {} for {}", drop, price);
+            removeCoinsConsumer.accept(price);
+            bought = true;
         }
-        LOGGER.info("Successfully bought {} for {}", drop, price);
-        removeCoinsConsumer.accept(price);
         if (drop.canInteract()) {
             drop.interact(keys);
         }
-        bought = true;
-
     }
 
     @Override

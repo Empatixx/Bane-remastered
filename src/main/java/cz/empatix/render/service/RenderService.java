@@ -1,7 +1,7 @@
 package cz.empatix.render.service;
 
 import cz.empatix.render.domain.DrawableData;
-import cz.empatix.render.domain.grouping.RenderableGroup;
+import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.renders.DynamicRenderer;
 
 import java.util.List;

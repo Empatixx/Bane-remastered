@@ -4,7 +4,7 @@ import cz.empatix.postprocessing.service.PostprocessService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.grouping.RenderableGroup;
+import cz.empatix.render.attributes.grouping.RenderableGroup;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,7 +26,7 @@ public class RenderEngine {
                 .stream()
                 .map(Renderable::getRenderableGroup)
                 .filter(RenderableGroup::isRenderable)
-                .collect(Collectors.groupingBy(RenderableGroup::getRenderScene));
+                .collect(Collectors.groupingBy(RenderableGroup::getRenderScene, () -> new EnumMap<>(RenderScene.class), Collectors.toList()));
         render(renderScenes, RenderScene.SCENE, (float) dt);
         render(renderScenes, RenderScene.HUD, (float) dt);
         render(renderScenes, RenderScene.OVERLAYS, (float) dt);

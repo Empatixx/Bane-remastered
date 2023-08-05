@@ -1,4 +1,4 @@
-package cz.empatix.render.domain.grouping;
+package cz.empatix.render.attributes.grouping;
 
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderScene;

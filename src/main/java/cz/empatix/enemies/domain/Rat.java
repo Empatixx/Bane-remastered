@@ -8,6 +8,7 @@ import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
 public class Rat implements Enemy{
+    private final static int MOVE_FORCE = 7500000;
     private final static int DIMENSION_WIDTH = 85;
     private final static int DIMENSION_HEIGHT = 37;
     private final static float SCALE = 1.5f;
@@ -24,7 +25,8 @@ public class Rat implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+                () -> MOVE_FORCE);
     }
     @Override
     public void update(double dt) {

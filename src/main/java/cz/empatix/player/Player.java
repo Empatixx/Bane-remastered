@@ -30,7 +30,6 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public class Player implements Drawable, InteractEntity {
     private final static int SCALE = 2;

@@ -10,6 +10,7 @@ import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
 public class Ghost implements Enemy{
+    private final static int MOVE_FORCE = 12500000;
     private final static int DIMENSION_WIDTH = 22;
     private final static int DIMENSION_HEIGHT = 28;
     private final static int SCALE = 4;
@@ -18,7 +19,7 @@ public class Ghost implements Enemy{
     private final Animation animation;
     private final EnemyImpl enemyImpl;
     private final Skill dash;
-    private int moveForce = 10000000;
+    private int moveForce = MOVE_FORCE;
 
     public Ghost(){
         animation = Animation.builder()
@@ -29,7 +30,8 @@ public class Ghost implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation,DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation,DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+                () -> moveForce);
         dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);
     }
     @Override

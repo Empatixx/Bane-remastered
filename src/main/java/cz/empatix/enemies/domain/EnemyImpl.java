@@ -27,6 +27,7 @@ public class EnemyImpl {
     private final int height;
     private final float scale;
     private final int maxHealth;
+    private final Supplier<Integer> moveForceSupplier;
     private int health;
 
     public EnemyImpl(final int width,
@@ -36,12 +37,14 @@ public class EnemyImpl {
                      final Animation animation,
                      final int damage,
                      final Consumer<Integer> hitCallback,
-                     final Supplier<Boolean> droppableCondition) {
+                     final Supplier<Boolean> droppableCondition,
+                     final Supplier<Integer> moveForceSupplier) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
         this.scale = scale;
         this.animation = animation;
+        this.moveForceSupplier = moveForceSupplier;
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
         physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
@@ -133,7 +136,8 @@ public class EnemyImpl {
     public void fixedUpdate(final double dt) {
         aStarTargetting.updatePath();
         aStarTargetting.update((float)dt);
-        final Vector2f force = aStarTargetting.getDirectionTarget().mul(5000000,5000000);
+        final float moveForce = moveForceSupplier.get();
+        final Vector2f force = aStarTargetting.getDirectionTarget().mul(moveForce,moveForce);
         physicsBody.applyForce(force.x(), force.y());
     }
 

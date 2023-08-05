@@ -8,6 +8,7 @@ import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
 public class Snake implements Enemy{
+    private final static int MOVE_FORCE = 8000000;
     private final static int DIMENSION_WIDTH = 64;
     private final static int DIMENSION_HEIGHT = 64;
     private final static float SCALE = 1.5f;
@@ -24,7 +25,8 @@ public class Snake implements Enemy{
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead());
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+                () -> MOVE_FORCE);
     }
     @Override
     public void update(double dt) {
