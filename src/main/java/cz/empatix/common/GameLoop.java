@@ -2,6 +2,8 @@ package cz.empatix.common;
 
 import cz.empatix.gamestate.service.GameStateService;
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.settings.domain.GameSettings;
+import cz.empatix.settings.service.SettingsService;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,13 +13,13 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class GameLoop{
     private static final Logger LOGGER = LoggerFactory.getLogger(GameLoop.class);
-    private final GameInitializator gameInitializator;
+    private final GameInitializer gameInitializer;
     private final GameStateService gss;
 
     public static final double FIXED_DELTA_TIME = 1.0 / 60.0;
 
     public GameLoop() {
-        gameInitializator = new GameInitializator(this);
+        gameInitializer = new GameInitializer(this);
         gss = new GameStateService();
     }
 
@@ -45,17 +47,21 @@ public class GameLoop{
                 fps++;
 
                 if (System.currentTimeMillis() - fpsTimer > 1000) {
-                    LOGGER.info("FPS: " + fps + " UPS: " + ups);
+                    LOGGER.info("FPS: {}, UPS: {}", fps, ups);
                     fpsTimer += 1000;
                     ups = 0;
                     fps = 0;
                 }
             }
         } catch (Exception e) {
+            LOGGER.error("Error in game loop", e);
             throw new RuntimeException(e);
         } finally {
-            gameInitializator.cleanUp();
+            LOGGER.info("Cleaning up game loop");
+            SettingsService.getInstance().saveSettings();
+            gameInitializer.cleanUp();
         }
+        System.exit(0);
     }
 
     private void fixedUpdate() {

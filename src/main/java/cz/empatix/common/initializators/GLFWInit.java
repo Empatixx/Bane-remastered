@@ -1,6 +1,8 @@
 package cz.empatix.common.initializators;
 
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.settings.domain.GameSettings;
+import cz.empatix.settings.service.SettingsService;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
@@ -19,7 +21,7 @@ import static org.lwjgl.stb.STBImage.stbi_load;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public class GLFWInit implements Initializator {
+public class GLFWInit implements Initializer {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
     private static final int HEIGHT = WindowHandler.TARGET_HEIGHT * 2;
     private static final int WIDTH = WindowHandler.TARGET_WIDTH * 2;
@@ -47,14 +49,19 @@ public class GLFWInit implements Initializator {
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
-        glfwSetWindowAspectRatio(window, WIDTH, HEIGHT);
-        glfwSetWindowSizeLimits(window, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 2540, 1440);
+        final SettingsService settingsService = SettingsService.getInstance();
+        final GameSettings settings = settingsService.getSettings();
+
+        glfwMakeContextCurrent(window);
+
+        glfwSetWindowAspectRatio(window, settings.getResolutionWidth(), settings.getResolutionHeight());
+        WindowHandler.setResolution(settings.getResolutionWidth(), settings.getResolutionHeight());
+        WindowHandler.setVsync(settings.isVsync());
+        WindowHandler.setFullscreen(settings.isFullscreen());
+
         centerWindow();
         setIcon();
-        // Make the OpenGL context current
-        glfwMakeContextCurrent(window);
-        // Enable v-sync
-        glfwSwapInterval(VSYNC ? 1 : 0);
+
         glfwShowWindow(window);
 
         // hide cursor

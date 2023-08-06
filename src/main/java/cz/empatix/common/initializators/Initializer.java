@@ -1,6 +1,6 @@
 package cz.empatix.common.initializators;
 
-public interface Initializator {
+public interface Initializer {
     void init();
     void destroy();
 }

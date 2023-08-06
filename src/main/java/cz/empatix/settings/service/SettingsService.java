@@ -14,10 +14,12 @@ public class SettingsService {
     private final static ObjectMapper MAPPER = new ObjectMapper();
     private final static Path SETTINGS_FILE = Path.of("settings.json");
     private final GameSettings settings = loadSettings();
-    private final SettingsService instance = new SettingsService();
-    public SettingsService getInstance() {
+    private static final SettingsService instance = new SettingsService();
+
+    public static SettingsService getInstance() {
         return instance;
     }
+
     private GameSettings loadSettings() {
         if (!Files.exists(SETTINGS_FILE)) {
             return createDefaultSettings();
@@ -33,9 +35,15 @@ public class SettingsService {
 
     private GameSettings createDefaultSettings() {
         LOGGER.info("Creating default settings");
-        return new GameSettings(WindowHandler.WIDTH, WindowHandler.HEIGHT, false, true, 0.5f, 0.5f, 0.5f);
+        return new GameSettings(WindowHandler.TARGET_WIDTH * 2, WindowHandler.TARGET_HEIGHT * 2,
+                false, true, 0.5f, 0.5f, 0.5f);
     }
-    private void saveSettings() {
+
+    public GameSettings getSettings() {
+        return settings;
+    }
+
+    public void saveSettings() {
         LOGGER.info("Saving settings to {}", SETTINGS_FILE);
         try {
             MAPPER.writeValue(SETTINGS_FILE.toFile(), settings);

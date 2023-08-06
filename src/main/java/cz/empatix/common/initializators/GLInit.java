@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import static org.lwjgl.opengl.GL43.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public class GLInit implements Initializator {
+public class GLInit implements Initializer {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLInit.class);
     private final static boolean DEBUG_MODE = true;
     public static int TEXTURE2D_MAX_SIZE;

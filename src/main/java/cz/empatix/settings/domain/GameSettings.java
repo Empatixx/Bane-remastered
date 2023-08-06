@@ -1,22 +1,26 @@
 package cz.empatix.settings.domain;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 
 public class GameSettings {
-    public int resolutionWidth;
-    public int resolutionHeight;
-    public boolean fullscreen;
-    public boolean vsync;
-    public float overallVolume;
-    public float musicVolume;
-    public float effectsVolume;
-    public GameSettings(final int resolutionWidth,
-                        final int resolutionHeight,
-                        final boolean fullscreen,
-                        final boolean vsync,
-                        final float overallVolume,
-                        final float musicVolume,
-                        final float effectsVolume){
+    private int resolutionWidth;
+    private int resolutionHeight;
+    private boolean fullscreen;
+    private boolean vsync;
+    private float overallVolume;
+    private float musicVolume;
+    private float effectsVolume;
+
+    @JsonCreator
+    public GameSettings(@JsonProperty("resolutionWidth") final int resolutionWidth,
+                        @JsonProperty("resolutionHeight") final int resolutionHeight,
+                        @JsonProperty("fullscreen") final boolean fullscreen,
+                        @JsonProperty("vsync") final boolean vsync,
+                        @JsonProperty("overallVolume") final float overallVolume,
+                        @JsonProperty("musicVolume") final float musicVolume,
+                        @JsonProperty("effectsVolume") final float effectsVolume) {
         Preconditions.checkArgument(resolutionWidth > 0, "resolutionWidth must be positive");
         Preconditions.checkArgument(resolutionHeight > 0, "resolutionHeight must be positive");
         Preconditions.checkArgument(overallVolume >= 0 && overallVolume <= 1, "overallVolume must be between 0 and 1");
@@ -30,5 +34,61 @@ public class GameSettings {
         this.overallVolume = overallVolume;
         this.musicVolume = musicVolume;
         this.effectsVolume = effectsVolume;
+    }
+
+    public int getResolutionHeight() {
+        return resolutionHeight;
+    }
+
+    public int getResolutionWidth() {
+        return resolutionWidth;
+    }
+
+    public boolean isFullscreen() {
+        return fullscreen;
+    }
+
+    public boolean isVsync() {
+        return vsync;
+    }
+
+    public float getEffectsVolume() {
+        return effectsVolume;
+    }
+
+    public float getOverallVolume() {
+        return overallVolume;
+    }
+
+    public float getMusicVolume() {
+        return musicVolume;
+    }
+
+    public void setEffectsVolume(float effectsVolume) {
+        this.effectsVolume = effectsVolume;
+    }
+
+    public void setFullscreen(boolean fullscreen) {
+        this.fullscreen = fullscreen;
+    }
+
+    public void setMusicVolume(float musicVolume) {
+        this.musicVolume = musicVolume;
+    }
+
+    public void setOverallVolume(float overallVolume) {
+        this.overallVolume = overallVolume;
+    }
+
+    public void setResolutionHeight(int resolutionHeight) {
+        this.resolutionHeight = resolutionHeight;
+    }
+
+    public void setResolutionWidth(int resolutionWidth) {
+        this.resolutionWidth = resolutionWidth;
+    }
+
+    public void setVsync(boolean vsync) {
+        this.vsync = vsync;
     }
 }

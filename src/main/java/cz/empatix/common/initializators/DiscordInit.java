@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.time.Instant;
 
-public class DiscordInit implements Initializator{
+public class DiscordInit implements Initializer {
     private final static Logger LOGGER = LoggerFactory.getLogger(DiscordInit.class);
     private final static long APPLICATION_ID = 805802430553653279L;
     private final static Path LIBRARY_WIN64_PATH = Path.of("./assets/discord-api/lib/x86_64/discord_game_sdk.dll");

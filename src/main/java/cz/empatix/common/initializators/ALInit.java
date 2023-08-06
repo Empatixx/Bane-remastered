@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.lwjgl.openal.ALC11.*;
 
-public class ALInit implements Initializator{
+public class ALInit implements Initializer {
     private final static Logger LOGGER = LoggerFactory.getLogger(ALInit.class);
     public static boolean canUseAL = true;
     private long device;
