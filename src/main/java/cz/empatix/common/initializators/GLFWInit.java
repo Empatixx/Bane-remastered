@@ -1,4 +1,5 @@
 package cz.empatix.common.initializators;
+
 import cz.empatix.common.handlers.WindowHandler;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;

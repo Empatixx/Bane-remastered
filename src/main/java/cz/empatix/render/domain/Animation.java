@@ -96,6 +96,9 @@ public class Animation {
 
     public List<Vertex> getVertices(final Vector2f position) {
         final AnimationPart part = animationParts.get(currentState);
+        return getVertices(position, part, part.rotated());
+    }
+    private List<Vertex> getVertices(final Vector2f position, final AnimationPart part, final boolean rotated){
         return Vertex.builder()
                 .texture(texture)
                 .texPosition(currentTextureIndex, part.row())
@@ -103,11 +106,13 @@ public class Animation {
                 .position(position)
                 .posDimensions(part.width(), part.height())
                 .offset(part.width(), part.height())
-                .rotatedX(part.rotated())
+                .rotatedX(rotated)
                 .scale(scale)
                 .buildQuad();
     }
-
+    public List<Vertex> getVertices(final Vector2f position, final boolean rotatedX) {
+        return getVertices(position, animationParts.get(currentState), rotatedX);
+    }
     public int getTextureId() {
         return texture.textureId();
     }

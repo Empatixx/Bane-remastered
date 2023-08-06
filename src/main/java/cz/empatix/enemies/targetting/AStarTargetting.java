@@ -145,4 +145,7 @@ public class AStarTargetting {
         }
         return direction;
     }
+    public boolean isTargetLeftFromEnemy(){
+        return target.getX() + target.getWidth()/2f < position.x() + selfWidth/2f;
+    }
 }

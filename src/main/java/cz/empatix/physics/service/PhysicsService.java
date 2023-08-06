@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PhysicsService {
-    private final static boolean RENDER_COLLISIONS = true;
+    private final static boolean RENDER_COLLISIONS = false;
     private static PhysicsService instance;
     public static PhysicsService getInstance() {
         if (instance == null) {

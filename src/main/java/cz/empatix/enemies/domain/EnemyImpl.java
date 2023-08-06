@@ -112,7 +112,7 @@ public class EnemyImpl {
 
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation()),
+                animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
