@@ -12,7 +12,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.EnemyBinding;
 import org.joml.Vector2f;
 
 import java.util.function.Consumer;
@@ -30,6 +30,10 @@ public class EnemyImpl {
     private final Supplier<Integer> moveForceSupplier;
     private int health;
 
+    // shaders vars
+    private final Vector2f texStartPos;
+    private final Vector2f texEndPos;
+
     public EnemyImpl(final int width,
                      final int height,
                      final int maxHealth,
@@ -45,6 +49,10 @@ public class EnemyImpl {
         this.scale = scale;
         this.animation = animation;
         this.moveForceSupplier = moveForceSupplier;
+
+        texStartPos = animation.getTexture().normalizedStartPositions();
+        texEndPos = animation.getTexture().normalizedEndPositions();
+
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
         physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
@@ -114,7 +122,7 @@ public class EnemyImpl {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new EnemyBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()), texStartPos, texEndPos)
         );
     }
 

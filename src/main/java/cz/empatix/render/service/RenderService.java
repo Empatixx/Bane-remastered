@@ -1,9 +1,11 @@
 package cz.empatix.render.service;
 
-import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
+import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.renders.DynamicRenderer;
 
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +22,11 @@ public class RenderService {
         }
         renderableGroups
                 .stream()
-                .collect(Collectors.groupingBy(RenderableGroup::getZIndex))
+                .sorted(Comparator.comparing(RenderableGroup::getZIndex))
+                .collect(Collectors.groupingBy(
+                        RenderableGroup::getZIndex,
+                        LinkedHashMap::new,
+                        Collectors.toList()))
                 .forEach(this::renderDataByZIndex);
     }
 

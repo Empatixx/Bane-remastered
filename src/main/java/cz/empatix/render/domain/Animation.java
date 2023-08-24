@@ -117,6 +117,9 @@ public class Animation {
         return texture.textureId();
     }
 
+    public TextureAtlas.Entry getTexture() {
+        return texture;
+    }
 
     private record AnimationPart(
             Vector2i dimensions,

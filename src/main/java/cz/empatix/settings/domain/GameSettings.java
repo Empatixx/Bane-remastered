@@ -12,6 +12,9 @@ public class GameSettings {
     private float overallVolume;
     private float musicVolume;
     private float effectsVolume;
+    public GameSettings(final GameSettings settings){
+        this(settings.getResolutionWidth(), settings.getResolutionHeight(), settings.isFullscreen(), settings.isVsync(), settings.getOverallVolume(), settings.getMusicVolume(), settings.getEffectsVolume());
+    }
 
     @JsonCreator
     public GameSettings(@JsonProperty("resolutionWidth") final int resolutionWidth,

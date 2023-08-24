@@ -1,14 +1,14 @@
 package cz.empatix.common;
 
-import cz.empatix.gamestate.service.GameStateService;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.settings.domain.GameSettings;
+import cz.empatix.gamestate.service.GameStateService;
 import cz.empatix.settings.service.SettingsService;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.glfwPollEvents;
+import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.opengl.GL11.*;
 
 public class GameLoop{
@@ -20,6 +20,7 @@ public class GameLoop{
 
     public GameLoop() {
         gameInitializer = new GameInitializer(this);
+        SettingsService.getInstance().applySettings();
         gss = new GameStateService();
     }
 

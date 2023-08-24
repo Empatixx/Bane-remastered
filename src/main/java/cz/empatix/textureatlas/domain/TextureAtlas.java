@@ -31,6 +31,7 @@ public record TextureAtlas(
     public static TextureAtlas from(final RawTextureAtlas raw) {
         return from(raw, TextureBuilder.BuildParam.NEAREST_FILTER);
     }
+
     public static TextureAtlas from(final RawTextureAtlas raw, final TextureBuilder.BuildParam type) {
         final int textureId = switch (type) {
             case NEAREST_FILTER -> nearestTexture(raw);
@@ -46,7 +47,8 @@ public record TextureAtlas(
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return new TextureAtlas(textureId, texturesInfos);
     }
-    private static int linearTexture(final RawTextureAtlas raw){
+
+    private static int linearTexture(final RawTextureAtlas raw) {
         return TextureBuilder.builder()
                 .buffer(raw.pixels())
                 .width(raw.width())
@@ -56,7 +58,8 @@ public record TextureAtlas(
                 .applyClampToEdgeWrap()
                 .build();
     }
-    private static int nearestTexture(final RawTextureAtlas raw){
+
+    private static int nearestTexture(final RawTextureAtlas raw) {
         return TextureBuilder.builder()
                 .buffer(raw.pixels())
                 .width(raw.width())
@@ -75,29 +78,36 @@ public record TextureAtlas(
         public int atlasWidth() {
             return atlasDimensions.x();
         }
+
         public int atlasHeight() {
             return atlasDimensions.y();
         }
-        public int width(){
+
+        public int width() {
             return dimensions().x();
         }
-        public int height(){
+
+        public int height() {
             return dimensions().y();
         }
-        public Vector2i dimensions(){
+
+        public Vector2i dimensions() {
             return info.textureDimensions();
         }
-        public Vector2i startPositions(){
+
+        public Vector2i startPositions() {
             return info.textureStartPositions();
         }
-        public Vector2f normalizedDimensions(){
+
+        public Vector2f normalizedDimensions() {
             final Vector2i dimensions = dimensions();
             return new Vector2f(
-                    (float)dimensions.x() / atlasWidth(),
-                    (float)dimensions.y() / atlasHeight()
+                    (float) dimensions.x() / atlasWidth(),
+                    (float) dimensions.y() / atlasHeight()
             );
         }
-        public Vector2f normalizedStartPositions(){
+
+        public Vector2f normalizedStartPositions() {
             final Vector2i startPositions = startPositions();
             return new Vector2f(
                     (float) startPositions.x() / atlasWidth(),

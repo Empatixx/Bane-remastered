@@ -12,15 +12,18 @@ import cz.empatix.hud.service.HUDElement;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import cz.empatix.settings.service.SettingsMenuService;
 import cz.empatix.ui.CommonButton;
 import cz.empatix.ui.UIElement;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class MenuState extends GameState {
+    private SettingsMenuService settingsMenuService;
     private HUDElement background;
     private List<UIElement> uiElements;
     private List<HUDElement> hudElements;
@@ -37,6 +40,8 @@ public class MenuState extends GameState {
             return;
         }
 
+        settingsMenuService = new SettingsMenuService();
+
         background = new CommonBackground("menu/bg.png");
 
         final CommonButton playButton = new CommonButton("Play", Camera.centerX().add(0, 225), 1.5f);
@@ -45,6 +50,7 @@ public class MenuState extends GameState {
 
         playButton.onClick(() -> setCurrentState(GameStateType.LOBBY));
         exitButton.onClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));
+        settingsButton.onClick(() -> settingsMenuService.activate(true));
 
         final CommonImage title = new CommonImage("menu/logo.tga", Camera.centerX().add(-114, 50), 3f);
 
@@ -57,6 +63,7 @@ public class MenuState extends GameState {
 
     @Override
     public void update(final double dt) {
+        settingsMenuService.update(dt);
         uiElements.forEach(uiElement -> uiElement.update(dt, mouseX, mouseY));
     }
 
@@ -67,11 +74,19 @@ public class MenuState extends GameState {
 
     @Override
     public List<Renderable> toRender(final double dt) {
+        if(settingsMenuService.isActive()){
+            final ArrayList<Renderable> renderables = new ArrayList<>(5);
+            renderables.add(background);
+            renderables.addAll(settingsMenuService.toRender(dt));
+            renderables.add(CursorService.getCursor());
+            return renderables;
+        }
         final List<? extends Renderable> renderable = Stream.of(
                         List.of(background),
                         List.of(CursorService.getCursor()),
                         uiElements,
-                        hudElements
+                        hudElements,
+                        settingsMenuService.toRender(dt)
                 )
                 .flatMap(Collection::stream)
                 .toList();

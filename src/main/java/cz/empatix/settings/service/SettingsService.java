@@ -14,6 +14,7 @@ public class SettingsService {
     private final static ObjectMapper MAPPER = new ObjectMapper();
     private final static Path SETTINGS_FILE = Path.of("settings.json");
     private final GameSettings settings = loadSettings();
+    private final SettingsApplier settingsApplier = new SettingsApplier();
     private static final SettingsService instance = new SettingsService();
 
     public static SettingsService getInstance() {
@@ -50,5 +51,8 @@ public class SettingsService {
         } catch (Exception e) {
             LOGGER.error("Failed to save settings", e);
         }
+    }
+    public void applySettings() {
+        settingsApplier.applySettings(settings);
     }
 }

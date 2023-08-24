@@ -3,6 +3,8 @@ package cz.empatix.common.handlers;
 import com.google.common.base.Preconditions;
 import cz.empatix.common.GameLoop;
 import cz.empatix.common.initializators.GLFWInit;
+import cz.empatix.settings.domain.GameSettings;
+import cz.empatix.settings.service.SettingsService;
 import org.joml.Vector2i;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -10,7 +12,8 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
 
-import static org.lwjgl.glfw.GLFW.glfwSetWindowSizeLimits;
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
 import static org.lwjgl.opengl.GL11.glViewport;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
@@ -27,12 +30,15 @@ public class WindowHandler {
             final IntBuffer pHeight = stack.mallocInt(1);
 
             GLFW.glfwGetWindowSize(WINDOW, pWidth, pHeight);
-
             WIDTH = pWidth.get(0);
             HEIGHT = pHeight.get(0);
         }
 
         GLFW.glfwSetFramebufferSizeCallback(WINDOW, (win, width, height) -> {
+            final GameSettings settings = SettingsService.getInstance().getSettings();
+            settings.setResolutionWidth(width);
+            settings.setResolutionHeight(height);
+
             WIDTH = width;
             HEIGHT = height;
             glViewport(0, 0, width, height);
@@ -43,6 +49,21 @@ public class WindowHandler {
             gameLoop.render(0);
         });
     }
+    private static void centerWindow() {
+        try (final MemoryStack stack = stackPush()) {
+            final IntBuffer pWidth = stack.mallocInt(1); // int*
+            final IntBuffer pHeight = stack.mallocInt(1); // int*
+            glfwGetWindowSize(WINDOW, pWidth, pHeight);
+            final GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            // Center the window
+            glfwSetWindowPos(
+                    WINDOW,
+                    (vidmode.width() - pWidth.get(0)) / 2,
+                    (vidmode.height() - pHeight.get(0)) / 2
+            );
+        }
+    }
+
 
     public static void setVsync(final boolean vsync) {
         GLFW.glfwSwapInterval(vsync ? 1 : 0);
@@ -50,7 +71,6 @@ public class WindowHandler {
 
     public static void setResolution(final int width, final int height) {
         GLFW.glfwSetWindowSize(WINDOW, width, height);
-        glfwSetWindowSizeLimits(WINDOW, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 2540, 1440);
     }
 
     public static Vector2i getMonitorResolution() {

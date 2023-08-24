@@ -1,5 +1,6 @@
 package cz.empatix.map.service;
 
+import cz.empatix.hud.service.SceneBackground;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -12,10 +13,12 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MapService {
     private final static Logger LOGGER = LoggerFactory.getLogger(MapService.class);
+    private final SceneBackground sceneBackground;
     private final List<Room> rooms;
     private final List<Room> pathRooms;
     private final Consumer<Room> minimapRoomConsumer;
@@ -34,14 +37,18 @@ public class MapService {
 
         Camera.setMinDimensions(xMin, yMin);
         Camera.setMaxDimensions(xMax, yMax);
+
+        sceneBackground = new SceneBackground("ingame/tilebackground.tga");
     }
 
     public List<Renderable> toRender(final double dt) {
-        return Stream.of(pathRooms, rooms)
+        final List<Renderable> renderables = Stream.of(pathRooms, rooms)
                 .flatMap(Collection::stream)
                 .map(Room::toRender)
                 .flatMap(List::stream)
-                .toList();
+                .collect(Collectors.toList());
+        renderables.add(sceneBackground);
+        return renderables;
     }
 
     public void update(final double dt,

@@ -49,11 +49,10 @@ public class GLFWInit implements Initializer {
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
-        final SettingsService settingsService = SettingsService.getInstance();
-        final GameSettings settings = settingsService.getSettings();
-
         glfwMakeContextCurrent(window);
 
+        final SettingsService settingsService = SettingsService.getInstance();
+        final GameSettings settings = settingsService.getSettings();
         glfwSetWindowAspectRatio(window, settings.getResolutionWidth(), settings.getResolutionHeight());
         WindowHandler.setResolution(settings.getResolutionWidth(), settings.getResolutionHeight());
         WindowHandler.setVsync(settings.isVsync());
@@ -78,7 +77,7 @@ public class GLFWInit implements Initializer {
             glfwGetWindowSize(window, pWidth, pHeight);
 
             // Get the resolution of the primary monitor
-            GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            final GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
             // Center the window
             glfwSetWindowPos(
@@ -86,7 +85,7 @@ public class GLFWInit implements Initializer {
                     (vidmode.width() - pWidth.get(0)) / 2,
                     (vidmode.height() - pHeight.get(0)) / 2
             );
-        } // the stack frame is popped automatically
+        }
     }
 
     private void setIcon() {

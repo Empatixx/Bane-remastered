@@ -11,6 +11,9 @@ public class CommonBackground implements HUDElement {
     public CommonBackground(final String texture) {
         this.image = new CommonImage(texture, new Vector2f(0,0), WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT);
     }
+    public CommonBackground(final String texture, final int width, final int height) {
+        this.image = new CommonImage(texture, new Vector2f((WindowHandler.TARGET_WIDTH - width) / 2f,(WindowHandler.TARGET_HEIGHT - height) / 2f), width, height);
+    }
     @Override
     public RenderData renderData() {
         return image.renderData();

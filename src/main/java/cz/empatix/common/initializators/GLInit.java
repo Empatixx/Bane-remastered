@@ -1,6 +1,8 @@
 package cz.empatix.common.initializators;
 
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.settings.domain.GameSettings;
+import cz.empatix.settings.service.SettingsService;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.KHRDebug;
@@ -26,8 +28,10 @@ public class GLInit implements Initializer {
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
-        glOrtho(0, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 0, 1, -1);
+        final GameSettings settings = SettingsService.getInstance().getSettings();
+        glViewport(0, 0, settings.getResolutionWidth(), settings.getResolutionHeight());
 
+        glOrtho(0, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 0, 1, -1);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         if (DEBUG_MODE) {
             LOGGER.info("Debug mode enabled");
