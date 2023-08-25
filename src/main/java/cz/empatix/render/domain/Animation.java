@@ -117,8 +117,11 @@ public class Animation {
         return texture.textureId();
     }
 
-    public TextureAtlas.Entry getTexture() {
-        return texture;
+    public Vector2f getNormalStartPositions() {
+        return texture.normalizedSpriteStartPosition(totalSprites, totalRows, currentTextureIndex, animationParts.get(currentState).row());
+    }
+    public Vector2f getNormalEndPositions() {
+        return texture.normalizedSpriteEndPosition(totalSprites, totalRows, currentTextureIndex, animationParts.get(currentState).row());
     }
 
     private record AnimationPart(

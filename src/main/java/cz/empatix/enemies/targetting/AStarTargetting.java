@@ -64,6 +64,9 @@ public class AStarTargetting {
 
         while (!openSet.isEmpty()) {
             final PathCell currentNode = openSet.peek();
+            if (currentNode.g() > 100){
+                return List.of();
+            }
             openSetLookup.remove(currentNode);
 
             if (Math.abs(currentNode.x() - targetX) <= CELL_SIZE && Math.abs(currentNode.y() - targetY) <= CELL_SIZE) {

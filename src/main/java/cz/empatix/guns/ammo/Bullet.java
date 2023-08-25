@@ -21,9 +21,9 @@ import org.joml.Vector3f;
 
 public class Bullet implements Drawable {
     private final static int MOVE_FORCE = 1_000_0000;
-    private final static int BULLET_WIDTH = 16;
-    private final static int BULLET_HEIGHT = 16;
     private final static int SCALE = 1;
+    private final static int BULLET_WIDTH = 16 * SCALE;
+    private final static int BULLET_HEIGHT = 16 * SCALE;
     private final PhysicsBody physicsBody;
     private final Animation animation;
     private final LightSource lightSource;
@@ -34,7 +34,6 @@ public class Bullet implements Drawable {
                 .addState(AnimationState.IDLE, 0, 4, BULLET_WIDTH, BULLET_HEIGHT, 70)
                 .addState(AnimationState.COLLISION, 1, 4, BULLET_WIDTH, BULLET_HEIGHT, 70)
                 .texture(AssetsService.getTexture("ingame/bullet.tga"))
-                .scale(SCALE)
                 .build();
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
@@ -94,9 +93,9 @@ public class Bullet implements Drawable {
         final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
         final Vector2f position = physicsBody.getPhysicsTranslation();
 
-        return position.x() + BULLET_WIDTH * SCALE > cameraPos.x()
+        return position.x() + BULLET_WIDTH > cameraPos.x()
                 && position.x() < cameraPos.x() + cameraDimensions.x()
-                && position.y() + BULLET_HEIGHT * SCALE > cameraPos.y()
+                && position.y() + BULLET_HEIGHT > cameraPos.y()
                 && position.y() < cameraPos.y() + cameraDimensions.y();
     }
 
@@ -105,7 +104,7 @@ public class Bullet implements Drawable {
     }
 
     public void setDirection(final float shooterX, final float shooterY, final float targetX, final float targetY, final float inaccuracy) {
-        float angleToTarget = (float) Math.atan2(targetY - shooterY, targetX - shooterX);
+        float angleToTarget = (float) Math.atan2(targetY - BULLET_HEIGHT/2f - shooterY, targetX - BULLET_WIDTH/2f - shooterX);
 
         float finalAngle = angleToTarget + inaccuracy;
 

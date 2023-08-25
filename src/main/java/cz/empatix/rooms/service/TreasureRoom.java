@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
@@ -15,12 +16,14 @@ public class TreasureRoom implements Room {
     private final RoomObjectService roomObjectService;
     private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
+    private final ItemService itemService;
 
     public TreasureRoom(final int rows, final int cols, final int xOffset, final int yOffset,
-                        final Set<RoomDirection> neighbors) {
+                        final Set<RoomDirection> neighbors, final ItemService itemService) {
         tileMap = new TreasureTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
+        this.itemService = itemService;
     }
 
     @Override
@@ -35,7 +38,7 @@ public class TreasureRoom implements Room {
 
     @Override
     public void init() {
-        final Chest chest = new Chest();
+        final Chest chest = new Chest(itemService);
         chest.setPosition((getMaxX() + getMinX()) / 2f - chest.getWidth() / 2f,
                 (getMaxY() + getMinY()) / 2f - chest.getHeight() / 2f);
         roomObjectService.add(chest);

@@ -149,7 +149,9 @@ public class PhysicsBody {
     public void setTranslation(final float x, final float y) {
         this.transform.setTranslation(x, y);
     }
-
+    public void setTranslation(final Vector2f pos) {
+        this.transform.setTranslation(pos.x(), pos.y());
+    }
     public void applyForce(final float x, final float y) {
         this.force.add(x, y);
     }

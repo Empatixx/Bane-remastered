@@ -114,5 +114,23 @@ public record TextureAtlas(
                     (float) startPositions.y() / atlasHeight()
             );
         }
+        public Vector2f normalizedSpriteDimensions(final int cols, final int rows){
+            return new Vector2f(
+                    (float) dimensions().x() / (atlasWidth() * cols),
+                    (float) dimensions().y() / (atlasHeight() * rows)
+            );
+        }
+        public Vector2f normalizedSpriteStartPosition(final int cols, final int rows, final int currentCol, final int currentRow){
+            final Vector2f normalizedSpriteDimensions = normalizedSpriteDimensions(cols, rows);
+            final Vector2f normalizedStartPositions = normalizedStartPositions();
+            return new Vector2f(
+                    normalizedStartPositions.x() + (normalizedSpriteDimensions.x() * currentCol),
+                    normalizedStartPositions.y() + (normalizedSpriteDimensions.y() * currentRow)
+            );
+        }
+        public Vector2f  normalizedSpriteEndPosition(final int cols, final int rows, final int currentCol, final int currentRow){
+            return normalizedSpriteStartPosition(cols, rows, currentCol+1, currentRow+1);
+        }
+
     }
 }

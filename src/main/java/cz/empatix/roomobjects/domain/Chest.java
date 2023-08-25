@@ -1,6 +1,12 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.interaction.domain.Interactable;
+import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.domain.MovableItemDrop;
+import cz.empatix.items.service.ItemFactory;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.service.PhysicsBodyFactory;
@@ -10,24 +16,31 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import org.joml.Vector2f;
 
-public class Chest implements RoomObject {
+import java.util.Set;
+
+public class Chest implements RoomObject, Interactable {
+    private final static int TOTAL_DROP_ITEMS = 5;
     private final static int SCALE = 4;
-    private final static int DIMENSION_WIDTH = 16;
-    private final static int DIMENSION_HEIGHT = 16;
+    private final static int DIMENSION_WIDTH = 16 * SCALE;
+    private final static int DIMENSION_HEIGHT = 16 * SCALE;
+    private final static int ITEM_DROP_FORCE = 30_000;
     private final Animation animation;
     private final PhysicsBody physicsBody;
-    private boolean opened;
+    private final ItemService itemService;
+    private boolean opened = false;
 
-    public Chest() {
+    public Chest(final ItemService itemService) {
+        this.itemService = itemService;
         animation = Animation.builder()
                 .setTotal(2, 4)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
-                .addState(AnimationState.DEATH, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
+                .addState(AnimationState.OPEN, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .texture(AssetsService.getTexture("ingame/chest.tga"))
-                .scale(SCALE)
                 .build();
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
+        InteractionService.getInstance().addInteractable(this);
     }
 
     @Override
@@ -57,22 +70,63 @@ public class Chest implements RoomObject {
     @Override
     public void update(double dt) {
         animation.update();
+        if (canRemove()){
+            dropItems();
+        }
+    }
+
+    private void dropItems(){
+        final ItemFactory itemFactory = itemService.getItemFactory();
+        for (int i = 0; i < TOTAL_DROP_ITEMS; i++) {
+            final MovableItemDrop itemDrop = itemFactory.createMovableItemDrop();
+            itemDrop.setPosition(physicsBody.getTranslation().x, physicsBody.getTranslation().y);
+            itemDrop.setDespawnable(false);
+
+            final float angle = (float)(Math.PI * 2 * (i+1)) / TOTAL_DROP_ITEMS;
+            final float forceX = (float) Math.cos(angle) * ITEM_DROP_FORCE;
+            final float forceY = (float) Math.sin(angle) * ITEM_DROP_FORCE;
+
+            itemDrop.applyForce(forceX, forceY);
+            itemService.add(itemDrop);
+        }
+        final ItemDrop itemDrop = itemFactory.createWeaponDrop();
+        itemDrop.setPosition(physicsBody.getTranslation().x, physicsBody.getTranslation().y);
+        itemService.add(itemDrop);
     }
 
     @Override
     public boolean canRemove() {
-        return opened;
+        return opened && animation.hasPlayedOnce();
     }
+
 
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
 
-    public float getWidth() {
-        return DIMENSION_WIDTH * SCALE;
+    @Override
+    public void interact(final Set<Integer> keys) {
+        opened = true;
+        animation.setState(AnimationState.OPEN);
     }
 
-    public float getHeight() {
-        return DIMENSION_HEIGHT * SCALE;
+    @Override
+    public boolean canInteract() {
+        return !opened;
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return physicsBody.getTranslation();
+    }
+
+    @Override
+    public int getWidth() {
+        return DIMENSION_WIDTH;
+    }
+
+    @Override
+    public int getHeight() {
+        return DIMENSION_HEIGHT;
     }
 }

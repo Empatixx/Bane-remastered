@@ -41,7 +41,7 @@ public class ProceduralMapGenerator {
         final List<BossRoomGenInfo> bossRooms = Stream.generate(() -> new BossRoomGenInfo(itemService))
                 .limit(TOTAL_BOSS_ROOMS)
                 .toList();
-        final List<TreasureRoomGenInfo> treasureRooms = Stream.generate(TreasureRoomGenInfo::new)
+        final List<TreasureRoomGenInfo> treasureRooms = Stream.generate(() -> new TreasureRoomGenInfo(itemService))
                 .limit(TOTAL_LOOT_ROOMS)
                 .toList();
         startRoomGenInfo.initDimensions();

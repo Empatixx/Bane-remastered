@@ -9,6 +9,7 @@ import cz.empatix.death.service.DeathService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.lightning.service.LightningService;
@@ -103,6 +104,7 @@ public class InGameState extends GameState {
         player.cleanUp();
         PhysicsService.getInstance().clear();
         LightningService.getInstance().clear();
+        InteractionService.getInstance().clear();
     }
 
     @Override

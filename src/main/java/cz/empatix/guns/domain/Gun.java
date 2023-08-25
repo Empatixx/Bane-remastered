@@ -27,6 +27,7 @@ public interface Gun {
     List<Renderable> hudToRender();
 
     GunType getType();
+    String getTexturePath();
 
     void addPercentAmmo(final float percent);
 }

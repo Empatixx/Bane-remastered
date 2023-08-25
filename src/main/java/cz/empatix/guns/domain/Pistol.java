@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Pistol extends AbstractGun implements Gun{
+    private final static String WEAPON_TXT_PATH = "ingame/guns/pistol.tga";
     private final static Logger LOGGER = LoggerFactory.getLogger(Pistol.class);
     private final CommonImage gunHud;
     private final CommonText ammoHud;
@@ -116,6 +117,11 @@ public class Pistol extends AbstractGun implements Gun{
     @Override
     public GunType getType() {
         return gunType;
+    }
+
+    @Override
+    public String getTexturePath() {
+        return WEAPON_TXT_PATH;
     }
 
     @Override

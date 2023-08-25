@@ -102,13 +102,15 @@ public class Slimebullet implements Drawable {
         physicsBody.setTranslation(x, y);
     }
 
-    public void setDirection(final float shooterX, final float shooterY, final float targetX, final float targetY, final float inaccuracy) {
-        float angleToTarget = (float) Math.atan2(targetY - shooterY, targetX - shooterX);
+    public void setDirection(final float shooterX, final float shooterY,
+                             final float targetX, final float targetY,
+                             final float inaccuracy) {
+        final float angleToTarget = (float) Math.atan2(targetY - shooterY, targetX - shooterX);
 
-        float finalAngle = angleToTarget + inaccuracy;
+        final float finalAngle = angleToTarget + inaccuracy;
 
-        float forceX = (float) Math.cos(finalAngle) * MOVE_FORCE;
-        float forceY = (float) Math.sin(finalAngle) * MOVE_FORCE;
+        final float forceX = (float) Math.cos(finalAngle) * MOVE_FORCE;
+        final float forceY = (float) Math.sin(finalAngle) * MOVE_FORCE;
 
         physicsBody.applyForce(forceX, forceY);
     }

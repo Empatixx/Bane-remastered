@@ -9,6 +9,7 @@ uniform vec2 uTexEndPos;
 in vec2 tex_coords;
 
 void main() {
+
     float centerAlpha = texture2D(uTexSampler, tex_coords).a;
 
     const vec2 offsets[8] = vec2[](

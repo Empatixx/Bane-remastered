@@ -12,6 +12,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
+import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.EnemyBinding;
 import org.joml.Vector2f;
 
@@ -30,9 +31,7 @@ public class EnemyImpl {
     private final Supplier<Integer> moveForceSupplier;
     private int health;
 
-    // shaders vars
-    private final Vector2f texStartPos;
-    private final Vector2f texEndPos;
+    private long lastHit;
 
     public EnemyImpl(final int width,
                      final int height,
@@ -49,9 +48,6 @@ public class EnemyImpl {
         this.scale = scale;
         this.animation = animation;
         this.moveForceSupplier = moveForceSupplier;
-
-        texStartPos = animation.getTexture().normalizedStartPositions();
-        texEndPos = animation.getTexture().normalizedEndPositions();
 
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
@@ -73,6 +69,7 @@ public class EnemyImpl {
         if (this.health < 0) {
             this.health = 0;
         }
+        lastHit = System.currentTimeMillis();
     }
 
     public void heal(final int health) {
@@ -119,11 +116,21 @@ public class EnemyImpl {
     }
 
     public RenderData renderData() {
-        return new RenderData(
-                animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
-                animation.getTextureId(),
-                new EnemyBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()), texStartPos, texEndPos)
-        );
+        final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
+        if (outline > 0) {
+            return new RenderData(
+                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getTextureId(),
+                    new EnemyBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
+                            animation.getNormalStartPositions(), animation.getNormalEndPositions(), outline)
+            );
+        } else {
+            return new RenderData(
+                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getTextureId(),
+                    new CommonBinding(Camera.getProjection())
+            );
+        }
     }
 
     public boolean canRender() {

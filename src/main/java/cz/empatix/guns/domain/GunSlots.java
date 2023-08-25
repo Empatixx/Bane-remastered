@@ -81,4 +81,7 @@ public class GunSlots {
                 .filter(gun -> gun != null && gun.getType() == gunType)
                 .forEach(gun -> gun.addPercentAmmo(percent));
     }
+    public boolean containsGun(final Gun gun){
+        return slots.contains(gun);
+    }
 }

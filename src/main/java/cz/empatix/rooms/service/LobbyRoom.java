@@ -102,9 +102,10 @@ public class LobbyRoom implements Room {
             roomObjectService.add(taskBoard);
         }
         {
-            final Chest chest = new Chest();
+            //todo; chest for daily reward
+            /*final Chest chest = new Chest();
             chest.setPosition(Tile.TILE_SIZE * Tile.SCALE * 24, Tile.TILE_SIZE * Tile.SCALE * 2 - 16);
-            roomObjectService.add(chest);
+            roomObjectService.add(chest);*/
         }
         {
             final CraftingTable craftingTable = new CraftingTable();

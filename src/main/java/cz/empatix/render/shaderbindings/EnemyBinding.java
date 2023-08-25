@@ -10,22 +10,22 @@ public record EnemyBinding(
         Matrix4f projection,
         Vector2f texSize,
         Vector2f texStartPos,
-        Vector2f texEndPos
+        Vector2f texEndPos,
+        float outlineAlpha
 
 ) implements ShaderBinding{
-    private final static Vector4f COLOR = new Vector4f(1.0f, 0.0f, 0.0f,1.f);
-    private final static float OUTLINE_THICKNESS = 0.1f;
+
+    private final static float OUTLINE_THICKNESS = 0.01f;
     @Override
     public Shader apply() {
         final Shader shader = AssetsService.getShader("enemy");
         shader.bind();
-        shader.setUniform4f("uOutlineColor", COLOR);
+        shader.setUniform4f("uOutlineColor", new Vector4f(1, 0, 0, outlineAlpha));
         shader.setUniform1f("uOutlineThickness", OUTLINE_THICKNESS);
         shader.setUniform2f("uTexSize", texSize);
         shader.setUniform4x4f("uProjection", projection);
         shader.setUniform2f("uTexStartPos", texStartPos);
         shader.setUniform2f("uTexEndPos", texEndPos);
-        shader.setUniform1i("uTexSampler", 0);
         return shader;
     }
     @Override

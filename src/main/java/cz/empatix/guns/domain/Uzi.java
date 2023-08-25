@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Uzi extends AbstractGun implements Gun{
+    private final static String WEAPON_TXT_PATH = "ingame/guns/uzi.tga";
     private final static Logger LOGGER = LoggerFactory.getLogger(Uzi.class);
     private final CommonImage gunHud;
     private final CommonText ammoHud;
@@ -39,7 +40,7 @@ public class Uzi extends AbstractGun implements Gun{
         this.shooting = false;
 
         this.bullets = new ArrayList<>(clipSize);
-        final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/guns/uzi.tga");
+        final TextureAtlas.Entry texture = AssetsService.getTexture(WEAPON_TXT_PATH);
         this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
@@ -115,6 +116,11 @@ public class Uzi extends AbstractGun implements Gun{
     @Override
     public GunType getType() {
         return gunType;
+    }
+
+    @Override
+    public String getTexturePath() {
+        return WEAPON_TXT_PATH;
     }
 
     @Override

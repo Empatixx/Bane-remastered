@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class M4 extends AbstractGun implements Gun{
+    private final static String WEAPON_TXT_PATH = "ingame/guns/M4.tga";
     private final static Logger LOGGER = LoggerFactory.getLogger(M4.class);
     private final static int BULLETS_PER_SHOT = 4;
     private final static int BURST_BULLET_DELAY = 50;
@@ -48,7 +49,7 @@ public class M4 extends AbstractGun implements Gun{
         this.shooting = false;
 
         this.bullets = new ArrayList<>(clipSize);
-        final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/guns/M4.tga");
+        final TextureAtlas.Entry texture = AssetsService.getTexture(WEAPON_TXT_PATH);
         this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
@@ -152,6 +153,11 @@ public class M4 extends AbstractGun implements Gun{
     @Override
     public GunType getType() {
         return gunType;
+    }
+
+    @Override
+    public String getTexturePath() {
+        return WEAPON_TXT_PATH;
     }
 
     @Override
