@@ -13,8 +13,9 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import cz.empatix.render.shaderbindings.EnemyBinding;
+import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.joml.Vector2f;
+import org.joml.Vector4f;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -56,7 +57,7 @@ public class EnemyImpl {
         aStarTargetting = new AStarTargetting(physicsBody.getTranslation(), (int) (width * scale), (int) (height * scale));
     }
 
-    private boolean canHit(final DamageSource source,final int damage) {
+    private boolean canHit(final DamageSource source, final int damage) {
         return source != DamageSource.ENEMY;
     }
 
@@ -121,8 +122,8 @@ public class EnemyImpl {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new EnemyBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
-                            animation.getNormalStartPositions(), animation.getNormalEndPositions(), outline)
+                    new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
+                            animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
@@ -150,13 +151,13 @@ public class EnemyImpl {
 
     public void fixedUpdate(final double dt) {
         aStarTargetting.updatePath();
-        aStarTargetting.update((float)dt);
+        aStarTargetting.update((float) dt);
         final float moveForce = moveForceSupplier.get();
-        final Vector2f force = aStarTargetting.getDirectionTarget().mul(moveForce,moveForce);
+        final Vector2f force = aStarTargetting.getDirectionTarget().mul(moveForce, moveForce);
         physicsBody.applyForce(force.x(), force.y());
     }
 
     public void update(final double dt) {
-        aStarTargetting.update((float)dt);
+        aStarTargetting.update((float) dt);
     }
 }

@@ -6,21 +6,21 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 
-public record EnemyBinding(
+public record OutlineBinding(
         Matrix4f projection,
         Vector2f texSize,
         Vector2f texStartPos,
         Vector2f texEndPos,
-        float outlineAlpha
+        Vector4f outlineColor
 
 ) implements ShaderBinding{
 
     private final static float OUTLINE_THICKNESS = 0.01f;
     @Override
     public Shader apply() {
-        final Shader shader = AssetsService.getShader("enemy");
+        final Shader shader = AssetsService.getShader("outline");
         shader.bind();
-        shader.setUniform4f("uOutlineColor", new Vector4f(1, 0, 0, outlineAlpha));
+        shader.setUniform4f("uOutlineColor", outlineColor);
         shader.setUniform1f("uOutlineThickness", OUTLINE_THICKNESS);
         shader.setUniform2f("uTexSize", texSize);
         shader.setUniform4x4f("uProjection", projection);
@@ -35,7 +35,7 @@ public record EnemyBinding(
     @Override
     public boolean equals(Object obj) {
         if(this == obj) return true;
-        if(obj instanceof final EnemyBinding other){
+        if(obj instanceof final OutlineBinding other){
             return other.projection.equals(projection) && other.texSize.equals(texSize) && other.texStartPos.equals(texStartPos) && other.texEndPos.equals(texEndPos);
         }
         return false;

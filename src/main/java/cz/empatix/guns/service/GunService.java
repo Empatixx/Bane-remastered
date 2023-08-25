@@ -100,6 +100,7 @@ public class GunService {
     }
 
     private void reload() {
+        setShooting(false);
         try {
             slots.getCurrentGun().reload();
         } catch (IllegalStateException e) {
@@ -108,19 +109,9 @@ public class GunService {
     }
 
     public void addGun(final Gun gun) {
+        setShooting(false);
         if (slots.hasFullSlots()) {
-            final ItemFactory itemFactory = itemService.getItemFactory();
-            final Gun drop = slots.dropCurrentGun();
-
-            final MovableItemDrop itemDrop = itemFactory.createMovableWeaponDrop(drop, this::addGun);
-            itemDrop.setPosition(shooterX - itemDrop.getWidth()/2f, shooterY - itemDrop.getHeight()/2f);
-
-            final double atan = Math.atan2(targetY - shooterY, targetX - shooterX);
-            final float forceX = (float) Math.cos(atan) * ITEM_DROP_FORCE;
-            final float forceY = (float) Math.sin(atan) * ITEM_DROP_FORCE;
-            itemDrop.applyForce(forceX, forceY);
-
-            itemService.add(itemDrop);
+            dropCurrentGun();
         }
         slots.addGun(gun);
     }
@@ -144,10 +135,12 @@ public class GunService {
 
     public void keyPressed(final int button) {
         if (button >= GLFW.GLFW_KEY_1 && button <= GLFW.GLFW_KEY_9) {
+            setShooting(false);
             slots.switchSlot(button - GLFW.GLFW_KEY_1);
         }
-        if (GLFW.GLFW_KEY_R == button) {
-            reload();
+        switch (button) {
+            case GLFW.GLFW_KEY_R -> reload();
+            case GLFW.GLFW_KEY_Q -> tryDropCurrentGun();
         }
     }
     public Gun getUnusedRandomGun(){
@@ -165,5 +158,27 @@ public class GunService {
 
     public void addAmmo(final GunType gunType, final float percent) {
         slots.addAmmo(gunType, percent);
+    }
+
+    public void tryDropCurrentGun(){
+        try {
+            dropCurrentGun();
+        } catch (IllegalStateException e) {
+            LOGGER.warn("Could not drop current gun..");
+        }
+    }
+    private void dropCurrentGun(){
+        final ItemFactory itemFactory = itemService.getItemFactory();
+        final Gun drop = slots.dropCurrentGun();
+
+        final MovableItemDrop itemDrop = itemFactory.createMovableWeaponDrop(drop, this::addGun);
+        itemDrop.setPosition(shooterX - itemDrop.getWidth()/2f, shooterY - itemDrop.getHeight()/2f);
+
+        final double atan = Math.atan2(targetY - shooterY, targetX - shooterX);
+        final float forceX = (float) Math.cos(atan) * ITEM_DROP_FORCE;
+        final float forceY = (float) Math.sin(atan) * ITEM_DROP_FORCE;
+        itemDrop.applyForce(forceX, forceY);
+
+        itemService.add(itemDrop);
     }
 }

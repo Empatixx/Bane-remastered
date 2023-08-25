@@ -1,30 +1,37 @@
 package cz.empatix.items.domain;
 
+import cz.empatix.assets.service.AssetsService;
 import cz.empatix.guns.domain.Gun;
-import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.interaction.domain.CommonInteractable;
+import cz.empatix.interaction.service.InteractionTracker;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.service.Camera;
+import cz.empatix.render.shaderbindings.OutlineBinding;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
+import org.joml.Vector4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Set;
 import java.util.function.Consumer;
 
 public class WeaponDrop implements ItemDrop {
+    private final InteractionTracker interactionTracker = new InteractionTracker();
     private final CommonInteractable interactable;
-    private final AlternativeViewImage weapon;
-    private boolean pickedUp = false;
     private final Vector2f position = new Vector2f();
+    private final TextureAtlas.Entry texture;
+    private boolean pickedUp = false;
     public WeaponDrop(final Gun gun, final Consumer<Gun> addGun) {
+        texture = AssetsService.getTexture(gun.getTexturePath());
         interactable = new CommonInteractable(pressedKeys -> {
+            interactionTracker.interaction();
             if(pressedKeys.contains(GLFW.GLFW_KEY_E)){
                 addGun.accept(gun);
                 pickedUp = true;
             }
-        }, () -> true, () -> pickedUp, position, 0, 0);
-        weapon = new AlternativeViewImage(gun.getTexturePath(), position, 1, 2, RenderScene.SCENE, Camera.getProjection());
+        }, () -> true, () -> pickedUp, position, getWidth(), getHeight());
     }
     @Override
     public void interact(final Set<Integer> keys) {
@@ -54,7 +61,6 @@ public class WeaponDrop implements ItemDrop {
     @Override
     public void setPosition(float x, float y) {
         position.set(x, y);
-        weapon.setPosition(x, y);
     }
 
     @Override
@@ -64,12 +70,12 @@ public class WeaponDrop implements ItemDrop {
 
     @Override
     public int getWidth() {
-        return weapon.getWidth();
+        return texture.width();
     }
 
     @Override
     public int getHeight() {
-        return weapon.getHeight();
+        return texture.height();
     }
 
     @Override
@@ -79,7 +85,17 @@ public class WeaponDrop implements ItemDrop {
 
     @Override
     public RenderData renderData() {
-        return weapon.renderData();
+        return new RenderData(
+                Vertex.builder()
+                        .position(position)
+                        .posDimensions(getWidth(), getHeight())
+                        .texture(texture)
+                        .offset(getWidth(), getHeight())
+                        .buildQuad(),
+                texture.textureId(),
+                new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
+                        texture.normalizedStartPositions(), texture.normalizedSpriteEndPosition(1,1,1,1), new Vector4f(1f, 1f, 0f, interactionTracker.isInteracting() ? 1f : 0f))
+        );
     }
 
     @Override

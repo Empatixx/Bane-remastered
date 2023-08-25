@@ -10,7 +10,7 @@ public class GunSlots {
     private final Logger LOGGER = LoggerFactory.getLogger(GunSlots.class);
     private final static int DEFAULT_MAX_SLOTS = 2;
     private final ArrayList<Gun> slots;
-    private int maxSlots;
+    private final int maxSlots;
     private int currentSlot;
 
     public GunSlots() {
@@ -29,6 +29,10 @@ public class GunSlots {
     }
 
     public void addGun(final Gun gun) {
+        if (slots.get(currentSlot) == null){
+            slots.set(currentSlot, gun);
+            return;
+        }
         for(int i = 0; i < maxSlots; i++){
             if(slots.get(i) == null){
                 slots.set(i, gun);
