@@ -7,6 +7,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.LobbyTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -174,5 +175,10 @@ public class LobbyRoom implements Room {
     @Override
     public Map<RoomDirection, Room> getNeighboursMap() {
         throw new UnsupportedOperationException("Lobby room cannot have neighbours");
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.UNKNOWN;
     }
 }

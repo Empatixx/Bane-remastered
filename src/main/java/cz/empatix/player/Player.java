@@ -1,6 +1,8 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.domain.StatusBarType;
 import cz.empatix.hud.service.StatusBar;
 import cz.empatix.interaction.domain.CommonInteractEntity;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Set;
 
 public class Player implements Drawable, InteractEntity {
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
@@ -137,18 +140,24 @@ public class Player implements Drawable, InteractEntity {
             health -= damage;
         }
         if (isDead()) {
+            animation.setState(AnimationState.IDLE); // player death anim todo
             right = false;
             left = false;
             top = false;
             bottom = false;
             physicsBody.setVelocity(0, 0);
+            AUDIO_SERVICE.play(SoundEffect.DEATH);
             return;
         }
+        AUDIO_SERVICE.play(SoundEffect.PLAYER_HURT);
         RedVignette.setMaxVignette();
         lastHitTime = System.currentTimeMillis();
     }
 
     public void fixedUpdate(final double dt) {
+        if(isDead()){
+            return;
+        }
         move(dt);
         final Vector2f velocity = physicsBody.getVelocity();
         if (Math.abs(velocity.x()) >= GAZE_SPEED_PRELIMIT || Math.abs(velocity.y()) >= GAZE_SPEED_PRELIMIT) {

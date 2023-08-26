@@ -45,4 +45,7 @@ public class KingSlimeArmageddon implements Skill {
     public List<Renderable> getSubRenderables() {
         return List.copyOf(slimebullets);
     }
+    public boolean noBullets(){
+        return slimebullets.isEmpty();
+    }
 }

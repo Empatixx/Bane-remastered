@@ -11,9 +11,9 @@ import org.joml.Vector2f;
 
 public class Ghost implements Enemy{
     private final static int MOVE_FORCE = 12500000;
-    private final static int DIMENSION_WIDTH = 22;
-    private final static int DIMENSION_HEIGHT = 28;
     private final static int SCALE = 4;
+    private final static int DIMENSION_WIDTH = (int) (22 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (28 * SCALE);
     private final static int DEFAULT_HEALTH = 11;
     private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
@@ -27,10 +27,9 @@ public class Ghost implements Enemy{
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addState(AnimationState.DEATH, 1, 5, DIMENSION_WIDTH, DIMENSION_HEIGHT, 85)
                 .texture(AssetsService.getTexture("ingame/ghost.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation,DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation,DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
                 () -> moveForce);
         dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);
     }

@@ -13,9 +13,9 @@ import java.util.List;
 
 public class Slime implements Enemy{
     private final static int MOVE_FORCE = 3000000;
-    private final static int DIMENSION_WIDTH = 64;
-    private final static int DIMENSION_HEIGHT = 48;
     private final static float SCALE = 1.5f;
+    private final static int DIMENSION_WIDTH = (int)(64 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int)(48* SCALE);
     private final static int DEFAULT_HEALTH = 9;
     private final static int DEFAULT_DAMAGE = 1;
     private final Animation animation;
@@ -27,12 +27,11 @@ public class Slime implements Enemy{
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .addState(AnimationState.DEATH, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
                 .texture(AssetsService.getTexture("ingame/slime.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
                 () -> MOVE_FORCE);
-        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2));
+        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2));
     }
     @Override
     public void update(double dt) {
@@ -55,7 +54,7 @@ public class Slime implements Enemy{
 
     }
 
-    public void onDeath() {
+    private void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
     }

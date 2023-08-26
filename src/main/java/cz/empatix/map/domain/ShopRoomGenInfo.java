@@ -1,6 +1,7 @@
 package cz.empatix.map.domain;
 
 import cz.empatix.items.service.ItemService;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.rooms.service.ShopRoom;
 
@@ -18,6 +19,11 @@ public class ShopRoomGenInfo extends RoomGenInfo {
     @Override
     public Room constructRoom() {
         return new ShopRoom(itemService, rows, cols, xOffset, yOffset, neighbours.keySet());
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.SHOP;
     }
 
     @Override

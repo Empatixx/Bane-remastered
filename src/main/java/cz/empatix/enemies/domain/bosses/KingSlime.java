@@ -4,6 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.skills.KingSlimeArmageddon;
 import cz.empatix.enemies.skills.SlimeSmash;
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -14,12 +15,13 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class KingSlime implements Enemy {
-    private final static int DIMENSION_WIDTH = 64;
-    private final static int DIMENSION_HEIGHT = 48;
+    private final static int MOVE_FORCE = 25000000;
     private final static int SCALE = 5;
+    private final static int DIMENSION_WIDTH = 64 * SCALE;
+    private final static int DIMENSION_HEIGHT = 48 * SCALE;
     private final static int DEFAULT_HEALTH = 90;
     private final Animation animation;
-    private final Enemy bossImpl;
+    private final BossImpl bossImpl;
     private final KingSlimeArmageddon armageddon;
     private final SlimeSmash slimeSmash;
 
@@ -29,12 +31,11 @@ public class KingSlime implements Enemy {
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .addState(AnimationState.DEATH, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
                 .texture(AssetsService.getTexture("ingame/kingslime.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
-        armageddon = new KingSlimeArmageddon(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2));
-        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH * SCALE / 2, DIMENSION_HEIGHT * SCALE / 2), 25);
+        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 2, this::hit, () -> MOVE_FORCE);
+        armageddon = new KingSlimeArmageddon(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2));
+        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), 25);
     }
 
     @Override
@@ -42,10 +43,15 @@ public class KingSlime implements Enemy {
         animation.update();
         armageddon.update((float) dt);
         slimeSmash.update((float) dt);
+        bossImpl.update(dt);
     }
 
     @Override
     public void fixedUpdate(double dt) {
+        if (isDead()) {
+            return;
+        }
+        bossImpl.fixedUpdate(dt);
         armageddon.activate();
         slimeSmash.activate();
     }
@@ -53,8 +59,19 @@ public class KingSlime implements Enemy {
 
     @Override
     public void hit(final int damage) {
+        if(isDead()){
+            return;
+        }
         bossImpl.hit(damage);
+        if(isDead()){
+            onDeath();
+        }
     }
+    private void onDeath() {
+        animation.setState(AnimationState.DEATH);
+        bossImpl.onDeath();
+    }
+
 
     @Override
     public void heal(final int health) {
@@ -73,7 +90,7 @@ public class KingSlime implements Enemy {
 
     @Override
     public boolean canDropItems() {
-        return bossImpl.canDropItems();
+        return false;
     }
 
     @Override
@@ -91,7 +108,7 @@ public class KingSlime implements Enemy {
 
     @Override
     public boolean canRemove() {
-        return false;
+        return isDead() && animation.hasPlayedOnce() && slimeSmash.noBullets() && armageddon.noBullets();
     }
 
     @Override
@@ -101,7 +118,7 @@ public class KingSlime implements Enemy {
 
     @Override
     public boolean canRender() {
-        return bossImpl.canRender();
+        return bossImpl.canRender() && !(isDead() && animation.hasPlayedOnce());
     }
 
     @Override
@@ -132,5 +149,10 @@ public class KingSlime implements Enemy {
     @Override
     public void setPosition(float x, float y) {
         bossImpl.setPosition(x, y);
+    }
+
+    @Override
+    public void setTarget(final Player player) {
+        bossImpl.setTarget(player);
     }
 }

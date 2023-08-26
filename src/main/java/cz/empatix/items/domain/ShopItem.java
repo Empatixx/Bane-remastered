@@ -1,6 +1,8 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.domain.font.FontSize;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.service.InteractionTracker;
@@ -20,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ShopItem implements ItemDrop {
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int ITEM_OFFSET = 15;
     private static final int INTERACTION_TEXT_OFFSET = 20;
     private final static Logger LOGGER = LoggerFactory.getLogger(ShopItem.class);
@@ -101,6 +104,7 @@ public class ShopItem implements ItemDrop {
             LOGGER.info("Successfully bought {} for {}", drop, price);
             removeCoinsConsumer.accept(price);
             bought = true;
+            AUDIO_SERVICE.play(SoundEffect.BUY);
         }
         if (drop.canInteract()) {
             drop.interact(keys);

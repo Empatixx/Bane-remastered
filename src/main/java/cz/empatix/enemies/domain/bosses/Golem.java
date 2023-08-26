@@ -2,6 +2,7 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -11,13 +12,13 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class Golem implements Enemy {
-
-    private final static int DIMENSION_WIDTH = 100;
-    private final static int DIMENSION_HEIGHT = 100;
-    private final static int SCALE = 5;
+    private final static int MOVE_FORCE = 150000000;
+    private final static int SCALE = 4;
+    private final static int DIMENSION_WIDTH = 100 * SCALE;
+    private final static int DIMENSION_HEIGHT = 100 * SCALE;
     private final static int DEFAULT_HEALTH = 130;
     private final Animation animation;
-    private final Enemy bossImpl;
+    private final BossImpl bossImpl;
     public Golem(){
         animation = Animation.builder()
                 .setTotal(8,14)
@@ -30,26 +31,38 @@ public class Golem implements Enemy {
                 .addState(AnimationState.SPELL4, 6, 10, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
                 .addState(AnimationState.DEATH, 7, 14, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
                 .texture(AssetsService.getTexture("ingame/golem.png"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation);
+        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> MOVE_FORCE);
     }
+
+
     @Override
     public void update(double dt) {
         animation.update();
+        bossImpl.update(dt);
+    }
+
+    @Override
+    public void hit(final int damage) {
+        if(isDead()){
+            return;
+        }
+        bossImpl.hit(damage);
+        if(isDead()){
+            onDeath();
+        }
+    }
+    private void onDeath() {
+        animation.setState(AnimationState.DEATH);
+        bossImpl.onDeath();
     }
 
     @Override
     public void fixedUpdate(double dt) {
-
+        bossImpl.fixedUpdate(dt);
     }
 
-
-    @Override
-    public void hit(final int damage) {
-        bossImpl.hit(damage);
-    }
 
     @Override
     public void heal(final int health) {
@@ -73,12 +86,12 @@ public class Golem implements Enemy {
 
     @Override
     public boolean canRemove() {
-        return false;
+        return isDead() && animation.hasPlayedOnce();
     }
 
     @Override
     public boolean canDropItems() {
-        return bossImpl.canDropItems();
+        return false;
     }
 
     @Override
@@ -122,5 +135,10 @@ public class Golem implements Enemy {
     @Override
     public void setPosition(float x, float y) {
         bossImpl.setPosition(x, y);
+    }
+
+    @Override
+    public void setTarget(final Player player) {
+        bossImpl.setTarget(player);
     }
 }

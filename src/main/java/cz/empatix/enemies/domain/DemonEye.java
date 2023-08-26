@@ -7,26 +7,27 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
-public class DemonEye implements Enemy{
+public class DemonEye implements Enemy {
     private final static int MOVE_FORCE = 15000000;
-    private final static int DIMENSION_WIDTH = 76;
-    private final static int DIMENSION_HEIGHT = 64;
     private final static float SCALE = 1.5f;
+    private final static int DIMENSION_WIDTH = (int) (76 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (64 * SCALE);
     private final static int DEFAULT_HEALTH = 11;
     private final static int DEFAULT_DAMAGE = 3;
     private final Animation animation;
     private final EnemyImpl enemyImpl;
-    public DemonEye(){
+
+    public DemonEye() {
         animation = Animation.builder()
-                .setTotal(1,4)
+                .setTotal(1, 4)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/demoneye.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, this::isDead,
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, this::isDead,
                 () -> MOVE_FORCE);
     }
+
     @Override
     public void update(double dt) {
         animation.update();
@@ -49,11 +50,11 @@ public class DemonEye implements Enemy{
 
     @Override
     public void hit(final int damage) {
-        if(isDead()){
+        if (isDead()) {
             return;
         }
         enemyImpl.hit(damage);
-        if(isDead()){
+        if (isDead()) {
             onDeath();
         }
     }
@@ -87,10 +88,12 @@ public class DemonEye implements Enemy{
     public RenderData renderData() {
         return enemyImpl.renderData();
     }
+
     @Override
     public boolean canRender() {
         return enemyImpl.canRender();
     }
+
     @Override
     public float getX() {
         return enemyImpl.getX();
@@ -105,6 +108,7 @@ public class DemonEye implements Enemy{
     public Vector2f getPosition() {
         return enemyImpl.getPosition();
     }
+
     @Override
     public int getWidth() {
         return enemyImpl.getWidth();
@@ -119,6 +123,7 @@ public class DemonEye implements Enemy{
     public void setPosition(float x, float y) {
         enemyImpl.setPosition(x, y);
     }
+
     @Override
     public boolean canDropItems() {
         return enemyImpl.canDropItems();

@@ -1,6 +1,8 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
@@ -15,6 +17,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public class CoinItem implements ItemDrop {
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static float SCALE = 0.75f;
     private final static int DIMENSION_WIDTH = (int) (33 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (33 * SCALE);
@@ -36,6 +39,7 @@ public class CoinItem implements ItemDrop {
         interactable = new CommonInteractable(pressedKeys -> {
             pickedUp = true;
             coinAdd.accept(amount);
+            AUDIO_SERVICE.play(SoundEffect.COIN);
         }, () -> !pickedUp, this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
     }

@@ -7,27 +7,28 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
-public class Snake implements Enemy{
+public class Snake implements Enemy {
     private final static int MOVE_FORCE = 8000000;
-    private final static int DIMENSION_WIDTH = 64;
-    private final static int DIMENSION_HEIGHT = 64;
     private final static float SCALE = 1.5f;
+    private final static int DIMENSION_WIDTH = (int) (64 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (64 * SCALE);
     private final static int DEFAULT_HEALTH = 8;
     private final static int DEFAULT_DAMAGE = 3;
     private final Animation animation;
     private final EnemyImpl enemyImpl;
-    public Snake(){
+
+    public Snake() {
         animation = Animation.builder()
-                .setTotal(2,9)
+                .setTotal(2, 9)
                 .addState(AnimationState.IDLE, 0, 9, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
                 .addState(AnimationState.DEATH, 1, 5, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/snake.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
                 () -> MOVE_FORCE);
     }
+
     @Override
     public void update(double dt) {
         animation.update();
@@ -43,20 +44,20 @@ public class Snake implements Enemy{
     public void fixedUpdate(double dt) {
         enemyImpl.fixedUpdate(dt);
     }
-    public void onDeath() {
+
+    private void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();
-
     }
 
 
     @Override
     public void hit(final int damage) {
-        if(isDead()){
+        if (isDead()) {
             return;
         }
         enemyImpl.hit(damage);
-        if(isDead()){
+        if (isDead()) {
             onDeath();
         }
     }
@@ -75,6 +76,7 @@ public class Snake implements Enemy{
     public void onSpawn() {
 
     }
+
     @Override
     public boolean canDropItems() {
         return enemyImpl.canDropItems();
@@ -95,18 +97,22 @@ public class Snake implements Enemy{
     public RenderData renderData() {
         return enemyImpl.renderData();
     }
+
     @Override
     public boolean canRender() {
         return !canRemove();
     }
+
     @Override
     public float getX() {
         return enemyImpl.getX();
     }
+
     @Override
     public Vector2f getPosition() {
         return enemyImpl.getPosition();
     }
+
     @Override
     public float getY() {
         return enemyImpl.getY();

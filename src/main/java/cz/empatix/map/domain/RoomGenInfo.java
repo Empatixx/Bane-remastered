@@ -1,5 +1,6 @@
 package cz.empatix.map.domain;
 
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public abstract class RoomGenInfo {
     public abstract void initDimensions();
 
     public abstract Room constructRoom();
+    public abstract RoomType getRoomType();
 
     public abstract boolean canCreateNeighbours();
 

@@ -3,6 +3,7 @@ package cz.empatix.rooms.service;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.rooms.domain.RoomType;
 
 import java.util.Collection;
 import java.util.List;
@@ -48,4 +49,5 @@ public interface Room {
         return getNeighboursMap().values();
     }
     Map<RoomDirection, Room> getNeighboursMap();
+    RoomType getRoomType();
 }

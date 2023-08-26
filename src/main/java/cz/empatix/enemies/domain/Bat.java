@@ -9,9 +9,9 @@ import org.joml.Vector2f;
 
 public class Bat implements Enemy{
     private final static int MOVE_FORCE = 15000000;
-    private final static int DIMENSION_WIDTH = 64;
-    private final static int DIMENSION_HEIGHT = 64;
     private final static float SCALE = 1.5f;
+    private final static int DIMENSION_WIDTH = (int) (64 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (64 * SCALE);
     private final static int DEFAULT_HEALTH = 9;
     private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
@@ -22,10 +22,9 @@ public class Bat implements Enemy{
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
                 .addState(AnimationState.DEATH, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/bat.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
                 () -> MOVE_FORCE);
     }
     @Override

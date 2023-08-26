@@ -27,7 +27,6 @@ public class EnemyImpl {
     private final AStarTargetting aStarTargetting;
     private final int width;
     private final int height;
-    private final float scale;
     private final int maxHealth;
     private final Supplier<Integer> moveForceSupplier;
     private int health;
@@ -37,7 +36,6 @@ public class EnemyImpl {
     public EnemyImpl(final int width,
                      final int height,
                      final int maxHealth,
-                     final float scale,
                      final Animation animation,
                      final int damage,
                      final Consumer<Integer> hitCallback,
@@ -46,15 +44,14 @@ public class EnemyImpl {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
-        this.scale = scale;
         this.animation = animation;
         this.moveForceSupplier = moveForceSupplier;
 
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from((int) (width * scale), (int) (height * scale)));
+        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(width, height));
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
         physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
         droppableState = new DroppableState(droppableCondition);
-        aStarTargetting = new AStarTargetting(physicsBody.getTranslation(), (int) (width * scale), (int) (height * scale));
+        aStarTargetting = new AStarTargetting(physicsBody.getTranslation(), width, height);
     }
 
     private boolean canHit(final DamageSource source, final int damage) {
@@ -101,11 +98,11 @@ public class EnemyImpl {
     }
 
     public int getWidth() {
-        return (int) (width * scale);
+        return width;
     }
 
     public int getHeight() {
-        return (int) (height * scale);
+        return height;
     }
 
     public void setPosition(float x, float y) {

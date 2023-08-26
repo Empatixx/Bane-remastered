@@ -1,5 +1,7 @@
 package cz.empatix.ui;
 
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
@@ -11,6 +13,7 @@ import org.joml.Vector3i;
 import java.util.List;
 
 public class TransparentButton implements UIElement{
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static RenderScene DEFAULT_SCENE = RenderScene.OVERLAYS;
     private final static int DIMENSIONS_BONUS_OFFSET = 10;
     private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
@@ -78,6 +81,7 @@ public class TransparentButton implements UIElement{
         if (!mouseIntersectsUI(mouseX, mouseY)) {
             return;
         }
+        AUDIO_SERVICE.play(SoundEffect.CLICK);
         onClick.run();
     }
 

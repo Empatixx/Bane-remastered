@@ -1,6 +1,8 @@
 package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.attributes.Renderable;
@@ -17,6 +19,7 @@ import org.joml.Vector3i;
 import java.util.List;
 
 public class CommonButton implements UIElement {
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private static final int DEFAULT_Z_DEPTH = 1;
     private final static String DEFAULT_TEXTURE = "menu/Menu_bar.tga";
     private final static Vector3i DEFAULT_COLOR = new Vector3i(200, 92, 18);
@@ -118,6 +121,7 @@ public class CommonButton implements UIElement {
         if (!mouseIntersectsUI(mouseX, mouseY)) {
             return;
         }
+        AUDIO_SERVICE.play(SoundEffect.CLICK);
         onClick.run();
     }
 

@@ -6,8 +6,8 @@ import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
 
 public interface Enemy extends Drawable {
-    void update(double dt);
-    void fixedUpdate(double dt);
+    void update(final double dt);
+    void fixedUpdate(final double dt);
     void hit(final int damage);
     void heal(final int health);
     void onCollision();
@@ -28,8 +28,6 @@ public interface Enemy extends Drawable {
     Vector2f getPosition();
     int getWidth();
     int getHeight();
-    void setPosition(float x, float y);
-    default void setTarget(Player player){
-
-    }
+    void setPosition(final float x,final float y);
+    void setTarget(final Player player);
 }

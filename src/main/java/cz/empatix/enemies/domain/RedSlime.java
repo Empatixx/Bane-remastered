@@ -7,27 +7,28 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
-public class RedSlime implements Enemy{
+public class RedSlime implements Enemy {
     private final static int MOVE_FORCE = 3000000;
-    private final static int DIMENSION_WIDTH = 64;
-    private final static int DIMENSION_HEIGHT = 48;
     private final static float SCALE = 1.5f;
+    private final static int DIMENSION_WIDTH = (int) (64 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (48 * SCALE);
     private final static int DEFAULT_HEALTH = 9;
     private final static int DEFAULT_DAMAGE = 1;
     private final Animation animation;
     private final EnemyImpl enemyImpl;
-    public RedSlime(){
+
+    public RedSlime() {
         animation = Animation.builder()
-                .setTotal(2,6)
+                .setTotal(2, 6)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .addState(AnimationState.DEATH, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
                 .texture(AssetsService.getTexture("ingame/redslime.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
                 () -> MOVE_FORCE);
     }
+
     @Override
     public void update(double dt) {
         animation.update();
@@ -51,11 +52,11 @@ public class RedSlime implements Enemy{
 
     @Override
     public void hit(final int damage) {
-        if(isDead()){
+        if (isDead()) {
             return;
         }
         enemyImpl.hit(damage);
-        if(isDead()){
+        if (isDead()) {
             onDeath();
         }
     }
@@ -74,6 +75,7 @@ public class RedSlime implements Enemy{
     public void onSpawn() {
 
     }
+
     @Override
     public boolean canDropItems() {
         return enemyImpl.canDropItems();
@@ -94,10 +96,12 @@ public class RedSlime implements Enemy{
     public RenderData renderData() {
         return enemyImpl.renderData();
     }
+
     @Override
     public boolean canRender() {
         return !canRemove();
     }
+
     @Override
     public float getX() {
         return enemyImpl.getX();
@@ -107,10 +111,12 @@ public class RedSlime implements Enemy{
     public float getY() {
         return enemyImpl.getY();
     }
+
     @Override
     public Vector2f getPosition() {
         return enemyImpl.getPosition();
     }
+
     @Override
     public int getWidth() {
         return enemyImpl.getWidth();

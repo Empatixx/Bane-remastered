@@ -3,8 +3,8 @@ package cz.empatix.map.generators;
 import com.google.common.base.Preconditions;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.*;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.rooms.service.StartRoom;
 import cz.empatix.tiles.domain.Tile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +62,7 @@ public class ProceduralMapGenerator {
         allRooms.forEach(Room::init);
 
         final Room startRoom = allRooms.stream()
-                .filter(room -> room instanceof StartRoom) //todo; enums
+                .filter(room -> room.getRoomType() == RoomType.START)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Start room not found"));
 
@@ -151,6 +151,9 @@ public class ProceduralMapGenerator {
                     .min(Comparator.comparingDouble(room -> random.nextFloat() + ROOMS_DENSITY * room.getNeighbours().size()))
                     .ifPresentOrElse(room -> {
                         final RoomGenInfo neighbour = availableRooms.peek();
+                        if (room.getRoomType() == RoomType.START && neighbour.getRoomType() != RoomType.NORMAL){
+                            return;
+                        }
                         final List<RoomDirection> availableDirections = room.getAvailableDirections();
                         while (!availableDirections.isEmpty()) {
                             final RoomDirection direction = availableDirections.get(random.nextInt(availableDirections.size()));

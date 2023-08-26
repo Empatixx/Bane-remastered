@@ -8,6 +8,7 @@ import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -108,6 +109,11 @@ public class CommonRoom implements Room {
     @Override
     public Map<RoomDirection, Room> getNeighboursMap() {
         return neighbors;
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.NORMAL;
     }
 
 }

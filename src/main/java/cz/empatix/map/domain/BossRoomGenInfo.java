@@ -1,6 +1,7 @@
 package cz.empatix.map.domain;
 
 import cz.empatix.items.service.ItemService;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.BossRoom;
 import cz.empatix.rooms.service.Room;
 
@@ -20,6 +21,11 @@ public class BossRoomGenInfo extends RoomGenInfo {
     @Override
     public Room constructRoom() {
         return new BossRoom(itemService, rows, cols, xOffset, yOffset, neighbours.keySet());
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.BOSS;
     }
 
     @Override

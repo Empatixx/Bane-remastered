@@ -64,18 +64,14 @@ public class MinimapRoom implements Drawable {
     }
 
     private int getTextureFrame(final Room r) {
-        if (r instanceof StartRoom) {
-            return 0;
-        } else if (r instanceof CommonRoom) {
-            return 1;
-        } else if (r instanceof TreasureRoom) {
-            return 2;
-        } else if (r instanceof ShopRoom) {
-            return 3;
-        } else if (r instanceof BossRoom) {
-            return 4;
-        }
-        throw new IllegalStateException("Unknown room type: " + r.getClass().getSimpleName());
+        return switch (r.getRoomType()){
+            case START -> 0;
+            case NORMAL -> 1;
+            case TREASURE -> 2;
+            case SHOP -> 3;
+            case BOSS -> 4;
+            default -> throw new IllegalStateException("Unknown room type: " + r.getRoomType());
+        };
     }
 
     public void visit() {

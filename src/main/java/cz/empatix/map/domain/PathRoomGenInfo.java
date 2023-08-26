@@ -1,6 +1,7 @@
 package cz.empatix.map.domain;
 
 import com.google.common.base.Preconditions;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.PathRoom;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
@@ -91,6 +92,11 @@ public class PathRoomGenInfo extends RoomGenInfo {
         }
         setCoordinates(newOffsetX, newOffsetY);
         return new PathRoom(xOffset, yOffset, rows, cols, minX, minY, maxX, maxY, isHorizontal);
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.PATH;
     }
 
     @Override

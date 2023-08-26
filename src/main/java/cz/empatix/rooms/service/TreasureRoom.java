@@ -7,6 +7,7 @@ import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.Chest;
 import cz.empatix.roomobjects.service.RoomObjectService;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.TileMap;
 import cz.empatix.tiles.tilemaps.TreasureTileMap;
 
@@ -88,5 +89,10 @@ public class TreasureRoom implements Room {
     @Override
     public Map<RoomDirection, Room> getNeighboursMap() {
         return neighbors;
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.TREASURE;
     }
 }

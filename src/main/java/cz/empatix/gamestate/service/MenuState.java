@@ -36,6 +36,7 @@ public class MenuState extends GameState {
     @Override
     public void init() {
         CursorService.setCursor(CursorType.DEFAULT);
+        AudioService.getInstance().play(Soundtrack.MAIN_MENU);
         if (loadedOnce) {
             return;
         }
@@ -56,8 +57,6 @@ public class MenuState extends GameState {
 
         uiElements = List.of(playButton, settingsButton, exitButton);
         hudElements = List.of(title);
-
-        AudioService.getInstance().play(Soundtrack.MAIN_MENU);
         loadedOnce = true;
     }
 

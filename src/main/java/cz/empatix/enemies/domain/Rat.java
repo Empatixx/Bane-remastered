@@ -9,9 +9,9 @@ import org.joml.Vector2f;
 
 public class Rat implements Enemy{
     private final static int MOVE_FORCE = 7500000;
-    private final static int DIMENSION_WIDTH = 85;
-    private final static int DIMENSION_HEIGHT = 37;
     private final static float SCALE = 1.5f;
+    private final static int DIMENSION_WIDTH = (int)(85 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int)(37* SCALE);
     private final static int DEFAULT_HEALTH = 12;
     private final static int DEFAULT_DAMAGE = 2;
     private final Animation animation;
@@ -22,10 +22,9 @@ public class Rat implements Enemy{
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 120)
                 .addState(AnimationState.DEATH, 1, 3, DIMENSION_WIDTH, DIMENSION_HEIGHT, 150)
                 .texture(AssetsService.getTexture("ingame/rat.tga"))
-                .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
-        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, SCALE, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
+        enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
                 () -> MOVE_FORCE);
     }
     @Override

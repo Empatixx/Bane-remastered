@@ -4,6 +4,7 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.PathTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -101,5 +102,10 @@ public class PathRoom implements Room {
     @Override
     public java.util.Map<RoomDirection, Room> getNeighboursMap() {
         throw new IllegalStateException("PathRoom does not have neighbors");
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.PATH;
     }
 }

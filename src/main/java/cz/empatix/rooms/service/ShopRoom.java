@@ -10,6 +10,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.ShopTable;
 import cz.empatix.roomobjects.domain.Shopkeeper;
 import cz.empatix.roomobjects.service.RoomObjectService;
+import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -110,5 +111,10 @@ public class ShopRoom implements Room {
     @Override
     public Map<RoomDirection, Room> getNeighboursMap() {
         return neighbors;
+    }
+
+    @Override
+    public RoomType getRoomType() {
+        return RoomType.SHOP;
     }
 }

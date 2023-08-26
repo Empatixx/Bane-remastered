@@ -79,7 +79,7 @@ public class Chest implements RoomObject, Interactable {
         final ItemFactory itemFactory = itemService.getItemFactory();
         for (int i = 0; i < TOTAL_DROP_ITEMS; i++) {
             final MovableItemDrop itemDrop = itemFactory.createMovableItemDrop();
-            itemDrop.setPosition(physicsBody.getTranslation().x, physicsBody.getTranslation().y);
+            itemDrop.setPosition(physicsBody.getTranslation().x() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getTranslation().y() - itemDrop.getHeight()/2f + getHeight()/2f);
             itemDrop.setDespawnable(false);
 
             final float angle = (float)(Math.PI * 2 * (i+1)) / TOTAL_DROP_ITEMS;
@@ -90,7 +90,7 @@ public class Chest implements RoomObject, Interactable {
             itemService.add(itemDrop);
         }
         final ItemDrop itemDrop = itemFactory.createWeaponDrop();
-        itemDrop.setPosition(physicsBody.getTranslation().x, physicsBody.getTranslation().y);
+        itemDrop.setPosition(physicsBody.getTranslation().x() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getTranslation().y() - itemDrop.getHeight()/2f + getHeight()/2f);
         itemService.add(itemDrop);
     }
 
