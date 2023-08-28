@@ -1,8 +1,6 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.domain.SoundEffect;
-import cz.empatix.audio.service.AudioService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionTracker;
@@ -20,7 +18,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public class WeaponDrop implements ItemDrop {
-    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final CommonInteractable interactable;
     private final Vector2f position = new Vector2f();
@@ -33,7 +30,6 @@ public class WeaponDrop implements ItemDrop {
             if(pressedKeys.contains(GLFW.GLFW_KEY_E)){
                 addGun.accept(gun);
                 pickedUp = true;
-                AUDIO_SERVICE.play(SoundEffect.PICKUP);
             }
         }, () -> true, () -> pickedUp, position, getWidth(), getHeight());
     }

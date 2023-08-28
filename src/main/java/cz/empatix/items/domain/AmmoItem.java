@@ -1,6 +1,8 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.guns.domain.GunType;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.items.service.ItemDespawnService;
@@ -18,6 +20,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class AmmoItem implements ItemDrop {
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static float SCALE = 1.5f;
     private final static int DIMENSION_WIDTH = (int) (32 * SCALE);
@@ -44,6 +47,7 @@ public class AmmoItem implements ItemDrop {
         interactable = new CommonInteractable(pressedKeys -> {
             pickUp.accept(type, percentAmount);
             pickedUp = true;
+            AUDIO_SERVICE.play(SoundEffect.PICKUP);
         }, () -> !pickedUp && canPickUp.apply(type), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
     }

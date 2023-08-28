@@ -2,9 +2,7 @@ package cz.empatix.hud.service.image;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.HUDElement;
-import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.domain.Vertex;
+import cz.empatix.render.domain.*;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Matrix4f;
@@ -12,34 +10,53 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 public class AlternativeViewImage implements HUDElement {
-    private final TextureAtlas.Entry texture;
     private final Vector2i dimensions;
-    private final Vector2f position;
     private final RenderScene scene;
     private final int zDepth;
     private final Matrix4f cameraMatrix;
-
-    public AlternativeViewImage(final String texture, final Vector2f position, final float scale, final int zDepth, final RenderScene scene, final Matrix4f cameraMatrix) {
-        this.texture = AssetsService.getTexture(texture);
-        this.dimensions = new Vector2i(this.texture.width(), this.texture.height());
+    private final Animation animation;
+    private final Vector2f position;
+    public AlternativeViewImage(final String texturePath, final Vector2f position, final float scale, final int zDepth, final RenderScene scene, final Matrix4f cameraMatrix) {
+        final TextureAtlas.Entry texture = AssetsService.getTexture(texturePath);
+        this.dimensions = new Vector2i(texture.width(), texture.height());
         this.dimensions.x *= scale;
         this.dimensions.y *= scale;
+
         this.cameraMatrix = cameraMatrix;
-        this.position = position;
         this.zDepth = zDepth;
         this.scene = scene;
-    }
+        this.position = position;
 
+        this.animation = Animation.builder()
+                .setTotal(1, 1)
+                .addState(AnimationState.IDLE, 0,1, dimensions.x(), dimensions.y(), -1)
+                .texture(texture)
+                .build();
+
+    }
+    public AlternativeViewImage(final String texturePath, final Vector2f position, final float scale, final int zDepth, final RenderScene scene, final Matrix4f cameraMatrix,
+                                final int frames, final int delayBetweenAnimations) {
+        final TextureAtlas.Entry texture = AssetsService.getTexture(texturePath);
+        this.dimensions = new Vector2i(texture.width(), texture.height());
+        this.dimensions.x *= scale / frames;
+        this.dimensions.y *= scale;
+
+        this.cameraMatrix = cameraMatrix;
+        this.zDepth = zDepth;
+        this.scene = scene;
+        this.position = position;
+
+        this.animation = Animation.builder()
+                .setTotal(1, frames)
+                .addState(AnimationState.IDLE, 0,frames, dimensions.x(), dimensions.y(), delayBetweenAnimations)
+                .texture(texture)
+                .build();
+    }
     @Override
     public RenderData renderData() {
         return new RenderData(
-                Vertex.builder()
-                        .position(position)
-                        .posDimensions(dimensions.x(), dimensions.y())
-                        .texture(texture)
-                        .offset(dimensions.x(), dimensions.y())
-                        .buildQuad(),
-                texture.textureId(),
+                animation.getVertices(position),
+                animation.getTextureId(),
                 new CommonBinding(cameraMatrix)
         );
     }
@@ -56,6 +73,7 @@ public class AlternativeViewImage implements HUDElement {
 
     @Override
     public void update(double dt) {
+        animation.update();
     }
     public int getWidth() {
         return dimensions.x;

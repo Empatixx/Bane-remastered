@@ -3,6 +3,7 @@ package cz.empatix.map.generators;
 import com.google.common.base.Preconditions;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.*;
+import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
@@ -30,7 +31,8 @@ public class ProceduralMapGenerator {
         Preconditions.checkArgument(TOTAL_START_ROOMS == 1, "Total start rooms must be 1");
         Preconditions.checkArgument(TOTAL_BOSS_ROOMS == 1, "Total boss rooms must be 1");
     }
-    public MapGenerationResult generate(final ItemService itemService) {
+    public MapGenerationResult generate(final ItemService itemService,
+                                        final MapLoaderService mapLoaderService) {
         final StartRoomGenInfo startRoomGenInfo = new StartRoomGenInfo();
         final List<CommonRoomGenInfo> normalRooms = Stream.generate(() -> new CommonRoomGenInfo(itemService))
                 .limit(TOTAL_NORMAL_ROOMS)
@@ -38,7 +40,7 @@ public class ProceduralMapGenerator {
         final List<ShopRoomGenInfo> shopRooms = Stream.generate(() -> new ShopRoomGenInfo(itemService))
                 .limit(TOTAL_SHOP_ROOMS)
                 .toList();
-        final List<BossRoomGenInfo> bossRooms = Stream.generate(() -> new BossRoomGenInfo(itemService))
+        final List<BossRoomGenInfo> bossRooms = Stream.generate(() -> new BossRoomGenInfo(itemService, mapLoaderService))
                 .limit(TOTAL_BOSS_ROOMS)
                 .toList();
         final List<TreasureRoomGenInfo> treasureRooms = Stream.generate(() -> new TreasureRoomGenInfo(itemService))

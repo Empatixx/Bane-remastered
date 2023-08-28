@@ -1,9 +1,11 @@
 package cz.empatix.items.domain;
 
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.render.attributes.Drawable;
 
 public interface ItemDrop extends Drawable, Interactable {
+     AudioService AUDIO_SERVICE = AudioService.getInstance();
     void update(final float dt);
     boolean canRemove();
     void setPosition(final float x, final float y);

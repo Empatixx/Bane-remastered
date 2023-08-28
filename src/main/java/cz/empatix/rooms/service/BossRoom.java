@@ -3,32 +3,42 @@ package cz.empatix.rooms.service;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
+import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.Ladder;
 import cz.empatix.roomobjects.service.RoomLockService;
+import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class BossRoom implements Room {
+    private final MapLoaderService mapLoaderService;
     private final ItemService itemService;
     private final EnemyService enemyService;
+    private final RoomObjectService roomObjectService;
     private final RoomLockService roomLockService;
     private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
-    private boolean visited;
+    private boolean visited = false;
 
     public BossRoom(final ItemService itemService,
+                    final MapLoaderService mapLoaderService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
                     final Set<RoomDirection> neighbors) {
         this.itemService = itemService;
+        this.mapLoaderService = mapLoaderService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomLockService = new RoomLockService(this, neighbors);
         enemyService = new EnemyService(itemService);
-        visited = false;
+        roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
     }
 
@@ -56,8 +66,13 @@ public class BossRoom implements Room {
     public void update(double dt) {
         enemyService.update(dt);
         roomLockService.update(dt);
+        roomObjectService.update(dt);
         if (enemyService.areEnemiesDead() && roomLockService.isLocked()) {
             roomLockService.setState(false);
+
+            final Ladder ladder = new Ladder(mapLoaderService, itemService);
+            ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f, tileMap.getY() + tileMap.getHeight() / 2f);
+            roomObjectService.add(ladder);
         }
     }
 
@@ -71,7 +86,8 @@ public class BossRoom implements Room {
         final Renderable tiles = (DrawableBatch) tileMap::toRender;
         final Renderable enemies = (DrawableBatch) enemyService::toRender;
         final Renderable gateWalls = (DrawableBatch) roomLockService::toRender;
-        return List.of(tiles, enemies, gateWalls);
+        final Renderable roomObjects = (DrawableBatch) roomObjectService::toRender;
+        return List.of(tiles, enemies, gateWalls, roomObjects);
     }
 
     @Override

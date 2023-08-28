@@ -1,6 +1,7 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
@@ -43,6 +44,7 @@ public class RecoverPotion implements ItemDrop {
         interactable = new CommonInteractable(pressedKeys -> {
             add.accept(amount);
             pickedUp = true;
+            AUDIO_SERVICE.play(SoundEffect.PICKUP);
         },() -> !pickedUp && !hasFull.get(), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
     }

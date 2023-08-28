@@ -76,7 +76,12 @@ public class AnimatedImage implements HUDElement {
 
     @Override
     public int getZIndex() {
-        return 1;
+        return zDepth;
+    }
+
+    @Override
+    public RenderScene renderScene(){
+        return scene;
     }
 
     @Override

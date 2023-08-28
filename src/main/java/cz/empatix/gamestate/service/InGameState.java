@@ -15,6 +15,7 @@ import cz.empatix.items.service.ItemService;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.ProceduralMapGenerator;
+import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.map.service.MapService;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.pause.service.PauseService;
@@ -34,6 +35,7 @@ public class InGameState extends GameState {
     private PauseService pauseService;
     private MinimapService minimapService;
     private MapService mapService;
+    private MapLoaderService mapLoaderService;
     private GunService gunService;
     private ItemService itemService;
     private Player player;
@@ -55,11 +57,16 @@ public class InGameState extends GameState {
 
         itemService.setFactory(new ItemFactory(gunService, player));
 
-        final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService);
+        mapLoaderService = new MapLoaderService(room -> minimapService.visit(room));
 
-        minimapService = new MinimapService(mapGenerationResult);
-        mapService = new MapService(mapGenerationResult, room -> minimapService.visit(room));
+        final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
+        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService);
+        mapLoaderService.load(mapGenerationResult);
+        mapLoaderService.setLoadedUse();
+
+        mapService = mapLoaderService.getMapService();
+        minimapService = mapLoaderService.getMinimapService();
+
 
         AudioService.getInstance().play(Soundtrack.INGAME);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
@@ -67,6 +74,14 @@ public class InGameState extends GameState {
 
     @Override
     public void update(final double dt) {
+        if (mapLoaderService.isLoadedNewMap()){
+            mapLoaderService.setLoadedUse();
+            mapService = mapLoaderService.getMapService();
+            minimapService = mapLoaderService.getMinimapService();
+            player.setPosition(0,0);
+            Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+        }
+
         deathService.update((float)dt, player.isDead());
         if(deathService.isActive()){
             player.update(dt);

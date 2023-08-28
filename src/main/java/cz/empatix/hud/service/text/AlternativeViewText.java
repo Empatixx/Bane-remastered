@@ -93,4 +93,7 @@ public class AlternativeViewText implements HUDElement {
         return position.y();
     }
 
+    public void setPositionY(final float v) {
+        position.y = v;
+    }
 }
