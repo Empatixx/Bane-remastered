@@ -44,7 +44,11 @@ public class ShopRoom implements Room {
     public void leaveEvent(final Player p) {
 
     }
-
+    @Override
+    public void cleanUp() {
+        roomObjectService.cleanUp();
+        tileMap.cleanUp();
+    }
     @Override
     public void init() {
         final Shopkeeper shopkeeper = new Shopkeeper();

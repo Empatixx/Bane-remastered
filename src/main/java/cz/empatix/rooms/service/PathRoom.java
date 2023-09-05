@@ -32,7 +32,10 @@ public class PathRoom implements Room {
         this.yMax = yMax;
         tileMap = new PathTileMap(xOffset, yOffset, rows, cols, isHorizontal);
     }
-
+    @Override
+    public void cleanUp() {
+        tileMap.cleanUp();
+    }
     @Override
     public void enterEvent(final Player p) {
     }

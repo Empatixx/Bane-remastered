@@ -38,22 +38,31 @@ public class TileFactory {
 
     private static final int[] FLOOR = {5, 6, 6, 6, 6, 6, 12, 13, 14, 15, 16, 17, 18};
 
-    public Tile[][] createTilemapFromClamp(final boolean[][] clampedMap,
+    public Tile[][] createTilemapFromClamp(final boolean[][] map,
                                            final int xOffset,
                                            final int yOffset) {
-        final Tile[][] tileMap = createTileMap(clampedMap, xOffset - TILE_SIZE, yOffset - TILE_SIZE);
+        final Tile[][] tileMap = new Tile[map.length - 2][map[0].length - 2];
+        for (int y = 1; y < map.length - 1; y++) {
+            for (int x = 1; x < map[y].length - 1; x++) {
+                final boolean isCollision = isCollision(x, y, map);
 
-        // remove clamp
-        final int cols = tileMap[0].length - 2;
-        final int rows = tileMap.length - 2;
+                final boolean topCollision = isCollision(x, y - 1, map);
+                final boolean bottomCollision = isCollision(x, y + 1, map);
+                final boolean leftCollision = isCollision(x - 1, y, map);
+                final boolean rightCollision = isCollision(x + 1, y, map);
 
-        final Tile[][] tileMapWithoutClamp = new Tile[rows][cols];
-        for(int y = 0; y < rows; y++){
-            for(int x = 0; x < cols; x++){
-                tileMapWithoutClamp[y][x] = tileMap[y+1][x+1];
+                final boolean topLeftCollision = isCollision(x - 1, y - 1, map);
+                final boolean topRightCollision = isCollision(x + 1, y - 1, map);
+                final boolean bottomLeftCollision = isCollision(x - 1, y + 1, map);
+                final boolean bottomRightCollision = isCollision(x + 1, y + 1, map);
+
+                final Tile tile = createTile(isCollision, topCollision, bottomCollision,
+                        leftCollision, rightCollision, topLeftCollision, topRightCollision,
+                        bottomLeftCollision, bottomRightCollision, x - 1, y - 1, xOffset, yOffset);
+                tileMap[y - 1][x - 1] = tile;
             }
         }
-        return tileMapWithoutClamp;
+        return tileMap;
     }
 
     public Tile[][] createTileMap(final boolean[][] map, final int xOffset, final int yOffset) {

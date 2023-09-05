@@ -1,6 +1,5 @@
 package cz.empatix.tiles.tilemaps;
 
-import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.service.BooleanMapUtil;
@@ -71,5 +70,12 @@ public class PathTileMap implements TileMap{
     @Override
     public int getY() {
         return yOffset;
+    }
+
+    @Override
+    public void cleanUp() {
+        Arrays.stream(tiles)
+                .flatMap(Arrays::stream)
+                .forEach(Tile::destroy);
     }
 }

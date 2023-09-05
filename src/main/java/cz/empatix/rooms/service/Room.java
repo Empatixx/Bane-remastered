@@ -13,6 +13,7 @@ public interface Room {
     void enterEvent(final Player p);
     void leaveEvent(final Player p);
     void init();
+    void cleanUp();
     void update(double dt);
     void fixedUpdate(double dt);
     List<Renderable> toRender();

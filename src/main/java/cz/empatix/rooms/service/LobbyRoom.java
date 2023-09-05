@@ -129,6 +129,11 @@ public class LobbyRoom implements Room {
             roomObjectService.add(potionStation);
         }
     }
+    @Override
+    public void cleanUp() {
+        roomObjectService.cleanUp();
+        tileMap.cleanUp();
+    }
 
     @Override
     public void update(double dt) {

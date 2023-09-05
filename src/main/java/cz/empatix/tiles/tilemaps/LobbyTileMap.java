@@ -65,4 +65,11 @@ public class LobbyTileMap implements TileMap {
     public int getY() {
         return 0;
     }
+
+    @Override
+    public void cleanUp() {
+        Arrays.stream(tiles)
+                .flatMap(Arrays::stream)
+                .forEach(Tile::destroy);
+    }
 }

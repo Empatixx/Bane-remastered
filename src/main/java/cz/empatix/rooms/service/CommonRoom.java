@@ -57,6 +57,13 @@ public class CommonRoom implements Room {
     }
 
     @Override
+    public void cleanUp() {
+        roomObjectService.cleanUp();
+        roomLockService.cleanUp();
+        tileMap.cleanUp();
+    }
+
+    @Override
     public void update(double dt) {
         enemyService.update(dt);
         roomObjectService.update(dt);

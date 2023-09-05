@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 public class TreasureTileMap implements TileMap {
-    private Tile[][] tiles;
+    private final Tile[][] tiles;
     private final int rows;
     private final int cols;
     private final int xOffset;
@@ -64,5 +64,13 @@ public class TreasureTileMap implements TileMap {
     @Override
     public int getY() {
         return yOffset;
+    }
+
+    @Override
+    public void cleanUp() {
+        Arrays.stream(tiles)
+                .flatMap(Arrays::stream)
+                .forEach(Tile::destroy);
+
     }
 }

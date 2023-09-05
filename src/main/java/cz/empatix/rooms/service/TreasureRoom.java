@@ -11,7 +11,10 @@ import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.TileMap;
 import cz.empatix.tiles.tilemaps.TreasureTileMap;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class TreasureRoom implements Room {
     private final RoomObjectService roomObjectService;
@@ -94,5 +97,10 @@ public class TreasureRoom implements Room {
     @Override
     public RoomType getRoomType() {
         return RoomType.TREASURE;
+    }
+    @Override
+    public void cleanUp() {
+        tileMap.cleanUp();
+        roomObjectService.cleanUp();
     }
 }

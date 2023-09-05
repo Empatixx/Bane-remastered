@@ -96,4 +96,7 @@ public class PathGate implements RoomObject {
             animation.setCurrentFrame(3);
         }
     }
+    public void destroy() {
+        physicsBody.destroy();
+    }
 }

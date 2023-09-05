@@ -21,4 +21,8 @@ public class RoomObjectService {
         roomObjects.forEach(roomObject -> roomObject.update(dt));
         roomObjects.removeIf(RoomObject::canRemove);
     }
+
+    public void cleanUp() {
+        // remove physics bodies when will be used.
+    }
 }

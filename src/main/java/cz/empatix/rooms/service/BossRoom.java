@@ -63,6 +63,13 @@ public class BossRoom implements Room {
     }
 
     @Override
+    public void cleanUp() {
+        roomLockService.cleanUp();
+        roomObjectService.cleanUp();
+        tileMap.cleanUp();
+    }
+
+    @Override
     public void update(double dt) {
         enemyService.update(dt);
         roomLockService.update(dt);

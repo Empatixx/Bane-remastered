@@ -39,6 +39,8 @@ public class MapService {
         Camera.setMaxDimensions(xMax, yMax);
 
         sceneBackground = new SceneBackground("ingame/tilebackground.tga");
+
+        currentRoom = mapGenerationResult.startRoom();
     }
 
     public List<Renderable> toRender(final double dt) {
@@ -92,5 +94,12 @@ public class MapService {
             LOGGER.error("No room found!", e);
         }
     }
+    public void cleanUp(){
+        rooms.forEach(Room::cleanUp);
+        pathRooms.forEach(Room::cleanUp);
+    }
 
+    public Room getCurrentRoom() {
+        return currentRoom;
+    }
 }

@@ -23,6 +23,7 @@ import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import cz.empatix.rooms.service.Room;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +58,7 @@ public class InGameState extends GameState {
 
         itemService.setFactory(new ItemFactory(gunService, player));
 
-        mapLoaderService = new MapLoaderService(room -> minimapService.visit(room));
+        mapLoaderService = new MapLoaderService(itemService, room -> minimapService.visit(room));
 
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService);
@@ -67,6 +68,9 @@ public class InGameState extends GameState {
         mapService = mapLoaderService.getMapService();
         minimapService = mapLoaderService.getMinimapService();
 
+        final Room startRoom = mapGenerationResult.startRoom();
+        player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
+                startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
 
         AudioService.getInstance().play(Soundtrack.INGAME);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
@@ -78,7 +82,9 @@ public class InGameState extends GameState {
             mapLoaderService.setLoadedUse();
             mapService = mapLoaderService.getMapService();
             minimapService = mapLoaderService.getMinimapService();
-            player.setPosition(0,0);
+            final Room startRoom = mapService.getCurrentRoom();
+            player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
+                    startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
             Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
         }
 

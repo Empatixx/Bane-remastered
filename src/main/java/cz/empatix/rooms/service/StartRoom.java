@@ -19,7 +19,10 @@ public class StartRoom implements Room {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         this.neighbors = new HashMap<>(neighbors.size());
     }
-
+    @Override
+    public void cleanUp() {
+        tileMap.cleanUp();
+    }
     @Override
     public void enterEvent(final Player p) {
 

@@ -79,6 +79,12 @@ public record Tile(
                 && position.y() <= cameraPos.y() + cameraDimensions.y();
     }
 
+    public void destroy() {
+        if (collision != null) {
+            collision.destroy();
+        }
+    }
+
 
     @Override
     public int getZIndex() {

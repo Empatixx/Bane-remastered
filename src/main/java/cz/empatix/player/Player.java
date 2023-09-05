@@ -78,7 +78,6 @@ public class Player implements Drawable, InteractEntity {
                 .build();
         animation.setState(AnimationState.IDLE);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
-        physicsBody.setTranslation(500, 500);
         physicsBody.addEventConsumer(new DamageConsumer(this::hit, this::canHit));
 
         interactEntity = new CommonInteractEntity(getWidth(), getHeight(), physicsBody.getPhysicsTranslation());

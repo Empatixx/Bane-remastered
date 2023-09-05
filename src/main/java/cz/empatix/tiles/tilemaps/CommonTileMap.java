@@ -63,4 +63,11 @@ public class CommonTileMap implements TileMap {
     public int getY() {
         return yOffset;
     }
+
+    @Override
+    public void cleanUp() {
+        Arrays.stream(tiles)
+                .flatMap(Arrays::stream)
+                .forEach(Tile::destroy);
+    }
 }

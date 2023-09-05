@@ -70,4 +70,8 @@ public class RoomLockService {
     public List<Drawable> toRender() {
         return List.copyOf(pathGates);
     }
+
+    public void cleanUp() {
+        pathGates.forEach(PathGate::destroy);
+    }
 }

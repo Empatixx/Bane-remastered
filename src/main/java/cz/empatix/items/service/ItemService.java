@@ -26,4 +26,9 @@ public class ItemService {
     public ItemFactory getItemFactory(){
         return itemFactory;
     }
+
+    public void cleanUp() {
+        itemDrops.forEach(ItemDrop::destroy);
+        itemDrops.clear();
+    }
 }
