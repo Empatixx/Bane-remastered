@@ -91,7 +91,7 @@ public class PathRoomGenInfo extends RoomGenInfo {
             default -> throw new IllegalStateException("Unexpected value: " + parentDirection);
         }
         setCoordinates(newOffsetX, newOffsetY);
-        return new PathRoom(xOffset, yOffset, rows, cols, minX, minY, maxX, maxY, isHorizontal);
+        return new PathRoom(xOffset, yOffset, rows, cols, minX, minY, maxX, maxY, isHorizontal, parentDirection);
     }
 
     @Override

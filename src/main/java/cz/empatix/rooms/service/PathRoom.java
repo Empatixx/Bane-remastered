@@ -5,6 +5,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.rooms.domain.RoomType;
+import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.PathTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -16,6 +17,8 @@ public class PathRoom implements Room {
     private final int xMax;
     private final int yMax;
     private final TileMap tileMap;
+    private final float xRoomIntersectionOffset;
+    private final float yRoomIntersectionOffset;
 
     public PathRoom(final int xOffset,
                     final int yOffset,
@@ -25,17 +28,39 @@ public class PathRoom implements Room {
                     final int yMin,
                     final int xMax,
                     final int yMax,
-                    final boolean isHorizontal) {
+                    final boolean isHorizontal,
+                    final RoomDirection direction) {
         this.xMin = xMin;
         this.yMin = yMin;
         this.xMax = xMax;
         this.yMax = yMax;
         tileMap = new PathTileMap(xOffset, yOffset, rows, cols, isHorizontal);
+        switch (direction) {
+            case TOP -> {
+                yRoomIntersectionOffset = -Tile.TILE_SIZE * Tile.SCALE;
+                xRoomIntersectionOffset = 0;
+            }
+            case BOTTOM -> {
+                yRoomIntersectionOffset = Tile.TILE_SIZE * Tile.SCALE;
+                xRoomIntersectionOffset = 0;
+            }
+            case LEFT -> {
+                yRoomIntersectionOffset = 0;
+                xRoomIntersectionOffset = -Tile.TILE_SIZE * Tile.SCALE;
+            }
+            case RIGHT -> {
+                yRoomIntersectionOffset = 0;
+                xRoomIntersectionOffset = Tile.TILE_SIZE * Tile.SCALE;
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + direction);
+        }
     }
+
     @Override
     public void cleanUp() {
         tileMap.cleanUp();
     }
+
     @Override
     public void enterEvent(final Player p) {
     }
@@ -84,24 +109,41 @@ public class PathRoom implements Room {
     }
 
     @Override
+    public boolean isInRoom(float x, float y) {
+        final int xStart = getX() + (int) xRoomIntersectionOffset;
+        final int yStart = getY() + (int) yRoomIntersectionOffset;
+
+        final int xEnd = getX() + getWidth() - (int) xRoomIntersectionOffset;
+        final int yEnd = getY() + getHeight() - (int) yRoomIntersectionOffset;
+
+        return x >= xStart && y >= yStart &&
+                xEnd >= x && yEnd >= y;
+    }
+
+    @Override
     public int getMinX() {
         return xMin;
     }
+
     @Override
     public int getMinY() {
         return yMin;
     }
+
     @Override
     public int getMaxX() {
         return xMax;
     }
+
     @Override
     public int getMaxY() {
         return yMax;
     }
+
     @Override
     public void addNeighbour(RoomDirection direction, Room room) {
     }
+
     @Override
     public java.util.Map<RoomDirection, Room> getNeighboursMap() {
         throw new IllegalStateException("PathRoom does not have neighbors");

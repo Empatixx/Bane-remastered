@@ -37,11 +37,11 @@ public interface Room {
         final int xStart = getX();
         final int yStart = getY();
 
-        final int width = getWidth();
-        final int height = getHeight();
+        final int xEnd = getX() + getWidth();
+        final int yEnd = getY() + getHeight();
 
         return x >= xStart && y >= yStart &&
-                xStart + width >= x && yStart + height >= y;
+                xEnd >= x && yEnd >= y;
     }
 
     void addNeighbour(final RoomDirection direction, final Room room);

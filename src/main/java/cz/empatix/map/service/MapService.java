@@ -68,7 +68,7 @@ public class MapService {
             final Room previousRoom = currentRoom;
             currentRoom = pathRooms
                     .stream()
-                    .filter(r -> r.isInRoom(position.x(), position.y()))
+                    .filter(r -> r.isInRoom(position.x() + p.getWidth()/2f, position.y() + p.getHeight()/2f))
                     .findFirst()
                     .orElseGet(() -> rooms
                             .stream()
