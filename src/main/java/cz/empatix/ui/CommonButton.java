@@ -21,10 +21,10 @@ import java.util.List;
 public class CommonButton implements UIElement {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private static final int DEFAULT_Z_DEPTH = 1;
-    private final static String DEFAULT_TEXTURE = "menu/Menu_bar.tga";
+    private final static String DEFAULT_TEXTURE = "menu/Menu_bar2.tga";
     private final static Vector3i DEFAULT_COLOR = new Vector3i(200, 92, 18);
-    private final static int DEFAULT_WIDTH = 100;
-    private final static int DEFAULT_HEIGHT = 50;
+    private final static int DEFAULT_WIDTH = 84;
+    private final static int DEFAULT_HEIGHT = 42;
     private final Vector2f position;
     private final Vector2i dimensions;
     private final CommonText text;

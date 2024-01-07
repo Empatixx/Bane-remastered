@@ -62,7 +62,7 @@ public class MenuState extends GameState {
 
     @Override
     public void update(final double dt) {
-        settingsMenuService.update(dt);
+        settingsMenuService.update(dt, mouseX, mouseY);
         uiElements.forEach(uiElement -> uiElement.update(dt, mouseX, mouseY));
     }
 
@@ -108,6 +108,10 @@ public class MenuState extends GameState {
 
     @Override
     public void mousePressed(int button) {
+        if(settingsMenuService.isActive()){
+            settingsMenuService.mousePressed(button, mouseX, mouseY);
+            return;
+        }
         uiElements.forEach(uiElement -> uiElement.mousePressed(button, mouseX, mouseY));
     }
 
