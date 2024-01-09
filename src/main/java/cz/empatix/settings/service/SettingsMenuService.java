@@ -3,7 +3,9 @@ package cz.empatix.settings.service;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.ui.CommonButton;
+import cz.empatix.ui.StickyHoverButton;
 import cz.empatix.ui.TransparentButton;
+import cz.empatix.ui.UISelector;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -14,10 +16,11 @@ public class SettingsMenuService {
     private final SettingsService settingsService = SettingsService.getInstance();
     private final CommonBackground background;
     private final List<CommonButton> buttons;
-    private final List<TransparentButton> transparentButtons;
+    private final UISelector selector;
     private boolean active;
+
     public SettingsMenuService() {
-        background =  new CommonBackground("menu/settings_background.tga",480,320);
+        background = new CommonBackground("menu/settings_background.tga", 480, 320);
 
         final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f);
         //applyButton.onClick(() -> settingsService.apply());
@@ -30,29 +33,31 @@ public class SettingsMenuService {
 
         buttons = List.of(exitButton, revertButton, applyButton);
 
-        final TransparentButton video = new TransparentButton("Video", new Vector2f(360, 165), 1);
-        final TransparentButton audio = new TransparentButton("Audio", new Vector2f(480, 165), 1);
-        final TransparentButton controls = new TransparentButton("Controls", new Vector2f(600, 165), 1);
-
-        transparentButtons = List.of(audio, video, controls);
+        selector = new UISelector();
+        final StickyHoverButton video = new StickyHoverButton("Video", "menu/settings_menubar.tga", 30, 16, new Vector2f(325, 160), 5f);
+        final StickyHoverButton audio = new StickyHoverButton("Audio", "menu/settings_menubar.tga", 30, 16, new Vector2f(480, 160), 5);
+        final StickyHoverButton controls = new StickyHoverButton("Controls", "menu/settings_menubar.tga", 30, 16, new Vector2f(635, 160), 5);
+        selector.addElements(List.of(video, audio, controls));
     }
 
-    public List<Renderable> toRender(final double dt){
-        if(!active){
+    public List<Renderable> toRender(final double dt) {
+        if (!active) {
             return List.of();
         }
         final List<Renderable> renderables = new ArrayList<>();
         renderables.add(background);
         renderables.addAll(buttons);
-        renderables.addAll(transparentButtons);
+        renderables.addAll(selector.toRender(dt));
         return renderables;
     }
-    public void update(final double dt, final float mouseX, final float mouseY){
+
+    public void update(final double dt, final float mouseX, final float mouseY) {
         background.update(dt);
         buttons.forEach(button -> button.update(dt, mouseX, mouseY));
-        transparentButtons.forEach(button -> button.update(dt, mouseX, mouseY));
+        selector.update(dt, mouseX, mouseY);
     }
-    public void activate(final boolean active){
+
+    public void activate(final boolean active) {
         this.active = active;
     }
 
@@ -62,6 +67,6 @@ public class SettingsMenuService {
 
     public void mousePressed(int button, float mouseX, float mouseY) {
         buttons.forEach(button1 -> button1.mousePressed(button, mouseX, mouseY));
-        transparentButtons.forEach(button2 -> button2.mousePressed(button, mouseX, mouseY));
+        selector.mousePressed(button, mouseX, mouseY);
     }
 }

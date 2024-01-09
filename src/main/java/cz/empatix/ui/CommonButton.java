@@ -39,6 +39,9 @@ public class CommonButton implements UIElement {
     public CommonButton(final String text, final Vector2f position, final float scale) {
         this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, DEFAULT_Z_DEPTH);
     }
+    public CommonButton(final String text, final String texture, final int width, final int height, final Vector2f position, final float scale) {
+        this(text, position, texture, DEFAULT_COLOR, width, height, scale, DEFAULT_Z_DEPTH);
+    }
     public CommonButton(final String text, final Vector2f position, final float scale, final int zDepth) {
         this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, zDepth);
     }
@@ -149,4 +152,5 @@ public class CommonButton implements UIElement {
     public boolean isHovered() {
         return hover;
     }
+
 }
