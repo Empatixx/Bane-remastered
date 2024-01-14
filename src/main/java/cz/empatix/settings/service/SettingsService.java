@@ -2,9 +2,7 @@ package cz.empatix.settings.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.common.initializators.GLFWInit;
 import cz.empatix.settings.domain.GameSettings;
-import cz.empatix.ui.SlidingList;
 import org.joml.Vector2i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +15,14 @@ public class SettingsService {
     private final static Logger LOGGER = LoggerFactory.getLogger(SettingsService.class);
     private final static ObjectMapper MAPPER = new ObjectMapper();
     private final static Path SETTINGS_FILE = Path.of("settings.json");
-    private final GameSettings settings = loadSettings();
-    private final SettingsApplier settingsApplier = new SettingsApplier();
-    private static final SettingsService instance = new SettingsService();
-
+    private static final SettingsService INSTANCE = new SettingsService();
     public static SettingsService getInstance() {
-        return instance;
+        return INSTANCE;
     }
+    private final GameSettings appliedSettings = loadSettings();
+    private final GameSettings unAppliedSettings = new GameSettings(appliedSettings);
+    private final SettingsApplier settingsApplier = new SettingsApplier();
+
 
     private GameSettings loadSettings() {
         if (!Files.exists(SETTINGS_FILE)) {
@@ -45,22 +44,35 @@ public class SettingsService {
     }
 
     public GameSettings getSettings() {
-        return settings;
+        return appliedSettings;
     }
 
     public void saveSettings() {
         LOGGER.info("Saving settings to {}", SETTINGS_FILE);
         try {
-            MAPPER.writeValue(SETTINGS_FILE.toFile(), settings);
+            MAPPER.writeValue(SETTINGS_FILE.toFile(), appliedSettings);
         } catch (Exception e) {
             LOGGER.error("Failed to save settings", e);
         }
     }
-    public void applySettings() {
-        settingsApplier.applySettings(settings);
+    public void apply() {
+        settingsApplier.applySettings(unAppliedSettings);
+    }
+    public void revert() {
+        unAppliedSettings.deepCopy(appliedSettings);
     }
 
     public List<Vector2i> getResolutions() {
         return WindowHandler.getMonitorResolutions();
+    }
+    public void setResolution(final Vector2i resolution) {
+        unAppliedSettings.setResolutionWidth(resolution.x());
+        unAppliedSettings.setResolutionHeight(resolution.y());
+    }
+    public void setVsync(final boolean vsync) {
+        unAppliedSettings.setVsync(vsync);
+    }
+    public void setFullscreen(final boolean fullscreen) {
+        unAppliedSettings.setFullscreen(fullscreen);
     }
 }

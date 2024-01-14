@@ -23,7 +23,7 @@ public class Animation {
     private long lastAnimation;
     private boolean playedOnce;
 
-    public Animation(final Map<AnimationState, AnimationPart> animationParts,
+    private Animation(final Map<AnimationState, AnimationPart> animationParts,
                      final TextureAtlas.Entry texture,
                      final int totalRows,
                      final int totalSprites,

@@ -94,4 +94,14 @@ public class GameSettings {
     public void setVsync(boolean vsync) {
         this.vsync = vsync;
     }
+
+    public void deepCopy(final GameSettings appliedSettings) {
+        this.resolutionWidth = appliedSettings.resolutionWidth;
+        this.resolutionHeight = appliedSettings.resolutionHeight;
+        this.fullscreen = appliedSettings.fullscreen;
+        this.vsync = appliedSettings.vsync;
+        this.overallVolume = appliedSettings.overallVolume;
+        this.musicVolume = appliedSettings.musicVolume;
+        this.effectsVolume = appliedSettings.effectsVolume;
+    }
 }
