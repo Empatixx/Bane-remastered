@@ -57,6 +57,7 @@ public class SettingsService {
     }
     public void apply() {
         settingsApplier.applySettings(unAppliedSettings);
+        appliedSettings.deepCopy(unAppliedSettings);
     }
     public void revert() {
         unAppliedSettings.deepCopy(appliedSettings);

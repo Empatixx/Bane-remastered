@@ -36,15 +36,6 @@ public class SettingsMenuService {
         selector.addElement(audio, SettingsType.AUDIO);
         selector.addElement(controls, SettingsType.CONTROLS);
 
-        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f);
-        applyButton.onClick(settingsService::apply);
-
-        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f);
-        revertButton.onClick(settingsService::revert);
-
-        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f);
-        exitButton.onClick(() -> activate(false));
-
         final Checkbox vsyncCheckbox = new Checkbox();
         vsyncCheckbox.setPosition(400, 225);
         vsyncCheckbox.check(gameSettings.isVsync());
@@ -81,6 +72,20 @@ public class SettingsMenuService {
         previousResolution.onClick(resolutionText::previous);
 
         resolutionText.center(410, 560, 340);
+
+        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f);
+        applyButton.onClick(settingsService::apply);
+
+        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f);
+        revertButton.onClick(() -> {
+            settingsService.revert();
+            resolutionText.slideToValue(new Vector2i(gameSettings.getResolutionWidth(), gameSettings.getResolutionHeight()));
+            vsyncCheckbox.check(gameSettings.isVsync());
+            fullscreenCheckbox.check(gameSettings.isFullscreen());
+        });
+
+        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f);
+        exitButton.onClick(() -> activate(false));
 
         uiSelector = selector;
         elements = List.of(exitButton, revertButton, applyButton, vsyncCheckbox, fullscreenCheckbox, nextResolution, previousResolution);
