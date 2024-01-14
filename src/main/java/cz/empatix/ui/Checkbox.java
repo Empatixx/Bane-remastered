@@ -119,4 +119,9 @@ public class Checkbox implements UIElement{
     public int getHeight(){
         return getDimensions().y();
     }
+
+    public void check(final boolean checked) {
+        this.checked = checked;
+        animation.setState(checked ? AnimationState.SELECTED : AnimationState.STATIC);
+    }
 }

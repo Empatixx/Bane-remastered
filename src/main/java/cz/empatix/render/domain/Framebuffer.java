@@ -66,6 +66,9 @@ public record Framebuffer(
     }
 
     public void resize() {
+        if (WindowHandler.WIDTH == 0 || WindowHandler.HEIGHT == 0){ // windows minimized
+            return;
+        }
         if (size.x() == WindowHandler.WIDTH && size.y() == WindowHandler.HEIGHT) {
             return;
         }

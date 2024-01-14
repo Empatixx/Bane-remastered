@@ -11,6 +11,8 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.IntBuffer;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
@@ -71,6 +73,19 @@ public class WindowHandler {
 
     public static void setResolution(final int width, final int height) {
         GLFW.glfwSetWindowSize(WINDOW, width, height);
+    }
+    public static List<Vector2i> getMonitorResolutions() {
+        final long monitor = GLFW.glfwGetPrimaryMonitor();
+        GLFWVidMode.Buffer videoModes = GLFW.glfwGetVideoModes(monitor);
+        if (videoModes == null) {
+            throw new RuntimeException("Failed to get video modes");
+        }
+        // Print all possible resolutions
+        return Stream.generate(videoModes::get)
+                .limit(videoModes.capacity())
+                .map(vidMode -> new Vector2i(vidMode.width(), vidMode.height()))
+                .distinct()
+                .toList();
     }
 
     public static Vector2i getMonitorResolution() {

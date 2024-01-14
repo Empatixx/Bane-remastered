@@ -2,12 +2,16 @@ package cz.empatix.settings.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.common.initializators.GLFWInit;
 import cz.empatix.settings.domain.GameSettings;
+import cz.empatix.ui.SlidingList;
+import org.joml.Vector2i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public class SettingsService {
     private final static Logger LOGGER = LoggerFactory.getLogger(SettingsService.class);
@@ -54,5 +58,9 @@ public class SettingsService {
     }
     public void applySettings() {
         settingsApplier.applySettings(settings);
+    }
+
+    public List<Vector2i> getResolutions() {
+        return WindowHandler.getMonitorResolutions();
     }
 }

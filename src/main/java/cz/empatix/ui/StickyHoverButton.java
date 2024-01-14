@@ -162,4 +162,9 @@ public class StickyHoverButton implements UIElement, SelectableUI{
     public void unselect() {
         hover = false;
     }
+
+    @Override
+    public void select() {
+        hover = true;
+    }
 }

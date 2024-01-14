@@ -4,18 +4,31 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
-public class UISelector implements UIElement{
+public class UISelector<T> implements UIElement{
     private final List<SelectableUI> elements;
+    private final Map<SelectableUI, T> elementMap;
     private SelectableUI selectedElement;
     public UISelector() {
         elements = new ArrayList<>();
+        elementMap = new HashMap<>();
     }
 
-    public void addElement(final SelectableUI element) {
-        elements.add(element);
+    public void addElement(final SelectableUI element, final T value) {
+        this.elements.add(element);
+        if (selectedElement == null) {
+            selectedElement = element;
+            selectedElement.select();
+        }
+        elementMap.put(element, value);
+    }
+    public T getSelected() {
+        return elementMap.get(selectedElement);
     }
 
     public void mouseReleased(final int button, final float mouseX, final float mouseY) {
@@ -77,11 +90,6 @@ public class UISelector implements UIElement{
     public List<Renderable> getSubRenderables() {
         return List.copyOf(elements);
     }
-
-    public void addElements(List<SelectableUI> elements) {
-        this.elements.addAll(elements);
-    }
-
     @Override
     public RenderData renderData() {
         throw new IllegalStateException("Should not be called, call subRenderables() instead");
