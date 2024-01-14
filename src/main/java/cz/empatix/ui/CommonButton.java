@@ -109,7 +109,7 @@ public class CommonButton implements UIElement {
         animation.setState(hover ? AnimationState.HOVER : AnimationState.STATIC);
     }
 
-    boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
+    private boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
         return IntersectionResolver.newInstance()
                 .addShape(position, new Vector2f(dimensions.x(), dimensions.y()))
                 .addShape((float) mouseX, (float) mouseY)

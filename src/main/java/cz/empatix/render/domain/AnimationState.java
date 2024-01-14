@@ -10,6 +10,7 @@ public enum AnimationState {
     DEATH,
     REVERSE,
     STATIC,
+    SELECTED,
     COLLISION,
     HOVER,
     LEFT_SIDE, RIGHT_SIDE,

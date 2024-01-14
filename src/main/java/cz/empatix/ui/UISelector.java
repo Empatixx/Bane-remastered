@@ -1,12 +1,13 @@
 package cz.empatix.ui;
 
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderData;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class UISelector {
+public class UISelector implements UIElement{
     private final List<SelectableUI> elements;
     private SelectableUI selectedElement;
     public UISelector() {
@@ -17,11 +18,17 @@ public class UISelector {
         elements.add(element);
     }
 
-    public void update(final double dt, final float mouseX, final float mouseY) {
+    public void mouseReleased(final int button, final float mouseX, final float mouseY) {
+        elements.forEach(element -> element.mouseReleased(button, mouseX, mouseY));
+    }
+
+    @Override
+    public void update(double dt, double mouseX, double mouseY) {
         elements.forEach(element -> element.update(dt, mouseX, mouseY));
     }
 
-    public void mousePressed(final int button, final float mouseX, final float mouseY) {
+    @Override
+    public void mousePressed(int button, double mouseX, double mouseY) {
         final AtomicBoolean selected = new AtomicBoolean(false);
         elements.forEach(element -> {
             if (element == selectedElement) {
@@ -41,30 +48,52 @@ public class UISelector {
                 .forEach(SelectableUI::unselect);
     }
 
-    public void mouseReleased(final int button, final float mouseX, final float mouseY) {
+    @Override
+    public void mouseReleased(int button, double mouseX, double mouseY) {
         elements.forEach(element -> element.mouseReleased(button, mouseX, mouseY));
     }
 
+    @Override
     public void keyPressed(final int key) {
         elements.forEach(element -> element.keyPressed(key));
     }
 
+    @Override
     public void keyReleased(final int key) {
         elements.forEach(element -> element.keyReleased(key));
     }
 
+    @Override
     public void mouseScrolled(final double xoffset, final double yoffset) {
         elements.forEach(element -> element.mouseScrolled(xoffset, yoffset));
     }
 
-    public List<Renderable> toRender(final double dt) {
-        return elements.stream()
-                .filter(UIElement::canRender)
-                .map(element -> (Renderable) element)
-                .toList();
+    @Override
+    public boolean isHovered() {
+        return false;
+    }
+
+    @Override
+    public List<Renderable> getSubRenderables() {
+        return List.copyOf(elements);
     }
 
     public void addElements(List<SelectableUI> elements) {
         this.elements.addAll(elements);
+    }
+
+    @Override
+    public RenderData renderData() {
+        throw new IllegalStateException("Should not be called, call subRenderables() instead");
+    }
+
+    @Override
+    public int getZIndex() {
+        throw new IllegalStateException("Should not be called, call subRenderables() instead");
+    }
+
+    @Override
+    public boolean canRender() {
+        throw new IllegalStateException("Should not be called, call subRenderables() instead");
     }
 }

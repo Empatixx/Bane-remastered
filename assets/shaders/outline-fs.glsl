@@ -1,3 +1,5 @@
+#version 330
+
 uniform sampler2D uTexSampler;
 uniform float uOutlineThickness;
 uniform vec4 uOutlineColor;
