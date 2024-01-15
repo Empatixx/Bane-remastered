@@ -15,13 +15,16 @@ public class SettingsApplier {
             WindowHandler.setFullscreen(currentSettings.isFullscreen());
             WindowHandler.setResolution(currentSettings.getResolutionWidth(), currentSettings.getResolutionHeight());
             WindowHandler.setVsync(currentSettings.isVsync());
+            WindowHandler.centerWindow();
         } else {
             if(previousSettings.isFullscreen() != currentSettings.isFullscreen()){
                 WindowHandler.setFullscreen(currentSettings.isFullscreen());
+                WindowHandler.centerWindow();
             }
             if(previousSettings.getResolutionWidth() != currentSettings.getResolutionWidth() ||
                     previousSettings.getResolutionHeight() != currentSettings.getResolutionHeight()){
                 WindowHandler.setResolution(currentSettings.getResolutionWidth(), currentSettings.getResolutionHeight());
+                WindowHandler.centerWindow();
             }
             if(previousSettings.isVsync() != currentSettings.isVsync()){
                 WindowHandler.setVsync(currentSettings.isVsync());

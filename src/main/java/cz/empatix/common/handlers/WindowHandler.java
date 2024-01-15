@@ -51,7 +51,8 @@ public class WindowHandler {
             gameLoop.render(0);
         });
     }
-    private static void centerWindow() {
+
+    public static void centerWindow() {
         try (final MemoryStack stack = stackPush()) {
             final IntBuffer pWidth = stack.mallocInt(1); // int*
             final IntBuffer pHeight = stack.mallocInt(1); // int*
@@ -74,6 +75,7 @@ public class WindowHandler {
     public static void setResolution(final int width, final int height) {
         GLFW.glfwSetWindowSize(WINDOW, width, height);
     }
+
     public static List<Vector2i> getMonitorResolutions() {
         final long monitor = GLFW.glfwGetPrimaryMonitor();
         GLFWVidMode.Buffer videoModes = GLFW.glfwGetVideoModes(monitor);
@@ -101,7 +103,14 @@ public class WindowHandler {
             GLFW.glfwSetWindowMonitor(WINDOW, GLFW.glfwGetPrimaryMonitor(),
                     0, 0, monitorResolution.x, monitorResolution.y, GLFW.GLFW_DONT_CARE);
         } else {
-            GLFW.glfwSetWindowMonitor(WINDOW, 0, 0, 0, TARGET_WIDTH, TARGET_HEIGHT, GLFW.GLFW_DONT_CARE);
+            try (final MemoryStack stack = stackPush()) {
+                final IntBuffer pWidth = stack.mallocInt(1); // int*
+                final IntBuffer pHeight = stack.mallocInt(1); // int*
+                glfwGetWindowSize(WINDOW, pWidth, pHeight);
+                final GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+                GLFW.glfwSetWindowMonitor(WINDOW, 0, (vidmode.width() - pWidth.get(0)) / 2,
+                        (vidmode.height() - pHeight.get(0)) / 2, TARGET_WIDTH, TARGET_HEIGHT, GLFW.GLFW_DONT_CARE);
+            }
         }
     }
 
