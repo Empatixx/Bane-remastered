@@ -20,8 +20,8 @@ public class GameLoop{
 
     public GameLoop() {
         gameInitializer = new GameInitializer(this);
-        SettingsService.getInstance().applySettings();
         gss = new GameStateService();
+        SettingsService.getInstance().apply();
     }
 
     public void run() {

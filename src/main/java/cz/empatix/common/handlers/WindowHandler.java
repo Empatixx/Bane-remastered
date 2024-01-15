@@ -101,8 +101,7 @@ public class WindowHandler {
             GLFW.glfwSetWindowMonitor(WINDOW, GLFW.glfwGetPrimaryMonitor(),
                     0, 0, monitorResolution.x, monitorResolution.y, GLFW.GLFW_DONT_CARE);
         } else {
-            //GLFW.glfwSetWindowMonitor(WINDOW, 0, 0, 0,
-            //        TARGET_WIDTH, TARGET_HEIGHT, GLFW.GLFW_DONT_CARE);
+            GLFW.glfwSetWindowMonitor(WINDOW, 0, 0, 0, TARGET_WIDTH, TARGET_HEIGHT, GLFW.GLFW_DONT_CARE);
         }
     }
 

@@ -15,7 +15,6 @@ import java.util.List;
 
 public class SettingsMenuService {
     private final static Vector3i TEXT_COLOR = new Vector3i(200, 92, 18);
-
     private final SettingsService settingsService = SettingsService.getInstance();
     private final CommonBackground background;
     private final List<UIElement> elements;
@@ -37,18 +36,10 @@ public class SettingsMenuService {
         selector.addElement(audio, SettingsType.AUDIO);
         selector.addElement(controls, SettingsType.CONTROLS);
 
-        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f);
-        //applyButton.onClick(() -> settingsService.apply());
-
-        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f);
-        //revertButton.onClick(() -> settingsService.revert());
-
-        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f);
-        exitButton.onClick(() -> activate(false));
-
         final Checkbox vsyncCheckbox = new Checkbox();
         vsyncCheckbox.setPosition(400, 225);
         vsyncCheckbox.check(gameSettings.isVsync());
+        vsyncCheckbox.onCheck(settingsService::setVsync);
 
         final CommonText vsyncLabel = new CommonText("V-sync:", "PixelFJVerdana12pt.ttf", new Vector2f(), vsyncCheckbox.getZIndex());
         vsyncLabel.setPosition(275, 225);
@@ -58,6 +49,7 @@ public class SettingsMenuService {
         final Checkbox fullscreenCheckbox = new Checkbox();
         fullscreenCheckbox.setPosition(400, 275);
         fullscreenCheckbox.check(gameSettings.isFullscreen());
+        fullscreenCheckbox.onCheck(settingsService::setFullscreen);
 
         final CommonText fullscreenLabel = new CommonText("Fullscreen:", "PixelFJVerdana12pt.ttf", new Vector2f(), vsyncCheckbox.getZIndex());
         fullscreenLabel.setPosition(275, 275);
@@ -70,6 +62,8 @@ public class SettingsMenuService {
 
         resolutionText = new SlidingListText<>(new SlidingList<>(settingsService.getResolutions()), resolution -> resolution.x + "x" + resolution.y);
         resolutionText.setColorRGB(TEXT_COLOR);
+        resolutionText.onChange(settingsService::setResolution);
+        resolutionText.slideToValue(new Vector2i(gameSettings.getResolutionWidth(), gameSettings.getResolutionHeight()));
 
         final CommonButton nextResolution = new CommonButton("", "menu/button_arrow_rotated.tga", 16, 16, new Vector2f(560, 335), 2);
         nextResolution.onClick(resolutionText::next);
@@ -78,6 +72,20 @@ public class SettingsMenuService {
         previousResolution.onClick(resolutionText::previous);
 
         resolutionText.center(410, 560, 340);
+
+        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f);
+        applyButton.onClick(settingsService::apply);
+
+        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f);
+        revertButton.onClick(() -> {
+            settingsService.revert();
+            resolutionText.slideToValue(new Vector2i(gameSettings.getResolutionWidth(), gameSettings.getResolutionHeight()));
+            vsyncCheckbox.check(gameSettings.isVsync());
+            fullscreenCheckbox.check(gameSettings.isFullscreen());
+        });
+
+        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f);
+        exitButton.onClick(() -> activate(false));
 
         uiSelector = selector;
         elements = List.of(exitButton, revertButton, applyButton, vsyncCheckbox, fullscreenCheckbox, nextResolution, previousResolution);
