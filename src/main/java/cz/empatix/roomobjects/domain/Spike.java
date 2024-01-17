@@ -3,6 +3,8 @@ package cz.empatix.roomobjects.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
+import cz.empatix.physics.events.domain.DamageSource;
+import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -17,6 +19,7 @@ public class Spike implements RoomObject {
     private final static int DIMENSION_HEIGHT = 16;
     private final Animation animation;
     private final PhysicsBody physicsBody;
+    private int damage;
     public Spike(){
         animation = Animation.builder()
                 .setTotal(1, 4)
@@ -24,7 +27,9 @@ public class Spike implements RoomObject {
                 .texture(AssetsService.getTexture("ingame/spike.tga"))
                 .scale(SCALE)
                 .build();
+        damage = 1;
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
     }
     @Override
     public RenderData renderData() {
@@ -52,6 +57,7 @@ public class Spike implements RoomObject {
 
     @Override
     public void update(double dt) {
+        damage = animation.getCurrentTextureIndex() >= 2 ? 0 : 1;
         animation.update();
     }
 

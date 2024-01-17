@@ -28,6 +28,9 @@ public class DamageConsumer implements EventConsumer {
         if (!canDamage.test(damageEvent.source(), damageEvent.damage())){
             return;
         }
+        if (damageEvent.damage() == 0){
+            return;
+        }
         damageConsumer.accept(damageEvent.damage());
         damageEvent.onDamageCallback().run();
     }

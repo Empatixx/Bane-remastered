@@ -6,16 +6,20 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.Spike;
 import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
+import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class CommonRoom implements Room {
     private static final int MAX_ENEMIES = 5;
+    private static final int MAX_SPIKES = 3;
     private final EnemyService enemyService;
     private final RoomObjectService roomObjectService;
     private final ItemService itemService;
@@ -54,6 +58,18 @@ public class CommonRoom implements Room {
 
     @Override
     public void init() {
+        final int totalSpikes = ThreadLocalRandom.current().nextInt(MAX_SPIKES);
+        for (int i = 0; i < totalSpikes; i++){
+            final int xTile = ThreadLocalRandom.current().nextInt(2,tileMap.getHeight() / (Tile.TILE_SIZE * Tile.SCALE) - 1);
+            final int yTile = ThreadLocalRandom.current().nextInt(2,tileMap.getHeight() / (Tile.TILE_SIZE * Tile.SCALE) - 1);
+
+            final int xPos = getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
+            final int yPos = getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
+
+            final Spike spike = new Spike();
+            spike.setPosition(xPos, yPos);
+            roomObjectService.add(spike);
+        }
     }
 
     @Override
