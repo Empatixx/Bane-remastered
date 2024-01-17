@@ -117,7 +117,11 @@ public class MenuState extends GameState {
 
     @Override
     public void mouseReleased(int button) {
-
+        if(settingsMenuService.isActive()){
+            settingsMenuService.mouseReleased(button, mouseX, mouseY);
+            return;
+        }
+        uiElements.forEach(uiElement -> uiElement.mouseReleased(button, mouseX, mouseY));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package cz.empatix.settings.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.settings.domain.GameSettings;
 import org.joml.Vector2i;
@@ -16,9 +17,11 @@ public class SettingsService {
     private final static ObjectMapper MAPPER = new ObjectMapper();
     private final static Path SETTINGS_FILE = Path.of("settings.json");
     private static final SettingsService INSTANCE = new SettingsService();
+
     public static SettingsService getInstance() {
         return INSTANCE;
     }
+
     private final GameSettings appliedSettings = loadSettings();
     private final GameSettings unAppliedSettings = new GameSettings(appliedSettings);
     private final SettingsApplier settingsApplier = new SettingsApplier();
@@ -40,7 +43,7 @@ public class SettingsService {
     private GameSettings createDefaultSettings() {
         LOGGER.info("Creating default settings");
         return new GameSettings(WindowHandler.TARGET_WIDTH * 2, WindowHandler.TARGET_HEIGHT * 2,
-                false, true, 0.5f, 0.5f, 0.5f);
+                false, true, 1f, 0.5f, 0.5f);
     }
 
     public GameSettings getSettings() {
@@ -55,10 +58,12 @@ public class SettingsService {
             LOGGER.error("Failed to save settings", e);
         }
     }
+
     public void apply() {
         settingsApplier.applySettings(unAppliedSettings);
         appliedSettings.deepCopy(unAppliedSettings);
     }
+
     public void revert() {
         unAppliedSettings.deepCopy(appliedSettings);
     }
@@ -66,14 +71,30 @@ public class SettingsService {
     public List<Vector2i> getResolutions() {
         return WindowHandler.getMonitorResolutions();
     }
+
     public void setResolution(final Vector2i resolution) {
         unAppliedSettings.setResolutionWidth(resolution.x());
         unAppliedSettings.setResolutionHeight(resolution.y());
     }
+
     public void setVsync(final boolean vsync) {
         unAppliedSettings.setVsync(vsync);
     }
+
     public void setFullscreen(final boolean fullscreen) {
         unAppliedSettings.setFullscreen(fullscreen);
+    }
+
+    public void setOverallVolume(final float overallPercentage) {
+        LOGGER.info("Setting overall volume to {}%", (int)(overallPercentage * 100));
+        unAppliedSettings.setOverallVolume(overallPercentage);
+    }
+
+    public void setMusicVolume(final float musicPercentage) {
+        unAppliedSettings.setMusicVolume(musicPercentage);
+    }
+
+    public void setEffectsVolume(final float effectsPercentage) {
+        unAppliedSettings.setEffectsVolume(effectsPercentage);
     }
 }

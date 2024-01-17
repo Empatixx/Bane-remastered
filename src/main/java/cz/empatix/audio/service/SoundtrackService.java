@@ -13,6 +13,7 @@ public class SoundtrackService {
     private final AudioSource[] audioSources;
     private AudioSource currentAudioSource;
     private AudioSource nextAudioSource;
+    private float currentVolume = 1f;
     public SoundtrackService(final AudioSourcePool audioSourcePool) {
         this.audioSources = new AudioSource[2];
         audioSources[0] = audioSourcePool.reserveAudioSource();
@@ -39,11 +40,22 @@ public class SoundtrackService {
             currentAudioSource = audioSources[0];
             final int buffer = AssetsService.getAudio(soundtrack.getPath());
             currentAudioSource.play(buffer);
+            currentAudioSource.setLooping(true);
+            currentAudioSource.setGain(currentVolume);
         } else {
             nextAudioSource = currentAudioSource == audioSources[0] ? audioSources[1] : audioSources[0];
             final int buffer = AssetsService.getAudio(soundtrack.getPath());
             nextAudioSource.play(buffer);
+            nextAudioSource.setLooping(true);
             nextAudioSource.setGain(0);
+        }
+    }
+
+    public void setVolume(final float overallVolume, final float musicVolume) {
+        currentVolume = overallVolume * musicVolume;
+        if(nextAudioSource != null){
+            currentAudioSource.setGain(currentVolume);
+            nextAudioSource.setGain(currentVolume);
         }
     }
 }

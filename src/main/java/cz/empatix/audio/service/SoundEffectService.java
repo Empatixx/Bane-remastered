@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 public class SoundEffectService {
     private final static Logger LOGGER = LoggerFactory.getLogger(SoundEffectService.class);
     private final AudioSourcePool audioSourcePool;
+    private float currentVolume = 1f;
     public SoundEffectService(final AudioSourcePool audioSourcePool) {
         this.audioSourcePool = audioSourcePool;
     }
@@ -21,5 +22,9 @@ public class SoundEffectService {
         }
         final int buffer = AssetsService.getAudio(soundEffect.getPath());
         audioSource.play(buffer);
+    }
+
+    public void setVolume(final float overallVolume, final float effectsVolume) {
+        audioSourcePool.setVolume(overallVolume * effectsVolume);
     }
 }

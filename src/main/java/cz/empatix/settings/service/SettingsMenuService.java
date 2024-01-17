@@ -21,7 +21,9 @@ public class SettingsMenuService {
     private final List<UIElement> videoElements;
     private final List<UIElement> audioElements;
     private final List<UIElement> controlsElements;
-    private final List<HUDElement> hudElements;
+    private final List<HUDElement> videoHudElements;
+    private final List<HUDElement> audioHudElements;
+    private final List<HUDElement> controlsHudElements;
     private final UISelector<SettingsType> uiSelector;
     private final SlidingListText<Vector2i> resolutionText;
     private boolean active;
@@ -40,7 +42,7 @@ public class SettingsMenuService {
         selector.addElement(controls, SettingsType.CONTROLS);
 
         final Checkbox vsyncCheckbox = new Checkbox();
-        vsyncCheckbox.setPosition(400, 225);
+        vsyncCheckbox.setPosition(470, 225);
         vsyncCheckbox.check(gameSettings.isVsync());
         vsyncCheckbox.onCheck(settingsService::setVsync);
 
@@ -50,7 +52,7 @@ public class SettingsMenuService {
         vsyncLabel.setColorRGB(TEXT_COLOR);
 
         final Checkbox fullscreenCheckbox = new Checkbox();
-        fullscreenCheckbox.setPosition(400, 275);
+        fullscreenCheckbox.setPosition(470, 275);
         fullscreenCheckbox.check(gameSettings.isFullscreen());
         fullscreenCheckbox.onCheck(settingsService::setFullscreen);
 
@@ -76,7 +78,43 @@ public class SettingsMenuService {
         resolutionText.center(410, 560, 340);
 
         final Slider overallSlider = new Slider();
-        overallSlider.setPosition(400, 400);
+        overallSlider.setPosition(425, 225);
+        overallSlider.setTextPosition(365, 225);
+        overallSlider.setCenterTextY(overallSlider.getPosition().y(), overallSlider.getPosition().y() + overallSlider.getHeight());
+        overallSlider.setTextRGB(TEXT_COLOR);
+        overallSlider.onChange(settingsService::setOverallVolume);
+        overallSlider.setValue(gameSettings.getOverallVolume());
+
+        final Slider musicSlider = new Slider();
+        musicSlider.setPosition(425, 275);
+        musicSlider.setTextPosition(365, 275);
+        musicSlider.setCenterTextY(musicSlider.getPosition().y(), musicSlider.getPosition().y() + musicSlider.getHeight());
+        musicSlider.setTextRGB(TEXT_COLOR);
+        musicSlider.onChange(settingsService::setMusicVolume);
+        musicSlider.setValue(gameSettings.getMusicVolume());
+
+        final Slider effectsSlider = new Slider();
+        effectsSlider.setPosition(425, 325);
+        effectsSlider.setTextPosition(365, 325);
+        effectsSlider.setCenterTextY(effectsSlider.getPosition().y(), effectsSlider.getPosition().y() + effectsSlider.getHeight());
+        effectsSlider.setTextRGB(TEXT_COLOR);
+        effectsSlider.onChange(settingsService::setEffectsVolume);
+        effectsSlider.setValue(gameSettings.getEffectsVolume());
+
+        final CommonText overallLabel = new CommonText("Overall:", "PixelFJVerdana12pt.ttf", new Vector2f(), vsyncCheckbox.getZIndex());
+        overallLabel.setPosition(275, 225);
+        overallLabel.setCenterY(overallSlider.getPosition().y(), overallSlider.getPosition().y() + overallSlider.getHeight());
+        overallLabel.setColorRGB(TEXT_COLOR);
+
+        final CommonText musicLabel = new CommonText("Music:", "PixelFJVerdana12pt.ttf", new Vector2f(), vsyncCheckbox.getZIndex());
+        musicLabel.setPosition(275, 275);
+        musicLabel.setCenterY(musicSlider.getPosition().y(), musicSlider.getPosition().y() + musicSlider.getHeight());
+        musicLabel.setColorRGB(TEXT_COLOR);
+
+        final CommonText effectsLabel = new CommonText("Effects:", "PixelFJVerdana12pt.ttf", new Vector2f(), vsyncCheckbox.getZIndex());
+        effectsLabel.setPosition(275, 325);
+        effectsLabel.setCenterY(effectsSlider.getPosition().y(), effectsSlider.getPosition().y() + effectsSlider.getHeight());
+        effectsLabel.setColorRGB(TEXT_COLOR);
 
         final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f);
         applyButton.onClick(settingsService::apply);
@@ -95,10 +133,12 @@ public class SettingsMenuService {
         uiSelector = selector;
         commonElements = List.of(exitButton, revertButton, applyButton);
         videoElements = List.of(vsyncCheckbox, fullscreenCheckbox, nextResolution, previousResolution);
-        audioElements = List.of(overallSlider);
+        audioElements = List.of(overallSlider, musicSlider, effectsSlider);
         controlsElements = List.of();
 
-        hudElements = List.of(vsyncLabel, fullscreenLabel, resolutionLabel);
+        videoHudElements = List.of(vsyncLabel, fullscreenLabel, resolutionLabel);
+        audioHudElements = List.of(overallLabel, musicLabel, effectsLabel);
+        controlsHudElements = List.of();
     }
 
     public List<Renderable> toRender(final double dt) {
@@ -111,16 +151,26 @@ public class SettingsMenuService {
                 renderables.add(background);
                 renderables.addAll(commonElements);
                 renderables.addAll(videoElements);
-                hudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
+                videoHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
                 renderables.addAll(resolutionText.getSubRenderables());
                 renderables.addAll(uiSelector.getSubRenderables());
                 yield renderables;
             }
-            case AUDIO, CONTROLS -> {
+            case AUDIO-> {
                 final List<Renderable> renderables = new ArrayList<>();
                 renderables.add(background);
                 renderables.addAll(commonElements);
                 renderables.addAll(audioElements);
+                audioHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
+                renderables.addAll(uiSelector.getSubRenderables());
+                yield renderables;
+            }
+            case CONTROLS -> {
+                final List<Renderable> renderables = new ArrayList<>();
+                renderables.add(background);
+                renderables.addAll(commonElements);
+                renderables.addAll(controlsElements);
+                controlsHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
                 renderables.addAll(uiSelector.getSubRenderables());
                 yield renderables;
             }
@@ -133,7 +183,7 @@ public class SettingsMenuService {
         videoElements.forEach(button -> button.update(dt, mouseX, mouseY));
         audioElements.forEach(button -> button.update(dt, mouseX, mouseY));
         controlsElements.forEach(button -> button.update(dt, mouseX, mouseY));
-        hudElements.forEach(button -> button.update(dt));
+        videoHudElements.forEach(button -> button.update(dt));
         uiSelector.update(dt, mouseX, mouseY);
     }
 
@@ -146,10 +196,21 @@ public class SettingsMenuService {
     }
 
     public void mousePressed(int btn, float mouseX, float mouseY) {
+        switch (uiSelector.getSelected()) {
+            case VIDEO -> videoElements.forEach(button -> button.mousePressed(btn, mouseX, mouseY));
+            case AUDIO -> audioElements.forEach(button -> button.mousePressed(btn, mouseX, mouseY));
+            case CONTROLS -> controlsElements.forEach(button -> button.mousePressed(btn, mouseX, mouseY));
+        }
         commonElements.forEach(button -> button.mousePressed(btn, mouseX, mouseY));
-        videoElements.forEach(button -> button.mousePressed(btn, mouseX, mouseY));
-        audioElements.forEach(button -> button.mousePressed(btn, mouseX, mouseY));
-        controlsElements.forEach(button -> button.mousePressed(btn, mouseX, mouseY));
         uiSelector.mousePressed(btn, mouseX, mouseY);
+    }
+    public void mouseReleased(int btn, float mouseX, float mouseY) {
+        switch (uiSelector.getSelected()) {
+            case VIDEO -> videoElements.forEach(button -> button.mouseReleased(btn, mouseX, mouseY));
+            case AUDIO -> audioElements.forEach(button -> button.mouseReleased(btn, mouseX, mouseY));
+            case CONTROLS -> controlsElements.forEach(button -> button.mouseReleased(btn, mouseX, mouseY));
+        }
+        commonElements.forEach(button -> button.mouseReleased(btn, mouseX, mouseY));
+        uiSelector.mouseReleased(btn, mouseX, mouseY);
     }
 }

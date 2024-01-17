@@ -1,5 +1,6 @@
 package cz.empatix.settings.service;
 
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.settings.domain.GameSettings;
 
@@ -28,6 +29,11 @@ public class SettingsApplier {
             }
             if(previousSettings.isVsync() != currentSettings.isVsync()){
                 WindowHandler.setVsync(currentSettings.isVsync());
+            }
+            if (previousSettings.getOverallVolume() != currentSettings.getOverallVolume() ||
+                    previousSettings.getMusicVolume() != currentSettings.getMusicVolume() ||
+                    previousSettings.getEffectsVolume() != currentSettings.getEffectsVolume()) {
+                AudioService.getInstance().setVolume(currentSettings.getOverallVolume(), currentSettings.getMusicVolume(), currentSettings.getEffectsVolume());
             }
         }
     }

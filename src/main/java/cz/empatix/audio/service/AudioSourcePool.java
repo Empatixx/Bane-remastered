@@ -32,4 +32,8 @@ public class AudioSourcePool {
         audioSources.remove(audioSource);
         return audioSource;
     }
+
+    public void setVolume(final float volume) {
+        audioSources.forEach(audioSource -> audioSource.setGain(volume));
+    }
 }

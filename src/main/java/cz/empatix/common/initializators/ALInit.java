@@ -1,5 +1,6 @@
 package cz.empatix.common.initializators;
 
+import cz.empatix.audio.service.AudioService;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.ALC;
 import org.lwjgl.openal.ALC10;
@@ -33,6 +34,7 @@ public class ALInit implements Initializer {
             alcMakeContextCurrent(context);
             final ALCCapabilities alcCapabilities = ALC.createCapabilities(device);
             AL.createCapabilities(alcCapabilities);
+            LOGGER.info("OpenAL initialized.");
         } catch (Exception e){
             LOGGER.error("Failed to initialize OpenAL.", e);
             canUseAL = false;
