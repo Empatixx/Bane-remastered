@@ -256,7 +256,7 @@ public class Player implements Drawable, InteractEntity {
 
     @Override
     public int getZIndex() {
-        return 2;
+        return 4;
     }
 
 
