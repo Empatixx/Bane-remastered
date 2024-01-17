@@ -1,5 +1,6 @@
 package cz.empatix.items.service;
 
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.domain.ItemDrop;
 import cz.empatix.render.attributes.Drawable;
 
@@ -9,6 +10,10 @@ import java.util.List;
 public class ItemService {
     private final List<ItemDrop> itemDrops = new ArrayList<>(10);
     private ItemFactory itemFactory;
+    public StatisticsService statisticsService;
+    public ItemService(final StatisticsService statisticsService){
+        this.statisticsService = statisticsService;
+    }
     public void update(final float dt){
         itemDrops.forEach(itemDrop -> itemDrop.update(dt));
         itemDrops.removeIf(ItemDrop::canRemove);

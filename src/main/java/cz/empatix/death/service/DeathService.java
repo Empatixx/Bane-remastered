@@ -31,6 +31,7 @@ public class DeathService {
     private static final int LABEL_TEXT_END_POSITION_Y = 225;
     private static final int LABEL_TEXT_START_POSITION_Y = LABEL_TEXT_END_POSITION_Y + LABEL_DIFFERENCE_Y;
     private final static float REWARD_TRANSITION_TIME = 0.5f;
+    private final StatisticsService statisticsService;
     private final List<CommonImage> icons;
     private final List<CommonText> texts;
     private final List<CommonText> rewardTexts;
@@ -40,7 +41,8 @@ public class DeathService {
     private boolean continuePressed = false;
     private float accumulator = 0f;
 
-    public DeathService() {
+    public DeathService(final StatisticsService statisticsService) {
+        this.statisticsService = statisticsService;
 
         final CommonImage accuracyIcon = new CommonImage("ingame/accuracy_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y), 1f, 2, RenderScene.OVERLAYS);
         final CommonImage killsIcon = new CommonImage("ingame/kills_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);

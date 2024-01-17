@@ -6,6 +6,7 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.death.service.DeathService;
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
@@ -50,15 +51,17 @@ public class InGameState extends GameState {
     public void init() {
         CursorService.setCursor(CursorType.CROSSHAIR);
 
+        final StatisticsService statisticsService = new StatisticsService();
+
         player = new Player();
         pauseService = new PauseService();
-        deathService = new DeathService();
-        itemService = new ItemService();
-        gunService = new GunService(itemService);
+        deathService = new DeathService(statisticsService);
+        itemService = new ItemService(statisticsService);
+        gunService = new GunService(itemService, statisticsService);
 
         itemService.setFactory(new ItemFactory(gunService, player));
 
-        mapLoaderService = new MapLoaderService(itemService, room -> minimapService.visit(room));
+        mapLoaderService = new MapLoaderService(itemService, room -> minimapService.visit(room), statisticsService);
 
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService);

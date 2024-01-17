@@ -1,9 +1,11 @@
 package cz.empatix.map.service;
 
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.rooms.service.Room;
+import org.lwjgl.system.linux.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,11 +18,14 @@ public class MapLoaderService {
     private boolean loaded = false;
     private MapService mapService;
     private MinimapService minimapService;
+    private final StatisticsService statisticsService;
 
     public MapLoaderService(final ItemService itemService,
-                            final Consumer<Room> minimapConsumer){
+                            final Consumer<Room> minimapConsumer,
+                            final StatisticsService statisticsService) {
         this.minimapConsumer = minimapConsumer;
         this.itemService = itemService;
+        this.statisticsService = statisticsService;
     }
     public void load(final MapGenerationResult generation){
         if (mapService != null){
@@ -32,6 +37,7 @@ public class MapLoaderService {
         mapService = new MapService(generation, minimapConsumer);
         minimapService = new MinimapService(generation);
         loaded = true;
+        statisticsService.nextFloor();
     }
 
     public MapService getMapService() {

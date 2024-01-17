@@ -4,6 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.utils.PositionUtils;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.guns.domain.*;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.items.domain.MovableItemDrop;
@@ -40,10 +41,13 @@ public class GunService {
     private final List<Gun> guns;
     private final GunSlots slots;
     private final ItemService itemService;
+    private final StatisticsService statisticsService;
 
     private float shooterX, shooterY, targetX, targetY;
 
-    public GunService(final ItemService itemService) {
+    public GunService(final ItemService itemService,
+                      final StatisticsService statisticsService) {
+        this.statisticsService = statisticsService;
         this.itemService = itemService;
         guns = List.of(
                 new Pistol(),
@@ -85,7 +89,10 @@ public class GunService {
         this.targetX = targetX;
         this.targetY = targetY;
         try {
-            slots.getCurrentGun().shoot(shooterX, shooterY, targetX, targetY);
+            final boolean shoot = slots.getCurrentGun().shoot(shooterX, shooterY, targetX, targetY);
+            if (shoot) {
+                statisticsService.addBulletFired();
+            }
         } catch (IllegalStateException e) {
             LOGGER.debug("Could not shoot gun..");
         }
