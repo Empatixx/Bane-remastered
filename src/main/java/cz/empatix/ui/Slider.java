@@ -1,6 +1,7 @@
 package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -11,6 +12,7 @@ import org.joml.Vector2f;
 public class Slider implements UIElement{
     private final Vector2f position;
     private final Animation animation;
+    private final CommonImage cursor;
     public Slider(){
         this.position = new Vector2f();
         this.animation = Animation.builder()
@@ -20,6 +22,7 @@ public class Slider implements UIElement{
                 .scale(2)
                 .build();
         animation.setState(AnimationState.STATIC);
+        this.cursor = new CommonImage("menu/slider.tga", Camera.centerX().add(-114, 50), 3f, 2);
     }
     public void setPosition(final float x, final float y){
         this.position.set(x, y);
