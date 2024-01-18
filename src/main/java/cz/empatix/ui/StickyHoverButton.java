@@ -14,6 +14,7 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.joml.Vector3i;
 
 import java.util.List;
@@ -166,5 +167,21 @@ public class StickyHoverButton implements UIElement, SelectableUI{
     @Override
     public void select() {
         hover = true;
+    }
+
+    public int getHeight() {
+        return dimensions.y();
+    }
+
+    public void setPosition(final float x, final float y) {
+        this.position.set(x, y);
+    }
+
+    public Vector2f getPosition() {
+        return position;
+    }
+
+    public int getWidth() {
+        return dimensions.x;
     }
 }

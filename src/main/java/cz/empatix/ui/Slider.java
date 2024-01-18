@@ -25,7 +25,7 @@ public class Slider implements UIElement {
     private final static int SCALE = 2;
     private final Vector2f position;
     private final Animation animation;
-    private final CommonImage cursor;
+    private final StickyHoverButton cursor;
     private final CommonText valueText;
     private final Vector2i dimensions;
     private float value;
@@ -43,9 +43,8 @@ public class Slider implements UIElement {
                 .build();
         this.dimensions = new Vector2i(entry.width(), entry.height()).mul(SCALE);
         animation.setState(AnimationState.STATIC);
-        this.cursor = new CommonImage("menu/slider-button.tga", new Vector2f(0, 0), 2.f, 2);
+        this.cursor = new StickyHoverButton("", new Vector2f(0, 0), "menu/slider-button.tga", new Vector3i(255, 255, 255), 16, 16, 2.f, 2);
         cursor.setPosition(position.x(), position.y() - cursor.getHeight() / 4f);
-
         this.valueText = new CommonText("0%", "PixelFJVerdana12pt.ttf", new Vector2f(), 1);
         value = 0;
     }
@@ -106,26 +105,22 @@ public class Slider implements UIElement {
             valueText.setText((int)(value * 100) + "%");
             onChange.accept(value);
         }
+        cursor.update(dt, mouseX, mouseY);
     }
 
     @Override
     public void mousePressed(int button, double mouseX, double mouseY) {
-        if (intersectsCursor(mouseX, mouseY)) {
-            selected = true;
-        }
+        cursor.mousePressed(button, mouseX, mouseY);
+        selected = cursor.isHovered();
     }
     public void onChange(final Consumer<Float> onChange) {
         this.onChange = onChange;
     }
 
-    public boolean intersectsCursor(final double mouseX, final double mouseY){
-        return cursor.getPosition().x() < mouseX && cursor.getPosition().x() + cursor.getWidth() > mouseX &&
-                cursor.getPosition().y() < mouseY && cursor.getPosition().y() + cursor.getHeight() > mouseY;
-    }
-
     @Override
     public void mouseReleased(int button, double mouseX, double mouseY) {
         selected = false;
+        cursor.unselect();
     }
 
     @Override

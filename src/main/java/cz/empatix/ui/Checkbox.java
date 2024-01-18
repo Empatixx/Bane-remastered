@@ -22,15 +22,18 @@ public class Checkbox implements UIElement{
     private final Vector2f position;
     private final Animation animation;
     private final Vector2i dimensions;
+    private boolean hover;
     public Checkbox(){
         animation = Animation.builder()
-                .setTotal(2,1)
-                .addState(AnimationState.STATIC, 0, 1, DEFAULT_DIMENSIONS.x(), DEFAULT_DIMENSIONS.y(), -1)
+                .setTotal(4,1)
+                .addState(AnimationState.UNSELECTED, 0, 1, DEFAULT_DIMENSIONS.x(), DEFAULT_DIMENSIONS.y(), -1)
                 .addState(AnimationState.SELECTED, 1, 1, DEFAULT_DIMENSIONS.x(), DEFAULT_DIMENSIONS.y(), -1)
+                .addState(AnimationState.UNSELECTED_HOVER, 2, 1, DEFAULT_DIMENSIONS.x(), DEFAULT_DIMENSIONS.y(), -1)
+                .addState(AnimationState.SELECTED_HOVER, 3, 1, DEFAULT_DIMENSIONS.x(), DEFAULT_DIMENSIONS.y(), -1)
                 .texture(AssetsService.getTexture(DEFAULT_TEXTURE))
                 .scale(SCALE)
                 .build();
-        animation.setState(AnimationState.SELECTED);
+        animation.setState(AnimationState.UNSELECTED);
         this.position = new Vector2f();
         this.dimensions = new Vector2i((int)(DEFAULT_DIMENSIONS.x() * SCALE), (int)(DEFAULT_DIMENSIONS.y() * SCALE));
     }
@@ -55,7 +58,20 @@ public class Checkbox implements UIElement{
 
     @Override
     public void update(double dt, double mouseX, double mouseY) {
-
+        final boolean hovered = mouseIntersectsUI(mouseX, mouseY);
+        if (hovered){
+            if (checked){
+                animation.setState(AnimationState.SELECTED_HOVER);
+            }else{
+                animation.setState(AnimationState.UNSELECTED_HOVER);
+            }
+        }else{
+            if (checked){
+                animation.setState(AnimationState.SELECTED);
+            }else{
+                animation.setState(AnimationState.UNSELECTED);
+            }
+        }
     }
 
     @Override
@@ -65,7 +81,6 @@ public class Checkbox implements UIElement{
             return;
         }
         checked = !checked;
-        animation.setState(checked ? AnimationState.SELECTED : AnimationState.STATIC);
         if (onCheck != null){
             onCheck.accept(checked);
         }
@@ -99,7 +114,7 @@ public class Checkbox implements UIElement{
 
     @Override
     public boolean isHovered() {
-        return false;
+        return hover;
     }
 
     public void onCheck(final Consumer<Boolean> consumer) {

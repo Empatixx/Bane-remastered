@@ -81,7 +81,7 @@ public class SettingsMenuService {
         overallSlider.setPosition(425, 225);
         overallSlider.setTextPosition(365, 225);
         overallSlider.setCenterTextY(overallSlider.getPosition().y(), overallSlider.getPosition().y() + overallSlider.getHeight());
-        overallSlider.setTextRGB(TEXT_COLOR);
+        overallSlider.setTextRGB(new Vector3i(223, 60, 28));
         overallSlider.onChange(settingsService::setOverallVolume);
         overallSlider.setValue(gameSettings.getOverallVolume());
 
@@ -89,7 +89,7 @@ public class SettingsMenuService {
         musicSlider.setPosition(425, 275);
         musicSlider.setTextPosition(365, 275);
         musicSlider.setCenterTextY(musicSlider.getPosition().y(), musicSlider.getPosition().y() + musicSlider.getHeight());
-        musicSlider.setTextRGB(TEXT_COLOR);
+        musicSlider.setTextRGB(new Vector3i(223, 60, 28));
         musicSlider.onChange(settingsService::setMusicVolume);
         musicSlider.setValue(gameSettings.getMusicVolume());
 
@@ -97,7 +97,7 @@ public class SettingsMenuService {
         effectsSlider.setPosition(425, 325);
         effectsSlider.setTextPosition(365, 325);
         effectsSlider.setCenterTextY(effectsSlider.getPosition().y(), effectsSlider.getPosition().y() + effectsSlider.getHeight());
-        effectsSlider.setTextRGB(TEXT_COLOR);
+        effectsSlider.setTextRGB(new Vector3i(223, 60, 28));
         effectsSlider.onChange(settingsService::setEffectsVolume);
         effectsSlider.setValue(gameSettings.getEffectsVolume());
 
