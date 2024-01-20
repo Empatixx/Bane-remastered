@@ -42,7 +42,7 @@ public class Portal implements RoomObject, Interactable {
                 .build();
         animation.setState(AnimationState.IDLE);
         InteractionService.getInstance().addInteractable(this);
-        alternativeViewText = new AlternativeViewText("Press E to enter the portal", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE),1,FontSize.FONTSIZE_20,Camera.getProjection());
+        alternativeViewText = new AlternativeViewText("Press E to enter the portal", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE),1,FontSize.FONTSIZE_32,Camera.getProjection());
         alternativeViewText.setCenterX(position.x(),position.x() + DIMENSION_WIDTH*SCALE);
         alternativeViewText.setColorRGB(222, 112, 38);
     }

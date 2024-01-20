@@ -1,5 +1,6 @@
 package cz.empatix.settings.service;
 
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.hud.service.text.CommonText;
@@ -34,9 +35,9 @@ public class SettingsMenuService {
         final GameSettings gameSettings = settingsService.getSettings();
 
         final UISelector<SettingsType> selector = new UISelector<>();
-        final StickyHoverButton video = new StickyHoverButton("Video", "menu/settings_menubar.tga", 30, 16, new Vector2f(325, 160), 5f);
-        final StickyHoverButton audio = new StickyHoverButton("Audio", "menu/settings_menubar.tga", 30, 16, new Vector2f(480, 160), 5);
-        final StickyHoverButton controls = new StickyHoverButton("Controls", "menu/settings_menubar.tga", 30, 16, new Vector2f(635, 160), 5);
+        final StickyHoverButton video = new StickyHoverButton("Video", "menu/settings_menubar.tga", 30, 16, new Vector2f(325, 160), 5f, FontSize.FONT_SIZE_42);
+        final StickyHoverButton audio = new StickyHoverButton("Audio", "menu/settings_menubar.tga", 30, 16, new Vector2f(480, 160), 5, FontSize.FONT_SIZE_42);
+        final StickyHoverButton controls = new StickyHoverButton("Controls", "menu/settings_menubar.tga", 30, 16, new Vector2f(635, 160), 5, FontSize.FONT_SIZE_42);
         selector.addElement(video, SettingsType.VIDEO);
         selector.addElement(audio, SettingsType.AUDIO);
         selector.addElement(controls, SettingsType.CONTROLS);
@@ -116,10 +117,10 @@ public class SettingsMenuService {
         effectsLabel.setCenterY(effectsSlider.getPosition().y(), effectsSlider.getPosition().y() + effectsSlider.getHeight());
         effectsLabel.setColorRGB(TEXT_COLOR);
 
-        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f);
+        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f, FontSize.FONTSIZE_32);
         applyButton.onClick(settingsService::apply);
 
-        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f);
+        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f, FontSize.FONTSIZE_32);
         revertButton.onClick(() -> {
             settingsService.revert();
             resolutionText.slideToValue(new Vector2i(gameSettings.getResolutionWidth(), gameSettings.getResolutionHeight()));
@@ -127,7 +128,7 @@ public class SettingsMenuService {
             fullscreenCheckbox.check(gameSettings.isFullscreen());
         });
 
-        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f);
+        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f, FontSize.FONTSIZE_32);
         exitButton.onClick(() -> activate(false));
 
         uiSelector = selector;

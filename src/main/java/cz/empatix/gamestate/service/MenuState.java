@@ -1,5 +1,6 @@
 package cz.empatix.gamestate.service;
 
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
@@ -45,9 +46,9 @@ public class MenuState extends GameState {
 
         background = new CommonBackground("menu/bg.png");
 
-        final CommonButton playButton = new CommonButton("Play", Camera.centerX().add(0, 225), 1.5f);
-        final CommonButton settingsButton = new CommonButton("Settings", Camera.centerX().add(0, 325), 1.5f);
-        final CommonButton exitButton = new CommonButton("Exit", Camera.centerX().add(0, 425), 1.5f);
+        final CommonButton playButton = new CommonButton("Play", Camera.centerX().add(0, 225), 1.5f, FontSize.FONTSIZE_32);
+        final CommonButton settingsButton = new CommonButton("Settings", Camera.centerX().add(0, 325), 1.5f, FontSize.FONTSIZE_32);
+        final CommonButton exitButton = new CommonButton("Exit", Camera.centerX().add(0, 425), 1.5f, FontSize.FONTSIZE_32);
 
         playButton.onClick(() -> setCurrentState(GameStateType.LOBBY));
         exitButton.onClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));

@@ -21,7 +21,6 @@ import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -52,13 +51,13 @@ public class FontLoader implements AssetLoader<RawFont> {
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".ttf"))
                     .forEach(p -> {
-                        final RawFont font16 = decodeFont(p, FontSize.FONTSIZE_16);
+                        final RawFont font16 = decodeFont(p, FontSize.FONTSIZE_22);
                         fonts.add(font16);
 
-                        final RawFont font20 = decodeFont(p, FontSize.FONTSIZE_20);
+                        final RawFont font20 = decodeFont(p, FontSize.FONTSIZE_32);
                         fonts.add(font20);
 
-                        final RawFont font24 = decodeFont(p, FontSize.FONTSIZE_24);
+                        final RawFont font24 = decodeFont(p, FontSize.FONT_SIZE_42);
                         fonts.add(font24);
 
                         total.incrementAndGet();
@@ -94,6 +93,7 @@ public class FontLoader implements AssetLoader<RawFont> {
             final Map<Character, RawGlyph> glyphs = new HashMap<>();
             final float scale = stbtt_ScaleForPixelHeight(info, fontSize.getSize());
             final float scaleForBitmap = stbtt_ScaleForPixelHeight(info, fontSize.getSize() * WindowHandler.getMaxHeight() / WindowHandler.TARGET_HEIGHT);
+
             for (char c = 0; c <= 255; c++) {
                 try (final MemoryStack memoryStack = MemoryStack.stackPush()) {
                     final IntBuffer bufBitmapWidth = memoryStack.mallocInt(1);

@@ -16,7 +16,7 @@ import org.joml.Vector3i;
 import java.util.List;
 
 public class CommonText implements HUDElement {
-    private final static FontSize DEFAULT_FONT_SIZE = FontSize.FONTSIZE_20;
+    private final static FontSize DEFAULT_FONT_SIZE = FontSize.FONTSIZE_22;
     private final static RenderScene DEFAULT_SCENE = RenderScene.HUD;
     private String text;
     private final Font font;
@@ -29,6 +29,9 @@ public class CommonText implements HUDElement {
     }
     public CommonText(final String text, final String font, final Vector2f position, final int prevZIndex) {
         this(text, font, position, prevZIndex, DEFAULT_SCENE, DEFAULT_FONT_SIZE);
+    }
+    public CommonText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize) {
+        this(text, font, position, prevZIndex, DEFAULT_SCENE, fontSize);
     }
     public CommonText(final String text, final String font, final Vector2f position, final int prevZIndex,
                       final RenderScene renderScene, final FontSize fontSize) {

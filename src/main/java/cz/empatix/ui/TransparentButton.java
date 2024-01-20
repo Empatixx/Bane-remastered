@@ -1,5 +1,6 @@
 package cz.empatix.ui;
 
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.text.CommonText;

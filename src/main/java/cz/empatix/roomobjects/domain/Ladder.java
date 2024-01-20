@@ -61,7 +61,7 @@ public class Ladder implements RoomObject, Interactable {
         animatedImage = new AlternativeViewImage("ingame/ladder_pointer.tga", new Vector2f(), 4, 2, RenderScene.SCENE,
                 Camera.getProjection(), 4, 100);
         text = new AlternativeViewText("Press E to enter next floor", "PixelFJVerdana12pt.ttf", new Vector2f(), 1,
-                FontSize.FONTSIZE_20, Camera.getProjection());
+                FontSize.FONTSIZE_32, Camera.getProjection());
         text.setColorRGB(222, 112, 38);
         InteractionService.getInstance().addInteractable(this);
     }

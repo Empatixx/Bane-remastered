@@ -1,5 +1,6 @@
 package cz.empatix.ui;
 
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
@@ -43,7 +44,7 @@ public class Slider implements UIElement {
                 .build();
         this.dimensions = new Vector2i(entry.width(), entry.height()).mul(SCALE);
         animation.setState(AnimationState.STATIC);
-        this.cursor = new StickyHoverButton("", new Vector2f(0, 0), "menu/slider-button.tga", new Vector3i(255, 255, 255), 16, 16, 2.f, 2);
+        this.cursor = new StickyHoverButton("", new Vector2f(0, 0), "menu/slider-button.tga", new Vector3i(255, 255, 255), 16, 16, 2.f, 2, FontSize.FONTSIZE_22);
         cursor.setPosition(position.x(), position.y() - cursor.getHeight() / 4f);
         this.valueText = new CommonText("0%", "PixelFJVerdana12pt.ttf", new Vector2f(), 1);
         value = 0;

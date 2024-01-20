@@ -63,7 +63,7 @@ public class DeathService {
         final CommonText lootCoins = new CommonText("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 2 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
         final CommonText floorCoins = new CommonText("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
 
-        gameOverText = new CommonText("Game Over", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONTSIZE_24);
+        gameOverText = new CommonText("Game Over", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONT_SIZE_42);
         gameOverText.setCenterX(0, WindowHandler.TARGET_WIDTH);
 
         continueText = new CommonText("Press any key to continue...", "PixelFJVerdana12pt.ttf", new Vector2f(700, 500), 2, RenderScene.OVERLAYS);

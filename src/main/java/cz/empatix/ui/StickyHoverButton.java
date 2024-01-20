@@ -1,5 +1,6 @@
 package cz.empatix.ui;
 
+import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
@@ -19,11 +20,12 @@ import org.joml.Vector3i;
 
 import java.util.List;
 
-public class StickyHoverButton implements UIElement, SelectableUI{
+public class StickyHoverButton implements UIElement, SelectableUI {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private static final int DEFAULT_Z_DEPTH = 1;
     private final static String DEFAULT_TEXTURE = "menu/Menu_bar2.tga";
     private final static Vector3i DEFAULT_COLOR = new Vector3i(200, 92, 18);
+    private final static FontSize DEFAULT_FONT_SIZE = FontSize.FONTSIZE_22;
     private final static int DEFAULT_WIDTH = 84;
     private final static int DEFAULT_HEIGHT = 42;
     private final Vector2f position;
@@ -35,25 +37,30 @@ public class StickyHoverButton implements UIElement, SelectableUI{
     private Runnable onClick;
 
     public StickyHoverButton(final String text, final Vector2f position) {
-        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, 1, DEFAULT_Z_DEPTH);
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, 1, DEFAULT_Z_DEPTH, DEFAULT_FONT_SIZE);
     }
+
     public StickyHoverButton(final String text, final Vector2f position, final float scale) {
-        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, DEFAULT_Z_DEPTH);
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, DEFAULT_Z_DEPTH, DEFAULT_FONT_SIZE);
     }
-    public StickyHoverButton(final String text, final String texture, final int width, final int height, final Vector2f position, final float scale) {
-        this(text, position, texture, DEFAULT_COLOR, width, height, scale, DEFAULT_Z_DEPTH);
+
+    public StickyHoverButton(final String text, final String texture, final int width, final int height, final Vector2f position, final float scale, final FontSize fontSize) {
+        this(text, position, texture, DEFAULT_COLOR, width, height, scale, DEFAULT_Z_DEPTH, fontSize);
     }
+
     public StickyHoverButton(final String text, final Vector2f position, final float scale, final int zDepth) {
-        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, zDepth);
+        this(text, position, DEFAULT_TEXTURE, DEFAULT_COLOR, DEFAULT_WIDTH, DEFAULT_HEIGHT, scale, zDepth, DEFAULT_FONT_SIZE);
     }
+
     public StickyHoverButton(final String text,
-                        final Vector2f position,
-                        final String texture,
-                        final Vector3i rgb,
-                        final int width,
-                        final int height,
-                        final float scale,
-                        final int zDepth) {
+                             final Vector2f position,
+                             final String texture,
+                             final Vector3i rgb,
+                             final int width,
+                             final int height,
+                             final float scale,
+                             final int zDepth,
+                             final FontSize fontSize) {
         this.zDepth = zDepth;
         this.dimensions = new Vector2i(width, height);
         this.dimensions.x *= scale;
@@ -61,7 +68,7 @@ public class StickyHoverButton implements UIElement, SelectableUI{
 
         final TextureAtlas.Entry textureImage = AssetsService.getTexture(texture);
         animation = Animation.builder()
-                .setTotal(2,1)
+                .setTotal(2, 1)
                 .addState(AnimationState.STATIC, 0, 1, dimensions.x(), dimensions.y(), -1)
                 .addState(AnimationState.HOVER, 1, 1, dimensions.x(), dimensions.y(), -1)
                 .texture(textureImage)
@@ -72,7 +79,7 @@ public class StickyHoverButton implements UIElement, SelectableUI{
         this.position = position.sub(new Vector2f(dimensions).div(2f));
         final Vector2f textPosition = new Vector2f(position)
                 .add(0, dimensions.y() / 2f);
-        this.text = new CommonText(text, "PixelFJVerdana12pt.ttf", textPosition, zDepth);
+        this.text = new CommonText(text, "PixelFJVerdana12pt.ttf", textPosition, zDepth, fontSize);
         this.text.setCenterX(position.x, position.x + dimensions.x());
         this.text.setColorRGB(rgb);
     }
@@ -91,9 +98,10 @@ public class StickyHoverButton implements UIElement, SelectableUI{
     }
 
     @Override
-    public List<Renderable> getSubRenderables(){
+    public List<Renderable> getSubRenderables() {
         return text.getSubRenderables();
     }
+
     @Override
     public boolean canRender() {
         return true;
