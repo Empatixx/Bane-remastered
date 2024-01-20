@@ -21,21 +21,24 @@ import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.lwjgl.stb.STBTruetype.*;
 
-public class FontLoader implements AssetLoader {
+public class FontLoader implements AssetLoader<RawFont> {
     private final static Logger LOGGER = LoggerFactory.getLogger(FontLoader.class);
     public final static Path PATH = Path.of("./assets/fonts/");
-    private final Map<String, Map<FontSize, RawFont>> fonts;
+    private final Queue<RawFont> fonts;
     private final TextureAtlasFactory textureAtlasFactory;
 
-    public FontLoader(final Map<String, Map<FontSize, RawFont>> fonts) {
-        this.fonts = fonts;
+    public FontLoader() {
+        fonts = new ConcurrentLinkedQueue<>();
         this.textureAtlasFactory = new TextureAtlasFactory();
     }
 
@@ -49,11 +52,15 @@ public class FontLoader implements AssetLoader {
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".ttf"))
                     .forEach(p -> {
-                        final Map<FontSize, RawFont> fontSizes = Map.of(
-                                FontSize.FONTSIZE_16, decodeFont(p, FontSize.FONTSIZE_16),
-                                FontSize.FONTSIZE_20, decodeFont(p, FontSize.FONTSIZE_20),
-                                FontSize.FONTSIZE_24, decodeFont(p, FontSize.FONTSIZE_24));
-                        fonts.put(p.toString(), fontSizes);
+                        final RawFont font16 = decodeFont(p, FontSize.FONTSIZE_16);
+                        fonts.add(font16);
+
+                        final RawFont font20 = decodeFont(p, FontSize.FONTSIZE_20);
+                        fonts.add(font20);
+
+                        final RawFont font24 = decodeFont(p, FontSize.FONTSIZE_24);
+                        fonts.add(font24);
+
                         total.incrementAndGet();
                     });
             return total.get();
@@ -68,6 +75,11 @@ public class FontLoader implements AssetLoader {
     @Override
     public int preload() {
         return 0;
+    }
+
+    @Override
+    public Queue<RawFont> getAssets() {
+        return fonts;
     }
 
     private RawFont decodeFont(final Path path, final FontSize fontSize) {
@@ -119,7 +131,7 @@ public class FontLoader implements AssetLoader {
                 }
             }
             final RawTextureAtlas atlas = getAtlas(glyphs);
-            return new RawFont(glyphs, atlas);
+            return new RawFont(path, fontSize, glyphs, atlas);
         } catch (Exception e) {
             LOGGER.error("Failed to load font file {}", path);
             throw new RuntimeException(e);

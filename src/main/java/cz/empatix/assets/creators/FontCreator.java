@@ -16,13 +16,11 @@ import java.util.stream.Collectors;
 public class FontCreator implements AssetCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(FontCreator.class);
     private final Map<String, Map<FontSize, Font>> fonts;
-    private final Map<String, Map<FontSize, RawFont>> rawFonts;
     private final FontLoader fontLoader;
 
     public FontCreator() {
         fonts = new HashMap<>();
-        rawFonts = new ConcurrentHashMap<>();
-        fontLoader = new FontLoader(rawFonts);
+        fontLoader = new FontLoader();
     }
 
     public Font get(final String name, final FontSize size) {
@@ -31,17 +29,10 @@ public class FontCreator implements AssetCreator {
 
     @Override
     public void create() {
-        final Iterator<Map.Entry<String, Map<FontSize, RawFont>>> iterator = rawFonts.entrySet().iterator();
-        while (iterator.hasNext()) {
-            final Map.Entry<String, Map<FontSize, RawFont>> entry = iterator.next();
-
-            final String path = entry.getKey();
-            final Map<FontSize, RawFont> rawSizedFonts = entry.getValue();
-            final Map<FontSize, Font> fonts = rawSizedFonts.entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, fontEntry -> Font.from(fontEntry.getValue())));
-            this.fonts.put(path, fonts);
-            iterator.remove();
+        while (!fontLoader.getAssets().isEmpty()) {
+            final RawFont rawFont = fontLoader.getAssets().poll();
+            fonts.computeIfAbsent(rawFont.path().toString(), s -> new ConcurrentHashMap<>())
+                    .put(rawFont.size(), Font.from(rawFont));
         }
     }
 

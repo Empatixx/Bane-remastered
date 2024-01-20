@@ -1,6 +1,7 @@
 package cz.empatix.assets.loaders;
 
 import cz.empatix.assets.domain.RawAudio;
+import cz.empatix.assets.domain.font.RawFont;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;
@@ -11,8 +12,13 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import static org.lwjgl.openal.AL10.AL_FORMAT_MONO16;
@@ -20,13 +26,14 @@ import static org.lwjgl.openal.AL10.AL_FORMAT_STEREO16;
 import static org.lwjgl.stb.STBVorbis.stb_vorbis_decode_filename;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
-public class AudioLoader implements AssetLoader {
+public class AudioLoader implements AssetLoader<RawAudio> {
     private final static Logger LOGGER = LoggerFactory.getLogger(AudioLoader.class);
     public final static Path PATH = Path.of("./assets/audio/");
-    private final Map<String, RawAudio> audio;
-
-    public AudioLoader(final Map<String, RawAudio> audio) {
-        this.audio = audio;
+    private final Queue<RawAudio> audio;
+    private final Lock lock;
+    public AudioLoader() {
+        this.audio = new ConcurrentLinkedQueue<>();
+        this.lock = new ReentrantLock();
     }
 
 
@@ -39,9 +46,9 @@ public class AudioLoader implements AssetLoader {
             paths
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".ogg"))
-                    .map(path -> Map.entry(path.toString(), decodeAudio(path)))
-                    .forEach(entry -> {
-                        this.audio.put(entry.getKey(), entry.getValue());
+                    .map(this::decodeAudio)
+                    .forEach(audio -> {
+                        this.audio.add(audio);
                         total.incrementAndGet();
                     });
             return total.get();
@@ -58,6 +65,11 @@ public class AudioLoader implements AssetLoader {
         return 0;
     }
 
+    @Override
+    public Queue<RawAudio> getAssets() {
+        return audio;
+    }
+
     private RawAudio decodeAudio(final Path path) {
         try {
             try (MemoryStack stack = stackPush()) {
@@ -66,10 +78,10 @@ public class AudioLoader implements AssetLoader {
                 final IntBuffer sampleRateBuffer = stack.mallocInt(1);
 
                 final ShortBuffer rawAudioBuffer = stb_vorbis_decode_filename(path.toString(), channelsBuffer, sampleRateBuffer);
-                if (rawAudioBuffer == null) {
-                    throw new RuntimeException("Failed to load audio file: " + path);
-                }
                 try{
+                    if (rawAudioBuffer == null) {
+                        throw new RuntimeException("Failed to load audio file: " + path);
+                    }
                     final int sampleRate = sampleRateBuffer.get();
                     final int channels = channelsBuffer.get();
                     final int format = switch (channels) {
@@ -80,7 +92,7 @@ public class AudioLoader implements AssetLoader {
                     final short[] audioData = new short[rawAudioBuffer.remaining()];
                     rawAudioBuffer.get(audioData);
 
-                    return new RawAudio(format, sampleRate, audioData);
+                    return new RawAudio(path, format, sampleRate, audioData);
                 } finally {
                     MemoryUtil.memFree(rawAudioBuffer);
                 }

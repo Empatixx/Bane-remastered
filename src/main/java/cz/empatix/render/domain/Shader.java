@@ -1,6 +1,7 @@
 package cz.empatix.render.domain;
 
 import cz.empatix.assets.domain.RawShader;
+import cz.empatix.assets.domain.ShaderType;
 import cz.empatix.common.utils.BufferFactory;
 import org.joml.*;
 import org.slf4j.Logger;
@@ -8,7 +9,10 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.FloatBuffer;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL20.*;
 
@@ -27,9 +31,11 @@ public record Shader(
         this(program, fragmentShaderId, vertexShaderId, new HashMap<>());
     }
 
-    public static Shader from(final RawShader rawShader) {
-        final String vertex = rawShader.vertex();
-        final String fragment = rawShader.fragment();
+    public static Shader from(final List<RawShader> rawShaders) {
+        final Map<ShaderType, RawShader> shaders = rawShaders.stream()
+                .collect(Collectors.toMap(RawShader::type, rawShader -> rawShader));
+        final String vertex = shaders.get(ShaderType.VERTEX).content();
+        final String fragment = shaders.get(ShaderType.FRAGMENT).content();
 
         final int program = glCreateProgram();
 

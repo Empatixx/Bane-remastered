@@ -18,12 +18,10 @@ public class TexturesCreator implements AssetCreator {
     public final static Path PATH = Path.of("./assets/textures/");
     private final TexturesLoader texturesLoader;
     private final List<TextureAtlas> textureAtlases;
-    private final Queue<RawTextureAtlas> rawTextureAtlases;
 
     public TexturesCreator() {
         textureAtlases = new ArrayList<>();
-        rawTextureAtlases = new ConcurrentLinkedQueue<>();
-        texturesLoader = new TexturesLoader(rawTextureAtlases);
+        texturesLoader = new TexturesLoader();
     }
 
     public TextureAtlas.Entry get(final String name) {
@@ -38,11 +36,9 @@ public class TexturesCreator implements AssetCreator {
 
     @Override
     public void create() {
-        final Iterator<RawTextureAtlas> iterator = rawTextureAtlases.iterator();
-        while (iterator.hasNext()){
-            final RawTextureAtlas rawAtlas = iterator.next();
-            textureAtlases.add(TextureAtlas.from(rawAtlas));
-            iterator.remove();
+        while (!texturesLoader.getAssets().isEmpty()) {
+            final RawTextureAtlas rawTextureAtlas = texturesLoader.getAssets().poll();
+            textureAtlases.add(TextureAtlas.from(rawTextureAtlas));
         }
     }
 

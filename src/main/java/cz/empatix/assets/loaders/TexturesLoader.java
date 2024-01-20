@@ -12,8 +12,11 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,15 +24,16 @@ import java.util.stream.Stream;
 import static org.lwjgl.stb.STBImage.stbi_failure_reason;
 import static org.lwjgl.stb.STBImage.stbi_load;
 
-public class TexturesLoader implements AssetLoader {
+public class TexturesLoader implements AssetLoader<RawTextureAtlas> {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesLoader.class);
     public final static Path PATH = Path.of("./assets/textures/");
     private final static Path PRELOAD_DIRECTORY = PATH.resolve("loading");
+    private final static Set<String> SUPPORTED_FORMATS = Set.of(".tga", ".png");
     private final Queue<RawTextureAtlas> rawTextureAtlases;
     private final TextureAtlasFactory textureAtlasFactory;
 
-    public TexturesLoader(final Queue<RawTextureAtlas> rawTextureAtlases){
-        this.rawTextureAtlases = rawTextureAtlases;
+    public TexturesLoader(){
+        this.rawTextureAtlases = new ConcurrentLinkedQueue<>();
         this.textureAtlasFactory = new TextureAtlasFactory();
     }
 
@@ -43,7 +47,7 @@ public class TexturesLoader implements AssetLoader {
                     .forEach(dirPath -> {
                         final RawTextureAtlas textureAtlas = atlasFromDirectory(dirPath);
                         rawTextureAtlases.add(textureAtlas);
-                        total.addAndGet(1);
+                        total.incrementAndGet();
                     });
         } catch (Exception e) {
             LOGGER.error("Failed to load textures", e);
@@ -65,11 +69,17 @@ public class TexturesLoader implements AssetLoader {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public Queue<RawTextureAtlas> getAssets() {
+        return rawTextureAtlases;
+    }
+
     private RawTextureAtlas atlasFromDirectory(final Path dir){
         try(final Stream<Path> paths = Files.walk(dir)){
             final Map<String, RawImage> textures = paths
                     .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".tga") || p.toString().endsWith(".png"))
+                    .filter(p -> SUPPORTED_FORMATS.contains(p.toString().substring(p.toString().lastIndexOf('.'))))
                     .map(path -> Map.entry(path.toString(), decodeImage(path)))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             LOGGER.info("Loaded {} textures from {}", textures.size(), dir);

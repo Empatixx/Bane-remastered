@@ -8,19 +8,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ShadersCreator implements AssetCreator {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShadersCreator.class);
     private final Map<String, Shader> shaders;
-    private final Map<String, RawShader> rawShaders;
     private final ShadersLoader shadersLoader;
 
     public ShadersCreator() {
         this.shaders = new HashMap<>();
-        this.rawShaders = new ConcurrentHashMap<>();
-        shadersLoader = new ShadersLoader(rawShaders);
+        shadersLoader = new ShadersLoader();
     }
 
     public Shader get(final String name) {
@@ -29,11 +27,9 @@ public class ShadersCreator implements AssetCreator {
 
     @Override
     public void create() {
-        final Iterator<Map.Entry<String, RawShader>> iterator = rawShaders.entrySet().iterator();
-        while (iterator.hasNext()) {
-            final Map.Entry<String, RawShader> entry = iterator.next();
-            shaders.put(entry.getKey(), Shader.from(entry.getValue()));
-            iterator.remove();
+        while(!shadersLoader.getAssets().isEmpty()){
+            final List<RawShader> rawShaders = shadersLoader.getAssets().poll();
+            shaders.put(rawShaders.get(0).getName(), Shader.from(rawShaders));
         }
     }
 

@@ -1,26 +1,24 @@
 package cz.empatix.assets.creators;
 
 import cz.empatix.assets.domain.RawAudio;
+import cz.empatix.assets.domain.font.RawFont;
 import cz.empatix.assets.loaders.AudioLoader;
 import org.lwjgl.openal.AL10;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class AudioCreator implements AssetCreator{
     private static final Logger LOGGER = LoggerFactory.getLogger(AudioCreator.class);
     private final Map<String, Integer> audio;
-    private final Map<String, RawAudio> rawAudio;
     private final AudioLoader audioLoader;
 
     public AudioCreator() {
         this.audio = new HashMap<>();
-        this.rawAudio = new ConcurrentHashMap<>();
-        audioLoader = new AudioLoader(rawAudio);
+        audioLoader = new AudioLoader();
     }
 
     public Integer get(final String name) {
@@ -28,11 +26,9 @@ public class AudioCreator implements AssetCreator{
     }
     @Override
     public void create(){
-        final Iterator<Map.Entry<String, RawAudio>> iterator = rawAudio.entrySet().iterator();
-        while (iterator.hasNext()){
-            final Map.Entry<String, RawAudio> entry = iterator.next();
-            audio.put(entry.getKey(), createAudio(entry.getValue()));
-            iterator.remove();
+        while (!audioLoader.getAssets().isEmpty()) {
+            final RawAudio rawAudio = audioLoader.getAssets().poll();
+            audio.put(rawAudio.filepath().toString(), createAudio(rawAudio));
         }
     }
     private int createAudio(final RawAudio audio){

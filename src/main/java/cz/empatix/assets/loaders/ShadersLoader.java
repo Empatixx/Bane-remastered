@@ -7,25 +7,22 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class ShadersLoader implements AssetLoader {
+public class ShadersLoader implements AssetLoader<List<RawShader>> {
     private final static Logger LOGGER = LoggerFactory.getLogger(ShadersLoader.class);
     public final static Path PATH = Path.of("./assets/shaders/");
-    private static final Path[] PRELOAD_SHADERS = {
+    private static final Set<Path> PRELOAD_SHADERS = Set.of(
             PATH.resolve("common-vs.glsl"),
             PATH.resolve("common-fs.glsl")
-    };
-    private final Map<String, RawShader> shaders;
-
-    public ShadersLoader(final Map<String, RawShader> shaders) {
-        this.shaders = shaders;
+    );
+    private final Queue<List<RawShader>> shaders;
+    public ShadersLoader() {
+        this.shaders = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -36,15 +33,20 @@ public class ShadersLoader implements AssetLoader {
         try (final Stream<Path> paths = Files.walk(PATH)) {
             paths
                     .filter(Files::isRegularFile)
+                    .filter(p -> !PRELOAD_SHADERS.contains(p))
                     .filter(p -> p.toString().endsWith(".glsl"))
-                    .collect(Collectors.groupingBy(p -> p.getFileName().toString().replaceAll("(-vs)*(-fs)*(\\.glsl)", "")))
-                    .entrySet()
-                    .stream()
-                    .filter(entry -> !shaders.containsKey(entry.getKey()))
-                    .map(this::createRawShader)
-                    .forEach(entry -> {
-                        shaders.put(entry.getKey(), entry.getValue());
-                        total.getAndIncrement();
+                    .map(p -> {
+                        try {
+                            return new RawShader(p, new String(Files.readAllBytes(p)));
+                        } catch (IOException e) {
+                            LOGGER.error("Error while reading shader file: {}", p);
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .collect(Collectors.groupingBy(RawShader::getName))
+                    .forEach((name, rawShaders) -> {
+                        shaders.add(rawShaders);
+                        total.incrementAndGet();
                     });
         } catch (IOException e) {
             LOGGER.error("Failed to load shader files", e);
@@ -57,35 +59,25 @@ public class ShadersLoader implements AssetLoader {
 
     @Override
     public int preload() {
-        Arrays.stream(PRELOAD_SHADERS)
-                .collect(Collectors.groupingBy(p -> p.getFileName().toString().replaceAll("(-vs)*(-fs)*(\\.glsl)", "")))
-                .entrySet()
-                .stream()
-                .map(this::createRawShader)
-                .forEach(entry -> shaders.put(entry.getKey(), entry.getValue()));
-        return PRELOAD_SHADERS.length;
-    }
-    private Map.Entry<String, RawShader> createRawShader(final Map.Entry<String, List<Path>> entry) {
-        final List<Path> value = entry.getValue();
-        final String vs = getShaderText(value, "-vs.glsl")
-                .orElseThrow(() -> new RuntimeException("Vertex shader not found!"));
-        final String fs = getShaderText(value, "-fs.glsl")
-                .orElseThrow(() -> new RuntimeException("Fragment shader not found!"));
-        return Map.entry(entry.getKey(), new RawShader(vs, fs));
-    }
-
-    private Optional<String> getShaderText(final List<Path> paths, final String suffix) {
-        return paths.stream()
-                .filter(p -> p.toString().endsWith(suffix))
-                .findFirst()
+        PRELOAD_SHADERS.stream()
                 .map(p -> {
                     try {
-                        return new String(Files.readAllBytes(p));
+                        return new RawShader(p, new String(Files.readAllBytes(p)));
                     } catch (IOException e) {
                         LOGGER.error("Error while reading shader file: {}", p);
                         throw new RuntimeException(e);
                     }
+                })
+                .collect(Collectors.groupingBy(RawShader::getName))
+                .forEach((name, rawShaders) -> {
+                    shaders.add(rawShaders);
                 });
+        return PRELOAD_SHADERS.size();
+    }
+
+    @Override
+    public Queue<List<RawShader>> getAssets() {
+        return shaders;
     }
 
 }
