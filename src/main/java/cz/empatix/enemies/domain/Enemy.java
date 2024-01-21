@@ -30,4 +30,7 @@ public interface Enemy extends Drawable {
     int getHeight();
     void setPosition(final float x,final float y);
     void setTarget(final Player player);
+    default void despawn(){
+
+    }
 }

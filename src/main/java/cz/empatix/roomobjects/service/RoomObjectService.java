@@ -23,6 +23,6 @@ public class RoomObjectService {
     }
 
     public void cleanUp() {
-        // remove physics bodies when will be used.
+        roomObjects.forEach(RoomObject::destroy);
     }
 }

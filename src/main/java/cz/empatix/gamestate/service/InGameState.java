@@ -93,6 +93,7 @@ public class InGameState extends GameState {
 
         deathService.update((float)dt, player.isDead());
         if(deathService.isActive()){
+            gunService.setShooting(false);
             player.update(dt);
             mapService.update(dt, player);
             return;

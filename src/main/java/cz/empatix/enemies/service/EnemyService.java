@@ -59,7 +59,7 @@ public class EnemyService {
             final float newY = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
             position.set(newX, newY);
         }
-        e.setPosition(x, y);
+        e.setPosition(position.x(), position.y());
 
         enemies.add(e);
     }
@@ -78,4 +78,8 @@ public class EnemyService {
         return enemies.size() <= 0;
     }
 
+    public void cleanUp() {
+        enemies.removeIf(Enemy::canRemove);
+
+    }
 }

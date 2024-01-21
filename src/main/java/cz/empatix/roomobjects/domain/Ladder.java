@@ -48,6 +48,7 @@ public class Ladder implements RoomObject, Interactable {
                 LOGGER.info("Loading new map");
                 final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
                 final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService);
+                mapLoaderService.clearPreviousMap();
                 mapLoaderService.load(mapGenerationResult);
             }
         }, () -> true, () -> false, getPosition(), getWidth(), getHeight());

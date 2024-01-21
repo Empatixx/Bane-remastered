@@ -73,4 +73,9 @@ public class CommonTileMap implements TileMap {
                 .flatMap(Arrays::stream)
                 .forEach(Tile::destroy);
     }
+
+    @Override
+    public boolean isWall(int xTile, int yTile) {
+        return tiles[yTile][xTile].collision() != null;
+    }
 }

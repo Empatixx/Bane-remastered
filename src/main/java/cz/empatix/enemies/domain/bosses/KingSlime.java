@@ -3,6 +3,7 @@ package cz.empatix.enemies.domain.bosses;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.skills.KingSlimeArmageddon;
+import cz.empatix.enemies.skills.PurpleSlimebullet;
 import cz.empatix.enemies.skills.SlimeSmash;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -34,8 +35,8 @@ public class KingSlime implements Enemy {
                 .build();
         animation.setState(AnimationState.IDLE);
         bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 2, this::hit, () -> MOVE_FORCE);
-        armageddon = new KingSlimeArmageddon(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2));
-        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), 25);
+        armageddon = new KingSlimeArmageddon(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), PurpleSlimebullet::new);
+        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), 25, PurpleSlimebullet::new);
     }
 
     @Override
@@ -59,14 +60,15 @@ public class KingSlime implements Enemy {
 
     @Override
     public void hit(final int damage) {
-        if(isDead()){
+        if (isDead()) {
             return;
         }
         bossImpl.hit(damage);
-        if(isDead()){
+        if (isDead()) {
             onDeath();
         }
     }
+
     private void onDeath() {
         animation.setState(AnimationState.DEATH);
         bossImpl.onDeath();
@@ -154,5 +156,11 @@ public class KingSlime implements Enemy {
     @Override
     public void setTarget(final Player player) {
         bossImpl.setTarget(player);
+    }
+
+    @Override
+    public void despawn() {
+        armageddon.clear();
+        slimeSmash.clear();
     }
 }

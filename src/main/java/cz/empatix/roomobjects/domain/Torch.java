@@ -81,4 +81,8 @@ public class Torch implements RoomObject {
     public float getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }
+    @Override
+    public void destroy() {
+        lightSource.destroy();
+    }
 }

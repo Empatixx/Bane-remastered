@@ -33,7 +33,7 @@ public class ProceduralTileMap implements TileMap {
                                  final Set<RoomDirection> directions) {
         final TileFactory tileFactory = new TileFactory();
         final boolean[][] map = BooleanMapUtil.createEmptyMap(rows, cols);
-        applyPerlinNoiseToMap(map, 0.05, 0.2, 0.6);
+        applyPerlinNoiseToMap(map, 0.05, 0.2, 0.4);
         removeSingleWalls(map);
         BooleanMapUtil.setPaths(map, directions);
         return tileFactory.createTilemapFromClamp(BooleanMapUtil.edgeClamp(map), xOffset, yOffset);
@@ -161,5 +161,10 @@ public class ProceduralTileMap implements TileMap {
         Arrays.stream(tiles)
                 .flatMap(Arrays::stream)
                 .forEach(Tile::destroy);
+    }
+
+    @Override
+    public boolean isWall(int xTile, int yTile) {
+        return tiles[yTile][xTile].collision() != null;
     }
 }

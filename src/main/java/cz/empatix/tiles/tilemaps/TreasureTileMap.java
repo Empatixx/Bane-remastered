@@ -73,4 +73,9 @@ public class TreasureTileMap implements TileMap {
                 .forEach(Tile::destroy);
 
     }
+
+    @Override
+    public boolean isWall(int xTile, int yTile) {
+        return tiles[yTile][xTile].collision() != null;
+    }
 }
