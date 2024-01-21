@@ -16,6 +16,7 @@ import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,6 +81,9 @@ public class LobbyState extends GameState {
 
     @Override
     public void keyPressed(int key) {
+        if (key == GLFW.GLFW_KEY_ESCAPE){
+            setCurrentState(GameStateType.MENU);
+        }
         player.keyPressed(key);
     }
 

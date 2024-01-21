@@ -44,9 +44,13 @@ public class Animation {
         }
         if (!animationParts.containsKey(state)) {
             LOGGER.error("Animation state {} not found for {}", state, this);
+            return;
         }
         currentState = state;
         currentTextureIndex = 0;
+        if (animationParts.get(currentState).reverse()) {
+            currentTextureIndex = animationParts.get(currentState).numSprites() - 1;
+        }
         lastAnimation = System.currentTimeMillis();
         playedOnce = false;
     }

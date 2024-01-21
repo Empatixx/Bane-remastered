@@ -11,7 +11,7 @@ import org.joml.Vector2f;
 
 public class Shopkeeper implements RoomObject{
     private static final int SHOPKEEPER_WIDTH = 80;
-    private static final int SHOPKEEPER_HEIGHT = 80;
+    private static final int SHOPKEEPER_HEIGHT = 90;
     private static final int SCALE = 4;
     private final Animation animation;
     private final Vector2f position;
@@ -63,6 +63,14 @@ public class Shopkeeper implements RoomObject{
     @Override
     public void update(double dt) {
         animation.update();
+        if (animation.hasPlayedOnce()){
+            if (animation.getCurrentState() == AnimationState.REVERSE){
+                animation.setState(AnimationState.IDLE);
+            }
+            else{
+                animation.setState(AnimationState.REVERSE);
+            }
+        }
     }
 
     @Override

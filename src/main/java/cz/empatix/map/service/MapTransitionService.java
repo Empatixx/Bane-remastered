@@ -40,6 +40,8 @@ public class MapTransitionService {
 
     public void nextFloor(){
         floor++;
+        titleText.setText("Floor "+ RomanNumber.toRoman(floor));
+        infoText.setText("Enemies have increased health by "+(floor-1)*12+"%");
         lastTransition = Instant.now();
     }
     public void update(final float dt){
