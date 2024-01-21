@@ -20,7 +20,7 @@ public class MapTransitionService {
     private final CommonImage title;
     private final CommonText titleText;
     private final CommonText infoText;
-    private Instant lastTransition = Instant.now();
+    private Instant lastTransition = Instant.now().minus(Duration.ofSeconds(DISPLAY_TIME_SECONDS));
     private int floor = 1;
     public MapTransitionService(){
         this.title = new CommonImage("ingame/title.tga", new Vector2f(), 5f, 4);

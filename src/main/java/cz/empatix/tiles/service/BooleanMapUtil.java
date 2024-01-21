@@ -3,6 +3,7 @@ package cz.empatix.tiles.service;
 import cz.empatix.map.domain.PathRoomGenInfo;
 import cz.empatix.map.domain.RoomDirection;
 
+import java.util.List;
 import java.util.Set;
 
 public class BooleanMapUtil {
@@ -26,6 +27,16 @@ public class BooleanMapUtil {
         }
 
         return expanded;
+    }
+
+    public static boolean[][] createMap(final int rows, final int cols, final List<BooleanMapModifier> modifiers){
+        boolean[][] map = createEmptyMap(rows, cols);
+        for(BooleanMapModifier modifier : modifiers){
+            if(Math.random() < modifier.chance()){
+                map = modifier.modify(map);
+            }
+        }
+        return map;
     }
 
     public static boolean[][] createEmptyMap(final int rows, final int cols) {

@@ -12,6 +12,7 @@ import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
+import cz.empatix.tiles.tilemaps.ProceduralTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.*;
@@ -32,7 +33,7 @@ public class CommonRoom implements Room {
                       final Set<RoomDirection> neighbors) {
 
         this.itemService = itemService;
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
+        tileMap = new ProceduralTileMap(rows, cols, xOffset, yOffset, neighbors);
         enemyService = new EnemyService(itemService);
         roomObjectService = new RoomObjectService();
         roomLockService = new RoomLockService(this, neighbors);

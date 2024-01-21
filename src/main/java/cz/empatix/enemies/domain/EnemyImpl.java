@@ -1,5 +1,7 @@
 package cz.empatix.enemies.domain;
 
+import cz.empatix.enemies.domain.vitality.VitalityChange;
+import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.items.service.DroppableState;
 import cz.empatix.physics.domain.PhysicsBody;
@@ -9,6 +11,7 @@ import cz.empatix.physics.events.domain.DamageSource;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.player.Player;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
@@ -17,10 +20,12 @@ import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class EnemyImpl {
+    private final VitalityDisplayService vitalityDisplayService;
     private final Animation animation;
     private final PhysicsBody physicsBody;
     private final DroppableState droppableState;
@@ -52,6 +57,7 @@ public class EnemyImpl {
         physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
         droppableState = new DroppableState(droppableCondition);
         aStarTargetting = new AStarTargetting(physicsBody.getTranslation(), width, height);
+        vitalityDisplayService = new VitalityDisplayService();
     }
 
     private boolean canHit(final DamageSource source, final int damage) {
@@ -63,6 +69,10 @@ public class EnemyImpl {
     }
 
     public void hit(final int damage) {
+        if (isDead()) {
+            return;
+        }
+        vitalityDisplayService.addChange(-damage, getPosition(), getWidth(), getHeight());
         this.health -= damage;
         if (this.health < 0) {
             this.health = 0;
@@ -70,7 +80,15 @@ public class EnemyImpl {
         lastHit = System.currentTimeMillis();
     }
 
+    public List<Renderable> getSubRenderables(){
+        return vitalityDisplayService.getRenderables();
+    }
+
     public void heal(final int health) {
+        if (isDead()) {
+            return;
+        }
+        vitalityDisplayService.addChange(health, getPosition(), getWidth(), getHeight());
         this.health += health;
         if (this.health > maxHealth) {
             this.health = maxHealth;
@@ -82,7 +100,7 @@ public class EnemyImpl {
     }
 
     public boolean canRemove() {
-        return isDead();
+        return isDead() && vitalityDisplayService.isEmpty();
     }
 
     public boolean canDropItems() {
@@ -156,5 +174,6 @@ public class EnemyImpl {
 
     public void update(final double dt) {
         aStarTargetting.update((float) dt);
+        vitalityDisplayService.update(dt);
     }
 }

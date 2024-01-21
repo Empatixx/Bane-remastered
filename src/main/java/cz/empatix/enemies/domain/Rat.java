@@ -2,10 +2,13 @@ package cz.empatix.enemies.domain;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.player.Player;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
+
+import java.util.List;
 
 public class Rat implements Enemy{
     private final static int MOVE_FORCE = 7500000;
@@ -43,6 +46,10 @@ public class Rat implements Enemy{
         enemyImpl.fixedUpdate(dt);
     }
 
+    @Override
+    public List<Renderable> getSubRenderables() {
+        return enemyImpl.getSubRenderables();
+    }
     private void onDeath() {
         animation.setState(AnimationState.DEATH);
         enemyImpl.onDeath();

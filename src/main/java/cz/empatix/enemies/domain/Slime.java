@@ -10,6 +10,7 @@ import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Slime implements Enemy{
     private final static int MOVE_FORCE = 3000000;
@@ -43,6 +44,7 @@ public class Slime implements Enemy{
     public void setTarget(final Player player) {
         enemyImpl.setTarget(player);
     }
+
 
     @Override
     public void fixedUpdate(double dt) {
@@ -107,7 +109,9 @@ public class Slime implements Enemy{
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return slimeSmash.getSubRenderables();
+        return Stream.of(enemyImpl.getSubRenderables(), slimeSmash.getSubRenderables())
+                .flatMap(List::stream)
+                .toList();
     }
 
     @Override
