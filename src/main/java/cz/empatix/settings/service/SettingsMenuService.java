@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SettingsMenuService {
+    private final static int OFFSET_BUTTON_Y = 5;
     private final static Vector3i TEXT_COLOR = new Vector3i(200, 92, 18);
     private final SettingsService settingsService = SettingsService.getInstance();
     private final CommonBackground background;
@@ -35,9 +36,9 @@ public class SettingsMenuService {
         final GameSettings gameSettings = settingsService.getSettings();
 
         final UISelector<SettingsType> selector = new UISelector<>();
-        final StickyHoverButton video = new StickyHoverButton("Video", "menu/settings_menubar.tga", 30, 16, new Vector2f(325, 160), 5f, FontSize.FONT_SIZE_42);
-        final StickyHoverButton audio = new StickyHoverButton("Audio", "menu/settings_menubar.tga", 30, 16, new Vector2f(480, 160), 5, FontSize.FONT_SIZE_42);
-        final StickyHoverButton controls = new StickyHoverButton("Controls", "menu/settings_menubar.tga", 30, 16, new Vector2f(635, 160), 5, FontSize.FONT_SIZE_42);
+        final StickyHoverButton video = new StickyHoverButton("Video", "menu/settings_menubar.tga", 30, 16, new Vector2f(250, 120), 5f, FontSize.FONTSIZE_32);
+        final StickyHoverButton audio = new StickyHoverButton("Audio", "menu/settings_menubar.tga", 30, 16, new Vector2f(405, 120), 5, FontSize.FONTSIZE_32);
+        final StickyHoverButton controls = new StickyHoverButton("Controls", "menu/settings_menubar.tga", 30, 16, new Vector2f(560, 120), 5, FontSize.FONTSIZE_32);
         selector.addElement(video, SettingsType.VIDEO);
         selector.addElement(audio, SettingsType.AUDIO);
         selector.addElement(controls, SettingsType.CONTROLS);
@@ -73,6 +74,7 @@ public class SettingsMenuService {
 
         final CommonButton nextResolution = new CommonButton("", "menu/button_arrow_rotated.tga", 16, 16, new Vector2f(560, 335), 2);
         nextResolution.onClick(resolutionText::next);
+        nextResolution.setTextPosition(560, 335);
 
         final CommonButton previousResolution = new CommonButton("", "menu/button_arrow.tga", 16, 16, new Vector2f(410, 335), 2);
         previousResolution.onClick(resolutionText::previous);
@@ -117,10 +119,12 @@ public class SettingsMenuService {
         effectsLabel.setCenterY(effectsSlider.getPosition().y(), effectsSlider.getPosition().y() + effectsSlider.getHeight());
         effectsLabel.setColorRGB(TEXT_COLOR);
 
-        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f, FontSize.FONTSIZE_32);
+        final CommonButton applyButton = new CommonButton("Apply", new Vector2f(800, 160), 1.5f, FontSize.FONTSIZE_27);
+        applyButton.setTextPosition(applyButton.getTextPosition().x(), applyButton.getTextPosition().y() - OFFSET_BUTTON_Y);
         applyButton.onClick(settingsService::apply);
 
-        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f, FontSize.FONTSIZE_32);
+        final CommonButton revertButton = new CommonButton("Revert", new Vector2f(800, 240), 1.5f, FontSize.FONTSIZE_27);
+        revertButton.setTextPosition(revertButton.getTextPosition().x(), revertButton.getTextPosition().y() - OFFSET_BUTTON_Y);
         revertButton.onClick(() -> {
             settingsService.revert();
             resolutionText.slideToValue(new Vector2i(gameSettings.getResolutionWidth(), gameSettings.getResolutionHeight()));
@@ -128,7 +132,8 @@ public class SettingsMenuService {
             fullscreenCheckbox.check(gameSettings.isFullscreen());
         });
 
-        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f, FontSize.FONTSIZE_32);
+        final CommonButton exitButton = new CommonButton("Exit", new Vector2f(800, 320), 1.5f, FontSize.FONTSIZE_27);
+        exitButton.setTextPosition(exitButton.getTextPosition().x(), exitButton.getTextPosition().y() - OFFSET_BUTTON_Y);
         exitButton.onClick(() -> activate(false));
 
         uiSelector = selector;

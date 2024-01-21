@@ -1,6 +1,10 @@
 package cz.empatix.map.service;
 
+import cz.empatix.assets.domain.font.FontSize;
+import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.service.SceneBackground;
+import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;

@@ -76,9 +76,10 @@ public class StickyHoverButton implements UIElement, SelectableUI {
 
         animation.setState(AnimationState.STATIC);
 
-        this.position = position.sub(new Vector2f(dimensions).div(2f));
+        this.position = position;
         final Vector2f textPosition = new Vector2f(position)
-                .add(0, dimensions.y() / 2f);
+                .add(dimensions.x() / 2f, dimensions.y() / 2f)
+                .add(0, AssetsService.getFont("PixelFJVerdana12pt.ttf", fontSize).getHeight(text) / 2f);
         this.text = new CommonText(text, "PixelFJVerdana12pt.ttf", textPosition, zDepth, fontSize);
         this.text.setCenterX(position.x, position.x + dimensions.x());
         this.text.setColorRGB(rgb);

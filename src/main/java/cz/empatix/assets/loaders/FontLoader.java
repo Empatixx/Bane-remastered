@@ -54,10 +54,10 @@ public class FontLoader implements AssetLoader<RawFont> {
                         final RawFont font16 = decodeFont(p, FontSize.FONTSIZE_22);
                         fonts.add(font16);
 
-                        final RawFont font20 = decodeFont(p, FontSize.FONTSIZE_32);
+                        final RawFont font20 = decodeFont(p, FontSize.FONTSIZE_27);
                         fonts.add(font20);
 
-                        final RawFont font24 = decodeFont(p, FontSize.FONT_SIZE_42);
+                        final RawFont font24 = decodeFont(p, FontSize.FONTSIZE_32);
                         fonts.add(font24);
 
                         total.incrementAndGet();

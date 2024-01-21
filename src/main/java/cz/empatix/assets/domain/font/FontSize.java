@@ -2,8 +2,8 @@ package cz.empatix.assets.domain.font;
 
 public enum FontSize {
     FONTSIZE_22(22),
-    FONTSIZE_32(32),
-    FONT_SIZE_42(42);
+    FONTSIZE_27(27),
+    FONTSIZE_32(32);
     private final int size;
     FontSize(final int size) {
         this.size = size;

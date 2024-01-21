@@ -4,11 +4,12 @@ import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.minimap.service.MinimapService;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.rooms.service.Room;
-import org.lwjgl.system.linux.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 public class MapLoaderService {
@@ -19,6 +20,8 @@ public class MapLoaderService {
     private MapService mapService;
     private MinimapService minimapService;
     private final StatisticsService statisticsService;
+    private final MapTransitionService mapTransitionService;
+
 
     public MapLoaderService(final ItemService itemService,
                             final Consumer<Room> minimapConsumer,
@@ -26,12 +29,14 @@ public class MapLoaderService {
         this.minimapConsumer = minimapConsumer;
         this.itemService = itemService;
         this.statisticsService = statisticsService;
+        this.mapTransitionService = new MapTransitionService();
     }
     public void load(final MapGenerationResult generation){
         if (mapService != null){
             LOGGER.info("Cleaning up old map");
             mapService.cleanUp();
             itemService.cleanUp();
+            mapTransitionService.nextFloor();
         }
         LOGGER.info("Loading new map");
         mapService = new MapService(generation, minimapConsumer);
@@ -39,6 +44,11 @@ public class MapLoaderService {
         loaded = true;
         statisticsService.nextFloor();
     }
+
+    public List<Renderable> toRender() {
+        return mapTransitionService.toRender();
+    }
+
 
     public MapService getMapService() {
         return mapService;

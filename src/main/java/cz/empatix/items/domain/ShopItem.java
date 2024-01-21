@@ -51,7 +51,7 @@ public class ShopItem implements ItemDrop {
         this.image = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1,2, RenderScene.HUD, Camera.getProjection());
         this.image.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.image.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
-        this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_32, Camera.getProjection());
+        this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
     }
 

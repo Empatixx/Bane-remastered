@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class MenuState extends GameState {
+    private final static int OFFSET_BUTTON_Y = 5;
     private SettingsMenuService settingsMenuService;
     private HUDElement background;
     private List<UIElement> uiElements;
@@ -46,9 +47,14 @@ public class MenuState extends GameState {
 
         background = new CommonBackground("menu/bg.png");
 
-        final CommonButton playButton = new CommonButton("Play", Camera.centerX().add(0, 225), 1.5f, FontSize.FONTSIZE_32);
-        final CommonButton settingsButton = new CommonButton("Settings", Camera.centerX().add(0, 325), 1.5f, FontSize.FONTSIZE_32);
-        final CommonButton exitButton = new CommonButton("Exit", Camera.centerX().add(0, 425), 1.5f, FontSize.FONTSIZE_32);
+        final CommonButton playButton = new CommonButton("Play", Camera.centerX().add(0, 225), 1.5f, FontSize.FONTSIZE_27);
+        playButton.setTextPosition(playButton.getTextPosition().x(), playButton.getTextPosition().y() - OFFSET_BUTTON_Y);
+
+        final CommonButton settingsButton = new CommonButton("Settings", Camera.centerX().add(0, 325), 1.5f, FontSize.FONTSIZE_27);
+        settingsButton.setTextPosition(settingsButton.getTextPosition().x(), settingsButton.getTextPosition().y() - OFFSET_BUTTON_Y);
+
+        final CommonButton exitButton = new CommonButton("Exit", Camera.centerX().add(0, 425), 1.5f, FontSize.FONTSIZE_27);
+        exitButton.setTextPosition(exitButton.getTextPosition().x(), exitButton.getTextPosition().y() - OFFSET_BUTTON_Y);
 
         playButton.onClick(() -> setCurrentState(GameStateType.LOBBY));
         exitButton.onClick(() -> GLFW.glfwSetWindowShouldClose(WindowHandler.WINDOW, true));

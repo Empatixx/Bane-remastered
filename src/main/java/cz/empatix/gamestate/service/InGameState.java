@@ -99,7 +99,7 @@ public class InGameState extends GameState {
         }
         final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
         final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
+        Camera.setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
         player.update(dt);
         mapService.update(dt, player);
         minimapService.update(dt);
@@ -118,7 +118,8 @@ public class InGameState extends GameState {
     @Override
     public List<Renderable> toRender(final double dt) {
         return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
-                        minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender())
+                        minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
+                        mapLoaderService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }
