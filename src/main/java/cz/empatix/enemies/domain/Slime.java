@@ -1,6 +1,7 @@
 package cz.empatix.enemies.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.enemies.skills.GreenSlimebullet;
 import cz.empatix.enemies.skills.SlimeSmash;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -10,6 +11,7 @@ import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Slime implements Enemy{
     private final static int MOVE_FORCE = 3000000;
@@ -31,7 +33,7 @@ public class Slime implements Enemy{
         animation.setState(AnimationState.IDLE);
         enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
                 () -> MOVE_FORCE);
-        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2));
+        slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), GreenSlimebullet::new);
     }
     @Override
     public void update(double dt) {
@@ -43,6 +45,7 @@ public class Slime implements Enemy{
     public void setTarget(final Player player) {
         enemyImpl.setTarget(player);
     }
+
 
     @Override
     public void fixedUpdate(double dt) {
@@ -107,7 +110,9 @@ public class Slime implements Enemy{
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return slimeSmash.getSubRenderables();
+        return Stream.of(enemyImpl.getSubRenderables(), slimeSmash.getSubRenderables())
+                .flatMap(List::stream)
+                .toList();
     }
 
     @Override

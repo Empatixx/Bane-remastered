@@ -94,10 +94,13 @@ public class ShopItem implements ItemDrop {
     @Override
     public void interact(final Set<Integer> keys) {
         interactionTracker.interaction();
-        if (!bought && !keys.contains(GLFW.GLFW_KEY_E)) {
+        if (bought){
             return;
         }
-        if (!bought && !hasEnoughCoinsPredicate.test(price)) {
+        if (!keys.contains(GLFW.GLFW_KEY_E)) {
+            return;
+        }
+        if (!hasEnoughCoinsPredicate.test(price)) {
             LOGGER.info("Unsuccessfully bought {}, do no have {} coins", drop, price);
             return;
         } else {

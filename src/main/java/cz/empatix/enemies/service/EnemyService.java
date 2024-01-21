@@ -2,10 +2,13 @@ package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.service.ItemService;
+import cz.empatix.physics.domain.geometry.Rectangle;
+import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
+import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,7 @@ public class EnemyService {
     private final EnemyFactory enemyFactory = new EnemyFactory();
     private final List<Enemy> enemies = new ArrayList<>(10);
     private final EnemyDropService enemyDropService;
+
     public EnemyService(final ItemService itemService) {
         this.enemyDropService = new EnemyDropService(itemService);
     }
@@ -47,7 +51,15 @@ public class EnemyService {
 
         final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
         final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
-        e.setPosition(x, y);
+        final PhysicsService physicsService = PhysicsService.getInstance();
+        final Rectangle rectangle = new Rectangle(e.getWidth(), e.getHeight());
+        final Vector2f position = new Vector2f(x, y);
+        while (physicsService.isColliding(position, rectangle)) {
+            final float newX = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
+            final float newY = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
+            position.set(newX, newY);
+        }
+        e.setPosition(position.x(), position.y());
 
         enemies.add(e);
     }
@@ -66,4 +78,8 @@ public class EnemyService {
         return enemies.size() <= 0;
     }
 
+    public void cleanUp() {
+        enemies.removeIf(Enemy::canRemove);
+
+    }
 }

@@ -10,12 +10,15 @@ import java.util.function.Supplier;
 public class KingSlimeArmageddon implements Skill {
     private final static int SHOOT_COOLDOWN = 150;
     private static final float INACCURACY_INCREASE = 0.25f;
-    private final List<Slimebullet> slimebullets = new ArrayList<>(100);
+    private final List<BaseSlimebullet> slimebullets = new ArrayList<>(100);
     private float currentInaccuracy = 0;
     private final Supplier<Vector2f> positionSupplier;
+    private final Supplier<BaseSlimebullet> bulletSupplier;
     private final Timer cooldown;
 
-    public KingSlimeArmageddon(final Supplier<Vector2f> positionSupplier) {
+    public KingSlimeArmageddon(final Supplier<Vector2f> positionSupplier,
+                               final Supplier<BaseSlimebullet> bulletSupplier) {
+        this.bulletSupplier = bulletSupplier;
         this.positionSupplier = positionSupplier;
         cooldown = new Timer(SHOOT_COOLDOWN);
     }
@@ -29,7 +32,7 @@ public class KingSlimeArmageddon implements Skill {
 
         cooldown.start();
         final Vector2f position = positionSupplier.get();
-        final Slimebullet slimebullet = new Slimebullet();
+        final BaseSlimebullet slimebullet = bulletSupplier.get();
         slimebullet.setPosition(position.x, position.y);
         slimebullet.setDirection(0, 0, 0, 0, currentInaccuracy);
         slimebullets.add(slimebullet);
@@ -38,7 +41,7 @@ public class KingSlimeArmageddon implements Skill {
     @Override
     public void update(float dt) {
         slimebullets.forEach(slimebullet -> slimebullet.update(dt));
-        slimebullets.removeIf(Slimebullet::shouldRemove);
+        slimebullets.removeIf(BaseSlimebullet::shouldRemove);
     }
 
     @Override
@@ -47,5 +50,10 @@ public class KingSlimeArmageddon implements Skill {
     }
     public boolean noBullets(){
         return slimebullets.isEmpty();
+    }
+
+    public void clear() {
+        slimebullets.forEach(BaseSlimebullet::destroy);
+        slimebullets.clear();
     }
 }

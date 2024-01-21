@@ -19,23 +19,23 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-public class Slimebullet implements Drawable {
-    private final static int MOVE_FORCE = 1_000_0000;
+public abstract class BaseSlimebullet implements Drawable {
+    private final static int MOVE_FORCE = 500_0000;
     private final static int BULLET_WIDTH = 16;
     private final static int BULLET_HEIGHT = 16;
     private final static int SCALE = 1;
     private final PhysicsBody physicsBody;
     private final Animation animation;
     private final LightSource lightSource;
-    public Slimebullet() {
+    public BaseSlimebullet(final String texture, final Vector3f colorLightning) {
         animation = Animation.builder()
                 .setTotal(2, 4)
                 .addState(AnimationState.IDLE, 0, 4, BULLET_WIDTH, BULLET_HEIGHT, 70)
                 .addState(AnimationState.COLLISION, 1, 4, BULLET_WIDTH, BULLET_HEIGHT, 70)
-                .texture(AssetsService.getTexture("ingame/bullet.tga"))
+                .texture(AssetsService.getTexture(texture))
                 .scale(SCALE)
                 .build();
-        lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
+        lightSource = LightningService.getInstance().createLightSource(colorLightning, 25f, 0.75f);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
         physicsBody.setLinearDamping(1.0f);
         physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> 1, () -> {
@@ -116,5 +116,10 @@ public class Slimebullet implements Drawable {
     }
     public boolean shouldRemove(){
         return animation.getCurrentState() == AnimationState.COLLISION && animation.hasPlayedOnce();
+    }
+
+    public void destroy() {
+        lightSource.destroy();
+        physicsBody.destroy();
     }
 }

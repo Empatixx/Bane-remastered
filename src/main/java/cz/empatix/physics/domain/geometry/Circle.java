@@ -1,5 +1,7 @@
 package cz.empatix.physics.domain.geometry;
 
+import org.joml.Vector2f;
+
 public record Circle(
        int radius
 ) implements Geometry{
@@ -11,5 +13,10 @@ public record Circle(
     @Override
     public GeometryType getType() {
         return GeometryType.CIRCLE;
+    }
+
+    @Override
+    public boolean isColliding(Vector2f translation, Geometry other, Vector2f otherTranslation) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

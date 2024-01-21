@@ -8,6 +8,7 @@ import cz.empatix.physics.events.domain.CollisionEvent;
 import cz.empatix.physics.events.suppliers.CollisionSupplier;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.lwjgl.opengl.GL30;
 
 import java.util.ArrayList;
@@ -105,5 +106,9 @@ public class PhysicsService {
                 GL30.glEnd();
             }
         });
+    }
+    public boolean isColliding(final Vector2f position, final Geometry geometry){
+        return physicsBodies.stream()
+                .anyMatch(b -> b.getGeometry().isColliding(b.getTranslation(), geometry, position));
     }
 }

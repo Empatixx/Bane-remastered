@@ -2,6 +2,7 @@ package cz.empatix.map.service;
 
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.service.ItemService;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.render.attributes.Renderable;
@@ -31,13 +32,14 @@ public class MapLoaderService {
         this.statisticsService = statisticsService;
         this.mapTransitionService = new MapTransitionService();
     }
+    public void clearPreviousMap(){
+        LOGGER.info("Cleaning up old map");
+        mapService.cleanUp();
+        itemService.cleanUp();
+        LightningService.getInstance().clear();
+        mapTransitionService.nextFloor();
+    }
     public void load(final MapGenerationResult generation){
-        if (mapService != null){
-            LOGGER.info("Cleaning up old map");
-            mapService.cleanUp();
-            itemService.cleanUp();
-            mapTransitionService.nextFloor();
-        }
         LOGGER.info("Loading new map");
         mapService = new MapService(generation, minimapConsumer);
         minimapService = new MinimapService(generation);

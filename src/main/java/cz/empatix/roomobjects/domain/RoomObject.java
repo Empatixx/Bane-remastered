@@ -5,4 +5,7 @@ import cz.empatix.render.attributes.Drawable;
 public interface RoomObject extends Drawable {
     void update(final double dt);
     boolean canRemove();
+    default void destroy(){
+
+    }
 }

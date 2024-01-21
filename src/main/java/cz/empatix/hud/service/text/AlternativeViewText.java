@@ -8,10 +8,7 @@ import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector3i;
+import org.joml.*;
 
 import java.util.List;
 
@@ -75,6 +72,9 @@ public class AlternativeViewText implements HUDElement {
         this.text = text;
     }
 
+    public void setPosition(final Vector2f position) {
+        this.position.set(position);
+    }
     public void setPosition(final float x, final float y) {
         this.position.set(x, y);
     }
@@ -95,5 +95,9 @@ public class AlternativeViewText implements HUDElement {
 
     public void setPositionY(final float v) {
         position.y = v;
+    }
+
+    public Vector2f getPosition() {
+        return position;
     }
 }
