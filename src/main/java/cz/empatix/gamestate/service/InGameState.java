@@ -90,7 +90,6 @@ public class InGameState extends GameState {
                     startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
             Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
         }
-
         deathService.update((float)dt, player.isDead());
         if(deathService.isActive()){
             gunService.setShooting(false);
@@ -102,6 +101,7 @@ public class InGameState extends GameState {
         final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
         Camera.setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
         player.update(dt);
+        mapLoaderService.update((float) dt);
         mapService.update(dt, player);
         minimapService.update(dt);
         gunService.update(dt);

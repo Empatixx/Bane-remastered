@@ -36,7 +36,6 @@ public class MapLoaderService {
         LOGGER.info("Cleaning up old map");
         mapService.cleanUp();
         itemService.cleanUp();
-        LightningService.getInstance().clear();
         mapTransitionService.nextFloor();
     }
     public void load(final MapGenerationResult generation){
@@ -49,6 +48,10 @@ public class MapLoaderService {
 
     public List<Renderable> toRender() {
         return mapTransitionService.toRender();
+    }
+
+    public void update(final float dt) {
+        mapTransitionService.update(dt);
     }
 
 
