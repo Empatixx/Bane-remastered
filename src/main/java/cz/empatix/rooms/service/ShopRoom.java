@@ -25,6 +25,7 @@ public class ShopRoom implements Room {
     private final ItemService itemService;
     private final RoomObjectService roomObjectService;
     private final TileMap tileMap;
+    private Shopkeeper shopkeeper;
 
     public ShopRoom(final ItemService itemService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
@@ -37,7 +38,7 @@ public class ShopRoom implements Room {
 
     @Override
     public void enterEvent(final Player p) {
-
+        shopkeeper.setInteractionText("Welcome to my shop!");
     }
 
     @Override
@@ -51,7 +52,7 @@ public class ShopRoom implements Room {
     }
     @Override
     public void init() {
-        final Shopkeeper shopkeeper = new Shopkeeper();
+        shopkeeper = new Shopkeeper();
         shopkeeper.setPosition(getMinX() + tileMap.getWidth()/2f - shopkeeper.getWidth() / 2f, getMinY() + tileMap.getHeight() / 4f - shopkeeper.getHeight() / 2f);
         roomObjectService.add(shopkeeper);
 
@@ -63,6 +64,9 @@ public class ShopRoom implements Room {
                 roomObjectService.add(shopTable);
 
                 final ShopItem shopItem = itemFactory.createShopDrop();
+                shopItem.setOnBuy(() -> {
+                    shopkeeper.setInteractionText("Enjoy your purchase!");
+                });
                 shopItem.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopItem.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopItem.getHeight() / 2f);
                 shopItem.setHudPosition(shopTable.getX() + shopTable.getWidth()/2f, shopTable.getY());
                 shopItem.setInteractionText(shopTable.getX(), shopTable.getX() + shopTable.getWidth(), shopTable.getY() + shopTable.getHeight());

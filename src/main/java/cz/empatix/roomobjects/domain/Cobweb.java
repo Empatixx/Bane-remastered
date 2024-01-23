@@ -72,11 +72,11 @@ public class Cobweb implements RoomObject {
         position.set(x, y);
     }
 
-    public float getWidth() {
+    public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
 
-    public float getHeight() {
+    public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }
 }

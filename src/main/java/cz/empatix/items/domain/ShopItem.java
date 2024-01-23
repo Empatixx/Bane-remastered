@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ShopItem implements ItemDrop {
+    private final static Runnable NOOP = () -> {};
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int ITEM_OFFSET = 15;
     private static final int INTERACTION_TEXT_OFFSET = 20;
@@ -34,6 +35,7 @@ public class ShopItem implements ItemDrop {
     private final AlternativeViewImage image;
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final AlternativeViewText interactionText;
+    private Runnable onBuy;
     private final int price;
     private boolean bought = false;
 
@@ -53,6 +55,7 @@ public class ShopItem implements ItemDrop {
                 drop.getPosition().y() + drop.getHeight() + 10);
         this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
+        onBuy = NOOP;
     }
 
     @Override
@@ -66,6 +69,10 @@ public class ShopItem implements ItemDrop {
             textRenderables.addAll(interactionText.getSubRenderables());
         }
         return textRenderables;
+    }
+
+    public void setOnBuy(final Runnable onBuy) {
+        this.onBuy = onBuy;
     }
 
     @Override
@@ -108,6 +115,7 @@ public class ShopItem implements ItemDrop {
             removeCoinsConsumer.accept(price);
             bought = true;
             AUDIO_SERVICE.play(SoundEffect.BUY);
+            onBuy.run();
         }
         if (drop.canInteract()) {
             drop.interact(keys);
