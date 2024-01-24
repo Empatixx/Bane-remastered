@@ -12,4 +12,8 @@ public record AABB (
                 yMin < other.yMax &&
                 yMax > other.yMin;
     }
+
+    public boolean isColliding(AABB aabb) {
+        return intersects(aabb);
+    }
 }
