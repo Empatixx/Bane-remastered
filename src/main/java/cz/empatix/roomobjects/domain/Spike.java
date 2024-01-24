@@ -3,7 +3,7 @@ package cz.empatix.roomobjects.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.domain.DamageSource;
+import cz.empatix.physics.events.domain.DamageSourceType;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.render.domain.Animation;
@@ -29,7 +29,7 @@ public class Spike implements RoomObject {
                 .build();
         damage = 1;
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSourceType.ENEMY, () -> damage));
     }
     @Override
     public RenderData renderData() {

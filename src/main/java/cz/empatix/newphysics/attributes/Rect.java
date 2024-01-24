@@ -26,8 +26,8 @@ public record Rect(
     public float yMax() {
         return position.y() + height;
     }
-    public static Rect of(final int width, final int height, final Vector2f position){
-        return new Rect(width, height, position);
+    public static Rect of(final int width, final int height){
+        return new Rect(width, height, new Vector2f());
     }
 
     @Override
@@ -58,5 +58,10 @@ public record Rect(
     @Override
     public boolean supportsAABB() {
         return true;
+    }
+
+    @Override
+    public float getMass() {
+        return width * height;
     }
 }

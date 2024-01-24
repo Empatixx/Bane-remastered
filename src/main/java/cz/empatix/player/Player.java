@@ -14,7 +14,7 @@ import cz.empatix.particles.service.GazewindService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
 import cz.empatix.physics.events.consumers.DamageConsumer;
-import cz.empatix.physics.events.domain.DamageSource;
+import cz.empatix.physics.events.domain.DamageSourceType;
 import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
@@ -92,8 +92,8 @@ public class Player implements Drawable, InteractEntity {
         coinService = new CoinService();
     }
 
-    private boolean canHit(final DamageSource source, final int damage) {
-        return source != DamageSource.PLAYER && !isInvulnerable() && !isDead();
+    private boolean canHit(final DamageSourceType source, final int damage) {
+        return source != DamageSourceType.PLAYER && !isInvulnerable() && !isDead();
     }
     private boolean isInvulnerable(){
         return System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME;

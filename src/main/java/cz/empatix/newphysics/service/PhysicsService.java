@@ -1,6 +1,7 @@
 package cz.empatix.newphysics.service;
 
 import cz.empatix.newphysics.attributes.Collisionable;
+import cz.empatix.newphysics.attributes.PhysicsObject;
 
 public class PhysicsService {
     private static PhysicsService instance;
@@ -15,7 +16,7 @@ public class PhysicsService {
         physicsEngine = new PhysicsEngine();
     }
 
-    public void add(final Collisionable physicsObject){
+    public void add(final PhysicsObject physicsObject){
         physicsEngine.add(physicsObject);
     }
     public void update(final double dt){

@@ -1,15 +1,10 @@
 package cz.empatix.enemies.domain;
 
-import cz.empatix.enemies.domain.vitality.VitalityChange;
 import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.items.service.DroppableState;
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.consumers.DamageConsumer;
-import cz.empatix.physics.events.domain.DamageSource;
-import cz.empatix.physics.events.suppliers.DamageSupplier;
-import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.newphysics.attributes.*;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
@@ -24,10 +19,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class EnemyImpl {
+public class EnemyImpl implements Damageable, DamageSource {
     private final VitalityDisplayService vitalityDisplayService;
     private final Animation animation;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     private final DroppableState droppableState;
     private final AStarTargetting aStarTargetting;
     private final int width;
@@ -37,6 +32,7 @@ public class EnemyImpl {
     private int health;
 
     private long lastHit;
+    private final int damage;
 
     public EnemyImpl(final int width,
                      final int height,
@@ -51,17 +47,18 @@ public class EnemyImpl {
         this.height = height;
         this.animation = animation;
         this.moveForceSupplier = moveForceSupplier;
+        this.damage = damage;
 
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(width, height));
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
-        physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
+        physicsBody = PhysicsObjectFactory.create(Rect.of(width, height));
+        physicsBody.setOwner(this);
+
         droppableState = new DroppableState(droppableCondition);
-        aStarTargetting = new AStarTargetting(physicsBody.getTranslation(), width, height);
+        aStarTargetting = new AStarTargetting(physicsBody.getPosition(), width, height);
         vitalityDisplayService = new VitalityDisplayService();
     }
 
-    private boolean canHit(final DamageSource source, final int damage) {
-        return source != DamageSource.ENEMY;
+    private boolean canHit(final DamageSourceType source, final int damage) {
+        return source != DamageSourceType.ENEMY;
     }
 
     public void onDeath() {
@@ -175,5 +172,22 @@ public class EnemyImpl {
     public void update(final double dt) {
         aStarTargetting.update((float) dt);
         vitalityDisplayService.update(dt);
+    }
+
+    @Override
+    public int damage() {
+        return damage;
+    }
+
+    @Override
+    public DamageSourceType type() {
+        return DamageSourceType.ENEMY;
+    }
+
+    @Override
+    public void hit(DamageSourceType source, int damage) {
+        if (canHit(source, damage)) {
+            hit(damage);
+        }
     }
 }

@@ -1,7 +1,6 @@
 package cz.empatix.particles.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.domain.transform.CommonTransform;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -13,14 +12,14 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 public record GazewindParticle(
-        CommonTransform transform,
+        Vector2f transform,
         Animation animation
 ) implements Drawable {
     private final static int SCALE = 2;
     private final static Vector2i DIMENSIONS = new Vector2i(16,16).mul(SCALE);
 
     public GazewindParticle() {
-        this(new CommonTransform(), Animation.builder()
+        this(new Vector2f(), Animation.builder()
                 .setTotal(1, 3)
                 .addState(AnimationState.IDLE, 0, 3, DIMENSIONS.x(), DIMENSIONS.y(), 100)
                 .texture(AssetsService.getTexture("ingame/gazewind_particle.tga"))
@@ -34,7 +33,7 @@ public record GazewindParticle(
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(transform.getTranslationToRender()),
+                animation.getVertices(transform),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
@@ -52,7 +51,7 @@ public record GazewindParticle(
 
     @Override
     public boolean canRender() {
-        final Vector2f position = transform.getTranslationToRender();
+        final Vector2f position = transform;
         return position.x() + DIMENSIONS.x() > Camera.getX() && position.x() < Camera.getTargetWidth() + Camera.getX() &&
                 position.y() + DIMENSIONS.y() > Camera.getY() && position.y() < Camera.getTargetHeight() + Camera.getY();
     }
@@ -62,7 +61,7 @@ public record GazewindParticle(
     }
 
     public void setPosition(final float x, final float y) {
-        transform.setTranslation(x, y);
+        transform.set(x, y);
     }
     public int getWidth(){
         return DIMENSIONS.x();

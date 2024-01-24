@@ -4,12 +4,8 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.hud.domain.StatusBarType;
 import cz.empatix.hud.service.StatusBar;
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.consumers.DamageConsumer;
-import cz.empatix.physics.events.domain.DamageSource;
-import cz.empatix.physics.events.suppliers.DamageSupplier;
-import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.newphysics.attributes.*;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
@@ -22,15 +18,16 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class BossImpl{
+public class BossImpl implements Damageable, DamageSource {
     private final AStarTargetting aStarTargetting;
     private final StatusBar healthBar;
     private final Animation animation;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     private final int width;
     private final int height;
     private final int maxHealth;
     private int health;
+    private int damage;
     private final Supplier<Integer> moveForceSupplier;
 
     public BossImpl(final int width,
@@ -46,17 +43,16 @@ public class BossImpl{
         this.animation = animation;
         this.moveForceSupplier = moveForceSupplier;
 
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(width, height));
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> damage));
-        physicsBody.addEventConsumer(new DamageConsumer(hitCallback, this::canHit));
-        aStarTargetting = new AStarTargetting(physicsBody.getTranslation(), width, height);
+        physicsBody = PhysicsObjectFactory.create(Rect.of(width, height));
+        physicsBody.setOwner(this);
+        aStarTargetting = new AStarTargetting(physicsBody.getPosition(), width, height);
 
         final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
         healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 450));
     }
 
-    private boolean canHit(final DamageSource source, final int damage) {
-        return source != DamageSource.ENEMY;
+    private boolean canHit(final DamageSourceType source, final int damage) {
+        return source != DamageSourceType.ENEMY;
     }
 
     public void hit(final int damage) {
@@ -146,5 +142,22 @@ public class BossImpl{
     }
     public void setTarget(final Player player) {
         aStarTargetting.target(player);
+    }
+
+    @Override
+    public int damage() {
+        return damage;
+    }
+
+    @Override
+    public DamageSourceType type() {
+        return DamageSourceType.ENEMY;
+    }
+
+    @Override
+    public void hit(DamageSourceType source, int damage) {
+        if (canHit(source, damage)) {
+            hit(damage);
+        }
     }
 }

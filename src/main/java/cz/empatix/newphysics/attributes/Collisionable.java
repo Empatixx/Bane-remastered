@@ -9,4 +9,6 @@ public interface Collisionable {
     float getAngle();
     boolean supportsSAT();
     boolean supportsAABB();
+
+    float getMass();
 }

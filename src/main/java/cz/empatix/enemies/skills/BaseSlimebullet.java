@@ -5,7 +5,7 @@ import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.domain.DamageSource;
+import cz.empatix.physics.events.domain.DamageSourceType;
 import cz.empatix.physics.events.domain.EventType;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
@@ -38,7 +38,7 @@ public abstract class BaseSlimebullet implements Drawable {
         lightSource = LightningService.getInstance().createLightSource(colorLightning, 25f, 0.75f);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
         physicsBody.setLinearDamping(1.0f);
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.ENEMY, () -> 1, () -> {
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSourceType.ENEMY, () -> 1, () -> {
             physicsBody.removeEventSupplier(EventType.DAMAGE);
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);

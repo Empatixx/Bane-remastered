@@ -1,7 +1,6 @@
 package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -86,10 +85,8 @@ public class Checkbox implements UIElement{
         }
     }
     private boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
-        return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(dimensions.x(), dimensions.y()))
-                .addShape((float) mouseX, (float) mouseY)
-                .resolve();
+        return mouseX >= position.x() && mouseX <= position.x() + dimensions.x() &&
+                mouseY >= position.y() && mouseY <= position.y() + dimensions.y();
     }
 
     @Override

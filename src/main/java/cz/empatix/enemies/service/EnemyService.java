@@ -2,8 +2,8 @@ package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.service.ItemService;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.service.PhysicsService;
+import cz.empatix.newphysics.attributes.Rect;
+import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.service.Room;
@@ -52,7 +52,7 @@ public class EnemyService {
         final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
         final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
         final PhysicsService physicsService = PhysicsService.getInstance();
-        final Rectangle rectangle = new Rectangle(e.getWidth(), e.getHeight());
+        final Rect rectangle = Rect.of(e.getWidth(), e.getHeight());
         final Vector2f position = new Vector2f(x, y);
         while (physicsService.isColliding(position, rectangle)) {
             final float newX = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);

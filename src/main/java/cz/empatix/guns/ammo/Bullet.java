@@ -5,7 +5,7 @@ import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.physics.domain.PhysicsBody;
 import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.domain.DamageSource;
+import cz.empatix.physics.events.domain.DamageSourceType;
 import cz.empatix.physics.events.domain.EventType;
 import cz.empatix.physics.events.suppliers.DamageSupplier;
 import cz.empatix.physics.service.PhysicsBodyFactory;
@@ -38,7 +38,7 @@ public class Bullet implements Drawable {
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
         physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
         physicsBody.setLinearDamping(1.0f);
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSource.PLAYER, () -> damage, () -> {
+        physicsBody.addEventSupplier(new DamageSupplier(DamageSourceType.PLAYER, () -> damage, () -> {
             physicsBody.removeEventSupplier(EventType.DAMAGE);
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
