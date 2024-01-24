@@ -2,6 +2,7 @@ package cz.empatix.minimap.service;
 
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.map.domain.MapGenerationResult;
+import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.minimap.domain.MinimapRoom;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
@@ -42,17 +43,7 @@ public class MinimapService {
             final MinimapRoom minimapRoomParent = minimapRooms.get(room);
             room.getNeighboursMap().forEach((direction, neighbour) -> {
                 if (!minimapRooms.containsKey(neighbour)) {
-                    final int xNeighbour = switch (direction) {
-                        case BOTTOM, TOP -> minimapRoomParent.getX();
-                        case LEFT -> minimapRoomParent.getX() - 1;
-                        case RIGHT -> minimapRoomParent.getX() + 1;
-                    };
-                    final int yNeighbour = switch (direction) {
-                        case LEFT, RIGHT -> minimapRoomParent.getY();
-                        case BOTTOM -> minimapRoomParent.getY() + 1;
-                        case TOP -> minimapRoomParent.getY() - 1;
-                    };
-                    final MinimapRoom minimapRoom = new MinimapRoom(xNeighbour, yNeighbour, neighbour);
+                    final MinimapRoom minimapRoom = createMapRoom(direction, neighbour, minimapRoomParent);
                     minimapRoom.setConnection(direction.getOpposite());
                     minimapRooms.put(neighbour, minimapRoom);
                     roomsToVisit.add(neighbour);
@@ -63,6 +54,20 @@ public class MinimapService {
             });
         }
         return minimapRooms;
+    }
+
+    private static MinimapRoom createMapRoom(RoomDirection direction, Room neighbour, MinimapRoom minimapRoomParent) {
+        final int x = switch (direction) {
+            case BOTTOM, TOP -> minimapRoomParent.getX();
+            case LEFT -> minimapRoomParent.getX() - 1;
+            case RIGHT -> minimapRoomParent.getX() + 1;
+        };
+        final int y = switch (direction) {
+            case LEFT, RIGHT -> minimapRoomParent.getY();
+            case BOTTOM -> minimapRoomParent.getY() + 1;
+            case TOP -> minimapRoomParent.getY() - 1;
+        };
+        return new MinimapRoom(x, y, neighbour);
     }
 
     public void update(final double dt){

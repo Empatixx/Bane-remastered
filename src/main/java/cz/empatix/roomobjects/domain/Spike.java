@@ -76,4 +76,9 @@ public class Spike implements RoomObject {
     public int  getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }
+
+    @Override
+    public void destroy() {
+        physicsBody.destroy();
+    }
 }
