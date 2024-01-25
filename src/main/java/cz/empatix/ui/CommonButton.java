@@ -5,7 +5,6 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.text.CommonText;
-import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -115,10 +114,8 @@ public class CommonButton implements UIElement {
     }
 
     private boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
-        return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(dimensions.x(), dimensions.y()))
-                .addShape((float) mouseX, (float) mouseY)
-                .resolve();
+        return mouseX >= position.x && mouseX <= position.x + dimensions.x
+                && mouseY >= position.y && mouseY <= position.y + dimensions.y;
     }
 
     @Override

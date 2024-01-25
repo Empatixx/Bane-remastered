@@ -3,8 +3,6 @@ package cz.empatix.rooms.service;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;

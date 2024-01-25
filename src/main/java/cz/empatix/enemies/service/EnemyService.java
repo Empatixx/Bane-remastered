@@ -2,12 +2,12 @@ package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.service.ItemService;
-import cz.empatix.newphysics.attributes.Rect;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
+import org.dyn4j.geometry.Rectangle;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -52,9 +52,9 @@ public class EnemyService {
         final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
         final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
         final PhysicsService physicsService = PhysicsService.getInstance();
-        final Rect rectangle = Rect.of(e.getWidth(), e.getHeight());
+        final Rectangle rectangle = new Rectangle(e.getWidth(), e.getHeight());
         final Vector2f position = new Vector2f(x, y);
-        while (physicsService.isColliding(position, rectangle)) {
+        while (physicsService.isColliding(rectangle, position)) {
             final float newX = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
             final float newY = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
             position.set(newX, newY);

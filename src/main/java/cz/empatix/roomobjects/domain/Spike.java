@@ -1,11 +1,10 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.domain.DamageSourceType;
-import cz.empatix.physics.events.suppliers.DamageSupplier;
-import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.newphysics.attributes.DamageSource;
+import cz.empatix.newphysics.attributes.DamageSourceType;
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -13,12 +12,12 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 
-public class Spike implements RoomObject {
+public class Spike implements RoomObject, DamageSource {
     private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 16;
     private final Animation animation;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     private int damage;
     public Spike(){
         animation = Animation.builder()
@@ -28,8 +27,7 @@ public class Spike implements RoomObject {
                 .scale(SCALE)
                 .build();
         damage = 1;
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSourceType.ENEMY, () -> damage));
+        physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
     @Override
     public RenderData renderData() {
@@ -80,5 +78,15 @@ public class Spike implements RoomObject {
     @Override
     public void destroy() {
         physicsBody.destroy();
+    }
+
+    @Override
+    public int damage() {
+        return damage;
+    }
+
+    @Override
+    public DamageSourceType type() {
+        return DamageSourceType.ENEMY;
     }
 }

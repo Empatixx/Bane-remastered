@@ -1,9 +1,8 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -18,7 +17,7 @@ public class PathGate implements RoomObject {
     private final static int DIMENSION_WIDTH = 64;
     private final static int DIMENSION_HEIGHT = 64;
     private final Animation animation;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     public PathGate() {
         animation = Animation.builder()
                 .setTotal(1, 4)
@@ -28,7 +27,8 @@ public class PathGate implements RoomObject {
                 .scale(SCALE)
                 .build();
         animation.setState(OPEN);
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE));
+
+        physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
 
     @Override
@@ -77,7 +77,7 @@ public class PathGate implements RoomObject {
     }
 
     public void setPosition(final float x, final float y) {
-        physicsBody.setTranslation(x, y);
+        physicsBody.setTranslation(x + getWidth()/2f, y + getHeight()/2f);
     }
 
     public float getWidth() {

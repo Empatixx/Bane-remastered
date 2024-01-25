@@ -12,7 +12,7 @@ import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
-import cz.empatix.physics.service.PhysicsService;
+import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;

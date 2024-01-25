@@ -1,8 +1,7 @@
 package cz.empatix.items.domain;
 
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
@@ -11,11 +10,12 @@ import java.util.Set;
 
 public class MovableItemDrop implements ItemDrop{
     private final ItemDrop itemDrop;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     public MovableItemDrop(final ItemDrop itemDrop){
         this.itemDrop = itemDrop;
-        this.physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(1, 1));
-        this.physicsBody.setTranslation(itemDrop.getPosition());
+
+        this.physicsBody = PhysicsObjectFactory.create(itemDrop.getWidth(), itemDrop.getHeight());
+        this.physicsBody.setOwner(this);
     }
     @Override
     public void interact(final Set<Integer> keys) {

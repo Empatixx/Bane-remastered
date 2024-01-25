@@ -3,12 +3,8 @@ package cz.empatix.guns.ammo;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.domain.DamageSourceType;
-import cz.empatix.physics.events.domain.EventType;
-import cz.empatix.physics.events.suppliers.DamageSupplier;
-import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -24,7 +20,7 @@ public class Bullet implements Drawable {
     private final static int SCALE = 1;
     private final static int BULLET_WIDTH = 16 * SCALE;
     private final static int BULLET_HEIGHT = 16 * SCALE;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     private final Animation animation;
     private final LightSource lightSource;
 
@@ -36,13 +32,12 @@ public class Bullet implements Drawable {
                 .texture(AssetsService.getTexture("ingame/bullet.tga"))
                 .build();
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(BULLET_WIDTH, BULLET_HEIGHT));
+        physicsBody = PhysicsObjectFactory.create(BULLET_WIDTH, BULLET_HEIGHT);
         physicsBody.setLinearDamping(1.0f);
-        physicsBody.addEventSupplier(new DamageSupplier(DamageSourceType.PLAYER, () -> damage, () -> {
-            physicsBody.removeEventSupplier(EventType.DAMAGE);
+        physicsBody.onCollision(() -> {
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
-        }));
+        });
     }
 
     @Override

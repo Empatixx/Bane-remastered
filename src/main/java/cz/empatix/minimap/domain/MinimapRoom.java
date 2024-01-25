@@ -3,15 +3,11 @@ package cz.empatix.minimap.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.minimap.service.MinimapService;
-import cz.empatix.physics.domain.transform.InterpolatedTransform;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
-import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.MiniMapBinding;
-import cz.empatix.rooms.service.*;
+import cz.empatix.rooms.service.Room;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector4i;
@@ -33,7 +29,7 @@ public class MinimapRoom implements Drawable {
     private final Vector2f normSubImagePos;
     private final Vector4i connections; // left, right, top, bottom, 1 if connected, 0 if not
     private final float randomOffset = ThreadLocalRandom.current().nextFloat(10);
-    private final InterpolatedTransform transform;
+    private final InterpolatedPosition transform;
     private int roomsAwayFromCenter;
 
     public MinimapRoom(final int x, final int y, final Room room) {
@@ -51,7 +47,7 @@ public class MinimapRoom implements Drawable {
         this.normSpriteSize = new Vector2f(16f / entry.atlasWidth(), 16f / entry.atlasHeight());
         this.normSubImagePos = entry.normalizedStartPositions();
         this.connections = new Vector4i(0, 0, 0, 0);
-        this.transform = new InterpolatedTransform();
+        this.transform = new InterpolatedPosition();
     }
 
     public void setConnection(final RoomDirection direction) {
@@ -97,7 +93,7 @@ public class MinimapRoom implements Drawable {
 
     @Override
     public RenderData renderData() {
-        return new RenderData(animation.getVertices(transform.getTranslationToRender()),
+        return new RenderData(animation.getVertices(transform.getInterpolatedPosition()),
                 animation.getTextureId(),
                 new MiniMapBinding(Camera.getOriginWithoutZoomProjection(), normSubImagePos, normSpriteSize,
                         System.currentTimeMillis() % 1000000 / 1000f, randomOffset, visited, current,
@@ -112,8 +108,8 @@ public class MinimapRoom implements Drawable {
         final float nextX = MinimapService.MINIMAP_POSITION_X + (this.x - x) * DIMENSIONS * SCALE;
         final float nextY = MinimapService.MINIMAP_POSITION_Y + (this.y - y) * DIMENSIONS * SCALE;
 
-        final float currentX = transform.getTranslation().x();
-        final float currentY = transform.getTranslation().y();
+        final float currentX = transform.getPosition().x();
+        final float currentY = transform.getPosition().y();
 
         float tween = TWEEN * dt;
         if(tween > 1){
@@ -123,7 +119,7 @@ public class MinimapRoom implements Drawable {
         final float newX = (nextX - currentX) * tween + currentX;
         final float newY = (nextY - currentY) * tween + currentY;
 
-        transform.setTranslation(newX, newY);
+        transform.setPosition(newX, newY);
     }
 
     public void setRoomsAwayFromCenter(int roomsAwayFromCenter) {

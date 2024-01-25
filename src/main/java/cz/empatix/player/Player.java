@@ -10,13 +10,12 @@ import cz.empatix.interaction.domain.InteractEntity;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
+import cz.empatix.newphysics.attributes.DamageSourceType;
+import cz.empatix.newphysics.attributes.Damageable;
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
+import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.particles.service.GazewindService;
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.events.consumers.DamageConsumer;
-import cz.empatix.physics.events.domain.DamageSourceType;
-import cz.empatix.physics.service.IntersectionResolver;
-import cz.empatix.physics.service.PhysicsBodyFactory;
 import cz.empatix.postprocessing.domain.RedVignette;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
@@ -26,6 +25,10 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.geometry.Mass;
+import org.dyn4j.geometry.MassType;
+import org.dyn4j.geometry.Rectangle;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -33,14 +36,14 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 import java.util.Set;
 
-public class Player implements Drawable, InteractEntity {
+public class Player implements Drawable, InteractEntity, Damageable {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 38 * SCALE;
-    private final static int MOVE_FORCE = 10000000;
+    private final static int MOVE_FORCE = 1000000;
     private final static float LOW_HP_THRESHOLD = 0.3f;
     private final static int GAZE_OFFSET = 16;
     private final static int GAZE_SPEED_PRELIMIT = 400;
@@ -48,7 +51,7 @@ public class Player implements Drawable, InteractEntity {
     private final StatusBar healthBar;
     private final StatusBar armorBar;
     private final Animation animation;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     private final CommonInteractEntity interactEntity;
     private final LightSource lightSource;
     private final GazewindService gazewindService;
@@ -77,8 +80,11 @@ public class Player implements Drawable, InteractEntity {
                 .texture(AssetsService.getTexture("ingame/player.tga"))
                 .build();
         animation.setState(AnimationState.IDLE);
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
-        physicsBody.addEventConsumer(new DamageConsumer(this::hit, this::canHit));
+
+        physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH, DIMENSION_HEIGHT);
+        physicsBody.setLinearDamping(1.0f);
+        physicsBody.setMass(MassType.NORMAL);
+        physicsBody.setOwner(this);
 
         interactEntity = new CommonInteractEntity(getWidth(), getHeight(), physicsBody.getPhysicsTranslation());
         InteractionService.getInstance().addEntity(this);
@@ -95,7 +101,8 @@ public class Player implements Drawable, InteractEntity {
     private boolean canHit(final DamageSourceType source, final int damage) {
         return source != DamageSourceType.PLAYER && !isInvulnerable() && !isDead();
     }
-    private boolean isInvulnerable(){
+
+    private boolean isInvulnerable() {
         return System.currentTimeMillis() - lastHitTime < INVULNERABLE_TIME;
     }
 
@@ -123,7 +130,7 @@ public class Player implements Drawable, InteractEntity {
     }
 
     public void hit(final int damage) {
-        if (isDead()){
+        if (isDead()) {
             return;
         }
         if (isInvulnerable()) {
@@ -154,7 +161,7 @@ public class Player implements Drawable, InteractEntity {
     }
 
     public void fixedUpdate(final double dt) {
-        if(isDead()){
+        if (isDead()) {
             return;
         }
         move(dt);
@@ -175,24 +182,31 @@ public class Player implements Drawable, InteractEntity {
             gazewindService.spawn(nextGazeX, nextGazeY);
         }
     }
-    public void addCoins(final int coins){
+
+    public void addCoins(final int coins) {
         coinService.addCoins(coins);
     }
-    public void removeCoins(final int coins){
+
+    public void removeCoins(final int coins) {
         coinService.removeCoins(coins);
     }
-    public boolean hasEnoughCoins(final int requiredCoins){
+
+    public boolean hasEnoughCoins(final int requiredCoins) {
         return coinService.hasEnoughCoins(requiredCoins);
     }
-    public void addHealth(final int health){
+
+    public void addHealth(final int health) {
         setHealth(getHealth() + health);
     }
-    public boolean hasFullHealth(){
+
+    public boolean hasFullHealth() {
         return getHealth() == getMaxHealth();
     }
-    public void addArmor(final int armor){
+
+    public void addArmor(final int armor) {
         setArmor(getArmor() + armor);
     }
+
     public boolean hasFullArmor() {
         return getArmor() == getMaxArmor();
     }
@@ -245,13 +259,16 @@ public class Player implements Drawable, InteractEntity {
 
     @Override
     public boolean canRender() {
-        if(isInvulnerable() && System.currentTimeMillis() / 100 % 2 == 0){
+        if (isInvulnerable() && System.currentTimeMillis() / 100 % 2 == 0) {
             return false;
         }
-        return IntersectionResolver.newInstance()
-                .addShape(physicsBody.getTranslation(), new Vector2f(DIMENSION_WIDTH, DIMENSION_HEIGHT))
-                .addShape(Camera.getPosition(), new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()))
-                .resolve();
+        final Vector2f cameraPos = Camera.getPosition();
+        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
+        final Vector2f position = physicsBody.getTranslation();
+        return position.x() + getWidth() > cameraPos.x()
+                && position.x() < cameraPos.x() + cameraDimensions.x()
+                && position.y() + getHeight() > cameraPos.y()
+                && position.y() < cameraPos.y() + cameraDimensions.y();
     }
 
     @Override
@@ -362,4 +379,10 @@ public class Player implements Drawable, InteractEntity {
         physicsBody.setTranslation(x, y);
     }
 
+    @Override
+    public void hit(DamageSourceType source, int damage) {
+        if (canHit(source, damage)) {
+            hit(damage);
+        }
+    }
 }

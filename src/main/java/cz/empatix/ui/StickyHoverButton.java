@@ -5,7 +5,6 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.text.CommonText;
-import cz.empatix.physics.service.IntersectionResolver;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -15,7 +14,6 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
-import org.joml.Vector2ic;
 import org.joml.Vector3i;
 
 import java.util.List;
@@ -119,10 +117,8 @@ public class StickyHoverButton implements UIElement, SelectableUI {
     }
 
     boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
-        return IntersectionResolver.newInstance()
-                .addShape(position, new Vector2f(dimensions.x(), dimensions.y()))
-                .addShape((float) mouseX, (float) mouseY)
-                .resolve();
+        return mouseX >= position.x && mouseX <= position.x + dimensions.x
+                && mouseY >= position.y && mouseY <= position.y + dimensions.y;
     }
 
     @Override

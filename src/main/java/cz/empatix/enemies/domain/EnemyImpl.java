@@ -12,6 +12,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
+import org.dyn4j.geometry.Rectangle;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 
@@ -49,7 +50,7 @@ public class EnemyImpl implements Damageable, DamageSource {
         this.moveForceSupplier = moveForceSupplier;
         this.damage = damage;
 
-        physicsBody = PhysicsObjectFactory.create(Rect.of(width, height));
+        physicsBody = PhysicsObjectFactory.create(width, height);
         physicsBody.setOwner(this);
 
         droppableState = new DroppableState(droppableCondition);

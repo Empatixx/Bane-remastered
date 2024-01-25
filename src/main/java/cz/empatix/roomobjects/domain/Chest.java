@@ -7,9 +7,8 @@ import cz.empatix.items.domain.ItemDrop;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
-import cz.empatix.physics.domain.PhysicsBody;
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.service.PhysicsBodyFactory;
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -27,7 +26,7 @@ public class Chest implements RoomObject, Interactable {
     private final static int DIMENSION_HEIGHT = 16 * SCALE;
     private final static int ITEM_DROP_FORCE = 30_000;
     private final Animation animation;
-    private final PhysicsBody physicsBody;
+    private final PhysicsObject physicsBody;
     private final ItemService itemService;
     private boolean opened = false;
 
@@ -39,7 +38,8 @@ public class Chest implements RoomObject, Interactable {
                 .addState(AnimationState.OPEN, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .texture(AssetsService.getTexture("ingame/chest.tga"))
                 .build();
-        physicsBody = PhysicsBodyFactory.createDynamic(Rectangle.from(DIMENSION_WIDTH, DIMENSION_HEIGHT));
+
+        physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH, DIMENSION_HEIGHT);
         InteractionService.getInstance().addInteractable(this);
     }
 

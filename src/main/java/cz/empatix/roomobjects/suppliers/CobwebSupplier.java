@@ -1,15 +1,10 @@
 package cz.empatix.roomobjects.suppliers;
 
-import cz.empatix.physics.domain.geometry.Rectangle;
-import cz.empatix.physics.service.PhysicsService;
 import cz.empatix.render.domain.AnimationState;
-import cz.empatix.roomobjects.domain.Bones;
 import cz.empatix.roomobjects.domain.Cobweb;
-import cz.empatix.roomobjects.domain.Torch;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
-import org.joml.Vector2f;
 
 import java.util.concurrent.ThreadLocalRandom;
 

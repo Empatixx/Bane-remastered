@@ -43,8 +43,7 @@ public class BossImpl implements Damageable, DamageSource {
         this.animation = animation;
         this.moveForceSupplier = moveForceSupplier;
 
-        physicsBody = PhysicsObjectFactory.create(Rect.of(width, height));
-        physicsBody.setOwner(this);
+        physicsBody = PhysicsObjectFactory.create(width, height);
         aStarTargetting = new AStarTargetting(physicsBody.getPosition(), width, height);
 
         final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
@@ -92,15 +91,15 @@ public class BossImpl implements Damageable, DamageSource {
 
 
     public float getX() {
-        return physicsBody.getPhysicsTranslationX();
+        return physicsBody.getPosition().x();
     }
 
     public float getY() {
-        return physicsBody.getPhysicsTranslationY();
+        return physicsBody.getPosition().y();
     }
 
     public Vector2f getPosition() {
-        return physicsBody.getTranslation();
+        return physicsBody.getPosition();
     }
 
     public int getWidth() {
@@ -112,7 +111,7 @@ public class BossImpl implements Damageable, DamageSource {
     }
 
     public void setPosition(float x, float y) {
-        physicsBody.setTranslation(x, y);
+        physicsBody.setPosition(x, y);
     }
 
     public List<Renderable> getSubRenderables() {
@@ -124,7 +123,7 @@ public class BossImpl implements Damageable, DamageSource {
 
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                animation.getVertices(physicsBody.getPosition(), aStarTargetting.isTargetLeftFromEnemy()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

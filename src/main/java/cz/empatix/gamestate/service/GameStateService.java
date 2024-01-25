@@ -4,7 +4,7 @@ import cz.empatix.audio.service.AudioService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.interaction.service.InteractionService;
-import cz.empatix.physics.service.PhysicsService;
+import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderEngine;
 import org.slf4j.Logger;
@@ -53,7 +53,6 @@ public class GameStateService {
     public void update(final double dt) {
         currentState.updateMouse((float)dt);
         currentState.update(dt);
-        physicsService.update(dt);
         audioService.update((float)dt);
     }
     public void fixedUpdate(final double dt) {
