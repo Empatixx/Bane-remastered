@@ -13,20 +13,27 @@ import org.lwjgl.opengl.GL30;
 
 public class PhysicsEngine {
     private final World<PhysicsObject> world;
-
+    private final static boolean DEBUG_RENDER = true;
     public PhysicsEngine() {
         final Settings settings = new Settings();
         settings.setStepFrequency(GameLoop.FIXED_DELTA_TIME);
         settings.setAtRestDetectionEnabled(false);
         settings.setMaximumTranslation(100);
+        settings.setMaximumLinearCorrection(100);
+        settings.setMaximumRotation(0);
+        settings.setMaximumAngularCorrection(0);
+        settings.setLinearTolerance(0.1);
+
 
         world = new World<>();
         world.setGravity(0,0);
         world.setSettings(settings);
 
 
+        world.addStepListener(new InterpolationStepListener());
         world.addCollisionListener(new DamageCollisionListener());
         world.addCollisionListener(new CollisionListener());
+
     }
 
     public void add(final PhysicsObject object) {
@@ -34,7 +41,13 @@ public class PhysicsEngine {
     }
 
     public void fixedUpdate(double dt) {
-        world.update(dt);
+        world.step(1);
+    }
+    public void update(final double dt){
+        final float delta = (float) dt;
+        for (PhysicsObject body : world.getBodies()) {
+            body.update(delta);
+        }
     }
 
     public void clear() {
@@ -43,6 +56,9 @@ public class PhysicsEngine {
 
 
     public void debugRender() {
+        if (!DEBUG_RENDER) {
+            return;
+        }
         world.getBodies().forEach(body -> {
             GL30.glBegin(GL30.GL_LINE_LOOP);
             final Rectangle rectangle = (Rectangle) body.getFixture(0).getShape();

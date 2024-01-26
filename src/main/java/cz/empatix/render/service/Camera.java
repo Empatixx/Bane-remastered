@@ -51,7 +51,7 @@ public class Camera {
     public static void setPosition(final float x, final float y) {
         final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), x));
         final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), y));
-        interpolatedPosition.setPosition(newX, newY);
+        interpolatedPosition.setInterpolatedPosition(newX, newY);
         Camera.update(1);
     }
 
@@ -62,7 +62,7 @@ public class Camera {
         }
         final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), (x - interpolatedPosition.getX()) * tween + interpolatedPosition.getX()));
         final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), (y - interpolatedPosition.getY()) * tween + interpolatedPosition.getY()));
-        interpolatedPosition.setPosition(newX, newY);
+        interpolatedPosition.setInterpolatedPosition(newX, newY);
     }
 
     public static float getX() {

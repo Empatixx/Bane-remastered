@@ -12,17 +12,16 @@ import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.Damageable;
+import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CategoryFilter;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.particles.service.GazewindService;
 import cz.empatix.postprocessing.domain.RedVignette;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
-import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.dyn4j.dynamics.BodyFixture;
@@ -43,7 +42,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 38 * SCALE;
-    private final static int MOVE_FORCE = 1000000;
+    private final static int MOVE_FORCE = 3000000;
     private final static float LOW_HP_THRESHOLD = 0.3f;
     private final static int GAZE_OFFSET = 16;
     private final static int GAZE_SPEED_PRELIMIT = 400;
@@ -51,7 +50,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
     private final StatusBar healthBar;
     private final StatusBar armorBar;
     private final Animation animation;
-    private final PhysicsObject physicsBody;
+    private final InterpolatedPhysicsObject physicsBody;
     private final CommonInteractEntity interactEntity;
     private final LightSource lightSource;
     private final GazewindService gazewindService;
@@ -81,10 +80,9 @@ public class Player implements Drawable, InteractEntity, Damageable {
                 .build();
         animation.setState(AnimationState.IDLE);
 
-        physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH, DIMENSION_HEIGHT);
-        physicsBody.setLinearDamping(1.0f);
-        physicsBody.setMass(MassType.NORMAL);
-        physicsBody.setOwner(this);
+        physicsBody = PhysicsObjectFactory.createInterpolated(DIMENSION_WIDTH, DIMENSION_HEIGHT);
+        physicsBody.getFixture(0).setFilter(CategoryFilter.PLAYER);
+        physicsBody.setUserData(this);
 
         interactEntity = new CommonInteractEntity(getWidth(), getHeight(), physicsBody.getPhysicsTranslation());
         InteractionService.getInstance().addEntity(this);

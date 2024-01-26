@@ -24,41 +24,42 @@ public class DamageCollisionListener implements CollisionListener<PhysicsObject,
 
     @Override
     public boolean collision(BroadphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        final PhysicsObject a2 = collision.getBody1();
-        final PhysicsObject b2 = collision.getBody2();
-        a2.setAngularVelocity(0);
-        b2.setAngularVelocity(0);
-
         final Object a = collision.getBody1().getUserData();
         final Object b = collision.getBody2().getUserData();
+
         postprocessDamageable(a, b);
         postprocessDamageable(b, a);
+        final boolean notActive = !collision.getBody1().isActive() || !collision.getBody2().isActive();
+        if (notActive) {
+            return false;
+        }
         return true;
     }
 
     @Override
     public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        final PhysicsObject a2 = collision.getBody1();
-        final PhysicsObject b2 = collision.getBody2();
-        a2.setAngularVelocity(0);
-        b2.setAngularVelocity(0);
-
         final Object a = collision.getBody1().getUserData();
         final Object b = collision.getBody2().getUserData();
+        final boolean notActive = !collision.getBody1().isActive() || !collision.getBody2().isActive();
         postprocessDamageable(a, b);
         postprocessDamageable(b, a);
+        if (notActive) {
+            return false;
+        }
         return true;
     }
 
     @Override
     public boolean collision(ManifoldCollisionData<PhysicsObject, BodyFixture> collision) {
-        final PhysicsObject a2 = collision.getBody1();
-        final PhysicsObject b2 = collision.getBody2();
-
         final Object a = collision.getBody1().getUserData();
         final Object b = collision.getBody2().getUserData();
+
+        final boolean notActive = !collision.getBody1().isActive() || !collision.getBody2().isActive();
         postprocessDamageable(a, b);
         postprocessDamageable(b, a);
+        if (notActive) {
+            return false;
+        }
         return true;
     }
 }

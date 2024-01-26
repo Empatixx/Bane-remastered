@@ -1,7 +1,9 @@
 package cz.empatix.items.domain;
 
+import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
+import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
@@ -10,12 +12,11 @@ import java.util.Set;
 
 public class MovableItemDrop implements ItemDrop{
     private final ItemDrop itemDrop;
-    private final PhysicsObject physicsBody;
+    private final InterpolatedPhysicsObject physicsBody;
     public MovableItemDrop(final ItemDrop itemDrop){
         this.itemDrop = itemDrop;
-
-        this.physicsBody = PhysicsObjectFactory.create(itemDrop.getWidth(), itemDrop.getHeight());
-        this.physicsBody.setOwner(this);
+        this.physicsBody = PhysicsObjectFactory.createInterpolated(itemDrop.getWidth(), itemDrop.getHeight());
+        this.physicsBody.setUserData(this);
     }
     @Override
     public void interact(final Set<Integer> keys) {
@@ -29,12 +30,11 @@ public class MovableItemDrop implements ItemDrop{
 
     @Override
     public Vector2f getPosition() {
-        return physicsBody.getTranslation();
+        return physicsBody.getPhysicsTranslation();
     }
 
     @Override
     public void update(float dt) {
-        physicsBody.update(dt);
         itemDrop.setPosition(physicsBody.getTranslation().x,physicsBody.getTranslation().y);
     }
 

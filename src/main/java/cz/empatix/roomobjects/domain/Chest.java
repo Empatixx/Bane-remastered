@@ -46,7 +46,7 @@ public class Chest implements RoomObject, Interactable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation()),
+                animation.getVertices(physicsBody.getPhysicsTranslation()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
@@ -79,7 +79,7 @@ public class Chest implements RoomObject, Interactable {
         final ItemFactory itemFactory = itemService.getItemFactory();
         for (int i = 0; i < TOTAL_DROP_ITEMS; i++) {
             final MovableItemDrop itemDrop = itemFactory.createMovableItemDrop();
-            itemDrop.setPosition(physicsBody.getTranslation().x() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getTranslation().y() - itemDrop.getHeight()/2f + getHeight()/2f);
+            itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
             itemDrop.setDespawnable(false);
 
             final float angle = (float)(Math.PI * 2 * (i+1)) / TOTAL_DROP_ITEMS;
@@ -90,7 +90,7 @@ public class Chest implements RoomObject, Interactable {
             itemService.add(itemDrop);
         }
         final ItemDrop itemDrop = itemFactory.createWeaponDrop();
-        itemDrop.setPosition(physicsBody.getTranslation().x() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getTranslation().y() - itemDrop.getHeight()/2f + getHeight()/2f);
+        itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
         itemService.add(itemDrop);
     }
 
@@ -117,7 +117,7 @@ public class Chest implements RoomObject, Interactable {
 
     @Override
     public Vector2f getPosition() {
-        return physicsBody.getTranslation();
+        return physicsBody.getPhysicsTranslation();
     }
 
     @Override

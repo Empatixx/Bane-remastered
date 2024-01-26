@@ -40,4 +40,8 @@ public class PhysicsService {
     public void remove(final PhysicsObject physicsObject) {
         physicsEngine.remove(physicsObject);
     }
+
+    public void update(double dt) {
+        physicsEngine.update(dt);
+    }
 }

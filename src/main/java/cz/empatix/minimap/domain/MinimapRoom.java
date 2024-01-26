@@ -119,7 +119,7 @@ public class MinimapRoom implements Drawable {
         final float newX = (nextX - currentX) * tween + currentX;
         final float newY = (nextY - currentY) * tween + currentY;
 
-        transform.setPosition(newX, newY);
+        transform.setInterpolatedPosition(newX, newY);
     }
 
     public void setRoomsAwayFromCenter(int roomsAwayFromCenter) {

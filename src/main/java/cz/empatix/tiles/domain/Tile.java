@@ -9,8 +9,10 @@ import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
+import org.dyn4j.geometry.Geometry;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
+import org.w3c.dom.css.Rect;
 
 import java.util.List;
 
@@ -35,7 +37,7 @@ public record Tile(
         final int tRow = tileNumber / TOTAL_COLUMNS;
 
         final Vector2f pos = new Vector2f(xOff + tilePosX * TILE_SIZE * SCALE, yOff + tilePosY * TILE_SIZE * SCALE);
-        final PhysicsObject collision = tRow > 0 ? PhysicsObjectFactory.create(TILE_SIZE * SCALE, TILE_SIZE * SCALE) : null;
+        final PhysicsObject collision = tRow > 0 ? PhysicsObjectFactory.create(Geometry.createRectangle(TILE_SIZE * SCALE, TILE_SIZE * SCALE)) : null;
         if (collision != null) {
             collision.setTranslation(pos.x + TILE_SIZE * SCALE/2f, pos.y + TILE_SIZE * SCALE/2f);
             collision.setMass(MassType.INFINITE);

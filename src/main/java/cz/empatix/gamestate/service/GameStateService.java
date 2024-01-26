@@ -54,6 +54,7 @@ public class GameStateService {
         currentState.updateMouse((float)dt);
         currentState.update(dt);
         audioService.update((float)dt);
+        physicsService.update(dt);
     }
     public void fixedUpdate(final double dt) {
         interactionService.fixedUpdate((float)dt);

@@ -4,6 +4,7 @@ import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.items.service.DroppableState;
 import cz.empatix.newphysics.attributes.*;
+import cz.empatix.newphysics.service.CategoryFilter;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -51,10 +52,11 @@ public class EnemyImpl implements Damageable, DamageSource {
         this.damage = damage;
 
         physicsBody = PhysicsObjectFactory.create(width, height);
-        physicsBody.setOwner(this);
+        physicsBody.getFixture(0).setFilter(CategoryFilter.ENEMY);
+        physicsBody.setUserData(this);
 
         droppableState = new DroppableState(droppableCondition);
-        aStarTargetting = new AStarTargetting(physicsBody.getPosition(), width, height);
+        aStarTargetting = new AStarTargetting(physicsBody.getPhysicsTranslation(), width, height);
         vitalityDisplayService = new VitalityDisplayService();
     }
 
@@ -126,21 +128,21 @@ public class EnemyImpl implements Damageable, DamageSource {
     }
 
     public Vector2f getPosition() {
-        return physicsBody.getTranslation();
+        return physicsBody.getPhysicsTranslation();
     }
 
     public RenderData renderData() {
         final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
         if (outline > 0) {
             return new RenderData(
-                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getVertices(physicsBody.getPhysicsTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
                     new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
-                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getVertices(physicsBody.getPhysicsTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
                     new CommonBinding(Camera.getProjection())
             );

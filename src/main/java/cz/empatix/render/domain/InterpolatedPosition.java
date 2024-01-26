@@ -20,12 +20,22 @@ public class InterpolatedPosition {
     }
 
 
-    public void setPosition(final float x, final float y) {
+    public void setInterpolatedPosition(final float x, final float y) {
         this.nextPosition.x = x;
         this.nextPosition.y = y;
 
         this.previousPosition.x = currentPosition.x;
         this.previousPosition.y = currentPosition.y;
+        t = 0;
+    }
+    public void setPosition(final float x, final float y) {
+        this.nextPosition.x = x;
+        this.nextPosition.y = y;
+
+        this.previousPosition.x = x;
+        this.previousPosition.y = y;
+        this.currentPosition.x = x;
+        this.currentPosition.y = y;
         t = 0;
     }
 

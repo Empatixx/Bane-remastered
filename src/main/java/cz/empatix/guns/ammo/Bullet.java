@@ -3,7 +3,10 @@ package cz.empatix.guns.ammo;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
+import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CategoryFilter;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -20,7 +23,7 @@ public class Bullet implements Drawable {
     private final static int SCALE = 1;
     private final static int BULLET_WIDTH = 16 * SCALE;
     private final static int BULLET_HEIGHT = 16 * SCALE;
-    private final PhysicsObject physicsBody;
+    private final InterpolatedPhysicsObject physicsBody;
     private final Animation animation;
     private final LightSource lightSource;
 
@@ -32,8 +35,9 @@ public class Bullet implements Drawable {
                 .texture(AssetsService.getTexture("ingame/bullet.tga"))
                 .build();
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
-        physicsBody = PhysicsObjectFactory.create(BULLET_WIDTH, BULLET_HEIGHT);
-        physicsBody.setLinearDamping(1.0f);
+        physicsBody = PhysicsObjectFactory.createInterpolated(BULLET_WIDTH, BULLET_HEIGHT);
+        physicsBody.getFixture(0).setFilter(CategoryFilter.PLAYER);
+        physicsBody.setLinearDamping(0f);
         physicsBody.onCollision(() -> {
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);

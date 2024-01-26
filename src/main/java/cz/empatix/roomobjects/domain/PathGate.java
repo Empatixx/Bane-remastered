@@ -8,6 +8,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import org.dyn4j.collision.Filter;
 
 import static cz.empatix.render.domain.AnimationState.CLOSE;
 import static cz.empatix.render.domain.AnimationState.OPEN;
@@ -29,12 +30,14 @@ public class PathGate implements RoomObject {
         animation.setState(OPEN);
 
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
+        physicsBody.setActive(false);
+        physicsBody.setUserData(this);
     }
 
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation()),
+                animation.getVertices(physicsBody.getPhysicsTranslation()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
@@ -77,7 +80,7 @@ public class PathGate implements RoomObject {
     }
 
     public void setPosition(final float x, final float y) {
-        physicsBody.setTranslation(x + getWidth()/2f, y + getHeight()/2f);
+        physicsBody.setTranslation(x, y);
     }
 
     public float getWidth() {

@@ -28,11 +28,13 @@ public class Spike implements RoomObject, DamageSource {
                 .build();
         damage = 1;
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
+        physicsBody.setActive(false);
+        physicsBody.setUserData(this);
     }
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation()),
+                animation.getVertices(physicsBody.getPhysicsTranslation()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
