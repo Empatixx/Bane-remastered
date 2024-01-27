@@ -25,11 +25,11 @@ public class PhysicsObject extends Body {
     }
 
     public void setPhysicsTranslation(float x, float y) {
-        getTransform().setTranslation(x, y);
+        getTransform().setTranslation(x + offset.x(), y + offset.y());
     }
 
     public Vector2f getPhysicsTranslation() {
-        return new Vector2f((float) getTransform().getTranslationX() , (float) getTransform().getTranslationY());
+        return new Vector2f(getPhysicsTranslationX(), getPhysicsTranslationY());
     }
 
     public void applyForce(final float x, final float y) {
@@ -45,15 +45,15 @@ public class PhysicsObject extends Body {
     }
 
     public float getPhysicsTranslationX() {
-        return (float) getTransform().getTranslationX();
+        return (float) getTransform().getTranslationX() - offset.x();
     }
 
     public float getPhysicsTranslationY() {
-        return (float) getTransform().getTranslationY();
+        return (float) getTransform().getTranslationY() - offset.y();
     }
 
     public void setTranslation(float x, float y) {
-        getTransform().setTranslation(x, y);
+        getTransform().setTranslation(x + offset.x(), y + offset.y());
     }
 
     public void update(final float dt){
@@ -72,5 +72,8 @@ public class PhysicsObject extends Body {
     }
     public boolean canRemove() {
         return remove;
+    }
+    public void setOffset(final int x, final int y) {
+        offset.set(x, y);
     }
 }

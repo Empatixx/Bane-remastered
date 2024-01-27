@@ -14,6 +14,7 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector4f;
 
 import java.util.List;
@@ -45,7 +46,7 @@ public class EnemyImpl implements Damageable, DamageSource {
                      final Supplier<Integer> moveForceSupplier,
                      final int collisionWidth,
                      final int collisionHeight,
-                     final Vector2f collisionOffset) {
+                     final Vector2i collisionOffset) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
@@ -55,7 +56,7 @@ public class EnemyImpl implements Damageable, DamageSource {
 
         physicsBody = PhysicsObjectFactory.createInterpolated(collisionWidth, collisionHeight);
         physicsBody.setType(CollisionType.ENEMY);
-        //physicsBody.setOffset(collisionOffset.x(), collisionOffset.y());
+        physicsBody.setOffset(collisionOffset.x(), collisionOffset.y());
         physicsBody.setUserData(this);
 
         droppableState = new DroppableState(droppableCondition);

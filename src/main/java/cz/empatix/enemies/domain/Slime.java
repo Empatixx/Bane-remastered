@@ -9,6 +9,7 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -17,10 +18,10 @@ public class Slime implements Enemy {
     private final static int MOVE_FORCE = 500_000;
     private final static float SCALE = 3f;
     private final static int DIMENSION_WIDTH = (int) (32 * SCALE);
-    private final static int DIMENSION_HEIGHT = (int) (20 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (24 * SCALE);
     private final static int COLLISION_OFFSET_X = (int) (0 * SCALE);
-    private final static int COLLISION_OFFSET_Y = (int) (1 * SCALE);
-    private final static Vector2f COLLISION_OFFSET = new Vector2f(COLLISION_OFFSET_X, COLLISION_OFFSET_Y);
+    private final static int COLLISION_OFFSET_Y = (int) (4 * SCALE);
+    private final static Vector2i COLLISION_OFFSET = new Vector2i(COLLISION_OFFSET_X, COLLISION_OFFSET_Y);
     private final static int DEFAULT_HEALTH = 9;
     private final static int DEFAULT_DAMAGE = 1;
     private final Animation animation;
@@ -36,7 +37,7 @@ public class Slime implements Enemy {
                 .build();
         animation.setState(AnimationState.IDLE);
         enemyImpl = new EnemyImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, DEFAULT_DAMAGE, this::hit, () -> animation.hasPlayedOnce() && isDead(),
-                () -> MOVE_FORCE, DIMENSION_WIDTH, DIMENSION_HEIGHT, COLLISION_OFFSET);
+                () -> MOVE_FORCE, DIMENSION_WIDTH, DIMENSION_HEIGHT - COLLISION_OFFSET_Y, COLLISION_OFFSET);
         slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), GreenSlimebullet::new);
     }
 
