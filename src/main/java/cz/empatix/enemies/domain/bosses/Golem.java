@@ -12,8 +12,8 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class Golem implements Enemy {
-    private final static int MOVE_FORCE = 150000000;
-    private final static int SCALE = 4;
+    private final static int MOVE_FORCE = 25_000_000;
+    private final static int SCALE = 3;
     private final static int DIMENSION_WIDTH = 100 * SCALE;
     private final static int DIMENSION_HEIGHT = 100 * SCALE;
     private final static int DEFAULT_HEALTH = 130;

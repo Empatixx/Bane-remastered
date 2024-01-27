@@ -17,8 +17,8 @@ public enum CollisionType {
     static {
         ITEM.collidesWith = EnumSet.noneOf(CollisionType.class);
         TRAP.collidesWith = EnumSet.noneOf(CollisionType.class);
-        PLAYER.collidesWith =  EnumSet.noneOf(CollisionType.class);
-        ENEMY.collidesWith =  EnumSet.noneOf(CollisionType.class);
+        PLAYER.collidesWith =  EnumSet.of(ENEMY_BULLET);
+        ENEMY.collidesWith =  EnumSet.of(PLAYER_BULLET);
         NONE.collidesWith =  EnumSet.noneOf(CollisionType.class);
         PLAYER_BULLET.collidesWith =  EnumSet.of(ENEMY);
         ENEMY_BULLET.collidesWith =  EnumSet.of(PLAYER);

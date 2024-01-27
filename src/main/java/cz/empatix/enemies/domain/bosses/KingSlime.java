@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class KingSlime implements Enemy {
-    private final static int MOVE_FORCE = 25000000;
-    private final static int SCALE = 5;
+    private final static int MOVE_FORCE = 10_000_000;
+    private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 64 * SCALE;
     private final static int DIMENSION_HEIGHT = 48 * SCALE;
     private final static int DEFAULT_HEALTH = 90;

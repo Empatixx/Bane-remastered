@@ -9,39 +9,34 @@ import org.dyn4j.world.ManifoldCollisionData;
 import org.dyn4j.world.NarrowphaseCollisionData;
 
 public class CollisionListener implements org.dyn4j.world.listener.CollisionListener<PhysicsObject, BodyFixture> {
+
     @Override
     public boolean collision(BroadphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        final boolean canCollide = canCollide(collision.getBody1(), collision.getBody2());
+        return checkCollision(collision);
+    }
+
+    private boolean checkCollision(BroadphaseCollisionData<PhysicsObject, BodyFixture> collision) {
+        final PhysicsObject o1 = collision.getBody1();
+        final PhysicsObject o2 = collision.getBody2();
+        final boolean canCollide = canCollide(o1, o2);
         if (!canCollide) {
             return false;
         }
-        collision.getBody1().onCollision();
-        collision.getBody2().onCollision();
+        o1.onCollision();
+        o2.onCollision();
         return true;
     }
 
     @Override
     public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        final boolean canCollide = canCollide(collision.getBody1(), collision.getBody2());
-        if (!canCollide) {
-            return false;
-        }
-        collision.getBody1().onCollision();
-        collision.getBody2().onCollision();
-        return true;
+        return checkCollision(collision);
     }
 
     @Override
     public boolean collision(ManifoldCollisionData<PhysicsObject, BodyFixture> collision) {
-        final boolean canCollide = canCollide(collision.getBody1(), collision.getBody2());
-        if (!canCollide) {
-            return false;
-        }
-        collision.getBody1().onCollision();
-        collision.getBody2().onCollision();
-        return true;
+        return checkCollision(collision);
     }
-    private final boolean canCollide(final PhysicsObject o1, final PhysicsObject o2){
+    private boolean canCollide(final PhysicsObject o1, final PhysicsObject o2){
         final CollisionType t1 = o1.getType();
         final CollisionType t2 = o2.getType();
 

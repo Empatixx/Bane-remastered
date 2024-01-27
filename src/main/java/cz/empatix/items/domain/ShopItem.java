@@ -102,6 +102,9 @@ public class ShopItem implements ItemDrop {
     public void interact(final Set<Integer> keys) {
         interactionTracker.interaction();
         if (bought){
+            if (drop.canInteract()) {
+                drop.interact(keys);
+            }
             return;
         }
         if (!keys.contains(GLFW.GLFW_KEY_E)) {

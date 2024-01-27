@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class EnemyDropService {
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
-    private final static int GARAUNTEED_DROP = 1;
+    private final static int GUARANTEED_DROP = 4;
     private final ItemService itemService;
     private final ItemFactory itemFactory;
     private static int enemiesKilledWithoutDrops = 0;
@@ -20,7 +20,7 @@ public class EnemyDropService {
     }
     public void tryDrop(final Enemy e){
         enemiesKilledWithoutDrops++;
-        if(enemiesKilledWithoutDrops + RANDOM.nextInt(6) > GARAUNTEED_DROP){
+        if(enemiesKilledWithoutDrops + RANDOM.nextInt(6) > GUARANTEED_DROP){
             final ItemDrop item = itemFactory.createItemDrop();
             item.setPosition(e.getX() + e.getWidth()/2f - item.getWidth()/2f, e.getY() + e.getHeight()/2f - item.getHeight()/2f);
             itemService.add(item);

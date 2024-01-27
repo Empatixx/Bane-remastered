@@ -5,6 +5,7 @@ import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.hud.domain.StatusBarType;
 import cz.empatix.hud.service.StatusBar;
 import cz.empatix.newphysics.attributes.*;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -29,6 +30,7 @@ public class BossImpl implements Damageable, DamageSource {
     private int health;
     private int damage;
     private final Supplier<Integer> moveForceSupplier;
+    private final Consumer<Integer> hitCallback;
 
     public BossImpl(final int width,
                     final int height,
@@ -42,8 +44,14 @@ public class BossImpl implements Damageable, DamageSource {
         this.height = height;
         this.animation = animation;
         this.moveForceSupplier = moveForceSupplier;
+        this.hitCallback = hitCallback;
+        this.damage = damage;
 
-        physicsBody = PhysicsObjectFactory.create(width, height);
+
+        physicsBody = PhysicsObjectFactory.createInterpolated(width, height);
+        physicsBody.setType(CollisionType.ENEMY);
+        physicsBody.setUserData(this);
+
         aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
 
         final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
@@ -156,7 +164,7 @@ public class BossImpl implements Damageable, DamageSource {
     @Override
     public void hit(DamageSourceType source, int damage) {
         if (canHit(source, damage)) {
-            hit(damage);
+            hitCallback.accept(damage);
         }
     }
 }
