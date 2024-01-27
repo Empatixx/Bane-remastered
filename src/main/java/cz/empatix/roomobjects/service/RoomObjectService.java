@@ -20,6 +20,9 @@ public class RoomObjectService {
     }
     public void update(final double dt){
         roomObjects.forEach(roomObject -> roomObject.update(dt));
+        roomObjects.stream()
+                .filter(RoomObject::canRemove)
+                .forEach(RoomObject::destroy);
         roomObjects.removeIf(RoomObject::canRemove);
     }
 

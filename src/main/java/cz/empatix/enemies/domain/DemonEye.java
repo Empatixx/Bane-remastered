@@ -11,7 +11,7 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class DemonEye implements Enemy {
-    private final static int MOVE_FORCE = 15000000;
+    private final static int MOVE_FORCE = 7_500_000;
     private final static float SCALE = 1.5f;
     private final static int DIMENSION_WIDTH = (int) (76 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (64 * SCALE);

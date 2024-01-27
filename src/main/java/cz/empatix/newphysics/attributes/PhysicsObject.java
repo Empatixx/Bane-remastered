@@ -1,5 +1,6 @@
 package cz.empatix.newphysics.attributes;
 
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
 import org.dyn4j.dynamics.Body;
@@ -10,13 +11,8 @@ public class PhysicsObject extends Body {
     private final static Runnable NOOP = () -> {
     };
     private Runnable onCollision = NOOP;
-    private boolean active = true;
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-    public boolean isActive() {
-        return active;
-    }
+    private CollisionType collisionType;
+    private boolean remove;
 
     public void onCollision(final Runnable onCollision) {
         this.onCollision = onCollision;
@@ -58,10 +54,21 @@ public class PhysicsObject extends Body {
         getTransform().setTranslation(x, y);
     }
 
-    public void destroy() {
-        PhysicsService.getInstance().remove(this);
-    }
     public void update(final float dt){
 
+    }
+
+    public CollisionType getType() {
+        return collisionType;
+    }
+
+    public void setType(final CollisionType collisionType) {
+        this.collisionType = collisionType;
+    }
+    public void destroy(){
+        remove = true;
+    }
+    public boolean canRemove(){
+        return remove;
     }
 }

@@ -80,7 +80,6 @@ public class WeaponDrop implements ItemDrop {
 
     @Override
     public void destroy() {
-
     }
 
     @Override

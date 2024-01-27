@@ -3,9 +3,9 @@ package cz.empatix.guns.ammo;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
+import cz.empatix.newphysics.attributes.DamageSource;
+import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
-import cz.empatix.newphysics.attributes.PhysicsObject;
-import cz.empatix.newphysics.service.CategoryFilter;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.attributes.Drawable;
@@ -18,7 +18,7 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-public class Bullet implements Drawable {
+public class Bullet implements Drawable, DamageSource {
     private final static int MOVE_FORCE = 1_000_0000;
     private final static int SCALE = 1;
     private final static int BULLET_WIDTH = 16 * SCALE;
@@ -26,6 +26,7 @@ public class Bullet implements Drawable {
     private final InterpolatedPhysicsObject physicsBody;
     private final Animation animation;
     private final LightSource lightSource;
+    private int damage;
 
     public Bullet(final int damage) {
         animation = Animation.builder()
@@ -36,11 +37,15 @@ public class Bullet implements Drawable {
                 .build();
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 25f, 0.75f);
         physicsBody = PhysicsObjectFactory.createInterpolated(BULLET_WIDTH, BULLET_HEIGHT);
-        physicsBody.getFixture(0).setFilter(CategoryFilter.PLAYER);
+        physicsBody.setType(CollisionType.PLAYER_BULLET);
         physicsBody.setLinearDamping(0f);
+        physicsBody.setUserData(this);
+        this.damage = damage;
         physicsBody.onCollision(() -> {
+            physicsBody.destroy();
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
+            this.damage = 0;
         });
     }
 
@@ -115,5 +120,15 @@ public class Bullet implements Drawable {
 
     public boolean shouldRemove() {
         return animation.getCurrentState() == AnimationState.COLLISION && animation.hasPlayedOnce();
+    }
+
+    @Override
+    public int damage() {
+        return damage;
+    }
+
+    @Override
+    public DamageSourceType type() {
+        return DamageSourceType.PLAYER;
     }
 }

@@ -2,6 +2,7 @@ package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.service.ItemService;
+import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
@@ -48,18 +49,18 @@ public class EnemyService {
         final Enemy e = enemyFactory.createEnemy();
 
         final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
-
-        final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
-        final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
         final PhysicsService physicsService = PhysicsService.getInstance();
-        final Rectangle rectangle = new Rectangle(e.getWidth(), e.getHeight());
-        final Vector2f position = new Vector2f(x, y);
-        while (physicsService.isColliding(rectangle, position)) {
-            final float newX = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
-            final float newY = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
-            position.set(newX, newY);
-        }
-        e.setPosition(position.x(), position.y());
+
+        final PhysicsObject physicsObject = new PhysicsObject();
+        physicsObject.addFixture(new Rectangle(e.getWidth(), e.getHeight()));
+
+        do{
+            final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
+            final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
+            physicsObject.setTranslation(x, y);
+        } while (physicsService.isColliding(physicsObject));
+
+        e.setPosition(physicsObject.getPhysicsTranslationX(), physicsObject.getPhysicsTranslationY());
 
         enemies.add(e);
     }

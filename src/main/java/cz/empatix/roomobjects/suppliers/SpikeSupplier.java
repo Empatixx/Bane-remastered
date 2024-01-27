@@ -24,27 +24,18 @@ public class SpikeSupplier implements RoomObjectSupplier<Spike> {
         final int cols = tileMap.getTotalCollumns();
         final int rows = tileMap.getTotalRows();
 
-        final int xTile = ThreadLocalRandom.current().nextInt(2, cols - 1);
-        final int yTile = ThreadLocalRandom.current().nextInt(2, rows - 1);
-
-        final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
-        final int yPos = room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
-
         final Spike spike = new Spike();
-        spike.setPosition(xPos, yPos);
-
-        final Rectangle spikeRectangle = new Rectangle(spike.getWidth(), spike.getHeight());
-
         final PhysicsService physicsService = PhysicsService.getInstance();
-        while (physicsService.isColliding(spikeRectangle,new Vector2f(xPos, yPos))) {
-            final int xTileNew = ThreadLocalRandom.current().nextInt(2, tileMap.getWidth() / (Tile.TILE_SIZE * Tile.SCALE) - 1);
-            final int yTileNew = ThreadLocalRandom.current().nextInt(2, tileMap.getHeight() / (Tile.TILE_SIZE * Tile.SCALE) - 1);
+        do{
+            final int xTile = ThreadLocalRandom.current().nextInt(2, cols - 1);
+            final int yTile = ThreadLocalRandom.current().nextInt(2, rows - 1);
 
-            final int xPosNew = room.getX() + xTileNew * Tile.TILE_SIZE * Tile.SCALE;
-            final int yPosNew = room.getY() + yTileNew * Tile.TILE_SIZE * Tile.SCALE;
+            final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
+            final int yPos = room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
 
-            spike.setPosition(xPosNew, yPosNew);
-        }
+            spike.setPosition(xPos, yPos);
+        } while (physicsService.isColliding(spike.getPhysicsObject()));
+
         return spike;
     }
 }

@@ -29,10 +29,6 @@ public class DamageCollisionListener implements CollisionListener<PhysicsObject,
 
         postprocessDamageable(a, b);
         postprocessDamageable(b, a);
-        final boolean notActive = !collision.getBody1().isActive() || !collision.getBody2().isActive();
-        if (notActive) {
-            return false;
-        }
         return true;
     }
 
@@ -40,12 +36,8 @@ public class DamageCollisionListener implements CollisionListener<PhysicsObject,
     public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
         final Object a = collision.getBody1().getUserData();
         final Object b = collision.getBody2().getUserData();
-        final boolean notActive = !collision.getBody1().isActive() || !collision.getBody2().isActive();
         postprocessDamageable(a, b);
         postprocessDamageable(b, a);
-        if (notActive) {
-            return false;
-        }
         return true;
     }
 
@@ -54,12 +46,8 @@ public class DamageCollisionListener implements CollisionListener<PhysicsObject,
         final Object a = collision.getBody1().getUserData();
         final Object b = collision.getBody2().getUserData();
 
-        final boolean notActive = !collision.getBody1().isActive() || !collision.getBody2().isActive();
         postprocessDamageable(a, b);
         postprocessDamageable(b, a);
-        if (notActive) {
-            return false;
-        }
         return true;
     }
 }

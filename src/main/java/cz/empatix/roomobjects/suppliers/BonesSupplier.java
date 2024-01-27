@@ -1,5 +1,7 @@
 package cz.empatix.roomobjects.suppliers;
 
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.roomobjects.domain.Bones;
 import cz.empatix.rooms.service.Room;
@@ -24,27 +26,24 @@ public class BonesSupplier implements RoomObjectSupplier<Bones>{
         final int cols = tileMap.getTotalCollumns();
         final int rows = tileMap.getTotalRows();
 
-        final int xTile = ThreadLocalRandom.current().nextInt(2, cols - 1);
-        final int yTile = ThreadLocalRandom.current().nextInt(2, rows - 1);
-
-        final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
-        final int yPos = room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
-
         final Bones bones = new Bones();
-        bones.setPosition(xPos, yPos);
-
-        final Rectangle spikeRectangle = new Rectangle(bones.getWidth(), bones.getHeight());
-
         final PhysicsService physicsService = PhysicsService.getInstance();
-        while (physicsService.isColliding(spikeRectangle, new Vector2f(xPos, yPos))) {
-            final int xTileNew = ThreadLocalRandom.current().nextInt(2, tileMap.getWidth() / (Tile.TILE_SIZE * Tile.SCALE) - 1);
-            final int yTileNew = ThreadLocalRandom.current().nextInt(2, tileMap.getHeight() / (Tile.TILE_SIZE * Tile.SCALE) - 1);
 
-            final int xPosNew = room.getX() + xTileNew * Tile.TILE_SIZE * Tile.SCALE;
-            final int yPosNew = room.getY() + yTileNew * Tile.TILE_SIZE * Tile.SCALE;
+        final PhysicsObject testObject = new PhysicsObject();
+        testObject.addFixture(new Rectangle(bones.getWidth(), bones.getHeight()));
 
-            bones.setPosition(xPosNew, yPosNew);
-        }
+        do{
+            final int xTile = ThreadLocalRandom.current().nextInt(2, cols - 1);
+            final int yTile = ThreadLocalRandom.current().nextInt(2, rows - 1);
+
+            final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
+            final int yPos = room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
+
+            testObject.setTranslation(xPos, yPos);
+            bones.setPosition(xPos, yPos);
+
+        } while (physicsService.isColliding(testObject));
+
         return bones;
     }
 }

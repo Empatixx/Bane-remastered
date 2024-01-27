@@ -1,6 +1,7 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -79,4 +80,9 @@ public class Bones implements RoomObject {
     public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }
+
+    public Vector2f getPosition() {
+        return position;
+    }
+
 }

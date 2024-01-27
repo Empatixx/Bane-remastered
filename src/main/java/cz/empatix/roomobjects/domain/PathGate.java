@@ -2,6 +2,7 @@ package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
@@ -30,7 +31,7 @@ public class PathGate implements RoomObject {
         animation.setState(OPEN);
 
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
-        physicsBody.setActive(false);
+        physicsBody.setType(CollisionType.TRAP);
         physicsBody.setUserData(this);
     }
 
@@ -94,9 +95,11 @@ public class PathGate implements RoomObject {
     public void setState(final boolean closed) {
         if (closed) {
             animation.setState(CLOSE);
+            physicsBody.setType(null);
         } else {
             animation.setState(OPEN);
             animation.setCurrentFrame(3);
+            physicsBody.setType(CollisionType.TRAP);
         }
     }
     public void destroy() {

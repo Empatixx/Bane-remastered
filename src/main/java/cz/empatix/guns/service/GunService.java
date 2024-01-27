@@ -27,7 +27,7 @@ public class GunService {
     private final static float HUD_SLOT_SCALE = 1.5f;
     public final static int HUD_SLOT_CENTER_X;
     public final static int HUD_SLOT_CENTER_Y;
-    private static final long ITEM_DROP_FORCE = 30_000;
+    private static final long ITEM_DROP_FORCE = 15_000;
 
     static {
         final TextureAtlas.Entry hudSlotTexture = AssetsService.getTexture("ingame/weaponslot.tga");

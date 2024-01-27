@@ -16,6 +16,9 @@ public class ItemService {
     }
     public void update(final float dt){
         itemDrops.forEach(itemDrop -> itemDrop.update(dt));
+        itemDrops.stream()
+                        .filter(ItemDrop::canRemove)
+                        .forEach(ItemDrop::destroy);
         itemDrops.removeIf(ItemDrop::canRemove);
     }
     public void add(final ItemDrop itemDrop){

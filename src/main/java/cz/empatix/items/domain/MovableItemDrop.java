@@ -2,10 +2,12 @@ package cz.empatix.items.domain;
 
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import org.dyn4j.geometry.Mass;
 import org.joml.Vector2f;
 
 import java.util.Set;
@@ -16,6 +18,8 @@ public class MovableItemDrop implements ItemDrop{
     public MovableItemDrop(final ItemDrop itemDrop){
         this.itemDrop = itemDrop;
         this.physicsBody = PhysicsObjectFactory.createInterpolated(itemDrop.getWidth(), itemDrop.getHeight());
+        this.physicsBody.setMass(new Mass(physicsBody.getMass().getCenter(), 1, 0));
+        this.physicsBody.setType(CollisionType.ITEM);
         this.physicsBody.setUserData(this);
     }
     @Override
@@ -35,7 +39,8 @@ public class MovableItemDrop implements ItemDrop{
 
     @Override
     public void update(float dt) {
-        itemDrop.setPosition(physicsBody.getTranslation().x,physicsBody.getTranslation().y);
+        System.out.println("MovableItemDrop.update:" + physicsBody.getTranslation().x);
+        itemDrop.setPosition(physicsBody.getTranslation().x(), physicsBody.getTranslation().y());
     }
 
     @Override
@@ -66,6 +71,7 @@ public class MovableItemDrop implements ItemDrop{
     @Override
     public void destroy() {
         itemDrop.destroy();
+        physicsBody.destroy();
     }
 
     @Override

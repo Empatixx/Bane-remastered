@@ -4,6 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.newphysics.attributes.DamageSource;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -11,6 +12,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import org.joml.Vector2f;
 
 public class Spike implements RoomObject, DamageSource {
     private final static int SCALE = 4;
@@ -28,7 +30,7 @@ public class Spike implements RoomObject, DamageSource {
                 .build();
         damage = 1;
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
-        physicsBody.setActive(false);
+        physicsBody.setType(CollisionType.TRAP);
         physicsBody.setUserData(this);
     }
     @Override
@@ -90,5 +92,13 @@ public class Spike implements RoomObject, DamageSource {
     @Override
     public DamageSourceType type() {
         return DamageSourceType.ENEMY;
+    }
+
+    public Vector2f getPosition() {
+        return physicsBody.getPhysicsTranslation();
+    }
+
+    public PhysicsObject getPhysicsObject() {
+        return physicsBody;
     }
 }

@@ -33,8 +33,8 @@ public class PhysicsService {
         physicsEngine.clear();
     }
 
-    public boolean isColliding(Shape shape, Vector2f position) {
-        return physicsEngine.isColliding(shape, position);
+    public boolean isColliding(final PhysicsObject object) {
+        return physicsEngine.isColliding(object);
     }
 
     public void remove(final PhysicsObject physicsObject) {

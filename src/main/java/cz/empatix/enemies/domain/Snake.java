@@ -11,7 +11,7 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class Snake implements Enemy {
-    private final static int MOVE_FORCE = 8000000;
+    private final static int MOVE_FORCE = 4_000_000;
     private final static float SCALE = 1.5f;
     private final static int DIMENSION_WIDTH = (int) (64 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (64 * SCALE);

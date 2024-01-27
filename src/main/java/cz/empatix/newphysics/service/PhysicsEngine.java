@@ -3,17 +3,23 @@ package cz.empatix.newphysics.service;
 import cz.empatix.common.GameLoop;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.render.service.Camera;
+import org.dyn4j.collision.Filter;
+import org.dyn4j.collision.Fixture;
+import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.Settings;
-import org.dyn4j.geometry.Rectangle;
-import org.dyn4j.geometry.Shape;
-import org.dyn4j.geometry.Vector2;
+import org.dyn4j.geometry.*;
 import org.dyn4j.world.World;
+import org.dyn4j.world.result.DetectResult;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL30;
+
+import java.util.List;
+import java.util.Objects;
 
 public class PhysicsEngine {
     private final World<PhysicsObject> world;
     private final static boolean DEBUG_RENDER = true;
+
     public PhysicsEngine() {
         final Settings settings = new Settings();
         settings.setStepFrequency(GameLoop.FIXED_DELTA_TIME);
@@ -26,9 +32,9 @@ public class PhysicsEngine {
 
 
         world = new World<>();
-        world.setGravity(0,0);
+        world.setGravity(0, 0);
         world.setSettings(settings);
-
+        world.setBounds(null);
 
         world.addStepListener(new InterpolationStepListener());
         world.addCollisionListener(new DamageCollisionListener());
@@ -42,8 +48,14 @@ public class PhysicsEngine {
 
     public void fixedUpdate(double dt) {
         world.step(1);
+        final List<PhysicsObject> toRemove = world.getBodies()
+                .stream()
+                .filter(PhysicsObject::canRemove)
+                .toList();
+        toRemove.forEach(world::removeBody);
     }
-    public void update(final double dt){
+
+    public void update(final double dt) {
         final float delta = (float) dt;
         for (PhysicsObject body : world.getBodies()) {
             body.update(delta);
@@ -64,7 +76,7 @@ public class PhysicsEngine {
             final Rectangle rectangle = (Rectangle) body.getFixture(0).getShape();
             final Vector2[] vertices = rectangle.getVertices();
             final Vector2 position = body.getTransform().getTranslation().copy().subtract(new Vector2(Camera.getPosition().x, Camera.getPosition().y));
-            final double angle =  body.getTransform().getRotationAngle();
+            final double angle = body.getTransform().getRotationAngle();
             for (Vector2 vertex : vertices) {
                 final Vector2 rotated = vertex.rotate(angle);
                 GL30.glVertex2d(rotated.x + position.x, rotated.y + position.y);
@@ -73,7 +85,17 @@ public class PhysicsEngine {
         });
     }
 
-    public boolean isColliding(final Shape shape, final Vector2f position) {
+    public boolean isColliding(final PhysicsObject object) {
+        for (PhysicsObject body : world.getBodies()) {
+            if (body == object) {
+                continue;
+            }
+            final AABB aabb = body.createAABB();
+            final AABB aabb1 = object.createAABB();
+            if (aabb.overlaps(aabb1)) {
+                return true;
+            }
+        }
         return false;
     }
 

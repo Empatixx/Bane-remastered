@@ -6,22 +6,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class AStarTargetting {
     private final static Logger LOGGER = LoggerFactory.getLogger(AStarTargetting.class);
     private final static int CELL_SIZE = 16;
     private final Queue<PathCell> path = new ArrayDeque<>(15);
-    private final Vector2f position;
+    private final Supplier<Vector2f> positionSupplier;
     private Player target;
     private int lastTargetX;
     private int lastTargetY;
     private final int selfWidth;
     private final int selfHeight;
 
-    public AStarTargetting(final Vector2f position,
+    public AStarTargetting(final Supplier<Vector2f> positionSupplier,
                            final int selfWidth,
                            final int selfHeight){
-        this.position = position;
+        this.positionSupplier = positionSupplier;
         this.selfWidth = selfWidth;
         this.selfHeight = selfHeight;
     }
@@ -37,6 +38,7 @@ public class AStarTargetting {
         if (Math.abs(target.getX() - lastTargetX) <= CELL_SIZE && Math.abs(target.getY() - lastTargetY) <= CELL_SIZE) {
             return;
         }
+        final Vector2f position = positionSupplier.get();
         final int startX = (int) position.x() + selfWidth / 2;
         final int startY = (int) position.y() + selfHeight / 2;
 
@@ -114,6 +116,7 @@ public class AStarTargetting {
             return;
         }
         final PathCell target = path.peek();
+        final Vector2f position = positionSupplier.get();
         final float x = position.x() + selfWidth / 2;
         final float y = position.y() + selfHeight / 2;
         final float targetX = target.x();
@@ -129,6 +132,7 @@ public class AStarTargetting {
     }
 
     public Vector2f getDirectionTarget() {
+        final Vector2f position = positionSupplier.get();
         if (path.isEmpty()) {
             final Vector2f direction = new Vector2f(target.getX() + target.getWidth()/2f - position.x() - selfWidth/2f, target.getY() + target.getHeight()/2f - position.y() - selfHeight/2f);
             if (direction.length() > 0) {
@@ -149,6 +153,7 @@ public class AStarTargetting {
         return direction;
     }
     public boolean isTargetLeftFromEnemy(){
+        final Vector2f position = positionSupplier.get();
         return target.getX() + target.getWidth()/2f < position.x() + selfWidth/2f;
     }
 }

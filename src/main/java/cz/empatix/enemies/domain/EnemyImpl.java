@@ -3,8 +3,11 @@ package cz.empatix.enemies.domain;
 import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.items.service.DroppableState;
-import cz.empatix.newphysics.attributes.*;
-import cz.empatix.newphysics.service.CategoryFilter;
+import cz.empatix.newphysics.attributes.DamageSource;
+import cz.empatix.newphysics.attributes.DamageSourceType;
+import cz.empatix.newphysics.attributes.Damageable;
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -13,7 +16,6 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
-import org.dyn4j.geometry.Rectangle;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 
@@ -35,6 +37,7 @@ public class EnemyImpl implements Damageable, DamageSource {
 
     private long lastHit;
     private final int damage;
+    private final Consumer<Integer> hitCallback;
 
     public EnemyImpl(final int width,
                      final int height,
@@ -51,13 +54,14 @@ public class EnemyImpl implements Damageable, DamageSource {
         this.moveForceSupplier = moveForceSupplier;
         this.damage = damage;
 
-        physicsBody = PhysicsObjectFactory.create(width, height);
-        physicsBody.getFixture(0).setFilter(CategoryFilter.ENEMY);
+        physicsBody = PhysicsObjectFactory.createInterpolated(width, height);
+        physicsBody.setType(CollisionType.ENEMY);
         physicsBody.setUserData(this);
 
         droppableState = new DroppableState(droppableCondition);
-        aStarTargetting = new AStarTargetting(physicsBody.getPhysicsTranslation(), width, height);
+        aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
         vitalityDisplayService = new VitalityDisplayService();
+        this.hitCallback = hitCallback;
     }
 
     private boolean canHit(final DamageSourceType source, final int damage) {
@@ -190,7 +194,7 @@ public class EnemyImpl implements Damageable, DamageSource {
     @Override
     public void hit(DamageSourceType source, int damage) {
         if (canHit(source, damage)) {
-            hit(damage);
+            hitCallback.accept(damage);
         }
     }
 }

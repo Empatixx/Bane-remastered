@@ -24,7 +24,8 @@ public class Chest implements RoomObject, Interactable {
     private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 16 * SCALE;
-    private final static int ITEM_DROP_FORCE = 30_000;
+    private final static int ITEM_DROP_FORCE = 15_000;
+
     private final Animation animation;
     private final PhysicsObject physicsBody;
     private final ItemService itemService;
@@ -128,5 +129,9 @@ public class Chest implements RoomObject, Interactable {
     @Override
     public int getHeight() {
         return DIMENSION_HEIGHT;
+    }
+    @Override
+    public void destroy() {
+        physicsBody.destroy();
     }
 }

@@ -44,7 +44,7 @@ public class BossImpl implements Damageable, DamageSource {
         this.moveForceSupplier = moveForceSupplier;
 
         physicsBody = PhysicsObjectFactory.create(width, height);
-        aStarTargetting = new AStarTargetting(physicsBody.getPhysicsTranslation(), width, height);
+        aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
 
         final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
         healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 450));

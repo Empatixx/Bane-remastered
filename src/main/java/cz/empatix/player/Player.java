@@ -13,8 +13,7 @@ import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
-import cz.empatix.newphysics.attributes.PhysicsObject;
-import cz.empatix.newphysics.service.CategoryFilter;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.particles.service.GazewindService;
@@ -81,7 +80,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
         animation.setState(AnimationState.IDLE);
 
         physicsBody = PhysicsObjectFactory.createInterpolated(DIMENSION_WIDTH, DIMENSION_HEIGHT);
-        physicsBody.getFixture(0).setFilter(CategoryFilter.PLAYER);
+        physicsBody.setType(CollisionType.PLAYER);
         physicsBody.setUserData(this);
 
         interactEntity = new CommonInteractEntity(getWidth(), getHeight(), physicsBody.getPhysicsTranslation());

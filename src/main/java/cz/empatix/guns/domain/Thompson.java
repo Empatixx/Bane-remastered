@@ -87,6 +87,7 @@ public class Thompson extends AbstractGun implements Gun{
     @Override
     public void update(final double dt) {
         bullets.forEach(b -> b.update(dt));
+
         bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
