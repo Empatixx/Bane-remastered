@@ -12,11 +12,18 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class Golem implements Enemy {
-    private final static int MOVE_FORCE = 25_000_000;
+    private final static int MOVE_FORCE = 12_500_000;
     private final static int SCALE = 3;
     private final static int DIMENSION_WIDTH = 100 * SCALE;
     private final static int DIMENSION_HEIGHT = 100 * SCALE;
     private final static int DEFAULT_HEALTH = 130;
+
+    private final static int COLLISION_WIDTH = 50 * SCALE;
+    private final static int COLLISION_HEIGHT = 50 * SCALE;
+    private final static int COLLISION_OFFSET_X = 25 * SCALE;
+    private final static int COLLISION_OFFSET_Y = 25 * SCALE;
+    private final static Vector2f COLLISION_OFFSET = new Vector2f(COLLISION_OFFSET_X, COLLISION_OFFSET_Y);
+
     private final Animation animation;
     private final BossImpl bossImpl;
     public Golem(){
@@ -33,7 +40,7 @@ public class Golem implements Enemy {
                 .texture(AssetsService.getTexture("ingame/golem.png"))
                 .build();
         animation.setState(AnimationState.IDLE);
-        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> MOVE_FORCE);
+        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> MOVE_FORCE, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
     }
 
 

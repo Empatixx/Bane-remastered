@@ -3,10 +3,7 @@ package cz.empatix.enemies.domain;
 import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.items.service.DroppableState;
-import cz.empatix.newphysics.attributes.DamageSource;
-import cz.empatix.newphysics.attributes.DamageSourceType;
-import cz.empatix.newphysics.attributes.Damageable;
-import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.attributes.*;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
@@ -26,7 +23,7 @@ import java.util.function.Supplier;
 public class EnemyImpl implements Damageable, DamageSource {
     private final VitalityDisplayService vitalityDisplayService;
     private final Animation animation;
-    private final PhysicsObject physicsBody;
+    private final InterpolatedPhysicsObject physicsBody;
     private final DroppableState droppableState;
     private final AStarTargetting aStarTargetting;
     private final int width;
@@ -34,11 +31,38 @@ public class EnemyImpl implements Damageable, DamageSource {
     private final int maxHealth;
     private final Supplier<Integer> moveForceSupplier;
     private int health;
-
     private long lastHit;
     private final int damage;
     private final Consumer<Integer> hitCallback;
 
+    public EnemyImpl(final int width,
+                     final int height,
+                     final int maxHealth,
+                     final Animation animation,
+                     final int damage,
+                     final Consumer<Integer> hitCallback,
+                     final Supplier<Boolean> droppableCondition,
+                     final Supplier<Integer> moveForceSupplier,
+                     final int collisionWidth,
+                     final int collisionHeight,
+                     final Vector2f collisionOffset) {
+        this.maxHealth = health = maxHealth;
+        this.width = width;
+        this.height = height;
+        this.animation = animation;
+        this.moveForceSupplier = moveForceSupplier;
+        this.damage = damage;
+
+        physicsBody = PhysicsObjectFactory.createInterpolated(collisionWidth, collisionHeight);
+        physicsBody.setType(CollisionType.ENEMY);
+        //physicsBody.setOffset(collisionOffset.x(), collisionOffset.y());
+        physicsBody.setUserData(this);
+
+        droppableState = new DroppableState(droppableCondition);
+        aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
+        vitalityDisplayService = new VitalityDisplayService();
+        this.hitCallback = hitCallback;
+    }
     public EnemyImpl(final int width,
                      final int height,
                      final int maxHealth,
@@ -128,7 +152,7 @@ public class EnemyImpl implements Damageable, DamageSource {
     }
 
     public void setPosition(float x, float y) {
-        physicsBody.setTranslation(x, y);
+        physicsBody.setPhysicsTranslation(x, y);
     }
 
     public Vector2f getPosition() {
@@ -139,14 +163,14 @@ public class EnemyImpl implements Damageable, DamageSource {
         final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
         if (outline > 0) {
             return new RenderData(
-                    animation.getVertices(physicsBody.getPhysicsTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
                     new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
-                    animation.getVertices(physicsBody.getPhysicsTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
                     new CommonBinding(Camera.getProjection())
             );

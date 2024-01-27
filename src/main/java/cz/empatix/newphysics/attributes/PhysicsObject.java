@@ -6,6 +6,7 @@ import cz.empatix.newphysics.service.PhysicsService;
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
 public class PhysicsObject extends Body {
     private final static Runnable NOOP = () -> {
@@ -13,6 +14,7 @@ public class PhysicsObject extends Body {
     private Runnable onCollision = NOOP;
     private CollisionType collisionType;
     private boolean remove;
+    protected final Vector2i offset = new Vector2i();
 
     public void onCollision(final Runnable onCollision) {
         this.onCollision = onCollision;
@@ -27,7 +29,7 @@ public class PhysicsObject extends Body {
     }
 
     public Vector2f getPhysicsTranslation() {
-        return new Vector2f((float) getTransform().getTranslationX(), (float) getTransform().getTranslationY());
+        return new Vector2f((float) getTransform().getTranslationX() , (float) getTransform().getTranslationY());
     }
 
     public void applyForce(final float x, final float y) {
@@ -65,10 +67,10 @@ public class PhysicsObject extends Body {
     public void setType(final CollisionType collisionType) {
         this.collisionType = collisionType;
     }
-    public void destroy(){
+    public void destroy() {
         remove = true;
     }
-    public boolean canRemove(){
+    public boolean canRemove() {
         return remove;
     }
 }

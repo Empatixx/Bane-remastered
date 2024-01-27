@@ -23,7 +23,7 @@ public class BossImpl implements Damageable, DamageSource {
     private final AStarTargetting aStarTargetting;
     private final StatusBar healthBar;
     private final Animation animation;
-    private final PhysicsObject physicsBody;
+    private final InterpolatedPhysicsObject physicsBody;
     private final int width;
     private final int height;
     private final int maxHealth;
@@ -49,6 +49,35 @@ public class BossImpl implements Damageable, DamageSource {
 
 
         physicsBody = PhysicsObjectFactory.createInterpolated(width, height);
+        physicsBody.setType(CollisionType.ENEMY);
+        physicsBody.setUserData(this);
+
+        aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
+
+        final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
+        healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 450));
+    }
+    public BossImpl(final int width,
+                    final int height,
+                    final int maxHealth,
+                    final Animation animation,
+                    final int damage,
+                    final Consumer<Integer> hitCallback,
+                    final Supplier<Integer> moveForceSupplier,
+                    final int collisionWidth,
+                    final int collisionHeight,
+                    final Vector2f collisionOffset) {
+        this.maxHealth = health = maxHealth;
+        this.width = width;
+        this.height = height;
+        this.animation = animation;
+        this.moveForceSupplier = moveForceSupplier;
+        this.hitCallback = hitCallback;
+        this.damage = damage;
+
+
+        physicsBody = PhysicsObjectFactory.createInterpolated(collisionWidth, collisionHeight);
+        //physicsBody.setOffset(collisionOffset.x(), collisionOffset.y());
         physicsBody.setType(CollisionType.ENEMY);
         physicsBody.setUserData(this);
 
@@ -118,7 +147,7 @@ public class BossImpl implements Damageable, DamageSource {
         return height;
     }
 
-    public void setPosition(float x, float y) {
+    public void setPosition(final float x, final float y) {
         physicsBody.setPhysicsTranslation(x, y);
     }
 
@@ -131,7 +160,7 @@ public class BossImpl implements Damageable, DamageSource {
 
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getPhysicsTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
@@ -166,5 +195,8 @@ public class BossImpl implements Damageable, DamageSource {
         if (canHit(source, damage)) {
             hitCallback.accept(damage);
         }
+    }
+    public void setOffset(final float x, final float y) {
+        //physicsBody.setOffset(x, y);
     }
 }

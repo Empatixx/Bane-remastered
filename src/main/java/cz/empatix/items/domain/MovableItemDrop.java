@@ -39,7 +39,6 @@ public class MovableItemDrop implements ItemDrop{
 
     @Override
     public void update(float dt) {
-        System.out.println("MovableItemDrop.update:" + physicsBody.getTranslation().x);
         itemDrop.setPosition(physicsBody.getTranslation().x(), physicsBody.getTranslation().y());
     }
 
