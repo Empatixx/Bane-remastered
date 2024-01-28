@@ -26,6 +26,7 @@ public class Dash implements Skill {
         cooldown = new Timer(DASH_COOLDOWN);
         duration = new Timer(DASH_DURATION);
     }
+    @Override
     public void activate() {
         if (cooldown.isFinished()) {
             forceConsumer.accept(ADDITIONAL_FORCE);
@@ -37,6 +38,7 @@ public class Dash implements Skill {
         }
     }
 
+    @Override
     public void update(final float dt) {
         if(duration.isFinished() && active) {
             forceConsumer.accept(-ADDITIONAL_FORCE);

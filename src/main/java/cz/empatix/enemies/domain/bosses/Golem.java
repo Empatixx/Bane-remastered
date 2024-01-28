@@ -2,12 +2,15 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.enemies.skills.Healing;
+import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
 import java.util.List;
 
@@ -16,19 +19,19 @@ public class Golem implements Enemy {
     private final static int SCALE = 3;
     private final static int DIMENSION_WIDTH = 100 * SCALE;
     private final static int DIMENSION_HEIGHT = 100 * SCALE;
-    private final static int DEFAULT_HEALTH = 130;
-
+    private final static int DEFAULT_HEALTH = 100;
     private final static int COLLISION_WIDTH = 50 * SCALE;
     private final static int COLLISION_HEIGHT = 50 * SCALE;
     private final static int COLLISION_OFFSET_X = 25 * SCALE;
     private final static int COLLISION_OFFSET_Y = 25 * SCALE;
-    private final static Vector2f COLLISION_OFFSET = new Vector2f(COLLISION_OFFSET_X, COLLISION_OFFSET_Y);
-
+    private final static Vector2i COLLISION_OFFSET = new Vector2i(COLLISION_OFFSET_X, COLLISION_OFFSET_Y);
     private final Animation animation;
     private final BossImpl bossImpl;
-    public Golem(){
+    private final Healing healing;
+
+    public Golem() {
         animation = Animation.builder()
-                .setTotal(8,14)
+                .setTotal(8, 14)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .addState(AnimationState.SPELL0, 1, 8, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
                 .addState(AnimationState.SPELL1, 2, 9, DIMENSION_WIDTH, DIMENSION_HEIGHT, 65)
@@ -41,25 +44,37 @@ public class Golem implements Enemy {
                 .build();
         animation.setState(AnimationState.IDLE);
         bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> MOVE_FORCE, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
+        healing = new Healing(2, this::heal);
     }
 
 
     @Override
     public void update(double dt) {
-        animation.update();
         bossImpl.update(dt);
+        if (animation.getCurrentState() == AnimationState.SPELL2) {
+            if (!animation.isLastFrame()){
+                animation.update();
+            } else {
+                final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
+                physicsObject.setVelocity(0,0);
+                //todo; bounces bullet
+            }
+        } else {
+            animation.update();
+        }
     }
 
     @Override
     public void hit(final int damage) {
-        if(isDead()){
+        if (isDead()) {
             return;
         }
         bossImpl.hit(damage);
-        if(isDead()){
+        if (isDead()) {
             onDeath();
         }
     }
+
     private void onDeath() {
         animation.setState(AnimationState.DEATH);
         bossImpl.onDeath();
@@ -67,7 +82,21 @@ public class Golem implements Enemy {
 
     @Override
     public void fixedUpdate(double dt) {
+        if(isDead()){
+            return;
+        }
         bossImpl.fixedUpdate(dt);
+        healing.activate();
+        healing.update((float) dt);
+        if (healing.isActive()) {
+            if (animation.getCurrentState() != AnimationState.SPELL2) {
+                animation.setState(AnimationState.SPELL2);
+            }
+        } else {
+            animation.setState(AnimationState.IDLE);
+
+        }
+
     }
 
 
@@ -105,6 +134,7 @@ public class Golem implements Enemy {
     public RenderData renderData() {
         return bossImpl.renderData();
     }
+
     @Override
     public List<Renderable> getSubRenderables() {
         return bossImpl.getSubRenderables();
@@ -114,6 +144,7 @@ public class Golem implements Enemy {
     public boolean canRender() {
         return bossImpl.canRender();
     }
+
     @Override
     public float getX() {
         return bossImpl.getX();

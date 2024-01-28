@@ -39,7 +39,6 @@ public class Chest implements RoomObject, Interactable {
                 .addState(AnimationState.OPEN, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .texture(AssetsService.getTexture("ingame/chest.tga"))
                 .build();
-
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH, DIMENSION_HEIGHT);
         InteractionService.getInstance().addInteractable(this);
     }

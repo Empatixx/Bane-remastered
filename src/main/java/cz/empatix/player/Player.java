@@ -41,10 +41,10 @@ public class Player implements Drawable, InteractEntity, Damageable {
     private final static int DEFAULT_MAX_ARMOR = 5;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 38 * SCALE;
-    private final static int MOVE_FORCE = 3000000;
+    private final static int MOVE_FORCE = 3_000_000;
     private final static float LOW_HP_THRESHOLD = 0.3f;
     private final static int GAZE_OFFSET = 16;
-    private final static int GAZE_SPEED_PRELIMIT = 400;
+    private final static int GAZE_SPEED_PRELIMIT = 350;
     private final static int INVULNERABLE_TIME = 1000;
     private final StatusBar healthBar;
     private final StatusBar armorBar;

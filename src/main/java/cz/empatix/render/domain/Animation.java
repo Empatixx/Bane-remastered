@@ -66,6 +66,9 @@ public class Animation {
     public int getCurrentTextureIndex() {
         return currentTextureIndex;
     }
+    public boolean isLastFrame(){
+        return currentTextureIndex == animationParts.get(currentState).numSprites() - 1;
+    }
     public int getCurrentStateNumSprites() {
         return animationParts.get(currentState).numSprites();
     }
