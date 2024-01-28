@@ -88,4 +88,10 @@ public class GunSlots {
     public boolean containsGun(final Gun gun){
         return slots.contains(gun);
     }
+
+    public boolean hasNotFullAmmo() {
+        return slots
+                .stream()
+                .anyMatch(gun -> gun != null && !gun.hasFullAmmo());
+    }
 }

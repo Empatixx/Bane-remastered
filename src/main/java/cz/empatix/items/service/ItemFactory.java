@@ -29,7 +29,7 @@ public class ItemFactory {
         );
         final List<Supplier<ItemDrop>> rareItemsSuppliers = List.of(
                 () -> new WeaponDrop(gunService.getUnusedRandomGun(), gunService::addGun),
-                () -> new AmmoItem(gunService::hasNotFullAmmo, gunService::addAmmo)
+                () -> new AmmoBoxItem(gunService::hasNotFullAmmo, gunService::addAmmo)
         );
         itemDropSuppliers = new EnumMap<>(ItemRarity.class);
         itemDropSuppliers.put(ItemRarity.COMMON, commonItemsSuppliers);

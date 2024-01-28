@@ -1,5 +1,7 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -50,12 +52,12 @@ public class BossRoom implements Room {
             roomLockService.setState(true);
         }
         enemyService.setTarget(p);
-
+        AudioService.getInstance().play(Soundtrack.BOSS_ROOM);
     }
 
     @Override
     public void leaveEvent(final Player p) {
-
+        AudioService.getInstance().play(Soundtrack.BOSS_ROOM);
     }
 
     @Override

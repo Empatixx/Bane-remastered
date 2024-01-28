@@ -162,9 +162,15 @@ public class GunService {
     public boolean hasNotFullAmmo(final GunType gunType){
         return slots.hasNotFullAmmo(gunType);
     }
+    public boolean hasNotFullAmmo(){
+        return slots.hasNotFullAmmo();
+    }
 
     public void addAmmo(final GunType gunType, final float percent) {
         slots.addAmmo(gunType, percent);
+    }
+    public void addAmmo(final float percent){
+        List.of(GunType.values()).forEach(gunType -> slots.addAmmo(gunType, percent));
     }
 
     public void tryDropCurrentGun(){

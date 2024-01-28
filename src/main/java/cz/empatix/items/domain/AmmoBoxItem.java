@@ -17,9 +17,11 @@ import org.joml.Vector2f;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-public class AmmoItem implements ItemDrop {
+public class AmmoBoxItem implements ItemDrop {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static float SCALE = 1.5f;
@@ -27,16 +29,14 @@ public class AmmoItem implements ItemDrop {
     private final static int DIMENSION_HEIGHT = (int) (32 * SCALE);
     private final CommonInteractable interactable;
     private final ItemDespawnService itemDespawnService;
-    private final GunType type;
     private final Animation animation;
     private final Vector2f position;
     private final float percentAmount;
     private boolean pickedUp = false;
 
-    public AmmoItem(final Function<GunType, Boolean> canPickUp,
-                    final BiConsumer<GunType, Float> pickUp) {
-        this.type = GunType.values()[RANDOM.nextInt(GunType.values().length)];
-        this.percentAmount = RANDOM.nextFloat(0, 0.05f);
+    public AmmoBoxItem(final Supplier<Boolean> canPickUp,
+                       final Consumer<Float> pickUp) {
+        this.percentAmount = RANDOM.nextFloat(0, 0.5f);
         this.animation = Animation.builder()
                 .setTotal(1, 1)
                 .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
@@ -45,10 +45,10 @@ public class AmmoItem implements ItemDrop {
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
         interactable = new CommonInteractable(pressedKeys -> {
-            pickUp.accept(type, percentAmount);
+            pickUp.accept(percentAmount);
             pickedUp = true;
             AUDIO_SERVICE.play(SoundEffect.PICKUP);
-        }, () -> !pickedUp && canPickUp.apply(type), this::canRemove, position, getHeight(), getWidth());
+        }, () -> !pickedUp && canPickUp.get(), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
     }
 
@@ -74,7 +74,7 @@ public class AmmoItem implements ItemDrop {
 
     @Override
     public void interact(Set<Integer> keys) {
-
+        interactable.interact(keys);
     }
 
     @Override
