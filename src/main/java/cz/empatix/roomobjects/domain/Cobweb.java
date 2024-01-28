@@ -18,15 +18,24 @@ public class Cobweb implements RoomObject {
     private final Animation animation;
     private final Vector2f position;
 
-    public Cobweb() {
+    public Cobweb(){
+        this(true);
+    }
+    public Cobweb(final boolean right) {
         animation = Animation.builder()
                 .setTotal(2, 1)
                 .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(AnimationState.TYPE2, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1, true)
+                .addState(AnimationState.TYPE3, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1, true)
                 .texture(AssetsService.getTexture("ingame/cobweb.tga"))
                 .scale(SCALE)
                 .build();
-        animation.setState(ThreadLocalRandom.current().nextInt(0, 2) == 0 ? AnimationState.TYPE0 : AnimationState.TYPE1);
+        if (right) {
+            animation.setState(ThreadLocalRandom.current().nextInt(0, 2) == 0 ? AnimationState.TYPE0 : AnimationState.TYPE2);
+        } else {
+            animation.setState(ThreadLocalRandom.current().nextInt(0, 2) == 0 ? AnimationState.TYPE1 : AnimationState.TYPE3);
+        }
         position = new Vector2f();
     }
 

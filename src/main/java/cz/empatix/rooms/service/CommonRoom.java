@@ -7,16 +7,10 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.AnimationState;
-import cz.empatix.roomobjects.domain.Bones;
-import cz.empatix.roomobjects.domain.Cobweb;
-import cz.empatix.roomobjects.domain.Spike;
-import cz.empatix.roomobjects.domain.Torch;
+import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
-import cz.empatix.roomobjects.suppliers.BonesSupplier;
-import cz.empatix.roomobjects.suppliers.CobwebSupplier;
-import cz.empatix.roomobjects.suppliers.SpikeSupplier;
-import cz.empatix.roomobjects.suppliers.TorchSupplier;
+import cz.empatix.roomobjects.suppliers.*;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.ProceduralTileMap;
@@ -33,6 +27,8 @@ public class CommonRoom implements Room {
     private static final int MAX_TORCHES = 2;
     private static final int MAX_BONES = 2;
     private static final int MAX_COBWEBS = 2;
+    private static final int MAX_BANNERS = 2;
+    private static final int MAX_BARRELS = 2;
     private final EnemyService enemyService;
     private final RoomObjectService roomObjectService;
     private final ItemService itemService;
@@ -75,6 +71,8 @@ public class CommonRoom implements Room {
         final TorchSupplier torchSupplier = new TorchSupplier(this, tileMap);
         final BonesSupplier bonesSupplier = new BonesSupplier(this, tileMap);
         final CobwebSupplier cobwebSupplier = new CobwebSupplier(this, tileMap);
+        final BannerSupplier bannerSupplier = new BannerSupplier(this, tileMap);
+        final BarrelSupplier barrelSupplier = new BarrelSupplier(this, tileMap);
 
         final List<Spike> spikes = Stream.generate(spikeSupplier::supply)
                 .limit(ThreadLocalRandom.current().nextInt(1, MAX_SPIKES))
@@ -88,10 +86,18 @@ public class CommonRoom implements Room {
         final List<Cobweb> cobwebs = Stream.generate(cobwebSupplier::supply)
                 .limit(MAX_COBWEBS)
                 .toList();
+        final List<Banner> banners = Stream.generate(bannerSupplier::supply)
+                .limit(MAX_BANNERS)
+                .toList();
+        final List<Barrel> barrels = Stream.generate(barrelSupplier::supply)
+                .limit(MAX_BARRELS)
+                .toList();
         roomObjectService.addAll(spikes);
         roomObjectService.addAll(torches);
         roomObjectService.addAll(bones);
         roomObjectService.addAll(cobwebs);
+        roomObjectService.addAll(banners);
+        roomObjectService.addAll(barrels);
     }
 
     @Override
@@ -120,12 +126,12 @@ public class CommonRoom implements Room {
     @Override
     public List<Renderable> toRender() {
         final Renderable tiles = (DrawableBatch) tileMap::toRender;
-        final Renderable roomObjects = (DrawableBatch) roomObjectService::toRender;
         final Renderable roomLocker = (DrawableBatch) this.roomLockService::toRender;
+        final List<Renderable> roomObjects = List.copyOf(roomObjectService.toRender());
 
         final List<Renderable> renderables = new ArrayList<>(enemyService.toRender());
         renderables.add(tiles);
-        renderables.add(roomObjects);
+        renderables.addAll(roomObjects);
         renderables.add(roomLocker);
         return renderables;
     }

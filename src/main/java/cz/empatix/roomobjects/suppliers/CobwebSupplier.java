@@ -23,8 +23,8 @@ public class CobwebSupplier implements RoomObjectSupplier<Cobweb>{
             final int cols = tileMap.getTotalCollumns();
             final int rows = tileMap.getTotalRows();
 
-            final int xTile = ThreadLocalRandom.current().nextInt(0, cols - 1);
-            final int yTile = ThreadLocalRandom.current().nextInt(0, rows - 1);
+            final int xTile = ThreadLocalRandom.current().nextInt(1, cols - 1);
+            final int yTile = ThreadLocalRandom.current().nextInt(1, rows - 1);
 
             if (!tileMap.isWall(xTile, yTile)) {
                 if (xTile + 1 < cols && tileMap.isWall(xTile + 1, yTile)) {
@@ -32,20 +32,17 @@ public class CobwebSupplier implements RoomObjectSupplier<Cobweb>{
                     final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
                     final int yPos =  room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
 
-                    final Cobweb cobweb = new Cobweb();
+                    final Cobweb cobweb = new Cobweb(false);
                     cobweb.setPosition(xPos, yPos);
-                    cobweb.setState(AnimationState.TYPE1);
                     return cobweb;
 
                 } else if (xTile - 1 >= 0 && tileMap.isWall(xTile - 1, yTile)) {
                     final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
                     final int yPos =  room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
 
-                    final Cobweb cobweb = new Cobweb();
+                    final Cobweb cobweb = new Cobweb(true);
                     cobweb.setPosition(xPos, yPos);
-                    cobweb.setState(AnimationState.TYPE0);
                     return cobweb;
-
                 }
             }
         }

@@ -28,16 +28,4 @@ public record OutlineBinding(
         shader.setUniform2f("uTexEndPos", texEndPos);
         return shader;
     }
-    @Override
-    public int hashCode() {
-        return projection.hashCode() + texSize.hashCode() + texStartPos.hashCode() + texEndPos.hashCode();
-    }
-    @Override
-    public boolean equals(Object obj) {
-        if(this == obj) return true;
-        if(obj instanceof final OutlineBinding other){
-            return other.projection.equals(projection) && other.texSize.equals(texSize) && other.texStartPos.equals(texStartPos) && other.texEndPos.equals(texEndPos);
-        }
-        return false;
-    }
 }

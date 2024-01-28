@@ -12,6 +12,7 @@ import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapLoaderService;
+import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -143,5 +144,9 @@ public class Ladder implements RoomObject, Interactable {
     @Override
     public int getHeight() {
         return DIMENSION_HEIGHT;
+    }
+    @Override
+    public void destroy() {
+        InteractionService.getInstance().removeInteractable(this);
     }
 }

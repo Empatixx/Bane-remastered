@@ -27,8 +27,8 @@ public class SpikeSupplier implements RoomObjectSupplier<Spike> {
         final Spike spike = new Spike();
         final PhysicsService physicsService = PhysicsService.getInstance();
         do{
-            final int xTile = ThreadLocalRandom.current().nextInt(2, cols - 1);
-            final int yTile = ThreadLocalRandom.current().nextInt(2, rows - 1);
+            final int xTile = ThreadLocalRandom.current().nextInt(2, cols - 2);
+            final int yTile = ThreadLocalRandom.current().nextInt(2, rows - 2);
 
             final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
             final int yPos = room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;

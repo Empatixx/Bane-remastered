@@ -21,10 +21,9 @@ public class Banner implements RoomObject{
     private final Vector2f position;
     public Banner(){
         animation = Animation.builder()
-                .setTotal(2, 4)
+                .setTotal(1, 4)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 150)
-                .addState(AnimationState.DEATH, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 150)
-                .texture(AssetsService.getTexture("ingame/torch.tga"))
+                .texture(AssetsService.getTexture("ingame/banner.tga"))
                 .scale(SCALE)
                 .build();
         animation.setState(AnimationState.IDLE);
@@ -62,7 +61,7 @@ public class Banner implements RoomObject{
 
     @Override
     public void update(double dt) {
-
+        animation.update();
     }
 
     @Override
@@ -74,5 +73,9 @@ public class Banner implements RoomObject{
     }
     public int getHeight(){
         return DIMENSION_HEIGHT * SCALE;
+    }
+
+    public void setPosition(final float x, final float y) {
+        position.set(x, y);
     }
 }

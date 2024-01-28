@@ -22,8 +22,8 @@ public class TorchSupplier implements RoomObjectSupplier<Torch>{
             final int cols = tileMap.getTotalCollumns();
             final int rows = tileMap.getTotalRows();
 
-            final int xTile = ThreadLocalRandom.current().nextInt(0, cols - 1);
-            final int yTile = ThreadLocalRandom.current().nextInt(0, rows - 1);
+            final int xTile = ThreadLocalRandom.current().nextInt(1, cols - 1);
+            final int yTile = ThreadLocalRandom.current().nextInt(1, rows - 1);
 
             if (!tileMap.isWall(xTile, yTile)) {
                 if (xTile + 1 < cols && tileMap.isWall(xTile + 1, yTile)) {
