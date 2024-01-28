@@ -1,5 +1,6 @@
 package cz.empatix.gamestate.service;
 
+import cz.empatix.artefacts.service.ArtefactsService;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
@@ -39,6 +40,7 @@ public class InGameState extends GameState {
     private MapService mapService;
     private MapLoaderService mapLoaderService;
     private GunService gunService;
+    private ArtefactsService artefactsService;
     private ItemService itemService;
     private Player player;
     private DeathService deathService;
@@ -58,6 +60,7 @@ public class InGameState extends GameState {
         deathService = new DeathService(statisticsService);
         itemService = new ItemService(statisticsService);
         gunService = new GunService(itemService, statisticsService);
+        artefactsService = new ArtefactsService(player);
 
         itemService.setFactory(new ItemFactory(gunService, player));
 
@@ -105,6 +108,7 @@ public class InGameState extends GameState {
         mapService.update(dt, player);
         minimapService.update(dt);
         gunService.update(dt);
+        artefactsService.update(dt);
         itemService.update((float)dt);
         pauseService.update(dt, mouseX, mouseY);
     }
@@ -120,7 +124,7 @@ public class InGameState extends GameState {
     public List<Renderable> toRender(final double dt) {
         return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
                         minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
-                        mapLoaderService.toRender())
+                        mapLoaderService.toRender(), artefactsService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }
@@ -144,6 +148,7 @@ public class InGameState extends GameState {
             return;
         }
         gunService.keyPressed(key);
+        artefactsService.keyPressed(key);
         player.keyPressed(key);
     }
 

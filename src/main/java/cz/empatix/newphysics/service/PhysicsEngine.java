@@ -18,7 +18,7 @@ import java.util.Objects;
 
 public class PhysicsEngine {
     private final World<PhysicsObject> world;
-    private final static boolean DEBUG_RENDER = true;
+    private final static boolean DEBUG_RENDER = false;
 
     public PhysicsEngine() {
         final Settings settings = new Settings();

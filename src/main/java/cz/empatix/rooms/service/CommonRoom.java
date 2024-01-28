@@ -73,6 +73,7 @@ public class CommonRoom implements Room {
         final CobwebSupplier cobwebSupplier = new CobwebSupplier(this, tileMap);
         final BannerSupplier bannerSupplier = new BannerSupplier(this, tileMap);
         final BarrelSupplier barrelSupplier = new BarrelSupplier(this, tileMap);
+        final FlamethrowerSupplier flamethrowerSupplier = new FlamethrowerSupplier(this, tileMap);
 
         final List<Spike> spikes = Stream.generate(spikeSupplier::supply)
                 .limit(ThreadLocalRandom.current().nextInt(1, MAX_SPIKES))
@@ -92,12 +93,17 @@ public class CommonRoom implements Room {
         final List<Barrel> barrels = Stream.generate(barrelSupplier::supply)
                 .limit(MAX_BARRELS)
                 .toList();
+        final List<Flamethrower> flamethrowers = Stream.generate(flamethrowerSupplier::supply)
+                .limit(1)
+                .filter(Objects::nonNull)
+                .toList();
         roomObjectService.addAll(spikes);
         roomObjectService.addAll(torches);
         roomObjectService.addAll(bones);
         roomObjectService.addAll(cobwebs);
         roomObjectService.addAll(banners);
         roomObjectService.addAll(barrels);
+        roomObjectService.addAll(flamethrowers);
     }
 
     @Override

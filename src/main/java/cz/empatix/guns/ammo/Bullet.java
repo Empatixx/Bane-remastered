@@ -131,4 +131,7 @@ public class Bullet implements Drawable, DamageSource {
     public DamageSourceType type() {
         return DamageSourceType.PLAYER;
     }
+
+    public void destroy() {
+    }
 }
