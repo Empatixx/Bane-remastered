@@ -16,9 +16,9 @@ public class RingOfDeath implements Artefact{
 
     @Override
     public void activate() {
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 50; i++) {
             final Bullet bullet = new Bullet(2);
-            final float inaccuracy = 0.1f * i;
+            final float inaccuracy = 0.15f * i;
             bullet.setPosition(player.getPosition().x(), player.getPosition().y());
             bullet.setDirection(player.getPosition().x(), player.getPosition().y(),0,0, inaccuracy);
             bullets.add(bullet);

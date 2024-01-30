@@ -1,6 +1,6 @@
 #version 330 core
 #define AMBIENT_LIGHT 0.6
-#define MAX_LIGHTS 100
+#define MAX_LIGHTS 254
 #define NOISE_INTENSITY 0.15
 
 uniform sampler2D texSampler; // framebuffer texture

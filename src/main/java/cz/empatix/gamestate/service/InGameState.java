@@ -118,6 +118,7 @@ public class InGameState extends GameState {
         player.fixedUpdate(dt);
         mapService.fixedUpdate(dt);
         gunService.fixedUpdate(player.getX() + player.getWidth()/2f, player.getY() + player.getHeight()/2f, Camera.getX() + mouseX, Camera.getY() + mouseY, dt);
+        artefactsService.fixedUpdate(dt);
     }
 
     @Override
