@@ -179,14 +179,7 @@ public class EnemyImpl implements Damageable, DamageSource {
     }
 
     public boolean canRender() {
-        final Vector2f cameraPos = Camera.getPosition();
-        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
-        final Vector2f position = new Vector2f(getX(), getY());
-
-        return position.x() + getWidth() > cameraPos.x()
-                && position.x() < cameraPos.x() + cameraDimensions.x()
-                && position.y() + getHeight() > cameraPos.y()
-                && position.y() < cameraPos.y() + cameraDimensions.y();
+        return Camera.isInProjection(getPosition(), getWidth(), getHeight());
     }
 
     public void setTarget(final Player player) {

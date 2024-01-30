@@ -167,7 +167,7 @@ public class ShopItem implements ItemDrop {
 
     @Override
     public boolean canRender() {
-        return true;
+        return drop.canRender();
     }
 
     @Override

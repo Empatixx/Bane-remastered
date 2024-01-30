@@ -8,6 +8,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -98,7 +99,7 @@ public class Ghost implements Enemy{
 
     @Override
     public boolean canRemove() {
-        return isDead() && animation.hasPlayedOnce();
+        return isDead() && animation.hasPlayedOnce() && Camera.isInProjection(getPosition(), getWidth(), getHeight());
     }
 
     @Override
@@ -112,7 +113,7 @@ public class Ghost implements Enemy{
     }
     @Override
     public boolean canRender() {
-        return !canRemove();
+        return !canRemove() && Camera.isInProjection(getPosition(), getWidth(), getHeight());
     }
     @Override
     public float getX() {

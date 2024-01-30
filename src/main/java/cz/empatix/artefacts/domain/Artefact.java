@@ -9,4 +9,5 @@ public interface Artefact {
     void update(final double dt);
     void fixedUpdate(final double dt);
     List<Renderable> getRenderables();
+    List<Renderable> hudToRender();
 }

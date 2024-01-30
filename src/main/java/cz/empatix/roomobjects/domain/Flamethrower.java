@@ -54,7 +54,7 @@ public class Flamethrower implements RoomObject, DamageSource {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(physicsBody.getPhysicsTranslation(), getWidth(), getHeight());
     }
 
     @Override

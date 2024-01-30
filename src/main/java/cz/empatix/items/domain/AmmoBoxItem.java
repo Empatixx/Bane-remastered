@@ -122,7 +122,10 @@ public class AmmoBoxItem implements ItemDrop {
 
     @Override
     public boolean canRender() {
-        if(itemDespawnService.canBlink()){
+        if (!Camera.isInProjection(position, DIMENSION_WIDTH, DIMENSION_HEIGHT)) {
+            return false;
+        }
+        if (itemDespawnService.canBlink()) {
             return System.currentTimeMillis() / 100 % 2 == 0;
         }
         return true;

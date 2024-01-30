@@ -56,7 +56,7 @@ public class Bones implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(position,DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
 
     @Override

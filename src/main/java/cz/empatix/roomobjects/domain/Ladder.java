@@ -89,7 +89,7 @@ public class Ladder implements RoomObject, Interactable {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(position, getWidth(), getHeight());
     }
 
     @Override

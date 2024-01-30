@@ -64,7 +64,7 @@ public class Cobweb implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(position, getWidth(), getHeight());
     }
 
     @Override

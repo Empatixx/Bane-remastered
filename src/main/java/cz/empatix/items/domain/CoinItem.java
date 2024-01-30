@@ -109,6 +109,9 @@ public class CoinItem implements ItemDrop {
 
     @Override
     public boolean canRender() {
+        if (!Camera.isInProjection(position, DIMENSION_WIDTH, DIMENSION_HEIGHT)) {
+            return false;
+        }
         if(itemDespawnService.canBlink()){
             return System.currentTimeMillis() / 100 % 2 == 0;
         }

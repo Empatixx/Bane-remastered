@@ -93,14 +93,7 @@ public class Bullet implements Drawable, DamageSource {
 
     @Override
     public boolean canRender() {
-        final Vector2f cameraPos = Camera.getPosition();
-        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
-        final Vector2f position = physicsBody.getPhysicsTranslation();
-
-        return position.x() + BULLET_WIDTH > cameraPos.x()
-                && position.x() < cameraPos.x() + cameraDimensions.x()
-                && position.y() + BULLET_HEIGHT > cameraPos.y()
-                && position.y() < cameraPos.y() + cameraDimensions.y();
+        return Camera.isInProjection(physicsBody.getTranslation(), BULLET_WIDTH * SCALE, BULLET_HEIGHT * SCALE);
     }
 
     public void setPosition(final float x, final float y) {

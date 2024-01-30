@@ -50,13 +50,8 @@ public class ShopTable implements RoomObject {
 
     @Override
     public boolean canRender() {
-        final Vector2f cameraPos = Camera.getPosition();
-        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
+        return Camera.isInProjection(position, (int) (TABLE_WIDTH * SCALE), (int) (TABLE_HEIGHT * SCALE));
 
-        return position.x() + TABLE_WIDTH * SCALE > cameraPos.x()
-                && position.x() < cameraPos.x() + cameraDimensions.x()
-                && position.y() + TABLE_HEIGHT * SCALE > cameraPos.y()
-                && position.y() < cameraPos.y() + cameraDimensions.y();
     }
 
     @Override

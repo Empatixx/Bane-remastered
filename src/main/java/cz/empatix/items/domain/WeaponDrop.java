@@ -109,6 +109,6 @@ public class WeaponDrop implements ItemDrop {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(position, getWidth(), getHeight());
     }
 }

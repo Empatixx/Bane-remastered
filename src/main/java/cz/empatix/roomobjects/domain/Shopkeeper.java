@@ -80,13 +80,7 @@ public class Shopkeeper implements RoomObject {
 
     @Override
     public boolean canRender() {
-        final Vector2f cameraPos = Camera.getPosition();
-        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
-
-        return position.x() + SHOPKEEPER_WIDTH * SCALE > cameraPos.x()
-                && position.x() < cameraPos.x() + cameraDimensions.x()
-                && position.y() + SHOPKEEPER_HEIGHT * SCALE > cameraPos.y()
-                && position.y() < cameraPos.y() + cameraDimensions.y();
+        return Camera.isInProjection(position, SHOPKEEPER_WIDTH * SCALE, SHOPKEEPER_HEIGHT * SCALE);
     }
 
     @Override

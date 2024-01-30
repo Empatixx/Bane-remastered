@@ -138,6 +138,6 @@ public class MinimapRoom implements Drawable {
 
     @Override
     public boolean canRender() {
-        return true;
+        return calculateAlpha() > 0;
     }
 }

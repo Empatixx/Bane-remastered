@@ -94,7 +94,6 @@ public class Golem implements Enemy {
             }
         } else {
             animation.setState(AnimationState.IDLE);
-
         }
 
     }

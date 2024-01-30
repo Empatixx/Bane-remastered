@@ -133,4 +133,9 @@ public class Camera {
     public static void setMaxDimensions(final int x, final int y) {
         maxDimensions.set(x - WindowHandler.TARGET_WIDTH, y - WindowHandler.TARGET_HEIGHT);
     }
+
+    public static boolean isInProjection(final Vector2f position, final int width, final int height) {
+        return position.x() + width > getX() && position.x() < getX() + getTargetWidth() &&
+                position.y() + height > getY() && position.y() < getY() + getTargetHeight();
+    }
 }

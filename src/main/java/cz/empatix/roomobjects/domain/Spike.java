@@ -54,7 +54,7 @@ public class Spike implements RoomObject, DamageSource {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
 
     @Override

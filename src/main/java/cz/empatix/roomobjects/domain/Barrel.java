@@ -78,12 +78,7 @@ public class Barrel implements RoomObject, Damageable {
 
     @Override
     public boolean canRender() {
-        final Vector2f cameraPos = Camera.getPosition();
-        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
-        final Vector2f position = physicsBody.getTranslation();
-
-        return position.x + DIMENSION_WIDTH > cameraPos.x && position.x < cameraPos.x + cameraDimensions.x &&
-                position.y + DIMENSION_HEIGHT > cameraPos.y && position.y < cameraPos.y + cameraDimensions.y;
+        return Camera.isInProjection(physicsBody.getTranslation(), getWidth(), getHeight());
     }
 
     public int getWidth() {

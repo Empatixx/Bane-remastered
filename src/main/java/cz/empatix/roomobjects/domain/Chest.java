@@ -64,7 +64,7 @@ public class Chest implements RoomObject, Interactable {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(getPosition(), getWidth(), getHeight());
     }
 
     @Override

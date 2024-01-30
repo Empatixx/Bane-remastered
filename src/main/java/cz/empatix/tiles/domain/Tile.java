@@ -73,13 +73,7 @@ public record Tile(
 
     @Override
     public boolean canRender() {
-        final Vector2f cameraPos = Camera.getPosition();
-        final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
-
-        return position.x() + TILE_SIZE * SCALE >= cameraPos.x()
-                && position.x() <= cameraPos.x() + cameraDimensions.x()
-                && position.y() + TILE_SIZE * SCALE >= cameraPos.y()
-                && position.y() <= cameraPos.y() + cameraDimensions.y();
+        return Camera.isInProjection(position, TILE_SIZE * SCALE, TILE_SIZE * SCALE);
     }
 
     public void destroy() {

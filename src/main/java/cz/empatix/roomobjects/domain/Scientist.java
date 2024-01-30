@@ -48,7 +48,7 @@ public class Scientist implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.isInProjection(position, (int) (DIMENSION_WIDTH * SCALE), (int) (DIMENSION_HEIGHT * SCALE));
     }
 
     @Override
