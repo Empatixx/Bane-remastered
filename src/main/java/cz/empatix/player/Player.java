@@ -1,5 +1,7 @@
 package cz.empatix.player;
 
+import cz.empatix.artefacts.domain.BerserkMoveForceEventHook;
+import cz.empatix.artefacts.domain.ShieldDamageEventHook;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
@@ -27,6 +29,7 @@ import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.geometry.Mass;
 import org.dyn4j.geometry.MassType;
 import org.dyn4j.geometry.Rectangle;
+import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -54,6 +57,8 @@ public class Player implements Drawable, InteractEntity, Damageable {
     private final LightSource lightSource;
     private final GazewindService gazewindService;
     private final CoinService coinService;
+    private final DamageEventHookComposite damageHook;
+    private final MoveForceEventHookComposite moveForceHook;
     private boolean left, right, top, bottom;
     private int maxHealth;
     private int health;
@@ -93,7 +98,11 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
         gazewindService = new GazewindService();
         coinService = new CoinService();
+
+        damageHook = new DamageEventHookComposite();
+        moveForceHook = new MoveForceEventHookComposite();
     }
+
 
     private boolean canHit(final DamageSourceType source, final int damage) {
         return source != DamageSourceType.PLAYER && !isInvulnerable() && !isDead();
@@ -126,7 +135,8 @@ public class Player implements Drawable, InteractEntity, Damageable {
         gazewindService.update((float) dt);
     }
 
-    public void hit(final int damage) {
+    public void hit(final int rawDamage) {
+        final int damage = damageHook.onDamage(rawDamage);
         if (isDead()) {
             return;
         }
@@ -164,20 +174,27 @@ public class Player implements Drawable, InteractEntity, Damageable {
         move(dt);
         final Vector2f velocity = physicsBody.getVelocity();
         if (Math.abs(velocity.x()) >= GAZE_SPEED_PRELIMIT || Math.abs(velocity.y()) >= GAZE_SPEED_PRELIMIT) {
-            final float nextGazeX;
-            final float nextGazeY;
-            if ((top || bottom) && !left && !right) {
-                nextGazeX = getX() + DIMENSION_WIDTH / 2 + GAZE_OFFSET * (float) Math.sin(2 * Math.PI * ((System.currentTimeMillis() % 1000) / 1000d));
-                nextGazeY = getY() + DIMENSION_HEIGHT;
-            } else if ((right || left) && !top && !bottom) {
-                nextGazeX = getX() + DIMENSION_WIDTH / 2;
-                nextGazeY = getY() + DIMENSION_HEIGHT + GAZE_OFFSET * (float) Math.sin(Math.PI * (1 + ((System.currentTimeMillis() % 1000) / 1000d)));
-            } else {
-                nextGazeX = getX() + DIMENSION_WIDTH / 2;
-                nextGazeY = getY() + DIMENSION_HEIGHT;
-            }
-            gazewindService.spawn(nextGazeX, nextGazeY);
+            final Vector2f nextGazePosition = getPossibleGazePosition();
+            gazewindService.spawn(nextGazePosition.x(), nextGazePosition.y());
         }
+    }
+    public Vector2f getPossibleGazePosition(final long offset) {
+        final float nextGazeX;
+        final float nextGazeY;
+        if ((top || bottom) && !left && !right) {
+            nextGazeX = getX() + DIMENSION_WIDTH / 2 + GAZE_OFFSET * (float) Math.sin(2 * Math.PI * (((System.currentTimeMillis() + offset) % 1000) / 1000d));
+            nextGazeY = getY() + DIMENSION_HEIGHT;
+        } else if ((right || left) && !top && !bottom) {
+            nextGazeX = getX() + DIMENSION_WIDTH / 2;
+            nextGazeY = getY() + DIMENSION_HEIGHT + GAZE_OFFSET * (float) Math.sin(Math.PI * (1 + (((System.currentTimeMillis() + offset) % 1000) / 1000d)));
+        } else {
+            nextGazeX = getX() + DIMENSION_WIDTH / 2;
+            nextGazeY = getY() + DIMENSION_HEIGHT;
+        }
+        return new Vector2f(nextGazeX, nextGazeY);
+    }
+    public Vector2f getPossibleGazePosition() {
+        return getPossibleGazePosition(0);
     }
 
     public void addCoins(final int coins) {
@@ -306,15 +323,16 @@ public class Player implements Drawable, InteractEntity, Damageable {
     }
 
     private void move(double dt) {
+        final long moveForce = moveForceHook.onMoveForce(MOVE_FORCE);
         if (left) {
-            physicsBody.applyForce(-MOVE_FORCE, 0);
+            physicsBody.applyForce(-moveForce, 0);
         } else if (right) {
-            physicsBody.applyForce(MOVE_FORCE, 0);
+            physicsBody.applyForce(moveForce, 0);
         }
         if (top) {
-            physicsBody.applyForce(0, -MOVE_FORCE);
+            physicsBody.applyForce(0, -moveForce);
         } else if (bottom) {
-            physicsBody.applyForce(0, MOVE_FORCE);
+            physicsBody.applyForce(0, moveForce);
         }
 
         if (left) {
@@ -381,5 +399,29 @@ public class Player implements Drawable, InteractEntity, Damageable {
         if (canHit(source, damage)) {
             hit(damage);
         }
+    }
+
+    public void addDamageHook(final DamageEventHook hook) {
+        damageHook.addHook(hook);
+    }
+
+    public void removeDamageHook(final DamageEventHook hook) {
+        damageHook.removeHook(hook);
+    }
+
+    public Vector2f getRenderPosition() {
+        return physicsBody.getTranslation();
+    }
+
+    public void addHook(final MoveForceEventHook hook) {
+        moveForceHook.addHook(hook);
+    }
+
+    public void removeHook(final MoveForceEventHook hook) {
+        moveForceHook.removeHook(hook);
+    }
+
+    public Vector2f getVelocity() {
+        return physicsBody.getVelocity();
     }
 }

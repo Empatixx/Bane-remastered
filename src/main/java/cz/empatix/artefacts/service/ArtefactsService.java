@@ -1,8 +1,6 @@
 package cz.empatix.artefacts.service;
 
-import cz.empatix.artefacts.domain.ArmorRefill;
-import cz.empatix.artefacts.domain.Artefact;
-import cz.empatix.artefacts.domain.RingOfDeath;
+import cz.empatix.artefacts.domain.*;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.utils.PositionUtils;
 import cz.empatix.hud.service.image.CommonImage;
@@ -28,9 +26,11 @@ public class ArtefactsService {
     public ArtefactsService(final Player player) {
         this.allArtefacts = List.of(
                 new RingOfDeath(player),
-                new ArmorRefill(player)
+                new ArmorRefill(player),
+                new ShieldHorn(player),
+                new BerserkPot(player)
         );
-        currentArtefact = allArtefacts.get(1);
+        currentArtefact = allArtefacts.get(3);
         commonImage = new CommonImage("ingame/artefacthud.tga", new Vector2f(), HUD_SLOT_SCALE);
         commonImage.setPosition(HUD_SLOT_POSITION.x(), HUD_SLOT_POSITION.y());
     }

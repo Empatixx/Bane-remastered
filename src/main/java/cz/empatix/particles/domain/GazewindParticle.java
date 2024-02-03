@@ -18,11 +18,11 @@ public record GazewindParticle(
     private final static int SCALE = 2;
     private final static Vector2i DIMENSIONS = new Vector2i(16,16).mul(SCALE);
 
-    public GazewindParticle() {
+    public GazewindParticle(final String texturePath) {
         this(new Vector2f(), Animation.builder()
                 .setTotal(1, 3)
                 .addState(AnimationState.IDLE, 0, 3, DIMENSIONS.x(), DIMENSIONS.y(), 100)
-                .texture(AssetsService.getTexture("ingame/gazewind_particle.tga"))
+                .texture(AssetsService.getTexture(texturePath))
                 .build());
     }
 
