@@ -139,7 +139,7 @@ public class AStarTargetting {
         final float dy = targetY - y;
 
         final float distance = (float) Math.sqrt(dx * dx + dy * dy);
-        if (distance <= CELL_SIZE / 2) {
+        if (distance <= CELL_SIZE) {
             path.poll();
         }
     }
