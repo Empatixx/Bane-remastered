@@ -1,5 +1,7 @@
 package cz.empatix.enemies.targetting;
 
+import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
@@ -7,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class AStarTargetting {
     private final static Logger LOGGER = LoggerFactory.getLogger(AStarTargetting.class);
@@ -21,7 +24,7 @@ public class AStarTargetting {
 
     public AStarTargetting(final Supplier<Vector2f> positionSupplier,
                            final int selfWidth,
-                           final int selfHeight){
+                           final int selfHeight) {
         this.positionSupplier = positionSupplier;
         this.selfWidth = selfWidth;
         this.selfHeight = selfHeight;
@@ -65,11 +68,13 @@ public class AStarTargetting {
         openSetLookup.add(startNode);
 
         while (!openSet.isEmpty()) {
-            final PathCell currentNode = openSet.peek();
-            if (currentNode.g() > 100){
+            if (openSet.size() > 40000){
+                LOGGER.error("A* failed to find path");
                 return List.of();
             }
+            final PathCell currentNode = openSet.peek();
             openSetLookup.remove(currentNode);
+            openSet.poll();
 
             if (Math.abs(currentNode.x() - targetX) <= CELL_SIZE && Math.abs(currentNode.y() - targetY) <= CELL_SIZE) {
                 PathCell endNode = currentNode;
@@ -95,16 +100,24 @@ public class AStarTargetting {
 
     private List<PathCell> createCells(final PathCell cell,
                                        final int targetX, final int targetY) {
-        return List.of(
-                new PathCell(cell.x() + CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() + CELL_SIZE, cell.y(), targetX, targetY), cell),
-                new PathCell(cell.x() - CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() - CELL_SIZE, cell.y(), targetX, targetY), cell),
-                new PathCell(cell.x(), cell.y() + CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() + CELL_SIZE, targetX, targetY), cell),
-                new PathCell(cell.x(), cell.y() - CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() - CELL_SIZE, targetX, targetY), cell),
-                new PathCell(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
-                new PathCell(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell),
-                new PathCell(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
-                new PathCell(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell)
-        );
+        return Stream.of(
+                        new PathCell(cell.x() + CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() + CELL_SIZE, cell.y(), targetX, targetY), cell),
+                        new PathCell(cell.x() - CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() - CELL_SIZE, cell.y(), targetX, targetY), cell),
+                        new PathCell(cell.x(), cell.y() + CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() + CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x(), cell.y() - CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() - CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell)
+                )
+                .filter(this::isNotBlocked)
+                .toList();
+    }
+
+    private boolean isNotBlocked(PathCell pathCell) {
+        final PhysicsService service = PhysicsService.getInstance();
+        return !service.query(new Vector2f(pathCell.x(), pathCell.y()), new Vector2f(CELL_SIZE, CELL_SIZE),
+                EnumSet.of(CollisionType.ENEMY, CollisionType.PLAYER, CollisionType.TRAP, CollisionType.ENEMY_BULLET, CollisionType.PLAYER_BULLET,CollisionType.ITEM, CollisionType.ROOM_OBJECT));
     }
 
     private int getDistance(final int startX, final int startY, final int targetX, final int targetY) {
@@ -134,11 +147,11 @@ public class AStarTargetting {
     public Vector2f getDirectionTarget() {
         final Vector2f position = positionSupplier.get();
         if (path.isEmpty()) {
-            final Vector2f direction = new Vector2f(target.getX() + target.getWidth()/2f - position.x() - selfWidth/2f, target.getY() + target.getHeight()/2f - position.y() - selfHeight/2f);
+            /*final Vector2f direction = new Vector2f(target.getX() + target.getWidth() / 2f - position.x() - selfWidth / 2f, target.getY() + target.getHeight() / 2f - position.y() - selfHeight / 2f);
             if (direction.length() > 0) {
                 direction.normalize();
-            }
-            return direction;
+            }*/
+            return new Vector2f(0, 0);
         }
         final PathCell target = path.peek();
         final float x = position.x() + selfWidth / 2;
@@ -152,8 +165,9 @@ public class AStarTargetting {
         }
         return direction;
     }
-    public boolean isTargetLeftFromEnemy(){
+
+    public boolean isTargetLeftFromEnemy() {
         final Vector2f position = positionSupplier.get();
-        return target.getX() + target.getWidth()/2f < position.x() + selfWidth/2f;
+        return target.getX() + target.getWidth() / 2f < position.x() + selfWidth / 2f;
     }
 }

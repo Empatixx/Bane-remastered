@@ -4,6 +4,8 @@ import cz.empatix.newphysics.attributes.PhysicsObject;
 import org.dyn4j.geometry.Shape;
 import org.joml.Vector2f;
 
+import java.util.Set;
+
 public class PhysicsService {
     private static PhysicsService instance;
     public static PhysicsService getInstance() {
@@ -15,6 +17,10 @@ public class PhysicsService {
     private final PhysicsEngine physicsEngine;
     public PhysicsService(){
         physicsEngine = new PhysicsEngine();
+    }
+    public boolean query(final Vector2f point, final Vector2f dimensions,
+                         final Set<CollisionType> ignored){
+        return physicsEngine.query(point, dimensions, ignored);
     }
 
     public void add(final PhysicsObject physicsObject){

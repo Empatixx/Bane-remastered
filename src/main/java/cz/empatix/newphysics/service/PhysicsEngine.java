@@ -6,15 +6,19 @@ import cz.empatix.render.service.Camera;
 import org.dyn4j.collision.Filter;
 import org.dyn4j.collision.Fixture;
 import org.dyn4j.dynamics.Body;
+import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.dynamics.Settings;
 import org.dyn4j.geometry.*;
+import org.dyn4j.world.DetectFilter;
 import org.dyn4j.world.World;
 import org.dyn4j.world.result.DetectResult;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL30;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class PhysicsEngine {
     private final World<PhysicsObject> world;
@@ -101,5 +105,25 @@ public class PhysicsEngine {
 
     public void remove(final PhysicsObject physicsObject) {
         world.removeBody(physicsObject);
+    }
+
+    public boolean query(final Vector2f point, final Vector2f dimensions, final Set<CollisionType> ignored) {
+        final Transform transform = new Transform();
+        transform.setTranslation(new Vector2(point.x, point.y));
+        final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);
+        final Iterator<DetectResult<PhysicsObject, BodyFixture>> resultIterator = world.detectIterator(rectangle, transform, new DetectFilter(true, true, null));
+        while (resultIterator.hasNext()) {
+            final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
+            final PhysicsObject object = result.getBody();
+            final BodyFixture fixture = result.getFixture();
+            if (object == null){
+                continue;
+            }
+            if (ignored.contains(object.getType())) {
+                continue;
+            }
+            return true;
+        }
+        return false;
     }
 }
