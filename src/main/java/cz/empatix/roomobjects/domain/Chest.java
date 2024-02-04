@@ -30,8 +30,10 @@ public class Chest implements RoomObject, Interactable {
     private final PhysicsObject physicsBody;
     private final ItemService itemService;
     private boolean opened = false;
+    private final ChestType chestType;
 
-    public Chest(final ItemService itemService) {
+    public Chest(final ItemService itemService,
+                 final ChestType chestType) {
         this.itemService = itemService;
         animation = Animation.builder()
                 .setTotal(2, 4)
@@ -41,6 +43,7 @@ public class Chest implements RoomObject, Interactable {
                 .build();
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH, DIMENSION_HEIGHT);
         InteractionService.getInstance().addInteractable(this);
+        this.chestType = chestType;
     }
 
     @Override
@@ -89,9 +92,18 @@ public class Chest implements RoomObject, Interactable {
             itemDrop.applyForce(forceX, forceY);
             itemService.add(itemDrop);
         }
-        final ItemDrop itemDrop = itemFactory.createWeaponDrop();
-        itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
-        itemService.add(itemDrop);
+        switch (chestType){
+            case WEAPON -> {
+                final ItemDrop itemDrop = itemFactory.createWeaponDrop();
+                itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
+                itemService.add(itemDrop);
+            }
+            case ARTEFACT -> {
+                final ItemDrop itemDrop = itemFactory.createArtefactDrop();
+                itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
+                itemService.add(itemDrop);
+            }
+        }
     }
 
     @Override

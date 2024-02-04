@@ -39,7 +39,7 @@ public class ProceduralMapGenerator {
         final List<CommonRoomGenInfo> normalRooms = Stream.generate(() -> new CommonRoomGenInfo(itemService, statisticsService))
                 .limit(TOTAL_NORMAL_ROOMS)
                 .toList();
-        final List<ShopRoomGenInfo> shopRooms = Stream.generate(() -> new ShopRoomGenInfo(itemService))
+        final List<ShopRoomGenInfo> shopRooms = Stream.generate(() -> new ShopRoomGenInfo(itemService, statisticsService))
                 .limit(TOTAL_SHOP_ROOMS)
                 .toList();
         final List<BossRoomGenInfo> bossRooms = Stream.generate(() -> new BossRoomGenInfo(itemService, mapLoaderService, statisticsService))

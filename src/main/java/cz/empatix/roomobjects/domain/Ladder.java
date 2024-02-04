@@ -34,8 +34,8 @@ import java.util.stream.Stream;
 public class Ladder implements RoomObject, Interactable {
     private final static Logger LOGGER = LoggerFactory.getLogger(Ladder.class);
     private final static int SCALE = 3;
-    private final static int DIMENSION_WIDTH = 30 * SCALE;
-    private final static int DIMENSION_HEIGHT = 30 * SCALE;
+    private final static int DIMENSION_WIDTH = 32 * SCALE;
+    private final static int DIMENSION_HEIGHT = 32 * SCALE;
     private final Animation animation;
     private final Vector2f position;
     private final AlternativeViewImage animatedImage;

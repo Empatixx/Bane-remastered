@@ -10,13 +10,14 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class ArmorRefill implements Artefact {
+    private final static String TEXTURE_PATH = "ingame/artefacts/armorrefill.tga";
     private final static int ARTEFACT_SCALE = 2;
     private final CommonImage artefactImage;
     private final Player player;
 
     public ArmorRefill(final Player player) {
         this.player = player;
-        artefactImage = new CommonImage("ingame/artefacts/armorrefill.tga", new Vector2f(), ARTEFACT_SCALE);
+        artefactImage = new CommonImage(TEXTURE_PATH, new Vector2f(), ARTEFACT_SCALE);
         artefactImage.setPosition(ArtefactsService.HUD_SLOT_CENTER_X - artefactImage.getWidth() / 2f, ArtefactsService.HUD_SLOT_CENTER_Y - artefactImage.getHeight() / 2f);
     }
 
@@ -42,5 +43,10 @@ public class ArmorRefill implements Artefact {
     @Override
     public List<Renderable> hudToRender() {
         return List.of(artefactImage);
+    }
+
+    @Override
+    public String getTexturePath() {
+        return TEXTURE_PATH;
     }
 }

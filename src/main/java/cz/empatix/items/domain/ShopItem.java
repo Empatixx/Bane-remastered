@@ -22,7 +22,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ShopItem implements ItemDrop {
-    private final static Runnable NOOP = () -> {};
+    private final static Runnable NOOP = () -> {
+    };
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int ITEM_OFFSET = 15;
     private static final int INTERACTION_TEXT_OFFSET = 20;
@@ -39,18 +40,19 @@ public class ShopItem implements ItemDrop {
     private final int price;
     private boolean bought = false;
 
-    public ShopItem(final ItemDrop itemDrop,
+    public ShopItem(final int floor,
+                    final ItemDrop itemDrop,
                     final Predicate<Integer> hasEnoughCoinsPredicate,
                     final Consumer<Integer> removeCoinsConsumer) {
         this.hasEnoughCoinsPredicate = hasEnoughCoinsPredicate;
         this.removeCoinsConsumer = removeCoinsConsumer;
         this.drop = itemDrop;
-        this.price = 1;
+        this.price = RANDOM.nextInt(1, 5) * (floor + 1);
         this.text = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.text.setColorRGB(212, 168, 8);
         this.text.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.text.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
-        this.image = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1,2, RenderScene.HUD, Camera.getProjection());
+        this.image = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getProjection());
         this.image.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.image.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
         this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
@@ -60,8 +62,8 @@ public class ShopItem implements ItemDrop {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        if(bought){
-           return List.of();
+        if (bought) {
+            return List.of();
         }
         final List<Renderable> textRenderables = text.getSubRenderables();
         textRenderables.add(image);
@@ -94,19 +96,20 @@ public class ShopItem implements ItemDrop {
     public void setPosition(float x, float y) {
         drop.setPosition(x, y - ITEM_OFFSET);
     }
+
     public void setHudPosition(final float x, final float y) {
-        this.text.setCenterX(x - image.getWidth()/2f, x + image.getWidth()/2f);
+        this.text.setCenterX(x - image.getWidth() / 2f, x + image.getWidth() / 2f);
         this.text.setCenterY(y - image.getHeight() - ITEM_OFFSET, y - ITEM_OFFSET);
-        this.image.setPosition(x - image.getWidth()/2f, y - image.getHeight() - ITEM_OFFSET);
+        this.image.setPosition(x - image.getWidth() / 2f, y - image.getHeight() - ITEM_OFFSET);
 
         this.interactionText.setCenterY(y - ITEM_OFFSET, y - ITEM_OFFSET);
-        this.interactionText.setCenterX(x,x);
+        this.interactionText.setCenterX(x, x);
     }
 
     @Override
     public void interact(final Set<Integer> keys) {
         interactionTracker.interaction();
-        if (bought){
+        if (bought) {
             if (drop.canInteract()) {
                 drop.interact(keys);
             }

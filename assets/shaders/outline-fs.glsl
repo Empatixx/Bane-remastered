@@ -11,7 +11,6 @@ uniform vec2 uTexEndPos;
 in vec2 tex_coords;
 
 void main() {
-
     float centerAlpha = texture2D(uTexSampler, tex_coords).a;
 
     const vec2 offsets[8] = vec2[](
@@ -27,7 +26,8 @@ void main() {
         float neighborAlpha = texture2D(uTexSampler, samplePos).a;
 
         if (abs(centerAlpha - neighborAlpha) > 0.1) {
-            gl_FragColor = uOutlineColor;
+            float blendFactor = centerAlpha < 1.0 ? (1.0 - centerAlpha) : 1.0;
+            gl_FragColor = mix(gl_FragColor, uOutlineColor, blendFactor * uOutlineColor.a);
             break;
         }
     }

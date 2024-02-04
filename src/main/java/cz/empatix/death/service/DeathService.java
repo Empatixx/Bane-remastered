@@ -68,10 +68,10 @@ public class DeathService {
 
         continueText = new CommonText("Press any key to continue...", "PixelFJVerdana12pt.ttf", new Vector2f(700, 500), 2, RenderScene.OVERLAYS);
 
-        accuracyCoins.setColorRGB(212, 168, 8);
-        killsCoins.setColorRGB(212, 168, 8);
-        lootCoins.setColorRGB(212, 168, 8);
-        floorCoins.setColorRGB(212, 168, 8);
+        accuracyCoins.setColorRGB(0,236,1);
+        killsCoins.setColorRGB(0,236,1);
+        lootCoins.setColorRGB(0,236,1);
+        floorCoins.setColorRGB(0,236,1);
 
         texts = List.of(accuracyText, killsText, lootText, floorText);
         rewardTexts = List.of(accuracyCoins, killsCoins, lootCoins, floorCoins);

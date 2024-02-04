@@ -10,6 +10,7 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class BerserkPot implements Artefact{
+    private static final String TEXTURE_PATH = "ingame/artefacts/berserkpot.tga";
     private final static int ARTEFACT_SCALE = 1;
     private final static int ACTIVATION_TIME = 15000;
     private final static int GAZE_SPEED_PRELIMIT = 350;
@@ -22,7 +23,7 @@ public class BerserkPot implements Artefact{
 
     public BerserkPot(final Player player) {
         this.player = player;
-        artefactImage = new CommonImage("ingame/artefacts/berserkpot.tga", new Vector2f(), ARTEFACT_SCALE);
+        artefactImage = new CommonImage(TEXTURE_PATH, new Vector2f(), ARTEFACT_SCALE);
         artefactImage.setPosition(ArtefactsService.HUD_SLOT_CENTER_X - artefactImage.getWidth() / 2f, ArtefactsService.HUD_SLOT_CENTER_Y - artefactImage.getHeight() / 2f);
         gazewindService = new GazewindService("ingame/artefacts/berserkpot-particle.tga");
     }
@@ -64,5 +65,10 @@ public class BerserkPot implements Artefact{
     @Override
     public List<Renderable> hudToRender() {
         return List.of(artefactImage);
+    }
+
+    @Override
+    public String getTexturePath() {
+        return TEXTURE_PATH;
     }
 }

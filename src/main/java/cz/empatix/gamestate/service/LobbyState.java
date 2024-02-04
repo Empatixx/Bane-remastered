@@ -13,9 +13,11 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.stream.Stream;
 public class LobbyState extends GameState {
     private MapService mapService;
     private Player player;
+    private CoinService coinService;
 
     protected LobbyState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.LOBBY);
@@ -41,6 +44,8 @@ public class LobbyState extends GameState {
         });
         player = new Player();
         player.setPosition(mapGenerationResult.startRoom().getMaxX() / 2f, mapGenerationResult.startRoom().getMaxY() / 2f);
+
+        coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(0,236,1));
 
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
@@ -64,7 +69,7 @@ public class LobbyState extends GameState {
 
     @Override
     public List<Renderable> toRender(double dt) {
-        final List<Renderable> renderables = Stream.of(mapService.toRender(dt), List.of(player))
+        final List<Renderable> renderables = Stream.of(mapService.toRender(dt), List.of(player), coinService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         renderables.add(CursorService.getCursor());

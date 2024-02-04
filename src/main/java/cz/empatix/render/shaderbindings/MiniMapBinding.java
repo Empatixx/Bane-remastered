@@ -13,7 +13,7 @@ public record MiniMapBinding(
         float time,
         float randomOffset,
         boolean visited,
-        boolean current,
+        @Deprecated boolean current,
         float alpha,
         int spriteColumn,
         Vector4i connections,
@@ -35,7 +35,6 @@ public record MiniMapBinding(
         shader.setUniform4x4f("projection", projectionMatrix);
         shader.setUniform1i("uTexSampler", 0);
         shader.setUniform1i("uVisited", visited ? 1 : 0);
-        shader.setUniform1i("uCurrent", current ? 1 : 0);
         shader.setUniform1f("uAlpha", alpha);
         shader.setUniform1f("uTime", time);
         shader.setUniform1f("uTimeWithOffset", timeWithOffset);

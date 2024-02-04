@@ -22,6 +22,7 @@ import cz.empatix.map.service.MapService;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.pause.service.PauseService;
+import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
@@ -41,6 +42,7 @@ public class InGameState extends GameState {
     private MapLoaderService mapLoaderService;
     private GunService gunService;
     private ArtefactsService artefactsService;
+    private CoinService coinService;
     private ItemService itemService;
     private Player player;
     private DeathService deathService;
@@ -56,13 +58,14 @@ public class InGameState extends GameState {
         final StatisticsService statisticsService = new StatisticsService();
 
         player = new Player();
+        coinService = new CoinService();
         pauseService = new PauseService();
         deathService = new DeathService(statisticsService);
         itemService = new ItemService(statisticsService);
         gunService = new GunService(itemService, statisticsService);
-        artefactsService = new ArtefactsService(player);
+        artefactsService = new ArtefactsService(player, itemService);
 
-        itemService.setFactory(new ItemFactory(gunService, player));
+        itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService));
 
         mapLoaderService = new MapLoaderService(itemService, room -> minimapService.visit(room), statisticsService);
 
@@ -125,7 +128,7 @@ public class InGameState extends GameState {
     public List<Renderable> toRender(final double dt) {
         return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
                         minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
-                        mapLoaderService.toRender(), artefactsService.toRender())
+                        mapLoaderService.toRender(), artefactsService.toRender(), coinService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

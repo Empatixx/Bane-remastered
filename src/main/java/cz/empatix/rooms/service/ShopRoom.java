@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.domain.ShopItem;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
@@ -26,14 +27,17 @@ public class ShopRoom implements Room {
     private final RoomObjectService roomObjectService;
     private final TileMap tileMap;
     private Shopkeeper shopkeeper;
+    private final StatisticsService statisticsService;
 
     public ShopRoom(final ItemService itemService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
-                    final Set<RoomDirection> neighbors) {
+                    final Set<RoomDirection> neighbors,
+                    final StatisticsService statisticsService) {
         this.itemService = itemService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
+        this.statisticsService = statisticsService;
     }
 
     @Override
@@ -63,7 +67,7 @@ public class ShopRoom implements Room {
                 shopTable.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopTable.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopTable.getHeight() / 2f);
                 roomObjectService.add(shopTable);
 
-                final ShopItem shopItem = itemFactory.createShopDrop();
+                final ShopItem shopItem = itemFactory.createShopDrop(statisticsService.getFloor());
                 shopItem.setOnBuy(() -> {
                     shopkeeper.setInteractionText("Enjoy your purchase!");
                 });

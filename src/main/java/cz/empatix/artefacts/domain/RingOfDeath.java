@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RingOfDeath implements Artefact {
+    private final static String TEXTURE_PATH = "ingame/artefacts/ringofdeath.tga";
     private final static int ARTEFACT_SCALE = 3;
     private final CommonImage artefactImage;
     private final List<Bullet> bullets = new ArrayList<>(30);
@@ -21,7 +22,7 @@ public class RingOfDeath implements Artefact {
 
     public RingOfDeath(Player player) {
         this.player = player;
-        final TextureAtlas.Entry texture = AssetsService.getTexture("ingame/artefacts/ringofdeath.tga");
+        final TextureAtlas.Entry texture = AssetsService.getTexture(TEXTURE_PATH);
         artefactImage = new CommonImage(texture, new Vector2f(), ARTEFACT_SCALE);
         artefactImage.setPosition(ArtefactsService.HUD_SLOT_CENTER_X - texture.width() *ARTEFACT_SCALE / 2f, ArtefactsService.HUD_SLOT_CENTER_Y - texture.height() * ARTEFACT_SCALE / 2f);
     }
@@ -56,5 +57,10 @@ public class RingOfDeath implements Artefact {
     @Override
     public List<Renderable> hudToRender() {
         return List.of(artefactImage);
+    }
+
+    @Override
+    public String getTexturePath() {
+        return TEXTURE_PATH;
     }
 }

@@ -3,7 +3,11 @@ package cz.empatix.artefacts.service;
 import cz.empatix.artefacts.domain.*;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.utils.PositionUtils;
+import cz.empatix.guns.domain.Gun;
 import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.items.domain.MovableItemDrop;
+import cz.empatix.items.service.ItemFactory;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.textureatlas.domain.TextureAtlas;
@@ -12,8 +16,10 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ArtefactsService {
+    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static float HUD_SLOT_SCALE = 1.5f;
     public final static int HUD_SLOT_CENTER_X;
     public final static int HUD_SLOT_CENTER_Y;
@@ -22,8 +28,13 @@ public class ArtefactsService {
     private Artefact currentArtefact;
     private final CommonImage commonImage;
     private boolean shouldActivate = false;
+    private final ItemService itemService;
+    private final Player player;
 
-    public ArtefactsService(final Player player) {
+    public ArtefactsService(final Player player,
+                            final ItemService itemService) {
+        this.player = player;
+        this.itemService = itemService;
         this.allArtefacts = List.of(
                 new RingOfDeath(player),
                 new ArmorRefill(player),
@@ -75,5 +86,29 @@ public class ArtefactsService {
                 .flatMap(artefact -> artefact.getRenderables().stream())
                 .toList());
         return renderables;
+    }
+
+    public Artefact getUnusedRandomArtefact() {
+        Artefact artefact = allArtefacts.get(RANDOM.nextInt(allArtefacts.size()));
+        while (artefact == currentArtefact) {
+            artefact = allArtefacts.get(RANDOM.nextInt(allArtefacts.size()));
+        }
+        return artefact;
+    }
+
+    public void addArtefact(final Artefact artefact) {
+        if (currentArtefact != null) {
+            dropCurrentArtefact();
+        }
+        currentArtefact = artefact;
+    }
+    public void dropCurrentArtefact() {
+        final ItemFactory itemFactory = itemService.getItemFactory();
+
+        final MovableItemDrop itemDrop = itemFactory.createMovableArtefactDrop(currentArtefact, this::addArtefact);
+        final Vector2f playerPosition = player.getPosition();
+        itemDrop.setPosition(playerPosition.x() - itemDrop.getWidth()/2f, playerPosition.y() - itemDrop.getHeight()/2f);
+
+        itemService.add(itemDrop);
     }
 }

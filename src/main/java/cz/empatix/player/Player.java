@@ -34,6 +34,7 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -56,7 +57,6 @@ public class Player implements Drawable, InteractEntity, Damageable {
     private final CommonInteractEntity interactEntity;
     private final LightSource lightSource;
     private final GazewindService gazewindService;
-    private final CoinService coinService;
     private final DamageEventHookComposite damageHook;
     private final MoveForceEventHookComposite moveForceHook;
     private boolean left, right, top, bottom;
@@ -97,7 +97,6 @@ public class Player implements Drawable, InteractEntity, Damageable {
         armorBar = new StatusBar(this::getArmor, this::getMaxArmor, StatusBarType.ARMOR, new Vector2f(75, 62.5f));
 
         gazewindService = new GazewindService();
-        coinService = new CoinService();
 
         damageHook = new DamageEventHookComposite();
         moveForceHook = new MoveForceEventHookComposite();
@@ -197,18 +196,6 @@ public class Player implements Drawable, InteractEntity, Damageable {
         return getPossibleGazePosition(0);
     }
 
-    public void addCoins(final int coins) {
-        coinService.addCoins(coins);
-    }
-
-    public void removeCoins(final int coins) {
-        coinService.removeCoins(coins);
-    }
-
-    public boolean hasEnoughCoins(final int requiredCoins) {
-        return coinService.hasEnoughCoins(requiredCoins);
-    }
-
     public void addHealth(final int health) {
         setHealth(getHealth() + health);
     }
@@ -247,7 +234,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = coinService.toRender();
+        final List<Renderable> renderables = new ArrayList<>();
         renderables.addAll(List.of(healthBar, armorBar));
         renderables.addAll(gazewindService.toRender());
         return renderables;

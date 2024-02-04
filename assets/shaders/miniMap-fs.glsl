@@ -18,7 +18,6 @@
 
 uniform sampler2D uTexSampler;
 uniform int uVisited;
-uniform int uCurrent;
 uniform float uSpriteShift;
 uniform float uAlpha;
 uniform float uTime;
@@ -103,19 +102,6 @@ void main() {
 
         vec4 fogColor = vec4(col, 1.0);
         gl_FragColor = mix(baseColor, fogColor, noise);
-    } else if (uCurrent == 1 && !isGate) {
-        float pulse = (sin(uTime * GLOW_SPEED) + 1.0) * 0.5;
-        vec4 outlineColor = OUTLINE_COLOR * pulse;
-
-        float distToEdgeX = min(uv.x, 1.0 - uv.x);
-        float distToEdgeY = min(uv.y, 1.0 - uv.y);
-        float distToEdge = min(distToEdgeX, distToEdgeY);
-
-        if (distToEdge < OUTLINE_WIDTH) {
-            gl_FragColor = mix(vec4(outlineColor.rgb, 1.0), vec4(baseColor.rgb, 1.0), 1.0 - outlineColor.a);
-        } else {
-            gl_FragColor = baseColor;
-        }
     } else {
         gl_FragColor = baseColor;
     }

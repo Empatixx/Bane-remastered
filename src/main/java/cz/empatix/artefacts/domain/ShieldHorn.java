@@ -10,6 +10,7 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class ShieldHorn implements Artefact {
+    private final static String TEXTURE_PATH = "ingame/artefacts/shieldhorn.tga";
     private final static int ARTEFACT_SCALE = 2;
     private final CommonImage artefactImage;
     private final Player player;
@@ -18,7 +19,7 @@ public class ShieldHorn implements Artefact {
 
     public ShieldHorn(final Player player) {
         this.player = player;
-        artefactImage = new CommonImage("ingame/artefacts/shieldhorn.tga", new Vector2f(), ARTEFACT_SCALE);
+        artefactImage = new CommonImage(TEXTURE_PATH, new Vector2f(), ARTEFACT_SCALE);
         magicShield = new MagicShield();
         artefactImage.setPosition(ArtefactsService.HUD_SLOT_CENTER_X - artefactImage.getWidth() / 2f, ArtefactsService.HUD_SLOT_CENTER_Y - artefactImage.getHeight() / 2f);
     }
@@ -55,6 +56,11 @@ public class ShieldHorn implements Artefact {
     @Override
     public List<Renderable> hudToRender() {
         return List.of(artefactImage);
+    }
+
+    @Override
+    public String getTexturePath() {
+        return TEXTURE_PATH;
     }
 }
 

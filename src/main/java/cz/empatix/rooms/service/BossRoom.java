@@ -10,10 +10,13 @@ import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.Chest;
+import cz.empatix.roomobjects.domain.ChestType;
 import cz.empatix.roomobjects.domain.Ladder;
 import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
+import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -85,8 +88,12 @@ public class BossRoom implements Room {
             AudioService.getInstance().play(Soundtrack.INGAME);
 
             final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService);
-            ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f, tileMap.getY() + tileMap.getHeight() / 2f);
+            ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - ladder.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f);
             roomObjectService.add(ladder);
+
+            final Chest chest = new Chest(itemService, ChestType.ARTEFACT);
+            chest.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - chest.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f - Tile.TILE_SIZE*Tile.SCALE*3);
+            roomObjectService.add(chest);
         }
     }
 

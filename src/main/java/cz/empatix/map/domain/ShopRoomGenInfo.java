@@ -1,5 +1,6 @@
 package cz.empatix.map.domain;
 
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
@@ -7,8 +8,11 @@ import cz.empatix.rooms.service.ShopRoom;
 
 public class ShopRoomGenInfo extends RoomGenInfo {
     private final ItemService itemService;
-    public ShopRoomGenInfo(final ItemService itemService){
+    private final StatisticsService statisticsService;
+    public ShopRoomGenInfo(final ItemService itemService,
+                           final StatisticsService statisticsService) {
         this.itemService = itemService;
+        this.statisticsService = statisticsService;
     }
     @Override
     public void initDimensions() {
@@ -18,7 +22,8 @@ public class ShopRoomGenInfo extends RoomGenInfo {
 
     @Override
     public Room constructRoom() {
-        return new ShopRoom(itemService, rows, cols, xOffset, yOffset, neighbours.keySet());
+        return new ShopRoom(itemService, rows, cols, xOffset, yOffset, neighbours.keySet(),
+                statisticsService);
     }
 
     @Override

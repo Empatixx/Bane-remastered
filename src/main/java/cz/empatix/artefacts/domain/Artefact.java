@@ -10,4 +10,5 @@ public interface Artefact {
     void fixedUpdate(final double dt);
     List<Renderable> getRenderables();
     List<Renderable> hudToRender();
+    String getTexturePath();
 }
