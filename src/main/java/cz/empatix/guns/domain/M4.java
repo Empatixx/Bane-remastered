@@ -31,8 +31,9 @@ public class M4 extends AbstractGun implements Gun{
     private float lastTargetY;
     private float lastShooterX;
     private float lastShooterY;
+    private final BulletFactory bulletFactory;
 
-    public M4() {
+    public M4(final BulletFactory bulletFactory) {
         this.minDamage = 200;
         this.maxDamage = 200;
 
@@ -53,6 +54,7 @@ public class M4 extends AbstractGun implements Gun{
         this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
+        this.bulletFactory = bulletFactory;
     }
 
     @Override
@@ -90,7 +92,7 @@ public class M4 extends AbstractGun implements Gun{
         }
         if (currentClip > 0) {
             LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
-            final Bullet bullet = BulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
+            final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
             bullets.add(bullet);
             currentClip--;
             bulletsToShoot = BULLETS_PER_SHOT - 1;

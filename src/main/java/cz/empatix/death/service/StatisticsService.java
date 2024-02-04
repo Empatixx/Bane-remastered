@@ -37,22 +37,30 @@ public class StatisticsService {
     }
 
     public int calculateScoreForAccuracy() {
-        return (int) (2.0 * Math.pow(1.02, getFloor()) * Math.pow(1.01, getAccuracy() * 100));
+        return (int) (2.0 * Math.pow(getFloor(), 1.02) * Math.pow(getAccuracy() * 100, 1.01));
     }
 
     public int calculateScoreForEnemiesKilled() {
-        return (int) (2.0 * Math.pow(1.02, getFloor()) * Math.pow(1.01, statistics.getEnemyKilled()));
+        return (int) (2.0 * Math.pow(getFloor(), 1.02) * Math.pow(statistics.getEnemyKilled(), 1.01));
     }
 
     public int calculateScoreForItemsCollected() {
-        return (int) (4.0 * Math.pow(1.02, getFloor()) * Math.pow(1.01, statistics.getItemsCollected()));
+        return (int) (4.0 * Math.pow(getFloor(), 1.02) * Math.pow(statistics.getItemsCollected(), 1.01));
     }
 
     public int calculateScoreForFloor() {
-        return getFloor() * 5;
+        return (getFloor() - 1) * 5;
     }
 
     public void nextFloor() {
         statistics.addFloor();
+    }
+
+    public int getEnemiesKilled() {
+        return statistics.getEnemyKilled();
+    }
+
+    public int getItemsCollected() {
+        return statistics.getItemsCollected();
     }
 }

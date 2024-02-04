@@ -1,5 +1,6 @@
 package cz.empatix.enemies.service;
 
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
@@ -10,6 +11,7 @@ import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import org.dyn4j.geometry.Rectangle;
 import org.joml.Vector2f;
+import org.lwjgl.system.linux.Stat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +22,12 @@ public class EnemyService {
     private final EnemyFactory enemyFactory = new EnemyFactory();
     private final List<Enemy> enemies = new ArrayList<>(10);
     private final EnemyDropService enemyDropService;
+    private final StatisticsService statisticsService;
 
-    public EnemyService(final ItemService itemService) {
+    public EnemyService(final ItemService itemService,
+                        final StatisticsService statisticsService) {
         this.enemyDropService = new EnemyDropService(itemService);
+        this.statisticsService = statisticsService;
     }
 
     public void update(final double dt) {
@@ -30,7 +35,13 @@ public class EnemyService {
         enemies.stream()
                 .filter(Enemy::canDropItems)
                 .forEach(enemyDropService::tryDrop);
-        enemies.removeIf(Enemy::canRemove);
+        enemies.removeIf(e -> {
+            if (e.canRemove()){
+                statisticsService.addEnemyKilled();
+                return true;
+            }
+            return false;
+        });
     }
 
     public void fixedUpdate(final double dt) {
@@ -76,7 +87,7 @@ public class EnemyService {
     }
 
     public boolean areEnemiesDead() {
-        return enemies.size() <= 0;
+        return enemies.isEmpty();
     }
 
     public void cleanUp() {

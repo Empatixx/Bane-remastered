@@ -121,4 +121,8 @@ public class CoinItem implements ItemDrop {
     public void setDespawnable(final boolean despawn) {
         itemDespawnService.setDespawnTime(despawn ? ItemDespawnService.DEFAULT_ITEM_DESPAWN_TIME : Long.MAX_VALUE);
     }
+    @Override
+    public boolean isPickedUp() {
+        return pickedUp;
+    }
 }

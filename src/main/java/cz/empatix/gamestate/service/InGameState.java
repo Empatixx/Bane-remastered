@@ -67,7 +67,7 @@ public class InGameState extends GameState {
         mapLoaderService = new MapLoaderService(itemService, room -> minimapService.visit(room), statisticsService);
 
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService);
+        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService);
         mapLoaderService.load(mapGenerationResult);
         mapLoaderService.setLoadedUse();
 

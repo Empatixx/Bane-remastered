@@ -8,6 +8,10 @@ public interface ItemDrop extends Drawable, Interactable {
      AudioService AUDIO_SERVICE = AudioService.getInstance();
     void update(final float dt);
     boolean canRemove();
+    boolean isPickedUp();
+    default DropSource getSource(){
+        return DropSource.NORMAL;
+    }
     void setPosition(final float x, final float y);
     void setDespawnable(final boolean despawn);
     int getWidth();

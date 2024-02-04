@@ -63,6 +63,11 @@ public class AmmoBoxItem implements ItemDrop {
     }
 
     @Override
+    public boolean isPickedUp() {
+        return pickedUp;
+    }
+
+    @Override
     public void setPosition(float x, float y) {
         position.set(x, y);
     }

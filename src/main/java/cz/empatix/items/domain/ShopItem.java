@@ -86,6 +86,11 @@ public class ShopItem implements ItemDrop {
     }
 
     @Override
+    public boolean isPickedUp() {
+        return drop.isPickedUp();
+    }
+
+    @Override
     public void setPosition(float x, float y) {
         drop.setPosition(x, y - ITEM_OFFSET);
     }

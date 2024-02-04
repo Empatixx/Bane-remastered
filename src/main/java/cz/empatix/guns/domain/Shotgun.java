@@ -24,8 +24,8 @@ public class Shotgun extends AbstractGun implements Gun {
     private final CommonImage gunHud;
     private final CommonText ammoHud;
     private final List<Bullet> bullets;
-
-    public Shotgun() {
+    private final BulletFactory bulletFactory;
+    public Shotgun(final BulletFactory bulletFactory) {
         this.minDamage = 2;
         this.maxDamage = 3;
 
@@ -46,6 +46,7 @@ public class Shotgun extends AbstractGun implements Gun {
         this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf",new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
+        this.bulletFactory = bulletFactory;
 
     }
 
@@ -68,7 +69,7 @@ public class Shotgun extends AbstractGun implements Gun {
             currentClip--;
             for(int i = 0;i<BULLETS_PER_SHOT;i++){
                 final float inaccuracy = this.inaccuracy * (float) Math.pow(-1, i) * (i + 1) / BULLETS_PER_SHOT;
-                final Bullet bullet = BulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
+                final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
                 bullets.add(bullet);
             }
             lastShootTime = System.currentTimeMillis();

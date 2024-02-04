@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -38,11 +39,11 @@ public class CommonRoom implements Room {
     private boolean visited;
 
     public CommonRoom(final ItemService itemService, final int rows, final int cols, final int xOffset, final int yOffset,
-                      final Set<RoomDirection> neighbors) {
-
+                      final Set<RoomDirection> neighbors,
+                      final StatisticsService statisticsService) {
         this.itemService = itemService;
         tileMap = new ProceduralTileMap(rows, cols, xOffset, yOffset, neighbors);
-        enemyService = new EnemyService(itemService);
+        enemyService = new EnemyService(itemService, statisticsService);
         roomObjectService = new RoomObjectService();
         roomLockService = new RoomLockService(this, neighbors);
         visited = false;

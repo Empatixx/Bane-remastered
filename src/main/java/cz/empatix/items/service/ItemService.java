@@ -1,7 +1,9 @@
 package cz.empatix.items.service;
 
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.items.domain.DropSource;
 import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.domain.WeaponDrop;
 import cz.empatix.render.attributes.Drawable;
 
 import java.util.ArrayList;
@@ -16,10 +18,16 @@ public class ItemService {
     }
     public void update(final float dt){
         itemDrops.forEach(itemDrop -> itemDrop.update(dt));
-        itemDrops.stream()
-                        .filter(ItemDrop::canRemove)
-                        .forEach(ItemDrop::destroy);
-        itemDrops.removeIf(ItemDrop::canRemove);
+        itemDrops.removeIf(itemDrop -> {
+            if (itemDrop.canRemove()){
+                if (itemDrop.isPickedUp() && itemDrop.getSource() == DropSource.NORMAL){
+                    statisticsService.addItemCollected();
+                }
+                itemDrop.destroy();
+                return true;
+            }
+            return false;
+        });
     }
     public void add(final ItemDrop itemDrop){
         itemDrops.add(itemDrop);

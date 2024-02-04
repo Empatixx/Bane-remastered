@@ -96,6 +96,12 @@ public class DeathService {
             if (accumulator > i * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
                 final CommonText text = texts.get(i);
                 final CommonImage icon = icons.get(i);
+                switch (i){
+                    case 0 -> text.setText("Accuracy: " + statisticsService.getAccuracy() + "%");
+                    case 1 -> text.setText("Kills: " + statisticsService.getEnemiesKilled());
+                    case 2 -> text.setText("Loot: " + statisticsService.getItemsCollected());
+                    case 3 -> text.setText("Floor: " + statisticsService.getFloor());
+                }
 
                 final float offsetAccumulator = accumulator - i * LABEL_TRANSITION_TIME - SKULL_TRANSITION_TIME;
                 text.setPosition(text.getX(), LABEL_TEXT_START_POSITION_Y + i * LABEL_POS_OFFSET - LABEL_DIFFERENCE_Y * Math.min(LABEL_TRANSITION_TIME, offsetAccumulator) / LABEL_TRANSITION_TIME);
@@ -104,12 +110,24 @@ public class DeathService {
                 break;
             }
         }
+        final int coinsForAccuracy = statisticsService.calculateScoreForAccuracy();
+        final int coinsForKills = statisticsService.calculateScoreForEnemiesKilled();
+        final int coinsForLoot = statisticsService.calculateScoreForItemsCollected();
+        final int coinsForFloor = statisticsService.calculateScoreForFloor();
+
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * REWARD_TRANSITION_TIME + TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
                 final CommonText text = rewardTexts.get(i);
+                final int coins = switch (i){
+                    case 0 -> coinsForAccuracy;
+                    case 1 -> coinsForKills;
+                    case 2 -> coinsForLoot;
+                    case 3 -> coinsForFloor;
+                    default -> throw new IllegalStateException("Unexpected value: " + i);
+                };
                 final float offsetAccumulator = accumulator - i * REWARD_TRANSITION_TIME - TOTAL_LABELS * LABEL_TRANSITION_TIME - SKULL_TRANSITION_TIME;
                 final float delta = Math.min(REWARD_TRANSITION_TIME, offsetAccumulator) / REWARD_TRANSITION_TIME;
-                text.setText("+" + (int) ((i * 100) * delta));
+                text.setText("+" + (int) ((i * coins) * delta));
             } else {
                 break;
             }
@@ -117,7 +135,7 @@ public class DeathService {
         if (!continuePressed && Fade.getValue() > 1) {
             Fade.setTween(0);
         } else if (continuePressed && Fade.getValue() > 2) {
-            GameStateController.getInstance().setCurrentState(GameStateType.MENU);
+            GameStateController.getInstance().setCurrentState(GameStateType.LOBBY);
             Fade.setTween(-1);
         }
     }

@@ -24,8 +24,9 @@ public class Luger extends AbstractGun implements Gun{
     private final CommonText ammoHud;
     private final List<Bullet> bullets;
     private int bulletsToShoot;
+    private final BulletFactory bulletFactory;
 
-    public Luger() {
+    public Luger(final BulletFactory bulletFactory) {
         this.minDamage = 1;
         this.maxDamage = 2;
 
@@ -46,6 +47,7 @@ public class Luger extends AbstractGun implements Gun{
         this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
+        this.bulletFactory = bulletFactory;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class Luger extends AbstractGun implements Gun{
         }
         if (currentClip > 0) {
             LOGGER.info("Shooting from luger clip: {}, ammo: {}", currentClip, ammo);
-            final Bullet bullet = BulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
+            final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
             bullets.add(bullet);
             currentClip--;
             shooting = false;

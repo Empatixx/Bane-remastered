@@ -6,6 +6,7 @@ import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.guns.domain.*;
+import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
@@ -49,14 +50,15 @@ public class GunService {
                       final StatisticsService statisticsService) {
         this.statisticsService = statisticsService;
         this.itemService = itemService;
+        final BulletFactory bulletFactory = new BulletFactory(statisticsService);
         guns = List.of(
-                new Pistol(),
-                new Shotgun(),
-                new Luger(),
-                new Revolver(),
-                new M4(),
-                new Uzi(),
-                new Thompson()
+                new Pistol(bulletFactory),
+                new Shotgun(bulletFactory),
+                new Luger(bulletFactory),
+                new Revolver(bulletFactory),
+                new M4(bulletFactory),
+                new Uzi(bulletFactory),
+                new Thompson(bulletFactory)
         );
         {
             slots = new GunSlots();

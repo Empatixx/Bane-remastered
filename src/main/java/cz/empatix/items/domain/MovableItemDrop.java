@@ -1,10 +1,8 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
-import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
-import cz.empatix.render.domain.InterpolatedPosition;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import org.dyn4j.geometry.Mass;
@@ -45,6 +43,11 @@ public class MovableItemDrop implements ItemDrop{
     @Override
     public boolean canRemove() {
         return itemDrop.canRemove();
+    }
+
+    @Override
+    public boolean isPickedUp() {
+        return itemDrop.isPickedUp();
     }
 
     @Override
@@ -94,5 +97,9 @@ public class MovableItemDrop implements ItemDrop{
     }
     public void applyForce(final float x, final float y) {
         physicsBody.applyForce(x,y);
+    }
+    @Override
+    public DropSource getSource() {
+        return itemDrop.getSource();
     }
 }

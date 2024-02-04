@@ -28,7 +28,7 @@ public class ItemFactory {
                 () -> new RecoverPotion(RecoverType.ARMOR, player::hasFullArmor, player::addArmor)
         );
         final List<Supplier<ItemDrop>> rareItemsSuppliers = List.of(
-                () -> new WeaponDrop(gunService.getUnusedRandomGun(), gunService::addGun),
+                () -> new WeaponDrop(DropSource.NORMAL, gunService.getUnusedRandomGun(), gunService::addGun),
                 () -> new AmmoBoxItem(gunService::hasNotFullAmmo, gunService::addAmmo)
         );
         itemDropSuppliers = new EnumMap<>(ItemRarity.class);
@@ -43,7 +43,7 @@ public class ItemFactory {
         };
     }
     public MovableItemDrop createMovableWeaponDrop(final Gun gun, final Consumer<Gun> addGun) {
-        final WeaponDrop drop = new WeaponDrop(gun, addGun);
+        final WeaponDrop drop = new WeaponDrop(DropSource.PLAYER, gun, addGun);
         final MovableItemDrop moveDrop = new MovableItemDrop(drop);
         InteractionService.getInstance().addInteractable(moveDrop);
         return moveDrop;

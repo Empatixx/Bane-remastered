@@ -2,6 +2,7 @@ package cz.empatix.rooms.service;
 
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
+import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -27,6 +28,7 @@ public class BossRoom implements Room {
     private final EnemyService enemyService;
     private final RoomObjectService roomObjectService;
     private final RoomLockService roomLockService;
+    private final StatisticsService statisticsService;
     private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
     private boolean visited = false;
@@ -34,14 +36,16 @@ public class BossRoom implements Room {
     public BossRoom(final ItemService itemService,
                     final MapLoaderService mapLoaderService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
-                    final Set<RoomDirection> neighbors) {
+                    final Set<RoomDirection> neighbors,
+                    final StatisticsService statisticsService) {
         this.itemService = itemService;
         this.mapLoaderService = mapLoaderService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomLockService = new RoomLockService(this, neighbors);
-        enemyService = new EnemyService(itemService);
+        enemyService = new EnemyService(itemService, statisticsService);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
+        this.statisticsService = statisticsService;
     }
 
     @Override
@@ -78,8 +82,9 @@ public class BossRoom implements Room {
         roomObjectService.update(dt);
         if (enemyService.areEnemiesDead() && roomLockService.isLocked()) {
             roomLockService.setState(false);
+            AudioService.getInstance().play(Soundtrack.INGAME);
 
-            final Ladder ladder = new Ladder(mapLoaderService, itemService);
+            final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService);
             ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f, tileMap.getY() + tileMap.getHeight() / 2f);
             roomObjectService.add(ladder);
         }

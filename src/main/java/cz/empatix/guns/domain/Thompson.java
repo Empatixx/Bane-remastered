@@ -23,7 +23,8 @@ public class Thompson extends AbstractGun implements Gun{
     private final CommonImage gunHud;
     private final CommonText ammoHud;
     private final List<Bullet> bullets;
-    public Thompson() {
+    private final BulletFactory bulletFactory;
+    public Thompson(final BulletFactory bulletFactory) {
         this.minDamage = 1;
         this.maxDamage = 3;
 
@@ -45,6 +46,7 @@ public class Thompson extends AbstractGun implements Gun{
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
 
+        this.bulletFactory = bulletFactory;
     }
 
     @Override
@@ -63,7 +65,7 @@ public class Thompson extends AbstractGun implements Gun{
         }
         if (currentClip > 0) {
             LOGGER.info("Shooting from thompson clip: {}, ammo: {}", currentClip, ammo);
-            final Bullet bullet = BulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
+            final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
             bullets.add(bullet);
             currentClip--;
             lastShootTime = System.currentTimeMillis();

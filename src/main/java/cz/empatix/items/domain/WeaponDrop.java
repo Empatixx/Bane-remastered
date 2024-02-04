@@ -23,7 +23,10 @@ public class WeaponDrop implements ItemDrop {
     private final Vector2f position = new Vector2f();
     private final TextureAtlas.Entry texture;
     private boolean pickedUp = false;
-    public WeaponDrop(final Gun gun, final Consumer<Gun> addGun) {
+    private final DropSource source;
+    public WeaponDrop(final DropSource source,
+                      final Gun gun,
+                      final Consumer<Gun> addGun) {
         texture = AssetsService.getTexture(gun.getTexturePath());
         interactable = new CommonInteractable(pressedKeys -> {
             interactionTracker.interaction();
@@ -32,6 +35,7 @@ public class WeaponDrop implements ItemDrop {
                 pickedUp = true;
             }
         }, () -> true, () -> pickedUp, position, getWidth(), getHeight());
+        this.source = source;
     }
     @Override
     public void interact(final Set<Integer> keys) {
@@ -56,6 +60,11 @@ public class WeaponDrop implements ItemDrop {
     @Override
     public boolean canRemove() {
         return interactable.canRemove();
+    }
+
+    @Override
+    public boolean isPickedUp() {
+        return pickedUp;
     }
 
     @Override
@@ -110,5 +119,10 @@ public class WeaponDrop implements ItemDrop {
     @Override
     public boolean canRender() {
         return Camera.isInProjection(position, getWidth(), getHeight());
+    }
+
+    @Override
+    public DropSource getSource() {
+        return source;
     }
 }
