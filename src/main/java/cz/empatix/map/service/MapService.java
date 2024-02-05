@@ -57,13 +57,6 @@ public class MapService {
         renderables.add(sceneBackground);
         return renderables;
     }
-    public void debugRender() {
-        rooms.forEach(r -> {
-            if (r instanceof CommonRoom cm){
-                cm.debugRender();
-            }
-        });
-    }
 
     public void update(final double dt,
                        final Player player) {

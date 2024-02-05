@@ -215,7 +215,4 @@ public class EnemyImpl implements Damageable, DamageSource {
             hitCallback.accept(damage);
         }
     }
-    public void debugRender() {
-        aStarTargetting.debugRender();
-    }
 }

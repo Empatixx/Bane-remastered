@@ -136,8 +136,4 @@ public class DemonEye implements Enemy {
     public boolean canDropItems() {
         return enemyImpl.canDropItems();
     }
-    @Override
-    public void debugRender(){
-        enemyImpl.debugRender();
-    }
 }

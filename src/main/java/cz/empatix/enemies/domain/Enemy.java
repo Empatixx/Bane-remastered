@@ -35,7 +35,4 @@ public interface Enemy extends Drawable{
     default void despawn(){
 
     }
-    default void debugRender(){
-
-    }
 }

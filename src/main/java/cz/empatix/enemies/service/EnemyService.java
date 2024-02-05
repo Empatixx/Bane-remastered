@@ -94,7 +94,4 @@ public class EnemyService {
         enemies.removeIf(Enemy::canRemove);
 
     }
-    public void debugRender(){
-        enemies.forEach(Enemy::debugRender);
-    }
 }

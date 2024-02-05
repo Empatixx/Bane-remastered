@@ -64,9 +64,6 @@ public class GameStateService {
     public void render(final double dt) {
         Camera.update((float) dt);
         renderEngine.render(currentState.toRender(dt), dt);
-        if (currentState instanceof InGameState dd){
-            dd.debugRender();
-        }
         physicsService.debugRender();
     }
 
