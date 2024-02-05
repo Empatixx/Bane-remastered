@@ -9,6 +9,7 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import cz.empatix.rooms.service.CommonRoom;
 import cz.empatix.rooms.service.Room;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
@@ -55,6 +56,13 @@ public class MapService {
                 .collect(Collectors.toList());
         renderables.add(sceneBackground);
         return renderables;
+    }
+    public void debugRender() {
+        rooms.forEach(r -> {
+            if (r instanceof CommonRoom cm){
+                cm.debugRender();
+            }
+        });
     }
 
     public void update(final double dt,

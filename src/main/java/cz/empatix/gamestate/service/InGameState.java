@@ -133,6 +133,10 @@ public class InGameState extends GameState {
                 .collect(Collectors.toList());
     }
 
+    public void debugRender(){
+        mapService.debugRender();
+    }
+
     @Override
     public void cleanUp() {
         player.cleanUp();

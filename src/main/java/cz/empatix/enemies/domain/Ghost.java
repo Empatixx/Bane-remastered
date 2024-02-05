@@ -142,4 +142,8 @@ public class Ghost implements Enemy{
     public void setPosition(float x, float y) {
         enemyImpl.setPosition(x, y);
     }
+    @Override
+    public void debugRender(){
+        enemyImpl.debugRender();
+    }
 }

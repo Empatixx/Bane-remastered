@@ -3,7 +3,10 @@ package cz.empatix.enemies.targetting;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
+import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL33;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +45,11 @@ public class AStarTargetting {
             return;
         }
         final Vector2f position = positionSupplier.get();
-        final int startX = (int) position.x() + selfWidth / 2;
-        final int startY = (int) position.y() + selfHeight / 2;
+        final int startX = (int) position.x();
+        final int startY = (int) position.y();
 
-        final int targetX = (int) target.getX() + target.getWidth() / 2;
-        final int targetY = (int) target.getY() + target.getHeight() / 2;
+        final int targetX = (int) target.getX();
+        final int targetY = (int) target.getY();
 
         lastTargetX = (int) target.getX();
         lastTargetY = (int) target.getY();
@@ -58,25 +61,24 @@ public class AStarTargetting {
 
     private List<PathCell> aStar(final int startX, final int startY,
                                  final int targetX, final int targetY) {
-        final PriorityQueue<PathCell> openSet = new PriorityQueue<>(100, Comparator.comparingDouble(PathCell::f));
-        final Set<PathCell> openSetLookup = new HashSet<>(100);
+        final PriorityQueue<PathCell> openSet = new PriorityQueue<>(500, Comparator.comparingDouble(PathCell::f));
+        final Set<PathCell> openSetLookup = new HashSet<>(500);
 
-        final Set<PathCell> closedSet = new HashSet<>(100);
+        final Set<PathCell> closedSet = new HashSet<>(500);
 
         final PathCell startNode = new PathCell(startX, startY, 0, getDistance(startX, startY, targetX, targetY), null);
         openSet.add(startNode);
         openSetLookup.add(startNode);
 
         while (!openSet.isEmpty()) {
-            if (openSet.size() > 40000){
+            if (openSet.size() > 40000) {
                 LOGGER.error("A* failed to find path");
                 return List.of();
             }
             final PathCell currentNode = openSet.peek();
             openSetLookup.remove(currentNode);
             openSet.poll();
-
-            if (Math.abs(currentNode.x() - targetX) <= CELL_SIZE && Math.abs(currentNode.y() - targetY) <= CELL_SIZE) {
+            if (intersects(currentNode)) {
                 PathCell endNode = currentNode;
                 final List<PathCell> path = new ArrayList<>();
                 while (endNode != null) {
@@ -95,7 +97,22 @@ public class AStarTargetting {
             openSet.addAll(cells);
             openSetLookup.addAll(cells);
         }
+        LOGGER.error("A* failed to find path");
         return List.of();
+    }
+
+    private boolean intersects(final PathCell currentNode) {
+        final float xMin = currentNode.x();
+        final float xMax = currentNode.x() + selfWidth;
+        final float yMin = currentNode.y();
+        final float yMax = currentNode.y() + selfHeight;
+
+        final float playerXMin = target.getX();
+        final float playerXMax = target.getX() + target.getWidth();
+        final float playerYMin = target.getY();
+        final float playerYMax = target.getY() + target.getHeight();
+
+        return xMin < playerXMax && xMax > playerXMin && yMin < playerYMax && yMax > playerYMin;
     }
 
     private List<PathCell> createCells(final PathCell cell,
@@ -116,8 +133,8 @@ public class AStarTargetting {
 
     private boolean isNotBlocked(PathCell pathCell) {
         final PhysicsService service = PhysicsService.getInstance();
-        return !service.query(new Vector2f(pathCell.x(), pathCell.y()), new Vector2f(CELL_SIZE, CELL_SIZE),
-                EnumSet.of(CollisionType.ENEMY, CollisionType.PLAYER, CollisionType.TRAP, CollisionType.ENEMY_BULLET, CollisionType.PLAYER_BULLET,CollisionType.ITEM, CollisionType.ROOM_OBJECT));
+        return !service.query(new Vector2f(pathCell.x(), pathCell.y()), new Vector2f(selfWidth, selfHeight),
+                EnumSet.of(CollisionType.ENEMY, CollisionType.PLAYER, CollisionType.TRAP, CollisionType.ENEMY_BULLET, CollisionType.PLAYER_BULLET, CollisionType.ITEM, CollisionType.ROOM_OBJECT));
     }
 
     private int getDistance(final int startX, final int startY, final int targetX, final int targetY) {
@@ -130,8 +147,8 @@ public class AStarTargetting {
         }
         final PathCell target = path.peek();
         final Vector2f position = positionSupplier.get();
-        final float x = position.x() + selfWidth / 2;
-        final float y = position.y() + selfHeight / 2;
+        final float x = position.x();
+        final float y = position.y();
         final float targetX = target.x();
         final float targetY = target.y();
 
@@ -154,8 +171,8 @@ public class AStarTargetting {
             return new Vector2f(0, 0);
         }
         final PathCell target = path.peek();
-        final float x = position.x() + selfWidth / 2;
-        final float y = position.y() + selfHeight / 2;
+        final float x = position.x();
+        final float y = position.y();
         final float targetX = target.x();
         final float targetY = target.y();
 
@@ -169,5 +186,17 @@ public class AStarTargetting {
     public boolean isTargetLeftFromEnemy() {
         final Vector2f position = positionSupplier.get();
         return target.getX() + target.getWidth() / 2f < position.x() + selfWidth / 2f;
+    }
+
+    public void debugRender() {
+        GL11.glColor3f(1, 0, 0);
+        GL11.glPointSize(5);
+
+        GL11.glBegin(GL11.GL_LINE_STRIP);
+        final Vector2f camera = Camera.getPosition();
+        for (PathCell cell : path) {
+            GL11.glVertex2f(cell.x() - camera.x, cell.y() - camera.y);
+        }
+        GL11.glEnd();
     }
 }

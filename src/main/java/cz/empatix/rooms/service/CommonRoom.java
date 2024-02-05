@@ -142,6 +142,9 @@ public class CommonRoom implements Room {
         renderables.add(roomLocker);
         return renderables;
     }
+    public void debugRender(){
+        enemyService.debugRender();
+    }
 
     @Override
     public int getWidth() {
