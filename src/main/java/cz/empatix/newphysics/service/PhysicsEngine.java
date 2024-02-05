@@ -111,6 +111,11 @@ public class PhysicsEngine {
         final Transform transform = new Transform();
         transform.setTranslation(new Vector2(point.x, point.y));
         final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);
+        rectangle.getVertices()[0].set(0,0);
+        rectangle.getVertices()[1].set(dimensions.x(),0);
+        rectangle.getVertices()[2].set(dimensions.x(),dimensions.y());
+        rectangle.getVertices()[3].set(0,dimensions.y());
+
         final Iterator<DetectResult<PhysicsObject, BodyFixture>> resultIterator = world.detectIterator(rectangle, transform, new DetectFilter(true, true, null));
         while (resultIterator.hasNext()) {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();

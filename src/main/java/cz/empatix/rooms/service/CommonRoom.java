@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class CommonRoom implements Room {
-    private static final int MAX_ENEMIES = 1;
+    private static final int MAX_ENEMIES = 5;
     private static final int MAX_SPIKES = 3;
     private static final int MAX_TORCHES = 2;
     private static final int MAX_BONES = 2;
@@ -142,7 +142,6 @@ public class CommonRoom implements Room {
         renderables.add(roomLocker);
         return renderables;
     }
-
     @Override
     public int getWidth() {
         return tileMap.getWidth();

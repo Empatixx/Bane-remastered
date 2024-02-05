@@ -9,6 +9,7 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import cz.empatix.rooms.service.CommonRoom;
 import cz.empatix.rooms.service.Room;
 import org.joml.Vector2f;
 import org.slf4j.Logger;

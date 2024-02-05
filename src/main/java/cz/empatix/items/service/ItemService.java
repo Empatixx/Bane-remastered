@@ -3,7 +3,6 @@ package cz.empatix.items.service;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.domain.DropSource;
 import cz.empatix.items.domain.ItemDrop;
-import cz.empatix.items.domain.WeaponDrop;
 import cz.empatix.render.attributes.Drawable;
 
 import java.util.ArrayList;
@@ -12,7 +11,7 @@ import java.util.List;
 public class ItemService {
     private final List<ItemDrop> itemDrops = new ArrayList<>(10);
     private ItemFactory itemFactory;
-    public StatisticsService statisticsService;
+    public final StatisticsService statisticsService;
     public ItemService(final StatisticsService statisticsService){
         this.statisticsService = statisticsService;
     }

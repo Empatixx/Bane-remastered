@@ -133,6 +133,7 @@ public class InGameState extends GameState {
                 .collect(Collectors.toList());
     }
 
+
     @Override
     public void cleanUp() {
         player.cleanUp();
