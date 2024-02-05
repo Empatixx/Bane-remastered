@@ -91,7 +91,7 @@ public class Flamethrower implements RoomObject, DamageSource {
 
     @Override
     public DamageSourceType type() {
-        return DamageSourceType.ENEMY;
+        return DamageSourceType.TRAP;
     }
 
     public Vector2f getPosition() {

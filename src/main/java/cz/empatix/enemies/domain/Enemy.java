@@ -23,7 +23,7 @@ public interface Enemy extends Drawable{
     }
     @Override
     default int getZIndex(){
-        return 2;
+        return 3;
     }
     float getX();
     float getY();

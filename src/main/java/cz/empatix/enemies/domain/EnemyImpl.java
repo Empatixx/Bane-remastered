@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class EnemyImpl implements Damageable, DamageSource {
+    private final static int TRAP_INVINCIBILITY = 1000;
     private final VitalityDisplayService vitalityDisplayService;
     private final Animation animation;
     private final InterpolatedPhysicsObject physicsBody;
@@ -35,6 +36,7 @@ public class EnemyImpl implements Damageable, DamageSource {
     private long lastHit;
     private final int damage;
     private final Consumer<Integer> hitCallback;
+    private long trapInvincibility;
 
     public EnemyImpl(final int width,
                      final int height,
@@ -90,6 +92,9 @@ public class EnemyImpl implements Damageable, DamageSource {
     }
 
     private boolean canHit(final DamageSourceType source, final int damage) {
+        if (source == DamageSourceType.TRAP){
+            return System.currentTimeMillis() - trapInvincibility > TRAP_INVINCIBILITY;
+        }
         return source != DamageSourceType.ENEMY;
     }
 
@@ -213,6 +218,9 @@ public class EnemyImpl implements Damageable, DamageSource {
     public void hit(DamageSourceType source, int damage) {
         if (canHit(source, damage)) {
             hitCallback.accept(damage);
+            if (source == DamageSourceType.TRAP) {
+                trapInvincibility = System.currentTimeMillis();
+            }
         }
     }
 }
