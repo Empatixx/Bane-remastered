@@ -164,11 +164,11 @@ public class AStarTargetting {
     public Vector2f getDirectionTarget() {
         final Vector2f position = positionSupplier.get();
         if (path.isEmpty()) {
-            /*final Vector2f direction = new Vector2f(target.getX() + target.getWidth() / 2f - position.x() - selfWidth / 2f, target.getY() + target.getHeight() / 2f - position.y() - selfHeight / 2f);
+            final Vector2f direction = new Vector2f(target.getX() + target.getWidth() / 2f - position.x() - selfWidth / 2f, target.getY() + target.getHeight() / 2f - position.y() - selfHeight / 2f);
             if (direction.length() > 0) {
                 direction.normalize();
-            }*/
-            return new Vector2f(0, 0);
+            }
+            return direction;
         }
         final PathCell target = path.peek();
         final float x = position.x();
@@ -186,17 +186,5 @@ public class AStarTargetting {
     public boolean isTargetLeftFromEnemy() {
         final Vector2f position = positionSupplier.get();
         return target.getX() + target.getWidth() / 2f < position.x() + selfWidth / 2f;
-    }
-
-    public void debugRender() {
-        GL11.glColor3f(1, 0, 0);
-        GL11.glPointSize(5);
-
-        GL11.glBegin(GL11.GL_LINE_STRIP);
-        final Vector2f camera = Camera.getPosition();
-        for (PathCell cell : path) {
-            GL11.glVertex2f(cell.x() - camera.x, cell.y() - camera.y);
-        }
-        GL11.glEnd();
     }
 }
