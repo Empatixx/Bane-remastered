@@ -15,6 +15,7 @@ import cz.empatix.map.service.MapService;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
+import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector3i;
@@ -88,6 +89,7 @@ public class LobbyState extends GameState {
     public void keyPressed(int key) {
         if (key == GLFW.GLFW_KEY_ESCAPE){
             setCurrentState(GameStateType.MENU);
+            GaussianBlur.setEnabled(false);
         }
         player.keyPressed(key);
     }
