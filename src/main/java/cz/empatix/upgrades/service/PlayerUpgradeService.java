@@ -1,5 +1,6 @@
 package cz.empatix.upgrades.service;
 
+import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
@@ -11,11 +12,15 @@ import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PlayerUpgradeService {
     private final List<UpgradeTree> upgradeTrees;
+    private final CommonImage upgradeBackground;
     private boolean isActive;
     public PlayerUpgradeService(){
+        upgradeBackground = new CommonImage("ingame/pausebg.tga", new Vector2f(675,150), 3, 2, RenderScene.OVERLAYS);
+
         final PlayerUpgrade utilityUpgrade = new PlayerUpgrade(QualityLevel.COMMON, false);
         final PlayerUpgrade offenseUpgrade = new PlayerUpgrade(QualityLevel.COMMON, false);
         final PlayerUpgrade defenseUpgrade = new PlayerUpgrade(QualityLevel.COMMON, false);
@@ -72,9 +77,11 @@ public class PlayerUpgradeService {
         upgradeTrees = List.of(utilityTree, offenseTree, defenseTree);
     }
     public List<Renderable> toRender() {
-        return upgradeTrees.stream()
+        final List<Renderable> trees = upgradeTrees.stream()
                 .flatMap(tree -> tree.getSubRenderables().stream())
-                .toList();
+                .collect(Collectors.toList());
+        trees.add(upgradeBackground);
+        return trees;
     }
     public boolean isActive() {
         return isActive;
