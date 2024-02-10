@@ -1,6 +1,5 @@
 package cz.empatix.upgrades.service;
 
-import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
@@ -9,17 +8,23 @@ import cz.empatix.upgrades.domain.PlayerUpgrade;
 import cz.empatix.upgrades.domain.QualityLevel;
 import cz.empatix.upgrades.domain.TreeType;
 import org.joml.Vector2f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class PlayerUpgradeService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PlayerUpgradeService.class);
     private final List<UpgradeTree> upgradeTrees;
+    private PlayerUpgrade selectedUpgrade;
     private final CommonImage upgradeBackground;
     private boolean isActive;
-    public PlayerUpgradeService(){
-        upgradeBackground = new CommonImage("ingame/pausebg.tga", new Vector2f(675,150), 3, 2, RenderScene.OVERLAYS);
+
+    public PlayerUpgradeService() {
+        upgradeBackground = new CommonImage("ingame/pausebg.tga", new Vector2f(675, 150), 3.0f, 2, RenderScene.OVERLAYS);
 
         final PlayerUpgrade utilityUpgrade = new PlayerUpgrade(QualityLevel.COMMON, false);
         final PlayerUpgrade offenseUpgrade = new PlayerUpgrade(QualityLevel.COMMON, false);
@@ -76,16 +81,37 @@ public class PlayerUpgradeService {
 
         upgradeTrees = List.of(utilityTree, offenseTree, defenseTree);
     }
+
     public List<Renderable> toRender() {
-        final List<Renderable> trees = upgradeTrees.stream()
+        final List<Renderable> renderables = upgradeTrees.stream()
                 .flatMap(tree -> tree.getSubRenderables().stream())
                 .collect(Collectors.toList());
-        trees.add(upgradeBackground);
-        return trees;
+        renderables.add(upgradeBackground);
+        if (selectedUpgrade != null){
+            renderables.add(selectedUpgrade);
+        }
+        return renderables;
     }
+    public void mousePresseed(final float mouseX, final float mouseY){
+        if (isActive) {
+            final List<PlayerUpgrade> pressedUpgrades = upgradeTrees.stream()
+                    .map(tree -> tree.getPressedUpgrade(mouseX, mouseY))
+                    .filter(Objects::nonNull)
+                    .toList();
+            if (pressedUpgrades.size() != 1){
+                LOGGER.warn("Pressed multiple upgrades from trees: {}", pressedUpgrades.size());
+            }
+            selectedUpgrade = pressedUpgrades.isEmpty() ? null : pressedUpgrades.get(0).deepCopy();
+            if (selectedUpgrade != null){
+                selectedUpgrade.setPosition(640,100);
+            }
+        }
+    }
+
     public boolean isActive() {
         return isActive;
     }
+
     public void setActive(final boolean active) {
         isActive = active;
         GaussianBlur.setEnabled(active);
