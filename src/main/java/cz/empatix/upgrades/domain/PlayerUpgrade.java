@@ -3,6 +3,7 @@ package cz.empatix.upgrades.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -11,6 +12,8 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
+import java.util.List;
+
 public class PlayerUpgrade implements Drawable {
     private final static int SCALE = 2;
     private final static int DIMENSION_WIDTH = 32 * SCALE;
@@ -18,10 +21,14 @@ public class PlayerUpgrade implements Drawable {
     private final Animation animation;
     private final Vector2f position;
     private boolean locked;
+    private final CommonImage upgradeImage;
+    private final String upgradeImg;
 
-    public PlayerUpgrade(final QualityLevel level, final boolean isLocked) {
+    public PlayerUpgrade(final String upgradeImg, final QualityLevel level, final boolean isLocked) {
         position = new Vector2f();
         locked = isLocked;
+        upgradeImage = new CommonImage(upgradeImg, new Vector2f(),2, 3, RenderScene.OVERLAYS);
+        this.upgradeImg = upgradeImg;
         animation = Animation.builder()
                 .texture(AssetsService.getTexture("ingame/talent_frame.tga"))
                 .setTotal(6, 1)
@@ -46,7 +53,6 @@ public class PlayerUpgrade implements Drawable {
             }
         }
     }
-
     @Override
     public RenderData renderData() {
         return new RenderData(
@@ -73,6 +79,7 @@ public class PlayerUpgrade implements Drawable {
 
     public void setPosition(final float x, final float y) {
         position.set(x, y);
+        upgradeImage.setPosition(x + 16, y + 16);
     }
 
     public boolean isLocked() {
@@ -85,7 +92,7 @@ public class PlayerUpgrade implements Drawable {
     }
 
     public PlayerUpgrade deepCopy() {
-        final PlayerUpgrade copy = new PlayerUpgrade(QualityLevel.COMMON, locked);
+        final PlayerUpgrade copy = new PlayerUpgrade(upgradeImg, QualityLevel.COMMON, locked);
         copy.setPosition(position.x(), position.y());
         return copy;
     }
@@ -93,7 +100,12 @@ public class PlayerUpgrade implements Drawable {
     public int getWidth() {
         return DIMENSION_WIDTH;
     }
+
     public int getHeight() {
         return DIMENSION_HEIGHT;
+    }
+    @Override
+    public List<Renderable> getSubRenderables() {
+        return List.of(upgradeImage);
     }
 }
