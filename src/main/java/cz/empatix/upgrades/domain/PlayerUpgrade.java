@@ -89,4 +89,11 @@ public class PlayerUpgrade implements Drawable {
         copy.setPosition(position.x(), position.y());
         return copy;
     }
+
+    public int getWidth() {
+        return DIMENSION_WIDTH;
+    }
+    public int getHeight() {
+        return DIMENSION_HEIGHT;
+    }
 }

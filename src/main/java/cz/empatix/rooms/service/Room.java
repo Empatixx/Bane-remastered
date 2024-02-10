@@ -51,4 +51,10 @@ public interface Room {
     }
     Map<RoomDirection, Room> getNeighboursMap();
     RoomType getRoomType();
+    default void hover(final float mouseX, final float mouseY){
+    }
+    default void mousePressed(final int button, final float mouseX, final float mouseY){
+    }
+    default void mouseReleased(final int button, final float mouseX, final float mouseY){
+    }
 }

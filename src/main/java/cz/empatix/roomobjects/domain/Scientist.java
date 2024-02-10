@@ -6,6 +6,7 @@ import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
+import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -21,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class Scientist implements RoomObject, Interactable {
+public class Scientist implements Interactable, Drawable {
     private final static float SCALE = 2.5f;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 40;
@@ -87,13 +88,15 @@ public class Scientist implements RoomObject, Interactable {
         return Camera.isInProjection(position, (int) (DIMENSION_WIDTH * SCALE), (int) (DIMENSION_HEIGHT * SCALE));
     }
 
-    @Override
-    public void update(double dt) {
+    public void update(double dt, final float mouseX, final float mouseY) {
         animation.update();
         if (playerUpgradeService.isActive() && !interactionTracker.isInteracting()){
             playerUpgradeService.setActive(false);
         }
     }
+
+
+
 
     @Override
     public boolean canRemove() {
@@ -132,4 +135,11 @@ public class Scientist implements RoomObject, Interactable {
     public int getHeight() {
         return (int)(DIMENSION_HEIGHT * SCALE);
     }
+
+    public void mousePressed(final int button, final float mouseX, final float mouseY) {
+        if (playerUpgradeService.isActive()){
+            playerUpgradeService.mousePresseed(mouseX, mouseY);
+        }
+    }
+
 }

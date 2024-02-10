@@ -114,11 +114,6 @@ public class LobbyRoom implements Room {
             roomObjectService.add(craftingTable);
         }
         {
-            final Scientist scientist = new Scientist();
-            scientist.setPosition(Tile.TILE_SIZE * Tile.SCALE * 4, Tile.TILE_SIZE * Tile.SCALE * 2);
-            roomObjectService.add(scientist);
-        }
-        {
             final Box box = new Box();
             box.setPosition(Tile.TILE_SIZE * Tile.SCALE * 5, Tile.TILE_SIZE * Tile.SCALE * 2);
             roomObjectService.add(box);

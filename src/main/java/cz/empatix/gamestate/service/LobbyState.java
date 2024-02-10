@@ -18,6 +18,8 @@ import cz.empatix.player.Player;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import cz.empatix.roomobjects.domain.Scientist;
+import cz.empatix.tiles.domain.Tile;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
@@ -29,6 +31,7 @@ public class LobbyState extends GameState {
     private MapService mapService;
     private Player player;
     private CoinService coinService;
+    private Scientist scientist;
 
     protected LobbyState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.LOBBY);
@@ -48,6 +51,9 @@ public class LobbyState extends GameState {
 
         coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(0,236,1));
 
+        scientist = new Scientist();
+        scientist.setPosition(Tile.TILE_SIZE * Tile.SCALE * 4, Tile.TILE_SIZE * Tile.SCALE * 2);
+
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
     }
@@ -59,6 +65,7 @@ public class LobbyState extends GameState {
         Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
 
         player.update(dt);
+        scientist.update(dt, mouseX, mouseY);
         mapService.update(dt, player);
     }
 
@@ -70,7 +77,7 @@ public class LobbyState extends GameState {
 
     @Override
     public List<Renderable> toRender(double dt) {
-        final List<Renderable> renderables = Stream.of(mapService.toRender(dt), List.of(player), coinService.toRender())
+        final List<Renderable> renderables = Stream.of(mapService.toRender(dt), List.of(player, scientist), coinService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         renderables.add(CursorService.getCursor());
@@ -101,12 +108,11 @@ public class LobbyState extends GameState {
 
     @Override
     public void mousePressed(int button) {
-
+        scientist.mousePressed(button, mouseX, mouseY);
     }
 
     @Override
     public void mouseReleased(int button) {
-
     }
 
     @Override

@@ -103,7 +103,7 @@ public class PlayerUpgradeService {
             }
             selectedUpgrade = pressedUpgrades.isEmpty() ? null : pressedUpgrades.get(0).deepCopy();
             if (selectedUpgrade != null){
-                selectedUpgrade.setPosition(640,100);
+                selectedUpgrade.setPosition(675 + upgradeBackground.getWidth()/2f - selectedUpgrade.getWidth()/2f,90);
             }
         }
     }
