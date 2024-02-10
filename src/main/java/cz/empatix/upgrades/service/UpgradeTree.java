@@ -1,5 +1,6 @@
 package cz.empatix.upgrades.service;
 
+import com.sun.source.tree.Tree;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
@@ -7,15 +8,19 @@ import cz.empatix.upgrades.domain.PlayerUpgrade;
 import cz.empatix.upgrades.domain.TalentPath;
 import cz.empatix.upgrades.domain.TreeType;
 import org.joml.Vector2f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public class UpgradeTree {
+    private final static Logger LOGGER = LoggerFactory.getLogger(UpgradeTree.class);
     private final CommonImage treeIcon;
     private final List<PlayerUpgrade> upgrades;
     private final List<TalentPath> parentConnectors;
+    private final TreeType type;
 
     public UpgradeTree(final List<PlayerUpgrade> upgrades, final TreeType type) {
         this.upgrades = upgrades;
@@ -34,7 +39,7 @@ public class UpgradeTree {
             case UTILITY -> "ingame/utility_icon.tga";
         };
         treeIcon = new CommonImage(texture, new Vector2f(), 4f, 3, RenderScene.OVERLAYS);
-
+        this.type = type;
     }
 
     public void setPosition(final float x, final float y) {
@@ -53,5 +58,15 @@ public class UpgradeTree {
         renderables.addAll(parentConnectors);
         renderables.add(treeIcon);
         return renderables;
+    }
+
+    public PlayerUpgrade getPressedUpgrade(final float mouseX, final float mouseY) {
+        final List<PlayerUpgrade> upgrades = this.upgrades.stream()
+                .filter(upgrade -> upgrade.isPressed(mouseX, mouseY))
+                .toList();
+        if (upgrades.size() > 1) {
+            LOGGER.warn("Multiple upgrades pressed at the same time! in type: {}", type);
+        }
+        return upgrades.isEmpty() ? null : upgrades.get(0);
     }
 }
