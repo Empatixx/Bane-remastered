@@ -4,6 +4,7 @@ import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.upgrades.domain.PlayerUpgrade;
+import cz.empatix.upgrades.domain.PlayerUpgradeName;
 import cz.empatix.upgrades.domain.TalentPath;
 import cz.empatix.upgrades.domain.TreeType;
 import org.joml.Vector2f;
@@ -11,7 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class UpgradeTree {
     private final static Logger LOGGER = LoggerFactory.getLogger(UpgradeTree.class);
@@ -71,4 +74,16 @@ public class UpgradeTree {
         return upgrades.isEmpty() ? null : upgrades.get(0);
     }
 
+    public List<PlayerUpgrade> getUpgrades() {
+        return upgrades;
+    }
+
+    public void setBoughtUpgrades(final Map<PlayerUpgradeName, Boolean> boughtUpgrades) {
+        upgrades.forEach(upgrade -> {
+            final Boolean bought = boughtUpgrades.get(upgrade.getName());
+            if (bought != null) {
+                upgrade.setBought(bought);
+            }
+        });
+    }
 }

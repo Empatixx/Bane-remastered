@@ -20,6 +20,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.roomobjects.domain.Scientist;
 import cz.empatix.tiles.domain.Tile;
+import cz.empatix.upgrades.service.UpgradeTreeFactory;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
@@ -90,6 +91,7 @@ public class LobbyState extends GameState {
         PhysicsService.getInstance().clear();
         InteractionService.getInstance().clear();
         LightningService.getInstance().clear();
+        scientist.cleanUp();
     }
 
     @Override

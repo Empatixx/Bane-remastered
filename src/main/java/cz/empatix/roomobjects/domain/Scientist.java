@@ -143,4 +143,7 @@ public class Scientist implements Interactable, Drawable {
         }
     }
 
+    public void cleanUp() {
+        playerUpgradeService.save();
+    }
 }

@@ -189,4 +189,8 @@ public class PlayerUpgrade implements Drawable {
             }
         }
     }
+
+    public PlayerUpgradeName getName() {
+        return name;
+    }
 }
