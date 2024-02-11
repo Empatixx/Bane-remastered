@@ -68,7 +68,4 @@ public class UpgradeTree {
         return upgrades.isEmpty() ? null : upgrades.get(0);
     }
 
-    public void update(final double dt, final float mouseX, final float mouseY) {
-        upgrades.forEach(upgrade -> upgrade.update(dt, mouseX, mouseY));
-    }
 }

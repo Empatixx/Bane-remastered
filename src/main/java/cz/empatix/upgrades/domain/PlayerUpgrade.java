@@ -66,7 +66,7 @@ public class PlayerUpgrade implements Drawable {
         this.description = new ArrayList<>();
 
         this.buy = new TransparentButton("Buy", new Vector2f(735, 410), 3);
-        this.price = new CommonText("100", "PixelFJVerdana12pt.ttf", new Vector2f(840, 410), 4,
+        this.price = new CommonText("100,-", "PixelFJVerdana12pt.ttf", new Vector2f(840, 410), 4,
                 RenderScene.OVERLAYS, FontSize.FONTSIZE_22);
         this.price.setColorRGB(222, 112, 38);
     }

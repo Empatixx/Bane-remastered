@@ -161,7 +161,9 @@ public class PlayerUpgradeService {
 
     public void update(final double dt,final float mouseX, final float mouseY) {
         if (isActive) {
-            upgradeTrees.forEach(tree -> tree.update(dt,mouseX, mouseY));
+            if (selectedUpgrade != null) {
+                selectedUpgrade.update(dt, mouseX, mouseY);
+            }
         }
     }
 }
