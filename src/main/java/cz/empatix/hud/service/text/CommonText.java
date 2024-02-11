@@ -108,4 +108,8 @@ public class CommonText implements HUDElement {
     public Vector2f getPosition() {
         return position;
     }
+
+    public String getText() {
+        return text;
+    }
 }

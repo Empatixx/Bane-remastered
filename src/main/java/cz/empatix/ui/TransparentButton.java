@@ -40,6 +40,7 @@ public class TransparentButton implements UIElement{
         this.dimensions.add(DIMENSIONS_BONUS_OFFSET, DIMENSIONS_BONUS_OFFSET);
     }
 
+
     @Override
     public RenderData renderData() {
         return null;
@@ -70,6 +71,9 @@ public class TransparentButton implements UIElement{
     }
 
     boolean mouseIntersectsUI(final double mouseX, final double mouseY) {
+        System.out.println("min" + position.x + " " + position.y);
+        System.out.println("max" + (position.x + dimensions.x()) + " " + (position.y + dimensions.y()));
+        System.out.println("mouse" + mouseX + " " + mouseY);
         return mouseX > position.x - DIMENSIONS_BONUS_OFFSET && mouseX < position.x + dimensions.x()  &&
                 mouseY > position.y - dimensions.y() && mouseY < position.y + DIMENSIONS_BONUS_OFFSET;
     }
@@ -115,4 +119,5 @@ public class TransparentButton implements UIElement{
     public RenderScene renderScene() {
         return DEFAULT_SCENE;
     }
+
 }

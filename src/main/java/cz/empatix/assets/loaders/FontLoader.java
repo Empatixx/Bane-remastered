@@ -51,14 +51,17 @@ public class FontLoader implements AssetLoader<RawFont> {
                     .filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".ttf"))
                     .forEach(p -> {
-                        final RawFont font16 = decodeFont(p, FontSize.FONTSIZE_22);
+                        final RawFont font16 = decodeFont(p, FontSize.FONTSIZE_16);
                         fonts.add(font16);
 
-                        final RawFont font20 = decodeFont(p, FontSize.FONTSIZE_27);
-                        fonts.add(font20);
+                        final RawFont font22 = decodeFont(p, FontSize.FONTSIZE_22);
+                        fonts.add(font22);
 
-                        final RawFont font24 = decodeFont(p, FontSize.FONTSIZE_32);
-                        fonts.add(font24);
+                        final RawFont font27 = decodeFont(p, FontSize.FONTSIZE_27);
+                        fonts.add(font27);
+
+                        final RawFont font32 = decodeFont(p, FontSize.FONTSIZE_32);
+                        fonts.add(font32);
 
                         total.incrementAndGet();
                     });

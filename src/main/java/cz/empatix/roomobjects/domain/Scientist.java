@@ -32,6 +32,7 @@ public class Scientist implements Interactable, Drawable {
     private final InteractionTracker interactionTracker;
     private final AlternativeViewText alternativeViewText;
     private final PlayerUpgradeService playerUpgradeService;
+
     public Scientist() {
         animation = Animation.builder()
                 .setTotal(1, 6)
@@ -42,8 +43,8 @@ public class Scientist implements Interactable, Drawable {
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
         interactionTracker = new InteractionTracker();
-        alternativeViewText = new AlternativeViewText("Press E to upgrade", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE + OFFSET),1, FontSize.FONTSIZE_22,Camera.getProjection());
-        alternativeViewText.setCenterX(position.x(),position.x() + DIMENSION_WIDTH*SCALE);
+        alternativeViewText = new AlternativeViewText("Press E to upgrade", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0, DIMENSION_HEIGHT * SCALE + OFFSET), 1, FontSize.FONTSIZE_22, Camera.getProjection());
+        alternativeViewText.setCenterX(position.x(), position.x() + DIMENSION_WIDTH * SCALE);
         alternativeViewText.setColorRGB(222, 112, 38);
 
         playerUpgradeService = new PlayerUpgradeService();
@@ -53,12 +54,12 @@ public class Scientist implements Interactable, Drawable {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        if(!interactionTracker.isInteracting()){
+        if (!interactionTracker.isInteracting()) {
             return List.of();
         }
         final List<Renderable> renderables = new ArrayList<>();
         renderables.addAll(alternativeViewText.getSubRenderables());
-        if (playerUpgradeService.isActive()){
+        if (playerUpgradeService.isActive()) {
             renderables.addAll(playerUpgradeService.toRender());
         }
         return renderables;
@@ -90,12 +91,11 @@ public class Scientist implements Interactable, Drawable {
 
     public void update(double dt, final float mouseX, final float mouseY) {
         animation.update();
-        if (playerUpgradeService.isActive() && !interactionTracker.isInteracting()){
+        playerUpgradeService.update(dt, mouseX, mouseY);
+        if (playerUpgradeService.isActive() && !interactionTracker.isInteracting()) {
             playerUpgradeService.setActive(false);
         }
     }
-
-
 
 
     @Override
@@ -105,14 +105,14 @@ public class Scientist implements Interactable, Drawable {
 
     public void setPosition(final float x, final float y) {
         position.set(x, y);
-        alternativeViewText.setPosition(new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE + OFFSET));
-        alternativeViewText.setCenterX(position.x(),position.x() + DIMENSION_WIDTH*SCALE);
+        alternativeViewText.setPosition(new Vector2f(position).add(0, DIMENSION_HEIGHT * SCALE + OFFSET));
+        alternativeViewText.setCenterX(position.x(), position.x() + DIMENSION_WIDTH * SCALE);
     }
 
     @Override
     public void interact(Set<Integer> keys) {
         interactionTracker.interaction();
-        if(keys.contains(GLFW.GLFW_KEY_E)){
+        if (keys.contains(GLFW.GLFW_KEY_E)) {
             playerUpgradeService.setActive(!playerUpgradeService.isActive());
         }
     }
@@ -129,15 +129,16 @@ public class Scientist implements Interactable, Drawable {
 
     @Override
     public int getWidth() {
-        return (int)(DIMENSION_WIDTH * SCALE);
+        return (int) (DIMENSION_WIDTH * SCALE);
     }
+
     @Override
     public int getHeight() {
-        return (int)(DIMENSION_HEIGHT * SCALE);
+        return (int) (DIMENSION_HEIGHT * SCALE);
     }
 
     public void mousePressed(final int button, final float mouseX, final float mouseY) {
-        if (playerUpgradeService.isActive()){
+        if (playerUpgradeService.isActive()) {
             playerUpgradeService.mousePressed(mouseX, mouseY);
         }
     }

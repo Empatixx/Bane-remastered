@@ -1,6 +1,5 @@
 package cz.empatix.upgrades.service;
 
-import com.sun.source.tree.Tree;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class UpgradeTree {
     private final static Logger LOGGER = LoggerFactory.getLogger(UpgradeTree.class);
@@ -68,5 +66,9 @@ public class UpgradeTree {
             LOGGER.warn("Multiple upgrades pressed at the same time! in type: {}", type);
         }
         return upgrades.isEmpty() ? null : upgrades.get(0);
+    }
+
+    public void update(final double dt, final float mouseX, final float mouseY) {
+        upgrades.forEach(upgrade -> upgrade.update(dt, mouseX, mouseY));
     }
 }
