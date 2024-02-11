@@ -10,7 +10,7 @@ public class GunSlots {
     private final Logger LOGGER = LoggerFactory.getLogger(GunSlots.class);
     private final static int DEFAULT_MAX_SLOTS = 2;
     private final ArrayList<Gun> slots;
-    private final int maxSlots;
+    private int maxSlots;
     private int currentSlot;
 
     public GunSlots() {
@@ -93,5 +93,10 @@ public class GunSlots {
         return slots
                 .stream()
                 .anyMatch(gun -> gun != null && !gun.hasFullAmmo());
+    }
+
+    public void addSlot() {
+        slots.add(null);
+        maxSlots++;
     }
 }

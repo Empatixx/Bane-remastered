@@ -13,6 +13,7 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.postprocessing.domain.GaussianBlur;

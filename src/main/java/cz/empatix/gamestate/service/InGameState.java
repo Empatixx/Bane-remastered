@@ -22,11 +22,13 @@ import cz.empatix.map.service.MapService;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.pause.service.PauseService;
+import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.upgrades.service.FileUpgradeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +58,7 @@ public class InGameState extends GameState {
         CursorService.setCursor(CursorType.CROSSHAIR);
 
         final StatisticsService statisticsService = new StatisticsService();
+        final ActiveUpgradeService activeUpgradeService = new ActiveUpgradeService();
 
         player = new Player();
         coinService = new CoinService();
@@ -83,6 +86,8 @@ public class InGameState extends GameState {
 
         AudioService.getInstance().play(Soundtrack.INGAME);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+
+
     }
 
     @Override

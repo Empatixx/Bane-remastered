@@ -25,6 +25,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.upgrades.domain.PlayerUpgradeName;
 import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.geometry.Mass;
 import org.dyn4j.geometry.MassType;
@@ -66,7 +67,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
     private int armor;
     private long lastHitTime;
 
-    public Player() {
+    public  Player() {
         maxHealth = DEFAULT_MAX_HEALTH;
         health = maxHealth;
 
@@ -212,6 +213,12 @@ public class Player implements Drawable, InteractEntity, Damageable {
         return getArmor() == getMaxArmor();
     }
 
+    public void setMaxHealth(final int maxHealth) {
+        this.maxHealth = maxHealth;
+    }
+    public void setMaxArmor(final int maxArmor) {
+        this.maxArmor = maxArmor;
+    }
     public void setHealth(final int health) {
         this.health = health;
         if (this.health > maxHealth) {

@@ -11,6 +11,7 @@ import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
+import cz.empatix.player.DamageEventHook;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
@@ -43,7 +44,6 @@ public class GunService {
     private final GunSlots slots;
     private final ItemService itemService;
     private final StatisticsService statisticsService;
-
     private float shooterX, shooterY, targetX, targetY;
 
     public GunService(final ItemService itemService,
@@ -195,5 +195,13 @@ public class GunService {
         itemDrop.applyForce(forceX, forceY);
 
         itemService.add(itemDrop);
+    }
+
+    public void addSlot() {
+        slots.addSlot();
+    }
+
+    public void addHook(final DamageEventHook hook) {
+
     }
 }
