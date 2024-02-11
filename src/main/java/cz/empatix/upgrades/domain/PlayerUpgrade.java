@@ -31,6 +31,7 @@ public class PlayerUpgrade implements Drawable {
     private String title;
     private String description;
     private PlayerUpgrade parent;
+    private PlayerUpgradeName name;
 
     public PlayerUpgrade(final String upgradeImg,
                          final QualityLevel level,
@@ -73,6 +74,10 @@ public class PlayerUpgrade implements Drawable {
         };
         description = "";
         title = "";
+        name = PlayerUpgradeName.UNKNOWN;
+    }
+    public void setName(final PlayerUpgradeName name){
+        this.name = name;
     }
     public boolean canBuy(){
         if (parent == null){
