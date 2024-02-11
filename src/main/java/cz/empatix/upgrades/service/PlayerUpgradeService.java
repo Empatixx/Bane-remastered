@@ -1,14 +1,8 @@
 package cz.empatix.upgrades.service;
 
-import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.render.domain.RenderScene;
 import cz.empatix.upgrades.domain.PlayerUpgrade;
-import cz.empatix.upgrades.domain.QualityLevel;
-import cz.empatix.upgrades.domain.TreeType;
-import org.checkerframework.checker.units.qual.Current;
-import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,133 +19,9 @@ public class PlayerUpgradeService {
     public PlayerUpgradeService() {
         currentUpgradeMenu = new CurrentUpgradeMenu();
 
-        final PlayerUpgrade utilityUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.COMMON, true);
-        final PlayerUpgrade offenseUpgrade = new PlayerUpgrade("ingame/talents/bloodtear.tga", QualityLevel.COMMON, true);
-        final PlayerUpgrade defenseUpgrade = new PlayerUpgrade("ingame/talents/health_cross.tga", QualityLevel.COMMON, true);
-
-        utilityUpgrade.setTitle("Swiftwind Steps");
-        offenseUpgrade.setTitle("Sharpened Bullets");
-        defenseUpgrade.setTitle("Hero's Heart");
-
-        utilityUpgrade.setDescription("Increases movement speed\n by 10%");
-        offenseUpgrade.setDescription("Increases all damage\n by 20%");
-        defenseUpgrade.setDescription("Increases initial health\n by 20%");
-
-        utilityUpgrade.setPosition(364, 125);
-        offenseUpgrade.setPosition(464, 125);
-        defenseUpgrade.setPosition(564, 125);
-
-        utilityUpgrade.setPrice(20);
-        offenseUpgrade.setPrice(20);
-        defenseUpgrade.setPrice(20);
-
-        final PlayerUpgrade healthUpgrade = new PlayerUpgrade("ingame/talents/armor.tga", QualityLevel.COMMON, true);
-        final PlayerUpgrade damageUpgrade = new PlayerUpgrade("ingame/talents/ammo.tga", QualityLevel.COMMON, true);
-        final PlayerUpgrade speedUpgrade = new PlayerUpgrade("ingame/talents/discount.tga", QualityLevel.COMMON, true);
-
-        speedUpgrade.setTitle("Discount");
-        damageUpgrade.setTitle("Additional Ammo");
-        healthUpgrade.setTitle("Improved Armor");
-
-        speedUpgrade.setDescription("The shop prices will\n have a chance to\n be reduced");
-        damageUpgrade.setDescription("Increases ammo capacity\n by 10%");
-        healthUpgrade.setDescription("Increases initial armor\n by 33%");
-
-        speedUpgrade.setPosition(364, 199);
-        damageUpgrade.setPosition(464, 199);
-        healthUpgrade.setPosition(564, 199);
-
-        speedUpgrade.setPrice(60);
-        damageUpgrade.setPrice(60);
-        healthUpgrade.setPrice(60);
-
-        speedUpgrade.setParent(utilityUpgrade);
-        damageUpgrade.setParent(offenseUpgrade);
-        healthUpgrade.setParent(defenseUpgrade);
-
-        final PlayerUpgrade discountUpgrade = new PlayerUpgrade("ingame/talents/trap.tga", QualityLevel.RARE, false);
-        final PlayerUpgrade ammoUpgrade = new PlayerUpgrade("ingame/talents/criticalhit.tga", QualityLevel.RARE, false);
-        final PlayerUpgrade armorUpgrade = new PlayerUpgrade("ingame/talents/armorregen.tga", QualityLevel.RARE, false);
-
-        discountUpgrade.setTitle("Trap Master");
-        ammoUpgrade.setTitle("Critical Hit");
-        armorUpgrade.setTitle("Armor Regeneration");
-
-        discountUpgrade.setDescription("All traps have a 30% chance\n to be immobilized");
-        ammoUpgrade.setDescription("Your attacks have a 10%\n chance to deal double\n damage");
-        armorUpgrade.setDescription("Restores armor after\n successfully\n clearing a room");
-
-        discountUpgrade.setPosition(364, 273);
-        ammoUpgrade.setPosition(464, 273);
-        armorUpgrade.setPosition(564, 273);
-
-        discountUpgrade.setPrice(140);
-        ammoUpgrade.setPrice(140);
-        armorUpgrade.setPrice(140);
-
-        discountUpgrade.setParent(speedUpgrade);
-        ammoUpgrade.setParent(damageUpgrade);
-        armorUpgrade.setParent(healthUpgrade);
-
-
-        final PlayerUpgrade armorRegenUpgrade = new PlayerUpgrade("ingame/talents/health_cross2.tga", QualityLevel.EPIC, false);
-        final PlayerUpgrade criticalChanceUpgrade = new PlayerUpgrade("ingame/talents/bloodtear2.tga", QualityLevel.EPIC, false);
-        final PlayerUpgrade damageReductionUpgrade = new PlayerUpgrade("ingame/talents/extragun.tga", QualityLevel.EPIC, false);
-
-        armorRegenUpgrade.setTitle("Titan's Heart");
-        criticalChanceUpgrade.setTitle("Dangerous Bullets");
-        damageReductionUpgrade.setTitle("Additional Gun");
-
-        armorRegenUpgrade.setDescription("Increases initial health\n by 25%");
-        criticalChanceUpgrade.setDescription("Increases all damage\n by 25%");
-        damageReductionUpgrade.setDescription("Adds an additional slot\n for a weapon");
-
-        armorRegenUpgrade.setPosition(364, 347);
-        criticalChanceUpgrade.setPosition(464, 347);
-        damageReductionUpgrade.setPosition(564, 347);
-
-        armorRegenUpgrade.setPrice(300);
-        criticalChanceUpgrade.setPrice(300);
-        damageReductionUpgrade.setPrice(300);
-
-        armorRegenUpgrade.setParent(armorUpgrade);
-        criticalChanceUpgrade.setParent(ammoUpgrade);
-        damageReductionUpgrade.setParent(discountUpgrade);
-
-        final PlayerUpgrade slotUpgrade = new PlayerUpgrade("ingame/talents/teleportation.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade healthUpgrade2 = new PlayerUpgrade("ingame/talents/kevlar.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade damageUpgrade2 = new PlayerUpgrade("ingame/talents/pet.tga", QualityLevel.COMMON, false);
-
-        slotUpgrade.setTitle("Teleportation");
-        healthUpgrade2.setTitle("Kevlar");
-        damageUpgrade2.setTitle("Pet");
-
-        slotUpgrade.setDescription("Teleports you to\n choosen and discovered\n room from the minimap");
-        healthUpgrade2.setDescription("Reduces damage taken\n by 10%");
-        damageUpgrade2.setDescription("Unlocks a pet that will\n help you in battle\n");
-
-        slotUpgrade.setPosition(364, 421);
-        damageUpgrade2.setPosition(464, 421);
-        healthUpgrade2.setPosition(564, 421);
-
-        slotUpgrade.setPrice(500);
-        healthUpgrade2.setPrice(500);
-        damageUpgrade2.setPrice(500);
-
-        slotUpgrade.setParent(damageReductionUpgrade);
-        healthUpgrade2.setParent(armorRegenUpgrade);
-        damageUpgrade2.setParent(criticalChanceUpgrade);
-
-        isActive = false;
-
-        final UpgradeTree utilityTree = new UpgradeTree(List.of(utilityUpgrade, speedUpgrade, discountUpgrade, damageReductionUpgrade, slotUpgrade), TreeType.UTILITY);
-        utilityTree.setPosition(364, 125);
-
-        final UpgradeTree offenseTree = new UpgradeTree(List.of(offenseUpgrade, damageUpgrade, ammoUpgrade, criticalChanceUpgrade, damageUpgrade2), TreeType.OFFENSIVE);
-        offenseTree.setPosition(464, 125);
-
-        final UpgradeTree defenseTree = new UpgradeTree(List.of(defenseUpgrade, healthUpgrade, armorUpgrade, armorRegenUpgrade, healthUpgrade2), TreeType.DEFENSIVE);
-        defenseTree.setPosition(564, 125);
+        final UpgradeTree utilityTree = UpgradeTreeFactory.createUtilityTree();
+        final UpgradeTree offenseTree = UpgradeTreeFactory.createOffenseTree();
+        final UpgradeTree defenseTree = UpgradeTreeFactory.createDefenseTree();
 
         upgradeTrees = List.of(utilityTree, offenseTree, defenseTree);
     }
