@@ -139,7 +139,7 @@ public class Scientist implements Interactable, Drawable {
 
     public void mousePressed(final int button, final float mouseX, final float mouseY) {
         if (playerUpgradeService.isActive()) {
-            playerUpgradeService.mousePressed(mouseX, mouseY);
+            playerUpgradeService.mousePressed(button, mouseX, mouseY);
         }
     }
 

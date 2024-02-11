@@ -7,6 +7,7 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.upgrades.domain.PlayerUpgrade;
 import cz.empatix.upgrades.domain.QualityLevel;
 import cz.empatix.upgrades.domain.TreeType;
+import org.checkerframework.checker.units.qual.Current;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,16 +19,15 @@ import java.util.stream.Collectors;
 public class PlayerUpgradeService {
     private static final Logger LOGGER = LoggerFactory.getLogger(PlayerUpgradeService.class);
     private final List<UpgradeTree> upgradeTrees;
-    private PlayerUpgrade selectedUpgrade;
-    private final CommonImage upgradeBackground;
+    private final CurrentUpgradeMenu currentUpgradeMenu;
     private boolean isActive;
 
     public PlayerUpgradeService() {
-        upgradeBackground = new CommonImage("ingame/pausebg.tga", new Vector2f(675, 150), 3.0f, 2, RenderScene.OVERLAYS);
+        currentUpgradeMenu = new CurrentUpgradeMenu();
 
-        final PlayerUpgrade utilityUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade offenseUpgrade = new PlayerUpgrade("ingame/talents/bloodtear.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade defenseUpgrade = new PlayerUpgrade("ingame/talents/health_cross.tga", QualityLevel.COMMON, false);
+        final PlayerUpgrade utilityUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.COMMON, true);
+        final PlayerUpgrade offenseUpgrade = new PlayerUpgrade("ingame/talents/bloodtear.tga", QualityLevel.COMMON, true);
+        final PlayerUpgrade defenseUpgrade = new PlayerUpgrade("ingame/talents/health_cross.tga", QualityLevel.COMMON, true);
 
         utilityUpgrade.setTitle("Swiftwind Steps");
         offenseUpgrade.setTitle("Sharpened Bullets");
@@ -41,9 +41,13 @@ public class PlayerUpgradeService {
         offenseUpgrade.setPosition(464, 125);
         defenseUpgrade.setPosition(564, 125);
 
-        final PlayerUpgrade healthUpgrade = new PlayerUpgrade("ingame/talents/armor.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade damageUpgrade = new PlayerUpgrade("ingame/talents/ammo.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade speedUpgrade = new PlayerUpgrade("ingame/talents/discount.tga", QualityLevel.COMMON, false);
+        utilityUpgrade.setPrice(20);
+        offenseUpgrade.setPrice(20);
+        defenseUpgrade.setPrice(20);
+
+        final PlayerUpgrade healthUpgrade = new PlayerUpgrade("ingame/talents/armor.tga", QualityLevel.COMMON, true);
+        final PlayerUpgrade damageUpgrade = new PlayerUpgrade("ingame/talents/ammo.tga", QualityLevel.COMMON, true);
+        final PlayerUpgrade speedUpgrade = new PlayerUpgrade("ingame/talents/discount.tga", QualityLevel.COMMON, true);
 
         speedUpgrade.setTitle("Discount");
         damageUpgrade.setTitle("Additional Ammo");
@@ -56,6 +60,14 @@ public class PlayerUpgradeService {
         speedUpgrade.setPosition(364, 199);
         damageUpgrade.setPosition(464, 199);
         healthUpgrade.setPosition(564, 199);
+
+        speedUpgrade.setPrice(60);
+        damageUpgrade.setPrice(60);
+        healthUpgrade.setPrice(60);
+
+        speedUpgrade.setParent(utilityUpgrade);
+        damageUpgrade.setParent(offenseUpgrade);
+        healthUpgrade.setParent(defenseUpgrade);
 
         final PlayerUpgrade discountUpgrade = new PlayerUpgrade("ingame/talents/trap.tga", QualityLevel.RARE, false);
         final PlayerUpgrade ammoUpgrade = new PlayerUpgrade("ingame/talents/criticalhit.tga", QualityLevel.RARE, false);
@@ -73,9 +85,18 @@ public class PlayerUpgradeService {
         ammoUpgrade.setPosition(464, 273);
         armorUpgrade.setPosition(564, 273);
 
-        final PlayerUpgrade armorRegenUpgrade = new PlayerUpgrade("ingame/talents/health_cross2.tga", QualityLevel.EPIC, true);
-        final PlayerUpgrade criticalChanceUpgrade = new PlayerUpgrade("ingame/talents/bloodtear2.tga", QualityLevel.EPIC, true);
-        final PlayerUpgrade damageReductionUpgrade = new PlayerUpgrade("ingame/talents/extragun.tga", QualityLevel.EPIC, true);
+        discountUpgrade.setPrice(140);
+        ammoUpgrade.setPrice(140);
+        armorUpgrade.setPrice(140);
+
+        discountUpgrade.setParent(speedUpgrade);
+        ammoUpgrade.setParent(damageUpgrade);
+        armorUpgrade.setParent(healthUpgrade);
+
+
+        final PlayerUpgrade armorRegenUpgrade = new PlayerUpgrade("ingame/talents/health_cross2.tga", QualityLevel.EPIC, false);
+        final PlayerUpgrade criticalChanceUpgrade = new PlayerUpgrade("ingame/talents/bloodtear2.tga", QualityLevel.EPIC, false);
+        final PlayerUpgrade damageReductionUpgrade = new PlayerUpgrade("ingame/talents/extragun.tga", QualityLevel.EPIC, false);
 
         armorRegenUpgrade.setTitle("Titan's Heart");
         criticalChanceUpgrade.setTitle("Dangerous Bullets");
@@ -89,9 +110,17 @@ public class PlayerUpgradeService {
         criticalChanceUpgrade.setPosition(464, 347);
         damageReductionUpgrade.setPosition(564, 347);
 
-        final PlayerUpgrade slotUpgrade = new PlayerUpgrade("ingame/talents/teleportation.tga", QualityLevel.COMMON, true);
-        final PlayerUpgrade healthUpgrade2 = new PlayerUpgrade("ingame/talents/kevlar.tga", QualityLevel.COMMON, true);
-        final PlayerUpgrade damageUpgrade2 = new PlayerUpgrade("ingame/talents/pet.tga", QualityLevel.COMMON, true);
+        armorRegenUpgrade.setPrice(300);
+        criticalChanceUpgrade.setPrice(300);
+        damageReductionUpgrade.setPrice(300);
+
+        armorRegenUpgrade.setParent(armorUpgrade);
+        criticalChanceUpgrade.setParent(ammoUpgrade);
+        damageReductionUpgrade.setParent(discountUpgrade);
+
+        final PlayerUpgrade slotUpgrade = new PlayerUpgrade("ingame/talents/teleportation.tga", QualityLevel.COMMON, false);
+        final PlayerUpgrade healthUpgrade2 = new PlayerUpgrade("ingame/talents/kevlar.tga", QualityLevel.COMMON, false);
+        final PlayerUpgrade damageUpgrade2 = new PlayerUpgrade("ingame/talents/pet.tga", QualityLevel.COMMON, false);
 
         slotUpgrade.setTitle("Teleportation");
         healthUpgrade2.setTitle("Kevlar");
@@ -104,6 +133,14 @@ public class PlayerUpgradeService {
         slotUpgrade.setPosition(364, 421);
         damageUpgrade2.setPosition(464, 421);
         healthUpgrade2.setPosition(564, 421);
+
+        slotUpgrade.setPrice(500);
+        healthUpgrade2.setPrice(500);
+        damageUpgrade2.setPrice(500);
+
+        slotUpgrade.setParent(damageReductionUpgrade);
+        healthUpgrade2.setParent(armorRegenUpgrade);
+        damageUpgrade2.setParent(criticalChanceUpgrade);
 
         isActive = false;
 
@@ -123,15 +160,11 @@ public class PlayerUpgradeService {
         final List<Renderable> renderables = upgradeTrees.stream()
                 .flatMap(tree -> tree.getSubRenderables().stream())
                 .collect(Collectors.toList());
-        if (selectedUpgrade != null) {
-            renderables.add(upgradeBackground);
-            renderables.add(selectedUpgrade);
-            renderables.addAll(selectedUpgrade.getCurrentRenderables());
-        }
+        renderables.addAll(currentUpgradeMenu.toRender());
         return renderables;
     }
 
-    public void mousePressed(final float mouseX, final float mouseY) {
+    public void mousePressed(final int button, final float mouseX, final float mouseY) {
         if (isActive) {
             final List<PlayerUpgrade> pressedUpgrades = upgradeTrees.stream()
                     .map(tree -> tree.getPressedUpgrade(mouseX, mouseY))
@@ -140,13 +173,12 @@ public class PlayerUpgradeService {
             if (pressedUpgrades.size() != 1) {
                 LOGGER.warn("Pressed multiple upgrades from trees: {}", pressedUpgrades.size());
             }
-            final PlayerUpgrade currentUpgrade = pressedUpgrades.isEmpty() ? null : pressedUpgrades.get(0);
-            selectedUpgrade = pressedUpgrades.isEmpty() ? null : currentUpgrade.deepCopy();
-            if (selectedUpgrade != null) {
-                selectedUpgrade.setPosition(675 + upgradeBackground.getWidth() / 2f - selectedUpgrade.getWidth() / 2f, 90);
-                selectedUpgrade.setTitle(currentUpgrade.getTitle());
-                selectedUpgrade.setDescription(currentUpgrade.getDescription());
+            final boolean eventOccured = currentUpgradeMenu.mousePressed(button, mouseX, mouseY);
+            if (eventOccured) {
+                return;
             }
+            final PlayerUpgrade currentUpgrade = pressedUpgrades.isEmpty() ? null : pressedUpgrades.get(0);
+            currentUpgradeMenu.setCurrent(currentUpgrade);
         }
     }
 
@@ -159,11 +191,10 @@ public class PlayerUpgradeService {
         GaussianBlur.setEnabled(active);
     }
 
-    public void update(final double dt,final float mouseX, final float mouseY) {
+    public void update(final double dt, final float mouseX, final float mouseY) {
         if (isActive) {
-            if (selectedUpgrade != null) {
-                selectedUpgrade.update(dt, mouseX, mouseY);
-            }
+            currentUpgradeMenu.update(dt, mouseX, mouseY);
+            upgradeTrees.forEach(tree -> tree.update(dt));
         }
     }
 }

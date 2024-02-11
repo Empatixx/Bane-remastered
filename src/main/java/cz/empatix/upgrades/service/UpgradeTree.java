@@ -26,7 +26,7 @@ public class UpgradeTree {
                 .skip(1)
                 .limit(upgrades.size() - 1)
                 .map(upgrade -> {
-                    final TalentPath path = new TalentPath(type, upgrade.isLocked());
+                    final TalentPath path = new TalentPath(type, () -> !upgrade.isBought());
                     return path;
                 })
                 .toList();
@@ -38,6 +38,9 @@ public class UpgradeTree {
         };
         treeIcon = new CommonImage(texture, new Vector2f(), 4f, 3, RenderScene.OVERLAYS);
         this.type = type;
+    }
+    public void update(final double dt){
+        parentConnectors.forEach(path -> path.update(dt));
     }
 
     public void setPosition(final float x, final float y) {

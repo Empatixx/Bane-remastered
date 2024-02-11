@@ -1,9 +1,7 @@
 package cz.empatix.upgrades.domain;
 
-import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.image.CommonImage;
-import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
@@ -12,11 +10,13 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import cz.empatix.ui.TransparentButton;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+
+import static cz.empatix.render.domain.AnimationState.*;
 
 public class PlayerUpgrade implements Drawable {
     private final static int SCALE = 2;
@@ -24,30 +24,31 @@ public class PlayerUpgrade implements Drawable {
     private final static int DIMENSION_HEIGHT = 32 * SCALE;
     private final Animation animation;
     private final Vector2f position;
-    private boolean locked;
+    private boolean bought;
     private final CommonImage upgradeImage;
-    private final String upgradeImg;
-    private final CommonText title;
-    private final List<CommonText> description;
-    private final TransparentButton buy;
-    private final CommonText price;
+    private final Supplier<PlayerUpgrade> deepCopySupplier;
+    private int price;
+    private String title;
+    private String description;
+    private PlayerUpgrade parent;
 
-    public PlayerUpgrade(final String upgradeImg, final QualityLevel level, final boolean isLocked) {
+    public PlayerUpgrade(final String upgradeImg,
+                         final QualityLevel level,
+                         final boolean isBought) {
         position = new Vector2f();
-        locked = isLocked;
+        bought = isBought;
         upgradeImage = new CommonImage(upgradeImg, new Vector2f(), 2, 3, RenderScene.OVERLAYS);
-        this.upgradeImg = upgradeImg;
         animation = Animation.builder()
                 .texture(AssetsService.getTexture("ingame/talent_frame.tga"))
                 .setTotal(6, 1)
-                .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .addState(AnimationState.TYPE2, 2, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .addState(AnimationState.TYPE3, 3, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .addState(AnimationState.TYPE4, 4, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .addState(AnimationState.TYPE5, 5, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(TYPE2, 2, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(TYPE3, 3, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(TYPE4, 4, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(TYPE5, 5, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .build();
-        if (isLocked) {
+        if (!isBought) {
             switch (level) {
                 case COMMON -> animation.setState(AnimationState.TYPE1);
                 case RARE -> animation.setState(AnimationState.TYPE3);
@@ -55,48 +56,54 @@ public class PlayerUpgrade implements Drawable {
             }
         } else {
             switch (level) {
-                case COMMON -> animation.setState(AnimationState.TYPE0);
-                case RARE -> animation.setState(AnimationState.TYPE2);
-                case EPIC -> animation.setState(AnimationState.TYPE4);
+                case COMMON -> animation.setState(TYPE0);
+                case RARE -> animation.setState(TYPE2);
+                case EPIC -> animation.setState(TYPE4);
             }
         }
-        this.title = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(675, 200), 4,
-                RenderScene.OVERLAYS, FontSize.FONTSIZE_22);
-        this.title.setColorRGB(222, 112, 38);
-        this.description = new ArrayList<>();
 
-        this.buy = new TransparentButton("Buy", new Vector2f(735, 410), 3);
-        this.price = new CommonText("100,-", "PixelFJVerdana12pt.ttf", new Vector2f(840, 410), 4,
-                RenderScene.OVERLAYS, FontSize.FONTSIZE_22);
-        this.price.setColorRGB(222, 112, 38);
+        this.deepCopySupplier = () -> {
+            final PlayerUpgrade copy = new PlayerUpgrade(upgradeImg, level, isBought());
+            copy.setTitle(getTitle());
+            copy.setDescription(getDescription());
+            copy.setPrice(getPrice());
+            copy.setPosition(position.x(), position.y());
+            copy.setParent(getParent());
+            return copy;
+        };
+        description = "";
+        title = "";
     }
-
-    public void setDescription(final String description) {
-        final List<String> lines = description.lines().toList();
-        for (int i = 0; i < lines.size(); i++) {
-            final CommonText text = new CommonText(lines.get(i), "PixelFJVerdana12pt.ttf", new Vector2f(675, 250 + 16 * (i + 1)), 4,
-                    RenderScene.OVERLAYS, FontSize.FONTSIZE_16);
-            text.setColorRGB(222, 112, 38);
-            text.setCenterX(675, 915);
-            this.description.add(text);
+    public boolean canBuy(){
+        if (parent == null){
+            return true;
         }
+        return parent.isBought();
     }
-
-    public String getDescription() {
-        final StringBuilder sb = new StringBuilder();
-        for (final CommonText text : description) {
-            sb.append(text.getText()).append("\n");
-        }
-        return sb.toString();
+    public void setParent(final PlayerUpgrade parent) {
+        this.parent = parent;
+    }
+    public PlayerUpgrade getParent() {
+        return parent;
+    }
+    public void setPrice(final int price) {
+        this.price = price;
     }
 
     public void setTitle(final String title) {
-        this.title.setText(title);
-        this.title.setCenterX(675, 915);
+        this.title = title;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public String getTitle() {
-        return title.getText();
+        return title;
     }
 
     @Override
@@ -128,20 +135,13 @@ public class PlayerUpgrade implements Drawable {
         upgradeImage.setPosition(x + 16, y + 16);
     }
 
-    public boolean isLocked() {
-        return locked;
+    public boolean isBought() {
+        return bought;
     }
 
     public boolean isPressed(final float mouseX, final float mouseY) {
         return mouseX >= position.x() && mouseX <= position.x() + DIMENSION_WIDTH
                 && mouseY >= position.y() && mouseY <= position.y() + DIMENSION_HEIGHT;
-    }
-
-
-    public PlayerUpgrade deepCopy() {
-        final PlayerUpgrade copy = new PlayerUpgrade(upgradeImg, QualityLevel.COMMON, locked);
-        copy.setPosition(position.x(), position.y());
-        return copy;
     }
 
     public int getWidth() {
@@ -159,17 +159,29 @@ public class PlayerUpgrade implements Drawable {
         return renderables;
     }
 
-    public List<Renderable> getCurrentRenderables() {
-        final List<Renderable> renderables = new ArrayList<>(title.getSubRenderables());
-        renderables.add(buy);
-        for (final CommonText text : description) {
-            renderables.addAll(text.getSubRenderables());
-        }
-        renderables.addAll(price.getSubRenderables());
-        return renderables;
+
+    public PlayerUpgrade deepCopy() {
+        return deepCopySupplier.get();
     }
 
-    public void update(final double dt, final float mouseX, final float mouseY) {
-        buy.update(dt, mouseX, mouseY);
+    public int getPrice() {
+        return price;
+    }
+
+    public void setBought(final boolean b) {
+        bought = b;
+        if (bought){
+            switch (animation.getCurrentState()) {
+                case TYPE1 -> animation.setState(AnimationState.TYPE0);
+                case TYPE3 -> animation.setState(AnimationState.TYPE2);
+                case TYPE5 -> animation.setState(AnimationState.TYPE4);
+            }
+        } else {
+            switch (animation.getCurrentState()) {
+                case TYPE0 -> animation.setState(AnimationState.TYPE1);
+                case TYPE2 -> animation.setState(AnimationState.TYPE3);
+                case TYPE4 -> animation.setState(AnimationState.TYPE5);
+            }
+        }
     }
 }

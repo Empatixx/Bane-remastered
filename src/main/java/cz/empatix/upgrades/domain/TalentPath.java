@@ -10,11 +10,16 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
+import java.util.function.Supplier;
+
 public class TalentPath implements Drawable {
     private Animation animation;
     private final Vector2f position;
-    public TalentPath(final TreeType type, final boolean isLocked){
+    private final Supplier<Boolean> isLocked;
+    private final TreeType type;
+    public TalentPath(final TreeType type, final Supplier<Boolean> isLocked){
         position = new Vector2f();
+        this.type = type;
         animation = Animation.builder()
                 .texture(AssetsService.getTexture("ingame/talent_path.tga"))
                 .setTotal(4,1)
@@ -24,15 +29,8 @@ public class TalentPath implements Drawable {
                 .addState(AnimationState.TYPE3, 3, 1, 8,15,-1)
                 .scale(2f)
                 .build();
-        if (isLocked){
-            animation.setState(AnimationState.TYPE3);
-        } else {
-            switch (type){
-                case UTILITY -> animation.setState(AnimationState.TYPE0);
-                case OFFENSIVE -> animation.setState(AnimationState.TYPE1);
-                case DEFENSIVE -> animation.setState(AnimationState.TYPE2);
-            }
-        }
+        this.isLocked = isLocked;
+        setImage();
     }
     @Override
     public RenderData renderData() {
@@ -59,5 +57,19 @@ public class TalentPath implements Drawable {
     }
     public void setPosition(final float x, final float y){
         position.set(x, y);
+    }
+    public void update(final double dt){
+        setImage();
+    }
+    private void setImage(){
+        if (isLocked.get()){
+            animation.setState(AnimationState.TYPE3);
+        } else {
+            switch (type){
+                case UTILITY -> animation.setState(AnimationState.TYPE0);
+                case OFFENSIVE -> animation.setState(AnimationState.TYPE1);
+                case DEFENSIVE -> animation.setState(AnimationState.TYPE2);
+            }
+        }
     }
 }
