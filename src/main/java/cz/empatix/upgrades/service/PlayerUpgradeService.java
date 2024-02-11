@@ -33,27 +33,27 @@ public class PlayerUpgradeService {
         offenseUpgrade.setPosition(464, 125);
         defenseUpgrade.setPosition(564, 125);
 
-        final PlayerUpgrade healthUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade damageUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.COMMON, false);
-        final PlayerUpgrade speedUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.COMMON, false);
+        final PlayerUpgrade healthUpgrade = new PlayerUpgrade("ingame/talents/armor.tga", QualityLevel.COMMON, false);
+        final PlayerUpgrade damageUpgrade = new PlayerUpgrade("ingame/talents/ammo.tga", QualityLevel.COMMON, false);
+        final PlayerUpgrade speedUpgrade = new PlayerUpgrade("ingame/talents/discount.tga", QualityLevel.COMMON, false);
 
         speedUpgrade.setPosition(364, 199);
         damageUpgrade.setPosition(464, 199);
         healthUpgrade.setPosition(564, 199);
 
 
-        final PlayerUpgrade discountUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.RARE, false);
-        final PlayerUpgrade ammoUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.RARE, false);
-        final PlayerUpgrade armorUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.RARE, false);
+        final PlayerUpgrade discountUpgrade = new PlayerUpgrade("ingame/talents/kevlar.tga", QualityLevel.RARE, false);
+        final PlayerUpgrade ammoUpgrade = new PlayerUpgrade("ingame/talents/criticalhit.tga", QualityLevel.RARE, false);
+        final PlayerUpgrade armorUpgrade = new PlayerUpgrade("ingame/talents/armorregen.tga", QualityLevel.RARE, false);
 
         discountUpgrade.setPosition(364, 273);
         ammoUpgrade.setPosition(464, 273);
         armorUpgrade.setPosition(564, 273);
 
 
-        final PlayerUpgrade armorRegenUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.EPIC, true);
-        final PlayerUpgrade damageReductionUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.EPIC, true);
-        final PlayerUpgrade criticalChanceUpgrade = new PlayerUpgrade("ingame/talents/boot.tga", QualityLevel.EPIC, true);
+        final PlayerUpgrade armorRegenUpgrade = new PlayerUpgrade("ingame/talents/health_cross2.tga", QualityLevel.EPIC, true);
+        final PlayerUpgrade criticalChanceUpgrade = new PlayerUpgrade("ingame/talents/bloodtear2.tga", QualityLevel.EPIC, true);
+        final PlayerUpgrade damageReductionUpgrade = new PlayerUpgrade("ingame/talents/extragun.tga", QualityLevel.EPIC, true);
 
         armorRegenUpgrade.setPosition(364, 347);
         criticalChanceUpgrade.setPosition(464, 347);
@@ -69,13 +69,13 @@ public class PlayerUpgradeService {
 
         isActive = false;
 
-        final UpgradeTree utilityTree = new UpgradeTree(List.of(utilityUpgrade, speedUpgrade, discountUpgrade, armorRegenUpgrade, slotUpgrade), TreeType.UTILITY);
+        final UpgradeTree utilityTree = new UpgradeTree(List.of(utilityUpgrade, speedUpgrade, discountUpgrade,damageReductionUpgrade, slotUpgrade), TreeType.UTILITY);
         utilityTree.setPosition(364, 125);
 
         final UpgradeTree offenseTree = new UpgradeTree(List.of(offenseUpgrade, damageUpgrade, ammoUpgrade, criticalChanceUpgrade, damageUpgrade2), TreeType.OFFENSIVE);
         offenseTree.setPosition(464, 125);
 
-        final UpgradeTree defenseTree = new UpgradeTree(List.of(defenseUpgrade, healthUpgrade, armorUpgrade, damageReductionUpgrade, healthUpgrade2), TreeType.DEFENSIVE);
+        final UpgradeTree defenseTree = new UpgradeTree(List.of(defenseUpgrade, healthUpgrade, armorUpgrade, armorRegenUpgrade, healthUpgrade2), TreeType.DEFENSIVE);
         defenseTree.setPosition(564, 125);
 
         upgradeTrees = List.of(utilityTree, offenseTree, defenseTree);
