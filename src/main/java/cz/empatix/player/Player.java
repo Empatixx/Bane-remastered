@@ -214,10 +214,24 @@ public class Player implements Drawable, InteractEntity, Damageable {
     }
 
     public void setMaxHealth(final int maxHealth) {
+        final int healthDiff = maxHealth - this.maxHealth;
         this.maxHealth = maxHealth;
+        if (healthDiff > 0) {
+            addHealth(healthDiff);
+        }
+        if (this.health > maxHealth) {
+            this.health = maxHealth;
+        }
     }
     public void setMaxArmor(final int maxArmor) {
+        final int armorDiff = maxArmor - this.maxArmor;
         this.maxArmor = maxArmor;
+        if (armorDiff > 0) {
+            addArmor(armorDiff);
+        }
+        if (this.armor > maxArmor) {
+            this.armor = maxArmor;
+        }
     }
     public void setHealth(final int health) {
         this.health = health;

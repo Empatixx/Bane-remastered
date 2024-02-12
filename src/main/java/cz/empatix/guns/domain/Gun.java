@@ -30,4 +30,7 @@ public interface Gun {
     String getTexturePath();
 
     void addPercentAmmo(final float percent);
+    void setMaxAmmo(final int maxAmmo);
+    int getMaxAmmo();
+
 }

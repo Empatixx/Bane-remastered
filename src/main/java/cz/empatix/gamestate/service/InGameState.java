@@ -28,6 +28,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.upgrades.appliers.UpgradesApplicationService;
 import cz.empatix.upgrades.service.FileUpgradeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,10 +85,11 @@ public class InGameState extends GameState {
         player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
                 startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
 
+        final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService);
+        upgradesApplicationService.apply();
+
         AudioService.getInstance().play(Soundtrack.INGAME);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
-
-
     }
 
     @Override

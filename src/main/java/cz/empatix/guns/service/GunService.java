@@ -37,20 +37,21 @@ public class GunService {
         HUD_SLOT_CENTER_X = PositionUtils.getCenterXInRange((int) (HUD_SLOT_POSITION.x()), (int) (HUD_SLOT_POSITION.x() + hudSlotTexture.width() * HUD_SLOT_SCALE));
         HUD_SLOT_CENTER_Y = PositionUtils.getCenterYInRange((int) (HUD_SLOT_POSITION.y()), (int) (HUD_SLOT_POSITION.y() + hudSlotTexture.height() * HUD_SLOT_SCALE));
     }
-
     private final static Logger LOGGER = LoggerFactory.getLogger(GunService.class);
     private final CommonImage weaponSlotHud;
     private final List<Gun> guns;
     private final GunSlots slots;
     private final ItemService itemService;
     private final StatisticsService statisticsService;
+    private final GunDamageEventComposite damageEventComposite;
     private float shooterX, shooterY, targetX, targetY;
 
     public GunService(final ItemService itemService,
                       final StatisticsService statisticsService) {
         this.statisticsService = statisticsService;
         this.itemService = itemService;
-        final BulletFactory bulletFactory = new BulletFactory(statisticsService);
+        damageEventComposite = new GunDamageEventComposite();
+        final BulletFactory bulletFactory = new BulletFactory(statisticsService, damageEventComposite);
         guns = List.of(
                 new Pistol(bulletFactory),
                 new Shotgun(bulletFactory),
@@ -200,8 +201,13 @@ public class GunService {
     public void addSlot() {
         slots.addSlot();
     }
-
-    public void addHook(final DamageEventHook hook) {
-
+    public void addHook(final GunDamageEventHook hook) {
+        damageEventComposite.addHook(hook);
+    }
+    public void removeHook(final GunDamageEventHook hook) {
+        damageEventComposite.removeHook(hook);
+    }
+    public List<Gun> getGuns() {
+        return guns;
     }
 }

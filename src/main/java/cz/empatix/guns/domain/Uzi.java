@@ -135,4 +135,13 @@ public class Uzi extends AbstractGun implements Gun{
             ammo = maxAmmo;
         }
     }
+    @Override
+    public void setMaxAmmo(int maxAmmo) {
+        this.maxAmmo = maxAmmo;
+    }
+
+    @Override
+    public int getMaxAmmo() {
+        return maxAmmo;
+    }
 }
