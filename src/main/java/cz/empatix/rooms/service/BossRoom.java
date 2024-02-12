@@ -57,14 +57,14 @@ public class BossRoom implements Room {
             enemyService.spawnBoss(this);
             visited = true;
             roomLockService.setState(true);
+
+            enemyService.setTarget(p);
+            AudioService.getInstance().play(Soundtrack.BOSS_ROOM);
         }
-        enemyService.setTarget(p);
-        AudioService.getInstance().play(Soundtrack.BOSS_ROOM);
     }
 
     @Override
     public void leaveEvent(final Player p) {
-        AudioService.getInstance().play(Soundtrack.BOSS_ROOM);
     }
 
     @Override

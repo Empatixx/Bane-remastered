@@ -20,6 +20,10 @@ public class RedVignette implements Postprocess {
         timeBased = false;
     }
 
+    public static boolean isTimeBased() {
+        return timeBased;
+    }
+
     @Override
     public void apply(final float dt) {
         if (timeBased) {

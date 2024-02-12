@@ -1,6 +1,8 @@
 package cz.empatix.upgrades.service;
 
 import cz.empatix.assets.domain.font.FontSize;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CurrentUpgradeMenu {
+    private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final CommonText title;
     private final List<CommonText> description;
     private final TransparentButton buy;
@@ -88,6 +91,7 @@ public class CurrentUpgradeMenu {
                 if (!currentUpgrade.isBought()) {
                     currentUpgrade.setBought(true);
                     selectedUpgrade.setBought(true);
+                    AUDIO_SERVICE.play(SoundEffect.BUY);
                 }
             }
         });

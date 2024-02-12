@@ -128,7 +128,11 @@ public class Player implements Drawable, InteractEntity, Damageable {
         armorBar.update(dt);
 
         if ((float) health / maxHealth < LOW_HP_THRESHOLD && !isDead()) {
+            if (RedVignette.isTimeBased()) {
+                return;
+            }
             RedVignette.setTimeBased(true);
+            AUDIO_SERVICE.play(SoundEffect.LOW_HEALTH);
         } else {
             RedVignette.setTimeBased(false);
         }

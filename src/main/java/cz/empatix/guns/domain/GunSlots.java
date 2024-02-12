@@ -1,5 +1,7 @@
 package cz.empatix.guns.domain;
 
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class GunSlots {
+    private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final Logger LOGGER = LoggerFactory.getLogger(GunSlots.class);
     private final static int DEFAULT_MAX_SLOTS = 2;
     private final ArrayList<Gun> slots;
@@ -30,11 +33,13 @@ public class GunSlots {
 
     public void addGun(final Gun gun) {
         if (slots.get(currentSlot) == null){
+            AUDIO_SERVICE.play(SoundEffect.SWITCH_GUN);
             slots.set(currentSlot, gun);
             return;
         }
         for(int i = 0; i < maxSlots; i++){
             if(slots.get(i) == null){
+                AUDIO_SERVICE.play(SoundEffect.SWITCH_GUN);
                 slots.set(i, gun);
                 return;
             }
@@ -47,8 +52,12 @@ public class GunSlots {
 
     public void switchSlot(final int slot) {
         LOGGER.info("Switching slot to {}", slot);
+        if (currentSlot == slot) {
+            return;
+        }
         if (slot < maxSlots && slot >= 0) {
             currentSlot = slot;
+            AUDIO_SERVICE.play(SoundEffect.SWITCH_GUN);
         }
     }
 

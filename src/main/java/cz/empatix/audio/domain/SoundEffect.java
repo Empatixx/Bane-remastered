@@ -7,9 +7,10 @@ public enum SoundEffect {
     BUY("buy.ogg"),
     COIN("coin.ogg"),
     DEATH("playerdeath.ogg"),
-    LOW_HEALTH("low_health.ogg"),
+    LOW_HEALTH("lowhealth.ogg"),
     CLICK("menuclick.ogg"),
     PICKUP("pickup.ogg"),
+    SWITCH_GUN("switchgun.ogg"),
     PLAYER_HURT("playerhurt_1.ogg", "playerhurt_2.ogg");
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final List<String> paths;
