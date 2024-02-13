@@ -7,6 +7,7 @@ import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.Chest;
 import cz.empatix.roomobjects.domain.ChestType;
+import cz.empatix.roomobjects.domain.RoomObject;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -99,6 +100,12 @@ public class TreasureRoom implements Room {
     public RoomType getRoomType() {
         return RoomType.TREASURE;
     }
+
+    @Override
+    public List<RoomObject> getRoomObjects() {
+        return roomObjectService.getRoomObjects();
+    }
+
     @Override
     public void cleanUp() {
         tileMap.cleanUp();

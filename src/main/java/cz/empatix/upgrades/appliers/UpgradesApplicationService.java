@@ -1,6 +1,7 @@
 package cz.empatix.upgrades.appliers;
 
 import cz.empatix.guns.service.GunService;
+import cz.empatix.map.service.MapService;
 import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.Player;
 
@@ -10,10 +11,12 @@ public class UpgradesApplicationService {
     private final List<UpgradesApplier> upgradesAppliers;
     public UpgradesApplicationService(final ActiveUpgradeService activeUpgradeService,
                                       final Player player,
-                                      final GunService gunService) {
+                                      final GunService gunService,
+                                      final MapService mapService) {
         this.upgradesAppliers = List.of(
                 new PlayerUpgradesApplier(activeUpgradeService, player),
-                new GunUpgradesApplier(gunService, activeUpgradeService)
+                new GunUpgradesApplier(gunService, activeUpgradeService),
+                new MapUpgradesApplier(mapService, player, activeUpgradeService)
         );
     }
     public void apply() {

@@ -4,6 +4,7 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.RoomObject;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.PathTileMap;
@@ -152,5 +153,10 @@ public class PathRoom implements Room {
     @Override
     public RoomType getRoomType() {
         return RoomType.PATH;
+    }
+
+    @Override
+    public List<RoomObject> getRoomObjects() {
+        return List.of();
     }
 }

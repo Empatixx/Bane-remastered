@@ -4,10 +4,12 @@ import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.domain.ShopItem;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
+import cz.empatix.items.service.ShopItemService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.RoomObject;
 import cz.empatix.roomobjects.domain.ShopTable;
 import cz.empatix.roomobjects.domain.Shopkeeper;
 import cz.empatix.roomobjects.service.RoomObjectService;
@@ -19,8 +21,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ShopRoom implements Room {
+    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static int TOTAL_TABLES = 3;
     private final Map<RoomDirection, Room> neighbors;
     private final ItemService itemService;
@@ -28,6 +32,7 @@ public class ShopRoom implements Room {
     private final TileMap tileMap;
     private Shopkeeper shopkeeper;
     private final StatisticsService statisticsService;
+    private final ShopItemService shopItemService;
 
     public ShopRoom(final ItemService itemService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
@@ -38,6 +43,7 @@ public class ShopRoom implements Room {
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.statisticsService = statisticsService;
+        shopItemService = new ShopItemService();
     }
 
     @Override
@@ -75,9 +81,20 @@ public class ShopRoom implements Room {
                 shopItem.setHudPosition(shopTable.getX() + shopTable.getWidth()/2f, shopTable.getY());
                 shopItem.setInteractionText(shopTable.getX(), shopTable.getX() + shopTable.getWidth(), shopTable.getY() + shopTable.getHeight());
                 itemService.add(shopItem);
+                shopItemService.add(shopItem);
             }
         }
 
+    }
+    public void applyDiscounts(){
+        final int chance = RANDOM.nextInt(0, 100);
+        if (chance < 5){
+            shopItemService.discount(0.75f, 1);
+        } else if (chance < 10){
+            shopItemService.discount(0.5f, 1);
+        } else if (chance < 33){
+            shopItemService.discount(0.25f, 1);
+        }
     }
 
 
@@ -128,5 +145,10 @@ public class ShopRoom implements Room {
     @Override
     public RoomType getRoomType() {
         return RoomType.SHOP;
+    }
+
+    @Override
+    public List<RoomObject> getRoomObjects() {
+        return roomObjectService.getRoomObjects();
     }
 }

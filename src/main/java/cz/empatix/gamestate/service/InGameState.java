@@ -85,7 +85,7 @@ public class InGameState extends GameState {
         player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
                 startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
 
-        final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService);
+        final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService, mapService);
         upgradesApplicationService.apply();
 
         AudioService.getInstance().play(Soundtrack.INGAME);

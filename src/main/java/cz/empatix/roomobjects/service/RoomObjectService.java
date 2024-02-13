@@ -33,4 +33,8 @@ public class RoomObjectService {
     public void addAll(List<? extends RoomObject> objs) {
         roomObjects.addAll(objs);
     }
+
+    public List<RoomObject> getRoomObjects() {
+        return roomObjects;
+    }
 }

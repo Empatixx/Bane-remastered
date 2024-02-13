@@ -181,4 +181,9 @@ public class LobbyRoom implements Room {
     public RoomType getRoomType() {
         return RoomType.UNKNOWN;
     }
+
+    @Override
+    public List<RoomObject> getRoomObjects() {
+        return roomObjectService.getRoomObjects();
+    }
 }

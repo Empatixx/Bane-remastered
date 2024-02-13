@@ -32,12 +32,13 @@ public class ShopItem implements ItemDrop {
     private final ItemDrop drop;
     private final Predicate<Integer> hasEnoughCoinsPredicate;
     private final Consumer<Integer> removeCoinsConsumer;
-    private final AlternativeViewText text;
+    private final AlternativeViewText saleText;
+    private final AlternativeViewText priceText;
     private final AlternativeViewImage image;
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final AlternativeViewText interactionText;
     private Runnable onBuy;
-    private final int price;
+    private int price;
     private boolean bought = false;
 
     public ShopItem(final int floor,
@@ -48,15 +49,18 @@ public class ShopItem implements ItemDrop {
         this.removeCoinsConsumer = removeCoinsConsumer;
         this.drop = itemDrop;
         this.price = RANDOM.nextInt(1, 5) * (floor + 1);
-        this.text = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
-        this.text.setColorRGB(212, 168, 8);
-        this.text.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.text.getWidth() / 2f,
+        this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+        this.priceText.setColorRGB(212, 168, 8);
+        this.priceText.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.priceText.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
         this.image = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getProjection());
         this.image.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.image.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
         this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
+
+        this.saleText = new AlternativeViewText("", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+        this.saleText.setColorRGB(122,248,18);
         onBuy = NOOP;
     }
 
@@ -65,8 +69,9 @@ public class ShopItem implements ItemDrop {
         if (bought) {
             return List.of();
         }
-        final List<Renderable> textRenderables = text.getSubRenderables();
+        final List<Renderable> textRenderables = priceText.getSubRenderables();
         textRenderables.add(image);
+        textRenderables.addAll(saleText.getSubRenderables());
         if (interactionTracker.isInteracting()) {
             textRenderables.addAll(interactionText.getSubRenderables());
         }
@@ -98,8 +103,12 @@ public class ShopItem implements ItemDrop {
     }
 
     public void setHudPosition(final float x, final float y) {
-        this.text.setCenterX(x - image.getWidth() / 2f, x + image.getWidth() / 2f);
-        this.text.setCenterY(y - image.getHeight() - ITEM_OFFSET, y - ITEM_OFFSET);
+        this.priceText.setCenterX(x - image.getWidth() / 2f, x + image.getWidth() / 2f);
+        this.priceText.setCenterY(y - image.getHeight() - ITEM_OFFSET, y - ITEM_OFFSET);
+
+        this.saleText.setCenterX(x - image.getWidth() / 2f, x + image.getWidth() / 2f);
+        this.saleText.setCenterY(y - image.getHeight() - ITEM_OFFSET - 15, y - image.getHeight()  - ITEM_OFFSET - 15);
+
         this.image.setPosition(x - image.getWidth() / 2f, y - image.getHeight() - ITEM_OFFSET);
 
         this.interactionText.setCenterY(y - ITEM_OFFSET, y - ITEM_OFFSET);
@@ -119,10 +128,10 @@ public class ShopItem implements ItemDrop {
             return;
         }
         if (!hasEnoughCoinsPredicate.test(price)) {
-            LOGGER.info("Unsuccessfully bought {}, do no have {} coins", drop, price);
+            LOGGER.info("Unsuccessfully bought {}, do no have {} coins", drop, priceText);
             return;
         } else {
-            LOGGER.info("Successfully bought {} for {}", drop, price);
+            LOGGER.info("Successfully bought {} for {}", drop, priceText);
             removeCoinsConsumer.accept(price);
             bought = true;
             AUDIO_SERVICE.play(SoundEffect.BUY);
@@ -186,5 +195,20 @@ public class ShopItem implements ItemDrop {
     public void setInteractionText(final float xMin, final float xMax, final float y) {
         this.interactionText.setCenterX(xMin, xMax);
         this.interactionText.setPosition(interactionText.getX(), y + INTERACTION_TEXT_OFFSET);
+    }
+
+    public void discount(double discountPercent) {
+        LOGGER.info("Discounting {} by {}", drop, discountPercent);
+        price = (int) (price * discountPercent);
+        if (price < 1) {
+            price = 1;
+        }
+        saleText.setText("SALE %d%%".formatted((int) (discountPercent * 100)));
+        saleText.setCenterX(saleText.getX() - saleText.getWidth() / 2f, saleText.getX() + saleText.getWidth() / 2f);
+
+        final float priceTextX = priceText.getX() + priceText.getWidth() / 2;
+        priceText.setText(String.valueOf(price));
+        priceText.setCenterX(priceTextX - priceText.getWidth() / 2f, priceTextX + priceText.getWidth() / 2f);
+        priceText.setColorRGB(122,248,18);
     }
 }

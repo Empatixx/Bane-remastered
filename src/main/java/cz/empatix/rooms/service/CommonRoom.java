@@ -12,6 +12,7 @@ import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.roomobjects.suppliers.*;
+import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.ProceduralTileMap;
@@ -176,5 +177,12 @@ public class CommonRoom implements Room {
     public RoomType getRoomType() {
         return RoomType.NORMAL;
     }
-
+    @Override
+    public RoomState getState(){
+        return roomLockService.isLocked() ? RoomState.CLOSED : RoomState.OPEN;
+    }
+    @Override
+    public List<RoomObject> getRoomObjects() {
+        return roomObjectService.getRoomObjects();
+    }
 }

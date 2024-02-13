@@ -9,12 +9,15 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
+import cz.empatix.rooms.domain.RoomEvent;
+import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.service.CommonRoom;
 import cz.empatix.rooms.service.Room;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,6 +30,7 @@ public class MapService {
     private final List<Room> rooms;
     private final List<Room> pathRooms;
     private final Consumer<Room> minimapRoomConsumer;
+    private final RoomEventObserver roomEventObserver;
     private Room currentRoom;
 
     public MapService(final MapGenerationResult mapGenerationResult,
@@ -46,6 +50,7 @@ public class MapService {
         sceneBackground = new SceneBackground("ingame/tilebackground.tga");
 
         currentRoom = mapGenerationResult.startRoom();
+        roomEventObserver = new RoomEventObserver(this);
     }
 
     public List<Renderable> toRender(final double dt) {
@@ -65,6 +70,7 @@ public class MapService {
     }
     public void fixedUpdate(final double dt) {
         rooms.forEach(room -> room.fixedUpdate(dt));
+        roomEventObserver.observe();
     }
 
     private void updateCurrentRoom(final Player p, float dt) {
@@ -107,4 +113,12 @@ public class MapService {
     public Room getCurrentRoom() {
         return currentRoom;
     }
+    public List<Room> getRooms() {
+        return rooms;
+    }
+
+    public void addListener(final Consumer<RoomEvent> listener) {
+        roomEventObserver.addListener(listener);
+    }
+
 }

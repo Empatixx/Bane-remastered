@@ -3,6 +3,8 @@ package cz.empatix.rooms.service;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.RoomObject;
+import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
 
 import java.util.Collection;
@@ -45,16 +47,10 @@ public interface Room {
     }
 
     void addNeighbour(final RoomDirection direction, final Room room);
-
-    default Collection<Room> getNeighbours(){
-        return getNeighboursMap().values();
-    }
     Map<RoomDirection, Room> getNeighboursMap();
     RoomType getRoomType();
-    default void hover(final float mouseX, final float mouseY){
+    default RoomState getState(){
+        return RoomState.OPEN;
     }
-    default void mousePressed(final int button, final float mouseX, final float mouseY){
-    }
-    default void mouseReleased(final int button, final float mouseX, final float mouseY){
-    }
+    List<RoomObject> getRoomObjects();
 }

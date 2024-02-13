@@ -4,6 +4,7 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.RoomObject;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -83,5 +84,10 @@ public class StartRoom implements Room {
     @Override
     public RoomType getRoomType() {
         return RoomType.START;
+    }
+
+    @Override
+    public List<RoomObject> getRoomObjects() {
+        return List.of();
     }
 }

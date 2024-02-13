@@ -13,8 +13,10 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.Chest;
 import cz.empatix.roomobjects.domain.ChestType;
 import cz.empatix.roomobjects.domain.Ladder;
+import cz.empatix.roomobjects.domain.RoomObject;
 import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
+import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
@@ -144,5 +146,14 @@ public class BossRoom implements Room {
     @Override
     public RoomType getRoomType() {
         return RoomType.BOSS;
+    }
+    @Override
+    public RoomState getState(){
+        return roomLockService.isLocked() ? RoomState.CLOSED : RoomState.OPEN;
+    }
+
+    @Override
+    public List<RoomObject> getRoomObjects() {
+        return roomObjectService.getRoomObjects();
     }
 }

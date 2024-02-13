@@ -14,7 +14,7 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
-public class Flamethrower implements RoomObject, DamageSource {
+public class Flamethrower implements RoomObject, DamageSource, Trap{
     private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 32;
@@ -25,6 +25,7 @@ public class Flamethrower implements RoomObject, DamageSource {
         animation = Animation.builder()
                 .setTotal(1, 4)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
+                .addState(AnimationState.DEACTIVATED, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .texture(AssetsService.getTexture("ingame/flamethrower.tga"))
                 .scale(SCALE)
                 .build();
@@ -100,5 +101,15 @@ public class Flamethrower implements RoomObject, DamageSource {
 
     public PhysicsObject getPhysicsObject() {
         return physicsBody;
+    }
+
+    @Override
+    public void deactivate() {
+        animation.setState(AnimationState.DEACTIVATED);
+    }
+
+    @Override
+    public void activate() {
+        animation.setState(AnimationState.IDLE);
     }
 }
