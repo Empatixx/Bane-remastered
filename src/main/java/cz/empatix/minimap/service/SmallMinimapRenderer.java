@@ -23,48 +23,9 @@ public class SmallMinimapRenderer implements MinimapRenderer {
 
     public SmallMinimapRenderer(final List<Room> rooms, final Room startRoom) {
         this.minimapLayout = new CommonImage("ingame/minimap_layout.tga", new Vector2f(MINIMAP_LAYOUT_POSITION_X, MINIMAP_LAYOUT_POSITION_Y), 1.25f, 4);
-        this.minimapRooms = createMinimap(rooms, startRoom);
+        this.minimapRooms = MinimapRoomFactory.createMinimap(rooms, startRoom, MinimapRoom::new);
     }
 
-    private MinimapRoom createMapRoom(RoomDirection direction, Room neighbour, MinimapRoom minimapRoomParent) {
-        final int x = switch (direction) {
-            case BOTTOM, TOP -> minimapRoomParent.getX();
-            case LEFT -> minimapRoomParent.getX() - 1;
-            case RIGHT -> minimapRoomParent.getX() + 1;
-        };
-        final int y = switch (direction) {
-            case LEFT, RIGHT -> minimapRoomParent.getY();
-            case BOTTOM -> minimapRoomParent.getY() + 1;
-            case TOP -> minimapRoomParent.getY() - 1;
-        };
-        return new MinimapRoom(x, y, neighbour);
-    }
-
-    private Map<Room, MinimapRoom> createMinimap(final List<Room> rooms, final Room startRoom) {
-        final Queue<Room> roomsToVisit = new ArrayDeque<>(rooms.size());
-        final Map<Room, MinimapRoom> minimapRooms = new HashMap<>(rooms.size());
-
-        final MinimapRoom startMinimapRoom = new MinimapRoom(0, 0, startRoom);
-
-        roomsToVisit.add(startRoom);
-        minimapRooms.put(startRoom, startMinimapRoom);
-
-        while (!roomsToVisit.isEmpty()) {
-            final Room room = roomsToVisit.poll();
-            final MinimapRoom minimapRoomParent = minimapRooms.get(room);
-            room.getNeighboursMap().forEach((direction, neighbour) -> {
-                if (!minimapRooms.containsKey(neighbour)) {
-                    final MinimapRoom minimapRoom = createMapRoom(direction, neighbour, minimapRoomParent);
-                    minimapRooms.put(neighbour, minimapRoom);
-                    roomsToVisit.add(neighbour);
-
-                    minimapRoomParent.addConnection(direction, minimapRoom);
-                    minimapRoom.addConnection(direction.getOpposite(), minimapRoomParent);
-                }
-            });
-        }
-        return minimapRooms;
-    }
 
 
     @Override
