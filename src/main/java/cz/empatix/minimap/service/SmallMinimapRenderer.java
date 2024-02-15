@@ -24,6 +24,8 @@ public class SmallMinimapRenderer implements MinimapRenderer {
     public SmallMinimapRenderer(final List<Room> rooms, final Room startRoom) {
         this.minimapLayout = new CommonImage("ingame/minimap_layout.tga", new Vector2f(MINIMAP_LAYOUT_POSITION_X, MINIMAP_LAYOUT_POSITION_Y), 1.25f, 4);
         this.minimapRooms = MinimapRoomFactory.createMinimap(rooms, startRoom, MinimapRoom::new);
+        visit(startRoom);
+        update(1, 0, 0);
     }
 
 

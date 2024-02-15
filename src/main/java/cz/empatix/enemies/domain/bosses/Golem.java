@@ -9,6 +9,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
@@ -52,12 +53,8 @@ public class Golem implements Enemy {
     public void update(double dt) {
         bossImpl.update(dt);
         if (animation.getCurrentState() == AnimationState.SPELL2) {
-            if (!animation.isLastFrame()){
+            if (!animation.isLastFrame()) {
                 animation.update();
-            } else {
-                final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
-                physicsObject.setVelocity(0,0);
-                //todo; bounces bullet
             }
         } else {
             animation.update();
@@ -91,9 +88,16 @@ public class Golem implements Enemy {
         if (healing.isActive()) {
             if (animation.getCurrentState() != AnimationState.SPELL2) {
                 animation.setState(AnimationState.SPELL2);
+                final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
+                physicsObject.setMass(MassType.INFINITE);
+                physicsObject.setVelocity(0, 0);
             }
         } else {
             animation.setState(AnimationState.IDLE);
+            final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
+            if (physicsObject.getMass().getType() == MassType.INFINITE) {
+                physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
+            }
         }
 
     }
