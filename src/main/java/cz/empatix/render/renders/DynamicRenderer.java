@@ -81,11 +81,10 @@ public class DynamicRenderer implements Renderer {
 
             glDrawElements(GL_TRIANGLES, batch.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD, GL_UNSIGNED_INT, 0);
         }
-
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
-        shader.unbind();
+        shaderBinding.unbind();
     }
 
     private void glBindTextureUnit(final int unit, final int texture) {

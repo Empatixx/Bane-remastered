@@ -12,8 +12,16 @@ public class InterpolatedPosition {
     private final Vector2f previousPosition;
 
     private float t = 0;
+    private final float delta;
 
+    public InterpolatedPosition(final float delta) {
+        this.delta = delta;
+        this.currentPosition = new Vector2f();
+        this.nextPosition = new Vector2f();
+        this.previousPosition = new Vector2f();
+    }
     public InterpolatedPosition() {
+        this.delta = (float) GameLoop.FIXED_DELTA_TIME;
         this.currentPosition = new Vector2f();
         this.nextPosition = new Vector2f();
         this.previousPosition = new Vector2f();
@@ -64,7 +72,7 @@ public class InterpolatedPosition {
     }
 
     public void update(final float dt) {
-        t += dt / (float) GameLoop.FIXED_DELTA_TIME;
+        t += dt / delta;
         if (t > 1) {
             t = 1;
         }

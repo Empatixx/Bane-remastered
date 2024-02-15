@@ -1,6 +1,7 @@
 package cz.empatix.pause.service;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class PauseService {
+    private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int BACKGROUND_SCALE = 3;
     private final CommonImage background;
     private final List<TransparentButton> buttons;
@@ -69,6 +71,8 @@ public class PauseService {
 
         final CursorType cursorType = this.pause ? CursorType.DEFAULT : CursorType.CROSSHAIR;
         CursorService.setCursor(cursorType);
+
+        //todo; reduce volume soundtrack
     }
 
     public void mousePressed(final int button, final float mouseX, final float mouseY) {

@@ -110,13 +110,17 @@ public class InGameState extends GameState {
             mapService.update(dt, player);
             return;
         }
-        final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
-        final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-        Camera.setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
+        if (!minimapService.isActiveBigMinimap()){
+            final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
+            final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
+            Camera.setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
+        } else {
+            Camera.setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f, (float) dt);
+        }
         player.update(dt);
         mapLoaderService.update((float) dt);
         mapService.update(dt, player);
-        minimapService.update(dt);
+        minimapService.update((float)dt, mouseX, mouseY);
         gunService.update(dt);
         artefactsService.update(dt);
         itemService.update((float)dt);
@@ -159,9 +163,14 @@ public class InGameState extends GameState {
         if(pauseService.isPause()){
             return;
         }
+        minimapService.keyPressed(key);
+        player.keyPressed(key);
+        if (minimapService.isActiveBigMinimap()){
+            gunService.setShooting(false);
+            return;
+        }
         gunService.keyPressed(key);
         artefactsService.keyPressed(key);
-        player.keyPressed(key);
     }
 
     @Override
@@ -172,6 +181,7 @@ public class InGameState extends GameState {
         if(pauseService.isPause()){
             return;
         }
+        minimapService.keyReleased(key);
         player.keyReleased(key);
     }
 
@@ -184,6 +194,10 @@ public class InGameState extends GameState {
         if(deathService.isActive()){
             return;
         }
+        minimapService.mousePressed(button, mouseX, mouseY);
+        if (minimapService.isActiveBigMinimap()){
+            return;
+        }
         gunService.setShooting(true);
     }
 
@@ -193,6 +207,10 @@ public class InGameState extends GameState {
             return;
         }
         if(deathService.isActive()){
+            return;
+        }
+        minimapService.mouseReleased(button, mouseX, mouseY);
+        if (minimapService.isActiveBigMinimap()){
             return;
         }
         gunService.setShooting(false);
