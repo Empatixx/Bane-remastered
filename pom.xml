@@ -66,54 +66,6 @@
             </properties>
         </profile>
         <profile>
-            <id>lwjgl-natives-linux-amd64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <arch>amd64</arch>
-                </os>
-            </activation>
-            <properties>
-                <lwjgl.natives>natives-linux</lwjgl.natives>
-            </properties>
-        </profile>
-        <profile>
-            <id>lwjgl-natives-linux-aarch64</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <arch>aarch64</arch>
-                </os>
-            </activation>
-            <properties>
-                <lwjgl.natives>natives-linux-arm64</lwjgl.natives>
-            </properties>
-        </profile>
-        <profile>
-            <id>lwjgl-natives-linux-arm</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <arch>arm</arch>
-                </os>
-            </activation>
-            <properties>
-                <lwjgl.natives>natives-linux-arm32</lwjgl.natives>
-            </properties>
-        </profile>
-        <profile>
-            <id>lwjgl-natives-linux-arm32</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                    <arch>arm32</arch>
-                </os>
-            </activation>
-            <properties>
-                <lwjgl.natives>natives-linux-arm32</lwjgl.natives>
-            </properties>
-        </profile>
-        <profile>
             <id>lwjgl-natives-windows-amd64</id>
             <activation>
                 <os>
@@ -149,6 +101,45 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version> <!-- Use the latest version -->
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>cz.empatix.BaneApplication</mainClass> <!-- Replace with your main class -->
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version> <!-- Check for the latest version -->
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>cz.empatix.BaneApplication</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <repositories>
         <repository>
