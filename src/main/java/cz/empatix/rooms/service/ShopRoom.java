@@ -19,10 +19,7 @@ import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class ShopRoom implements Room {
@@ -119,9 +116,10 @@ public class ShopRoom implements Room {
 
     @Override
     public List<Renderable> toRender() {
+        final List<Renderable> renderables = new ArrayList<>(roomObjectService.toRender());
         final Renderable tileMapBatch = (DrawableBatch) tileMap::toRender;
-        final Renderable roomObjectsBatch = (DrawableBatch) roomObjectService::toRender;
-        return List.of(tileMapBatch, roomObjectsBatch);
+        renderables.add(tileMapBatch);
+        return renderables;
     }
 
     @Override

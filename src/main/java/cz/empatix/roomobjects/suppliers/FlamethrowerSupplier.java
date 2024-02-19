@@ -9,6 +9,8 @@ import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Vector;
@@ -17,8 +19,8 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class FlamethrowerSupplier implements RoomObjectSupplier<Flamethrower> {
+    private final static Logger LOGGER = LoggerFactory.getLogger(FlamethrowerSupplier.class);
     private final static int MAX_TRIES = 100;
-
     private final TileMap tileMap;
     private final Room room;
 
@@ -30,16 +32,23 @@ public class FlamethrowerSupplier implements RoomObjectSupplier<Flamethrower> {
 
     @Override
     public Flamethrower supply() {
-        final Flamethrower flamethrower = new Flamethrower();
+        try {
+            final Flamethrower flamethrower = new Flamethrower();
 
-        final PositionFinder positionFinder = new PositionFinder();
-        final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(
-                room, tileMap, new Vector2i(2,2));
-        final Predicate<Vector2f> collisionPredicate = PositionPredicateFactory.withoutAllCollisions(
-                new Vector2i(flamethrower.getWidth(), flamethrower.getHeight()));
-        final PositionProcessor positionProcessor = new PositionProcessorImpl(List.of(collisionPredicate));
-        final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(positionProcessor));
+            final PositionFinder positionFinder = new PositionFinder();
+            final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(
+                    room, tileMap, new Vector2i(2,2));
+            final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0,0), tileMap);
+            final Predicate<Vector2f> bottomNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0,1), tileMap);
 
-        return flamethrower;
+            final PositionProcessor positionProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomNonCollisionPredicate));
+            final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(positionProcessor), MAX_TRIES);
+
+            flamethrower.setPosition(position.x(), position.y());
+            return flamethrower;
+        } catch (Exception e){
+            LOGGER.warn("Could not supply a flamethrower in room {}, exception: {}", room, e.getMessage());
+            return null;
+        }
     }
 }

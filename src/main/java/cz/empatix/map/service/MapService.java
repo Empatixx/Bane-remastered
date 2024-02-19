@@ -11,7 +11,6 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.domain.RoomEvent;
 import cz.empatix.rooms.domain.RoomState;
-import cz.empatix.rooms.service.CommonRoom;
 import cz.empatix.rooms.service.Room;
 import org.joml.Vector2f;
 import org.slf4j.Logger;

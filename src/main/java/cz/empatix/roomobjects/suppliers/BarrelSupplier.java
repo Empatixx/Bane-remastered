@@ -12,7 +12,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class BarrelSupplier implements RoomObjectSupplier<Barrel> {
-    private final static int MAX_TRIES = 100;
     private final Room room;
     private final TileMap tileMap;
 

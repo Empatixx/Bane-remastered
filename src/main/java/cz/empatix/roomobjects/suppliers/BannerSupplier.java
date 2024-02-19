@@ -30,8 +30,8 @@ public class BannerSupplier implements RoomObjectSupplier<Banner>{
 
         final PositionFinder positionFinder = new PositionFinder();
         final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(room, tileMap, new Vector2i(0,0));
-        final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0,0));
-        final Predicate<Vector2f> bottomTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0,1));
+        final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0,0), tileMap);
+        final Predicate<Vector2f> bottomTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0,1), tileMap);
         final PositionProcessor processor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomTileNonCollisionPredicate));
 
         final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(processor));

@@ -31,25 +31,25 @@ public class TorchSupplier implements RoomObjectSupplier<Torch> {
         final PositionFinder positionFinder = new PositionFinder();
         final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(
                 room, tileMap, new Vector2i(0,0));
-        final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0, 0));
-        final Predicate<Vector2f> bottomTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0, 1));
-        final Predicate<Vector2f> leftTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(-1, 0));
-        final Predicate<Vector2f> rightTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(1, 0));
+        final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0, 0), tileMap);
+        final Predicate<Vector2f> bottomTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0, 1), tileMap);
+        final Predicate<Vector2f> leftTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(-1, 0), tileMap);
+        final Predicate<Vector2f> rightTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(1, 0), tileMap);
 
         final PositionProcessor bottomProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomTileNonCollisionPredicate),
                 Function.identity(), pos -> {
             torch.setState(AnimationState.TOP);
-            return pos.add(0, -Tile.TILE_SIZE * Tile.SCALE);
+            return pos;
         });
         final PositionProcessor leftProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, leftTileNonCollisionPredicate),
                 Function.identity(), pos -> {
             torch.setState(AnimationState.RIGHT_SIDE);
-            return pos;
+            return pos.add(-Tile.SCALE_TILE_SIZE, 0);
         });
         final PositionProcessor rightProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, rightTileNonCollisionPredicate),
                 Function.identity(), pos -> {
             torch.setState(AnimationState.LEFT_SIDE);
-            return pos;
+            return pos.add(Tile.SCALE_TILE_SIZE, 0);
         });
         final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(bottomProcessor, leftProcessor, rightProcessor));
         torch.setPosition(position.x(), position.y());

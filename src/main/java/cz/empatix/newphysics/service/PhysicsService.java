@@ -24,6 +24,13 @@ public class PhysicsService {
                                      final Set<CollisionType> ignored){
         return physicsEngine.query(point, dimensions, ignored);
     }
+    public boolean queryExists(final Vector2f point, final Vector2i dimensions,
+                               final Set<CollisionType> ignored){
+        return physicsEngine.queryExists(point, dimensions, ignored);
+    }
+    public void updateBroadphase(){
+        physicsEngine.updateBroadphase();
+    }
 
     public void add(final PhysicsObject physicsObject){
         physicsEngine.add(physicsObject);
@@ -53,7 +60,4 @@ public class PhysicsService {
         physicsEngine.update(dt);
     }
 
-    public void step() {
-        physicsEngine.step();
-    }
 }

@@ -31,6 +31,8 @@ public class CommonRoom implements Room {
     private static final int MAX_COBWEBS = 2;
     private static final int MAX_BANNERS = 2;
     private static final int MAX_BARRELS = 2;
+    private static final int MAX_FLAMETHROWERS = 1;
+    private static final int MAX_POT = 2;
     private final EnemyService enemyService;
     private final RoomObjectService roomObjectService;
     private final ItemService itemService;
@@ -75,6 +77,7 @@ public class CommonRoom implements Room {
         final CobwebSupplier cobwebSupplier = new CobwebSupplier(this, tileMap);
         final BannerSupplier bannerSupplier = new BannerSupplier(this, tileMap);
         final BarrelSupplier barrelSupplier = new BarrelSupplier(this, tileMap);
+        final PotSupplier potSupplier = new PotSupplier(this, tileMap);
         final FlamethrowerSupplier flamethrowerSupplier = new FlamethrowerSupplier(this, tileMap);
 
         final List<Spike> spikes = Stream.generate(spikeSupplier::supply)
@@ -93,11 +96,14 @@ public class CommonRoom implements Room {
                 .limit(MAX_BANNERS)
                 .toList();
         final List<Barrel> barrels = Stream.generate(barrelSupplier::supply)
-                .limit(MAX_BARRELS)
+                .limit(ThreadLocalRandom.current().nextInt(MAX_BARRELS))
                 .toList();
         final List<Flamethrower> flamethrowers = Stream.generate(flamethrowerSupplier::supply)
                 .limit(1)
                 .filter(Objects::nonNull)
+                .toList();
+        final List<Pot> pots = Stream.generate(potSupplier::supply)
+                .limit(ThreadLocalRandom.current().nextInt(MAX_POT))
                 .toList();
         roomObjectService.addAll(spikes);
         roomObjectService.addAll(torches);
@@ -106,6 +112,7 @@ public class CommonRoom implements Room {
         roomObjectService.addAll(banners);
         roomObjectService.addAll(barrels);
         roomObjectService.addAll(flamethrowers);
+        roomObjectService.addAll(pots);
     }
 
     @Override

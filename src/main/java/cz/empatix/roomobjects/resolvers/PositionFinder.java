@@ -9,7 +9,17 @@ import java.util.function.Supplier;
 public class PositionFinder {
     public Vector2f getPosition(final Supplier<Vector2f> positionSupplier,
                                 final List<PositionProcessor> processors){
+        return getPosition(positionSupplier, processors, Integer.MAX_VALUE);
+    }
+    // todo; find a better algorithm instead of maxTries for non-solution of the problem
+    public Vector2f getPosition(final Supplier<Vector2f> positionSupplier,
+                                final List<PositionProcessor> processors,
+                                final int maxTries){
+        int tries = 0;
         do {
+            if (tries >= maxTries) {
+                throw new IllegalStateException("Could not find a valid position after " + maxTries + " tries");
+            }
             final Vector2f position = positionSupplier.get();
             A: for(final PositionProcessor processor : processors) {
                 final Vector2f preprocessed = processor.preprocess(position);
@@ -21,6 +31,7 @@ public class PositionFinder {
                 }
                 return processor.postprocess(preprocessed);
             }
+            tries++;
         } while (true);
     }
 }

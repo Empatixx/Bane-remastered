@@ -134,8 +134,8 @@ public class AStarTargetting {
 
     private boolean isNotBlocked(PathCell pathCell) {
         final PhysicsService service = PhysicsService.getInstance();
-        return !service.query(new Vector2f(pathCell.x(), pathCell.y()), new Vector2i(selfWidth, selfHeight),
-                EnumSet.of(CollisionType.ENEMY, CollisionType.PLAYER, CollisionType.TRAP, CollisionType.ENEMY_BULLET, CollisionType.PLAYER_BULLET, CollisionType.ITEM, CollisionType.ROOM_OBJECT)).isEmpty();
+        return !service.queryExists(new Vector2f(pathCell.x(), pathCell.y()), new Vector2i(selfWidth, selfHeight),
+                EnumSet.of(CollisionType.ENEMY, CollisionType.PLAYER, CollisionType.TRAP, CollisionType.ENEMY_BULLET, CollisionType.PLAYER_BULLET, CollisionType.ITEM, CollisionType.ROOM_OBJECT));
     }
 
     private int getDistance(final int startX, final int startY, final int targetX, final int targetY) {
