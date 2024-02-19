@@ -2,11 +2,18 @@ package cz.empatix.roomobjects.suppliers;
 
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.roomobjects.domain.Cobweb;
+import cz.empatix.roomobjects.resolvers.*;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class CobwebSupplier implements RoomObjectSupplier<Cobweb>{
     private final Room room;
@@ -19,32 +26,24 @@ public class CobwebSupplier implements RoomObjectSupplier<Cobweb>{
 
     @Override
     public Cobweb supply() {
-        while (true) {
-            final int cols = tileMap.getTotalCollumns();
-            final int rows = tileMap.getTotalRows();
+        final Cobweb cobweb = new Cobweb();
 
-            final int xTile = ThreadLocalRandom.current().nextInt(1, cols - 1);
-            final int yTile = ThreadLocalRandom.current().nextInt(1, rows - 1);
+        final PositionFinder positionFinder = new PositionFinder();
+        final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(room, tileMap, new Vector2i(0,0));
 
-            if (!tileMap.isWall(xTile, yTile)) {
-                if (xTile + 1 < cols && tileMap.isWall(xTile + 1, yTile)) {
+        final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0,0));
+        final Predicate<Vector2f> rightTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(1,0));
+        final Predicate<Vector2f> leftTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(-1,0));
 
-                    final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
-                    final int yPos =  room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
+        final PositionProcessor rightProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, rightTileNonCollisionPredicate));
+        final PositionProcessor leftProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, leftTileNonCollisionPredicate),
+                Function.identity(), pos -> {
+            cobweb.setLeft();
+            return pos;
+        });
 
-                    final Cobweb cobweb = new Cobweb(false);
-                    cobweb.setPosition(xPos, yPos);
-                    return cobweb;
-
-                } else if (xTile - 1 >= 0 && tileMap.isWall(xTile - 1, yTile)) {
-                    final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
-                    final int yPos =  room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
-
-                    final Cobweb cobweb = new Cobweb(true);
-                    cobweb.setPosition(xPos, yPos);
-                    return cobweb;
-                }
-            }
-        }
+        final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(rightProcessor, leftProcessor));
+        cobweb.setPosition(position.x(), position.y());
+        return cobweb;
     }
 }

@@ -5,6 +5,7 @@ import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33;
 import org.slf4j.Logger;
@@ -133,8 +134,8 @@ public class AStarTargetting {
 
     private boolean isNotBlocked(PathCell pathCell) {
         final PhysicsService service = PhysicsService.getInstance();
-        return !service.query(new Vector2f(pathCell.x(), pathCell.y()), new Vector2f(selfWidth, selfHeight),
-                EnumSet.of(CollisionType.ENEMY, CollisionType.PLAYER, CollisionType.TRAP, CollisionType.ENEMY_BULLET, CollisionType.PLAYER_BULLET, CollisionType.ITEM, CollisionType.ROOM_OBJECT));
+        return !service.query(new Vector2f(pathCell.x(), pathCell.y()), new Vector2i(selfWidth, selfHeight),
+                EnumSet.of(CollisionType.ENEMY, CollisionType.PLAYER, CollisionType.TRAP, CollisionType.ENEMY_BULLET, CollisionType.PLAYER_BULLET, CollisionType.ITEM, CollisionType.ROOM_OBJECT)).isEmpty();
     }
 
     private int getDistance(final int startX, final int startY, final int targetX, final int targetY) {

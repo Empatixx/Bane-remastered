@@ -9,11 +9,13 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.roomobjects.domain.Pot;
 import cz.empatix.roomobjects.domain.RoomObject;
 import cz.empatix.roomobjects.domain.ShopTable;
 import cz.empatix.roomobjects.domain.Shopkeeper;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
+import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -84,6 +86,14 @@ public class ShopRoom implements Room {
                 shopItemService.add(shopItem);
             }
         }
+        final Pot pot = new Pot();
+        final Pot pot2 = new Pot();
+
+        pot.setPosition(getMinX() + Tile.SCALE_TILE_SIZE * 2, getMinY() + tileMap.getHeight() * 4 / 5f - pot.getHeight() / 2f);
+        pot2.setPosition(getMaxX() - Tile.SCALE_TILE_SIZE * 5, getMinY() + tileMap.getHeight() * 4 / 5f - pot.getHeight() / 2f);
+
+        roomObjectService.add(pot);
+        roomObjectService.add(pot2);
 
     }
     public void applyDiscounts(){

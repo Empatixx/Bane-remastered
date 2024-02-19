@@ -25,6 +25,7 @@ public class PhysicsObject extends Body {
     }
 
     public void setPhysicsTranslation(float x, float y) {
+        getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
         getTransform().setTranslation(x + offset.x(), y + offset.y());
     }
 
@@ -53,6 +54,7 @@ public class PhysicsObject extends Body {
     }
 
     public void setTranslation(float x, float y) {
+        getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
         getTransform().setTranslation(x + offset.x(), y + offset.y());
     }
 

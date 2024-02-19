@@ -103,6 +103,19 @@ public class LobbyRoom implements Room {
             roomObjectService.add(taskBoard);
         }
         {
+            final Pot pot = new Pot();
+            final Pot pot2 = new Pot();
+
+            pot.setPosition(Tile.TILE_SIZE * Tile.SCALE * 22, Tile.TILE_SIZE * Tile.SCALE - 64);
+            pot2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 23, Tile.TILE_SIZE * Tile.SCALE - 64);
+
+            roomObjectService.add(pot);
+            roomObjectService.add(pot2);
+
+            pot.setImmovable();
+            pot2.setImmovable();
+        }
+        {
             //todo; chest for daily reward
             /*final Chest chest = new Chest();
             chest.setPosition(Tile.TILE_SIZE * Tile.SCALE * 24, Tile.TILE_SIZE * Tile.SCALE * 2 - 16);

@@ -13,12 +13,10 @@ import org.dyn4j.world.DetectFilter;
 import org.dyn4j.world.World;
 import org.dyn4j.world.result.DetectResult;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.lwjgl.opengl.GL30;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class PhysicsEngine {
     private final World<PhysicsObject> world;
@@ -48,6 +46,7 @@ public class PhysicsEngine {
 
     public void add(final PhysicsObject object) {
         world.addBody(object);
+        world.
     }
 
     public void fixedUpdate(double dt) {
@@ -107,7 +106,7 @@ public class PhysicsEngine {
         world.removeBody(physicsObject);
     }
 
-    public boolean query(final Vector2f point, final Vector2f dimensions, final Set<CollisionType> ignored) {
+    public List<PhysicsObject> query(final Vector2f point, final Vector2i dimensions, final Set<CollisionType> ignored) {
         final Transform transform = new Transform();
         transform.setTranslation(new Vector2(point.x, point.y));
         final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);
@@ -116,6 +115,7 @@ public class PhysicsEngine {
         rectangle.getVertices()[2].set(dimensions.x(),dimensions.y());
         rectangle.getVertices()[3].set(0,dimensions.y());
 
+        final Set<PhysicsObject> results = new HashSet<>();
         final Iterator<DetectResult<PhysicsObject, BodyFixture>> resultIterator = world.detectIterator(rectangle, transform, new DetectFilter(true, true, null));
         while (resultIterator.hasNext()) {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
@@ -124,11 +124,15 @@ public class PhysicsEngine {
             if (object == null){
                 continue;
             }
-            if (ignored.contains(object.getType())) {
+            if (object.getType() != null && ignored.contains(object.getType())){
                 continue;
             }
-            return true;
+            results.add(object);
         }
-        return false;
+        return List.copyOf(results);
+    }
+
+    public void step() {
+        world.step(1);
     }
 }

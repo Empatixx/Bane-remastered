@@ -3,7 +3,9 @@ package cz.empatix.newphysics.service;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import org.dyn4j.geometry.Shape;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
+import java.util.List;
 import java.util.Set;
 
 public class PhysicsService {
@@ -18,8 +20,8 @@ public class PhysicsService {
     public PhysicsService(){
         physicsEngine = new PhysicsEngine();
     }
-    public boolean query(final Vector2f point, final Vector2f dimensions,
-                         final Set<CollisionType> ignored){
+    public List<PhysicsObject> query(final Vector2f point, final Vector2i dimensions,
+                                     final Set<CollisionType> ignored){
         return physicsEngine.query(point, dimensions, ignored);
     }
 
@@ -49,5 +51,9 @@ public class PhysicsService {
 
     public void update(double dt) {
         physicsEngine.update(dt);
+    }
+
+    public void step() {
+        physicsEngine.step();
     }
 }

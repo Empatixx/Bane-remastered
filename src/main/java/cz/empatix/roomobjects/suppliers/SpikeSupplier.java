@@ -2,13 +2,20 @@ package cz.empatix.roomobjects.suppliers;
 
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.roomobjects.domain.Spike;
+import cz.empatix.roomobjects.resolvers.*;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.dyn4j.geometry.Rectangle;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class SpikeSupplier implements RoomObjectSupplier<Spike> {
     private final Room room;
@@ -21,21 +28,17 @@ public class SpikeSupplier implements RoomObjectSupplier<Spike> {
 
     @Override
     public Spike supply() {
-        final int cols = tileMap.getTotalCollumns();
-        final int rows = tileMap.getTotalRows();
-
         final Spike spike = new Spike();
-        final PhysicsService physicsService = PhysicsService.getInstance();
-        do{
-            final int xTile = ThreadLocalRandom.current().nextInt(2, cols - 2);
-            final int yTile = ThreadLocalRandom.current().nextInt(2, rows - 2);
 
-            final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
-            final int yPos = room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
+        final PositionFinder positionFinder = new PositionFinder();
+        final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(
+                room, tileMap, new Vector2i(2,2));
+        final Predicate<Vector2f> collisionPredicate = PositionPredicateFactory.withoutAllCollisions(
+                new Vector2i(spike.getWidth(), spike.getHeight()));
+        final PositionProcessor processor = new PositionProcessorImpl(List.of(collisionPredicate));
 
-            spike.setPosition(xPos, yPos);
-        } while (physicsService.isColliding(spike.getPhysicsObject()));
-
+        final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(processor));
+        spike.setPosition(position.x(), position.y());
         return spike;
     }
 }

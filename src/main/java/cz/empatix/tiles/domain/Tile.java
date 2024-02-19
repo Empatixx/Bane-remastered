@@ -22,10 +22,16 @@ public record Tile(
         Vector2f position,
         PhysicsObject collision
 ) implements Drawable {
+    public Tile {
+        if (collision != null) {
+            collision.setUserData(this);
+        }
+    }
     public final static int TILE_SIZE = 32;
     private final static int TOTAL_ROWS = 2;
     private final static int TOTAL_COLUMNS = 21;
     public final static int SCALE = 2;
+    public final static int SCALE_TILE_SIZE = TILE_SIZE * SCALE;
 
     public static Tile from(final int tileNumber,
                             final int tilePosX,

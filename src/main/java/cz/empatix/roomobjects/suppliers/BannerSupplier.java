@@ -3,11 +3,18 @@ package cz.empatix.roomobjects.suppliers;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.roomobjects.domain.Banner;
 import cz.empatix.roomobjects.domain.Torch;
+import cz.empatix.roomobjects.resolvers.*;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
+import org.joml.Vector2f;
+import org.joml.Vector2i;
 
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class BannerSupplier implements RoomObjectSupplier<Banner>{
     private final TileMap tileMap;
@@ -19,23 +26,16 @@ public class BannerSupplier implements RoomObjectSupplier<Banner>{
     }
     @Override
     public Banner supply() {
-        while (true) {
-            final int cols = tileMap.getTotalCollumns();
-            final int rows = tileMap.getTotalRows();
+        final Banner banner = new Banner();
 
-            final int xTile = ThreadLocalRandom.current().nextInt(0, cols - 1);
-            final int yTile = ThreadLocalRandom.current().nextInt(0, rows - 1);
+        final PositionFinder positionFinder = new PositionFinder();
+        final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(room, tileMap, new Vector2i(0,0));
+        final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0,0));
+        final Predicate<Vector2f> bottomTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0,1));
+        final PositionProcessor processor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomTileNonCollisionPredicate));
 
-            if (tileMap.isWall(xTile, yTile)) {
-                if (yTile + 1 < rows && !tileMap.isWall(xTile, yTile + 1)) {
-                    final int xPos = room.getX() + xTile * Tile.TILE_SIZE * Tile.SCALE;
-                    final int yPos = room.getY() + yTile * Tile.TILE_SIZE * Tile.SCALE;
-
-                    final Banner banner = new Banner();
-                    banner.setPosition(xPos, yPos);
-                    return banner;
-                }
-            }
-        }
+        final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(processor));
+        banner.setPosition(position.x(), position.y());
+        return banner;
     }
 }

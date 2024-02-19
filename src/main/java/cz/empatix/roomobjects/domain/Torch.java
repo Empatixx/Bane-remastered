@@ -74,11 +74,11 @@ public class Torch implements RoomObject {
     public void setPosition(final float x, final float y) {
         position.set(x, y);
     }
-    public float getWidth() {
+    public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
 
-    public float getHeight() {
+    public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }
     @Override

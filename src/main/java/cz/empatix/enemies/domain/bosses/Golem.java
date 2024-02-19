@@ -2,6 +2,7 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.enemies.skills.ArmorStacking;
 import cz.empatix.enemies.skills.Healing;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.player.Player;
@@ -29,6 +30,7 @@ public class Golem implements Enemy {
     private final Animation animation;
     private final BossImpl bossImpl;
     private final Healing healing;
+    private final ArmorStacking armorStacking;
 
     public Golem() {
         animation = Animation.builder()
@@ -46,6 +48,7 @@ public class Golem implements Enemy {
         animation.setState(AnimationState.IDLE);
         bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> MOVE_FORCE, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
         healing = new Healing(2, this::heal);
+        armorStacking = new ArmorStacking();
     }
 
 
@@ -79,27 +82,68 @@ public class Golem implements Enemy {
 
     @Override
     public void fixedUpdate(double dt) {
-        if(isDead()){
+        if (isDead()) {
             return;
         }
         bossImpl.fixedUpdate(dt);
-        healing.activate();
+
+        if (bossImpl.isDead()) {
+            return;
+        }
+        updateAnimationState(dt);
+
+        activateArmorStacking();
+        activateHealing();
+
+        armorStacking.update((float) dt);
         healing.update((float) dt);
-        if (healing.isActive()) {
-            if (animation.getCurrentState() != AnimationState.SPELL2) {
-                animation.setState(AnimationState.SPELL2);
-                final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
-                physicsObject.setMass(MassType.INFINITE);
-                physicsObject.setVelocity(0, 0);
-            }
-        } else {
-            animation.setState(AnimationState.IDLE);
-            final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
-            if (physicsObject.getMass().getType() == MassType.INFINITE) {
-                physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
-            }
+
         }
 
+    private void updateAnimationState(final double dt) {
+        final AnimationState currentState = animation.getCurrentState();
+        final AnimationState nextState = switch (currentState) {
+            case SPELL2 -> {
+                final AnimationState next =healing.isActive() ? AnimationState.SPELL2 : AnimationState.IDLE;
+                if (next == AnimationState.IDLE) {
+                    final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
+                        physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
+                }
+                yield next;
+            }
+            case SPELL4 -> {
+                yield animation.hasPlayedOnce() ? AnimationState.IDLE : AnimationState.SPELL4;
+            }
+            default -> currentState;
+        };
+        if (currentState != nextState) {
+            animation.setState(nextState);
+
+        }
+    }
+
+
+    private void activateHealing() {
+        if (!animation.getCurrentState().equals(AnimationState.IDLE)) {
+            return;
+        }
+        healing.activate();
+        if (healing.isActive()) {
+            animation.setState(AnimationState.SPELL2);
+            final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
+            physicsObject.setMass(MassType.INFINITE);
+            physicsObject.setVelocity(0, 0);
+        }
+    }
+
+    private void activateArmorStacking() {
+        if (!animation.getCurrentState().equals(AnimationState.IDLE)) {
+            return;
+        }
+        armorStacking.activate();
+        if (armorStacking.wasActivated()){
+            animation.setState(AnimationState.SPELL4);
+        }
     }
 
 
