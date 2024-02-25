@@ -26,10 +26,15 @@ public class AudioCreator implements AssetCreator{
     }
     @Override
     public void create(){
+        int totalInited = 0;
+        final long start = System.currentTimeMillis();
         while (!audioLoader.getAssets().isEmpty()) {
             final RawAudio rawAudio = audioLoader.getAssets().poll();
             audio.put(rawAudio.filepath().toString(), createAudio(rawAudio));
+            totalInited++;
         }
+        final long end = System.currentTimeMillis();
+        LOGGER.info("Inited " + totalInited + " audio files in " + (end - start) + "ms");
     }
     private int createAudio(final RawAudio audio){
         final int buffer = AL10.alGenBuffers();

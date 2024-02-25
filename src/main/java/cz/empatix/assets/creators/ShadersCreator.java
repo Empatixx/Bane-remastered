@@ -27,10 +27,16 @@ public class ShadersCreator implements AssetCreator {
 
     @Override
     public void create() {
+        final long start = System.currentTimeMillis();
+        int totalInited = 0;
         while(!shadersLoader.getAssets().isEmpty()){
             final List<RawShader> rawShaders = shadersLoader.getAssets().poll();
             shaders.put(rawShaders.get(0).getName(), Shader.from(rawShaders));
+            totalInited++;
         }
+        final long end = System.currentTimeMillis();
+        LOGGER.info("Inited " + totalInited + " shaders in " + (end - start) + "ms");
+
     }
 
     @Override

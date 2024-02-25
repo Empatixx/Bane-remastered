@@ -36,10 +36,15 @@ public class TexturesCreator implements AssetCreator {
 
     @Override
     public void create() {
+        final long start = System.currentTimeMillis();
+        int totalInited = 0;
         while (!texturesLoader.getAssets().isEmpty()) {
             final RawTextureAtlas rawTextureAtlas = texturesLoader.getAssets().poll();
             textureAtlases.add(TextureAtlas.from(rawTextureAtlas));
+            totalInited++;
         }
+        final long end = System.currentTimeMillis();
+        LOGGER.info("Inited " + totalInited + " textures in " + (end - start) + "ms");
     }
 
     @Override

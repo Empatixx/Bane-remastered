@@ -29,11 +29,16 @@ public class FontCreator implements AssetCreator {
 
     @Override
     public void create() {
+        int totalInited = 0;
+        final long start = System.currentTimeMillis();
         while (!fontLoader.getAssets().isEmpty()) {
             final RawFont rawFont = fontLoader.getAssets().poll();
-            fonts.computeIfAbsent(rawFont.path().toString(), s -> new ConcurrentHashMap<>())
+            fonts.computeIfAbsent(rawFont.path().toString(), s -> new HashMap<>())
                     .put(rawFont.size(), Font.from(rawFont));
+            totalInited++;
         }
+        final long end = System.currentTimeMillis();
+        LOGGER.info("Inited " + totalInited + " fonts in " + (end - start) + "ms");
     }
 
     @Override
