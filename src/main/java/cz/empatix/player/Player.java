@@ -202,6 +202,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
     public void addHealth(final int health) {
         setHealth(getHealth() + health);
+        AUDIO_SERVICE.play(SoundEffect.HEAL);
     }
 
     public boolean hasFullHealth() {
@@ -210,6 +211,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
     public void addArmor(final int armor) {
         setArmor(getArmor() + armor);
+        AUDIO_SERVICE.play(SoundEffect.HEAL);
     }
 
     public boolean hasFullArmor() {
@@ -220,7 +222,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
         final int healthDiff = maxHealth - this.maxHealth;
         this.maxHealth = maxHealth;
         if (healthDiff > 0) {
-            addHealth(healthDiff);
+            health += healthDiff;
         }
         if (this.health > maxHealth) {
             this.health = maxHealth;
@@ -230,7 +232,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
         final int armorDiff = maxArmor - this.maxArmor;
         this.maxArmor = maxArmor;
         if (armorDiff > 0) {
-            addArmor(armorDiff);
+            armor += armorDiff;
         }
         if (this.armor > maxArmor) {
             this.armor = maxArmor;

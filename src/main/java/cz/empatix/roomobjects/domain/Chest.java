@@ -1,6 +1,8 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.domain.ItemDrop;
@@ -20,6 +22,7 @@ import org.joml.Vector2f;
 import java.util.Set;
 
 public class Chest implements RoomObject, Interactable {
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int TOTAL_DROP_ITEMS = 5;
     private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
@@ -79,6 +82,7 @@ public class Chest implements RoomObject, Interactable {
     }
 
     private void dropItems(){
+        AUDIO_SERVICE.play(SoundEffect.OPEN_CHEST);
         final ItemFactory itemFactory = itemService.getItemFactory();
         for (int i = 0; i < TOTAL_DROP_ITEMS; i++) {
             final MovableItemDrop itemDrop = itemFactory.createMovableItemDrop();
