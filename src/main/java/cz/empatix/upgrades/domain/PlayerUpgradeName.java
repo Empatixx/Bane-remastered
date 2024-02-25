@@ -5,7 +5,7 @@ public enum PlayerUpgradeName {
     DISCOUNT,
     TRAP_MASTER,
     ADDITIONAL_GUN,
-    TELEPORTATION,
+    GAMBLE_MACHINE,
 
 
     IMPROVED_HEALTH,

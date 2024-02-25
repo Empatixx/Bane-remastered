@@ -91,7 +91,7 @@ public class CurrentUpgradeMenu {
                 if (!currentUpgrade.isBought()) {
                     currentUpgrade.setBought(true);
                     selectedUpgrade.setBought(true);
-                    AUDIO_SERVICE.play(SoundEffect.BUY);
+                    AUDIO_SERVICE.play(SoundEffect.TALENT_UNLOCK);
                 }
             }
         });

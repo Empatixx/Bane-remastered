@@ -11,7 +11,17 @@ public enum SoundEffect {
     CLICK("menuclick.ogg"),
     PICKUP("pickup.ogg"),
     SWITCH_GUN("switchgun.ogg"),
-    PLAYER_HURT("playerhurt_1.ogg", "playerhurt_2.ogg");
+    PLAYER_HURT("playerhurt_1.ogg", "playerhurt_2.ogg"),
+    EMPTY_GUN_SHOOT("guns/empty_gun_shoot.ogg"),
+    PISTOL_SHOOT("guns/pistol_shoot_1.ogg", "guns/pistol_shoot_2.ogg"),
+    SHOTGUN_SHOOT("guns/shotgun_shoot.ogg"),
+    M4_SHOOT("guns/M4_shoot.ogg"),
+    REVOLVER_SHOOT("guns/revolver_shoot.ogg"),
+    UZI_SHOOT("guns/uzi_shoot.ogg"),
+    PISTOL_RELOAD("guns/pistol_reload.ogg"),
+    SHOTGUN_RELOAD("guns/shotgun_reload.ogg"),
+    TALENT_UNLOCK("talent_unlock.wav"),
+    M4_RELOAD("guns/M4_reload.ogg");
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final List<String> paths;
     SoundEffect(final String... path) {

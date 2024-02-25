@@ -1,6 +1,8 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.guns.ammo.Bullet;
@@ -98,6 +100,8 @@ public class M4 extends AbstractGun implements Gun{
             bulletsToShoot = BULLETS_PER_SHOT - 1;
             lastShootTime = System.currentTimeMillis();
 
+            AUDIO_SERVICE.play(SoundEffect.M4_SHOOT);
+
             lastTargetX = targetX;
             lastTargetY = targetY;
             lastShooterX = shooterX;
@@ -119,6 +123,7 @@ public class M4 extends AbstractGun implements Gun{
             LOGGER.info("Reloading pistol clip: {}, ammo: {}", currentClip, ammo);
             reloading = true;
             lastReloadTime = System.currentTimeMillis();
+            AUDIO_SERVICE.play(SoundEffect.M4_RELOAD);
         }
     }
 

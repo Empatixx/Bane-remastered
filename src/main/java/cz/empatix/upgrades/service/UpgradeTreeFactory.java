@@ -42,12 +42,12 @@ public class UpgradeTreeFactory {
         additionalGun.setName(PlayerUpgradeName.ADDITIONAL_GUN);
 
         final PlayerUpgrade teleportation = new PlayerUpgrade("ingame/talents/teleportation.tga", QualityLevel.COMMON, false);
-        teleportation.setTitle("Teleportation");
-        teleportation.setDescription("Teleports you to\n choosen and discovered\n room from the minimap");
+        teleportation.setTitle("Gamble machine");
+        teleportation.setDescription("Unlocks the gamble machine\n in the shop\n");
         teleportation.setPosition(364, 421);
         teleportation.setPrice(500);
         teleportation.setParent(additionalGun);
-        teleportation.setName(PlayerUpgradeName.TELEPORTATION);
+        teleportation.setName(PlayerUpgradeName.GAMBLE_MACHINE);
 
         final UpgradeTree utilityTree = new UpgradeTree(List.of(improvedMovement, discount, trap, additionalGun, teleportation), TreeType.UTILITY);
         utilityTree.setPosition(364, 125);

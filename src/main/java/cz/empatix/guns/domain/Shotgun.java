@@ -1,6 +1,7 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.guns.service.GunService;
@@ -74,6 +75,7 @@ public class Shotgun extends AbstractGun implements Gun {
             }
             lastShootTime = System.currentTimeMillis();
             shooting = false;
+            AUDIO_SERVICE.play(SoundEffect.SHOTGUN_SHOOT);
             return true;
         }
         return false;
@@ -98,6 +100,7 @@ public class Shotgun extends AbstractGun implements Gun {
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
                 reloading = false;
+                AUDIO_SERVICE.play(SoundEffect.SHOTGUN_RELOAD);
                 reloadAmmo();
             }
         }

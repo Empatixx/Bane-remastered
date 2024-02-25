@@ -186,6 +186,11 @@ public class LobbyRoom implements Room {
             roomObjectService.add(bookshelf2);
         }
         {
+            final MapTable mapTable = new MapTable();
+            mapTable.setPosition(Tile.SCALE_TILE_SIZE * 5, Tile.SCALE_TILE_SIZE * 5);
+            roomObjectService.add(mapTable);
+        }
+        {
             /*final PotionStation potionStation = new PotionStation();
             potionStation.setPosition(Tile.TILE_SIZE * Tile.SCALE * 2 - 16, Tile.TILE_SIZE * Tile.SCALE * 3 - 16);
             roomObjectService.add(potionStation);*/

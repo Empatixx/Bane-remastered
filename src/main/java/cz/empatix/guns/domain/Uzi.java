@@ -1,6 +1,7 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.guns.service.GunService;
@@ -68,6 +69,7 @@ public class Uzi extends AbstractGun implements Gun{
             bullets.add(bullet);
             currentClip--;
             lastShootTime = System.currentTimeMillis();
+            AUDIO_SERVICE.play(SoundEffect.UZI_SHOOT);
             return true;
         }
         return false;
@@ -82,6 +84,7 @@ public class Uzi extends AbstractGun implements Gun{
             LOGGER.info("Reloading clip: {}, ammo: {}", currentClip, ammo);
             reloading = true;
             lastReloadTime = System.currentTimeMillis();
+            AUDIO_SERVICE.play(SoundEffect.PISTOL_RELOAD);
         }
     }
 

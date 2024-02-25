@@ -1,6 +1,9 @@
 package cz.empatix.guns.domain;
 
+import cz.empatix.audio.service.AudioService;
+
 public abstract class AbstractGun {
+    protected final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     protected int minDamage;
     protected  int maxDamage;
 
