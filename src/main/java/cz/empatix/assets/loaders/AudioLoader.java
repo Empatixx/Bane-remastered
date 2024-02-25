@@ -45,7 +45,7 @@ public class AudioLoader implements AssetLoader<RawAudio> {
         try (final Stream<Path> paths = Files.walk(PATH)) {
             paths
                     .filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".ogg") || p.toString().endsWith(".wav"))
+                    .filter(p -> p.toString().endsWith(".ogg"))
                     .map(this::decodeAudio)
                     .forEach(audio -> {
                         this.audio.add(audio);

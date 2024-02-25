@@ -72,6 +72,7 @@ public class Uzi extends AbstractGun implements Gun{
             AUDIO_SERVICE.play(SoundEffect.UZI_SHOOT);
             return true;
         }
+        AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
         return false;
     }
 

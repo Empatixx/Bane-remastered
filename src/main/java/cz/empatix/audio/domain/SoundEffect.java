@@ -20,8 +20,11 @@ public enum SoundEffect {
     UZI_SHOOT("guns/uzi_shoot.ogg"),
     PISTOL_RELOAD("guns/pistol_reload.ogg"),
     SHOTGUN_RELOAD("guns/shotgun_reload.ogg"),
-    TALENT_UNLOCK("talent_unlock.wav"),
-    M4_RELOAD("guns/M4_reload.ogg");
+    TALENT_UNLOCK("talent_unlock.ogg"),
+    M4_RELOAD("guns/M4_reload.ogg"),
+    OPEN_CHEST("open_chest_1.ogg", "open_chest_2.ogg", "open_chest_3.ogg"),
+    PLAYER_DASH("player_dash_1.ogg", "player_dash_2.ogg"),
+    SHOW_MAP("map_1.ogg", "map_2.ogg");
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final List<String> paths;
     SoundEffect(final String... path) {

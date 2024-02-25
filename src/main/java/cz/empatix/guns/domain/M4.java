@@ -108,6 +108,7 @@ public class M4 extends AbstractGun implements Gun{
             lastShooterY = shooterY;
             return true;
         }
+        AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
         return false;
     }
 

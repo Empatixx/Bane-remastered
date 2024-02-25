@@ -1,5 +1,7 @@
 package cz.empatix.minimap.service;
 
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 public class BigMinimapRenderer implements MinimapRenderer{
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(BigMinimapRenderer.class);
     private static final float MINIMAP_LAYOUT_POSITION_X = WindowHandler.TARGET_WIDTH /2f - 200;
     private static final float MINIMAP_LAYOUT_POSITION_Y = WindowHandler.TARGET_HEIGHT /2f - 200;
@@ -116,6 +119,7 @@ public class BigMinimapRenderer implements MinimapRenderer{
     public void keyPressed(int key) {
         if (key == GLFW.GLFW_KEY_TAB){
             show = !show;
+            AUDIO_SERVICE.play(SoundEffect.SHOW_MAP);
         }
         if (show) {
             CursorService.setCursor(CursorType.DEFAULT);

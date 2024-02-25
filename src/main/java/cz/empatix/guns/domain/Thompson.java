@@ -73,6 +73,7 @@ public class Thompson extends AbstractGun implements Gun{
             AUDIO_SERVICE.play(SoundEffect.PISTOL_SHOOT);
             return true;
         }
+        AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
         return false;
     }
 
