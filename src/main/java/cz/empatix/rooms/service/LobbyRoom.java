@@ -42,6 +42,11 @@ public class LobbyRoom implements Room {
             roomObjectService.add(portal);
         }
         {
+            final WeaponRack weaponRack = new WeaponRack();
+            weaponRack.setPosition(Tile.SCALE_TILE_SIZE * 22.75f, Tile.SCALE_TILE_SIZE/2f);
+            roomObjectService.add(weaponRack);
+        }
+        {
             final Torch torch1 = new Torch();
             final Torch torch2 = new Torch();
             final Torch torch3 = new Torch();
@@ -64,8 +69,8 @@ public class LobbyRoom implements Room {
             final Bones bones1 = new Bones();
             final Bones bones2 = new Bones();
 
-            bones1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 4, Tile.TILE_SIZE * Tile.SCALE);
-            bones2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 25, Tile.TILE_SIZE * Tile.SCALE * 6);
+            bones1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 20, Tile.SCALE_TILE_SIZE * 7);
+            bones2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 23, Tile.TILE_SIZE * Tile.SCALE * 4);
 
             bones1.setState(AnimationState.TYPE1);
             bones2.setState(AnimationState.TYPE0);
@@ -99,21 +104,25 @@ public class LobbyRoom implements Room {
         }
         {
             final TaskBoard taskBoard = new TaskBoard();
-            taskBoard.setPosition(Tile.TILE_SIZE * Tile.SCALE * 19, 0);
+            taskBoard.setPosition(Tile.TILE_SIZE * Tile.SCALE * 18.5f, 0);
             roomObjectService.add(taskBoard);
         }
         {
             final Pot pot = new Pot();
             final Pot pot2 = new Pot();
+            final Pot pot3 = new Pot();
 
-            pot.setPosition(Tile.TILE_SIZE * Tile.SCALE * 22, Tile.TILE_SIZE * Tile.SCALE - 64);
-            pot2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 23, Tile.TILE_SIZE * Tile.SCALE - 64);
+            pot.setPosition(Tile.TILE_SIZE * Tile.SCALE * 14f, Tile.SCALE_TILE_SIZE * 6);
+            pot2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 13f, Tile.SCALE_TILE_SIZE * 6);
+            pot3.setPosition(Tile.TILE_SIZE * Tile.SCALE * 12f, Tile.SCALE_TILE_SIZE * 6);
 
             roomObjectService.add(pot);
             roomObjectService.add(pot2);
+            roomObjectService.add(pot3);
 
             pot.setImmovable();
             pot2.setImmovable();
+            pot3.setImmovable();
         }
         {
             //todo; chest for daily reward
@@ -123,13 +132,31 @@ public class LobbyRoom implements Room {
         }
         {
             final CraftingTable craftingTable = new CraftingTable();
-            craftingTable.setPosition(Tile.TILE_SIZE * Tile.SCALE * 6, Tile.TILE_SIZE * Tile.SCALE);
+            craftingTable.setPosition(Tile.SCALE_TILE_SIZE * 23.5f, Tile.SCALE_TILE_SIZE * 0.5f);
             roomObjectService.add(craftingTable);
         }
         {
             final Box box = new Box();
-            box.setPosition(Tile.TILE_SIZE * Tile.SCALE * 5, Tile.TILE_SIZE * Tile.SCALE * 2);
+            box.setPosition(Tile.SCALE_TILE_SIZE * 26, Tile.SCALE_TILE_SIZE * 7);
             roomObjectService.add(box);
+        }
+        {
+            final Chains chains = new Chains();
+            chains.setPosition(Tile.SCALE_TILE_SIZE * 18, 0);
+            roomObjectService.add(chains);
+        }
+        {
+            final Rock rock = new Rock();
+            final Rock rock2 = new Rock();
+
+            rock.setState(AnimationState.TYPE0);
+            rock2.setState(AnimationState.TYPE1);
+
+            rock.setPosition(Tile.SCALE_TILE_SIZE * 26, Tile.SCALE_TILE_SIZE * 4);
+            rock2.setPosition(Tile.SCALE_TILE_SIZE * 17, Tile.SCALE_TILE_SIZE * 5);
+
+            roomObjectService.add(rock);
+            roomObjectService.add(rock2);
         }
         {
             /*final PotionStation potionStation = new PotionStation();

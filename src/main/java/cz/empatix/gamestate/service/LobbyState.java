@@ -54,7 +54,7 @@ public class LobbyState extends GameState {
         coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(0,236,1));
 
         scientist = new Scientist();
-        scientist.setPosition(Tile.TILE_SIZE * Tile.SCALE * 4, Tile.TILE_SIZE * Tile.SCALE * 2);
+        scientist.setPosition(Tile.TILE_SIZE * Tile.SCALE * 25, Tile.TILE_SIZE * Tile.SCALE * 6.5f);
 
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);

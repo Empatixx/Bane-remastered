@@ -5,11 +5,13 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.roomobjects.domain.Chest;
-import cz.empatix.roomobjects.domain.ChestType;
-import cz.empatix.roomobjects.domain.RoomObject;
+import cz.empatix.render.domain.AnimationState;
+import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
+import cz.empatix.roomobjects.suppliers.BonesSupplier;
+import cz.empatix.roomobjects.suppliers.CobwebSupplier;
 import cz.empatix.rooms.domain.RoomType;
+import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
 import cz.empatix.tiles.tilemaps.TreasureTileMap;
 
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class TreasureRoom implements Room {
     private final RoomObjectService roomObjectService;
@@ -44,6 +47,36 @@ public class TreasureRoom implements Room {
 
     @Override
     public void init() {
+        {
+            final Torch topLeftTorch = new Torch();
+            final Torch topRightTorch = new Torch();
+            final Torch bottomLeftTorch = new Torch();
+            final Torch bottomRightTorch = new Torch();
+
+            topLeftTorch.setPosition(getMinX() + Tile.SCALE_TILE_SIZE  * 5, getMinY() + Tile.SCALE_TILE_SIZE * 3);
+            topRightTorch.setPosition(getMaxX() - Tile.SCALE_TILE_SIZE * 6, getMinY() + Tile.SCALE_TILE_SIZE * 3);
+            bottomLeftTorch.setPosition(getMinX() + Tile.SCALE_TILE_SIZE * 5, getMaxY() - Tile.SCALE_TILE_SIZE * 5);
+            bottomRightTorch.setPosition(getMaxX() - Tile.SCALE_TILE_SIZE * 6, getMaxY() - Tile.SCALE_TILE_SIZE * 5);
+
+            topLeftTorch.setState(AnimationState.LEFT_SIDE);
+            topRightTorch.setState(AnimationState.RIGHT_SIDE);
+            bottomLeftTorch.setState(AnimationState.LEFT_SIDE);
+            bottomRightTorch.setState(AnimationState.RIGHT_SIDE);
+
+            roomObjectService.addAll(List.of(topLeftTorch, topRightTorch, bottomLeftTorch, bottomRightTorch));
+
+            final CobwebSupplier cobwebSupplier = new CobwebSupplier(this, tileMap);
+            final BonesSupplier bonesSupplier = new BonesSupplier(this, tileMap);
+            final List<Cobweb> cobwebs = Stream.generate(cobwebSupplier::supply)
+                    .limit(3)
+                    .toList();
+            final List<Bones> bones = Stream.generate(bonesSupplier::supply)
+                    .limit(3)
+                    .toList();
+            roomObjectService.addAll(cobwebs);
+            roomObjectService.addAll(bones);
+        }
+
         final Chest chest = new Chest(itemService, ChestType.WEAPON);
         chest.setPosition((getMaxX() + getMinX()) / 2f - chest.getWidth() / 2f,
                 (getMaxY() + getMinY()) / 2f - chest.getHeight() / 2f);
