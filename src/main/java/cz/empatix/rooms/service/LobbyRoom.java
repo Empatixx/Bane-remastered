@@ -43,8 +43,11 @@ public class LobbyRoom implements Room {
         }
         {
             final WeaponRack weaponRack = new WeaponRack();
+            final WeaponRack weaponRack2 = new WeaponRack();
             weaponRack.setPosition(Tile.SCALE_TILE_SIZE * 22.75f, Tile.SCALE_TILE_SIZE/2f);
+            weaponRack2.setPosition(Tile.SCALE_TILE_SIZE * 9.25f, Tile.SCALE_TILE_SIZE/2f);
             roomObjectService.add(weaponRack);
+            roomObjectService.add(weaponRack2);
         }
         {
             final Torch torch1 = new Torch();
@@ -142,21 +145,45 @@ public class LobbyRoom implements Room {
         }
         {
             final Chains chains = new Chains();
+            final Chains chains2 = new Chains();
+
             chains.setPosition(Tile.SCALE_TILE_SIZE * 18, 0);
+            chains2.setPosition(Tile.SCALE_TILE_SIZE * 5, 0);
+
             roomObjectService.add(chains);
+            roomObjectService.add(chains2);
         }
         {
             final Rock rock = new Rock();
             final Rock rock2 = new Rock();
 
+            final Rock rock3 = new Rock();
+            final Rock rock4 = new Rock();
+
             rock.setState(AnimationState.TYPE0);
             rock2.setState(AnimationState.TYPE1);
+
+            rock3.setState(AnimationState.TYPE0);
+            rock4.setState(AnimationState.TYPE1);
 
             rock.setPosition(Tile.SCALE_TILE_SIZE * 26, Tile.SCALE_TILE_SIZE * 4);
             rock2.setPosition(Tile.SCALE_TILE_SIZE * 17, Tile.SCALE_TILE_SIZE * 5);
 
+            rock3.setPosition(Tile.SCALE_TILE_SIZE * 3, Tile.SCALE_TILE_SIZE * 3);
+            rock4.setPosition(Tile.SCALE_TILE_SIZE * 8, Tile.SCALE_TILE_SIZE * 7);
+
             roomObjectService.add(rock);
             roomObjectService.add(rock2);
+            roomObjectService.add(rock3);
+            roomObjectService.add(rock4);
+        }
+        {
+            final Bookshelf bookshelf = new Bookshelf();
+            final Bookshelf bookshelf2 = new Bookshelf();
+            bookshelf.setPosition(Tile.SCALE_TILE_SIZE * 2, 0);
+            bookshelf2.setPosition(Tile.SCALE_TILE_SIZE * 6f, 0);
+            roomObjectService.add(bookshelf);
+            roomObjectService.add(bookshelf2);
         }
         {
             /*final PotionStation potionStation = new PotionStation();
