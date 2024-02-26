@@ -8,6 +8,8 @@ import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
+import cz.empatix.lightning.domain.LightSource;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -16,6 +18,7 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +35,7 @@ public class Portal implements RoomObject, Interactable {
     private final Vector2f position;
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final AlternativeViewText alternativeViewText;
+    private final LightSource lightSource;
     public Portal(final Vector2f position) {
         this.position = position;
         animation = Animation.builder()
@@ -45,6 +49,7 @@ public class Portal implements RoomObject, Interactable {
         alternativeViewText = new AlternativeViewText("Press E to enter the portal", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE),1,FontSize.FONTSIZE_22,Camera.getProjection());
         alternativeViewText.setCenterX(position.x(),position.x() + DIMENSION_WIDTH*SCALE);
         alternativeViewText.setColorRGB(222, 112, 38);
+        lightSource = LightningService.getInstance().createLightSource(new Vector3f(128,0,128),50,2.5f);
     }
 
     @Override
@@ -82,6 +87,8 @@ public class Portal implements RoomObject, Interactable {
     @Override
     public void update(double dt) {
         animation.update();
+        lightSource.setPosition(position.x() + DIMENSION_WIDTH * SCALE / 2, position.y() + DIMENSION_HEIGHT * SCALE / 2);
+
     }
 
     @Override
