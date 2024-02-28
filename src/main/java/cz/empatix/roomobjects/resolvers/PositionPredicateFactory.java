@@ -17,6 +17,7 @@ public class PositionPredicateFactory {
         return withoutAllCollisions(dimensions, new Vector2i(0, 0));
     }
 
+
     public static Predicate<Vector2f> withoutAllCollisions(final Vector2i dimensions,
                                                            final Vector2i offset) {
         return position -> {

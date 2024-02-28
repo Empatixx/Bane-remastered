@@ -46,8 +46,9 @@ public class LobbyState extends GameState {
         final StaticMapGenerator  proceduralMapGenerator = new StaticMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
 
-        mapService = new MapService(mapGenerationResult, room -> {
-        });
+        mapService = new MapService();
+        mapService.apply(mapGenerationResult);
+
         player = new Player();
         player.setPosition(mapGenerationResult.startRoom().getMaxX() / 2f, mapGenerationResult.startRoom().getMaxY() / 2f);
 

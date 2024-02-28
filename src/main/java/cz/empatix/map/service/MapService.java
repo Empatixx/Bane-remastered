@@ -1,22 +1,16 @@
 package cz.empatix.map.service;
 
-import cz.empatix.assets.domain.font.FontSize;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.service.SceneBackground;
-import cz.empatix.hud.service.image.CommonImage;
-import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.domain.RoomEvent;
-import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.service.Room;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -26,18 +20,20 @@ import java.util.stream.Stream;
 public class MapService {
     private final static Logger LOGGER = LoggerFactory.getLogger(MapService.class);
     private final SceneBackground sceneBackground;
-    private final List<Room> rooms;
-    private final List<Room> pathRooms;
-    private final Consumer<Room> minimapRoomConsumer;
+    private List<Room> rooms;
+    private List<Room> pathRooms;
     private final RoomEventObserver roomEventObserver;
+    private final RoomVisitorObserver roomVisitorObserver;
     private Room currentRoom;
 
-    public MapService(final MapGenerationResult mapGenerationResult,
-                      final Consumer<Room> minimapRoomConsumer) {
-        this.pathRooms = mapGenerationResult.paths();
-        this.rooms = mapGenerationResult.rooms();
-        this.minimapRoomConsumer = minimapRoomConsumer;
+    public MapService() {
+        sceneBackground = new SceneBackground("ingame/tilebackground.tga");
 
+        roomEventObserver = new RoomEventObserver();
+        roomVisitorObserver = new RoomVisitorObserver();
+    }
+
+    public void apply(final MapGenerationResult mapGenerationResult){
         final int xMin = mapGenerationResult.startRoom().getMinX();
         final int yMin = mapGenerationResult.startRoom().getMinY();
         final int xMax = mapGenerationResult.startRoom().getMaxX();
@@ -46,12 +42,14 @@ public class MapService {
         Camera.setMinDimensions(xMin, yMin);
         Camera.setMaxDimensions(xMax, yMax);
 
-        sceneBackground = new SceneBackground("ingame/tilebackground.tga");
+        pathRooms = mapGenerationResult.paths();
+        rooms = mapGenerationResult.rooms();
+
+        roomEventObserver.apply(mapGenerationResult);
 
         currentRoom = mapGenerationResult.startRoom();
-        roomEventObserver = new RoomEventObserver(this);
+        roomVisitorObserver.observe(currentRoom);
     }
-
     public List<Renderable> toRender(final double dt) {
         final List<Renderable> renderables = Stream.of(pathRooms, rooms)
                 .flatMap(Collection::stream)
@@ -98,7 +96,7 @@ public class MapService {
                 LOGGER.info("Player entered room: {}", currentRoom);
                 currentRoom.enterEvent(p);
                 previousRoom.leaveEvent(p);
-                minimapRoomConsumer.accept(currentRoom);
+                roomVisitorObserver.observe(currentRoom);
             }
         } catch (final IllegalStateException e) {
             LOGGER.error("No room found!", e);
@@ -116,8 +114,11 @@ public class MapService {
         return rooms;
     }
 
-    public void addListener(final Consumer<RoomEvent> listener) {
+    public void onRoomEventChange(final Consumer<RoomEvent> listener) {
         roomEventObserver.addListener(listener);
+    }
+    public void onVisit(final Consumer<Room> listener) {
+        roomVisitorObserver.addListener(listener);
     }
 
 }

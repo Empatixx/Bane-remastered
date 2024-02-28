@@ -6,6 +6,7 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.minimap.domain.BigMinimapRenderType;
 import cz.empatix.minimap.domain.BigMinimapRoom;
@@ -26,16 +27,19 @@ public class BigMinimapRenderer implements MinimapRenderer{
     private static final float MINIMAP_LAYOUT_POSITION_Y = WindowHandler.TARGET_HEIGHT /2f - 200;
     public final static float MINIMAP_POSITION_X = WindowHandler.TARGET_WIDTH /2f - (BigMinimapRoom.DIMENSIONS * 4)/2f;
     public final static float MINIMAP_POSITION_Y = WindowHandler.TARGET_HEIGHT /2f - (BigMinimapRoom.DIMENSIONS * 4)/2f;
-    private final Map<Room, BigMinimapRoom> minimapRooms;
+    private Map<Room, BigMinimapRoom> minimapRooms;
     private final CommonImage minimapLayout;
     private final Vector2f dragPosition = new Vector2f();
     private boolean dragging;
     private boolean show;
-    public BigMinimapRenderer(final List<Room> rooms, final Room startRoom){
+    public BigMinimapRenderer(){
         this.minimapLayout = new CommonImage("ingame/minimap_layout.tga", new Vector2f(MINIMAP_LAYOUT_POSITION_X, MINIMAP_LAYOUT_POSITION_Y), 4f, 4);
-        this.minimapRooms = MinimapRoomFactory.createMinimap(rooms, startRoom, BigMinimapRoom::new);
+    }
 
-        visit(startRoom);
+    @Override
+    public void apply(MapGenerationResult result) {
+        minimapRooms = MinimapRoomFactory.createMinimap(result.rooms(), result.startRoom(), BigMinimapRoom::new);
+        visit(result.startRoom());
         update(1, 0, 0);
     }
 

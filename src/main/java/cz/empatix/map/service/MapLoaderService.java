@@ -10,27 +10,29 @@ import cz.empatix.rooms.service.Room;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class MapLoaderService {
     private final static Logger LOGGER = LoggerFactory.getLogger(MapLoaderService.class);
     private final ItemService itemService;
-    private final Consumer<Room> minimapConsumer;
-    private boolean loaded = false;
-    private MapService mapService;
-    private MinimapService minimapService;
+    private final MapService mapService;
+    private final MinimapService minimapService;
     private final StatisticsService statisticsService;
     private final MapTransitionService mapTransitionService;
-
+    private final List<Consumer<MapGenerationResult>> listeners;
 
     public MapLoaderService(final ItemService itemService,
-                            final Consumer<Room> minimapConsumer,
+                            final MapService mapService,
+                            final MinimapService minimapService,
                             final StatisticsService statisticsService) {
-        this.minimapConsumer = minimapConsumer;
         this.itemService = itemService;
+        this.mapService = mapService;
+        this.minimapService = minimapService;
         this.statisticsService = statisticsService;
         this.mapTransitionService = new MapTransitionService();
+        this.listeners = new ArrayList<>();
     }
     public void clearPreviousMap(){
         LOGGER.info("Cleaning up old map");
@@ -40,9 +42,8 @@ public class MapLoaderService {
     }
     public void load(final MapGenerationResult generation){
         LOGGER.info("Loading new map");
-        mapService = new MapService(generation, minimapConsumer);
-        minimapService = new MinimapService(generation);
-        loaded = true;
+        mapService.apply(generation);
+        minimapService.apply(generation);
         statisticsService.nextFloor();
     }
 
@@ -55,17 +56,4 @@ public class MapLoaderService {
     }
 
 
-    public MapService getMapService() {
-        return mapService;
-    }
-
-    public MinimapService getMinimapService() {
-        return minimapService;
-    }
-    public boolean isLoadedNewMap(){
-        return loaded;
-    }
-    public void setLoadedUse(){
-        loaded = false;
-    }
 }

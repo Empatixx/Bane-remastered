@@ -1,5 +1,6 @@
 package cz.empatix.map.service;
 
+import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.rooms.domain.RoomEvent;
 import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.service.Room;
@@ -12,19 +13,22 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class RoomEventObserver {
-    private final MapService mapService;
     private final List<Consumer<RoomEvent>> listeners;
-    private final Map<Room, RoomState> lastState;
-    public RoomEventObserver(final MapService mapService) {
-        this.mapService = mapService;
+    private Map<Room, RoomState> lastState;
+
+    public RoomEventObserver() {
         this.listeners = new ArrayList<>();
-        this.lastState = mapService.getRooms()
+    }
+
+    public void apply(final MapGenerationResult result) {
+        this.lastState = result.rooms()
                 .stream()
                 .collect(Collectors.toMap(room -> room, Room::getState));
 
     }
+
     public void observe() {
-        mapService.getRooms().forEach(room -> {
+        lastState.keySet().forEach(room -> {
             final RoomState currentState = room.getState();
             final RoomState lastRoomState = lastState.get(room);
             if (currentState != lastRoomState) {

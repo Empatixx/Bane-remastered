@@ -71,15 +71,15 @@ public class InGameState extends GameState {
 
         itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService));
 
-        mapLoaderService = new MapLoaderService(itemService, room -> minimapService.visit(room), statisticsService);
+        mapService = new MapService();
+        minimapService = new MinimapService();
+
+        mapLoaderService = new MapLoaderService(itemService, mapService, minimapService, statisticsService);
 
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService);
         mapLoaderService.load(mapGenerationResult);
-        mapLoaderService.setLoadedUse();
-
-        mapService = mapLoaderService.getMapService();
-        minimapService = mapLoaderService.getMinimapService();
+        mapService.onVisit(minimapService::visit);
 
         final Room startRoom = mapGenerationResult.startRoom();
         player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
@@ -95,9 +95,6 @@ public class InGameState extends GameState {
     @Override
     public void update(final double dt) {
         if (mapLoaderService.isLoadedNewMap()){
-            mapLoaderService.setLoadedUse();
-            mapService = mapLoaderService.getMapService();
-            minimapService = mapLoaderService.getMinimapService();
             final Room startRoom = mapService.getCurrentRoom();
             player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
                     startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);

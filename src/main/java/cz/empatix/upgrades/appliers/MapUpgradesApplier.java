@@ -6,7 +6,6 @@ import cz.empatix.player.Player;
 import cz.empatix.roomobjects.domain.Trap;
 import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.rooms.service.Room;
 import cz.empatix.rooms.service.ShopRoom;
 import cz.empatix.upgrades.domain.PlayerUpgradeName;
 import org.slf4j.Logger;
@@ -40,7 +39,7 @@ public class MapUpgradesApplier implements UpgradesApplier {
             shopRooms.forEach(ShopRoom::applyDiscounts);
         }
         if (activeUpgradeService.isBought(PlayerUpgradeName.ARMOR_REGENERATION)){
-            mapService.addListener(event -> {
+            mapService.onRoomEventChange(event -> {
                 if (event.state().equals(RoomState.OPEN) && event.lastState().equals(RoomState.CLOSED)){
                     player.addArmor(1);
                 }

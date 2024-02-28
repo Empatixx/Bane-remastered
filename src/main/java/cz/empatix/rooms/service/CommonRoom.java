@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 public class CommonRoom implements Room {
     private static final int MAX_ENEMIES = 5;
     private static final int MAX_SPIKES = 3;
-    private static final int MAX_TORCHES = 2;
+    private static final int MAX_TORCHES = 20;
     private static final int MAX_BONES = 2;
     private static final int MAX_COBWEBS = 2;
     private static final int MAX_BANNERS = 2;

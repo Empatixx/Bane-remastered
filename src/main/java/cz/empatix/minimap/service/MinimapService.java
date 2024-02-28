@@ -15,12 +15,14 @@ import java.util.*;
 public class MinimapService {
     private static final Logger LOGGER = LoggerFactory.getLogger(MinimapService.class);
     private final List<MinimapRenderer> renderers;
-    public MinimapService(final MapGenerationResult mapGenerationResult) {
-        final SmallMinimapRenderer minimapRenderer = new SmallMinimapRenderer(mapGenerationResult.rooms(), mapGenerationResult.startRoom());
-        final BigMinimapRenderer bigMinimapRenderer = new BigMinimapRenderer(mapGenerationResult.rooms(), mapGenerationResult.startRoom());
+    public MinimapService() {
+        final SmallMinimapRenderer minimapRenderer = new SmallMinimapRenderer();
+        final BigMinimapRenderer bigMinimapRenderer = new BigMinimapRenderer();
 
         renderers = List.of(minimapRenderer, bigMinimapRenderer);
-
+    }
+    public void apply(final MapGenerationResult mapGenerationResult){
+        renderers.forEach(minimapRenderer -> minimapRenderer.apply(mapGenerationResult));
         visit(mapGenerationResult.startRoom());
     }
 

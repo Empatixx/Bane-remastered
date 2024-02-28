@@ -1,6 +1,7 @@
 package cz.empatix.minimap.service;
 
 import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.minimap.domain.MinimapRoom;
 import cz.empatix.render.attributes.Renderable;
@@ -19,16 +20,20 @@ public class SmallMinimapRenderer implements MinimapRenderer {
     private final static int MINIMAP_LAYOUT_POSITION_X = 835 - OFFSET_FROM_BORDER;
     private final static int MINIMAP_LAYOUT_POSITION_Y = OFFSET_FROM_BORDER;
     private final CommonImage minimapLayout;
-    private final Map<Room, MinimapRoom> minimapRooms;
+    private Map<Room, MinimapRoom> minimapRooms;
 
-    public SmallMinimapRenderer(final List<Room> rooms, final Room startRoom) {
+    public SmallMinimapRenderer() {
         this.minimapLayout = new CommonImage("ingame/minimap_layout.tga", new Vector2f(MINIMAP_LAYOUT_POSITION_X, MINIMAP_LAYOUT_POSITION_Y), 1.25f, 4);
-        this.minimapRooms = MinimapRoomFactory.createMinimap(rooms, startRoom, MinimapRoom::new);
-        visit(startRoom);
-        update(1, 0, 0);
+        this.minimapRooms = new HashMap<>();
     }
 
 
+    @Override
+    public void apply(MapGenerationResult result) {
+        minimapRooms = MinimapRoomFactory.createMinimap(result.rooms(), result.startRoom(), MinimapRoom::new);
+        visit(result.startRoom());
+        update(1, 0, 0);
+    }
 
     @Override
     public void visit(final Room room) {
