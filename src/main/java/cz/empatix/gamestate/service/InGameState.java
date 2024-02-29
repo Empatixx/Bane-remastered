@@ -69,21 +69,25 @@ public class InGameState extends GameState {
         gunService = new GunService(itemService, statisticsService);
         artefactsService = new ArtefactsService(player, itemService);
 
-        itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService));
-
-        mapService = new MapService();
         minimapService = new MinimapService();
 
+        mapService = new MapService();
+        mapService.onVisit(minimapService::visit);
+
+        itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService, minimapService));
+
         mapLoaderService = new MapLoaderService(itemService, mapService, minimapService, statisticsService);
+        mapLoaderService.addListener(result -> {
+            final Room startRoom = result.startRoom();
+            player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
+                    startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
+            Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+        });
+
 
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService);
         mapLoaderService.load(mapGenerationResult);
-        mapService.onVisit(minimapService::visit);
-
-        final Room startRoom = mapGenerationResult.startRoom();
-        player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
-                startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
 
         final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService, mapService);
         upgradesApplicationService.apply();
@@ -94,12 +98,6 @@ public class InGameState extends GameState {
 
     @Override
     public void update(final double dt) {
-        if (mapLoaderService.isLoadedNewMap()){
-            final Room startRoom = mapService.getCurrentRoom();
-            player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
-                    startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
-            Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
-        }
         deathService.update((float)dt, player.isDead());
         if(deathService.isActive()){
             gunService.setShooting(false);

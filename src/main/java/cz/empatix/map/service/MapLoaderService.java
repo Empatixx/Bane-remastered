@@ -42,13 +42,17 @@ public class MapLoaderService {
     }
     public void load(final MapGenerationResult generation){
         LOGGER.info("Loading new map");
-        mapService.apply(generation);
         minimapService.apply(generation);
+        mapService.apply(generation);
         statisticsService.nextFloor();
+        listeners.forEach(listener -> listener.accept(generation));
     }
 
     public List<Renderable> toRender() {
         return mapTransitionService.toRender();
+    }
+    public void addListener(final Consumer<MapGenerationResult> listener) {
+        listeners.add(listener);
     }
 
     public void update(final float dt) {

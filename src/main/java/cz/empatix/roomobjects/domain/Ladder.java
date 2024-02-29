@@ -49,8 +49,9 @@ public class Ladder implements RoomObject, Interactable {
             interactionTracker.interaction();
             if (keys.contains(GLFW.GLFW_KEY_E)){
                 LOGGER.info("Loading new map");
-                final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
                 mapLoaderService.clearPreviousMap();
+
+                final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
                 final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService);
                 mapLoaderService.load(mapGenerationResult);
             }

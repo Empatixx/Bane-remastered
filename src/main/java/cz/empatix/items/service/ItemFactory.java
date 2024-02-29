@@ -6,6 +6,7 @@ import cz.empatix.guns.domain.Gun;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.domain.*;
+import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 
@@ -25,7 +26,8 @@ public class ItemFactory {
     public ItemFactory(final GunService gunService,
                        final CoinService coinService,
                        final Player player,
-                       final ArtefactsService artefactsService) {
+                       final ArtefactsService artefactsService,
+                       final MinimapService minimapService) {
         final List<Supplier<ItemDrop>> commonItemsSuppliers = List.of(
                 () -> new CoinItem(coinService::addCoins)
         );

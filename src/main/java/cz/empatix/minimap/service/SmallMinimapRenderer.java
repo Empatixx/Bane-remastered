@@ -66,6 +66,11 @@ public class SmallMinimapRenderer implements MinimapRenderer {
     }
 
     @Override
+    public void visitAll() {
+        minimapRooms.values().forEach(MinimapRoom::visit);
+    }
+
+    @Override
     public List<Renderable> toRender() {
         final List<Renderable> renderables = new ArrayList<>(minimapRooms.size() + 1);
         renderables.add(minimapLayout);

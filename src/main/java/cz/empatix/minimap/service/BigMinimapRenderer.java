@@ -8,6 +8,7 @@ import cz.empatix.cursors.service.CursorService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.domain.RoomDirection;
+import cz.empatix.minimap.domain.AbstractMinimapRoom;
 import cz.empatix.minimap.domain.BigMinimapRenderType;
 import cz.empatix.minimap.domain.BigMinimapRoom;
 import cz.empatix.minimap.domain.MinimapRoom;
@@ -81,6 +82,14 @@ public class BigMinimapRenderer implements MinimapRenderer{
         minimapRooms.values().forEach(r -> {
             r.setPosition(currentRoom.getX(), currentRoom.getY());
         });
+    }
+
+    @Override
+    public void visitAll() {
+        minimapRooms.values().forEach(BigMinimapRoom::visit);
+        minimapRooms.values().stream()
+                .filter(r -> r.getRenderType() == BigMinimapRenderType.UNSEEN)
+                .forEach(r -> r.setRenderType(BigMinimapRenderType.VISITED));
     }
 
     @Override
