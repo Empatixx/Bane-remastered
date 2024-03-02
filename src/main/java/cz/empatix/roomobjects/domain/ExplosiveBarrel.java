@@ -6,6 +6,7 @@ import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -15,6 +16,8 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
+
+import java.util.List;
 
 public class ExplosiveBarrel implements RoomObject, Damageable {
     private final static int SCALE = 3;
@@ -28,6 +31,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
     private final InterpolatedPhysicsObject physicsBody;
     private int health = 4;
     private long lastHit;
+    private final BarrelExplosion explosion = new BarrelExplosion();
 
     public ExplosiveBarrel() {
         animation = Animation.builder()
@@ -95,10 +99,12 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
 
     @Override
     public void update(double dt) {
+        if (isDead()) {
+            explosion.update(dt);
+        }
         if (animation.getCurrentState() == AnimationState.DEATH && animation.hasPlayedOnce()) {
             return;
         }
-
         animation.update();
         switch (animation.getCurrentState()) {
             case HIT -> {
@@ -139,6 +145,9 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
     private void onDeath() {
         physicsBody.destroy();
         animation.setState(AnimationState.DEATH);
+        explosion.setPosition(physicsBody.getTranslation().x() + getWidth() / 2f - explosion.getWidth() / 2f,
+                physicsBody.getTranslation().y() + getHeight() / 2f - explosion.getHeight() / 2f - 20);
+        explosion.explode();
     }
 
     public boolean isDead() {
@@ -147,5 +156,12 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
 
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
+    }
+    @Override
+    public List<Renderable> getSubRenderables() {
+        if (isDead() && !explosion.hasPlayedOnce()) {
+            return List.of(explosion);
+        }
+        return List.of();
     }
 }

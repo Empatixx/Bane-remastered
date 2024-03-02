@@ -97,7 +97,7 @@ public class CommonRoom implements Room {
                 .limit(MAX_BANNERS)
                 .toList();
         final List<ExplosiveBarrel> explosiveBarrels = Stream.generate(explosiveBarrelSupplier::supply)
-                .limit(ThreadLocalRandom.current().nextInt(1))
+                .limit(2)
                 .toList();
         final List<Barrel> barrels = Stream.generate(barrelSupplier::supply)
                 .limit(ThreadLocalRandom.current().nextInt(MAX_BARRELS))
