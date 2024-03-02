@@ -92,6 +92,7 @@ public class Shotgun extends AbstractGun implements Gun {
             LOGGER.info("Reloading clip: {}, ammo: {}", currentClip, ammo);
             reloading = true;
             lastReloadTime = System.currentTimeMillis();
+            AUDIO_SERVICE.play(SoundEffect.SHOTGUN_RELOAD);
         }
     }
 
@@ -102,7 +103,6 @@ public class Shotgun extends AbstractGun implements Gun {
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
                 reloading = false;
-                AUDIO_SERVICE.play(SoundEffect.SHOTGUN_RELOAD);
                 reloadAmmo();
             }
         }
