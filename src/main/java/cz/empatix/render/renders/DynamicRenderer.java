@@ -7,6 +7,7 @@ import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.shaderbindings.ShaderBinding;
+import org.joml.Vector2f;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -63,16 +64,14 @@ public class DynamicRenderer implements Renderer {
 
         for(final List<RenderData> batch : batches){
             vertexBuffer.clear();
-            batch.stream()
-                    .flatMap(d -> d
-                            .vertices()
-                            .stream())
-                    .forEach(vertex -> {
-                        vertexBuffer.put(vertex.position().x());
-                        vertexBuffer.put(vertex.position().y());
-                        vertexBuffer.put(vertex.texCoords().x());
-                        vertexBuffer.put(vertex.texCoords().y());
-                    });
+            for(final RenderData d : batch){
+                d.vertices().forEach(vertex -> {
+                    vertexBuffer.put(vertex.position().x());
+                    vertexBuffer.put(vertex.position().y());
+                    vertexBuffer.put(vertex.texCoords().x());
+                    vertexBuffer.put(vertex.texCoords().y());
+                });
+            }
             vertexBuffer.flip();
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);

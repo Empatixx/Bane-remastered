@@ -46,8 +46,11 @@ public class RenderEngine {
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {
-        final List<Renderable> allDrawables = new ArrayList<>(renderables);
-        final Queue<Renderable> drawableQueue = new LinkedList<>(renderables);
+        final List<Renderable> allDrawables = new ArrayList<>(renderables.size() * 2);
+        allDrawables.addAll(renderables);
+
+        final Queue<Renderable> drawableQueue = new ArrayDeque<>(renderables.size());
+        drawableQueue.addAll(renderables);
 
         while (!drawableQueue.isEmpty()) {
             final Renderable current = drawableQueue.poll();

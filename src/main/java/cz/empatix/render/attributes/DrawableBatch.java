@@ -3,6 +3,7 @@ package cz.empatix.render.attributes;
 import cz.empatix.render.attributes.grouping.BatchRenderableGroup;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface DrawableBatch extends Renderable {
@@ -13,8 +14,13 @@ public interface DrawableBatch extends Renderable {
     }
     @Override
     default List<Renderable> getSubRenderables() {
-        return getDrawables().stream()
-                .flatMap(drawable -> drawable.getSubRenderables().stream())
-                .toList();
+        final List<Renderable> allSubRenderables = new ArrayList<>();
+        for (Drawable drawable : getDrawables()) {
+            List<Renderable> subRenderables = drawable.getSubRenderables();
+            if (!subRenderables.isEmpty()) {
+                allSubRenderables.addAll(subRenderables);
+            }
+        }
+        return allSubRenderables;
     }
 }
