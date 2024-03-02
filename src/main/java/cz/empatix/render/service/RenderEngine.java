@@ -55,6 +55,9 @@ public class RenderEngine {
         while (!drawableQueue.isEmpty()) {
             final Renderable current = drawableQueue.poll();
             final List<Renderable> subDrawables = current.getSubRenderables();
+            if (subDrawables.isEmpty()){
+                continue;
+            }
             allDrawables.addAll(subDrawables);
             drawableQueue.addAll(subDrawables);
         }
