@@ -107,8 +107,10 @@ public class M4 extends AbstractGun implements Gun{
             lastShooterX = shooterX;
             lastShooterY = shooterY;
             return true;
+        } else {
+            AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
+            lastShootTime = System.currentTimeMillis();
         }
-        AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
         return false;
     }
 

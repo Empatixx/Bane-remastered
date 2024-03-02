@@ -17,9 +17,13 @@ public class BulletFactory {
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     public Bullet createBullet(final int minDamage, final int maxDamage, final float inaccuracy,
                                final float shooterX, final float shooterY, final float targetX, final float targetY) {
+        return createBullet(minDamage, maxDamage, inaccuracy, RANDOM.nextFloat() - 0.5f, shooterX, shooterY, targetX, targetY);
+    }
+    public Bullet createBullet(final int minDamage, final int maxDamage, final float inaccuracy, final float inaccuracyPercent,
+                               final float shooterX, final float shooterY, final float targetX, final float targetY) {
         final int damage = minDamage + (int) (RANDOM.nextFloat() * (maxDamage - minDamage));
         final int modifiedDamage = gunDamageEventHook.apply(damage);
-        final float inaccuracyBullet = inaccuracy * (RANDOM.nextFloat() - 0.5f);
+        final float inaccuracyBullet = inaccuracy * inaccuracyPercent;
         final Bullet bullet = new Bullet(modifiedDamage);
         bullet.setPosition(shooterX, shooterY);
         bullet.setDirection(shooterX, shooterY, targetX, targetY, inaccuracyBullet);

@@ -30,7 +30,7 @@ public class Shotgun extends AbstractGun implements Gun {
         this.minDamage = 2;
         this.maxDamage = 3;
 
-        this.inaccuracy = 0.25f;
+        this.inaccuracy = 0.1f;
         this.fireRateTime = 500;
         this.reloadTime = 700;
 
@@ -69,8 +69,8 @@ public class Shotgun extends AbstractGun implements Gun {
             LOGGER.info("Shooting from shotgun clip: {}, ammo: {}", currentClip, ammo);
             currentClip--;
             for(int i = 0;i<BULLETS_PER_SHOT;i++){
-                final float inaccuracy = this.inaccuracy * (float) Math.pow(-1, i) * (i + 1) / BULLETS_PER_SHOT;
-                final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
+                final float inaccuracy = this.inaccuracy * i * (float) Math.pow(-1, i);
+                final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy,0.5f, shooterX, shooterY, targetX, targetY);
                 bullets.add(bullet);
             }
             lastShootTime = System.currentTimeMillis();
@@ -79,6 +79,7 @@ public class Shotgun extends AbstractGun implements Gun {
             return true;
         }
         AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
+        shooting = false;
         return false;
     }
 

@@ -88,7 +88,7 @@ public class BigMinimapRenderer implements MinimapRenderer{
     public void visitAll() {
         minimapRooms.values().forEach(BigMinimapRoom::visit);
         minimapRooms.values().stream()
-                .filter(r -> r.getRenderType() == BigMinimapRenderType.UNSEEN)
+                .filter(r -> r.getRenderType() != BigMinimapRenderType.CURRENT)
                 .forEach(r -> r.setRenderType(BigMinimapRenderType.VISITED));
     }
 
