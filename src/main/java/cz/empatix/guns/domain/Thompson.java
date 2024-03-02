@@ -72,9 +72,11 @@ public class Thompson extends AbstractGun implements Gun{
             lastShootTime = System.currentTimeMillis();
             AUDIO_SERVICE.play(SoundEffect.PISTOL_SHOOT);
             return true;
+        } else {
+            AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
+            lastShootTime = System.currentTimeMillis();
+            return false;
         }
-        AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
-        return false;
     }
 
     @Override

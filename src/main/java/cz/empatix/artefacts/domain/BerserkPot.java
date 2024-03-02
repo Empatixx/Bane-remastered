@@ -11,7 +11,7 @@ import java.util.List;
 
 public class BerserkPot implements Artefact{
     private static final String TEXTURE_PATH = "ingame/artefacts/berserkpot.tga";
-    private final static int ARTEFACT_SCALE = 1;
+    private final static int ARTEFACT_SCALE = 2;
     private final static int ACTIVATION_TIME = 15000;
     private final static int GAZE_SPEED_PRELIMIT = 350;
     private final static int GAZE_OFFSET = 10;

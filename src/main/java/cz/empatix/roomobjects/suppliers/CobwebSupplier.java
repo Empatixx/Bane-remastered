@@ -34,9 +34,10 @@ public class CobwebSupplier implements RoomObjectSupplier<Cobweb>{
         final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0,0), tileMap);
         final Predicate<Vector2f> rightTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(1,0), tileMap);
         final Predicate<Vector2f> leftTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(-1,0), tileMap);
+        final Predicate<Vector2f> withoutRoomObjectCollisions = PositionPredicateFactory.withoutRoomObjectCollisions(cobweb, room);
 
-        final PositionProcessor rightProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, rightTileNonCollisionPredicate), Function.identity(), pos -> pos.add(Tile.SCALE_TILE_SIZE, 0));
-        final PositionProcessor leftProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, leftTileNonCollisionPredicate), Function.identity(), pos -> {
+        final PositionProcessor rightProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, rightTileNonCollisionPredicate, withoutRoomObjectCollisions), Function.identity(), pos -> pos.add(Tile.SCALE_TILE_SIZE, 0));
+        final PositionProcessor leftProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, leftTileNonCollisionPredicate, withoutRoomObjectCollisions), Function.identity(), pos -> {
             cobweb.setLeft();
             return pos.add(-Tile.SCALE_TILE_SIZE, 0);
         });

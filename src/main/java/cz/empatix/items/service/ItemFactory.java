@@ -26,8 +26,7 @@ public class ItemFactory {
     public ItemFactory(final GunService gunService,
                        final CoinService coinService,
                        final Player player,
-                       final ArtefactsService artefactsService,
-                       final MinimapService minimapService) {
+                       final ArtefactsService artefactsService) {
         final List<Supplier<ItemDrop>> commonItemsSuppliers = List.of(
                 () -> new CoinItem(coinService::addCoins)
         );

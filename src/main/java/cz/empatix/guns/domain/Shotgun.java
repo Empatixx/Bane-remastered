@@ -30,7 +30,7 @@ public class Shotgun extends AbstractGun implements Gun {
         this.minDamage = 2;
         this.maxDamage = 3;
 
-        this.inaccuracy = 0.15f;
+        this.inaccuracy = 0.25f;
         this.fireRateTime = 500;
         this.reloadTime = 700;
 

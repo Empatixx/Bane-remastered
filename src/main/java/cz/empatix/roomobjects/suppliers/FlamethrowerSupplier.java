@@ -40,8 +40,9 @@ public class FlamethrowerSupplier implements RoomObjectSupplier<Flamethrower> {
                     room, tileMap, new Vector2i(2,2));
             final Predicate<Vector2f> tileCollisionPredicate = PositionPredicateFactory.withTileCollision(new Vector2i(0,0), tileMap);
             final Predicate<Vector2f> bottomNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0,1), tileMap);
+            final Predicate<Vector2f> withoutRoomObjectCollisions = PositionPredicateFactory.withoutRoomObjectCollisions(flamethrower, room);
 
-            final PositionProcessor positionProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomNonCollisionPredicate));
+            final PositionProcessor positionProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomNonCollisionPredicate, withoutRoomObjectCollisions));
             final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(positionProcessor), MAX_TRIES);
 
             flamethrower.setPosition(position.x(), position.y());

@@ -72,10 +72,11 @@ public class Rock implements RoomObject {
         position.set(x, y);
     }
 
+    @Override
     public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
-
+    @Override
     public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }

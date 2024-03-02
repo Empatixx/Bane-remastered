@@ -65,11 +65,17 @@ public class Bookshelf implements RoomObject {
         position.set(x, y);
     }
 
-    public float getWidth() {
+    @Override
+    public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
-
-    public float getHeight() {
+    @Override
+    public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return position;
     }
 }

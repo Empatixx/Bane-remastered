@@ -15,7 +15,7 @@ import java.util.List;
 
 public class RingOfDeath implements Artefact {
     private final static String TEXTURE_PATH = "ingame/artefacts/ringofdeath.tga";
-    private final static int ARTEFACT_SCALE = 3;
+    private final static int ARTEFACT_SCALE = 2;
     private final CommonImage artefactImage;
     private final List<Bullet> bullets = new ArrayList<>(30);
     private final Player player;

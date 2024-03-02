@@ -82,13 +82,18 @@ public class Pot implements RoomObject, Damageable {
     public boolean canRender() {
         return Camera.isInProjection(physicsBody.getTranslation(), getWidth(), getHeight());
     }
-
+    @Override
     public int getWidth() {
         return DIMENSION_WIDTH;
     }
-
+    @Override
     public int getHeight() {
         return DIMENSION_HEIGHT;
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return physicsBody.getTranslation();
     }
 
     public int getCollissionWidth() {

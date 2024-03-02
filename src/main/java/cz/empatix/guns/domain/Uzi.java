@@ -71,8 +71,11 @@ public class Uzi extends AbstractGun implements Gun{
             lastShootTime = System.currentTimeMillis();
             AUDIO_SERVICE.play(SoundEffect.UZI_SHOOT);
             return true;
+        } else {
+            LOGGER.info("Trying to shoot from empty uzi clip: {}, ammo: {}", currentClip, ammo);
+            AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
+            lastShootTime = System.currentTimeMillis();
         }
-        AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
         return false;
     }
 

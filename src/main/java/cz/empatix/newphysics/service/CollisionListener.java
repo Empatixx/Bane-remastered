@@ -22,8 +22,8 @@ public class CollisionListener implements org.dyn4j.world.listener.CollisionList
         if (!canCollide) {
             return false;
         }
-        o1.onCollision();
-        o2.onCollision();
+        o1.onCollision(o2);
+        o2.onCollision(o1);
         return true;
     }
 

@@ -25,7 +25,9 @@ public enum SoundEffect {
     OPEN_CHEST("open_chest_1.ogg", "open_chest_2.ogg", "open_chest_3.ogg"),
     PLAYER_DASH("player_dash_1.ogg", "player_dash_2.ogg"),
     SHOW_MAP("map_1.ogg", "map_2.ogg"),
-    HEAL("heal.ogg");
+    HEAL("heal.ogg"),
+    WALL_HIT("guns/wall_hit.ogg"),
+    ENEMY_HIT("guns/enemy_hit.ogg");
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final List<String> paths;
     SoundEffect(final String... path) {

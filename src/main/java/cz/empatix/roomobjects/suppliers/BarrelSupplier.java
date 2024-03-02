@@ -28,6 +28,7 @@ public class BarrelSupplier implements RoomObjectSupplier<Barrel> {
 
         final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.positionSupplier(room, new Vector2i(64, 64));
         final Predicate<Vector2f> collisionPredicate = PositionPredicateFactory.withoutAllCollisions(new Vector2i(barrel.getWidth(), barrel.getHeight()));
+        final Predicate<Vector2f> withoutRoomObjectCollisions = PositionPredicateFactory.withoutRoomObjectCollisions(barrel, room);
         final PositionProcessor positionResolver = new PositionProcessorImpl(List.of(collisionPredicate));
 
         final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(positionResolver));

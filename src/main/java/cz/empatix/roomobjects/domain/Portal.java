@@ -113,11 +113,11 @@ public class Portal implements RoomObject, Interactable {
     public Vector2f getPosition() {
         return position;
     }
-
+    @Override
     public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
-
+    @Override
     public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }

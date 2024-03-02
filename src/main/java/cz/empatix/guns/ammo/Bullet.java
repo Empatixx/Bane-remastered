@@ -1,6 +1,8 @@
 package cz.empatix.guns.ammo;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.attributes.DamageSource;
@@ -15,10 +17,12 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.tiles.domain.Tile;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 public class Bullet implements Drawable, DamageSource {
+    private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int MOVE_FORCE = 1_000_0000;
     private final static int SCALE = 1;
     private final static int BULLET_WIDTH = 16 * SCALE;
@@ -41,11 +45,16 @@ public class Bullet implements Drawable, DamageSource {
         physicsBody.setLinearDamping(0f);
         physicsBody.setUserData(this);
         this.damage = damage;
-        physicsBody.onCollision(() -> {
+        physicsBody.onCollision(roomObject-> {
             physicsBody.destroy();
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
             this.damage = 0;
+            if (roomObject.getUserData() instanceof Tile){
+                AUDIO_SERVICE.play(SoundEffect.WALL_HIT);
+            } else {
+                AUDIO_SERVICE.play(SoundEffect.ENEMY_HIT);
+            }
         });
     }
 

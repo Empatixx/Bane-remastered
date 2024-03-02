@@ -3,25 +3,28 @@ package cz.empatix.newphysics.attributes;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.roomobjects.domain.RoomObject;
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
+import java.util.function.Consumer;
+
 public class PhysicsObject extends Body {
-    private final static Runnable NOOP = () -> {
+    private final static Consumer NOOP = r -> {
     };
-    private Runnable onCollision = NOOP;
+    private Consumer<PhysicsObject> onCollision = NOOP;
     private CollisionType collisionType;
     private boolean remove;
     protected final Vector2i offset = new Vector2i();
 
-    public void onCollision(final Runnable onCollision) {
+    public void onCollision(final Consumer<PhysicsObject> onCollision) {
         this.onCollision = onCollision;
     }
 
-    public void onCollision() {
-        onCollision.run();
+    public void onCollision(final PhysicsObject physicsObject) {
+        onCollision.accept(physicsObject);
     }
 
     public void setPhysicsTranslation(float x, float y) {

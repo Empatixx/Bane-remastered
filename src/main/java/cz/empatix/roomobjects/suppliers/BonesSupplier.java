@@ -33,7 +33,8 @@ public class  BonesSupplier implements RoomObjectSupplier<Bones>{
         final PositionFinder positionFinder = new PositionFinder();
         final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(room, tileMap, new Vector2i(1,1));
         final Predicate<Vector2f> collisionPredicate = PositionPredicateFactory.withoutAllCollisions(new Vector2i(bones.getWidth(), bones.getHeight()));
-        final PositionProcessor positionResolver = new PositionProcessorImpl(List.of(collisionPredicate));
+        final Predicate<Vector2f> withoutRoomObjectCollisions = PositionPredicateFactory.withoutRoomObjectCollisions(bones, room);
+        final PositionProcessor positionResolver = new PositionProcessorImpl(List.of(collisionPredicate, withoutRoomObjectCollisions));
 
         final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(positionResolver));
         bones.setPosition(position.x(), position.y());

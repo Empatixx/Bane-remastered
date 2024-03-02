@@ -8,6 +8,7 @@ import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
+import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.textureatlas.domain.TextureAtlas;
@@ -32,16 +33,18 @@ public class ArtefactsService {
     private final Player player;
 
     public ArtefactsService(final Player player,
-                            final ItemService itemService) {
+                            final ItemService itemService,
+                            final MinimapService minimapService) {
         this.player = player;
         this.itemService = itemService;
         this.allArtefacts = List.of(
                 new RingOfDeath(player),
                 new ArmorRefill(player),
                 new ShieldHorn(player),
-                new BerserkPot(player)
+                new BerserkPot(player),
+                new RevealMap(minimapService)
         );
-        currentArtefact = allArtefacts.get(3);
+        currentArtefact = allArtefacts.get(4);
         commonImage = new CommonImage("ingame/artefacthud.tga", new Vector2f(), HUD_SLOT_SCALE);
         commonImage.setPosition(HUD_SLOT_POSITION.x(), HUD_SLOT_POSITION.y());
     }
@@ -107,7 +110,11 @@ public class ArtefactsService {
 
         final MovableItemDrop itemDrop = itemFactory.createMovableArtefactDrop(currentArtefact, this::addArtefact);
         final Vector2f playerPosition = player.getPosition();
-        itemDrop.setPosition(playerPosition.x() - itemDrop.getWidth()/2f, playerPosition.y() - itemDrop.getHeight()/2f);
+        final int playerWidth = player.getWidth();
+        final int playerHeight = player.getHeight();
+        final float x = playerPosition.x() + playerWidth / 2f - itemDrop.getWidth() / 2f;
+        final float y = playerPosition.y() + playerHeight / 2f - itemDrop.getHeight() / 2f;
+        itemDrop.setPosition(x, y);
 
         itemService.add(itemDrop);
     }

@@ -35,7 +35,8 @@ public class SpikeSupplier implements RoomObjectSupplier<Spike> {
                 room, tileMap, new Vector2i(2,2));
         final Predicate<Vector2f> collisionPredicate = PositionPredicateFactory.withoutAllCollisions(
                 new Vector2i(spike.getWidth(), spike.getHeight()));
-        final PositionProcessor processor = new PositionProcessorImpl(List.of(collisionPredicate));
+        final Predicate<Vector2f> withoutRoomObjectCollisions = PositionPredicateFactory.withoutRoomObjectCollisions(spike, room);
+        final PositionProcessor processor = new PositionProcessorImpl(List.of(collisionPredicate, withoutRoomObjectCollisions));
 
         final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(processor));
         spike.setPosition(position.x(), position.y());

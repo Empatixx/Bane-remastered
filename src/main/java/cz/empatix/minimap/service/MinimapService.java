@@ -29,6 +29,9 @@ public class MinimapService {
     public void visit(final Room room) {
         renderers.forEach(minimapRenderer -> minimapRenderer.visit(room));
     }
+    public void visitAll() {
+        renderers.forEach(MinimapRenderer::visitAll);
+    }
     public void keyPressed(final int key) {
         renderers.forEach(minimapRenderer -> minimapRenderer.keyPressed(key));
     }

@@ -63,12 +63,20 @@ public class ShopTable implements RoomObject {
     public boolean canRemove() {
         return false;
     }
+    @Override
     public int getWidth(){
         return (int)(TABLE_WIDTH * SCALE);
     }
+    @Override
     public int getHeight(){
         return (int)(TABLE_HEIGHT * SCALE);
     }
+
+    @Override
+    public Vector2f getPosition() {
+        return position;
+    }
+
     public float getX(){
         return position.x();
     }

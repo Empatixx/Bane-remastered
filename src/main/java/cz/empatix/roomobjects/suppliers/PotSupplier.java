@@ -29,7 +29,8 @@ public class PotSupplier implements RoomObjectSupplier<Pot>{
 
         final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.positionSupplier(room, new Vector2i(64, 64));
         final Predicate<Vector2f> collisionPredicate = PositionPredicateFactory.withoutAllCollisions(new Vector2i(pot.getWidth(), pot.getHeight()));
-        final PositionProcessor positionResolver = new PositionProcessorImpl(List.of(collisionPredicate));
+        final Predicate<Vector2f> withoutRoomObjectCollisions = PositionPredicateFactory.withoutRoomObjectCollisions(pot, room);
+        final PositionProcessor positionResolver = new PositionProcessorImpl(List.of(collisionPredicate, withoutRoomObjectCollisions));
 
         final Vector2f position = positionFinder.getPosition(positionSupplier, List.of(positionResolver));
         pot.setPosition(position.x(), position.y());

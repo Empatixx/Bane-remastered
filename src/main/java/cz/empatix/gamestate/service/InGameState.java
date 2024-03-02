@@ -66,15 +66,17 @@ public class InGameState extends GameState {
         pauseService = new PauseService();
         deathService = new DeathService(statisticsService);
         itemService = new ItemService(statisticsService);
-        gunService = new GunService(itemService, statisticsService);
-        artefactsService = new ArtefactsService(player, itemService);
 
         minimapService = new MinimapService();
 
         mapService = new MapService();
         mapService.onVisit(minimapService::visit);
 
-        itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService, minimapService));
+        gunService = new GunService(itemService, statisticsService);
+        artefactsService = new ArtefactsService(player, itemService, minimapService);
+
+
+        itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService));
 
         mapLoaderService = new MapLoaderService(itemService, mapService, minimapService, statisticsService);
         mapLoaderService.addListener(result -> {

@@ -12,14 +12,15 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-public class Banner implements RoomObject{
+public class Banner implements RoomObject {
     private final static int SCALE = 2;
     private final static int DIMENSION_WIDTH = 32;
     private final static int DIMENSION_HEIGHT = 32;
     private final Animation animation;
 
     private final Vector2f position;
-    public Banner(){
+
+    public Banner() {
         animation = Animation.builder()
                 .setTotal(1, 4)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 150)
@@ -29,6 +30,7 @@ public class Banner implements RoomObject{
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
     }
+
     @Override
     public RenderData renderData() {
         return new RenderData(
@@ -62,11 +64,20 @@ public class Banner implements RoomObject{
     public boolean canRemove() {
         return false;
     }
-    public int getWidth(){
+
+    @Override
+    public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
-    public int getHeight(){
+
+    @Override
+    public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return position;
     }
 
     public void setPosition(final float x, final float y) {

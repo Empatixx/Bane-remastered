@@ -1,6 +1,8 @@
 package cz.empatix.roomobjects.resolvers;
 
 import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.roomobjects.domain.RoomObject;
+import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.joml.Vector2f;
@@ -24,6 +26,20 @@ public class PositionPredicateFactory {
             PHYSICS_SERVICE.updateBroadphase();
             final Vector2f positionWithOffset = new Vector2f(position).add(offset.x, offset.y);
             return PHYSICS_SERVICE.query(positionWithOffset, dimensions, Set.of()).isEmpty();
+        };
+    }
+    public static Predicate<Vector2f> withoutRoomObjectCollisions(final RoomObject newObj,
+                                                                  final Room room){
+        return position -> {
+            for (final RoomObject roomObject : room.getRoomObjects()) {
+                if (roomObject.equals(newObj)) {
+                    continue;
+                }
+                if (roomObject.getAABB().overlaps(newObj.getAABB())) {
+                    return false;
+                }
+            }
+            return true;
         };
     }
     private final static Vector2i TOLERANCE = new Vector2i(1, 1);

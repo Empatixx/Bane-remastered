@@ -64,12 +64,17 @@ public class WeaponRack implements RoomObject {
     public void setPosition(final float x, final float y) {
         position.set(x, y);
     }
-
+    @Override
     public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
-
+    @Override
     public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return position;
     }
 }

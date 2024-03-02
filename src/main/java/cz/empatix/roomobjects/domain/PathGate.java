@@ -10,6 +10,7 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.dyn4j.collision.Filter;
+import org.joml.Vector2f;
 
 import static cz.empatix.render.domain.AnimationState.CLOSE;
 import static cz.empatix.render.domain.AnimationState.OPEN;
@@ -83,13 +84,18 @@ public class PathGate implements RoomObject {
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
-
-    public float getWidth() {
+    @Override
+    public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
-
-    public float getHeight() {
+    @Override
+    public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
+    }
+
+    @Override
+    public Vector2f getPosition() {
+        return physicsBody.getPhysicsTranslation();
     }
 
     public void setState(final boolean closed) {

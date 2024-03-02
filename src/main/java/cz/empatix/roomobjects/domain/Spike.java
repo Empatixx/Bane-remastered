@@ -72,10 +72,11 @@ public class Spike implements RoomObject, DamageSource, Trap {
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
+    @Override
     public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
-
+    @Override
     public int  getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }

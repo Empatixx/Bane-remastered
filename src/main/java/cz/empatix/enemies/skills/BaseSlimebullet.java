@@ -40,7 +40,7 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
         physicsBody.setType(CollisionType.ENEMY_BULLET);
         physicsBody.setLinearDamping(0f);
         physicsBody.setUserData(this);
-        physicsBody.onCollision(() -> {
+        physicsBody.onCollision(roomObject -> {
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
         });

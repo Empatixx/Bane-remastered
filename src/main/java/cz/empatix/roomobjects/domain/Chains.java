@@ -65,11 +65,17 @@ public class Chains implements RoomObject {
         position.set(x, y);
     }
 
-    public float getWidth() {
-        return DIMENSION_WIDTH * SCALE;
+    @Override
+    public int getWidth() {
+        return (int) (DIMENSION_WIDTH * SCALE);
+    }
+    @Override
+    public int getHeight() {
+        return (int) (DIMENSION_HEIGHT * SCALE);
     }
 
-    public float getHeight() {
-        return DIMENSION_HEIGHT * SCALE;
+    @Override
+    public Vector2f getPosition() {
+        return position;
     }
 }

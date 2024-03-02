@@ -36,18 +36,19 @@ public class TorchSupplier implements RoomObjectSupplier<Torch> {
         final Predicate<Vector2f> bottomTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(0, 1), tileMap);
         final Predicate<Vector2f> leftTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(-1, 0), tileMap);
         final Predicate<Vector2f> rightTileNonCollisionPredicate = PositionPredicateFactory.withoutTileCollision(new Vector2i(1, 0), tileMap);
+        final Predicate<Vector2f> withoutRoomObjectCollisions = PositionPredicateFactory.withoutRoomObjectCollisions(torch, room);
 
-        final PositionProcessor bottomProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomTileNonCollisionPredicate),
+        final PositionProcessor bottomProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, bottomTileNonCollisionPredicate, withoutRoomObjectCollisions),
                 Function.identity(), pos -> {
             torch.setState(AnimationState.TOP);
             return pos;
         });
-        final PositionProcessor leftProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, leftTileNonCollisionPredicate),
+        final PositionProcessor leftProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, leftTileNonCollisionPredicate, withoutRoomObjectCollisions),
                 Function.identity(), pos -> {
             torch.setState(AnimationState.RIGHT_SIDE);
             return pos.add(-Tile.SCALE_TILE_SIZE, 0);
         });
-        final PositionProcessor rightProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, rightTileNonCollisionPredicate),
+        final PositionProcessor rightProcessor = new PositionProcessorImpl(List.of(tileCollisionPredicate, rightTileNonCollisionPredicate, withoutRoomObjectCollisions),
                 Function.identity(), pos -> {
             torch.setState(AnimationState.LEFT_SIDE);
             return pos.add(Tile.SCALE_TILE_SIZE, 0);
