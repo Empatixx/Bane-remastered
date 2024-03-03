@@ -122,11 +122,11 @@ public class PhysicsEngine {
         while (resultIterator.hasNext()) {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
             final PhysicsObject object = result.getBody();
-            if (object.canRemove()){
-                continue;
-            }
             final BodyFixture fixture = result.getFixture();
             if (object == null){
+                continue;
+            }
+            if (object.canRemove()){
                 continue;
             }
             if (object.getType() != null && ignored.contains(object.getType())){
@@ -150,11 +150,11 @@ public class PhysicsEngine {
         while (resultIterator.hasNext()) {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
             final PhysicsObject object = result.getBody();
-            if (object.canRemove()){
-                continue;
-            }
             final BodyFixture fixture = result.getFixture();
             if (object == null){
+                continue;
+            }
+            if (object.canRemove()){
                 continue;
             }
             if (object.getType() != null && ignored.contains(object.getType())){
