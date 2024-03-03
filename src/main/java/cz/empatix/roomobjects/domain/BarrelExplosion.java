@@ -8,6 +8,7 @@ import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsEngine;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
@@ -43,15 +44,20 @@ public class BarrelExplosion implements Drawable {
 
     public void explode() {
         animation.setState(AnimationState.IDLE);
-        PhysicsService.getInstance().query(new Vector2f(position).sub(AREA_DAMAGE.x()/2f,AREA_DAMAGE.y()/2f), AREA_DAMAGE,
+       /* PhysicsService.getInstance().query(new Vector2f(position).sub(AREA_DAMAGE.x()/2f,AREA_DAMAGE.y()/2f), AREA_DAMAGE,
                         EnumSet.of(CollisionType.ITEM, CollisionType.TRAP, CollisionType.PLAYER_BULLET, CollisionType.ENEMY_BULLET))
                 .forEach(roomObj -> {
                     final Object obj = roomObj.getUserData();
                     if (obj instanceof Damageable) {
                         ((Damageable) obj).hit(DamageSourceType.TRAP, 3);
                     }
-                });
+                });*/
         AUDIO_SERVICE.play(SoundEffect.EXPLOSION);
+
+        final PhysicsObject physicsBody = PhysicsObjectFactory.create(WIDTH, HEIGHT);
+        physicsBody.setTranslation(position.x, position.y);
+        physicsBody.setType(CollisionType.TRAP);
+
     }
 
     @Override

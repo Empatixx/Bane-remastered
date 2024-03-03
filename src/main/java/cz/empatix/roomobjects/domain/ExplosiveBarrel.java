@@ -39,7 +39,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
                 .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .addState(AnimationState.HIT, 0, 3, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .addState(AnimationState.DEATH, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
-                .texture(AssetsService.getTexture("ingame/barrel.tga"))
+                .texture(AssetsService.getTexture("ingame/explosive_barrel.tga"))
                 .build();
         animation.setState(AnimationState.IDLE);
 
@@ -145,8 +145,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
     private void onDeath() {
         physicsBody.destroy();
         animation.setState(AnimationState.DEATH);
-        explosion.setPosition(physicsBody.getTranslation().x() + getWidth() / 2f - explosion.getWidth() / 2f,
-                physicsBody.getTranslation().y() + getHeight() / 2f - explosion.getHeight() / 2f - 20);
+        explosion.setPosition(physicsBody.getTranslation().x(), physicsBody.getTranslation().y());
         explosion.explode();
     }
 
