@@ -24,10 +24,6 @@ public class PhysicsService {
                                      final Set<CollisionType> ignored){
         return physicsEngine.query(point, dimensions, ignored);
     }
-    public List<PhysicsObject> queryAround(final Vector2f point, Vector2i dimensions,
-                                          final Set<CollisionType> ignored){
-        return physicsEngine.query(new Vector2f(point).sub(dimensions.x/2f, dimensions.y/2f), new Vector2i(dimensions).mul(2), ignored);
-    }
     public boolean queryExists(final Vector2f point, final Vector2i dimensions,
                                final Set<CollisionType> ignored){
         return physicsEngine.queryExists(point, dimensions, ignored);

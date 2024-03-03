@@ -26,7 +26,7 @@ public class BarrelExplosion implements Drawable {
     private static final int HEIGHT = 64 * SCALE;
     private final Animation animation;
     private final Vector2f position;
-    private static final Vector2i AREA_DAMAGE = new Vector2i(WIDTH * 2, HEIGHT * 2);
+    private static final Vector2i AREA_DAMAGE = new Vector2i(WIDTH * 3, HEIGHT * 3);
 
     public BarrelExplosion() {
         animation = Animation.builder()
@@ -40,7 +40,7 @@ public class BarrelExplosion implements Drawable {
 
     public void explode() {
         animation.setState(AnimationState.IDLE);
-        PhysicsService.getInstance().queryAround(new Vector2f(position).add(getWidth()/2F,getHeight()/2f), AREA_DAMAGE,
+        PhysicsService.getInstance().query(new Vector2f(position).sub(AREA_DAMAGE.x()/2f,AREA_DAMAGE.y()/2f), AREA_DAMAGE,
                         EnumSet.of(CollisionType.ITEM, CollisionType.TRAP, CollisionType.PLAYER_BULLET, CollisionType.ENEMY_BULLET))
                 .forEach(roomObj -> {
                     final Object obj = roomObj.getUserData();
