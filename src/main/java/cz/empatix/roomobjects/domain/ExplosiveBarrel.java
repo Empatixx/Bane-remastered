@@ -20,11 +20,11 @@ import org.joml.Vector4f;
 import java.util.List;
 
 public class ExplosiveBarrel implements RoomObject, Damageable {
-    private final static int SCALE = 3;
+    final static int SCALE = 3;
     private final static int OFFSET_X = (22 * SCALE);
     private final static int OFFSET_Y = (22 * SCALE);
-    private final static int COLLISSION_WIDTH = (19 * SCALE);
-    private final static int COLLISSION_HEIGHT = (21 * SCALE);
+    final static int COLLISSION_WIDTH = (19 * SCALE);
+    final static int COLLISSION_HEIGHT = (21 * SCALE);
     private final static int DIMENSION_WIDTH = 64 * SCALE;
     private final static int DIMENSION_HEIGHT = 64 * SCALE;
     private final Animation animation;
@@ -83,10 +83,12 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
     public boolean canRender() {
         return Camera.isInProjection(physicsBody.getTranslation(), getWidth(), getHeight());
     }
+
     @Override
     public int getWidth() {
         return DIMENSION_WIDTH;
     }
+
     @Override
     public int getHeight() {
         return DIMENSION_HEIGHT;
@@ -145,7 +147,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
     private void onDeath() {
         physicsBody.destroy();
         animation.setState(AnimationState.DEATH);
-        explosion.setPosition(physicsBody.getTranslation().x(), physicsBody.getTranslation().y());
+        explosion.setPosition(physicsBody.getPhysicsTranslation().x() + OFFSET_X, physicsBody.getPhysicsTranslation().y() + OFFSET_Y);
         explosion.explode();
     }
 
@@ -156,6 +158,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
+
     @Override
     public List<Renderable> getSubRenderables() {
         if (isDead() && !explosion.hasPlayedOnce()) {

@@ -30,7 +30,8 @@ public class BarrelExplosion implements Drawable {
     private static final int HEIGHT = 64 * SCALE;
     private final Animation animation;
     private final Vector2f position;
-    private static final Vector2i AREA_DAMAGE = new Vector2i(WIDTH * 3, HEIGHT * 3);
+    private final static Vector2i DAMAGE_SIZE = new Vector2i(ExplosiveBarrel.COLLISSION_WIDTH + 128, ExplosiveBarrel.COLLISSION_HEIGHT + 96);
+    private final static Vector2i DAMAGE_OFFSET = new Vector2i(64, 48);
 
     public BarrelExplosion() {
         animation = Animation.builder()
@@ -44,20 +45,15 @@ public class BarrelExplosion implements Drawable {
 
     public void explode() {
         animation.setState(AnimationState.IDLE);
-       /* PhysicsService.getInstance().query(new Vector2f(position).sub(AREA_DAMAGE.x()/2f,AREA_DAMAGE.y()/2f), AREA_DAMAGE,
+        PhysicsService.getInstance().query(new Vector2f(position).sub(DAMAGE_OFFSET.x(), DAMAGE_OFFSET.y()), DAMAGE_SIZE,
                         EnumSet.of(CollisionType.ITEM, CollisionType.TRAP, CollisionType.PLAYER_BULLET, CollisionType.ENEMY_BULLET))
                 .forEach(roomObj -> {
                     final Object obj = roomObj.getUserData();
                     if (obj instanceof Damageable) {
                         ((Damageable) obj).hit(DamageSourceType.TRAP, 3);
                     }
-                });*/
+                });
         AUDIO_SERVICE.play(SoundEffect.EXPLOSION);
-
-        final PhysicsObject physicsBody = PhysicsObjectFactory.create(WIDTH, HEIGHT);
-        physicsBody.setTranslation(position.x, position.y);
-        physicsBody.setType(CollisionType.TRAP);
-
     }
 
     @Override
