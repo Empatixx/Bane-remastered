@@ -1,6 +1,8 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.newphysics.attributes.PhysicsObject;
@@ -21,6 +23,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public class BarrelExplosion implements Drawable {
+    private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
     private static final int SCALE = 2;
     private static final int WIDTH = 64 * SCALE;
     private static final int HEIGHT = 64 * SCALE;
@@ -48,6 +51,7 @@ public class BarrelExplosion implements Drawable {
                         ((Damageable) obj).hit(DamageSourceType.TRAP, 3);
                     }
                 });
+        AUDIO_SERVICE.play(SoundEffect.EXPLOSION);
     }
 
     @Override
