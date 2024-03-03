@@ -50,6 +50,9 @@ public class PhysicsEngine {
 
     public void fixedUpdate(double dt) {
         world.step(1);
+        updateForRemoval();
+    }
+    private void updateForRemoval(){
         final List<PhysicsObject> toRemove = world.getBodies()
                 .stream()
                 .filter(PhysicsObject::canRemove)
@@ -119,6 +122,9 @@ public class PhysicsEngine {
         while (resultIterator.hasNext()) {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
             final PhysicsObject object = result.getBody();
+            if (object.canRemove()){
+                continue;
+            }
             final BodyFixture fixture = result.getFixture();
             if (object == null){
                 continue;
@@ -144,6 +150,9 @@ public class PhysicsEngine {
         while (resultIterator.hasNext()) {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
             final PhysicsObject object = result.getBody();
+            if (object.canRemove()){
+                continue;
+            }
             final BodyFixture fixture = result.getFixture();
             if (object == null){
                 continue;
