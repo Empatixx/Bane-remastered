@@ -8,6 +8,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.utils.RomanNumber;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.joml.Vector3i;
 
 import java.time.Duration;
@@ -33,8 +34,9 @@ public class MapTransitionService {
         this.titleText.setColorRGB(TEXT_COLOR);
 
         this.infoText = new CommonText("Enemies have increased health by "+(floor-1)*12+"%", "PixelFJVerdana12pt.ttf",new Vector2f(), 4, FontSize.FONTSIZE_22);
-        this.infoText.setPosition(480 - infoText.getWidth()/2f, 500);
+        this.infoText.setPosition(480 - infoText.getWidth()/2f, 150);
         this.infoText.setColorRGB(TEXT_COLOR);
+        lastTransition = Instant.now();
 
     }
 
