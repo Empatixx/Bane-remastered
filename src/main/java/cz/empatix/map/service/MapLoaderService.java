@@ -1,6 +1,7 @@
 package cz.empatix.map.service;
 
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.map.domain.MapGenerationResult;

@@ -3,6 +3,7 @@ package cz.empatix.enemies.domain.bosses;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.skills.ArmorStacking;
+import cz.empatix.enemies.skills.Dash;
 import cz.empatix.enemies.skills.Healing;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.player.Player;
@@ -30,7 +31,9 @@ public class Golem implements Enemy {
     private final Animation animation;
     private final BossImpl bossImpl;
     private final Healing healing;
+    private final Dash dash;
     private final ArmorStacking armorStacking;
+    private int moveForce = MOVE_FORCE;
 
     public Golem() {
         animation = Animation.builder()
@@ -46,9 +49,10 @@ public class Golem implements Enemy {
                 .texture(AssetsService.getTexture("ingame/golem.png"))
                 .build();
         animation.setState(AnimationState.IDLE);
-        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> MOVE_FORCE, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
+        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> moveForce, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
         healing = new Healing(2, this::heal);
         armorStacking = new ArmorStacking();
+        dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);
     }
 
 

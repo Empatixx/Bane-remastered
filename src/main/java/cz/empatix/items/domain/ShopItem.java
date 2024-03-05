@@ -5,6 +5,7 @@ import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
@@ -165,6 +166,7 @@ public class ShopItem implements ItemDrop {
     @Override
     public void destroy() {
         drop.destroy();
+        InteractionService.getInstance().removeInteractable(this);
     }
 
     @Override

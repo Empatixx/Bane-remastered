@@ -148,5 +148,6 @@ public class Chest implements RoomObject, Interactable {
     @Override
     public void destroy() {
         physicsBody.destroy();
+        InteractionService.getInstance().removeInteractable(this);
     }
 }

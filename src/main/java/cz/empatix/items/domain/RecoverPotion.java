@@ -3,6 +3,7 @@ package cz.empatix.items.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.interaction.domain.CommonInteractable;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -113,6 +114,7 @@ public class RecoverPotion implements ItemDrop {
 
     @Override
     public void destroy() {
+        InteractionService.getInstance().removeInteractable(this);
     }
 
     @Override

@@ -4,6 +4,7 @@ import cz.empatix.artefacts.domain.Artefact;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.interaction.domain.CommonInteractable;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -90,6 +91,7 @@ public class ArtefactDrop implements ItemDrop{
 
     @Override
     public void destroy() {
+        InteractionService.getInstance().removeInteractable(this);
     }
 
     @Override

@@ -36,7 +36,7 @@ public class MapTransitionService {
         this.infoText = new CommonText("Enemies have increased health by "+(floor-1)*12+"%", "PixelFJVerdana12pt.ttf",new Vector2f(), 4, FontSize.FONTSIZE_22);
         this.infoText.setPosition(480 - infoText.getWidth()/2f, 150);
         this.infoText.setColorRGB(TEXT_COLOR);
-        lastTransition = Instant.now();
+        lastTransition = Instant.now().minus(Duration.ofSeconds(DISPLAY_TIME_SECONDS));
 
     }
 
