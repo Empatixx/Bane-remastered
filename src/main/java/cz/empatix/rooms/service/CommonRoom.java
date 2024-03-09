@@ -55,14 +55,17 @@ public class CommonRoom implements Room {
 
     @Override
     public void enterEvent(final Player p) {
-        if (!visited) {
+        /*if (!visited) {
             visited = true;
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 enemyService.spawnEnemy(this);
             }
             enemyService.setTarget(p);
             roomLockService.setState(true);
-        }
+        }*/
+        enemyService.spawnBoss(this);
+        enemyService.setTarget(p);
+
     }
 
     @Override

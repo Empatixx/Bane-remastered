@@ -38,6 +38,7 @@ public class PhysicsEngine {
         world.setSettings(settings);
         world.setBounds(null);
 
+        world.addStepListener(new PostUpdateStepListener());
         world.addStepListener(new InterpolationStepListener());
         world.addCollisionListener(new DamageCollisionListener());
         world.addCollisionListener(new CollisionListener());

@@ -14,13 +14,22 @@ import java.util.function.Consumer;
 public class PhysicsObject extends Body {
     private final static Consumer NOOP = r -> {
     };
+    private final static Runnable NOOP_RUNNABLE = () -> {
+    };
     private Consumer<PhysicsObject> onCollision = NOOP;
+    private Runnable postPhysicsUpdate = NOOP_RUNNABLE;
     private CollisionType collisionType;
     private boolean remove;
     protected final Vector2i offset = new Vector2i();
 
     public void onCollision(final Consumer<PhysicsObject> onCollision) {
         this.onCollision = onCollision;
+    }
+    public void postPhysicsUpdate() {
+        this.postPhysicsUpdate.run();
+    }
+    public void postPhysicsUpdate(final Runnable postPhysicsUpdate) {
+        this.postPhysicsUpdate = postPhysicsUpdate;
     }
 
     public void onCollision(final PhysicsObject physicsObject) {

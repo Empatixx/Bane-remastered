@@ -15,6 +15,7 @@ import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Golem implements Enemy {
@@ -27,12 +28,15 @@ public class Golem implements Enemy {
     private final static int COLLISION_HEIGHT = 50 * SCALE;
     private final static int COLLISION_OFFSET_X = 25 * SCALE;
     private final static int COLLISION_OFFSET_Y = 25 * SCALE;
+    private final static int EYE_OFFSET_X = 51 * SCALE - (int) (46 * 1.5f);
+    private final static int EYE_OFFSET_Y = 32 * SCALE - (int) (37 * 1.5f);
     private final static Vector2i COLLISION_OFFSET = new Vector2i(COLLISION_OFFSET_X, COLLISION_OFFSET_Y);
     private final Animation animation;
     private final BossImpl bossImpl;
     private final Healing healing;
     private final Dash dash;
     private final ArmorStacking armorStacking;
+    private final GolemLaser golemLaser;
     private int moveForce = MOVE_FORCE;
 
     public Golem() {
@@ -50,6 +54,12 @@ public class Golem implements Enemy {
                 .build();
         animation.setState(AnimationState.IDLE);
         bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> moveForce, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
+        golemLaser = new GolemLaser();
+        bossImpl.getPhysicsObject().postPhysicsUpdate(() -> {
+            final int facingOffset = !bossImpl.isRightFacing() ? 4 * SCALE : 0;
+            golemLaser.setPosition(bossImpl.getX() + EYE_OFFSET_X - facingOffset, bossImpl.getY() + EYE_OFFSET_Y);
+
+        });
         healing = new Healing(2, this::heal);
         armorStacking = new ArmorStacking();
         dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);
@@ -98,20 +108,21 @@ public class Golem implements Enemy {
 
         activateArmorStacking();
         activateHealing();
+        dash.activate();
 
         armorStacking.update((float) dt);
         healing.update((float) dt);
-
-        }
+        dash.update((float) dt);
+    }
 
     private void updateAnimationState(final double dt) {
         final AnimationState currentState = animation.getCurrentState();
         final AnimationState nextState = switch (currentState) {
             case SPELL2 -> {
-                final AnimationState next =healing.isActive() ? AnimationState.SPELL2 : AnimationState.IDLE;
+                final AnimationState next = healing.isActive() ? AnimationState.SPELL2 : AnimationState.IDLE;
                 if (next == AnimationState.IDLE) {
                     final PhysicsObject physicsObject = bossImpl.getPhysicsObject();
-                        physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
+                    physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
                 }
                 yield next;
             }
@@ -145,7 +156,7 @@ public class Golem implements Enemy {
             return;
         }
         armorStacking.activate();
-        if (armorStacking.wasActivated()){
+        if (armorStacking.wasActivated()) {
             animation.setState(AnimationState.SPELL4);
         }
     }
@@ -188,7 +199,11 @@ public class Golem implements Enemy {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return bossImpl.getSubRenderables();
+        final List<Renderable> renderables = new ArrayList<>();
+        final List<Renderable> bossImplRenderables = bossImpl.getSubRenderables();
+        renderables.addAll(bossImplRenderables);
+        renderables.add(golemLaser);
+        return renderables;
     }
 
     @Override
