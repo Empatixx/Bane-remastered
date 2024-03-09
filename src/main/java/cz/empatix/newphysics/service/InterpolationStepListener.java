@@ -28,7 +28,6 @@ public class InterpolationStepListener implements StepListener<PhysicsObject> {
     @Override
     public void end(TimeStep step, PhysicsWorld<PhysicsObject, ?> world) {
         final List<PhysicsObject> bodies = world.getBodies();
-        LOGGER.debug("Interpolation step listener");
         for (PhysicsObject body : bodies) {
             if (body instanceof InterpolatedPhysicsObject o) {
                 o.updateInterpolatedPosition();

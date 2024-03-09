@@ -21,9 +21,8 @@ public class GolemLaser implements DamageSource, Drawable {
     public GolemLaser(){
         this.physicsObject = PhysicsObjectFactory.createInterpolated(810, 45);
         physicsObject.setType(CollisionType.TRAP);
-        physicsObject.setAngularDamping(Integer.MAX_VALUE);
-        physicsObject.setRotation(0.2f);
         physicsObject.setUserData(this);
+
         this.animation = Animation.builder()
                 .setTotal(14, 1)
                 .addState(AnimationState.IDLE, 13, 1, 810, 45, 100)
@@ -33,7 +32,7 @@ public class GolemLaser implements DamageSource, Drawable {
     }
 
     public void setPosition(final float x, final float y) {
-        this.physicsObject.setInterpolatedTranslation(x, y);
+        this.physicsObject.setPhysicsTranslation(x, y);
     }
 
 
@@ -49,8 +48,8 @@ public class GolemLaser implements DamageSource, Drawable {
 
     @Override
     public RenderData renderData() {
-        List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation());
-        vertices.forEach(vertex -> vertex.rotateAround(vertices.get(3).position(), physicsObject.getRotation()));
+        List<Vertex> vertices = animation.getVertices(physicsObject.getPhysicsTranslation());
+        //vertices.forEach(vertex -> vertex.rotateAround(vertices.get(3).position(), physicsObject.getRotation()));
         return new RenderData(
                 vertices,
                 animation.getTextureId(),

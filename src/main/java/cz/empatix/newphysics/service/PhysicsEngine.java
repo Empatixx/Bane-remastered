@@ -44,7 +44,6 @@ public class PhysicsEngine {
         world.addStepListener(new InterpolationStepListener());
         world.addCollisionListener(new DamageCollisionListener());
         world.addCollisionListener(new CollisionListener());
-
     }
 
     public void add(final PhysicsObject object) {
@@ -88,15 +87,10 @@ public class PhysicsEngine {
             for (final Vector2 originVertex : originVertices){
                 vertices.add(new Vector2(originVertex.x, originVertex.y));
             }
-            final Vector2 position = body.getTransform().getTranslation().copy().subtract(new Vector2(Camera.getPosition().x, Camera.getPosition().y));
-            final double angle = body.getTransform().getRotationAngle();
-            if (angle != 0){
-                LOGGER.info("Angle {}", angle);
-                vertices.forEach(v -> LOGGER.info("vertex: {}", v));
-            }
+            final Vector2f cameraPos = Camera.getPosition();
             for (Vector2 vertex : vertices) {
-                Vector2 rotated = vertex.rotate(angle);
-                GL30.glVertex2d(rotated.x + position.x, rotated.y + position.y);
+                final Vector2 transformed = body.getWorldPoint(vertex);
+                GL30.glVertex2d(transformed.x - cameraPos.x, transformed.y - cameraPos.y);
             }
             GL30.glEnd();
         });

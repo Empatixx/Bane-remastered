@@ -57,7 +57,7 @@ public class Golem implements Enemy {
         golemLaser = new GolemLaser();
         bossImpl.getPhysicsObject().postPhysicsUpdate(() -> {
             final int facingOffset = bossImpl.isRightFacing() ? 6 * SCALE : 0;
-            golemLaser.setPosition(bossImpl.getX() + EYE_OFFSET_X - facingOffset, bossImpl.getY() + EYE_OFFSET_Y);
+            golemLaser.setPosition(bossImpl.getX(), bossImpl.getY());
 
         });
         healing = new Healing(2, this::heal);

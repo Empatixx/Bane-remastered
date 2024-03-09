@@ -26,7 +26,6 @@ public class PostUpdateStepListener implements StepListener<PhysicsObject> {
 
     @Override
     public void end(TimeStep step, PhysicsWorld<PhysicsObject, ?> world) {
-        LOGGER.debug("Post update step listener");
         for (final PhysicsObject physicsObject : world.getBodies()) {
             physicsObject.postPhysicsUpdate();
         }

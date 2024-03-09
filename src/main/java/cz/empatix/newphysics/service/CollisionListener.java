@@ -12,29 +12,26 @@ public class CollisionListener implements org.dyn4j.world.listener.CollisionList
 
     @Override
     public boolean collision(BroadphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        return checkCollision(collision);
+        return true;
     }
 
-    private boolean checkCollision(BroadphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        final PhysicsObject o1 = collision.getBody1();
-        final PhysicsObject o2 = collision.getBody2();
-        final boolean canCollide = canCollide(o1, o2);
+
+    @Override
+    public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
+        final PhysicsObject a = collision.getBody1();
+        final PhysicsObject b = collision.getBody2();
+        final boolean canCollide = canCollide(a, b);
         if (!canCollide) {
             return false;
         }
-        o1.onCollision(o2);
-        o2.onCollision(o1);
+        a.onCollision(b);
+        b.onCollision(a);
         return true;
     }
 
     @Override
-    public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        return checkCollision(collision);
-    }
-
-    @Override
     public boolean collision(ManifoldCollisionData<PhysicsObject, BodyFixture> collision) {
-        return checkCollision(collision);
+        return true;
     }
     private boolean canCollide(final PhysicsObject o1, final PhysicsObject o2){
         final CollisionType t1 = o1.getType();

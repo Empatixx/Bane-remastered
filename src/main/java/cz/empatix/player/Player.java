@@ -87,8 +87,6 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
         physicsBody = PhysicsObjectFactory.createInterpolated(DIMENSION_WIDTH, DIMENSION_HEIGHT);
         physicsBody.setType(CollisionType.PLAYER);
-        physicsBody.setRotation(0.5f);
-        physicsBody.setMass(MassType.FIXED_ANGULAR_VELOCITY);
         physicsBody.setUserData(this);
 
         interactEntity = new CommonInteractEntity(getWidth(), getHeight(), physicsBody.getPhysicsTranslation());
