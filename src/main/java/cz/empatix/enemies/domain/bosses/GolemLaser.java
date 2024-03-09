@@ -12,6 +12,8 @@ import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public class GolemLaser implements DamageSource, Drawable {
     private final static float SCALE = 1.5f;
     private final InterpolatedPhysicsObject physicsObject;
@@ -19,6 +21,8 @@ public class GolemLaser implements DamageSource, Drawable {
     public GolemLaser(){
         this.physicsObject = PhysicsObjectFactory.createInterpolated(810, 45);
         physicsObject.setType(CollisionType.TRAP);
+        physicsObject.setAngularDamping(Integer.MAX_VALUE);
+        physicsObject.setRotation(0.2f);
         physicsObject.setUserData(this);
         this.animation = Animation.builder()
                 .setTotal(14, 1)
@@ -45,8 +49,10 @@ public class GolemLaser implements DamageSource, Drawable {
 
     @Override
     public RenderData renderData() {
+        List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation());
+        vertices.forEach(vertex -> vertex.rotateAround(vertices.get(3).position(), physicsObject.getRotation()));
         return new RenderData(
-                animation.getVertices(physicsObject.getTranslation()),
+                vertices,
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

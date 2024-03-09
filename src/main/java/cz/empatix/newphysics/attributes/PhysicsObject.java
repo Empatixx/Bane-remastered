@@ -90,4 +90,12 @@ public class PhysicsObject extends Body {
     public void setOffset(final int x, final int y) {
         offset.set(x, y);
     }
+
+    public void setRotation(final float radians) {
+        getTransform().setRotation(radians);
+        getPreviousTransform().setRotation(radians);
+    }
+    public float getRotation() {
+        return (float) getTransform().getRotationAngle();
+    }
 }

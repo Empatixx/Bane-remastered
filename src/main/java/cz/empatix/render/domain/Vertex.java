@@ -12,6 +12,15 @@ public record Vertex(
         Vector2f position,
         Vector2f texCoords
 ) {
+    public void rotateAround(final Vector2f point, final float radians){
+        final float x = position.x() - point.x;
+        final float y = position.y() - point.y;
+        final float cos = (float) Math.cos(radians);
+        final float sin = (float) Math.sin(radians);
+        final float newX = x * cos - y * sin;
+        final float newY = x * sin + y * cos;
+        position.set(newX + point.x, newY + point.y);
+    }
 
     public static class Builder {
         private final Vector2i posDimensions;

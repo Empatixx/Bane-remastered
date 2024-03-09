@@ -28,8 +28,8 @@ public class Golem implements Enemy {
     private final static int COLLISION_HEIGHT = 50 * SCALE;
     private final static int COLLISION_OFFSET_X = 25 * SCALE;
     private final static int COLLISION_OFFSET_Y = 25 * SCALE;
-    private final static int EYE_OFFSET_X = 51 * SCALE - (int) (46 * 1.5f);
-    private final static int EYE_OFFSET_Y = 32 * SCALE - (int) (37 * 1.5f);
+    private final static int EYE_OFFSET_X = 42 * SCALE;
+    private final static int EYE_OFFSET_Y = 20 * SCALE;
     private final static Vector2i COLLISION_OFFSET = new Vector2i(COLLISION_OFFSET_X, COLLISION_OFFSET_Y);
     private final Animation animation;
     private final BossImpl bossImpl;
@@ -56,7 +56,7 @@ public class Golem implements Enemy {
         bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> moveForce, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
         golemLaser = new GolemLaser();
         bossImpl.getPhysicsObject().postPhysicsUpdate(() -> {
-            final int facingOffset = !bossImpl.isRightFacing() ? 4 * SCALE : 0;
+            final int facingOffset = bossImpl.isRightFacing() ? 6 * SCALE : 0;
             golemLaser.setPosition(bossImpl.getX() + EYE_OFFSET_X - facingOffset, bossImpl.getY() + EYE_OFFSET_Y);
 
         });
@@ -99,8 +99,10 @@ public class Golem implements Enemy {
         if (isDead()) {
             return;
         }
+        if(true){
+            return;
+        }
         bossImpl.fixedUpdate(dt);
-
         if (bossImpl.isDead()) {
             return;
         }
