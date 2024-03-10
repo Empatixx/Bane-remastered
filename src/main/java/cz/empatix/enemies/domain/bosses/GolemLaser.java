@@ -1,9 +1,11 @@
 package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.enemies.targetting.RotationTargetting;
 import cz.empatix.newphysics.attributes.*;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
@@ -18,12 +20,13 @@ import java.util.List;
 public class GolemLaser implements DamageSource, Drawable {
     private final static float SCALE = 1.5f;
     private final InterpolatedPhysicsObject physicsObject;
+    private final RotationTargetting rotationTargetting;
     private final Animation animation;
 
     public GolemLaser() {
         this.physicsObject = PhysicsObjectFactory.createInterpolated(810, 45);
         physicsObject.setType(CollisionType.NONE);
-        physicsObject.setRotation(0.f);
+        physicsObject.setRotation(0.3f);
         physicsObject.setUserData(this);
         physicsObject.postPhysicsUpdate(() -> {
                     LoggerFactory.getLogger(GolemLaser.class).info("DDGolemLaser: X" + physicsObject.getPhysicsTranslationX() + " Y:" + physicsObject.getPhysicsTranslationY());
@@ -36,10 +39,19 @@ public class GolemLaser implements DamageSource, Drawable {
                 .texture(AssetsService.getTexture("ingame/laserbeam.tga"))
                 .scale(SCALE)
                 .build();
+
+        rotationTargetting = new RotationTargetting(physicsObject::getPhysicsTranslation, 810,45);
     }
 
     public void setPosition(final float x, final float y) {
         this.physicsObject.setPhysicsTranslation(x, y);
+    }
+
+    public void fixedUpdate(final float dt){
+        physicsObject.setRotation(rotationTargetting.getRotation());
+    }
+    public void setTarget(final Player player){
+        this.rotationTargetting.target(player);
     }
 
 
@@ -55,8 +67,8 @@ public class GolemLaser implements DamageSource, Drawable {
 
     @Override
     public RenderData renderData() {
-        List<Vertex> vertices = animation.getVertices(physicsObject.getPhysicsTranslation());
-        //vertices.forEach(vertex -> vertex.rotateAround(vertices.get(3).position(), physicsObject.getRotation()));
+        final List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation());
+        vertices.forEach(vertex -> vertex.rotateAround(vertices.get(3).position(), physicsObject.getRotation()));
         return new RenderData(
                 vertices,
                 animation.getTextureId(),

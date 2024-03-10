@@ -57,7 +57,7 @@ public class Golem implements Enemy {
         golemLaser = new GolemLaser();
         bossImpl.getPhysicsObject().postPhysicsUpdate(() -> {
             final int facingOffset = bossImpl.isRightFacing() ? 6 * SCALE : 0;
-            golemLaser.setPosition(bossImpl.getX(), bossImpl.getY());
+            golemLaser.setPosition(bossImpl.getX() + EYE_OFFSET_X, bossImpl.getY() + EYE_OFFSET_Y);
         });
         healing = new Healing(2, this::heal);
         armorStacking = new ArmorStacking();
@@ -91,10 +91,13 @@ public class Golem implements Enemy {
     private void onDeath() {
         animation.setState(AnimationState.DEATH);
         bossImpl.onDeath();
+        golemLaser.destroy();
     }
 
     @Override
     public void fixedUpdate(double dt) {
+        golemLaser.fixedUpdate((float) dt);
+
         if (true){
             return;
         }
@@ -245,5 +248,6 @@ public class Golem implements Enemy {
     @Override
     public void setTarget(final Player player) {
         bossImpl.setTarget(player);
+        golemLaser.setTarget(player);
     }
 }
