@@ -52,6 +52,7 @@ public class PhysicsEngine {
 
     public void fixedUpdate(double dt) {
         world.step(1);
+
         updateForRemoval();
     }
 

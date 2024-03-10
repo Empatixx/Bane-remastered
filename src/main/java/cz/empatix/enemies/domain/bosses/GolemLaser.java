@@ -8,6 +8,7 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import org.dyn4j.geometry.Mass;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,16 @@ public class GolemLaser implements DamageSource, Drawable {
     private final static float SCALE = 1.5f;
     private final InterpolatedPhysicsObject physicsObject;
     private final Animation animation;
-    public GolemLaser(){
+
+    public GolemLaser() {
         this.physicsObject = PhysicsObjectFactory.createInterpolated(810, 45);
-        physicsObject.setType(CollisionType.TRAP);
+        physicsObject.setType(CollisionType.NONE);
+        physicsObject.setRotation(0.f);
         physicsObject.setUserData(this);
+        physicsObject.postPhysicsUpdate(() -> {
+                    LoggerFactory.getLogger(GolemLaser.class).info("DDGolemLaser: X" + physicsObject.getPhysicsTranslationX() + " Y:" + physicsObject.getPhysicsTranslationY());
+                }
+        );
 
         this.animation = Animation.builder()
                 .setTotal(14, 1)
@@ -70,5 +77,9 @@ public class GolemLaser implements DamageSource, Drawable {
     @Override
     public boolean canRender() {
         return true;
+    }
+
+    public void destroy() {
+        physicsObject.destroy();
     }
 }

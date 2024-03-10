@@ -1,5 +1,6 @@
 package cz.empatix.newphysics.attributes;
 
+import cz.empatix.enemies.domain.bosses.GolemLaser;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
@@ -8,6 +9,7 @@ import org.dyn4j.dynamics.Body;
 import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 
@@ -37,8 +39,7 @@ public class PhysicsObject extends Body {
     }
 
     public void setPhysicsTranslation(float x, float y) {
-        getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
-        getTransform().setTranslation(x + offset.x(), y + offset.y());
+        setTranslation(x, y);
     }
 
     public Vector2f getPhysicsTranslation() {
@@ -66,6 +67,9 @@ public class PhysicsObject extends Body {
     }
 
     public void setTranslation(float x, float y) {
+        if (getUserData() instanceof GolemLaser){
+            LoggerFactory.getLogger(GolemLaser.class).info("GolemLaser: X" + x + " Y:" + y);
+        }
         getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
         getTransform().setTranslation(x + offset.x(), y + offset.y());
     }

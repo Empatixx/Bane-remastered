@@ -58,7 +58,6 @@ public class Golem implements Enemy {
         bossImpl.getPhysicsObject().postPhysicsUpdate(() -> {
             final int facingOffset = bossImpl.isRightFacing() ? 6 * SCALE : 0;
             golemLaser.setPosition(bossImpl.getX(), bossImpl.getY());
-
         });
         healing = new Healing(2, this::heal);
         armorStacking = new ArmorStacking();
@@ -96,10 +95,10 @@ public class Golem implements Enemy {
 
     @Override
     public void fixedUpdate(double dt) {
-        if (isDead()) {
+        if (true){
             return;
         }
-        if(true){
+        if (isDead()) {
             return;
         }
         bossImpl.fixedUpdate(dt);

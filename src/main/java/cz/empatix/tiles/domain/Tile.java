@@ -1,6 +1,7 @@
 package cz.empatix.tiles.domain;
 
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
@@ -47,6 +48,7 @@ public record Tile(
         if (collision != null) {
             collision.setTranslation(pos.x + TILE_SIZE * SCALE/2f, pos.y + TILE_SIZE * SCALE/2f);
             collision.setMass(MassType.INFINITE);
+            collision.setType(CollisionType.TILE);
         }
         return new Tile(Vertex.builder()
                 .texPosition(tCol, tRow)

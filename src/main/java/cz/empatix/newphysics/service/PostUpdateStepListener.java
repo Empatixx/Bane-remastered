@@ -27,6 +27,9 @@ public class PostUpdateStepListener implements StepListener<PhysicsObject> {
     @Override
     public void end(TimeStep step, PhysicsWorld<PhysicsObject, ?> world) {
         for (final PhysicsObject physicsObject : world.getBodies()) {
+            if (physicsObject.canRemove()){
+                continue;
+            }
             physicsObject.postPhysicsUpdate();
         }
     }
