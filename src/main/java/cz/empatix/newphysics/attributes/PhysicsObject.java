@@ -5,6 +5,7 @@ import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.roomobjects.domain.RoomObject;
+import org.dyn4j.collision.Fixture;
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
@@ -67,11 +68,9 @@ public class PhysicsObject extends Body {
     }
 
     public void setTranslation(float x, float y) {
-        if (getUserData() instanceof GolemLaser){
-            LoggerFactory.getLogger(GolemLaser.class).info("GolemLaser: X" + x + " Y:" + y);
-        }
         getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
         getTransform().setTranslation(x + offset.x(), y + offset.y());
+
     }
 
     public void update(final float dt){
@@ -95,9 +94,13 @@ public class PhysicsObject extends Body {
         offset.set(x, y);
     }
 
-    public void setRotation(final float radians) {
-        getTransform().setRotation(radians);
-        getPreviousTransform().setRotation(radians);
+    public void setRotation(final double radians) {
+        final Fixture fixture = getFixture(0);
+        fixture.getShape().rotate(radians);
+    }
+    public void setRotation(final double radians, final Vector2f point) {
+        final Fixture fixture = getFixture(0);
+        fixture.getShape().rotate(radians, new Vector2(point.x, point.y));
     }
     public float getRotation() {
         return (float) getTransform().getRotationAngle();

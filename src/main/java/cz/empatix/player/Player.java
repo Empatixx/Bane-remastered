@@ -405,6 +405,7 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
+        physicsBody.setRotation(Math.PI/2f, new Vector2f( DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2));
     }
 
     @Override

@@ -12,6 +12,7 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.dyn4j.geometry.Mass;
 import org.dyn4j.geometry.MassType;
+import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.slf4j.LoggerFactory;
 
@@ -19,28 +20,27 @@ import java.util.List;
 
 public class GolemLaser implements DamageSource, Drawable {
     private final static float SCALE = 1.5f;
+    private static final int WIDTH = (int) (810 * SCALE);
+    private static final int HEIGHT = (int) (45 * SCALE);
+    private static final int EYE_OFFSET_X = (int) (22 * SCALE);
     private final InterpolatedPhysicsObject physicsObject;
     private final RotationTargetting rotationTargetting;
     private final Animation animation;
+    private final Vector2f rotationPoint = new Vector2f();
 
     public GolemLaser() {
-        this.physicsObject = PhysicsObjectFactory.createInterpolated(810, 45);
+        this.physicsObject = PhysicsObjectFactory.createInterpolated(WIDTH, HEIGHT);
         physicsObject.setType(CollisionType.NONE);
-        physicsObject.setRotation(0.3f);
+        physicsObject.setRotation(0.0f);
         physicsObject.setUserData(this);
-        physicsObject.postPhysicsUpdate(() -> {
-                    LoggerFactory.getLogger(GolemLaser.class).info("DDGolemLaser: X" + physicsObject.getPhysicsTranslationX() + " Y:" + physicsObject.getPhysicsTranslationY());
-                }
-        );
 
         this.animation = Animation.builder()
-                .setTotal(14, 1)
-                .addState(AnimationState.IDLE, 13, 1, 810, 45, 100)
+                .setTotal(1, 1)
+                .addState(AnimationState.IDLE, 0, 1, WIDTH, HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/laserbeam.tga"))
-                .scale(SCALE)
                 .build();
 
-        rotationTargetting = new RotationTargetting(physicsObject::getPhysicsTranslation, 810,45);
+        rotationTargetting = new RotationTargetting(physicsObject::getPhysicsTranslation, WIDTH, HEIGHT);
     }
 
     public void setPosition(final float x, final float y) {
@@ -48,7 +48,9 @@ public class GolemLaser implements DamageSource, Drawable {
     }
 
     public void fixedUpdate(final float dt){
-        physicsObject.setRotation(rotationTargetting.getRotation());
+        rotationPoint.set(new Vector2f(physicsObject.getTranslation())).add(EYE_OFFSET_X, HEIGHT/2f);
+        physicsObject.setRotation(rotationTargetting.getRotation(), rotationPoint);
+
     }
     public void setTarget(final Player player){
         this.rotationTargetting.target(player);
@@ -68,7 +70,7 @@ public class GolemLaser implements DamageSource, Drawable {
     @Override
     public RenderData renderData() {
         final List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation());
-        vertices.forEach(vertex -> vertex.rotateAround(vertices.get(3).position(), physicsObject.getRotation()));
+        vertices.forEach(vertex -> vertex.rotateAround(rotationPoint, physicsObject.getRotation()));
         return new RenderData(
                 vertices,
                 animation.getTextureId(),
