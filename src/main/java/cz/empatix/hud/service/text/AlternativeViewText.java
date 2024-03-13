@@ -19,7 +19,10 @@ public class AlternativeViewText implements HUDElement {
     private final Vector3f color;
     private final int zIndex;
     private final Matrix4f cameraProjection;
-    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize, final Matrix4f cameraProjection) {
+    private final RenderScene scene;
+    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize, final Matrix4f cameraProjection,
+                               final RenderScene scene) {
+        this.scene = scene;
         this.text = text;
         this.font = AssetsService.getFont(font, fontSize);
         this.position = position;
@@ -27,7 +30,9 @@ public class AlternativeViewText implements HUDElement {
         color = new Vector3f(1f, 1f, 1f);
         this.cameraProjection = cameraProjection;
     }
-
+    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize, final Matrix4f cameraProjection) {
+        this(text,font,position,prevZIndex,fontSize,cameraProjection,RenderScene.HUD);
+    }
     public void setCenterX(final float xMin, final float xMax) {
         position.x = (xMin + xMax) / 2 - font.getWidth(text) / 2;
     }
@@ -50,7 +55,11 @@ public class AlternativeViewText implements HUDElement {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return font.getDrawables(text, position, color, zIndex, RenderScene.HUD, cameraProjection);
+        return font.getDrawables(text, position, color, zIndex, scene, cameraProjection);
+    }
+    @Override
+    public RenderScene renderScene(){
+        return scene;
     }
 
     @Override
