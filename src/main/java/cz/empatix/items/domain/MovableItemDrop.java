@@ -1,5 +1,6 @@
 package cz.empatix.items.domain;
 
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
@@ -74,6 +75,7 @@ public class MovableItemDrop implements ItemDrop{
     public void destroy() {
         itemDrop.destroy();
         physicsBody.destroy();
+        InteractionService.getInstance().removeInteractable(this);
     }
 
     @Override

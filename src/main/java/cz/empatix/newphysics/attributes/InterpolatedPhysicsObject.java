@@ -11,15 +11,21 @@ public class InterpolatedPhysicsObject extends PhysicsObject {
     private final InterpolatedPosition interpolatedPosition = new InterpolatedPosition();
 
     @Override
-    public void setPhysicsTranslation(float x, float y) {
+    public void setPhysicsTranslation(final float x, final float y) {
         super.setPhysicsTranslation(x, y);
         interpolatedPosition.setPosition(x, y);
     }
 
     @Override
-    public void setTranslation(float x, float y) {
+    public void setTranslation(final float x, final float y) {
         super.setTranslation(x, y);
         interpolatedPosition.setPosition(x, y);
+    }
+
+    // sets physics translation and interpolated position for rendering
+    public void setInterpolatedTranslation(final float x, final float y) {
+        super.setTranslation(x, y);
+        interpolatedPosition.setInterpolatedPosition(x, y);
     }
 
     public void updateInterpolatedPosition() {

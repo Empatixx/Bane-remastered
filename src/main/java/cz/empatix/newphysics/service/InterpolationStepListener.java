@@ -5,11 +5,13 @@ import cz.empatix.newphysics.attributes.PhysicsObject;
 import org.dyn4j.dynamics.TimeStep;
 import org.dyn4j.world.PhysicsWorld;
 import org.dyn4j.world.listener.StepListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class InterpolationStepListener implements StepListener<PhysicsObject> {
-
+    private final static Logger LOGGER = LoggerFactory.getLogger(InterpolationStepListener.class);
     @Override
     public void begin(TimeStep step, PhysicsWorld<PhysicsObject, ?> world) {
 

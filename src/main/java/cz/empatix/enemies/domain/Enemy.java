@@ -12,6 +12,7 @@ public interface Enemy extends Drawable{
     void fixedUpdate(final double dt);
     void hit(final int damage);
     void heal(final int health);
+    @Deprecated
     void onCollision();
     void onSpawn();
     boolean isDead();

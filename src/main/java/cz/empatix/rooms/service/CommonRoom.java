@@ -55,14 +55,17 @@ public class CommonRoom implements Room {
 
     @Override
     public void enterEvent(final Player p) {
-        if (!visited) {
+        /*if (!visited) {
             visited = true;
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 enemyService.spawnEnemy(this);
             }
             enemyService.setTarget(p);
             roomLockService.setState(true);
-        }
+        }*/
+        enemyService.spawnBoss(this);
+        enemyService.setTarget(p);
+
     }
 
     @Override
@@ -97,7 +100,7 @@ public class CommonRoom implements Room {
                 .limit(MAX_BANNERS)
                 .toList();
         final List<ExplosiveBarrel> explosiveBarrels = Stream.generate(explosiveBarrelSupplier::supply)
-                .limit(ThreadLocalRandom.current().nextInt(1))
+                .limit(ThreadLocalRandom.current().nextInt(3))
                 .toList();
         final List<Barrel> barrels = Stream.generate(barrelSupplier::supply)
                 .limit(ThreadLocalRandom.current().nextInt(MAX_BARRELS))

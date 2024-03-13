@@ -15,21 +15,23 @@ import org.dyn4j.world.result.DetectResult;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.lwjgl.opengl.GL30;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class PhysicsEngine {
+    private final static Logger LOGGER = LoggerFactory.getLogger(PhysicsEngine.class);
     private final World<PhysicsObject> world;
-    private final static boolean DEBUG_RENDER = false;
+    private final static boolean DEBUG_RENDER = true;
 
     public PhysicsEngine() {
         final Settings settings = new Settings();
         settings.setStepFrequency(GameLoop.FIXED_DELTA_TIME);
-        settings.setAtRestDetectionEnabled(false);
+        settings.setAtRestDetectionEnabled(true);
         settings.setMaximumTranslation(100);
         settings.setMaximumLinearCorrection(100);
-        settings.setMaximumRotation(0);
-        settings.setMaximumAngularCorrection(0);
+        settings.setMaximumAngularCorrection(100);
         settings.setLinearTolerance(0.1);
 
 
@@ -38,10 +40,10 @@ public class PhysicsEngine {
         world.setSettings(settings);
         world.setBounds(null);
 
+        world.addStepListener(new PostUpdateStepListener());
         world.addStepListener(new InterpolationStepListener());
         world.addCollisionListener(new DamageCollisionListener());
         world.addCollisionListener(new CollisionListener());
-
     }
 
     public void add(final PhysicsObject object) {
@@ -50,6 +52,11 @@ public class PhysicsEngine {
 
     public void fixedUpdate(double dt) {
         world.step(1);
+
+        updateForRemoval();
+    }
+
+    private void updateForRemoval() {
         final List<PhysicsObject> toRemove = world.getBodies()
                 .stream()
                 .filter(PhysicsObject::canRemove)
@@ -76,12 +83,15 @@ public class PhysicsEngine {
         world.getBodies().forEach(body -> {
             GL30.glBegin(GL30.GL_LINE_LOOP);
             final Rectangle rectangle = (Rectangle) body.getFixture(0).getShape();
-            final Vector2[] vertices = rectangle.getVertices();
-            final Vector2 position = body.getTransform().getTranslation().copy().subtract(new Vector2(Camera.getPosition().x, Camera.getPosition().y));
-            final double angle = body.getTransform().getRotationAngle();
+            final Vector2[] originVertices = rectangle.getVertices();
+            final List<Vector2> vertices = new ArrayList<>(originVertices.length);
+            for (final Vector2 originVertex : originVertices){
+                vertices.add(new Vector2(originVertex.x, originVertex.y));
+            }
+            final Vector2f cameraPos = Camera.getPosition();
             for (Vector2 vertex : vertices) {
-                final Vector2 rotated = vertex.rotate(angle);
-                GL30.glVertex2d(rotated.x + position.x, rotated.y + position.y);
+                final Vector2 transformed = body.getWorldPoint(vertex);
+                GL30.glVertex2d(transformed.x - cameraPos.x, transformed.y - cameraPos.y);
             }
             GL30.glEnd();
         });
@@ -109,10 +119,10 @@ public class PhysicsEngine {
         final Transform transform = new Transform();
         transform.setTranslation(new Vector2(point.x, point.y));
         final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);
-        rectangle.getVertices()[0].set(0,0);
-        rectangle.getVertices()[1].set(dimensions.x(),0);
-        rectangle.getVertices()[2].set(dimensions.x(),dimensions.y());
-        rectangle.getVertices()[3].set(0,dimensions.y());
+        rectangle.getVertices()[0].set(0, 0);
+        rectangle.getVertices()[1].set(dimensions.x(), 0);
+        rectangle.getVertices()[2].set(dimensions.x(), dimensions.y());
+        rectangle.getVertices()[3].set(0, dimensions.y());
 
         final Set<PhysicsObject> results = new HashSet<>();
         final Iterator<DetectResult<PhysicsObject, BodyFixture>> resultIterator = world.detectIterator(rectangle, transform, new DetectFilter(true, true, null));
@@ -120,24 +130,28 @@ public class PhysicsEngine {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
             final PhysicsObject object = result.getBody();
             final BodyFixture fixture = result.getFixture();
-            if (object == null){
+            if (object == null) {
                 continue;
             }
-            if (object.getType() != null && ignored.contains(object.getType())){
+            if (object.canRemove()) {
+                continue;
+            }
+            if (object.getType() != null && ignored.contains(object.getType())) {
                 continue;
             }
             results.add(object);
         }
         return List.copyOf(results);
     }
+
     public boolean queryExists(final Vector2f point, final Vector2i dimensions, final Set<CollisionType> ignored) {
         final Transform transform = new Transform();
         transform.setTranslation(new Vector2(point.x, point.y));
         final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);
-        rectangle.getVertices()[0].set(0,0);
-        rectangle.getVertices()[1].set(dimensions.x(),0);
-        rectangle.getVertices()[2].set(dimensions.x(),dimensions.y());
-        rectangle.getVertices()[3].set(0,dimensions.y());
+        rectangle.getVertices()[0].set(0, 0);
+        rectangle.getVertices()[1].set(dimensions.x(), 0);
+        rectangle.getVertices()[2].set(dimensions.x(), dimensions.y());
+        rectangle.getVertices()[3].set(0, dimensions.y());
 
         final Set<PhysicsObject> results = new HashSet<>();
         final Iterator<DetectResult<PhysicsObject, BodyFixture>> resultIterator = world.detectIterator(rectangle, transform, new DetectFilter(true, true, null));
@@ -145,16 +159,20 @@ public class PhysicsEngine {
             final DetectResult<PhysicsObject, BodyFixture> result = resultIterator.next();
             final PhysicsObject object = result.getBody();
             final BodyFixture fixture = result.getFixture();
-            if (object == null){
+            if (object == null) {
                 continue;
             }
-            if (object.getType() != null && ignored.contains(object.getType())){
+            if (object.canRemove()) {
+                continue;
+            }
+            if (object.getType() != null && ignored.contains(object.getType())) {
                 continue;
             }
             return true;
         }
         return false;
     }
+
     public void updateBroadphase() {
         world.getBroadphaseDetector().update();
     }

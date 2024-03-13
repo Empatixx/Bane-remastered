@@ -26,10 +26,7 @@ public class PhysicsObjectFactory {
     public static PhysicsObject create(final int width, final int height) {
         final PhysicsObject physicsObject = new PhysicsObject();
         final Rectangle rectangle = new Rectangle(width, height);
-        rectangle.getVertices()[0].set(0,0);
-        rectangle.getVertices()[1].set(width,0);
-        rectangle.getVertices()[2].set(width,height);
-        rectangle.getVertices()[3].set(0,height);
+        rectangle.translate(width/2f, height/2f);
 
         final BodyFixture fixture = new BodyFixture(rectangle);
         fixture.setFriction(0);
@@ -47,10 +44,7 @@ public class PhysicsObjectFactory {
         final InterpolatedPhysicsObject physicsObject = new InterpolatedPhysicsObject();
 
         final Rectangle rectangle = new Rectangle(width, height);
-        rectangle.getVertices()[0].set(0,0);
-        rectangle.getVertices()[1].set(width,0);
-        rectangle.getVertices()[2].set(width,height);
-        rectangle.getVertices()[3].set(0,height);
+        rectangle.translate(width/2f, height/2f);
 
         final BodyFixture fixture = new BodyFixture(rectangle);
 
@@ -63,8 +57,7 @@ public class PhysicsObjectFactory {
         physicsObject.setAtRest(false);
         physicsObject.setAtRestDetectionEnabled(false);
 
-        physicsObject.setMass(MassType.NORMAL);
-        physicsObject.setMass(new Mass(physicsObject.getMass().getCenter(),physicsObject.getMass().getMass(), 0)); // prevent rotations
+        physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
         physicsObject.setLinearDamping(3);
 
         SERVICE.add(physicsObject);

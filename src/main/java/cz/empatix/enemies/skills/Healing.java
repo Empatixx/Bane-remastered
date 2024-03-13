@@ -21,6 +21,8 @@ public class Healing implements Skill{
         this.cooldown = new Timer(HEALING_COOLDOWN);
         this.tickTimer = new Timer(DURATION / TOTAL_HEAL_TICKS);
         this.currentHealTick = TOTAL_HEAL_TICKS;
+
+        cooldown.start();
     }
     @Override
     public void activate() {

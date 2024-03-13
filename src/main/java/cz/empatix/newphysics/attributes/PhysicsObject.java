@@ -1,20 +1,26 @@
 package cz.empatix.newphysics.attributes;
 
+import cz.empatix.enemies.domain.bosses.GolemLaser;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.roomobjects.domain.RoomObject;
+import org.dyn4j.collision.Fixture;
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 
 public class PhysicsObject extends Body {
     private final static Consumer NOOP = r -> {
     };
+    private final static Runnable NOOP_RUNNABLE = () -> {
+    };
     private Consumer<PhysicsObject> onCollision = NOOP;
+    private Runnable postPhysicsUpdate = NOOP_RUNNABLE;
     private CollisionType collisionType;
     private boolean remove;
     protected final Vector2i offset = new Vector2i();
@@ -22,14 +28,19 @@ public class PhysicsObject extends Body {
     public void onCollision(final Consumer<PhysicsObject> onCollision) {
         this.onCollision = onCollision;
     }
+    public void postPhysicsUpdate() {
+        this.postPhysicsUpdate.run();
+    }
+    public void postPhysicsUpdate(final Runnable postPhysicsUpdate) {
+        this.postPhysicsUpdate = postPhysicsUpdate;
+    }
 
     public void onCollision(final PhysicsObject physicsObject) {
         onCollision.accept(physicsObject);
     }
 
     public void setPhysicsTranslation(float x, float y) {
-        getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
-        getTransform().setTranslation(x + offset.x(), y + offset.y());
+        setTranslation(x, y);
     }
 
     public Vector2f getPhysicsTranslation() {
@@ -59,6 +70,7 @@ public class PhysicsObject extends Body {
     public void setTranslation(float x, float y) {
         getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
         getTransform().setTranslation(x + offset.x(), y + offset.y());
+
     }
 
     public void update(final float dt){
@@ -80,5 +92,17 @@ public class PhysicsObject extends Body {
     }
     public void setOffset(final int x, final int y) {
         offset.set(x, y);
+    }
+
+    public void setRotation(final double radians) {
+        final Fixture fixture = getFixture(0);
+        fixture.getShape().rotate(radians);
+    }
+    public void setRotation(final double radians, final Vector2f point) {
+        final Fixture fixture = getFixture(0);
+        fixture.getShape().rotate(radians, new Vector2(point.x, point.y));
+    }
+    public float getRotation() {
+        return (float) getTransform().getRotationAngle();
     }
 }

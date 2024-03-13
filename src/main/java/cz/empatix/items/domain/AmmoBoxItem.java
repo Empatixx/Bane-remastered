@@ -5,6 +5,7 @@ import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.guns.domain.GunType;
 import cz.empatix.interaction.domain.CommonInteractable;
+import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -104,6 +105,7 @@ public class AmmoBoxItem implements ItemDrop {
 
     @Override
     public void destroy() {
+        InteractionService.getInstance().removeInteractable(this);
     }
 
     @Override

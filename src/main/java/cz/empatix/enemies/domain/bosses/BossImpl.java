@@ -15,6 +15,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
+import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector4f;
@@ -86,6 +87,7 @@ public class BossImpl implements Damageable, DamageSource {
 
 
         physicsBody = PhysicsObjectFactory.createInterpolated(collisionWidth, collisionHeight);
+        physicsBody.setMass(MassType.FIXED_ANGULAR_VELOCITY);
         physicsBody.setOffset(collisionOffset.x(), collisionOffset.y());
         physicsBody.setType(CollisionType.ENEMY);
         physicsBody.setUserData(this);
@@ -198,6 +200,9 @@ public class BossImpl implements Damageable, DamageSource {
                     new CommonBinding(Camera.getProjection())
             );
         }
+    }
+    public boolean isRightFacing() {
+        return aStarTargetting.isTargetLeftFromEnemy();
     }
 
     public boolean canRender() {
