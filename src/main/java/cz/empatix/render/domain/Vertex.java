@@ -12,13 +12,13 @@ public record Vertex(
         Vector2f position,
         Vector2f texCoords
 ) {
-    public void rotateAround(final Vector2f point, final float radians){
+    public void rotateAround(final Vector2f point, final double radians){
         final float x = position.x() - point.x;
         final float y = position.y() - point.y;
-        final float cos = (float) Math.cos(radians);
-        final float sin = (float) Math.sin(radians);
-        final float newX = x * cos - y * sin;
-        final float newY = x * sin + y * cos;
+        final double cos = Math.cos(radians);
+        final double sin = Math.sin(radians);
+        final float newX = (float) (x * cos - y * sin);
+        final float newY = (float) (x * sin + y * cos);
         position.set(newX + point.x, newY + point.y);
     }
 

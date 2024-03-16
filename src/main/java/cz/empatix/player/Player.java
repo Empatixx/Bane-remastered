@@ -34,6 +34,7 @@ import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -268,8 +269,10 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
     @Override
     public RenderData renderData() {
+        final List<Vertex> vertices = animation.getVertices(physicsBody.getTranslation());
+        vertices.forEach(v -> v.rotateAround(physicsBody.getTranslation(), physicsBody.getRotation()));
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation()),
+                vertices,
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
@@ -405,7 +408,6 @@ public class Player implements Drawable, InteractEntity, Damageable {
 
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
-        physicsBody.setRotation(Math.PI/2f, new Vector2f( DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2));
     }
 
     @Override

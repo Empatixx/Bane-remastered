@@ -6,6 +6,7 @@ import cz.empatix.newphysics.attributes.PhysicsObject;
 import org.dyn4j.collision.Fixture;
 import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.geometry.*;
+import org.joml.Vector2f;
 
 public class PhysicsObjectFactory {
     private final static PhysicsService SERVICE = PhysicsService.getInstance();
@@ -59,6 +60,7 @@ public class PhysicsObjectFactory {
 
         physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
         physicsObject.setLinearDamping(3);
+
 
         SERVICE.add(physicsObject);
         return physicsObject;

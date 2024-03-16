@@ -95,14 +95,10 @@ public class PhysicsObject extends Body {
     }
 
     public void setRotation(final double radians) {
-        final Fixture fixture = getFixture(0);
-        fixture.getShape().rotate(radians);
-    }
-    public void setRotation(final double radians, final Vector2f point) {
-        final Fixture fixture = getFixture(0);
-        fixture.getShape().rotate(radians, new Vector2(point.x, point.y));
+        rotateAboutCenter(radians);
     }
     public float getRotation() {
         return (float) getTransform().getRotationAngle();
     }
+
 }

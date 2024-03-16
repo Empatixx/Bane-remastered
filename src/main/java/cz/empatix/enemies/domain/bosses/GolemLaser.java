@@ -31,8 +31,8 @@ public class GolemLaser implements DamageSource, Drawable {
     public GolemLaser() {
         this.physicsObject = PhysicsObjectFactory.createInterpolated(WIDTH, HEIGHT);
         physicsObject.setType(CollisionType.NONE);
-        physicsObject.setRotation(0.0f);
         physicsObject.setUserData(this);
+        physicsObject.setEnabled(false);
 
         this.animation = Animation.builder()
                 .setTotal(1, 1)
@@ -49,7 +49,7 @@ public class GolemLaser implements DamageSource, Drawable {
 
     public void fixedUpdate(final float dt){
         rotationPoint.set(new Vector2f(physicsObject.getTranslation())).add(EYE_OFFSET_X, HEIGHT/2f);
-        physicsObject.setRotation(rotationTargetting.getRotation(), rotationPoint);
+        physicsObject.rotate(0.05, new Vector2(rotationPoint.x, rotationPoint.y));
 
     }
     public void setTarget(final Player player){
@@ -70,6 +70,8 @@ public class GolemLaser implements DamageSource, Drawable {
     @Override
     public RenderData renderData() {
         final List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation());
+        final Vector2f rotationPoint = new Vector2f(physicsObject.getTranslation()).add(EYE_OFFSET_X, HEIGHT/2f);
+
         vertices.forEach(vertex -> vertex.rotateAround(rotationPoint, physicsObject.getRotation()));
         return new RenderData(
                 vertices,

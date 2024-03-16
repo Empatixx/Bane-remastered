@@ -44,6 +44,7 @@ public class PhysicsEngine {
         world.addStepListener(new InterpolationStepListener());
         world.addCollisionListener(new DamageCollisionListener());
         world.addCollisionListener(new CollisionListener());
+
     }
 
     public void add(final PhysicsObject object) {

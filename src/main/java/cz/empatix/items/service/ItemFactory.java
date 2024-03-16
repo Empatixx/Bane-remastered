@@ -6,7 +6,6 @@ import cz.empatix.guns.domain.Gun;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.domain.*;
-import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 
