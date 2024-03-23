@@ -3,6 +3,7 @@ package cz.empatix.render.domain;
 import com.google.common.base.Preconditions;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlasInfo;
+import org.dyn4j.geometry.Interval;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 

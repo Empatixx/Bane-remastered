@@ -55,10 +55,6 @@ public class Golem implements Enemy {
         animation.setState(AnimationState.IDLE);
         bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> moveForce, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
         golemLaser = new GolemLaser();
-        bossImpl.getPhysicsObject().postPhysicsUpdate(() -> {
-            final int facingOffset = bossImpl.isRightFacing() ? 6 * SCALE : 0;
-            //golemLaser.setPosition(bossImpl.getX() + EYE_OFFSET_X, bossImpl.getY() + EYE_OFFSET_Y);
-        });
         healing = new Healing(2, this::heal);
         armorStacking = new ArmorStacking();
         dash = new Dash(() -> {}, () -> {}, force -> moveForce = moveForce + force);

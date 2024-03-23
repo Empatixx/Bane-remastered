@@ -26,7 +26,6 @@ public class GolemLaser implements DamageSource, Drawable {
     private final InterpolatedPhysicsObject physicsObject;
     private final RotationTargetting rotationTargetting;
     private final Animation animation;
-    private final Vector2f rotationPoint = new Vector2f();
 
     public GolemLaser() {
         this.physicsObject = PhysicsObjectFactory.createInterpolated(WIDTH, HEIGHT);
@@ -48,8 +47,8 @@ public class GolemLaser implements DamageSource, Drawable {
     }
 
     public void fixedUpdate(final float dt){
-        rotationPoint.set(new Vector2f(physicsObject.getTranslation())).add(EYE_OFFSET_X, HEIGHT/2f);
-        physicsObject.rotate(0.05, new Vector2(rotationPoint.x, rotationPoint.y));
+        physicsObject.getLocalCenter().set(EYE_OFFSET_X, HEIGHT/2f);
+        physicsObject.rotateAboutCenter(0.01f);
 
     }
     public void setTarget(final Player player){
@@ -70,9 +69,9 @@ public class GolemLaser implements DamageSource, Drawable {
     @Override
     public RenderData renderData() {
         final List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation());
-        final Vector2f rotationPoint = new Vector2f(physicsObject.getTranslation()).add(EYE_OFFSET_X, HEIGHT/2f);
-
-        vertices.forEach(vertex -> vertex.rotateAround(rotationPoint, physicsObject.getRotation()));
+        final Vector2 rotationPointPhysics = physicsObject.getWorldCenter();
+        final Vector2f rotation = new Vector2f((float) rotationPointPhysics.x, (float) rotationPointPhysics.y);
+        vertices.forEach(vertex -> vertex.rotateAround(rotation, physicsObject.getRotation()));
         return new RenderData(
                 vertices,
                 animation.getTextureId(),

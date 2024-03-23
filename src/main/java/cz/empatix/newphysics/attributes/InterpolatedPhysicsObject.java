@@ -22,14 +22,13 @@ public class InterpolatedPhysicsObject extends PhysicsObject {
         interpolatedPosition.setPosition(x, y);
     }
 
-    // sets physics translation and interpolated position for rendering
-    public void setInterpolatedTranslation(final float x, final float y) {
-        super.setTranslation(x, y);
-        interpolatedPosition.setInterpolatedPosition(x, y);
-    }
-
     public void updateInterpolatedPosition() {
-        interpolatedPosition.setInterpolatedPosition(getPhysicsTranslationX(), getPhysicsTranslationY());
+        final Vector2f translation = new Vector2f();
+        final Vector2 localCenter = getLocalCenter();
+        final Vector2 worldCenter = getWorldCenter();
+        translation.x = (float) (worldCenter.x - localCenter.x - offset.x);
+        translation.y = (float) (worldCenter.y - localCenter.y - offset.y);
+        interpolatedPosition.setInterpolatedPosition(translation.x, translation.y);
     }
 
     public float getTranslationX() {

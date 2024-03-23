@@ -44,7 +44,12 @@ public class PhysicsObject extends Body {
     }
 
     public Vector2f getPhysicsTranslation() {
-        return new Vector2f(getPhysicsTranslationX(), getPhysicsTranslationY());
+        final Vector2f translation = new Vector2f();
+        final Vector2 localCenter = getLocalCenter();
+        final Vector2 worldCenter = getWorldCenter();
+        translation.x = (float) (worldCenter.x - localCenter.x - offset.x());
+        translation.y = (float) (worldCenter.y - localCenter.y - offset.y());
+        return translation;
     }
 
     public void applyForce(final float x, final float y) {
@@ -60,11 +65,11 @@ public class PhysicsObject extends Body {
     }
 
     public float getPhysicsTranslationX() {
-        return (float) getTransform().getTranslationX() - offset.x();
+        return getPhysicsTranslation().x();
     }
 
     public float getPhysicsTranslationY() {
-        return (float) getTransform().getTranslationY() - offset.y();
+        return getPhysicsTranslation().y();
     }
 
     public void setTranslation(float x, float y) {
@@ -80,7 +85,6 @@ public class PhysicsObject extends Body {
     public CollisionType getType() {
         return collisionType;
     }
-
     public void setType(final CollisionType collisionType) {
         this.collisionType = collisionType;
     }
@@ -92,10 +96,6 @@ public class PhysicsObject extends Body {
     }
     public void setOffset(final int x, final int y) {
         offset.set(x, y);
-    }
-
-    public void setRotation(final double radians) {
-        rotateAboutCenter(radians);
     }
     public float getRotation() {
         return (float) getTransform().getRotationAngle();

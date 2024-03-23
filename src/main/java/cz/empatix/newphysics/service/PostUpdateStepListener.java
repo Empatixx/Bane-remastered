@@ -30,7 +30,6 @@ public class PostUpdateStepListener implements StepListener<PhysicsObject> {
             if (physicsObject.canRemove()){
                 continue;
             }
-            physicsObject.postPhysicsUpdate();
         }
     }
 }
