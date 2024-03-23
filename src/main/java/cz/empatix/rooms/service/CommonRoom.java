@@ -57,11 +57,10 @@ public class CommonRoom implements Room {
     public void enterEvent(final Player p) {
         if (!visited) {
             visited = true;
-            /*for (int i = 0; i < MAX_ENEMIES; i++) {
+            for (int i = 0; i < MAX_ENEMIES; i++) {
                 enemyService.spawnEnemy(this);
             }
-            roomLockService.setState(true);*/
-            enemyService.spawnBoss(this);
+            roomLockService.setState(true);
         }
         enemyService.setTarget(p);
 

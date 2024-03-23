@@ -15,11 +15,12 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 public abstract class BaseSlimebullet implements Drawable, DamageSource {
-    private final static int MOVE_FORCE = 500_0000;
+    private final static int MOVE_FORCE = 5_000_000;
     private final static int BULLET_WIDTH = 16;
     private final static int BULLET_HEIGHT = 16;
     private final static int SCALE = 1;
@@ -57,16 +58,14 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
 
     public void update(final double dt) {
         animation.update();
+        if(animation.getCurrentState() != AnimationState.COLLISION){
+            return;
+        }
         lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
-        final Vector2f velocity = physicsBody.getVelocity();
-        if(velocity.x() == 0 || velocity.y() == 0) {
-            animation.setState(AnimationState.COLLISION);
-            physicsBody.setVelocity(0,0);
-        }
-        updateCollisionLightning();
+        lightSource.setIntensity(0.75f * (1 - (float)animation.getCurrentTextureIndex()/animation.getCurrentStateNumSprites()));
     }
-    public void updateCollisionLightning(){
+    public void fixedUpdate(final double dt){
         if(animation.getCurrentState() != AnimationState.COLLISION){
             return;
         }
@@ -74,7 +73,6 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
             lightSource.destroy();
             physicsBody.destroy();
         }
-        lightSource.setIntensity(0.75f * (1 - (float)animation.getCurrentTextureIndex()/animation.getCurrentStateNumSprites()));
     }
 
     @Override

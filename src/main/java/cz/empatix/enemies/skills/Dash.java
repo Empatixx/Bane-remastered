@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 public class Dash implements Skill {
     private final static int DASH_COOLDOWN = 3000;
     private final static int DASH_DURATION = 1000;
-    private final static int ADDITIONAL_FORCE = 12_500_000;
+    private final static int ADDITIONAL_FORCE = 24_500_000;
 
     private final Runnable activate;
     private final Runnable deactivate;

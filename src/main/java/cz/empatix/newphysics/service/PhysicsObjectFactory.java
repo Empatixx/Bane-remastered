@@ -35,8 +35,8 @@ public class PhysicsObjectFactory {
         fixture.setDensity(1);
         physicsObject.addFixture(fixture);
 
-        //physicsObject.setAtRest(false);
-        //physicsObject.setAtRestDetectionEnabled(false);
+        physicsObject.setAtRest(false);
+        physicsObject.setAtRestDetectionEnabled(false);
 
         SERVICE.add(physicsObject);
         return physicsObject;
@@ -59,7 +59,7 @@ public class PhysicsObjectFactory {
         physicsObject.setAtRestDetectionEnabled(false);
 
         physicsObject.setMass(MassType.FIXED_ANGULAR_VELOCITY);
-        physicsObject.setLinearDamping(3);
+        physicsObject.setLinearDamping(5);
 
 
         SERVICE.add(physicsObject);

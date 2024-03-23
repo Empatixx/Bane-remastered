@@ -14,7 +14,7 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public class Ghost extends BaseEnemy{
-    private final static int MOVE_FORCE = 4_500_000;
+    private final static int MOVE_FORCE = 8_500_000;
     private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = (int) (22 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (28 * SCALE);

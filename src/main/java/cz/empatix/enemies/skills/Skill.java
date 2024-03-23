@@ -7,5 +7,8 @@ import java.util.List;
 public interface Skill {
     void activate();
     void update(final float dt);
+    default void fixedUpdate(final float dt){
+
+    }
     List<Renderable> getSubRenderables();
 }

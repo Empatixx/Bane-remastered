@@ -30,13 +30,15 @@ public class ItemFactory {
                 () -> new CoinItem(coinService::addCoins)
         );
         final List<Supplier<ItemDrop>> uncommonItemsSuppliers = List.of(
-                () -> new RecoverPotion(RecoverType.HEALTH, player::hasFullHealth, player::addHealth),
-                () -> new RecoverPotion(RecoverType.ARMOR, player::hasFullArmor, player::addArmor)
+                () -> new RecoverPotion(RecoverSize.SMALL, RecoverType.HEALTH, player::hasFullHealth, player::addHealth),
+                () -> new RecoverPotion(RecoverSize.SMALL, RecoverType.ARMOR, player::hasFullArmor, player::addArmor)
         );
         final List<Supplier<ItemDrop>> rareItemsSuppliers = List.of(
                 () -> new WeaponDrop(DropSource.NORMAL, gunService.getUnusedRandomGun(), gunService::addGun),
                 () -> new ArtefactDrop(DropSource.NORMAL, artefactsService.getUnusedRandomArtefact(), artefactsService::addArtefact),
-                () -> new AmmoBoxItem(gunService::hasNotFullAmmo, gunService::addAmmo)
+                () -> new AmmoBoxItem(gunService::hasNotFullAmmo, gunService::addAmmo),
+                () -> new RecoverPotion(RecoverSize.LARGE, RecoverType.HEALTH, player::hasFullHealth, player::addHealth),
+                () -> new RecoverPotion(RecoverSize.LARGE, RecoverType.ARMOR, player::hasFullArmor, player::addArmor)
         );
         itemDropSuppliers = new EnumMap<>(ItemRarity.class);
         itemDropSuppliers.put(ItemRarity.COMMON, commonItemsSuppliers);
@@ -82,7 +84,7 @@ public class ItemFactory {
     }
 
     public ItemDrop createItemDrop() {
-        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(ItemRarity.randomRarity(ItemRarity.COMMON));
+        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(ItemRarity.randomRarity(ItemRarity.COMMON, ItemRarity.UNCOMMON));
         final ItemDrop drop = suppliers.get(RANDOM.nextInt(suppliers.size())).get();
         InteractionService.getInstance().addInteractable(drop);
         return drop;

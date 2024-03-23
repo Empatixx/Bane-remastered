@@ -41,6 +41,10 @@ public class KingSlimeArmageddon implements Skill {
     @Override
     public void update(float dt) {
         slimebullets.forEach(slimebullet -> slimebullet.update(dt));
+    }
+    @Override
+    public void fixedUpdate(final float dt){
+        slimebullets.forEach(slimebullet -> slimebullet.fixedUpdate(dt));
         slimebullets.removeIf(BaseSlimebullet::shouldRemove);
     }
 

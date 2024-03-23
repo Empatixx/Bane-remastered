@@ -22,6 +22,7 @@ public class RecoverPotion implements ItemDrop {
     private final static int DIMENSION_WIDTH = (int) (15 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (16 * SCALE);
     private final RecoverType type;
+    private final RecoverSize size;
     private final CommonInteractable interactable;
     private final ItemDespawnService itemDespawnService;
     private final Animation animation;
@@ -29,16 +30,18 @@ public class RecoverPotion implements ItemDrop {
     private final int amount;
     private boolean pickedUp = false;
 
-    public RecoverPotion(final RecoverType type,
+    public RecoverPotion(final RecoverSize size,
+                         final RecoverType type,
                          final Supplier<Boolean> hasFull,
                          final Consumer<Integer> add) {
         this.type = type;
+        this.size = size;
         this.amount = getDefaultAmount();
         this.animation = Animation.builder()
                 .setTotal(2, 1)
                 .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .texture(AssetsService.getTexture("ingame/healing_pot.tga"))
+                .texture(AssetsService.getTexture(getTexture()))
                 .build();
         animation.setState(getAnimationState());
         position = new Vector2f();
@@ -46,7 +49,7 @@ public class RecoverPotion implements ItemDrop {
             add.accept(amount);
             pickedUp = true;
             AUDIO_SERVICE.play(SoundEffect.PICKUP);
-        },() -> !pickedUp && !hasFull.get(), this::canRemove, position, getHeight(), getWidth());
+        }, () -> !pickedUp && !hasFull.get(), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
     }
 
@@ -56,11 +59,17 @@ public class RecoverPotion implements ItemDrop {
             case ARMOR -> AnimationState.TYPE1;
         };
     }
+    private String getTexture(){
+        return switch (size){
+            case SMALL -> "ingame/healing_pot.tga";
+            case LARGE -> "ingame/large_healing_pot.tga";
+        };
+    }
 
     private int getDefaultAmount() {
-        return switch (type) {
-            case HEALTH -> 2;
-            case ARMOR -> 1;
+        return switch (size){
+            case SMALL -> 1;
+            case LARGE -> 4;
         };
     }
 
@@ -141,15 +150,17 @@ public class RecoverPotion implements ItemDrop {
         if (!Camera.isInProjection(position, DIMENSION_WIDTH, DIMENSION_HEIGHT)) {
             return false;
         }
-        if(itemDespawnService.canBlink()){
+        if (itemDespawnService.canBlink()) {
             return System.currentTimeMillis() / 100 % 2 == 0;
         }
         return true;
     }
+
     @Override
     public void setDespawnable(final boolean despawn) {
         itemDespawnService.setDespawnTime(despawn ? ItemDespawnService.DEFAULT_ITEM_DESPAWN_TIME : Long.MAX_VALUE);
     }
+
     @Override
     public boolean isPickedUp() {
         return pickedUp;

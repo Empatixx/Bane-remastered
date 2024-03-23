@@ -49,12 +49,15 @@ public class KingSlime implements Enemy {
 
     @Override
     public void fixedUpdate(double dt) {
+        slimeSmash.fixedUpdate((float)dt);
+        armageddon.fixedUpdate((float)dt);
         if (isDead()) {
             return;
         }
         bossImpl.fixedUpdate(dt);
         armageddon.activate();
         slimeSmash.activate();
+
     }
 
 

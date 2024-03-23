@@ -3,14 +3,14 @@ package cz.empatix.roomobjects.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
-import cz.empatix.interaction.domain.Interactable;
-import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.domain.ItemDrop;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
+import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -19,16 +19,14 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
-import java.util.Set;
-
-public class Chest implements RoomObject, Interactable {
+public class Chest implements RoomObject {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int TOTAL_DROP_ITEMS = 5;
     private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 16 * SCALE;
     private final static int ITEM_DROP_FORCE = 15_000;
-
+    private static final int CHEST_PUSH_FORCE = 125_000_000;
     private final Animation animation;
     private final PhysicsObject physicsBody;
     private final ItemService itemService;
@@ -44,8 +42,28 @@ public class Chest implements RoomObject, Interactable {
                 .addState(AnimationState.OPEN, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
                 .texture(AssetsService.getTexture("ingame/chest.tga"))
                 .build();
-        physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH, DIMENSION_HEIGHT);
-        InteractionService.getInstance().addInteractable(this);
+        physicsBody = PhysicsObjectFactory.createInterpolated(DIMENSION_WIDTH, DIMENSION_HEIGHT);
+        physicsBody.onCollision(other -> {
+            if (opened){
+                return;
+            }
+            if (other.getType().equals(CollisionType.PLAYER)) {
+                opened = true;
+                animation.setState(AnimationState.OPEN);
+                final Vector2f velocity = physicsBody.getVelocity();
+                final Vector2f otherVelocity = other.getVelocity();
+
+                Vector2f relativeVelocity = otherVelocity.sub(velocity);
+
+                Vector2f directionNormalized = relativeVelocity.normalize();
+
+                float angle = (float) Math.atan2(directionNormalized.y, directionNormalized.x);
+
+                final Vector2f force = new Vector2f((float) Math.cos(angle) * CHEST_PUSH_FORCE, (float) Math.sin(angle) * CHEST_PUSH_FORCE);
+
+                physicsBody.applyForce(force.x(), force.y());
+            }
+        });
         this.chestType = chestType;
     }
 
@@ -76,35 +94,35 @@ public class Chest implements RoomObject, Interactable {
     @Override
     public void update(double dt) {
         animation.update();
-        if (canRemove()){
+        if (canRemove()) {
             dropItems();
         }
     }
 
-    private void dropItems(){
+    private void dropItems() {
         AUDIO_SERVICE.play(SoundEffect.OPEN_CHEST);
         final ItemFactory itemFactory = itemService.getItemFactory();
         for (int i = 0; i < TOTAL_DROP_ITEMS; i++) {
             final MovableItemDrop itemDrop = itemFactory.createMovableItemDrop();
-            itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
+            itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth() / 2f + getWidth() / 2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight() / 2f + getHeight() / 2f);
             itemDrop.setDespawnable(false);
 
-            final float angle = (float)(Math.PI * 2 * (i+1)) / TOTAL_DROP_ITEMS;
+            final float angle = (float) (Math.PI * 2 * (i + 1)) / TOTAL_DROP_ITEMS;
             final float forceX = (float) Math.cos(angle) * ITEM_DROP_FORCE;
             final float forceY = (float) Math.sin(angle) * ITEM_DROP_FORCE;
 
             itemDrop.applyForce(forceX, forceY);
             itemService.add(itemDrop);
         }
-        switch (chestType){
+        switch (chestType) {
             case WEAPON -> {
                 final ItemDrop itemDrop = itemFactory.createWeaponDrop();
-                itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
+                itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth() / 2f + getWidth() / 2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight() / 2f + getHeight() / 2f);
                 itemService.add(itemDrop);
             }
             case ARTEFACT -> {
                 final ItemDrop itemDrop = itemFactory.createArtefactDrop();
-                itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth()/2f + getWidth()/2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight()/2f + getHeight()/2f);
+                itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth() / 2f + getWidth() / 2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight() / 2f + getHeight() / 2f);
                 itemService.add(itemDrop);
             }
         }
@@ -121,17 +139,6 @@ public class Chest implements RoomObject, Interactable {
     }
 
     @Override
-    public void interact(final Set<Integer> keys) {
-        opened = true;
-        animation.setState(AnimationState.OPEN);
-    }
-
-    @Override
-    public boolean canInteract() {
-        return !opened;
-    }
-
-    @Override
     public Vector2f getPosition() {
         return physicsBody.getPhysicsTranslation();
     }
@@ -145,9 +152,9 @@ public class Chest implements RoomObject, Interactable {
     public int getHeight() {
         return DIMENSION_HEIGHT;
     }
+
     @Override
     public void destroy() {
         physicsBody.destroy();
-        InteractionService.getInstance().removeInteractable(this);
     }
 }

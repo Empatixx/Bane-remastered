@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Slime extends BaseEnemy {
-    private final static int MOVE_FORCE = 500_000;
+    private final static int MOVE_FORCE = 1_000_000;
     private final static float SCALE = 3f;
     private final static int DIMENSION_WIDTH = (int) (32 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (24 * SCALE);
@@ -55,6 +55,7 @@ public class Slime extends BaseEnemy {
     @Override
     public void fixedUpdate(double dt) {
         super.fixedUpdate(dt);
+        slimeSmash.fixedUpdate((float)dt);
         if (isSpawning()){
             return;
         }

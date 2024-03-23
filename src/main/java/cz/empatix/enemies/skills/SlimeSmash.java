@@ -51,6 +51,10 @@ public class SlimeSmash implements Skill {
     @Override
     public void update(float dt) {
         bullets.forEach(bullet -> bullet.update(dt));
+    }
+    @Override
+    public void fixedUpdate(final float dt){
+        bullets.forEach(slimebullet -> slimebullet.fixedUpdate(dt));
         bullets.removeIf(BaseSlimebullet::shouldRemove);
     }
     public boolean noBullets() {
