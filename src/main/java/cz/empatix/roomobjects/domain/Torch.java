@@ -62,8 +62,19 @@ public class Torch implements RoomObject {
     @Override
     public void update(double dt) {
         animation.update();
-        lightSource.setPosition(position.x() + DIMENSION_WIDTH / 2,
-                position.y() + DIMENSION_HEIGHT / 2);
+        final AnimationState state = animation.getCurrentState();
+        switch (state){
+            case LEFT_SIDE -> {
+                lightSource.setPosition(position.x() + DIMENSION_WIDTH/2f, position.y() + DIMENSION_HEIGHT/2f);
+            }
+            case RIGHT_SIDE -> {
+                lightSource.setPosition(position.x() + DIMENSION_WIDTH, position.y() + DIMENSION_HEIGHT / 2f);
+            }
+            case TOP -> {
+                lightSource.setPosition(position.x() + DIMENSION_WIDTH / 2,
+                        position.y() + DIMENSION_HEIGHT / 2);
+            }
+        }
     }
 
     @Override
