@@ -26,7 +26,7 @@ public class Chest implements RoomObject {
     private final static int DIMENSION_WIDTH = 16 * SCALE;
     private final static int DIMENSION_HEIGHT = 16 * SCALE;
     private final static int ITEM_DROP_FORCE = 15_000;
-    private static final int CHEST_PUSH_FORCE = 125_000_000;
+    private static final int CHEST_PUSH_FORCE = 250_000_000;
     private final Animation animation;
     private final PhysicsObject physicsBody;
     private final ItemService itemService;
