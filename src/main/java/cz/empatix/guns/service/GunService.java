@@ -64,7 +64,7 @@ public class GunService {
         {
             slots = new GunSlots();
             slots.addGun(guns.get(1));
-            slots.addGun(guns.get(3));
+            slots.addGun(guns.get(guns.toArray().length -3));
         }
         weaponSlotHud = new CommonImage(AssetsService.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE);
     }

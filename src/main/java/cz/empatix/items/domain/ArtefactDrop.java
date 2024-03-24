@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 public class ArtefactDrop implements ItemDrop{
+    private static final int SCALE = 2;
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final CommonInteractable interactable;
     private final Vector2f position = new Vector2f();
@@ -81,12 +82,12 @@ public class ArtefactDrop implements ItemDrop{
 
     @Override
     public int getWidth() {
-        return texture.width();
+        return texture.width() * SCALE;
     }
 
     @Override
     public int getHeight() {
-        return texture.height();
+        return texture.height() * SCALE;
     }
 
     @Override
@@ -102,7 +103,7 @@ public class ArtefactDrop implements ItemDrop{
                         .posDimensions(getWidth(), getHeight())
                         .texture(texture)
                         .offset(getWidth(), getHeight())
-                        .scale(2)
+                        .scale(SCALE)
                         .buildQuad(),
                 texture.textureId(),
                 new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),

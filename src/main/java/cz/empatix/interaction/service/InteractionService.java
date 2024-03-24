@@ -2,6 +2,9 @@ package cz.empatix.interaction.service;
 
 import cz.empatix.interaction.domain.InteractEntity;
 import cz.empatix.interaction.domain.Interactable;
+import org.joml.Vector2f;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 import java.util.ArrayList;
 import java.util.List;
