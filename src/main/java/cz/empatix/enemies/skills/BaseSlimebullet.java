@@ -59,11 +59,11 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
 
     public void update(final double dt) {
         animation.update();
+        lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
+                physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
         if(animation.getCurrentState() != AnimationState.COLLISION){
             return;
         }
-        lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
-                physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
         lightSource.setIntensity(0.75f * (1 - (float)animation.getCurrentTextureIndex()/animation.getCurrentStateNumSprites()));
     }
     public void fixedUpdate(final double dt){

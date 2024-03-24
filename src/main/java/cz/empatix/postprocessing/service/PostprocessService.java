@@ -22,6 +22,7 @@ public class PostprocessService {
         postprocesses.add(new GaussianBlur());
         postprocesses.add(new Fade());
         postprocesses.add(new RedVignette());
+        postprocesses.add(new PoisonVignette());
 
         fallbackPostprocess = new NoPostprocessing();
         this.renderService = renderService;

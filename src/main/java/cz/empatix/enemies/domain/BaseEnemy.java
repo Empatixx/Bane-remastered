@@ -73,6 +73,7 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
         return System.currentTimeMillis() - spawnTime < SPAWN_INVINCIBILITY;
     }
 
+    @Override
     public void update(double dt){
         if (isSpawning()){
             return;
@@ -81,17 +82,25 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
         aStarTargetting.update((float) dt);
         vitalityDisplayService.update(dt);
     }
+    @Override
     public void fixedUpdate(double dt){
         if (isSpawning()){
+            physicsBody.setEnabled(false);
             return;
+        }
+        if (!physicsBody.isEnabled()){
+            physicsBody.setEnabled(true);
         }
         aStarTargetting.updatePath();
         aStarTargetting.update((float) dt);
         final Vector2f force = aStarTargetting.getDirectionTarget().mul(moveForce, moveForce);
         physicsBody.applyForce(force.x(), force.y());
     }
+
+
     abstract public void onDeath();
     abstract public void onSpawn();
+    @Override
     public boolean canDropItems(){
         return droppableState.canDrop();
     }
@@ -149,7 +158,9 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
         if (this.health > maxHealth) {
             this.health = maxHealth;
         }
+
     }
+    @Override
     public void setTarget(final Player player){
         aStarTargetting.target(player);
     }

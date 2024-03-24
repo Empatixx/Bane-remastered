@@ -50,21 +50,24 @@ public class Chest implements RoomObject {
             if (other.getType().equals(CollisionType.PLAYER)) {
                 opened = true;
                 animation.setState(AnimationState.OPEN);
-                final Vector2f velocity = physicsBody.getVelocity();
-                final Vector2f otherVelocity = other.getVelocity();
-
-                Vector2f relativeVelocity = otherVelocity.sub(velocity);
-
-                Vector2f directionNormalized = relativeVelocity.normalize();
-
-                float angle = (float) Math.atan2(directionNormalized.y, directionNormalized.x);
-
-                final Vector2f force = new Vector2f((float) Math.cos(angle) * CHEST_PUSH_FORCE, (float) Math.sin(angle) * CHEST_PUSH_FORCE);
-
-                physicsBody.applyForce(force.x(), force.y());
+                pushBy(other);
             }
         });
         this.chestType = chestType;
+    }
+    private void pushBy(final PhysicsObject other){
+        final Vector2f velocity = physicsBody.getVelocity();
+        final Vector2f otherVelocity = other.getVelocity();
+
+        Vector2f relativeVelocity = otherVelocity.sub(velocity);
+
+        Vector2f directionNormalized = relativeVelocity.normalize();
+
+        float angle = (float) Math.atan2(directionNormalized.y, directionNormalized.x);
+
+        final Vector2f force = new Vector2f((float) Math.cos(angle) * CHEST_PUSH_FORCE, (float) Math.sin(angle) * CHEST_PUSH_FORCE);
+
+        physicsBody.applyForce(force.x(), force.y());
     }
 
     @Override

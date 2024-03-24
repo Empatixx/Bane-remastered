@@ -3,6 +3,7 @@ package cz.empatix.enemies.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.skills.BaseSlimebullet;
 import cz.empatix.enemies.skills.GreenSlimebullet;
+import cz.empatix.enemies.skills.RedSlimebullet;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -24,7 +25,7 @@ public class RedSlime extends BaseEnemy {
     private final static int DEFAULT_HEALTH = 9;
     private final static int DEFAULT_DAMAGE = 1;
     private int totalHitCount = 0;
-    private final List<GreenSlimebullet> slimebullets = new ArrayList<>();
+    private final List<RedSlimebullet> slimebullets = new ArrayList<>();
 
     public RedSlime() {
         super(DIMENSION_WIDTH, DIMENSION_HEIGHT);
@@ -66,9 +67,9 @@ public class RedSlime extends BaseEnemy {
     public void onDeath() {
         animation.setState(AnimationState.DEATH);
         for (int i = 0; i < totalHitCount; i++){
-            final GreenSlimebullet slimebullet = new GreenSlimebullet();
-            slimebullet.setPosition(getX(), getY());
-            slimebullet.setDirection(0,0,0,0, i * 0.25f);
+            final RedSlimebullet slimebullet = new RedSlimebullet();
+            slimebullet.setPosition(getX() + getWidth()/2f, getY() + getHeight()/2f);
+            slimebullet.setDirection(0,0,0,0, i * 1.25f);
             slimebullets.add(slimebullet);
         }
     }

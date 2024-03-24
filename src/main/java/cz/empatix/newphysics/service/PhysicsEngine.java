@@ -23,7 +23,7 @@ import java.util.*;
 public class PhysicsEngine {
     private final static Logger LOGGER = LoggerFactory.getLogger(PhysicsEngine.class);
     private final World<PhysicsObject> world;
-    private final static boolean DEBUG_RENDER = true;
+    private final static boolean DEBUG_RENDER = false;
 
     public PhysicsEngine() {
         final Settings settings = new Settings();
