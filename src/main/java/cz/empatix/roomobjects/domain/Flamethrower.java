@@ -1,6 +1,8 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.lightning.domain.LightSource;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.attributes.DamageSource;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.PhysicsObject;
@@ -13,15 +15,18 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
-public class Flamethrower implements RoomObject, DamageSource, Trap{
+public class Flamethrower implements RoomObject, DamageSource, Trap {
     private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 32;
     private final Animation animation;
     private final PhysicsObject physicsBody;
+    private final LightSource lightSource;
     private int damage;
-    public Flamethrower(){
+
+    public Flamethrower() {
         animation = Animation.builder()
                 .setTotal(1, 4)
                 .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 175)
@@ -33,7 +38,10 @@ public class Flamethrower implements RoomObject, DamageSource, Trap{
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
         physicsBody.setType(CollisionType.TRAP);
         physicsBody.setUserData(this);
+
+        lightSource = LightningService.getInstance().createLightSource(new Vector3f(255, 0, 0), 50, 3);
     }
+
     @Override
     public RenderData renderData() {
         return new RenderData(
@@ -61,6 +69,9 @@ public class Flamethrower implements RoomObject, DamageSource, Trap{
     @Override
     public void update(double dt) {
         damage = animation.getCurrentTextureIndex() != 3 ? 0 : 1;
+        lightSource.setPosition(physicsBody.getPhysicsTranslationX() + getWidth() / 2f,
+                physicsBody.getPhysicsTranslationY() + getHeight() / 2f + 20 * (float) animation.getCurrentTextureIndex() / animation.getCurrentStateNumSprites());
+        lightSource.setIntensity(3 * (float) Math.min(animation.getCurrentTextureIndex(), 1) / animation.getCurrentStateNumSprites());
         animation.update();
     }
 
@@ -72,18 +83,21 @@ public class Flamethrower implements RoomObject, DamageSource, Trap{
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
+
     @Override
     public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
+
     @Override
-    public int  getHeight() {
+    public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
     }
 
     @Override
     public void destroy() {
         physicsBody.destroy();
+        lightSource.destroy();
     }
 
     @Override

@@ -440,4 +440,11 @@ public class Player implements Drawable, InteractEntity, Damageable {
     public Vector2f getVelocity() {
         return physicsBody.getVelocity();
     }
+
+    public void stopMoving() {
+        bottom = false;
+        top = false;
+        left = false;
+        right = false;
+    }
 }

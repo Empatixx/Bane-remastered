@@ -10,17 +10,15 @@ import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
-import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 public class EyeWatcherProjectile implements Drawable, DamageSource {
-    private static final float LERP = 0.005f;
+
+    private static final int TIME_LIVENESS = 5000;
     private final static int MOVE_FORCE = 35_000_000;
     private final static int SCALE = 3;
     private final static int BULLET_WIDTH = 16 * SCALE;
@@ -29,7 +27,8 @@ public class EyeWatcherProjectile implements Drawable, DamageSource {
     private final Animation animation;
     private final LightSource lightSource;
     private Player target;
-    private Vector2f lastTargetedPosition;
+    private InterpolatedPosition lastTargetedPosition;
+    private final long spawnTime;
 
     public EyeWatcherProjectile() {
         animation = Animation.builder()
@@ -49,6 +48,7 @@ public class EyeWatcherProjectile implements Drawable, DamageSource {
             physicsBody.setVelocity(0, 0);
             physicsBody.destroy();
         });
+        spawnTime = System.currentTimeMillis();
     }
 
     @Override
@@ -67,30 +67,49 @@ public class EyeWatcherProjectile implements Drawable, DamageSource {
         if (animation.getCurrentState() != AnimationState.COLLISION) {
             return;
         }
-        lightSource.setIntensity(1f * (1 - (float) animation.getCurrentTextureIndex() / animation.getCurrentStateNumSprites()));
+        lightSource.setIntensity((1 - (float) animation.getCurrentTextureIndex() / animation.getCurrentStateNumSprites()));
         if (animation.hasPlayedOnce()) {
             lightSource.destroy();
         }
     }
 
     public void fixedUpdate(final double dt) {
+        if (System.currentTimeMillis() - spawnTime > TIME_LIVENESS){
+            animation.setState(AnimationState.COLLISION);
+            physicsBody.setVelocity(0, 0);
+            physicsBody.destroy();
+        }
         if (animation.getCurrentState() != AnimationState.COLLISION) {
-            setForceToFollow();
+            setForceToFollow(dt);
         }
     }
 
-    private void setForceToFollow(){
+    private void setForceToFollow(final double dt){
         if (lastTargetedPosition == null){
-            lastTargetedPosition = new Vector2f(target.getPosition());
+            lastTargetedPosition = new InterpolatedPosition();
+            lastTargetedPosition.setPosition(target.getX(), target.getY());
         } else {
-            lastTargetedPosition.lerp(target.getPosition(), LERP);
+            lastTargetedPosition.setInterpolatedPosition(target.getX(), target.getY());
+            lastTargetedPosition.update((float) (dt/16));
         }
         physicsBody.setVelocity(0,0);
-        final float angleToTarget = (float) Math.atan2(lastTargetedPosition.y() - physicsBody.getTranslationY(), lastTargetedPosition.x() - physicsBody.getTranslationX());
+        physicsBody.clearAccumulatedForce();
+        physicsBody.clearForce();
+        final Vector2f interpolatedPosition = lastTargetedPosition.getInterpolatedPosition();
+        final float angleToTarget = (float) Math.atan2(interpolatedPosition.y() + target.getHeight()/2f - physicsBody.getTranslationY() - getHeight() / 2f,
+                interpolatedPosition.x()  + target.getWidth()/2f - physicsBody.getTranslationX() - getWidth() / 2f);
         final float forceX = (float) Math.cos(angleToTarget) * MOVE_FORCE;
         final float forceY = (float) Math.sin(angleToTarget) * MOVE_FORCE;
         physicsBody.applyForce(forceX, forceY);
     }
+
+    public int getHeight() {
+        return BULLET_HEIGHT;
+    }
+    public int getWidth(){
+        return BULLET_WIDTH;
+    }
+
     @Override
     public RenderScene renderScene() {
         return RenderScene.SCENE;

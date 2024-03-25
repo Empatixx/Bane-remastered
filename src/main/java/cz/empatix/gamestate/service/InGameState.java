@@ -159,6 +159,7 @@ public class InGameState extends GameState {
         }
         pauseService.keyPressed(key);
         if(pauseService.isPause()){
+            player.stopMoving();
             return;
         }
         minimapService.keyPressed(key);

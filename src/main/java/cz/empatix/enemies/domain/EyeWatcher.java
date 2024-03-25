@@ -68,7 +68,8 @@ public class EyeWatcher extends BaseEnemy{
                 if (animation.hasPlayedOnce()){
                     animation.setState(AnimationState.IDLE);
                     final EyeWatcherProjectile projectile = new EyeWatcherProjectile();
-                    projectile.setPosition(physicsBody.getTranslationX() + WIDTH / 2, physicsBody.getTranslationY());
+                    projectile.setPosition(physicsBody.getTranslationX() + getWidth()/2f - projectile.getWidth()/2f,
+                            physicsBody.getTranslationY());
                     projectile.followTarget(target);
                     projectiles.add(projectile);
                 }
