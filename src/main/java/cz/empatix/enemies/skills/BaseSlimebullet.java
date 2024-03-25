@@ -44,7 +44,7 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
         physicsBody.onCollision(roomObject -> {
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
-            physicsBody.setType(CollisionType.NONE);
+            physicsBody.destroy();
         });
     }
 
@@ -65,15 +65,11 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
             return;
         }
         lightSource.setIntensity(0.75f * (1 - (float)animation.getCurrentTextureIndex()/animation.getCurrentStateNumSprites()));
-    }
-    public void fixedUpdate(final double dt){
-        if(animation.getCurrentState() != AnimationState.COLLISION){
-            return;
-        }
         if(animation.hasPlayedOnce()){
             lightSource.destroy();
-            physicsBody.destroy();
         }
+    }
+    public void fixedUpdate(final double dt){
     }
 
     @Override
