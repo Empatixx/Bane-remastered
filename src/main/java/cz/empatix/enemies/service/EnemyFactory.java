@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 
 public class EnemyFactory {
     private final List<Supplier<Enemy>> commonEnemiesSuppliers = List.of(Bat::new, Slime::new, DemonEye::new, Ghost::new, RedSlime::new, Snake::new, Rat::new,
-            EyeWatcher::new);
+            EyeWatcher::new, Spider::new);
     private final List<Supplier<Enemy>> bossEnemiesSuppliers = List.of(Golem::new);//KingSlime::new
 
     public Enemy createEnemy() {
