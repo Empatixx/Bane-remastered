@@ -46,6 +46,7 @@ public class Spider extends BossBaseEnemy {
             final Spiderling spiderling = new Spiderling();
             spiderling.setPosition(getX() + getWidth() / 2 - spiderling.getWidth() / 2, getY() + getHeight() / 2 - spiderling.getHeight() / 2);
             spiderling.setTarget(target);
+            spiderling.removeSpawning();
             spiderlings.add(spiderling);
         }
         spiderlings.forEach(s -> s.update(dt));

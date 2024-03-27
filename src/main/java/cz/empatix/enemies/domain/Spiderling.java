@@ -30,6 +30,10 @@ public class Spiderling extends BaseEnemy {
 
     }
 
+    public void removeSpawning() {
+        spawnTime -= SPAWN_INVINCIBILITY;
+    }
+
     @Override
     public void onSpawn() {
 
