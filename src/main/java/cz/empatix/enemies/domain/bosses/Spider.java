@@ -2,11 +2,13 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.*;
+import cz.empatix.enemies.skills.HatchSpiderlings;
 import cz.empatix.enemies.skills.Timer;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
+import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,9 +21,7 @@ public class Spider extends BossBaseEnemy {
     private static final int DEFAULT_DAMAGE = 1;
     private static final int DEFAULT_HEALTH = 7;
     private static final int MOVE_FORCE = 32_500_000;
-    private List<Spiderling> spiderlings;
-    private Timer timer;
-    private Player target;
+    private HatchSpiderlings hatchSpiderlings;
 
     public Spider() {
         super(WIDTH, HEIGHT);
@@ -34,39 +34,30 @@ public class Spider extends BossBaseEnemy {
         maxHealth = health = DEFAULT_HEALTH;
         damage = DEFAULT_DAMAGE;
         moveForce = MOVE_FORCE;
-        spiderlings = new ArrayList<>();
-        timer = new Timer(5000);
+        hatchSpiderlings = new HatchSpiderlings(() -> new Vector2f(getX() + getWidth() / 2, getY() + getHeight() / 2));
     }
 
     @Override
     public void update(double dt) {
         super.update(dt);
-        if (timer.isFinished()) {
-            timer.start();
-            final Spiderling spiderling = new Spiderling();
-            spiderling.setPosition(getX() + getWidth() / 2 - spiderling.getWidth() / 2, getY() + getHeight() / 2 - spiderling.getHeight() / 2);
-            spiderling.setTarget(target);
-            spiderling.removeSpawning();
-            spiderlings.add(spiderling);
-        }
-        spiderlings.forEach(s -> s.update(dt));
+        hatchSpiderlings.update((float)dt);
     }
     @Override
     public void setTarget(final Player player){
         super.setTarget(player);
-        this.target = player;
+        hatchSpiderlings.setTarget(player);
     }
 
     @Override
     public void fixedUpdate(double dt) {
         super.fixedUpdate(dt);
-        spiderlings.forEach(s -> s.fixedUpdate(dt));
-        spiderlings.removeIf(BaseEnemy::canRemove);
+        hatchSpiderlings.activate();
+        hatchSpiderlings.fixedUpdate((float)dt);
     }
     @Override
     public List<Renderable> getSubRenderables() {
         final List<Renderable> renderables = new ArrayList<>(super.getSubRenderables());
-        renderables.addAll(spiderlings);
+        renderables.addAll(hatchSpiderlings.getSubRenderables());
         return renderables;
     }
     @Override

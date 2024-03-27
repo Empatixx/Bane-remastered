@@ -18,11 +18,14 @@ import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class ShopRoom implements Room {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShopRoom.class);
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static int TOTAL_TABLES = 3;
     private final Map<RoomDirection, Room> neighbors;
