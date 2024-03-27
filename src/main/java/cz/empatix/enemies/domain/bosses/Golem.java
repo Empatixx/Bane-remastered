@@ -2,6 +2,8 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.enemies.domain.EnemyType;
+import cz.empatix.enemies.domain.SpawnableEnemy;
 import cz.empatix.enemies.skills.ArmorStacking;
 import cz.empatix.enemies.skills.Dash;
 import cz.empatix.enemies.skills.Healing;

@@ -1,0 +1,259 @@
+package cz.empatix.enemies.domain.bosses;
+
+import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.enemies.service.VitalityDisplayService;
+import cz.empatix.enemies.targetting.AStarTargetting;
+import cz.empatix.hud.domain.StatusBarType;
+import cz.empatix.hud.service.StatusBar;
+import cz.empatix.items.service.DroppableState;
+import cz.empatix.newphysics.attributes.DamageSource;
+import cz.empatix.newphysics.attributes.DamageSourceType;
+import cz.empatix.newphysics.attributes.Damageable;
+import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
+import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.newphysics.service.PhysicsObjectFactory;
+import cz.empatix.player.Player;
+import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.service.Camera;
+import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.OutlineBinding;
+import cz.empatix.render.shaderbindings.SpawnBinding;
+import org.joml.Vector2f;
+import org.joml.Vector4f;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSource, Enemy {
+    protected final static int SPAWN_INVINCIBILITY = 1500;
+    protected final static int TRAP_INVINCIBILITY = 1000;
+    protected final VitalityDisplayService vitalityDisplayService = new VitalityDisplayService();
+    protected final InterpolatedPhysicsObject physicsBody;
+    protected long moveForce;
+    protected DroppableState droppableState;
+    protected final AStarTargetting aStarTargetting;
+    protected final int width;
+    protected final int height;
+
+    protected Animation animation;
+
+    protected  int maxHealth;
+    protected int health;
+
+    protected int damage;
+
+    protected long lastHit;
+    protected long trapInvincibility;
+
+    protected long spawnTime;
+    private final StatusBar healthBar;
+
+    public BossBaseEnemy(final int width,
+                         final int height){
+        this.width = width;
+        this.height = height;
+
+        physicsBody = PhysicsObjectFactory.createInterpolated(width, height);
+        physicsBody.setType(CollisionType.ENEMY);
+        physicsBody.setUserData(this);
+
+        droppableState = new DroppableState(this::canDrop);
+
+        aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
+
+        spawnTime = System.currentTimeMillis();
+
+        final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
+        healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 450));
+    }
+
+    @Override
+    @Deprecated
+    public void onCollision() {
+
+    }
+    public boolean isSpawning(){
+        return System.currentTimeMillis() - spawnTime < SPAWN_INVINCIBILITY;
+    }
+
+    @Override
+    public void update(double dt){
+        if (isSpawning()){
+            return;
+        }
+        healthBar.update(dt);
+        animation.update();
+        aStarTargetting.update((float) dt);
+        vitalityDisplayService.update(dt);
+    }
+    @Override
+    public void fixedUpdate(double dt){
+        if (isSpawning()){
+            physicsBody.setEnabled(false);
+            return;
+        }
+        if (!physicsBody.isEnabled()){
+            physicsBody.setEnabled(true);
+        }
+        aStarTargetting.updatePath();
+        aStarTargetting.update((float) dt);
+        final Vector2f force = aStarTargetting.getDirectionTarget().mul(moveForce, moveForce);
+        physicsBody.applyForce(force.x(), force.y());
+    }
+
+
+    abstract public void onDeath();
+    abstract public void onSpawn();
+    @Override
+    public boolean canDropItems(){
+        return droppableState.canDrop();
+    }
+    public boolean canDrop(){
+        return droppableState != null && isDead() && animation.hasPlayedOnce();
+    }
+    public Vector2f getPosition(){
+        return physicsBody.getPhysicsTranslation();
+    }
+    public float getX(){
+        return physicsBody.getPhysicsTranslation().x();
+    }
+    public float getY(){
+        return physicsBody.getPhysicsTranslation().y();
+    }
+    public void setPosition(final float x, final float y){
+        physicsBody.setPhysicsTranslation(x, y);
+    }
+    public int getWidth(){
+        return width;
+    }
+    public int getHeight(){
+        return height;
+    }
+    public boolean isDead(){
+        return health <= 0;
+    }
+    public void hit(final int damage){
+        if (isSpawning()){
+            return;
+        }
+        if (isDead()) {
+            return;
+        }
+        vitalityDisplayService.addChange(-damage, getPosition(), getWidth(), getHeight());
+        this.health -= damage;
+        if (this.health < 0) {
+            this.health = 0;
+        }
+        if (isDead()) {
+            physicsBody.destroy();
+            onDeath();
+        }
+        lastHit = System.currentTimeMillis();
+    }
+    public void heal(final int amount){
+        if (isSpawning()){
+            return;
+        }
+        if (isDead()) {
+            return;
+        }
+        vitalityDisplayService.addChange(amount, getPosition(), getWidth(), getHeight());
+        this.health += amount;
+        if (this.health > maxHealth) {
+            this.health = maxHealth;
+        }
+
+    }
+    @Override
+    public void setTarget(final Player player){
+        aStarTargetting.target(player);
+    }
+
+    @Override
+    public boolean canRender() {
+        return Camera.isInProjection(getPosition(), getWidth(), getHeight()) &&
+                !(isDead() && animation.hasPlayedOnce());
+    }
+
+    @Override
+    public RenderData renderData() {
+        if (isSpawning()){
+            return new RenderData(
+                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getTextureId(),
+                    new SpawnBinding(Camera.getProjection(), (float) (System.currentTimeMillis() - spawnTime) / SPAWN_INVINCIBILITY)
+            );
+        }
+        final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
+        if (outline > 0) {
+            return new RenderData(
+                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getTextureId(),
+                    new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
+                            animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
+            );
+        } else {
+            return new RenderData(
+                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getTextureId(),
+                    new CommonBinding(Camera.getProjection())
+            );
+        }
+    }
+
+    @Override
+    public List<Renderable> getSubRenderables(){
+        final List<Renderable> renderables = new ArrayList<>(vitalityDisplayService.getRenderables());
+        renderables.add(healthBar);
+        return renderables;
+    }
+
+    @Override
+    public int getZIndex() {
+        return 3;
+    }
+
+    @Override
+    public RenderScene renderScene() {
+        return RenderScene.SCENE;
+    }
+
+    @Override
+    public void hit(DamageSourceType source, int damage) {
+        if (canHit(source, damage)) {
+            hit(damage);
+            if (source == DamageSourceType.TRAP) {
+                trapInvincibility = System.currentTimeMillis();
+            }
+        }
+    }
+    private boolean canHit(final DamageSourceType source, final int damage) {
+        if (source == DamageSourceType.TRAP){
+            return System.currentTimeMillis() - trapInvincibility > TRAP_INVINCIBILITY;
+        }
+        return source != DamageSourceType.ENEMY;
+    }
+    @Override
+    public DamageSourceType type() {
+        return DamageSourceType.ENEMY;
+    }
+
+    @Override
+    public int damage() {
+        if (isSpawning()){
+            return 0;
+        }
+        return damage;
+    }
+
+    public boolean canRemove() {
+        return isDead() && vitalityDisplayService.isEmpty() && animation.hasPlayedOnce();
+    }
+
+}

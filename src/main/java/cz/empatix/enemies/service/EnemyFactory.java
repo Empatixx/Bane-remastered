@@ -13,9 +13,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 public class EnemyFactory {
-    private final List<Supplier<Enemy>> commonEnemiesSuppliers = List.of(Bat::new, Slime::new, DemonEye::new, Ghost::new, RedSlime::new, Snake::new, Rat::new,
-            EyeWatcher::new, Spider::new);
-    private final List<Supplier<Enemy>> bossEnemiesSuppliers = List.of(Golem::new);//KingSlime::new
+    private final List<Supplier<Enemy>> commonEnemiesSuppliers;
+    private final List<Supplier<Enemy>> bossEnemiesSuppliers;
     public EnemyFactory(){
         final Reflections reflections = new Reflections("cz.empatix.enemies.domain");
         final Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(SpawnableEnemy.class);
@@ -40,6 +39,8 @@ public class EnemyFactory {
                throw new RuntimeException("Failed to create enemy from class: " + annotatedClass.getName(), e);
             }
         }
+        this.commonEnemiesSuppliers = commonEnemiesSuppliers;
+        this.bossEnemiesSuppliers = bossEnemiesSuppliers;
     }
 
     public Enemy createEnemy() {

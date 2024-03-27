@@ -62,7 +62,7 @@ public class RedSlime extends BaseEnemy {
         for (int i = 0; i < totalHitCount; i++){
             final RedSlimebullet slimebullet = new RedSlimebullet();
             slimebullet.setPosition(getX() + getWidth()/2f, getY() + getHeight()/2f);
-            slimebullet.setDirection(0,0,0,0, i * 1.25f);
+            slimebullet.setDirection(0,0,0,0, i * 1.00f);
             slimebullets.add(slimebullet);
         }
     }

@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-@SpawnableEnemy
 public class EnemyImpl implements Damageable, DamageSource {
     private final static int TRAP_INVINCIBILITY = 1000;
     private final VitalityDisplayService vitalityDisplayService;

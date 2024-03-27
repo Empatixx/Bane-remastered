@@ -2,6 +2,8 @@ package cz.empatix.enemies.domain.bosses;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.enemies.domain.EnemyType;
+import cz.empatix.enemies.domain.SpawnableEnemy;
 import cz.empatix.enemies.skills.KingSlimeArmageddon;
 import cz.empatix.enemies.skills.PurpleSlimebullet;
 import cz.empatix.enemies.skills.SlimeSmash;
@@ -14,7 +16,6 @@ import org.joml.Vector2f;
 
 import java.util.List;
 import java.util.stream.Stream;
-
 public class KingSlime implements Enemy {
     private final static int MOVE_FORCE = 10_000_000;
     private final static int SCALE = 4;
