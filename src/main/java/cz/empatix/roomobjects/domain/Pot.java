@@ -132,12 +132,12 @@ public class Pot implements RoomObject, Damageable {
     }
 
     @Override
-    public void hit(DamageSourceType source, int damage) {
+    public int hit(DamageSourceType source, int damage) {
         if (source == DamageSourceType.ENEMY) {
-            return;
+            return 0;
         }
         if (isDead()) {
-            return;
+            return 0;
         }
         health -= damage;
         lastHit = System.currentTimeMillis();
@@ -145,6 +145,7 @@ public class Pot implements RoomObject, Damageable {
         if (isDead()) {
             onDeath();
         }
+        return damage;
     }
 
     private void onDeath() {

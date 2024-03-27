@@ -23,6 +23,7 @@ import org.joml.Vector4f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class BossImpl implements Damageable, DamageSource {
@@ -37,7 +38,7 @@ public class BossImpl implements Damageable, DamageSource {
     private int health;
     private int damage;
     private final Supplier<Integer> moveForceSupplier;
-    private final Consumer<Integer> hitCallback;
+    private final Function<Integer, Integer> hitCallback;
     private long lastHit;
 
     public BossImpl(final int width,
@@ -45,7 +46,7 @@ public class BossImpl implements Damageable, DamageSource {
                     final int maxHealth,
                     final Animation animation,
                     final int damage,
-                    final Consumer<Integer> hitCallback,
+                    final Function<Integer, Integer> hitCallback,
                     final Supplier<Integer> moveForceSupplier) {
         this.maxHealth = health = maxHealth;
         this.width = width;
@@ -72,7 +73,7 @@ public class BossImpl implements Damageable, DamageSource {
                     final int maxHealth,
                     final Animation animation,
                     final int damage,
-                    final Consumer<Integer> hitCallback,
+                    final Function<Integer, Integer> hitCallback,
                     final Supplier<Integer> moveForceSupplier,
                     final int collisionWidth,
                     final int collisionHeight,
@@ -201,12 +202,13 @@ public class BossImpl implements Damageable, DamageSource {
             );
         }
     }
+
     public boolean isRightFacing() {
         return aStarTargetting.isTargetLeftFromEnemy();
     }
 
     public boolean canRender() {
-       return Camera.isInProjection(getPosition(), getWidth(), getHeight());
+        return Camera.isInProjection(getPosition(), getWidth(), getHeight());
     }
 
     public void setTarget(final Player player) {
@@ -224,13 +226,14 @@ public class BossImpl implements Damageable, DamageSource {
     }
 
     @Override
-    public void hit(DamageSourceType source, int damage) {
+    public int hit(DamageSourceType source, int damage) {
         if (canHit(source, damage)) {
-            hitCallback.accept(damage);
+            return hitCallback.apply(damage);
         }
+        return 0;
     }
 
-    public PhysicsObject getPhysicsObject(){
+    public PhysicsObject getPhysicsObject() {
         return physicsBody;
     }
 }

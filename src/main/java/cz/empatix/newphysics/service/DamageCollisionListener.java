@@ -17,7 +17,8 @@ public class DamageCollisionListener implements CollisionListener<PhysicsObject,
                 if (damageSource.damage() <= 0) {
                     return;
                 }
-                d.hit(damageSource.type(), damageSource.damage());
+                final int received = d.hit(damageSource.type(), damageSource.damage());
+                damageSource.postDamage(received);
             }
         }
     }

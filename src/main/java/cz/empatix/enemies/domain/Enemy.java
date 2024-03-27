@@ -9,7 +9,7 @@ import org.joml.Vector2f;
 public interface Enemy extends Drawable{
     void update(final double dt);
     void fixedUpdate(final double dt);
-    void hit(final int damage);
+    int hit(final int damage);
     void heal(final int health);
     @Deprecated
     void onCollision();

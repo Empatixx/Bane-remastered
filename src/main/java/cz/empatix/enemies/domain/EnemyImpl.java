@@ -215,12 +215,13 @@ public class EnemyImpl implements Damageable, DamageSource {
     }
 
     @Override
-    public void hit(DamageSourceType source, int damage) {
+    public int hit(DamageSourceType source, int damage) {
         if (canHit(source, damage)) {
             hitCallback.accept(damage);
             if (source == DamageSourceType.TRAP) {
                 trapInvincibility = System.currentTimeMillis();
             }
         }
+        return 0;
     }
 }

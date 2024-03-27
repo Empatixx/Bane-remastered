@@ -128,12 +128,13 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
     public boolean isDead(){
         return health <= 0;
     }
-    public void hit(final int damage){
+    @Override
+    public int hit(final int damage){
         if (isSpawning()){
-            return;
+            return 0;
         }
         if (isDead()) {
-            return;
+            return 0;
         }
         vitalityDisplayService.addChange(-damage, getPosition(), getWidth(), getHeight());
         this.health -= damage;
@@ -145,6 +146,7 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
             onDeath();
         }
         lastHit = System.currentTimeMillis();
+        return damage;
     }
     public void heal(final int amount){
         if (isSpawning()){
@@ -213,13 +215,15 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
     }
 
     @Override
-    public void hit(DamageSourceType source, int damage) {
+    public int hit(DamageSourceType source, int damage) {
         if (canHit(source, damage)) {
-            hit(damage);
+            final int received = hit(damage);
             if (source == DamageSourceType.TRAP) {
                 trapInvincibility = System.currentTimeMillis();
             }
+            return received;
         }
+        return 0;
     }
     private boolean canHit(final DamageSourceType source, final int damage) {
         if (source == DamageSourceType.TRAP){

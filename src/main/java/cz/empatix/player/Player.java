@@ -139,13 +139,13 @@ public class Player implements Drawable, InteractEntity, Damageable {
         gazewindService.update((float) dt);
     }
 
-    public void hit(final int rawDamage) {
+    public int hit(final int rawDamage) {
         final int damage = damageHook.onDamage(rawDamage);
         if (isDead()) {
-            return;
+            return 0;
         }
         if (isInvulnerable()) {
-            return;
+            return 0;
         }
         if (armor > 0) {
             armor -= damage;
@@ -164,11 +164,12 @@ public class Player implements Drawable, InteractEntity, Damageable {
             bottom = false;
             physicsBody.setVelocity(0, 0);
             AUDIO_SERVICE.play(SoundEffect.DEATH);
-            return;
+            return 0;
         }
         AUDIO_SERVICE.play(SoundEffect.PLAYER_HURT);
         RedVignette.setMaxVignette();
         lastHitTime = System.currentTimeMillis();
+        return damage;
     }
 
     public void fixedUpdate(final double dt) {
@@ -411,10 +412,11 @@ public class Player implements Drawable, InteractEntity, Damageable {
     }
 
     @Override
-    public void hit(DamageSourceType source, int damage) {
+    public int hit(DamageSourceType source, int damage) {
         if (canHit(source, damage)) {
-            hit(damage);
+            return hit(damage);
         }
+        return 0;
     }
 
     public void addDamageHook(final DamageEventHook hook) {
