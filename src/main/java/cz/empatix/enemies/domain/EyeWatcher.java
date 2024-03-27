@@ -11,7 +11,7 @@ import cz.empatix.render.domain.AnimationState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-
+@SpawnableEnemy
 public class EyeWatcher extends BaseEnemy{
     private final static long SHOOT_TIME = 3000;
     private static final int SCALE = 3;

@@ -10,7 +10,7 @@ import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 
 import java.util.List;
-
+@SpawnableEnemy
 public class Rat extends BaseEnemy{
     private final static int MOVE_FORCE = 8_500000;
     private final static float SCALE = 1.5f;

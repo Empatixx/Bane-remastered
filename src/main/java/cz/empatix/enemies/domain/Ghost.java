@@ -12,7 +12,7 @@ import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 
 import java.util.List;
-
+@SpawnableEnemy
 public class Ghost extends BaseEnemy{
     private final static int MOVE_FORCE = 8_500_000;
     private final static int SCALE = 4;

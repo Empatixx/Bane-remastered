@@ -6,7 +6,6 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
-
 public interface Enemy extends Drawable{
     void update(final double dt);
     void fixedUpdate(final double dt);

@@ -14,7 +14,7 @@ import org.joml.Vector2i;
 
 import java.util.List;
 import java.util.stream.Stream;
-
+@SpawnableEnemy
 public class Slime extends BaseEnemy {
     private final static int MOVE_FORCE = 1_000_000;
     private final static float SCALE = 3f;

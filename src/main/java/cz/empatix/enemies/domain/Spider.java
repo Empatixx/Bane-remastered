@@ -5,6 +5,7 @@ import cz.empatix.enemies.domain.BaseEnemy;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 
+@SpawnableEnemy
 public class Spider extends BaseEnemy {
     private static final int SCALE = 3;
     private static final int HEIGHT = 40 * SCALE;

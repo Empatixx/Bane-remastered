@@ -209,6 +209,11 @@
             <version>${joml.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.12</version>
+        </dependency>
+        <dependency>
             <groupId>com.code-disaster.steamworks4j</groupId>
             <artifactId>steamworks4j</artifactId>
             <version>${steamworks4j.version}</version>
