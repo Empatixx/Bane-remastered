@@ -37,5 +37,6 @@ public class Spiderling extends BaseEnemy {
     @Override
     public void onSpawn() {
 
+
     }
 }

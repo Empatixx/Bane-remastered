@@ -6,6 +6,7 @@ import cz.empatix.enemies.skills.RedSlimebullet;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
+import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +64,13 @@ public class RedSlime extends BaseEnemy {
             final RedSlimebullet slimebullet = new RedSlimebullet();
             slimebullet.setPosition(getX() + getWidth()/2f, getY() + getHeight()/2f);
             slimebullet.setDirection(0,0,0,0, i * 1.00f);
+            slimebullets.add(slimebullet);
+        }
+        for (int i = 0; i < totalHitCount; i++) {
+            final RedSlimebullet slimebullet = new RedSlimebullet();
+            final Vector2f position = new Vector2f(getX() + getWidth() / 2f, getY() + getHeight() / 2f);
+            slimebullet.setPosition(position.x(), position.y());
+            slimebullet.setDirection(position.x(), position.y(), position.x(), position.y(),(float)(Math.PI * 2 * (i+1)) / totalHitCount);
             slimebullets.add(slimebullet);
         }
     }
