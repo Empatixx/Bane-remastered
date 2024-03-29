@@ -11,6 +11,7 @@ public interface Enemy extends Drawable{
     void fixedUpdate(final double dt);
     int hit(final int damage);
     void heal(final int health);
+    int getHealth();
     @Deprecated
     void onCollision();
     void onSpawn();
@@ -33,6 +34,6 @@ public interface Enemy extends Drawable{
     void setPosition(final float x,final float y);
     void setTarget(final Player player);
     default void despawn(){
-
+        hit(getHealth());
     }
 }

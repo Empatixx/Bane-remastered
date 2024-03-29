@@ -244,6 +244,11 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
         return damage;
     }
 
+    @Override
+    public int getHealth(){
+        return health;
+    }
+
     public boolean canRemove() {
         return isDead() && vitalityDisplayService.isEmpty() && animation.hasPlayedOnce();
     }

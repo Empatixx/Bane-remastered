@@ -18,8 +18,9 @@ public class GreenSpiderling extends BaseEnemy {
     public GreenSpiderling() {
         super(WIDTH, HEIGHT);
         animation = Animation.builder()
-                .setTotal(1,5)
+                .setTotal(2,5)
                 .addState(AnimationState.IDLE, 0, 5, WIDTH, HEIGHT, 120)
+                .addState(AnimationState.DEATH, 1, 3, WIDTH, HEIGHT, 150)
                 .texture(AssetsService.getTexture("ingame/green_spiderling.tga"))
                 .build();
         animation.setState(AnimationState.IDLE);
@@ -29,7 +30,7 @@ public class GreenSpiderling extends BaseEnemy {
     }
     @Override
     public void onDeath() {
-
+        animation.setState(AnimationState.DEATH);
     }
 
     public void removeSpawning() {

@@ -1,0 +1,75 @@
+package cz.empatix.enemies.skills;
+
+import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.player.Player;
+import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.AnimationState;
+import org.checkerframework.checker.units.qual.A;
+import org.joml.Vector2f;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+import java.util.function.Supplier;
+
+public class SpitCobweb implements Skill {
+    private static final int COOLDOWN = 5000;
+    private final Timer timer;
+    private final Animation animation;
+    private final PhysicsObject physicsObject;
+    private final List<CobwebProjectile> cobwebProjectiles;
+    private final Supplier<Vector2f> cobwebPositionSupplier;
+    private Player target;
+    private boolean canShoot;
+    public SpitCobweb(final Animation animation,
+                      final PhysicsObject physicsObject,
+                      final Supplier<Vector2f> cobwebPositionSupplier) {
+        timer = new Timer(COOLDOWN);
+        timer.start();
+        this.animation = animation;
+        this.physicsObject = physicsObject;
+        cobwebProjectiles = new ArrayList<>();
+        this.cobwebPositionSupplier = cobwebPositionSupplier;
+    }
+
+    @Override
+    public void activate() {
+        if (timer.isFinished()) {
+            timer.start();
+            animation.setState(AnimationState.SPELL0);
+            physicsObject.setVelocity(0,0);
+            physicsObject.clearForce();
+            physicsObject.clearAccumulatedForce();
+        }
+    }
+
+    public void setTarget(final Player player) {
+        this.target = player;
+    }
+
+    @Override
+    public void update(float dt) {
+        if (animation.hasPlayedOnce() && animation.getCurrentState() == AnimationState.SPELL0) {
+            canShoot = true;
+        }
+    }
+    @Override
+    public void fixedUpdate(float dt) {
+        if(canShoot){
+            final Vector2f cobwebPosition = cobwebPositionSupplier.get();
+            final Vector2f targetPosition = target.getPosition();
+            final CobwebProjectile cobwebProjectile = new CobwebProjectile();
+            cobwebProjectile.setPosition(cobwebPosition.x, cobwebPosition.y);
+            cobwebProjectile.setDirection(cobwebPosition.x, cobwebPosition.y,
+                    targetPosition.x + target.getWidth() / 2f, targetPosition.y + target.getHeight() / 2f,
+                    0);
+            cobwebProjectiles.add(cobwebProjectile);
+            canShoot = false;
+        }
+    }
+    @Override
+    public List<Renderable> getSubRenderables() {
+        return List.copyOf(cobwebProjectiles);
+    }
+}

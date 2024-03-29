@@ -76,14 +76,15 @@ public class Golem implements Enemy {
     }
 
     @Override
-    public void hit(final int damage) {
+    public int hit(final int damage) {
         if (isDead()) {
-            return;
+            return 0;
         }
-        bossImpl.hit(damage);
+        final int received = bossImpl.hit(damage);
         if (isDead()) {
             onDeath();
         }
+        return received;
     }
 
     private void onDeath() {
@@ -167,6 +168,11 @@ public class Golem implements Enemy {
     @Override
     public void heal(final int health) {
         bossImpl.heal(health);
+    }
+
+    @Override
+    public int getHealth() {
+        return bossImpl.getHealth();
     }
 
     @Override

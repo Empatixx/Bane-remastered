@@ -1,6 +1,9 @@
 package cz.empatix.enemies.skills;
 
-import cz.empatix.enemies.domain.Spiderling;
+import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.enemies.domain.GreenSpiderling;
+import cz.empatix.enemies.domain.PurpleSpiderling;
+import cz.empatix.enemies.domain.RedSpiderling;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import org.joml.Vector2f;
@@ -9,38 +12,84 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-public class HatchSpiderlings implements Skill{
+public class HatchSpiderlings implements Skill {
     private final static int HATCH_DELAY = 5000;
     private final Timer timer;
     private final Supplier<Vector2f> spawnPosition;
-    private final List<Spiderling> spiderlings;
+    private final List<Enemy> spiderlings;
     private Player target;
-    public HatchSpiderlings(final Supplier<Vector2f> spawnPosition){
+    private HatchRotation hatchRotation;
+
+    public HatchSpiderlings(final Supplier<Vector2f> spawnPosition) {
         this.timer = new Timer(HATCH_DELAY);
         this.spawnPosition = spawnPosition;
         spiderlings = new ArrayList<>();
+        hatchRotation = HatchRotation.RED;
     }
 
-    public void setTarget(final Player player){
+    public void setTarget(final Player player) {
         this.target = player;
     }
+
     @Override
-    public void fixedUpdate(final float dt){
+    public void fixedUpdate(final float dt) {
         spiderlings.forEach(s -> s.fixedUpdate(dt));
-        spiderlings.removeIf(Spiderling::canRemove);
+        spiderlings.removeIf(Enemy::canRemove);
     }
 
     @Override
     public void activate() {
-        if(timer.isFinished()){
+        if (timer.isFinished()) {
             timer.start();
-            final Spiderling spiderling = new Spiderling();
-            final Vector2f spawnPosition = this.spawnPosition.get();
-            spiderling.setPosition(spawnPosition.x(), spawnPosition.y());
-            spiderling.setTarget(target);
-            spiderling.removeSpawning();
-            spiderlings.add(spiderling);
+            switch (hatchRotation) {
+                case RED -> {
+                    final RedSpiderling spiderling = new RedSpiderling();
+                    final Vector2f spawnPosition = this.spawnPosition.get();
+                    spiderling.setPosition(spawnPosition.x(), spawnPosition.y());
+                    spiderling.setTarget(target);
+                    spiderling.removeSpawning();
+                    spiderlings.add(spiderling);
+                }
+                case GREEN -> {
+                    final GreenSpiderling spiderling = new GreenSpiderling();
+                    final Vector2f spawnPosition = this.spawnPosition.get();
+                    spiderling.setPosition(spawnPosition.x(), spawnPosition.y());
+                    spiderling.setTarget(target);
+                    spiderling.removeSpawning();
+                    spiderlings.add(spiderling);
+                }
+                case PURPLE -> {
+                    final PurpleSpiderling spiderling = new PurpleSpiderling();
+                    final Vector2f spawnPosition = this.spawnPosition.get();
+                    spiderling.setPosition(spawnPosition.x(), spawnPosition.y());
+                    spiderling.setTarget(target);
+                    spiderling.removeSpawning();
+                    spiderlings.add(spiderling);
+                }
+            }
+            hatchRotation = hatchRotation.next();
         }
+    }
+
+    public boolean canRemove() {
+        return spiderlings.isEmpty();
+    }
+
+    private enum HatchRotation {
+        RED,
+        GREEN,
+        PURPLE;
+
+        public HatchRotation next() {
+            return switch (this) {
+                case RED -> GREEN;
+                case GREEN -> PURPLE;
+                case PURPLE -> RED;
+            };
+        }
+    }
+    public void despawnAll(){
+        spiderlings.forEach(Enemy::despawn);
     }
 
     @Override

@@ -105,9 +105,9 @@ public class BossImpl implements Damageable, DamageSource {
         return source != DamageSourceType.ENEMY;
     }
 
-    public void hit(final int damage) {
+    public int hit(final int damage) {
         if (isDead()) {
-            return;
+            return 0;
         }
         vitalityDisplayService.addChange(-damage, getPosition(), getWidth(), getHeight());
         this.health -= damage;
@@ -115,6 +115,7 @@ public class BossImpl implements Damageable, DamageSource {
             this.health = 0;
         }
         lastHit = System.currentTimeMillis();
+        return damage;
     }
 
     public void update(final double dt) {
@@ -235,5 +236,9 @@ public class BossImpl implements Damageable, DamageSource {
 
     public PhysicsObject getPhysicsObject() {
         return physicsBody;
+    }
+
+    public int getHealth() {
+        return health;
     }
 }

@@ -256,6 +256,10 @@ public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSourc
         return damage;
     }
 
+    @Override
+    public int getHealth(){
+        return health;
+    }
     public boolean canRemove() {
         return isDead() && vitalityDisplayService.isEmpty() && animation.hasPlayedOnce();
     }

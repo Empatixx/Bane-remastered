@@ -52,9 +52,12 @@ public class RedSlime extends BaseEnemy {
     }
 
     @Override
-    public void hit(final int damage) {
-        totalHitCount++;
-        super.hit(damage);
+    public int hit(final int damage) {
+        final int received = super.hit(damage);
+        if (received > 0){
+            totalHitCount++;
+        }
+        return received;
     }
 
     @Override

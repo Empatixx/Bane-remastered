@@ -32,8 +32,8 @@ public class FlamethrowerSupplier implements RoomObjectSupplier<Flamethrower> {
 
     @Override
     public Flamethrower supply() {
+        final Flamethrower flamethrower = new Flamethrower();
         try {
-            final Flamethrower flamethrower = new Flamethrower();
 
             final PositionFinder positionFinder = new PositionFinder();
             final Supplier<Vector2f> positionSupplier = PositionSupplierFactory.tileBasedPositionSupplier(
@@ -49,6 +49,7 @@ public class FlamethrowerSupplier implements RoomObjectSupplier<Flamethrower> {
             return flamethrower;
         } catch (Exception e){
             LOGGER.warn("Could not supply a flamethrower in room {}, exception: {}", room, e.getMessage());
+            flamethrower.destroy();
             return null;
         }
     }
