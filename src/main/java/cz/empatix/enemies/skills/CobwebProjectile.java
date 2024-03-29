@@ -43,11 +43,12 @@ public class CobwebProjectile implements Drawable {
             if (userData instanceof Player player) {
                 final double currentDamping = other.getLinearDamping();
                 if (currentDamping > 10){
+                    increaseDamping = 0;
                     return;
                 }
                 LOGGER.info("Player entered cobweb updating damping from {} by damping {}", currentDamping, increaseDamping);
                 increaseDamping = 3;
-                //other.setLinearDamping(currentDamping + increaseDamping);
+                other.setLinearDamping(currentDamping + increaseDamping);
             }
         });
         physicsBody.onLeave((other) -> {
@@ -55,7 +56,7 @@ public class CobwebProjectile implements Drawable {
             if (userData instanceof Player player) {
                 final double currentDamping = other.getLinearDamping();
                 LOGGER.info("Player left cobweb updating damping from {} by damping {}", currentDamping, increaseDamping);
-                //other.setLinearDamping(currentDamping - increaseDamping);
+                other.setLinearDamping(currentDamping - increaseDamping);
                 increaseDamping = 0;
             }
         });

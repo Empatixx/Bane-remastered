@@ -10,6 +10,11 @@ import org.dyn4j.world.NarrowphaseCollisionData;
 import org.dyn4j.world.WorldCollisionData;
 
 public class CollisionListener implements org.dyn4j.world.listener.CollisionListener<PhysicsObject, BodyFixture> {
+    private final EnterLeaveListener enterLeaveListener;
+
+    public CollisionListener(final EnterLeaveListener enterLeaveListener) {
+        this.enterLeaveListener = enterLeaveListener;
+    }
 
     @Override
     public boolean collision(BroadphaseCollisionData<PhysicsObject, BodyFixture> collision) {
@@ -21,17 +26,23 @@ public class CollisionListener implements org.dyn4j.world.listener.CollisionList
     public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
         final PhysicsObject a = collision.getBody1();
         final PhysicsObject b = collision.getBody2();
+
+        enterLeaveListener.enter(a, b);
+
+        if (!canCollide(a, b)) {
+            return false;
+        }
+        a.onCollision(b);
+        b.onCollision(a);
         return true;
     }
 
     @Override
     public boolean collision(ManifoldCollisionData<PhysicsObject, BodyFixture> collision) {
-        final PhysicsObject a = collision.getBody1();
-        final PhysicsObject b = collision.getBody2();
-
         return true;
     }
-    private boolean canCollide(final PhysicsObject o1, final PhysicsObject o2){
+
+    private boolean canCollide(final PhysicsObject o1, final PhysicsObject o2) {
         final CollisionType t1 = o1.getType();
         final CollisionType t2 = o2.getType();
 

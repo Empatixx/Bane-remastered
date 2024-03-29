@@ -40,10 +40,12 @@ public class PhysicsEngine {
         world.setSettings(settings);
         world.setBounds(null);
 
+        final EnterLeaveListener enterLeaveListener = new EnterLeaveListener();
+
         world.addStepListener(new InterpolationStepListener());
+        world.addStepListener(enterLeaveListener);
         world.addCollisionListener(new DamageCollisionListener());
-        world.addCollisionListener(new CollisionListener());
-        world.addContactListener(new ContactListenerImpl());
+        world.addCollisionListener(new CollisionListener(enterLeaveListener));
     }
 
     public void add(final PhysicsObject object) {

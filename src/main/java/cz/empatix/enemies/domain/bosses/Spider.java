@@ -67,6 +67,9 @@ public class Spider extends BossBaseEnemy {
 
         hatchSpiderlings.fixedUpdate((float)dt);
         spitCobweb.fixedUpdate((float)dt);
+        if (isDead()){
+            return;
+        }
 
         if (animation.getCurrentState() == AnimationState.SPELL0){
             if (animation.hasPlayedOnce()){
@@ -93,6 +96,7 @@ public class Spider extends BossBaseEnemy {
     public void onDeath() {
         animation.setState(AnimationState.DEATH);
         hatchSpiderlings.despawnAll();
+        spitCobweb.destroy();
     }
 
     @Override

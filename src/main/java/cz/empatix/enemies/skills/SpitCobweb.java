@@ -14,7 +14,7 @@ import java.util.Vector;
 import java.util.function.Supplier;
 
 public class SpitCobweb implements Skill {
-    private static final int COOLDOWN = 1000;
+    private static final int COOLDOWN = 5000;
     private final Timer timer;
     private final Animation animation;
     private final PhysicsObject physicsObject;
@@ -67,6 +67,9 @@ public class SpitCobweb implements Skill {
             cobwebProjectiles.add(cobwebProjectile);
             canShoot = false;
         }
+    }
+    public void destroy(){
+        cobwebProjectiles.forEach(c -> c.destroy());
     }
     @Override
     public List<Renderable> getSubRenderables() {
