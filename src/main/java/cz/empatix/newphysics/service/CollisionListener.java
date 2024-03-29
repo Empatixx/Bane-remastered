@@ -7,6 +7,7 @@ import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.world.BroadphaseCollisionData;
 import org.dyn4j.world.ManifoldCollisionData;
 import org.dyn4j.world.NarrowphaseCollisionData;
+import org.dyn4j.world.WorldCollisionData;
 
 public class CollisionListener implements org.dyn4j.world.listener.CollisionListener<PhysicsObject, BodyFixture> {
 
@@ -20,17 +21,14 @@ public class CollisionListener implements org.dyn4j.world.listener.CollisionList
     public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
         final PhysicsObject a = collision.getBody1();
         final PhysicsObject b = collision.getBody2();
-        final boolean canCollide = canCollide(a, b);
-        if (!canCollide) {
-            return false;
-        }
-        a.onCollision(b);
-        b.onCollision(a);
         return true;
     }
 
     @Override
     public boolean collision(ManifoldCollisionData<PhysicsObject, BodyFixture> collision) {
+        final PhysicsObject a = collision.getBody1();
+        final PhysicsObject b = collision.getBody2();
+
         return true;
     }
     private boolean canCollide(final PhysicsObject o1, final PhysicsObject o2){

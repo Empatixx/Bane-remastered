@@ -7,10 +7,11 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.PoisonVignetteBinding;
 import cz.empatix.render.shaderbindings.RedVignetteBinding;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 public class PoisonVignette implements Postprocess{
-    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE);
+    private final static Set<RenderScene> SUPPORTED = EnumSet.of(RenderScene.SCENE);
     private int textureId;
     private static float vignetteAmount;
 

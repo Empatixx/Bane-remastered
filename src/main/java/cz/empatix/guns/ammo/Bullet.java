@@ -10,6 +10,7 @@ import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
+import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -46,6 +47,9 @@ public class Bullet implements Drawable, DamageSource {
         physicsBody.setUserData(this);
         this.damage = damage;
         physicsBody.onCollision(roomObject-> {
+            if (roomObject.getUserData() instanceof Player){
+                return;
+            }
             physicsBody.destroy();
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);

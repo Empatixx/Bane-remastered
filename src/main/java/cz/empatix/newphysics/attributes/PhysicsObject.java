@@ -17,10 +17,9 @@ import java.util.function.Consumer;
 public class PhysicsObject extends Body {
     private final static Consumer NOOP = r -> {
     };
-    private final static Runnable NOOP_RUNNABLE = () -> {
-    };
     private Consumer<PhysicsObject> onCollision = NOOP;
-    private Runnable postPhysicsUpdate = NOOP_RUNNABLE;
+    private Consumer<PhysicsObject> onEnter = NOOP;
+    private Consumer<PhysicsObject> onLeave = NOOP;
     private CollisionType collisionType;
     private boolean remove;
     protected final Vector2i offset = new Vector2i();
@@ -28,15 +27,21 @@ public class PhysicsObject extends Body {
     public void onCollision(final Consumer<PhysicsObject> onCollision) {
         this.onCollision = onCollision;
     }
-    public void postPhysicsUpdate() {
-        this.postPhysicsUpdate.run();
+    public void onEnter(final Consumer<PhysicsObject> onEnter) {
+        this.onEnter = onEnter;
     }
-    public void postPhysicsUpdate(final Runnable postPhysicsUpdate) {
-        this.postPhysicsUpdate = postPhysicsUpdate;
+    public void onLeave(final Consumer<PhysicsObject> onLeave) {
+        this.onLeave = onLeave;
     }
 
     public void onCollision(final PhysicsObject physicsObject) {
         onCollision.accept(physicsObject);
+    }
+    public void onEnter(final PhysicsObject physicsObject) {
+        onEnter.accept(physicsObject);
+    }
+    public void onLeave(final PhysicsObject physicsObject) {
+        onLeave.accept(physicsObject);
     }
 
     public void setPhysicsTranslation(float x, float y) {

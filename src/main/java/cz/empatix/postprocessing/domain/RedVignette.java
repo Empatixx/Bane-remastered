@@ -6,10 +6,11 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.RedVignetteBinding;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 public class RedVignette implements Postprocess {
-    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE);
+    private final static Set<RenderScene> SUPPORTED = EnumSet.of(RenderScene.SCENE);
     private final static float VIGNETTE_TWEEN = 2f;
     private static float vignetteAmount;
     private static boolean timeBased;

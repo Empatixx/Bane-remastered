@@ -14,7 +14,7 @@ import java.util.Vector;
 import java.util.function.Supplier;
 
 public class SpitCobweb implements Skill {
-    private static final int COOLDOWN = 5000;
+    private static final int COOLDOWN = 1000;
     private final Timer timer;
     private final Animation animation;
     private final PhysicsObject physicsObject;
@@ -60,9 +60,9 @@ public class SpitCobweb implements Skill {
             final Vector2f cobwebPosition = cobwebPositionSupplier.get();
             final Vector2f targetPosition = target.getPosition();
             final CobwebProjectile cobwebProjectile = new CobwebProjectile();
-            cobwebProjectile.setPosition(cobwebPosition.x, cobwebPosition.y);
-            cobwebProjectile.setDirection(cobwebPosition.x, cobwebPosition.y,
-                    targetPosition.x + target.getWidth() / 2f, targetPosition.y + target.getHeight() / 2f,
+            cobwebProjectile.setPosition(cobwebPosition.x - cobwebProjectile.getWidth()/2f, cobwebPosition.y - cobwebProjectile.getWidth()/2f);
+            cobwebProjectile.setDirection(cobwebPosition.x - cobwebProjectile.getWidth()/2f, cobwebPosition.y - cobwebProjectile.getWidth()/2f,
+                    targetPosition.x, targetPosition.y,
                     0);
             cobwebProjectiles.add(cobwebProjectile);
             canShoot = false;

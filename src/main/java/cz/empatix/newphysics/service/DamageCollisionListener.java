@@ -30,16 +30,16 @@ public class DamageCollisionListener implements CollisionListener<PhysicsObject,
 
     @Override
     public boolean collision(NarrowphaseCollisionData<PhysicsObject, BodyFixture> collision) {
-        final Object a = collision.getBody1().getUserData();
-        final Object b = collision.getBody2().getUserData();
-
-        postprocessDamageable(a, b);
-        postprocessDamageable(b, a);
         return true;
     }
 
     @Override
     public boolean collision(ManifoldCollisionData<PhysicsObject, BodyFixture> collision) {
+        final Object a = collision.getBody1().getUserData();
+        final Object b = collision.getBody2().getUserData();
+
+        postprocessDamageable(a, b);
+        postprocessDamageable(b, a);
         return true;
     }
 }

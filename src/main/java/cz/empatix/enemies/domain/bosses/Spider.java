@@ -41,9 +41,9 @@ public class Spider extends BossBaseEnemy {
         hatchSpiderlings = new HatchSpiderlings(() -> new Vector2f(getX() + getWidth() / 2, getY() + getHeight() / 2));
         spitCobweb = new SpitCobweb(animation, physicsBody, () -> {
             if (aStarTargetting.isTargetLeftFromEnemy()){
-                return new Vector2f(getX() + getWidth() / 4, getY() + getHeight() - 20);
+                return new Vector2f(getX() + getWidth() / 2 - 12 * SCALE, getY() + getHeight() - 5 * SCALE);
             } else {
-                return new Vector2f(getX() + getWidth() * 3 / 4, getY() + getHeight() - 20);
+                return new Vector2f(getX() + getWidth() / 2 + 12 * SCALE, getY() + getHeight() - 5 * SCALE);
             }
         });
     }

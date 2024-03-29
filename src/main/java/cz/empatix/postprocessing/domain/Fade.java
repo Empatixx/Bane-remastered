@@ -6,10 +6,11 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.FadeBinding;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 public class Fade implements Postprocess {
-    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.HUD, RenderScene.SCENE);
+    private final static Set<RenderScene> SUPPORTED = EnumSet.of(RenderScene.HUD, RenderScene.SCENE);
     private final static float MAX_VALUE = 5f;
     private final static float MIN_VALUE = 0f;
     private final static float DEFAULT_TWEEN = 0f;

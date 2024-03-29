@@ -6,6 +6,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.GaussianBlurBinding;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 public class GaussianBlur implements Postprocess{
@@ -13,7 +14,7 @@ public class GaussianBlur implements Postprocess{
     private final static float MAX_DARKEN_AMOUNT = 0.3f;
     private final static float BLUR_STEP = 5f;
     private final static float DARKNESS_STEP = 0.5f;
-    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE, RenderScene.HUD);
+    private final static Set<RenderScene> SUPPORTED = EnumSet.of(RenderScene.SCENE, RenderScene.HUD);
     private int textureId;
     private static float blurAmount = 0;
     private static float darkness = 0;

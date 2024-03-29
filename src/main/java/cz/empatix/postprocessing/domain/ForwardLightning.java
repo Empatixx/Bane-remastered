@@ -7,11 +7,12 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.ForwardLightningBinding;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 
 public class ForwardLightning implements Postprocess {
-    private final static Set<RenderScene> SUPPORTED = Set.of(RenderScene.SCENE);
+    private final static Set<RenderScene> SUPPORTED = EnumSet.of(RenderScene.SCENE);
     private final LightningService lightningService = LightningService.getInstance();
     private int textureId;
 
