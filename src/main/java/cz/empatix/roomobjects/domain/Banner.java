@@ -50,6 +50,7 @@ public class Banner implements RoomObject {
         return 2;
     }
 
+
     @Override
     public boolean canRender() {
         return Camera.isInProjection(position, getWidth(), getHeight());

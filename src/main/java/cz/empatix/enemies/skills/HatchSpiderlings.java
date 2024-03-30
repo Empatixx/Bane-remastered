@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class HatchSpiderlings implements Skill {
-    private final static int HATCH_DELAY = 7500;
+    private final static int HATCH_DELAY = 2500;
     private final Timer timer;
     private final Supplier<Vector2f> spawnPosition;
     private final List<Enemy> spiderlings;

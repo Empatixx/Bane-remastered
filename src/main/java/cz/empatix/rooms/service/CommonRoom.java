@@ -1,6 +1,7 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.enemies.service.EnemyBoundsService;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -34,6 +35,7 @@ public class CommonRoom implements Room {
     private static final int MAX_FLAMETHROWERS = 1;
     private static final int MAX_POT = 2;
     private final EnemyService enemyService;
+    private final EnemyBoundsService enemyBoundsService;
     private final RoomObjectService roomObjectService;
     private final ItemService itemService;
     private final RoomLockService roomLockService;
@@ -47,6 +49,7 @@ public class CommonRoom implements Room {
         this.itemService = itemService;
         tileMap = new ProceduralTileMap(rows, cols, xOffset, yOffset, neighbors);
         enemyService = new EnemyService(itemService, statisticsService);
+        enemyBoundsService = new EnemyBoundsService(this, enemyService);
         roomObjectService = new RoomObjectService();
         roomLockService = new RoomLockService(this, neighbors);
         visited = false;
@@ -142,6 +145,7 @@ public class CommonRoom implements Room {
     @Override
     public void fixedUpdate(double dt) {
         enemyService.fixedUpdate(dt);
+        enemyBoundsService.fixedUpdate(dt);
     }
 
     @Override

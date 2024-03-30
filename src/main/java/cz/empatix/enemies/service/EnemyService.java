@@ -94,4 +94,8 @@ public class EnemyService {
         enemies.removeIf(Enemy::canRemove);
 
     }
+
+    public List<Enemy> getEnemies() {
+        return enemies;
+    }
 }

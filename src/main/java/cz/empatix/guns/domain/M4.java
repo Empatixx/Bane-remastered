@@ -36,8 +36,8 @@ public class M4 extends AbstractGun implements Gun{
     private final BulletFactory bulletFactory;
 
     public M4(final BulletFactory bulletFactory) {
-        this.minDamage = 200;
-        this.maxDamage = 200;
+        this.minDamage = 2;
+        this.maxDamage = 2;
 
         this.inaccuracy = 0.f;
         this.fireRateTime = 750;

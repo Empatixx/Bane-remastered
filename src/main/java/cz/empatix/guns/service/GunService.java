@@ -63,8 +63,7 @@ public class GunService {
         );
         {
             slots = new GunSlots();
-            slots.addGun(guns.get(1));
-            slots.addGun(guns.get(guns.toArray().length -3));
+            slots.addGun(guns.get(0));
         }
         weaponSlotHud = new CommonImage(AssetsService.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE);
     }
@@ -209,5 +208,13 @@ public class GunService {
     }
     public List<Gun> getGuns() {
         return guns;
+    }
+
+    public void mouseScrolled(final double xoffset, final double yoffset) {
+        if (yoffset > 0) {
+            slots.switchNextSlot();
+        } else {
+            slots.switchPreviousSlot();
+        }
     }
 }

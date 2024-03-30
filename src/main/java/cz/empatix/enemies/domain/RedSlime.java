@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 @SpawnableEnemy
 public class RedSlime extends BaseEnemy {
-    private final static int MOVE_FORCE = 2_500_000;
+    private final static int MOVE_FORCE = 1_000_000;
     private final static float SCALE = 1.5f;
     private final static int DIMENSION_WIDTH = (int) (64 * SCALE);
     private final static int DIMENSION_HEIGHT = (int) (48 * SCALE);

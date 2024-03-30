@@ -217,6 +217,6 @@ public class InGameState extends GameState {
 
     @Override
     public void mouseScrolled(double xoffset, double yoffset) {
-
+        gunService.mouseScrolled(xoffset, yoffset);
     }
 }

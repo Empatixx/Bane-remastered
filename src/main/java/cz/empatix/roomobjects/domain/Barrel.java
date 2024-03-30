@@ -151,6 +151,11 @@ public class Barrel implements RoomObject, Damageable {
         animation.setState(AnimationState.DEATH);
     }
 
+    @Override
+    public void destroy(){
+        physicsBody.destroy();
+    }
+
     public boolean isDead() {
         return health <= 0;
     }

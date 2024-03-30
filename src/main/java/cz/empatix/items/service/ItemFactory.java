@@ -35,10 +35,10 @@ public class ItemFactory {
         );
         final List<Supplier<ItemDrop>> rareItemsSuppliers = List.of(
                 () -> new WeaponDrop(DropSource.NORMAL, gunService.getUnusedRandomGun(), gunService::addGun),
-                () -> new ArtefactDrop(DropSource.NORMAL, artefactsService.getUnusedRandomArtefact(), artefactsService::addArtefact)
-                /*() -> new AmmoBoxItem(gunService::hasNotFullAmmo, gunService::addAmmo),
+                () -> new ArtefactDrop(DropSource.NORMAL, artefactsService.getUnusedRandomArtefact(), artefactsService::addArtefact),
+                () -> new AmmoBoxItem(gunService::hasNotFullAmmo, gunService::addAmmo),
                 () -> new RecoverPotion(RecoverSize.LARGE, RecoverType.HEALTH, player::hasFullHealth, player::addHealth),
-                () -> new RecoverPotion(RecoverSize.LARGE, RecoverType.ARMOR, player::hasFullArmor, player::addArmor)*/
+                () -> new RecoverPotion(RecoverSize.LARGE, RecoverType.ARMOR, player::hasFullArmor, player::addArmor)
         );
         itemDropSuppliers = new EnumMap<>(ItemRarity.class);
         itemDropSuppliers.put(ItemRarity.COMMON, commonItemsSuppliers);

@@ -3,6 +3,7 @@ package cz.empatix.rooms.service;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.enemies.service.EnemyBoundsService;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -31,6 +32,7 @@ public class BossRoom implements Room {
     private final MapLoaderService mapLoaderService;
     private final ItemService itemService;
     private final EnemyService enemyService;
+    private final EnemyBoundsService enemyBoundsService;
     private final RoomObjectService roomObjectService;
     private final RoomLockService roomLockService;
     private final StatisticsService statisticsService;
@@ -48,6 +50,7 @@ public class BossRoom implements Room {
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomLockService = new RoomLockService(this, neighbors);
         enemyService = new EnemyService(itemService, statisticsService);
+        enemyBoundsService = new EnemyBoundsService(this, enemyService);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.statisticsService = statisticsService;
@@ -102,6 +105,7 @@ public class BossRoom implements Room {
     @Override
     public void fixedUpdate(double dt) {
         enemyService.fixedUpdate(dt);
+        enemyBoundsService.fixedUpdate(dt);
     }
 
     @Override

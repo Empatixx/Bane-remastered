@@ -23,7 +23,7 @@ import java.util.*;
 public class PhysicsEngine {
     private final static Logger LOGGER = LoggerFactory.getLogger(PhysicsEngine.class);
     private final World<PhysicsObject> world;
-    private final static boolean DEBUG_RENDER = true;
+    private final static boolean DEBUG_RENDER = false;
 
     public PhysicsEngine() {
         final Settings settings = new Settings();
@@ -121,10 +121,7 @@ public class PhysicsEngine {
         final Transform transform = new Transform();
         transform.setTranslation(new Vector2(point.x, point.y));
         final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);
-        rectangle.getVertices()[0].set(0, 0);
-        rectangle.getVertices()[1].set(dimensions.x(), 0);
-        rectangle.getVertices()[2].set(dimensions.x(), dimensions.y());
-        rectangle.getVertices()[3].set(0, dimensions.y());
+        rectangle.translate(new Vector2(dimensions.x / 2f, dimensions.y / 2f));
 
         final Set<PhysicsObject> results = new HashSet<>();
         final Iterator<DetectResult<PhysicsObject, BodyFixture>> resultIterator = world.detectIterator(rectangle, transform, new DetectFilter(true, true, null));

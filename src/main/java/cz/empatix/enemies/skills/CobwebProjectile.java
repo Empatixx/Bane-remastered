@@ -42,12 +42,12 @@ public class CobwebProjectile implements Drawable {
             final Object userData = other.getUserData();
             if (userData instanceof Player player) {
                 final double currentDamping = other.getLinearDamping();
-                if (currentDamping > 10){
-                    increaseDamping = 0;
+                if (currentDamping > 15){
+                    increaseDamping = 5;
                     return;
                 }
                 LOGGER.info("Player entered cobweb updating damping from {} by damping {}", currentDamping, increaseDamping);
-                increaseDamping = 3;
+                increaseDamping = 5;
                 other.setLinearDamping(currentDamping + increaseDamping);
             }
         });

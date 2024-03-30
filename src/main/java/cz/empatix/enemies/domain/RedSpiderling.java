@@ -13,9 +13,9 @@ public class RedSpiderling extends BaseEnemy {
     private static final int SCALE = 3;
     private static final int HEIGHT = 20 * SCALE;
     private static final int WIDTH = 32 * SCALE;
-    private static final int DEFAULT_DAMAGE = 1;
+    private static final int DEFAULT_DAMAGE = 2;
     private static final int DEFAULT_HEALTH = 3;
-    private static final int MOVE_FORCE = 12_500_000;
+    private static final int MOVE_FORCE = 5_500_000;
     public RedSpiderling() {
         super(WIDTH, HEIGHT);
         animation = Animation.builder()

@@ -160,4 +160,8 @@ public class Pot implements RoomObject, Damageable {
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
+    @Override
+    public void destroy() {
+        physicsBody.destroy();
+    }
 }
