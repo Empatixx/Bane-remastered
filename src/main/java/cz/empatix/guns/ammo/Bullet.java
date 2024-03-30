@@ -18,6 +18,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.MotionBlurBinding;
 import cz.empatix.tiles.domain.Tile;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -32,6 +33,7 @@ public class Bullet implements Drawable, DamageSource {
     private final Animation animation;
     private final LightSource lightSource;
     private int damage;
+    private Vector2f lastPosition;
 
     public Bullet(final int damage) {
         animation = Animation.builder()
@@ -64,14 +66,18 @@ public class Bullet implements Drawable, DamageSource {
 
     @Override
     public RenderData renderData() {
+        final Vector2f currentPos = physicsBody.getTranslation();
+        final Vector2f lastPos = new Vector2f(lastPosition);
+        final Vector2f direction = new Vector2f(currentPos).sub(lastPos).normalize();
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new MotionBlurBinding(Camera.getProjection(), new Vector2f(direction))
         );
     }
 
     public void update(final double dt) {
+        lastPosition = physicsBody.getTranslation();
         animation.update();
         lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
