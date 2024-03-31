@@ -104,6 +104,7 @@ public class InGameState extends GameState {
         deathService.update((float)dt, player.isDead());
         if(deathService.isActive()){
             gunService.setShooting(false);
+            pauseService.setPause(false);
             player.update(dt);
             mapService.update(dt, player);
             return;
@@ -160,6 +161,7 @@ public class InGameState extends GameState {
         pauseService.keyPressed(key);
         if(pauseService.isPause()){
             player.stopMoving();
+            minimapService.deactivateBigMinimap();
             return;
         }
         minimapService.keyPressed(key);
@@ -180,7 +182,6 @@ public class InGameState extends GameState {
         if(pauseService.isPause()){
             return;
         }
-        minimapService.keyReleased(key);
         player.keyReleased(key);
     }
 

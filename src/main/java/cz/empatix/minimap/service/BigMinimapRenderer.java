@@ -129,21 +129,18 @@ public class BigMinimapRenderer implements MinimapRenderer{
     }
 
     @Override
-    public void keyPressed(int key) {
-        if (key == GLFW.GLFW_KEY_TAB){
-            show = !show;
-            AUDIO_SERVICE.play(SoundEffect.SHOW_MAP);
-        }
-        if (show) {
-            CursorService.setCursor(CursorType.DEFAULT);
-        } else {
-            CursorService.setCursor(CursorType.CROSSHAIR);
-        }
+    public void activate() {
+        show = true;
+        CursorService.setCursor(CursorType.DEFAULT);
+        AUDIO_SERVICE.play(SoundEffect.SHOW_MAP);
     }
 
     @Override
-    public void keyReleased(int key) {
+    public void deactivate() {
+        show = false;
+        CursorService.setCursor(CursorType.CROSSHAIR);
     }
+
 
     public boolean isActive() {
         return show;

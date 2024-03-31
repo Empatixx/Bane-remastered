@@ -19,7 +19,6 @@ public interface MinimapRenderer {
 
     void mousePressed(final int button, final float mouseX, final float mouseY);
 
-    void keyPressed(int key);
-
-    void keyReleased(int key);
+    void activate();
+    void deactivate();
 }

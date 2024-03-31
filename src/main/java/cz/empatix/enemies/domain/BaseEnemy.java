@@ -27,7 +27,7 @@ import java.util.List;
 
 
 public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, Enemy {
-    protected final static int SPAWN_INVINCIBILITY = 1500;
+    protected final static int SPAWN_INVINCIBILITY = 2000;
     protected final static int TRAP_INVINCIBILITY = 1000;
     protected final VitalityDisplayService vitalityDisplayService = new VitalityDisplayService();
     protected final InterpolatedPhysicsObject physicsBody;

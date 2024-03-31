@@ -33,10 +33,17 @@ public class MinimapService {
         renderers.forEach(MinimapRenderer::visitAll);
     }
     public void keyPressed(final int key) {
-        renderers.forEach(minimapRenderer -> minimapRenderer.keyPressed(key));
-    }
-    public void keyReleased(final int key) {
-        renderers.forEach(minimapRenderer -> minimapRenderer.keyReleased(key));
+        switch (key){
+            case GLFW.GLFW_KEY_TAB -> {
+                final boolean isActive = ((BigMinimapRenderer) renderers.get(1)).isActive();
+                if (isActive) {
+                    renderers.get(1).deactivate();
+                } else {
+                    renderers.get(1).activate();
+                }
+            }
+            case GLFW.GLFW_KEY_ESCAPE -> renderers.get(1).deactivate();
+        }
     }
     public List<Renderable> toRender(final double dt) {
         return renderers.stream()
@@ -59,5 +66,10 @@ public class MinimapService {
     public boolean isActiveBigMinimap() {
         final BigMinimapRenderer bigMinimapRenderer = (BigMinimapRenderer) renderers.get(1);
         return bigMinimapRenderer.isActive();
+    }
+
+    public void deactivateBigMinimap() {
+        final BigMinimapRenderer bigMinimapRenderer = (BigMinimapRenderer) renderers.get(1);
+        bigMinimapRenderer.deactivate();
     }
 }

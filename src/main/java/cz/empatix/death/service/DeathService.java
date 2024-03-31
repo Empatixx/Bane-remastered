@@ -9,8 +9,10 @@ import cz.empatix.gamestate.service.GameStateController;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.postprocessing.domain.Fade;
+import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.shaderbindings.MotionBlurBinding;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -82,6 +84,7 @@ public class DeathService {
         if (isPlayerDead && !active) {
             CursorService.setCursor(CursorType.DISABLED);
             Fade.setTween(0.2f);
+            GaussianBlur.setEnabled(false);
             active = true;
         }
         if (!active) {

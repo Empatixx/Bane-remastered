@@ -89,14 +89,15 @@ public class SmallMinimapRenderer implements MinimapRenderer {
     }
 
     @Override
-    public void keyPressed(int key) {
+    public void activate() {
 
     }
 
     @Override
-    public void keyReleased(int key) {
+    public void deactivate() {
 
     }
+
 
     @Override
     public void update(float dt, final float mouseX, final float mouseY) {
