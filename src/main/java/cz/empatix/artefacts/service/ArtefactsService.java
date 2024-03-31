@@ -24,7 +24,7 @@ public class ArtefactsService {
     private final static float HUD_SLOT_SCALE = 1.5f;
     public final static int HUD_SLOT_CENTER_X;
     public final static int HUD_SLOT_CENTER_Y;
-    private final static Vector2f HUD_SLOT_POSITION = new Vector2f(615, 450);
+    private final static Vector2f HUD_SLOT_POSITION = new Vector2f(585, 450);
     private final List<Artefact> allArtefacts;
     private Artefact currentArtefact;
     private final CommonImage commonImage;

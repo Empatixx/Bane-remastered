@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 
 public class GunService {
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
-    private final static Vector2f HUD_SLOT_POSITION = new Vector2f(715, 450);
+    private final static Vector2f HUD_SLOT_POSITION = new Vector2f(685, 450);
     private final static float HUD_SLOT_SCALE = 1.5f;
     public final static int HUD_SLOT_CENTER_X;
     public final static int HUD_SLOT_CENTER_Y;
@@ -64,6 +64,7 @@ public class GunService {
         {
             slots = new GunSlots();
             slots.addGun(guns.get(0));
+            slots.addGun(guns.get(1));
         }
         weaponSlotHud = new CommonImage(AssetsService.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE);
     }

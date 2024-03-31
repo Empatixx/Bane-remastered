@@ -66,9 +66,6 @@ public class Bullet implements Drawable, DamageSource {
 
     @Override
     public RenderData renderData() {
-        final Vector2f currentPos = physicsBody.getTranslation();
-        final Vector2f lastPos = new Vector2f(lastPosition);
-        final Vector2f direction = new Vector2f(currentPos).sub(lastPos).normalize();
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation()),
                 animation.getTextureId(),

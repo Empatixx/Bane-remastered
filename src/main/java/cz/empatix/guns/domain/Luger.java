@@ -26,6 +26,7 @@ public class Luger extends AbstractGun implements Gun{
     private final List<Bullet> bullets;
     private int bulletsToShoot;
     private final BulletFactory bulletFactory;
+    private final PistolClipHud pistolClipHud;
 
     public Luger(final BulletFactory bulletFactory) {
         this.minDamage = 1;
@@ -49,6 +50,7 @@ public class Luger extends AbstractGun implements Gun{
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
         this.bulletFactory = bulletFactory;
+        this.pistolClipHud = new PistolClipHud(() -> currentClip, () -> clipSize);
     }
 
     @Override
@@ -98,6 +100,7 @@ public class Luger extends AbstractGun implements Gun{
 
     @Override
     public void update(final double dt) {
+        pistolClipHud.update(dt);
         bullets.forEach(b -> b.update(dt));
         bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
@@ -117,7 +120,7 @@ public class Luger extends AbstractGun implements Gun{
     public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
         ammoHud.setPosition(AMMO_COUNTER_POSITION.x() - ammoHud.getWidth(), AMMO_COUNTER_POSITION.y());
-        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables())
+        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables(), pistolClipHud.getSubRenderables())
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }

@@ -25,6 +25,7 @@ public class Thompson extends AbstractGun implements Gun{
     private final CommonText ammoHud;
     private final List<Bullet> bullets;
     private final BulletFactory bulletFactory;
+    private final SubMachineClipHud clipHud;
     public Thompson(final BulletFactory bulletFactory) {
         this.minDamage = 1;
         this.maxDamage = 3;
@@ -33,7 +34,7 @@ public class Thompson extends AbstractGun implements Gun{
         this.fireRateTime = 200;
         this.reloadTime = 850;
 
-        this.clipSize = 50;
+        this.clipSize = 30;
         this.currentClip = clipSize;
         this.maxAmmo = 300;
         this.ammo = maxAmmo;
@@ -48,6 +49,8 @@ public class Thompson extends AbstractGun implements Gun{
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
 
         this.bulletFactory = bulletFactory;
+
+        this.clipHud = new SubMachineClipHud(() -> currentClip, () -> clipSize);
     }
 
     @Override
@@ -94,8 +97,8 @@ public class Thompson extends AbstractGun implements Gun{
 
     @Override
     public void update(final double dt) {
+        clipHud.update(dt);
         bullets.forEach(b -> b.update(dt));
-
         bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
             if(System.currentTimeMillis() - lastReloadTime > reloadTime){
@@ -114,7 +117,7 @@ public class Thompson extends AbstractGun implements Gun{
     public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
         ammoHud.setPosition(AMMO_COUNTER_POSITION.x() - ammoHud.getWidth(), AMMO_COUNTER_POSITION.y());
-        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables())
+        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables(), clipHud.getSubRenderables())
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }

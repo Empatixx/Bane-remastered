@@ -2,7 +2,6 @@ package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
-import cz.empatix.audio.service.AudioService;
 import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.guns.ammo.Bullet;
@@ -34,6 +33,7 @@ public class M4 extends AbstractGun implements Gun{
     private float lastShooterX;
     private float lastShooterY;
     private final BulletFactory bulletFactory;
+    private final SubMachineClipHud clipHud;
 
     public M4(final BulletFactory bulletFactory) {
         this.minDamage = 2;
@@ -57,6 +57,7 @@ public class M4 extends AbstractGun implements Gun{
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
         this.bulletFactory = bulletFactory;
+        this.clipHud = new SubMachineClipHud(() -> currentClip, () -> clipSize);
     }
 
     @Override
@@ -132,6 +133,7 @@ public class M4 extends AbstractGun implements Gun{
 
     @Override
     public void update(final double dt) {
+        clipHud.update(dt);
         bullets.forEach(b -> b.update(dt));
         bullets.removeIf(Bullet::shouldRemove);
         if(reloading){
@@ -152,7 +154,7 @@ public class M4 extends AbstractGun implements Gun{
     public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
         ammoHud.setPosition(AMMO_COUNTER_POSITION.x() - ammoHud.getWidth(), AMMO_COUNTER_POSITION.y());
-        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables())
+        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables(), clipHud.getSubRenderables())
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }
