@@ -14,7 +14,7 @@ import org.joml.Vector2f;
 import java.util.ArrayList;
 import java.util.List;
 
-@SpawnableEnemy(type = EnemyType.BOSS)
+@SpawnableEnemy(type = EnemyType.BOSS, maxFloor = 1, minFloor = 1)
 public class Spider extends BossBaseEnemy {
     private static final int SCALE = 3;
     private static final int HEIGHT = 40 * SCALE;

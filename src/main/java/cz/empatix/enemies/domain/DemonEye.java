@@ -9,7 +9,7 @@ import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 
 import java.util.List;
-@SpawnableEnemy()
+@SpawnableEnemy(minFloor = 3)
 public class DemonEye extends BaseEnemy {
     private final static int MOVE_FORCE = 14_500_000;
     private final static float SCALE = 1.5f;
