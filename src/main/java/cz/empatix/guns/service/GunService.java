@@ -8,6 +8,8 @@ import cz.empatix.death.service.StatisticsService;
 import cz.empatix.guns.domain.*;
 import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.hud.service.image.CommonImage;
+import cz.empatix.items.domain.AmmoBoxItem;
+import cz.empatix.items.domain.AmmoBoxType;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
@@ -161,19 +163,21 @@ public class GunService {
         gun.addPercentAmmo(100);
         return gun;
     }
-
-    public boolean hasNotFullAmmo(final GunType gunType){
-        return slots.hasNotFullAmmo(gunType);
+    public boolean hasNotFullAmmo(final AmmoBoxType ammoBoxType){
+        return switch (ammoBoxType) {
+            case PISTOL, SUBMACHINE -> {
+                yield Stream.of(GunType.PISTOL, GunType.SUBMACHINE).anyMatch(slots::hasNotFullAmmo); //todo; for now, when textures are same to avoid confusion
+            }
+            case SHOTGUN -> slots.hasNotFullAmmo(GunType.SHOTGUN);
+            case UNIVERSAL -> slots.hasNotFullAmmo();
+        };
     }
-    public boolean hasNotFullAmmo(){
-        return slots.hasNotFullAmmo();
-    }
-
-    public void addAmmo(final GunType gunType, final float percent) {
-        slots.addAmmo(gunType, percent);
-    }
-    public void addAmmo(final float percent){
-        List.of(GunType.values()).forEach(gunType -> slots.addAmmo(gunType, percent));
+    public void addAmmo(final float percent, final AmmoBoxType ammoBoxType){
+        switch (ammoBoxType) {
+            case PISTOL -> List.of(GunType.PISTOL, GunType.SUBMACHINE).forEach(gunType -> slots.addAmmo(gunType, percent)); //todo; for now, when textures are same to avoid confusion
+            case SHOTGUN -> slots.addAmmo(GunType.SHOTGUN, percent);
+            case UNIVERSAL -> List.of(GunType.values()).forEach(gunType -> slots.addAmmo(gunType, percent));
+        }
     }
 
     public void tryDropCurrentGun(){

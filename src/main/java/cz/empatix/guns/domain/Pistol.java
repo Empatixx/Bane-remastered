@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-public class Pistol extends AbstractGun implements Gun{
+public class Pistol extends AbstractGun implements Gun {
     private final static String WEAPON_TXT_PATH = "ingame/guns/pistol.tga";
     private final static Logger LOGGER = LoggerFactory.getLogger(Pistol.class);
     private final CommonImage gunHud;
@@ -28,6 +28,7 @@ public class Pistol extends AbstractGun implements Gun{
     private final List<Bullet> bullets;
     private final BulletFactory bulletFactory;
     private final PistolClipHud pistolClipHud;
+
     public Pistol(final BulletFactory bulletFactory) {
         this.minDamage = 1;
         this.maxDamage = 3;
@@ -62,10 +63,10 @@ public class Pistol extends AbstractGun implements Gun{
     @Override
     public boolean shoot(float shooterX, float shooterY, float targetX, float targetY
     ) {
-        if(!shooting || reloading){
+        if (!shooting || reloading) {
             return false;
         }
-        if(System.currentTimeMillis() - lastShootTime < fireRateTime){
+        if (System.currentTimeMillis() - lastShootTime < fireRateTime) {
             return false;
         }
         if (currentClip > 0) {
@@ -85,7 +86,7 @@ public class Pistol extends AbstractGun implements Gun{
 
     @Override
     public void reload() {
-        if(reloading){
+        if (reloading) {
             return;
         }
         if (ammo > 0 && currentClip < clipSize) {
@@ -101,8 +102,8 @@ public class Pistol extends AbstractGun implements Gun{
         pistolClipHud.update(dt);
         bullets.forEach(b -> b.update(dt));
         bullets.removeIf(Bullet::shouldRemove);
-        if(reloading){
-            if(System.currentTimeMillis() - lastReloadTime > reloadTime){
+        if (reloading) {
+            if (System.currentTimeMillis() - lastReloadTime > reloadTime) {
                 reloading = false;
                 reloadAmmo();
             }
@@ -122,10 +123,12 @@ public class Pistol extends AbstractGun implements Gun{
                 .flatMap(Collection::stream)
                 .collect(java.util.stream.Collectors.toList());
     }
+
     @Override
-    public boolean isReloading(){
+    public boolean isReloading() {
         return reloading;
     }
+
     @Override
     public GunType getType() {
         return gunType;
@@ -140,13 +143,16 @@ public class Pistol extends AbstractGun implements Gun{
     public boolean hasFullAmmo() {
         return ammo == maxAmmo;
     }
+
     @Override
     public void addPercentAmmo(float percent) {
-         ammo += maxAmmo * percent;
-        if(ammo > maxAmmo){
+        LOGGER.info("Adding ammo to pistol: {}", percent);
+        ammo += maxAmmo * percent;
+        if (ammo > maxAmmo) {
             ammo = maxAmmo;
         }
     }
+
     @Override
     public void setMaxAmmo(int maxAmmo) {
         this.maxAmmo = maxAmmo;

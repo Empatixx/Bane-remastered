@@ -3,7 +3,6 @@ package cz.empatix.items.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
-import cz.empatix.guns.domain.GunType;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.ItemDespawnService;
@@ -17,40 +16,71 @@ import org.joml.Vector2f;
 
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 public class AmmoBoxItem implements ItemDrop {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static float SCALE = 1.5f;
-    private final static int DIMENSION_WIDTH = (int) (32 * SCALE);
-    private final static int DIMENSION_HEIGHT = (int) (32 * SCALE);
+    private final static int UNIVERSAL_DIMENSION_WIDTH = (int) (32 * SCALE);
+    private final static int UNIVERSAL_DIMENSION_HEIGHT = (int) (32 * SCALE);
+    private final static int OTHER_DIMENSION_WIDTH = (int) (24 * SCALE);
+    private final static int OTHER_DIMENSION_HEIGHT = (int) (24 * SCALE);
     private final CommonInteractable interactable;
     private final ItemDespawnService itemDespawnService;
     private final Animation animation;
     private final Vector2f position;
     private final float percentAmount;
     private boolean pickedUp = false;
+    private final AmmoBoxType ammoBoxType;
+    private final int width;
+    private final int height;
+    public AmmoBoxItem(final AmmoBoxType ammoBoxType,
+                       final Predicate<AmmoBoxType> canPickUp,
+                       final BiConsumer<Float, AmmoBoxType> pickUp) {
+        this.ammoBoxType = ammoBoxType;
+        this.percentAmount = getPercentAmount(ammoBoxType);
+        this.width = switch (ammoBoxType) {
+            case PISTOL, SUBMACHINE, SHOTGUN -> OTHER_DIMENSION_WIDTH;
+            case UNIVERSAL -> UNIVERSAL_DIMENSION_WIDTH;
+        };
+        this.height = switch (ammoBoxType) {
+            case PISTOL, SUBMACHINE, SHOTGUN -> OTHER_DIMENSION_HEIGHT;
+            case UNIVERSAL -> UNIVERSAL_DIMENSION_HEIGHT;
+        };
 
-    public AmmoBoxItem(final Supplier<Boolean> canPickUp,
-                       final Consumer<Float> pickUp) {
-        this.percentAmount = RANDOM.nextFloat(0, 0.5f);
         this.animation = Animation.builder()
                 .setTotal(1, 1)
-                .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .texture(AssetsService.getTexture("ingame/ammobox.tga"))
+                .addState(AnimationState.IDLE, 0, 1, width, height, -1)
+                .texture(AssetsService.getTexture(getTexturePath(ammoBoxType)))
                 .build();
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
         interactable = new CommonInteractable(pressedKeys -> {
-            pickUp.accept(percentAmount);
+            pickUp.accept(percentAmount, ammoBoxType);
             pickedUp = true;
             AUDIO_SERVICE.play(SoundEffect.PICKUP);
-        }, () -> !pickedUp && canPickUp.get(), this::canRemove, position, getHeight(), getWidth());
+        }, () -> !pickedUp && canPickUp.test(ammoBoxType), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
+    }
+
+    private String getTexturePath(final AmmoBoxType ammoBoxType) {
+        return switch (ammoBoxType) {
+            case PISTOL -> "ingame/ammobox_pistol.tga";
+            case SHOTGUN -> "ingame/ammobox_shotgun.tga";
+            case SUBMACHINE -> "ingame/ammobox_pistol.tga";
+            case UNIVERSAL -> "ingame/ammobox_universal.tga";
+            default -> throw new IllegalArgumentException("Unknown ammo box type: " + ammoBoxType);
+        };
+    }
+    private float getPercentAmount(final AmmoBoxType ammoBoxType) {
+        return switch (ammoBoxType) {
+            case PISTOL -> 0.10f;
+            case SHOTGUN -> 0.25f;
+            case SUBMACHINE -> 0.10f;
+            case UNIVERSAL -> 0.5f;
+            default -> throw new IllegalArgumentException("Unknown ammo box type: " + ammoBoxType);
+        };
     }
 
     @Override
@@ -95,12 +125,12 @@ public class AmmoBoxItem implements ItemDrop {
 
     @Override
     public int getWidth() {
-        return DIMENSION_WIDTH;
+        return width;
     }
 
     @Override
     public int getHeight() {
-        return DIMENSION_HEIGHT;
+        return height;
     }
 
     @Override
@@ -129,7 +159,7 @@ public class AmmoBoxItem implements ItemDrop {
 
     @Override
     public boolean canRender() {
-        if (!Camera.isInProjection(position, DIMENSION_WIDTH, DIMENSION_HEIGHT)) {
+        if (!Camera.isInProjection(position, width, height)) {
             return false;
         }
         if (itemDespawnService.canBlink()) {

@@ -31,13 +31,18 @@ public class ItemFactory {
         final Supplier<ItemDrop> recoverArmorSupplier = () -> new RecoverPotion(RecoverSize.SMALL, RecoverType.ARMOR, player::hasFullArmor, player::addArmor);
         final Supplier<ItemDrop> weaponSupplier = () -> new WeaponDrop(DropSource.NORMAL, gunService.getUnusedRandomGun(), gunService::addGun);
         final Supplier<ItemDrop> artefactSupplier = () -> new ArtefactDrop(DropSource.NORMAL, artefactsService.getUnusedRandomArtefact(), artefactsService::addArtefact);
-        final Supplier<ItemDrop> ammoBoxSupplier = () -> new AmmoBoxItem(gunService::hasNotFullAmmo, gunService::addAmmo);
+
+        final Supplier<ItemDrop> pistolAmmoSupplier = () -> new AmmoBoxItem(AmmoBoxType.PISTOL, gunService::hasNotFullAmmo, gunService::addAmmo);
+        final Supplier<ItemDrop> shotgunAmmoSupplier = () -> new AmmoBoxItem(AmmoBoxType.SHOTGUN, gunService::hasNotFullAmmo, gunService::addAmmo);
+        final Supplier<ItemDrop> submachineAmmoSupplier = () -> new AmmoBoxItem(AmmoBoxType.SUBMACHINE, gunService::hasNotFullAmmo, gunService::addAmmo);
+        final Supplier<ItemDrop> universalAmmoSupplier = () -> new AmmoBoxItem(AmmoBoxType.UNIVERSAL, gunService::hasNotFullAmmo, gunService::addAmmo);
+
         final Supplier<ItemDrop> recoverHealthLargeSupplier = () -> new RecoverPotion(RecoverSize.LARGE, RecoverType.HEALTH, player::hasFullHealth, player::addHealth);
         final Supplier<ItemDrop> recoverArmorLargeSupplier = () -> new RecoverPotion(RecoverSize.LARGE, RecoverType.ARMOR, player::hasFullArmor, player::addArmor);
 
-        final List<Supplier<ItemDrop>> commonItemsSuppliers = List.of(coinSupplier);
+        final List<Supplier<ItemDrop>> commonItemsSuppliers = List.of(coinSupplier, pistolAmmoSupplier, shotgunAmmoSupplier, submachineAmmoSupplier);
         final List<Supplier<ItemDrop>> uncommonItemsSuppliers = List.of(recoverHealthSupplier, recoverArmorSupplier);
-        final List<Supplier<ItemDrop>> rareItemsSuppliers = List.of(weaponSupplier, artefactSupplier, ammoBoxSupplier, recoverHealthLargeSupplier, recoverArmorLargeSupplier);
+        final List<Supplier<ItemDrop>> rareItemsSuppliers = List.of(weaponSupplier, artefactSupplier, universalAmmoSupplier, recoverHealthLargeSupplier, recoverArmorLargeSupplier);
 
         itemDropSuppliers = new EnumMap<>(ItemRarity.class);
         itemDropSuppliers.put(ItemRarity.COMMON, commonItemsSuppliers);
@@ -46,7 +51,7 @@ public class ItemFactory {
 
         shopDropSuppliers = new EnumMap<>(ShopType.class);
         shopDropSuppliers.put(ShopType.OFFENSIVE, List.of(weaponSupplier, artefactSupplier));
-        shopDropSuppliers.put(ShopType.AMMUNITION, List.of(ammoBoxSupplier));
+        shopDropSuppliers.put(ShopType.AMMUNITION, List.of(universalAmmoSupplier));
         shopDropSuppliers.put(ShopType.DEFENSIVE, List.of(recoverHealthLargeSupplier, recoverArmorLargeSupplier));
 
         shopDropSupplier = drop -> {
