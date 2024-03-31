@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
-@SpawnableEnemy
+@SpawnableEnemy(minFloor = 2)
 public class GreenSpiderling extends BaseEnemy {
     private static final int SCALE = 3;
     private static final int HEIGHT = 20 * SCALE;

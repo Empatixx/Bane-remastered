@@ -1,57 +1,84 @@
 package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.*;
-import cz.empatix.enemies.domain.bosses.Golem;
-import cz.empatix.enemies.domain.bosses.KingSlime;
 import org.reflections.Reflections;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 public class EnemyFactory {
-    private final List<Supplier<Enemy>> commonEnemiesSuppliers;
-    private final List<Supplier<Enemy>> bossEnemiesSuppliers;
-    public EnemyFactory(){
-        final Reflections reflections = new Reflections("cz.empatix.enemies.domain");
-        final Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(SpawnableEnemy.class);
-        final List<Supplier<Enemy>> commonEnemiesSuppliers = new ArrayList<>();
-        final List<Supplier<Enemy>> bossEnemiesSuppliers = new ArrayList<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(EnemyFactory.class);
+    private final static AtomicReference<List<EnemySupplier>> commonEnemiesSuppliers = new AtomicReference<>();
+    private final static AtomicReference<List<EnemySupplier>> bossEnemiesSuppliers = new AtomicReference<>();
 
-        for (Class<?> annotatedClass : annotatedClasses) {
-            final SpawnableEnemy annotation = annotatedClass.getAnnotation(SpawnableEnemy.class);
-            try {
-                final Supplier<Enemy> supplier = () -> {
-                    try {
-                        return (Enemy) annotatedClass.getConstructor().newInstance();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+    public static void init() {
+        CompletableFuture.runAsync(() -> {
+            final Reflections reflections = new Reflections("cz.empatix.enemies.domain");
+            final Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(SpawnableEnemy.class);
+            final List<EnemySupplier> commonEnemiesSuppliers = new ArrayList<>();
+            final List<EnemySupplier> bossEnemiesSuppliers = new ArrayList<>();
+
+            LOGGER.info("Found {} enemies", annotatedClasses.size());
+            for (Class<?> annotatedClass : annotatedClasses) {
+                final SpawnableEnemy annotation = annotatedClass.getAnnotation(SpawnableEnemy.class);
+                try {
+                    final Supplier<Enemy> supplier = () -> {
+                        try {
+                            return (Enemy) annotatedClass.getConstructor().newInstance();
+                        } catch (Exception e) {
+                            LOGGER.error("Failed to create enemy from class: " + annotatedClass.getName(), e);
+                            throw new RuntimeException(e);
+                        }
+                    };
+                    final int minFloor = annotation.minFloor();
+                    final int maxFloor = annotation.maxFloor();
+                    final EnemySupplier enemySupplier = new EnemySupplier(supplier, minFloor, maxFloor);
+                    switch (annotation.type()) {
+                        case COMMON -> commonEnemiesSuppliers.add(enemySupplier);
+                        case BOSS -> bossEnemiesSuppliers.add(enemySupplier);
                     }
-                };
-                switch (annotation.type()) {
-                    case COMMON -> commonEnemiesSuppliers.add(supplier);
-                    case BOSS -> bossEnemiesSuppliers.add(supplier);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to create enemy from class: " + annotatedClass.getName(), e);
                 }
-            } catch (Exception e) {
-               throw new RuntimeException("Failed to create enemy from class: " + annotatedClass.getName(), e);
+                LOGGER.info("Loaded total common enemies: {}", commonEnemiesSuppliers.size());
+                LOGGER.info("Loaded total boss enemies: {}", bossEnemiesSuppliers.size());
+                EnemyFactory.bossEnemiesSuppliers.set(bossEnemiesSuppliers);
+                EnemyFactory.commonEnemiesSuppliers.set(commonEnemiesSuppliers);
             }
+        });
+    }
+
+    public static Enemy createEnemy(final int currentFloor) {
+        final ThreadLocalRandom random = ThreadLocalRandom.current();
+        final List<EnemySupplier> possibleSuppliers = commonEnemiesSuppliers.get().stream()
+                .filter(supplier -> supplier.isSpawnable(currentFloor))
+                .toList();
+        if (possibleSuppliers.isEmpty()) {
+            throw new RuntimeException("No enemies available for floor: " + currentFloor);
         }
-        this.commonEnemiesSuppliers = commonEnemiesSuppliers;
-        this.bossEnemiesSuppliers = bossEnemiesSuppliers;
+        final int index = random.nextInt(possibleSuppliers.size());
+        return possibleSuppliers.get(index).supplier().get();
     }
 
-    public Enemy createEnemy() {
+    public static Enemy createBoss(final int currentFloor) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
-        final int index = random.nextInt(commonEnemiesSuppliers.size());
-        return commonEnemiesSuppliers.get(index).get();
-    }
-
-    public Enemy createBoss() {
-        final ThreadLocalRandom random = ThreadLocalRandom.current();
-        final int index = random.nextInt(bossEnemiesSuppliers.size());
-        return bossEnemiesSuppliers.get(index).get();
+        final List<EnemySupplier> possibleSuppliers = bossEnemiesSuppliers.get().stream()
+                .filter(supplier -> supplier.isSpawnable(currentFloor))
+                .toList();
+        if (possibleSuppliers.isEmpty()) {
+            throw new RuntimeException("No enemies available for floor: " + currentFloor);
+        }
+        final int index = random.nextInt(possibleSuppliers.size());
+        return possibleSuppliers.get(index).supplier().get();
     }
 }

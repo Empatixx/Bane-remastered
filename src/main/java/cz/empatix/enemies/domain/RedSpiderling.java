@@ -8,7 +8,7 @@ import cz.empatix.render.domain.AnimationState;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@SpawnableEnemy
+@SpawnableEnemy(minFloor = 2)
 public class RedSpiderling extends BaseEnemy {
     private static final int SCALE = 3;
     private static final int HEIGHT = 20 * SCALE;
@@ -16,10 +16,11 @@ public class RedSpiderling extends BaseEnemy {
     private static final int DEFAULT_DAMAGE = 2;
     private static final int DEFAULT_HEALTH = 3;
     private static final int MOVE_FORCE = 5_500_000;
+
     public RedSpiderling() {
         super(WIDTH, HEIGHT);
         animation = Animation.builder()
-                .setTotal(2,5)
+                .setTotal(2, 5)
                 .addState(AnimationState.IDLE, 0, 5, WIDTH, HEIGHT, 120)
                 .addState(AnimationState.DEATH, 1, 3, WIDTH, HEIGHT, 150)
                 .texture(AssetsService.getTexture("ingame/spiderling.tga"))
@@ -29,6 +30,7 @@ public class RedSpiderling extends BaseEnemy {
         damage = DEFAULT_DAMAGE;
         moveForce = MOVE_FORCE;
     }
+
     @Override
     public void onDeath() {
         animation.setState(AnimationState.DEATH);
@@ -44,8 +46,8 @@ public class RedSpiderling extends BaseEnemy {
     }
 
     @Override
-    public void postDamage(final int damage){
-        if (damage == 0){
+    public void postDamage(final int damage) {
+        if (damage == 0) {
             return;
         }
         heal(1);

@@ -19,7 +19,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class EnemyService {
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
-    private final EnemyFactory enemyFactory = new EnemyFactory();
     private final List<Enemy> enemies = new ArrayList<>(10);
     private final EnemyDropService enemyDropService;
     private final StatisticsService statisticsService;
@@ -57,7 +56,7 @@ public class EnemyService {
     }
 
     public void spawnEnemy(final Room room) {
-        final Enemy e = enemyFactory.createEnemy();
+        final Enemy e = EnemyFactory.createEnemy(statisticsService.getFloor());
 
         final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
         final PhysicsService physicsService = PhysicsService.getInstance();
@@ -77,7 +76,7 @@ public class EnemyService {
     }
 
     public void spawnBoss(final Room room) {
-        final Enemy e = enemyFactory.createBoss();
+        final Enemy e = EnemyFactory.createBoss(statisticsService.getFloor());
 
         final float x = room.getX() + room.getWidth() / 2f - e.getWidth() / 2f;
         final float y = room.getY() + room.getHeight() / 2f - e.getHeight() / 2f;

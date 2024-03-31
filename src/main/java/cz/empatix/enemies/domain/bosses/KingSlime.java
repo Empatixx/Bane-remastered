@@ -17,7 +17,7 @@ import org.joml.Vector2f;
 import java.util.List;
 import java.util.stream.Stream;
 
-@SpawnableEnemy(type = EnemyType.BOSS)
+@SpawnableEnemy(type = EnemyType.BOSS, minFloor = 2)
 public class KingSlime implements Enemy {
     private final static int MOVE_FORCE = 10_000_000;
     private final static int SCALE = 4;

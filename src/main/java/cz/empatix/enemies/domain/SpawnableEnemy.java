@@ -9,5 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface SpawnableEnemy {
     EnemyType type() default EnemyType.COMMON;
+    int minFloor() default 0;
+    int maxFloor() default Integer.MAX_VALUE;
 
 }

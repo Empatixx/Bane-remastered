@@ -9,7 +9,7 @@ import cz.empatix.render.domain.AnimationState;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@SpawnableEnemy
+@SpawnableEnemy(minFloor = 2)
 public class PurpleSpiderling extends BaseEnemy {
     private static final int SCALE = 3;
     private static final int HEIGHT = 20 * SCALE;
