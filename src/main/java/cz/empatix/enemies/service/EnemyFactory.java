@@ -5,6 +5,8 @@ import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +30,8 @@ public class EnemyFactory {
             final List<EnemySupplier> commonEnemiesSuppliers = new ArrayList<>();
             final List<EnemySupplier> bossEnemiesSuppliers = new ArrayList<>();
 
+            final Instant start = Instant.now();
+
             LOGGER.info("Found {} enemies", annotatedClasses.size());
             for (Class<?> annotatedClass : annotatedClasses) {
                 final SpawnableEnemy annotation = annotatedClass.getAnnotation(SpawnableEnemy.class);
@@ -50,11 +54,14 @@ public class EnemyFactory {
                 } catch (Exception e) {
                     throw new RuntimeException("Failed to create enemy from class: " + annotatedClass.getName(), e);
                 }
-                LOGGER.info("Loaded total common enemies: {}", commonEnemiesSuppliers.size());
-                LOGGER.info("Loaded total boss enemies: {}", bossEnemiesSuppliers.size());
-                EnemyFactory.bossEnemiesSuppliers.set(bossEnemiesSuppliers);
-                EnemyFactory.commonEnemiesSuppliers.set(commonEnemiesSuppliers);
             }
+            LOGGER.info("Loaded total common enemies: {}", commonEnemiesSuppliers.size());
+            LOGGER.info("Loaded total boss enemies: {}", bossEnemiesSuppliers.size());
+            EnemyFactory.bossEnemiesSuppliers.set(bossEnemiesSuppliers);
+            EnemyFactory.commonEnemiesSuppliers.set(commonEnemiesSuppliers);
+
+            final Instant end = Instant.now();
+            LOGGER.info("EnemyFactory initialized in: {} ms", Duration.between(start, end).toMillis());
         });
     }
 

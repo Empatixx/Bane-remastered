@@ -43,6 +43,7 @@ public class Chest implements RoomObject {
                 .texture(AssetsService.getTexture("ingame/chest.tga"))
                 .build();
         physicsBody = PhysicsObjectFactory.createInterpolated(DIMENSION_WIDTH, DIMENSION_HEIGHT);
+        physicsBody.setType(CollisionType.ROOM_OBJECT);
         physicsBody.onCollision(other -> {
             if (opened){
                 return;

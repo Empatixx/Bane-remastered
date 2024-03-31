@@ -42,14 +42,13 @@ public class ShopItem implements ItemDrop {
     private int price;
     private boolean bought = false;
 
-    public ShopItem(final int floor,
-                    final ItemDrop itemDrop,
+    public ShopItem(final ItemDrop itemDrop,
                     final Predicate<Integer> hasEnoughCoinsPredicate,
                     final Consumer<Integer> removeCoinsConsumer) {
         this.hasEnoughCoinsPredicate = hasEnoughCoinsPredicate;
         this.removeCoinsConsumer = removeCoinsConsumer;
         this.drop = itemDrop;
-        this.price = RANDOM.nextInt(1, 5) * (floor + 1);
+        this.price = 0;
         this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.priceText.setColorRGB(212, 168, 8);
         this.priceText.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.priceText.getWidth() / 2f,
@@ -61,7 +60,7 @@ public class ShopItem implements ItemDrop {
         this.interactionText.setColorRGB(222, 112, 38);
 
         this.saleText = new AlternativeViewText("", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
-        this.saleText.setColorRGB(122,248,18);
+        this.saleText.setColorRGB(122, 248, 18);
         onBuy = NOOP;
     }
 
@@ -108,7 +107,7 @@ public class ShopItem implements ItemDrop {
         this.priceText.setCenterY(y - image.getHeight() - ITEM_OFFSET, y - ITEM_OFFSET);
 
         this.saleText.setCenterX(x - image.getWidth() / 2f, x + image.getWidth() / 2f);
-        this.saleText.setCenterY(y - image.getHeight() - ITEM_OFFSET - 15, y - image.getHeight()  - ITEM_OFFSET - 15);
+        this.saleText.setCenterY(y - image.getHeight() - ITEM_OFFSET - 15, y - image.getHeight() - ITEM_OFFSET - 15);
 
         this.image.setPosition(x - image.getWidth() / 2f, y - image.getHeight() - ITEM_OFFSET);
 
@@ -211,6 +210,13 @@ public class ShopItem implements ItemDrop {
         final float priceTextX = priceText.getX() + priceText.getWidth() / 2;
         priceText.setText(String.valueOf(price));
         priceText.setCenterX(priceTextX - priceText.getWidth() / 2f, priceTextX + priceText.getWidth() / 2f);
-        priceText.setColorRGB(122,248,18);
+        priceText.setColorRGB(122, 248, 18);
+    }
+
+    public void setPrice(final ShopType type, final int floor) {
+        final int price = (int)(RANDOM.nextInt(1, 5) * (floor + 1) * type.getMultiplier());
+        this.price = price;
+        this.priceText.setText(String.valueOf(price));
+        this.priceText.setCenterX(priceText.getX() - priceText.getWidth() / 2f, priceText.getX() + priceText.getWidth() / 2f);
     }
 }

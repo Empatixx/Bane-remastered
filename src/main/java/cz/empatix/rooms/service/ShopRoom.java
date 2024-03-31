@@ -2,6 +2,7 @@ package cz.empatix.rooms.service;
 
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.domain.ShopItem;
+import cz.empatix.items.domain.ShopType;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.items.service.ShopItemService;
@@ -69,13 +70,15 @@ public class ShopRoom implements Room {
         roomObjectService.add(shopkeeper);
 
         final ItemFactory itemFactory = itemService.getItemFactory();
+        final List<ShopType> types = new ArrayList<>(List.of(ShopType.OFFENSIVE, ShopType.AMMUNITION, ShopType.DEFENSIVE));
+        Collections.reverse(types);
         for (int i = 0; i < TOTAL_TABLES; i++) {
             {
                 final ShopTable shopTable = new ShopTable();
                 shopTable.setPosition(getMinX() + tileMap.getWidth() / 4f * (i+1) - shopTable.getWidth()/2f, getMinY()+ tileMap.getHeight() / 2f - shopTable.getHeight() / 2f);
                 roomObjectService.add(shopTable);
 
-                final ShopItem shopItem = itemFactory.createShopDrop(statisticsService.getFloor());
+                final ShopItem shopItem = itemFactory.createShopDrop(types.get(i), statisticsService.getFloor());
                 shopItem.setOnBuy(() -> {
                     shopkeeper.setInteractionText("Enjoy your purchase!");
                 });

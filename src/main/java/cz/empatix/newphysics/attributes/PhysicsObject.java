@@ -20,7 +20,7 @@ public class PhysicsObject extends Body {
     private Consumer<PhysicsObject> onCollision = NOOP;
     private Consumer<PhysicsObject> onEnter = NOOP;
     private Consumer<PhysicsObject> onLeave = NOOP;
-    private CollisionType collisionType;
+    private CollisionType collisionType = CollisionType.NONE;
     private boolean remove;
     protected final Vector2i offset = new Vector2i();
 
