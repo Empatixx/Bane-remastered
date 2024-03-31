@@ -1,6 +1,9 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.service.ItemFactory;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
@@ -16,8 +19,11 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Barrel implements RoomObject, Damageable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Barrel.class);
     private final static int SCALE = 3;
     private final static int OFFSET_X = (22 * SCALE);
     private final static int OFFSET_Y = (22 * SCALE);
@@ -29,8 +35,11 @@ public class Barrel implements RoomObject, Damageable {
     private final InterpolatedPhysicsObject physicsBody;
     private int health = 4;
     private long lastHit;
+    private final ItemService itemService;
+    private boolean alreadyDropped;
 
-    public Barrel() {
+    public Barrel(final ItemService itemService) {
+        this.itemService = itemService;
         animation = Animation.builder()
                 .setTotal(2, 4)
                 .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
@@ -80,10 +89,12 @@ public class Barrel implements RoomObject, Damageable {
     public boolean canRender() {
         return Camera.isInProjection(physicsBody.getTranslation(), getWidth(), getHeight());
     }
+
     @Override
     public int getWidth() {
         return DIMENSION_WIDTH;
     }
+
     @Override
     public int getHeight() {
         return DIMENSION_HEIGHT;
@@ -107,7 +118,6 @@ public class Barrel implements RoomObject, Damageable {
         if (animation.getCurrentState() == AnimationState.DEATH && animation.hasPlayedOnce()) {
             return;
         }
-
         animation.update();
         switch (animation.getCurrentState()) {
             case HIT -> {
@@ -116,12 +126,24 @@ public class Barrel implements RoomObject, Damageable {
                 }
             }
             case DEATH -> {
+                if (!alreadyDropped) {
+                    dropItems();
+                    alreadyDropped = true;
+                }
                 if (animation.hasPlayedOnce()) {
                     physicsBody.destroy();
                     animation.setCurrentFrame(animation.getCurrentStateNumSprites() - 1);
                 }
             }
         }
+    }
+
+    private void dropItems() {
+        LOGGER.info("Dropping items for barrel at {}", physicsBody.getTranslation());
+        final ItemFactory itemFactory = itemService.getItemFactory();
+        final ItemDrop itemDrop = itemFactory.createItemDrop();
+        itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth() / 2f + getWidth() / 2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight() / 2f + getHeight() / 2f);
+        itemService.add(itemDrop);
     }
 
     @Override
@@ -152,7 +174,7 @@ public class Barrel implements RoomObject, Damageable {
     }
 
     @Override
-    public void destroy(){
+    public void destroy() {
         physicsBody.destroy();
     }
 

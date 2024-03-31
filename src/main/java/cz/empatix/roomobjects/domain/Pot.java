@@ -1,6 +1,9 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.service.ItemFactory;
+import cz.empatix.items.service.ItemService;
 import cz.empatix.newphysics.attributes.DamageSourceType;
 import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
@@ -16,8 +19,11 @@ import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Pot implements RoomObject, Damageable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Pot.class);
     private final static int SCALE = 3;
     private final static int OFFSET_X = (25 * SCALE);
     private final static int OFFSET_Y = (26 * SCALE);
@@ -29,7 +35,10 @@ public class Pot implements RoomObject, Damageable {
     private final InterpolatedPhysicsObject physicsBody;
     private int health = 4;
     private long lastHit;
-    public Pot() {
+    private final ItemService itemService;
+    private boolean alreadyDropped;
+    public Pot(final ItemService itemService) {
+        this.itemService = itemService;
         animation = Animation.builder()
                 .setTotal(2, 4)
                 .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
@@ -96,12 +105,12 @@ public class Pot implements RoomObject, Damageable {
         return physicsBody.getTranslation();
     }
 
-    public int getCollissionWidth() {
-        return COLLISSION_WIDTH;
-    }
-
-    public int getCollissionHeight() {
-        return COLLISSION_HEIGHT;
+    private void dropItems() {
+        LOGGER.info("Dropping items for barrel at {}", physicsBody.getTranslation());
+        final ItemFactory itemFactory = itemService.getItemFactory();
+        final ItemDrop itemDrop = itemFactory.createItemDrop();
+        itemDrop.setPosition(physicsBody.getPhysicsTranslationX() - itemDrop.getWidth() / 2f + getWidth() / 2f, physicsBody.getPhysicsTranslationY() - itemDrop.getHeight() / 2f + getHeight() / 2f);
+        itemService.add(itemDrop);
     }
 
     @Override
@@ -118,6 +127,10 @@ public class Pot implements RoomObject, Damageable {
                 }
             }
             case DEATH -> {
+                if (!alreadyDropped) {
+                    dropItems();
+                    alreadyDropped = true;
+                }
                 if (animation.hasPlayedOnce()) {
                     physicsBody.destroy();
                     animation.setCurrentFrame(animation.getCurrentStateNumSprites() - 1);

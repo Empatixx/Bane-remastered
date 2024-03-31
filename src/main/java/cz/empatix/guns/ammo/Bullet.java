@@ -72,7 +72,7 @@ public class Bullet implements Drawable, DamageSource {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation()),
                 animation.getTextureId(),
-                new MotionBlurBinding(Camera.getProjection(), new Vector2f(direction))
+                new CommonBinding(Camera.getProjection())
         );
     }
 

@@ -111,9 +111,9 @@ public class LobbyRoom implements Room {
             roomObjectService.add(taskBoard);
         }
         {
-            final Pot pot = new Pot();
-            final Pot pot2 = new Pot();
-            final Pot pot3 = new Pot();
+            final Pot pot = new Pot(null);
+            final Pot pot2 = new Pot(null);
+            final Pot pot3 = new Pot(null);
 
             pot.setPosition(Tile.TILE_SIZE * Tile.SCALE * 14f, Tile.SCALE_TILE_SIZE * 6);
             pot2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 13f, Tile.SCALE_TILE_SIZE * 6);

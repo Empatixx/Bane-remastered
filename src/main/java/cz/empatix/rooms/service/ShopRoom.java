@@ -86,8 +86,8 @@ public class ShopRoom implements Room {
                 shopItemService.add(shopItem);
             }
         }
-        final Pot pot = new Pot();
-        final Pot pot2 = new Pot();
+        final Pot pot = new Pot(itemService);
+        final Pot pot2 = new Pot(itemService);
 
         pot.setPosition(getMinX() + Tile.SCALE_TILE_SIZE * 2, getMinY() + tileMap.getHeight() * 4 / 5f - pot.getHeight() / 2f);
         pot2.setPosition(getMaxX() - Tile.SCALE_TILE_SIZE * 5, getMinY() + tileMap.getHeight() * 4 / 5f - pot.getHeight() / 2f);

@@ -80,9 +80,9 @@ public class CommonRoom implements Room {
         final BonesSupplier bonesSupplier = new BonesSupplier(this, tileMap);
         final CobwebSupplier cobwebSupplier = new CobwebSupplier(this, tileMap);
         final BannerSupplier bannerSupplier = new BannerSupplier(this, tileMap);
-        final BarrelSupplier barrelSupplier = new BarrelSupplier(this, tileMap);
+        final BarrelSupplier barrelSupplier = new BarrelSupplier(this, tileMap, itemService);
         final ExplosiveBarrelSupplier explosiveBarrelSupplier = new ExplosiveBarrelSupplier(this);
-        final PotSupplier potSupplier = new PotSupplier(this, tileMap);
+        final PotSupplier potSupplier = new PotSupplier(this, tileMap, itemService);
         final FlamethrowerSupplier flamethrowerSupplier = new FlamethrowerSupplier(this, tileMap);
 
         final List<Spike> spikes = Stream.generate(spikeSupplier::supply)
