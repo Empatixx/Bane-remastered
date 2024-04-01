@@ -138,17 +138,10 @@
                     </execution>
                 </executions>
             </plugin>
-            /*<plugin>
+            <plugin>
                 <groupId>com.github.wvengen</groupId>
                 <artifactId>proguard-maven-plugin</artifactId>
                 <version>2.6.1</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>net.sf.proguard</groupId>
-                        <artifactId>proguard-base</artifactId>
-                        <version>6.2.2</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -156,16 +149,12 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <proguardVersion>4.10</proguardVersion>
-                    <options>
-                        <option>-keep public class myapp.Main{public static void main(java.lang.String[]);}</option>
-                    </options>
-                    <libs>
-                        <lib>${java.home}/lib/rt.jar</lib>
-                        <lib>${java.home}/lib/jce.jar</lib>
-                    </libs>
+                    <proguardConfiguration>
+                        ./proguard.conf
+                    </proguardConfiguration>
+                    <proGuardVersion>7.4.2</proGuardVersion>
                 </configuration>
-            </plugin>*/
+            </plugin>
         </plugins>
     </build>
 
@@ -239,7 +228,7 @@
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-            <version>0.9.12</version>
+            <version>0.10.2</version>
         </dependency>
         <dependency>
             <groupId>com.code-disaster.steamworks4j</groupId>

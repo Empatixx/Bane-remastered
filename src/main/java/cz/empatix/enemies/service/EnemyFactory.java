@@ -23,45 +23,49 @@ public class EnemyFactory {
     private final static AtomicReference<List<EnemySupplier>> commonEnemiesSuppliers = new AtomicReference<>();
     private final static AtomicReference<List<EnemySupplier>> bossEnemiesSuppliers = new AtomicReference<>();
 
-    public static void init() {
+    public static void  init() {
         CompletableFuture.runAsync(() -> {
-            final Reflections reflections = new Reflections("cz.empatix.enemies.domain");
-            final Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(SpawnableEnemy.class);
-            final List<EnemySupplier> commonEnemiesSuppliers = new ArrayList<>();
-            final List<EnemySupplier> bossEnemiesSuppliers = new ArrayList<>();
+            try {
+                final Reflections reflections = new Reflections("cz.empatix.enemies.domain");
+                final Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(SpawnableEnemy.class);
+                final List<EnemySupplier> commonEnemiesSuppliers = new ArrayList<>();
+                final List<EnemySupplier> bossEnemiesSuppliers = new ArrayList<>();
 
-            final Instant start = Instant.now();
+                final Instant start = Instant.now();
 
-            LOGGER.info("Found {} enemies", annotatedClasses.size());
-            for (Class<?> annotatedClass : annotatedClasses) {
-                final SpawnableEnemy annotation = annotatedClass.getAnnotation(SpawnableEnemy.class);
-                try {
-                    final Supplier<Enemy> supplier = () -> {
-                        try {
-                            return (Enemy) annotatedClass.getConstructor().newInstance();
-                        } catch (Exception e) {
-                            LOGGER.error("Failed to create enemy from class: " + annotatedClass.getName(), e);
-                            throw new RuntimeException(e);
+                LOGGER.info("Found {} enemies", annotatedClasses.size());
+                for (Class<?> annotatedClass : annotatedClasses) {
+                    final SpawnableEnemy annotation = annotatedClass.getAnnotation(SpawnableEnemy.class);
+                    try {
+                        final Supplier<Enemy> supplier = () -> {
+                            try {
+                                return (Enemy) annotatedClass.getConstructor().newInstance();
+                            } catch (Exception e) {
+                                LOGGER.error("Failed to create enemy from class: " + annotatedClass.getName(), e);
+                                throw new RuntimeException(e);
+                            }
+                        };
+                        final int minFloor = annotation.minFloor();
+                        final int maxFloor = annotation.maxFloor();
+                        final EnemySupplier enemySupplier = new EnemySupplier(supplier, minFloor, maxFloor);
+                        switch (annotation.type()) {
+                            case COMMON -> commonEnemiesSuppliers.add(enemySupplier);
+                            case BOSS -> bossEnemiesSuppliers.add(enemySupplier);
                         }
-                    };
-                    final int minFloor = annotation.minFloor();
-                    final int maxFloor = annotation.maxFloor();
-                    final EnemySupplier enemySupplier = new EnemySupplier(supplier, minFloor, maxFloor);
-                    switch (annotation.type()) {
-                        case COMMON -> commonEnemiesSuppliers.add(enemySupplier);
-                        case BOSS -> bossEnemiesSuppliers.add(enemySupplier);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to create enemy from class: " + annotatedClass.getName(), e);
                     }
-                } catch (Exception e) {
-                    throw new RuntimeException("Failed to create enemy from class: " + annotatedClass.getName(), e);
                 }
-            }
-            LOGGER.info("Loaded total common enemies: {}", commonEnemiesSuppliers.size());
-            LOGGER.info("Loaded total boss enemies: {}", bossEnemiesSuppliers.size());
-            EnemyFactory.bossEnemiesSuppliers.set(bossEnemiesSuppliers);
-            EnemyFactory.commonEnemiesSuppliers.set(commonEnemiesSuppliers);
+                LOGGER.info("Loaded total common enemies: {}", commonEnemiesSuppliers.size());
+                LOGGER.info("Loaded total boss enemies: {}", bossEnemiesSuppliers.size());
+                EnemyFactory.bossEnemiesSuppliers.set(bossEnemiesSuppliers);
+                EnemyFactory.commonEnemiesSuppliers.set(commonEnemiesSuppliers);
 
-            final Instant end = Instant.now();
-            LOGGER.info("EnemyFactory initialized in: {} ms", Duration.between(start, end).toMillis());
+                final Instant end = Instant.now();
+                LOGGER.info("EnemyFactory initialized in: {} ms", Duration.between(start, end).toMillis());
+            } catch (Exception e){
+                LOGGER.error("Failed to initialize EnemyFactory", e);
+            }
         });
     }
 

@@ -19,9 +19,11 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.MotionBlurBinding;
+import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.tiles.domain.Tile;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class Bullet implements Drawable, DamageSource {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
@@ -74,7 +76,6 @@ public class Bullet implements Drawable, DamageSource {
     }
 
     public void update(final double dt) {
-        lastPosition = physicsBody.getTranslation();
         animation.update();
         lightSource.setPosition(physicsBody.getTranslationX() + BULLET_WIDTH * SCALE / 2,
                 physicsBody.getTranslationY() + BULLET_HEIGHT * SCALE / 2);
