@@ -44,6 +44,7 @@ public class PistolClipHud {
     public void update(final double dt){
         currentClipObserver.update();
         maxClipObserver.update();
+        ammoImages.forEach(ammoImage -> ammoImage.update((float) dt));
     }
     private void updatedClip(final int currentClip) {
         for (int i = 0; i < ammoImages.size(); i++) {

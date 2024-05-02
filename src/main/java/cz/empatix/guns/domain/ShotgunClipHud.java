@@ -45,6 +45,7 @@ public class ShotgunClipHud {
     public void update(final double dt){
         currentClipObserver.update();
         maxClipObserver.update();
+        ammoImages.forEach(ammoImage -> ammoImage.update((float) dt));
     }
     private void updatedClip(final int currentClip) {
         for (int i = 0; i < ammoImages.size(); i++) {
@@ -58,13 +59,12 @@ public class ShotgunClipHud {
     }
     private void updatedSize(final int maxClipAmmo) {
         ammoImages = new ArrayList<>();
-        ammoImages.clear();
         for (int i = 0; i < maxClipAmmo; i++) {
             final ShotgunAmmoHud ammoImage = new ShotgunAmmoHud();
             ammoImage.setPosition(START_POSITION.x, START_POSITION.y - i * STEP);
             ammoImages.add(ammoImage);
         }
-        ammoImages = List.copyOf(ammoImages); // Immutable list
+        ammoImages = List.copyOf(ammoImages);
     }
 
     public List<Renderable> getSubRenderables() {

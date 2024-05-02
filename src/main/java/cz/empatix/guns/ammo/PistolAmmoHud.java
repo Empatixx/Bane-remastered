@@ -20,9 +20,9 @@ public class PistolAmmoHud implements Drawable {
         position = new Vector2f();
         animation = Animation.builder()
                 .texture(AssetsService.getTexture("ingame/ammo_hud.tga"))
-                .setTotal(2, 1)
+                .setTotal(2, 2)
                 .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .addState(AnimationState.EMPTY, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(AnimationState.EMPTY, 1, 2, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .build();
         animation.setState(AnimationState.IDLE);
     }
@@ -32,6 +32,12 @@ public class PistolAmmoHud implements Drawable {
         } else {
             animation.setState(AnimationState.EMPTY);
         }
+    }
+    public void update(final float dt){
+        if (animation.getCurrentState() == AnimationState.EMPTY && animation.isLastFrame()){
+            return;
+        }
+        animation.update();
     }
     public void setPosition(final float x, final float y){
         position.set(x, y);
