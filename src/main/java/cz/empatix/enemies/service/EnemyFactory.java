@@ -2,6 +2,10 @@ package cz.empatix.enemies.service;
 
 import cz.empatix.enemies.domain.*;
 import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.scanners.TypeAnnotationsScanner;
+import org.reflections.util.ClasspathHelper;
+import org.reflections.util.ConfigurationBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +30,8 @@ public class EnemyFactory {
     public static void  init() {
         CompletableFuture.runAsync(() -> {
             try {
-                final Reflections reflections = new Reflections("cz.empatix.enemies.domain");
+                final Reflections reflections = new Reflections(new ConfigurationBuilder()
+                        .forPackage("cz.empatix.enemies.domain"));
                 final Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(SpawnableEnemy.class);
                 final List<EnemySupplier> commonEnemiesSuppliers = new ArrayList<>();
                 final List<EnemySupplier> bossEnemiesSuppliers = new ArrayList<>();

@@ -48,12 +48,7 @@ public class AmmoBoxItem implements ItemDrop {
             case PISTOL, SUBMACHINE, SHOTGUN -> OTHER_DIMENSION_HEIGHT;
             case UNIVERSAL -> UNIVERSAL_DIMENSION_HEIGHT;
         };
-
-        this.animation = Animation.builder()
-                .setTotal(1, 1)
-                .addState(AnimationState.IDLE, 0, 1, width, height, -1)
-                .texture(AssetsService.getTexture(getTexturePath(ammoBoxType)))
-                .build();
+        this.animation = getAnimation(ammoBoxType);
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
         interactable = new CommonInteractable(pressedKeys -> {
@@ -63,7 +58,20 @@ public class AmmoBoxItem implements ItemDrop {
         }, () -> !pickedUp && canPickUp.test(ammoBoxType), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
     }
-
+    private Animation getAnimation(final AmmoBoxType ammoBoxType) {
+        return switch (ammoBoxType) {
+            case PISTOL, SUBMACHINE, SHOTGUN -> Animation.builder()
+                    .setTotal(1, 8)
+                    .addState(AnimationState.IDLE, 0, 8, width, height, 100)
+                    .texture(AssetsService.getTexture(getTexturePath(ammoBoxType)))
+                    .build();
+            case UNIVERSAL -> Animation.builder()
+                    .setTotal(1, 6)
+                    .addState(AnimationState.IDLE, 0, 1, width, height, -1)
+                    .texture(AssetsService.getTexture(getTexturePath(ammoBoxType)))
+                    .build();
+        };
+    }
     private String getTexturePath(final AmmoBoxType ammoBoxType) {
         return switch (ammoBoxType) {
             case PISTOL -> "ingame/ammobox_pistol.tga";
@@ -85,7 +93,7 @@ public class AmmoBoxItem implements ItemDrop {
 
     @Override
     public void update(float dt) {
-
+        animation.update();
     }
 
     @Override
