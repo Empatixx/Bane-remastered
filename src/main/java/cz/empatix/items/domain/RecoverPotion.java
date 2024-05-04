@@ -20,8 +20,11 @@ import java.util.function.Supplier;
 
 public class RecoverPotion implements ItemDrop {
     private final static float SCALE = 2.5f;
-    private final static int DIMENSION_WIDTH = (int) (15 * SCALE);
-    private final static int DIMENSION_HEIGHT = (int) (16 * SCALE);
+    private final static float LARGE_SCALE = 2f;
+    private final static int DIMENSION_WIDTH = (int) (24 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (24 * SCALE);
+    private final static int LARGE_DIMENSION_WIDTH = (int) (32 * LARGE_SCALE);
+    private final static int LARGE_DIMENSION_HEIGHT = (int) (32 * LARGE_SCALE);
     private final RecoverType type;
     private final RecoverSize size;
     private final CommonInteractable interactable;
@@ -31,6 +34,7 @@ public class RecoverPotion implements ItemDrop {
     private final int amount;
     private boolean pickedUp = false;
     private final FloatingEffectService floatingEffectService;
+
     public RecoverPotion(final RecoverSize size,
                          final RecoverType type,
                          final Supplier<Boolean> hasFull,
@@ -38,12 +42,7 @@ public class RecoverPotion implements ItemDrop {
         this.type = type;
         this.size = size;
         this.amount = getDefaultAmount();
-        this.animation = Animation.builder()
-                .setTotal(2, 1)
-                .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
-                .texture(AssetsService.getTexture(getTexture()))
-                .build();
+        animation = getAnimation(size);
         animation.setState(getAnimationState());
         position = new Vector2f();
         interactable = new CommonInteractable(pressedKeys -> {
@@ -55,21 +54,40 @@ public class RecoverPotion implements ItemDrop {
         floatingEffectService = new FloatingEffectService();
     }
 
+    private Animation getAnimation(RecoverSize size) {
+        return switch (size) {
+            case SMALL -> Animation.builder()
+                    .setTotal(2, 4)
+                    .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
+                    .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
+                    .texture(AssetsService.getTexture(getTexture()))
+                    .build();
+            case LARGE -> Animation.builder()
+                    .setTotal(2, 1)
+                    .addState(AnimationState.TYPE0, 0, 1, LARGE_DIMENSION_WIDTH, LARGE_DIMENSION_HEIGHT, -1)
+                    .addState(AnimationState.TYPE1, 1, 1, LARGE_DIMENSION_WIDTH, LARGE_DIMENSION_HEIGHT, -1)
+                    .texture(AssetsService.getTexture(getTexture()))
+                    .build();
+            default -> throw new IllegalStateException("Unexpected value: " + size);
+        };
+    }
+
     private AnimationState getAnimationState() {
         return switch (type) {
             case HEALTH -> AnimationState.TYPE0;
             case ARMOR -> AnimationState.TYPE1;
         };
     }
-    private String getTexture(){
-        return switch (size){
+
+    private String getTexture() {
+        return switch (size) {
             case SMALL -> "ingame/healing_pot.tga";
             case LARGE -> "ingame/large_healing_pot.tga";
         };
     }
 
     private int getDefaultAmount() {
-        return switch (size){
+        return switch (size) {
             case SMALL -> 1;
             case LARGE -> 4;
         };
@@ -116,12 +134,18 @@ public class RecoverPotion implements ItemDrop {
 
     @Override
     public int getWidth() {
-        return DIMENSION_WIDTH;
+        return switch (size) {
+            case SMALL -> DIMENSION_WIDTH;
+            case LARGE -> LARGE_DIMENSION_WIDTH;
+        };
     }
 
     @Override
     public int getHeight() {
-        return DIMENSION_HEIGHT;
+        return switch (size) {
+            case SMALL -> DIMENSION_HEIGHT;
+            case LARGE -> LARGE_DIMENSION_HEIGHT;
+        };
     }
 
     @Override
