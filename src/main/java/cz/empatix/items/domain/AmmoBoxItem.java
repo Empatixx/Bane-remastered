@@ -5,6 +5,7 @@ import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.items.service.FloatingEffectService;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -35,6 +36,7 @@ public class AmmoBoxItem implements ItemDrop {
     private final AmmoBoxType ammoBoxType;
     private final int width;
     private final int height;
+    private final FloatingEffectService floatingEffectService;
     public AmmoBoxItem(final AmmoBoxType ammoBoxType,
                        final Predicate<AmmoBoxType> canPickUp,
                        final BiConsumer<Float, AmmoBoxType> pickUp) {
@@ -57,6 +59,7 @@ public class AmmoBoxItem implements ItemDrop {
             AUDIO_SERVICE.play(SoundEffect.PICKUP);
         }, () -> !pickedUp && canPickUp.test(ammoBoxType), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
+        floatingEffectService = new FloatingEffectService();
     }
     private Animation getAnimation(final AmmoBoxType ammoBoxType) {
         return switch (ammoBoxType) {
@@ -66,7 +69,7 @@ public class AmmoBoxItem implements ItemDrop {
                     .texture(AssetsService.getTexture(getTexturePath(ammoBoxType)))
                     .build();
             case UNIVERSAL -> Animation.builder()
-                    .setTotal(1, 6)
+                    .setTotal(1, 1)
                     .addState(AnimationState.IDLE, 0, 1, width, height, -1)
                     .texture(AssetsService.getTexture(getTexturePath(ammoBoxType)))
                     .build();
@@ -94,6 +97,7 @@ public class AmmoBoxItem implements ItemDrop {
     @Override
     public void update(float dt) {
         animation.update();
+        floatingEffectService.update(dt);
     }
 
     @Override
@@ -148,8 +152,9 @@ public class AmmoBoxItem implements ItemDrop {
 
     @Override
     public RenderData renderData() {
+        final Vector2f floatingPosition = new Vector2f(position).add(0, floatingEffectService.getOffsetY());
         return new RenderData(
-                animation.getVertices(position),
+                animation.getVertices(floatingPosition),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

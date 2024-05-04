@@ -6,6 +6,7 @@ import cz.empatix.guns.domain.Gun;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
+import cz.empatix.items.service.FloatingEffectService;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Vertex;
@@ -27,6 +28,7 @@ public class ArtefactDrop implements ItemDrop{
     private final TextureAtlas.Entry texture;
     private boolean pickedUp = false;
     private final DropSource source;
+    private final FloatingEffectService floatingEffectService;
     public ArtefactDrop(final DropSource source,
                         final Artefact artefact,
                         final Consumer<Artefact> addArtefact) {
@@ -39,6 +41,7 @@ public class ArtefactDrop implements ItemDrop{
             }
         }, () -> true, () -> pickedUp, position, getWidth(), getHeight());
         this.source = source;
+        floatingEffectService = new FloatingEffectService();
     }
     @Override
     public void interact(final Set<Integer> keys) {
@@ -57,7 +60,7 @@ public class ArtefactDrop implements ItemDrop{
 
     @Override
     public void update(float dt) {
-
+        floatingEffectService.update(dt);
     }
 
     @Override
@@ -97,9 +100,10 @@ public class ArtefactDrop implements ItemDrop{
 
     @Override
     public RenderData renderData() {
+        final Vector2f floatingPosition = new Vector2f(position).add(0, floatingEffectService.getOffsetY());
         return new RenderData(
                 Vertex.builder()
-                        .position(position)
+                        .position(floatingPosition)
                         .posDimensions(getWidth(), getHeight())
                         .texture(texture)
                         .offset(getWidth(), getHeight())

@@ -52,7 +52,7 @@ public class LobbyState extends GameState {
         player = new Player();
         player.setPosition(mapGenerationResult.startRoom().getMaxX() / 2f, mapGenerationResult.startRoom().getMaxY() / 2f);
 
-        coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(0,236,1));
+        coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(236,0,0));
 
         scientist = new Scientist();
         scientist.setPosition(Tile.TILE_SIZE * Tile.SCALE * 25, Tile.TILE_SIZE * Tile.SCALE * 6.5f);

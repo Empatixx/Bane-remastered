@@ -20,7 +20,9 @@ import java.util.stream.Stream;
 public class CoinService {
     private final static String DEFAULT_COIN_TEXTURE = "ingame/banecoin.tga";
     private final static Vector3i DEFAULT_COLOR_TEXT = new Vector3i(255, 216, 0);
-    private final static int COIN_HUD_OFFSET = 25;
+    private final static int COIN_HUD_OFFSET = 10;
+    private final static int TEXT_OFFSET = 15;
+    private static final int IMAGE_SCALE = 2;
     private final static Logger LOGGER = LoggerFactory.getLogger(CoinService.class);
     private final CommonImage coinHud;
     private final CommonText coinText;
@@ -28,10 +30,10 @@ public class CoinService {
 
     public CoinService(final String coinTexture, final Vector3i colorText){
         final TextureAtlas.Entry coinTxt = AssetsService.getTexture(coinTexture);
-        coinHud = new CommonImage(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height()), 1f);
-        coinText = new CommonText(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET + coinTxt.width() + 15, 0f), coinHud.getZIndex());
+        coinHud = new CommonImage(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height() * IMAGE_SCALE), IMAGE_SCALE);
+        coinText = new CommonText(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET + coinTxt.width() * IMAGE_SCALE + TEXT_OFFSET, 0f), coinHud.getZIndex());
 
-        coinText.setCenterY(WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height());
+        coinText.setCenterY(WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height() * IMAGE_SCALE);
         coinText.setColorRGB(colorText.x(), colorText.y(), colorText.z());
     }
     public CoinService(){

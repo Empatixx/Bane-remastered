@@ -1,6 +1,7 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.items.service.FloatingEffectService;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
@@ -38,6 +39,7 @@ public class MovableItemDrop implements ItemDrop{
 
     @Override
     public void update(float dt) {
+        itemDrop.update(dt);
         itemDrop.setPosition(physicsBody.getTranslation().x(), physicsBody.getTranslation().y());
     }
 

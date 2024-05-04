@@ -4,6 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.items.service.FloatingEffectService;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -29,7 +30,7 @@ public class RecoverPotion implements ItemDrop {
     private final Vector2f position;
     private final int amount;
     private boolean pickedUp = false;
-
+    private final FloatingEffectService floatingEffectService;
     public RecoverPotion(final RecoverSize size,
                          final RecoverType type,
                          final Supplier<Boolean> hasFull,
@@ -51,6 +52,7 @@ public class RecoverPotion implements ItemDrop {
             AUDIO_SERVICE.play(SoundEffect.PICKUP);
         }, () -> !pickedUp && !hasFull.get(), this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
+        floatingEffectService = new FloatingEffectService();
     }
 
     private AnimationState getAnimationState() {
@@ -83,7 +85,8 @@ public class RecoverPotion implements ItemDrop {
 
     @Override
     public void update(float dt) {
-
+        animation.update();
+        floatingEffectService.update(dt);
     }
 
     @Override
@@ -128,8 +131,9 @@ public class RecoverPotion implements ItemDrop {
 
     @Override
     public RenderData renderData() {
+        final Vector2f floatingPosition = new Vector2f(position).add(0, floatingEffectService.getOffsetY());
         return new RenderData(
-                animation.getVertices(position),
+                animation.getVertices(floatingPosition),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

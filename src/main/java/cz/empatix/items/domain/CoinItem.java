@@ -5,6 +5,7 @@ import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.items.service.FloatingEffectService;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -19,21 +20,22 @@ import java.util.function.Consumer;
 
 public class CoinItem implements ItemDrop {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
-    private final static float SCALE = 0.75f;
-    private final static int DIMENSION_WIDTH = (int) (33 * SCALE);
-    private final static int DIMENSION_HEIGHT = (int) (33 * SCALE);
+    private final static float SCALE = 1.5f;
+    private final static int DIMENSION_WIDTH = (int) (16 * SCALE);
+    private final static int DIMENSION_HEIGHT = (int) (16 * SCALE);
     private final CommonInteractable interactable;
     private final ItemDespawnService itemDespawnService;
     private final Vector2f position;
     private final Animation animation;
     private final int amount;
     private boolean pickedUp = false;
+    private final FloatingEffectService floatingEffectService;
 
     public CoinItem(final Consumer<Integer> coinAdd) {
         this.amount = 1;
         this.animation = Animation.builder()
-                .setTotal(1, 10)
-                .addState(AnimationState.IDLE, 0, 10, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75)
+                .setTotal(1, 4)
+                .addState(AnimationState.IDLE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
                 .texture(AssetsService.getTexture("ingame/banecoin_anim.tga"))
                 .build();
         position = new Vector2f();
@@ -43,11 +45,13 @@ public class CoinItem implements ItemDrop {
             AUDIO_SERVICE.play(SoundEffect.COIN);
         }, () -> !pickedUp, this::canRemove, position, getHeight(), getWidth());
         itemDespawnService = new ItemDespawnService();
+        floatingEffectService = new FloatingEffectService();
     }
 
     @Override
     public void update(float dt) {
         animation.update();
+        floatingEffectService.update(dt);
     }
 
     @Override
@@ -92,8 +96,9 @@ public class CoinItem implements ItemDrop {
 
     @Override
     public RenderData renderData() {
+        final Vector2f floatingPosition = new Vector2f(position).add(0, floatingEffectService.getOffsetY());
         return new RenderData(
-                animation.getVertices(position),
+                animation.getVertices(floatingPosition),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
