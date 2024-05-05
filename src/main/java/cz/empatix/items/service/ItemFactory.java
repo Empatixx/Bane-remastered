@@ -22,6 +22,7 @@ public class ItemFactory {
     private final Map<ItemRarity, List<Supplier<ItemDrop>>> itemDropSuppliers;
     private final Map<ShopType, List<Supplier<ItemDrop>>> shopDropSuppliers;
     private final Function<ItemDrop, ShopItem> shopDropSupplier;
+    private final Function<ItemDrop, SacrificialItem> sacrificialItemSupplier;
     public ItemFactory(final GunService gunService,
                        final CoinService coinService,
                        final Player player,
@@ -56,6 +57,9 @@ public class ItemFactory {
 
         shopDropSupplier = drop -> {
             return new ShopItem(drop, coinService::hasEnoughCoins, coinService::removeCoins);
+        };
+        sacrificialItemSupplier = drop -> {
+            return new SacrificialItem(drop, player::hasEnoughHealth, player::removeHealth);
         };
     }
 
@@ -95,6 +99,15 @@ public class ItemFactory {
         shopDrop.setDespawnable(false);
         InteractionService.getInstance().addInteractable(shopDrop);
         return shopDrop;
+    }
+
+    public SacrificialItem createSacrificialItem(final ShopType type, final int floor) {
+        final List<Supplier<ItemDrop>> suppliers = shopDropSuppliers.get(type);
+        final ItemDrop drop = suppliers.get(RANDOM.nextInt(suppliers.size())).get();
+        final SacrificialItem sacrificialItem = sacrificialItemSupplier.apply(drop);
+        sacrificialItem.setDespawnable(false);
+        InteractionService.getInstance().addInteractable(sacrificialItem);
+        return sacrificialItem;
     }
 
     public ItemDrop createItemDrop() {

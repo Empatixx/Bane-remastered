@@ -22,4 +22,10 @@ public interface RoomObject extends Drawable {
         final float yMax = position.y + height;
         return new AABB(Math.min(xMin, xMax), Math.min(yMin, yMax), Math.max(xMin, xMax), Math.max(yMin, yMax));
     }
+    default float getX(){
+        return getPosition().x;
+    }
+    default float getY(){
+        return getPosition().y;
+    }
 }

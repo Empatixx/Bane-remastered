@@ -1,11 +1,11 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.items.domain.SacrificialItem;
 import cz.empatix.items.domain.ShopItem;
 import cz.empatix.items.domain.ShopType;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
-import cz.empatix.items.service.ShopItemService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
@@ -13,7 +13,6 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.slf4j.Logger;
@@ -59,6 +58,15 @@ public class SacrificeRoom implements Room {
         pentagramCircle.setPosition((getMaxX() + getMinX()) / 2f -  pentagramCircle.getWidth() / 2f,
                 (getMaxY() + getMinY()) / 2f -  pentagramCircle.getHeight() / 2f);
         roomObjectService.add(pentagramCircle);
+
+        final ItemFactory factory = itemService.getItemFactory();
+        final SacrificialItem item = factory.createSacrificialItem(ShopType.values()[RANDOM.nextInt(ShopType.values().length)],
+                statisticsService.getFloor());
+        item.setPosition(pentagramCircle.getX() + pentagramCircle.getWidth() / 2f - item.getWidth() / 2f,
+                pentagramCircle.getY() + pentagramCircle.getHeight() / 2f - item.getHeight() / 2f);
+        item.setHudPosition(pentagramCircle.getX() + pentagramCircle.getWidth() / 2f, pentagramCircle.getY());
+        item.setInteractionText(pentagramCircle.getX(), pentagramCircle.getX() + pentagramCircle.getWidth(), pentagramCircle.getY() + pentagramCircle.getHeight());
+        itemService.add(item);
     }
 
     @Override

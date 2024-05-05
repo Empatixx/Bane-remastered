@@ -58,8 +58,8 @@ public class RecoverPotion implements ItemDrop {
         return switch (size) {
             case SMALL -> Animation.builder()
                     .setTotal(2, 4)
-                    .addState(AnimationState.TYPE0, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
-                    .addState(AnimationState.TYPE1, 1, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
+                    .addState(AnimationState.TYPE0, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
+                    .addState(AnimationState.TYPE1, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 125)
                     .texture(AssetsService.getTexture(getTexture()))
                     .build();
             case LARGE -> Animation.builder()

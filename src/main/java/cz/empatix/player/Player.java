@@ -449,4 +449,16 @@ public class Player implements Drawable, InteractEntity, Damageable {
         left = false;
         right = false;
     }
+
+    public boolean hasEnoughHealth(final int damage) {
+        return health - damage >= 0;
+    }
+
+    // use this, if you want remove raw health without any hooks
+    public void removeHealth(final int damage) {
+        health -= damage;
+        AUDIO_SERVICE.play(SoundEffect.PLAYER_HURT);
+        RedVignette.setMaxVignette();
+        lastHitTime = System.currentTimeMillis();
+    }
 }
