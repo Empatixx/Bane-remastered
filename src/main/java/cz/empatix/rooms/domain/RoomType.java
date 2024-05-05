@@ -7,5 +7,6 @@ public enum RoomType {
     NORMAL,
     SHOP,
     PATH,
+    SACRIFICE,
     UNKNOWN
 }

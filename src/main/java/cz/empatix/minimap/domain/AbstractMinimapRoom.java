@@ -32,8 +32,8 @@ public abstract class AbstractMinimapRoom<E> {
                                final int scale) {
         final TextureAtlas.Entry entry = AssetsService.getTexture("ingame/minimap_icons.tga");
         this.animation = Animation.builder()
-                .addState(AnimationState.IDLE, 0, 5, DIMENSIONS, DIMENSIONS, -1)
-                .setTotal(1, 5)
+                .addState(AnimationState.IDLE, 0, 6, DIMENSIONS, DIMENSIONS, -1)
+                .setTotal(1, 6)
                 .texture(entry)
                 .scale(scale)
                 .build();
@@ -52,6 +52,7 @@ public abstract class AbstractMinimapRoom<E> {
             case TREASURE -> 2;
             case SHOP -> 3;
             case BOSS -> 4;
+            case SACRIFICE -> 5;
             default -> throw new IllegalStateException("Unknown room type: " + type);
         };
     }

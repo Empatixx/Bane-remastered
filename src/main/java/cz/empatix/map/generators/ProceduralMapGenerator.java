@@ -7,6 +7,7 @@ import cz.empatix.map.domain.*;
 import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.rooms.service.SacrificeRoom;
 import cz.empatix.tiles.domain.Tile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ProceduralMapGenerator {
+    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static float ROOMS_DENSITY = 0.15f;
     private final static Logger LOGGER = LoggerFactory.getLogger(ProceduralMapGenerator.class);
     private final static int TOTAL_NORMAL_ROOMS = 5;
@@ -25,7 +27,9 @@ public class ProceduralMapGenerator {
     private final static int TOTAL_SHOP_ROOMS = 1;
     private final static int TOTAL_LOOT_ROOMS = 1;
     private final static int TOTAL_START_ROOMS = 1;
+    private final static int TOTAL_SACRIFICE_ROOMS = 1;
     private final static int TOTAL_ROOMS = TOTAL_NORMAL_ROOMS + TOTAL_BOSS_ROOMS + TOTAL_SHOP_ROOMS + TOTAL_START_ROOMS + TOTAL_LOOT_ROOMS;
+    private final static int TOTAL_BONUS_ROOMS = TOTAL_SACRIFICE_ROOMS;
 
     static {
         Preconditions.checkArgument(TOTAL_ROOMS > 0, "Total rooms must be greater than 0");
@@ -48,13 +52,22 @@ public class ProceduralMapGenerator {
         final List<TreasureRoomGenInfo> treasureRooms = Stream.generate(() -> new TreasureRoomGenInfo(itemService))
                 .limit(TOTAL_LOOT_ROOMS)
                 .toList();
+        final List<SacrificeRoomGenInfo> sacrificeRooms = Stream.generate(() -> new SacrificeRoomGenInfo(itemService, statisticsService))
+                .limit(RANDOM.nextInt(0, TOTAL_BONUS_ROOMS + 1))
+                .toList();
+
+        if (!sacrificeRooms.isEmpty()) {
+            LOGGER.info("Sacrifice rooms: {}", sacrificeRooms.size());
+        }
+
         startRoomGenInfo.initDimensions();
         normalRooms.forEach(RoomGenInfo::initDimensions);
         shopRooms.forEach(RoomGenInfo::initDimensions);
         bossRooms.forEach(RoomGenInfo::initDimensions);
         treasureRooms.forEach(RoomGenInfo::initDimensions);
+        sacrificeRooms.forEach(RoomGenInfo::initDimensions);
 
-        setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
+        setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms, sacrificeRooms);
 
         final List<PathRoomGenInfo> pathsRoom = generatePaths(startRoomGenInfo);
         pathsRoom.forEach(RoomGenInfo::initDimensions);
@@ -62,7 +75,7 @@ public class ProceduralMapGenerator {
         final List<Room> pathRooms = pathsRoom.stream().map(RoomGenInfo::constructRoom).toList();
         pathRooms.forEach(Room::init);
 
-        final List<Room> allRooms = transform(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms);
+        final List<Room> allRooms = transform(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms, sacrificeRooms);
         allRooms.forEach(Room::init);
 
         final Room startRoom = allRooms.stream()
@@ -135,14 +148,18 @@ public class ProceduralMapGenerator {
                                        final List<CommonRoomGenInfo> normalRooms,
                                        final List<ShopRoomGenInfo> shopRooms,
                                        final List<BossRoomGenInfo> bossRooms,
-                                       final List<TreasureRoomGenInfo> treasureRooms) {
-        final List<RoomGenInfo> usedRooms = new ArrayList<>(TOTAL_ROOMS);
-        final Queue<RoomGenInfo> availableRooms = new ArrayDeque<>(TOTAL_ROOMS);
+                                       final List<TreasureRoomGenInfo> treasureRooms,
+                                       final List<SacrificeRoomGenInfo> sacrificeRooms) {
+        final int totalBonusRooms = sacrificeRooms.size();
+
+        final List<RoomGenInfo> usedRooms = new ArrayList<>(TOTAL_ROOMS + totalBonusRooms);
+        final Queue<RoomGenInfo> availableRooms = new ArrayDeque<>(TOTAL_ROOMS + totalBonusRooms);
 
         availableRooms.addAll(normalRooms);
         availableRooms.addAll(treasureRooms);
         availableRooms.addAll(shopRooms);
         availableRooms.addAll(bossRooms);
+        availableRooms.addAll(sacrificeRooms);
 
         usedRooms.add(startRoomGenInfo);
 
@@ -182,14 +199,15 @@ public class ProceduralMapGenerator {
                         LOGGER.error("Fatal error! No room can create neighbours");
                         throw new IllegalStateException("Fatal error! No room can create neighbours");
                     });
-        } while (usedRooms.size() < TOTAL_ROOMS);
+        } while (usedRooms.size() < TOTAL_ROOMS + totalBonusRooms);
     }
 
     private List<Room> transform(final StartRoomGenInfo startRoomGenInfo,
                                  final List<CommonRoomGenInfo> normalRooms,
                                  final List<ShopRoomGenInfo> shopRooms,
                                  final List<BossRoomGenInfo> bossRooms,
-                                 final List<TreasureRoomGenInfo> treasureRooms) {
+                                 final List<TreasureRoomGenInfo> treasureRooms,
+                                 final List<SacrificeRoomGenInfo> sacrificeRooms) {
         final List<RoomGenInfo> rooms = new ArrayList<>(TOTAL_ROOMS);
 
         rooms.add(startRoomGenInfo);
@@ -197,6 +215,7 @@ public class ProceduralMapGenerator {
         rooms.addAll(shopRooms);
         rooms.addAll(bossRooms);
         rooms.addAll(treasureRooms);
+        rooms.addAll(sacrificeRooms);
 
         final Map<RoomGenInfo, Room> roomMap = rooms.stream()
                 .collect(Collectors.toMap(Function.identity(), RoomGenInfo::constructRoom));
