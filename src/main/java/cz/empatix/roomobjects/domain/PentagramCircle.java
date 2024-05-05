@@ -10,7 +10,7 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
 public class PentagramCircle implements RoomObject {
-    private final static int SCALE = 2;
+    private final static float SCALE = 1.5f;
     private final static int DIMENSION_WIDTH = 150;
     private final static int DIMENSION_HEIGHT = 80;
     private final Animation animation;
@@ -67,12 +67,12 @@ public class PentagramCircle implements RoomObject {
 
     @Override
     public int getWidth() {
-        return DIMENSION_WIDTH * SCALE;
+        return (int) (DIMENSION_WIDTH * SCALE);
     }
 
     @Override
     public int getHeight() {
-        return DIMENSION_HEIGHT * SCALE;
+        return (int) (DIMENSION_HEIGHT * SCALE);
     }
 
     @Override

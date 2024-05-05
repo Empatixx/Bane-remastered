@@ -13,6 +13,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
+import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.SacrificialTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
@@ -55,6 +56,11 @@ public class SacrificeRoom implements Room {
     }
     @Override
     public void init() {
+        final AngelStatue angelStatue = new AngelStatue();
+        angelStatue.setPosition((getMaxX() + getMinX()) / 2f - angelStatue.getWidth() / 2f,
+                (getMaxY() + getMinY()) / 2f - angelStatue.getHeight() / 2f - angelStatue.getHeight()/2f - 27);
+        roomObjectService.add(angelStatue);
+
         final PentagramCircle pentagramCircle = new PentagramCircle();
         pentagramCircle.setPosition((getMaxX() + getMinX()) / 2f -  pentagramCircle.getWidth() / 2f,
                 (getMaxY() + getMinY()) / 2f -  pentagramCircle.getHeight() / 2f);
@@ -68,6 +74,26 @@ public class SacrificeRoom implements Room {
         item.setHudPosition(pentagramCircle.getX() + pentagramCircle.getWidth() / 2f, pentagramCircle.getY());
         item.setInteractionText(pentagramCircle.getX(), pentagramCircle.getX() + pentagramCircle.getWidth(), pentagramCircle.getY() + pentagramCircle.getHeight());
         itemService.add(item);
+
+        final LayingBook layingBook = new LayingBook();
+        layingBook.setPosition(getMinX() + 6 * Tile.SCALE_TILE_SIZE, getMinY() + 6 * Tile.SCALE_TILE_SIZE);
+        roomObjectService.add(layingBook);
+
+        final LayingBook layingBook2 = new LayingBook();
+        layingBook2.setPosition(getMinX() + 13 * Tile.SCALE_TILE_SIZE, getMinY() + 3 * Tile.SCALE_TILE_SIZE);
+        roomObjectService.add(layingBook2);
+
+        final LayingBook layingBook3 = new LayingBook();
+        layingBook3.setPosition(getMinX() + 11 * Tile.SCALE_TILE_SIZE, getMinY() + 11 * Tile.SCALE_TILE_SIZE);
+        roomObjectService.add(layingBook3);
+
+        final Chains chains = new Chains();
+        chains.setPosition(getMinX() + 3 * Tile.SCALE_TILE_SIZE, getMinY() + 4 * Tile.SCALE_TILE_SIZE);
+        roomObjectService.add(chains);
+
+        final Chains chains2 = new Chains();
+        chains2.setPosition(getMinX() + 15 * Tile.SCALE_TILE_SIZE, getMinY() + 11 * Tile.SCALE_TILE_SIZE);
+        roomObjectService.add(chains2);
     }
 
     @Override

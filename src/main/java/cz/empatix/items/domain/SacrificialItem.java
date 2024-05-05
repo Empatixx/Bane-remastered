@@ -56,7 +56,7 @@ public class SacrificialItem implements ItemDrop{
         this.drop = itemDrop;
         this.price = RANDOM.nextInt(1, MAX_HEALTH_PRICE + 1);
         this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
-        this.priceText.setColorRGB(212, 0, 0);
+        this.priceText.setColorRGB(212, 160, 0);
         this.priceText.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.priceText.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
         this.image = new AlternativeViewImage("ingame/sacrifice_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getProjection());
