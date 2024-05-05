@@ -7,11 +7,15 @@ import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
+import cz.empatix.lightning.domain.LightSource;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
+import org.dyn4j.geometry.Vector3;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +43,7 @@ public class SacrificialItem implements ItemDrop{
     private final AlternativeViewImage image;
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final AlternativeViewText interactionText;
+    private final LightSource lightSource;
     private Runnable onBuy;
     private int price;
     private boolean bought = false;
@@ -63,6 +68,12 @@ public class SacrificialItem implements ItemDrop{
         this.saleText = new AlternativeViewText("", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.saleText.setColorRGB(122, 248, 18);
         onBuy = NOOP;
+
+        lightSource = LightningService.getInstance().createLightSource(
+                new Vector3f(212, 0, 0),
+                250,
+                1f
+        );
     }
 
 
@@ -106,6 +117,7 @@ public class SacrificialItem implements ItemDrop{
     @Override
     public void update(float dt) {
         drop.update(dt);
+        lightSource.setPosition(drop.getPosition().x() + drop.getWidth() / 2f, drop.getPosition().y() + drop.getHeight() / 2f);
     }
 
     @Override
@@ -141,6 +153,7 @@ public class SacrificialItem implements ItemDrop{
     @Override
     public void destroy() {
         drop.destroy();
+        lightSource.destroy();
         InteractionService.getInstance().removeInteractable(this);
     }
 

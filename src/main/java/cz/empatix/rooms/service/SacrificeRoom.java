@@ -14,6 +14,7 @@ import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
+import cz.empatix.tiles.tilemaps.SacrificialTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ public class SacrificeRoom implements Room {
                     final Set<RoomDirection> neighbors,
                     final StatisticsService statisticsService) {
         this.itemService = itemService;
-        tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
+        tileMap = new SacrificialTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.statisticsService = statisticsService;
