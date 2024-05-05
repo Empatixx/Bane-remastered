@@ -2,6 +2,7 @@ package cz.empatix.tiles.tilemaps;
 
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.factory.TileFactory;
 import cz.empatix.tiles.service.BooleanMapUtil;
 
@@ -13,7 +14,6 @@ public class LobbyTileMap implements TileMap {
     private final static int ROWS = 10;
     private final Tile[][] tiles;
     public LobbyTileMap() {
-
         tiles = createTiles();
     }
 
@@ -48,12 +48,12 @@ public class LobbyTileMap implements TileMap {
 
     @Override
     public int getWidth() {
-        return COLS * Tile.TILE_SIZE * Tile.SCALE;
+        return COLS * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
 
     @Override
     public int getHeight() {
-        return ROWS * Tile.TILE_SIZE * Tile.SCALE;
+        return ROWS * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
 
     @Override
@@ -71,10 +71,5 @@ public class LobbyTileMap implements TileMap {
         Arrays.stream(tiles)
                 .flatMap(Arrays::stream)
                 .forEach(Tile::destroy);
-    }
-
-    @Override
-    public boolean isWall(int xTile, int yTile) {
-        return tiles[yTile][xTile].collision() != null;
     }
 }

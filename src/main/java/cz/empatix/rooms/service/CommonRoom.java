@@ -8,17 +8,14 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.render.domain.AnimationState;
 import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.roomobjects.suppliers.*;
 import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.ProceduralTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
-import org.joml.Vector2f;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;

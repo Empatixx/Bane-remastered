@@ -13,15 +13,13 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.newphysics.service.PhysicsService;
-import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.roomobjects.domain.Scientist;
-import cz.empatix.tiles.domain.Tile;
-import cz.empatix.upgrades.service.UpgradeTreeFactory;
+import cz.empatix.tiles.domain.TileImpl;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
@@ -55,7 +53,7 @@ public class LobbyState extends GameState {
         coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(236,0,0));
 
         scientist = new Scientist();
-        scientist.setPosition(Tile.TILE_SIZE * Tile.SCALE * 25, Tile.TILE_SIZE * Tile.SCALE * 6.5f);
+        scientist.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 25, TileImpl.TILE_SIZE * TileImpl.SCALE * 6.5f);
 
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
         Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);

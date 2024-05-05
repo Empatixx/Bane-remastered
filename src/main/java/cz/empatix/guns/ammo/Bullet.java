@@ -18,12 +18,9 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import cz.empatix.render.shaderbindings.MotionBlurBinding;
-import cz.empatix.textureatlas.domain.TextureAtlas;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
-import org.joml.Vector4f;
 
 public class Bullet implements Drawable, DamageSource {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
@@ -58,7 +55,7 @@ public class Bullet implements Drawable, DamageSource {
             animation.setState(AnimationState.COLLISION);
             physicsBody.setVelocity(0, 0);
             this.damage = 0;
-            if (roomObject.getUserData() instanceof Tile){
+            if (roomObject.getUserData() instanceof TileImpl){
                 AUDIO_SERVICE.play(SoundEffect.WALL_HIT);
             } else {
                 AUDIO_SERVICE.play(SoundEffect.ENEMY_HIT);

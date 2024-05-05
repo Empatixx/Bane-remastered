@@ -1,18 +1,13 @@
 package cz.empatix.roomobjects.suppliers;
 
-import cz.empatix.render.domain.AnimationState;
 import cz.empatix.roomobjects.domain.Banner;
-import cz.empatix.roomobjects.domain.Torch;
 import cz.empatix.roomobjects.resolvers.*;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 

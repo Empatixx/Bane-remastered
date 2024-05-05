@@ -4,7 +4,7 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.roomobjects.domain.PathGate;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 
 import java.util.List;
 import java.util.Set;
@@ -27,7 +27,7 @@ public class RoomLockService {
         final int centerX = room.getX() + room.getWidth() / 2;
         final int centerY = room.getY() + room.getHeight() / 2;
 
-        final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
+        final int tileSize = TileImpl.TILE_SIZE * TileImpl.SCALE;
 
         final int correctionX = Math.abs(centerX % (tileSize));
         final int correctionY = Math.abs(centerY % (tileSize));

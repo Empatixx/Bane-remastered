@@ -6,7 +6,7 @@ import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.RoomObject;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.PathTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -38,20 +38,20 @@ public class PathRoom implements Room {
         tileMap = new PathTileMap(xOffset, yOffset, rows, cols, isHorizontal);
         switch (direction) {
             case TOP -> {
-                yRoomIntersectionOffset = -Tile.TILE_SIZE * Tile.SCALE;
+                yRoomIntersectionOffset = -TileImpl.TILE_SIZE * TileImpl.SCALE;
                 xRoomIntersectionOffset = 0;
             }
             case BOTTOM -> {
-                yRoomIntersectionOffset = Tile.TILE_SIZE * Tile.SCALE;
+                yRoomIntersectionOffset = TileImpl.TILE_SIZE * TileImpl.SCALE;
                 xRoomIntersectionOffset = 0;
             }
             case LEFT -> {
                 yRoomIntersectionOffset = 0;
-                xRoomIntersectionOffset = -Tile.TILE_SIZE * Tile.SCALE;
+                xRoomIntersectionOffset = -TileImpl.TILE_SIZE * TileImpl.SCALE;
             }
             case RIGHT -> {
                 yRoomIntersectionOffset = 0;
-                xRoomIntersectionOffset = Tile.TILE_SIZE * Tile.SCALE;
+                xRoomIntersectionOffset = TileImpl.TILE_SIZE * TileImpl.SCALE;
             }
             default -> throw new IllegalStateException("Unexpected value: " + direction);
         }

@@ -2,7 +2,6 @@ package cz.empatix.rooms.service;
 
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.domain.SacrificialItem;
-import cz.empatix.items.domain.ShopItem;
 import cz.empatix.items.domain.ShopType;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
@@ -13,8 +12,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.tiles.domain.Tile;
-import cz.empatix.tiles.tilemaps.CommonTileMap;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.SacrificialTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.slf4j.Logger;
@@ -76,23 +74,23 @@ public class SacrificeRoom implements Room {
         itemService.add(item);
 
         final LayingBook layingBook = new LayingBook();
-        layingBook.setPosition(getMinX() + 6 * Tile.SCALE_TILE_SIZE, getMinY() + 6 * Tile.SCALE_TILE_SIZE);
+        layingBook.setPosition(getMinX() + 6 * TileImpl.SCALE_TILE_SIZE, getMinY() + 6 * TileImpl.SCALE_TILE_SIZE);
         roomObjectService.add(layingBook);
 
         final LayingBook layingBook2 = new LayingBook();
-        layingBook2.setPosition(getMinX() + 13 * Tile.SCALE_TILE_SIZE, getMinY() + 3 * Tile.SCALE_TILE_SIZE);
+        layingBook2.setPosition(getMinX() + 13 * TileImpl.SCALE_TILE_SIZE, getMinY() + 3 * TileImpl.SCALE_TILE_SIZE);
         roomObjectService.add(layingBook2);
 
         final LayingBook layingBook3 = new LayingBook();
-        layingBook3.setPosition(getMinX() + 11 * Tile.SCALE_TILE_SIZE, getMinY() + 11 * Tile.SCALE_TILE_SIZE);
+        layingBook3.setPosition(getMinX() + 11 * TileImpl.SCALE_TILE_SIZE, getMinY() + 11 * TileImpl.SCALE_TILE_SIZE);
         roomObjectService.add(layingBook3);
 
         final Chains chains = new Chains();
-        chains.setPosition(getMinX() + 3 * Tile.SCALE_TILE_SIZE, getMinY() + 4 * Tile.SCALE_TILE_SIZE);
+        chains.setPosition(getMinX() + 3 * TileImpl.SCALE_TILE_SIZE, getMinY() + 4 * TileImpl.SCALE_TILE_SIZE);
         roomObjectService.add(chains);
 
         final Chains chains2 = new Chains();
-        chains2.setPosition(getMinX() + 15 * Tile.SCALE_TILE_SIZE, getMinY() + 11 * Tile.SCALE_TILE_SIZE);
+        chains2.setPosition(getMinX() + 15 * TileImpl.SCALE_TILE_SIZE, getMinY() + 11 * TileImpl.SCALE_TILE_SIZE);
         roomObjectService.add(chains2);
     }
 

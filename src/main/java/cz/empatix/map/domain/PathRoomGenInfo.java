@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.PathRoom;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 
 import java.util.List;
 import java.util.Map;
@@ -45,7 +45,7 @@ public class PathRoomGenInfo extends RoomGenInfo {
         final int centerX = (parent.getWidth() - this.getWidth()) / 2;
         final int centerY = (parent.getHeight() - this.getHeight()) / 2;
 
-        final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
+        final int tileSize = TileImpl.TILE_SIZE * TileImpl.SCALE;
 
         // to tile based sizes
         final int shiftCenterX = centerX % tileSize;

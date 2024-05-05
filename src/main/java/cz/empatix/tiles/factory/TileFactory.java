@@ -3,11 +3,12 @@ package cz.empatix.tiles.factory;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TileFactory {
-    private final static int TILE_SIZE = Tile.SCALE * Tile.TILE_SIZE;
+    private final static int TILE_SIZE = TileImpl.SCALE * TileImpl.TILE_SIZE;
     private final static String TEXTURE_NAME = "ingame/tileset.tga";
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private static final int[] TOP_WALL = {22, 23, 24, 25};
@@ -39,9 +40,9 @@ public class TileFactory {
     private static final int[] FLOOR = {5, 6, 6, 6, 6, 6, 12, 13, 14, 15, 16, 17, 18};
 
     public Tile[][] createTilemapFromClamp(final boolean[][] map,
-                                           final int xOffset,
-                                           final int yOffset) {
-        final Tile[][] tileMap = new Tile[map.length - 2][map[0].length - 2];
+                                               final int xOffset,
+                                               final int yOffset) {
+        final Tile[][] tileMap = new TileImpl[map.length - 2][map[0].length - 2];
         for (int y = 1; y < map.length - 1; y++) {
             for (int x = 1; x < map[y].length - 1; x++) {
                 final boolean isCollision = isCollision(x, y, map);
@@ -99,18 +100,18 @@ public class TileFactory {
     }
 
     private Tile createTile(final boolean current,
-                            final boolean top,
-                            final boolean bottom,
-                            final boolean left,
-                            final boolean right,
-                            final boolean topLeft,
-                            final boolean topRight,
-                            final boolean bottomLeft,
-                            final boolean bottomRight,
-                            final int x,
-                            final int y,
-                            final int xOffset,
-                            final int yOffset) {
+                                final boolean top,
+                                final boolean bottom,
+                                final boolean left,
+                                final boolean right,
+                                final boolean topLeft,
+                                final boolean topRight,
+                                final boolean bottomLeft,
+                                final boolean bottomRight,
+                                final int x,
+                                final int y,
+                                final int xOffset,
+                                final int yOffset) {
         if (current && top && bottom && right && left && topLeft && topRight && bottomLeft && bottomRight) {
             return createTile(WALL[RANDOM.nextInt(WALL.length)], x, y, xOffset, yOffset);
         } else if (current && top && bottom && right && !left) {
@@ -164,6 +165,6 @@ public class TileFactory {
                             final int xOffset,
                             final int yOffset) {
         final TextureAtlas.Entry texture = AssetsService.getTexture(TEXTURE_NAME);
-        return Tile.from(tileNumber, x, y, xOffset, yOffset, texture);
+        return TileImpl.from(tileNumber, x, y, xOffset, yOffset, texture);
     }
 }

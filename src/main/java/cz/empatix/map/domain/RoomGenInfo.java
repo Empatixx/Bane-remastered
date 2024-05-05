@@ -2,7 +2,7 @@ package cz.empatix.map.domain;
 
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,11 +47,11 @@ public abstract class RoomGenInfo {
     }
 
     public int getWidth() {
-        return cols * Tile.TILE_SIZE * Tile.SCALE;
+        return cols * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
 
     public int getHeight() {
-        return rows * Tile.TILE_SIZE * Tile.SCALE;
+        return rows * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
 
     public int getXOffset() {
@@ -74,8 +74,8 @@ public abstract class RoomGenInfo {
 
         final int newOffsetX, newOffsetY;
 
-        final int pathWidth = PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;
-        final int pathHeight = PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;
+        final int pathWidth = PathRoomGenInfo.MIN_COLS * TileImpl.TILE_SIZE * TileImpl.SCALE;
+        final int pathHeight = PathRoomGenInfo.MIN_ROWS * TileImpl.TILE_SIZE * TileImpl.SCALE;
 
         switch (RoomDirection.getRandom()) {
             case TOP -> {

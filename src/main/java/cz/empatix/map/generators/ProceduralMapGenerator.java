@@ -7,8 +7,7 @@ import cz.empatix.map.domain.*;
 import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.rooms.service.SacrificeRoom;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,8 +115,8 @@ public class ProceduralMapGenerator {
 
         final int newOffsetX, newOffsetY;
 
-        final int pathWidth = PathRoomGenInfo.MIN_COLS * Tile.TILE_SIZE * Tile.SCALE;
-        final int pathHeight = PathRoomGenInfo.MIN_ROWS * Tile.TILE_SIZE * Tile.SCALE;
+        final int pathWidth = PathRoomGenInfo.MIN_COLS * TileImpl.TILE_SIZE * TileImpl.SCALE;
+        final int pathHeight = PathRoomGenInfo.MIN_ROWS * TileImpl.TILE_SIZE * TileImpl.SCALE;
 
         final int centerWidthOffset = (parent.getWidth() - child.getWidth()) / 2;
         final int centerHeightOffset = (parent.getHeight() - child.getHeight()) / 2;

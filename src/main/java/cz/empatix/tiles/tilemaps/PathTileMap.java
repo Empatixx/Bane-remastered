@@ -2,6 +2,7 @@ package cz.empatix.tiles.tilemaps;
 
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.service.BooleanMapUtil;
 
 import java.util.Arrays;
@@ -55,11 +56,11 @@ public class PathTileMap implements TileMap{
 
     @Override
     public int getWidth(){
-        return cols * Tile.TILE_SIZE * Tile.SCALE;
+        return cols * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
     @Override
     public int getHeight(){
-        return rows * Tile.TILE_SIZE * Tile.SCALE;
+        return rows * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
 
     @Override
@@ -77,10 +78,5 @@ public class PathTileMap implements TileMap{
         Arrays.stream(tiles)
                 .flatMap(Arrays::stream)
                 .forEach(Tile::destroy);
-    }
-
-    @Override
-    public boolean isWall(int xTile, int yTile) {
-        return tiles[yTile][xTile].collision() != null;
     }
 }

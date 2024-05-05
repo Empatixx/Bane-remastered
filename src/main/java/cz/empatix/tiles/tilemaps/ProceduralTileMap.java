@@ -3,6 +3,7 @@ package cz.empatix.tiles.tilemaps;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.factory.TileFactory;
 import cz.empatix.tiles.service.BooleanMapUtil;
 import cz.empatix.tiles.service.PerlinNoiseGenerator;
@@ -30,7 +31,7 @@ public class ProceduralTileMap implements TileMap {
     }
 
     private Tile[][] createTiles(final int rows, final int cols, final int xOffset, final int yOffset,
-                                 final Set<RoomDirection> directions) {
+                                     final Set<RoomDirection> directions) {
         final TileFactory tileFactory = new TileFactory();
         final boolean[][] map = BooleanMapUtil.createEmptyMap(rows, cols);
         applyPerlinNoiseToMap(map, 0.05, 0.2, 0.4);
@@ -138,12 +139,12 @@ public class ProceduralTileMap implements TileMap {
 
     @Override
     public int getWidth() {
-        return cols * Tile.TILE_SIZE * Tile.SCALE;
+        return cols * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
 
     @Override
     public int getHeight() {
-        return rows * Tile.TILE_SIZE * Tile.SCALE;
+        return rows * TileImpl.TILE_SIZE * TileImpl.SCALE;
     }
 
     @Override
@@ -161,10 +162,5 @@ public class ProceduralTileMap implements TileMap {
         Arrays.stream(tiles)
                 .flatMap(Arrays::stream)
                 .forEach(Tile::destroy);
-    }
-
-    @Override
-    public boolean isWall(int xTile, int yTile) {
-        return tiles[yTile][xTile].collision() != null;
     }
 }

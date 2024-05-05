@@ -29,8 +29,8 @@ public class Shotgun extends AbstractGun implements Gun {
     private final BulletFactory bulletFactory;
     private final ShotgunClipHud shotgunAmmoHud;
     public Shotgun(final BulletFactory bulletFactory) {
-        this.minDamage = 2;
-        this.maxDamage = 3;
+        this.minDamage = 222;
+        this.maxDamage = 333;
 
         this.inaccuracy = 0.1f;
         this.fireRateTime = 500;

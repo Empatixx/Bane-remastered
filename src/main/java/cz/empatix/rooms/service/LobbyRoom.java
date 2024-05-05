@@ -8,7 +8,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.LobbyTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.joml.Vector2f;
@@ -38,14 +38,14 @@ public class LobbyRoom implements Room {
     @Override
     public void init() {
         {
-            final Portal portal = new Portal(new Vector2f((getMinX() + getMaxX()) / 2f - 96, Tile.SCALE * Tile.TILE_SIZE / 2f));
+            final Portal portal = new Portal(new Vector2f((getMinX() + getMaxX()) / 2f - 96, TileImpl.SCALE * TileImpl.TILE_SIZE / 2f));
             roomObjectService.add(portal);
         }
         {
             final WeaponRack weaponRack = new WeaponRack();
             final WeaponRack weaponRack2 = new WeaponRack();
-            weaponRack.setPosition(Tile.SCALE_TILE_SIZE * 22.75f, Tile.SCALE_TILE_SIZE/2f);
-            weaponRack2.setPosition(Tile.SCALE_TILE_SIZE * 9.25f, Tile.SCALE_TILE_SIZE/2f);
+            weaponRack.setPosition(TileImpl.SCALE_TILE_SIZE * 22.75f, TileImpl.SCALE_TILE_SIZE/2f);
+            weaponRack2.setPosition(TileImpl.SCALE_TILE_SIZE * 9.25f, TileImpl.SCALE_TILE_SIZE/2f);
             roomObjectService.add(weaponRack);
             roomObjectService.add(weaponRack2);
         }
@@ -55,10 +55,10 @@ public class LobbyRoom implements Room {
             final Torch torch3 = new Torch();
             final Torch torch4 = new Torch();
 
-            torch1.setPosition(Tile.TILE_SIZE * Tile.SCALE, Tile.TILE_SIZE * Tile.SCALE * 2);
-            torch2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 10, Tile.TILE_SIZE * Tile.SCALE * 2);
-            torch3.setPosition(Tile.TILE_SIZE * Tile.SCALE * 18, Tile.TILE_SIZE * Tile.SCALE * 2);
-            torch4.setPosition(Tile.TILE_SIZE * Tile.SCALE * 27, Tile.TILE_SIZE * Tile.SCALE * 2);
+            torch1.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE, TileImpl.TILE_SIZE * TileImpl.SCALE * 2);
+            torch2.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 10, TileImpl.TILE_SIZE * TileImpl.SCALE * 2);
+            torch3.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 18, TileImpl.TILE_SIZE * TileImpl.SCALE * 2);
+            torch4.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 27, TileImpl.TILE_SIZE * TileImpl.SCALE * 2);
 
             torch2.setState(AnimationState.RIGHT_SIDE);
             torch4.setState(AnimationState.RIGHT_SIDE);
@@ -72,8 +72,8 @@ public class LobbyRoom implements Room {
             final Bones bones1 = new Bones();
             final Bones bones2 = new Bones();
 
-            bones1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 20, Tile.SCALE_TILE_SIZE * 7);
-            bones2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 23, Tile.TILE_SIZE * Tile.SCALE * 4);
+            bones1.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 20, TileImpl.SCALE_TILE_SIZE * 7);
+            bones2.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 23, TileImpl.TILE_SIZE * TileImpl.SCALE * 4);
 
             bones1.setState(AnimationState.TYPE1);
             bones2.setState(AnimationState.TYPE0);
@@ -85,8 +85,8 @@ public class LobbyRoom implements Room {
             final Cobweb cobweb1 = new Cobweb();
             final Cobweb cobweb2 = new Cobweb();
 
-            cobweb1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 10, Tile.TILE_SIZE * Tile.SCALE);
-            cobweb2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 18, Tile.TILE_SIZE * Tile.SCALE * 8);
+            cobweb1.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 10, TileImpl.TILE_SIZE * TileImpl.SCALE);
+            cobweb2.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 18, TileImpl.TILE_SIZE * TileImpl.SCALE * 8);
 
             cobweb1.setState(AnimationState.TYPE1);
             cobweb2.setState(AnimationState.TYPE0);
@@ -98,8 +98,8 @@ public class LobbyRoom implements Room {
             final Armorstand armorstand1 = new Armorstand();
             final Armorstand armorstand2 = new Armorstand();
 
-            armorstand1.setPosition(Tile.TILE_SIZE * Tile.SCALE * 11.5f, Tile.TILE_SIZE * Tile.SCALE * 1.75f);
-            armorstand2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 16.5f, Tile.TILE_SIZE * Tile.SCALE * 1.75f);
+            armorstand1.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 11.5f, TileImpl.TILE_SIZE * TileImpl.SCALE * 1.75f);
+            armorstand2.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 16.5f, TileImpl.TILE_SIZE * TileImpl.SCALE * 1.75f);
 
             roomObjectService.add(armorstand1);
             roomObjectService.add(armorstand2);
@@ -107,7 +107,7 @@ public class LobbyRoom implements Room {
         }
         {
             final TaskBoard taskBoard = new TaskBoard();
-            taskBoard.setPosition(Tile.TILE_SIZE * Tile.SCALE * 18.5f, 0);
+            taskBoard.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 18.5f, 0);
             roomObjectService.add(taskBoard);
         }
         {
@@ -115,9 +115,9 @@ public class LobbyRoom implements Room {
             final Pot pot2 = new Pot(null);
             final Pot pot3 = new Pot(null);
 
-            pot.setPosition(Tile.TILE_SIZE * Tile.SCALE * 14f, Tile.SCALE_TILE_SIZE * 6);
-            pot2.setPosition(Tile.TILE_SIZE * Tile.SCALE * 13f, Tile.SCALE_TILE_SIZE * 6);
-            pot3.setPosition(Tile.TILE_SIZE * Tile.SCALE * 12f, Tile.SCALE_TILE_SIZE * 6);
+            pot.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 14f, TileImpl.SCALE_TILE_SIZE * 6);
+            pot2.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 13f, TileImpl.SCALE_TILE_SIZE * 6);
+            pot3.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 12f, TileImpl.SCALE_TILE_SIZE * 6);
 
             roomObjectService.add(pot);
             roomObjectService.add(pot2);
@@ -135,20 +135,20 @@ public class LobbyRoom implements Room {
         }
         {
             final CraftingTable craftingTable = new CraftingTable();
-            craftingTable.setPosition(Tile.SCALE_TILE_SIZE * 23.5f, Tile.SCALE_TILE_SIZE * 0.5f);
+            craftingTable.setPosition(TileImpl.SCALE_TILE_SIZE * 23.5f, TileImpl.SCALE_TILE_SIZE * 0.5f);
             roomObjectService.add(craftingTable);
         }
         {
             final Box box = new Box();
-            box.setPosition(Tile.SCALE_TILE_SIZE * 26, Tile.SCALE_TILE_SIZE * 7);
+            box.setPosition(TileImpl.SCALE_TILE_SIZE * 26, TileImpl.SCALE_TILE_SIZE * 7);
             roomObjectService.add(box);
         }
         {
             final Chains chains = new Chains();
             final Chains chains2 = new Chains();
 
-            chains.setPosition(Tile.SCALE_TILE_SIZE * 18, 0);
-            chains2.setPosition(Tile.SCALE_TILE_SIZE * 5, 0);
+            chains.setPosition(TileImpl.SCALE_TILE_SIZE * 18, 0);
+            chains2.setPosition(TileImpl.SCALE_TILE_SIZE * 5, 0);
 
             roomObjectService.add(chains);
             roomObjectService.add(chains2);
@@ -166,11 +166,11 @@ public class LobbyRoom implements Room {
             rock3.setState(AnimationState.TYPE0);
             rock4.setState(AnimationState.TYPE1);
 
-            rock.setPosition(Tile.SCALE_TILE_SIZE * 26, Tile.SCALE_TILE_SIZE * 4);
-            rock2.setPosition(Tile.SCALE_TILE_SIZE * 17, Tile.SCALE_TILE_SIZE * 5);
+            rock.setPosition(TileImpl.SCALE_TILE_SIZE * 26, TileImpl.SCALE_TILE_SIZE * 4);
+            rock2.setPosition(TileImpl.SCALE_TILE_SIZE * 17, TileImpl.SCALE_TILE_SIZE * 5);
 
-            rock3.setPosition(Tile.SCALE_TILE_SIZE * 3, Tile.SCALE_TILE_SIZE * 3);
-            rock4.setPosition(Tile.SCALE_TILE_SIZE * 8, Tile.SCALE_TILE_SIZE * 7);
+            rock3.setPosition(TileImpl.SCALE_TILE_SIZE * 3, TileImpl.SCALE_TILE_SIZE * 3);
+            rock4.setPosition(TileImpl.SCALE_TILE_SIZE * 8, TileImpl.SCALE_TILE_SIZE * 7);
 
             roomObjectService.add(rock);
             roomObjectService.add(rock2);
@@ -180,14 +180,14 @@ public class LobbyRoom implements Room {
         {
             final Bookshelf bookshelf = new Bookshelf();
             final Bookshelf bookshelf2 = new Bookshelf();
-            bookshelf.setPosition(Tile.SCALE_TILE_SIZE * 2, 0);
-            bookshelf2.setPosition(Tile.SCALE_TILE_SIZE * 6f, 0);
+            bookshelf.setPosition(TileImpl.SCALE_TILE_SIZE * 2, 0);
+            bookshelf2.setPosition(TileImpl.SCALE_TILE_SIZE * 6f, 0);
             roomObjectService.add(bookshelf);
             roomObjectService.add(bookshelf2);
         }
         {
             final MapTable mapTable = new MapTable();
-            mapTable.setPosition(Tile.SCALE_TILE_SIZE * 5, Tile.SCALE_TILE_SIZE * 5);
+            mapTable.setPosition(TileImpl.SCALE_TILE_SIZE * 5, TileImpl.SCALE_TILE_SIZE * 5);
             roomObjectService.add(mapTable);
         }
         {

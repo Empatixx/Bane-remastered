@@ -11,8 +11,9 @@ import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.roomobjects.suppliers.BonesSupplier;
 import cz.empatix.roomobjects.suppliers.CobwebSupplier;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.TileMap;
+import cz.empatix.tiles.tilemaps.ProceduralCarpetTileMap;
 import cz.empatix.tiles.tilemaps.TreasureTileMap;
 
 import java.util.HashMap;
@@ -25,11 +26,13 @@ public class TreasureRoom implements Room {
     private final RoomObjectService roomObjectService;
     private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
+    private final TileMap carpetTileMap;
     private final ItemService itemService;
 
     public TreasureRoom(final int rows, final int cols, final int xOffset, final int yOffset,
                         final Set<RoomDirection> neighbors, final ItemService itemService) {
         tileMap = new TreasureTileMap(rows, cols, xOffset, yOffset, neighbors);
+        carpetTileMap = new ProceduralCarpetTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.itemService = itemService;
@@ -53,10 +56,10 @@ public class TreasureRoom implements Room {
             final Torch bottomLeftTorch = new Torch();
             final Torch bottomRightTorch = new Torch();
 
-            topLeftTorch.setPosition(getMinX() + Tile.SCALE_TILE_SIZE  * 5, getMinY() + Tile.SCALE_TILE_SIZE * 3);
-            topRightTorch.setPosition(getMaxX() - Tile.SCALE_TILE_SIZE * 6, getMinY() + Tile.SCALE_TILE_SIZE * 3);
-            bottomLeftTorch.setPosition(getMinX() + Tile.SCALE_TILE_SIZE * 5, getMaxY() - Tile.SCALE_TILE_SIZE * 5);
-            bottomRightTorch.setPosition(getMaxX() - Tile.SCALE_TILE_SIZE * 6, getMaxY() - Tile.SCALE_TILE_SIZE * 5);
+            topLeftTorch.setPosition(getMinX() + TileImpl.SCALE_TILE_SIZE  * 5, getMinY() + TileImpl.SCALE_TILE_SIZE * 3);
+            topRightTorch.setPosition(getMaxX() - TileImpl.SCALE_TILE_SIZE * 6, getMinY() + TileImpl.SCALE_TILE_SIZE * 3);
+            bottomLeftTorch.setPosition(getMinX() + TileImpl.SCALE_TILE_SIZE * 5, getMaxY() - TileImpl.SCALE_TILE_SIZE * 5);
+            bottomRightTorch.setPosition(getMaxX() - TileImpl.SCALE_TILE_SIZE * 6, getMaxY() - TileImpl.SCALE_TILE_SIZE * 5);
 
             topLeftTorch.setState(AnimationState.LEFT_SIDE);
             topRightTorch.setState(AnimationState.RIGHT_SIDE);
@@ -96,8 +99,9 @@ public class TreasureRoom implements Room {
     @Override
     public List<Renderable> toRender() {
         final Renderable tiles = (DrawableBatch) tileMap::toRender;
+        final Renderable carpetTiles = (DrawableBatch) carpetTileMap::toRender;
         final Renderable roomObjects = (DrawableBatch) roomObjectService::toRender;
-        return List.of(tiles, roomObjects);
+        return List.of(tiles, roomObjects, carpetTiles);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package cz.empatix.roomobjects.resolvers;
 
 import cz.empatix.rooms.service.Room;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -29,7 +29,7 @@ public class PositionSupplierFactory {
 
         final int xMin = room.getMinX();
         final int yMin = room.getMinY();
-        final int tileSize = Tile.SCALE_TILE_SIZE;
+        final int tileSize = TileImpl.SCALE_TILE_SIZE;
         return () -> {
             final int xTile = RANDOM.nextInt(minCols, maxCols);
             final int yTile = RANDOM.nextInt(minRows, maxRows);

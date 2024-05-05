@@ -8,10 +8,8 @@ import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import org.dyn4j.geometry.Rectangle;
-import org.joml.Vector2f;
-import org.lwjgl.system.linux.Stat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +56,7 @@ public class EnemyService {
     public void spawnEnemy(final Room room) {
         final Enemy e = EnemyFactory.createEnemy(statisticsService.getFloor());
 
-        final int tileSize = Tile.TILE_SIZE * Tile.SCALE;
+        final int tileSize = TileImpl.TILE_SIZE * TileImpl.SCALE;
         final PhysicsService physicsService = PhysicsService.getInstance();
 
         final PhysicsObject physicsObject = new PhysicsObject();

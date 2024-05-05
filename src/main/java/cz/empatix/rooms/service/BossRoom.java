@@ -19,7 +19,7 @@ import cz.empatix.roomobjects.service.RoomLockService;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.tiles.domain.Tile;
+import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -97,7 +97,7 @@ public class BossRoom implements Room {
             roomObjectService.add(ladder);
 
             final Chest chest = new Chest(itemService, ChestType.ARTEFACT);
-            chest.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - chest.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f - Tile.TILE_SIZE*Tile.SCALE*3);
+            chest.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - chest.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f - TileImpl.TILE_SIZE* TileImpl.SCALE*3);
             roomObjectService.add(chest);
         }
     }
