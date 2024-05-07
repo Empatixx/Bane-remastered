@@ -14,6 +14,7 @@ import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.TileMap;
 import cz.empatix.tiles.tilemaps.ProceduralCarpetTileMap;
+import cz.empatix.tiles.tilemaps.TreasureCarpetTileMap;
 import cz.empatix.tiles.tilemaps.TreasureTileMap;
 
 import java.util.HashMap;
@@ -32,7 +33,7 @@ public class TreasureRoom implements Room {
     public TreasureRoom(final int rows, final int cols, final int xOffset, final int yOffset,
                         final Set<RoomDirection> neighbors, final ItemService itemService) {
         tileMap = new TreasureTileMap(rows, cols, xOffset, yOffset, neighbors);
-        carpetTileMap = new ProceduralCarpetTileMap(rows, cols, xOffset, yOffset, neighbors);
+        carpetTileMap = new TreasureCarpetTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.itemService = itemService;
