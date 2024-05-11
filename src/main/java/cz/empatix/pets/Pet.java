@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
+    private final static int DAMAGE_COOLDOWN = 200;
     private final static int DAMAGE = 1;
     private static final int MOVE_FORCE = 12_500_000;
     private static final int SCALE = 3;
@@ -31,6 +32,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     private final FollowingStrategy followingStrategy;
     private final FollowingStrategy collectingStrategy;
     private final FollowingStrategy attackingStrategy;
+    private long lastAttack = 0;
 
     public Pet() {
         animation = Animation.builder()
@@ -153,7 +155,15 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
 
     @Override
     public int damage() {
+        if (System.currentTimeMillis() - lastAttack < DAMAGE_COOLDOWN) {
+            return 0;
+        }
         return DAMAGE;
+    }
+
+    @Override
+    public void postDamage(final int damage) {
+        lastAttack = System.currentTimeMillis();
     }
 
     public PhysicsObject getPhysicsObject() {
