@@ -1,12 +1,13 @@
 package cz.empatix.enemies.domain;
 
+import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.newphysics.attributes.DamageSource;
 import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
-public interface Enemy extends Drawable{
+public interface Enemy extends Drawable, Targetable {
     void update(final double dt);
     void fixedUpdate(final double dt);
     int hit(final int damage);

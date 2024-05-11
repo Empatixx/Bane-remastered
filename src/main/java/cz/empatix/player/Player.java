@@ -1,7 +1,5 @@
 package cz.empatix.player;
 
-import cz.empatix.artefacts.domain.BerserkMoveForceEventHook;
-import cz.empatix.artefacts.domain.ShieldDamageEventHook;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
@@ -17,30 +15,23 @@ import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
-import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.particles.service.GazewindService;
+import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.postprocessing.domain.RedVignette;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import cz.empatix.upgrades.domain.PlayerUpgradeName;
-import org.dyn4j.dynamics.BodyFixture;
-import org.dyn4j.geometry.Mass;
-import org.dyn4j.geometry.MassType;
-import org.dyn4j.geometry.Rectangle;
-import org.dyn4j.geometry.Vector2;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class Player implements Drawable, InteractEntity, Damageable {
+public class Player implements Drawable, InteractEntity, Damageable, Targetable {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private final static int SCALE = 2;
     private final static int DEFAULT_MAX_HEALTH = 10;

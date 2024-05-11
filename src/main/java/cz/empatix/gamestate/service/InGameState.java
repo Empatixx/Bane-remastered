@@ -22,6 +22,7 @@ import cz.empatix.map.service.MapService;
 import cz.empatix.minimap.service.MinimapService;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.pause.service.PauseService;
+import cz.empatix.pets.PetService;
 import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
@@ -50,6 +51,7 @@ public class InGameState extends GameState {
     private ItemService itemService;
     private Player player;
     private DeathService deathService;
+    private PetService petService;
 
     public InGameState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.INGAME);
@@ -92,6 +94,8 @@ public class InGameState extends GameState {
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService);
         mapLoaderService.load(mapGenerationResult);
 
+        petService = new PetService(player);
+
         final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService, mapService);
         upgradesApplicationService.apply();
 
@@ -124,6 +128,7 @@ public class InGameState extends GameState {
         artefactsService.update(dt);
         itemService.update((float)dt);
         pauseService.update(dt, mouseX, mouseY);
+        petService.update((float)dt);
     }
 
     @Override
@@ -132,13 +137,14 @@ public class InGameState extends GameState {
         mapService.fixedUpdate(dt);
         gunService.fixedUpdate(player.getX() + player.getWidth()/2f, player.getY() + player.getHeight()/2f, Camera.getX() + mouseX, Camera.getY() + mouseY, dt);
         artefactsService.fixedUpdate(dt);
+        petService.fixedUpdate((float)dt);
     }
 
     @Override
     public List<Renderable> toRender(final double dt) {
         return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
                         minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
-                        mapLoaderService.toRender(), artefactsService.toRender(), coinService.toRender())
+                        mapLoaderService.toRender(), artefactsService.toRender(), coinService.toRender(), petService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

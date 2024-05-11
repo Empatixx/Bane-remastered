@@ -2,12 +2,8 @@ package cz.empatix.enemies.targetting;
 
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsService;
-import cz.empatix.player.Player;
-import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL33;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +16,7 @@ public class AStarTargetting {
     private final static int CELL_SIZE = 16;
     private final Queue<PathCell> path = new ArrayDeque<>(15);
     private final Supplier<Vector2f> positionSupplier;
-    private Player target;
+    private Targetable target;
     private int lastTargetX;
     private int lastTargetY;
     private final int selfWidth;
@@ -34,16 +30,19 @@ public class AStarTargetting {
         this.selfHeight = selfHeight;
     }
 
-    public void target(final Player player) {
-        this.target = player;
+    public void target(final Targetable targetable) {
+        this.target = targetable;
     }
 
-    public void updatePath() {
+    /**
+     * @return true if path was found
+     */
+    public AStarTargetingState updatePath() {
         if (target == null) {
-            return;
+            return AStarTargetingState.NOT_FOUND;
         }
         if (Math.abs(target.getX() - lastTargetX) <= CELL_SIZE && Math.abs(target.getY() - lastTargetY) <= CELL_SIZE) {
-            return;
+            return AStarTargetingState.CACHED;
         }
         final Vector2f position = positionSupplier.get();
         final int startX = (int) position.x();
@@ -58,6 +57,8 @@ public class AStarTargetting {
         LOGGER.info("Starting A* for player {} at {},{} to {},{}", target, startX, startY, targetX, targetY);
         this.path.clear();
         this.path.addAll(aStar(startX, startY, targetX, targetY));
+        AStarTargetingState aStarTargetingState = this.path.isEmpty() ? AStarTargetingState.NOT_FOUND : AStarTargetingState.FOUND;
+        return aStarTargetingState;
     }
 
     private List<PathCell> aStar(final int startX, final int startY,
@@ -73,8 +74,8 @@ public class AStarTargetting {
 
         while (!openSet.isEmpty()) {
             if (openSet.size() > 40000) {
-                LOGGER.error("A* failed to find path");
-                return List.of();
+                LOGGER.error("A* failed to find path, exhausted max open set size");
+                throw new IllegalStateException("A* failed to find path");
             }
             final PathCell currentNode = openSet.peek();
             openSetLookup.remove(currentNode);
@@ -98,7 +99,6 @@ public class AStarTargetting {
             openSet.addAll(cells);
             openSetLookup.addAll(cells);
         }
-        LOGGER.error("A* failed to find path");
         return List.of();
     }
 
@@ -187,5 +187,9 @@ public class AStarTargetting {
     public boolean isTargetLeftFromEnemy() {
         final Vector2f position = positionSupplier.get();
         return target.getX() + target.getWidth() / 2f < position.x() + selfWidth / 2f;
+    }
+
+    public boolean hasTarget() {
+        return target != null;
     }
 }
