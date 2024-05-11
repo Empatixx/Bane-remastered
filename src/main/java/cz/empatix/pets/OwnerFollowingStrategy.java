@@ -7,6 +7,7 @@ import org.joml.Vector2f;
 
 public class OwnerFollowingStrategy implements FollowingStrategy{
     protected static final int DISTANCE_MIN = 550;
+    protected static final int STOP_DISTANCE = 100;
     private AStarTargetting targetting;
     private Targetable followTarget;
     private final Pet self;
@@ -23,7 +24,6 @@ public class OwnerFollowingStrategy implements FollowingStrategy{
         final Vector2f position = followTarget.getPosition();
         final Vector2f selfPosition = self.getPosition();
         final float distance = position.distance(selfPosition);
-
         if (distance > DISTANCE_MIN) {
             // teleport
             self.setPosition(position.x, position.y);
@@ -64,6 +64,16 @@ public class OwnerFollowingStrategy implements FollowingStrategy{
     @Override
 
     public Vector2f getDirection() {
+        final Vector2f position = followTarget.getPosition();
+        final Vector2f selfPosition = self.getPosition();
+
+        final Vector2f targetCenter = new Vector2f(position.x + followTarget.getWidth() / 2, position.y + followTarget.getHeight() / 2);
+        final Vector2f selfCenter = new Vector2f(selfPosition.x + self.getWidth() / 2, selfPosition.y + self.getHeight() / 2);
+
+        final float distance = targetCenter.distance(selfCenter);
+        if (distance < STOP_DISTANCE) {
+            return new Vector2f(0, 0);
+        }
         return targetting.getDirectionTarget();
     }
 }

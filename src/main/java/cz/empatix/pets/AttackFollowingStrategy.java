@@ -88,7 +88,6 @@ public class AttackFollowingStrategy implements FollowingStrategy {
         return pathFound;
     }
     @Override
-
     public Vector2f getDirection() {
         return targetting.getDirectionTarget();
     }

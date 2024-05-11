@@ -5,6 +5,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.gamestate.service.GameStateController;
 import cz.empatix.hud.service.text.AlternativeViewText;
+import cz.empatix.interaction.domain.InteractEntity;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;

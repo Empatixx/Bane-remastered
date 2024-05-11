@@ -3,6 +3,7 @@ package cz.empatix.interaction.service;
 import cz.empatix.interaction.domain.InteractEntity;
 import cz.empatix.interaction.domain.Interactable;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
@@ -51,5 +52,19 @@ public class InteractionService {
     }
     public void removeInteractable(final Interactable interactable){
         interactables.remove(interactable);
+    }
+
+    public List<Interactable> query(Vector2f position, Vector2i dimensions) {
+        final List<Interactable> result = new ArrayList<>();
+        for (final Interactable interactable : interactables) {
+            final Vector2f interactablePosition = interactable.getPosition();
+            if (interactablePosition.x() + interactable.getWidth() >= position.x &&
+                    interactablePosition.x() <= position.x + dimensions.x &&
+                    interactablePosition.y() + interactable.getHeight() >= position.y &&
+                    interactablePosition.y() <= position.y + dimensions.y) {
+                result.add(interactable);
+            }
+        }
+        return result;
     }
 }

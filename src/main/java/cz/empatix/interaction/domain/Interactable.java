@@ -1,5 +1,6 @@
 package cz.empatix.interaction.domain;
 
+import cz.empatix.enemies.targetting.Targetable;
 import org.joml.Vector2f;
 
 import java.util.Set;
