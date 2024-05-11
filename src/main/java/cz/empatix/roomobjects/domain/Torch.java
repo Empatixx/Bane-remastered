@@ -21,10 +21,13 @@ public class Torch implements RoomObject {
     private final Vector2f position;
     public Torch(){
         animation = Animation.builder()
-                .setTotal(2, 4)
+                .setTotal(4, 4)
                 .addState(AnimationState.LEFT_SIDE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 150)
                 .addState(AnimationState.RIGHT_SIDE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 150,true)
                 .addState(AnimationState.TOP, 1, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 150)
+                .addState(AnimationState.DISABLED_LEFT_SIDE, 2, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .addState(AnimationState.DISABLED_RIGHT_SIDE, 2, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1,true)
+                .addState(AnimationState.DISABLED_TOP, 3, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .texture(AssetsService.getTexture("ingame/torch.tga"))
                 .scale(SCALE)
                 .build();
@@ -39,6 +42,15 @@ public class Torch implements RoomObject {
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );
+    }
+    public void disable(){
+        final AnimationState state = animation.getCurrentState();
+        switch (state){
+            case LEFT_SIDE -> animation.setState(AnimationState.DISABLED_LEFT_SIDE);
+            case RIGHT_SIDE -> animation.setState(AnimationState.DISABLED_RIGHT_SIDE);
+            case TOP -> animation.setState(AnimationState.DISABLED_TOP);
+        }
+        lightSource.destroy();
     }
     public void setState(final AnimationState state){
         animation.setState(state);

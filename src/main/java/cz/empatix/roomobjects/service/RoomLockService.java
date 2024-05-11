@@ -3,6 +3,7 @@ package cz.empatix.roomobjects.service;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.roomobjects.domain.PathGate;
+import cz.empatix.roomobjects.domain.PathGateDirection;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.tiles.domain.TileImpl;
 
@@ -44,10 +45,14 @@ public class RoomLockService {
             case RIGHT -> {
                 firstGate.setPosition(room.getMaxX() - tileSize, centerY - correctionY);
                 secondGate.setPosition(room.getMaxX() - tileSize, centerY - correctionY - tileSize);
+                firstGate.setDirection(PathGateDirection.RIGHT_SIDE);
+                secondGate.setDirection(PathGateDirection.RIGHT_SIDE);
             }
             case LEFT -> {
                 firstGate.setPosition(room.getX(), centerY - correctionY);
                 secondGate.setPosition(room.getX(), centerY - correctionY - tileSize);
+                firstGate.setDirection(PathGateDirection.LEFT_SIDE);
+                secondGate.setDirection(PathGateDirection.LEFT_SIDE);
             }
         }
         return List.of(firstGate, secondGate);

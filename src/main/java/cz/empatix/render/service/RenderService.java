@@ -4,6 +4,7 @@ import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.renders.DynamicRenderer;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,6 +21,9 @@ public class RenderService {
         if (renderableGroups == null || renderableGroups.isEmpty()) {
             return;
         }
+        final List<RenderableGroup> sortedRenderableGroups = new ArrayList<>(renderableGroups);
+        sortedRenderableGroups.sort(Comparator.comparing(RenderableGroup::getZIndex));
+
         renderableGroups
                 .stream()
                 .sorted(Comparator.comparing(RenderableGroup::getZIndex))

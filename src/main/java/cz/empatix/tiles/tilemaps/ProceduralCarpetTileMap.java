@@ -29,14 +29,16 @@ public class ProceduralCarpetTileMap implements TileMap {
         final CarpetTileFactory tileFactory = new CarpetTileFactory();
 
         final boolean[][] map = new boolean[rows][cols];
-        for (int y = 5; y < rows - 5; y++) {
-            for (int x = 7; x < cols - 7; x++) {
-                map[y][x] = true;
-            }
-        }
-        applyPerlinNoiseToMap(map, 0.05, 0.0, 0.2);
+        applyPerlinNoiseToMap(map, 0.05, 0.5, 1);
+        postProcessMap(map);
         final Tile[][] carpetTiles = tileFactory.createTileMap(map, xOffset, yOffset);
         tiles = carpetTiles;
+    }
+
+    // min 2x2 carpets, also make carpets grouped, do not make empty places between them, so they are connected
+    // or create a fragments of carpets  if there are too distant from each other
+    private void postProcessMap(final boolean[][] map) {
+
     }
 
     private void applyPerlinNoiseToMap(boolean[][] map, final double scale, final double lowerThreshold, final double upperThreshold) {

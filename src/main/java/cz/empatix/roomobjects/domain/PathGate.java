@@ -9,23 +9,30 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import org.dyn4j.collision.Filter;
 import org.joml.Vector2f;
 
-import static cz.empatix.render.domain.AnimationState.CLOSE;
-import static cz.empatix.render.domain.AnimationState.OPEN;
+import static cz.empatix.render.domain.AnimationState.*;
 
 public class PathGate implements RoomObject {
-    private final static int SCALE = 1;
-    private final static int DIMENSION_WIDTH = 64;
-    private final static int DIMENSION_HEIGHT = 64;
+    private final static int SCALE = 2;
+    private final static int DIMENSION_WIDTH = 32;
+    private final static int DIMENSION_HEIGHT = 32;
     private final Animation animation;
     private final PhysicsObject physicsBody;
+    private PathGateDirection direction = PathGateDirection.NORMAL;
+
     public PathGate() {
         animation = Animation.builder()
-                .setTotal(1, 4)
+                .setTotal(4, 6)
                 .addState(OPEN, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, false, true)
-                .addState(CLOSE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, false)
+                .addState(CLOSE, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75)
+                .addState(IDLE, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75)
+                .addState(RIGHT_SIDE_OPEN, 2, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, false, true)
+                .addState(RIGHT_SIDE_CLOSE, 2, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75)
+                .addState(RIGHT_SIDE_IDLE, 3, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75)
+                .addState(LEFT_SIDE_OPEN, 2, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, true, true)
+                .addState(LEFT_SIDE_CLOSE, 2, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, true)
+                .addState(LEFT_SIDE_IDLE, 3, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 75, true)
                 .texture(AssetsService.getTexture("ingame/pathgate.tga"))
                 .scale(SCALE)
                 .build();
@@ -34,6 +41,15 @@ public class PathGate implements RoomObject {
         physicsBody = PhysicsObjectFactory.create(DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
         physicsBody.setType(CollisionType.TRAP);
         physicsBody.setUserData(this);
+    }
+
+    public void setDirection(final PathGateDirection direction) {
+        this.direction = direction;
+        switch (direction) {
+            case NORMAL -> animation.setState(OPEN);
+            case RIGHT_SIDE -> animation.setState(RIGHT_SIDE_OPEN);
+            case LEFT_SIDE -> animation.setState(LEFT_SIDE_OPEN);
+        }
     }
 
     @Override
@@ -63,16 +79,22 @@ public class PathGate implements RoomObject {
     @Override
     public void update(double dt) {
         switch (animation.getCurrentState()) {
-            case CLOSE -> {
-                if (animation.getCurrentTextureIndex() != 3) {
-                    animation.update();
+            case CLOSE, RIGHT_SIDE_CLOSE, LEFT_SIDE_CLOSE -> {
+                animation.update();
+                if (animation.hasPlayedOnce()){
+                    switch (animation.getCurrentState()){
+                        case CLOSE -> animation.setState(IDLE);
+                        case RIGHT_SIDE_CLOSE -> animation.setState(RIGHT_SIDE_IDLE);
+                        case LEFT_SIDE_CLOSE -> animation.setState(LEFT_SIDE_IDLE);
+                    }
                 }
             }
-            case OPEN -> {
+            case OPEN, RIGHT_SIDE_OPEN, LEFT_SIDE_OPEN -> {
                 if (animation.getCurrentTextureIndex() != 0) {
                     animation.update();
                 }
             }
+            case IDLE, RIGHT_SIDE_IDLE, LEFT_SIDE_IDLE -> animation.update();
         }
     }
 
@@ -84,10 +106,12 @@ public class PathGate implements RoomObject {
     public void setPosition(final float x, final float y) {
         physicsBody.setTranslation(x, y);
     }
+
     @Override
     public int getWidth() {
         return DIMENSION_WIDTH * SCALE;
     }
+
     @Override
     public int getHeight() {
         return DIMENSION_HEIGHT * SCALE;
@@ -100,14 +124,23 @@ public class PathGate implements RoomObject {
 
     public void setState(final boolean closed) {
         if (closed) {
-            animation.setState(CLOSE);
+            switch (direction) {
+                case NORMAL -> animation.setState(CLOSE);
+                case RIGHT_SIDE -> animation.setState(RIGHT_SIDE_CLOSE);
+                case LEFT_SIDE -> animation.setState(LEFT_SIDE_CLOSE);
+            }
             physicsBody.setType(null);
         } else {
-            animation.setState(OPEN);
+            switch (direction) {
+                case NORMAL -> animation.setState(OPEN);
+                case RIGHT_SIDE -> animation.setState(RIGHT_SIDE_OPEN);
+                case LEFT_SIDE -> animation.setState(LEFT_SIDE_OPEN);
+            }
             animation.setCurrentFrame(3);
             physicsBody.setType(CollisionType.TRAP);
         }
     }
+
     public void destroy() {
         physicsBody.destroy();
     }

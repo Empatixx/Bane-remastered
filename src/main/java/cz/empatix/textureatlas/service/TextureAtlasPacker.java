@@ -33,7 +33,7 @@ public class TextureAtlasPacker {
             }
 
             if (failed) {
-                if (GLInit.TEXTURE2D_MAX_SIZE <= targetSize) {
+                if (GLInit.TEXTURE2D_MAX_SIZE < targetSize) {
                     throw new IllegalStateException("Failed to pack images into atlas, graphics card limit is " + GLInit.TEXTURE2D_MAX_SIZE + "x" + GLInit.TEXTURE2D_MAX_SIZE);
                 }
                 targetSize += stepSize;

@@ -136,7 +136,7 @@ public class FontLoader implements AssetLoader<RawFont> {
             final RawTextureAtlas atlas = getAtlas(glyphs);
             return new RawFont(path, fontSize, glyphs, atlas);
         } catch (Exception e) {
-            LOGGER.error("Failed to load font file {}", path);
+            LOGGER.error("Failed to load font file {}", path, e);
             throw new RuntimeException(e);
         }
     }

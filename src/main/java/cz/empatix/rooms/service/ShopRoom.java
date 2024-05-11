@@ -18,6 +18,7 @@ import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.TileImpl;
 import cz.empatix.tiles.tilemaps.CommonTileMap;
+import cz.empatix.tiles.tilemaps.ShopCarpetTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ public class ShopRoom implements Room {
     private final ItemService itemService;
     private final RoomObjectService roomObjectService;
     private final TileMap tileMap;
+    private final TileMap carpetTileMap;
     private Shopkeeper shopkeeper;
     private final StatisticsService statisticsService;
     private final ShopItemService shopItemService;
@@ -43,6 +45,7 @@ public class ShopRoom implements Room {
                     final StatisticsService statisticsService) {
         this.itemService = itemService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
+        carpetTileMap = new ShopCarpetTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.statisticsService = statisticsService;
@@ -124,7 +127,9 @@ public class ShopRoom implements Room {
     public List<Renderable> toRender() {
         final List<Renderable> renderables = new ArrayList<>(roomObjectService.toRender());
         final Renderable tileMapBatch = (DrawableBatch) tileMap::toRender;
+        final Renderable carpetTileMapBatch = (DrawableBatch) carpetTileMap::toRender;
         renderables.add(tileMapBatch);
+        renderables.add(carpetTileMapBatch);
         return renderables;
     }
 

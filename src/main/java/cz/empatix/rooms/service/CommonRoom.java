@@ -14,6 +14,7 @@ import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.roomobjects.suppliers.*;
 import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
+import cz.empatix.tiles.tilemaps.ProceduralCarpetTileMap;
 import cz.empatix.tiles.tilemaps.ProceduralTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class CommonRoom implements Room {
+    private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private static final int MAX_ENEMIES = 5;
     private static final int MAX_SPIKES = 3;
     private static final int MAX_TORCHES = 2;
@@ -110,6 +112,12 @@ public class CommonRoom implements Room {
         final List<Pot> pots = Stream.generate(potSupplier::supply)
                 .limit(ThreadLocalRandom.current().nextInt(MAX_POT))
                 .toList();
+
+        // sometimes torch can be disabled, not lighten up
+        torches.stream()
+                .filter(t -> RANDOM.nextInt(0, 100) < 10)
+                .forEach(Torch::disable);
+
         roomObjectService.addAll(spikes);
         roomObjectService.addAll(torches);
         roomObjectService.addAll(bones);
@@ -157,6 +165,7 @@ public class CommonRoom implements Room {
         renderables.add(roomLocker);
         return renderables;
     }
+
     @Override
     public int getWidth() {
         return tileMap.getWidth();
@@ -191,10 +200,12 @@ public class CommonRoom implements Room {
     public RoomType getRoomType() {
         return RoomType.NORMAL;
     }
+
     @Override
-    public RoomState getState(){
+    public RoomState getState() {
         return roomLockService.isLocked() ? RoomState.CLOSED : RoomState.OPEN;
     }
+
     @Override
     public List<RoomObject> getRoomObjects() {
         return roomObjectService.getRoomObjects();
