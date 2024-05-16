@@ -91,7 +91,7 @@ public class InGameState extends GameState {
 
 
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService);
+        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService);
         mapLoaderService.load(mapGenerationResult);
 
         petService = new PetService(player);

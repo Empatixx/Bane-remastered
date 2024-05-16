@@ -8,6 +8,7 @@ import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.map.service.MapLoaderService;
+import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
@@ -31,6 +32,7 @@ import java.util.Set;
 public class BossRoom implements Room {
     private final MapLoaderService mapLoaderService;
     private final ItemService itemService;
+    private final CoinService coinService;
     private final EnemyService enemyService;
     private final EnemyBoundsService enemyBoundsService;
     private final RoomObjectService roomObjectService;
@@ -44,7 +46,9 @@ public class BossRoom implements Room {
                     final MapLoaderService mapLoaderService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
                     final Set<RoomDirection> neighbors,
-                    final StatisticsService statisticsService) {
+                    final StatisticsService statisticsService,
+                    final CoinService coinService) {
+        this.coinService = coinService;
         this.itemService = itemService;
         this.mapLoaderService = mapLoaderService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
@@ -92,7 +96,7 @@ public class BossRoom implements Room {
             roomLockService.setState(false);
             AudioService.getInstance().play(Soundtrack.INGAME);
 
-            final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService);
+            final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService, coinService);
             ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - ladder.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f);
             roomObjectService.add(ladder);
 

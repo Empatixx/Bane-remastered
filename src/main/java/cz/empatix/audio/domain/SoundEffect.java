@@ -29,7 +29,11 @@ public enum SoundEffect {
     WALL_HIT("guns/wall_hit.ogg"),
     ENEMY_HIT("guns/enemy_hit.ogg"),
     EXPLOSION("explosion.ogg"),
-    SACRIFICE("sacrifice.ogg");
+    SACRIFICE("sacrifice.ogg"),
+    SLOTMACHINE_WIN("slotmachine_win.ogg"),
+    SLOTMACHINE_LOSE("slotmachine_lose.ogg"),
+    SLOTMACHINE_SPIN("slotmachine_spin.ogg"),
+    SLOTMACHINE_CASHOUT("slotmachine_cashout.ogg");
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final List<String> paths;
     SoundEffect(final String... path) {

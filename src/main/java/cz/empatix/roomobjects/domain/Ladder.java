@@ -14,6 +14,7 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
+import cz.empatix.player.CoinService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -44,7 +45,8 @@ public class Ladder implements RoomObject, Interactable {
     private final CommonInteractable commonInteractable;
     public Ladder(final MapLoaderService mapLoaderService,
                   final ItemService itemService,
-                  final StatisticsService statisticsService) {
+                  final StatisticsService statisticsService,
+                  final CoinService coinService) {
         commonInteractable = new CommonInteractable(keys -> {
             interactionTracker.interaction();
             if (keys.contains(GLFW.GLFW_KEY_E)){
@@ -52,7 +54,7 @@ public class Ladder implements RoomObject, Interactable {
                 mapLoaderService.clearPreviousMap();
 
                 final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-                final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService);
+                final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService);
                 mapLoaderService.load(mapGenerationResult);
             }
         }, () -> true, () -> false, getPosition(), getWidth(), getHeight());

@@ -16,7 +16,7 @@ public class AudioService {
     }
     private final SoundtrackService soundtrackService;
     private final SoundEffectService soundEffectService;
-    public AudioService() {
+    private AudioService() {
         final AudioSourcePool audioSourcePool = new AudioSourcePool();
         this.soundtrackService = new SoundtrackService(audioSourcePool);
         this.soundEffectService = new SoundEffectService(audioSourcePool);

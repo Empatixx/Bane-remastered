@@ -7,13 +7,11 @@ import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.items.service.ShopItemService;
 import cz.empatix.map.domain.RoomDirection;
+import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.roomobjects.domain.Pot;
-import cz.empatix.roomobjects.domain.RoomObject;
-import cz.empatix.roomobjects.domain.ShopTable;
-import cz.empatix.roomobjects.domain.Shopkeeper;
+import cz.empatix.roomobjects.domain.*;
 import cz.empatix.roomobjects.service.RoomObjectService;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.tiles.domain.TileImpl;
@@ -38,11 +36,13 @@ public class ShopRoom implements Room {
     private Shopkeeper shopkeeper;
     private final StatisticsService statisticsService;
     private final ShopItemService shopItemService;
+    private final CoinService coinService;
 
     public ShopRoom(final ItemService itemService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
                     final Set<RoomDirection> neighbors,
-                    final StatisticsService statisticsService) {
+                    final StatisticsService statisticsService,
+                    final CoinService coinService) {
         this.itemService = itemService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         carpetTileMap = new ShopCarpetTileMap(rows, cols, xOffset, yOffset, neighbors);
@@ -50,6 +50,7 @@ public class ShopRoom implements Room {
         this.neighbors = new HashMap<>(neighbors.size());
         this.statisticsService = statisticsService;
         shopItemService = new ShopItemService();
+        this.coinService = coinService;
     }
 
     @Override
@@ -101,6 +102,9 @@ public class ShopRoom implements Room {
         roomObjectService.add(pot);
         roomObjectService.add(pot2);
 
+        final SlotMachine slotMachine = new SlotMachine(itemService, coinService);
+        slotMachine.setPosition(getMinX() + tileMap.getWidth() - slotMachine.getWidth() - 128, getMinY() + 64);
+        roomObjectService.add(slotMachine);
     }
     public void applyDiscounts(){
         final int chance = RANDOM.nextInt(0, 100);
