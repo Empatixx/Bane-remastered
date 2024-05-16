@@ -10,6 +10,7 @@ import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
+import cz.empatix.items.domain.ItemDrop;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.player.CoinService;
 import cz.empatix.render.attributes.Renderable;
@@ -138,6 +139,7 @@ public class SlotMachine implements RoomObject, Interactable {
     }
     private static class MachineSlotService {
         private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+        private static final int CASHOUT_CHANCE = 5;
         private static final int WIN_CHANCE = 33;
         private static final int LOSE_CHANCE = 66;
         private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
@@ -153,12 +155,15 @@ public class SlotMachine implements RoomObject, Interactable {
             this.itemService = itemService;
             spinTask = new DelayedTask(SPINNING_TIME, () -> {
                 spinning = false;
-                final int chance = RANDOM.nextInt(WIN_CHANCE + LOSE_CHANCE);
+                final int chance = RANDOM.nextInt(WIN_CHANCE + LOSE_CHANCE + CASHOUT_CHANCE);
                 if (chance < WIN_CHANCE) {
+                    coinService.addCoins(10);
                     AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
-                    coinService.addCoins(PRICE_COST * 2);
-                } else {
+                } else if (chance < WIN_CHANCE + LOSE_CHANCE) {
                     AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_LOSE);
+                } else {
+                    final ItemDrop drop = itemService.getItemFactory().createItemDrop();
+                    AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_CASHOUT);
                 }
             });
         }
