@@ -119,14 +119,14 @@ public class AStarTargetting {
     private List<PathCell> createCells(final PathCell cell,
                                        final int targetX, final int targetY) {
         return Stream.of(
-                        new PathCell(cell.x() + CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() + CELL_SIZE, cell.y(), targetX, targetY), cell),
-                        new PathCell(cell.x() - CELL_SIZE, cell.y(), cell.g() + 1, getDistance(cell.x() - CELL_SIZE, cell.y(), targetX, targetY), cell),
-                        new PathCell(cell.x(), cell.y() + CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() + CELL_SIZE, targetX, targetY), cell),
-                        new PathCell(cell.x(), cell.y() - CELL_SIZE, cell.g() + 1, getDistance(cell.x(), cell.y() - CELL_SIZE, targetX, targetY), cell),
-                        new PathCell(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
-                        new PathCell(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell),
-                        new PathCell(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
-                        new PathCell(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 1.4f, getDistance(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell)
+                        new PathCell(cell.x() + CELL_SIZE, cell.y(), cell.g() + 10, getDistance(cell.x() + CELL_SIZE, cell.y(), targetX, targetY), cell),
+                        new PathCell(cell.x() - CELL_SIZE, cell.y(), cell.g() + 10, getDistance(cell.x() - CELL_SIZE, cell.y(), targetX, targetY), cell),
+                        new PathCell(cell.x(), cell.y() + CELL_SIZE, cell.g() + 10, getDistance(cell.x(), cell.y() + CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x(), cell.y() - CELL_SIZE, cell.g() + 10, getDistance(cell.x(), cell.y() - CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 14f, getDistance(cell.x() + CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 14f, getDistance(cell.x() - CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 14f, getDistance(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
+                        new PathCell(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 14f, getDistance(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell)
                 )
                 .filter(this::isNotBlocked)
                 .toList();

@@ -114,11 +114,10 @@ public class SlotMachine implements RoomObject, Interactable {
 
     @Override
     public boolean canInteract(Set<Integer> keys) {
-        final boolean canInteract = !machineSlotService.isSpinning() && keys.contains(GLFW.GLFW_KEY_E);
-        if (canInteract) {
+        if (!machineSlotService.isSpinning()){
             interactionTracker.interaction();
         }
-        return canInteract;
+        return !machineSlotService.isSpinning() && keys.contains(GLFW.GLFW_KEY_E);
     }
 
     @Override
