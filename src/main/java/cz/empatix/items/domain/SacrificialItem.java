@@ -38,7 +38,6 @@ public class SacrificialItem implements ItemDrop{
     private final ItemDrop drop;
     private final Predicate<Integer> hasEnoughHealthPredicate;
     private final Consumer<Integer> removeHealthConsumer;
-    private final AlternativeViewText saleText;
     private final AlternativeViewText priceText;
     private final AlternativeViewImage image;
     private final InteractionTracker interactionTracker = new InteractionTracker();
@@ -56,7 +55,7 @@ public class SacrificialItem implements ItemDrop{
         this.drop = itemDrop;
         this.price = RANDOM.nextInt(1, MAX_HEALTH_PRICE + 1);
         this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
-        this.priceText.setColorRGB(150, 0, 0);
+        this.priceText.setColorRGB(212, 168, 8);
         this.priceText.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.priceText.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
         this.image = new AlternativeViewImage("ingame/sacrifice_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getProjection());
@@ -64,9 +63,6 @@ public class SacrificialItem implements ItemDrop{
                 drop.getPosition().y() + drop.getHeight() + 10);
         this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
-
-        this.saleText = new AlternativeViewText("", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
-        this.saleText.setColorRGB(122, 248, 18);
         onBuy = NOOP;
 
         lightSource = LightningService.getInstance().createLightSource(
@@ -183,7 +179,6 @@ public class SacrificialItem implements ItemDrop{
         }
         final List<Renderable> textRenderables = priceText.getSubRenderables();
         textRenderables.add(image);
-        textRenderables.addAll(saleText.getSubRenderables());
         if (interactionTracker.isInteracting()) {
             textRenderables.addAll(interactionText.getSubRenderables());
         }
@@ -193,9 +188,6 @@ public class SacrificialItem implements ItemDrop{
     public void setHudPosition(final float x, final float y){
         this.priceText.setCenterX(x - image.getWidth() / 2f, x + image.getWidth() / 2f);
         this.priceText.setCenterY(y - image.getHeight() - ITEM_OFFSET, y - ITEM_OFFSET);
-
-        this.saleText.setCenterX(x - image.getWidth() / 2f, x + image.getWidth() / 2f);
-        this.saleText.setCenterY(y - image.getHeight() - ITEM_OFFSET - 15, y - image.getHeight() - ITEM_OFFSET - 15);
 
         this.image.setPosition(x - image.getWidth() / 2f, y - image.getHeight() - ITEM_OFFSET);
 

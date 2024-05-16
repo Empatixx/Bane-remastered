@@ -6,7 +6,7 @@ import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
-import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.domain.*;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -18,6 +18,8 @@ public class DropFollowingStrategy implements FollowingStrategy{
     private AStarTargetting targetting;
     private ItemDrop followTarget;
     private final Pet self;
+    private static final List<Class<?>> IGNORED_DROPS = List.of(ShopItem.class, SacrificialItem.class,
+            ArtefactDrop.class, WeaponDrop.class);
     public DropFollowingStrategy(Pet self) {
         targetting = new AStarTargetting(self::getPosition, self.getWidth(), self.getHeight());
         this.self = self;
@@ -40,7 +42,7 @@ public class DropFollowingStrategy implements FollowingStrategy{
                         final Vector2f o2Position = o2.getPosition();
                         return (int) (o1Position.distanceSquared(selfPosition) - o2Position.distanceSquared(selfPosition));
                     })
-                    .filter(o -> o instanceof ItemDrop)
+                    .filter(o -> o instanceof ItemDrop && !IGNORED_DROPS.contains(o.getClass()))
                     .map(o -> (ItemDrop) o)
                     .filter(item -> item.canInteract())
                     .toList();
@@ -76,10 +78,16 @@ public class DropFollowingStrategy implements FollowingStrategy{
         if (followTarget == null){
             return;
         }
-        if (!followTarget.canInteract() || followTarget.isPickedUp()) {
+        if (!followTarget.canInteract() || followTarget.canRemove() || tooFarFromItem()) {
             followTarget = null;
         }
         targetting.update(dt);
+    }
+
+    private boolean tooFarFromItem() {
+        final Vector2f selfPosition = self.getPhysicsObject().getPhysicsTranslation();
+        final Vector2f targetPosition = followTarget.getPosition();
+        return selfPosition.distance(targetPosition) > AREA_LOOT;
     }
 
     protected AStarTargetingState performPathUpdate(final float dt) {
