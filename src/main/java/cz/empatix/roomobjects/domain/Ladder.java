@@ -48,7 +48,6 @@ public class Ladder implements RoomObject, Interactable {
                   final StatisticsService statisticsService,
                   final CoinService coinService) {
         commonInteractable = new CommonInteractable(keys -> {
-            interactionTracker.interaction();
             if (keys.contains(GLFW.GLFW_KEY_E)){
                 LOGGER.info("Loading new map");
                 mapLoaderService.clearPreviousMap();
@@ -132,8 +131,9 @@ public class Ladder implements RoomObject, Interactable {
     }
 
     @Override
-    public boolean canInteract() {
-        return commonInteractable.canInteract();
+    public boolean canInteract(final Set<Integer> keys) {
+        interactionTracker.interaction();
+        return commonInteractable.canInteract(keys);
     }
 
     @Override

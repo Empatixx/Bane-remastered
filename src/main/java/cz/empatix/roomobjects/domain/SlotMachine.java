@@ -6,11 +6,14 @@ import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.utils.DelayedTask;
 import cz.empatix.common.utils.Task;
+import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
-import cz.empatix.items.domain.ItemDrop;
+import cz.empatix.items.domain.ItemRarity;
+import cz.empatix.items.domain.MovableItemDrop;
+import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.player.CoinService;
 import cz.empatix.render.attributes.Renderable;
@@ -22,9 +25,10 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SlotMachine implements RoomObject, Interactable {
@@ -38,20 +42,20 @@ public class SlotMachine implements RoomObject, Interactable {
     private final MachineSlotService machineSlotService;
     public SlotMachine(final ItemService itemService,
                        final CoinService coinService) {
-        machineSlotService = new MachineSlotService(coinService, itemService);
+        machineSlotService = new MachineSlotService(coinService, itemService, this);
         animation = Animation.builder()
-                .setTotal(1, 1)
-                .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
+                .setTotal(3, 6)
+                .addState(AnimationState.SPIN, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
+                .addState(AnimationState.WIN, 1, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
+                .addState(AnimationState.LOSE, 2, 6, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .texture(AssetsService.getTexture("ingame/slotmachine.tga"))
                 .build();
-        animation.setState(AnimationState.IDLE);
+        animation.setState(AnimationState.LOSE);
         position = new Vector2f();
         interactionTracker = new InteractionTracker();
 
-        this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+        this.interactionText = new AlternativeViewText("Press E to spin", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
-
-        coinService.addCoins(100);
 
         InteractionService.getInstance().addInteractable(this);
     }
@@ -103,15 +107,18 @@ public class SlotMachine implements RoomObject, Interactable {
 
     @Override
     public void interact(Set<Integer> keys) {
-        interactionTracker.interaction();
         if (keys.contains(GLFW.GLFW_KEY_E)) {
             machineSlotService.spin();
         }
     }
 
     @Override
-    public boolean canInteract() {
-        return !machineSlotService.isSpinning();
+    public boolean canInteract(Set<Integer> keys) {
+        final boolean canInteract = !machineSlotService.isSpinning() && keys.contains(GLFW.GLFW_KEY_E);
+        if (canInteract) {
+            interactionTracker.interaction();
+        }
+        return canInteract;
     }
 
     @Override
@@ -128,47 +135,152 @@ public class SlotMachine implements RoomObject, Interactable {
         position.set(x, y);
         interactionText.setPosition(x,y + DIMENSION_HEIGHT - 10);
         interactionText.setCenterX(x, x + DIMENSION_WIDTH);
+        machineSlotService.setPosition(x, y);
     }
 
     @Override
     public List<Renderable> getSubRenderables() {
+        final List<Renderable> subRenderables = machineSlotService.getSubRenderables();
         if (interactionTracker.isInteracting()) {
-            return interactionText.getSubRenderables();
+            subRenderables.addAll(interactionText.getSubRenderables());
         }
-        return List.of();
+        return subRenderables;
     }
     private static class MachineSlotService {
+        private static final Logger LOGGER = LoggerFactory.getLogger(MachineSlotService.class);
         private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
-        private static final int CASHOUT_CHANCE = 5;
-        private static final int WIN_CHANCE = 33;
-        private static final int LOSE_CHANCE = 66;
         private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
         private static final int PRICE_COST = 2;
-        private static final int SPINNING_TIME = 3;
+        private static final int SPINNING_TIME = 2;
         private final Task spinTask;
         private final CoinService coinService;
         private final ItemService itemService;
         private boolean spinning = false;
+        private final SlotMachine slotMachine;
+        private final NavigableMap<Integer, Runnable> rewards;
+
+        private final AlternativeViewText priceText;
+        private final AlternativeViewImage priceHud;
+
         public MachineSlotService(final CoinService coinService,
-                                  final ItemService itemService) {
+                                  final ItemService itemService,
+                                  final SlotMachine slotMachine) {
             this.coinService = coinService;
             this.itemService = itemService;
+            this.slotMachine = slotMachine;
+
+            int currentChance = 0;
+            rewards = new TreeMap<>();
+            rewards.put(currentChance += 5, this::winRareItem);
+            rewards.put(currentChance += 5, this::cashout);
+            rewards.put(currentChance += 10, this::dropItems);
+            rewards.put(currentChance += 10, this::winTriple);
+            rewards.put(currentChance += 20, this::winDouble);
+            rewards.put(currentChance += 90, this::lose);
+
+            final int total = currentChance;
             spinTask = new DelayedTask(SPINNING_TIME, () -> {
                 spinning = false;
-                final int chance = RANDOM.nextInt(WIN_CHANCE + LOSE_CHANCE + CASHOUT_CHANCE);
-                if (chance < WIN_CHANCE) {
-                    coinService.addCoins(10);
-                    AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
-                } else if (chance < WIN_CHANCE + LOSE_CHANCE) {
-                    AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_LOSE);
-                } else {
-                    final ItemDrop drop = itemService.getItemFactory().createItemDrop();
-                    AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_CASHOUT);
-                }
+                final int chance = RANDOM.nextInt(total);
+                LOGGER.info("Chance: {}", chance);
+                rewards.higherEntry(chance).getValue().run();
             });
+
+            this.priceText = new AlternativeViewText(String.valueOf(PRICE_COST), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+            this.priceText.setColorRGB(212, 168, 8);
+            this.priceHud = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getProjection());
+            setPosition(0, 0);
         }
+
+        public void setPosition(final float x, final float y) {
+            priceHud.setPosition(x + slotMachine.getWidth() / 2f - priceHud.getWidth() / 2f, y);
+
+            final float xMin = priceHud.getX();
+            final float xMax = priceHud.getX() + priceHud.getWidth();
+            priceText.setCenterX(xMin, xMax);
+
+            final float yMin = priceHud.getY();
+            final float yMax = priceHud.getY() + priceHud.getHeight();
+
+            priceText.setCenterY(yMin, yMax);
+        }
+
+        private void dropItems() {
+            dropCommonItems(5);
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
+            slotMachine.animation.setState(AnimationState.WIN);
+        }
+
+        private void dropCoins(final int coins) {
+            for (int i = 0; i < coins; i++) {
+                final MovableItemDrop drop = itemService.getItemFactory().createMovableCoinDrop();
+                drop.setPosition(slotMachine.getPosition().x() + slotMachine.getWidth() / 2 - drop.getWidth() / 2,
+                        slotMachine.getPosition().y() + slotMachine.getHeight() / 2 - drop.getHeight() / 2);
+                // set direction from the center of the slot machine as circle in loop
+                final float angle = (float) (Math.PI * 2 * i) / coins;
+                final float forceX = (float) Math.cos(angle) * 25_000;
+                final float forceY = (float) Math.sin(angle) * 25_000;
+                drop.applyForce(forceX, forceY);
+                itemService.add(drop);
+            }
+        }
+
+        public void dropCommonItems(final int totalItems){
+            for (int i = 0; i < totalItems; i++) {
+                final MovableItemDrop drop = itemService.getItemFactory().createMovableItemDrop(ItemRarity.COMMON);
+                drop.setPosition(slotMachine.getPosition().x() + slotMachine.getWidth() / 2 - drop.getWidth() / 2,
+                        slotMachine.getPosition().y() + slotMachine.getHeight() / 2 - drop.getHeight() / 2);
+                // set direction from the center of the slot machine as circle in loop
+                final float angle = (float) (Math.PI * 2 * i) / totalItems;
+                final float forceX = (float) Math.cos(angle) * 25_000;
+                final float forceY = (float) Math.sin(angle) * 25_000;
+                drop.applyForce(forceX, forceY);
+                itemService.add(drop);
+            }
+        }
+
+        private void lose() {
+            LOGGER.info("Lose");
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_LOSE);
+            slotMachine.animation.setState(AnimationState.LOSE);
+        }
+
+        private void winRareItem() {
+            final ItemFactory factory = itemService.getItemFactory();
+            final MovableItemDrop drop = factory.createMovableItemDrop(ItemRarity.UNCOMMON, ItemRarity.RARE);
+            drop.setPosition(slotMachine.getPosition().x() + slotMachine.getWidth() / 2 - drop.getWidth() / 2,
+                    slotMachine.getPosition().y() + slotMachine.getHeight() / 2 - drop.getHeight() / 2);
+            drop.applyForce(0, 25_000);
+            itemService.add(drop);
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_CASHOUT);
+            LOGGER.info("Win item: {}", drop);
+            slotMachine.animation.setState(AnimationState.WIN);
+        }
+
+        public void cashout() {
+            LOGGER.info("Cashout");
+            dropCoins(10);
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
+            slotMachine.animation.setState(AnimationState.WIN);
+        }
+        public void winTriple() {
+            LOGGER.info("Win triple");
+            dropCoins(PRICE_COST * 3);
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
+            slotMachine.animation.setState(AnimationState.WIN);
+        }
+        public void winDouble() {
+            LOGGER.info("Win double");
+            dropCoins(PRICE_COST * 2);
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
+            slotMachine.animation.setState(AnimationState.WIN);
+        }
+
         public void update(final float dt) {
             spinTask.update(dt);
+            if (slotMachine.animation.getCurrentState() == AnimationState.WIN && slotMachine.animation.hasPlayedOnce()) {
+                slotMachine.animation.setCurrentFrame(0);
+            }
         }
 
         public boolean isSpinning() {
@@ -182,10 +294,19 @@ public class SlotMachine implements RoomObject, Interactable {
             if (!coinService.hasEnoughCoins(PRICE_COST)) {
                 return;
             }
+            slotMachine.animation.setState(AnimationState.SPIN);
             coinService.removeCoins(PRICE_COST);
             AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_SPIN);
             spinTask.start();
             spinning = true;
+        }
+        public List<Renderable> getSubRenderables() {
+            if (isSpinning()){
+                return new ArrayList<>();
+            }
+            final List<Renderable> subRenderables = new ArrayList<>(priceText.getSubRenderables());
+            subRenderables.add(priceHud);
+            return subRenderables;
         }
     }
 }

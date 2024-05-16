@@ -12,6 +12,7 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 
 import java.util.List;
+import java.util.Set;
 
 public class DropFollowingStrategy implements FollowingStrategy{
     private static final int AREA_LOOT = 500;
@@ -44,7 +45,7 @@ public class DropFollowingStrategy implements FollowingStrategy{
                     })
                     .filter(o -> o instanceof ItemDrop && !IGNORED_DROPS.contains(o.getClass()))
                     .map(o -> (ItemDrop) o)
-                    .filter(item -> item.canInteract())
+                    .filter(item -> item.canInteract(Set.of()))
                     .toList();
             if (closest.isEmpty()) {
                 return;
@@ -78,7 +79,7 @@ public class DropFollowingStrategy implements FollowingStrategy{
         if (followTarget == null){
             return;
         }
-        if (!followTarget.canInteract() || followTarget.canRemove() || tooFarFromItem()) {
+        if (!followTarget.canInteract(Set.of()) || followTarget.canRemove() || tooFarFromItem()) {
             followTarget = null;
         }
         targetting.update(dt);

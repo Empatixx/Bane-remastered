@@ -32,7 +32,6 @@ public class WeaponDrop implements ItemDrop {
                       final Consumer<Gun> addGun) {
         texture = AssetsService.getTexture(gun.getTexturePath());
         interactable = new CommonInteractable(pressedKeys -> {
-            interactionTracker.interaction();
             if(pressedKeys.contains(GLFW.GLFW_KEY_E)){
                 addGun.accept(gun);
                 pickedUp = true;
@@ -47,8 +46,9 @@ public class WeaponDrop implements ItemDrop {
     }
 
     @Override
-    public boolean canInteract() {
-        return interactable.canInteract();
+    public boolean canInteract(final Set<Integer> keys) {
+        interactionTracker.interaction();
+        return interactable.canInteract(keys);
     }
 
     @Override

@@ -70,8 +70,8 @@ public class CoinItem implements ItemDrop {
     }
 
     @Override
-    public boolean canInteract() {
-        return interactable.canInteract();
+    public boolean canInteract(final Set<Integer> keys) {
+        return interactable.canInteract(keys);
     }
 
     @Override

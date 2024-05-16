@@ -28,8 +28,8 @@ public class MovableItemDrop implements ItemDrop{
     }
 
     @Override
-    public boolean canInteract() {
-        return itemDrop.canInteract();
+    public boolean canInteract(final Set<Integer> keys) {
+        return itemDrop.canInteract(keys);
     }
 
     @Override

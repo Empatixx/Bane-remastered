@@ -118,7 +118,7 @@ public class Scientist implements Interactable, Drawable {
     }
 
     @Override
-    public boolean canInteract() {
+    public boolean canInteract(final Set<Integer> keys) {
         return true;
     }
 

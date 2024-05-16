@@ -9,6 +9,7 @@ import org.lwjgl.opengl.GL30;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class InteractionService {
     private static InteractionService instance;
@@ -26,9 +27,10 @@ public class InteractionService {
         interactionEntities.removeIf(InteractEntity::canRemove);
 
         A: for (final InteractEntity entity : interactionEntities) {
+            final Set<Integer> keys = entity.getInteractKeys();
             for (final Interactable interactable : interactables) {
-                if (interactable.intersects(entity) && interactable.canInteract()) {
-                    interactable.interact(entity.getInteractKeys());
+                if (interactable.intersects(entity) && interactable.canInteract(keys)) {
+                    interactable.interact(keys);
                     entity.getInteractKeys().clear();
                     break A;
                 }

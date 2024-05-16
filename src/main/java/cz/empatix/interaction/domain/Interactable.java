@@ -7,7 +7,7 @@ import java.util.Set;
 
 public interface Interactable {
     void interact(final Set<Integer> keys);
-    boolean canInteract();
+    boolean canInteract(final Set<Integer> keys);
 
     default boolean intersects(final InteractEntity e) {
         final Vector2f entityPos = e.getPosition();

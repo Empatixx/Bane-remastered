@@ -111,16 +111,32 @@ public class ItemFactory {
     }
 
     public ItemDrop createItemDrop() {
-        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(ItemRarity.randomRarity(ItemRarity.COMMON, ItemRarity.UNCOMMON));
+        return createItemDrop(ItemRarity.randomRarity(ItemRarity.COMMON));
+    }
+    public ItemDrop createItemDrop(final ItemRarity... rarities){
+        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(rarities[RANDOM.nextInt(rarities.length)]);
         final ItemDrop drop = suppliers.get(RANDOM.nextInt(suppliers.size())).get();
         InteractionService.getInstance().addInteractable(drop);
         return drop;
     }
 
-    public MovableItemDrop createMovableItemDrop() {
-        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(ItemRarity.randomRarity(ItemRarity.COMMON));
-        final ItemDrop drop = suppliers.get(RANDOM.nextInt(suppliers.size())).get();
+    public ItemDrop createCoinDrop() {
+        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(ItemRarity.COMMON);
+        final ItemDrop drop = suppliers.get(0).get();
         InteractionService.getInstance().addInteractable(drop);
+        return drop;
+    }
+    public MovableItemDrop createMovableCoinDrop() {
+        final ItemDrop drop = createCoinDrop();
+        return new MovableItemDrop(drop);
+    }
+
+    public MovableItemDrop createMovableItemDrop() {
+        final ItemDrop drop = createItemDrop();
+        return new MovableItemDrop(drop);
+    }
+    public MovableItemDrop createMovableItemDrop(final ItemRarity... rarities) {
+        final ItemDrop drop = createItemDrop(rarities);
         return new MovableItemDrop(drop);
     }
 }

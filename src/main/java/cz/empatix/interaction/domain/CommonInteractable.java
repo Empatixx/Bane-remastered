@@ -34,7 +34,7 @@ public class CommonInteractable implements Interactable {
     }
 
     @Override
-    public boolean canInteract() {
+    public boolean canInteract(final Set<Integer> keys) {
         return canInteract.get();
     }
 

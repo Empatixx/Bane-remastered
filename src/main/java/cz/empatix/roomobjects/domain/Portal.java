@@ -99,14 +99,14 @@ public class Portal implements RoomObject, Interactable {
 
     @Override
     public void interact(final Set<Integer> keys) {
-        interactionTracker.interaction();
         if(keys.contains(GLFW.GLFW_KEY_E)){
             GameStateController.getInstance().setCurrentState(GameStateType.INGAME);
         }
     }
 
     @Override
-    public boolean canInteract() {
+    public boolean canInteract(final Set<Integer> keys) {
+        interactionTracker.interaction();
         return true;
     }
 

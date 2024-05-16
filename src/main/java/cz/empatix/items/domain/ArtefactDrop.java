@@ -34,7 +34,6 @@ public class ArtefactDrop implements ItemDrop{
                         final Consumer<Artefact> addArtefact) {
         texture = AssetsService.getTexture(artefact.getTexturePath());
         interactable = new CommonInteractable(pressedKeys -> {
-            interactionTracker.interaction();
             if(pressedKeys.contains(GLFW.GLFW_KEY_E)){
                 addArtefact.accept(artefact);
                 pickedUp = true;
@@ -45,12 +44,13 @@ public class ArtefactDrop implements ItemDrop{
     }
     @Override
     public void interact(final Set<Integer> keys) {
+        interactionTracker.interaction();
         interactable.interact(keys);
     }
 
     @Override
-    public boolean canInteract() {
-        return interactable.canInteract();
+        public boolean canInteract(final Set<Integer> keys) {
+            return interactable.canInteract(keys);
     }
 
     @Override

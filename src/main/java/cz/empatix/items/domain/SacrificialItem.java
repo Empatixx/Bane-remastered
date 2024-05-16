@@ -75,9 +75,8 @@ public class SacrificialItem implements ItemDrop{
 
     @Override
     public void interact(Set<Integer> keys) {
-        interactionTracker.interaction();
         if (bought) {
-            if (drop.canInteract()) {
+            if (drop.canInteract(keys)) {
                 drop.interact(keys);
             }
             return;
@@ -95,14 +94,15 @@ public class SacrificialItem implements ItemDrop{
             AUDIO_SERVICE.play(SoundEffect.SACRIFICE);
             onBuy.run();
         }
-        if (drop.canInteract()) {
+        if (drop.canInteract(keys)) {
             drop.interact(keys);
         }
     }
 
     @Override
-    public boolean canInteract() {
-        return !bought || drop.canInteract();
+    public boolean canInteract(final Set<Integer> keys) {
+        interactionTracker.interaction();
+        return !bought || drop.canInteract(keys);
     }
 
     @Override

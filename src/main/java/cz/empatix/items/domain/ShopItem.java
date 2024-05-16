@@ -119,7 +119,7 @@ public class ShopItem implements ItemDrop {
     public void interact(final Set<Integer> keys) {
         interactionTracker.interaction();
         if (bought) {
-            if (drop.canInteract()) {
+            if (drop.canInteract(keys)) {
                 drop.interact(keys);
             }
             return;
@@ -137,14 +137,14 @@ public class ShopItem implements ItemDrop {
             AUDIO_SERVICE.play(SoundEffect.BUY);
             onBuy.run();
         }
-        if (drop.canInteract()) {
+        if (drop.canInteract(keys)) {
             drop.interact(keys);
         }
     }
 
     @Override
-    public boolean canInteract() {
-        return !bought || drop.canInteract();
+    public boolean canInteract(final Set<Integer> keys) {
+        return !bought || drop.canInteract(keys);
     }
 
     @Override
