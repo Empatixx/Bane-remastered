@@ -80,7 +80,6 @@ public class PhysicsObject extends Body {
     public void setTranslation(float x, float y) {
         getPreviousTransform().setTranslation(x + offset.x(), y + offset.y());
         getTransform().setTranslation(x + offset.x(), y + offset.y());
-
     }
 
     public void update(final float dt){

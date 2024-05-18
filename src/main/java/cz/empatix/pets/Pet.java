@@ -51,6 +51,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         physicsObject = PhysicsObjectFactory.createInterpolated(WIDTH, HEIGHT);
         physicsObject.setType(CollisionType.PLAYER);
         physicsObject.setUserData(this);
+        physicsObject.setBullet(false);
         followingStrategy = new OwnerFollowingStrategy(this);
         collectingStrategy = new DropFollowingStrategy(this);
         attackingStrategy = new AttackFollowingStrategy(this);
