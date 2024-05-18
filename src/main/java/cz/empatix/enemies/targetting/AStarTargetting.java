@@ -32,7 +32,11 @@ public class AStarTargetting {
 
     public void target(final Targetable targetable) {
         this.target = targetable;
+        this.path.clear();
+        lastTargetX = Integer.MAX_VALUE;
+        lastTargetY = Integer.MAX_VALUE;
     }
+
 
     /**
      * @return true if path was found
@@ -42,7 +46,8 @@ public class AStarTargetting {
             return AStarTargetingState.NOT_FOUND;
         }
         if (Math.abs(target.getX() - lastTargetX) <= CELL_SIZE && Math.abs(target.getY() - lastTargetY) <= CELL_SIZE) {
-            return AStarTargetingState.CACHED;
+            this.path.clear();
+            return AStarTargetingState.CLOSE;
         }
 
         final Vector2f position = positionSupplier.get();
@@ -71,7 +76,7 @@ public class AStarTargetting {
         used.add(startNode);
 
         while (!openSet.isEmpty()) {
-            if (used.size() > 50_000) {
+            if (used.size() > 25_000) {
                 LOGGER.error("A* failed to find path, exhausted max used set size");
                 return List.of();
             }

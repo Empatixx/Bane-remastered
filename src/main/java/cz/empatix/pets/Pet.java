@@ -1,6 +1,7 @@
 package cz.empatix.pets;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.utils.LogBackFormatter;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.interaction.domain.InteractEntity;
@@ -13,8 +14,11 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -51,7 +55,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         physicsObject = PhysicsObjectFactory.createInterpolated(WIDTH, HEIGHT);
         physicsObject.setType(CollisionType.PLAYER);
         physicsObject.setUserData(this);
-        physicsObject.setBullet(false);
+
         followingStrategy = new OwnerFollowingStrategy(this);
         collectingStrategy = new DropFollowingStrategy(this);
         attackingStrategy = new AttackFollowingStrategy(this);
@@ -69,7 +73,6 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     }
 
     public void fixedUpdate(final float dt) {
-        System.out.println("X: " + physicsObject.getPhysicsTranslation().x() + " Y: " + physicsObject.getPhysicsTranslation().y());
         followingStrategy.fixedUpdate(dt);
         attackingStrategy.fixedUpdate(dt);
         collectingStrategy.fixedUpdate(dt);
@@ -86,6 +89,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         direction.mul(MOVE_FORCE);
         physicsObject.applyForce(direction.x(), direction.y());
     }
+
     private void setAnimation(Vector2f direction) {
         if (direction.x() > 0.3f) {
             animation.setState(AnimationState.RIGHT_MOVE);

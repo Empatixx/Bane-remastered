@@ -7,6 +7,7 @@ import org.dyn4j.collision.Filter;
 import org.dyn4j.collision.Fixture;
 import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.BodyFixture;
+import org.dyn4j.dynamics.ContinuousDetectionMode;
 import org.dyn4j.dynamics.Settings;
 import org.dyn4j.geometry.*;
 import org.dyn4j.world.DetectFilter;
