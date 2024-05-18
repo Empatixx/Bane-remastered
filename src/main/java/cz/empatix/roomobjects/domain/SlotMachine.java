@@ -56,7 +56,6 @@ public class SlotMachine implements RoomObject, Interactable {
 
         this.interactionText = new AlternativeViewText("Press E to spin", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
-
         InteractionService.getInstance().addInteractable(this);
     }
 
@@ -149,7 +148,7 @@ public class SlotMachine implements RoomObject, Interactable {
         private static final Logger LOGGER = LoggerFactory.getLogger(MachineSlotService.class);
         private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
         private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
-        private static final int PRICE_COST = 2;
+        private static final int PRICE_COST = 5;
         private static final int SPINNING_TIME = 2;
         private final Task spinTask;
         private final CoinService coinService;
@@ -170,8 +169,8 @@ public class SlotMachine implements RoomObject, Interactable {
 
             int currentChance = 0;
             rewards = new TreeMap<>();
-            rewards.put(currentChance += 5, this::winRareItem);
-            rewards.put(currentChance += 5, this::cashout);
+            rewards.put(currentChance += 10, this::winRareItem);
+            rewards.put(currentChance += 10, this::cashout);
             rewards.put(currentChance += 10, this::dropItems);
             rewards.put(currentChance += 10, this::winTriple);
             rewards.put(currentChance += 20, this::winDouble);
@@ -251,7 +250,7 @@ public class SlotMachine implements RoomObject, Interactable {
                     slotMachine.getPosition().y() + slotMachine.getHeight() / 2 - drop.getHeight() / 2);
             drop.applyForce(0, 25_000);
             itemService.add(drop);
-            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_CASHOUT);
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
             LOGGER.info("Win item: {}", drop);
             slotMachine.animation.setState(AnimationState.WIN);
         }
@@ -259,7 +258,7 @@ public class SlotMachine implements RoomObject, Interactable {
         public void cashout() {
             LOGGER.info("Cashout");
             dropCoins(10);
-            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_WIN);
+            AUDIO_SERVICE.play(SoundEffect.SLOTMACHINE_CASHOUT);
             slotMachine.animation.setState(AnimationState.WIN);
         }
         public void winTriple() {

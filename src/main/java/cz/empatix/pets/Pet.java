@@ -61,7 +61,6 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     }
 
     public void update(final float dt) {
-        physicsObject.update(dt);
         animation.update();
         followingStrategy.update(dt);
         attackingStrategy.update(dt);
@@ -69,6 +68,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     }
 
     public void fixedUpdate(final float dt) {
+        System.out.println("X: " + physicsObject.getPhysicsTranslation().x() + " Y: " + physicsObject.getPhysicsTranslation().y());
         followingStrategy.fixedUpdate(dt);
         attackingStrategy.fixedUpdate(dt);
         collectingStrategy.fixedUpdate(dt);
@@ -149,7 +149,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     }
 
     public void setPosition(float x, float y) {
-        physicsObject.setTranslation(x, y);
+        physicsObject.setPhysicsTranslation(x, y);
     }
 
     @Override

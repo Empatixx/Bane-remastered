@@ -57,6 +57,12 @@ public class TreasureRoom implements Room {
             final Torch bottomLeftTorch = new Torch();
             final Torch bottomRightTorch = new Torch();
 
+            final Bricks topLeftBricks = new Bricks();
+            final Bricks bottomLeftBricks = new Bricks();
+
+            topLeftBricks.setPosition(getMinX() + TileImpl.SCALE_TILE_SIZE * 4, getMinY() + TileImpl.SCALE_TILE_SIZE * 4.5f);
+            bottomLeftBricks.setPosition(getMinX() + TileImpl.SCALE_TILE_SIZE * 3, getMaxY() - TileImpl.SCALE_TILE_SIZE * 3.5f);
+
             topLeftTorch.setPosition(getMinX() + TileImpl.SCALE_TILE_SIZE  * 5, getMinY() + TileImpl.SCALE_TILE_SIZE * 3);
             topRightTorch.setPosition(getMaxX() - TileImpl.SCALE_TILE_SIZE * 6, getMinY() + TileImpl.SCALE_TILE_SIZE * 3);
             bottomLeftTorch.setPosition(getMinX() + TileImpl.SCALE_TILE_SIZE * 5, getMaxY() - TileImpl.SCALE_TILE_SIZE * 5);
@@ -68,6 +74,7 @@ public class TreasureRoom implements Room {
             bottomRightTorch.setState(AnimationState.RIGHT_SIDE);
 
             roomObjectService.addAll(List.of(topLeftTorch, topRightTorch, bottomLeftTorch, bottomRightTorch));
+            roomObjectService.addAll(List.of(topLeftBricks, bottomLeftBricks));
 
             final CobwebSupplier cobwebSupplier = new CobwebSupplier(this, tileMap);
             final BonesSupplier bonesSupplier = new BonesSupplier(this, tileMap);
@@ -79,6 +86,7 @@ public class TreasureRoom implements Room {
                     .toList();
             roomObjectService.addAll(cobwebs);
             roomObjectService.addAll(bones);
+
         }
 
         final Chest chest = new Chest(itemService, ChestType.WEAPON);

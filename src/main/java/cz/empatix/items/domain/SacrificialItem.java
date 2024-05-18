@@ -42,7 +42,6 @@ public class SacrificialItem implements ItemDrop{
     private final AlternativeViewImage image;
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final AlternativeViewText interactionText;
-    private final LightSource lightSource;
     private Runnable onBuy;
     private int price;
     private boolean bought = false;
@@ -64,12 +63,6 @@ public class SacrificialItem implements ItemDrop{
         this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
         onBuy = NOOP;
-
-        lightSource = LightningService.getInstance().createLightSource(
-                new Vector3f(212, 0, 0),
-                250,
-                1f
-        );
     }
 
 
@@ -99,6 +92,10 @@ public class SacrificialItem implements ItemDrop{
         }
     }
 
+    public void onBuy(final Runnable onBuy) {
+        this.onBuy = onBuy;
+    }
+
     @Override
     public boolean canInteract(final Set<Integer> keys) {
         interactionTracker.interaction();
@@ -113,7 +110,6 @@ public class SacrificialItem implements ItemDrop{
     @Override
     public void update(float dt) {
         drop.update(dt);
-        lightSource.setPosition(drop.getPosition().x() + drop.getWidth() / 2f, drop.getPosition().y() + drop.getHeight() / 2f);
     }
 
     @Override
@@ -149,7 +145,6 @@ public class SacrificialItem implements ItemDrop{
     @Override
     public void destroy() {
         drop.destroy();
-        lightSource.destroy();
         InteractionService.getInstance().removeInteractable(this);
     }
 

@@ -59,6 +59,22 @@ public class SacrificeRoom implements Room {
                 (getMaxY() + getMinY()) / 2f - angelStatue.getHeight() / 2f - angelStatue.getHeight()/2f - 27);
         roomObjectService.add(angelStatue);
 
+        final Candlestick leftCandlestick = new Candlestick();
+        final Candlestick leftCandlestick2 = new Candlestick();
+        final Candlestick rightCandlestick = new Candlestick();
+        final Candlestick rightCandlestick2 = new Candlestick();
+        final Candlestick bottomCandlestick = new Candlestick();
+
+        leftCandlestick.setPosition(getMinX() + 8 * TileImpl.SCALE_TILE_SIZE, getMinY() + 6 * TileImpl.SCALE_TILE_SIZE);
+        leftCandlestick2.setPosition(getMinX() + 7.5f * TileImpl.SCALE_TILE_SIZE, getMinY() + 8 * TileImpl.SCALE_TILE_SIZE);
+
+        rightCandlestick.setPosition(getMinX() + 11 * TileImpl.SCALE_TILE_SIZE, getMinY() + 6 * TileImpl.SCALE_TILE_SIZE);
+        rightCandlestick2.setPosition(getMinX() + 11.5f * TileImpl.SCALE_TILE_SIZE, getMinY() + 8 * TileImpl.SCALE_TILE_SIZE);
+
+        bottomCandlestick.setPosition(getMinX() + 9.5f * TileImpl.SCALE_TILE_SIZE, getMinY() + 9f * TileImpl.SCALE_TILE_SIZE);
+
+        roomObjectService.addAll(List.of(leftCandlestick, leftCandlestick2, rightCandlestick, rightCandlestick2, bottomCandlestick));
+
         final PentagramCircle pentagramCircle = new PentagramCircle();
         pentagramCircle.setPosition((getMaxX() + getMinX()) / 2f -  pentagramCircle.getWidth() / 2f,
                 (getMaxY() + getMinY()) / 2f -  pentagramCircle.getHeight() / 2f);
@@ -71,26 +87,34 @@ public class SacrificeRoom implements Room {
                 pentagramCircle.getY() + pentagramCircle.getHeight() / 2f - item.getHeight() / 2f);
         item.setHudPosition(pentagramCircle.getX() + pentagramCircle.getWidth() / 2f, pentagramCircle.getY());
         item.setInteractionText(pentagramCircle.getX(), pentagramCircle.getX() + pentagramCircle.getWidth(), pentagramCircle.getY() + pentagramCircle.getHeight());
+        item.onBuy(() -> {
+            leftCandlestick.disableLight();
+            leftCandlestick2.disableLight();
+            rightCandlestick.disableLight();
+            rightCandlestick2.disableLight();
+            bottomCandlestick.disableLight();
+        });
         itemService.add(item);
 
         final LayingBook layingBook = new LayingBook();
-        layingBook.setPosition(getMinX() + 6 * TileImpl.SCALE_TILE_SIZE, getMinY() + 6 * TileImpl.SCALE_TILE_SIZE);
-        roomObjectService.add(layingBook);
-
         final LayingBook layingBook2 = new LayingBook();
-        layingBook2.setPosition(getMinX() + 13 * TileImpl.SCALE_TILE_SIZE, getMinY() + 3 * TileImpl.SCALE_TILE_SIZE);
-        roomObjectService.add(layingBook2);
-
         final LayingBook layingBook3 = new LayingBook();
-        layingBook3.setPosition(getMinX() + 11 * TileImpl.SCALE_TILE_SIZE, getMinY() + 11 * TileImpl.SCALE_TILE_SIZE);
-        roomObjectService.add(layingBook3);
 
         final Chains chains = new Chains();
-        chains.setPosition(getMinX() + 3 * TileImpl.SCALE_TILE_SIZE, getMinY() + 4 * TileImpl.SCALE_TILE_SIZE);
-        roomObjectService.add(chains);
-
         final Chains chains2 = new Chains();
+
+        layingBook.setPosition(getMinX() + 6 * TileImpl.SCALE_TILE_SIZE, getMinY() + 6 * TileImpl.SCALE_TILE_SIZE);
+        layingBook2.setPosition(getMinX() + 13 * TileImpl.SCALE_TILE_SIZE, getMinY() + 3 * TileImpl.SCALE_TILE_SIZE);
+        layingBook3.setPosition(getMinX() + 11 * TileImpl.SCALE_TILE_SIZE, getMinY() + 11 * TileImpl.SCALE_TILE_SIZE);
+
+        roomObjectService.add(layingBook);
+        roomObjectService.add(layingBook2);
+        roomObjectService.add(layingBook3);
+
+        chains.setPosition(getMinX() + 3 * TileImpl.SCALE_TILE_SIZE, getMinY() + 4 * TileImpl.SCALE_TILE_SIZE);
         chains2.setPosition(getMinX() + 15 * TileImpl.SCALE_TILE_SIZE, getMinY() + 11 * TileImpl.SCALE_TILE_SIZE);
+
+        roomObjectService.add(chains);
         roomObjectService.add(chains2);
     }
 

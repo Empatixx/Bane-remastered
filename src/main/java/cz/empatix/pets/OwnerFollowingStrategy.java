@@ -4,8 +4,11 @@ import cz.empatix.enemies.targetting.AStarTargetingState;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.enemies.targetting.Targetable;
 import org.joml.Vector2f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OwnerFollowingStrategy implements FollowingStrategy{
+    private static final Logger LOGGER = LoggerFactory.getLogger(OwnerFollowingStrategy.class);
     protected static final int DISTANCE_MIN = 550;
     protected static final int STOP_DISTANCE = 100;
     private AStarTargetting targetting;
@@ -25,17 +28,23 @@ public class OwnerFollowingStrategy implements FollowingStrategy{
         final Vector2f selfPosition = self.getPosition();
         final float distance = position.distance(selfPosition);
         if (distance > DISTANCE_MIN) {
-            // teleport
-            self.setPosition(position.x, position.y);
-            performPathUpdate(dt);
+            teleportToTarget(dt);
             return;
         }
 
         final AStarTargetingState pathFound = performPathUpdate(dt);
         if (pathFound == AStarTargetingState.NOT_FOUND) {
-            // teleport to target
-            self.setPosition(followTarget.getX(), followTarget.getY());
-            performPathUpdate(dt);
+            teleportToTarget(dt);
+        }
+    }
+    private void teleportToTarget(final float dt) {
+        final float x = followTarget.getX() + followTarget.getWidth() / 2f - self.getWidth()/2F;
+        final float y = followTarget.getY() + followTarget.getHeight() / 2f - self.getHeight()/2F;
+        self.setPosition(x, y);
+        LOGGER.info("Teleporting {} to target to location {}, {}", followTarget, x, y);
+        final AStarTargetingState aStarTargetingState = performPathUpdate(dt);
+        if (aStarTargetingState == AStarTargetingState.NOT_FOUND) {
+            LOGGER.error("Path not found after teleporting to target");
         }
     }
 

@@ -44,6 +44,7 @@ public class AStarTargetting {
         if (Math.abs(target.getX() - lastTargetX) <= CELL_SIZE && Math.abs(target.getY() - lastTargetY) <= CELL_SIZE) {
             return AStarTargetingState.CACHED;
         }
+
         final Vector2f position = positionSupplier.get();
         final int startX = (int) position.x();
         final int startY = (int) position.y();
@@ -54,7 +55,6 @@ public class AStarTargetting {
         lastTargetX = (int) target.getX();
         lastTargetY = (int) target.getY();
 
-        LOGGER.info("Starting A* for player {} at {},{} to {},{}", target, startX, startY, targetX, targetY);
         this.path.clear();
         this.path.addAll(aStar(startX, startY, targetX, targetY));
         AStarTargetingState aStarTargetingState = this.path.isEmpty() ? AStarTargetingState.NOT_FOUND : AStarTargetingState.FOUND;
@@ -64,21 +64,18 @@ public class AStarTargetting {
     private List<PathCell> aStar(final int startX, final int startY,
                                  final int targetX, final int targetY) {
         final PriorityQueue<PathCell> openSet = new PriorityQueue<>(500, Comparator.comparingDouble(PathCell::f));
-        final Set<PathCell> openSetLookup = new HashSet<>(500);
-
-        final Set<PathCell> closedSet = new HashSet<>(500);
+        final Set<PathCell> used = new HashSet<>(1000);
 
         final PathCell startNode = new PathCell(startX, startY, 0, getDistance(startX, startY, targetX, targetY), null);
         openSet.add(startNode);
-        openSetLookup.add(startNode);
+        used.add(startNode);
 
         while (!openSet.isEmpty()) {
-            if (openSet.size() > 40000) {
-                LOGGER.error("A* failed to find path, exhausted max open set size");
-                throw new IllegalStateException("A* failed to find path");
+            if (used.size() > 50_000) {
+                LOGGER.error("A* failed to find path, exhausted max used set size");
+                return List.of();
             }
             final PathCell currentNode = openSet.peek();
-            openSetLookup.remove(currentNode);
             openSet.poll();
             if (intersects(currentNode)) {
                 PathCell endNode = currentNode;
@@ -90,14 +87,11 @@ public class AStarTargetting {
                 Collections.reverse(path);
                 return path;
             }
-            closedSet.add(currentNode);
+            used.add(currentNode);
 
-            final List<PathCell> cells = createCells(currentNode, targetX, targetY)
-                    .stream()
-                    .filter(cell -> !closedSet.contains(cell) && !openSetLookup.contains(cell))
-                    .toList();
+            final List<PathCell> cells = createCells(currentNode, used, targetX, targetY);
             openSet.addAll(cells);
-            openSetLookup.addAll(cells);
+            used.addAll(cells);
         }
         return List.of();
     }
@@ -117,6 +111,7 @@ public class AStarTargetting {
     }
 
     private List<PathCell> createCells(final PathCell cell,
+                                       final Set<PathCell> used,
                                        final int targetX, final int targetY) {
         return Stream.of(
                         new PathCell(cell.x() + CELL_SIZE, cell.y(), cell.g() + 10, getDistance(cell.x() + CELL_SIZE, cell.y(), targetX, targetY), cell),
@@ -128,7 +123,7 @@ public class AStarTargetting {
                         new PathCell(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, cell.g() + 14f, getDistance(cell.x() - CELL_SIZE, cell.y() + CELL_SIZE, targetX, targetY), cell),
                         new PathCell(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, cell.g() + 14f, getDistance(cell.x() + CELL_SIZE, cell.y() - CELL_SIZE, targetX, targetY), cell)
                 )
-                .filter(this::isNotBlocked)
+                .filter(newCell -> !used.contains(newCell) && isNotBlocked(newCell))
                 .toList();
     }
 
