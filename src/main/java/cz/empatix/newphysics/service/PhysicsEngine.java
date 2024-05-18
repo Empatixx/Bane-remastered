@@ -30,10 +30,11 @@ public class PhysicsEngine {
         final Settings settings = new Settings();
         settings.setStepFrequency(GameLoop.FIXED_DELTA_TIME);
         settings.setAtRestDetectionEnabled(true);
-        settings.setMaximumTranslation(100);
-        settings.setMaximumLinearCorrection(100);
+        settings.setMaximumTranslation(1000);
+        settings.setMaximumLinearCorrection(1);
         settings.setMaximumAngularCorrection(100);
         settings.setLinearTolerance(0.1);
+        settings.setContinuousDetectionMode(ContinuousDetectionMode.NONE);
 
 
         world = new World<>();
