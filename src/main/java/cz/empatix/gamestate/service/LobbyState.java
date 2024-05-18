@@ -13,6 +13,7 @@ import cz.empatix.map.domain.MapGenerationResult;
 import cz.empatix.map.generators.StaticMapGenerator;
 import cz.empatix.map.service.MapService;
 import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.pause.service.PauseService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.postprocessing.domain.GaussianBlur;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class LobbyState extends GameState {
+    private PauseService pauseService;
     private MapService mapService;
     private Player player;
     private CoinService coinService;
@@ -41,16 +43,17 @@ public class LobbyState extends GameState {
     public void init() {
         CursorService.setCursor(CursorType.DEFAULT);
 
-        final StaticMapGenerator  proceduralMapGenerator = new StaticMapGenerator();
+        final StaticMapGenerator proceduralMapGenerator = new StaticMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate();
 
+        pauseService = new PauseService();
         mapService = new MapService();
         mapService.apply(mapGenerationResult);
 
         player = new Player();
         player.setPosition(mapGenerationResult.startRoom().getMaxX() / 2f, mapGenerationResult.startRoom().getMaxY() / 2f);
 
-        coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(236,0,0));
+        coinService = new CoinService("ingame/green_banecoin.tga", new Vector3i(236, 0, 0));
 
         scientist = new Scientist();
         scientist.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 25, TileImpl.TILE_SIZE * TileImpl.SCALE * 6.5f);
@@ -68,6 +71,7 @@ public class LobbyState extends GameState {
         player.update(dt);
         scientist.update(dt, mouseX, mouseY);
         mapService.update(dt, player);
+        pauseService.update(dt, mouseX, mouseY);
     }
 
     @Override
@@ -78,7 +82,10 @@ public class LobbyState extends GameState {
 
     @Override
     public List<Renderable> toRender(double dt) {
-        final List<Renderable> renderables = Stream.of(mapService.toRender(dt), List.of(player, scientist), coinService.toRender())
+        final List<Renderable> renderables = Stream.of(mapService.toRender(dt),
+                        pauseService.toRender(dt),
+                        List.of(player, scientist),
+                        coinService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         renderables.add(CursorService.getCursor());
@@ -96,9 +103,10 @@ public class LobbyState extends GameState {
 
     @Override
     public void keyPressed(int key) {
-        if (key == GLFW.GLFW_KEY_ESCAPE){
-            setCurrentState(GameStateType.MENU);
-            GaussianBlur.setEnabled(false);
+        pauseService.keyPressed(key);
+        if (pauseService.isPause()) {
+            player.stopMoving();
+            return;
         }
         player.keyPressed(key);
     }
@@ -110,6 +118,7 @@ public class LobbyState extends GameState {
 
     @Override
     public void mousePressed(int button) {
+        pauseService.mousePressed(button, mouseX, mouseY);
         scientist.mousePressed(button, mouseX, mouseY);
     }
 

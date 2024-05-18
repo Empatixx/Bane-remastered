@@ -61,7 +61,6 @@ public class EnemyService {
 
         final PhysicsObject physicsObject = new PhysicsObject();
         physicsObject.addFixture(new Rectangle(e.getWidth(), e.getHeight()));
-
         do{
             final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
             final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);

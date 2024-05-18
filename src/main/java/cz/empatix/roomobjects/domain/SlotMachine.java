@@ -56,6 +56,9 @@ public class SlotMachine implements RoomObject, Interactable {
 
         this.interactionText = new AlternativeViewText("Press E to spin", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
         this.interactionText.setColorRGB(222, 112, 38);
+
+        coinService.addCoins(100);
+
         InteractionService.getInstance().addInteractable(this);
     }
 
