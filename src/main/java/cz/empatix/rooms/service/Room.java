@@ -36,11 +36,14 @@ public interface Room {
         return getY() + getHeight();
     }
     default boolean isInRoom(final float x, final float y){
-        final int xStart = getX();
-        final int yStart = getY();
+        return isInRoom(x, y, 0);
+    }
+    default boolean isInRoom(final float x, final float y, final float offset){
+        final int xStart = getX() + (int) offset;
+        final int yStart = getY() + (int) offset;
 
-        final int xEnd = getX() + getWidth();
-        final int yEnd = getY() + getHeight();
+        final int xEnd = getX() + getWidth() - (int) offset;
+        final int yEnd = getY() + getHeight() - (int) offset;
 
         return x >= xStart && y >= yStart &&
                 xEnd >= x && yEnd >= y;

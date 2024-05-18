@@ -7,6 +7,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.domain.RoomEvent;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.tiles.domain.TileImpl;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,8 @@ public class MapService {
     private final RoomEventObserver roomEventObserver;
     private final RoomVisitorObserver roomVisitorObserver;
     private Room currentRoom;
+    private Room previousRoom;
+    private boolean alreadyEntered;
 
     public MapService() {
         sceneBackground = new SceneBackground("ingame/tilebackground.tga");
@@ -72,7 +75,7 @@ public class MapService {
 
     private void updateCurrentRoom(final Player p, float dt) {
         try {
-            final Vector2f position = p.getPosition();
+            final Vector2f position = new Vector2f(p.getPosition());
             final Room previousRoom = currentRoom;
             currentRoom = pathRooms
                     .stream()
@@ -92,11 +95,18 @@ public class MapService {
             Camera.setSmoothlyMinDimensions(xMin, yMin, dt);
             Camera.setSmoothlyMaxDimensions(xMax, yMax, dt);
 
-            if(previousRoom != null && previousRoom != currentRoom) {
-                LOGGER.info("Player entered room: {}", currentRoom);
-                currentRoom.enterEvent(p);
+            if (previousRoom != null && previousRoom != currentRoom) {
                 previousRoom.leaveEvent(p);
-                roomVisitorObserver.observe(currentRoom);
+                alreadyEntered = false;
+            }
+            // not in leave event, because we want enter room with little offset
+            if (!alreadyEntered){
+                if (currentRoom.isInRoom(position.x() + p.getWidth()/2f, position.y() + p.getWidth()/2f, TileImpl.SCALE_TILE_SIZE)){
+                    LOGGER.info("Player entered room: {}", currentRoom);
+                    currentRoom.enterEvent(p);
+                    roomVisitorObserver.observe(currentRoom);
+                    alreadyEntered = true;
+                }
             }
         } catch (final IllegalStateException e) {
             LOGGER.error("No room found!", e);
@@ -107,9 +117,6 @@ public class MapService {
         pathRooms.forEach(Room::cleanUp);
     }
 
-    public Room getCurrentRoom() {
-        return currentRoom;
-    }
     public List<Room> getRooms() {
         return rooms;
     }
