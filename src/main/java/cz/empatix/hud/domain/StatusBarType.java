@@ -32,6 +32,10 @@ public enum StatusBarType {
         this.tex = AssetsService.getTexture(texturePath);
     }
 
+    public int getXOffset() {
+        return xOffset;
+    }
+
     public float getNormalizedXOffset() {
         return ((float) tex.info().textureStartPositions().x() + xOffset) / tex.atlasWidth();
     }

@@ -74,4 +74,14 @@ public class StatusBar implements HUDElement {
     public int getZIndex() {
         return 1;
     }
+
+    public Vector2f getPosition() {
+        return position;
+    }
+    public int getWidth() {
+        return statusBarType.getTexture().width() * statusBarType.getScale();
+    }
+    public int getXOffset() {
+        return statusBarType.getXOffset() * statusBarType.getScale();
+    }
 }

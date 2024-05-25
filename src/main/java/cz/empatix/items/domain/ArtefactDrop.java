@@ -20,7 +20,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class ArtefactDrop implements ItemDrop{
+public class ArtefactDrop implements ItemDrop {
     private static final int SCALE = 2;
     private final InteractionTracker interactionTracker = new InteractionTracker();
     private final CommonInteractable interactable;
@@ -29,28 +29,30 @@ public class ArtefactDrop implements ItemDrop{
     private boolean pickedUp = false;
     private final DropSource source;
     private final FloatingEffectService floatingEffectService;
+
     public ArtefactDrop(final DropSource source,
                         final Artefact artefact,
                         final Consumer<Artefact> addArtefact) {
         texture = AssetsService.getTexture(artefact.getTexturePath());
         interactable = new CommonInteractable(pressedKeys -> {
-            if(pressedKeys.contains(GLFW.GLFW_KEY_E)){
+            if (pressedKeys.contains(GLFW.GLFW_KEY_E)) {
                 addArtefact.accept(artefact);
                 pickedUp = true;
             }
-        }, () -> true, () -> pickedUp, position, getWidth(), getHeight());
+        }, keys -> keys.contains(GLFW.GLFW_KEY_E), () -> pickedUp, position, getWidth(), getHeight());
         this.source = source;
         floatingEffectService = new FloatingEffectService();
     }
+
     @Override
     public void interact(final Set<Integer> keys) {
-        interactionTracker.interaction();
         interactable.interact(keys);
     }
 
     @Override
-        public boolean canInteract(final Set<Integer> keys) {
-            return interactable.canInteract(keys);
+    public boolean canInteract(final Set<Integer> keys) {
+        interactionTracker.interaction();
+        return interactable.canInteract(keys);
     }
 
     @Override
@@ -110,7 +112,7 @@ public class ArtefactDrop implements ItemDrop{
                         .buildQuad(),
                 texture.textureId(),
                 new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
-                        texture.normalizedStartPositions(), texture.normalizedSpriteEndPosition(1,1,1,1), new Vector4f(1f, 1f, 0f, interactionTracker.isInteracting() ? 1f : 0f))
+                        texture.normalizedStartPositions(), texture.normalizedSpriteEndPosition(1, 1, 1, 1), new Vector4f(1f, 1f, 0f, interactionTracker.isInteracting() ? 1f : 0f))
         );
     }
 

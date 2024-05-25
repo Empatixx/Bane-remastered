@@ -8,10 +8,9 @@ import cz.empatix.tiles.domain.TileImpl;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TileFactory {
-    private final static int TILE_SIZE = TileImpl.SCALE * TileImpl.TILE_SIZE;
     private final static String TEXTURE_NAME = "ingame/tileset.tga";
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
-    private static final int[] TOP_WALL = {22, 23, 24, 25};
+    private static final int[] TOP_WALL = {22, 23, 24, 25, 22, 23, 24, 25, 36, 37};
     private static final int[] BOTTOM_WALL = {30, 31};
     private static final int[] LEFT_WALL = {27, 39};
     private static final int[] RIGHT_WALL = {28, 40};
@@ -37,7 +36,7 @@ public class TileFactory {
     private static final int[] FLOOR_NEAR_LEFT_BOTTOM_CORNER = {8};
     private static final int[] FLOOR_NEAR_RIGHT_BOTTOM_CORNER = {11};
 
-    private static final int[] FLOOR = {5, 6, 6, 6, 6, 6, 12, 13, 14, 15, 16, 17, 18};
+    private static final int[] FLOOR = {5, 6, 6, 6, 6, 6, 12, 13, 14, 15, 16, 17, 18, 19};
 
     public Tile[][] createTilemapFromClamp(final boolean[][] map,
                                                final int xOffset,

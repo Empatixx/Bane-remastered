@@ -36,7 +36,7 @@ public class WeaponDrop implements ItemDrop {
                 addGun.accept(gun);
                 pickedUp = true;
             }
-        }, () -> true, () -> pickedUp, position, getWidth(), getHeight());
+        }, (keys) -> keys.contains(GLFW.GLFW_KEY_E), () -> pickedUp, position, getWidth(), getHeight());
         this.source = source;
         floatingEffectService = new FloatingEffectService();
     }

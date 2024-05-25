@@ -4,18 +4,19 @@ import org.joml.Vector2f;
 
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class CommonInteractable implements Interactable {
     private final Consumer<Set<Integer>> interactConsumer;
-    private final Supplier<Boolean> canInteract;
+    private final Function<Set<Integer>, Boolean> canInteract;
     private final Supplier<Boolean> canRemoveSupplier;
     private final Vector2f position;
     private final int width;
     private final int height;
 
     public CommonInteractable(final Consumer<Set<Integer>> interactConsumer,
-                              final Supplier<Boolean> canInteract,
+                              final Function<Set<Integer>, Boolean> canInteract,
                               final Supplier<Boolean> canRemoveSupplier,
                               final Vector2f position,
                               final int height,
@@ -27,6 +28,14 @@ public class CommonInteractable implements Interactable {
         this.width = width;
         this.height = height;
     }
+    public CommonInteractable(final Consumer<Set<Integer>> interactConsumer,
+                              final Supplier<Boolean> canInteract,
+                              final Supplier<Boolean> canRemoveSupplier,
+                              final Vector2f position,
+                              final int height,
+                              final int width) {
+        this(interactConsumer, keys -> canInteract.get(), canRemoveSupplier, position, height, width);
+    }
 
     @Override
     public void interact(final Set<Integer> keys) {
@@ -35,7 +44,7 @@ public class CommonInteractable implements Interactable {
 
     @Override
     public boolean canInteract(final Set<Integer> keys) {
-        return canInteract.get();
+        return canInteract.apply(keys);
     }
 
     @Override

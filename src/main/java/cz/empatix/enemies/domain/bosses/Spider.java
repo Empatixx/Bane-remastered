@@ -26,7 +26,7 @@ public class Spider extends BossBaseEnemy {
     private final SpitCobweb spitCobweb;
 
     public Spider() {
-        super(WIDTH, HEIGHT);
+        super(WIDTH, HEIGHT, "Spider king");
         animation = Animation.builder()
                 .setTotal(3, 5)
                 .addState(AnimationState.IDLE, 0, 5, WIDTH, HEIGHT, 120)
