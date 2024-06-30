@@ -14,6 +14,8 @@ public class RenderEngine {
     private final RenderService renderService;
     private final PostprocessService postprocessService;
 
+    private int totalDrawableLastFrame = 10;
+
     public RenderEngine() {
         this.fbo = Framebuffer.createRgba();
         this.renderService = new RenderService();
@@ -46,7 +48,9 @@ public class RenderEngine {
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {
-        final List<Renderable> allDrawables = new ArrayList<>(renderables);
+        final List<Renderable> allDrawables = new ArrayList<>(totalDrawableLastFrame);
+        allDrawables.addAll(renderables);
+
         final Queue<Renderable> drawableQueue = new LinkedList<>(renderables);
 
         while (!drawableQueue.isEmpty()) {
@@ -58,6 +62,8 @@ public class RenderEngine {
             allDrawables.addAll(subDrawables);
             drawableQueue.addAll(subDrawables);
         }
+
+        totalDrawableLastFrame = allDrawables.size();
 
         return allDrawables;
     }

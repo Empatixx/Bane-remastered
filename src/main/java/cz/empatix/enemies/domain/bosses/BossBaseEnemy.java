@@ -76,8 +76,7 @@ public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSourc
         final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
         healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 15));
         this.bossName = new CommonText(bossName, "PixelFJVerdana12pt.ttf", new Vector2f(), 1, RenderScene.HUD, FontSize.FONTSIZE_22);
-        this.bossName.setPosition(0, 35);
-        this.bossName.setCenterX(healthBar.getPosition().x() + healthBar.getXOffset(), healthBar.getPosition().x() + healthBar.getWidth());
+        this.bossName.setPosition(healthBar.getPosition().x() + healthBar.getXOffset() + 5, 30);
         this.bossName.setColorRGB(255, 0, 0);
     }
 

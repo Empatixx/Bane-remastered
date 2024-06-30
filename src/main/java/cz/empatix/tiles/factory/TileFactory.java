@@ -8,7 +8,7 @@ import cz.empatix.tiles.domain.TileImpl;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class TileFactory {
-    private final static String TEXTURE_NAME = "ingame/tileset.tga";
+    private final static String TEXTURE_NAME = "ingame/tileset_2.png";
     private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private static final int[] TOP_WALL = {22, 23, 24, 25, 22, 23, 24, 25, 36, 37};
     private static final int[] BOTTOM_WALL = {30, 31};
