@@ -45,7 +45,7 @@ public class ArtefactsService {
                 new RevealMap(minimapService)
         );
         currentArtefact = allArtefacts.get(4);
-        commonImage = new CommonImage("ingame/artefacthud.tga", new Vector2f(), HUD_SLOT_SCALE);
+        commonImage = new CommonImage("ingame/artefacthud.tga", new Vector2f(), HUD_SLOT_SCALE,0);
         commonImage.setPosition(HUD_SLOT_POSITION.x(), HUD_SLOT_POSITION.y());
     }
 

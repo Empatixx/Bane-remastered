@@ -27,6 +27,13 @@ public class CommonImage implements HUDElement {
         this.zDepth = DEFAULT_Z_DEPTH;
         this.scene = DEFAULT_SCENE;
     }
+    public CommonImage(final String textureName, final Vector2f position, final int width, final int height, final int zDepth) {
+        this.dimensions = new Vector2i(width, height);
+        this.texture = AssetsService.getTexture(textureName);
+        this.position = new Vector2f(position);
+        this.zDepth = zDepth;
+        this.scene = DEFAULT_SCENE;
+    }
 
     public CommonImage(final String textureName, final Vector2f position, final float scale) {
         this(AssetsService.getTexture(textureName), position, scale, DEFAULT_Z_DEPTH);

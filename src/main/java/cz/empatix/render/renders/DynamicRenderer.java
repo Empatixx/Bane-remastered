@@ -48,12 +48,13 @@ public class DynamicRenderer implements Renderer {
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, elementIndices);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
+
     @Override
     public void render(final List<DrawableData> data, final ShaderBinding shaderBinding, final int zDepth) {
         final List<RenderData> renderData = data.stream()
                 .map(DrawableData::renderData)
                 .toList();
-        if(renderData.isEmpty()) {
+        if (renderData.isEmpty()) {
             return;
         }
         glBindTextureUnit(0, renderData.get(0).textureId());
@@ -63,13 +64,13 @@ public class DynamicRenderer implements Renderer {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         final List<List<RenderData>> batches = Lists.partition(renderData, MAX_PER_BATCH);
 
-        for(final List<RenderData> batch : batches){
+        for (final List<RenderData> batch : batches) {
             vertexBuffer.clear();
             batch.stream()
                     .flatMap(d -> d
                             .vertices()
                             .stream())
-                    .forEach(vertex -> vertexBuffer.put(new float[]{vertex.position().x(), vertex.position().y(), vertex.position().z(),vertex.texCoords().x(), vertex.texCoords().y()}));
+                    .forEach(vertex -> vertexBuffer.put(new float[]{vertex.position().x(), vertex.position().y(), vertex.position().z(), vertex.texCoords().x(), vertex.texCoords().y()}));
             vertexBuffer.flip();
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -89,6 +90,7 @@ public class DynamicRenderer implements Renderer {
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, texture);
     }
+
     private int[] createElementIndices(final int count) {
         final int[] indices = new int[count * TOTAL_ELEMENT_VERTICES_PER_QUAD];
         int offset = 0;

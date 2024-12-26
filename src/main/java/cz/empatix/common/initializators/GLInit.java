@@ -31,12 +31,10 @@ public class GLInit implements Initializer {
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
         glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
 
         final GameSettings settings = SettingsService.getInstance().getSettings();
         glViewport(0, 0, settings.getResolutionWidth(), settings.getResolutionHeight());
 
-        glOrtho(0, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 0, 1, -1);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         if (DEBUG_MODE) {
             LOGGER.info("Debug mode enabled");

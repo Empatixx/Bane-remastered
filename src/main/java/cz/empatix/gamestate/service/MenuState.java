@@ -45,7 +45,7 @@ public class MenuState extends GameState {
 
         settingsMenuService = new SettingsMenuService();
 
-        background = new CommonBackground("menu/bg.png");
+        background = new CommonBackground("menu/bg.png", 0);
 
         final CommonButton playButton = new CommonButton("Play", Camera.centerX().add(0, 225), 1.5f, FontSize.FONTSIZE_27);
         playButton.setTextPosition(playButton.getTextPosition().x(), playButton.getTextPosition().y() - OFFSET_BUTTON_Y);

@@ -27,7 +27,9 @@ public class RenderService {
     private void renderDataByZIndex(final List<RenderableGroup> drawableData) {
         drawableData
                 .stream()
-                .collect(Collectors.groupingBy(RenderableGroup::getShaderBinding))
+                .collect(Collectors.groupingBy(RenderableGroup::getShaderBinding,
+                        LinkedHashMap::new,
+                        Collectors.toUnmodifiableList()))
                 .forEach((shaderBinding, drawablesOfType) -> {
                     final List<DrawableData> drawables = drawablesOfType
                             .stream()

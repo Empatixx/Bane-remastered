@@ -8,6 +8,8 @@ import cz.empatix.render.service.RenderService;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.lwjgl.opengl.GL11.*;
+
 public class PostprocessService {
     private final RenderService renderService;
     private final List<Postprocess> postprocesses;
@@ -31,6 +33,8 @@ public class PostprocessService {
     public void process(final Framebuffer sceneFbo,
                         final RenderScene scene,
                         final float dt) {
+        glDisable(GL_DEPTH_TEST);
+
         final List<Postprocess> postprocesses = this.postprocesses.stream()
                 .filter(Postprocess::canRender)
                 .filter(p -> p.accepts(scene))
@@ -39,6 +43,7 @@ public class PostprocessService {
         if(postprocesses.isEmpty()){
             fallbackPostprocess.setInput(sceneFbo);
             renderService.render(fallbackPostprocess.getRenderableGroup());
+            glEnable(GL_DEPTH_TEST);
             return;
         }
 
@@ -63,6 +68,8 @@ public class PostprocessService {
 
             inputFBO = outputFBO;
         }
+        glEnable(GL_DEPTH_TEST);
+
     }
 
     private Framebuffer getFramebuffer(final List<Postprocess> postprocesses,

@@ -7,7 +7,7 @@ in vec2 tex_coords;
 
 void main(){
     gl_FragColor = vec4(vec3(color), texture2D(texSampler, tex_coords).r);
-    if  (gl_FragColor.a == 0){
+    if  (gl_FragColor.a < 0.1){
         discard;
     }
 }
