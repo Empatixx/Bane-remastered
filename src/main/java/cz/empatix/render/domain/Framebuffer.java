@@ -13,6 +13,7 @@ import static org.lwjgl.opengl.GL30.*;
 
 public record Framebuffer(
         int fbo,
+        int depthRbo,
         int colorAttachment,
         int channels,
         Vector2i size
@@ -42,6 +43,7 @@ public record Framebuffer(
     private static Framebuffer create(final int channels) {
         final int fbo = glGenFramebuffers();
         final int textureId = glGenTextures();
+        final int depthRbo = glGenRenderbuffers();
         try {
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
             bindTexBuffer(textureId, channels);
@@ -52,13 +54,18 @@ public record Framebuffer(
                 LOGGER.error("Framebuffer not complete");
                 throw new Exception("Framebuffer not complete");
             }
+            glBindRenderbuffer(GL_RENDERBUFFER, depthRbo);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WindowHandler.WIDTH, WindowHandler.HEIGHT);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRbo);
+
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         } catch (Exception e) {
             LOGGER.error("Exception while creatine framebuffer", e);
             glDeleteFramebuffers(fbo);
             glDeleteTextures(textureId);
+            glDeleteRenderbuffers(depthRbo);
         }
-        return new Framebuffer(fbo, textureId, channels, new Vector2i(WindowHandler.WIDTH, WindowHandler.HEIGHT));
+        return new Framebuffer(fbo, depthRbo, textureId, channels, new Vector2i(WindowHandler.WIDTH, WindowHandler.HEIGHT));
     }
 
     public void bind() {
@@ -74,8 +81,15 @@ public record Framebuffer(
             return;
         }
         size.set(WindowHandler.WIDTH, WindowHandler.HEIGHT);
+
         bindTexBuffer(colorAttachment, channels);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+        glBindRenderbuffer(GL_RENDERBUFFER, depthRbo);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x(), size.y());
+        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     private static void bindTexBuffer(final int colorAttachment, final int channels) {
@@ -100,7 +114,7 @@ public record Framebuffer(
 
     public void flush() {
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }

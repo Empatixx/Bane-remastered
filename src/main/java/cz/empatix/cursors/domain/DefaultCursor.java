@@ -9,7 +9,7 @@ public class DefaultCursor implements Cursor {
     private final static float SCALE = 0.5f;
     private final static float X_OFFSET = 12 * SCALE;
     private final static float Y_OFFSET = 7 * SCALE;
-    private final CommonImage image = new CommonImage("ingame/cursor.tga", new Vector2f(),SCALE, Integer.MAX_VALUE, RenderScene.OVERLAYS);
+    private final CommonImage image = new CommonImage("ingame/cursor.tga", new Vector2f(),SCALE, 200, RenderScene.OVERLAYS);
     @Override
     public RenderData renderData() {
         return image.renderData();

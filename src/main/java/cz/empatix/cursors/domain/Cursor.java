@@ -12,7 +12,7 @@ public interface Cursor extends Drawable {
 
     @Override
     default int getZIndex() {
-        return 200;
+        return -200;
     }
 
     void updateMouse(final float x, final float y, final float dt);

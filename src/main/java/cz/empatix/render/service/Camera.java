@@ -21,12 +21,12 @@ public class Camera {
             0,
             TARGET_WIDTH,
             TARGET_HEIGHT,
-            0, -100, 100);
+            0, -1000, 1000);
     private final static Matrix4f TRANSLATED_PROJECTION_MATRIX = new Matrix4f().ortho(
             0,
             TARGET_WIDTH,
             TARGET_HEIGHT,
-            0, -100, 100);
+            0, -1000, 1000);
 
     public static Matrix4f getProjection() {
         return TRANSLATED_PROJECTION_MATRIX;
