@@ -23,10 +23,15 @@ public class GLInit implements Initializer {
         GL.createCapabilities();
 
         glEnable(GL_TEXTURE_2D);
+
         glEnable(GL_BLEND);
-        glEnable(GL_LINE_SMOOTH);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+        glEnable(GL_LINE_SMOOTH);
         glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
 
         final GameSettings settings = SettingsService.getInstance().getSettings();
         glViewport(0, 0, settings.getResolutionWidth(), settings.getResolutionHeight());

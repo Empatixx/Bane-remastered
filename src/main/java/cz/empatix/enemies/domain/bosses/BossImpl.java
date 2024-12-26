@@ -40,14 +40,15 @@ public class BossImpl implements Damageable, DamageSource {
     private final Supplier<Integer> moveForceSupplier;
     private final Function<Integer, Integer> hitCallback;
     private long lastHit;
-
+    private final int zDepth;
     public BossImpl(final int width,
                     final int height,
                     final int maxHealth,
                     final Animation animation,
                     final int damage,
                     final Function<Integer, Integer> hitCallback,
-                    final Supplier<Integer> moveForceSupplier) {
+                    final Supplier<Integer> moveForceSupplier,
+                    final int zDepth) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
@@ -55,6 +56,7 @@ public class BossImpl implements Damageable, DamageSource {
         this.moveForceSupplier = moveForceSupplier;
         this.hitCallback = hitCallback;
         this.damage = damage;
+        this.zDepth = zDepth;
 
 
         physicsBody = PhysicsObjectFactory.createInterpolated(width, height);
@@ -77,7 +79,8 @@ public class BossImpl implements Damageable, DamageSource {
                     final Supplier<Integer> moveForceSupplier,
                     final int collisionWidth,
                     final int collisionHeight,
-                    final Vector2i collisionOffset) {
+                    final Vector2i collisionOffset,
+                    final int zDepth) {
         this.maxHealth = health = maxHealth;
         this.width = width;
         this.height = height;
@@ -85,6 +88,7 @@ public class BossImpl implements Damageable, DamageSource {
         this.moveForceSupplier = moveForceSupplier;
         this.hitCallback = hitCallback;
         this.damage = damage;
+        this.zDepth = zDepth;
 
 
         physicsBody = PhysicsObjectFactory.createInterpolated(collisionWidth, collisionHeight);
@@ -190,14 +194,14 @@ public class BossImpl implements Damageable, DamageSource {
         final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
         if (outline > 0) {
             return new RenderData(
-                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getVertices(physicsBody.getTranslation(), zDepth, aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
                     new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
-                    animation.getVertices(physicsBody.getTranslation(), aStarTargetting.isTargetLeftFromEnemy()),
+                    animation.getVertices(physicsBody.getTranslation(), zDepth, aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
                     new CommonBinding(Camera.getProjection())
             );

@@ -33,7 +33,7 @@ public record GazewindParticle(
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(transform),
+                animation.getVertices(transform, getZIndex()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

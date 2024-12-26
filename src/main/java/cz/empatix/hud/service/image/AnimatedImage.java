@@ -62,9 +62,9 @@ public class AnimatedImage implements HUDElement {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(position),
+                animation.getVertices(position, getZIndex()),
                 texture.textureId(),
-                new CommonBinding(Camera.getOriginWithoutZoomProjection())
+                new CommonBinding(Camera.getProjectionMatrix())
         );
     }
 

@@ -1,21 +1,11 @@
 package cz.empatix.minimap.domain;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.minimap.service.BigMinimapRenderer;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.BigMiniMapBinding;
-import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.textureatlas.domain.TextureAtlas;
-import org.joml.Vector2f;
-import org.joml.Vector4i;
-
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class BigMinimapRoom extends AbstractMinimapRoom<BigMinimapRoom> implements Drawable {
     public final static int DIMENSIONS = 16;
@@ -27,9 +17,9 @@ public class BigMinimapRoom extends AbstractMinimapRoom<BigMinimapRoom> implemen
     }
     @Override
     public RenderData renderData() {
-        return new RenderData(animation.getVertices(transform.getInterpolatedPosition()),
+        return new RenderData(animation.getVertices(transform.getInterpolatedPosition(), getZIndex()),
                 animation.getTextureId(),
-                new BigMiniMapBinding(Camera.getOriginWithoutZoomProjection(), normSubImagePos, normSpriteSize,
+                new BigMiniMapBinding(Camera.getProjectionMatrix(), normSubImagePos, normSpriteSize,
                         System.currentTimeMillis() % 1000000 / 1000f, randomOffset, visited, renderType == BigMinimapRenderType.CURRENT,
                         calculateAlpha(), animation.getCurrentTextureIndex(), connections));
     }

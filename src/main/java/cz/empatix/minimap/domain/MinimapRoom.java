@@ -1,21 +1,11 @@
 package cz.empatix.minimap.domain;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.minimap.service.SmallMinimapRenderer;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.MiniMapBinding;
-import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.textureatlas.domain.TextureAtlas;
-import org.joml.Vector2f;
-import org.joml.Vector4i;
-
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class MinimapRoom extends AbstractMinimapRoom<MinimapRoom> implements Drawable {
     private final static float ALPHA_DECREASE = 0.25f;
@@ -29,9 +19,9 @@ public class MinimapRoom extends AbstractMinimapRoom<MinimapRoom> implements Dra
 
     @Override
     public RenderData renderData() {
-        return new RenderData(animation.getVertices(transform.getInterpolatedPosition()),
+        return new RenderData(animation.getVertices(transform.getInterpolatedPosition(), getZIndex()),
                 animation.getTextureId(),
-                new MiniMapBinding(Camera.getOriginWithoutZoomProjection(), normSubImagePos, normSpriteSize,
+                new MiniMapBinding(Camera.getProjectionMatrix(), normSubImagePos, normSpriteSize,
                         System.currentTimeMillis() % 1000000 / 1000f, randomOffset, visited, roomsAwayFromCenter == 0,
                         calculateAlpha(), animation.getCurrentTextureIndex(), connections));
     }

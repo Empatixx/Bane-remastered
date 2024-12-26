@@ -51,7 +51,7 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(physicsBody.getTranslation()),
+                animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

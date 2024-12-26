@@ -68,7 +68,7 @@ public class GolemLaser implements DamageSource, Drawable {
 
     @Override
     public RenderData renderData() {
-        final List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation());
+        final List<Vertex> vertices = animation.getVertices(physicsObject.getTranslation(), getZIndex());
         final Vector2 rotationPointPhysics = physicsObject.getWorldCenter();
         final Vector2f rotation = new Vector2f((float) rotationPointPhysics.x, (float) rotationPointPhysics.y);
         vertices.forEach(vertex -> vertex.rotateAround(rotation, physicsObject.getRotation()));

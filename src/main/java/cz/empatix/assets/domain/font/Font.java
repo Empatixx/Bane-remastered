@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 public record Font(
         Map<Character, Glyph> glyphs,
+        FontSize size,
         TextureAtlas atlas
 ) {
     public void destroy() {
@@ -35,7 +36,7 @@ public record Font(
                 throw new IllegalArgumentException("Font does not contain glyph for character: " + c);
             }
             final Glyph glyph = glyphs.get(c);
-            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth, renderScene, cameraMatrix));
+            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth, renderScene, size, cameraMatrix));
             positionShifting.x += glyph.advance();
         }
         return glyphDrawables;
@@ -67,6 +68,6 @@ public record Font(
                     return Map.entry(key, Glyph.from(value, atlas.texturesInfos().get(String.valueOf(key))));
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return new Font(glyphs, atlas);
+        return new Font(glyphs, font.size(), atlas);
     }
 }

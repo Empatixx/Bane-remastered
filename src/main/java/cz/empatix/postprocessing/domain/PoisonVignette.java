@@ -5,7 +5,6 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.PoisonVignetteBinding;
-import cz.empatix.render.shaderbindings.RedVignetteBinding;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -34,7 +33,7 @@ public class PoisonVignette implements Postprocess{
         final float timeInSeconds = System.currentTimeMillis() % 3000 / 1000.0f;
         final float timeForShader = timeInSeconds * (2.0f * (float) Math.PI) / 3.0f;
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new PoisonVignetteBinding(Camera.getOriginWithoutZoomProjection(), vignetteAmount, timeForShader));
+                new PoisonVignetteBinding(Camera.getProjectionMatrix(), vignetteAmount, timeForShader));
 
     }
 

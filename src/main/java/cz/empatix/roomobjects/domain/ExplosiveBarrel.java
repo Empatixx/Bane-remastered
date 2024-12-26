@@ -63,14 +63,14 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
         final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
         if (outline > 0) {
             return new RenderData(
-                    animation.getVertices(physicsBody.getTranslation()),
+                    animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                     animation.getTextureId(),
                     new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
-                    animation.getVertices(physicsBody.getTranslation()),
+                    animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                     animation.getTextureId(),
                     new CommonBinding(Camera.getProjection())
             );

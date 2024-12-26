@@ -98,7 +98,7 @@ public class CoinItem implements ItemDrop {
     public RenderData renderData() {
         final Vector2f floatingPosition = new Vector2f(position).add(0, floatingEffectService.getOffsetY());
         return new RenderData(
-                animation.getVertices(floatingPosition),
+                animation.getVertices(floatingPosition, getZIndex()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

@@ -74,7 +74,7 @@ public class GameLoop{
     }
 
     public void render(final double dt) {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         gss.render(dt);
         glfwSwapBuffers(WindowHandler.WINDOW);

@@ -101,6 +101,7 @@ public class WeaponDrop implements ItemDrop {
         final Vector2f floatingPosition = new Vector2f(position).add(0, floatingEffectService.getOffsetY());
         return new RenderData(
                 Vertex.builder()
+                        .zDepth(getZIndex())
                         .position(floatingPosition)
                         .posDimensions(getWidth(), getHeight())
                         .texture(texture)

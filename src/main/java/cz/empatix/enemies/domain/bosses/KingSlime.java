@@ -37,7 +37,7 @@ public class KingSlime implements Enemy {
                 .texture(AssetsService.getTexture("ingame/kingslime.tga"))
                 .build();
         animation.setState(AnimationState.IDLE);
-        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 2, this::hit, () -> MOVE_FORCE);
+        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 2, this::hit, () -> MOVE_FORCE,getZIndex());
         armageddon = new KingSlimeArmageddon(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), PurpleSlimebullet::new);
         slimeSmash = new SlimeSmash(() -> new Vector2f(getX(), getY()).add(DIMENSION_WIDTH / 2, DIMENSION_HEIGHT / 2), 25, PurpleSlimebullet::new);
     }

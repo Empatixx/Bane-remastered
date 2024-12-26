@@ -29,7 +29,7 @@ public class MagicShield implements Drawable {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(position),
+                animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
                 new CommonBinding(Camera.getProjection())
         );

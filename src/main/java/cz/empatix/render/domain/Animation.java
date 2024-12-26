@@ -101,12 +101,13 @@ public class Animation {
         }
     }
 
-    public List<Vertex> getVertices(final Vector2f position) {
+    public List<Vertex> getVertices(final Vector2f position, final int zDepth) {
         final AnimationPart part = animationParts.get(currentState);
-        return getVertices(position, part, part.rotated());
+        return getVertices(position, zDepth, part, part.rotated());
     }
-    private List<Vertex> getVertices(final Vector2f position, final AnimationPart part, final boolean rotated){
+    private List<Vertex> getVertices(final Vector2f position, final int zDepth, final AnimationPart part, final boolean rotated){
         return Vertex.builder()
+                .zDepth(zDepth)
                 .texture(texture)
                 .texPosition(currentTextureIndex, part.row())
                 .texPositionsDimensions(totalSprites, totalRows)
@@ -117,8 +118,8 @@ public class Animation {
                 .scale(scale)
                 .buildQuad();
     }
-    public List<Vertex> getVertices(final Vector2f position, final boolean rotatedX) {
-        return getVertices(position, animationParts.get(currentState), rotatedX);
+    public List<Vertex> getVertices(final Vector2f position, final int zDepth, final boolean rotatedX) {
+        return getVertices(position, zDepth, animationParts.get(currentState), rotatedX);
     }
     public int getTextureId() {
         return texture.textureId();

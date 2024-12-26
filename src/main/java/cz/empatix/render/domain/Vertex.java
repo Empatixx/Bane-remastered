@@ -6,11 +6,12 @@ import cz.empatix.textureatlas.domain.TextureAtlasInfo;
 import org.dyn4j.geometry.Interval;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.joml.Vector3f;
 
 import java.util.List;
 
 public record Vertex(
-        Vector2f position,
+        Vector3f position,
         Vector2f texCoords
 ) {
     public void rotateAround(final Vector2f point, final double radians){
@@ -20,7 +21,7 @@ public record Vertex(
         final double sin = Math.sin(radians);
         final float newX = (float) (x * cos - y * sin);
         final float newY = (float) (x * sin + y * cos);
-        position.set(newX + point.x, newY + point.y);
+        position.set(newX + point.x, newY + point.y, position.z());
     }
 
     public static class Builder {
@@ -32,6 +33,7 @@ public record Vertex(
         private boolean reverseTexY;
         private boolean rotatedX;
         private TextureAtlas.Entry texture;
+        private float zDepth;
 
         public Builder() {
             posDimensions = new Vector2i();
@@ -39,6 +41,7 @@ public record Vertex(
             posOffset = new Vector2f();
             texPosition = new Vector2i();
             texPositionDimensions = new Vector2i(1, 1);
+            zDepth = 0;
         }
 
         public Builder position(final Vector2f position) {
@@ -58,11 +61,16 @@ public record Vertex(
             return this;
         }
 
+        public Builder zDepth(final float zDepth) {
+            this.zDepth = zDepth;
+            return this;
+        }
+
         public List<Vertex> buildQuad() {
-            final Vector2f posBottomLeft = new Vector2f(position.x() + posOffset.x(), position.y() + posOffset.y());
-            final Vector2f posBottomRight = new Vector2f(position.x() + posDimensions.x() + posOffset.x(), position.y() + posOffset.y());
-            final Vector2f posTopRight = new Vector2f(position.x() + posDimensions.x() + posOffset.x(), position.y() + posDimensions.y() + posOffset.y());
-            final Vector2f posTopLeft = new Vector2f(position.x() + posOffset.x(), position.y() + posDimensions.y() + posOffset.y());
+            final Vector3f posBottomLeft = new Vector3f(position.x() + posOffset.x(), position.y() + posOffset.y(), zDepth);
+            final Vector3f posBottomRight = new Vector3f(position.x() + posDimensions.x() + posOffset.x(), position.y() + posOffset.y(), zDepth);
+            final Vector3f posTopRight = new Vector3f(position.x() + posDimensions.x() + posOffset.x(), position.y() + posDimensions.y() + posOffset.y(), zDepth);
+            final Vector3f posTopLeft = new Vector3f(position.x() + posOffset.x(), position.y() + posDimensions.y() + posOffset.y(), zDepth);
 
             final int baseTexWidth = texture.width() / texPositionDimensions.x();
             final int baseTexHeight = texture.height() / texPositionDimensions.y();
@@ -90,10 +98,10 @@ public record Vertex(
             return getVertices(posBottomLeft, posBottomRight, posTopRight, posTopLeft, texTopLeft, texTopRight, texBottomRight, texBottomLeft);
         }
 
-        private List<Vertex> getVertices(final Vector2f posBottomLeft,
-                                         final Vector2f posBottomRight,
-                                         final Vector2f posTopRight,
-                                         final Vector2f posTopLeft,
+        private List<Vertex> getVertices(final Vector3f posBottomLeft,
+                                         final Vector3f posBottomRight,
+                                         final Vector3f posTopRight,
+                                         final Vector3f posTopLeft,
                                          final Vector2f texBottomLeft,
                                          final Vector2f texBottomRight,
                                          final Vector2f texTopRight,

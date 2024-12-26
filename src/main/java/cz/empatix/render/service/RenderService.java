@@ -21,21 +21,10 @@ public class RenderService {
         if (renderableGroups == null || renderableGroups.isEmpty()) {
             return;
         }
-        final List<RenderableGroup> sortedRenderableGroups = new ArrayList<>(renderableGroups);
-        sortedRenderableGroups.sort(Comparator.comparing(RenderableGroup::getZIndex));
-
-        renderableGroups
-                .stream()
-                .sorted(Comparator.comparing(RenderableGroup::getZIndex))
-                .collect(Collectors.groupingBy(
-                        RenderableGroup::getZIndex,
-                        LinkedHashMap::new,
-                        Collectors.toList()))
-                .forEach(this::renderDataByZIndex);
+        renderDataByZIndex(renderableGroups);
     }
 
-    private void renderDataByZIndex(final int zIndex,
-                                    final List<RenderableGroup> drawableData) {
+    private void renderDataByZIndex(final List<RenderableGroup> drawableData) {
         drawableData
                 .stream()
                 .collect(Collectors.groupingBy(RenderableGroup::getShaderBinding))
@@ -44,7 +33,7 @@ public class RenderService {
                             .stream()
                             .flatMap(renderableGroup -> renderableGroup.getDrawableData().stream())
                             .toList();
-                    renderer.render(drawables, shaderBinding, zIndex);
+                    renderer.render(drawables, shaderBinding, 0);
                 });
     }
 }

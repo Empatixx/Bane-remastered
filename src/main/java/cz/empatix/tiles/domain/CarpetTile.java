@@ -54,6 +54,7 @@ public record CarpetTile(
 
         final Vector2f pos = new Vector2f(xOff + tilePosX * TILE_SIZE * SCALE, yOff + tilePosY * TILE_SIZE * SCALE);
         return new CarpetTile(Vertex.builder()
+                .zDepth(1)
                 .texPosition(tCol, tRow)
                 .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
                 .position(pos)

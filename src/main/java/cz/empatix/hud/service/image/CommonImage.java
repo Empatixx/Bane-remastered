@@ -62,13 +62,14 @@ public class CommonImage implements HUDElement {
     public RenderData renderData() {
         return new RenderData(
                 Vertex.builder()
+                        .zDepth(zDepth)
                         .position(position)
                         .posDimensions(dimensions.x(), dimensions.y())
                         .texture(texture)
                         .offset(dimensions.x(), dimensions.y())
                         .buildQuad(),
                 texture.textureId(),
-                new CommonBinding(Camera.getOriginWithoutZoomProjection())
+                new CommonBinding(Camera.getProjectionMatrix())
         );
     }
 

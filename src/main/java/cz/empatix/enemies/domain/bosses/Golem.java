@@ -55,7 +55,7 @@ public class Golem implements Enemy {
                 .texture(AssetsService.getTexture("ingame/golem.png"))
                 .build();
         animation.setState(AnimationState.IDLE);
-        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> moveForce, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET);
+        bossImpl = new BossImpl(DIMENSION_WIDTH, DIMENSION_HEIGHT, DEFAULT_HEALTH, animation, 4, this::hit, () -> moveForce, COLLISION_WIDTH, COLLISION_HEIGHT, COLLISION_OFFSET, getZIndex());
         golemLaser = new GolemLaser();
         healing = new Healing(2, this::heal);
         armorStacking = new ArmorStacking();

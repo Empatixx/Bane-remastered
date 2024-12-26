@@ -14,13 +14,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL41.*;
 
 public record Shader(
         int program,
         int fragmentShaderId,
         int vertexShaderId,
-        HashMap<String, Integer> locations
+        Map<String, Integer> locations
 ) {
     private final static Logger LOGGER = LoggerFactory.getLogger(Shader.class);
     private final static int SHADER_UNIFORM_NOT_FOUND = -1;
@@ -101,37 +101,31 @@ public record Shader(
         getLocation(name).ifPresent(location -> glUniformMatrix4fv(location, false, buffer));
     }
 
-    public void setUniform1iv(final String name, final int[] value) {
-        getLocation(name).ifPresent(location -> glUniform1iv(location, value));
-    }
-
     public void setUniform1i(final String name, final int value) {
-        getLocation(name).ifPresent(location -> glUniform1i(location, value));
+        getLocation(name).ifPresent(location -> glProgramUniform1i(program, location, value));
     }
 
     public void setUniform1f(final String name, final float value) {
-        getLocation(name).ifPresent(location -> glUniform1f(location, value));
+        getLocation(name).ifPresent(location -> glProgramUniform1f(program, location, value));
     }
 
     public void setUniform2f(final String name, final Vector2f value) {
-        getLocation(name).ifPresent(location -> glUniform2f(location, value.x, value.y));
+        getLocation(name).ifPresent(location -> glProgramUniform2f(program, location, value.x, value.y));
     }
 
     public void setUniform3f(final String name, final Vector3f value) {
-        getLocation(name).ifPresent(location -> glUniform3f(location, value.x, value.y, value.z));
+        getLocation(name).ifPresent(location -> glProgramUniform3f(program, location, value.x, value.y, value.z));
     }
 
     public void setUniform4f(final String name, final Vector4f value) {
-        getLocation(name).ifPresent(location -> glUniform4f(location, value.x, value.y, value.z, value.w));
+        getLocation(name).ifPresent(location -> glProgramUniform4f(program, location, value.x, value.y, value.z, value.w));
     }
 
     public void setUniform2i(final String name, final Vector2i value) {
-        getLocation(name).ifPresent(location -> glUniform2i(location, value.x, value.y));
+        getLocation(name).ifPresent(location -> glProgramUniform2i(program, location, value.x, value.y));
     }
 
-    public void setUniform4i(final String uConnections, final Vector4i connections) {
-        getLocation(uConnections).ifPresent(location -> {
-            glUniform4i(location, connections.x, connections.y, connections.z, connections.w);
-        });
+    public void setUniform4i(final String uConnections, final Vector4i value) {
+        getLocation(uConnections).ifPresent(location -> glProgramUniform4i(program, location, value.x, value.y, value.z, value.w));
     }
 }

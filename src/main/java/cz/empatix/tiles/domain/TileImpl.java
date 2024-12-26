@@ -49,6 +49,7 @@ public record TileImpl(
             collision.setType(CollisionType.TILE);
         }
         return new TileImpl(Vertex.builder()
+                .zDepth(1)
                 .texPosition(tCol, tRow)
                 .texPositionsDimensions(TOTAL_COLUMNS, TOTAL_ROWS)
                 .position(pos)

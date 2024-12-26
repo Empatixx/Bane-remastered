@@ -5,6 +5,8 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
+import cz.empatix.render.renders.DynamicRenderer;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ public class RenderEngine {
     private void render(Map<RenderScene, List<RenderableGroup>> renderScenes,
                         final RenderScene scene,
                         final float dt) {
+        DynamicRenderer.draws.set(0);
         fbo.bind();
         renderService.render(renderScenes.get(scene));
         fbo.unbind();
@@ -45,6 +48,7 @@ public class RenderEngine {
         fbo.flush();
 
         postprocessService.flushFramebuffers();
+        //LoggerFactory.getLogger(RenderEngine.class).info("Rendered total draws {} for scene {}", DynamicRenderer.draws.get(), scene);
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {

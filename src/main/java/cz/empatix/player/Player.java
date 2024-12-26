@@ -261,7 +261,7 @@ public class Player implements Drawable, InteractEntity, Damageable, Targetable 
 
     @Override
     public RenderData renderData() {
-        final List<Vertex> vertices = animation.getVertices(physicsBody.getTranslation());
+        final List<Vertex> vertices = animation.getVertices(physicsBody.getTranslation(), getZIndex());
         vertices.forEach(v -> v.rotateAround(physicsBody.getTranslation(), physicsBody.getRotation()));
         return new RenderData(
                 vertices,

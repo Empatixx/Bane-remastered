@@ -3,6 +3,7 @@ package cz.empatix.render.domain;
 import cz.empatix.common.handlers.WindowHandler;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +20,10 @@ public record Framebuffer(
     private final static int RGBA_CHANNELS = 4;
     private final static int RGB_CHANNELS = 3;
     public static final List<Vertex> VERTICES = List.of(
-            new Vertex(new Vector2f(0, 0), new Vector2f(0, 1)),
-            new Vertex(new Vector2f(WindowHandler.TARGET_WIDTH, 0), new Vector2f(1, 1)),
-            new Vertex(new Vector2f(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT), new Vector2f(1, 0)),
-            new Vertex(new Vector2f(0, WindowHandler.TARGET_HEIGHT), new Vector2f(0, 0))
+            new Vertex(new Vector3f(0, 0,100), new Vector2f(0, 1)),
+            new Vertex(new Vector3f(WindowHandler.TARGET_WIDTH, 0,100), new Vector2f(1, 1)),
+            new Vertex(new Vector3f(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT,100), new Vector2f(1, 0)),
+            new Vertex(new Vector3f(0, WindowHandler.TARGET_HEIGHT,100), new Vector2f(0, 0))
     );
     private final static Logger LOGGER = LoggerFactory.getLogger(Framebuffer.class);
 

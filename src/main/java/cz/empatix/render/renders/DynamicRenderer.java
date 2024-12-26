@@ -12,30 +12,33 @@ import org.lwjgl.BufferUtils;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.lwjgl.opengl.GL33.*;
 
 public class DynamicRenderer implements Renderer {
+    public static AtomicInteger draws = new AtomicInteger(0);
     private final FloatBuffer vertexBuffer;
-    private static final int MAX_PER_BATCH = 400;
+    private static final int MAX_PER_BATCH = 10000;
     private final int vao;
     private final int vbo;
     private final int ebo;
 
     public DynamicRenderer() {
         vbo = VboBuilder.builder()
-                .buffer(new float[MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2)])
-                .dynamic()
+                .buffer(new float[MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (3 + 2)])
+                .streaming()
                 .build();
         ebo = VboBuilder.builder()
                 .buffer(new int[MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD])
                 .build();
+        final int stride = (3 + 2) * Float.BYTES;
         vao = VaoBuilder.builder()
-                .addVbo(0, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 0)
-                .addVbo(1, vbo, 2, TOTAL_VERTICES_PER_QUAD * Float.BYTES, 2 * Float.BYTES)
+                .addVbo(0, vbo, 3, stride, 0)
+                .addVbo(1, vbo, 2, stride, 3 * Float.BYTES)
                 .build();
 
-        vertexBuffer = BufferUtils.createFloatBuffer(MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (2 + 2));
+        vertexBuffer = BufferUtils.createFloatBuffer(MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (3 + 2));
 
         final IntBuffer elementIndices = BufferUtils.createIntBuffer(MAX_PER_BATCH * TOTAL_ELEMENT_VERTICES_PER_QUAD);
         elementIndices.put(createElementIndices(MAX_PER_BATCH));
@@ -58,7 +61,6 @@ public class DynamicRenderer implements Renderer {
 
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-
         final List<List<RenderData>> batches = Lists.partition(renderData, MAX_PER_BATCH);
 
         for(final List<RenderData> batch : batches){
@@ -67,12 +69,7 @@ public class DynamicRenderer implements Renderer {
                     .flatMap(d -> d
                             .vertices()
                             .stream())
-                    .forEach(vertex -> {
-                        vertexBuffer.put(vertex.position().x());
-                        vertexBuffer.put(vertex.position().y());
-                        vertexBuffer.put(vertex.texCoords().x());
-                        vertexBuffer.put(vertex.texCoords().y());
-                    });
+                    .forEach(vertex -> vertexBuffer.put(new float[]{vertex.position().x(), vertex.position().y(), vertex.position().z(),vertex.texCoords().x(), vertex.texCoords().y()}));
             vertexBuffer.flip();
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -80,6 +77,7 @@ public class DynamicRenderer implements Renderer {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             glDrawElements(GL_TRIANGLES, batch.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD, GL_UNSIGNED_INT, 0);
+            draws.incrementAndGet();
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);

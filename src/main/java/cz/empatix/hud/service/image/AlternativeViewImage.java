@@ -55,7 +55,7 @@ public class AlternativeViewImage implements HUDElement {
     @Override
     public RenderData renderData() {
         return new RenderData(
-                animation.getVertices(position),
+                animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
                 new CommonBinding(cameraMatrix)
         );

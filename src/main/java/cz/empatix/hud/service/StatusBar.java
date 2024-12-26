@@ -49,7 +49,7 @@ public class StatusBar implements HUDElement {
         final float normHeight = statusBarType.getNormalizedHeight();
         final Vector3f color = statusBarType.getBarColor();
 
-        final Matrix4f projection = Camera.getOriginWithoutZoomProjection();
+        final Matrix4f projection = Camera.getProjectionMatrix();
         return new RenderData(vertices(),
                 statusBarType.getTexture().textureId(),
                 new StatusBarBinding(projection, color, fillAmount, delayedFillAmount, normXOffset, normYOffset, normWidth, normHeight));
@@ -58,6 +58,7 @@ public class StatusBar implements HUDElement {
     private List<Vertex> vertices() {
         final TextureAtlas.Entry texture = statusBarType.getTexture();
         return Vertex.builder()
+                .zDepth(getZIndex())
                 .position(position)
                 .posDimensions(texture.width(), texture.height())
                 .texture(texture)
