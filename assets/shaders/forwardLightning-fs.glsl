@@ -3,14 +3,14 @@
 #define MAX_LIGHTS 254
 #define NOISE_INTENSITY 0.15
 
-uniform sampler2D texSampler; // framebuffer texture
-uniform vec2 lightPosition[MAX_LIGHTS]; // array of light positions in screen space
-uniform vec3 lightColor[MAX_LIGHTS]; // array of light colors
-uniform float lightIntensity[MAX_LIGHTS]; // array of light intensities
-uniform float lightRadius[MAX_LIGHTS]; // array of light radius (in pixels)
-uniform int numLights; // number of active lights
-uniform vec2 resolution; // resolution of the framebuffer
-uniform vec2 cameraPosition; // camera position in world space
+uniform sampler2D texSampler;
+uniform vec2 lightPosition[MAX_LIGHTS];
+uniform vec3 lightColor[MAX_LIGHTS];
+uniform float lightIntensity[MAX_LIGHTS];
+uniform float lightRadius[MAX_LIGHTS];
+uniform int numLights;
+uniform vec2 resolution;
+uniform vec2 cameraPosition;
 
 in vec2 tex_coords;
 

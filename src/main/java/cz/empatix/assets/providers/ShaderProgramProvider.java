@@ -5,6 +5,7 @@ import cz.empatix.assets.domain.ShaderType;
 import cz.empatix.assets.loaders.ShadersLoader;
 import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
+import cz.empatix.render.service.Camera;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,7 @@ public class ShaderProgramProvider implements AssetProvider {
             final Shader fragmentShader = new Shader(shaderForFragment(rawShaders).content(), GL_FRAGMENT_SHADER);
             final Shader vertexShader = new Shader(shaderForVertex(rawShaders).content(), GL_VERTEX_SHADER);
             final ShaderProgram shaderProgram = new ShaderProgram(List.of(vertexShader, fragmentShader));
+            Camera.getInstance().addObserver(shaderProgram);
             shaders.put(rawShaders.get(0).getName(), shaderProgram);
             totalInited++;
         }

@@ -4,6 +4,7 @@ import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.InterpolatedPosition;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -24,11 +25,13 @@ public class Camera implements ObserveSubject{
     private final Matrix4f viewMatrix;
     private final Vector2f maxPosition = new Vector2f();
     private final Vector2f minPosition = new Vector2f();
+    private final Vector2i resolution = new Vector2i();
     private final InterpolatedPosition interpolatedPosition;
     private final List<Observer> observers;
 
     public Camera() {
         projectionMatrix = new Matrix4f().ortho(0, TARGET_WIDTH, TARGET_HEIGHT, 0, -1000, 1000);
+        resolution.set(TARGET_WIDTH, TARGET_HEIGHT);
         viewMatrix = new Matrix4f();
         interpolatedPosition = new InterpolatedPosition();
         observers = new ArrayList<>();
@@ -52,8 +55,7 @@ public class Camera implements ObserveSubject{
     }
 
     public void setViewport(final int width, final int height) {
-        //projectionMatrix.identity().ortho(0, width, height, 0, -1000, 1000);
-        notifyObservers(new CameraObservePayload(CameraChangeType.PROJECTION));
+        resolution.set(width, height);
         glViewport(0, 0, width, height);
     }
 
@@ -132,6 +134,9 @@ public class Camera implements ObserveSubject{
     @Override
     public void addObserver(Observer observer) {
         observers.add(observer);
+        observer.update(this, new CameraObservePayload(CameraChangeType.VIEW));
+        observer.update(this, new CameraObservePayload(CameraChangeType.VIEWPORT));
+        observer.update(this, new CameraObservePayload(CameraChangeType.PROJECTION));
     }
 
     @Override
@@ -144,4 +149,7 @@ public class Camera implements ObserveSubject{
         observers.forEach(observer -> observer.update(this, payload));
     }
 
+    public Vector2i getResolution() {
+        return resolution;
+    }
 }

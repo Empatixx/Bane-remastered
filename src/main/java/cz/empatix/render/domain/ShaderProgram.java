@@ -1,5 +1,7 @@
 package cz.empatix.render.domain;
 
+import cz.empatix.render.service.*;
+import cz.empatix.render.service.Observer;
 import org.joml.*;
 
 import java.util.*;
@@ -7,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.lwjgl.opengl.GL41.*;
 
-public class ShaderProgram {
+public class ShaderProgram implements Observer {
     private static final int NOT_FOUND = -1;
     private final Map<String, Integer> uniformLocations;
     private final int programId;
@@ -83,4 +85,16 @@ public class ShaderProgram {
         }
     }
 
+    @Override
+    public void update(ObserveSubject subject, ObservePayload payload) {
+        if (subject instanceof Camera camera){
+            if (payload instanceof CameraObservePayload cameraObservePayload){
+                switch (cameraObservePayload.change()){
+                    case VIEW -> setUniform4x4f("u_viewMatrix", camera.getViewMatrix());
+                    case PROJECTION -> setUniform4x4f("u_projectionMatrix", camera.getProjectionMatrix());
+                    case VIEWPORT -> setUniform2f("u_resolution", new Vector2f(camera.getResolution().x(), camera.getResolution().y()));
+                }
+            }
+        }
+    }
 }
