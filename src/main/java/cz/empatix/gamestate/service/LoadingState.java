@@ -28,7 +28,7 @@ public class LoadingState extends GameState {
     public void init() {
         AssetsService.loadAssets();
         EnemyFactory.init();
-        loadingBg = new CommonBackground("loading/loading.tga");
+        loadingBg = new CommonBackground("loading/loading.tga", 0);
         loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(WindowHandler.TARGET_WIDTH/2,380), 8, true);
         startTime = System.currentTimeMillis();
     }

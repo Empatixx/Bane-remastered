@@ -3,9 +3,8 @@ package cz.empatix.render.service;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.renders.DynamicRenderer;
+import cz.empatix.render.shaderbindings.ShaderBinding;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,21 +20,20 @@ public class RenderService {
         if (renderableGroups == null || renderableGroups.isEmpty()) {
             return;
         }
-        renderDataByZIndex(renderableGroups);
-    }
-
-    private void renderDataByZIndex(final List<RenderableGroup> drawableData) {
-        drawableData
+        renderableGroups
                 .stream()
                 .collect(Collectors.groupingBy(RenderableGroup::getShaderBinding,
                         LinkedHashMap::new,
                         Collectors.toUnmodifiableList()))
-                .forEach((shaderBinding, drawablesOfType) -> {
-                    final List<DrawableData> drawables = drawablesOfType
-                            .stream()
-                            .flatMap(renderableGroup -> renderableGroup.getDrawableData().stream())
-                            .toList();
-                    renderer.render(drawables, shaderBinding, 0);
-                });
+                .forEach(this::render);
+    }
+
+    private void render(final ShaderBinding shaderBinding,
+                        final List<RenderableGroup> drawablesOfType) {
+        final List<DrawableData> drawables = drawablesOfType
+                .stream()
+                .flatMap(renderableGroup -> renderableGroup.getDrawableData().stream())
+                .toList();
+        renderer.render(drawables, shaderBinding, 0);
     }
 }

@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30.glBindFramebuffer;
+
 public class RenderEngine {
     private final Framebuffer fbo;
     private final RenderService renderService;
@@ -31,24 +35,24 @@ public class RenderEngine {
                 .map(Renderable::getRenderableGroup)
                 .filter(RenderableGroup::isRenderable)
                 .collect(Collectors.groupingBy(RenderableGroup::getRenderScene, () -> new EnumMap<>(RenderScene.class), Collectors.toList()));
-        render(renderScenes, RenderScene.SCENE, (float) dt);
-        render(renderScenes, RenderScene.HUD, (float) dt);
-        render(renderScenes, RenderScene.OVERLAYS, (float) dt);
-
+        DynamicRenderer.draws.set(0);
+        render(renderScenes.getOrDefault(RenderScene.SCENE, List.of()), RenderScene.SCENE, (float) dt);
+        render(renderScenes.getOrDefault(RenderScene.HUD, List.of()), RenderScene.HUD, (float) dt);
+        render(renderScenes.getOrDefault(RenderScene.OVERLAYS, List.of()), RenderScene.OVERLAYS, (float) dt);
+        //LoggerFactory.getLogger(RenderEngine.class).info("Rendered total draws {}", DynamicRenderer.draws.get());
     }
 
-    private void render(Map<RenderScene, List<RenderableGroup>> renderScenes,
+    private void render(List<RenderableGroup> renderables,
                         final RenderScene scene,
                         final float dt) {
-        DynamicRenderer.draws.set(0);
+        if (renderables.isEmpty()) {
+            return;
+        }
         fbo.bind();
-        renderService.render(renderScenes.get(scene));
+        fbo.flush();
+        renderService.render(renderables);
         fbo.unbind();
         postprocessService.process(fbo, scene, dt);
-        fbo.flush();
-
-        postprocessService.flushFramebuffers();
-        //LoggerFactory.getLogger(RenderEngine.class).info("Rendered total draws {} for scene {}", DynamicRenderer.draws.get(), scene);
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {

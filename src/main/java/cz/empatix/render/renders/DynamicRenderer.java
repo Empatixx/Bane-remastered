@@ -58,8 +58,8 @@ public class DynamicRenderer implements Renderer {
             return;
         }
         glBindTextureUnit(0, renderData.get(0).textureId());
-        final Shader shader = shaderBinding.apply();
 
+        final Shader shader = shaderBinding.apply();
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         final List<List<RenderData>> batches = Lists.partition(renderData, MAX_PER_BATCH);
