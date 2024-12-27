@@ -91,7 +91,7 @@ public class Slime extends BaseEnemy {
 
     @Override
     public boolean canRender() {
-        return (!isDead() || !animation.hasPlayedOnce()) && Camera.isInProjection(getPosition(), getWidth(), getHeight());
+        return (!isDead() || !animation.hasPlayedOnce()) && Camera.getInstance().isInProjection(getPosition(), getWidth(), getHeight());
     }
 
 }

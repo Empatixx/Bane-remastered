@@ -36,7 +36,7 @@ public class Bones implements RoomObject {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -56,7 +56,7 @@ public class Bones implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position,DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
+        return Camera.getInstance().isInProjection(position,DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
 
     @Override

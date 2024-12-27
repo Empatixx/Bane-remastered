@@ -21,7 +21,7 @@ public class MinimapRoom extends AbstractMinimapRoom<MinimapRoom> implements Dra
     public RenderData renderData() {
         return new RenderData(animation.getVertices(transform.getInterpolatedPosition(), getZIndex()),
                 animation.getTextureId(),
-                new MiniMapBinding(Camera.getProjectionMatrix(), normSubImagePos, normSpriteSize,
+                new MiniMapBinding(Camera.getInstance().getProjectionMatrix(), normSubImagePos, normSpriteSize,
                         System.currentTimeMillis() % 1000000 / 1000f, randomOffset, visited, roomsAwayFromCenter == 0,
                         calculateAlpha(), animation.getCurrentTextureIndex(), connections));
     }

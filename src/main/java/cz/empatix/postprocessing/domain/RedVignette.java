@@ -48,7 +48,7 @@ public class RedVignette implements Postprocess {
         final float timeInSeconds = System.currentTimeMillis() % 3000 / 1000.0f;
         final float timeForShader = timeInSeconds * (2.0f * (float) Math.PI) / 3.0f;
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new RedVignetteBinding(Camera.getProjectionMatrix(), vignetteAmount, timeBased, timeForShader));
+                new RedVignetteBinding(Camera.getInstance().getProjectionMatrix(), vignetteAmount, timeBased, timeForShader));
     }
 
     @Override

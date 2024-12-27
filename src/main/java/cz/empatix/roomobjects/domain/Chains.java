@@ -10,7 +10,7 @@ import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
 public class Chains implements RoomObject {
-    private final static float SCALE = 4f;
+    private final static int SCALE = 4;
     private final static int DIMENSION_WIDTH = 16;
     private final static int DIMENSION_HEIGHT = 32;
     private final Animation animation;
@@ -32,7 +32,7 @@ public class Chains implements RoomObject {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -48,7 +48,7 @@ public class Chains implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return true;
+        return Camera.getInstance().isInProjection(position, DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
 
     @Override

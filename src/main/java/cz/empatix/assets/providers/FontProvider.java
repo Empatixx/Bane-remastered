@@ -1,4 +1,4 @@
-package cz.empatix.assets.creators;
+package cz.empatix.assets.providers;
 
 import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.FontSize;
@@ -8,17 +8,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
-public class FontCreator implements AssetCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FontCreator.class);
+public class FontProvider implements AssetProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FontProvider.class);
     private final Map<String, Map<FontSize, Font>> fonts;
     private final FontLoader fontLoader;
 
-    public FontCreator() {
+    public FontProvider() {
         fonts = new HashMap<>();
         fontLoader = new FontLoader();
     }

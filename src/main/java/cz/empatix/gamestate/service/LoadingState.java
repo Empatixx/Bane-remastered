@@ -38,7 +38,7 @@ public class LoadingState extends GameState {
         loadingBg.update(dt);
         loadingCircle.update(dt);
         AssetsService.createAssets();
-        if(AssetsService.isLoaded()){
+        if(AssetsService.getLoaded()){
             LOGGER.info("Loading took {} ms", System.currentTimeMillis() - startTime);
             setCurrentState(GameStateType.MENU);
         }

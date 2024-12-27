@@ -24,7 +24,7 @@ public class NoPostprocessing implements Postprocess{
 
     @Override
     public RenderData renderData() {
-        return new RenderData(Framebuffer.VERTICES, textureId, new CommonBinding(Camera.getProjectionMatrix()));
+        return new RenderData(Framebuffer.VERTICES, textureId, new CommonBinding(Camera.getInstance().getProjectionMatrix()));
     }
 
     @Override

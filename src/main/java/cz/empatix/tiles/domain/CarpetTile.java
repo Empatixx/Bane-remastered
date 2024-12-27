@@ -25,7 +25,7 @@ public record CarpetTile(
         return new RenderData(
                 vertices,
                 textureId,
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );    }
 
     @Override
@@ -40,7 +40,7 @@ public record CarpetTile(
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, SCALED_TILE_SIZE, SCALED_TILE_SIZE);
+        return Camera.getInstance().isInProjection(position, SCALED_TILE_SIZE, SCALED_TILE_SIZE);
     }
 
     public static CarpetTile from(final int tileNumber,

@@ -196,14 +196,14 @@ public class BossImpl implements Damageable, DamageSource {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), zDepth, aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
+                    new OutlineBinding(Camera.getInstance().getProjectionMatrix(), new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), zDepth, aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new CommonBinding(Camera.getProjection())
+                    new CommonBinding(Camera.getInstance().getProjectionMatrix())
             );
         }
     }
@@ -213,7 +213,7 @@ public class BossImpl implements Damageable, DamageSource {
     }
 
     public boolean canRender() {
-        return Camera.isInProjection(getPosition(), getWidth(), getHeight());
+        return Camera.getInstance().isInProjection(getPosition(), getWidth(), getHeight());
     }
 
     public void setTarget(final Player player) {

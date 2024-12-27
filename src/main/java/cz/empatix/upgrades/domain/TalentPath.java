@@ -37,7 +37,7 @@ public class TalentPath implements Drawable {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjectionMatrix())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 

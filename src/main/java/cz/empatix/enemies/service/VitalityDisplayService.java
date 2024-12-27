@@ -29,7 +29,7 @@ public class VitalityDisplayService {
             return;
         }
         if (change > 0){
-            final AlternativeViewText text = new AlternativeViewText("+" + change, "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+            final AlternativeViewText text = new AlternativeViewText("+" + change, "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
             text.setPosition(position.x() + RANDOM.nextFloat(width), position.y() + height/5f);
             text.setColorRGB(COLOR_GREEN);
 
@@ -38,7 +38,7 @@ public class VitalityDisplayService {
             final Instant now = Instant.now();
             changes.add(new VitalityChange(movableText, now));
         } else {
-            final AlternativeViewText text = new AlternativeViewText(String.valueOf(Math.abs(change)), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+            final AlternativeViewText text = new AlternativeViewText(String.valueOf(Math.abs(change)), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
             text.setPosition(position.x() + RANDOM.nextFloat(width), position.y() + height/5f);
             text.setColorRGB(COLOR_RED);
 

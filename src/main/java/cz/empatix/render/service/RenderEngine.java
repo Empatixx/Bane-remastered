@@ -19,7 +19,6 @@ public class RenderEngine {
     private final Framebuffer fbo;
     private final RenderService renderService;
     private final PostprocessService postprocessService;
-
     private int totalDrawableLastFrame = 10;
 
     public RenderEngine() {

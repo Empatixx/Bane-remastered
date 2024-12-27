@@ -65,9 +65,9 @@ public class Ladder implements RoomObject, Interactable {
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
         animatedImage = new AlternativeViewImage("ingame/ladder_pointer.tga", new Vector2f(), 4, 2, RenderScene.SCENE,
-                Camera.getProjection(), 4, 100);
+                Camera.getInstance().getProjectionMatrix(), 4, 100);
         text = new AlternativeViewText("Press E to enter next floor", "PixelFJVerdana12pt.ttf", new Vector2f(), 1,
-                FontSize.FONTSIZE_22, Camera.getProjection());
+                FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
         text.setColorRGB(222, 112, 38);
         InteractionService.getInstance().addInteractable(this);
     }
@@ -77,7 +77,7 @@ public class Ladder implements RoomObject, Interactable {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -93,7 +93,7 @@ public class Ladder implements RoomObject, Interactable {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, getWidth(), getHeight());
+        return Camera.getInstance().isInProjection(position, getWidth(), getHeight());
     }
 
     @Override

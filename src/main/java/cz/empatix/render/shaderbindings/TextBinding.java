@@ -3,6 +3,7 @@ package cz.empatix.render.shaderbindings;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -20,8 +21,8 @@ public class TextBinding implements ShaderBinding{
         this.fontSize = fontSize;
     }
     @Override
-    public Shader apply() {
-        final Shader shader = AssetsService.getShader("text");
+    public ShaderProgram bind() {
+        final ShaderProgram shader = AssetsService.getShader("text");
         shader.bind();
         shader.setUniform4x4f("projection", projection);
         shader.setUniform3f("color", color);

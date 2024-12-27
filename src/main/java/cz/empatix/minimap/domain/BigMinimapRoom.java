@@ -19,7 +19,7 @@ public class BigMinimapRoom extends AbstractMinimapRoom<BigMinimapRoom> implemen
     public RenderData renderData() {
         return new RenderData(animation.getVertices(transform.getInterpolatedPosition(), getZIndex()),
                 animation.getTextureId(),
-                new BigMiniMapBinding(Camera.getProjectionMatrix(), normSubImagePos, normSpriteSize,
+                new BigMiniMapBinding(Camera.getInstance().getProjectionMatrix(), normSubImagePos, normSpriteSize,
                         System.currentTimeMillis() % 1000000 / 1000f, randomOffset, visited, renderType == BigMinimapRenderType.CURRENT,
                         calculateAlpha(), animation.getCurrentTextureIndex(), connections));
     }

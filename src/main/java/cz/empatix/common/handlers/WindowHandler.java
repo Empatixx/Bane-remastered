@@ -3,6 +3,7 @@ package cz.empatix.common.handlers;
 import com.google.common.base.Preconditions;
 import cz.empatix.common.GameLoop;
 import cz.empatix.common.initializators.GLFWInit;
+import cz.empatix.render.service.Camera;
 import cz.empatix.settings.domain.GameSettings;
 import cz.empatix.settings.service.SettingsService;
 import org.joml.Vector2i;
@@ -43,8 +44,7 @@ public class WindowHandler {
 
             WIDTH = width;
             HEIGHT = height;
-            glViewport(0, 0, width, height);
-
+            Camera.getInstance().setViewport(width, height);
         });
         //todo: remove in new GLFW (fixed)
         GLFW.glfwSetWindowSizeCallback(WINDOW, (win, width, height) -> {

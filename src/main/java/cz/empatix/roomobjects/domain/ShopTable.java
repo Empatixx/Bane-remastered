@@ -35,7 +35,7 @@ public class ShopTable implements RoomObject {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );    }
 
     @Override
@@ -50,7 +50,7 @@ public class ShopTable implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, (int) (TABLE_WIDTH * SCALE), (int) (TABLE_HEIGHT * SCALE));
+        return Camera.getInstance().isInProjection(position, (int) (TABLE_WIDTH * SCALE), (int) (TABLE_HEIGHT * SCALE));
 
     }
 

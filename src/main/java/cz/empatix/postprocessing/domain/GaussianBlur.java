@@ -42,7 +42,7 @@ public class GaussianBlur implements Postprocess{
     @Override
     public RenderData renderData() {
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new GaussianBlurBinding(blurAmount, 1f - darkness, Camera.getProjectionMatrix()));
+                new GaussianBlurBinding(blurAmount, 1f - darkness, Camera.getInstance().getProjectionMatrix()));
     }
 
     @Override

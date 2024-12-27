@@ -86,10 +86,10 @@ public final class LightSource {
     }
 
     public boolean isOnCamera() {
-        return Camera.getX() < position.x + radius * intensity + ADDITIONAL_FRUSTRUM &&
-                Camera.getX() + Camera.getTargetWidth() > position.x - radius * intensity - ADDITIONAL_FRUSTRUM &&
-                Camera.getY() < position.y + radius * intensity + ADDITIONAL_FRUSTRUM &&
-                Camera.getY() + Camera.getTargetHeight() > position.y - radius * intensity - ADDITIONAL_FRUSTRUM;
+        return Camera.getInstance().getX() < position.x + radius * intensity + ADDITIONAL_FRUSTRUM &&
+                Camera.getInstance().getX() + Camera.getTargetWidth() > position.x - radius * intensity - ADDITIONAL_FRUSTRUM &&
+                Camera.getInstance().getY() < position.y + radius * intensity + ADDITIONAL_FRUSTRUM &&
+                Camera.getInstance().getY() + Camera.getTargetHeight() > position.y - radius * intensity - ADDITIONAL_FRUSTRUM;
     }
 
     public void setIntensity(final float intensity) {

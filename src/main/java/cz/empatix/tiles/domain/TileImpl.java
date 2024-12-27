@@ -68,7 +68,7 @@ public record TileImpl(
         return new RenderData(
                 vertices,
                 textureId,
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -80,7 +80,7 @@ public record TileImpl(
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, SCALE_TILE_SIZE, SCALE_TILE_SIZE);
+        return Camera.getInstance().isInProjection(position, SCALE_TILE_SIZE, SCALE_TILE_SIZE);
     }
     @Override
     public void destroy() {

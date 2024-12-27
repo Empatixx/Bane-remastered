@@ -3,6 +3,7 @@ package cz.empatix.render.shaderbindings;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4i;
@@ -38,8 +39,8 @@ public record BigMiniMapBinding(
     }
 
     @Override
-    public Shader apply() {
-        final Shader shader = AssetsService.getShader("miniMap");
+    public ShaderProgram bind() {
+        final ShaderProgram shader = AssetsService.getShader("miniMap");
         glEnable(GL_SCISSOR_TEST);
 
         final float xScale = (float) WindowHandler.WIDTH / WindowHandler.TARGET_WIDTH;

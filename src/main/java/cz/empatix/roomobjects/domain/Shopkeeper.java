@@ -44,8 +44,8 @@ public class Shopkeeper implements RoomObject {
                 .build();
         animation.setState(AnimationState.IDLE);
         position = new Vector2f(0, 0);
-        sayText = new AlternativeViewText("", "PixelFJVerdana12pt.ttf", new Vector2f(), 5, FontSize.FONTSIZE_22, Camera.getProjection());
-        sayBox = new AlternativeViewImage("ingame/shopkeeper_saybox.tga", new Vector2f(), BOX_SCALE, 1, RenderScene.HUD, Camera.getProjection());
+        sayText = new AlternativeViewText("", "PixelFJVerdana12pt.ttf", new Vector2f(), 5, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
+        sayBox = new AlternativeViewImage("ingame/shopkeeper_saybox.tga", new Vector2f(), BOX_SCALE, 1, RenderScene.HUD, Camera.getInstance().getProjectionMatrix());
         sayText.setColorRGB(new Vector3i(200, 92, 18));
 
 
@@ -64,7 +64,7 @@ public class Shopkeeper implements RoomObject {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -80,7 +80,7 @@ public class Shopkeeper implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, SHOPKEEPER_WIDTH * SCALE, SHOPKEEPER_HEIGHT * SCALE);
+        return Camera.getInstance().isInProjection(position, SHOPKEEPER_WIDTH * SCALE, SHOPKEEPER_HEIGHT * SCALE);
     }
 
     @Override

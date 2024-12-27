@@ -46,7 +46,7 @@ public class GameStateService {
                 .filter(gameState -> gameState.getType() == type)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No such state"));
-        Camera.setPosition(0,0);
+        Camera.getInstance().setPosition(0,0);
         currentState.init();
         LOGGER.info("Current state set to {}", type);
     }
@@ -62,7 +62,7 @@ public class GameStateService {
         physicsService.fixedUpdate(dt);
     }
     public void render(final double dt) {
-        Camera.update((float) dt);
+        Camera.getInstance().update((float) dt);
         renderEngine.render(currentState.toRender(dt), dt);
         physicsService.debugRender();
     }

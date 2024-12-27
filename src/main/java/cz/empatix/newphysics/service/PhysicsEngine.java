@@ -92,7 +92,7 @@ public class PhysicsEngine {
             for (final Vector2 originVertex : originVertices){
                 vertices.add(new Vector2(originVertex.x, originVertex.y));
             }
-            final Vector2f cameraPos = Camera.getPosition();
+            final Vector2f cameraPos = Camera.getInstance().getPosition();
             for (Vector2 vertex : vertices) {
                 final Vector2 transformed = body.getWorldPoint(vertex);
                 GL30.glVertex2d(transformed.x - cameraPos.x, transformed.y - cameraPos.y);

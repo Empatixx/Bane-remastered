@@ -2,6 +2,7 @@ package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 
 public record PoisonVignetteBinding(
@@ -10,8 +11,8 @@ public record PoisonVignetteBinding(
         float time
 ) implements ShaderBinding{
     @Override
-    public Shader apply() {
-        final Shader shader = AssetsService.getShader("poison");
+    public ShaderProgram bind() {
+        final ShaderProgram shader = AssetsService.getShader("poison");
         shader.bind();
         shader.setUniform4x4f("u_projection", projection);
         shader.setUniform1i("u_texture", 0);

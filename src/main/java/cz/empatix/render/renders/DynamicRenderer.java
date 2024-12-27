@@ -6,6 +6,7 @@ import cz.empatix.render.builders.VboBuilder;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.ShaderProgram;
 import cz.empatix.render.shaderbindings.ShaderBinding;
 import org.lwjgl.BufferUtils;
 
@@ -50,7 +51,7 @@ public class DynamicRenderer implements Renderer {
     }
 
     @Override
-    public void render(final List<DrawableData> data, final ShaderBinding shaderBinding, final int zDepth) {
+    public void render(final List<DrawableData> data, final ShaderBinding shaderBinding) {
         final List<RenderData> renderData = data.stream()
                 .map(DrawableData::renderData)
                 .toList();
@@ -59,7 +60,7 @@ public class DynamicRenderer implements Renderer {
         }
         glBindTextureUnit(0, renderData.get(0).textureId());
 
-        final Shader shader = shaderBinding.apply();
+        shaderBinding.bind();
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         final List<List<RenderData>> batches = Lists.partition(renderData, MAX_PER_BATCH);

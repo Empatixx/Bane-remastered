@@ -31,7 +31,7 @@ public abstract class GameState {
             this.mouseX = (float) mouseX.get(0) * WindowHandler.TARGET_WIDTH / WindowHandler.WIDTH;
             this.mouseY = (float) mouseY.get(0) * WindowHandler.TARGET_HEIGHT / WindowHandler.HEIGHT;
 
-            if(AssetsService.isLoaded()){
+            if(AssetsService.getLoaded()){
                 CursorService.updateMouse(this.mouseX, this.mouseY, dt);
             }
         }

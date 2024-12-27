@@ -67,7 +67,7 @@ public class CobwebProjectile implements Drawable {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -89,7 +89,7 @@ public class CobwebProjectile implements Drawable {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(physicsBody.getTranslation(), WIDTH * SCALE, HEIGHT * SCALE)
+        return Camera.getInstance().isInProjection(physicsBody.getTranslation(), WIDTH * SCALE, HEIGHT * SCALE)
                 && !shouldRemove();
     }
 

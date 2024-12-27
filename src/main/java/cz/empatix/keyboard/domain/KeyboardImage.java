@@ -38,7 +38,7 @@ public class KeyboardImage implements HUDElement {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -49,7 +49,7 @@ public class KeyboardImage implements HUDElement {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, WIDTH, HEIGHT);
+        return Camera.getInstance().isInProjection(position, WIDTH, HEIGHT);
     }
 
     @Override

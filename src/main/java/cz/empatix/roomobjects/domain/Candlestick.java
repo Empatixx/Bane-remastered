@@ -52,7 +52,7 @@ public class Candlestick implements RoomObject{
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -72,7 +72,7 @@ public class Candlestick implements RoomObject{
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position,DIMENSION_WIDTH, DIMENSION_HEIGHT);
+        return Camera.getInstance().isInProjection(position,DIMENSION_WIDTH, DIMENSION_HEIGHT);
     }
 
     @Override

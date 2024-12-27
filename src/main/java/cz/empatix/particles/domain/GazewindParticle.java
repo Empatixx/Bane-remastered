@@ -35,7 +35,7 @@ public record GazewindParticle(
         return new RenderData(
                 animation.getVertices(transform, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -51,9 +51,7 @@ public record GazewindParticle(
 
     @Override
     public boolean canRender() {
-        final Vector2f position = transform;
-        return position.x() + DIMENSIONS.x() > Camera.getX() && position.x() < Camera.getTargetWidth() + Camera.getX() &&
-                position.y() + DIMENSIONS.y() > Camera.getY() && position.y() < Camera.getTargetHeight() + Camera.getY();
+        return Camera.getInstance().isInProjection(transform, DIMENSIONS.x(), DIMENSIONS.y());
     }
 
     public boolean shouldRemove() {

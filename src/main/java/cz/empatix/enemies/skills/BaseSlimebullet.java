@@ -53,7 +53,7 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -84,7 +84,7 @@ public abstract class BaseSlimebullet implements Drawable, DamageSource {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(physicsBody.getTranslation(), BULLET_WIDTH * SCALE, BULLET_HEIGHT * SCALE)
+        return Camera.getInstance().isInProjection(physicsBody.getTranslation(), BULLET_WIDTH * SCALE, BULLET_HEIGHT * SCALE)
                 && !shouldRemove();
     }
 

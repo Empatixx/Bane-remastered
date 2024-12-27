@@ -53,14 +53,14 @@ public class SacrificialItem implements ItemDrop{
         this.removeHealthConsumer = removeHealthConsumer;
         this.drop = itemDrop;
         this.price = RANDOM.nextInt(1, MAX_HEALTH_PRICE + 1);
-        this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+        this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
         this.priceText.setColorRGB(212, 168, 8);
         this.priceText.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.priceText.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
-        this.image = new AlternativeViewImage("ingame/sacrifice_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getProjection());
+        this.image = new AlternativeViewImage("ingame/sacrifice_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getInstance().getProjectionMatrix());
         this.image.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.image.getWidth() / 2f,
                 drop.getPosition().y() + drop.getHeight() + 10);
-        this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getProjection());
+        this.interactionText = new AlternativeViewText("Press E to buy", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
         this.interactionText.setColorRGB(222, 112, 38);
         onBuy = NOOP;
     }

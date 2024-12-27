@@ -43,7 +43,7 @@ public class Scientist implements Interactable, Drawable {
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
         interactionTracker = new InteractionTracker();
-        alternativeViewText = new AlternativeViewText("Press E to upgrade", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0, DIMENSION_HEIGHT * SCALE + OFFSET), 1, FontSize.FONTSIZE_22, Camera.getProjection());
+        alternativeViewText = new AlternativeViewText("Press E to upgrade", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0, DIMENSION_HEIGHT * SCALE + OFFSET), 1, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
         alternativeViewText.setCenterX(position.x(), position.x() + DIMENSION_WIDTH * SCALE);
         alternativeViewText.setColorRGB(222, 112, 38);
 
@@ -70,7 +70,7 @@ public class Scientist implements Interactable, Drawable {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -86,7 +86,7 @@ public class Scientist implements Interactable, Drawable {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, (int) (DIMENSION_WIDTH * SCALE), (int) (DIMENSION_HEIGHT * SCALE));
+        return Camera.getInstance().isInProjection(position, (int) (DIMENSION_WIDTH * SCALE), (int) (DIMENSION_HEIGHT * SCALE));
     }
 
     public void update(double dt, final float mouseX, final float mouseY) {

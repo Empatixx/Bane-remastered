@@ -2,6 +2,7 @@ package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 
 public record RedVignetteBinding (
@@ -12,8 +13,8 @@ public record RedVignetteBinding (
 ) implements ShaderBinding {
 
     @Override
-    public Shader apply() {
-        final Shader shader = AssetsService.getShader("redVignette");
+    public ShaderProgram bind() {
+        final ShaderProgram shader = AssetsService.getShader("redVignette");
         shader.bind();
         shader.setUniform4x4f("u_projection", projection);
         shader.setUniform1i("u_texture", 0);

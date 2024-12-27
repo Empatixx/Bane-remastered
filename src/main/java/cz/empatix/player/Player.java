@@ -266,7 +266,7 @@ public class Player implements Drawable, InteractEntity, Damageable, Targetable 
         return new RenderData(
                 vertices,
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -284,7 +284,7 @@ public class Player implements Drawable, InteractEntity, Damageable, Targetable 
         if (isInvulnerable() && System.currentTimeMillis() / 100 % 2 == 0) {
             return false;
         }
-        final Vector2f cameraPos = Camera.getPosition();
+        final Vector2f cameraPos = Camera.getInstance().getPosition();
         final Vector2f cameraDimensions = new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight());
         final Vector2f position = physicsBody.getTranslation();
         return position.x() + getWidth() > cameraPos.x()

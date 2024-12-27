@@ -159,7 +159,7 @@ public class RecoverPotion implements ItemDrop {
         return new RenderData(
                 animation.getVertices(floatingPosition, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -175,7 +175,7 @@ public class RecoverPotion implements ItemDrop {
 
     @Override
     public boolean canRender() {
-        if (!Camera.isInProjection(position, DIMENSION_WIDTH, DIMENSION_HEIGHT)) {
+        if (!Camera.getInstance().isInProjection(position, DIMENSION_WIDTH, DIMENSION_HEIGHT)) {
             return false;
         }
         if (itemDespawnService.canBlink()) {

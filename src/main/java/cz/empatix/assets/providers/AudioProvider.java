@@ -1,22 +1,19 @@
-package cz.empatix.assets.creators;
+package cz.empatix.assets.providers;
 
 import cz.empatix.assets.domain.RawAudio;
-import cz.empatix.assets.domain.font.RawFont;
 import cz.empatix.assets.loaders.AudioLoader;
 import org.lwjgl.openal.AL10;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class AudioCreator implements AssetCreator{
-    private static final Logger LOGGER = LoggerFactory.getLogger(AudioCreator.class);
+public class AudioProvider implements AssetProvider {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AudioProvider.class);
     private final Map<String, Integer> audio;
     private final AudioLoader audioLoader;
 
-    public AudioCreator() {
+    public AudioProvider() {
         this.audio = new HashMap<>();
         audioLoader = new AudioLoader();
     }

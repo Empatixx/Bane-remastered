@@ -59,14 +59,14 @@ public class LobbyState extends GameState {
         scientist.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 25, TileImpl.TILE_SIZE * TileImpl.SCALE * 6.5f);
 
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
-        Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+        Camera.getInstance().setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
     }
 
     @Override
     public void update(double dt) {
         final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
         final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-        Camera.setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
+        Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
 
         player.update(dt);
         scientist.update(dt, mouseX, mouseY);

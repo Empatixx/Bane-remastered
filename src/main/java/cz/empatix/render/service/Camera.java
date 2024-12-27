@@ -6,72 +6,84 @@ import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import static cz.empatix.common.handlers.WindowHandler.TARGET_HEIGHT;
-import static cz.empatix.common.handlers.WindowHandler.TARGET_WIDTH;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Camera {
-    private static final float ZOOM = 1f;
+import static cz.empatix.common.handlers.WindowHandler.*;
+import static org.lwjgl.opengl.GL11.glViewport;
+
+public class Camera implements ObserveSubject{
+    private static final Camera INSTANCE = new Camera();
+
+    public static Camera getInstance() {
+        return INSTANCE;
+    }
+
     private static final float TWEEN = 5f;
-    private final static Vector2f minDimensions = new Vector2f();
-    private static final Vector2f maxDimensions = new Vector2f();
-    private static final InterpolatedPosition interpolatedPosition = new InterpolatedPosition();
+    private final Matrix4f projectionMatrix;
+    private final Matrix4f viewMatrix;
+    private final Vector2f maxPosition = new Vector2f();
+    private final Vector2f minPosition = new Vector2f();
+    private final InterpolatedPosition interpolatedPosition;
+    private final List<Observer> observers;
 
-    // optimization so it is always one reference to shaderbindings!
-    private final static Matrix4f PROJECTION_MATRIX = new Matrix4f().ortho(
-            0,
-            TARGET_WIDTH,
-            TARGET_HEIGHT,
-            0, -1000, 1000);
-    private final static Matrix4f TRANSLATED_PROJECTION_MATRIX = new Matrix4f().ortho(
-            0,
-            TARGET_WIDTH,
-            TARGET_HEIGHT,
-            0, -1000, 1000);
-
-    public static Matrix4f getProjection() {
-        return TRANSLATED_PROJECTION_MATRIX;
-    }
-    public static Matrix4f getProjectionMatrix() {
-        return PROJECTION_MATRIX;
+    public Camera() {
+        projectionMatrix = new Matrix4f().ortho(0, TARGET_WIDTH, TARGET_HEIGHT, 0, -1000, 1000);
+        viewMatrix = new Matrix4f();
+        interpolatedPosition = new InterpolatedPosition();
+        observers = new ArrayList<>();
     }
 
-    public static Matrix4f getOriginProjection() {
-        return PROJECTION_MATRIX;
+    public Matrix4f getProjectionMatrix() {
+        return projectionMatrix;
     }
 
-    public static void update(final float dt) {
+    public Matrix4f getViewMatrix() {
+        return viewMatrix;
+    }
+
+    public void update(final float dt) {
         interpolatedPosition.update(dt);
+        notifyObservers(new CameraObservePayload(CameraChangeType.VIEW));
+        viewMatrix.identity().translate(-getX(), -getY(), 0);
 
-        Matrix4f translate = getOriginProjection().translate(new Vector3f(-getX(), -getY(), 0), new Matrix4f());
-        TRANSLATED_PROJECTION_MATRIX.set(translate);
+        final Matrix4f translate = viewMatrix.translate(new Vector3f(-getX(), -getY(), 0), new Matrix4f());
+        viewMatrix.set(translate);
     }
 
-    public static void setPosition(final float x, final float y) {
-        final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), x));
-        final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), y));
+    public void setViewport(final int width, final int height) {
+        //projectionMatrix.identity().ortho(0, width, height, 0, -1000, 1000);
+        notifyObservers(new CameraObservePayload(CameraChangeType.PROJECTION));
+        glViewport(0, 0, width, height);
+    }
+
+    public void setPosition(final float x, final float y) {
+        final float newX = Math.max(minPosition.x(), Math.min(maxPosition.x(), x));
+        final float newY = Math.max(minPosition.y(), Math.min(maxPosition.y(), y));
+
         interpolatedPosition.setInterpolatedPosition(newX, newY);
-        Camera.update(1);
+        update(1);
     }
 
-    public static void setSmoothlyPosition(final float x, final float y, final float dt) {
+    public void setSmoothlyPosition(final float x, final float y, final float dt) {
         float tween = TWEEN * dt;
         if(tween > 1){
             tween = 1;
         }
-        final float newX = Math.max(minDimensions.x(), Math.min(maxDimensions.x(), (x - interpolatedPosition.getX()) * tween + interpolatedPosition.getX()));
-        final float newY = Math.max(minDimensions.y(), Math.min(maxDimensions.y(), (y - interpolatedPosition.getY()) * tween + interpolatedPosition.getY()));
+        final float newX = Math.max(minPosition.x(), Math.min(maxPosition.x(), (x - interpolatedPosition.getX()) * tween + interpolatedPosition.getX()));
+        final float newY = Math.max(minPosition.y(), Math.min(maxPosition.y(), (y - interpolatedPosition.getY()) * tween + interpolatedPosition.getY()));
         interpolatedPosition.setInterpolatedPosition(newX, newY);
     }
 
-    public static float getX() {
-        return interpolatedPosition.getInterpolatedX() + TARGET_WIDTH * (1 - ZOOM) / 2;
+    public float getX() {
+        return interpolatedPosition.getInterpolatedX();
     }
 
-    public static float getY() {
-        return interpolatedPosition.getInterpolatedY() + TARGET_HEIGHT * (1 - ZOOM) / 2;
+    public float getY() {
+        return interpolatedPosition.getInterpolatedY();
     }
 
-    public static Vector2f getPosition() {
+    public Vector2f getPosition() {
         return new Vector2f(getX(), getY());
     }
 
@@ -80,41 +92,56 @@ public class Camera {
     }
 
     public static float getTargetWidth() {
-        return WindowHandler.TARGET_WIDTH * ZOOM;
+        return WindowHandler.TARGET_WIDTH;
     }
 
     public static float getTargetHeight() {
-        return WindowHandler.TARGET_HEIGHT * ZOOM;
+        return WindowHandler.TARGET_HEIGHT;
     }
 
-    public static void setSmoothlyMinDimensions(final int x, final int y, final float dt) {
+    public void setSmoothlyMinPosition(final float x, final float y, final float dt) {
         float tween = TWEEN * dt;
         if(tween > 1){
             tween = 1;
         }
-        minDimensions.x = (x - minDimensions.x) * tween + minDimensions.x;
-        minDimensions.y = (y - minDimensions.y) * tween + minDimensions.y;
+        minPosition.x = (x - minPosition.x) * tween + minPosition.x;
+        minPosition.y = (y - minPosition.y) * tween + minPosition.y;
     }
 
-    public static void setSmoothlyMaxDimensions(final int x, final int y, final float dt) {
+    public void setSmoothlyMaxPosition(final float x, final float y, final float dt) {
         float tween = TWEEN * dt;
         if(tween > 1){
             tween = 1;
         }
-        maxDimensions.x = (x - maxDimensions.x - WindowHandler.TARGET_WIDTH) * tween + maxDimensions.x;
-        maxDimensions.y = (y - maxDimensions.y - WindowHandler.TARGET_HEIGHT) * tween + maxDimensions.y;
+        maxPosition.x = (x - maxPosition.x - WindowHandler.TARGET_WIDTH) * tween + maxPosition.x;
+        maxPosition.y = (y - maxPosition.y - WindowHandler.TARGET_HEIGHT) * tween + maxPosition.y;
     }
 
-    public static void setMinDimensions(final int x, final int y) {
-        minDimensions.set(x, y);
+    public void setMinPosition(final float x, final float y) {
+        minPosition.set(x, y);
+    }
+    public void setMaxPosition(final float x, final float y) {
+        maxPosition.set(x - WindowHandler.TARGET_WIDTH, y - WindowHandler.TARGET_HEIGHT);
     }
 
-    public static void setMaxDimensions(final int x, final int y) {
-        maxDimensions.set(x - WindowHandler.TARGET_WIDTH, y - WindowHandler.TARGET_HEIGHT);
-    }
-
-    public static boolean isInProjection(final Vector2f position, final int width, final int height) {
+    public boolean isInProjection(final Vector2f position, final int width, final int height) {
         return position.x() + width > getX() && position.x() < getX() + getTargetWidth() &&
                 position.y() + height > getY() && position.y() < getY() + getTargetHeight();
     }
+
+    @Override
+    public void addObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(ObservePayload payload) {
+        observers.forEach(observer -> observer.update(this, payload));
+    }
+
 }

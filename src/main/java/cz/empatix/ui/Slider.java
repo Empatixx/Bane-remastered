@@ -70,7 +70,7 @@ public class Slider implements UIElement {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getOriginProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 

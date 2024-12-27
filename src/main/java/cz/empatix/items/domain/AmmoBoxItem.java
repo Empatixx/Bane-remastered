@@ -156,7 +156,7 @@ public class AmmoBoxItem implements ItemDrop {
         return new RenderData(
                 animation.getVertices(floatingPosition, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -172,7 +172,7 @@ public class AmmoBoxItem implements ItemDrop {
 
     @Override
     public boolean canRender() {
-        if (!Camera.isInProjection(position, width, height)) {
+        if (!Camera.getInstance().isInProjection(position, width, height)) {
             return false;
         }
         if (itemDespawnService.canBlink()) {

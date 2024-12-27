@@ -47,7 +47,7 @@ public class Flamethrower implements RoomObject, DamageSource, Trap {
         return new RenderData(
                 animation.getVertices(physicsBody.getPhysicsTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -63,7 +63,7 @@ public class Flamethrower implements RoomObject, DamageSource, Trap {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(physicsBody.getPhysicsTranslation(), getWidth(), getHeight());
+        return Camera.getInstance().isInProjection(physicsBody.getPhysicsTranslation(), getWidth(), getHeight());
     }
 
     @Override

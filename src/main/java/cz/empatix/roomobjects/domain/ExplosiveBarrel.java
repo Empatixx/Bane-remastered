@@ -65,14 +65,14 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                     animation.getTextureId(),
-                    new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
+                    new OutlineBinding(Camera.getInstance().getProjectionMatrix(), new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                     animation.getTextureId(),
-                    new CommonBinding(Camera.getProjection())
+                    new CommonBinding(Camera.getInstance().getProjectionMatrix())
             );
         }
     }
@@ -89,7 +89,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(physicsBody.getTranslation(), getWidth(), getHeight());
+        return Camera.getInstance().isInProjection(physicsBody.getTranslation(), getWidth(), getHeight());
     }
 
     @Override

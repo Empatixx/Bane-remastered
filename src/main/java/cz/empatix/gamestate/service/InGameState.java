@@ -86,7 +86,7 @@ public class InGameState extends GameState {
             final Room startRoom = result.startRoom();
             player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
                     startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
-            Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+            Camera.getInstance().setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
         });
 
 
@@ -100,7 +100,7 @@ public class InGameState extends GameState {
         upgradesApplicationService.apply();
 
         AudioService.getInstance().play(Soundtrack.INGAME);
-        Camera.setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+        Camera.getInstance().setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
     }
 
     @Override
@@ -116,9 +116,9 @@ public class InGameState extends GameState {
         if (!minimapService.isActiveBigMinimap()){
             final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
             final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-            Camera.setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
+            Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
         } else {
-            Camera.setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f, (float) dt);
+            Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f, (float) dt);
         }
         player.update(dt);
         mapLoaderService.update((float) dt);
@@ -135,7 +135,7 @@ public class InGameState extends GameState {
     public void fixedUpdate(double dt) {
         player.fixedUpdate(dt);
         mapService.fixedUpdate(dt);
-        gunService.fixedUpdate(player.getX() + player.getWidth()/2f, player.getY() + player.getHeight()/2f, Camera.getX() + mouseX, Camera.getY() + mouseY, dt);
+        gunService.fixedUpdate(player.getX() + player.getWidth()/2f, player.getY() + player.getHeight()/2f, Camera.getInstance().getX() + mouseX, Camera.getInstance().getY() + mouseY, dt);
         artefactsService.fixedUpdate(dt);
         petService.fixedUpdate((float)dt);
     }

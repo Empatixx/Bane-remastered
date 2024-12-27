@@ -57,7 +57,7 @@ public class PathGate implements RoomObject {
         return new RenderData(
                 animation.getVertices(physicsBody.getPhysicsTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -73,7 +73,7 @@ public class PathGate implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
+        return Camera.getInstance().isInProjection(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
 
     @Override

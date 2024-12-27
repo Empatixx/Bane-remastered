@@ -76,7 +76,7 @@ public class Chest implements RoomObject {
         return new RenderData(
                 animation.getVertices(physicsBody.getPhysicsTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -92,7 +92,7 @@ public class Chest implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(getPosition(), getWidth(), getHeight());
+        return Camera.getInstance().isInProjection(getPosition(), getWidth(), getHeight());
     }
 
     @Override

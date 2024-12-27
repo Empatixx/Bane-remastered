@@ -42,8 +42,8 @@ public class MapService {
         final int xMax = mapGenerationResult.startRoom().getMaxX();
         final int yMax = mapGenerationResult.startRoom().getMaxY();
 
-        Camera.setMinDimensions(xMin, yMin);
-        Camera.setMaxDimensions(xMax, yMax);
+        Camera.getInstance().setMinPosition(xMin, yMin);
+        Camera.getInstance().setMaxPosition(xMax, yMax);
 
         pathRooms = mapGenerationResult.paths();
         rooms = mapGenerationResult.rooms();
@@ -92,8 +92,8 @@ public class MapService {
             final int xMax = currentRoom.getMaxX();
             final int yMax = currentRoom.getMaxY();
 
-            Camera.setSmoothlyMinDimensions(xMin, yMin, dt);
-            Camera.setSmoothlyMaxDimensions(xMax, yMax, dt);
+            Camera.getInstance().setSmoothlyMinPosition(xMin, yMin, dt);
+            Camera.getInstance().setSmoothlyMaxPosition(xMax, yMax, dt);
 
             if (previousRoom != null && previousRoom != currentRoom) {
                 previousRoom.leaveEvent(p);

@@ -186,7 +186,7 @@ public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSourc
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(getPosition(), getWidth(), getHeight()) &&
+        return Camera.getInstance().isInProjection(getPosition(), getWidth(), getHeight()) &&
                 !(isDead() && animation.hasPlayedOnce());
     }
 
@@ -196,7 +196,7 @@ public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSourc
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new SpawnBinding(Camera.getProjection(), (float) (System.currentTimeMillis() - spawnTime) / SPAWN_INVINCIBILITY)
+                    new SpawnBinding(Camera.getInstance().getProjectionMatrix(), (float) (System.currentTimeMillis() - spawnTime) / SPAWN_INVINCIBILITY)
             );
         }
         final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
@@ -204,14 +204,14 @@ public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSourc
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new OutlineBinding(Camera.getProjection(), new Vector2f(getWidth(), getHeight()),
+                    new OutlineBinding(Camera.getInstance().getProjectionMatrix(), new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new CommonBinding(Camera.getProjection())
+                    new CommonBinding(Camera.getInstance().getProjectionMatrix())
             );
         }
     }

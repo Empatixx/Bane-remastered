@@ -33,7 +33,7 @@ public class PoisonVignette implements Postprocess{
         final float timeInSeconds = System.currentTimeMillis() % 3000 / 1000.0f;
         final float timeForShader = timeInSeconds * (2.0f * (float) Math.PI) / 3.0f;
         return new RenderData(Framebuffer.VERTICES, textureId,
-                new PoisonVignetteBinding(Camera.getProjectionMatrix(), vignetteAmount, timeForShader));
+                new PoisonVignetteBinding(Camera.getInstance().getProjectionMatrix(), vignetteAmount, timeForShader));
 
     }
 

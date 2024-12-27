@@ -76,7 +76,7 @@ public class CommonImage implements HUDElement {
                         .offset(dimensions.x(), dimensions.y())
                         .buildQuad(),
                 texture.textureId(),
-                new CommonBinding(Camera.getProjectionMatrix())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 

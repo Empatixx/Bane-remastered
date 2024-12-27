@@ -3,6 +3,7 @@ package cz.empatix.render.shaderbindings;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.render.domain.Shader;
+import cz.empatix.render.domain.ShaderProgram;
 import cz.empatix.render.service.Camera;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -15,8 +16,8 @@ public record ForwardLightningBinding(
 ) implements ShaderBinding {
 
     @Override
-    public Shader apply() {
-        final Shader shader = AssetsService.getShader("forwardLightning");
+    public ShaderProgram bind() {
+        final ShaderProgram shader = AssetsService.getShader("forwardLightning");
 
         final List<LightSource> lightSources = this.lightSources.stream()
                         .filter(LightSource::canDisplay)
@@ -25,7 +26,7 @@ public record ForwardLightningBinding(
         shader.setUniform1i("texSampler", 0);
         shader.setUniform4x4f("projection", projectionMatrix);
         shader.setUniform2f("resolution", new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()));
-        shader.setUniform2f("cameraPosition", Camera.getPosition());
+        shader.setUniform2f("cameraPosition", Camera.getInstance().getPosition());
         for(int i = 0;i<lightSources.size();i++) {
             shader.setUniform2f("lightPosition[" + i + "]", lightSources.get(i).getPosition());
             shader.setUniform1f("lightIntensity[" + i + "]", lightSources.get(i).getIntensity());

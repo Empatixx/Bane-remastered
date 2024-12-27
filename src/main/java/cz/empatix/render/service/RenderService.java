@@ -34,6 +34,6 @@ public class RenderService {
                 .stream()
                 .flatMap(renderableGroup -> renderableGroup.getDrawableData().stream())
                 .toList();
-        renderer.render(drawables, shaderBinding, 0);
+        renderer.render(drawables, shaderBinding);
     }
 }

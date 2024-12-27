@@ -1,4 +1,4 @@
-package cz.empatix.assets.creators;
+package cz.empatix.assets.providers;
 
 import cz.empatix.assets.loaders.TexturesLoader;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
@@ -8,18 +8,15 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class TexturesCreator implements AssetCreator {
-    private final static Logger LOGGER = LoggerFactory.getLogger(TexturesCreator.class);
+public class TexturesProvider implements AssetProvider {
+    private final static Logger LOGGER = LoggerFactory.getLogger(TexturesProvider.class);
     public final static Path PATH = Path.of("./assets/textures/");
     private final TexturesLoader texturesLoader;
     private final List<TextureAtlas> textureAtlases;
 
-    public TexturesCreator() {
+    public TexturesProvider() {
         textureAtlases = new ArrayList<>();
         texturesLoader = new TexturesLoader();
     }

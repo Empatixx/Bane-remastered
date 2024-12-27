@@ -39,7 +39,7 @@ public class Spike implements RoomObject, DamageSource, Trap {
         return new RenderData(
                 animation.getVertices(physicsBody.getPhysicsTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -55,7 +55,7 @@ public class Spike implements RoomObject, DamageSource, Trap {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
+        return Camera.getInstance().isInProjection(physicsBody.getPhysicsTranslation(), DIMENSION_WIDTH * SCALE, DIMENSION_HEIGHT * SCALE);
     }
 
     @Override

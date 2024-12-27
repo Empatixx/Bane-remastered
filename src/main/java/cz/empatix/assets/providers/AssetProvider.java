@@ -1,8 +1,8 @@
-package cz.empatix.assets.creators;
+package cz.empatix.assets.providers;
 
 
 
-public interface AssetCreator {
+public interface AssetProvider {
     void create();
     void load();
     void preload();

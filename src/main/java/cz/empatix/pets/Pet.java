@@ -134,7 +134,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         return new RenderData(
                 animation.getVertices(physicsObject.getTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -150,7 +150,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(physicsObject.getTranslation(), WIDTH, HEIGHT);
+        return Camera.getInstance().isInProjection(physicsObject.getTranslation(), WIDTH, HEIGHT);
     }
 
     public void setPosition(float x, float y) {

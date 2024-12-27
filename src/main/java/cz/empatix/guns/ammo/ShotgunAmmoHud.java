@@ -47,7 +47,7 @@ public class ShotgunAmmoHud implements Drawable {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getOriginProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 

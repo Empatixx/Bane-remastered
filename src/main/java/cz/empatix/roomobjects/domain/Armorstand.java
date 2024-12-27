@@ -32,7 +32,7 @@ public class Armorstand implements RoomObject {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getProjection())
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 
@@ -48,7 +48,7 @@ public class Armorstand implements RoomObject {
 
     @Override
     public boolean canRender() {
-        return Camera.isInProjection(position, getWidth(), getHeight());
+        return Camera.getInstance().isInProjection(position, getWidth(), getHeight());
     }
 
     @Override
