@@ -8,6 +8,7 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.HudCommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -64,7 +65,7 @@ public class AnimatedImage implements HUDElement {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 texture.textureId(),
-                new CommonBinding()
+                new HudCommonBinding()
         );
     }
 

@@ -10,7 +10,7 @@ public class SceneBackground implements HUDElement{
     private final CommonImage image;
 
     public SceneBackground(final String texture) {
-        this.image = new CommonImage(texture, new Vector2f(0,0), WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT);
+        this.image = new CommonImage(texture, new Vector2f(0,0), WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, -1);
     }
     @Override
     public RenderData renderData() {

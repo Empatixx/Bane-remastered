@@ -29,8 +29,7 @@ public class LightningService {
         lightSources.add(lightSource);
         return lightSource;
     }
-    public LightSource createLightSource(
-                                         final Vector3f color,
+    public LightSource createLightSource(final Vector3f color,
                                          final float radius,
                                          final float intensity) {
         return createLightSource(new Vector2f(), color, radius, intensity);

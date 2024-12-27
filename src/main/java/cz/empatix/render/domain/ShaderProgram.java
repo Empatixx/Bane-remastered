@@ -92,7 +92,10 @@ public class ShaderProgram implements Observer {
                 switch (cameraObservePayload.change()){
                     case VIEW -> setUniform4x4f("u_viewMatrix", camera.getViewMatrix());
                     case PROJECTION -> setUniform4x4f("u_projectionMatrix", camera.getProjectionMatrix());
-                    case VIEWPORT -> setUniform2f("u_resolution", new Vector2f(camera.getResolution().x(), camera.getResolution().y()));
+                    case VIEWPORT -> {
+                        setUniform2f("u_resolution", new Vector2f(camera.getResolution().x(), camera.getResolution().y()));
+                        setUniform2f("u_targetResolution", new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()));
+                    }
                 }
             }
         }

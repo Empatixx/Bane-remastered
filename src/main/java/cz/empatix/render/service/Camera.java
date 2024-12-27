@@ -47,6 +47,9 @@ public class Camera implements ObserveSubject{
 
     public void update(final float dt) {
         interpolatedPosition.update(dt);
+        if (interpolatedPosition.isSamePosition()){
+            return;
+        }
         notifyObservers(new CameraObservePayload(CameraChangeType.VIEW));
         viewMatrix.identity().translate(-getX(),-getY(), 0);
     }

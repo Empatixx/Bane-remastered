@@ -78,6 +78,11 @@ public class InterpolatedPosition {
         }
         this.previousPosition.lerp(nextPosition, t, currentPosition);
     }
+
+    public boolean isSamePosition() {
+        return currentPosition.equals(nextPosition);
+    }
+
     public float getT() {
         return t;
     }

@@ -5,6 +5,7 @@ import cz.empatix.render.builders.VaoBuilder;
 import cz.empatix.render.builders.VboBuilder;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.shaderbindings.ShaderProgramBinding;
 import org.lwjgl.BufferUtils;
 
@@ -64,13 +65,7 @@ public class DynamicRenderer implements Renderer {
         final List<List<RenderData>> batches = Lists.partition(renderData, MAX_PER_BATCH);
 
         for (final List<RenderData> batch : batches) {
-            vertexBuffer.clear();
-            batch.stream()
-                    .flatMap(d -> d
-                            .vertices()
-                            .stream())
-                    .forEach(vertex -> vertexBuffer.put(new float[]{vertex.position().x(), vertex.position().y(), vertex.position().z(), vertex.texCoords().x(), vertex.texCoords().y()}));
-            vertexBuffer.flip();
+            putVerticesToBuffer(batch);
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
             glBufferSubData(GL_ARRAY_BUFFER, 0, vertexBuffer);
@@ -83,6 +78,15 @@ public class DynamicRenderer implements Renderer {
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
         shaderProgramBinding.unbind();
+    }
+    private void putVerticesToBuffer(final List<RenderData> batch) {
+        vertexBuffer.clear();
+        for (final RenderData batchRenderData : batch){
+            for (final Vertex vertices : batchRenderData.vertices()){
+                vertexBuffer.put(new float[]{vertices.position().x(), vertices.position().y(), vertices.position().z(), vertices.texCoords().x(), vertices.texCoords().y()});
+            }
+        }
+        vertexBuffer.flip();
     }
 
     private void glBindTextureUnit(final int unit, final int texture) {
