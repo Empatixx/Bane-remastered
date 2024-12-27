@@ -40,7 +40,7 @@ public class Torch implements RoomObject {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
     public void disable(){

@@ -35,7 +35,7 @@ public record GazewindParticle(
         return new RenderData(
                 animation.getVertices(transform, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 

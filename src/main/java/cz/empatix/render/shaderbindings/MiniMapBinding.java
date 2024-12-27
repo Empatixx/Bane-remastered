@@ -7,7 +7,6 @@ import org.joml.Vector2f;
 import org.joml.Vector4i;
 
 public record MiniMapBinding(
-        Matrix4f projectionMatrix,
         Vector2f normSubImagePos,
         Vector2f normSpriteSize,
         float time,
@@ -21,18 +20,17 @@ public record MiniMapBinding(
         float normSpriteShift
 ) implements ShaderProgramBinding {
 
-    public MiniMapBinding(final Matrix4f projection, final Vector2f normSubImagePos, final Vector2f normSpriteSize,
+    public MiniMapBinding(final Vector2f normSubImagePos, final Vector2f normSpriteSize,
                           final float time, final float randomOffset, final boolean visited,
                           final boolean current, final float alpha, final int spriteColumn,
                           final Vector4i connections) {
-        this(projection, normSubImagePos, normSpriteSize, time, randomOffset, visited, current, alpha,  spriteColumn, connections, time+randomOffset, normSpriteSize.x * spriteColumn);
+        this(normSubImagePos, normSpriteSize, time, randomOffset, visited, current, alpha,  spriteColumn, connections, time+randomOffset, normSpriteSize.x * spriteColumn);
     }
 
     @Override
     public ShaderProgram bind() {
         final ShaderProgram shader = AssetsService.getShader("miniMap");
         shader.bind();
-        shader.setUniform4x4f("projection", projectionMatrix);
         shader.setUniform1i("uTexSampler", 0);
         shader.setUniform1i("uVisited", visited ? 1 : 0);
         shader.setUniform1f("uAlpha", alpha);

@@ -68,7 +68,7 @@ public record TileImpl(
         return new RenderData(
                 vertices,
                 textureId,
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 

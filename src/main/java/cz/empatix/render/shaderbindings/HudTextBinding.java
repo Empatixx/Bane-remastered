@@ -5,16 +5,13 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Vector3f;
 
+import javax.print.DocFlavor;
 import java.util.Objects;
 
-public class HudTextBinding implements ShaderProgramBinding {
-    private final Vector3f color;
-    private final FontSize fontSize;
-    public HudTextBinding(final Vector3f color,
-                       final FontSize fontSize){
-        this.color = color;
-        this.fontSize = fontSize;
-    }
+public record HudTextBinding(
+        Vector3f color,
+        FontSize fontSize
+) implements ShaderProgramBinding {
     @Override
     public ShaderProgram bind() {
         final ShaderProgram shader = AssetsService.getShader("hudText");
@@ -22,5 +19,4 @@ public class HudTextBinding implements ShaderProgramBinding {
         shader.setUniform3f("color", color);
         return shader;
     }
-
 }

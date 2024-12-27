@@ -75,7 +75,7 @@ public class GolemLaser implements DamageSource, Drawable {
         return new RenderData(
                 vertices,
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 

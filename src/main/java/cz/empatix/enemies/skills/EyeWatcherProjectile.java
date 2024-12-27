@@ -56,7 +56,7 @@ public class EyeWatcherProjectile implements Drawable, DamageSource {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 

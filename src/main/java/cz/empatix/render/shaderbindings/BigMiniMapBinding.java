@@ -11,7 +11,6 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.glUseProgram;
 
 public record BigMiniMapBinding(
-        Matrix4f projectionMatrix,
         Vector2f normSubImagePos,
         Vector2f normSpriteSize,
         float time,
@@ -30,11 +29,11 @@ public record BigMiniMapBinding(
     private static final int LAYOUT_POS_X = 280 + BORDER_OFFSET;
     private static final int LAYOUT_POS_Y = 70 + BORDER_OFFSET;
 
-    public BigMiniMapBinding(final Matrix4f projection, final Vector2f normSubImagePos, final Vector2f normSpriteSize,
+    public BigMiniMapBinding(final Vector2f normSubImagePos, final Vector2f normSpriteSize,
                              final float time, final float randomOffset, final boolean visited,
                              final boolean current, final float alpha, final int spriteColumn,
                              final Vector4i connections) {
-        this(projection, normSubImagePos, normSpriteSize, time, randomOffset, visited, current, alpha, spriteColumn, connections, time + randomOffset, normSpriteSize.x * spriteColumn);
+        this(normSubImagePos, normSpriteSize, time, randomOffset, visited, current, alpha, spriteColumn, connections, time + randomOffset, normSpriteSize.x * spriteColumn);
     }
 
     @Override
@@ -48,7 +47,6 @@ public record BigMiniMapBinding(
         glScissor((int) (LAYOUT_POS_X * xScale), (int) (LAYOUT_POS_Y * yScale), (int) (LAYOUT_SIZE_X * xScale), (int) (LAYOUT_SIZE_Y * yScale));
 
         shader.bind();
-        shader.setUniform4x4f("projection", projectionMatrix);
         shader.setUniform1i("uTexSampler", 0);
         shader.setUniform1i("uVisited", visited ? 1 : 0);
         shader.setUniform1f("uAlpha", alpha);

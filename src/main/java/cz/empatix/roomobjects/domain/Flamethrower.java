@@ -47,7 +47,7 @@ public class Flamethrower implements RoomObject, DamageSource, Trap {
         return new RenderData(
                 animation.getVertices(physicsBody.getPhysicsTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 

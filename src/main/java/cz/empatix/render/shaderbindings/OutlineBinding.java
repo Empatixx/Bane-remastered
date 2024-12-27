@@ -7,12 +7,10 @@ import org.joml.Vector2f;
 import org.joml.Vector4f;
 
 public record OutlineBinding(
-        Matrix4f projection,
         Vector2f texSize,
         Vector2f texStartPos,
         Vector2f texEndPos,
         Vector4f outlineColor
-
 ) implements ShaderProgramBinding {
 
     private final static float OUTLINE_THICKNESS = 0.01f;
@@ -23,7 +21,6 @@ public record OutlineBinding(
         shader.setUniform4f("uOutlineColor", outlineColor);
         shader.setUniform1f("uOutlineThickness", OUTLINE_THICKNESS);
         shader.setUniform2f("uTexSize", texSize);
-        shader.setUniform4x4f("uProjection", projection);
         shader.setUniform2f("uTexStartPos", texStartPos);
         shader.setUniform2f("uTexEndPos", texEndPos);
         return shader;

@@ -266,7 +266,7 @@ public class Player implements Drawable, InteractEntity, Damageable, Targetable 
         return new RenderData(
                 vertices,
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 

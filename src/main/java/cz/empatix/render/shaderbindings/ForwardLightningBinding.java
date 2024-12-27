@@ -10,8 +10,7 @@ import org.joml.Vector2f;
 import java.util.List;
 
 public record ForwardLightningBinding(
-        List<LightSource> lightSources,
-        Matrix4f projectionMatrix
+        List<LightSource> lightSources
 ) implements ShaderProgramBinding {
 
     @Override
@@ -23,7 +22,6 @@ public record ForwardLightningBinding(
                         .toList();
         shader.bind();
         shader.setUniform1i("texSampler", 0);
-        shader.setUniform4x4f("projection", projectionMatrix);
         shader.setUniform2f("resolution", new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()));
         shader.setUniform2f("cameraPosition", Camera.getInstance().getPosition());
         for(int i = 0;i<lightSources.size();i++) {

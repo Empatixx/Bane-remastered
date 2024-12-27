@@ -134,7 +134,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         return new RenderData(
                 animation.getVertices(physicsObject.getTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 

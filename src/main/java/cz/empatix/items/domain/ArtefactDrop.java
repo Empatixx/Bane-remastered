@@ -112,7 +112,7 @@ public class ArtefactDrop implements ItemDrop {
                         .offset(getWidth(), getHeight())
                         .buildQuad(),
                 texture.textureId(),
-                new OutlineBinding(Camera.getInstance().getProjectionMatrix(), new Vector2f(getWidth(), getHeight()),
+                new OutlineBinding(new Vector2f(getWidth(), getHeight()),
                         texture.normalizedStartPositions(), texture.normalizedSpriteEndPosition(1, 1, 1, 1), new Vector4f(1f, 1f, 0f, interactionTracker.isInteracting() ? 1f : 0f))
         );
     }

@@ -13,7 +13,6 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
@@ -179,7 +178,7 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new SpawnBinding(Camera.getInstance().getProjectionMatrix(), (float) (System.currentTimeMillis() - spawnTime) / SPAWN_INVINCIBILITY)
+                    new SpawnBinding((float) (System.currentTimeMillis() - spawnTime) / SPAWN_INVINCIBILITY)
             );
         }
         final float outline = 1 - (System.currentTimeMillis() - lastHit) / 1000f;
@@ -187,14 +186,14 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new OutlineBinding(Camera.getInstance().getProjectionMatrix(), new Vector2f(getWidth(), getHeight()),
+                    new OutlineBinding(new Vector2f(getWidth(), getHeight()),
                             animation.getNormalStartPositions(), animation.getNormalEndPositions(), new Vector4f(1, 0, 0, outline))
             );
         } else {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                    new CommonBinding()
             );
         }
     }

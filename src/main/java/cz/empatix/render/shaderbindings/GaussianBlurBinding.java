@@ -8,8 +8,7 @@ import org.joml.Vector2f;
 
 public record GaussianBlurBinding(
         float blurAmount,
-        float darknessAmount,
-        Matrix4f projectionMatrix
+        float darknessAmount
 ) implements ShaderProgramBinding {
 
     @Override
@@ -19,7 +18,6 @@ public record GaussianBlurBinding(
         shader.setUniform1i("uTexture", 0);
         shader.setUniform1f("uBlurAmount", blurAmount);
         shader.setUniform1f("uDarknessAmount", darknessAmount);
-        shader.setUniform4x4f("projection", projectionMatrix);
         shader.setUniform2f("uTexSize", new Vector2f(WindowHandler.WIDTH, WindowHandler.HEIGHT));
         return shader;
     }

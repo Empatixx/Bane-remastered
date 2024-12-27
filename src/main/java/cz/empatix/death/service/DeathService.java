@@ -12,7 +12,6 @@ import cz.empatix.postprocessing.domain.Fade;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.shaderbindings.MotionBlurBinding;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;

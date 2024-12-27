@@ -76,7 +76,7 @@ public class Chest implements RoomObject {
         return new RenderData(
                 animation.getVertices(physicsBody.getPhysicsTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new CommonBinding()
         );
     }
 
