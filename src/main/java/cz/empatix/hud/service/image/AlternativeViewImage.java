@@ -3,7 +3,9 @@ package cz.empatix.hud.service.image;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.domain.*;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.HudCommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -13,16 +15,14 @@ public class AlternativeViewImage implements HUDElement {
     private final Vector2i dimensions;
     private final RenderScene scene;
     private final int zDepth;
-    private final Matrix4f cameraMatrix;
     private final Animation animation;
     private final Vector2f position;
-    public AlternativeViewImage(final String texturePath, final Vector2f position, final float scale, final int zDepth, final RenderScene scene, final Matrix4f cameraMatrix) {
+    public AlternativeViewImage(final String texturePath, final Vector2f position, final float scale, final int zDepth, final RenderScene scene) {
         final TextureAtlas.Entry texture = AssetsService.getTexture(texturePath);
         this.dimensions = new Vector2i(texture.width(), texture.height());
         this.dimensions.x *= scale;
         this.dimensions.y *= scale;
 
-        this.cameraMatrix = cameraMatrix;
         this.zDepth = zDepth;
         this.scene = scene;
         this.position = position;
@@ -41,7 +41,6 @@ public class AlternativeViewImage implements HUDElement {
         this.dimensions.x *= scale / frames;
         this.dimensions.y *= scale;
 
-        this.cameraMatrix = cameraMatrix;
         this.zDepth = zDepth;
         this.scene = scene;
         this.position = position;
@@ -57,7 +56,7 @@ public class AlternativeViewImage implements HUDElement {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(cameraMatrix)
+                new CommonBinding(Camera.getInstance().getProjectionMatrix())
         );
     }
 

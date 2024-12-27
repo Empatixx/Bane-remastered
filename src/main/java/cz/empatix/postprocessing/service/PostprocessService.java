@@ -23,8 +23,7 @@ public class PostprocessService {
                 new ForwardLightning(),
                 new GaussianBlur(),
                 new Fade(),
-                new RedVignette(),
-                new PoisonVignette()
+                new RedVignette()
         );
         this.fallbackPostprocess = new NoPostprocessing();
     }

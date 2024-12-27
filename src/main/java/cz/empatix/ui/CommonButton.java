@@ -11,6 +11,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.HudCommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -85,7 +86,7 @@ public class CommonButton implements UIElement {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new HudCommonBinding()
         );
     }
 

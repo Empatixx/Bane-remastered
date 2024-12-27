@@ -2,7 +2,6 @@ package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -24,7 +23,7 @@ public record BigMiniMapBinding(
         Vector4i connections,
         float timeWithOffset,
         float normSpriteShift
-) implements ShaderBinding {
+) implements ShaderProgramBinding {
     private static final int BORDER_OFFSET = 20;
     private static final int LAYOUT_SIZE_X = 400 - BORDER_OFFSET * 2;
     private static final int LAYOUT_SIZE_Y = 400 - BORDER_OFFSET * 2;

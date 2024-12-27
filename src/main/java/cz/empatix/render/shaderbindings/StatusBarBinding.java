@@ -1,7 +1,6 @@
 package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -13,7 +12,7 @@ public record StatusBarBinding(
         float delayedFillAmount,
         Vector4f barRect,
         Vector3f barColor
-) implements ShaderBinding {
+) implements ShaderProgramBinding {
 
     public StatusBarBinding(final Matrix4f projection,
                             final Vector3f barColor,

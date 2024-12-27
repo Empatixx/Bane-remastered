@@ -43,7 +43,7 @@ public class Scientist implements Interactable, Drawable {
         animation.setState(AnimationState.IDLE);
         position = new Vector2f();
         interactionTracker = new InteractionTracker();
-        alternativeViewText = new AlternativeViewText("Press E to upgrade", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0, DIMENSION_HEIGHT * SCALE + OFFSET), 1, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
+        alternativeViewText = new AlternativeViewText("Press E to upgrade", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0, DIMENSION_HEIGHT * SCALE + OFFSET), 1, FontSize.FONTSIZE_22);
         alternativeViewText.setCenterX(position.x(), position.x() + DIMENSION_WIDTH * SCALE);
         alternativeViewText.setColorRGB(222, 112, 38);
 

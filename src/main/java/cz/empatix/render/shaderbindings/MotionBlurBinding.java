@@ -1,7 +1,6 @@
 package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -9,7 +8,7 @@ import org.joml.Vector2f;
 public record MotionBlurBinding(
     Matrix4f projectionMatrix,
     Vector2f motionVector
-) implements ShaderBinding{
+) implements ShaderProgramBinding {
     @Override
     public ShaderProgram bind() {
         final ShaderProgram shader = AssetsService.getShader("motionBlur");

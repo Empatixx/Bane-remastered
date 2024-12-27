@@ -28,11 +28,11 @@ public class StartRoomKeyboardService {
         final KeyboardImage useSlot1Key = new KeyboardImage(KeyboardType.NUMBER_ONE);
         final KeyboardImage useSlot2Key = new KeyboardImage(KeyboardType.NUMBER_TWO);
 
-        final AlternativeViewText dropGunDesc = new AlternativeViewText("Drop gun", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix(), RenderScene.SCENE);
-        final AlternativeViewText interactDesc = new AlternativeViewText("Interact", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix(), RenderScene.SCENE);
-        final AlternativeViewText useArtefactDesc = new AlternativeViewText("Use artefact", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix(), RenderScene.SCENE);
-        final AlternativeViewText useSlot1Desc = new AlternativeViewText("Switch slot 1", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix(), RenderScene.SCENE);
-        final AlternativeViewText useSlot2Desc = new AlternativeViewText("Switch slot 2", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix(), RenderScene.SCENE);
+        final AlternativeViewText dropGunDesc = new AlternativeViewText("Drop gun", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, RenderScene.SCENE);
+        final AlternativeViewText interactDesc = new AlternativeViewText("Interact", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, RenderScene.SCENE);
+        final AlternativeViewText useArtefactDesc = new AlternativeViewText("Use artefact", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, RenderScene.SCENE);
+        final AlternativeViewText useSlot1Desc = new AlternativeViewText("Switch slot 1", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, RenderScene.SCENE);
+        final AlternativeViewText useSlot2Desc = new AlternativeViewText("Switch slot 2", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, RenderScene.SCENE);
 
         final KeyboardImageWithText dropGunPair = KeyboardImageWithText.of(dropGunKey, dropGunDesc);
         final KeyboardImageWithText interactionPair = KeyboardImageWithText.of(interactKey, interactDesc);
@@ -53,7 +53,7 @@ public class StartRoomKeyboardService {
         final KeyboardImage moveLeftKey = new KeyboardImage(KeyboardType.A);
         final KeyboardImage moveRightKey = new KeyboardImage(KeyboardType.D);
 
-        final AlternativeViewText movementText = new AlternativeViewText("Movement", "PixelFJVerdana12pt.ttf", new Vector2f(), 1, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix(), RenderScene.SCENE);
+        final AlternativeViewText movementText = new AlternativeViewText("Movement", "PixelFJVerdana12pt.ttf", new Vector2f(), 1, FontSize.FONTSIZE_22, RenderScene.SCENE);
 
         moveUpKey.setPosition(xRoom - 150, yRoom + 350);
         moveDownKey.setPosition(xRoom - 150, yRoom + 400);

@@ -32,7 +32,7 @@ public class Camera implements ObserveSubject{
     public Camera() {
         projectionMatrix = new Matrix4f().ortho(0, TARGET_WIDTH, TARGET_HEIGHT, 0, -1000, 1000);
         resolution.set(TARGET_WIDTH, TARGET_HEIGHT);
-        viewMatrix = new Matrix4f();
+        viewMatrix = new Matrix4f().identity();
         interpolatedPosition = new InterpolatedPosition();
         observers = new ArrayList<>();
     }
@@ -48,14 +48,12 @@ public class Camera implements ObserveSubject{
     public void update(final float dt) {
         interpolatedPosition.update(dt);
         notifyObservers(new CameraObservePayload(CameraChangeType.VIEW));
-        viewMatrix.identity().translate(-getX(), -getY(), 0);
-
-        final Matrix4f translate = viewMatrix.translate(new Vector3f(-getX(), -getY(), 0), new Matrix4f());
-        viewMatrix.set(translate);
+        viewMatrix.identity().translate(-getX(),-getY(), 0);
     }
 
     public void setViewport(final int width, final int height) {
         resolution.set(width, height);
+        notifyObservers(new CameraObservePayload(CameraChangeType.VIEWPORT));
         glViewport(0, 0, width, height);
     }
 

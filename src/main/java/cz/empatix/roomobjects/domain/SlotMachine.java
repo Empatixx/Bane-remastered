@@ -54,7 +54,7 @@ public class SlotMachine implements RoomObject, Interactable {
         position = new Vector2f();
         interactionTracker = new InteractionTracker();
 
-        this.interactionText = new AlternativeViewText("Press E to spin", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
+        this.interactionText = new AlternativeViewText("Press E to spin", "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22);
         this.interactionText.setColorRGB(222, 112, 38);
 
         coinService.addCoins(100);
@@ -187,9 +187,9 @@ public class SlotMachine implements RoomObject, Interactable {
                 rewards.higherEntry(chance).getValue().run();
             });
 
-            this.priceText = new AlternativeViewText(String.valueOf(PRICE_COST), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22, Camera.getInstance().getProjectionMatrix());
+            this.priceText = new AlternativeViewText(String.valueOf(PRICE_COST), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22);
             this.priceText.setColorRGB(212, 168, 8);
-            this.priceHud = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD, Camera.getInstance().getProjectionMatrix());
+            this.priceHud = new AlternativeViewImage("ingame/shop_price_hud.tga", new Vector2f(), 1, 2, RenderScene.HUD);
             setPosition(0, 0);
         }
 

@@ -1,7 +1,6 @@
 package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -14,7 +13,7 @@ public record OutlineBinding(
         Vector2f texEndPos,
         Vector4f outlineColor
 
-) implements ShaderBinding{
+) implements ShaderProgramBinding {
 
     private final static float OUTLINE_THICKNESS = 0.01f;
     @Override

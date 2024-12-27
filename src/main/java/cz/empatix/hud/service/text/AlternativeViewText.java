@@ -18,9 +18,9 @@ public class AlternativeViewText implements HUDElement {
     private final Vector2f position;
     private final Vector3f color;
     private final int zIndex;
-    private final Matrix4f cameraProjection;
     private final RenderScene scene;
-    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize, final Matrix4f cameraProjection,
+
+    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize,
                                final RenderScene scene) {
         this.scene = scene;
         this.text = text;
@@ -28,14 +28,16 @@ public class AlternativeViewText implements HUDElement {
         this.position = position;
         zIndex = prevZIndex + 1;
         color = new Vector3f(1f, 1f, 1f);
-        this.cameraProjection = cameraProjection;
     }
-    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize, final Matrix4f cameraProjection) {
-        this(text,font,position,prevZIndex,fontSize,cameraProjection,RenderScene.HUD);
+
+    public AlternativeViewText(final String text, final String font, final Vector2f position, final int prevZIndex, final FontSize fontSize) {
+        this(text, font, position, prevZIndex, fontSize, RenderScene.HUD);
     }
+
     public void setCenterX(final float xMin, final float xMax) {
         position.x = (xMin + xMax) / 2 - font.getWidth(text) / 2;
     }
+
     public void setCenterY(final float yMin, final float yMax) {
         position.y = (yMin + yMax) / 2 + font.getHeight(text) / 2;
     }
@@ -55,10 +57,11 @@ public class AlternativeViewText implements HUDElement {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return font.getDrawables(text, position, color, zIndex, scene, cameraProjection);
+        return font.getDrawables(text, position, color, zIndex, scene, true);
     }
+
     @Override
-    public RenderScene renderScene(){
+    public RenderScene renderScene() {
         return scene;
     }
 
@@ -84,6 +87,7 @@ public class AlternativeViewText implements HUDElement {
     public void setPosition(final Vector2f position) {
         this.position.set(position);
     }
+
     public void setPosition(final float x, final float y) {
         this.position.set(x, y);
     }
@@ -91,14 +95,16 @@ public class AlternativeViewText implements HUDElement {
     public float getWidth() {
         return font.getWidth(text);
     }
-    public float getHeight(){
+
+    public float getHeight() {
         return font.getHeight(text);
     }
 
     public float getX() {
         return position.x();
     }
-    public float getY(){
+
+    public float getY() {
         return position.y();
     }
 

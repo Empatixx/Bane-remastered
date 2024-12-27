@@ -2,7 +2,6 @@ package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -11,7 +10,7 @@ public record GaussianBlurBinding(
         float blurAmount,
         float darknessAmount,
         Matrix4f projectionMatrix
-) implements ShaderBinding {
+) implements ShaderProgramBinding {
 
     @Override
     public ShaderProgram bind() {

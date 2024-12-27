@@ -4,7 +4,7 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.DrawableBatch;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.shaderbindings.ShaderBinding;
+import cz.empatix.render.shaderbindings.ShaderProgramBinding;
 
 import java.util.List;
 
@@ -25,8 +25,8 @@ public record BatchRenderableGroup(
     }
 
     @Override
-    public ShaderBinding getShaderBinding() {
-        return drawableData.get(0).renderData().shaderBinding();
+    public ShaderProgramBinding getShaderBinding() {
+        return drawableData.get(0).renderData().shaderProgramBinding();
     }
 
     @Override

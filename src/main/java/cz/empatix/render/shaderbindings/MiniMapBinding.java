@@ -1,7 +1,6 @@
 package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -20,7 +19,7 @@ public record MiniMapBinding(
         Vector4i connections,
         float timeWithOffset,
         float normSpriteShift
-) implements ShaderBinding {
+) implements ShaderProgramBinding {
 
     public MiniMapBinding(final Matrix4f projection, final Vector2f normSubImagePos, final Vector2f normSpriteSize,
                           final float time, final float randomOffset, final boolean visited,

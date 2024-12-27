@@ -65,7 +65,7 @@ public class CommonText implements HUDElement {
 
     @Override
     public List<Renderable> getSubRenderables() {
-        return font.getDrawables(text, position, color, zIndex, renderScene, Camera.getInstance().getProjectionMatrix());
+        return font.getDrawables(text, position, color, zIndex, renderScene, false);
     }
 
     @Override

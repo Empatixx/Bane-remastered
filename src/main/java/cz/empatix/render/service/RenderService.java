@@ -3,7 +3,7 @@ package cz.empatix.render.service;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.renders.DynamicRenderer;
-import cz.empatix.render.shaderbindings.ShaderBinding;
+import cz.empatix.render.shaderbindings.ShaderProgramBinding;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,12 +28,12 @@ public class RenderService {
                 .forEach(this::render);
     }
 
-    private void render(final ShaderBinding shaderBinding,
+    private void render(final ShaderProgramBinding shaderProgramBinding,
                         final List<RenderableGroup> drawablesOfType) {
         final List<DrawableData> drawables = drawablesOfType
                 .stream()
                 .flatMap(renderableGroup -> renderableGroup.getDrawableData().stream())
                 .toList();
-        renderer.render(drawables, shaderBinding);
+        renderer.render(drawables, shaderProgramBinding);
     }
 }

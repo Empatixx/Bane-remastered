@@ -47,7 +47,7 @@ public class Portal implements RoomObject, Interactable {
                 .build();
         animation.setState(AnimationState.IDLE);
         InteractionService.getInstance().addInteractable(this);
-        alternativeViewText = new AlternativeViewText("Press E to enter the portal", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE),1,FontSize.FONTSIZE_22,Camera.getInstance().getProjectionMatrix());
+        alternativeViewText = new AlternativeViewText("Press E to enter the portal", "PixelFJVerdana12pt.ttf", new Vector2f(position).add(0,DIMENSION_HEIGHT*SCALE),1,FontSize.FONTSIZE_22);
         alternativeViewText.setCenterX(position.x(),position.x() + DIMENSION_WIDTH*SCALE);
         alternativeViewText.setColorRGB(222, 112, 38);
         lightSource = LightningService.getInstance().createLightSource(new Vector3f(128,0,128),50,2.5f);

@@ -28,7 +28,7 @@ public record Font(
                                          final Vector3f color,
                                          final int zDepth,
                                          final RenderScene renderScene,
-                                         final Matrix4f cameraMatrix) {
+                                         final boolean cameraMovable) {
         final List<Renderable> glyphDrawables = new ArrayList<>();
         final Vector2f positionShifting = new Vector2f(position);
         for (final char c : text.toCharArray()) {
@@ -36,7 +36,7 @@ public record Font(
                 throw new IllegalArgumentException("Font does not contain glyph for character: " + c);
             }
             final Glyph glyph = glyphs.get(c);
-            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth, renderScene, size, cameraMatrix));
+            glyphDrawables.add(glyph.toDrawable(new Vector2f(positionShifting), color, zDepth, renderScene, size, cameraMovable));
             positionShifting.x += glyph.advance();
         }
         return glyphDrawables;

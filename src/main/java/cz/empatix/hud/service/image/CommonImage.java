@@ -7,6 +7,7 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.HudCommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -76,7 +77,7 @@ public class CommonImage implements HUDElement {
                         .offset(dimensions.x(), dimensions.y())
                         .buildQuad(),
                 texture.textureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new HudCommonBinding()
         );
     }
 

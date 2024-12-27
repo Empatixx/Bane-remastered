@@ -1,14 +1,13 @@
 package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 
 public record SpawnBinding (
         Matrix4f projectionMatrix,
         float time
-) implements ShaderBinding{
+) implements ShaderProgramBinding {
     @Override
     public ShaderProgram bind() {
         final ShaderProgram shader = AssetsService.getShader("spawn");

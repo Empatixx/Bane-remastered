@@ -18,7 +18,9 @@ public class ShadersLoader implements AssetLoader<List<RawShader>> {
     public final static Path PATH = Path.of("./assets/shaders/");
     private static final Set<Path> PRELOAD_SHADERS = Set.of(
             PATH.resolve("common-vs.glsl"),
-            PATH.resolve("common-fs.glsl")
+            PATH.resolve("common-fs.glsl"),
+            PATH.resolve("hudCommon-vs.glsl"),
+            PATH.resolve("hudCommon-fs.glsl")
     );
     private final Queue<List<RawShader>> shaders;
     public ShadersLoader() {

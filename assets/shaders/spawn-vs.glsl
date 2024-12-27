@@ -10,5 +10,5 @@ out vec2 tex_coords;
 
 void main() {
     tex_coords = textures;
-    gl_Position = u_viewMatrix * u_projectionMatrix * vec4(vertices, 1.0f);
+    gl_Position = u_projectionMatrix * u_viewMatrix * vec4(vertices, 1.0f);
 }

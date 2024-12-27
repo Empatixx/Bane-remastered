@@ -2,7 +2,6 @@ package cz.empatix.render.shaderbindings;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.lightning.domain.LightSource;
-import cz.empatix.render.domain.Shader;
 import cz.empatix.render.domain.ShaderProgram;
 import cz.empatix.render.service.Camera;
 import org.joml.Matrix4f;
@@ -13,7 +12,7 @@ import java.util.List;
 public record ForwardLightningBinding(
         List<LightSource> lightSources,
         Matrix4f projectionMatrix
-) implements ShaderBinding {
+) implements ShaderProgramBinding {
 
     @Override
     public ShaderProgram bind() {

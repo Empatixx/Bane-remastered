@@ -3,7 +3,7 @@ package cz.empatix.render.attributes.grouping;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.DrawableData;
 import cz.empatix.render.domain.RenderScene;
-import cz.empatix.render.shaderbindings.ShaderBinding;
+import cz.empatix.render.shaderbindings.ShaderProgramBinding;
 
 import java.util.List;
 
@@ -19,8 +19,8 @@ public record SingleRenderableGroup(
     }
 
     @Override
-    public ShaderBinding getShaderBinding() {
-        return drawableData.renderData().shaderBinding();
+    public ShaderProgramBinding getShaderBinding() {
+        return drawableData.renderData().shaderProgramBinding();
     }
 
     @Override

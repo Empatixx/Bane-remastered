@@ -5,6 +5,7 @@ import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.HudCommonBinding;
 
 public class NoPostprocessing implements Postprocess{
     private int textureId;
@@ -24,7 +25,7 @@ public class NoPostprocessing implements Postprocess{
 
     @Override
     public RenderData renderData() {
-        return new RenderData(Framebuffer.VERTICES, textureId, new CommonBinding(Camera.getInstance().getProjectionMatrix()));
+        return new RenderData(Framebuffer.VERTICES, textureId, new HudCommonBinding());
     }
 
     @Override

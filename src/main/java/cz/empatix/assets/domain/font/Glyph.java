@@ -4,9 +4,9 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Vertex;
+import cz.empatix.render.shaderbindings.HudTextBinding;
 import cz.empatix.render.shaderbindings.TextBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
-import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -43,8 +43,8 @@ public record Glyph(
                                     final int zDepth,
                                     final RenderScene scene,
                                     final FontSize fontSize,
-                                    final Matrix4f cameraMatrix) {
-        return new GlyphDrawable(this, position, color, zDepth, scene, fontSize, cameraMatrix);
+                                    final boolean cameraMovable) {
+        return new GlyphDrawable(this, position, color, zDepth, scene, fontSize, cameraMovable);
     }
 
     public record GlyphDrawable(
@@ -54,14 +54,14 @@ public record Glyph(
             int zDepth,
             RenderScene scene,
             FontSize fontSize,
-            Matrix4f cameraMatrix
+            boolean cameraMovable
     ) implements Drawable {
         @Override
         public RenderData renderData() {
             return new RenderData(
                     vertices(),
                     glyph.texture().textureId(),
-                    new TextBinding(color, cameraMatrix, fontSize)
+                    cameraMovable ? new TextBinding(color, fontSize) : new HudTextBinding(color, fontSize)
             );
         }
 

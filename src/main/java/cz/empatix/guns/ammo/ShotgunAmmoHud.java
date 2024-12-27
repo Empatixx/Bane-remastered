@@ -8,6 +8,7 @@ import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.HudCommonBinding;
 import org.joml.Vector2f;
 
 public class ShotgunAmmoHud implements Drawable {
@@ -47,7 +48,7 @@ public class ShotgunAmmoHud implements Drawable {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding(Camera.getInstance().getProjectionMatrix())
+                new HudCommonBinding()
         );
     }
 
