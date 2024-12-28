@@ -1,32 +1,28 @@
 package cz.empatix.pets;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.common.utils.LogBackFormatter;
-import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.interaction.domain.InteractEntity;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.newphysics.attributes.*;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
-import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.particles.service.GazewindService;
 import cz.empatix.render.attributes.Drawable;
+import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
-import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
-import org.joml.Vector2i;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     private final static Set<Integer> INTERACT_KEYS = new HashSet<>();
+    private final static int GAZE_OFFSET = 16;
+    private final static int GAZE_SPEED_PRELIMIT = 150;
     private final static int DAMAGE_COOLDOWN = 200;
     private final static int DAMAGE = 1;
     private static final int MOVE_FORCE = 12_500_000;
@@ -40,7 +36,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     private final FollowingStrategy collectingStrategy;
     private final FollowingStrategy attackingStrategy;
     private long lastAttack = 0;
-
+    private final GazewindService gazewindService;
     public Pet() {
         animation = Animation.builder()
                 .texture(AssetsService.getTexture("ingame/wolf_pet.tga"))
@@ -60,6 +56,9 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         collectingStrategy = new DropFollowingStrategy(this);
         attackingStrategy = new AttackFollowingStrategy(this);
         InteractionService.getInstance().addEntity(this);
+
+        gazewindService = new GazewindService();
+
     }
     public void setOwner(final Targetable owner) {
         followingStrategy.follow(owner);
@@ -70,13 +69,34 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         followingStrategy.update(dt);
         attackingStrategy.update(dt);
         collectingStrategy.update(dt);
+        gazewindService.update((float) dt);
     }
 
     public void fixedUpdate(final float dt) {
         followingStrategy.fixedUpdate(dt);
         attackingStrategy.fixedUpdate(dt);
         collectingStrategy.fixedUpdate(dt);
+        move();
+        trySpawnGazeWind();
+    }
 
+    private void trySpawnGazeWind() {
+        final Vector2f velocity = physicsObject.getVelocity();
+        if (Math.abs(velocity.x()) >= GAZE_SPEED_PRELIMIT || Math.abs(velocity.y()) >= GAZE_SPEED_PRELIMIT) {
+            final Vector2f nextGazePosition = getGazeWindPosition();
+            gazewindService.spawn(nextGazePosition.x(), nextGazePosition.y());
+        }
+
+    }
+
+    public Vector2f getGazeWindPosition() {
+        final Vector2f position = new Vector2f(physicsObject.getTranslation());
+        position.x += WIDTH / 2;
+        position.y += HEIGHT;
+        return position;
+    }
+
+    private void move(){
         final Vector2f direction;
         if (collectingStrategy.hasTarget()) {
             direction = collectingStrategy.getDirection();
@@ -137,6 +157,11 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
                 new CommonBinding()
         );
     }
+    @Override
+    public List<Renderable> getSubRenderables() {
+        return gazewindService.toRender();
+    }
+
 
     @Override
     public RenderScene renderScene() {

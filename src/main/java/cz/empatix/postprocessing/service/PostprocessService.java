@@ -19,6 +19,7 @@ public class PostprocessService {
     private final Framebuffer fbo1;
     private final Framebuffer fbo2;
 
+
     public PostprocessService(final RenderService renderService) {
         this.renderService = renderService;
         this.postprocesses = List.of(
@@ -37,6 +38,7 @@ public class PostprocessService {
 
     public boolean hasNonePostProcessingForScene(final RenderScene scene) {
         return postprocesses.stream()
+                .filter(Postprocess::canRender)
                 .noneMatch(postprocess -> postprocess.accepts(scene));
     }
 
