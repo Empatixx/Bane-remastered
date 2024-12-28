@@ -35,6 +35,11 @@ public class PostprocessService {
         Camera.getInstance().addObserver(fbo2);
     }
 
+    public boolean hasNonePostProcessingForScene(final RenderScene scene) {
+        return postprocesses.stream()
+                .noneMatch(postprocess -> postprocess.accepts(scene));
+    }
+
     public void process(final Framebuffer sceneFbo, final RenderScene scene, final float dt) {
         glDisable(GL_DEPTH_TEST);
 

@@ -44,6 +44,10 @@ public class RenderEngine {
         if (renderables.isEmpty()) {
             return;
         }
+        if (postprocessService.hasNonePostProcessingForScene(scene)){
+            renderService.render(renderables);
+            return;
+        }
         mainFramebuffer.bind();
         mainFramebuffer.flush();
         renderService.render(renderables);
