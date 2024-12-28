@@ -1,118 +1,24 @@
 package cz.empatix.render.domain;
 
 import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.render.service.Observer;
 import org.joml.Vector2f;
-import org.joml.Vector2i;
 import org.joml.Vector3f;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static org.lwjgl.opengl.GL30.*;
-
-public record Framebuffer(
-        int fbo,
-        int depthRbo,
-        int colorAttachment,
-        int channels,
-        Vector2i size
-) {
-    private final static int RGBA_CHANNELS = 4;
-    private final static int RGB_CHANNELS = 3;
-    public static final List<Vertex> VERTICES = List.of(
+public interface Framebuffer extends Observer {
+    int RGBA_CHANNELS = 4;
+    int RGB_CHANNELS = 3;
+    void destroy();
+    void bind();
+    void unbind();
+    void flush();
+    int colorAttachment();
+    List<Vertex> VERTICES = List.of(
             new Vertex(new Vector3f(0, 0,100), new Vector2f(0, 1)),
             new Vertex(new Vector3f(WindowHandler.TARGET_WIDTH, 0,100), new Vector2f(1, 1)),
             new Vertex(new Vector3f(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT,100), new Vector2f(1, 0)),
             new Vertex(new Vector3f(0, WindowHandler.TARGET_HEIGHT,100), new Vector2f(0, 0))
     );
-    private final static Logger LOGGER = LoggerFactory.getLogger(Framebuffer.class);
-
-    public void destroy() {
-        glDeleteFramebuffers(fbo);
-    }
-
-    public static Framebuffer createRgb() {
-        return create(RGB_CHANNELS);
-    }
-
-    public static Framebuffer createRgba() {
-        return create(RGBA_CHANNELS);
-    }
-
-    private static Framebuffer create(final int channels) {
-        final int fbo = glGenFramebuffers();
-        final int textureId = glGenTextures();
-        final int depthRbo = glGenRenderbuffers();
-        try {
-            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-            bindTexBuffer(textureId, channels);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureId, 0);
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-                LOGGER.error("Framebuffer not complete");
-                throw new Exception("Framebuffer not complete");
-            }
-            glBindRenderbuffer(GL_RENDERBUFFER, depthRbo);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WindowHandler.WIDTH, WindowHandler.HEIGHT);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthRbo);
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        } catch (Exception e) {
-            LOGGER.error("Exception while creatine framebuffer", e);
-            glDeleteFramebuffers(fbo);
-            glDeleteTextures(textureId);
-            glDeleteRenderbuffers(depthRbo);
-        }
-        return new Framebuffer(fbo, depthRbo, textureId, channels, new Vector2i(WindowHandler.WIDTH, WindowHandler.HEIGHT));
-    }
-
-    public void bind() {
-        resize();
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-    }
-
-    public void resize() {
-        if (WindowHandler.WIDTH == 0 || WindowHandler.HEIGHT == 0){ // windows minimized
-            return;
-        }
-        if (size.x() == WindowHandler.WIDTH && size.y() == WindowHandler.HEIGHT) {
-            return;
-        }
-        size.set(WindowHandler.WIDTH, WindowHandler.HEIGHT);
-
-        bindTexBuffer(colorAttachment, channels);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-        glBindRenderbuffer(GL_RENDERBUFFER, depthRbo);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x(), size.y());
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    private static void bindTexBuffer(final int colorAttachment, final int channels) {
-        glBindTexture(GL_TEXTURE_2D, colorAttachment);
-        switch (channels) {
-            case RGBA_CHANNELS -> {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WindowHandler.WIDTH, WindowHandler.HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-            }
-            case RGB_CHANNELS -> {
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, WindowHandler.WIDTH, WindowHandler.HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-            }
-        }
-    }
-
-    public void unbind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    public int getColorAttachment() {
-        return colorAttachment;
-    }
-
-    public void flush() {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
 }

@@ -1,11 +1,13 @@
 package cz.empatix.postprocessing.service;
 
 import cz.empatix.postprocessing.domain.*;
+import cz.empatix.render.domain.ColorFramebuffer;
+import cz.empatix.render.domain.DepthColorFramebuffer;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -14,8 +16,8 @@ public class PostprocessService {
     private final RenderService renderService;
     private final List<Postprocess> postprocesses;
     private final Postprocess fallbackPostprocess;
-    private final Framebuffer fbo1 = Framebuffer.createRgba();
-    private final Framebuffer fbo2 = Framebuffer.createRgba();
+    private final Framebuffer fbo1;
+    private final Framebuffer fbo2;
 
     public PostprocessService(final RenderService renderService) {
         this.renderService = renderService;
@@ -26,6 +28,11 @@ public class PostprocessService {
                 new RedVignette()
         );
         this.fallbackPostprocess = new NoPostprocessing();
+
+        fbo1 = new ColorFramebuffer(4);
+        fbo2 = new ColorFramebuffer(4);
+        Camera.getInstance().addObserver(fbo1);
+        Camera.getInstance().addObserver(fbo2);
     }
 
     public void process(final Framebuffer sceneFbo, final RenderScene scene, final float dt) {
@@ -73,11 +80,12 @@ public class PostprocessService {
         outputFbo.bind();
         postprocess.apply(dt);
         renderService.render(postprocess.getRenderableGroup());
-        outputFbo.unbind();
     }
+
     private void executePostprocess(final Postprocess postprocess,
                                     final Framebuffer inputFbo,
                                     final float dt) {
+        inputFbo.unbind();
         postprocess.setInput(inputFbo);
         postprocess.apply(dt);
         renderService.render(postprocess.getRenderableGroup());

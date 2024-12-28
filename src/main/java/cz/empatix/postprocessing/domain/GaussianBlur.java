@@ -36,7 +36,7 @@ public class GaussianBlur implements Postprocess{
 
     @Override
     public void setInput(final Framebuffer inputFBO) {
-        textureId = inputFBO.getColorAttachment();
+        textureId = inputFBO.colorAttachment();
     }
 
     @Override

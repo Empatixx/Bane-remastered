@@ -2,27 +2,24 @@ package cz.empatix.render.service;
 
 import cz.empatix.postprocessing.service.PostprocessService;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.DepthColorFramebuffer;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.renders.DynamicRenderer;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER;
-import static org.lwjgl.opengl.GL30.glBindFramebuffer;
-
 public class RenderEngine {
-    private final Framebuffer fbo;
+    private final Framebuffer mainFramebuffer;
     private final RenderService renderService;
     private final PostprocessService postprocessService;
     private int totalDrawableLastFrame = 10;
 
     public RenderEngine() {
-        this.fbo = Framebuffer.createRgba();
+        this.mainFramebuffer = new DepthColorFramebuffer(4);
+        Camera.getInstance().addObserver(mainFramebuffer);
         this.renderService = new RenderService();
         this.postprocessService = new PostprocessService(renderService);
     }
@@ -47,11 +44,11 @@ public class RenderEngine {
         if (renderables.isEmpty()) {
             return;
         }
-        fbo.bind();
-        fbo.flush();
+        mainFramebuffer.bind();
+        mainFramebuffer.flush();
         renderService.render(renderables);
-        fbo.unbind();
-        postprocessService.process(fbo, scene, dt);
+        mainFramebuffer.unbind();
+        postprocessService.process(mainFramebuffer, scene, dt);
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {
