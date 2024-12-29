@@ -8,16 +8,19 @@ import cz.empatix.render.service.Observer;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 
-public final class LightSource implements Observer {
+public final class LightSource implements ObserveSubject {
     private final static int ADDITIONAL_FRUSTRUM = 300;
     private final Vector2f position;
     private final Vector3f color;
     private final float radius;
     private float intensity;
     private boolean isDestroyed = false;
+    private final List<Observer> observers = new ArrayList<>();
 
     public LightSource(final Vector2f position,
                        final Vector3f color,
@@ -83,6 +86,7 @@ public final class LightSource implements Observer {
     }
     public void setPosition(final float x, final float y){
         this.position.set(x, y);
+        notifyObservers(null);
     }
     public boolean canDisplay(){
         return !isDestroyed;
@@ -97,9 +101,27 @@ public final class LightSource implements Observer {
 
     public void setIntensity(final float intensity) {
         this.intensity = intensity;
+        notifyObservers(null);
+    }
+
+
+    @Override
+    public void addObserver(Observer observer) {
+        observers.add(observer);
     }
 
     @Override
-    public void update(ObserveSubject subject, ObservePayload payload) {
+    public void removeObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void clearObservers() {
+        observers.clear();
+    }
+
+    @Override
+    public void notifyObservers(ObservePayload payload) {
+        observers.forEach(observer -> observer.update(this, payload));
     }
 }

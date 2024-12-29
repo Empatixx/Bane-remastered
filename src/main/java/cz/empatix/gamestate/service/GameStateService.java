@@ -4,6 +4,7 @@ import cz.empatix.audio.service.AudioService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.interaction.service.InteractionService;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderEngine;
@@ -55,6 +56,7 @@ public class GameStateService {
         currentState.update(dt);
         audioService.update((float)dt);
         physicsService.update(dt);
+        LightningService.getInstance().update();
     }
     public void fixedUpdate(final double dt) {
         interactionService.fixedUpdate((float)dt);

@@ -12,7 +12,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
 import java.util.Set;
@@ -156,7 +156,7 @@ public class AmmoBoxItem implements ItemDrop {
         return new RenderData(
                 animation.getVertices(floatingPosition, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

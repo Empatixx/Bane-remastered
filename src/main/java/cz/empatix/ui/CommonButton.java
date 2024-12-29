@@ -10,7 +10,7 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.HudCommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;

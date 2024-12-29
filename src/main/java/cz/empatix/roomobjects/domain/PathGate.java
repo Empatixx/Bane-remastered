@@ -8,7 +8,7 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
 import static cz.empatix.render.domain.AnimationState.*;
@@ -57,7 +57,7 @@ public class PathGate implements RoomObject {
         return new RenderData(
                 animation.getVertices(physicsBody.getPhysicsTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

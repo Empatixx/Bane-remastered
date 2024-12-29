@@ -7,7 +7,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
 public class MagicShield implements Drawable {
@@ -31,7 +31,7 @@ public class MagicShield implements Drawable {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

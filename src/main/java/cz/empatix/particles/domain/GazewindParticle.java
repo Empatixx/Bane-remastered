@@ -7,7 +7,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
@@ -35,7 +35,7 @@ public record GazewindParticle(
         return new RenderData(
                 animation.getVertices(transform, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

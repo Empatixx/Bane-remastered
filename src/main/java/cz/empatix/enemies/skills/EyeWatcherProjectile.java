@@ -12,7 +12,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -56,7 +56,7 @@ public class EyeWatcherProjectile implements Drawable, DamageSource {
         return new RenderData(
                 animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

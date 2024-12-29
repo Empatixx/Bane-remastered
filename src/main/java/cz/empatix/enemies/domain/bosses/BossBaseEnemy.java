@@ -22,7 +22,7 @@ import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
 import cz.empatix.render.shaderbindings.SpawnBinding;
 import org.joml.Vector2f;
@@ -211,7 +211,7 @@ public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSourc
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex(), aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new CommonBinding()
+                    new CommonLightBinding()
             );
         }
     }

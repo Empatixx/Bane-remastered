@@ -1,5 +1,9 @@
 package cz.empatix.render.domain;
 
+import cz.empatix.lightning.domain.LightSource;
+import cz.empatix.lightning.domain.LightSourceChangePayload;
+import cz.empatix.lightning.domain.LightsMetaPayload;
+import cz.empatix.lightning.service.LightningService;
 import cz.empatix.render.service.*;
 import cz.empatix.render.service.Observer;
 import org.joml.*;
@@ -11,9 +15,10 @@ import static org.lwjgl.opengl.GL41.*;
 
 public class ShaderProgram implements Observer {
     private static final int NOT_FOUND = -1;
-    private final Map<String, Integer> uniformLocations;
     private final int programId;
     private final List<Shader> shaders;
+    private final Map<String, Integer> uniformLocations;
+
     public ShaderProgram(final List<Shader> shaders) {
         this.programId = glCreateProgram();
         this.uniformLocations = new ConcurrentHashMap<>();
@@ -97,6 +102,19 @@ public class ShaderProgram implements Observer {
                         setUniform2f("u_targetResolution", new Vector2f(Camera.getTargetWidth(), Camera.getTargetHeight()));
                     }
                 }
+            }
+        }
+        if (subject instanceof LightningService lightningService){
+            if (payload instanceof LightsMetaPayload lightsMetaPayload){
+                setUniform1i("numLights", lightsMetaPayload.numberLights());
+            } else if (payload instanceof LightSourceChangePayload changedLightSourcePayload){
+                final LightSource light = changedLightSourcePayload.light();
+                final int index = changedLightSourcePayload.index();
+
+                setUniform2f("lights["+index+"].position", light.getPosition());
+                setUniform3f("lights["+index+"].color", light.getColor());
+                setUniform1f("lights["+index+"].intensity", light.getIntensity());
+                setUniform1f("lights["+index+"].radius", light.getRadius());
             }
         }
     }

@@ -22,7 +22,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -67,7 +67,7 @@ public class SlotMachine implements RoomObject, Interactable {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

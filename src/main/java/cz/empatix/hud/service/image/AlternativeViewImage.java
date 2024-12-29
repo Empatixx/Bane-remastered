@@ -4,7 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.HudCommonBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Matrix4f;
@@ -56,7 +56,7 @@ public class AlternativeViewImage implements HUDElement {
         return new RenderData(
                 animation.getVertices(position, getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

@@ -27,12 +27,12 @@ float calcDiffuse(vec2 lightDir, float lightRadius, float lightIntensity) {
     return gradient * lightIntensity;
 }
 
-float random(vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453);
-}
 
 void main() {
     vec4 albedo = texture(texSampler, tex_coords);
+    if (albedo.a <= 0.1){
+        discard;
+    }
 
     vec3 finalLightColor = vec3(0.0);
 
@@ -42,8 +42,6 @@ void main() {
         finalLightColor += diffuse * lights[i].color;
     }
 
-    float noiseValue = random(tex_coords);
-    float adjustedNoise = mix(1.0, noiseValue, NOISE_INTENSITY);
 
-    FragColor = vec4(albedo.rgb * (AMBIENT_LIGHT + finalLightColor * adjustedNoise), albedo.a);
+    FragColor = vec4(albedo.rgb * (AMBIENT_LIGHT + finalLightColor), albedo.a);
 }

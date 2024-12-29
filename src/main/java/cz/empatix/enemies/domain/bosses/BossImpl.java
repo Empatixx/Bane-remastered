@@ -13,7 +13,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
@@ -203,7 +203,7 @@ public class BossImpl implements Damageable, DamageSource {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), zDepth, aStarTargetting.isTargetLeftFromEnemy()),
                     animation.getTextureId(),
-                    new CommonBinding()
+                    new CommonLightBinding()
             );
         }
     }

@@ -6,7 +6,7 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 
@@ -28,7 +28,7 @@ public class AnimatedBackground implements HUDElement {
         return new RenderData(
                 animation.getVertices(new Vector2f(0, 0), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

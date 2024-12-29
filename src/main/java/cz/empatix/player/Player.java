@@ -22,7 +22,7 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -266,7 +266,7 @@ public class Player implements Drawable, InteractEntity, Damageable, Targetable 
         return new RenderData(
                 vertices,
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
 

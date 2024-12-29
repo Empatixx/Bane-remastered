@@ -21,7 +21,6 @@ public record ForwardLightningBinding(
                         .toList();
         shader.bind();
         shader.setUniform1i("texSampler", 0);
-        shader.setUniform2f("cameraPosition", Camera.getInstance().getPosition());
         for(int i = 0;i<lightSources.size();i++) {
             shader.setUniform2f("lights[" + i + "].position", lightSources.get(i).getPosition());
             shader.setUniform1f("lights[" + i + "].intensity", lightSources.get(i).getIntensity());

@@ -17,7 +17,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -78,7 +78,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                     animation.getTextureId(),
-                    new CommonBinding()
+                    new CommonLightBinding()
             );
         }
     }

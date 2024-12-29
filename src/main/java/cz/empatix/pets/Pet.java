@@ -12,7 +12,7 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
 import java.util.HashSet;
@@ -154,7 +154,7 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         return new RenderData(
                 animation.getVertices(physicsObject.getTranslation(), getZIndex()),
                 animation.getTextureId(),
-                new CommonBinding()
+                new CommonLightBinding()
         );
     }
     @Override

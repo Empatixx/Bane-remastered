@@ -146,6 +146,11 @@ public class Camera implements ObserveSubject{
     }
 
     @Override
+    public void clearObservers() {
+        observers.clear();
+    }
+
+    @Override
     public void notifyObservers(ObservePayload payload) {
         observers.forEach(observer -> observer.update(this, payload));
     }

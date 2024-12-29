@@ -14,7 +14,7 @@ import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.CommonBinding;
+import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
@@ -72,7 +72,7 @@ public class Pot implements RoomObject, Damageable {
             return new RenderData(
                     animation.getVertices(physicsBody.getTranslation(), getZIndex()),
                     animation.getTextureId(),
-                    new CommonBinding()
+                    new CommonLightBinding()
             );
         }
     }
