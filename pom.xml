@@ -246,6 +246,16 @@
             <version>31.1-jre</version>
         </dependency>
         <dependency>
+            <groupId>de.articdive</groupId>
+            <artifactId>jnoise-core</artifactId>
+            <version>4.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>de.articdive</groupId>
+            <artifactId>jnoise-pipeline</artifactId>
+            <version>4.1.0</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>2.0.6</version>

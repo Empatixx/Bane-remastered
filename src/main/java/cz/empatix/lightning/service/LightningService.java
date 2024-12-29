@@ -57,7 +57,7 @@ public class LightningService implements ObserveSubject, Observer{
         for(int i = 0; i < lightSources.size(); i++) {
             final LightSource light = lightSources.get(i);
             if (light.isDestroyed()){
-                light.clearObservers();
+                light.removeObserver(this);
                 lightSources.remove(i);
                 i--;
                 if(firstIndexDeleted == -1){

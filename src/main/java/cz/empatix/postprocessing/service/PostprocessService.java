@@ -19,7 +19,6 @@ public class PostprocessService {
     private final Framebuffer fbo1;
     private final Framebuffer fbo2;
 
-
     public PostprocessService(final RenderService renderService) {
         this.renderService = renderService;
         this.postprocesses = List.of(
