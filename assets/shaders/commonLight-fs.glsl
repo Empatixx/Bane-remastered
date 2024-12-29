@@ -1,7 +1,8 @@
 #version 330 core
-#define AMBIENT_LIGHT 0.6
-#define MAX_LIGHTS 254
-#define NOISE_INTENSITY 0.25
+
+#define MAX_LIGHTS 255
+#define NOISE_INTENSITY 0.10
+#define AMBIENT_LIGHT vec3(0.6)
 
 struct Light {
     vec2 position;
@@ -27,32 +28,29 @@ float calcDiffuse(vec2 lightDir, float lightRadius, float lightIntensity) {
     float dist = length(lightDir);
     float normalizedDist = dist / lightRadius;
     float attenuation = 1.0 / (1.0 + normalizedDist * normalizedDist);
-    float gradient = clamp(attenuation, 0.0, 1.0);
-    return gradient * lightIntensity;
+    return clamp(attenuation, 0.0, 1.0) * lightIntensity;
 }
 
+vec3 computeTotalDiffuse(vec2 worldPos) {
+    vec3 result = vec3(0.0);
+    result += AMBIENT_LIGHT;
+
+    for (int i = 0; i < numLights; ++i) {
+        vec2 lightDir = lights[i].position - worldPos;
+        result += calcDiffuse(lightDir, lights[i].radius, lights[i].intensity) * lights[i].color;
+    }
+    return result;
+}
 
 void main() {
     vec4 albedo = texture(texSampler, tex_coords);
-    if (albedo.a <= 0.1){
-        discard;
-    }
-    vec3 finalLightColor = vec3(0.0);
-    for (int i = 0; i < numLights; ++i) {
-        vec2 lightDir = lights[i].position - world_position;
-        float diffuse = calcDiffuse(lightDir, lights[i].radius, lights[i].intensity);
-        finalLightColor += diffuse * lights[i].color;
-    }
+    if (albedo.a <= 0.1) discard;
+
+    vec3 totalDiffuse = computeTotalDiffuse(world_position);
 
     vec2 noiseUV = gl_FragCoord.xy / u_resolution;
     float noiseValue = texture(noiseSampler, noiseUV).r;
+    totalDiffuse *= (1.0 + noiseValue * NOISE_INTENSITY);
 
-    finalLightColor *= (1.0 + noiseValue * NOISE_INTENSITY);
-
-    FragColor = vec4(albedo.rgb * (AMBIENT_LIGHT + finalLightColor), albedo.a);
-    //FragColor = vec4(vec3(noiseValue), 1.0);
+    FragColor = vec4(albedo.rgb * totalDiffuse, albedo.a);
 }
-
-
-
-

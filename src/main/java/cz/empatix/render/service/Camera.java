@@ -66,6 +66,8 @@ public class Camera implements ObserveSubject{
 
         interpolatedPosition.setInterpolatedPosition(newX, newY);
         update(1);
+        viewMatrix.identity().translate(-getX(),-getY(), 0);
+        notifyObservers(new CameraObservePayload(CameraChangeType.VIEW));
     }
 
     public void setSmoothlyPosition(final float x, final float y, final float dt) {
@@ -118,6 +120,7 @@ public class Camera implements ObserveSubject{
         }
         maxPosition.x = (x - maxPosition.x - WindowHandler.TARGET_WIDTH) * tween + maxPosition.x;
         maxPosition.y = (y - maxPosition.y - WindowHandler.TARGET_HEIGHT) * tween + maxPosition.y;
+
     }
 
     public void setMinPosition(final float x, final float y) {

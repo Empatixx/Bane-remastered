@@ -11,8 +11,8 @@ public record CommonLightBinding(
     @Override
     public ShaderProgram bind() {
         final ShaderProgram shader = AssetsService.getShader("commonLight");
-        final Texture noiseTexture = AssetsService.getNoiseTexture("lightningNoise");
 
+        final Texture noiseTexture = AssetsService.getNoiseTexture("lightningNoise");
         noiseTexture.bind(1);
 
         shader.bind();

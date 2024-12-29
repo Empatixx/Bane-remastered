@@ -17,7 +17,7 @@ public class PerlinNoiseGenerator {
                 //.white(SEED)
                 .perlin(SEED, Interpolation.LINEAR, FadeFunction.CUBIC_POLY)
                 .clamp(0,1)
-                .scale(500)
+                .scale(250)
                 .octavate(3, 0.5, 1.2, FractalFunction.FBM,false)
                 .build();
     }
