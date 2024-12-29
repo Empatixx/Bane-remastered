@@ -2,13 +2,16 @@ package cz.empatix.lightning.domain;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.render.service.Camera;
+import cz.empatix.render.service.ObservePayload;
+import cz.empatix.render.service.ObserveSubject;
+import cz.empatix.render.service.Observer;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.Objects;
 
 
-public final class LightSource {
+public final class LightSource implements Observer {
     private final static int ADDITIONAL_FRUSTRUM = 300;
     private final Vector2f position;
     private final Vector3f color;
@@ -94,5 +97,9 @@ public final class LightSource {
 
     public void setIntensity(final float intensity) {
         this.intensity = intensity;
+    }
+
+    @Override
+    public void update(ObserveSubject subject, ObservePayload payload) {
     }
 }

@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.lwjgl.opengl.GL33.*;
 
 public class DynamicRenderer implements Renderer {
-    public static AtomicInteger draws = new AtomicInteger(0);
     private final FloatBuffer vertexBuffer;
     private static final int MAX_PER_BATCH = 10000;
     private final int vao;
@@ -72,7 +71,6 @@ public class DynamicRenderer implements Renderer {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             glDrawElements(GL_TRIANGLES, batch.size() * TOTAL_ELEMENT_VERTICES_PER_QUAD, GL_UNSIGNED_INT, 0);
-            draws.incrementAndGet();
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);

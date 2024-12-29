@@ -1,34 +1,42 @@
 package cz.empatix.lightning.service;
 
+import cz.empatix.lightning.domain.ChangedLightSourcePayload;
 import cz.empatix.lightning.domain.LightSource;
+import cz.empatix.render.service.ObservePayload;
+import cz.empatix.render.service.ObserveSubject;
+import cz.empatix.render.service.Observer;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LightningService {
+public class LightningService implements ObserveSubject{
     private final List<LightSource> lightSources = new ArrayList<>();
-    public static LightningService instance;
+    private final List<Observer> observers = new ArrayList<>();
+    public static final LightningService INSTANCE = new LightningService();
 
     public static LightningService getInstance() {
-        if (instance == null) {
-            instance = new LightningService();
-        }
-        return instance;
+        return INSTANCE;
     }
 
     public LightSource createLightSource(final Vector2f position,
                                          final Vector3f color,
                                          final float radius,
                                          final float intensity) {
-        final float r = color.x != 0 ? color.x/255f : 0;
-        final float g = color.y != 0 ? color.y/255f : 0;
-        final float b = color.z != 0 ? color.z/255f : 0;
-        final LightSource lightSource = new LightSource(position, new Vector3f(r,g,b), radius, intensity);
+        final Vector3f rgb = getNormalizedColor(color.x(), color.y(), color.z());
+        final LightSource lightSource = new LightSource(position, rgb, radius, intensity);
         lightSources.add(lightSource);
+        notifyObservers(new ChangedLightSourcePayload(lightSource, lightSources.size() - 1));
         return lightSource;
     }
+    private Vector3f getNormalizedColor(final float red, final float green, final float blue){
+        final float r = red/255f;
+        final float g = green/255f;
+        final float b = blue/255f;
+        return new Vector3f(r,g,b);
+    }
+
     public LightSource createLightSource(final Vector3f color,
                                          final float radius,
                                          final float intensity) {
@@ -37,6 +45,24 @@ public class LightningService {
 
     public void update() {
         lightSources.removeIf(LightSource::isDestroyed);
+    }
+    private void removeDestroyedLights(){
+        int firstIndexDeleted = -1;
+        for(int i = 0; i < lightSources.size(); i++) {
+            final LightSource light = lightSources.get(i);
+            if (light.isDestroyed()){
+                lightSources.remove(i);
+                i--;
+                if(firstIndexDeleted == -1){
+                    firstIndexDeleted = i;
+                }
+            }
+        }
+        for (int i = firstIndexDeleted; i < lightSources.size(); i++){
+            final LightSource light = lightSources.get(i);
+            notifyObservers(new ChangedLightSourcePayload(light, i));
+        }
+
     }
 
     public List<LightSource> lightsOnCamera(){
@@ -48,5 +74,20 @@ public class LightningService {
 
     public void clear() {
         lightSources.clear();
+    }
+
+    @Override
+    public void addObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers(ObservePayload payload) {
+        observers.forEach(observer -> observer.update(this, payload));
     }
 }

@@ -24,7 +24,7 @@ public class RenderService {
                 .stream()
                 .collect(Collectors.groupingBy(RenderableGroup::getShaderBinding,
                         LinkedHashMap::new,
-                        Collectors.toUnmodifiableList()))
+                        Collectors.toList()))
                 .forEach(this::render);
     }
 

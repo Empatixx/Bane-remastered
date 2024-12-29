@@ -23,7 +23,6 @@ public class PostprocessService {
     public PostprocessService(final RenderService renderService) {
         this.renderService = renderService;
         this.postprocesses = List.of(
-                new ForwardLightning(),
                 new GaussianBlur(),
                 new Fade(),
                 new RedVignette()

@@ -31,21 +31,15 @@ public class RenderEngine {
                 .map(Renderable::getRenderableGroup)
                 .filter(RenderableGroup::isRenderable)
                 .collect(Collectors.groupingBy(RenderableGroup::getRenderScene, () -> new EnumMap<>(RenderScene.class), Collectors.toList()));
-        DynamicRenderer.draws.set(0);
         render(renderScenes.getOrDefault(RenderScene.SCENE, List.of()), RenderScene.SCENE, (float) dt);
         render(renderScenes.getOrDefault(RenderScene.HUD, List.of()), RenderScene.HUD, (float) dt);
         render(renderScenes.getOrDefault(RenderScene.OVERLAYS, List.of()), RenderScene.OVERLAYS, (float) dt);
-        //LoggerFactory.getLogger(RenderEngine.class).info("Rendered total draws {}", DynamicRenderer.draws.get());
     }
 
     private void render(List<RenderableGroup> renderables,
                         final RenderScene scene,
                         final float dt) {
         if (renderables.isEmpty()) {
-            return;
-        }
-        if (postprocessService.hasNonePostProcessingForScene(scene)){
-            renderService.render(renderables);
             return;
         }
         mainFramebuffer.bind();
