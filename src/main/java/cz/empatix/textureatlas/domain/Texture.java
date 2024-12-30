@@ -8,8 +8,8 @@ public class Texture {
     private final int textureId;
 
     private final int channels;
-    private final int width;
-    private final int height;
+    private int width;
+    private int height;
 
     private final Set<TextureFlag> flags;
 
@@ -39,6 +39,9 @@ public class Texture {
     }
 
     public void resize(final int width, final int height){
+        this.width = width;
+        this.height = height;
+
         bind();
         final int bufferFormat = getInternalFormat(channels);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, bufferFormat, GL_UNSIGNED_BYTE, (ByteBuffer) null);

@@ -31,6 +31,7 @@ public class DepthStencilFramebufferAttachment implements FramebufferAttachment{
     @Override
     public void update(Framebuffer framebuffer) {
         final Vector2i size = framebuffer.getSize();
+        resize(size.x, size.y);
     }
     private void resize(final int width, final int height){
         glBindRenderbuffer(GL_RENDERBUFFER, depthStencilBuffer);

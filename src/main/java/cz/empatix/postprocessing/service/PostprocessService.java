@@ -10,6 +10,7 @@ import cz.empatix.render.service.RenderService;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_SRGB;
 
 public class PostprocessService {
     private final RenderService renderService;

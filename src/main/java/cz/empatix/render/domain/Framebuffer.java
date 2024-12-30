@@ -78,11 +78,17 @@ public class Framebuffer implements Observer {
         if (subject instanceof Camera camera){
             if (payload instanceof CameraObservePayload cameraPayload){
                 if (cameraPayload.change().equals(CameraChangeType.VIEWPORT)){
-                    bind();
-                    attachments.forEach(attachment -> attachment.update(this));
-                    unbind();
+                    resize(WindowHandler.WIDTH, WindowHandler.HEIGHT);
                 }
             }
+        }
+    }
+    private void resize(final int width, final int height){
+        if (size.x != width || size.y != height){
+            size.set(width, height);
+            bind();
+            attachments.forEach(attachment -> attachment.update(this));
+            unbind();
         }
     }
 }
