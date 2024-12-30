@@ -2,7 +2,8 @@ package cz.empatix.render.service;
 
 import cz.empatix.postprocessing.service.PostprocessService;
 import cz.empatix.render.attributes.Renderable;
-import cz.empatix.render.domain.DepthColorFramebuffer;
+import cz.empatix.render.domain.ColorFramebufferAttachment;
+import cz.empatix.render.domain.DepthStencilFramebufferAttachment;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
@@ -18,8 +19,11 @@ public class RenderEngine {
     private int totalDrawableLastFrame = 10;
 
     public RenderEngine() {
-        this.mainFramebuffer = new DepthColorFramebuffer(4);
+        this.mainFramebuffer = new Framebuffer();
+        this.mainFramebuffer.attach(new ColorFramebufferAttachment(4));
+        this.mainFramebuffer.attach(new DepthStencilFramebufferAttachment());
         Camera.getInstance().addObserver(mainFramebuffer);
+
         this.renderService = new RenderService();
         this.postprocessService = new PostprocessService(renderService);
     }

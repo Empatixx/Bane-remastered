@@ -1,10 +1,9 @@
 package cz.empatix.postprocessing.service;
 
 import cz.empatix.postprocessing.domain.*;
-import cz.empatix.render.domain.ColorFramebuffer;
-import cz.empatix.render.domain.DepthColorFramebuffer;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.ColorFramebufferAttachment;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderService;
 
@@ -28,8 +27,11 @@ public class PostprocessService {
         );
         this.fallbackPostprocess = new NoPostprocessing();
 
-        fbo1 = new ColorFramebuffer(4);
-        fbo2 = new ColorFramebuffer(4);
+        fbo1 = new Framebuffer();
+        fbo1.attach(new ColorFramebufferAttachment(4));
+        fbo2 = new Framebuffer();
+        fbo2.attach(new ColorFramebufferAttachment(4));
+
         Camera.getInstance().addObserver(fbo1);
         Camera.getInstance().addObserver(fbo2);
     }

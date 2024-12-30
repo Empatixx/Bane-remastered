@@ -38,6 +38,13 @@ public class Texture {
         unbind();
     }
 
+    public void resize(final int width, final int height){
+        bind();
+        final int bufferFormat = getInternalFormat(channels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, bufferFormat, GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        unbind();
+    }
+
     public void bind(){
         glBindTexture(GL_TEXTURE_2D, textureId);
     }
@@ -52,6 +59,14 @@ public class Texture {
 
     public void destroy(){
         glDeleteTextures(textureId);
+    }
+
+    public void attachFramebuffer(final int attachment){
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, textureId, 0);
+    }
+
+    public int getTextureId(){
+        return textureId;
     }
 
     private int getInternalFormat(final int channels){
