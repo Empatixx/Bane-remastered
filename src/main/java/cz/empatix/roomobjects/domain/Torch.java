@@ -54,6 +54,18 @@ public class Torch implements RoomObject {
     }
     public void setState(final AnimationState state){
         animation.setState(state);
+        switch (state){
+            case LEFT_SIDE -> {
+                lightSource.setPosition(position.x() + DIMENSION_WIDTH/2f, position.y() + DIMENSION_HEIGHT/2f);
+            }
+            case RIGHT_SIDE -> {
+                lightSource.setPosition(position.x() + DIMENSION_WIDTH, position.y() + DIMENSION_HEIGHT / 2f);
+            }
+            case TOP -> {
+                lightSource.setPosition(position.x() + DIMENSION_WIDTH / 2,
+                        position.y() + DIMENSION_HEIGHT / 2);
+            }
+        }
     }
 
     @Override
@@ -75,7 +87,16 @@ public class Torch implements RoomObject {
     public void update(double dt) {
         animation.update();
         final AnimationState state = animation.getCurrentState();
-        switch (state){
+    }
+
+    @Override
+    public boolean canRemove() {
+        return false;
+    }
+
+    public void setPosition(final float x, final float y) {
+        position.set(x, y);
+        switch (animation.getCurrentState()){
             case LEFT_SIDE -> {
                 lightSource.setPosition(position.x() + DIMENSION_WIDTH/2f, position.y() + DIMENSION_HEIGHT/2f);
             }
@@ -87,15 +108,6 @@ public class Torch implements RoomObject {
                         position.y() + DIMENSION_HEIGHT / 2);
             }
         }
-    }
-
-    @Override
-    public boolean canRemove() {
-        return false;
-    }
-
-    public void setPosition(final float x, final float y) {
-        position.set(x, y);
     }
     @Override
     public int getWidth() {

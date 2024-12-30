@@ -13,7 +13,7 @@ public class RenderService {
     private final DynamicRenderer renderer = new DynamicRenderer();
 
     public void render(final RenderableGroup drawableData) {
-        render(List.of(drawableData));
+        renderer.render(drawableData.getDrawableData(), drawableData.getShaderBinding());
     }
 
     public void render(final List<RenderableGroup> renderableGroups) {

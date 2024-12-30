@@ -68,7 +68,7 @@ public class Flamethrower implements RoomObject, DamageSource, Trap {
 
     @Override
     public void update(double dt) {
-        damage = animation.getCurrentTextureIndex() != 3 ? 0 : 1;
+        damage = animation.getCurrentTextureIndex   () != 3 ? 0 : 1;
         lightSource.setPosition(physicsBody.getPhysicsTranslationX() + getWidth() / 2f,
                 physicsBody.getPhysicsTranslationY() + getHeight() / 2f + 20 * (float) animation.getCurrentTextureIndex() / animation.getCurrentStateNumSprites());
         lightSource.setIntensity(3 * (float) Math.min(animation.getCurrentTextureIndex(), 1) / animation.getCurrentStateNumSprites());

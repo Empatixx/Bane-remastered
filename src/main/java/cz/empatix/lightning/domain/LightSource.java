@@ -85,6 +85,12 @@ public final class LightSource implements ObserveSubject {
         setPosition(translation.x, translation.y);
     }
     public void setPosition(final float x, final float y){
+        if (isDestroyed){
+            return;
+        }
+        if (position.x == x && position.y == y){
+            return;
+        }
         this.position.set(x, y);
         notifyObservers(null);
     }
@@ -100,6 +106,12 @@ public final class LightSource implements ObserveSubject {
     }
 
     public void setIntensity(final float intensity) {
+        if (isDestroyed){
+            return;
+        }
+        if (this.intensity == intensity){
+            return;
+        }
         this.intensity = intensity;
         notifyObservers(null);
     }

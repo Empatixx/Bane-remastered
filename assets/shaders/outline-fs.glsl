@@ -1,6 +1,6 @@
-#version 330 core
+#version 430 core
 
-#define MAX_LIGHTS 255
+#define MAX_LIGHTS 253
 #define NOISE_INTENSITY 0.10
 #define AMBIENT_LIGHT vec3(0.6)
 

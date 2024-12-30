@@ -78,7 +78,6 @@ public class Candlestick implements RoomObject{
     @Override
     public void update(double dt) {
         animation.update();
-        lightSource.setPosition(position.x + DIMENSION_WIDTH / 2, position.y);
         lightSource.setIntensity((float) (1.25f + 0.5f * (0.5 * (Math.sin(System.currentTimeMillis() / 500.0 * Math.PI) * 0.5 + 0.5)
                         + 0.05 * Math.sin(System.currentTimeMillis() / 250.0 * Math.PI)
                         + 0.15 * Math.cos(System.currentTimeMillis() / 333.0 * Math.PI))));
@@ -91,6 +90,7 @@ public class Candlestick implements RoomObject{
 
     public void setPosition(final float x, final float y) {
         position.set(x, y);
+        lightSource.setPosition(position.x + DIMENSION_WIDTH / 2, position.y);
     }
 
     @Override
