@@ -28,9 +28,11 @@ public abstract class GameState {
             final DoubleBuffer mouseX = stack.mallocDouble(1);
             final DoubleBuffer mouseY = stack.mallocDouble(1);
                 GLFW.glfwGetCursorPos(WindowHandler.WINDOW, mouseX, mouseY);
+            if (mouseX.get(0) < 0 || mouseX.get(0) > WindowHandler.WIDTH || mouseY.get(0) < 0 || mouseY.get(0) > WindowHandler.HEIGHT) {
+                return;
+            }
             this.mouseX = (float) mouseX.get(0) * WindowHandler.TARGET_WIDTH / WindowHandler.WIDTH;
             this.mouseY = (float) mouseY.get(0) * WindowHandler.TARGET_HEIGHT / WindowHandler.HEIGHT;
-
             if(AssetsService.getLoaded()){
                 CursorService.updateMouse(this.mouseX, this.mouseY, dt);
             }

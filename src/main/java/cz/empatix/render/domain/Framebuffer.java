@@ -84,6 +84,9 @@ public class Framebuffer implements Observer {
         }
     }
     private void resize(final int width, final int height){
+        if (width <= 0 || height <= 0){
+            return;
+        }
         if (size.x != width || size.y != height){
             size.set(width, height);
             bind();
