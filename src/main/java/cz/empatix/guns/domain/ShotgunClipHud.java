@@ -2,7 +2,7 @@ package cz.empatix.guns.domain;
 
 import cz.empatix.guns.ammo.PistolAmmoHud;
 import cz.empatix.guns.ammo.ShotgunAmmoHud;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -67,8 +67,8 @@ public class ShotgunClipHud {
         ammoImages = List.copyOf(ammoImages);
     }
 
-    public List<Renderable> getSubRenderables() {
-        return List.copyOf(ammoImages);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(ammoImages);
     }
 }
 

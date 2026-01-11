@@ -5,17 +5,12 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Vector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CoinService {
     private final static String DEFAULT_COIN_TEXTURE = "ingame/banecoin.tga";
@@ -55,10 +50,9 @@ public class CoinService {
         this.coins -= coins;
         updateHud();
     }
-    public List<Renderable> toRender(){
-        return Stream.of(List.of(coinHud), coinText.getSubRenderables())
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+    public void collectSubRenderables(RenderableState state) {
+        state.add(coinHud);
+        coinText.collectSubRenderables(state);
     }
 
     public boolean hasEnoughCoins(final int requiredCoins) {

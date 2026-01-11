@@ -2,12 +2,10 @@ package cz.empatix.keyboard.domain;
 
 import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector3i;
-
-import java.util.List;
 
 public record KeyboardImageWithText(
         KeyboardImage image,
@@ -39,8 +37,8 @@ public record KeyboardImageWithText(
         return image.canRender();
     }
     @Override
-    public List<Renderable> getSubRenderables(){
-        return text.getSubRenderables();
+    public void collectSubRenderables(RenderableState state) {
+        text.collectSubRenderables(state);
     }
     public static KeyboardImageWithText of(final KeyboardImage image, final AlternativeViewText text){
         return new KeyboardImageWithText(image, text);

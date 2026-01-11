@@ -5,6 +5,7 @@ import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.particles.service.GazewindService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
 
 import java.util.List;
@@ -59,7 +60,9 @@ public class BerserkPot implements Artefact{
 
     @Override
     public List<Renderable> getRenderables() {
-        return gazewindService.toRender();
+        final RenderableState state = new RenderableState(8);
+        gazewindService.collectSubRenderables(state);
+        return state.getList();
     }
 
     @Override

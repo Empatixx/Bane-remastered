@@ -27,6 +27,7 @@ import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.upgrades.appliers.UpgradesApplicationService;
@@ -140,9 +141,11 @@ public class InGameState extends GameState {
 
     @Override
     public List<Renderable> toRender(final double dt) {
+        final RenderableState coinState = new RenderableState(8);
+        coinService.collectSubRenderables(coinState);
         return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
                         minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
-                        mapLoaderService.toRender(), artefactsService.toRender(), coinService.toRender(), petService.toRender())
+                        mapLoaderService.toRender(), artefactsService.toRender(), coinState.getList(), petService.toRender())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
     }

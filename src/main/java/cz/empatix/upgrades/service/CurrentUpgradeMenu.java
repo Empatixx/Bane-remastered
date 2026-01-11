@@ -6,6 +6,7 @@ import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.ui.TransparentButton;
 import cz.empatix.upgrades.domain.PlayerUpgrade;
@@ -41,27 +42,26 @@ public class CurrentUpgradeMenu {
                 RenderScene.OVERLAYS, FontSize.FONTSIZE_22);
         this.price.setColorRGB(222, 112, 38);
     }
-    public List<Renderable> toRender() {
+    public void collectSubRenderables(RenderableState state) {
         if (currentUpgrade == null) {
-            return List.of();
+            return;
         }
-        final List<Renderable> renderables = new ArrayList<>(title.getSubRenderables());
+        title.collectSubRenderables(state);
         if (!currentUpgrade.isBought()) {
             if (currentUpgrade.canBuy()) {
-                renderables.add(buy);
-                renderables.addAll(price.getSubRenderables());
+                state.add(buy);
+                price.collectSubRenderables(state);
             } else {
-                renderables.addAll(cantBuy.getSubRenderables());
+                cantBuy.collectSubRenderables(state);
             }
         } else {
-            renderables.add(bought);
+            state.add(bought);
         }
-        renderables.add(upgradeBackground);
-        renderables.add(selectedUpgrade);
+        state.add(upgradeBackground);
+        state.add(selectedUpgrade);
         for (final CommonText text : description) {
-            renderables.addAll(text.getSubRenderables());
+            text.collectSubRenderables(state);
         }
-        return renderables;
     }
     public void setCurrent(final PlayerUpgrade upgrade){
         currentUpgrade = upgrade;

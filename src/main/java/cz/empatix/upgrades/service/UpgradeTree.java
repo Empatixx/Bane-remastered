@@ -2,6 +2,7 @@ package cz.empatix.upgrades.service;
 
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.upgrades.domain.PlayerUpgrade;
 import cz.empatix.upgrades.domain.PlayerUpgradeName;
@@ -57,11 +58,10 @@ public class UpgradeTree {
         }
     }
 
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = new ArrayList<>(List.copyOf(upgrades));
-        renderables.addAll(parentConnectors);
-        renderables.add(treeIcon);
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(upgrades);
+        state.addAll(parentConnectors);
+        state.add(treeIcon);
     }
 
     public PlayerUpgrade getPressedUpgrade(final float mouseX, final float mouseY) {

@@ -11,6 +11,7 @@ import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.postprocessing.domain.Fade;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
 
@@ -146,30 +147,30 @@ public class DeathService {
         if (!active || continuePressed) {
             return List.of();
         }
-        final ArrayList<Renderable> renderables = new ArrayList<>(100);
-        renderables.add(icons.get(SKULL_INDEX));
+        final RenderableState state = new RenderableState(100);
+        state.add(icons.get(SKULL_INDEX));
         if(accumulator > SKULL_TRANSITION_TIME) {
-            renderables.addAll(gameOverText.getSubRenderables());
+            gameOverText.collectSubRenderables(state);
         }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
-                renderables.addAll(texts.get(i).getSubRenderables());
-                renderables.add(icons.get(i));
+                texts.get(i).collectSubRenderables(state);
+                state.add(icons.get(i));
             } else {
                 break;
             }
         }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * REWARD_TRANSITION_TIME + TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
-                renderables.addAll(rewardTexts.get(i).getSubRenderables());
+                rewardTexts.get(i).collectSubRenderables(state);
             } else {
                 break;
             }
         }
         if (System.currentTimeMillis() / 200 % 2 == 0 && accumulator > TOTAL_LABELS * (REWARD_TRANSITION_TIME + LABEL_TRANSITION_TIME) + SKULL_TRANSITION_TIME) {
-            renderables.addAll(continueText.getSubRenderables());
+            continueText.collectSubRenderables(state);
         }
-        return List.copyOf(renderables);
+        return state.getList();
     }
 
     public void keyPressed(final int key) {

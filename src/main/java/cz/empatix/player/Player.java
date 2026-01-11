@@ -19,7 +19,6 @@ import cz.empatix.particles.service.GazewindService;
 import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.postprocessing.domain.RedVignette;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
@@ -27,7 +26,6 @@ import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -252,11 +250,9 @@ public class Player implements Drawable, InteractEntity, Damageable, Targetable 
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = new ArrayList<>();
-        renderables.addAll(List.of(healthBar, armorBar));
-        renderables.addAll(gazewindService.toRender());
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        state.add(healthBar).add(armorBar);
+        gazewindService.collectSubRenderables(state);
     }
 
     @Override

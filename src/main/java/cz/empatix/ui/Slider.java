@@ -4,7 +4,6 @@ import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -14,11 +13,10 @@ import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlasInfo;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector3i;
 import org.lwjgl.assimp.AIQuaternion;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 public class Slider implements UIElement {
@@ -75,11 +73,9 @@ public class Slider implements UIElement {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = new ArrayList<>();
-        renderables.add(cursor);
-        renderables.addAll(valueText.getSubRenderables());
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        state.add(cursor);
+        valueText.collectSubRenderables(state);
     }
 
     @Override

@@ -7,8 +7,8 @@ import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -18,8 +18,6 @@ import cz.empatix.upgrades.service.PlayerUpgradeService;
 import org.joml.Vector2f;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 public class Scientist implements Interactable, Drawable {
@@ -53,16 +51,14 @@ public class Scientist implements Interactable, Drawable {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
+    public void collectSubRenderables(RenderableState state) {
         if (!interactionTracker.isInteracting()) {
-            return List.of();
+            return;
         }
-        final List<Renderable> renderables = new ArrayList<>();
-        renderables.addAll(alternativeViewText.getSubRenderables());
+        alternativeViewText.collectSubRenderables(state);
         if (playerUpgradeService.isActive()) {
-            renderables.addAll(playerUpgradeService.toRender());
+            playerUpgradeService.collectSubRenderables(state);
         }
-        return renderables;
     }
 
     @Override

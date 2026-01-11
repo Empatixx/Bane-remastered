@@ -1,6 +1,6 @@
 package cz.empatix.enemies.skills;
 
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -62,8 +62,8 @@ public class SlimeSmash implements Skill {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return List.copyOf(bullets);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(bullets);
     }
 
     public void clear() {

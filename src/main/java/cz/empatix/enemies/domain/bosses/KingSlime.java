@@ -8,14 +8,11 @@ import cz.empatix.enemies.skills.KingSlimeArmageddon;
 import cz.empatix.enemies.skills.PurpleSlimebullet;
 import cz.empatix.enemies.skills.SlimeSmash;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
-
-import java.util.List;
-import java.util.stream.Stream;
 
 @SpawnableEnemy(type = EnemyType.BOSS, minFloor = 2)
 public class KingSlime implements Enemy {
@@ -108,11 +105,10 @@ public class KingSlime implements Enemy {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> bossImpl = this.bossImpl.getSubRenderables();
-        final List<Renderable> armageddon = this.armageddon.getSubRenderables();
-        final List<Renderable> slimeSmash = this.slimeSmash.getSubRenderables();
-        return Stream.of(bossImpl, armageddon, slimeSmash).flatMap(List::stream).toList();
+    public void collectSubRenderables(RenderableState state) {
+        bossImpl.collectSubRenderables(state);
+        armageddon.collectSubRenderables(state);
+        slimeSmash.collectSubRenderables(state);
     }
 
     @Override

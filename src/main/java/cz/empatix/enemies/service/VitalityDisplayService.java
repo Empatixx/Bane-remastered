@@ -5,8 +5,7 @@ import cz.empatix.enemies.domain.vitality.VitalityChange;
 import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.hud.service.text.MovableAlternativeViewText;
-import cz.empatix.render.attributes.Renderable;
-import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -52,12 +51,10 @@ public class VitalityDisplayService {
         changes.forEach(c -> c.update(dt));
         changes.removeIf(e -> e.timeWhen().plusMillis(TTL_MILIS).isBefore(Instant.now()));
     }
-    public List<Renderable> getRenderables(){
-        final List<Renderable> renderables = new ArrayList<>();
+    public void collectSubRenderables(RenderableState state) {
         for (final VitalityChange change : changes) {
-            renderables.addAll(change.toRender());
+            change.collectSubRenderables(state);
         }
-        return renderables;
     }
     public boolean isEmpty(){
         return changes.isEmpty();

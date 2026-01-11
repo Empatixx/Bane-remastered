@@ -15,8 +15,8 @@ import cz.empatix.map.generators.ProceduralMapGenerator;
 import cz.empatix.map.service.MapLoaderService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.player.CoinService;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -27,10 +27,7 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Ladder implements RoomObject, Interactable {
     private final static Logger LOGGER = LoggerFactory.getLogger(Ladder.class);
@@ -103,13 +100,11 @@ public class Ladder implements RoomObject, Interactable {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
+    public void collectSubRenderables(RenderableState state) {
+        state.add(animatedImage);
         if (interactionTracker.isInteracting()) {
-            return Stream.of(List.of(animatedImage), text.getSubRenderables())
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
+            text.collectSubRenderables(state);
         }
-        return List.of(animatedImage);
     }
 
 

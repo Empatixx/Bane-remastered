@@ -4,13 +4,12 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.skills.EyeWatcherProjectile;
 import cz.empatix.enemies.skills.Timer;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 @SpawnableEnemy(minFloor = 3)
 public class EyeWatcher extends BaseEnemy{
     private final static long SHOOT_TIME = 3000;
@@ -88,11 +87,9 @@ public class EyeWatcher extends BaseEnemy{
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = new ArrayList<>();
-        renderables.addAll(projectiles);
-        renderables.addAll(super.getSubRenderables());
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(projectiles);
+        super.collectSubRenderables(state);
     }
 
     @Override

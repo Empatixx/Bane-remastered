@@ -3,8 +3,8 @@ package cz.empatix.enemies.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.skills.BaseSlimebullet;
 import cz.empatix.enemies.skills.RedSlimebullet;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import org.joml.Vector2f;
 
@@ -84,12 +84,9 @@ public class RedSlime extends BaseEnemy {
 
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> parentRenderables = super.getSubRenderables();
-        final List<Renderable> renderables = new ArrayList<>(parentRenderables.size() + slimebullets.size());
-        renderables.addAll(parentRenderables);
-        renderables.addAll(slimebullets);
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        super.collectSubRenderables(state);
+        state.addAll(slimebullets);
     }
 
     @Override

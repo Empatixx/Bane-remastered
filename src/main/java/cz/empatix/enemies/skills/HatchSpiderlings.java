@@ -5,7 +5,7 @@ import cz.empatix.enemies.domain.GreenSpiderling;
 import cz.empatix.enemies.domain.PurpleSpiderling;
 import cz.empatix.enemies.domain.RedSpiderling;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
@@ -99,7 +99,7 @@ public class HatchSpiderlings implements Skill {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return List.copyOf(spiderlings);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(spiderlings);
     }
 }

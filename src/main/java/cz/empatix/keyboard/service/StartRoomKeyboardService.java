@@ -6,6 +6,7 @@ import cz.empatix.keyboard.domain.KeyboardImage;
 import cz.empatix.keyboard.domain.KeyboardImageWithText;
 import cz.empatix.keyboard.domain.KeyboardType;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.StartRoom;
@@ -70,11 +71,11 @@ public class StartRoomKeyboardService {
 
 
     public List<Renderable> toRender() {
-        final List<Renderable> renderables = new ArrayList<>(pairs.size() + keyboardImages.size() + 1);
-        renderables.addAll(movementDesc.getSubRenderables());
-        renderables.addAll(pairs);
-        renderables.addAll(keyboardImages);
-        return renderables;
+        final RenderableState state = new RenderableState(pairs.size() + keyboardImages.size() + 10);
+        movementDesc.collectSubRenderables(state);
+        state.addAll(pairs);
+        state.addAll(keyboardImages);
+        return state.getList();
     }
 
     public void update(double dt) {

@@ -5,6 +5,7 @@ import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.settings.domain.GameSettings;
 import cz.empatix.ui.*;
 import org.joml.Vector2f;
@@ -151,34 +152,32 @@ public class SettingsMenuService {
         if (!active) {
             return List.of();
         }
+        final RenderableState state = new RenderableState(50);
         return switch (uiSelector.getSelected()) {
             case VIDEO -> {
-                final List<Renderable> renderables = new ArrayList<>();
-                renderables.add(background);
-                renderables.addAll(commonElements);
-                renderables.addAll(videoElements);
-                videoHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
-                renderables.addAll(resolutionText.getSubRenderables());
-                renderables.addAll(uiSelector.getSubRenderables());
-                yield renderables;
+                state.add(background);
+                state.addAll(commonElements);
+                state.addAll(videoElements);
+                videoHudElements.forEach(hudElement -> hudElement.collectSubRenderables(state));
+                resolutionText.collectSubRenderables(state);
+                uiSelector.collectSubRenderables(state);
+                yield state.getList();
             }
             case AUDIO-> {
-                final List<Renderable> renderables = new ArrayList<>();
-                renderables.add(background);
-                renderables.addAll(commonElements);
-                renderables.addAll(audioElements);
-                audioHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
-                renderables.addAll(uiSelector.getSubRenderables());
-                yield renderables;
+                state.add(background);
+                state.addAll(commonElements);
+                state.addAll(audioElements);
+                audioHudElements.forEach(hudElement -> hudElement.collectSubRenderables(state));
+                uiSelector.collectSubRenderables(state);
+                yield state.getList();
             }
             case CONTROLS -> {
-                final List<Renderable> renderables = new ArrayList<>();
-                renderables.add(background);
-                renderables.addAll(commonElements);
-                renderables.addAll(controlsElements);
-                controlsHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
-                renderables.addAll(uiSelector.getSubRenderables());
-                yield renderables;
+                state.add(background);
+                state.addAll(commonElements);
+                state.addAll(controlsElements);
+                controlsHudElements.forEach(hudElement -> hudElement.collectSubRenderables(state));
+                uiSelector.collectSubRenderables(state);
+                yield state.getList();
             }
         };
     }

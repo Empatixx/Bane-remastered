@@ -1,8 +1,6 @@
 package cz.empatix.enemies.skills;
 
-import cz.empatix.render.attributes.Renderable;
-
-import java.util.List;
+import cz.empatix.render.domain.RenderableState;
 
 public class ArmorStacking implements Skill {
     private static final int COOLDOWN_MS = 4000;
@@ -42,7 +40,7 @@ public class ArmorStacking implements Skill {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return null;
+    public void collectSubRenderables(RenderableState state) {
+        // No sub-renderables
     }
 }

@@ -5,6 +5,7 @@ import cz.empatix.hud.service.image.AnimatedImage;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.utils.RomanNumber;
 import org.joml.Vector2f;
@@ -54,10 +55,10 @@ public class MapTransitionService {
         if (Duration.between(lastTransition, Instant.now()).toMillis() > DISPLAY_TIME_MILLIS) {
             return List.of();
         }
-        final ArrayList<Renderable> renderables = new ArrayList<>();
-        renderables.add(title);
-        renderables.addAll(titleText.getSubRenderables());
-        renderables.addAll(infoText.getSubRenderables());
-        return renderables;
+        final RenderableState state = new RenderableState(20);
+        state.add(title);
+        titleText.collectSubRenderables(state);
+        infoText.collectSubRenderables(state);
+        return state.getList();
     }
 }

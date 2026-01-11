@@ -9,8 +9,8 @@ import cz.empatix.newphysics.attributes.*;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
@@ -20,8 +20,6 @@ import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector4f;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -180,14 +178,12 @@ public class BossImpl implements Damageable, DamageSource {
         physicsBody.setPhysicsTranslation(x, y);
     }
 
-    public List<Renderable> getSubRenderables() {
+    public void collectSubRenderables(RenderableState state) {
         if (isDead()) {
-            return List.of();
+            return;
         }
-        final List<Renderable> renderables = new ArrayList<>();
-        renderables.add(healthBar);
-        renderables.addAll(vitalityDisplayService.getRenderables());
-        return renderables;
+        state.add(healthBar);
+        vitalityDisplayService.collectSubRenderables(state);
     }
 
     public RenderData renderData() {

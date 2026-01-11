@@ -18,6 +18,7 @@ import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.roomobjects.domain.Scientist;
 import cz.empatix.tiles.domain.TileImpl;
@@ -82,10 +83,12 @@ public class LobbyState extends GameState {
 
     @Override
     public List<Renderable> toRender(double dt) {
+        final RenderableState coinState = new RenderableState(8);
+        coinService.collectSubRenderables(coinState);
         final List<Renderable> renderables = Stream.of(mapService.toRender(dt),
                         pauseService.toRender(dt),
                         List.of(player, scientist),
-                        coinService.toRender())
+                        coinState.getList())
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
         renderables.add(CursorService.getCursor());

@@ -5,15 +5,13 @@ import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.HUDElement;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
-
-import java.util.List;
 
 public class CommonText implements HUDElement {
     private final static FontSize DEFAULT_FONT_SIZE = FontSize.FONTSIZE_22;
@@ -64,8 +62,8 @@ public class CommonText implements HUDElement {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return font.getDrawables(text, position, color, zIndex, renderScene, false);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(font.getDrawables(text, position, color, zIndex, renderScene, false));
     }
 
     @Override

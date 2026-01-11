@@ -16,8 +16,8 @@ import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.player.CoinService;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -140,12 +140,11 @@ public class SlotMachine implements RoomObject, Interactable {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> subRenderables = machineSlotService.getSubRenderables();
+    public void collectSubRenderables(RenderableState state) {
+        machineSlotService.collectSubRenderables(state);
         if (interactionTracker.isInteracting()) {
-            subRenderables.addAll(interactionText.getSubRenderables());
+            interactionText.collectSubRenderables(state);
         }
-        return subRenderables;
     }
     private static class MachineSlotService {
         private static final Logger LOGGER = LoggerFactory.getLogger(MachineSlotService.class);
@@ -301,13 +300,12 @@ public class SlotMachine implements RoomObject, Interactable {
             spinTask.start();
             spinning = true;
         }
-        public List<Renderable> getSubRenderables() {
-            if (isSpinning()){
-                return new ArrayList<>();
+        public void collectSubRenderables(RenderableState state) {
+            if (isSpinning()) {
+                return;
             }
-            final List<Renderable> subRenderables = new ArrayList<>(priceText.getSubRenderables());
-            subRenderables.add(priceHud);
-            return subRenderables;
+            priceText.collectSubRenderables(state);
+            state.add(priceHud);
         }
     }
 }

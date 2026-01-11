@@ -2,10 +2,9 @@ package cz.empatix.render.attributes;
 
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.attributes.grouping.SingleRenderableGroup;
-
-import java.util.List;
 
 public interface Drawable extends Renderable
 {
@@ -18,7 +17,7 @@ public interface Drawable extends Renderable
         return new SingleRenderableGroup(this);
     }
     @Override
-    default List<Renderable> getSubRenderables(){
-        return List.of();
+    default void collectSubRenderables(RenderableState state) {
+        // Empty by default - no sub-renderables
     }
 }

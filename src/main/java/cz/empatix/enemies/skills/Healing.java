@@ -1,8 +1,7 @@
 package cz.empatix.enemies.skills;
 
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 public class Healing implements Skill{
@@ -45,8 +44,8 @@ public class Healing implements Skill{
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return List.of();
+    public void collectSubRenderables(RenderableState state) {
+        // No sub-renderables
     }
 
     public boolean isActive() {

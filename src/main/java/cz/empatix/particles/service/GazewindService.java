@@ -1,7 +1,7 @@
 package cz.empatix.particles.service;
 
 import cz.empatix.particles.domain.GazewindParticle;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +34,8 @@ public class GazewindService {
     public void clear(){
         gazewindParticles.clear();
     }
-    public List<Renderable> toRender() {
-        return List.copyOf(gazewindParticles);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(gazewindParticles);
     }
 
 }

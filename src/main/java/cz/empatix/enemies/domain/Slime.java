@@ -3,17 +3,13 @@ package cz.empatix.enemies.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.skills.GreenSlimebullet;
 import cz.empatix.enemies.skills.SlimeSmash;
-import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
-
-import java.util.List;
-import java.util.stream.Stream;
 @SpawnableEnemy
 public class Slime extends BaseEnemy {
     private final static int MOVE_FORCE = 1_000_000;
@@ -83,10 +79,9 @@ public class Slime extends BaseEnemy {
 
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return Stream.of(super.getSubRenderables(), slimeSmash.getSubRenderables())
-                .flatMap(List::stream)
-                .toList();
+    public void collectSubRenderables(RenderableState state) {
+        super.collectSubRenderables(state);
+        slimeSmash.collectSubRenderables(state);
     }
 
     @Override

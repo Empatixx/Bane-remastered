@@ -3,14 +3,11 @@ package cz.empatix.enemies.skills;
 import cz.empatix.enemies.domain.PurpleSpiderling;
 import cz.empatix.enemies.targetting.BehindTargetTargetting;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import org.checkerframework.checker.units.qual.A;
 import org.joml.Vector2f;
-
-import java.util.List;
-import java.util.function.Consumer;
 
 public class SpiderlingTeleport implements Skill {
     private final static int COOLDOWN = 8000;
@@ -57,8 +54,8 @@ public class SpiderlingTeleport implements Skill {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return List.of();
+    public void collectSubRenderables(RenderableState state) {
+        // No sub-renderables
     }
 
     public void setTarget(final Player target) {

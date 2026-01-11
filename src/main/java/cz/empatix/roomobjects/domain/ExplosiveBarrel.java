@@ -11,8 +11,8 @@ import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
 import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.newphysics.service.PhysicsService;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -25,7 +25,6 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.EnumSet;
-import java.util.List;
 
 public class ExplosiveBarrel implements RoomObject, Damageable {
     private static final float LIGHT_INTENSITY = 1.5f;
@@ -203,10 +202,9 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
+    public void collectSubRenderables(RenderableState state) {
         if (isDead() && !explosion.hasPlayedOnce()) {
-            return List.of(explosion);
+            state.add(explosion);
         }
-        return List.of();
     }
 }

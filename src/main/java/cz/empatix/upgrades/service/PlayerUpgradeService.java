@@ -2,6 +2,7 @@ package cz.empatix.upgrades.service;
 
 import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.upgrades.domain.PlayerUpgrade;
 import cz.empatix.upgrades.domain.PlayerUpgradeName;
 import org.slf4j.Logger;
@@ -33,12 +34,11 @@ public class PlayerUpgradeService {
         upgradeTrees = List.of(utilityTree, offenseTree, defenseTree);
     }
 
-    public List<Renderable> toRender() {
-        final List<Renderable> renderables = upgradeTrees.stream()
-                .flatMap(tree -> tree.getSubRenderables().stream())
-                .collect(Collectors.toList());
-        renderables.addAll(currentUpgradeMenu.toRender());
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        for (final UpgradeTree tree : upgradeTrees) {
+            tree.collectSubRenderables(state);
+        }
+        currentUpgradeMenu.collectSubRenderables(state);
     }
 
     public void mousePressed(final int button, final float mouseX, final float mouseY) {

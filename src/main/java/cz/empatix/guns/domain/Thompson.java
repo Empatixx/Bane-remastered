@@ -8,15 +8,14 @@ import cz.empatix.guns.service.GunService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class Thompson extends AbstractGun implements Gun{
     private final static String WEAPON_TXT_PATH = "ingame/guns/thompson.tga";
@@ -117,9 +116,11 @@ public class Thompson extends AbstractGun implements Gun{
     public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
         ammoHud.setPosition(AMMO_COUNTER_POSITION.x() - ammoHud.getWidth(), AMMO_COUNTER_POSITION.y());
-        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables(), clipHud.getSubRenderables())
-                .flatMap(Collection::stream)
-                .collect(java.util.stream.Collectors.toList());
+        final RenderableState state = new RenderableState(40);
+        state.add(gunHud);
+        ammoHud.collectSubRenderables(state);
+        clipHud.collectSubRenderables(state);
+        return state.getList();
     }
     @Override
     public boolean isReloading(){

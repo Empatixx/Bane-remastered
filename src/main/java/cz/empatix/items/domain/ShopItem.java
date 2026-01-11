@@ -7,8 +7,8 @@ import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
@@ -16,7 +16,6 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
@@ -65,17 +64,16 @@ public class ShopItem implements ItemDrop {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
+    public void collectSubRenderables(RenderableState state) {
         if (bought) {
-            return List.of();
+            return;
         }
-        final List<Renderable> textRenderables = priceText.getSubRenderables();
-        textRenderables.add(image);
-        textRenderables.addAll(saleText.getSubRenderables());
+        priceText.collectSubRenderables(state);
+        state.add(image);
+        saleText.collectSubRenderables(state);
         if (interactionTracker.isInteracting()) {
-            textRenderables.addAll(interactionText.getSubRenderables());
+            interactionText.collectSubRenderables(state);
         }
-        return textRenderables;
     }
 
     public void setOnBuy(final Runnable onBuy) {

@@ -9,16 +9,13 @@ import cz.empatix.enemies.skills.Dash;
 import cz.empatix.enemies.skills.Healing;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Golem implements Enemy {
     private final static int MOVE_FORCE = 12_500_000;
@@ -206,12 +203,9 @@ public class Golem implements Enemy {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = new ArrayList<>();
-        final List<Renderable> bossImplRenderables = bossImpl.getSubRenderables();
-        renderables.addAll(bossImplRenderables);
-        renderables.add(golemLaser);
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        bossImpl.collectSubRenderables(state);
+        state.add(golemLaser);
     }
 
     @Override

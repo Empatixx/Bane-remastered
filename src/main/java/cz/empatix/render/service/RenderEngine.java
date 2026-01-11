@@ -9,6 +9,8 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.renders.DynamicRenderer;
 
+import cz.empatix.render.domain.RenderableState;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,7 +18,10 @@ public class RenderEngine {
     private final Framebuffer mainFramebuffer;
     private final RenderService renderService;
     private final PostprocessService postprocessService;
-    private int totalDrawableLastFrame = 10;
+
+    private final List<Renderable> allDrawables = new ArrayList<>(256);
+    private final ArrayDeque<Renderable> drawableQueue = new ArrayDeque<>(128);
+    private final RenderableState subRenderableState = new RenderableState(64);
 
     public RenderEngine() {
         this.mainFramebuffer = new Framebuffer();
@@ -54,22 +59,22 @@ public class RenderEngine {
     }
 
     private List<Renderable> findAllDrawables(final List<Renderable> renderables) {
-        final List<Renderable> allDrawables = new ArrayList<>(totalDrawableLastFrame);
-        allDrawables.addAll(renderables);
+        allDrawables.clear();
+        drawableQueue.clear();
 
-        final Queue<Renderable> drawableQueue = new LinkedList<>(renderables);
+        allDrawables.addAll(renderables);
+        drawableQueue.addAll(renderables);
 
         while (!drawableQueue.isEmpty()) {
             final Renderable current = drawableQueue.poll();
-            final List<Renderable> subDrawables = current.getSubRenderables();
-            if (subDrawables.isEmpty()){
-                continue;
+            subRenderableState.clear();
+            current.collectSubRenderables(subRenderableState);
+            List<Renderable> subs = subRenderableState.getList();
+            if (!subs.isEmpty()) {
+                allDrawables.addAll(subs);
+                drawableQueue.addAll(subs);
             }
-            allDrawables.addAll(subDrawables);
-            drawableQueue.addAll(subDrawables);
         }
-
-        totalDrawableLastFrame = allDrawables.size();
 
         return allDrawables;
     }

@@ -2,15 +2,14 @@ package cz.empatix.enemies.skills;
 
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import org.checkerframework.checker.units.qual.A;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.function.Supplier;
 
 public class SpitCobweb implements Skill {
@@ -72,7 +71,7 @@ public class SpitCobweb implements Skill {
         cobwebProjectiles.forEach(c -> c.destroy());
     }
     @Override
-    public List<Renderable> getSubRenderables() {
-        return List.copyOf(cobwebProjectiles);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(cobwebProjectiles);
     }
 }

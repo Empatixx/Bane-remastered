@@ -9,14 +9,12 @@ import cz.empatix.newphysics.service.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.particles.service.GazewindService;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
@@ -158,8 +156,8 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
         );
     }
     @Override
-    public List<Renderable> getSubRenderables() {
-        return gazewindService.toRender();
+    public void collectSubRenderables(RenderableState state) {
+        gazewindService.collectSubRenderables(state);
     }
 
 

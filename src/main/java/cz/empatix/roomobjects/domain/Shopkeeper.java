@@ -4,9 +4,8 @@ import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
-import cz.empatix.hud.service.text.CommonText;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -17,8 +16,6 @@ import org.joml.Vector3i;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Shopkeeper implements RoomObject {
     private static final int SHOPKEEPER_WIDTH = 80;
@@ -96,14 +93,12 @@ public class Shopkeeper implements RoomObject {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
+    public void collectSubRenderables(RenderableState state) {
         if (lastTextChange.isBefore(Instant.now().minus(Duration.ofSeconds(3)))) {
-            return List.of();
+            return;
         }
-        final List<Renderable> renders = new ArrayList<>();
-        renders.add(sayBox);
-        renders.addAll(sayText.getSubRenderables());
-        return renders;
+        state.add(sayBox);
+        sayText.collectSubRenderables(state);
     }
 
     @Override

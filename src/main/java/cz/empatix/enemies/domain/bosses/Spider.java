@@ -6,13 +6,10 @@ import cz.empatix.enemies.skills.HatchSpiderlings;
 import cz.empatix.enemies.skills.SpitCobweb;
 import cz.empatix.enemies.skills.Timer;
 import cz.empatix.player.Player;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.AnimationState;
 import org.joml.Vector2f;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @SpawnableEnemy(type = EnemyType.BOSS, maxFloor = 1, minFloor = 1)
 public class Spider extends BossBaseEnemy {
@@ -86,11 +83,10 @@ public class Spider extends BossBaseEnemy {
         spitCobweb.activate();
     }
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = new ArrayList<>(super.getSubRenderables());
-        renderables.addAll(hatchSpiderlings.getSubRenderables());
-        renderables.addAll(spitCobweb.getSubRenderables());
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        super.collectSubRenderables(state);
+        hatchSpiderlings.collectSubRenderables(state);
+        spitCobweb.collectSubRenderables(state);
     }
     @Override
     public void onDeath() {
