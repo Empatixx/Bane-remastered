@@ -147,11 +147,11 @@ public class DeathService {
         final ArrayList<Renderable> renderables = new ArrayList<>(100);
         renderables.add(icons.get(SKULL_INDEX));
         if(accumulator > SKULL_TRANSITION_TIME) {
-            renderables.addAll(gameOverText.getSubRenderables());
+            renderables.add(gameOverText);
         }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
-                renderables.addAll(texts.get(i).getSubRenderables());
+                renderables.add(texts.get(i));
                 renderables.add(icons.get(i));
             } else {
                 break;
@@ -159,13 +159,13 @@ public class DeathService {
         }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * REWARD_TRANSITION_TIME + TOTAL_LABELS * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {
-                renderables.addAll(rewardTexts.get(i).getSubRenderables());
+                renderables.add(rewardTexts.get(i));
             } else {
                 break;
             }
         }
         if (System.currentTimeMillis() / 200 % 2 == 0 && accumulator > TOTAL_LABELS * (REWARD_TRANSITION_TIME + LABEL_TRANSITION_TIME) + SKULL_TRANSITION_TIME) {
-            renderables.addAll(continueText.getSubRenderables());
+            renderables.add(continueText);
         }
         return List.copyOf(renderables);
     }

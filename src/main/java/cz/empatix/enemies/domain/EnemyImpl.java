@@ -10,6 +10,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
@@ -114,8 +115,8 @@ public class EnemyImpl implements Damageable, DamageSource {
         lastHit = System.currentTimeMillis();
     }
 
-    public List<Renderable> getSubRenderables(){
-        return vitalityDisplayService.getRenderables();
+    public void collectSubRenderables(RenderableState state){
+        state.addAll(vitalityDisplayService.getRenderables());
     }
 
     public void heal(final int health) {

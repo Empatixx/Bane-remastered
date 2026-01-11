@@ -3,17 +3,15 @@ package cz.empatix.upgrades.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Drawable;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Supplier;
 
 import static cz.empatix.render.domain.AnimationState.*;
@@ -158,10 +156,8 @@ public class PlayerUpgrade implements Drawable {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        final List<Renderable> renderables = new ArrayList<>();
-        renderables.add(upgradeImage);
-        return renderables;
+    public void collectSubRenderables(RenderableState state) {
+        state.add(upgradeImage);
     }
 
 

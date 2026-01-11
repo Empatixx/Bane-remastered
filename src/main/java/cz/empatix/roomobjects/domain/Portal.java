@@ -8,11 +8,11 @@ import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.interaction.domain.Interactable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.interaction.service.InteractionTracker;
-import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import org.joml.Vector2f;
@@ -20,7 +20,6 @@ import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Set;
 
 public class Portal implements RoomObject, Interactable {
@@ -48,11 +47,11 @@ public class Portal implements RoomObject, Interactable {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        if(!interactionTracker.isInteracting()){
-            return List.of();
+    public void collectSubRenderables(RenderableState state) {
+        if (!interactionTracker.isInteracting()) {
+            return;
         }
-        return alternativeViewText.getSubRenderables();
+        alternativeViewText.collectSubRenderables(state);
     }
 
     @Override

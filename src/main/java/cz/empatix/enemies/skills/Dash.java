@@ -1,8 +1,7 @@
 package cz.empatix.enemies.skills;
 
 import cz.empatix.render.attributes.Renderable;
-
-import java.util.List;
+import cz.empatix.render.domain.RenderableState;
 import java.util.function.Consumer;
 
 public class Dash implements Skill {
@@ -48,8 +47,7 @@ public class Dash implements Skill {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return List.of();
+    public void collectSubRenderables(RenderableState state) {
     }
 
 

@@ -5,12 +5,13 @@ import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.HUDElement;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.attributes.grouping.ContainerRenderableGroup;
+import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.*;
 
-import java.util.List;
 
 public class AlternativeViewText implements HUDElement {
     private String text;
@@ -44,13 +45,18 @@ public class AlternativeViewText implements HUDElement {
     }
 
     @Override
+    public RenderableGroup getRenderableGroup() {
+        return ContainerRenderableGroup.INSTANCE;
+    }
+
+    @Override
     public RenderData renderData() {
         throw new UnsupportedOperationException("Should not be called, call getSubRenderables instead");
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return font.getDrawables(text, position, color, zIndex, RenderScene.HUD, cameraProjection);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(font.getDrawables(text, position, color, zIndex, RenderScene.HUD, cameraProjection));
     }
 
     @Override

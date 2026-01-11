@@ -12,6 +12,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
@@ -172,14 +173,12 @@ public class BossImpl implements Damageable, DamageSource {
         physicsBody.setPhysicsTranslation(x, y);
     }
 
-    public List<Renderable> getSubRenderables() {
+    public void collectSubRenderables(RenderableState state) {
         if (isDead()) {
-            return List.of();
+            return;
         }
-        final List<Renderable> renderables = new ArrayList<>();
-        renderables.add(healthBar);
-        renderables.addAll(vitalityDisplayService.getRenderables());
-        return renderables;
+        state.add(healthBar);
+        state.addAll(vitalityDisplayService.getRenderables());
     }
 
     public RenderData renderData() {

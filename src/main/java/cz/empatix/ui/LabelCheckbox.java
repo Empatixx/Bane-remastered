@@ -3,11 +3,10 @@ package cz.empatix.ui;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
-
-import java.util.List;
 
 public class LabelCheckbox implements UIElement {
     private final static Vector3i DEFAULT_COLOR = new Vector3i(222, 112, 38);
@@ -41,8 +40,8 @@ public class LabelCheckbox implements UIElement {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return label.getSubRenderables();
+    public void collectSubRenderables(RenderableState state) {
+        label.collectSubRenderables(state);
     }
 
     @Override

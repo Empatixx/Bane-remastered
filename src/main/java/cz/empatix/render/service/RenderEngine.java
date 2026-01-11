@@ -4,6 +4,7 @@ import cz.empatix.postprocessing.service.PostprocessService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.attributes.grouping.RenderableGroup;
 
 import java.util.*;
@@ -14,6 +15,10 @@ public class RenderEngine {
     private final RenderService renderService;
     private final PostprocessService postprocessService;
 
+    private final List<Renderable> allDrawables = new ArrayList<>(256);
+    private final ArrayDeque<Renderable> drawableQueue = new ArrayDeque<>(128);
+    private final RenderableState subRenderableState = new RenderableState(64);
+
     public RenderEngine() {
         this.fbo = Framebuffer.createRgba();
         this.renderService = new RenderService();
@@ -22,7 +27,8 @@ public class RenderEngine {
 
     public void render(final List<Renderable> renderables,
                        final double dt) {
-        final Map<RenderScene, List<RenderableGroup>> renderScenes = findAllDrawables(renderables)
+        findAllDrawables(renderables);
+        final Map<RenderScene, List<RenderableGroup>> renderScenes = allDrawables
                 .stream()
                 .map(Renderable::getRenderableGroup)
                 .filter(RenderableGroup::isRenderable)
@@ -30,7 +36,6 @@ public class RenderEngine {
         render(renderScenes, RenderScene.SCENE, (float) dt);
         render(renderScenes, RenderScene.HUD, (float) dt);
         render(renderScenes, RenderScene.OVERLAYS, (float) dt);
-
     }
 
     private void render(Map<RenderScene, List<RenderableGroup>> renderScenes,
@@ -45,23 +50,22 @@ public class RenderEngine {
         postprocessService.flushFramebuffers();
     }
 
-    private List<Renderable> findAllDrawables(final List<Renderable> renderables) {
-        final List<Renderable> allDrawables = new ArrayList<>(renderables.size() * 2);
-        allDrawables.addAll(renderables);
+    private void findAllDrawables(final List<Renderable> renderables) {
+        allDrawables.clear();
+        drawableQueue.clear();
 
-        final Queue<Renderable> drawableQueue = new ArrayDeque<>(renderables.size());
+        allDrawables.addAll(renderables);
         drawableQueue.addAll(renderables);
 
         while (!drawableQueue.isEmpty()) {
             final Renderable current = drawableQueue.poll();
-            final List<Renderable> subDrawables = current.getSubRenderables();
-            if (subDrawables.isEmpty()){
-                continue;
+            subRenderableState.clear();
+            current.collectSubRenderables(subRenderableState);
+            List<Renderable> subs = subRenderableState.getList();
+            if (!subs.isEmpty()) {
+                allDrawables.addAll(subs);
+                drawableQueue.addAll(subs);
             }
-            allDrawables.addAll(subDrawables);
-            drawableQueue.addAll(subDrawables);
         }
-
-        return allDrawables;
     }
 }

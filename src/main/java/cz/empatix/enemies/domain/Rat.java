@@ -6,10 +6,9 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
-
-import java.util.List;
 
 public class Rat implements Enemy{
     private final static int MOVE_FORCE = 4_500000;
@@ -48,8 +47,8 @@ public class Rat implements Enemy{
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return enemyImpl.getSubRenderables();
+    public void collectSubRenderables(RenderableState state) {
+        enemyImpl.collectSubRenderables(state);
     }
     private void onDeath() {
         animation.setState(AnimationState.DEATH);

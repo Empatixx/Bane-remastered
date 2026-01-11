@@ -1,11 +1,12 @@
 package cz.empatix.hud.service.text;
 
 import cz.empatix.hud.service.HUDElement;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.attributes.grouping.ContainerRenderableGroup;
+import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
 
-import java.util.List;
 
 public class MovableAlternativeViewText implements HUDElement {
     private final AlternativeViewText text;
@@ -35,7 +36,12 @@ public class MovableAlternativeViewText implements HUDElement {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return text.getSubRenderables();
+    public void collectSubRenderables(RenderableState state) {
+        text.collectSubRenderables(state);
+    }
+
+    @Override
+    public RenderableGroup getRenderableGroup() {
+        return ContainerRenderableGroup.INSTANCE;
     }
 }

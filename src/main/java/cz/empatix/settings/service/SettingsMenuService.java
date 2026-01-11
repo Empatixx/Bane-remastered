@@ -157,9 +157,9 @@ public class SettingsMenuService {
                 renderables.add(background);
                 renderables.addAll(commonElements);
                 renderables.addAll(videoElements);
-                videoHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
-                renderables.addAll(resolutionText.getSubRenderables());
-                renderables.addAll(uiSelector.getSubRenderables());
+                renderables.addAll(videoHudElements);
+                renderables.add(resolutionText);
+                renderables.add(uiSelector);
                 yield renderables;
             }
             case AUDIO-> {
@@ -167,8 +167,8 @@ public class SettingsMenuService {
                 renderables.add(background);
                 renderables.addAll(commonElements);
                 renderables.addAll(audioElements);
-                audioHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
-                renderables.addAll(uiSelector.getSubRenderables());
+                renderables.addAll(audioHudElements);
+                renderables.add(uiSelector);
                 yield renderables;
             }
             case CONTROLS -> {
@@ -176,8 +176,8 @@ public class SettingsMenuService {
                 renderables.add(background);
                 renderables.addAll(commonElements);
                 renderables.addAll(controlsElements);
-                controlsHudElements.forEach(hudElement -> renderables.addAll(hudElement.getSubRenderables()));
-                renderables.addAll(uiSelector.getSubRenderables());
+                renderables.addAll(controlsHudElements);
+                renderables.add(uiSelector);
                 yield renderables;
             }
         };

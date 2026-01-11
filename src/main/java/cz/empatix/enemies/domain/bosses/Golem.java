@@ -9,11 +9,10 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
-
-import java.util.List;
 
 public class Golem implements Enemy {
     private final static int MOVE_FORCE = 12_500_000;
@@ -139,8 +138,8 @@ public class Golem implements Enemy {
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return bossImpl.getSubRenderables();
+    public void collectSubRenderables(RenderableState state) {
+        bossImpl.collectSubRenderables(state);
     }
 
     @Override

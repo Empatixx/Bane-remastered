@@ -17,17 +17,13 @@ import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.postprocessing.domain.GaussianBlur;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.roomobjects.domain.Scientist;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.upgrades.service.UpgradeTreeFactory;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class LobbyState extends GameState {
     private MapService mapService;
@@ -78,12 +74,12 @@ public class LobbyState extends GameState {
     }
 
     @Override
-    public List<Renderable> toRender(double dt) {
-        final List<Renderable> renderables = Stream.of(mapService.toRender(dt), List.of(player, scientist), coinService.toRender())
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        renderables.add(CursorService.getCursor());
-        return List.copyOf(renderables);
+    public void toRender(double dt, RenderableState state) {
+        state.addAll(mapService.toRender(dt))
+             .add(player)
+             .add(scientist)
+             .addAll(coinService.toRender())
+             .add(CursorService.getCursor());
     }
 
     @Override

@@ -1,11 +1,10 @@
 package cz.empatix.enemies.skills;
 
 import cz.empatix.render.attributes.Renderable;
-
-import java.util.List;
+import cz.empatix.render.domain.RenderableState;
 
 public interface Skill {
     void activate();
     void update(final float dt);
-    List<Renderable> getSubRenderables();
+    void collectSubRenderables(RenderableState state);
 }

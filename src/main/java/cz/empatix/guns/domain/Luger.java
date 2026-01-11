@@ -13,9 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class Luger extends AbstractGun implements Gun{
     private final static String WEAPON_TXT_PATH = "ingame/guns/luger.tga";
@@ -112,9 +110,7 @@ public class Luger extends AbstractGun implements Gun{
     public List<Renderable> hudToRender() {
         ammoHud.setText(String.format("%d/%d", currentClip, ammo));
         ammoHud.setPosition(AMMO_COUNTER_POSITION.x() - ammoHud.getWidth(), AMMO_COUNTER_POSITION.y());
-        return Stream.of(List.of(gunHud), ammoHud.getSubRenderables())
-                .flatMap(Collection::stream)
-                .collect(java.util.stream.Collectors.toList());
+        return List.of(gunHud, ammoHud);
     }
 
     @Override

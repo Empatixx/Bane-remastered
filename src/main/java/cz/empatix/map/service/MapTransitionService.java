@@ -12,7 +12,6 @@ import org.joml.Vector3i;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 public class MapTransitionService {
@@ -52,10 +51,6 @@ public class MapTransitionService {
         if (Duration.between(lastTransition, Instant.now()).toMillis() > DISPLAY_TIME_MILLIS) {
             return List.of();
         }
-        final ArrayList<Renderable> renderables = new ArrayList<>();
-        renderables.add(title);
-        renderables.addAll(titleText.getSubRenderables());
-        renderables.addAll(infoText.getSubRenderables());
-        return renderables;
+        return List.of(title, titleText, infoText);
     }
 }

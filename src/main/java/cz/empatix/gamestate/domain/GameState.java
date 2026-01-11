@@ -4,12 +4,11 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.service.GameStateService;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.DoubleBuffer;
-import java.util.List;
 
 import static org.lwjgl.system.MemoryStack.stackPush;
 
@@ -45,7 +44,7 @@ public abstract class GameState {
     public abstract void init();
     public abstract void update(final double dt);
     public abstract void fixedUpdate(double dt);
-    public abstract List<Renderable> toRender(final double dt);
+    public abstract void toRender(double dt, RenderableState state);
     public abstract void cleanUp();
     public abstract void keyPressed(int key);
     public abstract void keyReleased(int key);

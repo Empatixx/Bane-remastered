@@ -45,22 +45,21 @@ public class CurrentUpgradeMenu {
         if (currentUpgrade == null) {
             return List.of();
         }
-        final List<Renderable> renderables = new ArrayList<>(title.getSubRenderables());
+        final List<Renderable> renderables = new ArrayList<>();
+        renderables.add(title);
         if (!currentUpgrade.isBought()) {
             if (currentUpgrade.canBuy()) {
                 renderables.add(buy);
-                renderables.addAll(price.getSubRenderables());
+                renderables.add(price);
             } else {
-                renderables.addAll(cantBuy.getSubRenderables());
+                renderables.add(cantBuy);
             }
         } else {
             renderables.add(bought);
         }
         renderables.add(upgradeBackground);
         renderables.add(selectedUpgrade);
-        for (final CommonText text : description) {
-            renderables.addAll(text.getSubRenderables());
-        }
+        renderables.addAll(description);
         return renderables;
     }
     public void setCurrent(final PlayerUpgrade upgrade){

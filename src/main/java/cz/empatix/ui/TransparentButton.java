@@ -6,12 +6,11 @@ import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.domain.RenderScene;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3i;
-
-import java.util.List;
 
 public class TransparentButton implements UIElement{
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
@@ -50,8 +49,8 @@ public class TransparentButton implements UIElement{
         this.onClick = onClick;
     }
     @Override
-    public List<Renderable> getSubRenderables(){
-        return text.getSubRenderables();
+    public void collectSubRenderables(RenderableState state) {
+        text.collectSubRenderables(state);
     }
     @Override
     public boolean canRender() {

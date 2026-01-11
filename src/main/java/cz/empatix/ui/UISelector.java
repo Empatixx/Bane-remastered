@@ -1,14 +1,15 @@
 package cz.empatix.ui;
 
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.attributes.grouping.ContainerRenderableGroup;
+import cz.empatix.render.attributes.grouping.RenderableGroup;
 import cz.empatix.render.domain.RenderData;
+import cz.empatix.render.domain.RenderableState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 public class UISelector<T> implements UIElement{
     private final List<SelectableUI> elements;
@@ -87,8 +88,12 @@ public class UISelector<T> implements UIElement{
     }
 
     @Override
-    public List<Renderable> getSubRenderables() {
-        return List.copyOf(elements);
+    public void collectSubRenderables(RenderableState state) {
+        state.addAll(elements);
+    }
+    @Override
+    public RenderableGroup getRenderableGroup() {
+        return ContainerRenderableGroup.INSTANCE;
     }
     @Override
     public RenderData renderData() {

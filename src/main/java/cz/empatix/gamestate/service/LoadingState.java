@@ -7,12 +7,10 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.service.image.AnimatedImage;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class LoadingState extends GameState {
     private static final Logger LOGGER = LoggerFactory.getLogger(LoadingState.class);
@@ -47,8 +45,8 @@ public class LoadingState extends GameState {
     }
 
     @Override
-    public List<Renderable> toRender(final double dt) {
-        return List.of(loadingBg, loadingCircle);
+    public void toRender(double dt, RenderableState state) {
+        state.add(loadingBg).add(loadingCircle);
     }
 
     @Override

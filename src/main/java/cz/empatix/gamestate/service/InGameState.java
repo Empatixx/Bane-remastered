@@ -26,6 +26,7 @@ import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.upgrades.appliers.UpgradesApplicationService;
@@ -34,8 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
@@ -136,12 +135,18 @@ public class InGameState extends GameState {
     }
 
     @Override
-    public List<Renderable> toRender(final double dt) {
-        return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
-                        minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
-                        mapLoaderService.toRender(), artefactsService.toRender(), coinService.toRender())
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+    public void toRender(double dt, RenderableState state) {
+        state.addAll(mapService.toRender(dt))
+             .add(player)
+             .addAll(gunService.toRender(dt))
+             .addAll(pauseService.toRender(dt))
+             .addAll(minimapService.toRender(dt))
+             .add(CursorService.getCursor())
+             .addAll(deathService.toRender())
+             .addAll(itemService.toRender())
+             .addAll(mapLoaderService.toRender())
+             .addAll(artefactsService.toRender())
+             .addAll(coinService.toRender());
     }
 
 

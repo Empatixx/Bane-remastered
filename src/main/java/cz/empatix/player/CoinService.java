@@ -13,9 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Vector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CoinService {
     private final static String DEFAULT_COIN_TEXTURE = "ingame/banecoin.tga";
@@ -54,9 +51,7 @@ public class CoinService {
         updateHud();
     }
     public List<Renderable> toRender(){
-        return Stream.of(List.of(coinHud), coinText.getSubRenderables())
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+        return List.of(coinHud, coinText);
     }
 
     public boolean hasEnoughCoins(final int requiredCoins) {

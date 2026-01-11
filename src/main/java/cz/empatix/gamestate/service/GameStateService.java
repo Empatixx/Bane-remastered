@@ -5,6 +5,7 @@ import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderEngine;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ public class GameStateService {
     private final RenderEngine renderEngine;
     private final InteractionService interactionService;
     private final AudioService audioService;
+    private final RenderableState renderableState = new RenderableState(256);
     private GameState currentState;
 
     public GameStateService() {
@@ -63,7 +65,9 @@ public class GameStateService {
     }
     public void render(final double dt) {
         Camera.update((float) dt);
-        renderEngine.render(currentState.toRender(dt), dt);
+        renderableState.clear();
+        currentState.toRender(dt, renderableState);
+        renderEngine.render(renderableState.getList(), dt);
         physicsService.debugRender();
     }
 

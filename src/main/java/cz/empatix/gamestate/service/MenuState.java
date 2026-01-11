@@ -11,17 +11,14 @@ import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.hud.service.CommonBackground;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.hud.service.image.CommonImage;
-import cz.empatix.render.attributes.Renderable;
+import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.settings.service.SettingsMenuService;
 import cz.empatix.ui.CommonButton;
 import cz.empatix.ui.UIElement;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class MenuState extends GameState {
     private final static int OFFSET_BUTTON_Y = 5;
@@ -79,24 +76,17 @@ public class MenuState extends GameState {
     }
 
     @Override
-    public List<Renderable> toRender(final double dt) {
-        if(settingsMenuService.isActive()){
-            final ArrayList<Renderable> renderables = new ArrayList<>(5);
-            renderables.add(background);
-            renderables.addAll(settingsMenuService.toRender(dt));
-            renderables.add(CursorService.getCursor());
-            return renderables;
+    public void toRender(double dt, RenderableState state) {
+        state.add(background);
+        if (settingsMenuService.isActive()) {
+            state.addAll(settingsMenuService.toRender(dt))
+                 .add(CursorService.getCursor());
+            return;
         }
-        final List<? extends Renderable> renderable = Stream.of(
-                        List.of(background),
-                        List.of(CursorService.getCursor()),
-                        uiElements,
-                        hudElements,
-                        settingsMenuService.toRender(dt)
-                )
-                .flatMap(Collection::stream)
-                .toList();
-        return List.copyOf(renderable);
+        state.add(CursorService.getCursor())
+             .addAll(uiElements)
+             .addAll(hudElements)
+             .addAll(settingsMenuService.toRender(dt));
     }
 
     @Override

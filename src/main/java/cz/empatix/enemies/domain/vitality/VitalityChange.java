@@ -14,7 +14,7 @@ public record VitalityChange(
         Instant timeWhen
 ) {
     public List<Renderable> toRender(){
-        return text.getSubRenderables();
+        return List.of(text);
     }
     public void update(final double dt){
         text.update(dt);
