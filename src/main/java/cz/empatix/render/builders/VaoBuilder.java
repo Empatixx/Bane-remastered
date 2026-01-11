@@ -7,12 +7,14 @@ import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 
 public class VaoBuilder {
     private final Map<Integer, Integer> vboMap;
     private final Map<Integer, Integer> vboSizeMap;
     private final Map<Integer, Integer> vboStrideMap;
     private final Map<Integer, Integer> vboOffsetMap;
+    private Integer eboId;
 
     public VaoBuilder() {
         vboMap = new HashMap<>();
@@ -37,9 +39,20 @@ public class VaoBuilder {
         return this;
     }
 
+    public VaoBuilder addEbo(final int eboId) {
+        this.eboId = eboId;
+        return this;
+    }
+
     public int build() {
         final int vao = GL30.glGenVertexArrays();
         GL30.glBindVertexArray(vao);
+
+        // Bind EBO to VAO state (if provided)
+        if (eboId != null) {
+            GL30.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, eboId);
+        }
+
         for (Map.Entry<Integer, Integer> entry : vboMap.entrySet()) {
             final int vbo = entry.getValue();
             final int index = entry.getKey();
