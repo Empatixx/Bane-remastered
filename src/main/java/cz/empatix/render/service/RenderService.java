@@ -36,4 +36,12 @@ public class RenderService {
                 .toList();
         renderer.render(drawables, shaderProgramBinding);
     }
+
+    public void beginRendering() {
+        renderer.beginRendering();
+    }
+
+    public void endRendering() {
+        renderer.endRendering();
+    }
 }

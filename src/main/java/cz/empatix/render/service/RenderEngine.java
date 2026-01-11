@@ -40,19 +40,26 @@ public class RenderEngine {
                 .map(Renderable::getRenderableGroup)
                 .filter(RenderableGroup::isRenderable)
                 .collect(Collectors.groupingBy(RenderableGroup::getRenderScene, () -> new EnumMap<>(RenderScene.class), Collectors.toList()));
-        render(renderScenes.getOrDefault(RenderScene.SCENE, List.of()), RenderScene.SCENE, (float) dt);
-        render(renderScenes.getOrDefault(RenderScene.HUD, List.of()), RenderScene.HUD, (float) dt);
-        render(renderScenes.getOrDefault(RenderScene.OVERLAYS, List.of()), RenderScene.OVERLAYS, (float) dt);
+
+        renderService.beginRendering();
+        render(renderScenes, RenderScene.SCENE, (float) dt);
+        render(renderScenes, RenderScene.HUD, (float) dt);
+        render(renderScenes, RenderScene.OVERLAYS, (float) dt);
+        renderService.endRendering();
+
+        mainFramebuffer.flush();
+        postprocessService.flushFramebuffers();
     }
 
-    private void render(List<RenderableGroup> renderables,
+    private void render(final Map<RenderScene, List<RenderableGroup>> renderScenes,
                         final RenderScene scene,
                         final float dt) {
-        if (renderables.isEmpty()) {
+        final List<RenderableGroup> renderables = renderScenes.get(scene);
+        if (renderables == null || renderables.isEmpty()) {
             return;
         }
         mainFramebuffer.bind();
-        mainFramebuffer.flush();
+        mainFramebuffer.clear();
         renderService.render(renderables);
         mainFramebuffer.unbind();
         postprocessService.process(mainFramebuffer, scene, dt);

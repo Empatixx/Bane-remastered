@@ -65,6 +65,13 @@ public class Framebuffer implements Observer {
 
 
     public void flush(){
+        bind();
+        clear();
+        unbind();
+    }
+
+    public void clear(){
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         int flushingBits = 0;
         for (FramebufferAttachment attachment : attachments){
             flushingBits |= attachment.getFlushingBits();

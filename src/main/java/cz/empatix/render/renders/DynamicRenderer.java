@@ -20,9 +20,11 @@ import static org.lwjgl.opengl.GL33.*;
 public class DynamicRenderer implements Renderer {
     private final FloatBuffer vertexBuffer;
     private static final int MAX_PER_BATCH = 10000;
+    private static final int VERTEX_BUFFER_SIZE = MAX_PER_BATCH * TOTAL_VERTICES_PER_QUAD * (3 + 2) * Float.BYTES;
     private final int vao;
     private final int vbo;
     private final int ebo;
+    private ShaderProgramBinding currentShaderBinding;
 
     public DynamicRenderer() {
         vbo = VboBuilder.builder()
@@ -59,7 +61,15 @@ public class DynamicRenderer implements Renderer {
         }
         glBindTextureUnit(0, renderData.get(0).textureId());
 
-        shaderProgramBinding.bind();
+        // Only bind shader if different from current
+        if (currentShaderBinding != shaderProgramBinding) {
+            if (currentShaderBinding != null) {
+                currentShaderBinding.unbind();
+            }
+            shaderProgramBinding.bind();
+            currentShaderBinding = shaderProgramBinding;
+        }
+
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         final List<List<RenderData>> batches = Lists.partition(renderData, MAX_PER_BATCH);
@@ -68,6 +78,7 @@ public class DynamicRenderer implements Renderer {
             putVerticesToBuffer(batch);
 
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE, GL_STREAM_DRAW); // orphan old buffer
             glBufferSubData(GL_ARRAY_BUFFER, 0, vertexBuffer);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -76,7 +87,6 @@ public class DynamicRenderer implements Renderer {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
-        shaderProgramBinding.unbind();
     }
     private void putVerticesToBuffer(final List<RenderData> batch) {
         vertexBuffer.clear();
@@ -86,6 +96,17 @@ public class DynamicRenderer implements Renderer {
             }
         }
         vertexBuffer.flip();
+    }
+
+    public void beginRendering() {
+        currentShaderBinding = null;
+    }
+
+    public void endRendering() {
+        if (currentShaderBinding != null) {
+            currentShaderBinding.unbind();
+            currentShaderBinding = null;
+        }
     }
 
     private void glBindTextureUnit(final int unit, final int texture) {

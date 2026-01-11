@@ -98,4 +98,9 @@ public class PostprocessService {
         postprocess.apply(dt);
         renderService.render(postprocess.getRenderableGroup());
     }
+
+    public void flushFramebuffers() {
+        fbo1.flush();
+        fbo2.flush();
+    }
 }
