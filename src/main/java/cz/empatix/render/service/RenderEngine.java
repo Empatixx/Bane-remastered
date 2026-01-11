@@ -33,21 +33,23 @@ public class RenderEngine {
                 .map(Renderable::getRenderableGroup)
                 .filter(RenderableGroup::isRenderable)
                 .collect(Collectors.groupingBy(RenderableGroup::getRenderScene, () -> new EnumMap<>(RenderScene.class), Collectors.toList()));
+        renderService.beginRendering();
         render(renderScenes, RenderScene.SCENE, (float) dt);
         render(renderScenes, RenderScene.HUD, (float) dt);
         render(renderScenes, RenderScene.OVERLAYS, (float) dt);
+        renderService.endRendering();
+        fbo.flush();
+        postprocessService.flushFramebuffers();
     }
 
     private void render(Map<RenderScene, List<RenderableGroup>> renderScenes,
                         final RenderScene scene,
                         final float dt) {
         fbo.bind();
+        fbo.clear();
         renderService.render(renderScenes.get(scene));
         fbo.unbind();
         postprocessService.process(fbo, scene, dt);
-        fbo.flush();
-
-        postprocessService.flushFramebuffers();
     }
 
     private void findAllDrawables(final List<Renderable> renderables) {

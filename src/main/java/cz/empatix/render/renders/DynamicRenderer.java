@@ -22,6 +22,7 @@ public class DynamicRenderer implements Renderer {
     private final int vao;
     private final int vbo;
     private final int ebo;
+    private ShaderBinding currentShaderBinding;
 
     public DynamicRenderer() {
         vbo = VboBuilder.builder()
@@ -55,7 +56,15 @@ public class DynamicRenderer implements Renderer {
             return;
         }
         glBindTextureUnit(0, renderData.get(0).textureId());
-        final Shader shader = shaderBinding.apply();
+
+        // Only bind shader if different from current
+        if (currentShaderBinding != shaderBinding) {
+            if (currentShaderBinding != null) {
+                currentShaderBinding.unbind();
+            }
+            shaderBinding.apply();
+            currentShaderBinding = shaderBinding;
+        }
 
         glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -83,7 +92,17 @@ public class DynamicRenderer implements Renderer {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
-        shaderBinding.unbind();
+    }
+
+    public void beginRendering() {
+        currentShaderBinding = null;
+    }
+
+    public void endRendering() {
+        if (currentShaderBinding != null) {
+            currentShaderBinding.unbind();
+            currentShaderBinding = null;
+        }
     }
 
     private void glBindTextureUnit(final int unit, final int texture) {

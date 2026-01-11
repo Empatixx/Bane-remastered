@@ -43,4 +43,12 @@ public class RenderService {
                     renderer.render(drawables, shaderBinding, zIndex);
                 });
     }
+
+    public void beginRendering() {
+        renderer.beginRendering();
+    }
+
+    public void endRendering() {
+        renderer.endRendering();
+    }
 }

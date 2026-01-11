@@ -12,6 +12,7 @@ public class PostprocessService {
     private final RenderService renderService;
     private final List<Postprocess> postprocesses;
     private final Postprocess fallbackPostprocess;
+    private final List<Postprocess> activePostprocesses = new ArrayList<>(8);
 
     private final Framebuffer fbo1 = Framebuffer.createRgba();
     private final Framebuffer fbo2 = Framebuffer.createRgba();
@@ -30,12 +31,14 @@ public class PostprocessService {
     public void process(final Framebuffer sceneFbo,
                         final RenderScene scene,
                         final float dt) {
-        final List<Postprocess> postprocesses = this.postprocesses.stream()
-                .filter(Postprocess::canRender)
-                .filter(p -> p.accepts(scene))
-                .toList();
+        activePostprocesses.clear();
+        for (Postprocess p : this.postprocesses) {
+            if (p.canRender() && p.accepts(scene)) {
+                activePostprocesses.add(p);
+            }
+        }
 
-        if(postprocesses.isEmpty()){
+        if(activePostprocesses.isEmpty()){
             fallbackPostprocess.setInput(sceneFbo);
             renderService.render(fallbackPostprocess.getRenderableGroup());
             return;
@@ -44,9 +47,9 @@ public class PostprocessService {
         Framebuffer inputFBO = sceneFbo;
         Framebuffer outputFBO;
 
-        for (int i = 0; i < postprocesses.size(); i++) {
-            final Postprocess postprocess = postprocesses.get(i);
-            outputFBO = getFramebuffer(postprocesses, i);
+        for (int i = 0; i < activePostprocesses.size(); i++) {
+            final Postprocess postprocess = activePostprocesses.get(i);
+            outputFBO = getFramebuffer(activePostprocesses, i);
             postprocess.setInput(inputFBO);
 
             if (outputFBO != null) {
