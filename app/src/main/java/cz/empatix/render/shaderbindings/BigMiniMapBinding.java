@@ -1,7 +1,7 @@
 package cz.empatix.render.shaderbindings;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.domain.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -41,8 +41,8 @@ public record BigMiniMapBinding(
         final ShaderProgram shader = AssetsService.getShader("miniMap");
         glEnable(GL_SCISSOR_TEST);
 
-        final float xScale = (float) WindowHandler.WIDTH / WindowHandler.TARGET_WIDTH;
-        final float yScale = (float) WindowHandler.HEIGHT / WindowHandler.TARGET_HEIGHT;
+        final float xScale = (float) Viewport.WIDTH / Viewport.TARGET_WIDTH;
+        final float yScale = (float) Viewport.HEIGHT / Viewport.TARGET_HEIGHT;
 
         glScissor((int) (LAYOUT_POS_X * xScale), (int) (LAYOUT_POS_Y * yScale), (int) (LAYOUT_SIZE_X * xScale), (int) (LAYOUT_SIZE_Y * yScale));
 

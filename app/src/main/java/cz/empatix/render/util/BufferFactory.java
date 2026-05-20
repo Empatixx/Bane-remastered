@@ -1,4 +1,4 @@
-package cz.empatix.common.utils;
+package cz.empatix.render.util;
 
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;

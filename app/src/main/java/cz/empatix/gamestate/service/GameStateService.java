@@ -8,7 +8,6 @@ import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.service.PhysicsDebugRenderer;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.service.GlPhysicsDebugRenderer;
 import cz.empatix.render.service.RenderEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

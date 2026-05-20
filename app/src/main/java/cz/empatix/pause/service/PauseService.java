@@ -1,8 +1,8 @@
 package cz.empatix.pause.service;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.service.AudioService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameStateType;
@@ -29,11 +29,11 @@ public class PauseService {
 
     public PauseService() {
         final TextureAtlas.Entry pauseBgTxt = AssetsService.getTexture("ingame/pausebg.tga");
-        background = new CommonImage(pauseBgTxt, new Vector2f(WindowHandler.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, WindowHandler.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2, RenderScene.OVERLAYS);
+        background = new CommonImage(pauseBgTxt, new Vector2f(Viewport.TARGET_WIDTH / 2f - pauseBgTxt.width() * BACKGROUND_SCALE / 2f, Viewport.TARGET_HEIGHT / 2f - pauseBgTxt.height() * BACKGROUND_SCALE / 2f), BACKGROUND_SCALE, 2, RenderScene.OVERLAYS);
 
-        final TransparentButton resumeButton = new TransparentButton("Resume", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 225), 3);
-        final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 275), 3); //todo;
-        final TransparentButton exitButton = new TransparentButton("Exit", new Vector2f(WindowHandler.TARGET_WIDTH / 2f, 325), 3);
+        final TransparentButton resumeButton = new TransparentButton("Resume", new Vector2f(Viewport.TARGET_WIDTH / 2f, 225), 3);
+        final TransparentButton settingsButton = new TransparentButton("Statistics", new Vector2f(Viewport.TARGET_WIDTH / 2f, 275), 3); //todo;
+        final TransparentButton exitButton = new TransparentButton("Exit", new Vector2f(Viewport.TARGET_WIDTH / 2f, 325), 3);
 
         resumeButton.onClick(() -> setPause(false));
         settingsButton.onClick(() -> System.out.println("Statistics"));

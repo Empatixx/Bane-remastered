@@ -1,7 +1,7 @@
 package cz.empatix.render.builders;
 
 import com.google.common.base.Preconditions;
-import cz.empatix.common.utils.BufferFactory;
+import cz.empatix.render.util.BufferFactory;
 import org.lwjgl.opengl.GL30;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

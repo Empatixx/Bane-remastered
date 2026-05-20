@@ -1,6 +1,6 @@
 package cz.empatix.hud.service;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
@@ -10,7 +10,7 @@ public class SceneBackground implements HUDElement{
     private final CommonImage image;
 
     public SceneBackground(final String texture) {
-        this.image = new CommonImage(texture, new Vector2f(0,0), WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, -1);
+        this.image = new CommonImage(texture, new Vector2f(0,0), Viewport.TARGET_WIDTH, Viewport.TARGET_HEIGHT, -1);
     }
     @Override
     public RenderData renderData() {

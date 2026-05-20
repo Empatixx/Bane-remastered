@@ -1,8 +1,8 @@
 package cz.empatix.player;
+import cz.empatix.core.Viewport;
 
 import com.google.common.base.Preconditions;
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.domain.RenderableState;
@@ -25,10 +25,10 @@ public class CoinService {
 
     public CoinService(final String coinTexture, final Vector3i colorText){
         final TextureAtlas.Entry coinTxt = AssetsService.getTexture(coinTexture);
-        coinHud = new CommonImage(coinTxt, new Vector2f(COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height() * IMAGE_SCALE), IMAGE_SCALE);
+        coinHud = new CommonImage(coinTxt, new Vector2f(COIN_HUD_OFFSET, Viewport.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height() * IMAGE_SCALE), IMAGE_SCALE);
         coinText = new CommonText(String.valueOf(coins), "PixelFJVerdana12pt.ttf", new Vector2f(COIN_HUD_OFFSET + coinTxt.width() * IMAGE_SCALE + TEXT_OFFSET, 0f), coinHud.getZIndex());
 
-        coinText.setCenterY(WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET, WindowHandler.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height() * IMAGE_SCALE);
+        coinText.setCenterY(Viewport.TARGET_HEIGHT - COIN_HUD_OFFSET, Viewport.TARGET_HEIGHT - COIN_HUD_OFFSET - coinTxt.height() * IMAGE_SCALE);
         coinText.setColorRGB(colorText.x(), colorText.y(), colorText.z());
     }
     public CoinService(){

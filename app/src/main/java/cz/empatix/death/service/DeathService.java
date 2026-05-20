@@ -1,7 +1,7 @@
 package cz.empatix.death.service;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.domain.font.FontSize;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameStateType;
@@ -66,7 +66,7 @@ public class DeathService {
         final CommonText floorCoins = new CommonText("+0", "PixelFJVerdana12pt.ttf", new Vector2f(650, LABEL_TEXT_END_POSITION_Y + 3 * LABEL_POS_OFFSET), 2, RenderScene.OVERLAYS);
 
         gameOverText = new CommonText("Game Over", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONTSIZE_32);
-        gameOverText.setCenterX(0, WindowHandler.TARGET_WIDTH);
+        gameOverText.setCenterX(0, Viewport.TARGET_WIDTH);
 
         continueText = new CommonText("Press any key to continue...", "PixelFJVerdana12pt.ttf", new Vector2f(700, 500), 2, RenderScene.OVERLAYS);
 

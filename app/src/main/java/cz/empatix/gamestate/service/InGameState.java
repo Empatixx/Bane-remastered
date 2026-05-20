@@ -1,9 +1,9 @@
 package cz.empatix.gamestate.service;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.artefacts.service.ArtefactsService;
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.death.service.DeathService;
@@ -91,7 +91,7 @@ public class InGameState extends GameState {
             final Room startRoom = result.startRoom();
             player.setPosition(startRoom.getX() + startRoom.getWidth() / 2f - player.getWidth()/2f,
                     startRoom.getY() + startRoom.getHeight() / 2f - player.getHeight()/2f);
-            Camera.getInstance().setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+            Camera.getInstance().setPosition(player.getX() + player.getWidth() - Viewport.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - Viewport.TARGET_HEIGHT / 2f);
         });
 
 
@@ -107,7 +107,7 @@ public class InGameState extends GameState {
         upgradesApplicationService.apply();
 
         AudioService.getInstance().play(Soundtrack.INGAME);
-        Camera.getInstance().setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+        Camera.getInstance().setPosition(player.getX() + player.getWidth() - Viewport.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - Viewport.TARGET_HEIGHT / 2f);
     }
 
     @Override
@@ -121,11 +121,11 @@ public class InGameState extends GameState {
             return;
         }
         if (!minimapService.isActiveBigMinimap()){
-            final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
-            final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-            Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
+            final float mouseDirectionX = (mouseX - Viewport.TARGET_WIDTH / 2f) / 10f;
+            final float mouseDirectionY = (mouseY - Viewport.TARGET_HEIGHT / 2f) / 10f;
+            Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth()/2f - Viewport.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight()/2f - Viewport.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
         } else {
-            Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f, (float) dt);
+            Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth()/2f - Viewport.TARGET_WIDTH / 2f, player.getY() + player.getHeight()/2f - Viewport.TARGET_HEIGHT / 2f, (float) dt);
         }
         player.update(dt);
         shadowService.update();

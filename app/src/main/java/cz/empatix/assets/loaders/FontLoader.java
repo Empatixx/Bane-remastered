@@ -1,11 +1,11 @@
 package cz.empatix.assets.loaders;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.domain.font.RawFont;
 import cz.empatix.assets.domain.font.RawGlyph;
-import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.common.utils.BufferFactory;
+import cz.empatix.render.util.BufferFactory;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.factory.TextureAtlasFactory;
@@ -95,7 +95,7 @@ public class FontLoader implements AssetLoader<RawFont> {
             }
             final Map<Character, RawGlyph> glyphs = new HashMap<>();
             final float scale = stbtt_ScaleForPixelHeight(info, fontSize.getSize());
-            final float scaleForBitmap = stbtt_ScaleForPixelHeight(info, fontSize.getSize() * WindowHandler.getMaxHeight() / WindowHandler.TARGET_HEIGHT);
+            final float scaleForBitmap = stbtt_ScaleForPixelHeight(info, fontSize.getSize() * Viewport.MAX_HEIGHT / Viewport.TARGET_HEIGHT);
 
             for (char c = 0; c <= 255; c++) {
                 try (final MemoryStack memoryStack = MemoryStack.stackPush()) {

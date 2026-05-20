@@ -1,6 +1,6 @@
 package cz.empatix.render.domain;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.service.*;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -14,9 +14,9 @@ import static org.lwjgl.opengl.GL30.*;
 public class Framebuffer implements Observer {
     public static final List<Vertex> VERTICES = List.of(
             new Vertex(new Vector3f(0, 0,100), new Vector2f(0, 1)),
-            new Vertex(new Vector3f(WindowHandler.TARGET_WIDTH, 0,100), new Vector2f(1, 1)),
-            new Vertex(new Vector3f(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT,100), new Vector2f(1, 0)),
-            new Vertex(new Vector3f(0, WindowHandler.TARGET_HEIGHT,100), new Vector2f(0, 0))
+            new Vertex(new Vector3f(Viewport.TARGET_WIDTH, 0,100), new Vector2f(1, 1)),
+            new Vertex(new Vector3f(Viewport.TARGET_WIDTH, Viewport.TARGET_HEIGHT,100), new Vector2f(1, 0)),
+            new Vertex(new Vector3f(0, Viewport.TARGET_HEIGHT,100), new Vector2f(0, 0))
     );
     private final int fboId;
     private final Vector2i size;
@@ -25,7 +25,7 @@ public class Framebuffer implements Observer {
 
     public Framebuffer(){
         fboId = glGenFramebuffers();
-        size = new Vector2i(WindowHandler.WIDTH, WindowHandler.HEIGHT);
+        size = new Vector2i(Viewport.WIDTH, Viewport.HEIGHT);
         attachments = new ArrayList<>();
     }
 
@@ -85,7 +85,7 @@ public class Framebuffer implements Observer {
         if (subject instanceof Camera camera){
             if (payload instanceof CameraObservePayload cameraPayload){
                 if (cameraPayload.change().equals(CameraChangeType.VIEWPORT)){
-                    resize(WindowHandler.WIDTH, WindowHandler.HEIGHT);
+                    resize(Viewport.WIDTH, Viewport.HEIGHT);
                 }
             }
         }

@@ -1,6 +1,6 @@
 package cz.empatix.common.initializators;
 
-import cz.empatix.common.handlers.WindowHandler;
+import cz.empatix.core.GraphicsCapabilities;
 import cz.empatix.settings.domain.GameSettings;
 import cz.empatix.settings.service.SettingsService;
 import org.lwjgl.opengl.GL;
@@ -16,7 +16,6 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class GLInit implements Initializer {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLInit.class);
     private final static boolean DEBUG_MODE = true;
-    public static int TEXTURE2D_MAX_SIZE;
 
     @Override
     public void init() {
@@ -41,7 +40,7 @@ public class GLInit implements Initializer {
             enableDebug();
         }
 
-        TEXTURE2D_MAX_SIZE = glGetInteger(GL_MAX_TEXTURE_SIZE);
+        GraphicsCapabilities.maxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
 
     }
 

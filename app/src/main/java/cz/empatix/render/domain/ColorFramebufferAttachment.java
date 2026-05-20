@@ -1,6 +1,6 @@
 package cz.empatix.render.domain;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.textureatlas.domain.Texture;
 import org.joml.Vector2i;
 
@@ -9,7 +9,7 @@ import static org.lwjgl.opengl.GL30.*;
 public class ColorFramebufferAttachment implements FramebufferAttachment {
     private final Texture texture;
     public ColorFramebufferAttachment(final int channels){
-        this.texture = new Texture(null, WindowHandler.WIDTH, WindowHandler.HEIGHT, channels);
+        this.texture = new Texture(null, Viewport.WIDTH, Viewport.HEIGHT, channels);
     }
 
     @Override

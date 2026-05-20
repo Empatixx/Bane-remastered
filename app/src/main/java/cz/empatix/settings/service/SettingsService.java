@@ -1,4 +1,5 @@
 package cz.empatix.settings.service;
+import cz.empatix.core.Viewport;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.empatix.audio.service.AudioService;
@@ -42,7 +43,7 @@ public class SettingsService {
 
     private GameSettings createDefaultSettings() {
         LOGGER.info("Creating default settings");
-        return new GameSettings(WindowHandler.TARGET_WIDTH * 2, WindowHandler.TARGET_HEIGHT * 2,
+        return new GameSettings(Viewport.TARGET_WIDTH * 2, Viewport.TARGET_HEIGHT * 2,
                 false, true, 1f, 0.5f, 0.5f);
     }
 

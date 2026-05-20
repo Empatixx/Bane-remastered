@@ -1,6 +1,6 @@
 package cz.empatix.render.domain;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.textureatlas.domain.TextureArray;
 import org.joml.Vector2i;
 
@@ -9,7 +9,7 @@ import static org.lwjgl.opengl.GL30.*;
 public class TextureArrayFramebufferAttachment implements FramebufferAttachment{
     private final TextureArray textureArray;
     public TextureArrayFramebufferAttachment(final int channels, final int layers){
-        this.textureArray = new TextureArray(WindowHandler.WIDTH, WindowHandler.HEIGHT, layers, channels);
+        this.textureArray = new TextureArray(Viewport.WIDTH, Viewport.HEIGHT, layers, channels);
     }
     @Override
     public void attach() {

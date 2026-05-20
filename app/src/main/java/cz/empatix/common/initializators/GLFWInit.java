@@ -1,4 +1,5 @@
 package cz.empatix.common.initializators;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.settings.domain.GameSettings;
@@ -23,8 +24,8 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GLFWInit implements Initializer {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLFWInit.class);
-    private static final int HEIGHT = WindowHandler.TARGET_HEIGHT * 2;
-    private static final int WIDTH = WindowHandler.TARGET_WIDTH * 2;
+    private static final int HEIGHT = Viewport.TARGET_HEIGHT * 2;
+    private static final int WIDTH = Viewport.TARGET_WIDTH * 2;
     private static final boolean VSYNC = false;
     public static long window;
 

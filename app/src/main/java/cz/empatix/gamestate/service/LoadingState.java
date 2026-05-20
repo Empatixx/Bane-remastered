@@ -1,7 +1,7 @@
 package cz.empatix.gamestate.service;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.enemies.service.EnemyFactory;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
@@ -29,7 +29,7 @@ public class LoadingState extends GameState {
         AssetsService.loadAssets();
         EnemyFactory.init();
         loadingBg = new CommonBackground("loading/loading.tga", 0);
-        loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(WindowHandler.TARGET_WIDTH/2,380), 8, true);
+        loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(Viewport.TARGET_WIDTH/2,380), 8, true);
         startTime = System.currentTimeMillis();
     }
 

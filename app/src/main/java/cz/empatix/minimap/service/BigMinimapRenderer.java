@@ -1,8 +1,8 @@
 package cz.empatix.minimap.service;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.service.AudioService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.hud.service.image.CommonImage;
@@ -24,10 +24,10 @@ import java.util.*;
 public class BigMinimapRenderer implements MinimapRenderer{
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
     private static final Logger LOGGER = LoggerFactory.getLogger(BigMinimapRenderer.class);
-    private static final float MINIMAP_LAYOUT_POSITION_X = WindowHandler.TARGET_WIDTH /2f - 200;
-    private static final float MINIMAP_LAYOUT_POSITION_Y = WindowHandler.TARGET_HEIGHT /2f - 200;
-    public final static float MINIMAP_POSITION_X = WindowHandler.TARGET_WIDTH /2f - (BigMinimapRoom.DIMENSIONS * 4)/2f;
-    public final static float MINIMAP_POSITION_Y = WindowHandler.TARGET_HEIGHT /2f - (BigMinimapRoom.DIMENSIONS * 4)/2f;
+    private static final float MINIMAP_LAYOUT_POSITION_X = Viewport.TARGET_WIDTH /2f - 200;
+    private static final float MINIMAP_LAYOUT_POSITION_Y = Viewport.TARGET_HEIGHT /2f - 200;
+    public final static float MINIMAP_POSITION_X = Viewport.TARGET_WIDTH /2f - (BigMinimapRoom.DIMENSIONS * 4)/2f;
+    public final static float MINIMAP_POSITION_Y = Viewport.TARGET_HEIGHT /2f - (BigMinimapRoom.DIMENSIONS * 4)/2f;
     private Map<Room, BigMinimapRoom> minimapRooms;
     private final CommonImage minimapLayout;
     private final Vector2f dragPosition = new Vector2f();

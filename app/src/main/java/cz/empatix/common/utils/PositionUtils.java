@@ -1,14 +1,14 @@
 package cz.empatix.common.utils;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 
 public class PositionUtils {
     public static int getCenterX() {
-        return WindowHandler.WIDTH / 2;
+        return Viewport.WIDTH / 2;
     }
 
     public static int getCenterY() {
-        return WindowHandler.HEIGHT / 2;
+        return Viewport.HEIGHT / 2;
     }
 
     public static int getCenterXInRange(int xMin, int xMax) {

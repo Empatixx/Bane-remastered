@@ -1,7 +1,7 @@
 package cz.empatix.enemies.domain.bosses;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.domain.font.FontSize;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
@@ -70,7 +70,7 @@ public abstract class BossBaseEnemy implements Drawable, Damageable, DamageSourc
 
         spawnTime = System.currentTimeMillis();
 
-        final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
+        final float xPosition = Viewport.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
         healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 15));
         this.bossName = new CommonText(bossName, "PixelFJVerdana12pt.ttf", new Vector2f(), 1, RenderScene.HUD, FontSize.FONTSIZE_22);
         this.bossName.setPosition(healthBar.getPosition().x() + healthBar.getXOffset() + 5, 30);

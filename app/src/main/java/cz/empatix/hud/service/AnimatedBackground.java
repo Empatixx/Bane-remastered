@@ -1,7 +1,7 @@
 package cz.empatix.hud.service;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;
@@ -17,7 +17,7 @@ public class AnimatedBackground implements HUDElement {
         final TextureAtlas.Entry textureImage = AssetsService.getTexture(texture);
         this.animation = Animation.builder()
                 .setTotal(1,frames)
-                .addState(AnimationState.STATIC, 0, frames, WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT, 100)
+                .addState(AnimationState.STATIC, 0, frames, Viewport.TARGET_WIDTH, Viewport.TARGET_HEIGHT, 100)
                 .texture(textureImage)
                 .build();
         this.animation.setState(AnimationState.STATIC);

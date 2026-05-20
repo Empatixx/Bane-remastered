@@ -1,6 +1,6 @@
 package cz.empatix.enemies.domain.bosses;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.hud.domain.StatusBarType;
@@ -63,7 +63,7 @@ public class BossImpl implements Damageable, DamageSource {
 
         aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
 
-        final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
+        final float xPosition = Viewport.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
         healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 450));
         vitalityDisplayService = new VitalityDisplayService();
     }
@@ -97,7 +97,7 @@ public class BossImpl implements Damageable, DamageSource {
 
         aStarTargetting = new AStarTargetting(physicsBody::getPhysicsTranslation, width, height);
 
-        final float xPosition = WindowHandler.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
+        final float xPosition = Viewport.TARGET_WIDTH / 2f - StatusBarType.BOSS_HEALTH.getTexture().width() * StatusBarType.BOSS_HEALTH.getScale() / 2f;
         healthBar = new StatusBar(() -> health, () -> maxHealth, StatusBarType.BOSS_HEALTH, new Vector2f(xPosition, 450));
 
         vitalityDisplayService = new VitalityDisplayService();

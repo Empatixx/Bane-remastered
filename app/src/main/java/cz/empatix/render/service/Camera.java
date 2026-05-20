@@ -1,6 +1,6 @@
 package cz.empatix.render.service;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.core.InterpolatedPosition;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -10,7 +10,7 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 
-import static cz.empatix.common.handlers.WindowHandler.*;
+import static cz.empatix.core.Viewport.*;
 import static org.lwjgl.opengl.GL11.glViewport;
 
 public class Camera implements ObserveSubject{
@@ -97,11 +97,11 @@ public class Camera implements ObserveSubject{
     }
 
     public static float getTargetWidth() {
-        return WindowHandler.TARGET_WIDTH;
+        return Viewport.TARGET_WIDTH;
     }
 
     public static float getTargetHeight() {
-        return WindowHandler.TARGET_HEIGHT;
+        return Viewport.TARGET_HEIGHT;
     }
 
     public void setSmoothlyMinPosition(final float x, final float y, final float dt) {
@@ -118,8 +118,8 @@ public class Camera implements ObserveSubject{
         if(tween > 1){
             tween = 1;
         }
-        maxPosition.x = (x - maxPosition.x - WindowHandler.TARGET_WIDTH) * tween + maxPosition.x;
-        maxPosition.y = (y - maxPosition.y - WindowHandler.TARGET_HEIGHT) * tween + maxPosition.y;
+        maxPosition.x = (x - maxPosition.x - Viewport.TARGET_WIDTH) * tween + maxPosition.x;
+        maxPosition.y = (y - maxPosition.y - Viewport.TARGET_HEIGHT) * tween + maxPosition.y;
 
     }
 
@@ -127,7 +127,7 @@ public class Camera implements ObserveSubject{
         minPosition.set(x, y);
     }
     public void setMaxPosition(final float x, final float y) {
-        maxPosition.set(x - WindowHandler.TARGET_WIDTH, y - WindowHandler.TARGET_HEIGHT);
+        maxPosition.set(x - Viewport.TARGET_WIDTH, y - Viewport.TARGET_HEIGHT);
     }
 
     public boolean isInProjection(final Vector2f position, final int width, final int height) {

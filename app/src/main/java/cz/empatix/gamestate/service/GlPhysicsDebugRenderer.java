@@ -1,6 +1,7 @@
-package cz.empatix.render.service;
+package cz.empatix.gamestate.service;
 
 import cz.empatix.newphysics.service.PhysicsDebugRenderer;
+import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL30;
 

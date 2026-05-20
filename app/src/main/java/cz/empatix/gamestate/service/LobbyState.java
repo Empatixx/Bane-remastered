@@ -1,8 +1,8 @@
 package cz.empatix.gamestate.service;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.audio.domain.Soundtrack;
 import cz.empatix.audio.service.AudioService;
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.gamestate.domain.GameState;
@@ -64,14 +64,14 @@ public class LobbyState extends GameState {
         shadowService = new ShadowService(player);
 
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
-        Camera.getInstance().setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
+        Camera.getInstance().setPosition(player.getX() + player.getWidth() - Viewport.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - Viewport.TARGET_HEIGHT / 2f);
     }
 
     @Override
     public void update(double dt) {
-        final float mouseDirectionX = (mouseX - WindowHandler.TARGET_WIDTH / 2f) / 10f;
-        final float mouseDirectionY = (mouseY - WindowHandler.TARGET_HEIGHT / 2f) / 10f;
-        Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
+        final float mouseDirectionX = (mouseX - Viewport.TARGET_WIDTH / 2f) / 10f;
+        final float mouseDirectionY = (mouseY - Viewport.TARGET_HEIGHT / 2f) / 10f;
+        Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth() - Viewport.TARGET_WIDTH / 2f + mouseDirectionX, player.getY() + player.getHeight() - Viewport.TARGET_HEIGHT / 2f + mouseDirectionY, (float) dt);
 
         player.update(dt);
         scientist.update(dt, mouseX, mouseY);

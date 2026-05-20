@@ -1,6 +1,6 @@
 package cz.empatix.assets.providers;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.textureatlas.domain.Texture;
 import cz.empatix.textureatlas.domain.TextureFlag;
 import cz.empatix.textureatlas.service.PerlinNoiseGenerator;
@@ -17,7 +17,7 @@ public class NoiseTextureProvider implements AssetProvider {
     @Override
     public void create() {
         if (textureMap.isEmpty()) {
-            final Texture noise = getNoiseTexture(WindowHandler.TARGET_WIDTH, WindowHandler.TARGET_HEIGHT);
+            final Texture noise = getNoiseTexture(Viewport.TARGET_WIDTH, Viewport.TARGET_HEIGHT);
             textureMap.put("lightningNoise", noise);
         }
     }

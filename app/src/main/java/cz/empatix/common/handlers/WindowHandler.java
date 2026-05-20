@@ -3,6 +3,7 @@ package cz.empatix.common.handlers;
 import com.google.common.base.Preconditions;
 import cz.empatix.common.GameLoop;
 import cz.empatix.common.initializators.GLFWInit;
+import cz.empatix.core.Viewport;
 import cz.empatix.render.service.Camera;
 import cz.empatix.settings.domain.GameSettings;
 import cz.empatix.settings.service.SettingsService;
@@ -21,20 +22,17 @@ import static org.lwjgl.opengl.GL11.glViewport;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class WindowHandler {
-    public static int WIDTH;
-    public static int HEIGHT;
-    public final static int TARGET_WIDTH = 960;
-    public final static int TARGET_HEIGHT = 540;
     public static final long WINDOW = GLFWInit.window;
 
     public static void registerCallbacks(final GameLoop gameLoop) {
+        Viewport.MAX_HEIGHT = getMonitorResolution().y;
         try (final MemoryStack stack = stackPush()) {
             final IntBuffer pWidth = stack.mallocInt(1);
             final IntBuffer pHeight = stack.mallocInt(1);
 
             GLFW.glfwGetWindowSize(WINDOW, pWidth, pHeight);
-            WIDTH = pWidth.get(0);
-            HEIGHT = pHeight.get(0);
+            Viewport.WIDTH = pWidth.get(0);
+            Viewport.HEIGHT = pHeight.get(0);
         }
 
         GLFW.glfwSetFramebufferSizeCallback(WINDOW, (win, width, height) -> {
@@ -42,8 +40,8 @@ public class WindowHandler {
             settings.setResolutionWidth(width);
             settings.setResolutionHeight(height);
 
-            WIDTH = width;
-            HEIGHT = height;
+            Viewport.WIDTH = width;
+            Viewport.HEIGHT = height;
             Camera.getInstance().setViewport(width, height);
         });
         //todo: remove in new GLFW (fixed)
@@ -109,7 +107,7 @@ public class WindowHandler {
                 glfwGetWindowSize(WINDOW, pWidth, pHeight);
                 final GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
                 GLFW.glfwSetWindowMonitor(WINDOW, 0, (vidmode.width() - pWidth.get(0)) / 2,
-                        (vidmode.height() - pHeight.get(0)) / 2, TARGET_WIDTH, TARGET_HEIGHT, GLFW.GLFW_DONT_CARE);
+                        (vidmode.height() - pHeight.get(0)) / 2, Viewport.TARGET_WIDTH, Viewport.TARGET_HEIGHT, GLFW.GLFW_DONT_CARE);
             }
         }
     }

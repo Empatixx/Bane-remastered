@@ -1,6 +1,6 @@
 package cz.empatix.render.domain;
+import cz.empatix.core.Viewport;
 
-import cz.empatix.common.handlers.WindowHandler;
 import org.joml.Vector2i;
 
 import static org.lwjgl.opengl.GL30.*;
@@ -13,7 +13,7 @@ public class DepthStencilFramebufferAttachment implements FramebufferAttachment{
     @Override
     public void attach() {
         glBindRenderbuffer(GL_RENDERBUFFER, depthStencilBuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,  WindowHandler.WIDTH, WindowHandler.HEIGHT);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8,  Viewport.WIDTH, Viewport.HEIGHT);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthStencilBuffer);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
     }

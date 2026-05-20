@@ -1,7 +1,7 @@
 package cz.empatix.textureatlas.service;
 
 import cz.empatix.assets.domain.RawImage;
-import cz.empatix.common.initializators.GLInit;
+import cz.empatix.core.GraphicsCapabilities;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlasBlueprint;
@@ -19,7 +19,7 @@ public class TextureAtlasPacker {
 
     public TextureAtlasBlueprint pack(final Map<String, RawImage> images) {
         TextureAtlasBlueprint lastSmallestAtlas = null;
-        int targetSize = Math.min(GLInit.TEXTURE2D_MAX_SIZE, MAX_TEXTURE_SIZE);
+        int targetSize = Math.min(GraphicsCapabilities.maxTextureSize, MAX_TEXTURE_SIZE);
         boolean failed;
         for (int stepSize = targetSize / 2; stepSize >= TEXTURE_MINSTEPSIZE; stepSize = stepSize / 2) {
             try {
@@ -33,8 +33,8 @@ public class TextureAtlasPacker {
             }
 
             if (failed) {
-                if (GLInit.TEXTURE2D_MAX_SIZE < targetSize) {
-                    throw new IllegalStateException("Failed to pack images into atlas, graphics card limit is " + GLInit.TEXTURE2D_MAX_SIZE + "x" + GLInit.TEXTURE2D_MAX_SIZE);
+                if (GraphicsCapabilities.maxTextureSize < targetSize) {
+                    throw new IllegalStateException("Failed to pack images into atlas, graphics card limit is " + GraphicsCapabilities.maxTextureSize + "x" + GraphicsCapabilities.maxTextureSize);
                 }
                 targetSize += stepSize;
             } else {
