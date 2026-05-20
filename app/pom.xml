@@ -104,6 +104,10 @@
             <groupId>cz.empatix</groupId>
             <artifactId>game-engine-physics</artifactId>
         </dependency>
+        <dependency>
+            <groupId>cz.empatix</groupId>
+            <artifactId>game-engine-render</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>

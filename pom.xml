@@ -12,6 +12,7 @@
     <modules>
         <module>game-engine-core</module>
         <module>game-engine-physics</module>
+        <module>game-engine-render</module>
         <module>app</module>
     </modules>
 
@@ -121,6 +122,11 @@
             <dependency>
                 <groupId>cz.empatix</groupId>
                 <artifactId>game-engine-physics</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cz.empatix</groupId>
+                <artifactId>game-engine-render</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
