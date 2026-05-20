@@ -1,4 +1,10 @@
-# Project exclude paths
-/target/#
+# Build output
+target/
+dependency-reduced-pom.xml
+
+# Game runtime / local files
 upgrades.bin
 settings.json
+
+# IDE
+*.iml
