@@ -23,4 +23,8 @@ public class PetService {
     public List<? extends Renderable> toRender() {
         return List.of(pet);
     }
+
+    public Pet getPet() {
+        return pet;
+    }
 }

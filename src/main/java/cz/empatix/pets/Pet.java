@@ -12,12 +12,13 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
+import cz.empatix.shadow.domain.ShadowCaster;
 import org.joml.Vector2f;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
+public class Pet implements InteractEntity, Drawable, Targetable, DamageSource, ShadowCaster {
     private final static Set<Integer> INTERACT_KEYS = new HashSet<>();
     private final static int GAZE_OFFSET = 16;
     private final static int GAZE_SPEED_PRELIMIT = 150;
@@ -200,5 +201,26 @@ public class Pet implements InteractEntity, Drawable, Targetable, DamageSource {
     @Override
     public DamageSourceType type() {
         return DamageSourceType.PLAYER;
+    }
+
+    // ShadowCaster implementations
+    @Override
+    public Vector2f getShadowPosition() {
+        return physicsObject.getTranslation();
+    }
+
+    @Override
+    public int getShadowWidth() {
+        return getWidth();
+    }
+
+    @Override
+    public int getShadowHeight() {
+        return getHeight();
+    }
+
+    @Override
+    public float getShadowFeetOffsetY() {
+        return -HEIGHT * 0.3f;
     }
 }

@@ -21,6 +21,7 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.roomobjects.domain.Scientist;
+import cz.empatix.shadow.service.ShadowService;
 import cz.empatix.tiles.domain.TileImpl;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
@@ -35,6 +36,7 @@ public class LobbyState extends GameState {
     private Player player;
     private CoinService coinService;
     private Scientist scientist;
+    private ShadowService shadowService;
 
     protected LobbyState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.LOBBY);
@@ -58,6 +60,8 @@ public class LobbyState extends GameState {
 
         scientist = new Scientist();
         scientist.setPosition(TileImpl.TILE_SIZE * TileImpl.SCALE * 25, TileImpl.TILE_SIZE * TileImpl.SCALE * 6.5f);
+
+        shadowService = new ShadowService(player);
 
         AudioService.getInstance().play(Soundtrack.PROGRESS_ROOM);
         Camera.getInstance().setPosition(player.getX() + player.getWidth() - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight() - WindowHandler.TARGET_HEIGHT / 2f);
@@ -86,6 +90,7 @@ public class LobbyState extends GameState {
         final RenderableState coinState = new RenderableState(8);
         coinService.collectSubRenderables(coinState);
         final List<Renderable> renderables = Stream.of(mapService.toRender(dt),
+                        shadowService.toRender((float) dt),
                         pauseService.toRender(dt),
                         List.of(player, scientist),
                         coinState.getList())

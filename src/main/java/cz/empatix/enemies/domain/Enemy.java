@@ -6,8 +6,9 @@ import cz.empatix.newphysics.attributes.Damageable;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderScene;
+import cz.empatix.shadow.domain.ShadowCaster;
 import org.joml.Vector2f;
-public interface Enemy extends Drawable, Targetable {
+public interface Enemy extends Drawable, Targetable, ShadowCaster {
     void update(final double dt);
     void fixedUpdate(final double dt);
     int hit(final int damage);
@@ -36,5 +37,21 @@ public interface Enemy extends Drawable, Targetable {
     void setTarget(final Player player);
     default void despawn(){
         hit(getHealth());
+    }
+
+    // ShadowCaster default implementations
+    @Override
+    default Vector2f getShadowPosition() {
+        return getPosition();
+    }
+
+    @Override
+    default int getShadowWidth() {
+        return getWidth();
+    }
+
+    @Override
+    default int getShadowHeight() {
+        return getHeight();
     }
 }

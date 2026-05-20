@@ -1,6 +1,7 @@
 package cz.empatix.rooms.service;
 
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.service.EnemyBoundsService;
 import cz.empatix.enemies.service.EnemyService;
 import cz.empatix.items.service.ItemService;
@@ -209,5 +210,10 @@ public class CommonRoom implements Room {
     @Override
     public List<RoomObject> getRoomObjects() {
         return roomObjectService.getRoomObjects();
+    }
+
+    @Override
+    public List<Enemy> getEnemies() {
+        return enemyService.getEnemies();
     }
 }

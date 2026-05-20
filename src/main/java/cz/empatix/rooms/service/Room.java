@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
@@ -8,6 +9,7 @@ import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -56,4 +58,8 @@ public interface Room {
         return RoomState.OPEN;
     }
     List<RoomObject> getRoomObjects();
+
+    default List<Enemy> getEnemies() {
+        return Collections.emptyList();
+    }
 }

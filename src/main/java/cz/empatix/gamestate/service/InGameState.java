@@ -30,10 +30,14 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderableState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.rooms.service.Room;
+import cz.empatix.shadow.domain.ShadowCaster;
+import cz.empatix.shadow.service.ObjectShadowService;
+import cz.empatix.shadow.service.ShadowService;
 import cz.empatix.upgrades.appliers.UpgradesApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,6 +55,8 @@ public class InGameState extends GameState {
     private Player player;
     private DeathService deathService;
     private PetService petService;
+    private ShadowService shadowService;
+    private ObjectShadowService objectShadowService;
 
     public InGameState(final GameStateService gameStateService) {
         super(gameStateService, GameStateType.INGAME);
@@ -94,6 +100,8 @@ public class InGameState extends GameState {
         mapLoaderService.load(mapGenerationResult);
 
         petService = new PetService(player);
+        shadowService = new ShadowService(player);
+        objectShadowService = new ObjectShadowService();
 
         final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService, mapService);
         upgradesApplicationService.apply();
@@ -120,6 +128,7 @@ public class InGameState extends GameState {
             Camera.getInstance().setSmoothlyPosition(player.getX() + player.getWidth()/2f - WindowHandler.TARGET_WIDTH / 2f, player.getY() + player.getHeight()/2f - WindowHandler.TARGET_HEIGHT / 2f, (float) dt);
         }
         player.update(dt);
+        shadowService.update();
         mapLoaderService.update((float) dt);
         mapService.update(dt, player);
         minimapService.update((float)dt, mouseX, mouseY);
@@ -143,7 +152,23 @@ public class InGameState extends GameState {
     public List<Renderable> toRender(final double dt) {
         final RenderableState coinState = new RenderableState(8);
         coinService.collectSubRenderables(coinState);
-        return Stream.of(mapService.toRender(dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
+
+        // Collect shadow casters for object shadows (enemies and pets only)
+        final List<ShadowCaster> shadowCasters = new ArrayList<>();
+        for (final Room room : mapService.getRooms()) {
+            shadowCasters.addAll(room.getEnemies());
+        }
+        if (petService.getPet().canRender()) {
+            shadowCasters.add(petService.getPet());
+        }
+
+        // Compute object shadows (each object gets its own shadow angle)
+        final List<Renderable> objectShadows = objectShadowService.computeShadows(
+                shadowCasters,
+                (float) dt
+        );
+
+        return Stream.of(mapService.toRender(dt), objectShadows, shadowService.toRender((float) dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
                         minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
                         mapLoaderService.toRender(), artefactsService.toRender(), coinState.getList(), petService.toRender())
                 .flatMap(List::stream)

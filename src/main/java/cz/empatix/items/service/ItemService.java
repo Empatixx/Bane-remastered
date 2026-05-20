@@ -34,6 +34,10 @@ public class ItemService {
     public List<Drawable> toRender(){
         return List.copyOf(itemDrops);
     }
+
+    public List<ItemDrop> getItems() {
+        return List.copyOf(itemDrops);
+    }
     public void setFactory(final ItemFactory itemFactory) {
         this.itemFactory = itemFactory;
     }

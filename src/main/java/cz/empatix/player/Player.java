@@ -437,6 +437,10 @@ public class Player implements Drawable, InteractEntity, Damageable, Targetable 
         right = false;
     }
 
+    public LightSource getLightSource() {
+        return lightSource;
+    }
+
     public boolean hasEnoughHealth(final int damage) {
         return health - damage >= 0;
     }
