@@ -8,7 +8,7 @@ import cz.empatix.enemies.skills.Timer;
 import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import org.joml.Vector2f;
 
 @SpawnableEnemy(type = EnemyType.BOSS, maxFloor = 1, minFloor = 1)

@@ -6,7 +6,7 @@ import cz.empatix.sound.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.text.CommonText;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;

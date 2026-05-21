@@ -3,6 +3,7 @@ package cz.empatix.hud.service.image;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.hud.service.HUDElement;
 import cz.empatix.render.domain.*;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.HudCommonBinding;

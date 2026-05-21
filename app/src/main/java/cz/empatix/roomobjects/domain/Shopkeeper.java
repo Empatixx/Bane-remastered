@@ -6,7 +6,7 @@ import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;

@@ -6,7 +6,7 @@ import cz.empatix.enemies.skills.Skill;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import org.joml.Vector2f;

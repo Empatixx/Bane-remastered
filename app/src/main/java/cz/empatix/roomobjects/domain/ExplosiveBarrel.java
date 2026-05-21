@@ -13,7 +13,7 @@ import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
@@ -123,7 +123,7 @@ public class ExplosiveBarrel implements RoomObject, Damageable {
             return;
         }
         animation.update();
-        switch (animation.getCurrentState()) {
+        switch ((AnimationState) animation.getCurrentState()) {
             case HIT -> {
                 if (animation.hasPlayedOnce()) {
                     animation.setState(AnimationState.IDLE);

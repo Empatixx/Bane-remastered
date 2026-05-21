@@ -11,7 +11,7 @@ import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.dyn4j.geometry.MassType;
 import org.joml.Vector2f;
@@ -116,7 +116,7 @@ public class Golem implements Enemy {
     }
 
     private void updateAnimationState(final double dt) {
-        final AnimationState currentState = animation.getCurrentState();
+        final AnimationState currentState = (AnimationState) animation.getCurrentState();
         final AnimationState nextState = switch (currentState) {
             case SPELL2 -> {
                 final AnimationState next = healing.isActive() ? AnimationState.SPELL2 : AnimationState.IDLE;

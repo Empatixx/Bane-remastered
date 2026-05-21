@@ -4,7 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
@@ -44,7 +44,7 @@ public class Torch implements RoomObject {
         );
     }
     public void disable(){
-        final AnimationState state = animation.getCurrentState();
+        final AnimationState state = (AnimationState) animation.getCurrentState();
         switch (state){
             case LEFT_SIDE -> animation.setState(AnimationState.DISABLED_LEFT_SIDE);
             case RIGHT_SIDE -> animation.setState(AnimationState.DISABLED_RIGHT_SIDE);
@@ -86,7 +86,7 @@ public class Torch implements RoomObject {
     @Override
     public void update(double dt) {
         animation.update();
-        final AnimationState state = animation.getCurrentState();
+        final AnimationState state = (AnimationState) animation.getCurrentState();
     }
 
     @Override
@@ -96,7 +96,7 @@ public class Torch implements RoomObject {
 
     public void setPosition(final float x, final float y) {
         position.set(x, y);
-        switch (animation.getCurrentState()){
+        switch ((AnimationState) animation.getCurrentState()){
             case LEFT_SIDE -> {
                 lightSource.setPosition(position.x() + DIMENSION_WIDTH/2f, position.y() + DIMENSION_HEIGHT/2f);
             }

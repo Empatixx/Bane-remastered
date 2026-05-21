@@ -2,7 +2,7 @@ package cz.empatix.ui;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;

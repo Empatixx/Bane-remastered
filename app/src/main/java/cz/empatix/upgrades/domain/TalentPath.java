@@ -3,7 +3,7 @@ package cz.empatix.upgrades.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;

@@ -4,7 +4,7 @@ import cz.empatix.assets.service.AssetsService;
 import cz.empatix.enemies.skills.SpiderlingTeleport;
 import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -41,7 +41,7 @@ public class PurpleSpiderling extends BaseEnemy {
         if (isSpawning() || isDead()){
             return;
         }
-        final AnimationState currentState = animation.getCurrentState();
+        final AnimationState currentState = (AnimationState) animation.getCurrentState();
         switch (currentState){
             case SPELL1 -> {
                 if (animation.hasPlayedOnce()){

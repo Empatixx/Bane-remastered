@@ -12,6 +12,7 @@ import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.particles.service.GazewindService;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.shadow.domain.ShadowCaster;

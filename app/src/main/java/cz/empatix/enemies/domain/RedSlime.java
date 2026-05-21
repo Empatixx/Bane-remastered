@@ -5,7 +5,7 @@ import cz.empatix.enemies.skills.BaseSlimebullet;
 import cz.empatix.enemies.skills.RedSlimebullet;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import org.joml.Vector2f;
 
 import java.util.ArrayList;

@@ -11,6 +11,7 @@ import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.core.InterpolatedPosition;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;

@@ -11,7 +11,8 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
-import static cz.empatix.render.domain.AnimationState.*;
+import static cz.empatix.animation.AnimationState.*;
+import cz.empatix.animation.AnimationState;
 
 public class PathGate implements RoomObject {
     private final static int SCALE = 2;
@@ -78,11 +79,11 @@ public class PathGate implements RoomObject {
 
     @Override
     public void update(double dt) {
-        switch (animation.getCurrentState()) {
+        switch ((AnimationState) animation.getCurrentState()) {
             case CLOSE, RIGHT_SIDE_CLOSE, LEFT_SIDE_CLOSE -> {
                 animation.update();
                 if (animation.hasPlayedOnce()){
-                    switch (animation.getCurrentState()){
+                    switch ((AnimationState) animation.getCurrentState()){
                         case CLOSE -> animation.setState(IDLE);
                         case RIGHT_SIDE_CLOSE -> animation.setState(RIGHT_SIDE_IDLE);
                         case LEFT_SIDE_CLOSE -> animation.setState(LEFT_SIDE_IDLE);

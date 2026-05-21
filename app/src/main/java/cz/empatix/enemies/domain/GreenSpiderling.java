@@ -5,7 +5,7 @@ import cz.empatix.newphysics.attributes.PhysicsObject;
 import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 

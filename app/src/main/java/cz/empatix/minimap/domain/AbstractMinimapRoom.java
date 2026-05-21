@@ -3,7 +3,7 @@ package cz.empatix.minimap.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.core.InterpolatedPosition;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.textureatlas.domain.TextureAtlas;

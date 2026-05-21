@@ -5,7 +5,7 @@ import cz.empatix.hud.service.image.CommonImage;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
@@ -15,7 +15,7 @@ import org.joml.Vector2f;
 
 import java.util.function.Supplier;
 
-import static cz.empatix.render.domain.AnimationState.*;
+import static cz.empatix.animation.AnimationState.*;
 
 public class PlayerUpgrade implements Drawable {
     private final static int SCALE = 2;
@@ -173,13 +173,13 @@ public class PlayerUpgrade implements Drawable {
     public void setBought(final boolean b) {
         bought = b;
         if (bought){
-            switch (animation.getCurrentState()) {
+            switch ((AnimationState) animation.getCurrentState()) {
                 case TYPE1 -> animation.setState(AnimationState.TYPE0);
                 case TYPE3 -> animation.setState(AnimationState.TYPE2);
                 case TYPE5 -> animation.setState(AnimationState.TYPE4);
             }
         } else {
-            switch (animation.getCurrentState()) {
+            switch ((AnimationState) animation.getCurrentState()) {
                 case TYPE0 -> animation.setState(AnimationState.TYPE1);
                 case TYPE2 -> animation.setState(AnimationState.TYPE3);
                 case TYPE4 -> animation.setState(AnimationState.TYPE5);

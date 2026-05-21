@@ -6,7 +6,7 @@ import cz.empatix.enemies.skills.Timer;
 import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +61,7 @@ public class EyeWatcher extends BaseEnemy{
         activateProjectileAttack();
     }
     private void activateProjectileAttack(){
-        final AnimationState state = animation.getCurrentState();
+        final AnimationState state = (AnimationState) animation.getCurrentState();
         switch (state){
             case ATTACK -> {
                 if (animation.hasPlayedOnce()){

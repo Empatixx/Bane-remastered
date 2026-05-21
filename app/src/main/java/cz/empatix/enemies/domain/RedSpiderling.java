@@ -3,7 +3,7 @@ package cz.empatix.enemies.domain;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.collision.CollisionType;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;

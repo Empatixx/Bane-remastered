@@ -20,6 +20,7 @@ import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.postprocess.RedVignette;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;

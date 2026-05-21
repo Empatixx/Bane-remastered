@@ -1,6 +1,6 @@
 package cz.empatix.roomobjects.suppliers;
 
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.roomobjects.domain.Torch;
 import cz.empatix.roomobjects.resolvers.*;
 import cz.empatix.rooms.service.Room;

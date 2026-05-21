@@ -24,6 +24,7 @@ public class Animation {
     private boolean playedOnce;
 
     private Animation(final Map<AnimationState, AnimationPart> animationParts,
+                     final AnimationState initialState,
                      final TextureAtlas.Entry texture,
                      final int totalRows,
                      final int totalSprites,
@@ -31,7 +32,7 @@ public class Animation {
         this.texture = texture;
         this.scale = scale;
         this.animationParts = animationParts;
-        this.currentState = AnimationState.IDLE;
+        this.currentState = initialState;
         this.currentTextureIndex = 0;
         this.lastAnimation = System.currentTimeMillis();
         this.totalRows = totalRows;
@@ -158,6 +159,7 @@ public class Animation {
 
     public static class Builder {
         private final Map<AnimationState, AnimationPart> animationParts;
+        private AnimationState initialState;
         private TextureAtlas.Entry texture;
         private int totalRows, totalSprites;
         private float scale;
@@ -165,6 +167,12 @@ public class Animation {
         public Builder() {
             this.animationParts = new HashMap<>();
             scale = 1;
+        }
+
+        /** Overrides the initial state; defaults to the first state added. */
+        public Builder initialState(final AnimationState state) {
+            this.initialState = state;
+            return this;
         }
 
         public Builder setTotal(final int totalRows, final int totalSprites) {
@@ -206,6 +214,9 @@ public class Animation {
                     delayBetweenAnimations,
                     rotated,
                     reverse);
+            if (animationParts.isEmpty() && initialState == null) {
+                initialState = state;
+            }
             animationParts.put(state, part);
             return this;
         }
@@ -221,7 +232,7 @@ public class Animation {
         }
 
         public Animation build() {
-            return new Animation(animationParts, texture, totalRows, totalSprites, scale);
+            return new Animation(animationParts, initialState, texture, totalRows, totalSprites, scale);
         }
     }
 

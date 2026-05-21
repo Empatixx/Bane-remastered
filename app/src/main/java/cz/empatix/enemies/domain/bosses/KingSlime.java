@@ -10,7 +10,7 @@ import cz.empatix.enemies.skills.SlimeSmash;
 import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import org.joml.Vector2f;
 

@@ -7,7 +7,7 @@ import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.FloatingEffectService;
 import cz.empatix.items.service.ItemDespawnService;
 import cz.empatix.render.domain.Animation;
-import cz.empatix.render.domain.AnimationState;
+import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
