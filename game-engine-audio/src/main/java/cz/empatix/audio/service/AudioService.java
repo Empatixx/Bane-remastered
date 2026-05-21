@@ -1,7 +1,7 @@
 package cz.empatix.audio.service;
 
-import cz.empatix.audio.domain.SoundEffect;
-import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.audio.domain.SoundEffectClip;
+import cz.empatix.audio.domain.SoundtrackClip;
 import cz.empatix.audio.init.ALInit;
 
 public class AudioService {
@@ -27,13 +27,13 @@ public class AudioService {
         }
         soundtrackService.update(dt);
     }
-    public void play(final Soundtrack soundtrack) {
+    public void play(final SoundtrackClip soundtrack) {
         if(!ALInit.canUseAL){
             return;
         }
         soundtrackService.play(soundtrack);
     }
-    public void play(final SoundEffect soundEffect) {
+    public void play(final SoundEffectClip soundEffect) {
         if(!ALInit.canUseAL){
             return;
         }

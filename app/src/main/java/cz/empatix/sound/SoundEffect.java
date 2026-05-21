@@ -1,9 +1,11 @@
-package cz.empatix.audio.domain;
+package cz.empatix.sound;
+
+import cz.empatix.audio.domain.SoundEffectClip;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public enum SoundEffect {
+public enum SoundEffect implements SoundEffectClip {
     BUY("buy.ogg"),
     COIN("coin.ogg"),
     DEATH("playerdeath.ogg"),

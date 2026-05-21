@@ -1,6 +1,8 @@
-package cz.empatix.audio.domain;
+package cz.empatix.sound;
 
-public enum Soundtrack {
+import cz.empatix.audio.domain.SoundtrackClip;
+
+public enum Soundtrack implements SoundtrackClip {
     MAIN_MENU("intro.ogg"),
     INGAME("audio.ogg"),
     PROGRESS_ROOM("ambient.ogg"),

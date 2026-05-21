@@ -1,6 +1,6 @@
 package cz.empatix.guns.domain;
 
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.sound.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

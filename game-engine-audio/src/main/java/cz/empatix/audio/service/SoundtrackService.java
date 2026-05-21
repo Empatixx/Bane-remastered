@@ -2,7 +2,7 @@ package cz.empatix.audio.service;
 
 import cz.empatix.audio.assets.AudioAssets;
 import cz.empatix.audio.domain.AudioSource;
-import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.audio.domain.SoundtrackClip;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ public class SoundtrackService {
             }
         }
     }
-    public void play(final Soundtrack soundtrack) {
+    public void play(final SoundtrackClip soundtrack) {
         LOGGER.info("Playing soundtrack {}.", soundtrack.name());
         if(currentAudioSource == null){
             currentAudioSource = audioSources[0];

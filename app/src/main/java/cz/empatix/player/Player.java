@@ -1,7 +1,7 @@
 package cz.empatix.player;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.sound.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.domain.StatusBarType;
 import cz.empatix.hud.service.StatusBar;

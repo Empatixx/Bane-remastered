@@ -1,7 +1,7 @@
 package cz.empatix.minimap.service;
 import cz.empatix.core.Viewport;
 
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.sound.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;

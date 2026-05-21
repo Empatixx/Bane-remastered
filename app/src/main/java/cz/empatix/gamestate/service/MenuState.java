@@ -1,7 +1,7 @@
 package cz.empatix.gamestate.service;
 
 import cz.empatix.assets.domain.font.FontSize;
-import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.sound.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.handlers.WindowHandler;
 import cz.empatix.cursors.domain.CursorType;

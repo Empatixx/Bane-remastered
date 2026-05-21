@@ -1,7 +1,7 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.sound.SoundEffect;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.ammo.ShotgunAmmoHud;
 import cz.empatix.guns.factory.BulletFactory;

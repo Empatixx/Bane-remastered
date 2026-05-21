@@ -1,6 +1,6 @@
 package cz.empatix.rooms.service;
 
-import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.sound.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.domain.Enemy;

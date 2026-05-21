@@ -2,7 +2,7 @@ package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.sound.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.utils.DelayedTask;
 import cz.empatix.common.utils.Task;

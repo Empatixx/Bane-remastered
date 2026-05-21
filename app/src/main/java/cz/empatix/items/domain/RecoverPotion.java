@@ -1,7 +1,7 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.sound.SoundEffect;
 import cz.empatix.interaction.domain.CommonInteractable;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.FloatingEffectService;

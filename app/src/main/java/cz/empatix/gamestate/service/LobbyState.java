@@ -1,7 +1,7 @@
 package cz.empatix.gamestate.service;
 import cz.empatix.core.Viewport;
 
-import cz.empatix.audio.domain.Soundtrack;
+import cz.empatix.sound.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;

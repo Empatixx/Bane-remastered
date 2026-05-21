@@ -2,7 +2,7 @@ package cz.empatix.audio.service;
 
 import cz.empatix.audio.assets.AudioAssets;
 import cz.empatix.audio.domain.AudioSource;
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.audio.domain.SoundEffectClip;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +13,7 @@ public class SoundEffectService {
     public SoundEffectService(final AudioSourcePool audioSourcePool) {
         this.audioSourcePool = audioSourcePool;
     }
-    public void play(final SoundEffect soundEffect) {
+    public void play(final SoundEffectClip soundEffect) {
         LOGGER.info("Playing sound effect {}.", soundEffect.name());
         final AudioSource audioSource = audioSourcePool.getAudioSource();
         if(audioSource == null){

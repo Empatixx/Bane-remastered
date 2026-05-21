@@ -1,7 +1,7 @@
 package cz.empatix.items.domain;
 
 import cz.empatix.assets.domain.font.FontSize;
-import cz.empatix.audio.domain.SoundEffect;
+import cz.empatix.sound.SoundEffect;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.hud.service.image.AlternativeViewImage;
 import cz.empatix.hud.service.text.AlternativeViewText;
