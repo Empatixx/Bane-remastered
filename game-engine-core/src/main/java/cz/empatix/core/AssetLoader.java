@@ -1,4 +1,4 @@
-package cz.empatix.assets.loaders;
+package cz.empatix.core;
 
 
 import java.util.List;

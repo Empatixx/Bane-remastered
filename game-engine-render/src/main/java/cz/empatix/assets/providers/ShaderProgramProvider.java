@@ -1,4 +1,5 @@
 package cz.empatix.assets.providers;
+import cz.empatix.core.AssetProvider;
 
 import cz.empatix.assets.domain.RawShader;
 import cz.empatix.assets.domain.ShaderType;

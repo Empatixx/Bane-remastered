@@ -1,4 +1,4 @@
-package cz.empatix.assets.providers;
+package cz.empatix.core;
 
 
 

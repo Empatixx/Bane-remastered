@@ -1,6 +1,6 @@
 package cz.empatix.audio.service;
 
-import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.assets.AudioAssets;
 import cz.empatix.audio.domain.AudioSource;
 import cz.empatix.audio.domain.Soundtrack;
 import org.slf4j.Logger;
@@ -41,13 +41,13 @@ public class SoundtrackService {
         LOGGER.info("Playing soundtrack {}.", soundtrack.name());
         if(currentAudioSource == null){
             currentAudioSource = audioSources[0];
-            final int buffer = AssetsService.getAudio(soundtrack.getPath());
+            final int buffer = AudioAssets.getAudio(soundtrack.getPath());
             currentAudioSource.play(buffer);
             currentAudioSource.setLooping(true);
             currentAudioSource.setGain(maxGain);
         } else {
             nextAudioSource = currentAudioSource == audioSources[0] ? audioSources[1] : audioSources[0];
-            final int buffer = AssetsService.getAudio(soundtrack.getPath());
+            final int buffer = AudioAssets.getAudio(soundtrack.getPath());
             nextAudioSource.play(buffer);
             nextAudioSource.setLooping(true);
             nextAudioSource.setGain(0);

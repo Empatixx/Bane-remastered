@@ -1,4 +1,5 @@
 package cz.empatix.assets.providers;
+import cz.empatix.core.AssetProvider;
 import cz.empatix.core.Viewport;
 
 import cz.empatix.textureatlas.domain.Texture;

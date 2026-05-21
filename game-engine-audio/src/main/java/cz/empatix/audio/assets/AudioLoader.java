@@ -1,7 +1,6 @@
-package cz.empatix.assets.loaders;
+package cz.empatix.audio.assets;
+import cz.empatix.core.AssetLoader;
 
-import cz.empatix.assets.domain.RawAudio;
-import cz.empatix.assets.domain.font.RawFont;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.slf4j.Logger;

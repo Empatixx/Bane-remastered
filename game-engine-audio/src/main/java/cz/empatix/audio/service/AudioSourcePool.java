@@ -1,7 +1,7 @@
 package cz.empatix.audio.service;
 
 import cz.empatix.audio.domain.AudioSource;
-import cz.empatix.common.initializators.ALInit;
+import cz.empatix.audio.init.ALInit;
 
 import java.util.ArrayList;
 import java.util.List;

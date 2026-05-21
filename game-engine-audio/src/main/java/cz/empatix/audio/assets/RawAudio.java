@@ -1,4 +1,4 @@
-package cz.empatix.assets.domain;
+package cz.empatix.audio.assets;
 
 
 import java.nio.file.Path;

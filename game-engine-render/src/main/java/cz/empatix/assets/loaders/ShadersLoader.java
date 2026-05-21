@@ -1,4 +1,5 @@
 package cz.empatix.assets.loaders;
+import cz.empatix.core.AssetLoader;
 
 import cz.empatix.assets.domain.RawShader;
 import org.slf4j.Logger;

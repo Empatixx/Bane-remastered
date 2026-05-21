@@ -2,9 +2,7 @@ package cz.empatix.audio.service;
 
 import cz.empatix.audio.domain.SoundEffect;
 import cz.empatix.audio.domain.Soundtrack;
-import cz.empatix.common.initializators.ALInit;
-import cz.empatix.settings.domain.GameSettings;
-import cz.empatix.settings.service.SettingsService;
+import cz.empatix.audio.init.ALInit;
 
 public class AudioService {
     private static AudioService instance;
@@ -20,10 +18,8 @@ public class AudioService {
         final AudioSourcePool audioSourcePool = new AudioSourcePool();
         this.soundtrackService = new SoundtrackService(audioSourcePool);
         this.soundEffectService = new SoundEffectService(audioSourcePool);
-
-        final GameSettings settings = SettingsService.getInstance().getSettings();
-        soundtrackService.setVolume(settings.getOverallVolume(), settings.getMusicVolume());
-        soundEffectService.setVolume(settings.getOverallVolume(), settings.getEffectsVolume());
+        // Initial volume is applied by the application via setVolume() once settings are
+        // available, keeping the audio module independent of the game settings layer.
     }
     public void update(final float dt){
         if(!ALInit.canUseAL){

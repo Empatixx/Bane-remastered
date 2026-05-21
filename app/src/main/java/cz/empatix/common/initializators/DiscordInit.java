@@ -1,4 +1,5 @@
 package cz.empatix.common.initializators;
+import cz.empatix.core.Initializer;
 
 import de.jcm.discordgamesdk.Core;
 import de.jcm.discordgamesdk.CreateParams;

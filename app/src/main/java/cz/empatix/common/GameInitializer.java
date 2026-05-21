@@ -1,11 +1,11 @@
 package cz.empatix.common;
+import cz.empatix.core.Initializer;
 
 import cz.empatix.common.handlers.InputHandler;
 import cz.empatix.common.handlers.WindowHandler;
-import cz.empatix.common.initializators.ALInit;
+import cz.empatix.audio.init.ALInit;
 import cz.empatix.common.initializators.GLFWInit;
 import cz.empatix.common.initializators.GLInit;
-import cz.empatix.common.initializators.Initializer;
 
 import java.util.List;
 

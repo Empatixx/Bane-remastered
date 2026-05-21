@@ -1,4 +1,4 @@
-package cz.empatix.common.initializators;
+package cz.empatix.core;
 
 public interface Initializer {
     void init();

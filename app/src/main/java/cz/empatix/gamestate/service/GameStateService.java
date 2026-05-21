@@ -9,6 +9,8 @@ import cz.empatix.newphysics.service.PhysicsDebugRenderer;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderEngine;
+import cz.empatix.settings.domain.GameSettings;
+import cz.empatix.settings.service.SettingsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,8 @@ public class GameStateService {
         interactionService = InteractionService.getInstance();
         renderEngine = new RenderEngine();
         audioService = AudioService.getInstance();
+        final GameSettings settings = SettingsService.getInstance().getSettings();
+        audioService.setVolume(settings.getOverallVolume(), settings.getMusicVolume(), settings.getEffectsVolume());
 
         GameStateController.init(this::setCurrentState);
 

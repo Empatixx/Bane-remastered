@@ -1,7 +1,6 @@
-package cz.empatix.assets.providers;
+package cz.empatix.audio.assets;
+import cz.empatix.core.AssetProvider;
 
-import cz.empatix.assets.domain.RawAudio;
-import cz.empatix.assets.loaders.AudioLoader;
 import org.lwjgl.openal.AL10;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

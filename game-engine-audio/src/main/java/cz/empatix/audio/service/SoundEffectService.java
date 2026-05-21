@@ -1,6 +1,6 @@
 package cz.empatix.audio.service;
 
-import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.assets.AudioAssets;
 import cz.empatix.audio.domain.AudioSource;
 import cz.empatix.audio.domain.SoundEffect;
 import org.slf4j.Logger;
@@ -20,7 +20,7 @@ public class SoundEffectService {
             LOGGER.warn("No audio source available for sound effect {}.", soundEffect.name());
             return;
         }
-        final int buffer = AssetsService.getAudio(soundEffect.getPath());
+        final int buffer = AudioAssets.getAudio(soundEffect.getPath());
         audioSource.play(buffer);
     }
 

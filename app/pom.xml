@@ -108,6 +108,10 @@
             <groupId>cz.empatix</groupId>
             <artifactId>game-engine-render</artifactId>
         </dependency>
+        <dependency>
+            <groupId>cz.empatix</groupId>
+            <artifactId>game-engine-audio</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>

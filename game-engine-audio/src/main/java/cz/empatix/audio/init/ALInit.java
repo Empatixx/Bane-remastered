@@ -1,6 +1,6 @@
-package cz.empatix.common.initializators;
+package cz.empatix.audio.init;
+import cz.empatix.core.Initializer;
 
-import cz.empatix.audio.service.AudioService;
 import org.lwjgl.openal.AL;
 import org.lwjgl.openal.ALC;
 import org.lwjgl.openal.ALC10;

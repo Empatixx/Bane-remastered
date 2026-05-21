@@ -2,6 +2,7 @@ package cz.empatix.gamestate.service;
 import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.assets.AudioAssets;
 import cz.empatix.enemies.service.EnemyFactory;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
@@ -27,6 +28,7 @@ public class LoadingState extends GameState {
     @Override
     public void init() {
         AssetsService.loadAssets();
+        AudioAssets.loadAssets();
         EnemyFactory.init();
         loadingBg = new CommonBackground("loading/loading.tga", 0);
         loadingCircle = new AnimatedImage("loading/loading_image.tga", new Vector2f(Viewport.TARGET_WIDTH/2,380), 8, true);
@@ -38,7 +40,8 @@ public class LoadingState extends GameState {
         loadingBg.update(dt);
         loadingCircle.update(dt);
         AssetsService.createAssets();
-        if(AssetsService.getLoaded()){
+        AudioAssets.createAssets();
+        if(AssetsService.getLoaded() && AudioAssets.getLoaded()){
             LOGGER.info("Loading took {} ms", System.currentTimeMillis() - startTime);
             setCurrentState(GameStateType.MENU);
         }

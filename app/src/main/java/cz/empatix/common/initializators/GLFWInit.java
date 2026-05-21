@@ -1,4 +1,5 @@
 package cz.empatix.common.initializators;
+import cz.empatix.core.Initializer;
 import cz.empatix.core.Viewport;
 
 import cz.empatix.common.handlers.WindowHandler;
