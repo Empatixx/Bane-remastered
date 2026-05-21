@@ -18,7 +18,7 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import cz.empatix.render.shaderbindings.OutlineBinding;
-import cz.empatix.render.shaderbindings.SpawnBinding;
+import cz.empatix.shaderbindings.SpawnBinding;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 

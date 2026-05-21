@@ -5,7 +5,7 @@ import cz.empatix.hud.domain.StatusController;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.StatusBarBinding;
+import cz.empatix.shaderbindings.StatusBarBinding;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;

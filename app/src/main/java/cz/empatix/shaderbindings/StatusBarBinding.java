@@ -1,4 +1,6 @@
-package cz.empatix.render.shaderbindings;
+package cz.empatix.shaderbindings;
+
+import cz.empatix.render.shaderbindings.ShaderProgramBinding;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.render.domain.ShaderProgram;

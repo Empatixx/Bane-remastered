@@ -5,7 +5,7 @@ import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.core.InterpolatedPosition;
 import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.MiniMapBinding;
+import cz.empatix.shaderbindings.MiniMapBinding;
 import cz.empatix.rooms.service.Room;
 
 public class MinimapRoom extends AbstractMinimapRoom<MinimapRoom> implements Drawable {
