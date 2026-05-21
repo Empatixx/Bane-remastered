@@ -1,10 +1,10 @@
-package cz.empatix.postprocessing.domain;
+package cz.empatix.postprocess;
 
+import cz.empatix.postprocessing.domain.Postprocess;
 import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Framebuffer;
 import cz.empatix.render.domain.RenderData;
-import cz.empatix.render.service.Camera;
-import cz.empatix.render.shaderbindings.RedVignetteBinding;
+import cz.empatix.shaderbindings.RedVignetteBinding;
 
 import java.util.EnumSet;
 import java.util.Set;

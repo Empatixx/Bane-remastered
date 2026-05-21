@@ -8,6 +8,9 @@ import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.service.PhysicsDebugRenderer;
 import cz.empatix.newphysics.service.PhysicsService;
+import cz.empatix.postprocess.RedVignette;
+import cz.empatix.postprocessing.domain.Fade;
+import cz.empatix.postprocessing.domain.GaussianBlur;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.service.RenderEngine;
 import cz.empatix.settings.domain.GameSettings;
@@ -39,7 +42,11 @@ public class GameStateService {
         physicsService = PhysicsService.getInstance();
         physicsService.addCollisionHandler(new DamageHandler());
         interactionService = InteractionService.getInstance();
-        renderEngine = new RenderEngine();
+        renderEngine = new RenderEngine(List.of(
+                new GaussianBlur(),
+                new Fade(),
+                new RedVignette()
+        ));
         audioService = AudioService.getInstance();
         final GameSettings settings = SettingsService.getInstance().getSettings();
         audioService.setVolume(settings.getOverallVolume(), settings.getMusicVolume(), settings.getEffectsVolume());

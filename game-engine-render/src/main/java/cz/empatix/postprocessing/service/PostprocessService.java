@@ -19,13 +19,9 @@ public class PostprocessService {
     private final Framebuffer fbo1;
     private final Framebuffer fbo2;
 
-    public PostprocessService(final RenderService renderService) {
+    public PostprocessService(final RenderService renderService, final List<Postprocess> postprocesses) {
         this.renderService = renderService;
-        this.postprocesses = List.of(
-                new GaussianBlur(),
-                new Fade(),
-                new RedVignette()
-        );
+        this.postprocesses = List.copyOf(postprocesses);
         this.fallbackPostprocess = new NoPostprocessing();
 
         fbo1 = new Framebuffer();

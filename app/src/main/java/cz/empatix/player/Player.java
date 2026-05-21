@@ -17,7 +17,7 @@ import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.particles.service.GazewindService;
 import cz.empatix.enemies.targetting.Targetable;
-import cz.empatix.postprocessing.domain.RedVignette;
+import cz.empatix.postprocess.RedVignette;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.*;
 import cz.empatix.render.service.Camera;
