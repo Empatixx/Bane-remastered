@@ -1,6 +1,7 @@
 package cz.empatix.gamestate.service;
 
 import cz.empatix.audio.service.AudioService;
+import cz.empatix.collision.DamageHandler;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.interaction.service.InteractionService;
@@ -36,6 +37,7 @@ public class GameStateService {
         gameStates.add(new LobbyState(this));
 
         physicsService = PhysicsService.getInstance();
+        physicsService.addCollisionHandler(new DamageHandler());
         interactionService = InteractionService.getInstance();
         renderEngine = new RenderEngine();
         audioService = AudioService.getInstance();

@@ -1,10 +1,10 @@
 package cz.empatix.enemies.skills;
 
 import cz.empatix.assets.service.AssetsService;
-import cz.empatix.newphysics.attributes.DamageSource;
-import cz.empatix.newphysics.attributes.DamageSourceType;
+import cz.empatix.collision.DamageSource;
+import cz.empatix.collision.DamageSourceType;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;

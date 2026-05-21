@@ -1,8 +1,7 @@
 package cz.empatix.newphysics.service;
 
+import cz.empatix.core.CollisionCategory;
 import cz.empatix.newphysics.attributes.PhysicsObject;
-import org.dyn4j.collision.Fixture;
-import org.dyn4j.dynamics.Body;
 import org.dyn4j.dynamics.BodyFixture;
 import org.dyn4j.world.BroadphaseCollisionData;
 import org.dyn4j.world.ManifoldCollisionData;
@@ -43,8 +42,8 @@ public class CollisionListener implements org.dyn4j.world.listener.CollisionList
     }
 
     private boolean canCollide(final PhysicsObject o1, final PhysicsObject o2) {
-        final CollisionType t1 = o1.getType();
-        final CollisionType t2 = o2.getType();
+        final CollisionCategory t1 = o1.getType();
+        final CollisionCategory t2 = o2.getType();
 
         if (t1 == null || t2 == null) { // default
             return true;

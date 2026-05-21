@@ -3,7 +3,7 @@ package cz.empatix.pets;
 import cz.empatix.enemies.targetting.AStarTargetingState;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.enemies.targetting.Targetable;
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
 import org.joml.Vector2f;
@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
-import static cz.empatix.newphysics.service.CollisionType.ENEMY;
+import static cz.empatix.collision.CollisionType.ENEMY;
 
 public class OwnerFollowingStrategy implements FollowingStrategy {
     private static final Logger LOGGER = LoggerFactory.getLogger(OwnerFollowingStrategy.class);

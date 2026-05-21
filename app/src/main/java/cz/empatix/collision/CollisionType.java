@@ -1,10 +1,11 @@
-package cz.empatix.newphysics.service;
+package cz.empatix.collision;
+
+import cz.empatix.core.CollisionCategory;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 
-public enum CollisionType {
+public enum CollisionType implements CollisionCategory {
     ITEM,
     TRAP,
     PLAYER,
@@ -28,8 +29,8 @@ public enum CollisionType {
         TILE.collidesWith = EnumSet.of(PLAYER, ENEMY, PLAYER_BULLET, ENEMY_BULLET, ROOM_OBJECT);
     }
 
-    public boolean collidesWith(final CollisionType type) {
-
+    @Override
+    public boolean collidesWith(final CollisionCategory type) {
         return collidesWith.contains(type);
     }
 }

@@ -2,7 +2,7 @@ package cz.empatix.enemies.domain;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.render.domain.AnimationState;

@@ -2,7 +2,7 @@ package cz.empatix.tiles.domain;
 
 import cz.empatix.lightning.service.LightningService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;

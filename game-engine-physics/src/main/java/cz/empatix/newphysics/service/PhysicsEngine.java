@@ -1,5 +1,7 @@
 package cz.empatix.newphysics.service;
 
+import cz.empatix.core.CollisionCategory;
+import cz.empatix.core.CollisionHandler;
 import cz.empatix.core.EngineTimestep;
 import cz.empatix.newphysics.attributes.PhysicsObject;
 import org.dyn4j.collision.Filter;
@@ -22,6 +24,7 @@ import java.util.*;
 public class PhysicsEngine {
     private final static Logger LOGGER = LoggerFactory.getLogger(PhysicsEngine.class);
     private final World<PhysicsObject> world;
+    private final CollisionHandlerDispatcher collisionHandlerDispatcher = new CollisionHandlerDispatcher();
 
     public PhysicsEngine() {
         final Settings settings = new Settings();
@@ -43,8 +46,12 @@ public class PhysicsEngine {
 
         world.addStepListener(new InterpolationStepListener());
         world.addStepListener(enterLeaveListener);
-        world.addCollisionListener(new DamageCollisionListener());
+        world.addCollisionListener(collisionHandlerDispatcher);
         world.addCollisionListener(new CollisionListener(enterLeaveListener));
+    }
+
+    public void addCollisionHandler(final CollisionHandler handler) {
+        collisionHandlerDispatcher.add(handler);
     }
 
     public void add(final PhysicsObject object) {
@@ -107,7 +114,7 @@ public class PhysicsEngine {
         world.removeBody(physicsObject);
     }
 
-    public List<PhysicsObject> query(final Vector2f point, final Vector2i dimensions, final Set<CollisionType> ignored) {
+    public List<PhysicsObject> query(final Vector2f point, final Vector2i dimensions, final Set<? extends CollisionCategory> ignored) {
         final Transform transform = new Transform();
         transform.setTranslation(new Vector2(point.x, point.y));
         final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);
@@ -133,7 +140,7 @@ public class PhysicsEngine {
         return List.copyOf(results);
     }
 
-    public boolean queryExists(final Vector2f point, final Vector2i dimensions, final Set<CollisionType> ignored) {
+    public boolean queryExists(final Vector2f point, final Vector2i dimensions, final Set<? extends CollisionCategory> ignored) {
         final Transform transform = new Transform();
         transform.setTranslation(new Vector2(point.x, point.y));
         final Rectangle rectangle = Geometry.createRectangle(dimensions.x, dimensions.y);

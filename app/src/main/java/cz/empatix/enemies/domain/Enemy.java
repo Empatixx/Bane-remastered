@@ -1,8 +1,8 @@
 package cz.empatix.enemies.domain;
 
 import cz.empatix.enemies.targetting.Targetable;
-import cz.empatix.newphysics.attributes.DamageSource;
-import cz.empatix.newphysics.attributes.Damageable;
+import cz.empatix.collision.DamageSource;
+import cz.empatix.collision.Damageable;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.RenderScene;

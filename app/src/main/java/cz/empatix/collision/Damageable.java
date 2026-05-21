@@ -1,4 +1,4 @@
-package cz.empatix.newphysics.attributes;
+package cz.empatix.collision;
 
 
 public interface Damageable {

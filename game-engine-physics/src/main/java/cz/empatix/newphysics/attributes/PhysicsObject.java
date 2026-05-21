@@ -1,6 +1,6 @@
 package cz.empatix.newphysics.attributes;
 
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.core.CollisionCategory;
 import cz.empatix.newphysics.service.PhysicsEngine;
 import cz.empatix.newphysics.service.PhysicsService;
 import org.dyn4j.collision.Fixture;
@@ -18,7 +18,9 @@ public class PhysicsObject extends Body {
     private Consumer<PhysicsObject> onCollision = NOOP;
     private Consumer<PhysicsObject> onEnter = NOOP;
     private Consumer<PhysicsObject> onLeave = NOOP;
-    private CollisionType collisionType = CollisionType.NONE;
+    /** Default category collides with nothing (matches the former CollisionType.NONE). */
+    private static final CollisionCategory NONE = other -> false;
+    private CollisionCategory collisionType = NONE;
     private boolean remove;
     protected final Vector2i offset = new Vector2i();
 
@@ -85,10 +87,10 @@ public class PhysicsObject extends Body {
 
     }
 
-    public CollisionType getType() {
+    public CollisionCategory getType() {
         return collisionType;
     }
-    public void setType(final CollisionType collisionType) {
+    public void setType(final CollisionCategory collisionType) {
         this.collisionType = collisionType;
     }
     public void destroy() {

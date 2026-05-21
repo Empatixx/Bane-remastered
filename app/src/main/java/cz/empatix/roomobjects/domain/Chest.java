@@ -8,7 +8,7 @@ import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.newphysics.attributes.PhysicsObject;
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;

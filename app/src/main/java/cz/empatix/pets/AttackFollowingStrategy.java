@@ -4,8 +4,9 @@ import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.targetting.AStarTargetingState;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.enemies.targetting.Targetable;
+import cz.empatix.collision.CollisionQueries;
 import cz.empatix.newphysics.attributes.PhysicsObject;
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsService;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
@@ -32,7 +33,7 @@ public class AttackFollowingStrategy implements FollowingStrategy {
 
         final Vector2f selfPosition = new Vector2f(physicsObject.getPhysicsTranslation().add(width / 2, height / 2))
                 .sub(AREA_ATTACK / 2, AREA_ATTACK / 2);
-        final List<PhysicsObject> objects = physicsService.queryType(selfPosition, new Vector2i(AREA_ATTACK, AREA_ATTACK), EnumSet.of(CollisionType.ENEMY));
+        final List<PhysicsObject> objects = CollisionQueries.queryType(selfPosition, new Vector2i(AREA_ATTACK, AREA_ATTACK), EnumSet.of(CollisionType.ENEMY));
         if (!objects.isEmpty()) {
             final List<Enemy> closest = objects.stream()
                     .sorted((o1, o2) -> {

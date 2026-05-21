@@ -1,6 +1,6 @@
 package cz.empatix.enemies.targetting;
 
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsService;
 import org.joml.Vector2f;
 import org.joml.Vector2i;

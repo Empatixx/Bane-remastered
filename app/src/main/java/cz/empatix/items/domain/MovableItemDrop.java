@@ -3,7 +3,7 @@ package cz.empatix.items.domain;
 import cz.empatix.interaction.service.InteractionService;
 import cz.empatix.items.service.FloatingEffectService;
 import cz.empatix.newphysics.attributes.InterpolatedPhysicsObject;
-import cz.empatix.newphysics.service.CollisionType;
+import cz.empatix.collision.CollisionType;
 import cz.empatix.newphysics.service.PhysicsObjectFactory;
 import cz.empatix.render.domain.RenderData;
 import cz.empatix.render.domain.RenderScene;

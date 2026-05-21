@@ -1,11 +1,11 @@
 package cz.empatix.newphysics.service;
 
+import cz.empatix.core.CollisionCategory;
+import cz.empatix.core.CollisionHandler;
 import cz.empatix.newphysics.attributes.PhysicsObject;
-import org.dyn4j.geometry.Shape;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,19 +26,17 @@ public class PhysicsService {
     }
 
     public List<PhysicsObject> query(final Vector2f point, final Vector2i dimensions,
-                                     final Set<CollisionType> ignored) {
+                                     final Set<? extends CollisionCategory> ignored) {
         return physicsEngine.query(point, dimensions, ignored);
     }
 
     public boolean queryExists(final Vector2f point, final Vector2i dimensions,
-                               final Set<CollisionType> ignored) {
+                               final Set<? extends CollisionCategory> ignored) {
         return physicsEngine.queryExists(point, dimensions, ignored);
     }
 
-    public List<PhysicsObject> queryType(Vector2f targetPosition, Vector2i dimensions, Set<CollisionType> types) {
-        final Set<CollisionType> ignored = new HashSet<>(Set.of(CollisionType.values()));
-        ignored.removeAll(types);
-        return physicsEngine.query(targetPosition, dimensions, ignored);
+    public void addCollisionHandler(final CollisionHandler handler) {
+        physicsEngine.addCollisionHandler(handler);
     }
 
     public void updateBroadphase() {
