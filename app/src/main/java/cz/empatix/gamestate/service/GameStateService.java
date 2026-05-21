@@ -33,14 +33,14 @@ public class GameStateService {
     private GameState currentState;
 
     public GameStateService() {
+        physicsService = new PhysicsService();
+        physicsService.addCollisionHandler(new DamageHandler());
+
         this.gameStates = new ArrayList<>();
         gameStates.add(new LoadingState(this));
-        gameStates.add(new InGameState(this));
+        gameStates.add(new InGameState(this, physicsService));
         gameStates.add(new MenuState(this));
-        gameStates.add(new LobbyState(this));
-
-        physicsService = PhysicsService.getInstance();
-        physicsService.addCollisionHandler(new DamageHandler());
+        gameStates.add(new LobbyState(this, physicsService));
         interactionService = InteractionService.getInstance();
         renderEngine = new RenderEngine(List.of(
                 new GaussianBlur(),

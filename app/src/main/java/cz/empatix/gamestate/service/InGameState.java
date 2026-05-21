@@ -57,9 +57,11 @@ public class InGameState extends GameState {
     private PetService petService;
     private ShadowService shadowService;
     private ObjectShadowService objectShadowService;
+    private final PhysicsService physicsService;
 
-    public InGameState(final GameStateService gameStateService) {
+    public InGameState(final GameStateService gameStateService, final PhysicsService physicsService) {
         super(gameStateService, GameStateType.INGAME);
+        this.physicsService = physicsService;
     }
 
     @Override
@@ -179,7 +181,7 @@ public class InGameState extends GameState {
     @Override
     public void cleanUp() {
         player.cleanUp();
-        PhysicsService.getInstance().clear();
+        physicsService.clear();
         LightningService.getInstance().clear();
         InteractionService.getInstance().clear();
     }

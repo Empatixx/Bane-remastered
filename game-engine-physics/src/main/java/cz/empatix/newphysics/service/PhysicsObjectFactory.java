@@ -9,7 +9,6 @@ import org.dyn4j.geometry.*;
 import org.joml.Vector2f;
 
 public class PhysicsObjectFactory {
-    private final static PhysicsService SERVICE = PhysicsService.getInstance();
     public static PhysicsObject create(Rectangle rect){
         final PhysicsObject physicsObject = new PhysicsObject();
         final BodyFixture fixture = new BodyFixture(rect);
@@ -21,7 +20,7 @@ public class PhysicsObjectFactory {
         //physicsObject.setAtRest(false);
         //physicsObject.setAtRestDetectionEnabled(false);
 
-        SERVICE.add(physicsObject);
+        PhysicsService.getInstance().add(physicsObject);
         return physicsObject;
     }
     public static PhysicsObject create(final int width, final int height) {
@@ -38,7 +37,7 @@ public class PhysicsObjectFactory {
         physicsObject.setAtRest(false);
         physicsObject.setAtRestDetectionEnabled(false);
 
-        SERVICE.add(physicsObject);
+        PhysicsService.getInstance().add(physicsObject);
         return physicsObject;
     }
     public static InterpolatedPhysicsObject createInterpolated(final int width, final int height) {
@@ -62,7 +61,7 @@ public class PhysicsObjectFactory {
         physicsObject.setLinearDamping(5);
 
 
-        SERVICE.add(physicsObject);
+        PhysicsService.getInstance().add(physicsObject);
         return physicsObject;
     }
 }

@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 public class PositionPredicateFactory {
-    private final static PhysicsService PHYSICS_SERVICE = PhysicsService.getInstance();
 
     public static Predicate<Vector2f> withoutAllCollisions(final Vector2i dimensions) {
         return withoutAllCollisions(dimensions, new Vector2i(0, 0));
@@ -22,9 +21,9 @@ public class PositionPredicateFactory {
     public static Predicate<Vector2f> withoutAllCollisions(final Vector2i dimensions,
                                                            final Vector2i offset) {
         return position -> {
-            PHYSICS_SERVICE.updateBroadphase();
+            PhysicsService.getInstance().updateBroadphase();
             final Vector2f positionWithOffset = new Vector2f(position).add(offset.x, offset.y);
-            return PHYSICS_SERVICE.query(positionWithOffset, dimensions, Set.of()).isEmpty();
+            return PhysicsService.getInstance().query(positionWithOffset, dimensions, Set.of()).isEmpty();
         };
     }
     public static Predicate<Vector2f> withoutRoomObjectCollisions(final RoomObject newObj,
@@ -52,8 +51,8 @@ public class PositionPredicateFactory {
             }
             final Vector2i tileDimensions = new Vector2i(TileImpl.SCALE_TILE_SIZE, TileImpl.SCALE_TILE_SIZE)
                     .sub(new Vector2i(TOLERANCE.x() * 2, TOLERANCE.y() * 2));
-            PHYSICS_SERVICE.updateBroadphase();
-            return PHYSICS_SERVICE.query(positionWithOffset, tileDimensions, Set.of())
+            PhysicsService.getInstance().updateBroadphase();
+            return PhysicsService.getInstance().query(positionWithOffset, tileDimensions, Set.of())
                     .stream()
                     .anyMatch(c -> c.getUserData() instanceof TileImpl);
         };
@@ -69,8 +68,8 @@ public class PositionPredicateFactory {
             }
             final Vector2i tileDimensions = new Vector2i(TileImpl.SCALE_TILE_SIZE, TileImpl.SCALE_TILE_SIZE)
                     .sub(new Vector2i(TOLERANCE.x() * 2, TOLERANCE.y() * 2));
-            PHYSICS_SERVICE.updateBroadphase();
-            return PHYSICS_SERVICE.query(positionWithOffset, tileDimensions, Set.of()).isEmpty();
+            PhysicsService.getInstance().updateBroadphase();
+            return PhysicsService.getInstance().query(positionWithOffset, tileDimensions, Set.of()).isEmpty();
         };
     }
 

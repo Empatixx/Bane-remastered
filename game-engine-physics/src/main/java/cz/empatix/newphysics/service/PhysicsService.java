@@ -12,17 +12,26 @@ import java.util.Set;
 public class PhysicsService {
     private static PhysicsService instance;
 
+    /**
+     * Returns the application-owned instance. The application is responsible for
+     * creating the single {@code PhysicsService} (via the constructor) before any
+     * ambient consumer asks for it; this fails fast instead of silently creating a
+     * second physics world if that ordering is ever violated.
+     */
     public static PhysicsService getInstance() {
         if (instance == null) {
-            instance = new PhysicsService();
+            throw new IllegalStateException(
+                    "PhysicsService has not been initialized; the application must create it first");
         }
         return instance;
     }
 
     private final PhysicsEngine physicsEngine;
 
+    /** Creates the physics world and registers it as the application-owned instance. */
     public PhysicsService() {
         physicsEngine = new PhysicsEngine();
+        instance = this;
     }
 
     public List<PhysicsObject> query(final Vector2f point, final Vector2i dimensions,

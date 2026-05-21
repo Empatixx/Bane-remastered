@@ -37,9 +37,11 @@ public class LobbyState extends GameState {
     private CoinService coinService;
     private Scientist scientist;
     private ShadowService shadowService;
+    private final PhysicsService physicsService;
 
-    protected LobbyState(final GameStateService gameStateService) {
+    protected LobbyState(final GameStateService gameStateService, final PhysicsService physicsService) {
         super(gameStateService, GameStateType.LOBBY);
+        this.physicsService = physicsService;
     }
 
     @Override
@@ -103,7 +105,7 @@ public class LobbyState extends GameState {
     @Override
     public void cleanUp() {
         player.cleanUp();
-        PhysicsService.getInstance().clear();
+        physicsService.clear();
         InteractionService.getInstance().clear();
         LightningService.getInstance().clear();
         scientist.cleanUp();
