@@ -7,9 +7,12 @@ package cz.empatix.core;
  */
 public final class Viewport {
 
-    /** Fixed internal render resolution the game is designed around. */
-    public static final int TARGET_WIDTH = 960;
-    public static final int TARGET_HEIGHT = 540;
+    /**
+     * Fixed internal render resolution. The concrete values are the application's
+     * choice; the engine only stores them. Set once at startup via {@link #configure}.
+     */
+    public static int TARGET_WIDTH;
+    public static int TARGET_HEIGHT;
 
     /** Current window framebuffer size, updated by the windowing layer on resize. */
     public static int WIDTH;
@@ -19,5 +22,11 @@ public final class Viewport {
     public static int MAX_HEIGHT;
 
     private Viewport() {
+    }
+
+    /** Set the internal render resolution. Must be called by the application before rendering. */
+    public static void configure(final int targetWidth, final int targetHeight) {
+        TARGET_WIDTH = targetWidth;
+        TARGET_HEIGHT = targetHeight;
     }
 }

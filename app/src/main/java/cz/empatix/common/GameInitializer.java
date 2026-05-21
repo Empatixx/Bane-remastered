@@ -1,5 +1,6 @@
 package cz.empatix.common;
 import cz.empatix.core.Initializer;
+import cz.empatix.core.Viewport;
 
 import cz.empatix.common.handlers.InputHandler;
 import cz.empatix.common.handlers.WindowHandler;
@@ -10,8 +11,12 @@ import cz.empatix.common.initializators.GLInit;
 import java.util.List;
 
 public class GameInitializer {
+    /** Bane's internal render resolution (16:9). */
+    private static final int TARGET_WIDTH = 960;
+    private static final int TARGET_HEIGHT = 540;
     private final List<Initializer> initializers;
     public GameInitializer(final GameLoop gameLoop){
+        Viewport.configure(TARGET_WIDTH, TARGET_HEIGHT);
         final GLFWInit glfwInit = new GLFWInit();
         final GLInit glInit = new GLInit();
         final ALInit alInit = new ALInit();
