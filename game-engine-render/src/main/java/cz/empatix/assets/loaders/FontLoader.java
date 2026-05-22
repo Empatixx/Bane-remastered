@@ -1,5 +1,6 @@
 package cz.empatix.assets.loaders;
 import cz.empatix.core.AssetLoader;
+import cz.empatix.core.AssetPaths;
 import cz.empatix.core.Viewport;
 
 import cz.empatix.assets.domain.RawImage;
@@ -33,7 +34,7 @@ import static org.lwjgl.stb.STBTruetype.*;
 
 public class FontLoader implements AssetLoader<RawFont> {
     private final static Logger LOGGER = LoggerFactory.getLogger(FontLoader.class);
-    public final static Path PATH = Path.of("./assets/fonts/");
+    public final static Path PATH = AssetPaths.FONTS;
     private final Queue<RawFont> fonts;
     private final TextureAtlasFactory textureAtlasFactory;
 

@@ -1,5 +1,6 @@
 package cz.empatix.assets.providers;
 import cz.empatix.core.AssetProvider;
+import cz.empatix.core.AssetPaths;
 
 import cz.empatix.assets.loaders.TexturesLoader;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public class TexturesProvider implements AssetProvider {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesProvider.class);
-    public final static Path PATH = Path.of("./assets/textures/");
+    public final static Path PATH = AssetPaths.TEXTURES;
     private final TexturesLoader texturesLoader;
     private final List<TextureAtlas> textureAtlases;
 

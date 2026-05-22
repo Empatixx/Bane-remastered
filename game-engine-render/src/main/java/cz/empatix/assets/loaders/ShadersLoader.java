@@ -1,5 +1,6 @@
 package cz.empatix.assets.loaders;
 import cz.empatix.core.AssetLoader;
+import cz.empatix.core.AssetPaths;
 
 import cz.empatix.assets.domain.RawShader;
 import org.slf4j.Logger;
@@ -16,7 +17,7 @@ import java.util.stream.Stream;
 
 public class ShadersLoader implements AssetLoader<List<RawShader>> {
     private final static Logger LOGGER = LoggerFactory.getLogger(ShadersLoader.class);
-    public final static Path PATH = Path.of("./assets/shaders/");
+    public final static Path PATH = AssetPaths.SHADERS;
     private static final Set<Path> PRELOAD_SHADERS = Set.of(
             PATH.resolve("common-vs.glsl"),
             PATH.resolve("common-fs.glsl"),

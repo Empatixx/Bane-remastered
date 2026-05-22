@@ -1,5 +1,6 @@
 package cz.empatix.assets.loaders;
 import cz.empatix.core.AssetLoader;
+import cz.empatix.core.AssetPaths;
 
 import cz.empatix.assets.domain.RawImage;
 import cz.empatix.textureatlas.domain.RawTextureAtlas;
@@ -27,7 +28,7 @@ import static org.lwjgl.stb.STBImage.stbi_load;
 
 public class TexturesLoader implements AssetLoader<RawTextureAtlas> {
     private final static Logger LOGGER = LoggerFactory.getLogger(TexturesLoader.class);
-    public final static Path PATH = Path.of("./assets/textures/");
+    public final static Path PATH = AssetPaths.TEXTURES;
     private final static Path PRELOAD_DIRECTORY = PATH.resolve("loading");
     private final static Set<String> SUPPORTED_FORMATS = Set.of(".tga", ".png");
     private final Queue<RawTextureAtlas> rawTextureAtlases;

@@ -1,5 +1,6 @@
 package cz.empatix.audio.assets;
 import cz.empatix.core.AssetLoader;
+import cz.empatix.core.AssetPaths;
 
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -27,7 +28,7 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class AudioLoader implements AssetLoader<RawAudio> {
     private final static Logger LOGGER = LoggerFactory.getLogger(AudioLoader.class);
-    public final static Path PATH = Path.of("./assets/audio/");
+    public final static Path PATH = AssetPaths.AUDIO;
     private final Queue<RawAudio> audio;
     private final Lock lock;
     public AudioLoader() {
