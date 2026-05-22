@@ -81,16 +81,8 @@ public class Revolver extends AbstractGun implements Gun {
     }
 
     @Override
-    public void reload() {
-        if(reloading){
-            return;
-        }
-        if (ammo > 0 && currentClip < clipSize) {
-            LOGGER.info("Reloading clip: {}, ammo: {}", currentClip, ammo);
-            reloading = true;
-            lastReloadTime = System.currentTimeMillis();
-            audioService.play(SoundEffect.PISTOL_RELOAD);
-        }
+    protected SoundEffect reloadSound() {
+        return SoundEffect.PISTOL_RELOAD;
     }
 
     @Override
@@ -98,12 +90,7 @@ public class Revolver extends AbstractGun implements Gun {
         pistolClipHud.update(dt);
         bullets.forEach(b -> b.update(dt));
         bullets.removeIf(Bullet::shouldRemove);
-        if(reloading){
-            if(System.currentTimeMillis() - lastReloadTime > reloadTime){
-                reloading = false;
-                reloadAmmo();
-            }
-        }
+        updateReload();
     }
 
     @Override

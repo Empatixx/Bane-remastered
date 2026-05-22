@@ -117,19 +117,17 @@ public class M4 extends AbstractGun implements Gun{
     }
 
     @Override
+    protected SoundEffect reloadSound() {
+        return SoundEffect.M4_RELOAD;
+    }
+
+    @Override
     public void reload() {
-        if(reloading){
+        // can't reload mid-burst
+        if (bulletsToShoot > 0) {
             return;
         }
-        if(bulletsToShoot > 0){
-            return;
-        }
-        if (ammo > 0 && currentClip < clipSize) {
-            LOGGER.info("Reloading pistol clip: {}, ammo: {}", currentClip, ammo);
-            reloading = true;
-            lastReloadTime = System.currentTimeMillis();
-            audioService.play(SoundEffect.M4_RELOAD);
-        }
+        super.reload();
     }
 
     @Override
@@ -137,12 +135,7 @@ public class M4 extends AbstractGun implements Gun{
         clipHud.update(dt);
         bullets.forEach(b -> b.update(dt));
         bullets.removeIf(Bullet::shouldRemove);
-        if(reloading){
-            if(System.currentTimeMillis() - lastReloadTime > reloadTime){
-                reloading = false;
-                reloadAmmo();
-            }
-        }
+        updateReload();
     }
 
 
