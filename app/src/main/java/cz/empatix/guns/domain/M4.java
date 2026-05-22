@@ -1,5 +1,6 @@
 package cz.empatix.guns.domain;
 
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.sound.SoundEffect;
 import cz.empatix.guns.factory.BulletFactory;
@@ -34,7 +35,8 @@ public class M4 extends AbstractGun implements Gun{
     private final BulletFactory bulletFactory;
     private final SubMachineClipHud clipHud;
 
-    public M4(final BulletFactory bulletFactory) {
+    public M4(final BulletFactory bulletFactory, final AudioService audioService) {
+        super(audioService);
         this.minDamage = 2;
         this.maxDamage = 2;
 
@@ -100,7 +102,7 @@ public class M4 extends AbstractGun implements Gun{
             bulletsToShoot = BULLETS_PER_SHOT - 1;
             lastShootTime = System.currentTimeMillis();
 
-            AUDIO_SERVICE.play(SoundEffect.M4_SHOOT);
+            audioService.play(SoundEffect.M4_SHOOT);
 
             lastTargetX = targetX;
             lastTargetY = targetY;
@@ -108,7 +110,7 @@ public class M4 extends AbstractGun implements Gun{
             lastShooterY = shooterY;
             return true;
         } else {
-            AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
+            audioService.play(SoundEffect.EMPTY_GUN_SHOOT);
             lastShootTime = System.currentTimeMillis();
         }
         return false;
@@ -126,7 +128,7 @@ public class M4 extends AbstractGun implements Gun{
             LOGGER.info("Reloading pistol clip: {}, ammo: {}", currentClip, ammo);
             reloading = true;
             lastReloadTime = System.currentTimeMillis();
-            AUDIO_SERVICE.play(SoundEffect.M4_RELOAD);
+            audioService.play(SoundEffect.M4_RELOAD);
         }
     }
 

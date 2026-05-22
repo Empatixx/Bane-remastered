@@ -1,5 +1,6 @@
 package cz.empatix.guns.domain;
 
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.sound.SoundEffect;
 import cz.empatix.guns.ammo.Bullet;
@@ -25,7 +26,8 @@ public class Thompson extends AbstractGun implements Gun{
     private final List<Bullet> bullets;
     private final BulletFactory bulletFactory;
     private final SubMachineClipHud clipHud;
-    public Thompson(final BulletFactory bulletFactory) {
+    public Thompson(final BulletFactory bulletFactory, final AudioService audioService) {
+        super(audioService);
         this.minDamage = 1;
         this.maxDamage = 3;
 
@@ -72,10 +74,10 @@ public class Thompson extends AbstractGun implements Gun{
             bullets.add(bullet);
             currentClip--;
             lastShootTime = System.currentTimeMillis();
-            AUDIO_SERVICE.play(SoundEffect.PISTOL_SHOOT);
+            audioService.play(SoundEffect.PISTOL_SHOOT);
             return true;
         } else {
-            AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
+            audioService.play(SoundEffect.EMPTY_GUN_SHOOT);
             lastShootTime = System.currentTimeMillis();
             return false;
         }
@@ -90,7 +92,7 @@ public class Thompson extends AbstractGun implements Gun{
             LOGGER.info("Reloading clip: {}, ammo: {}", currentClip, ammo);
             reloading = true;
             lastReloadTime = System.currentTimeMillis();
-            AUDIO_SERVICE.play(SoundEffect.PISTOL_RELOAD);
+            audioService.play(SoundEffect.PISTOL_RELOAD);
         }
     }
 

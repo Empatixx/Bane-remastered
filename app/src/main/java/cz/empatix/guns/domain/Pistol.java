@@ -27,7 +27,8 @@ public class Pistol extends AbstractGun implements Gun {
     private final BulletFactory bulletFactory;
     private final PistolClipHud pistolClipHud;
 
-    public Pistol(final BulletFactory bulletFactory) {
+    public Pistol(final BulletFactory bulletFactory, final AudioService audioService) {
+        super(audioService);
         this.minDamage = 1;
         this.maxDamage = 3;
 
@@ -74,11 +75,11 @@ public class Pistol extends AbstractGun implements Gun {
             currentClip--;
             shooting = false;
             lastShootTime = System.currentTimeMillis();
-            AUDIO_SERVICE.play(SoundEffect.PISTOL_SHOOT);
+            audioService.play(SoundEffect.PISTOL_SHOOT);
             return true;
         }
         shooting = false;
-        AUDIO_SERVICE.play(SoundEffect.EMPTY_GUN_SHOOT);
+        audioService.play(SoundEffect.EMPTY_GUN_SHOOT);
         return false;
     }
 
@@ -91,7 +92,7 @@ public class Pistol extends AbstractGun implements Gun {
             LOGGER.info("Reloading clip: {}, ammo: {}", currentClip, ammo);
             reloading = true;
             lastReloadTime = System.currentTimeMillis();
-            AUDIO_SERVICE.play(SoundEffect.PISTOL_RELOAD);
+            audioService.play(SoundEffect.PISTOL_RELOAD);
         }
     }
 

@@ -1,6 +1,7 @@
 package cz.empatix.guns.service;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.utils.PositionUtils;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
@@ -54,14 +55,15 @@ public class GunService {
         this.itemService = itemService;
         damageEventComposite = new GunDamageEventComposite();
         final BulletFactory bulletFactory = new BulletFactory(statisticsService, damageEventComposite);
+        final AudioService audioService = AudioService.getInstance();
         guns = List.of(
-                new Pistol(bulletFactory),
-                new Shotgun(bulletFactory),
-                new Luger(bulletFactory),
-                new Revolver(bulletFactory),
-                new M4(bulletFactory),
-                new Uzi(bulletFactory),
-                new Thompson(bulletFactory)
+                new Pistol(bulletFactory, audioService),
+                new Shotgun(bulletFactory, audioService),
+                new Luger(bulletFactory, audioService),
+                new Revolver(bulletFactory, audioService),
+                new M4(bulletFactory, audioService),
+                new Uzi(bulletFactory, audioService),
+                new Thompson(bulletFactory, audioService)
         );
         {
             slots = new GunSlots();

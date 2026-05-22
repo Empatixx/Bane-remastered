@@ -3,7 +3,7 @@ package cz.empatix.guns.domain;
 import cz.empatix.audio.service.AudioService;
 
 public abstract class AbstractGun {
-    protected final static AudioService AUDIO_SERVICE = AudioService.getInstance();
+    protected final AudioService audioService;
     protected int minDamage;
     protected  int maxDamage;
 
@@ -23,6 +23,10 @@ public abstract class AbstractGun {
 
     protected long lastShootTime;
     protected long lastReloadTime;
+
+    protected AbstractGun(final AudioService audioService) {
+        this.audioService = audioService;
+    }
 
     protected void reloadAmmo(){
         final int ammoToReload = clipSize - currentClip;
