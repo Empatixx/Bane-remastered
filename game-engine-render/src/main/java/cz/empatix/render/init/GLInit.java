@@ -1,9 +1,7 @@
-package cz.empatix.common.initializators;
-import cz.empatix.core.Initializer;
+package cz.empatix.render.init;
 
 import cz.empatix.core.GraphicsCapabilities;
-import cz.empatix.settings.domain.GameSettings;
-import cz.empatix.settings.service.SettingsService;
+import cz.empatix.core.Initializer;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.KHRDebug;
@@ -14,9 +12,22 @@ import org.slf4j.LoggerFactory;
 import static org.lwjgl.opengl.GL43.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+/**
+ * Creates the OpenGL capabilities and sets the baseline GL state for the renderer.
+ * The framebuffer viewport size is supplied by the application (it owns the window
+ * resolution), keeping this engine class free of any app/settings dependency.
+ */
 public class GLInit implements Initializer {
     private final static Logger LOGGER = LoggerFactory.getLogger(GLInit.class);
     private final static boolean DEBUG_MODE = true;
+
+    private final int viewportWidth;
+    private final int viewportHeight;
+
+    public GLInit(final int viewportWidth, final int viewportHeight) {
+        this.viewportWidth = viewportWidth;
+        this.viewportHeight = viewportHeight;
+    }
 
     @Override
     public void init() {
@@ -32,8 +43,7 @@ public class GLInit implements Initializer {
 
         glEnable(GL_DEPTH_TEST);
 
-        final GameSettings settings = SettingsService.getInstance().getSettings();
-        glViewport(0, 0, settings.getResolutionWidth(), settings.getResolutionHeight());
+        glViewport(0, 0, viewportWidth, viewportHeight);
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         if (DEBUG_MODE) {
