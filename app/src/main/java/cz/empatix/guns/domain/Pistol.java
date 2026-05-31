@@ -60,27 +60,13 @@ public class Pistol extends AbstractGun implements Gun {
     }
 
     @Override
-    public boolean shoot(float shooterX, float shooterY, float targetX, float targetY
-    ) {
-        if (!shooting || reloading) {
-            return false;
-        }
-        if (System.currentTimeMillis() - lastShootTime < fireRateTime) {
-            return false;
-        }
-        if (currentClip > 0) {
-            LOGGER.info("Shooting from pistol clip: {}, ammo: {}", currentClip, ammo);
-            final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
-            bullets.add(bullet);
-            currentClip--;
-            shooting = false;
-            lastShootTime = System.currentTimeMillis();
-            audioService.play(SoundEffect.PISTOL_SHOOT);
-            return true;
-        }
-        shooting = false;
-        audioService.play(SoundEffect.EMPTY_GUN_SHOOT);
-        return false;
+    protected void spawnBullets(final float shooterX, final float shooterY, final float targetX, final float targetY) {
+        bullets.add(bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY));
+    }
+
+    @Override
+    protected SoundEffect shootSound() {
+        return SoundEffect.PISTOL_SHOOT;
     }
 
     @Override

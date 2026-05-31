@@ -117,6 +117,18 @@ public class M4 extends AbstractGun implements Gun{
     }
 
     @Override
+    protected SoundEffect shootSound() {
+        return SoundEffect.M4_SHOOT;
+    }
+
+    // M4 overrides shoot() for its delayed burst, so spawnBullets() is only here to satisfy the
+    // AbstractGun contract; it mirrors a single round of the burst.
+    @Override
+    protected void spawnBullets(final float shooterX, final float shooterY, final float targetX, final float targetY) {
+        bullets.add(bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY));
+    }
+
+    @Override
     protected SoundEffect reloadSound() {
         return SoundEffect.M4_RELOAD;
     }

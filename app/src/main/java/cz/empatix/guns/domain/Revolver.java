@@ -12,15 +12,12 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderableState;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Revolver extends AbstractGun implements Gun {
     private final static String WEAPON_TXT_PATH = "ingame/guns/revolver.tga";
-    private final static Logger LOGGER = LoggerFactory.getLogger(Revolver.class);
     private final CommonImage gunHud;
     private final CommonText ammoHud;
     private final List<Bullet> bullets;
@@ -58,26 +55,13 @@ public class Revolver extends AbstractGun implements Gun {
     }
 
     @Override
-    public boolean shoot(final float shooterX,final  float shooterY,final float targetX,final float targetY) {
-        if(!shooting || reloading){
-            return false;
-        }
-        if(System.currentTimeMillis() - lastShootTime < fireRateTime){
-            return false;
-        }
-        if (currentClip > 0) {
-            LOGGER.info("Shooting from revolver clip: {}, ammo: {}", currentClip, ammo);
-            final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
-            bullets.add(bullet);
-            currentClip--;
-            shooting = false;
-            lastShootTime = System.currentTimeMillis();
-            audioService.play(SoundEffect.REVOLVER_SHOOT);
-            return true;
-        }
-        shooting = false;
-        audioService.play(SoundEffect.EMPTY_GUN_SHOOT);
-        return false;
+    protected void spawnBullets(final float shooterX, final float shooterY, final float targetX, final float targetY) {
+        bullets.add(bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY));
+    }
+
+    @Override
+    protected SoundEffect shootSound() {
+        return SoundEffect.REVOLVER_SHOOT;
     }
 
     @Override

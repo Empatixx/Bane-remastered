@@ -12,15 +12,12 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.render.domain.RenderableState;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Uzi extends AbstractGun implements Gun{
     private final static String WEAPON_TXT_PATH = "ingame/guns/uzi.tga";
-    private final static Logger LOGGER = LoggerFactory.getLogger(Uzi.class);
     private final CommonImage gunHud;
     private final CommonText ammoHud;
     private final List<Bullet> bullets;
@@ -59,28 +56,18 @@ public class Uzi extends AbstractGun implements Gun{
     }
 
     @Override
-    public boolean shoot(float shooterX, float shooterY, float targetX, float targetY
-    ) {
-        if(!shooting || reloading){
-            return false;
-        }
-        if(System.currentTimeMillis() - lastShootTime < fireRateTime){
-            return false;
-        }
-        if (currentClip > 0) {
-            LOGGER.info("Shooting from uzi clip: {}, ammo: {}", currentClip, ammo);
-            final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY);
-            bullets.add(bullet);
-            currentClip--;
-            lastShootTime = System.currentTimeMillis();
-            audioService.play(SoundEffect.UZI_SHOOT);
-            return true;
-        } else {
-            LOGGER.info("Trying to shoot from empty uzi clip: {}, ammo: {}", currentClip, ammo);
-            audioService.play(SoundEffect.EMPTY_GUN_SHOOT);
-            lastShootTime = System.currentTimeMillis();
-        }
+    protected void spawnBullets(final float shooterX, final float shooterY, final float targetX, final float targetY) {
+        bullets.add(bulletFactory.createBullet(minDamage, maxDamage, inaccuracy, shooterX, shooterY, targetX, targetY));
+    }
+
+    @Override
+    protected boolean isSemiAuto() {
         return false;
+    }
+
+    @Override
+    protected SoundEffect shootSound() {
+        return SoundEffect.UZI_SHOOT;
     }
 
     @Override
