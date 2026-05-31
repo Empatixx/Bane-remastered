@@ -2,12 +2,14 @@ package cz.empatix.guns.domain;
 
 import cz.empatix.assets.domain.font.Font;
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.audio.init.ALInit;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.factory.BulletFactory;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.textureatlas.domain.TextureAtlasInfo;
 import org.joml.Vector2i;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -31,6 +33,11 @@ import static org.mockito.Mockito.when;
  * A fake (GL-free) {@link TextureAtlas.Entry} is returned so the pixel-math in the HUD ctors works.
  */
 class PistolMockedAssetsTest {
+
+    @BeforeAll
+    static void headlessAudio() {
+        ALInit.canUseAL = false; // mock(Bullet.class) triggers Bullet's OpenAL-touching static init
+    }
 
     /** A GL-free atlas entry: 16x16 sprite inside a 64x64 atlas, so width()/normalized math return real values. */
     private static TextureAtlas.Entry fakeEntry() {
