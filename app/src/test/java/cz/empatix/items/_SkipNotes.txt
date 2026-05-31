@@ -1,0 +1,37 @@
+Skip / coverage notes for cz.empatix.items.* unit tests
+=========================================================
+
+All constructible domain/service classes are now covered by REAL-class headless tests.
+
+Newly covered (real classes exercised):
+  domain/AmmoBoxItem      -> AmmoBoxItemTest        (percent refill, pickUp callback, footprint, despawn gate)
+  domain/RecoverPotion    -> RecoverPotionTest      (small/large amount, type, heal callback, full-gate)
+  domain/CoinItem         -> CoinItemTest           (single-coin pickup, once-only, footprint)
+  domain/WeaponDrop       -> WeaponDropTest         (E-key gated pickup, addGun callback, scale)
+  domain/ArtefactDrop     -> ArtefactDropTest       (E-key gated pickup, addArtefact callback, 2x scale)
+  domain/ShopItem         -> ShopItemTest           (buy/affordability/E-gate, discount floor, canRemove)
+  domain/SacrificialItem  -> SacrificialItemTest    (health-cost buy in [1,3], gate, delegation)
+  domain/MovableItemDrop  -> MovableItemDropTest    (physics-backed delegation + position sync)
+  service/ItemFactory     -> ItemFactoryTest        (every produced item type incl. movable/shop/sacrificial)
+  service/ItemService     -> ItemServiceTest        (update/remove/destroy, statistics gating, cleanUp)
+  service/ShopItemService -> ShopItemServiceTest    (limited-subset discount)
+  service/ItemDespawnService -> ItemDespawnServiceTest (time gates driven via public setDespawnTime)
+  service/FloatingEffectService -> FloatingEffectServiceTest (bobbing amplitude bounds)
+  service/DroppableState  -> DroppableStateTest     (edge-triggered drop latch/rearm)
+
+Already covered by pre-existing tests (left as-is, not duplicated):
+  domain/ItemRarity  -> ItemRarityTest
+  domain/ShopType    -> ShopTypeTest
+  domain/AmmoBoxType, RecoverType, RecoverSize, DropSource -> ItemEnumsTest
+
+Not unit-tested (reason):
+  domain/ItemDrop interface  -> behaviourless interface; its AUDIO_SERVICE field and getSource()
+                                default are exercised indirectly through the concrete drops above.
+
+Headless seams relied on:
+  - mockStatic(AssetsService.class) + MockedAssets.stub(...) for GPU asset fetches in ctors.
+  - new PhysicsService() in @BeforeEach for MovableItemDrop / ItemFactory movable variants.
+  - ALInit.canUseAL = false in @BeforeAll for AudioService static touch at class-load.
+  - GunService / ArtefactsService classes are first loaded INSIDE the mockStatic scope so their
+    static{} blocks (which call AssetsService.getTexture) see the stub.
+  - Render-output paths that call font.getDrawables (NPE on mock Font) are intentionally NOT invoked.
