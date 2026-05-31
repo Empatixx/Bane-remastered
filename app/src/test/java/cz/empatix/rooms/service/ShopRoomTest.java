@@ -1,20 +1,15 @@
 package cz.empatix.rooms.service;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.init.ALInit;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
-import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.CoinService;
 import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
-import cz.empatix.testsupport.MockedAssets;
+import cz.empatix.testsupport.HeadlessAssets;
 import cz.empatix.tiles.domain.TileImpl;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.EnumSet;
 
@@ -22,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Headless coverage for the real {@link ShopRoom}: geometry from its backing common tile map, the
@@ -30,17 +24,8 @@ import static org.mockito.Mockito.mockStatic;
  * collaborator (which would otherwise build HUD widgets) is mocked because it is only consumed
  * inside {@code init()}, which is not exercised here.
  */
+@ExtendWith(HeadlessAssets.class)
 class ShopRoomTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        ALInit.canUseAL = false;
-    }
-
-    @BeforeEach
-    void physics() {
-        new PhysicsService();
-    }
 
     private static final int SCALED = TileImpl.TILE_SIZE * TileImpl.SCALE;
 
@@ -52,39 +37,30 @@ class ShopRoomTest {
 
     @Test
     void geometryDerivesFromRowsColsAndOffset() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final ShopRoom room = room(12, 16, 64, 0);
+        final ShopRoom room = room(12, 16, 64, 0);
 
-            assertEquals(16 * SCALED, room.getWidth());
-            assertEquals(12 * SCALED, room.getHeight());
-            assertEquals(64, room.getX());
-            assertEquals(0, room.getY());
-        }
+        assertEquals(16 * SCALED, room.getWidth());
+        assertEquals(12 * SCALED, room.getHeight());
+        assertEquals(64, room.getX());
+        assertEquals(0, room.getY());
     }
 
     @Test
     void typeStateAndEmptyObjectsBeforeInit() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final ShopRoom room = room(12, 14, 0, 0);
+        final ShopRoom room = room(12, 14, 0, 0);
 
-            assertEquals(RoomType.SHOP, room.getRoomType());
-            assertEquals(RoomState.OPEN, room.getState());
-            assertTrue(room.getRoomObjects().isEmpty());
-        }
+        assertEquals(RoomType.SHOP, room.getRoomType());
+        assertEquals(RoomState.OPEN, room.getState());
+        assertTrue(room.getRoomObjects().isEmpty());
     }
 
     @Test
     void addNeighbourIsStoredAndRetrievable() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final ShopRoom room = room(12, 14, 0, 0);
-            final Room neighbour = mock(Room.class);
+        final ShopRoom room = room(12, 14, 0, 0);
+        final Room neighbour = mock(Room.class);
 
-            room.addNeighbour(RoomDirection.TOP, neighbour);
+        room.addNeighbour(RoomDirection.TOP, neighbour);
 
-            assertSame(neighbour, room.getNeighboursMap().get(RoomDirection.TOP));
-        }
+        assertSame(neighbour, room.getNeighboursMap().get(RoomDirection.TOP));
     }
 }

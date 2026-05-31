@@ -1,26 +1,21 @@
 package cz.empatix.shadow.service;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.init.ALInit;
 import cz.empatix.lightning.domain.LightSource;
 import cz.empatix.lightning.service.LightningService;
-import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.player.Player;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.shadow.domain.PlayerTextureShadow;
-import cz.empatix.testsupport.MockedAssets;
+import cz.empatix.testsupport.HeadlessAssets;
 import org.joml.Vector3f;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Headless coverage for {@link ShadowService} driven by a REAL {@link Player}: the strongest-light
@@ -29,16 +24,11 @@ import static org.mockito.Mockito.mockStatic;
  * The {@link LightningService} singleton is cleared per test; a large {@code dt} is used so the
  * interpolated intensity reaches its target in a single tick. Only shadow presence/count is asserted.
  */
+@ExtendWith(HeadlessAssets.class)
 class ShadowServiceTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        ALInit.canUseAL = false;
-    }
 
     @BeforeEach
     void resetWorld() {
-        new PhysicsService();
         LightningService.getInstance().clear();
     }
 
@@ -51,85 +41,70 @@ class ShadowServiceTest {
 
     @Test
     void noExternalLightYieldsNoShadow() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Player player = new Player();
-            player.setPosition(0, 0);
-            // Only the player's own light exists (created in Player ctor); it is excluded as a caster.
-            final ShadowService service = new ShadowService(player);
+        final Player player = new Player();
+        player.setPosition(0, 0);
+        // Only the player's own light exists (created in Player ctor); it is excluded as a caster.
+        final ShadowService service = new ShadowService(player);
 
-            final List<Renderable> shadows = service.toRender(1.0f);
+        final List<Renderable> shadows = service.toRender(1.0f);
 
-            assertTrue(shadows.isEmpty(), "the player's own light cannot cast the player's shadow");
-        }
+        assertTrue(shadows.isEmpty(), "the player's own light cannot cast the player's shadow");
     }
 
     @Test
     void aNearbyExternalLightCastsAPlayerShadow() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Player player = new Player();
-            player.setPosition(300, 300);
-            externalLightAt(320, 320, 1.0f); // close, strong, displayable
-            final ShadowService service = new ShadowService(player);
+        final Player player = new Player();
+        player.setPosition(300, 300);
+        externalLightAt(320, 320, 1.0f); // close, strong, displayable
+        final ShadowService service = new ShadowService(player);
 
-            // large dt -> interpolated intensity jumps straight to its (positive) target this tick
-            final List<Renderable> shadows = service.toRender(1.0f);
+        // large dt -> interpolated intensity jumps straight to its (positive) target this tick
+        final List<Renderable> shadows = service.toRender(1.0f);
 
-            assertEquals(1, shadows.size());
-            assertInstanceOf(PlayerTextureShadow.class, shadows.get(0));
-        }
+        assertEquals(1, shadows.size());
+        assertInstanceOf(PlayerTextureShadow.class, shadows.get(0));
     }
 
     @Test
     void aLightBeyondMaxDistanceProducesNoShadow() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Player player = new Player();
-            player.setPosition(0, 0);
-            externalLightAt(10_000, 10_000, 1.0f); // beyond MAX_SHADOW_DISTANCE
-            final ShadowService service = new ShadowService(player);
+        final Player player = new Player();
+        player.setPosition(0, 0);
+        externalLightAt(10_000, 10_000, 1.0f); // beyond MAX_SHADOW_DISTANCE
+        final ShadowService service = new ShadowService(player);
 
-            final List<Renderable> shadows = service.toRender(1.0f);
+        final List<Renderable> shadows = service.toRender(1.0f);
 
-            assertTrue(shadows.isEmpty());
-        }
+        assertTrue(shadows.isEmpty());
     }
 
     @Test
     void shadowFadesOutAfterTheLightIsRemoved() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Player player = new Player();
-            player.setPosition(300, 300);
-            final LightSource light = externalLightAt(320, 320, 1.0f);
-            final ShadowService service = new ShadowService(player);
+        final Player player = new Player();
+        player.setPosition(300, 300);
+        final LightSource light = externalLightAt(320, 320, 1.0f);
+        final ShadowService service = new ShadowService(player);
 
-            // build up a shadow first
-            assertEquals(1, service.toRender(1.0f).size());
+        // build up a shadow first
+        assertEquals(1, service.toRender(1.0f).size());
 
-            // remove the light and let intensity interpolate back down to ~0 over many ticks
-            light.destroy();
-            LightningService.getInstance().update();
-            List<Renderable> shadows = List.of();
-            for (int i = 0; i < 50; i++) {
-                shadows = service.toRender(1.0f);
-            }
-
-            assertTrue(shadows.isEmpty(), "with no light the shadow intensity decays below the render threshold");
+        // remove the light and let intensity interpolate back down to ~0 over many ticks
+        light.destroy();
+        LightningService.getInstance().update();
+        List<Renderable> shadows = List.of();
+        for (int i = 0; i < 50; i++) {
+            shadows = service.toRender(1.0f);
         }
+
+        assertTrue(shadows.isEmpty(), "with no light the shadow intensity decays below the render threshold");
     }
 
     @Test
     void updateIsANoOpAndDoesNotThrow() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Player player = new Player();
-            final ShadowService service = new ShadowService(player);
+        final Player player = new Player();
+        final ShadowService service = new ShadowService(player);
 
-            service.update(); // documented no-op; just exercise the method
+        service.update(); // documented no-op; just exercise the method
 
-            assertTrue(service.toRender(0.016f).isEmpty());
-        }
+        assertTrue(service.toRender(0.016f).isEmpty());
     }
 }

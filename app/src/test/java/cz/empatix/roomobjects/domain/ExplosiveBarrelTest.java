@@ -1,21 +1,15 @@
 package cz.empatix.roomobjects.domain;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.init.ALInit;
 import cz.empatix.collision.DamageSourceType;
-import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.domain.RenderableState;
-import cz.empatix.testsupport.MockedAssets;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -25,76 +19,55 @@ import static org.mockito.Mockito.verify;
  * headless physics area query and play a no-op sound with OpenAL disabled), the explosion
  * sub-renderable collection guard, and the light-decay branch of {@link ExplosiveBarrel#update}.
  */
+@ExtendWith(HeadlessAssets.class)
 class ExplosiveBarrelTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        ALInit.canUseAL = false;
-    }
-
-    @BeforeEach
-    void physics() {
-        new PhysicsService();
-    }
 
     @Test
     void enemyDamageIgnoredPlayerDamageKills() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final ExplosiveBarrel barrel = new ExplosiveBarrel();
+        final ExplosiveBarrel barrel = new ExplosiveBarrel();
 
-            assertEquals(0, barrel.hit(DamageSourceType.ENEMY, 99));
-            assertFalse(barrel.isDead());
+        assertEquals(0, barrel.hit(DamageSourceType.ENEMY, 99));
+        assertFalse(barrel.isDead());
 
-            barrel.hit(DamageSourceType.PLAYER, 4);
-            assertTrue(barrel.isDead());
-        }
+        barrel.hit(DamageSourceType.PLAYER, 4);
+        assertTrue(barrel.isDead());
     }
 
     @Test
     void deathRunsExplosionAndLightDecayInUpdate() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final ExplosiveBarrel barrel = new ExplosiveBarrel();
-            barrel.setPosition(50f, 50f);
+        final ExplosiveBarrel barrel = new ExplosiveBarrel();
+        barrel.setPosition(50f, 50f);
 
-            barrel.hit(DamageSourceType.PLAYER, 4); // onDeath: creates light, queries physics, plays sound
+        barrel.hit(DamageSourceType.PLAYER, 4); // onDeath: creates light, queries physics, plays sound
 
-            // Drive the death + explosion + light-decay branches; must not throw headlessly.
-            for (int i = 0; i < 30; i++) {
-                barrel.update(0.1);
-            }
-
-            assertTrue(barrel.isDead());
+        // Drive the death + explosion + light-decay branches; must not throw headlessly.
+        for (int i = 0; i < 30; i++) {
+            barrel.update(0.1);
         }
+
+        assertTrue(barrel.isDead());
     }
 
     @Test
     void explosionIsCollectedAsSubRenderableOnlyAfterDeath() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final ExplosiveBarrel barrel = new ExplosiveBarrel();
-            final RenderableState before = mock(RenderableState.class);
+        final ExplosiveBarrel barrel = new ExplosiveBarrel();
+        final RenderableState before = mock(RenderableState.class);
 
-            barrel.collectSubRenderables(before);
-            verify(before, never()).add(org.mockito.ArgumentMatchers.any());
+        barrel.collectSubRenderables(before);
+        verify(before, never()).add(org.mockito.ArgumentMatchers.any());
 
-            barrel.hit(DamageSourceType.PLAYER, 4);
-            final RenderableState after = mock(RenderableState.class);
-            barrel.collectSubRenderables(after);
-            verify(after).add(org.mockito.ArgumentMatchers.any());
-        }
+        barrel.hit(DamageSourceType.PLAYER, 4);
+        final RenderableState after = mock(RenderableState.class);
+        barrel.collectSubRenderables(after);
+        verify(after).add(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void dimensionsAndRemovability() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final ExplosiveBarrel barrel = new ExplosiveBarrel();
+        final ExplosiveBarrel barrel = new ExplosiveBarrel();
 
-            assertEquals(64 * 3, barrel.getWidth());
-            assertEquals(64 * 3, barrel.getHeight());
-            assertFalse(barrel.canRemove());
-        }
+        assertEquals(64 * 3, barrel.getWidth());
+        assertEquals(64 * 3, barrel.getHeight());
+        assertFalse(barrel.canRemove());
     }
 }

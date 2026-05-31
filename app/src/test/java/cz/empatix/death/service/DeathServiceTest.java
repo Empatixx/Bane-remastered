@@ -1,16 +1,13 @@
 package cz.empatix.death.service;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.testsupport.MockedAssets;
-import org.junit.jupiter.api.BeforeAll;
+import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,101 +19,77 @@ import static org.mockito.Mockito.when;
  * ({@code toRender}'s sub-renderable collection) is not exercised — only the logic/state and the
  * statistics wiring are asserted.
  */
+@ExtendWith(HeadlessAssets.class)
 class DeathServiceTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        cz.empatix.audio.init.ALInit.canUseAL = false;
-    }
 
     @Test
     void startsInactiveAndRendersNothing() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final DeathService service = new DeathService(mock(StatisticsService.class));
 
-            final DeathService service = new DeathService(mock(StatisticsService.class));
-
-            assertFalse(service.isActive());
-            assertTrue(service.toRender().isEmpty());
-        }
+        assertFalse(service.isActive());
+        assertTrue(service.toRender().isEmpty());
     }
 
     @Test
     void inactiveUpdateWhilePlayerAliveDoesNothing() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final StatisticsService stats = mock(StatisticsService.class);
+        final DeathService service = new DeathService(stats);
 
-            final StatisticsService stats = mock(StatisticsService.class);
-            final DeathService service = new DeathService(stats);
+        service.update(0.016f, false);
 
-            service.update(0.016f, false);
-
-            assertFalse(service.isActive());
-            // Score is only computed once the screen is active.
-            verify(stats, never()).calculateScoreForFloor();
-        }
+        assertFalse(service.isActive());
+        // Score is only computed once the screen is active.
+        verify(stats, never()).calculateScoreForFloor();
     }
 
     @Test
     void playerDeathActivatesTheScreenAndComputesScore() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final StatisticsService stats = mock(StatisticsService.class);
+        final DeathService service = new DeathService(stats);
 
-            final StatisticsService stats = mock(StatisticsService.class);
-            final DeathService service = new DeathService(stats);
+        service.update(0.016f, true);
 
-            service.update(0.016f, true);
-
-            assertTrue(service.isActive());
-            // Every active tick recomputes the four reward components.
-            verify(stats, atLeastOnce()).calculateScoreForAccuracy();
-            verify(stats, atLeastOnce()).calculateScoreForEnemiesKilled();
-            verify(stats, atLeastOnce()).calculateScoreForItemsCollected();
-            verify(stats, atLeastOnce()).calculateScoreForFloor();
-        }
+        assertTrue(service.isActive());
+        // Every active tick recomputes the four reward components.
+        verify(stats, atLeastOnce()).calculateScoreForAccuracy();
+        verify(stats, atLeastOnce()).calculateScoreForEnemiesKilled();
+        verify(stats, atLeastOnce()).calculateScoreForItemsCollected();
+        verify(stats, atLeastOnce()).calculateScoreForFloor();
     }
 
     @Test
     void afterSkullTransitionTheStatisticLabelsAreFilledFromTheService() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final StatisticsService stats = mock(StatisticsService.class);
+        when(stats.getAccuracy()).thenReturn(42f);
+        when(stats.getEnemiesKilled()).thenReturn(7);
+        when(stats.getItemsCollected()).thenReturn(3);
+        when(stats.getFloor()).thenReturn(2);
 
-            final StatisticsService stats = mock(StatisticsService.class);
-            when(stats.getAccuracy()).thenReturn(42f);
-            when(stats.getEnemiesKilled()).thenReturn(7);
-            when(stats.getItemsCollected()).thenReturn(3);
-            when(stats.getFloor()).thenReturn(2);
+        final DeathService service = new DeathService(stats);
 
-            final DeathService service = new DeathService(stats);
+        // Activate, then push the accumulator past the skull transition (2.5s) plus all labels.
+        service.update(0.016f, true);
+        service.update(10f, true);
 
-            // Activate, then push the accumulator past the skull transition (2.5s) plus all labels.
-            service.update(0.016f, true);
-            service.update(10f, true);
-
-            verify(stats, atLeastOnce()).getAccuracy();
-            verify(stats, atLeastOnce()).getEnemiesKilled();
-            verify(stats, atLeastOnce()).getItemsCollected();
-            verify(stats, atLeastOnce()).getFloor();
-        }
+        verify(stats, atLeastOnce()).getAccuracy();
+        verify(stats, atLeastOnce()).getEnemiesKilled();
+        verify(stats, atLeastOnce()).getItemsCollected();
+        verify(stats, atLeastOnce()).getFloor();
     }
 
     @Test
     void keyPressedBeforeRewardsCompleteIsIgnored() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final DeathService service = new DeathService(mock(StatisticsService.class));
 
-            final DeathService service = new DeathService(mock(StatisticsService.class));
+        // Not active yet -> a key press must not flip into the "continue" state, so the
+        // screen remains inactive and rendering stays empty.
+        service.keyPressed(0);
+        assertTrue(service.toRender().isEmpty());
 
-            // Not active yet -> a key press must not flip into the "continue" state, so the
-            // screen remains inactive and rendering stays empty.
-            service.keyPressed(0);
-            assertTrue(service.toRender().isEmpty());
-
-            // Active but the reward sequence has not finished -> key press is still ignored, the
-            // screen stays active (does not transition away).
-            service.update(0.016f, true);
-            service.keyPressed(0);
-            assertTrue(service.isActive());
-        }
+        // Active but the reward sequence has not finished -> key press is still ignored, the
+        // screen stays active (does not transition away).
+        service.update(0.016f, true);
+        service.keyPressed(0);
+        assertTrue(service.isActive());
     }
 }

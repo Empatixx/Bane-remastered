@@ -1,12 +1,11 @@
 package cz.empatix.upgrades.service;
 
-import cz.empatix.assets.service.AssetsService;
+import cz.empatix.testsupport.HeadlessAssets;
 import cz.empatix.testsupport.MockedAssets;
 import cz.empatix.upgrades.domain.PlayerUpgrade;
 import cz.empatix.upgrades.domain.PlayerUpgradeName;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
@@ -14,7 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mockStatic;
 
 /**
  * Structure coverage of {@link UpgradeTreeFactory}: each tree has five upgrades with the expected
@@ -22,12 +20,8 @@ import static org.mockito.Mockito.mockStatic;
  * {@link PlayerUpgrade}s (texture fetch in ctor), so all assertions run inside a
  * {@link MockedAssets}-stubbed static.
  */
+@ExtendWith(HeadlessAssets.class)
 class UpgradeTreeFactoryTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        cz.empatix.audio.init.ALInit.canUseAL = false;
-    }
 
     // Expected per-level pricing, shared across all three trees.
     private static final int[] PRICES = {20, 60, 140, 300, 500};
@@ -50,71 +44,55 @@ class UpgradeTreeFactoryTest {
 
     @Test
     void utilityTreeHasExpectedNamesPricesAndChain() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final List<PlayerUpgrade> upgrades = UpgradeTreeFactory.createUtilityTree().getUpgrades();
 
-            final List<PlayerUpgrade> upgrades = UpgradeTreeFactory.createUtilityTree().getUpgrades();
-
-            assertEquals(
-                    List.of(PlayerUpgradeName.IMPROVED_MOVEMENT_SPEED, PlayerUpgradeName.DISCOUNT,
-                            PlayerUpgradeName.TRAP_MASTER, PlayerUpgradeName.ADDITIONAL_GUN,
-                            PlayerUpgradeName.GAMBLE_MACHINE),
-                    upgrades.stream().map(PlayerUpgrade::getName).toList());
-            assertChainPricesAndParents(upgrades);
-            // First two tiers ship unlocked, the rare/epic tiers do not.
-            assertTrue(upgrades.get(1).isBought());
-            assertFalse(upgrades.get(2).isBought());
-        }
+        assertEquals(
+                List.of(PlayerUpgradeName.IMPROVED_MOVEMENT_SPEED, PlayerUpgradeName.DISCOUNT,
+                        PlayerUpgradeName.TRAP_MASTER, PlayerUpgradeName.ADDITIONAL_GUN,
+                        PlayerUpgradeName.GAMBLE_MACHINE),
+                upgrades.stream().map(PlayerUpgrade::getName).toList());
+        assertChainPricesAndParents(upgrades);
+        // First two tiers ship unlocked, the rare/epic tiers do not.
+        assertTrue(upgrades.get(1).isBought());
+        assertFalse(upgrades.get(2).isBought());
     }
 
     @Test
     void defenseTreeHasExpectedNamesPricesAndChain() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final List<PlayerUpgrade> upgrades = UpgradeTreeFactory.createDefenseTree().getUpgrades();
 
-            final List<PlayerUpgrade> upgrades = UpgradeTreeFactory.createDefenseTree().getUpgrades();
-
-            assertEquals(
-                    List.of(PlayerUpgradeName.IMPROVED_HEALTH, PlayerUpgradeName.IMPROVED_ARMOR,
-                            PlayerUpgradeName.ARMOR_REGENERATION, PlayerUpgradeName.ENHANCED_HEALTH,
-                            PlayerUpgradeName.REDUCED_DAMAGE_TAKEN),
-                    upgrades.stream().map(PlayerUpgrade::getName).toList());
-            assertChainPricesAndParents(upgrades);
-        }
+        assertEquals(
+                List.of(PlayerUpgradeName.IMPROVED_HEALTH, PlayerUpgradeName.IMPROVED_ARMOR,
+                        PlayerUpgradeName.ARMOR_REGENERATION, PlayerUpgradeName.ENHANCED_HEALTH,
+                        PlayerUpgradeName.REDUCED_DAMAGE_TAKEN),
+                upgrades.stream().map(PlayerUpgrade::getName).toList());
+        assertChainPricesAndParents(upgrades);
     }
 
     @Test
     void offenseTreeHasExpectedNamesPricesAndChain() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final List<PlayerUpgrade> upgrades = UpgradeTreeFactory.createOffenseTree().getUpgrades();
 
-            final List<PlayerUpgrade> upgrades = UpgradeTreeFactory.createOffenseTree().getUpgrades();
-
-            assertEquals(
-                    List.of(PlayerUpgradeName.IMPROVED_DAMAGE, PlayerUpgradeName.ADDITIONAL_AMMO,
-                            PlayerUpgradeName.CRITICAL_HIT, PlayerUpgradeName.ENHANCED_DAMAGE,
-                            PlayerUpgradeName.PET),
-                    upgrades.stream().map(PlayerUpgrade::getName).toList());
-            assertChainPricesAndParents(upgrades);
-        }
+        assertEquals(
+                List.of(PlayerUpgradeName.IMPROVED_DAMAGE, PlayerUpgradeName.ADDITIONAL_AMMO,
+                        PlayerUpgradeName.CRITICAL_HIT, PlayerUpgradeName.ENHANCED_DAMAGE,
+                        PlayerUpgradeName.PET),
+                upgrades.stream().map(PlayerUpgrade::getName).toList());
+        assertChainPricesAndParents(upgrades);
     }
 
     @Test
     void everyUpgradeHasANonEmptyTitleAndDescription() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final List<PlayerUpgrade> all = List.of(
+                UpgradeTreeFactory.createUtilityTree(),
+                UpgradeTreeFactory.createOffenseTree(),
+                UpgradeTreeFactory.createDefenseTree())
+                .stream().flatMap(t -> t.getUpgrades().stream()).toList();
 
-            final List<PlayerUpgrade> all = List.of(
-                    UpgradeTreeFactory.createUtilityTree(),
-                    UpgradeTreeFactory.createOffenseTree(),
-                    UpgradeTreeFactory.createDefenseTree())
-                    .stream().flatMap(t -> t.getUpgrades().stream()).toList();
-
-            assertEquals(15, all.size());
-            for (final PlayerUpgrade u : all) {
-                assertFalse(u.getTitle().isBlank(), "blank title for " + u.getName());
-                assertFalse(u.getDescription().isBlank(), "blank description for " + u.getName());
-            }
+        assertEquals(15, all.size());
+        for (final PlayerUpgrade u : all) {
+            assertFalse(u.getTitle().isBlank(), "blank title for " + u.getName());
+            assertFalse(u.getDescription().isBlank(), "blank description for " + u.getName());
         }
     }
 }

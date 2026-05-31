@@ -7,11 +7,10 @@ import cz.empatix.render.attributes.Renderable;
 import cz.empatix.rooms.domain.RoomState;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.testsupport.MockedAssets;
+import cz.empatix.testsupport.HeadlessAssets;
 import org.joml.Vector2f;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 
@@ -21,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,12 +28,8 @@ import static org.mockito.Mockito.when;
  * a {@code SceneBackground} (asset), so the test runs under a mocked {@link AssetsService};
  * {@code Camera} is headless-safe. The GL render contents are not asserted beyond list composition.
  */
+@ExtendWith(HeadlessAssets.class)
 class MapServiceTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        cz.empatix.audio.init.ALInit.canUseAL = false;
-    }
 
     private Room boundedRoom() {
         final Room room = mock(Room.class);
@@ -53,110 +47,86 @@ class MapServiceTest {
 
     @Test
     void applyRegistersRoomsAndExposesThem() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final MapService service = new MapService();
+        final Room start = boundedRoom();
+        final Room other = boundedRoom();
 
-            final MapService service = new MapService();
-            final Room start = boundedRoom();
-            final Room other = boundedRoom();
+        service.apply(new MapGenerationResult(start, List.of(start, other), List.of()));
 
-            service.apply(new MapGenerationResult(start, List.of(start, other), List.of()));
-
-            assertEquals(List.of(start, other), service.getRooms());
-        }
+        assertEquals(List.of(start, other), service.getRooms());
     }
 
     @Test
     void applyFiresTheVisitorObserverForTheStartRoom() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final MapService service = new MapService();
+        final Room start = boundedRoom();
 
-            final MapService service = new MapService();
-            final Room start = boundedRoom();
+        final java.util.List<Room> visited = new java.util.ArrayList<>();
+        service.onVisit(visited::add);
 
-            final java.util.List<Room> visited = new java.util.ArrayList<>();
-            service.onVisit(visited::add);
+        service.apply(new MapGenerationResult(start, List.of(start), List.of()));
 
-            service.apply(new MapGenerationResult(start, List.of(start), List.of()));
-
-            assertEquals(1, visited.size());
-            assertSame(start, visited.get(0));
-        }
+        assertEquals(1, visited.size());
+        assertSame(start, visited.get(0));
     }
 
     @Test
     void toRenderFlattensRoomRenderablesAndAppendsBackground() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final MapService service = new MapService();
+        final Room start = boundedRoom();
+        final Renderable roomRenderable = mock(Renderable.class);
+        when(start.toRender()).thenReturn(List.of(roomRenderable));
 
-            final MapService service = new MapService();
-            final Room start = boundedRoom();
-            final Renderable roomRenderable = mock(Renderable.class);
-            when(start.toRender()).thenReturn(List.of(roomRenderable));
+        service.apply(new MapGenerationResult(start, List.of(start), List.of()));
 
-            service.apply(new MapGenerationResult(start, List.of(start), List.of()));
-
-            final List<Renderable> rendered = service.toRender(0.016);
-            // One room renderable + the scene background.
-            assertEquals(2, rendered.size());
-            assertTrue(rendered.contains(roomRenderable));
-        }
+        final List<Renderable> rendered = service.toRender(0.016);
+        // One room renderable + the scene background.
+        assertEquals(2, rendered.size());
+        assertTrue(rendered.contains(roomRenderable));
     }
 
     @Test
     void updateAdvancesRoomStateAndEntersTheCurrentRoom() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final MapService service = new MapService();
+        final Room start = boundedRoom();
+        when(start.isInRoom(anyFloat(), anyFloat())).thenReturn(true);
+        when(start.isInRoom(anyFloat(), anyFloat(), anyFloat())).thenReturn(true);
 
-            final MapService service = new MapService();
-            final Room start = boundedRoom();
-            when(start.isInRoom(anyFloat(), anyFloat())).thenReturn(true);
-            when(start.isInRoom(anyFloat(), anyFloat(), anyFloat())).thenReturn(true);
+        service.apply(new MapGenerationResult(start, List.of(start), List.of()));
 
-            service.apply(new MapGenerationResult(start, List.of(start), List.of()));
+        final Player player = mock(Player.class);
+        when(player.getPosition()).thenReturn(new Vector2f(100, 100));
+        when(player.getWidth()).thenReturn(32);
+        when(player.getHeight()).thenReturn(32);
 
-            final Player player = mock(Player.class);
-            when(player.getPosition()).thenReturn(new Vector2f(100, 100));
-            when(player.getWidth()).thenReturn(32);
-            when(player.getHeight()).thenReturn(32);
+        service.update(0.016, player);
 
-            service.update(0.016, player);
-
-            // Each room is ticked, and the player enters the resolved current room.
-            verify(start).update(anyDouble());
-            verify(start).enterEvent(player);
-        }
+        // Each room is ticked, and the player enters the resolved current room.
+        verify(start).update(anyDouble());
+        verify(start).enterEvent(player);
     }
 
     @Test
     void fixedUpdateTicksRoomsAndPollsEvents() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final MapService service = new MapService();
+        final Room start = boundedRoom();
+        service.apply(new MapGenerationResult(start, List.of(start), List.of()));
 
-            final MapService service = new MapService();
-            final Room start = boundedRoom();
-            service.apply(new MapGenerationResult(start, List.of(start), List.of()));
+        service.fixedUpdate(0.016);
 
-            service.fixedUpdate(0.016);
-
-            verify(start).fixedUpdate(anyDouble());
-        }
+        verify(start).fixedUpdate(anyDouble());
     }
 
     @Test
     void cleanUpReleasesRoomsAndPaths() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final MapService service = new MapService();
+        final Room start = boundedRoom();
+        final Room path = boundedRoom();
+        service.apply(new MapGenerationResult(start, List.of(start), List.of(path)));
 
-            final MapService service = new MapService();
-            final Room start = boundedRoom();
-            final Room path = boundedRoom();
-            service.apply(new MapGenerationResult(start, List.of(start), List.of(path)));
+        service.cleanUp();
 
-            service.cleanUp();
-
-            verify(start).cleanUp();
-            verify(path).cleanUp();
-        }
+        verify(start).cleanUp();
+        verify(path).cleanUp();
     }
 }

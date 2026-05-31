@@ -1,12 +1,8 @@
 package cz.empatix.items.domain;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.init.ALInit;
-import cz.empatix.testsupport.MockedAssets;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -17,94 +13,71 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Drives the real {@link AmmoBoxItem} pickup/effect logic headlessly through the asset stub. */
+/** Drives the real {@link AmmoBoxItem} pickup/effect logic headlessly (see {@link HeadlessAssets}). */
+@ExtendWith(HeadlessAssets.class)
 class AmmoBoxItemTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        ALInit.canUseAL = false;
-    }
-
-    @BeforeEach
-    void physics() {
-        new cz.empatix.newphysics.service.PhysicsService();
-    }
 
     @SuppressWarnings("unchecked")
     @Test
     void pickupAddsConfiguredPercentAmountAndMarksPickedUp() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Predicate<AmmoBoxType> canPickUp = mock(Predicate.class);
-            when(canPickUp.test(AmmoBoxType.SHOTGUN)).thenReturn(true);
-            final BiConsumer<Float, AmmoBoxType> pickUp = mock(BiConsumer.class);
+        final Predicate<AmmoBoxType> canPickUp = mock(Predicate.class);
+        when(canPickUp.test(AmmoBoxType.SHOTGUN)).thenReturn(true);
+        final BiConsumer<Float, AmmoBoxType> pickUp = mock(BiConsumer.class);
 
-            final AmmoBoxItem item = new AmmoBoxItem(AmmoBoxType.SHOTGUN, canPickUp, pickUp);
+        final AmmoBoxItem item = new AmmoBoxItem(AmmoBoxType.SHOTGUN, canPickUp, pickUp);
 
-            assertFalse(item.isPickedUp());
-            assertTrue(item.canInteract(Set.of()));
+        assertFalse(item.isPickedUp());
+        assertTrue(item.canInteract(Set.of()));
 
-            item.interact(Set.of());
+        item.interact(Set.of());
 
-            assertTrue(item.isPickedUp());
-            assertTrue(item.canRemove()); // picked up -> removable
-            // SHOTGUN box refills 25%
-            verify(pickUp).accept(eq(0.25f), eq(AmmoBoxType.SHOTGUN));
-        }
+        assertTrue(item.isPickedUp());
+        assertTrue(item.canRemove()); // picked up -> removable
+        // SHOTGUN box refills 25%
+        verify(pickUp).accept(eq(0.25f), eq(AmmoBoxType.SHOTGUN));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void cannotInteractWhenGunAlreadyFull() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Predicate<AmmoBoxType> canPickUp = mock(Predicate.class);
-            when(canPickUp.test(AmmoBoxType.PISTOL)).thenReturn(false); // already full
-            final BiConsumer<Float, AmmoBoxType> pickUp = mock(BiConsumer.class);
+        final Predicate<AmmoBoxType> canPickUp = mock(Predicate.class);
+        when(canPickUp.test(AmmoBoxType.PISTOL)).thenReturn(false); // already full
+        final BiConsumer<Float, AmmoBoxType> pickUp = mock(BiConsumer.class);
 
-            final AmmoBoxItem item = new AmmoBoxItem(AmmoBoxType.PISTOL, canPickUp, pickUp);
+        final AmmoBoxItem item = new AmmoBoxItem(AmmoBoxType.PISTOL, canPickUp, pickUp);
 
-            assertFalse(item.canInteract(Set.of()));
-        }
+        assertFalse(item.canInteract(Set.of()));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     void universalBoxIsLargerAndRefillsHalf() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final Predicate<AmmoBoxType> canPickUp = mock(Predicate.class);
-            when(canPickUp.test(AmmoBoxType.UNIVERSAL)).thenReturn(true);
-            final BiConsumer<Float, AmmoBoxType> pickUp = mock(BiConsumer.class);
+        final Predicate<AmmoBoxType> canPickUp = mock(Predicate.class);
+        when(canPickUp.test(AmmoBoxType.UNIVERSAL)).thenReturn(true);
+        final BiConsumer<Float, AmmoBoxType> pickUp = mock(BiConsumer.class);
 
-            final AmmoBoxItem universal = new AmmoBoxItem(AmmoBoxType.UNIVERSAL, canPickUp, pickUp);
-            final AmmoBoxItem pistol = new AmmoBoxItem(AmmoBoxType.PISTOL, t -> true, (a, b) -> {});
+        final AmmoBoxItem universal = new AmmoBoxItem(AmmoBoxType.UNIVERSAL, canPickUp, pickUp);
+        final AmmoBoxItem pistol = new AmmoBoxItem(AmmoBoxType.PISTOL, t -> true, (a, b) -> {});
 
-            // UNIVERSAL uses the 32*1.5 footprint, PISTOL the 24*1.5 footprint.
-            assertEquals(48, universal.getWidth());
-            assertEquals(48, universal.getHeight());
-            assertEquals(36, pistol.getWidth());
-            assertEquals(36, pistol.getHeight());
+        // UNIVERSAL uses the 32*1.5 footprint, PISTOL the 24*1.5 footprint.
+        assertEquals(48, universal.getWidth());
+        assertEquals(48, universal.getHeight());
+        assertEquals(36, pistol.getWidth());
+        assertEquals(36, pistol.getHeight());
 
-            universal.interact(Set.of());
-            verify(pickUp).accept(eq(0.5f), eq(AmmoBoxType.UNIVERSAL));
-        }
+        universal.interact(Set.of());
+        verify(pickUp).accept(eq(0.5f), eq(AmmoBoxType.UNIVERSAL));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void despawnableFlagControlsCanRemove() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final AmmoBoxItem item = new AmmoBoxItem(AmmoBoxType.PISTOL, t -> true, (a, b) -> {});
+        final AmmoBoxItem item = new AmmoBoxItem(AmmoBoxType.PISTOL, t -> true, (a, b) -> {});
 
-            item.setDespawnable(false); // despawn time pushed to MAX -> never despawns
-            assertFalse(item.canRemove());
-            assertFalse(item.isPickedUp());
-        }
+        item.setDespawnable(false); // despawn time pushed to MAX -> never despawns
+        assertFalse(item.canRemove());
+        assertFalse(item.isPickedUp());
     }
 }

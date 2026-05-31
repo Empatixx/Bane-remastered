@@ -5,10 +5,9 @@ import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.minimap.domain.BigMinimapRoom;
 import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
-import cz.empatix.testsupport.MockedAssets;
-import org.junit.jupiter.api.BeforeAll;
+import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -17,7 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
@@ -26,12 +24,8 @@ import static org.mockito.Mockito.when;
  * grid coordinate (start at the origin, RIGHT = +x, TOP = -y, etc.). The {@code BigMinimapRoom}
  * factory function fetches an atlas entry, so the test runs under a mocked {@link AssetsService}.
  */
+@ExtendWith(HeadlessAssets.class)
 class MinimapRoomFactoryTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        cz.empatix.audio.init.ALInit.canUseAL = false;
-    }
 
     private Room room(final RoomType type) {
         final Room r = mock(Room.class);
@@ -47,76 +41,64 @@ class MinimapRoomFactoryTest {
 
     @Test
     void singleRoomMapPlacesStartAtOrigin() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final Room start = room(RoomType.START);
 
-            final Room start = room(RoomType.START);
+        final Map<Room, BigMinimapRoom> map =
+                MinimapRoomFactory.createMinimap(java.util.List.of(start), start, BigMinimapRoom::new);
 
-            final Map<Room, BigMinimapRoom> map =
-                    MinimapRoomFactory.createMinimap(java.util.List.of(start), start, BigMinimapRoom::new);
-
-            assertEquals(1, map.size());
-            final BigMinimapRoom startMini = map.get(start);
-            assertEquals(0, startMini.getX());
-            assertEquals(0, startMini.getY());
-            assertTrue(startMini.getNeighbours().isEmpty());
-        }
+        assertEquals(1, map.size());
+        final BigMinimapRoom startMini = map.get(start);
+        assertEquals(0, startMini.getX());
+        assertEquals(0, startMini.getY());
+        assertTrue(startMini.getNeighbours().isEmpty());
     }
 
     @Test
     void neighboursArePlacedRelativeToParentAndCrossConnected() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        final Room start = room(RoomType.START);
+        final Room rightRoom = room(RoomType.NORMAL);
+        final Room topRoom = room(RoomType.SHOP);
 
-            final Room start = room(RoomType.START);
-            final Room rightRoom = room(RoomType.NORMAL);
-            final Room topRoom = room(RoomType.SHOP);
+        link(start, RoomDirection.RIGHT, rightRoom);
+        link(start, RoomDirection.TOP, topRoom);
 
-            link(start, RoomDirection.RIGHT, rightRoom);
-            link(start, RoomDirection.TOP, topRoom);
+        final Map<Room, BigMinimapRoom> map = MinimapRoomFactory.createMinimap(
+                java.util.List.of(start, rightRoom, topRoom), start, BigMinimapRoom::new);
 
-            final Map<Room, BigMinimapRoom> map = MinimapRoomFactory.createMinimap(
-                    java.util.List.of(start, rightRoom, topRoom), start, BigMinimapRoom::new);
+        assertEquals(3, map.size());
 
-            assertEquals(3, map.size());
+        // RIGHT neighbour -> x + 1, same y.
+        final BigMinimapRoom right = map.get(rightRoom);
+        assertEquals(1, right.getX());
+        assertEquals(0, right.getY());
 
-            // RIGHT neighbour -> x + 1, same y.
-            final BigMinimapRoom right = map.get(rightRoom);
-            assertEquals(1, right.getX());
-            assertEquals(0, right.getY());
+        // TOP neighbour -> same x, y - 1.
+        final BigMinimapRoom top = map.get(topRoom);
+        assertEquals(0, top.getX());
+        assertEquals(-1, top.getY());
 
-            // TOP neighbour -> same x, y - 1.
-            final BigMinimapRoom top = map.get(topRoom);
-            assertEquals(0, top.getX());
-            assertEquals(-1, top.getY());
-
-            // Connections are wired in both directions.
-            final BigMinimapRoom startMini = map.get(start);
-            assertSame(right, startMini.getNeighbours().get(RoomDirection.RIGHT));
-            assertSame(top, startMini.getNeighbours().get(RoomDirection.TOP));
-            assertSame(startMini, right.getNeighbours().get(RoomDirection.LEFT));
-            assertSame(startMini, top.getNeighbours().get(RoomDirection.BOTTOM));
-        }
+        // Connections are wired in both directions.
+        final BigMinimapRoom startMini = map.get(start);
+        assertSame(right, startMini.getNeighbours().get(RoomDirection.RIGHT));
+        assertSame(top, startMini.getNeighbours().get(RoomDirection.TOP));
+        assertSame(startMini, right.getNeighbours().get(RoomDirection.LEFT));
+        assertSame(startMini, top.getNeighbours().get(RoomDirection.BOTTOM));
     }
 
     @Test
     void chainedRoomsAccumulateOffsets() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
+        // start -RIGHT-> a -RIGHT-> b  => x coordinates 0, 1, 2.
+        final Room start = room(RoomType.START);
+        final Room a = room(RoomType.NORMAL);
+        final Room b = room(RoomType.BOSS);
+        link(start, RoomDirection.RIGHT, a);
+        link(a, RoomDirection.RIGHT, b);
 
-            // start -RIGHT-> a -RIGHT-> b  => x coordinates 0, 1, 2.
-            final Room start = room(RoomType.START);
-            final Room a = room(RoomType.NORMAL);
-            final Room b = room(RoomType.BOSS);
-            link(start, RoomDirection.RIGHT, a);
-            link(a, RoomDirection.RIGHT, b);
+        final Map<Room, BigMinimapRoom> map = MinimapRoomFactory.createMinimap(
+                java.util.List.of(start, a, b), start, BigMinimapRoom::new);
 
-            final Map<Room, BigMinimapRoom> map = MinimapRoomFactory.createMinimap(
-                    java.util.List.of(start, a, b), start, BigMinimapRoom::new);
-
-            assertEquals(0, map.get(start).getX());
-            assertEquals(1, map.get(a).getX());
-            assertEquals(2, map.get(b).getX());
-        }
+        assertEquals(0, map.get(start).getX());
+        assertEquals(1, map.get(a).getX());
+        assertEquals(2, map.get(b).getX());
     }
 }

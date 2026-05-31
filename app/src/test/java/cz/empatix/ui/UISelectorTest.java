@@ -1,12 +1,9 @@
 package cz.empatix.ui;
 
-import cz.empatix.assets.service.AssetsService;
-import cz.empatix.audio.init.ALInit;
-import cz.empatix.testsupport.MockedAssets;
+import cz.empatix.testsupport.HeadlessAssets;
 import org.joml.Vector2f;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,12 +20,8 @@ import static org.mockito.Mockito.when;
  * press-to-select state machine. Collaborator {@link SelectableUI} elements are mocked so hover
  * outcomes are deterministic; one test uses real {@link StickyHoverButton}s end-to-end.
  */
+@ExtendWith(HeadlessAssets.class)
 class UISelectorTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        ALInit.canUseAL = false;
-    }
 
     @Test
     void firstAddedElementBecomesSelectedAndIsSelectCalled() {
@@ -116,23 +108,20 @@ class UISelectorTest {
 
     @Test
     void worksEndToEndWithRealStickyHoverButtons() {
-        try (MockedStatic<AssetsService> assets = mockStatic(AssetsService.class)) {
-            MockedAssets.stub(assets);
-            final UISelector<String> selector = new UISelector<>();
-            final StickyHoverButton easy = new StickyHoverButton("Easy", new Vector2f(0, 0));
-            final StickyHoverButton hard = new StickyHoverButton("Hard", new Vector2f(200, 0));
-            selector.addElement(easy, "easy");
-            selector.addElement(hard, "hard");
+        final UISelector<String> selector = new UISelector<>();
+        final StickyHoverButton easy = new StickyHoverButton("Easy", new Vector2f(0, 0));
+        final StickyHoverButton hard = new StickyHoverButton("Hard", new Vector2f(200, 0));
+        selector.addElement(easy, "easy");
+        selector.addElement(hard, "hard");
 
-            // The first button is auto-selected (and thus stuck-hovered).
-            assertTrue(easy.isSelected(), "first real element starts selected");
-            assertSame("easy", selector.getSelected(), "value maps to the first element");
+        // The first button is auto-selected (and thus stuck-hovered).
+        assertTrue(easy.isSelected(), "first real element starts selected");
+        assertSame("easy", selector.getSelected(), "value maps to the first element");
 
-            // Press inside the second button (200..284 x 0..42); it sticks and wins the selection.
-            selector.mousePressed(0, 210, 10);
+        // Press inside the second button (200..284 x 0..42); it sticks and wins the selection.
+        selector.mousePressed(0, 210, 10);
 
-            assertEquals("hard", selector.getSelected(), "pressing the second button selects it");
-            assertFalse(easy.isSelected(), "the first button is unselected once the second wins");
-        }
+        assertEquals("hard", selector.getSelected(), "pressing the second button selects it");
+        assertFalse(easy.isSelected(), "the first button is unselected once the second wins");
     }
 }
