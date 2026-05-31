@@ -82,7 +82,7 @@ public class InGameState extends GameState {
         mapService = new MapService();
         mapService.onVisit(minimapService::visit);
 
-        gunService = new GunService(itemService, statisticsService);
+        gunService = new GunService(itemService, statisticsService, cz.empatix.assets.service.StaticAssetSource.INSTANCE);
         artefactsService = new ArtefactsService(player, itemService, minimapService);
 
 

@@ -1,6 +1,6 @@
 package cz.empatix.guns.ammo;
 
-import cz.empatix.assets.service.AssetsService;
+import cz.empatix.assets.service.AssetSource;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.animation.AnimationState;
@@ -17,10 +17,10 @@ public class PistolAmmoHud implements Drawable {
     private final static int DIMENSION_HEIGHT = (int)(16 *  SCALE);
     private final Animation animation;
     private final Vector2f position;
-    public PistolAmmoHud() {
+    public PistolAmmoHud(final AssetSource assetSource) {
         position = new Vector2f();
         animation = Animation.builder()
-                .texture(AssetsService.getTexture("ingame/ammo_hud.tga"))
+                .texture(assetSource.getTexture("ingame/ammo_hud.tga"))
                 .setTotal(2, 2)
                 .addState(AnimationState.IDLE, 0, 1, DIMENSION_WIDTH, DIMENSION_HEIGHT, -1)
                 .addState(AnimationState.EMPTY, 1, 2, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)

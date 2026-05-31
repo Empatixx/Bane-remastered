@@ -1,7 +1,8 @@
 package cz.empatix.guns.domain;
 
 import cz.empatix.audio.service.AudioService;
-import cz.empatix.assets.service.AssetsService;
+import cz.empatix.assets.domain.font.FontSize;
+import cz.empatix.assets.service.AssetSource;
 import cz.empatix.sound.SoundEffect;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.factory.BulletFactory;
@@ -23,7 +24,7 @@ public class Thompson extends AbstractGun implements Gun{
     private final List<Bullet> bullets;
     private final BulletFactory bulletFactory;
     private final SubMachineClipHud clipHud;
-    public Thompson(final BulletFactory bulletFactory, final AudioService audioService) {
+    public Thompson(final BulletFactory bulletFactory, final AssetSource assetSource, final AudioService audioService) {
         super(audioService);
         this.minDamage = 1;
         this.maxDamage = 3;
@@ -41,14 +42,14 @@ public class Thompson extends AbstractGun implements Gun{
         this.shooting = false;
 
         this.bullets = new ArrayList<>(clipSize);
-        final TextureAtlas.Entry texture = AssetsService.getTexture(WEAPON_TXT_PATH);
+        final TextureAtlas.Entry texture = assetSource.getTexture(WEAPON_TXT_PATH);
         this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
-        this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
+        this.ammoHud = new CommonText("", assetSource.getFont("PixelFJVerdana12pt.ttf", FontSize.FONTSIZE_22), new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
 
         this.bulletFactory = bulletFactory;
 
-        this.clipHud = new SubMachineClipHud(() -> currentClip, () -> clipSize);
+        this.clipHud = new SubMachineClipHud(assetSource, () -> currentClip, () -> clipSize);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package cz.empatix.guns.service;
 
+import cz.empatix.assets.service.AssetSource;
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.common.utils.PositionUtils;
@@ -50,27 +51,28 @@ public class GunService {
     private float shooterX, shooterY, targetX, targetY;
 
     public GunService(final ItemService itemService,
-                      final StatisticsService statisticsService) {
+                      final StatisticsService statisticsService,
+                      final AssetSource assetSource) {
         this.statisticsService = statisticsService;
         this.itemService = itemService;
         damageEventComposite = new GunDamageEventComposite();
         final BulletFactory bulletFactory = new BulletFactory(statisticsService, damageEventComposite);
         final AudioService audioService = AudioService.getInstance();
         guns = List.of(
-                new Pistol(bulletFactory, audioService),
-                new Shotgun(bulletFactory, audioService),
-                new Luger(bulletFactory, audioService),
-                new Revolver(bulletFactory, audioService),
-                new M4(bulletFactory, audioService),
-                new Uzi(bulletFactory, audioService),
-                new Thompson(bulletFactory, audioService)
+                new Pistol(bulletFactory, assetSource, audioService),
+                new Shotgun(bulletFactory, assetSource, audioService),
+                new Luger(bulletFactory, assetSource, audioService),
+                new Revolver(bulletFactory, assetSource, audioService),
+                new M4(bulletFactory, assetSource, audioService),
+                new Uzi(bulletFactory, assetSource, audioService),
+                new Thompson(bulletFactory, assetSource, audioService)
         );
         {
             slots = new GunSlots();
             slots.addGun(guns.get(0));
             slots.addGun(guns.get(1));
         }
-        weaponSlotHud = new CommonImage(AssetsService.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE, 0);
+        weaponSlotHud = new CommonImage(assetSource.getTexture("ingame/weaponslot.tga"), HUD_SLOT_POSITION, HUD_SLOT_SCALE, 0);
     }
 
     public void update(final double dt) {

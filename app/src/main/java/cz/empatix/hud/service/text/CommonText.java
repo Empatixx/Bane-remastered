@@ -33,8 +33,18 @@ public class CommonText implements HUDElement {
     }
     public CommonText(final String text, final String font, final Vector2f position, final int prevZIndex,
                       final RenderScene renderScene, final FontSize fontSize) {
+        this(text, AssetsService.getFont(font, fontSize), position, prevZIndex, renderScene);
+    }
+
+    /** Render-data-injected variant: the caller supplies the already-resolved {@link Font}. */
+    public CommonText(final String text, final Font font, final Vector2f position, final int prevZIndex) {
+        this(text, font, position, prevZIndex, DEFAULT_SCENE);
+    }
+
+    public CommonText(final String text, final Font font, final Vector2f position, final int prevZIndex,
+                      final RenderScene renderScene) {
         this.text = text;
-        this.font = AssetsService.getFont(font, fontSize);
+        this.font = font;
         this.position = position;
         this.renderScene = renderScene;
         zIndex = prevZIndex + 1;
