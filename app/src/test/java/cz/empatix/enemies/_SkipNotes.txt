@@ -1,0 +1,64 @@
+Enemies headless test coverage — skip / partial-coverage notes
+==============================================================
+
+Scope tested (REAL classes, headless via mockStatic(AssetsService) + new PhysicsService()):
+
+domain/
+  BaseEnemy            -> BaseEnemyHeadlessTest (via a real in-package TestEnemy subclass):
+                          spawn-invincibility, hit/heal clamping, death transition, ENEMY/TRAP
+                          source filtering, trap per-hit invincibility, despawn, getters.
+  Bat, Rat, Snake, Ghost, DemonEye, Slime, RedSlime, EyeWatcher,
+  GreenSpiderling, RedSpiderling, PurpleSpiderling
+                       -> AllConcreteEnemiesHeadlessTest (parameterized): construction, player
+                          damage -> death, enemy-source rejection, A* direction finiteness,
+                          spawn-window no-op ticks, post-spawn tick + collectSubRenderables smoke.
+  EnemyImpl            -> EnemyImplHeadlessTest: both constructors, hit/heal clamping, source-filtered
+                          callback routing, trap invincibility, getters, onDeath.
+  EnemySupplier        -> already covered by existing EnemySupplierTest.
+
+domain/bosses/
+  BossBaseEnemy (Spider) -> BossesHeadlessTest: spawn-invincibility, player damage, death, A* dir.
+  BossImpl               -> BossImplHeadlessTest: both constructors, hit/heal clamping, callback
+                            source filter, getters, getPhysicsObject, isRightFacing (mock Player).
+  Golem, KingSlime       -> BossesHeadlessTest: construction, damage->death, heal cap, despawn,
+                            no-item-drop, safe ticks.
+
+skills/
+  Timer                 -> already covered by existing TimerTest.
+  Dash, Healing, ArmorStacking -> CooldownSkillsTest (pure logic; Timer-driven branches forced via
+                                  the never-started-Timer-is-finished property).
+  BaseSlimebullet + Green/Red/Purple, EyeWatcherProjectile,
+  SlimeSmash, KingSlimeArmageddon
+                        -> ProjectileSkillsHeadlessTest: damage/type/lifecycle flags, volley spawn +
+                           cooldown gating, clear().
+  CobwebProjectile, SpitCobweb, HatchSpiderlings, BehindTargetTargetting
+                        -> SpiderSkillsHeadlessTest: construction, cooldown gating, empty-state
+                           no-ops, behind-target slot search in an empty world.
+
+targetting/
+  AStarTargetting, AStarTargetingState, PathCell, RotationTargetting
+                        -> already covered by existing tests in the targetting package.
+
+Partial coverage / deliberately NOT asserted (with reasons):
+
+- SpitCobweb projectile-emission path (update() -> canShoot -> fixedUpdate spawns a CobwebProjectile)
+  is NOT driven to the spawn point. It is gated on Animation.hasPlayedOnce(), and Animation.update()
+  only advances when real wall-clock time exceeds the per-frame delay (private lastAnimation /
+  playedOnce fields live in the separate game-engine-render module and are not safely reflectable).
+  Forcing it would require Thread.sleep (disallowed). We assert the pre-spawn invariant instead.
+
+- SpiderlingTeleport is NOT unit-tested directly: its only public behaviour (activate/fixedUpdate)
+  is gated on the same Animation.hasPlayedOnce() timing wall and on BehindTargetTargetting state; the
+  teleport branch cannot be reached headlessly without sleeping or animation-frame reflection.
+  BehindTargetTargetting (the substantive logic it delegates to) IS covered separately.
+
+- Boss/enemy collectSubRenderables is only smoke-exercised when no damage popups are pending. After a
+  hit, VitalityDisplayService holds VitalityChange entries whose collectSubRenderables calls
+  Font.getDrawables on a mock Font (-> NPE). BossBaseEnemy additionally renders its boss-name
+  CommonText the same way. These render-output paths are out of scope per the headless rules.
+
+- renderData()/canRender() that build OutlineBinding/SpawnBinding or rotate laser vertices are not
+  asserted: they exercise GL-adjacent render plumbing, not domain logic.
+
+- service/ package (EnemyService, EnemyFactory, EnemyBoundsService, EnemyDropService,
+  VitalityDisplayService) was outside the requested target set (domain, domain.bosses, skills).
