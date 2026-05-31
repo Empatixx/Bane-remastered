@@ -1,12 +1,10 @@
 package cz.empatix.guns.domain;
 
-import cz.empatix.assets.service.AssetSource;
-import cz.empatix.audio.init.ALInit;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.guns.ammo.Bullet;
 import cz.empatix.guns.factory.BulletFactory;
-import cz.empatix.testsupport.FakeAssetSource;
-import org.junit.jupiter.api.BeforeAll;
+import cz.empatix.testsupport.HeadlessAssets;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -23,21 +21,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Constructs and exercises every concrete {@link AbstractGun} as the REAL class, headlessly, by
- * injecting a {@link FakeAssetSource} for the HUD textures/fonts — no static asset mocking needed.
+ * Constructs and exercises every concrete {@link AbstractGun} as the REAL class (not a test double),
+ * headlessly, by stubbing the static asset accessors its HUD sub-objects touch in their constructors.
  * BulletFactory is mocked so no physics/lighting-coupled {@link Bullet} is built.
  */
+@ExtendWith(HeadlessAssets.class)
 class AllGunsHeadlessTest {
-
-    @BeforeAll
-    static void headlessAudio() {
-        // mock(Bullet.class) triggers Bullet's static AudioService.getInstance() (OpenAL) at class-load.
-        ALInit.canUseAL = false;
-    }
 
     @FunctionalInterface
     interface GunFactory {
-        AbstractGun create(BulletFactory bulletFactory, AssetSource assetSource, AudioService audioService);
+        AbstractGun create(BulletFactory bulletFactory, AudioService audioService);
     }
 
     static Stream<Arguments> guns() {
@@ -61,14 +54,10 @@ class AllGunsHeadlessTest {
         return bulletFactory;
     }
 
-    private static AbstractGun build(final GunFactory factory) {
-        return factory.create(bulletFactoryReturningMocks(), new FakeAssetSource(), mock(AudioService.class));
-    }
-
     @ParameterizedTest(name = "{0}")
     @MethodSource("guns")
     void constructsWithFullClipAndAmmo(final String name, final GunFactory factory) {
-        final AbstractGun gun = build(factory);
+        final AbstractGun gun = factory.create(bulletFactoryReturningMocks(), mock(AudioService.class));
         final Gun g = (Gun) gun; // Gun-interface methods live on the concrete classes, fields on AbstractGun
 
         assertNotNull(g.getType(), name + " should expose a gun type");
@@ -80,7 +69,7 @@ class AllGunsHeadlessTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("guns")
     void firingConsumesOneRoundFromTheClip(final String name, final GunFactory factory) {
-        final AbstractGun gun = build(factory);
+        final AbstractGun gun = factory.create(bulletFactoryReturningMocks(), mock(AudioService.class));
         final Gun g = (Gun) gun;
         final int clipBefore = gun.currentClip;
 
@@ -95,7 +84,7 @@ class AllGunsHeadlessTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("guns")
     void reloadRefillsClipAfterReloadTime(final String name, final GunFactory factory) {
-        final AbstractGun gun = build(factory);
+        final AbstractGun gun = factory.create(bulletFactoryReturningMocks(), mock(AudioService.class));
         final Gun g = (Gun) gun;
         gun.currentClip = 1;
         gun.ammo = gun.maxAmmo;
@@ -112,7 +101,7 @@ class AllGunsHeadlessTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("guns")
     void addPercentAmmoIsCappedAtMax(final String name, final GunFactory factory) {
-        final AbstractGun gun = build(factory);
+        final AbstractGun gun = factory.create(bulletFactoryReturningMocks(), mock(AudioService.class));
         final Gun g = (Gun) gun;
         gun.ammo = 0;
 

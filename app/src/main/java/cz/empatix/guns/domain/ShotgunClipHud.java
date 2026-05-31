@@ -1,6 +1,6 @@
 package cz.empatix.guns.domain;
 
-import cz.empatix.assets.service.AssetSource;
+import cz.empatix.guns.ammo.PistolAmmoHud;
 import cz.empatix.guns.ammo.ShotgunAmmoHud;
 import cz.empatix.render.domain.RenderableState;
 import org.joml.Vector2f;
@@ -16,12 +16,9 @@ public class ShotgunClipHud {
     private List<ShotgunAmmoHud> ammoImages;
     private final ValueObserver<Integer> currentClipObserver;
     private final ValueObserver<Integer> maxClipObserver;
-    private final AssetSource assetSource;
 
-    public ShotgunClipHud(final AssetSource assetSource,
-                          final Supplier<Integer> currentClipSupplier,
+    public ShotgunClipHud(final Supplier<Integer> currentClipSupplier,
                           final Supplier<Integer> maxClipSupplier) {
-        this.assetSource = assetSource;
         maxClipObserver = new ValueObserver<>(maxClipSupplier, this::updatedSize);
         currentClipObserver = new ValueObserver<>(currentClipSupplier, this::updatedClip);
     }
@@ -63,7 +60,7 @@ public class ShotgunClipHud {
     private void updatedSize(final int maxClipAmmo) {
         ammoImages = new ArrayList<>();
         for (int i = 0; i < maxClipAmmo; i++) {
-            final ShotgunAmmoHud ammoImage = new ShotgunAmmoHud(assetSource);
+            final ShotgunAmmoHud ammoImage = new ShotgunAmmoHud();
             ammoImage.setPosition(START_POSITION.x, START_POSITION.y - i * STEP);
             ammoImages.add(ammoImage);
         }

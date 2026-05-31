@@ -4,7 +4,6 @@ import cz.empatix.death.service.StatisticsService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.items.domain.AmmoBoxType;
 import cz.empatix.items.service.ItemService;
-import cz.empatix.testsupport.FakeAssetSource;
 import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +28,7 @@ class GunServiceTest {
     private GunService newService() {
         final ItemService itemService = mock(ItemService.class);
         final StatisticsService statisticsService = mock(StatisticsService.class);
-        return new GunService(itemService, statisticsService, new FakeAssetSource());
+        return new GunService(itemService, statisticsService);
     }
 
     @Test
