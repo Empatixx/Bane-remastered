@@ -13,6 +13,7 @@ import cz.empatix.testsupport.HeadlessAssets;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Set;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.mock;
  * reaped by the real {@link ItemService} lifecycle. Wires factory + interaction + item + currency +
  * service-lifecycle together with real objects — the chain no single unit test covers.
  */
+@Tag("integration")
 @ExtendWith(HeadlessAssets.class)
 class LootIntegrationTest {
 

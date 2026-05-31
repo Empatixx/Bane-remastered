@@ -9,6 +9,7 @@ import cz.empatix.player.Player;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>Unlike the unit tests (which call hit() directly), this exercises the whole physics -> collision
  * dispatch -> damage chain wired together with real objects.
  */
+@Tag("integration")
 @ExtendWith(HeadlessAssets.class)
 class CombatIntegrationTest {
 

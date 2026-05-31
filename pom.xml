@@ -31,9 +31,18 @@
         <mockito.version>5.20.0</mockito.version>
         <surefire.version>3.5.2</surefire.version>
         <jacoco.version>0.8.13</jacoco.version>
+        <!-- Default test run skips the @Tag("integration") suite; -Pintegration clears this. -->
+        <surefire.excludedGroups>integration</surefire.excludedGroups>
     </properties>
 
     <profiles>
+        <!-- Run the full suite including the slow @Tag("integration") tests: mvn test -Pintegration -->
+        <profile>
+            <id>integration</id>
+            <properties>
+                <surefire.excludedGroups></surefire.excludedGroups>
+            </properties>
+        </profile>
         <profile>
             <id>lwjgl-natives-linux-amd64</id>
             <activation>
@@ -191,6 +200,9 @@
                              is slated for removal). @{argLine} preserves JaCoCo's coverage agent, which
                              sets the argLine property in prepare-agent. -->
                         <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
+                        <!-- Slow, wired-up integration tests (cz.empatix.integration, ~15-23s each)
+                             are excluded from the default fast unit run. Enable them with -Pintegration. -->
+                        <excludedGroups>${surefire.excludedGroups}</excludedGroups>
                     </configuration>
                 </plugin>
             </plugins>

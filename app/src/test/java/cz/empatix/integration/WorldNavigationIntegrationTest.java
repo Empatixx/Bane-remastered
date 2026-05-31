@@ -8,6 +8,7 @@ import cz.empatix.rooms.domain.RoomType;
 import cz.empatix.rooms.service.Room;
 import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
  * room. Drives the real position -> room-resolution -> enter/leave -> visit chain that the existing
  * MapService unit test (which only covers apply()) does not.
  */
+@Tag("integration")
 @ExtendWith(HeadlessAssets.class)
 class WorldNavigationIntegrationTest {
 

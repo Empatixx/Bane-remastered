@@ -10,6 +10,7 @@ import cz.empatix.newphysics.service.PhysicsService;
 import cz.empatix.render.attributes.Renderable;
 import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.mock;
  * carries real damage. Unlike the gun unit tests (which mock the factory), this drives the real
  * gun -> factory -> bullet -> physics chain and advances the simulation on it.
  */
+@Tag("integration")
 @ExtendWith(HeadlessAssets.class)
 class WeaponFireIntegrationTest {
 

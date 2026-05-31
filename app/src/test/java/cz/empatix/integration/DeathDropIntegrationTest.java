@@ -12,6 +12,7 @@ import cz.empatix.player.CoinService;
 import cz.empatix.player.Player;
 import cz.empatix.testsupport.HeadlessAssets;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.lang.reflect.Field;
@@ -28,6 +29,7 @@ import static org.mockito.Mockito.when;
  * the drop-service -> factory -> item-service chain); the drop roll is made deterministic by forcing
  * the kill-streak counter so the guaranteed-drop branch fires.
  */
+@Tag("integration")
 @ExtendWith(HeadlessAssets.class)
 class DeathDropIntegrationTest {
 
