@@ -3,6 +3,7 @@ package cz.empatix.rooms.service;
 import cz.empatix.sound.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.death.service.VictoryService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.common.RngService;
 import cz.empatix.enemies.service.DifficultyService;
@@ -43,6 +44,7 @@ public class BossRoom implements Room {
     private final StatisticsService statisticsService;
     private final DifficultyService difficultyService;
     private final RngService rngService;
+    private final VictoryService victoryService;
     private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
     private boolean visited = false;
@@ -54,7 +56,8 @@ public class BossRoom implements Room {
                     final StatisticsService statisticsService,
                     final CoinService coinService,
                     final DifficultyService difficultyService,
-                    final RngService rngService) {
+                    final RngService rngService,
+                    final VictoryService victoryService) {
         this.coinService = coinService;
         this.itemService = itemService;
         this.mapLoaderService = mapLoaderService;
@@ -67,6 +70,7 @@ public class BossRoom implements Room {
         this.statisticsService = statisticsService;
         this.difficultyService = difficultyService;
         this.rngService = rngService;
+        this.victoryService = victoryService;
     }
 
     @Override
@@ -105,9 +109,13 @@ public class BossRoom implements Room {
             roomLockService.setState(false);
             AudioService.getInstance().play(Soundtrack.INGAME);
 
-            final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService, coinService, difficultyService, rngService);
-            ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - ladder.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f);
-            roomObjectService.add(ladder);
+            if (victoryService.isFinalFloor(statisticsService.getFloor())) {
+                victoryService.achieve();
+            } else {
+                final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService, coinService, difficultyService, rngService, victoryService);
+                ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - ladder.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f);
+                roomObjectService.add(ladder);
+            }
 
             final Chest chest = new Chest(itemService, ChestType.ARTEFACT);
             chest.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - chest.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f - TileImpl.TILE_SIZE* TileImpl.SCALE*3);

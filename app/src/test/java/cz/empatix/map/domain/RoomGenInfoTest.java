@@ -201,7 +201,7 @@ class RoomGenInfoTest {
         // constructors; getRoomType() never touches them, so null is safe here.
         assertEquals(RoomType.START, new StartRoomGenInfo().getRoomType());
         assertEquals(RoomType.NORMAL, new CommonRoomGenInfo(null, null, null, null).getRoomType());
-        assertEquals(RoomType.BOSS, new BossRoomGenInfo(null, null, null, null, null, null).getRoomType());
+        assertEquals(RoomType.BOSS, new BossRoomGenInfo(null, null, null, null, null, null, null).getRoomType());
         assertEquals(RoomType.SHOP, new ShopRoomGenInfo(null, null, null, null).getRoomType());
         assertEquals(RoomType.SACRIFICE, new SacrificeRoomGenInfo(null, null, null).getRoomType());
         assertEquals(RoomType.TREASURE, new TreasureRoomGenInfo(null).getRoomType());
@@ -216,7 +216,7 @@ class RoomGenInfoTest {
         assertTrue(start.canCreateNeighbours());
         assertTrue(common.canCreateNeighbours());
 
-        assertFalse(new BossRoomGenInfo(null, null, null, null, null, null).canCreateNeighbours());
+        assertFalse(new BossRoomGenInfo(null, null, null, null, null, null, null).canCreateNeighbours());
         assertFalse(new ShopRoomGenInfo(null, null, null, null).canCreateNeighbours());
         assertFalse(new SacrificeRoomGenInfo(null, null, null).canCreateNeighbours());
         assertFalse(new TreasureRoomGenInfo(null).canCreateNeighbours());

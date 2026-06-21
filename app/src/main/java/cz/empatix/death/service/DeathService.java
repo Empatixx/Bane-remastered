@@ -34,17 +34,21 @@ public class DeathService {
     private static final int LABEL_TEXT_START_POSITION_Y = LABEL_TEXT_END_POSITION_Y + LABEL_DIFFERENCE_Y;
     private final static float REWARD_TRANSITION_TIME = 0.5f;
     private final StatisticsService statisticsService;
+    private final VictoryService victoryService;
     private final List<CommonImage> icons;
     private final List<CommonText> texts;
     private final List<CommonText> rewardTexts;
     private final CommonText continueText;
     private final CommonText gameOverText;
+    private final CommonText victoryText;
     private boolean active = false;
+    private boolean victory = false;
     private boolean continuePressed = false;
     private float accumulator = 0f;
 
-    public DeathService(final StatisticsService statisticsService) {
+    public DeathService(final StatisticsService statisticsService, final VictoryService victoryService) {
         this.statisticsService = statisticsService;
+        this.victoryService = victoryService;
 
         final CommonImage accuracyIcon = new CommonImage("ingame/accuracy_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y), 1f, 2, RenderScene.OVERLAYS);
         final CommonImage killsIcon = new CommonImage("ingame/kills_icon.tga", new Vector2f(250, LABEL_START_POSITION_Y + LABEL_POS_OFFSET), 1f, 2, RenderScene.OVERLAYS);
@@ -68,6 +72,9 @@ public class DeathService {
         gameOverText = new CommonText("Game Over", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONTSIZE_32);
         gameOverText.setCenterX(0, Viewport.TARGET_WIDTH);
 
+        victoryText = new CommonText("Victory!", "PixelFJVerdana12pt.ttf", new Vector2f(0, 175), 2, RenderScene.OVERLAYS, FontSize.FONTSIZE_32);
+        victoryText.setCenterX(0, Viewport.TARGET_WIDTH);
+
         continueText = new CommonText("Press any key to continue...", "PixelFJVerdana12pt.ttf", new Vector2f(700, 500), 2, RenderScene.OVERLAYS);
 
         accuracyCoins.setColorRGB(236,0,0);
@@ -81,10 +88,11 @@ public class DeathService {
     }
 
     public void update(final float dt, final boolean isPlayerDead) {
-        if (isPlayerDead && !active) {
+        if ((isPlayerDead || victoryService.isAchieved()) && !active) {
             CursorService.setCursor(CursorType.DISABLED);
             Fade.setTween(0.2f);
             GaussianBlur.setEnabled(false);
+            victory = victoryService.isAchieved();
             active = true;
         }
         if (!active) {
@@ -150,7 +158,7 @@ public class DeathService {
         final RenderableState state = new RenderableState(100);
         state.add(icons.get(SKULL_INDEX));
         if(accumulator > SKULL_TRANSITION_TIME) {
-            gameOverText.collectSubRenderables(state);
+            (victory ? victoryText : gameOverText).collectSubRenderables(state);
         }
         for (int i = 0; i < TOTAL_LABELS; i++) {
             if (accumulator > i * LABEL_TRANSITION_TIME + SKULL_TRANSITION_TIME) {

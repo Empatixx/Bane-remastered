@@ -2,6 +2,7 @@ package cz.empatix.roomobjects.domain;
 
 import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.death.service.VictoryService;
 import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.service.MapLoaderService;
@@ -31,7 +32,7 @@ class LadderTest {
                                     final ItemService itemService,
                                     final StatisticsService statisticsService,
                                     final CoinService coinService) {
-        return new Ladder(mapLoaderService, itemService, statisticsService, coinService, new DifficultyService(), new RngService(0L));
+        return new Ladder(mapLoaderService, itemService, statisticsService, coinService, new DifficultyService(), new RngService(0L), new VictoryService());
     }
 
     @Test

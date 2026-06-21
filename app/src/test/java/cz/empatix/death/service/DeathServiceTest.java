@@ -24,7 +24,7 @@ class DeathServiceTest {
 
     @Test
     void startsInactiveAndRendersNothing() {
-        final DeathService service = new DeathService(mock(StatisticsService.class));
+        final DeathService service = new DeathService(mock(StatisticsService.class), new VictoryService());
 
         assertFalse(service.isActive());
         assertTrue(service.toRender().isEmpty());
@@ -33,7 +33,7 @@ class DeathServiceTest {
     @Test
     void inactiveUpdateWhilePlayerAliveDoesNothing() {
         final StatisticsService stats = mock(StatisticsService.class);
-        final DeathService service = new DeathService(stats);
+        final DeathService service = new DeathService(stats, new VictoryService());
 
         service.update(0.016f, false);
 
@@ -45,7 +45,7 @@ class DeathServiceTest {
     @Test
     void playerDeathActivatesTheScreenAndComputesScore() {
         final StatisticsService stats = mock(StatisticsService.class);
-        final DeathService service = new DeathService(stats);
+        final DeathService service = new DeathService(stats, new VictoryService());
 
         service.update(0.016f, true);
 
@@ -65,7 +65,7 @@ class DeathServiceTest {
         when(stats.getItemsCollected()).thenReturn(3);
         when(stats.getFloor()).thenReturn(2);
 
-        final DeathService service = new DeathService(stats);
+        final DeathService service = new DeathService(stats, new VictoryService());
 
         // Activate, then push the accumulator past the skull transition (2.5s) plus all labels.
         service.update(0.016f, true);
@@ -79,7 +79,7 @@ class DeathServiceTest {
 
     @Test
     void keyPressedBeforeRewardsCompleteIsIgnored() {
-        final DeathService service = new DeathService(mock(StatisticsService.class));
+        final DeathService service = new DeathService(mock(StatisticsService.class), new VictoryService());
 
         // Not active yet -> a key press must not flip into the "continue" state, so the
         // screen remains inactive and rendering stays empty.
@@ -90,6 +90,18 @@ class DeathServiceTest {
         // screen stays active (does not transition away).
         service.update(0.016f, true);
         service.keyPressed(0);
+        assertTrue(service.isActive());
+    }
+
+    @Test
+    void runCompletionActivatesTheScreenEvenWhilePlayerIsAlive() {
+        final StatisticsService stats = mock(StatisticsService.class);
+        final VictoryService victory = new VictoryService();
+        final DeathService service = new DeathService(stats, victory);
+
+        victory.achieve();
+        service.update(0.016f, false); // alive, but the run was won
+
         assertTrue(service.isActive());
     }
 }

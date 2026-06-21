@@ -3,6 +3,7 @@ package cz.empatix.map.generators;
 import com.google.common.base.Preconditions;
 import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.death.service.VictoryService;
 import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.*;
@@ -41,7 +42,8 @@ public class ProceduralMapGenerator {
                                         final StatisticsService statisticsService,
                                         final CoinService coinService,
                                         final DifficultyService difficultyService,
-                                        final RngService rngService) {
+                                        final RngService rngService,
+                                        final VictoryService victoryService) {
         final StartRoomGenInfo startRoomGenInfo = new StartRoomGenInfo();
         final List<CommonRoomGenInfo> normalRooms = Stream.generate(() -> new CommonRoomGenInfo(itemService, statisticsService, difficultyService, rngService))
                 .limit(TOTAL_NORMAL_ROOMS)
@@ -49,7 +51,7 @@ public class ProceduralMapGenerator {
         final List<ShopRoomGenInfo> shopRooms = Stream.generate(() -> new ShopRoomGenInfo(itemService, statisticsService, coinService, rngService))
                 .limit(TOTAL_SHOP_ROOMS)
                 .toList();
-        final List<BossRoomGenInfo> bossRooms = Stream.generate(() -> new BossRoomGenInfo(itemService, mapLoaderService, statisticsService, coinService, difficultyService, rngService))
+        final List<BossRoomGenInfo> bossRooms = Stream.generate(() -> new BossRoomGenInfo(itemService, mapLoaderService, statisticsService, coinService, difficultyService, rngService, victoryService))
                 .limit(TOTAL_BOSS_ROOMS)
                 .toList();
         final List<TreasureRoomGenInfo> treasureRooms = Stream.generate(() -> new TreasureRoomGenInfo(itemService))
