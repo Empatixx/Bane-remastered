@@ -17,10 +17,10 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 
 public class ArtefactsService {
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rng;
     private final static float HUD_SLOT_SCALE = 1.5f;
     public final static int HUD_SLOT_CENTER_X;
     public final static int HUD_SLOT_CENTER_Y;
@@ -34,9 +34,11 @@ public class ArtefactsService {
 
     public ArtefactsService(final Player player,
                             final ItemService itemService,
-                            final MinimapService minimapService) {
+                            final MinimapService minimapService,
+                            final RngService rng) {
         this.player = player;
         this.itemService = itemService;
+        this.rng = rng;
         this.allArtefacts = List.of(
                 new RingOfDeath(player),
                 new ArmorRefill(player),
@@ -92,9 +94,9 @@ public class ArtefactsService {
     }
 
     public Artefact getUnusedRandomArtefact() {
-        Artefact artefact = allArtefacts.get(RANDOM.nextInt(allArtefacts.size()));
+        Artefact artefact = allArtefacts.get(rng.nextInt(allArtefacts.size()));
         while (artefact == currentArtefact) {
-            artefact = allArtefacts.get(RANDOM.nextInt(allArtefacts.size()));
+            artefact = allArtefacts.get(rng.nextInt(allArtefacts.size()));
         }
         return artefact;
     }

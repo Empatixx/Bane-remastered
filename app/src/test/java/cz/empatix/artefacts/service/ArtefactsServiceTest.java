@@ -1,6 +1,7 @@
 package cz.empatix.artefacts.service;
 
 import cz.empatix.artefacts.domain.Artefact;
+import cz.empatix.common.RngService;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
 import cz.empatix.items.service.ItemService;
@@ -41,7 +42,7 @@ class ArtefactsServiceTest {
         player = mock(Player.class);
         itemService = mock(ItemService.class);
         minimapService = mock(MinimapService.class);
-        return new ArtefactsService(player, itemService, minimapService);
+        return new ArtefactsService(player, itemService, minimapService, new RngService(0L));
     }
 
     private static Artefact currentArtefact(final ArtefactsService service) throws Exception {

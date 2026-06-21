@@ -84,7 +84,7 @@ public class InGameState extends GameState {
         mapService.onVisit(minimapService::visit);
 
         gunService = new GunService(itemService, statisticsService, rngService);
-        artefactsService = new ArtefactsService(player, itemService, minimapService);
+        artefactsService = new ArtefactsService(player, itemService, minimapService, rngService);
 
 
         itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService, rngService));

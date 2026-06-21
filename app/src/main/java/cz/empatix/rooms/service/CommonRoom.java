@@ -22,11 +22,10 @@ import cz.empatix.tiles.tilemaps.ProceduralTileMap;
 import cz.empatix.tiles.tilemaps.TileMap;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 
 public class CommonRoom implements Room {
-    private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rngService;
     private static final int MAX_ENEMIES = 5;
     private static final int MAX_SPIKES = 3;
     private static final int MAX_TORCHES = 2;
@@ -51,6 +50,7 @@ public class CommonRoom implements Room {
                       final DifficultyService difficultyService,
                       final RngService rngService) {
         this.itemService = itemService;
+        this.rngService = rngService;
         tileMap = new ProceduralTileMap(rows, cols, xOffset, yOffset, neighbors);
         enemyService = new EnemyService(itemService, statisticsService, difficultyService, rngService);
         enemyBoundsService = new EnemyBoundsService(this, enemyService);
@@ -90,7 +90,7 @@ public class CommonRoom implements Room {
         final FlamethrowerSupplier flamethrowerSupplier = new FlamethrowerSupplier(this, tileMap);
 
         final List<Spike> spikes = Stream.generate(spikeSupplier::supply)
-                .limit(ThreadLocalRandom.current().nextInt(1, MAX_SPIKES))
+                .limit(rngService.nextInt(1, MAX_SPIKES))
                 .toList();
         final List<Torch> torches = Stream.generate(torchSupplier::supply)
                 .limit(MAX_TORCHES)
@@ -105,22 +105,22 @@ public class CommonRoom implements Room {
                 .limit(MAX_BANNERS)
                 .toList();
         final List<ExplosiveBarrel> explosiveBarrels = Stream.generate(explosiveBarrelSupplier::supply)
-                .limit(ThreadLocalRandom.current().nextInt(3))
+                .limit(rngService.nextInt(3))
                 .toList();
         final List<Barrel> barrels = Stream.generate(barrelSupplier::supply)
-                .limit(ThreadLocalRandom.current().nextInt(MAX_BARRELS))
+                .limit(rngService.nextInt(MAX_BARRELS))
                 .toList();
         final List<Flamethrower> flamethrowers = Stream.generate(flamethrowerSupplier::supply)
                 .limit(1)
                 .filter(Objects::nonNull)
                 .toList();
         final List<Pot> pots = Stream.generate(potSupplier::supply)
-                .limit(ThreadLocalRandom.current().nextInt(MAX_POT))
+                .limit(rngService.nextInt(MAX_POT))
                 .toList();
 
         // sometimes torch can be disabled, not lighten up
         torches.stream()
-                .filter(t -> RANDOM.nextInt(0, 100) < 10)
+                .filter(t -> rngService.nextInt(0, 100) < 10)
                 .forEach(Torch::disable);
 
         roomObjectService.addAll(spikes);
