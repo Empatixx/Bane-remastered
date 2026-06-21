@@ -2,6 +2,7 @@ package cz.empatix.enemies.domain;
 
 import cz.empatix.assets.service.AssetsService;
 import cz.empatix.collision.DamageSourceType;
+import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.animation.AnimationState;
 import cz.empatix.testsupport.HeadlessAssets;
@@ -188,7 +189,7 @@ class BaseEnemyHeadlessTest {
     void scaleToFloorRaisesHealthAndDamageByTheFloorMultipliers() {
         final TestEnemy enemy = enemy(10, 5); // past the spawn window
 
-        enemy.scaleToFloor(5);
+        enemy.scaleToFloor(new DifficultyService(), 5);
 
         // health: round(10 * (1 + 0.12*5)) = round(16.0) = 16, current health refilled to the new max
         assertEquals(16, enemy.getHealth());
@@ -200,7 +201,7 @@ class BaseEnemyHeadlessTest {
     void scaleToFloorZeroLeavesStatsUnchanged() {
         final TestEnemy enemy = enemy(9, 2);
 
-        enemy.scaleToFloor(0);
+        enemy.scaleToFloor(new DifficultyService(), 0);
 
         assertEquals(9, enemy.getHealth());
         assertEquals(2, enemy.damage());

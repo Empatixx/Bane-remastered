@@ -74,7 +74,7 @@ public class EnemyFactory {
         });
     }
 
-    public static Enemy createEnemy(final int currentFloor) {
+    public static Enemy createEnemy(final int currentFloor, final DifficultyService difficulty) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
         final List<EnemySupplier> possibleSuppliers = commonEnemiesSuppliers.get().stream()
                 .filter(supplier -> supplier.isSpawnable(currentFloor))
@@ -84,11 +84,11 @@ public class EnemyFactory {
         }
         final int index = random.nextInt(possibleSuppliers.size());
         final Enemy enemy = possibleSuppliers.get(index).supplier().get();
-        enemy.scaleToFloor(currentFloor);
+        enemy.scaleToFloor(difficulty, currentFloor);
         return enemy;
     }
 
-    public static Enemy createBoss(final int currentFloor) {
+    public static Enemy createBoss(final int currentFloor, final DifficultyService difficulty) {
         final ThreadLocalRandom random = ThreadLocalRandom.current();
         final List<EnemySupplier> possibleSuppliers = bossEnemiesSuppliers.get().stream()
                 .filter(supplier -> supplier.isSpawnable(currentFloor))
@@ -98,7 +98,7 @@ public class EnemyFactory {
         }
         final int index = random.nextInt(possibleSuppliers.size());
         final Enemy boss = possibleSuppliers.get(index).supplier().get();
-        boss.scaleToFloor(currentFloor);
+        boss.scaleToFloor(difficulty, currentFloor);
         return boss;
     }
 }

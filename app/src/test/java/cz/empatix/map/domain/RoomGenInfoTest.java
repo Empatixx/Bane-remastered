@@ -200,8 +200,8 @@ class RoomGenInfoTest {
         // Subclasses requiring service dependencies only store them in their
         // constructors; getRoomType() never touches them, so null is safe here.
         assertEquals(RoomType.START, new StartRoomGenInfo().getRoomType());
-        assertEquals(RoomType.NORMAL, new CommonRoomGenInfo(null, null).getRoomType());
-        assertEquals(RoomType.BOSS, new BossRoomGenInfo(null, null, null, null).getRoomType());
+        assertEquals(RoomType.NORMAL, new CommonRoomGenInfo(null, null, null).getRoomType());
+        assertEquals(RoomType.BOSS, new BossRoomGenInfo(null, null, null, null, null).getRoomType());
         assertEquals(RoomType.SHOP, new ShopRoomGenInfo(null, null, null).getRoomType());
         assertEquals(RoomType.SACRIFICE, new SacrificeRoomGenInfo(null, null).getRoomType());
         assertEquals(RoomType.TREASURE, new TreasureRoomGenInfo(null).getRoomType());
@@ -212,11 +212,11 @@ class RoomGenInfoTest {
     void canCreateNeighboursBySubclass() {
         // START and NORMAL allow neighbours while under the max; the rest never do.
         final RoomGenInfo start = new StartRoomGenInfo();
-        final RoomGenInfo common = new CommonRoomGenInfo(null, null);
+        final RoomGenInfo common = new CommonRoomGenInfo(null, null, null);
         assertTrue(start.canCreateNeighbours());
         assertTrue(common.canCreateNeighbours());
 
-        assertFalse(new BossRoomGenInfo(null, null, null, null).canCreateNeighbours());
+        assertFalse(new BossRoomGenInfo(null, null, null, null, null).canCreateNeighbours());
         assertFalse(new ShopRoomGenInfo(null, null, null).canCreateNeighbours());
         assertFalse(new SacrificeRoomGenInfo(null, null).canCreateNeighbours());
         assertFalse(new TreasureRoomGenInfo(null).canCreateNeighbours());

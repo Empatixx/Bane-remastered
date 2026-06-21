@@ -1,5 +1,6 @@
 package cz.empatix.enemies.domain;
 
+import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.enemies.targetting.Targetable;
 import cz.empatix.collision.DamageSource;
 import cz.empatix.collision.Damageable;
@@ -40,7 +41,7 @@ public interface Enemy extends Drawable, Targetable, ShadowCaster {
     }
 
     /** Scales this enemy's stats for the given floor. Default is a no-op; common enemies override. */
-    default void scaleToFloor(final int floor) {
+    default void scaleToFloor(final DifficultyService difficulty, final int floor) {
     }
 
     // ShadowCaster default implementations

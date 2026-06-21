@@ -46,7 +46,7 @@ class EnemyFactoryTest {
         ));
 
         for (int i = 0; i < 20; i++) {
-            final Enemy produced = EnemyFactory.createEnemy(5);
+            final Enemy produced = EnemyFactory.createEnemy(5, new DifficultyService());
             assertSame(onlyEligible, produced,
                     "floor 5 should only ever pick the supplier whose [min,max] covers it");
         }
@@ -62,7 +62,7 @@ class EnemyFactoryTest {
         ));
 
         for (int i = 0; i < 20; i++) {
-            final Enemy produced = EnemyFactory.createEnemy(3);
+            final Enemy produced = EnemyFactory.createEnemy(3, new DifficultyService());
             assertTrue(produced == a || produced == b);
         }
     }
@@ -72,7 +72,7 @@ class EnemyFactoryTest {
         seed("commonEnemiesSuppliers", List.of(
                 supplierFor(mock(Enemy.class), 80, 90)
         ));
-        assertThrows(RuntimeException.class, () -> EnemyFactory.createEnemy(1));
+        assertThrows(RuntimeException.class, () -> EnemyFactory.createEnemy(1, new DifficultyService()));
     }
 
     @Test
@@ -82,7 +82,7 @@ class EnemyFactoryTest {
                 supplierFor(boss, 0, 10)
         ));
 
-        final Enemy produced = EnemyFactory.createBoss(4);
+        final Enemy produced = EnemyFactory.createBoss(4, new DifficultyService());
         assertNotNull(produced);
         assertSame(boss, produced);
     }
@@ -92,27 +92,29 @@ class EnemyFactoryTest {
         seed("bossEnemiesSuppliers", List.of(
                 supplierFor(mock(Enemy.class), 20, 30)
         ));
-        assertThrows(RuntimeException.class, () -> EnemyFactory.createBoss(1));
+        assertThrows(RuntimeException.class, () -> EnemyFactory.createBoss(1, new DifficultyService()));
     }
 
     @Test
     void createEnemyScalesTheSpawnedEnemyToTheFloor() throws Exception {
         final Enemy enemy = mock(Enemy.class);
+        final DifficultyService difficulty = new DifficultyService();
         seed("commonEnemiesSuppliers", List.of(supplierFor(enemy, 0, 100)));
 
-        EnemyFactory.createEnemy(7);
+        EnemyFactory.createEnemy(7, difficulty);
 
-        verify(enemy).scaleToFloor(7);
+        verify(enemy).scaleToFloor(difficulty, 7);
     }
 
     @Test
     void createBossScalesTheSpawnedBossToTheFloor() throws Exception {
         final Enemy boss = mock(Enemy.class);
+        final DifficultyService difficulty = new DifficultyService();
         seed("bossEnemiesSuppliers", List.of(supplierFor(boss, 0, 100)));
 
-        EnemyFactory.createBoss(7);
+        EnemyFactory.createBoss(7, difficulty);
 
-        verify(boss).scaleToFloor(7);
+        verify(boss).scaleToFloor(difficulty, 7);
     }
 
     @Test

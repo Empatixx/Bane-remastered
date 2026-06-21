@@ -20,11 +20,14 @@ public class EnemyService {
     private final List<Enemy> enemies = new ArrayList<>(10);
     private final EnemyDropService enemyDropService;
     private final StatisticsService statisticsService;
+    private final DifficultyService difficultyService;
 
     public EnemyService(final ItemService itemService,
-                        final StatisticsService statisticsService) {
+                        final StatisticsService statisticsService,
+                        final DifficultyService difficultyService) {
         this.enemyDropService = new EnemyDropService(itemService);
         this.statisticsService = statisticsService;
+        this.difficultyService = difficultyService;
     }
 
     public void update(final double dt) {
@@ -54,7 +57,7 @@ public class EnemyService {
     }
 
     public void spawnEnemy(final Room room) {
-        final Enemy e = EnemyFactory.createEnemy(statisticsService.getFloor());
+        final Enemy e = EnemyFactory.createEnemy(statisticsService.getFloor(), difficultyService);
 
         final int tileSize = TileImpl.TILE_SIZE * TileImpl.SCALE;
         final PhysicsService physicsService = PhysicsService.getInstance();
@@ -73,7 +76,7 @@ public class EnemyService {
     }
 
     public void spawnBoss(final Room room) {
-        final Enemy e = EnemyFactory.createBoss(statisticsService.getFloor());
+        final Enemy e = EnemyFactory.createBoss(statisticsService.getFloor(), difficultyService);
 
         final float x = room.getX() + room.getWidth() / 2f - e.getWidth() / 2f;
         final float y = room.getY() + room.getHeight() / 2f - e.getHeight() / 2f;

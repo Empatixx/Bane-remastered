@@ -8,6 +8,7 @@ import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.death.service.DeathService;
 import cz.empatix.death.service.StatisticsService;
+import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.gamestate.domain.GameState;
 import cz.empatix.gamestate.domain.GameStateType;
 import cz.empatix.guns.service.GunService;
@@ -95,8 +96,9 @@ public class InGameState extends GameState {
         });
 
 
+        final DifficultyService difficultyService = new DifficultyService();
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService);
+        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService, difficultyService);
         mapLoaderService.load(mapGenerationResult);
 
         petService = new PetService(player);
