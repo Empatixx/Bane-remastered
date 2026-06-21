@@ -83,7 +83,9 @@ public class EnemyFactory {
             throw new RuntimeException("No enemies available for floor: " + currentFloor);
         }
         final int index = random.nextInt(possibleSuppliers.size());
-        return possibleSuppliers.get(index).supplier().get();
+        final Enemy enemy = possibleSuppliers.get(index).supplier().get();
+        enemy.scaleToFloor(currentFloor);
+        return enemy;
     }
 
     public static Enemy createBoss(final int currentFloor) {
@@ -95,6 +97,8 @@ public class EnemyFactory {
             throw new RuntimeException("No enemies available for floor: " + currentFloor);
         }
         final int index = random.nextInt(possibleSuppliers.size());
-        return possibleSuppliers.get(index).supplier().get();
+        final Enemy boss = possibleSuppliers.get(index).supplier().get();
+        boss.scaleToFloor(currentFloor);
+        return boss;
     }
 }

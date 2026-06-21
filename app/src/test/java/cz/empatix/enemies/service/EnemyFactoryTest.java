@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Drives the floor-filtering + random-pick selection of {@link EnemyFactory#createEnemy(int)} and
@@ -92,6 +93,26 @@ class EnemyFactoryTest {
                 supplierFor(mock(Enemy.class), 20, 30)
         ));
         assertThrows(RuntimeException.class, () -> EnemyFactory.createBoss(1));
+    }
+
+    @Test
+    void createEnemyScalesTheSpawnedEnemyToTheFloor() throws Exception {
+        final Enemy enemy = mock(Enemy.class);
+        seed("commonEnemiesSuppliers", List.of(supplierFor(enemy, 0, 100)));
+
+        EnemyFactory.createEnemy(7);
+
+        verify(enemy).scaleToFloor(7);
+    }
+
+    @Test
+    void createBossScalesTheSpawnedBossToTheFloor() throws Exception {
+        final Enemy boss = mock(Enemy.class);
+        seed("bossEnemiesSuppliers", List.of(supplierFor(boss, 0, 100)));
+
+        EnemyFactory.createBoss(7);
+
+        verify(boss).scaleToFloor(7);
     }
 
     @Test
