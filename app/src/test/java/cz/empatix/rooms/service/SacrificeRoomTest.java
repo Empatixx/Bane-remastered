@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -28,7 +29,7 @@ class SacrificeRoomTest {
 
     private static SacrificeRoom room(final int rows, final int cols, final int xOff, final int yOff) {
         return new SacrificeRoom(mock(ItemService.class), rows, cols, xOff, yOff,
-                EnumSet.noneOf(RoomDirection.class), mock(StatisticsService.class));
+                EnumSet.noneOf(RoomDirection.class), mock(StatisticsService.class), new RngService(0L));
     }
 
     @Test

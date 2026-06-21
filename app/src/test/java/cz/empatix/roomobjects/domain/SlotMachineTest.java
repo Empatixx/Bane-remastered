@@ -1,5 +1,6 @@
 package cz.empatix.roomobjects.domain;
 
+import cz.empatix.common.RngService;
 import cz.empatix.items.domain.ItemRarity;
 import cz.empatix.items.domain.MovableItemDrop;
 import cz.empatix.items.service.ItemFactory;
@@ -42,7 +43,7 @@ class SlotMachineTest {
 
     @Test
     void freshMachineIsNotSpinningAndOnlyInteractsWithEKey() {
-        final SlotMachine machine = new SlotMachine(mock(ItemService.class), new CoinService());
+        final SlotMachine machine = new SlotMachine(mock(ItemService.class), new CoinService(), new RngService(0L));
 
         assertFalse(machine.canInteract(Set.of(GLFW.GLFW_KEY_A)));
         assertTrue(machine.canInteract(Set.of(GLFW.GLFW_KEY_E)));
@@ -53,7 +54,7 @@ class SlotMachineTest {
     void spinningConsumesCoinsAndBlocksFurtherInteractionUntilResolved() {
         final ItemService itemService = itemServiceWithStubbedFactory();
         final CoinService coinService = new CoinService(); // starts at 0, machine adds 100 in ctor
-        final SlotMachine machine = new SlotMachine(itemService, coinService);
+        final SlotMachine machine = new SlotMachine(itemService, coinService, new RngService(0L));
 
         machine.interact(Set.of(GLFW.GLFW_KEY_E)); // spin
         assertFalse(machine.canInteract(Set.of(GLFW.GLFW_KEY_E))); // spinning -> cannot interact
@@ -67,7 +68,7 @@ class SlotMachineTest {
 
     @Test
     void positionAndGeometry() {
-        final SlotMachine machine = new SlotMachine(mock(ItemService.class), new CoinService());
+        final SlotMachine machine = new SlotMachine(mock(ItemService.class), new CoinService(), new RngService(0L));
         machine.setPosition(200f, 300f);
 
         assertEquals(64 * 3, machine.getWidth());

@@ -202,8 +202,8 @@ class RoomGenInfoTest {
         assertEquals(RoomType.START, new StartRoomGenInfo().getRoomType());
         assertEquals(RoomType.NORMAL, new CommonRoomGenInfo(null, null, null, null).getRoomType());
         assertEquals(RoomType.BOSS, new BossRoomGenInfo(null, null, null, null, null, null).getRoomType());
-        assertEquals(RoomType.SHOP, new ShopRoomGenInfo(null, null, null).getRoomType());
-        assertEquals(RoomType.SACRIFICE, new SacrificeRoomGenInfo(null, null).getRoomType());
+        assertEquals(RoomType.SHOP, new ShopRoomGenInfo(null, null, null, null).getRoomType());
+        assertEquals(RoomType.SACRIFICE, new SacrificeRoomGenInfo(null, null, null).getRoomType());
         assertEquals(RoomType.TREASURE, new TreasureRoomGenInfo(null).getRoomType());
         assertEquals(RoomType.PATH, new PathRoomGenInfo().getRoomType());
     }
@@ -217,8 +217,8 @@ class RoomGenInfoTest {
         assertTrue(common.canCreateNeighbours());
 
         assertFalse(new BossRoomGenInfo(null, null, null, null, null, null).canCreateNeighbours());
-        assertFalse(new ShopRoomGenInfo(null, null, null).canCreateNeighbours());
-        assertFalse(new SacrificeRoomGenInfo(null, null).canCreateNeighbours());
+        assertFalse(new ShopRoomGenInfo(null, null, null, null).canCreateNeighbours());
+        assertFalse(new SacrificeRoomGenInfo(null, null, null).canCreateNeighbours());
         assertFalse(new TreasureRoomGenInfo(null).canCreateNeighbours());
         assertFalse(new PathRoomGenInfo().canCreateNeighbours());
     }

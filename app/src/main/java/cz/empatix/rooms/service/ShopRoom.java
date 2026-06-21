@@ -22,11 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 
 public class ShopRoom implements Room {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShopRoom.class);
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rngService;
     private final static int TOTAL_TABLES = 3;
     private final Map<RoomDirection, Room> neighbors;
     private final ItemService itemService;
@@ -42,7 +42,8 @@ public class ShopRoom implements Room {
                     final int rows, final int cols, final int xOffset, final int yOffset,
                     final Set<RoomDirection> neighbors,
                     final StatisticsService statisticsService,
-                    final CoinService coinService) {
+                    final CoinService coinService,
+                    final RngService rngService) {
         this.itemService = itemService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         carpetTileMap = new ShopCarpetTileMap(rows, cols, xOffset, yOffset, neighbors);
@@ -51,6 +52,7 @@ public class ShopRoom implements Room {
         this.statisticsService = statisticsService;
         shopItemService = new ShopItemService();
         this.coinService = coinService;
+        this.rngService = rngService;
     }
 
     @Override
@@ -102,12 +104,12 @@ public class ShopRoom implements Room {
         roomObjectService.add(pot);
         roomObjectService.add(pot2);
 
-        final SlotMachine slotMachine = new SlotMachine(itemService, coinService);
+        final SlotMachine slotMachine = new SlotMachine(itemService, coinService, rngService);
         slotMachine.setPosition(getMinX() + tileMap.getWidth() - slotMachine.getWidth() - 128, getMinY() + 64);
         roomObjectService.add(slotMachine);
     }
     public void applyDiscounts(){
-        final int chance = RANDOM.nextInt(0, 100);
+        final int chance = rngService.nextInt(0, 100);
         if (chance < 5){
             shopItemService.discount(0.75f, 1);
         } else if (chance < 10){

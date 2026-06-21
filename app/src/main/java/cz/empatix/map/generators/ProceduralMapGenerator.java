@@ -46,7 +46,7 @@ public class ProceduralMapGenerator {
         final List<CommonRoomGenInfo> normalRooms = Stream.generate(() -> new CommonRoomGenInfo(itemService, statisticsService, difficultyService, rngService))
                 .limit(TOTAL_NORMAL_ROOMS)
                 .toList();
-        final List<ShopRoomGenInfo> shopRooms = Stream.generate(() -> new ShopRoomGenInfo(itemService, statisticsService, coinService))
+        final List<ShopRoomGenInfo> shopRooms = Stream.generate(() -> new ShopRoomGenInfo(itemService, statisticsService, coinService, rngService))
                 .limit(TOTAL_SHOP_ROOMS)
                 .toList();
         final List<BossRoomGenInfo> bossRooms = Stream.generate(() -> new BossRoomGenInfo(itemService, mapLoaderService, statisticsService, coinService, difficultyService, rngService))
@@ -55,7 +55,7 @@ public class ProceduralMapGenerator {
         final List<TreasureRoomGenInfo> treasureRooms = Stream.generate(() -> new TreasureRoomGenInfo(itemService))
                 .limit(TOTAL_LOOT_ROOMS)
                 .toList();
-        final List<SacrificeRoomGenInfo> sacrificeRooms = Stream.generate(() -> new SacrificeRoomGenInfo(itemService, statisticsService))
+        final List<SacrificeRoomGenInfo> sacrificeRooms = Stream.generate(() -> new SacrificeRoomGenInfo(itemService, statisticsService, rngService))
                 .limit(rngService.nextInt(0, TOTAL_BONUS_ROOMS + 1))
                 .toList();
 

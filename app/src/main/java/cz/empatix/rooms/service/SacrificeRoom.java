@@ -19,11 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 
 public class SacrificeRoom implements Room {
     private static final Logger LOGGER = LoggerFactory.getLogger(ShopRoom.class);
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rngService;
     private final Map<RoomDirection, Room> neighbors;
     private final ItemService itemService;
     private final RoomObjectService roomObjectService;
@@ -32,12 +32,14 @@ public class SacrificeRoom implements Room {
     public SacrificeRoom(final ItemService itemService,
                     final int rows, final int cols, final int xOffset, final int yOffset,
                     final Set<RoomDirection> neighbors,
-                    final StatisticsService statisticsService) {
+                    final StatisticsService statisticsService,
+                    final RngService rngService) {
         this.itemService = itemService;
         tileMap = new SacrificialTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.statisticsService = statisticsService;
+        this.rngService = rngService;
     }
 
     @Override
@@ -81,7 +83,7 @@ public class SacrificeRoom implements Room {
         roomObjectService.add(pentagramCircle);
 
         final ItemFactory factory = itemService.getItemFactory();
-        final SacrificialItem item = factory.createSacrificialItem(ShopType.values()[RANDOM.nextInt(ShopType.values().length)],
+        final SacrificialItem item = factory.createSacrificialItem(ShopType.values()[rngService.nextInt(ShopType.values().length)],
                 statisticsService.getFloor());
         item.setPosition(pentagramCircle.getX() + pentagramCircle.getWidth() / 2f - item.getWidth() / 2f,
                 pentagramCircle.getY() + pentagramCircle.getHeight() / 2f - item.getHeight() / 2f);

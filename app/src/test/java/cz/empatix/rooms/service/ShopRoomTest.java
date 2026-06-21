@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.items.service.ItemService;
 import cz.empatix.map.domain.RoomDirection;
@@ -32,7 +33,7 @@ class ShopRoomTest {
     private static ShopRoom room(final int rows, final int cols, final int xOff, final int yOff) {
         return new ShopRoom(mock(ItemService.class), rows, cols, xOff, yOff,
                 EnumSet.noneOf(RoomDirection.class), mock(StatisticsService.class),
-                mock(CoinService.class));
+                mock(CoinService.class), new RngService(0L));
     }
 
     @Test

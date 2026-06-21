@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 
 public class SlotMachine implements RoomObject, Interactable {
     private final static int SCALE = 3;
@@ -41,8 +41,9 @@ public class SlotMachine implements RoomObject, Interactable {
     private final AlternativeViewText interactionText;
     private final MachineSlotService machineSlotService;
     public SlotMachine(final ItemService itemService,
-                       final CoinService coinService) {
-        machineSlotService = new MachineSlotService(coinService, itemService, this);
+                       final CoinService coinService,
+                       final RngService rngService) {
+        machineSlotService = new MachineSlotService(coinService, itemService, this, rngService);
         animation = Animation.builder()
                 .setTotal(3, 6)
                 .addState(AnimationState.SPIN, 0, 4, DIMENSION_WIDTH, DIMENSION_HEIGHT, 100)
@@ -148,7 +149,6 @@ public class SlotMachine implements RoomObject, Interactable {
     }
     private static class MachineSlotService {
         private static final Logger LOGGER = LoggerFactory.getLogger(MachineSlotService.class);
-        private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
         private static final AudioService AUDIO_SERVICE = AudioService.getInstance();
         private static final int PRICE_COST = 5;
         private static final int SPINNING_TIME = 2;
@@ -157,6 +157,7 @@ public class SlotMachine implements RoomObject, Interactable {
         private final ItemService itemService;
         private boolean spinning = false;
         private final SlotMachine slotMachine;
+        private final RngService rng;
         private final NavigableMap<Integer, Runnable> rewards;
 
         private final AlternativeViewText priceText;
@@ -164,10 +165,12 @@ public class SlotMachine implements RoomObject, Interactable {
 
         public MachineSlotService(final CoinService coinService,
                                   final ItemService itemService,
-                                  final SlotMachine slotMachine) {
+                                  final SlotMachine slotMachine,
+                                  final RngService rng) {
             this.coinService = coinService;
             this.itemService = itemService;
             this.slotMachine = slotMachine;
+            this.rng = rng;
 
             int currentChance = 0;
             rewards = new TreeMap<>();
@@ -181,7 +184,7 @@ public class SlotMachine implements RoomObject, Interactable {
             final int total = currentChance;
             spinTask = new DelayedTask(SPINNING_TIME, () -> {
                 spinning = false;
-                final int chance = RANDOM.nextInt(total);
+                final int chance = rng.nextInt(total);
                 LOGGER.info("Chance: {}", chance);
                 rewards.higherEntry(chance).getValue().run();
             });
