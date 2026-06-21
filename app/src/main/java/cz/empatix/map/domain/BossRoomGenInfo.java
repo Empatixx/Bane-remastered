@@ -1,5 +1,6 @@
 package cz.empatix.map.domain;
 
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.items.service.ItemService;
@@ -15,17 +16,20 @@ public class BossRoomGenInfo extends RoomGenInfo {
     private final StatisticsService statisticsService;
     private final CoinService coinService;
     private final DifficultyService difficultyService;
+    private final RngService rngService;
 
     public BossRoomGenInfo(final ItemService itemService,
                            final MapLoaderService mapLoaderService,
                            final StatisticsService statisticsService,
                            final CoinService coinService,
-                           final DifficultyService difficultyService) {
+                           final DifficultyService difficultyService,
+                           final RngService rngService) {
         this.itemService = itemService;
         this.mapLoaderService = mapLoaderService;
         this.statisticsService = statisticsService;
         this.coinService = coinService;
         this.difficultyService = difficultyService;
+        this.rngService = rngService;
     }
 
     @Override
@@ -37,7 +41,7 @@ public class BossRoomGenInfo extends RoomGenInfo {
     @Override
     public Room constructRoom() {
         return new BossRoom(itemService, mapLoaderService, rows, cols, xOffset, yOffset, neighbours.keySet(),
-                statisticsService, coinService, difficultyService);
+                statisticsService, coinService, difficultyService, rngService);
     }
 
     @Override

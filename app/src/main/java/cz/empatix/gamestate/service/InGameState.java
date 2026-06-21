@@ -4,6 +4,7 @@ import cz.empatix.core.Viewport;
 import cz.empatix.artefacts.service.ArtefactsService;
 import cz.empatix.sound.Soundtrack;
 import cz.empatix.audio.service.AudioService;
+import cz.empatix.common.RngService;
 import cz.empatix.cursors.domain.CursorType;
 import cz.empatix.cursors.service.CursorService;
 import cz.empatix.death.service.DeathService;
@@ -97,8 +98,9 @@ public class InGameState extends GameState {
 
 
         final DifficultyService difficultyService = new DifficultyService();
+        final RngService rngService = new RngService(System.currentTimeMillis());
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService, difficultyService);
+        final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService, difficultyService, rngService);
         mapLoaderService.load(mapGenerationResult);
 
         petService = new PetService(player);

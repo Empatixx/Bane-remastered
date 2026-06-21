@@ -1,5 +1,6 @@
 package cz.empatix.enemies.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.domain.EnemySupplier;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class EnemyFactoryTest {
         ));
 
         for (int i = 0; i < 20; i++) {
-            final Enemy produced = EnemyFactory.createEnemy(5, new DifficultyService());
+            final Enemy produced = EnemyFactory.createEnemy(5, new DifficultyService(), new RngService(0L));
             assertSame(onlyEligible, produced,
                     "floor 5 should only ever pick the supplier whose [min,max] covers it");
         }
@@ -62,7 +63,7 @@ class EnemyFactoryTest {
         ));
 
         for (int i = 0; i < 20; i++) {
-            final Enemy produced = EnemyFactory.createEnemy(3, new DifficultyService());
+            final Enemy produced = EnemyFactory.createEnemy(3, new DifficultyService(), new RngService(0L));
             assertTrue(produced == a || produced == b);
         }
     }
@@ -72,7 +73,7 @@ class EnemyFactoryTest {
         seed("commonEnemiesSuppliers", List.of(
                 supplierFor(mock(Enemy.class), 80, 90)
         ));
-        assertThrows(RuntimeException.class, () -> EnemyFactory.createEnemy(1, new DifficultyService()));
+        assertThrows(RuntimeException.class, () -> EnemyFactory.createEnemy(1, new DifficultyService(), new RngService(0L)));
     }
 
     @Test
@@ -82,7 +83,7 @@ class EnemyFactoryTest {
                 supplierFor(boss, 0, 10)
         ));
 
-        final Enemy produced = EnemyFactory.createBoss(4, new DifficultyService());
+        final Enemy produced = EnemyFactory.createBoss(4, new DifficultyService(), new RngService(0L));
         assertNotNull(produced);
         assertSame(boss, produced);
     }
@@ -92,7 +93,7 @@ class EnemyFactoryTest {
         seed("bossEnemiesSuppliers", List.of(
                 supplierFor(mock(Enemy.class), 20, 30)
         ));
-        assertThrows(RuntimeException.class, () -> EnemyFactory.createBoss(1, new DifficultyService()));
+        assertThrows(RuntimeException.class, () -> EnemyFactory.createBoss(1, new DifficultyService(), new RngService(0L)));
     }
 
     @Test
@@ -101,7 +102,7 @@ class EnemyFactoryTest {
         final DifficultyService difficulty = new DifficultyService();
         seed("commonEnemiesSuppliers", List.of(supplierFor(enemy, 0, 100)));
 
-        EnemyFactory.createEnemy(7, difficulty);
+        EnemyFactory.createEnemy(7, difficulty, new RngService(0L));
 
         verify(enemy).scaleToFloor(difficulty, 7);
     }
@@ -112,7 +113,7 @@ class EnemyFactoryTest {
         final DifficultyService difficulty = new DifficultyService();
         seed("bossEnemiesSuppliers", List.of(supplierFor(boss, 0, 100)));
 
-        EnemyFactory.createBoss(7, difficulty);
+        EnemyFactory.createBoss(7, difficulty, new RngService(0L));
 
         verify(boss).scaleToFloor(difficulty, 7);
     }

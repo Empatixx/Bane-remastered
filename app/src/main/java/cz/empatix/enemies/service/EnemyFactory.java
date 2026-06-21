@@ -1,5 +1,6 @@
 package cz.empatix.enemies.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.enemies.domain.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -74,29 +74,27 @@ public class EnemyFactory {
         });
     }
 
-    public static Enemy createEnemy(final int currentFloor, final DifficultyService difficulty) {
-        final ThreadLocalRandom random = ThreadLocalRandom.current();
+    public static Enemy createEnemy(final int currentFloor, final DifficultyService difficulty, final RngService rng) {
         final List<EnemySupplier> possibleSuppliers = commonEnemiesSuppliers.get().stream()
                 .filter(supplier -> supplier.isSpawnable(currentFloor))
                 .toList();
         if (possibleSuppliers.isEmpty()) {
             throw new RuntimeException("No enemies available for floor: " + currentFloor);
         }
-        final int index = random.nextInt(possibleSuppliers.size());
+        final int index = rng.nextInt(possibleSuppliers.size());
         final Enemy enemy = possibleSuppliers.get(index).supplier().get();
         enemy.scaleToFloor(difficulty, currentFloor);
         return enemy;
     }
 
-    public static Enemy createBoss(final int currentFloor, final DifficultyService difficulty) {
-        final ThreadLocalRandom random = ThreadLocalRandom.current();
+    public static Enemy createBoss(final int currentFloor, final DifficultyService difficulty, final RngService rng) {
         final List<EnemySupplier> possibleSuppliers = bossEnemiesSuppliers.get().stream()
                 .filter(supplier -> supplier.isSpawnable(currentFloor))
                 .toList();
         if (possibleSuppliers.isEmpty()) {
             throw new RuntimeException("No enemies available for floor: " + currentFloor);
         }
-        final int index = random.nextInt(possibleSuppliers.size());
+        final int index = rng.nextInt(possibleSuppliers.size());
         final Enemy boss = possibleSuppliers.get(index).supplier().get();
         boss.scaleToFloor(difficulty, currentFloor);
         return boss;

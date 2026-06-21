@@ -2,6 +2,7 @@ package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.domain.font.FontSize;
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.hud.service.image.AlternativeViewImage;
@@ -45,14 +46,15 @@ public class Ladder implements RoomObject, Interactable {
                   final ItemService itemService,
                   final StatisticsService statisticsService,
                   final CoinService coinService,
-                  final DifficultyService difficultyService) {
+                  final DifficultyService difficultyService,
+                  final RngService rngService) {
         commonInteractable = new CommonInteractable(keys -> {
             if (keys.contains(GLFW.GLFW_KEY_E)){
                 LOGGER.info("Loading new map");
                 mapLoaderService.clearPreviousMap();
 
                 final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
-                final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService, difficultyService);
+                final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService, difficultyService, rngService);
                 mapLoaderService.load(mapGenerationResult);
             }
         }, () -> true, () -> false, getPosition(), getWidth(), getHeight());

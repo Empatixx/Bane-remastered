@@ -1,6 +1,7 @@
 package cz.empatix.integration;
 
 import cz.empatix.artefacts.service.ArtefactsService;
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.enemies.service.EnemyDropService;
@@ -45,7 +46,7 @@ class DeathDropIntegrationTest {
         final ItemFactory factory = new ItemFactory(
                 mock(GunService.class), new CoinService(), mock(Player.class), mock(ArtefactsService.class));
         itemService.setFactory(factory); // EnemyDropService reads the factory off the service
-        final EnemyDropService dropService = new EnemyDropService(itemService);
+        final EnemyDropService dropService = new EnemyDropService(itemService, new RngService(0L));
 
         final Enemy enemy = mock(Enemy.class);
         when(enemy.getX()).thenReturn(300f);

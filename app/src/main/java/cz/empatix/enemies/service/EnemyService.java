@@ -1,5 +1,6 @@
 package cz.empatix.enemies.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.service.ItemService;
@@ -13,19 +14,20 @@ import org.dyn4j.geometry.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class EnemyService {
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final List<Enemy> enemies = new ArrayList<>(10);
     private final EnemyDropService enemyDropService;
     private final StatisticsService statisticsService;
     private final DifficultyService difficultyService;
+    private final RngService rngService;
 
     public EnemyService(final ItemService itemService,
                         final StatisticsService statisticsService,
-                        final DifficultyService difficultyService) {
-        this.enemyDropService = new EnemyDropService(itemService);
+                        final DifficultyService difficultyService,
+                        final RngService rngService) {
+        this.rngService = rngService;
+        this.enemyDropService = new EnemyDropService(itemService, rngService);
         this.statisticsService = statisticsService;
         this.difficultyService = difficultyService;
     }
@@ -57,7 +59,7 @@ public class EnemyService {
     }
 
     public void spawnEnemy(final Room room) {
-        final Enemy e = EnemyFactory.createEnemy(statisticsService.getFloor(), difficultyService);
+        final Enemy e = EnemyFactory.createEnemy(statisticsService.getFloor(), difficultyService, rngService);
 
         final int tileSize = TileImpl.TILE_SIZE * TileImpl.SCALE;
         final PhysicsService physicsService = PhysicsService.getInstance();
@@ -65,8 +67,8 @@ public class EnemyService {
         final PhysicsObject physicsObject = new PhysicsObject();
         physicsObject.addFixture(new Rectangle(e.getWidth(), e.getHeight()));
         do{
-            final float x = room.getX() + tileSize + RANDOM.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
-            final float y = room.getY() + tileSize + RANDOM.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
+            final float x = room.getX() + tileSize + rngService.nextInt(room.getWidth() - e.getWidth() - tileSize * 2);
+            final float y = room.getY() + tileSize + rngService.nextInt(room.getHeight() - e.getHeight() - tileSize * 2);
             physicsObject.setTranslation(x, y);
         } while (physicsService.isColliding(physicsObject));
 
@@ -76,7 +78,7 @@ public class EnemyService {
     }
 
     public void spawnBoss(final Room room) {
-        final Enemy e = EnemyFactory.createBoss(statisticsService.getFloor(), difficultyService);
+        final Enemy e = EnemyFactory.createBoss(statisticsService.getFloor(), difficultyService, rngService);
 
         final float x = room.getX() + room.getWidth() / 2f - e.getWidth() / 2f;
         final float y = room.getY() + room.getHeight() / 2f - e.getHeight() / 2f;

@@ -1,5 +1,6 @@
 package cz.empatix.enemies.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.enemies.domain.Enemy;
 import cz.empatix.items.domain.ItemDrop;
 import cz.empatix.items.service.ItemFactory;
@@ -37,7 +38,7 @@ class EnemyDropServiceTest {
 
     private static EnemyDropService newService(final ItemFactory factory, final ItemService itemService) {
         when(itemService.getItemFactory()).thenReturn(factory);
-        return new EnemyDropService(itemService);
+        return new EnemyDropService(itemService, new RngService(0L));
     }
 
     @Test

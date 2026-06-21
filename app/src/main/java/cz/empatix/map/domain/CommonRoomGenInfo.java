@@ -1,5 +1,6 @@
 package cz.empatix.map.domain;
 
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.items.service.ItemService;
@@ -11,12 +12,15 @@ public class CommonRoomGenInfo extends RoomGenInfo{
     private final ItemService itemService;
     private final StatisticsService statisticsService;
     private final DifficultyService difficultyService;
+    private final RngService rngService;
     public CommonRoomGenInfo(final ItemService itemService,
                              final StatisticsService statisticsService,
-                             final DifficultyService difficultyService){
+                             final DifficultyService difficultyService,
+                             final RngService rngService){
         this.itemService = itemService;
         this.statisticsService = statisticsService;
         this.difficultyService = difficultyService;
+        this.rngService = rngService;
     }
     @Override
     public void initDimensions() {
@@ -26,7 +30,7 @@ public class CommonRoomGenInfo extends RoomGenInfo{
 
     @Override
     public Room constructRoom() {
-       return new CommonRoom(itemService, rows, cols, xOffset, yOffset,  neighbours.keySet(), statisticsService, difficultyService);
+       return new CommonRoom(itemService, rows, cols, xOffset, yOffset,  neighbours.keySet(), statisticsService, difficultyService, rngService);
     }
 
     @Override

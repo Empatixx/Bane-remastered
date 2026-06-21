@@ -4,6 +4,7 @@ import cz.empatix.sound.Soundtrack;
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.domain.Enemy;
+import cz.empatix.common.RngService;
 import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.enemies.service.EnemyBoundsService;
 import cz.empatix.enemies.service.EnemyService;
@@ -41,6 +42,7 @@ public class BossRoom implements Room {
     private final RoomLockService roomLockService;
     private final StatisticsService statisticsService;
     private final DifficultyService difficultyService;
+    private final RngService rngService;
     private final Map<RoomDirection, Room> neighbors;
     private final TileMap tileMap;
     private boolean visited = false;
@@ -51,18 +53,20 @@ public class BossRoom implements Room {
                     final Set<RoomDirection> neighbors,
                     final StatisticsService statisticsService,
                     final CoinService coinService,
-                    final DifficultyService difficultyService) {
+                    final DifficultyService difficultyService,
+                    final RngService rngService) {
         this.coinService = coinService;
         this.itemService = itemService;
         this.mapLoaderService = mapLoaderService;
         tileMap = new CommonTileMap(rows, cols, xOffset, yOffset, neighbors);
         roomLockService = new RoomLockService(this, neighbors);
-        enemyService = new EnemyService(itemService, statisticsService, difficultyService);
+        enemyService = new EnemyService(itemService, statisticsService, difficultyService, rngService);
         enemyBoundsService = new EnemyBoundsService(this, enemyService);
         roomObjectService = new RoomObjectService();
         this.neighbors = new HashMap<>(neighbors.size());
         this.statisticsService = statisticsService;
         this.difficultyService = difficultyService;
+        this.rngService = rngService;
     }
 
     @Override
@@ -101,7 +105,7 @@ public class BossRoom implements Room {
             roomLockService.setState(false);
             AudioService.getInstance().play(Soundtrack.INGAME);
 
-            final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService, coinService, difficultyService);
+            final Ladder ladder = new Ladder(mapLoaderService, itemService, statisticsService, coinService, difficultyService, rngService);
             ladder.setPosition(tileMap.getX() + tileMap.getWidth() / 2f - ladder.getWidth()/2f, tileMap.getY() + tileMap.getHeight() / 2f);
             roomObjectService.add(ladder);
 

@@ -1,5 +1,6 @@
 package cz.empatix.rooms.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.enemies.service.DifficultyService;
 import cz.empatix.items.service.ItemService;
@@ -32,7 +33,7 @@ class CommonRoomTest {
 
     private static CommonRoom room(final int rows, final int cols, final int xOff, final int yOff) {
         return new CommonRoom(mock(ItemService.class), rows, cols, xOff, yOff,
-                EnumSet.noneOf(RoomDirection.class), mock(StatisticsService.class), new DifficultyService());
+                EnumSet.noneOf(RoomDirection.class), mock(StatisticsService.class), new DifficultyService(), new RngService(0L));
     }
 
     @Test
