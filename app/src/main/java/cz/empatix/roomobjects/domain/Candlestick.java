@@ -12,8 +12,6 @@ import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 public class Candlestick implements RoomObject{
     private final static int SCALE = 3;
     private final static int DIMENSION_WIDTH = 16 * SCALE;

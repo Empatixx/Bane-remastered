@@ -9,7 +9,7 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 
 public class Rock implements RoomObject {
     private final static int SCALE = 4;
@@ -26,7 +26,7 @@ public class Rock implements RoomObject {
                 .texture(AssetsService.getTexture("ingame/rock.tga"))
                 .scale(SCALE)
                 .build();
-        animation.setState(ThreadLocalRandom.current().nextInt(0, 2) == 0 ? AnimationState.TYPE0 : AnimationState.TYPE1);
+        animation.setState(AnimationState.TYPE0);
         position = new Vector2f();
     }
 
@@ -70,6 +70,8 @@ public class Rock implements RoomObject {
 
     public void setPosition(final float x, final float y) {
         position.set(x, y);
+        animation.setState(new RngService(RngService.seedForCoordinate((int) x, (int) y)).nextInt(2) == 0
+                ? AnimationState.TYPE0 : AnimationState.TYPE1);
     }
 
     @Override

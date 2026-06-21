@@ -1,6 +1,7 @@
 package cz.empatix.roomobjects.domain;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.RngService;
 import cz.empatix.render.domain.Animation;
 import cz.empatix.animation.AnimationState;
 import cz.empatix.render.domain.RenderData;
@@ -24,9 +25,6 @@ public class LayingBook implements RoomObject{
                 .texture(AssetsService.getTexture("ingame/laying_book.tga"))
                 .build();
         animation.setState(AnimationState.IDLE);
-        if (Math.random() > 0.5) {
-            animation.setState(AnimationState.REVERSE);
-        }
         position = new Vector2f();
     }
 
@@ -66,6 +64,8 @@ public class LayingBook implements RoomObject{
 
     public void setPosition(final float x, final float y) {
         position.set(x, y);
+        animation.setState(new RngService(RngService.seedForCoordinate((int) x, (int) y)).nextInt(2) == 0
+                ? AnimationState.IDLE : AnimationState.REVERSE);
     }
 
     @Override

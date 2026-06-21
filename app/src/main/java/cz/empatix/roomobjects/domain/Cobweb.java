@@ -9,7 +9,7 @@ import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 
 public class Cobweb implements RoomObject {
     private final static int SCALE = 4;
@@ -17,6 +17,7 @@ public class Cobweb implements RoomObject {
     private final static int DIMENSION_HEIGHT = 16;
     private final Animation animation;
     private final Vector2f position;
+    private boolean leftSide = false;
 
     public Cobweb() {
         animation = Animation.builder()
@@ -28,14 +29,24 @@ public class Cobweb implements RoomObject {
                 .texture(AssetsService.getTexture("ingame/cobweb.tga"))
                 .scale(SCALE)
                 .build();
-        setRight();
         position = new Vector2f();
+        animation.setState(AnimationState.TYPE0);
     }
     public void setRight(){
-        animation.setState(ThreadLocalRandom.current().nextInt(0, 2) == 0 ? AnimationState.TYPE0 : AnimationState.TYPE2);
+        leftSide = false;
+        applyVariant();
     }
     public void setLeft(){
-        animation.setState(ThreadLocalRandom.current().nextInt(0, 2) == 0 ? AnimationState.TYPE1 : AnimationState.TYPE3);
+        leftSide = true;
+        applyVariant();
+    }
+    private void applyVariant(){
+        final int pick = new RngService(RngService.seedForCoordinate((int) position.x, (int) position.y)).nextInt(2);
+        if (leftSide) {
+            animation.setState(pick == 0 ? AnimationState.TYPE1 : AnimationState.TYPE3);
+        } else {
+            animation.setState(pick == 0 ? AnimationState.TYPE0 : AnimationState.TYPE2);
+        }
     }
 
 
@@ -80,6 +91,7 @@ public class Cobweb implements RoomObject {
 
     public void setPosition(final float x, final float y) {
         position.set(x, y);
+        applyVariant();
     }
     @Override
     public int getWidth() {
