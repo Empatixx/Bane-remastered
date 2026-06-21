@@ -39,6 +39,10 @@ public interface Enemy extends Drawable, Targetable, ShadowCaster {
         hit(getHealth());
     }
 
+    /** Scales this enemy's stats for the given floor. Default is a no-op; common enemies override. */
+    default void scaleToFloor(final int floor) {
+    }
+
     // ShadowCaster default implementations
     @Override
     default Vector2f getShadowPosition() {

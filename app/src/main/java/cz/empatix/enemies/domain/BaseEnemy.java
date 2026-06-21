@@ -1,5 +1,6 @@
 package cz.empatix.enemies.domain;
 
+import cz.empatix.enemies.service.DifficultyScaling;
 import cz.empatix.enemies.service.VitalityDisplayService;
 import cz.empatix.enemies.targetting.AStarTargetting;
 import cz.empatix.items.service.DroppableState;
@@ -158,6 +159,12 @@ public abstract class BaseEnemy implements Drawable, Damageable, DamageSource, E
             this.health = maxHealth;
         }
 
+    }
+    @Override
+    public void scaleToFloor(final int floor){
+        maxHealth = DifficultyScaling.scaleStat(maxHealth, DifficultyScaling.healthMultiplier(floor));
+        health = maxHealth;
+        damage = DifficultyScaling.scaleStat(damage, DifficultyScaling.damageMultiplier(floor));
     }
     @Override
     public void setTarget(final Player player){

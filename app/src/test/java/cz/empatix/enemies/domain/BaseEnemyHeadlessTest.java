@@ -183,4 +183,26 @@ class BaseEnemyHeadlessTest {
         assertTrue(enemy.isDead(), "despawn drops the enemy by dealing its remaining health");
         assertEquals(0, enemy.getHealth());
     }
+
+    @Test
+    void scaleToFloorRaisesHealthAndDamageByTheFloorMultipliers() {
+        final TestEnemy enemy = enemy(10, 5); // past the spawn window
+
+        enemy.scaleToFloor(5);
+
+        // health: round(10 * (1 + 0.12*5)) = round(16.0) = 16, current health refilled to the new max
+        assertEquals(16, enemy.getHealth());
+        // damage: round(5 * (1 + 0.08*5)) = round(7.0) = 7
+        assertEquals(7, enemy.damage());
+    }
+
+    @Test
+    void scaleToFloorZeroLeavesStatsUnchanged() {
+        final TestEnemy enemy = enemy(9, 2);
+
+        enemy.scaleToFloor(0);
+
+        assertEquals(9, enemy.getHealth());
+        assertEquals(2, enemy.damage());
+    }
 }
