@@ -16,12 +16,10 @@ import cz.empatix.render.shaderbindings.CommonLightBinding;
 import org.joml.Vector2f;
 
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.*;
 
 public class AmmoBoxItem implements ItemDrop {
     private final static AudioService AUDIO_SERVICE = AudioService.getInstance();
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static float SCALE = 1.5f;
     private final static int UNIVERSAL_DIMENSION_WIDTH = (int) (32 * SCALE);
     private final static int UNIVERSAL_DIMENSION_HEIGHT = (int) (32 * SCALE);

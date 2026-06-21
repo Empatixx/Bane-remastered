@@ -87,7 +87,7 @@ public class InGameState extends GameState {
         artefactsService = new ArtefactsService(player, itemService, minimapService);
 
 
-        itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService));
+        itemService.setFactory(new ItemFactory(gunService, coinService, player, artefactsService, rngService));
 
         mapLoaderService = new MapLoaderService(itemService, mapService, minimapService, statisticsService);
         mapLoaderService.addListener(result -> {

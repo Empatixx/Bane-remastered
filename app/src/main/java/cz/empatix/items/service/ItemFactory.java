@@ -2,6 +2,7 @@ package cz.empatix.items.service;
 
 import cz.empatix.artefacts.domain.Artefact;
 import cz.empatix.artefacts.service.ArtefactsService;
+import cz.empatix.common.RngService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.interaction.service.InteractionService;
@@ -12,13 +13,12 @@ import cz.empatix.player.Player;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class ItemFactory {
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rngService;
     private final Map<ItemRarity, List<Supplier<ItemDrop>>> itemDropSuppliers;
     private final Map<ShopType, List<Supplier<ItemDrop>>> shopDropSuppliers;
     private final Function<ItemDrop, ShopItem> shopDropSupplier;
@@ -26,7 +26,9 @@ public class ItemFactory {
     public ItemFactory(final GunService gunService,
                        final CoinService coinService,
                        final Player player,
-                       final ArtefactsService artefactsService) {
+                       final ArtefactsService artefactsService,
+                       final RngService rngService) {
+        this.rngService = rngService;
         final Supplier<ItemDrop> coinSupplier = () -> new CoinItem(coinService::addCoins);
         final Supplier<ItemDrop> recoverHealthSupplier = () -> new RecoverPotion(RecoverSize.SMALL, RecoverType.HEALTH, player::hasFullHealth, player::addHealth);
         final Supplier<ItemDrop> recoverArmorSupplier = () -> new RecoverPotion(RecoverSize.SMALL, RecoverType.ARMOR, player::hasFullArmor, player::addArmor);
@@ -93,7 +95,7 @@ public class ItemFactory {
 
     public ShopItem createShopDrop(final ShopType type, final int floor) {
         final List<Supplier<ItemDrop>> suppliers = shopDropSuppliers.get(type);
-        final ItemDrop drop = suppliers.get(RANDOM.nextInt(suppliers.size())).get();
+        final ItemDrop drop = suppliers.get(rngService.nextInt(suppliers.size())).get();
         final ShopItem shopDrop = shopDropSupplier.apply(drop);
         shopDrop.setPrice(type, floor);
         shopDrop.setDespawnable(false);
@@ -103,7 +105,7 @@ public class ItemFactory {
 
     public SacrificialItem createSacrificialItem(final ShopType type, final int floor) {
         final List<Supplier<ItemDrop>> suppliers = shopDropSuppliers.get(type);
-        final ItemDrop drop = suppliers.get(RANDOM.nextInt(suppliers.size())).get();
+        final ItemDrop drop = suppliers.get(rngService.nextInt(suppliers.size())).get();
         final SacrificialItem sacrificialItem = sacrificialItemSupplier.apply(drop);
         sacrificialItem.setDespawnable(false);
         InteractionService.getInstance().addInteractable(sacrificialItem);
@@ -111,11 +113,11 @@ public class ItemFactory {
     }
 
     public ItemDrop createItemDrop() {
-        return createItemDrop(ItemRarity.randomRarity(ItemRarity.COMMON));
+        return createItemDrop(ItemRarity.randomRarity(rngService, ItemRarity.COMMON));
     }
     public ItemDrop createItemDrop(final ItemRarity... rarities){
-        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(rarities[RANDOM.nextInt(rarities.length)]);
-        final ItemDrop drop = suppliers.get(RANDOM.nextInt(suppliers.size())).get();
+        final List<Supplier<ItemDrop>> suppliers = itemDropSuppliers.get(rarities[rngService.nextInt(rarities.length)]);
+        final ItemDrop drop = suppliers.get(rngService.nextInt(suppliers.size())).get();
         InteractionService.getInstance().addInteractable(drop);
         return drop;
     }

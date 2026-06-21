@@ -2,6 +2,7 @@ package cz.empatix.items.service;
 
 import cz.empatix.artefacts.domain.Artefact;
 import cz.empatix.artefacts.service.ArtefactsService;
+import cz.empatix.common.RngService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.items.domain.AmmoBoxItem;
@@ -49,7 +50,7 @@ class ItemFactoryTest {
         when(artefact.getTexturePath()).thenReturn("artefacts/shield.tga");
         when(artefactsService.getUnusedRandomArtefact()).thenReturn(artefact);
 
-        return new ItemFactory(gunService, coinService, player, artefactsService);
+        return new ItemFactory(gunService, coinService, player, artefactsService, new RngService(0L));
     }
 
     @Test

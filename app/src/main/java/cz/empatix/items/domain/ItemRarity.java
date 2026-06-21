@@ -1,8 +1,7 @@
 package cz.empatix.items.domain;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
+
 import java.util.stream.Stream;
 
 public enum ItemRarity {
@@ -10,7 +9,6 @@ public enum ItemRarity {
     UNCOMMON(25),
     RARE(15),
     UNDEFINED(0);
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final int weight;
     ItemRarity(final int weight){
         this.weight = weight;
@@ -20,11 +18,11 @@ public enum ItemRarity {
         return weight;
     }
 
-    public static ItemRarity randomRarity(final ItemRarity... itemRarities){
+    public static ItemRarity randomRarity(final RngService rng, final ItemRarity... itemRarities){
         final int totalWeight = Stream.of(itemRarities)
                 .mapToInt(ItemRarity::getWeight)
                 .sum();
-        int randomValue = RANDOM.nextInt(totalWeight);
+        int randomValue = rng.nextInt(totalWeight);
         for (final ItemRarity rarity : itemRarities) {
             randomValue -= rarity.getWeight();
             if (randomValue < 0) {

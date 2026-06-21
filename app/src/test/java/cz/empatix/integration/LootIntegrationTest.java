@@ -1,6 +1,7 @@
 package cz.empatix.integration;
 
 import cz.empatix.artefacts.service.ArtefactsService;
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.interaction.service.InteractionService;
@@ -39,7 +40,7 @@ class LootIntegrationTest {
         final CoinService coinService = new CoinService();
         final ItemService itemService = new ItemService(mock(StatisticsService.class));
         final ItemFactory factory = new ItemFactory(
-                mock(GunService.class), coinService, mock(Player.class), mock(ArtefactsService.class));
+                mock(GunService.class), coinService, mock(Player.class), mock(ArtefactsService.class), new RngService(0L));
 
         final ItemDrop coin = factory.createCoinDrop(); // also registers with InteractionService
         coin.setPosition(100, 100);

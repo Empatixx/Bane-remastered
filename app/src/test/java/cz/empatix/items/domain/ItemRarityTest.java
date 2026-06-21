@@ -1,5 +1,6 @@
 package cz.empatix.items.domain;
 
+import cz.empatix.common.RngService;
 import org.junit.jupiter.api.Test;
 
 import java.util.EnumSet;
@@ -10,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ItemRarityTest {
+
+    private final RngService rng = new RngService(0L);
 
     @Test
     void weightsMatchDeclaredValues() {
@@ -29,7 +32,7 @@ class ItemRarityTest {
     @Test
     void randomRarityWithSingleOptionAlwaysReturnsThatOption() {
         for (int i = 0; i < 50; i++) {
-            assertSame(ItemRarity.COMMON, ItemRarity.randomRarity(ItemRarity.COMMON));
+            assertSame(ItemRarity.COMMON, ItemRarity.randomRarity(rng, ItemRarity.COMMON));
         }
     }
 
@@ -40,7 +43,7 @@ class ItemRarityTest {
 
         for (int i = 0; i < 1000; i++) {
             final ItemRarity result = ItemRarity.randomRarity(
-                    ItemRarity.COMMON, ItemRarity.UNCOMMON, ItemRarity.RARE);
+                    rng, ItemRarity.COMMON, ItemRarity.UNCOMMON, ItemRarity.RARE);
             assertTrue(allowed.contains(result),
                     "randomRarity returned an unexpected value: " + result);
         }
@@ -53,7 +56,7 @@ class ItemRarityTest {
         // many draws should hit all three at least once.
         for (int i = 0; i < 5000 && seen.size() < 3; i++) {
             seen.add(ItemRarity.randomRarity(
-                    ItemRarity.COMMON, ItemRarity.UNCOMMON, ItemRarity.RARE));
+                    rng, ItemRarity.COMMON, ItemRarity.UNCOMMON, ItemRarity.RARE));
         }
         assertTrue(seen.contains(ItemRarity.COMMON));
         assertTrue(seen.contains(ItemRarity.UNCOMMON));

@@ -44,7 +44,7 @@ class DeathDropIntegrationTest {
     void killingAnEnemyDropsAPositionedItemIntoTheWorld() throws Exception {
         final ItemService itemService = new ItemService(mock(StatisticsService.class));
         final ItemFactory factory = new ItemFactory(
-                mock(GunService.class), new CoinService(), mock(Player.class), mock(ArtefactsService.class));
+                mock(GunService.class), new CoinService(), mock(Player.class), mock(ArtefactsService.class), new RngService(0L));
         itemService.setFactory(factory); // EnemyDropService reads the factory off the service
         final EnemyDropService dropService = new EnemyDropService(itemService, new RngService(0L));
 
