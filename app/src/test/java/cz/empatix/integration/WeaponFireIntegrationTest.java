@@ -2,6 +2,7 @@ package cz.empatix.integration;
 
 import cz.empatix.audio.service.AudioService;
 import cz.empatix.collision.DamageSource;
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.guns.domain.Pistol;
 import cz.empatix.guns.factory.BulletFactory;
@@ -34,7 +35,7 @@ class WeaponFireIntegrationTest {
     @Test
     void firingAPistolSpawnsARealDamagingBulletInTheWorld() {
         final BulletFactory bulletFactory =
-                new BulletFactory(new StatisticsService(), new GunDamageEventComposite());
+                new BulletFactory(new StatisticsService(), new GunDamageEventComposite(), new RngService(0L));
         final Pistol pistol = new Pistol(bulletFactory, mock(AudioService.class));
 
         pistol.setShooting(true);

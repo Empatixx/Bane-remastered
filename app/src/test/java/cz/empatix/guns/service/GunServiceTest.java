@@ -1,5 +1,6 @@
 package cz.empatix.guns.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.death.service.StatisticsService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.items.domain.AmmoBoxType;
@@ -28,7 +29,7 @@ class GunServiceTest {
     private GunService newService() {
         final ItemService itemService = mock(ItemService.class);
         final StatisticsService statisticsService = mock(StatisticsService.class);
-        return new GunService(itemService, statisticsService);
+        return new GunService(itemService, statisticsService, new RngService(0L));
     }
 
     @Test

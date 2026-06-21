@@ -70,6 +70,7 @@ public class InGameState extends GameState {
 
         final StatisticsService statisticsService = new StatisticsService();
         final ActiveUpgradeService activeUpgradeService = new ActiveUpgradeService();
+        final RngService rngService = new RngService(System.currentTimeMillis());
 
         player = new Player();
         coinService = new CoinService();
@@ -82,7 +83,7 @@ public class InGameState extends GameState {
         mapService = new MapService();
         mapService.onVisit(minimapService::visit);
 
-        gunService = new GunService(itemService, statisticsService);
+        gunService = new GunService(itemService, statisticsService, rngService);
         artefactsService = new ArtefactsService(player, itemService, minimapService);
 
 
@@ -98,7 +99,6 @@ public class InGameState extends GameState {
 
 
         final DifficultyService difficultyService = new DifficultyService();
-        final RngService rngService = new RngService(System.currentTimeMillis());
         final ProceduralMapGenerator proceduralMapGenerator = new ProceduralMapGenerator();
         final MapGenerationResult mapGenerationResult = proceduralMapGenerator.generate(itemService, mapLoaderService, statisticsService, coinService, difficultyService, rngService);
         mapLoaderService.load(mapGenerationResult);

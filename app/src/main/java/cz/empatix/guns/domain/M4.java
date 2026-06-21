@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class M4 extends AbstractGun implements Gun{
     private final static String WEAPON_TXT_PATH = "ingame/guns/M4.tga";
@@ -77,10 +76,11 @@ public class M4 extends AbstractGun implements Gun{
                 }
                 lastShootTime = System.currentTimeMillis();
                 LOGGER.info("Shooting from M4 clip: {}, ammo: {}", currentClip, ammo);
-                final int damage = minDamage + (int) (ThreadLocalRandom.current().nextFloat() * (maxDamage - minDamage));
-                final Bullet bullet = new Bullet(damage);
-                bullet.setPosition(shooterX, shooterY);
-                bullet.setDirection(this.lastShooterX, this.lastShooterY, this.lastTargetX, this.lastTargetY, inaccuracy);
+                // burst spawns at the gun's current position but keeps the initial shot's locked aim
+                final float aimDx = this.lastTargetX - this.lastShooterX;
+                final float aimDy = this.lastTargetY - this.lastShooterY;
+                final Bullet bullet = bulletFactory.createBullet(minDamage, maxDamage, inaccuracy,
+                        shooterX, shooterY, shooterX + aimDx, shooterY + aimDy);
                 bullets.add(bullet);
                 bulletsToShoot--;
                 currentClip--;

@@ -23,11 +23,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 import java.util.stream.Stream;
 
 public class GunService {
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static Vector2f HUD_SLOT_POSITION = new Vector2f(685, 450);
     private final static float HUD_SLOT_SCALE = 1.5f;
     public final static int HUD_SLOT_CENTER_X;
@@ -47,14 +46,17 @@ public class GunService {
     private final ItemService itemService;
     private final StatisticsService statisticsService;
     private final GunDamageEventComposite damageEventComposite;
+    private final RngService rngService;
     private float shooterX, shooterY, targetX, targetY;
 
     public GunService(final ItemService itemService,
-                      final StatisticsService statisticsService) {
+                      final StatisticsService statisticsService,
+                      final RngService rngService) {
         this.statisticsService = statisticsService;
         this.itemService = itemService;
+        this.rngService = rngService;
         damageEventComposite = new GunDamageEventComposite();
-        final BulletFactory bulletFactory = new BulletFactory(statisticsService, damageEventComposite);
+        final BulletFactory bulletFactory = new BulletFactory(statisticsService, damageEventComposite, rngService);
         final AudioService audioService = AudioService.getInstance();
         guns = List.of(
                 new Pistol(bulletFactory, audioService),
@@ -158,9 +160,9 @@ public class GunService {
         }
     }
     public Gun getUnusedRandomGun(){
-        Gun gun = guns.get(RANDOM.nextInt(guns.size()));
+        Gun gun = guns.get(rngService.nextInt(guns.size()));
         while(slots.containsGun(gun)){
-            gun = guns.get(RANDOM.nextInt(guns.size()));
+            gun = guns.get(rngService.nextInt(guns.size()));
         }
         gun.addPercentAmmo(100);
         return gun;
