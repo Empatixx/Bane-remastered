@@ -39,8 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class InGameState extends GameState {
     private final static Logger LOGGER = LoggerFactory.getLogger(InGameState.class);
@@ -170,11 +168,22 @@ public class InGameState extends GameState {
                 (float) dt
         );
 
-        return Stream.of(mapService.toRender(dt), objectShadows, shadowService.toRender((float) dt), List.of(player), gunService.toRender(dt), pauseService.toRender(dt),
-                        minimapService.toRender(dt), List.of(CursorService.getCursor()), deathService.toRender(), itemService.toRender(),
-                        mapLoaderService.toRender(), artefactsService.toRender(), coinState.getList(), petService.toRender())
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+        final List<Renderable> renderables = new ArrayList<>();
+        renderables.addAll(mapService.toRender(dt));
+        renderables.addAll(objectShadows);
+        renderables.addAll(shadowService.toRender((float) dt));
+        renderables.add(player);
+        renderables.addAll(gunService.toRender(dt));
+        renderables.addAll(pauseService.toRender(dt));
+        renderables.addAll(minimapService.toRender(dt));
+        renderables.add(CursorService.getCursor());
+        renderables.addAll(deathService.toRender());
+        renderables.addAll(itemService.toRender());
+        renderables.addAll(mapLoaderService.toRender());
+        renderables.addAll(artefactsService.toRender());
+        renderables.addAll(coinState.getList());
+        renderables.addAll(petService.toRender());
+        return renderables;
     }
 
 

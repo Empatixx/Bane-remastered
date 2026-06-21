@@ -12,11 +12,9 @@ import org.joml.Vector2f;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MapService {
     private final static Logger LOGGER = LoggerFactory.getLogger(MapService.class);
@@ -54,11 +52,13 @@ public class MapService {
         roomVisitorObserver.observe(currentRoom);
     }
     public List<Renderable> toRender(final double dt) {
-        final List<Renderable> renderables = Stream.of(pathRooms, rooms)
-                .flatMap(Collection::stream)
-                .map(Room::toRender)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+        final List<Renderable> renderables = new ArrayList<>();
+        for (final Room room : pathRooms) {
+            renderables.addAll(room.toRender());
+        }
+        for (final Room room : rooms) {
+            renderables.addAll(room.toRender());
+        }
         renderables.add(sceneBackground);
         return renderables;
     }

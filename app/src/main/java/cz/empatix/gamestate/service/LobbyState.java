@@ -26,9 +26,8 @@ import cz.empatix.tiles.domain.TileImpl;
 import org.joml.Vector3i;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class LobbyState extends GameState {
     private PauseService pauseService;
@@ -91,15 +90,15 @@ public class LobbyState extends GameState {
     public List<Renderable> toRender(double dt) {
         final RenderableState coinState = new RenderableState(8);
         coinService.collectSubRenderables(coinState);
-        final List<Renderable> renderables = Stream.of(mapService.toRender(dt),
-                        shadowService.toRender((float) dt),
-                        pauseService.toRender(dt),
-                        List.of(player, scientist),
-                        coinState.getList())
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
+        final List<Renderable> renderables = new ArrayList<>();
+        renderables.addAll(mapService.toRender(dt));
+        renderables.addAll(shadowService.toRender((float) dt));
+        renderables.addAll(pauseService.toRender(dt));
+        renderables.add(player);
+        renderables.add(scientist);
+        renderables.addAll(coinState.getList());
         renderables.add(CursorService.getCursor());
-        return List.copyOf(renderables);
+        return renderables;
     }
 
     @Override

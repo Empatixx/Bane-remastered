@@ -158,11 +158,10 @@ public class CommonRoom implements Room {
     public List<Renderable> toRender() {
         final Renderable tiles = (DrawableBatch) tileMap::toRender;
         final Renderable roomLocker = (DrawableBatch) this.roomLockService::toRender;
-        final List<Renderable> roomObjects = List.copyOf(roomObjectService.toRender());
 
         final List<Renderable> renderables = new ArrayList<>(enemyService.toRender());
         renderables.add(tiles);
-        renderables.addAll(roomObjects);
+        renderables.addAll(roomObjectService.toRender());
         renderables.add(roomLocker);
         return renderables;
     }
