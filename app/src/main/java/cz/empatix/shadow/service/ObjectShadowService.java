@@ -19,7 +19,16 @@ import java.util.List;
  */
 public class ObjectShadowService {
     private static final float MAX_SHADOW_DISTANCE = 400f;
+    private static final float MAX_SHADOW_DISTANCE_SQ = MAX_SHADOW_DISTANCE * MAX_SHADOW_DISTANCE;
+    /** A light closer than this (squared) sits on top of the caster: direction is undefined, so skip it. */
+    private static final float MIN_SHADOW_DISTANCE_SQ = 0.001f * 0.001f;
     private static final float SHADOW_LENGTH = 15f;
+    /** Quadratic distance falloff applied when ranking lights by apparent strength. */
+    private static final float DISTANCE_FALLOFF = 0.0001f;
+    /** Caster intensity is scaled by light intensity and this factor, then clamped to the band below. */
+    private static final float INTENSITY_SCALE = 0.2f;
+    private static final float MIN_SHADOW_INTENSITY = 0.02f;
+    private static final float MAX_SHADOW_INTENSITY = 0.10f;
 
     private final LightningService lightningService;
 
@@ -79,13 +88,14 @@ public class ObjectShadowService {
                 final float centerX = pos.x() + caster.getShadowWidth() / 2f;
                 final float centerY = pos.y() + caster.getShadowHeight() / 2f;
                 final Vector2f lightPos = light.getPosition();
-                final float dist = distance(centerX, centerY, lightPos.x(), lightPos.y());
+                final float distSq = distanceSquared(centerX, centerY, lightPos.x(), lightPos.y());
 
-                if (dist > MAX_SHADOW_DISTANCE) {
+                if (distSq > MAX_SHADOW_DISTANCE_SQ) {
                     continue;
                 }
 
-                final float strength = light.getIntensity() / (dist * dist * 0.0001f + 1f);
+                // strength only needs dist^2, so rank lights without a square root in this O(lights*casters) loop
+                final float strength = light.getIntensity() / (distSq * DISTANCE_FALLOFF + 1f);
                 if (strength > strongestStrength) {
                     strongestStrength = strength;
                     strongestLight = light;
@@ -119,24 +129,19 @@ public class ObjectShadowService {
 
         final float dirX = centerX - lightPos.x();
         final float dirY = centerY - lightPos.y();
-        final float len = (float) Math.sqrt(dirX * dirX + dirY * dirY);
+        final float distSq = dirX * dirX + dirY * dirY;
 
-        if (len < 0.001f) {
+        // Light on top of the caster (undefined direction) or out of range: no shadow.
+        if (distSq < MIN_SHADOW_DISTANCE_SQ || distSq > MAX_SHADOW_DISTANCE_SQ) {
             return null;
         }
 
-        final float nx = dirX / len;
-        final float ny = dirY / len;
-        final float angle = (float) Math.atan2(ny, nx) - (float) Math.PI / 2f;
+        // atan2 is scale-invariant, so feed it the raw direction (no normalization / sqrt needed).
+        final float angle = (float) Math.atan2(dirY, dirX) - (float) Math.PI / 2f;
 
-        // Compute intensity based on distance
-        final float dist = distance(centerX, centerY, lightPos.x(), lightPos.y());
-        if (dist > MAX_SHADOW_DISTANCE) {
-            return null;
-        }
-
-        final float distanceFactor = 1f - (dist / MAX_SHADOW_DISTANCE) * (dist / MAX_SHADOW_DISTANCE);
-        final float intensity = Math.max(0.02f, Math.min(0.10f, distanceFactor * light.getIntensity() * 0.2f));
+        final float distanceFactor = 1f - distSq / MAX_SHADOW_DISTANCE_SQ;
+        final float intensity = Math.max(MIN_SHADOW_INTENSITY,
+                Math.min(MAX_SHADOW_INTENSITY, distanceFactor * light.getIntensity() * INTENSITY_SCALE));
 
         // Compute rotated shadow vertices
         final float cos = (float) Math.cos(angle);
@@ -163,9 +168,9 @@ public class ObjectShadowService {
         return new ObjectShadow(caster, relativeVertices, casterData.textureId(), intensity);
     }
 
-    private float distance(final float x1, final float y1, final float x2, final float y2) {
+    private float distanceSquared(final float x1, final float y1, final float x2, final float y2) {
         final float dx = x2 - x1;
         final float dy = y2 - y1;
-        return (float) Math.sqrt(dx * dx + dy * dy);
+        return dx * dx + dy * dy;
     }
 }
