@@ -58,10 +58,10 @@ public class ItemFactory {
         shopDropSuppliers.put(ShopType.DEFENSIVE, List.of(recoverHealthLargeSupplier, recoverArmorLargeSupplier));
 
         shopDropSupplier = drop -> {
-            return new ShopItem(drop, coinService::hasEnoughCoins, coinService::removeCoins);
+            return new ShopItem(drop, coinService::hasEnoughCoins, coinService::removeCoins, rngService);
         };
         sacrificialItemSupplier = drop -> {
-            return new SacrificialItem(drop, player::hasEnoughHealth, player::removeHealth);
+            return new SacrificialItem(drop, player::hasEnoughHealth, player::removeHealth, rngService);
         };
     }
 

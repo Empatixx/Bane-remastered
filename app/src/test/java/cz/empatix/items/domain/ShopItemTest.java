@@ -1,5 +1,6 @@
 package cz.empatix.items.domain;
 
+import cz.empatix.common.RngService;
 import cz.empatix.testsupport.HeadlessAssets;
 import org.joml.Vector2f;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class ShopItemTest {
         when(hasEnough.test(anyInt())).thenReturn(true);
         final Consumer<Integer> removeCoins = mock(Consumer.class);
 
-        final ShopItem item = new ShopItem(drop, hasEnough, removeCoins);
+        final ShopItem item = new ShopItem(drop, hasEnough, removeCoins, new RngService(0L));
         item.setPrice(ShopType.AMMUNITION, 1); // deterministic-ish; price >= 1
         final Runnable onBuy = mock(Runnable.class);
         item.setOnBuy(onBuy);
@@ -62,7 +63,7 @@ class ShopItemTest {
         final Consumer<Integer> removeCoins = mock(Consumer.class);
         final Runnable onBuy = mock(Runnable.class);
 
-        final ShopItem item = new ShopItem(drop, hasEnough, removeCoins);
+        final ShopItem item = new ShopItem(drop, hasEnough, removeCoins, new RngService(0L));
         item.setPrice(ShopType.OFFENSIVE, 0);
         item.setOnBuy(onBuy);
 
@@ -81,7 +82,7 @@ class ShopItemTest {
         when(hasEnough.test(anyInt())).thenReturn(true);
         final Consumer<Integer> removeCoins = mock(Consumer.class);
 
-        final ShopItem item = new ShopItem(drop, hasEnough, removeCoins);
+        final ShopItem item = new ShopItem(drop, hasEnough, removeCoins, new RngService(0L));
         item.setPrice(ShopType.DEFENSIVE, 2);
 
         item.interact(Set.of(GLFW.GLFW_KEY_W));
@@ -98,7 +99,7 @@ class ShopItemTest {
         final Predicate<Integer> hasEnough = mock(Predicate.class);
         when(hasEnough.test(anyInt())).thenReturn(true);
 
-        final ShopItem item = new ShopItem(drop, hasEnough, c -> {});
+        final ShopItem item = new ShopItem(drop, hasEnough, c -> {}, new RngService(0L));
         item.setPrice(ShopType.AMMUNITION, 0);
 
         // Inner drop can be removed, but until bought the shop wrapper holds it.
@@ -115,7 +116,7 @@ class ShopItemTest {
 
         // Heavy discount floors the price at 1; the follow-up buy then removes exactly 1 coin.
         final java.util.concurrent.atomic.AtomicInteger removed = new java.util.concurrent.atomic.AtomicInteger();
-        final ShopItem item = new ShopItem(drop, i -> true, removed::set);
+        final ShopItem item = new ShopItem(drop, i -> true, removed::set, new RngService(0L));
         item.setPrice(ShopType.OFFENSIVE, 0); // some price in [1,4]*1*2
         item.discount(0.0);                   // price -> 0 -> clamped to 1
         item.interact(Set.of(GLFW.GLFW_KEY_E));

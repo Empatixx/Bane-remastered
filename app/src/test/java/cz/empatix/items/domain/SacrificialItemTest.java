@@ -1,5 +1,6 @@
 package cz.empatix.items.domain;
 
+import cz.empatix.common.RngService;
 import cz.empatix.testsupport.HeadlessAssets;
 import org.joml.Vector2f;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ class SacrificialItemTest {
         when(hasEnoughHealth.test(anyInt())).thenReturn(true);
         final Consumer<Integer> removeHealth = mock(Consumer.class);
 
-        final SacrificialItem item = new SacrificialItem(drop, hasEnoughHealth, removeHealth);
+        final SacrificialItem item = new SacrificialItem(drop, hasEnoughHealth, removeHealth, new RngService(0L));
         final Runnable onBuy = mock(Runnable.class);
         item.onBuy(onBuy);
 
@@ -62,7 +63,7 @@ class SacrificialItemTest {
         final Consumer<Integer> removeHealth = mock(Consumer.class);
         final Runnable onBuy = mock(Runnable.class);
 
-        final SacrificialItem item = new SacrificialItem(drop, hasEnoughHealth, removeHealth);
+        final SacrificialItem item = new SacrificialItem(drop, hasEnoughHealth, removeHealth, new RngService(0L));
         item.onBuy(onBuy);
 
         item.interact(Set.of(GLFW.GLFW_KEY_E));
@@ -78,7 +79,7 @@ class SacrificialItemTest {
         final ItemDrop drop = innerDrop();
         final Consumer<Integer> removeHealth = mock(Consumer.class);
 
-        final SacrificialItem item = new SacrificialItem(drop, i -> true, removeHealth);
+        final SacrificialItem item = new SacrificialItem(drop, i -> true, removeHealth, new RngService(0L));
 
         item.interact(Set.of(GLFW.GLFW_KEY_W));
 
@@ -91,7 +92,7 @@ class SacrificialItemTest {
         when(drop.canRemove()).thenReturn(true);
         when(drop.isPickedUp()).thenReturn(true);
 
-        final SacrificialItem item = new SacrificialItem(drop, i -> true, c -> {});
+        final SacrificialItem item = new SacrificialItem(drop, i -> true, c -> {}, new RngService(0L));
 
         assertTrue(item.canRemove());
         assertTrue(item.isPickedUp());

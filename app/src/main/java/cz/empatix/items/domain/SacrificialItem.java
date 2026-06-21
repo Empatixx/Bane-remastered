@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -33,7 +33,6 @@ public class SacrificialItem implements ItemDrop{
     private final static int ITEM_OFFSET = 15;
     private static final int INTERACTION_TEXT_OFFSET = 20;
     private final static Logger LOGGER = LoggerFactory.getLogger(ShopItem.class);
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final ItemDrop drop;
     private final Predicate<Integer> hasEnoughHealthPredicate;
     private final Consumer<Integer> removeHealthConsumer;
@@ -47,11 +46,12 @@ public class SacrificialItem implements ItemDrop{
 
     public SacrificialItem(final ItemDrop itemDrop,
                     final Predicate<Integer> hasEnoughHealthPredicate,
-                    final Consumer<Integer> removeHealthConsumer) {
+                    final Consumer<Integer> removeHealthConsumer,
+                    final RngService rng) {
         this.hasEnoughHealthPredicate = hasEnoughHealthPredicate;
         this.removeHealthConsumer = removeHealthConsumer;
         this.drop = itemDrop;
-        this.price = RANDOM.nextInt(1, MAX_HEALTH_PRICE + 1);
+        this.price = rng.nextInt(1, MAX_HEALTH_PRICE + 1);
         this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22);
         this.priceText.setColorRGB(212, 168, 8);
         this.priceText.setPosition(drop.getPosition().x() + drop.getWidth() / 2f - this.priceText.getWidth() / 2f,

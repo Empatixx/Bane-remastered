@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
+import cz.empatix.common.RngService;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -28,7 +28,7 @@ public class ShopItem implements ItemDrop {
     private final static int ITEM_OFFSET = 15;
     private static final int INTERACTION_TEXT_OFFSET = 20;
     private final static Logger LOGGER = LoggerFactory.getLogger(ShopItem.class);
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rng;
     private final ItemDrop drop;
     private final Predicate<Integer> hasEnoughCoinsPredicate;
     private final Consumer<Integer> removeCoinsConsumer;
@@ -43,9 +43,11 @@ public class ShopItem implements ItemDrop {
 
     public ShopItem(final ItemDrop itemDrop,
                     final Predicate<Integer> hasEnoughCoinsPredicate,
-                    final Consumer<Integer> removeCoinsConsumer) {
+                    final Consumer<Integer> removeCoinsConsumer,
+                    final RngService rng) {
         this.hasEnoughCoinsPredicate = hasEnoughCoinsPredicate;
         this.removeCoinsConsumer = removeCoinsConsumer;
+        this.rng = rng;
         this.drop = itemDrop;
         this.price = 0;
         this.priceText = new AlternativeViewText(String.valueOf(price), "PixelFJVerdana12pt.ttf", new Vector2f(), 2, FontSize.FONTSIZE_22);
@@ -212,7 +214,7 @@ public class ShopItem implements ItemDrop {
     }
 
     public void setPrice(final ShopType type, final int floor) {
-        final int price = (int)(RANDOM.nextInt(1, 5) * (floor + 1) * type.getMultiplier());
+        final int price = (int)(rng.nextInt(1, 5) * (floor + 1) * type.getMultiplier());
         this.price = price;
         this.priceText.setText(String.valueOf(price));
         this.priceText.setCenterX(priceText.getX() - priceText.getWidth() / 2f, priceText.getX() + priceText.getWidth() / 2f);
