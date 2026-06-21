@@ -1,5 +1,6 @@
 package cz.empatix.upgrades.appliers;
 
+import cz.empatix.common.RngService;
 import cz.empatix.map.service.MapService;
 import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.Player;
@@ -12,20 +13,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-
 public class MapUpgradesApplier implements UpgradesApplier {
     private static final Logger LOGGER = LoggerFactory.getLogger(MapUpgradesApplier.class);
-    private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final MapService mapService;
     private final Player player;
     private final ActiveUpgradeService activeUpgradeService;
+    private final RngService rng;
     public MapUpgradesApplier(final MapService mapService,
                               final Player player,
-                              final ActiveUpgradeService activeUpgradeService) {
+                              final ActiveUpgradeService activeUpgradeService,
+                              final RngService rng) {
         this.mapService = mapService;
         this.player = player;
         this.activeUpgradeService = activeUpgradeService;
+        this.rng = rng;
     }
 
     @Override
@@ -50,7 +51,7 @@ public class MapUpgradesApplier implements UpgradesApplier {
                     .flatMap(room -> room.getRoomObjects().stream())
                     .filter(object -> object instanceof Trap)
                     .map(object -> (Trap) object)
-                    .filter(trap -> RANDOM.nextInt(100) <= 30)
+                    .filter(trap -> rng.nextInt(100) <= 30)
                     .forEach(trap -> {
                         LOGGER.info("Deactivating trap {}", trap);
                         trap.deactivate();

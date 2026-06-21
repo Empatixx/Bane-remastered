@@ -1,6 +1,7 @@
 package cz.empatix.upgrades.appliers;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.RngService;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.map.service.MapService;
 import cz.empatix.player.ActiveUpgradeService;
@@ -52,7 +53,7 @@ class UpgradesApplicationServiceTest {
         final MapService mapService = mock(MapService.class);
 
         final UpgradesApplicationService service =
-                new UpgradesApplicationService(upgrades, player, gunService, mapService);
+                new UpgradesApplicationService(upgrades, player, gunService, mapService, new RngService(0L));
 
         assertDoesNotThrow(service::apply);
         // Every applier consults the upgrade service at least once.
@@ -70,7 +71,7 @@ class UpgradesApplicationServiceTest {
         when(upgrades.isBought(PlayerUpgradeName.IMPROVED_HEALTH)).thenReturn(true);  // player applier
         when(upgrades.isBought(PlayerUpgradeName.ADDITIONAL_GUN)).thenReturn(true);   // gun applier
 
-        new UpgradesApplicationService(upgrades, player, gunService, mapService).apply();
+        new UpgradesApplicationService(upgrades, player, gunService, mapService, new RngService(0L)).apply();
 
         verify(player).setMaxHealth(120); // (int)(100 * 1.2) from the player applier
         verify(gunService).addSlot();     // from the gun applier

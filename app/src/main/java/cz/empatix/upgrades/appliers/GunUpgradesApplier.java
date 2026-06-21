@@ -1,19 +1,20 @@
 package cz.empatix.upgrades.appliers;
 
+import cz.empatix.common.RngService;
 import cz.empatix.guns.service.GunService;
 import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.upgrades.domain.PlayerUpgradeName;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 public class GunUpgradesApplier implements UpgradesApplier{
     private final GunService gunService;
     private final ActiveUpgradeService activeUpgradeService;
-    private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rng;
     public GunUpgradesApplier(final GunService gunService,
-                              final ActiveUpgradeService activeUpgradeService) {
+                              final ActiveUpgradeService activeUpgradeService,
+                              final RngService rng) {
         this.gunService = gunService;
         this.activeUpgradeService = activeUpgradeService;
+        this.rng = rng;
     }
     @Override
     public void apply() {
@@ -25,7 +26,7 @@ public class GunUpgradesApplier implements UpgradesApplier{
         }
         if (activeUpgradeService.isBought(PlayerUpgradeName.CRITICAL_HIT)){
             gunService.addHook((damage) -> {
-                if (RANDOM.nextFloat() < 0.1) {
+                if (rng.nextFloat() < 0.1) {
                     return damage * 2;
                 }
                 return damage;

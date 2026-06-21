@@ -1,6 +1,7 @@
 package cz.empatix.upgrades.appliers;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.RngService;
 import cz.empatix.guns.domain.Gun;
 import cz.empatix.guns.service.GunDamageEventHook;
 import cz.empatix.guns.service.GunService;
@@ -55,7 +56,7 @@ class GunUpgradesApplierTest {
         final GunService gunService = mock(GunService.class);
         final ActiveUpgradeService upgrades = mock(ActiveUpgradeService.class);
 
-        new GunUpgradesApplier(gunService, upgrades).apply();
+        new GunUpgradesApplier(gunService, upgrades, new RngService(0L)).apply();
 
         verify(gunService, never()).addHook(any());
         verify(gunService, never()).addSlot();
@@ -67,7 +68,7 @@ class GunUpgradesApplierTest {
         final ActiveUpgradeService upgrades = mock(ActiveUpgradeService.class);
         when(upgrades.isBought(PlayerUpgradeName.IMPROVED_DAMAGE)).thenReturn(true);
 
-        new GunUpgradesApplier(gunService, upgrades).apply();
+        new GunUpgradesApplier(gunService, upgrades, new RngService(0L)).apply();
 
         final ArgumentCaptor<GunDamageEventHook> captor = ArgumentCaptor.forClass(GunDamageEventHook.class);
         verify(gunService).addHook(captor.capture());
@@ -80,7 +81,7 @@ class GunUpgradesApplierTest {
         final ActiveUpgradeService upgrades = mock(ActiveUpgradeService.class);
         when(upgrades.isBought(PlayerUpgradeName.ENHANCED_DAMAGE)).thenReturn(true);
 
-        new GunUpgradesApplier(gunService, upgrades).apply();
+        new GunUpgradesApplier(gunService, upgrades, new RngService(0L)).apply();
 
         final ArgumentCaptor<GunDamageEventHook> captor = ArgumentCaptor.forClass(GunDamageEventHook.class);
         verify(gunService).addHook(captor.capture());
@@ -93,7 +94,7 @@ class GunUpgradesApplierTest {
         final ActiveUpgradeService upgrades = mock(ActiveUpgradeService.class);
         when(upgrades.isBought(PlayerUpgradeName.CRITICAL_HIT)).thenReturn(true);
 
-        new GunUpgradesApplier(gunService, upgrades).apply();
+        new GunUpgradesApplier(gunService, upgrades, new RngService(0L)).apply();
 
         final ArgumentCaptor<GunDamageEventHook> captor = ArgumentCaptor.forClass(GunDamageEventHook.class);
         verify(gunService).addHook(captor.capture());
@@ -115,7 +116,7 @@ class GunUpgradesApplierTest {
         when(gun.getMaxAmmo()).thenReturn(50);
         when(gunService.getGuns()).thenReturn(List.of(gun));
 
-        new GunUpgradesApplier(gunService, upgrades).apply();
+        new GunUpgradesApplier(gunService, upgrades, new RngService(0L)).apply();
 
         verify(gun).setMaxAmmo(55); // (int)(50 * 1.1)
     }
@@ -126,7 +127,7 @@ class GunUpgradesApplierTest {
         final ActiveUpgradeService upgrades = mock(ActiveUpgradeService.class);
         when(upgrades.isBought(PlayerUpgradeName.ADDITIONAL_GUN)).thenReturn(true);
 
-        new GunUpgradesApplier(gunService, upgrades).apply();
+        new GunUpgradesApplier(gunService, upgrades, new RngService(0L)).apply();
 
         verify(gunService).addSlot();
     }

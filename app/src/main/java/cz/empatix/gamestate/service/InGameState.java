@@ -107,7 +107,7 @@ public class InGameState extends GameState {
         shadowService = new ShadowService(player);
         objectShadowService = new ObjectShadowService();
 
-        final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService, mapService);
+        final UpgradesApplicationService upgradesApplicationService = new UpgradesApplicationService(activeUpgradeService, player, gunService, mapService, rngService);
         upgradesApplicationService.apply();
 
         AudioService.getInstance().play(Soundtrack.INGAME);

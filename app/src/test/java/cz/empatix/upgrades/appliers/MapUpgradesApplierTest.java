@@ -1,5 +1,6 @@
 package cz.empatix.upgrades.appliers;
 
+import cz.empatix.common.RngService;
 import cz.empatix.map.service.MapService;
 import cz.empatix.player.ActiveUpgradeService;
 import cz.empatix.player.Player;
@@ -47,7 +48,7 @@ class MapUpgradesApplierTest {
         final Player player = mock(Player.class);
         final ActiveUpgradeService upgrades = mock(ActiveUpgradeService.class);
 
-        new MapUpgradesApplier(mapService, player, upgrades).apply();
+        new MapUpgradesApplier(mapService, player, upgrades, new RngService(0L)).apply();
 
         verify(mapService, never()).onRoomEventChange(any());
         verify(player, never()).addArmor(org.mockito.ArgumentMatchers.anyInt());
@@ -66,7 +67,7 @@ class MapUpgradesApplierTest {
         when(normal.getRoomType()).thenReturn(RoomType.NORMAL);
         when(mapService.getRooms()).thenReturn(List.of(normal, shop));
 
-        new MapUpgradesApplier(mapService, player, upgrades).apply();
+        new MapUpgradesApplier(mapService, player, upgrades, new RngService(0L)).apply();
 
         verify(shop).applyDiscounts();
     }
@@ -78,7 +79,7 @@ class MapUpgradesApplierTest {
         final ActiveUpgradeService upgrades = mock(ActiveUpgradeService.class);
         when(upgrades.isBought(PlayerUpgradeName.ARMOR_REGENERATION)).thenReturn(true);
 
-        new MapUpgradesApplier(mapService, player, upgrades).apply();
+        new MapUpgradesApplier(mapService, player, upgrades, new RngService(0L)).apply();
 
         @SuppressWarnings("unchecked")
         final ArgumentCaptor<Consumer<RoomEvent>> captor =
@@ -111,7 +112,7 @@ class MapUpgradesApplierTest {
         when(room.getRoomObjects()).thenReturn(List.of(trap, notTrap));
         when(mapService.getRooms()).thenReturn(List.of(room));
 
-        new MapUpgradesApplier(mapService, player, upgrades).apply();
+        new MapUpgradesApplier(mapService, player, upgrades, new RngService(0L)).apply();
 
         // Randomised 30% gate: the trap is deactivated either 0 or 1 times.
         verify((Trap) trap, atMost(1)).deactivate();
