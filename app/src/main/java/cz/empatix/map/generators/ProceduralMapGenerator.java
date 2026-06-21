@@ -15,13 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ProceduralMapGenerator {
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
     private final static float ROOMS_DENSITY = 0.15f;
     private final static Logger LOGGER = LoggerFactory.getLogger(ProceduralMapGenerator.class);
     private final static int TOTAL_NORMAL_ROOMS = 5;
@@ -58,7 +56,7 @@ public class ProceduralMapGenerator {
                 .limit(TOTAL_LOOT_ROOMS)
                 .toList();
         final List<SacrificeRoomGenInfo> sacrificeRooms = Stream.generate(() -> new SacrificeRoomGenInfo(itemService, statisticsService))
-                .limit(RANDOM.nextInt(0, TOTAL_BONUS_ROOMS + 1))
+                .limit(rngService.nextInt(0, TOTAL_BONUS_ROOMS + 1))
                 .toList();
 
         if (!sacrificeRooms.isEmpty()) {
@@ -72,7 +70,7 @@ public class ProceduralMapGenerator {
         treasureRooms.forEach(RoomGenInfo::initDimensions);
         sacrificeRooms.forEach(RoomGenInfo::initDimensions);
 
-        setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms, sacrificeRooms);
+        setNeighboursForRooms(startRoomGenInfo, normalRooms, shopRooms, bossRooms, treasureRooms, sacrificeRooms, rngService);
 
         final List<PathRoomGenInfo> pathsRoom = generatePaths(startRoomGenInfo);
         pathsRoom.forEach(RoomGenInfo::initDimensions);
@@ -154,7 +152,8 @@ public class ProceduralMapGenerator {
                                        final List<ShopRoomGenInfo> shopRooms,
                                        final List<BossRoomGenInfo> bossRooms,
                                        final List<TreasureRoomGenInfo> treasureRooms,
-                                       final List<SacrificeRoomGenInfo> sacrificeRooms) {
+                                       final List<SacrificeRoomGenInfo> sacrificeRooms,
+                                       final RngService rngService) {
         final int totalBonusRooms = sacrificeRooms.size();
 
         final List<RoomGenInfo> usedRooms = new ArrayList<>(TOTAL_ROOMS + totalBonusRooms);
@@ -168,13 +167,11 @@ public class ProceduralMapGenerator {
 
         usedRooms.add(startRoomGenInfo);
 
-        final ThreadLocalRandom random = ThreadLocalRandom.current();
-
         do {
             usedRooms
                     .stream()
                     .filter(RoomGenInfo::canCreateNeighbours)
-                    .min(Comparator.comparingDouble(room -> random.nextFloat() + ROOMS_DENSITY * room.getNeighbours().size()))
+                    .min(Comparator.comparingDouble(room -> rngService.nextFloat() + ROOMS_DENSITY * room.getNeighbours().size()))
                     .ifPresentOrElse(room -> {
                         final RoomGenInfo neighbour = availableRooms.peek();
                         if (room.getRoomType() == RoomType.START && neighbour.getRoomType() != RoomType.NORMAL){
@@ -182,7 +179,7 @@ public class ProceduralMapGenerator {
                         }
                         final List<RoomDirection> availableDirections = room.getAvailableDirections();
                         while (!availableDirections.isEmpty()) {
-                            final RoomDirection direction = availableDirections.get(random.nextInt(availableDirections.size()));
+                            final RoomDirection direction = availableDirections.get(rngService.nextInt(availableDirections.size()));
 
                             setOrientationAround(room, neighbour, direction);
 
