@@ -1,5 +1,6 @@
 package cz.empatix.tiles.tilemaps;
 
+import cz.empatix.common.RngService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
@@ -26,10 +27,11 @@ public class ProceduralCarpetTileMap implements TileMap {
         this.xOffset = xOffset;
         this.yOffset = yOffset;
 
-        final CarpetTileFactory tileFactory = new CarpetTileFactory();
+        final long tileSeed = RngService.seedForCoordinate(xOffset, yOffset);
+        final CarpetTileFactory tileFactory = new CarpetTileFactory(new RngService(tileSeed));
 
         final boolean[][] map = new boolean[rows][cols];
-        applyPerlinNoiseToMap(map, 0.05, 0.5, 1);
+        applyPerlinNoiseToMap(map, 0.05, 0.5, 1, tileSeed);
         postProcessMap(map);
         final Tile[][] carpetTiles = tileFactory.createTileMap(map, xOffset, yOffset);
         tiles = carpetTiles;
@@ -41,8 +43,8 @@ public class ProceduralCarpetTileMap implements TileMap {
 
     }
 
-    private void applyPerlinNoiseToMap(boolean[][] map, final double scale, final double lowerThreshold, final double upperThreshold) {
-        final PerlinNoiseGenerator perlinNoiseGenerator = new PerlinNoiseGenerator(System.currentTimeMillis());
+    private void applyPerlinNoiseToMap(boolean[][] map, final double scale, final double lowerThreshold, final double upperThreshold, final long seed) {
+        final PerlinNoiseGenerator perlinNoiseGenerator = new PerlinNoiseGenerator(seed);
 
         for (int y = 0; y < map.length; y++) {
             for (int x = 0; x < map[0].length; x++) {

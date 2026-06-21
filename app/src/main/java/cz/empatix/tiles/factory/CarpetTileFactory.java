@@ -9,15 +9,15 @@ import cz.empatix.tiles.domain.Tile;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 
 public class CarpetTileFactory {
-    private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final cz.empatix.common.RngService rng;
     private final Map<TileOrientation, List<Integer>> tileNumbers;
     private static final String TEXTURE_NAME = "ingame/carpet_tilemap.tga";
 
-    public CarpetTileFactory() {
+    public CarpetTileFactory(final cz.empatix.common.RngService rng) {
+        this.rng = rng;
         tileNumbers = new EnumMap<TileOrientation, List<Integer>>(TileOrientation.class);
         tileNumbers.put(TileOrientation.TOP_LEFT_OUTER_CORNER, List.of(0));
         tileNumbers.put(TileOrientation.TOP, List.of(1, 2));
@@ -109,7 +109,7 @@ public class CarpetTileFactory {
                                   final int xOffset,
                                   final int yOffset) {
         final TextureAtlas.Entry texture = AssetsService.getTexture(TEXTURE_NAME);
-        final int tileNumber = tileNumbers.get(RANDOM.nextInt(tileNumbers.size()));
+        final int tileNumber = tileNumbers.get(rng.nextInt(tileNumbers.size()));
         return CarpetTile.from(tileNumber, x, y, xOffset, yOffset, texture);
     }
 }

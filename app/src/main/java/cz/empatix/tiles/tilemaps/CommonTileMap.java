@@ -1,5 +1,6 @@
 package cz.empatix.tiles.tilemaps;
 
+import cz.empatix.common.RngService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
@@ -34,8 +35,9 @@ public class CommonTileMap implements TileMap {
 
     private Tile[][] createTiles(final int rows, final int cols, final int xOffset, final int yOffset,
                                      final Set<RoomDirection> directions) {
-        final TileFactory tileFactory = new TileFactory();
-        final boolean[][] map = BooleanMapUtil.createMap(rows, cols, MODIFIERS);
+        final RngService tileRng = new RngService(RngService.seedForCoordinate(xOffset, yOffset));
+        final TileFactory tileFactory = new TileFactory(tileRng);
+        final boolean[][] map = BooleanMapUtil.createMap(rows, cols, MODIFIERS, tileRng);
         BooleanMapUtil.setPaths(map, directions);
         return tileFactory.createTilemapFromClamp(BooleanMapUtil.edgeClamp(map), xOffset, yOffset);
     }

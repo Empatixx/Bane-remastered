@@ -1,15 +1,18 @@
 package cz.empatix.tiles.factory;
 
 import cz.empatix.assets.service.AssetsService;
+import cz.empatix.common.RngService;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.domain.TileImpl;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 public class TileFactory {
     private final static String TEXTURE_NAME = "ingame/tileset_2.png";
-    private final static ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
+    private final RngService rng;
+
+    public TileFactory(final RngService rng) {
+        this.rng = rng;
+    }
     private static final int[] TOP_WALL = {22, 23, 24, 25, 22, 23, 24, 25, 36, 37};
     private static final int[] BOTTOM_WALL = {30, 31};
     private static final int[] LEFT_WALL = {27, 39};
@@ -112,49 +115,49 @@ public class TileFactory {
                                 final int xOffset,
                                 final int yOffset) {
         if (current && top && bottom && right && left && topLeft && topRight && bottomLeft && bottomRight) {
-            return createTile(WALL[RANDOM.nextInt(WALL.length)], x, y, xOffset, yOffset);
+            return createTile(WALL[rng.nextInt(WALL.length)], x, y, xOffset, yOffset);
         } else if (current && top && bottom && right && !left) {
-            return createTile(RIGHT_WALL[RANDOM.nextInt(RIGHT_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(RIGHT_WALL[rng.nextInt(RIGHT_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && top && bottom && left && !right) {
-            return createTile(LEFT_WALL[RANDOM.nextInt(LEFT_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(LEFT_WALL[rng.nextInt(LEFT_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && top && right && left && !bottom) {
-            return createTile(TOP_WALL[RANDOM.nextInt(TOP_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(TOP_WALL[rng.nextInt(TOP_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && bottom && right && left && !top) {
-            return createTile(BOTTOM_WALL[RANDOM.nextInt(BOTTOM_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(BOTTOM_WALL[rng.nextInt(BOTTOM_WALL.length)], x, y, xOffset, yOffset);
         } else if (current && bottom && left && !bottomLeft) {
-            return createTile(TOP_RIGHT_INNER_CORNER[RANDOM.nextInt(TOP_RIGHT_INNER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(TOP_RIGHT_INNER_CORNER[rng.nextInt(TOP_RIGHT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && bottom && right && !bottomRight) {
-            return createTile(TOP_LEFT_INNER_CORNER[RANDOM.nextInt(TOP_LEFT_INNER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(TOP_LEFT_INNER_CORNER[rng.nextInt(TOP_LEFT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && left && !topLeft) {
-            return createTile(BOTTOM_RIGHT_INNER_CORNER[RANDOM.nextInt(BOTTOM_RIGHT_INNER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(BOTTOM_RIGHT_INNER_CORNER[rng.nextInt(BOTTOM_RIGHT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && right && !topRight) {
-            return createTile(BOTTOM_LEFT_INNER_CORNER[RANDOM.nextInt(BOTTOM_LEFT_INNER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(BOTTOM_LEFT_INNER_CORNER[rng.nextInt(BOTTOM_LEFT_INNER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && !top && !left && right && bottom) {
-            return createTile(TOP_LEFT_OUTER_CORNER[RANDOM.nextInt(TOP_LEFT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(TOP_LEFT_OUTER_CORNER[rng.nextInt(TOP_LEFT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && !top && left && !right && bottom) {
-            return createTile(TOP_RIGHT_OUTER_CORNER[RANDOM.nextInt(TOP_RIGHT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(TOP_RIGHT_OUTER_CORNER[rng.nextInt(TOP_RIGHT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && !left && right && !bottom) {
-            return createTile(BOTTOM_LEFT_OUTER_CORNER[RANDOM.nextInt(BOTTOM_LEFT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(BOTTOM_LEFT_OUTER_CORNER[rng.nextInt(BOTTOM_LEFT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (current && top && left && !right && !bottom) {
-            return createTile(BOTTOM_RIGHT_OUTER_CORNER[RANDOM.nextInt(BOTTOM_RIGHT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(BOTTOM_RIGHT_OUTER_CORNER[rng.nextInt(BOTTOM_RIGHT_OUTER_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && top && right) {
-            return createTile(FLOOR_NEAR_RIGHT_TOP_CORNER[RANDOM.nextInt(FLOOR_NEAR_RIGHT_TOP_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_RIGHT_TOP_CORNER[rng.nextInt(FLOOR_NEAR_RIGHT_TOP_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && top && left) {
-            return createTile(FLOOR_NEAR_LEFT_TOP_CORNER[RANDOM.nextInt(FLOOR_NEAR_LEFT_TOP_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_LEFT_TOP_CORNER[rng.nextInt(FLOOR_NEAR_LEFT_TOP_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && bottom && right) {
-            return createTile(FLOOR_NEAR_RIGHT_BOTTOM_CORNER[RANDOM.nextInt(FLOOR_NEAR_RIGHT_BOTTOM_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_RIGHT_BOTTOM_CORNER[rng.nextInt(FLOOR_NEAR_RIGHT_BOTTOM_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && bottom && left) {
-            return createTile(FLOOR_NEAR_LEFT_BOTTOM_CORNER[RANDOM.nextInt(FLOOR_NEAR_LEFT_BOTTOM_CORNER.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_LEFT_BOTTOM_CORNER[rng.nextInt(FLOOR_NEAR_LEFT_BOTTOM_CORNER.length)], x, y, xOffset, yOffset);
         } else if (!current && bottom) {
-            return createTile(FLOOR_NEAR_BOTTOM_WALL[RANDOM.nextInt(FLOOR_NEAR_BOTTOM_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_BOTTOM_WALL[rng.nextInt(FLOOR_NEAR_BOTTOM_WALL.length)], x, y, xOffset, yOffset);
         } else if (!current && top) {
-            return createTile(FLOOR_NEAR_TOP_WALL[RANDOM.nextInt(FLOOR_NEAR_TOP_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_TOP_WALL[rng.nextInt(FLOOR_NEAR_TOP_WALL.length)], x, y, xOffset, yOffset);
         } else if (!current && left) {
-            return createTile(FLOOR_NEAR_LEFT_WALL[RANDOM.nextInt(FLOOR_NEAR_LEFT_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_LEFT_WALL[rng.nextInt(FLOOR_NEAR_LEFT_WALL.length)], x, y, xOffset, yOffset);
         } else if (!current && right) {
-            return createTile(FLOOR_NEAR_RIGHT_WALL[RANDOM.nextInt(FLOOR_NEAR_RIGHT_WALL.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR_NEAR_RIGHT_WALL[rng.nextInt(FLOOR_NEAR_RIGHT_WALL.length)], x, y, xOffset, yOffset);
         } else {
-            return createTile(FLOOR[RANDOM.nextInt(FLOOR.length)], x, y, xOffset, yOffset);
+            return createTile(FLOOR[rng.nextInt(FLOOR.length)], x, y, xOffset, yOffset);
         }
     }
 

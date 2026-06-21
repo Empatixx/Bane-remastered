@@ -1,5 +1,6 @@
 package cz.empatix.tiles.factory;
 
+import cz.empatix.common.RngService;
 import cz.empatix.testsupport.HeadlessAssets;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.domain.TileImpl;
@@ -25,7 +26,7 @@ class TileFactoryTest {
     void createTileMapKeepsTheInputGridDimensions() {
         final boolean[][] map = new boolean[4][5];
 
-        final Tile[][] tiles = new TileFactory().createTileMap(map, 0, 0);
+        final Tile[][] tiles = new TileFactory(new RngService(0L)).createTileMap(map, 0, 0);
 
         assertEquals(4, tiles.length);
         assertEquals(5, tiles[0].length);
@@ -36,7 +37,7 @@ class TileFactoryTest {
         // A 6x6 clamped map yields a 4x4 tile grid (border ring stripped).
         final boolean[][] clamped = new boolean[6][6];
 
-        final Tile[][] tiles = new TileFactory().createTilemapFromClamp(clamped, 0, 0);
+        final Tile[][] tiles = new TileFactory(new RngService(0L)).createTilemapFromClamp(clamped, 0, 0);
 
         assertEquals(4, tiles.length);
         assertEquals(4, tiles[0].length);
@@ -46,7 +47,7 @@ class TileFactoryTest {
     void allFalseMapProducesFloorTilesWithoutCollisionBodies() {
         final boolean[][] map = new boolean[3][3]; // every cell open -> all floor
 
-        final Tile[][] tiles = new TileFactory().createTileMap(map, 0, 0);
+        final Tile[][] tiles = new TileFactory(new RngService(0L)).createTileMap(map, 0, 0);
 
         for (final Tile[] row : tiles) {
             for (final Tile tile : row) {
@@ -64,7 +65,7 @@ class TileFactoryTest {
                 {true, true, true}
         };
 
-        final Tile[][] tiles = new TileFactory().createTileMap(map, 0, 0);
+        final Tile[][] tiles = new TileFactory(new RngService(0L)).createTileMap(map, 0, 0);
 
         assertNotNull(((TileImpl) tiles[1][1]).collision(),
                 "an enclosed wall tile must be solid");
@@ -74,7 +75,7 @@ class TileFactoryTest {
     void tileWorldPositionAccountsForOffsetAndGridIndex() {
         final boolean[][] map = new boolean[2][2];
 
-        final Tile[][] tiles = new TileFactory().createTileMap(map, 64, 128);
+        final Tile[][] tiles = new TileFactory(new RngService(0L)).createTileMap(map, 64, 128);
 
         final TileImpl corner = (TileImpl) tiles[1][1]; // grid x=1, y=1
         assertEquals(64 + SCALED, corner.position().x, 0.0001f);

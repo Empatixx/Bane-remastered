@@ -1,8 +1,10 @@
 package cz.empatix.tiles.tilemaps;
 
+import cz.empatix.common.RngService;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.domain.TileImpl;
+import cz.empatix.tiles.factory.TileFactory;
 import cz.empatix.tiles.service.BooleanMapUtil;
 
 import java.util.Arrays;
@@ -43,6 +45,7 @@ public class PathTileMap implements TileMap{
                 map[i][cols - 1] = true;
             }
         }
+        final TileFactory tileFactory = new TileFactory(new RngService(RngService.seedForCoordinate(xOffset, yOffset)));
         tiles = tileFactory.createTilemapFromClamp(BooleanMapUtil.edgeClamp(map), xOffset, yOffset);
     }
 

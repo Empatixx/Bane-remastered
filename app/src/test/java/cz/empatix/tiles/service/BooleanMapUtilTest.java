@@ -1,5 +1,6 @@
 package cz.empatix.tiles.service;
 
+import cz.empatix.common.RngService;
 import cz.empatix.map.domain.RoomDirection;
 import org.junit.jupiter.api.Test;
 
@@ -76,7 +77,7 @@ class BooleanMapUtilTest {
 
     @Test
     void createMapWithNoModifiersReturnsEmptyMap() {
-        final boolean[][] map = BooleanMapUtil.createMap(6, 6, List.of());
+        final boolean[][] map = BooleanMapUtil.createMap(6, 6, List.of(), new RngService(0L));
 
         // Same shape and border as createEmptyMap.
         final boolean[][] expected = BooleanMapUtil.createEmptyMap(6, 6);
@@ -91,7 +92,7 @@ class BooleanMapUtilTest {
     void createMapAppliesAlwaysOnModifier() {
         // EdgeClampBooleanModifier has chance()==1f so it always applies, growing the map.
         final boolean[][] map = BooleanMapUtil.createMap(6, 6,
-                List.of(new EdgeClampBooleanModifier()));
+                List.of(new EdgeClampBooleanModifier()), new RngService(0L));
 
         assertEquals(8, map.length);
         assertEquals(8, map[0].length);

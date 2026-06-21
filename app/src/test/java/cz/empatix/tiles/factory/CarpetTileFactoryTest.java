@@ -1,5 +1,6 @@
 package cz.empatix.tiles.factory;
 
+import cz.empatix.common.RngService;
 import cz.empatix.testsupport.HeadlessAssets;
 import cz.empatix.tiles.domain.CarpetTile;
 import cz.empatix.tiles.domain.EmptyTile;
@@ -21,7 +22,7 @@ class CarpetTileFactoryTest {
     void emptyMapProducesOnlyEmptyTilesAndKeepsDimensions() {
         final boolean[][] map = new boolean[3][4]; // all false -> no carpet anywhere
 
-        final Tile[][] tiles = new CarpetTileFactory().createTileMap(map, 0, 0);
+        final Tile[][] tiles = new CarpetTileFactory(new RngService(0L)).createTileMap(map, 0, 0);
 
         assertEquals(3, tiles.length);
         assertEquals(4, tiles[0].length);
@@ -40,7 +41,7 @@ class CarpetTileFactoryTest {
                 {true, true, true}
         };
 
-        final Tile[][] tiles = new CarpetTileFactory().createTileMap(map, 0, 0);
+        final Tile[][] tiles = new CarpetTileFactory(new RngService(0L)).createTileMap(map, 0, 0);
 
         // Centre cell is surrounded on all sides/corners -> a solid CENTER carpet piece.
         assertInstanceOf(CarpetTile.class, tiles[1][1]);
@@ -55,7 +56,7 @@ class CarpetTileFactoryTest {
                 {true, true}
         };
 
-        final Tile[][] tiles = new CarpetTileFactory().createTileMap(map, 0, 0);
+        final Tile[][] tiles = new CarpetTileFactory(new RngService(0L)).createTileMap(map, 0, 0);
 
         assertInstanceOf(CarpetTile.class, tiles[0][0]);
         assertInstanceOf(CarpetTile.class, tiles[1][1]);

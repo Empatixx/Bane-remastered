@@ -1,5 +1,6 @@
 package cz.empatix.tiles.tilemaps;
 
+import cz.empatix.common.RngService;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.Tile;
 import cz.empatix.tiles.domain.TileImpl;
@@ -18,7 +19,7 @@ public class LobbyTileMap implements TileMap {
     }
 
     private Tile[][] createTiles() {
-        final TileFactory tileFactory = new TileFactory();
+        final TileFactory tileFactory = new TileFactory(new RngService(RngService.seedForCoordinate(0, 0)));
         final boolean[][] map = BooleanMapUtil.createEmptyMap(ROWS, COLS);
         for(int i = 11; i < 13; i++){
             map[1][i] = true;

@@ -1,5 +1,6 @@
 package cz.empatix.tiles.tilemaps;
 
+import cz.empatix.common.RngService;
 import cz.empatix.map.domain.RoomDirection;
 import cz.empatix.render.attributes.Drawable;
 import cz.empatix.tiles.domain.CarpetTile;
@@ -27,7 +28,7 @@ public class TreasureCarpetTileMap implements TileMap {
         this.xOffset = xOffset;
         this.yOffset = yOffset;
 
-        final CarpetTileFactory tileFactory = new CarpetTileFactory();
+        final CarpetTileFactory tileFactory = new CarpetTileFactory(new RngService(RngService.seedForCoordinate(xOffset, yOffset)));
 
         final boolean[][] map = new boolean[rows][cols];
         for (int y = 5; y < rows - 5; y++) {

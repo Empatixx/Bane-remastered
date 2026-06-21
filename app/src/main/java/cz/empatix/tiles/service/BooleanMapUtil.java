@@ -29,10 +29,10 @@ public class BooleanMapUtil {
         return expanded;
     }
 
-    public static boolean[][] createMap(final int rows, final int cols, final List<BooleanMapModifier> modifiers){
+    public static boolean[][] createMap(final int rows, final int cols, final List<BooleanMapModifier> modifiers, final cz.empatix.common.RngService rng){
         boolean[][] map = createEmptyMap(rows, cols);
         for(BooleanMapModifier modifier : modifiers){
-            if(Math.random() < modifier.chance()){
+            if(rng.nextDouble() < modifier.chance()){
                 map = modifier.modify(map);
             }
         }

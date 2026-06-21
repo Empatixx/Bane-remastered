@@ -27,6 +27,16 @@ public class RngService {
         return seed;
     }
 
+    /**
+     * A deterministic seed derived from a 2D coordinate (e.g. a room's tile offset). Because room
+     * offsets are themselves produced by the seeded map generator, the same run seed yields the same
+     * offsets and therefore the same coordinate-seeded sub-generators — useful for self-contained
+     * generators (tile maps) that should be reproducible without threading the per-run instance.
+     */
+    public static long seedForCoordinate(final int x, final int y) {
+        return ((long) x * 73856093L) ^ ((long) y * 19349663L);
+    }
+
     /** A value in {@code [0, bound)}. */
     public int nextInt(final int bound) {
         return random.nextInt(bound);
