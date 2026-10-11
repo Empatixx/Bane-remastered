@@ -11,13 +11,6 @@ pub(crate) fn overlaps(a_center: Vec2, a_size: Vec2, b_center: Vec2, b_size: Vec
         .all()
 }
 
-pub(crate) fn collides(a_center: Vec2, a_size: Vec2, b_center: Vec2, b_size: Vec2) -> bool {
-    (a_center - b_center)
-        .abs()
-        .cmplt((a_size + b_size) / 2.0)
-        .all()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -35,12 +28,5 @@ mod tests {
         let size = Vec2::new(10.0, 10.0);
         assert!(overlaps(Vec2::ZERO, size, Vec2::new(9.0, 9.0), size));
         assert!(!overlaps(Vec2::ZERO, size, Vec2::new(11.0, 0.0), size));
-    }
-
-    #[test]
-    fn touching_rectangles_do_not_collide() {
-        let size = Vec2::new(10.0, 10.0);
-        assert!(collides(Vec2::ZERO, size, Vec2::new(9.0, 0.0), size));
-        assert!(!collides(Vec2::ZERO, size, Vec2::new(10.0, 0.0), size));
     }
 }

@@ -4,6 +4,7 @@ mod components;
 mod game;
 mod geometry;
 mod input;
+mod physics;
 mod prefabs;
 mod render;
 mod scenes;

@@ -2,21 +2,27 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size, Solid, Sprite, Text,
-    UiAction, Velocity,
+    Animation, Bullet, Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size,
+    Sprite, Text, UiAction, Velocity, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
 };
+use crate::physics::Physics;
 use crate::render::TextureId;
 use crate::tilemap::{self, TileGrid, Tileset};
 
-pub(crate) fn player(world: &mut World, position: Vec2) -> Entity {
-    world.spawn((
+pub(crate) fn player(world: &mut World, physics: &mut Physics, position: Vec2) -> Entity {
+    let size = Vec2::new(32.0, 32.0);
+    let entity = world.spawn((
         Player,
         Position(position),
         Velocity::default(),
-        Size(Vec2::new(32.0, 32.0)),
+        Weapon::pistol(),
+        Size(size),
         Color(Vec4::new(0.95, 0.85, 0.2, 1.0)),
         Layer(1),
-    ))
+    ));
+    let body = physics.add_player(entity, position, size);
+    let _ = world.insert_one(entity, body);
+    entity
 }
 
 pub(crate) fn block(world: &mut World, position: Vec2, size: Vec2, color: Vec4) -> Entity {
@@ -92,12 +98,18 @@ fn label_at(world: &mut World, position: Vec2, content: &str, layer: Layer) -> E
     ))
 }
 
-pub(crate) fn tilemap(world: &mut World, grid: &TileGrid, tileset: &Tileset, texture: TextureId) {
+pub(crate) fn tilemap(
+    world: &mut World,
+    grid: &TileGrid,
+    tileset: &Tileset,
+    texture: TextureId,
+) -> Vec<(usize, usize)> {
+    let mut solid_cells = Vec::new();
     for row in 0..grid.rows() {
         for column in 0..grid.columns() {
             let number = tileset.tile_number(grid, column, row);
             let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
-            let entity = world.spawn((
+            world.spawn((
                 Position(center),
                 Size(Vec2::splat(tilemap::TILE_SIZE)),
                 Color(Vec4::ONE),
@@ -111,8 +123,32 @@ pub(crate) fn tilemap(world: &mut World, grid: &TileGrid, tileset: &Tileset, tex
                 Layer(-2),
             ));
             if tileset.is_solid(number) {
-                let _ = world.insert_one(entity, Solid);
+                solid_cells.push((column, row));
             }
         }
     }
+    solid_cells
+}
+
+pub(crate) fn bullet(
+    world: &mut World,
+    physics: &mut Physics,
+    position: Vec2,
+    velocity: Vec2,
+    texture: TextureId,
+) -> Entity {
+    let size = Vec2::splat(16.0);
+    let entity = world.spawn((
+        Bullet,
+        Position(position),
+        Velocity(velocity),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(texture, 0, BULLET_FLIGHT.row, BULLET_COLUMNS, BULLET_ROWS),
+        Animation::new(BULLET_COLUMNS, BULLET_ROWS, BULLET_FLIGHT),
+        Layer(2),
+    ));
+    let body = physics.add_bullet(entity, position, velocity, size);
+    let _ = world.insert_one(entity, body);
+    entity
 }

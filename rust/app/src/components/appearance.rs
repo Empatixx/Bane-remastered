@@ -26,16 +26,20 @@ impl Sprite {
         columns: usize,
         rows: usize,
     ) -> Self {
-        let (columns, rows) = (columns as f32, rows as f32);
         Self {
             texture,
-            uv: [
-                column as f32 / columns,
-                row as f32 / rows,
-                (column + 1) as f32 / columns,
-                (row + 1) as f32 / rows,
-            ],
+            uv: Self::cell_uv(column, row, columns, rows),
         }
+    }
+
+    pub(crate) fn cell_uv(column: usize, row: usize, columns: usize, rows: usize) -> [f32; 4] {
+        let (columns, rows) = (columns as f32, rows as f32);
+        [
+            column as f32 / columns,
+            row as f32 / rows,
+            (column + 1) as f32 / columns,
+            (row + 1) as f32 / rows,
+        ]
     }
 }
 
