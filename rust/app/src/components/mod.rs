@@ -6,6 +6,7 @@ mod effects;
 mod hud;
 mod interaction;
 mod lighting;
+mod minimap;
 mod motion;
 mod settings_ui;
 mod shadow;
@@ -24,6 +25,7 @@ pub(crate) use effects::{GazeWind, LightFade, Particle, RoomId, ThenPlay};
 pub(crate) use hud::{AmmoPip, AmmoText, BarKind, CoinText, StatusBar, PIP_EMPTY, PIP_FULL};
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use lighting::{Light, Lit};
+pub(crate) use minimap::{BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
 pub(crate) use settings_ui::{
     Checkbox, Hidden, ResolutionText, SettingsTabKind, SettingsUi, SliderHandle, SliderValue,

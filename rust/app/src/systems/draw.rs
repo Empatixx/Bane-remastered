@@ -2,12 +2,13 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{
-    Color, Hidden, InRange, Layer, Lit, Overlay, PlayerShadow, Position, Prompt, ScreenSpace, Size,
-    Sprite, StatusBar, Text,
+    Color, Hidden, InRange, Layer, Lit, MapSize, Minimap, Overlay, PlayerShadow, Position, Prompt,
+    ScreenSpace, Size, Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
 use super::hud::bar_draws;
+use super::minimap::minimap_draws;
 use super::shadow::shadow_draw;
 
 #[derive(Default)]
@@ -96,6 +97,12 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Layer
         let bucket = sorted.bucket(screen, overlay);
         for draw in draws {
             bucket.push((layer, draw));
+        }
+    }
+    for map in world.query::<&Minimap>().without::<&Hidden>().iter() {
+        let layer = if map.size == MapSize::Big { 7 } else { 5 };
+        for draw in minimap_draws(map) {
+            sorted.hud.push((Layer(layer), draw));
         }
     }
     for (position, size, sprite, shadow) in world

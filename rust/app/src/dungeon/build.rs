@@ -2,7 +2,7 @@ use std::error::Error;
 
 use glam::Vec2;
 
-use crate::tilemap::TileGrid;
+use crate::tilemap::{TileGrid, TILE_SIZE};
 
 use super::layout::{Direction, Layout, LayoutSpec};
 use super::rng::Rng;
@@ -22,6 +22,7 @@ pub(crate) struct DoorSlot {
 #[derive(Debug, Clone)]
 pub(crate) struct DungeonRoom {
     pub(crate) kind: RoomKind,
+    pub(crate) cell: (i32, i32),
     pub(crate) origin: (usize, usize),
     pub(crate) spawns: Vec<(usize, usize)>,
     pub(crate) doors: Vec<DoorSlot>,
@@ -134,6 +135,7 @@ impl Dungeon {
             }
             rooms.push(DungeonRoom {
                 kind: placed.kind,
+                cell: placed.cell,
                 origin,
                 spawns,
                 doors,
@@ -152,6 +154,44 @@ impl Dungeon {
 
     pub(crate) fn start_room(&self) -> Option<&DungeonRoom> {
         self.rooms.iter().find(|room| room.kind == RoomKind::Start)
+    }
+
+    pub(crate) fn camera_region(&self, column: usize, row: usize) -> Option<(Vec2, Vec2)> {
+        let tile = TILE_SIZE;
+        let rect = |room: &DungeonRoom| {
+            (
+                Vec2::new(room.origin.0 as f32, room.origin.1 as f32),
+                Vec2::new(
+                    (room.origin.0 + ROOM_COLUMNS) as f32,
+                    (room.origin.1 + ROOM_ROWS) as f32,
+                ),
+            )
+        };
+        if let Some(index) = self.room_at(column, row) {
+            let (min, max) = rect(&self.rooms[index]);
+            return Some((min * tile, max * tile));
+        }
+        let point = Vec2::new(column as f32 + 0.5, row as f32 + 0.5);
+        for room in &self.rooms {
+            for door in &room.doors {
+                let Some(other) = self.neighbour(room, door.direction) else {
+                    continue;
+                };
+                let (a_min, a_max) = rect(room);
+                let (b_min, b_max) = rect(other);
+                let (min, max) = (a_min.min(b_min), a_max.max(b_max));
+                if point.cmpge(min).all() && point.cmplt(max).all() {
+                    return Some((min * tile, max * tile));
+                }
+            }
+        }
+        None
+    }
+
+    fn neighbour(&self, room: &DungeonRoom, direction: Direction) -> Option<&DungeonRoom> {
+        let (dx, dy) = direction.delta();
+        let cell = (room.cell.0 + dx, room.cell.1 + dy);
+        self.rooms.iter().find(|other| other.cell == cell)
     }
 
     pub(crate) fn room_at(&self, column: usize, row: usize) -> Option<usize> {
@@ -279,6 +319,36 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn the_camera_area_is_the_room_itself_and_in_a_corridor_both_connected_rooms() {
+        let dungeon = dungeon(8);
+        let start = dungeon.start_room().expect("there is a start room");
+        let door = start.doors.first().expect("the start room has a door");
+        let inside = dungeon
+            .camera_region(start.origin.0 + 3, start.origin.1 + 3)
+            .expect("inside the room");
+        assert_eq!(
+            inside.1 - inside.0,
+            Vec2::new(ROOM_COLUMNS as f32, ROOM_ROWS as f32) * TILE_SIZE
+        );
+
+        let (column, row) = door.tiles[0];
+        let (dx, dy) = door.direction.delta();
+        let in_gap = (
+            (column as isize + dx as isize * 2) as usize,
+            (row as isize + dy as isize * 2) as usize,
+        );
+        let corridor = dungeon
+            .camera_region(in_gap.0, in_gap.1)
+            .expect("in the corridor");
+        assert!(corridor.1.x - corridor.0.x >= inside.1.x - inside.0.x);
+        assert!(corridor.1.y - corridor.0.y >= inside.1.y - inside.0.y);
+        assert!(
+            corridor.1 - corridor.0 != inside.1 - inside.0,
+            "the corridor area spans two rooms"
+        );
     }
 
     #[test]

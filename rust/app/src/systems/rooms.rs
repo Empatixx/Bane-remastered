@@ -23,13 +23,25 @@ enum RoomState {
 #[derive(Debug)]
 pub(crate) struct RoomRuntime {
     states: Vec<RoomState>,
+    entered: Vec<bool>,
+    current: usize,
 }
 
 impl RoomRuntime {
     pub(crate) fn new(dungeon: &Dungeon) -> Self {
         Self {
             states: dungeon.rooms.iter().map(|_| RoomState::Unvisited).collect(),
+            entered: vec![false; dungeon.rooms.len()],
+            current: 0,
         }
+    }
+
+    pub(crate) fn entered(&self) -> &[bool] {
+        &self.entered
+    }
+
+    pub(crate) fn current(&self) -> usize {
+        self.current
     }
 
     #[cfg(test)]
@@ -51,6 +63,10 @@ pub(crate) fn update_rooms(
     physics: &mut Physics,
     rng: &mut Rng,
 ) {
+    if let Some(index) = player_tile(context.dungeon, world) {
+        runtime.current = index;
+        runtime.entered[index] = true;
+    }
     if let Some(room) = player_room(context.dungeon, world) {
         if matches!(runtime.states[room], RoomState::Unvisited) {
             enter(runtime, context, room, world, physics, rng);
@@ -72,13 +88,25 @@ pub(crate) fn update_rooms(
     }
 }
 
-fn player_room(dungeon: &Dungeon, world: &World) -> Option<usize> {
-    let position = world
+fn player_position(world: &World) -> Option<Vec2> {
+    world
         .query::<&Position>()
         .with::<&Player>()
         .iter()
         .next()
-        .map(|position| position.0)?;
+        .map(|position| position.0)
+}
+
+fn player_tile(dungeon: &Dungeon, world: &World) -> Option<usize> {
+    let position = player_position(world)?;
+    dungeon.room_at(
+        (position.x / TILE_SIZE) as usize,
+        (position.y / TILE_SIZE) as usize,
+    )
+}
+
+fn player_room(dungeon: &Dungeon, world: &World) -> Option<usize> {
+    let position = player_position(world)?;
     let column = (position.x / TILE_SIZE) as usize;
     let row = (position.y / TILE_SIZE) as usize;
     let room = dungeon.room_at(column, row)?;
