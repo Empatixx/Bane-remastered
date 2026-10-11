@@ -1,8 +1,9 @@
 use std::fmt;
 use std::ops::ControlFlow;
 
+use crate::assets::Textures;
 use crate::input::Input;
-use crate::render::Quad;
+use crate::render::Draw;
 use crate::systems;
 
 use super::ingame::InGameScene;
@@ -28,11 +29,11 @@ impl fmt::Debug for Scenes {
 }
 
 impl Scenes {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(textures: Textures) -> Self {
         let mut scenes = Self {
             current: SceneId::Loading,
             loading: LoadingScene::default(),
-            menu: MenuScene::default(),
+            menu: MenuScene::new(textures),
             lobby: LobbyScene::default(),
             ingame: InGameScene::default(),
         };
@@ -50,8 +51,8 @@ impl Scenes {
         self.apply(transition)
     }
 
-    pub(crate) fn quads(&self) -> Vec<Quad> {
-        systems::collect_quads(self.scene().world())
+    pub(crate) fn draws(&self) -> Vec<Draw> {
+        systems::collect_draws(self.scene().world())
     }
 
     fn apply(&mut self, transition: Transition) -> ControlFlow<()> {
@@ -106,7 +107,7 @@ mod tests {
     }
 
     fn menu() -> (Scenes, Input) {
-        let mut scenes = Scenes::new();
+        let mut scenes = Scenes::new(Textures::default());
         let input = Input::default();
         assert!(scenes.update(&input, 2.0).is_continue());
         assert_eq!(scenes.current, SceneId::Menu);
@@ -115,7 +116,7 @@ mod tests {
 
     #[test]
     fn loading_switches_to_menu_when_done() {
-        let mut scenes = Scenes::new();
+        let mut scenes = Scenes::new(Textures::default());
         let input = Input::default();
         assert!(scenes.update(&input, 0.5).is_continue());
         assert_eq!(scenes.current, SceneId::Loading);

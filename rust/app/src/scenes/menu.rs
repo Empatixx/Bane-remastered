@@ -1,6 +1,7 @@
 use glam::{Vec2, Vec4};
 use hecs::World;
 
+use crate::assets::Textures;
 use crate::components::UiAction;
 use crate::input::Input;
 use crate::prefabs;
@@ -12,6 +13,16 @@ use super::{Scene, SceneId, Transition};
 #[derive(Default)]
 pub(crate) struct MenuScene {
     world: World,
+    textures: Textures,
+}
+
+impl MenuScene {
+    pub(crate) fn new(textures: Textures) -> Self {
+        Self {
+            world: World::new(),
+            textures,
+        }
+    }
 }
 
 impl Scene for MenuScene {
@@ -25,11 +36,19 @@ impl Scene for MenuScene {
 
     fn enter(&mut self) {
         let x = TARGET.x / 2.0;
-        prefabs::block(
+        prefabs::sprite(
+            &mut self.world,
+            TARGET / 2.0,
+            TARGET,
+            self.textures.menu_background,
+            -1,
+        );
+        prefabs::sprite(
             &mut self.world,
             Vec2::new(x, 100.0),
-            Vec2::new(320.0, 64.0),
-            Vec4::new(0.85, 0.65, 0.15, 1.0),
+            Vec2::new(304.0, 144.0),
+            self.textures.logo,
+            0,
         );
         prefabs::button(
             &mut self.world,

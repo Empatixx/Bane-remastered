@@ -3,8 +3,9 @@ use std::ops::ControlFlow;
 use glam::Vec2;
 use winit::event::{ElementState, KeyEvent, MouseButton};
 
+use crate::assets::Textures;
 use crate::input::Input;
-use crate::render::Quad;
+use crate::render::Draw;
 use crate::scenes::Scenes;
 
 #[derive(Debug)]
@@ -14,10 +15,10 @@ pub(crate) struct Game {
 }
 
 impl Game {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(textures: Textures) -> Self {
         Self {
             input: Input::default(),
-            scenes: Scenes::new(),
+            scenes: Scenes::new(textures),
         }
     }
 
@@ -43,7 +44,7 @@ impl Game {
         flow
     }
 
-    pub(crate) fn quads(&self) -> Vec<Quad> {
-        self.scenes.quads()
+    pub(crate) fn draws(&self) -> Vec<Draw> {
+        self.scenes.draws()
     }
 }

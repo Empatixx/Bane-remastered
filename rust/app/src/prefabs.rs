@@ -2,8 +2,10 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Button, Color, LoadingBar, OnClick, Player, Portal, Position, Size, UiAction, Velocity,
+    Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size, Sprite, UiAction,
+    Velocity,
 };
+use crate::render::TextureId;
 
 pub(crate) fn player(world: &mut World, position: Vec2) -> Entity {
     world.spawn((
@@ -12,6 +14,7 @@ pub(crate) fn player(world: &mut World, position: Vec2) -> Entity {
         Velocity::default(),
         Size(Vec2::new(32.0, 32.0)),
         Color(Vec4::new(0.95, 0.85, 0.2, 1.0)),
+        Layer(1),
     ))
 }
 
@@ -47,5 +50,21 @@ pub(crate) fn loading_bar(world: &mut World, position: Vec2) -> Entity {
         Position(position),
         Size(Vec2::new(0.0, 16.0)),
         Color(Vec4::new(0.3, 0.8, 0.5, 1.0)),
+    ))
+}
+
+pub(crate) fn sprite(
+    world: &mut World,
+    position: Vec2,
+    size: Vec2,
+    texture: TextureId,
+    layer: i32,
+) -> Entity {
+    world.spawn((
+        Position(position),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite(texture),
+        Layer(layer),
     ))
 }

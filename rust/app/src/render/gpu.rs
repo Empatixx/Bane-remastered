@@ -1,11 +1,13 @@
 use std::error::Error;
+use std::path::Path;
 use std::sync::Arc;
 
 use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
-use super::Quad;
+use super::texture::Pixels;
+use super::{Draw, Quad, TextureId};
 use crate::viewport::TARGET;
 
 const MAX_QUADS: usize = 10_000;
@@ -18,6 +20,9 @@ pub(crate) struct Gpu {
     config: wgpu::SurfaceConfiguration,
     pipeline: wgpu::RenderPipeline,
     screen_bind_group: wgpu::BindGroup,
+    texture_layout: wgpu::BindGroupLayout,
+    sampler: wgpu::Sampler,
+    textures: Vec<wgpu::BindGroup>,
     quad_buffer: wgpu::Buffer,
 }
 
@@ -63,6 +68,33 @@ impl Gpu {
                 resource: screen_buffer.as_entire_binding(),
             }],
         });
+        let texture_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("texture"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("texture"),
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
         let quad_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("quads"),
             size: (MAX_QUADS * size_of::<Quad>()) as u64,
@@ -72,7 +104,7 @@ impl Gpu {
         let shader = device.create_shader_module(wgpu::include_wgsl!("quad.wgsl"));
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("quads"),
-            bind_group_layouts: &[Some(&screen_layout)],
+            bind_group_layouts: &[Some(&screen_layout), Some(&texture_layout)],
             immediate_size: 0,
         });
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -96,7 +128,11 @@ impl Gpu {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(config.format.into())],
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,
@@ -105,15 +141,70 @@ impl Gpu {
             cache: None,
         });
 
-        Ok(Self {
+        let mut gpu = Self {
             surface,
             device,
             queue,
             config,
             pipeline,
             screen_bind_group,
+            texture_layout,
+            sampler,
+            textures: Vec::new(),
             quad_buffer,
-        })
+        };
+        gpu.upload(&Pixels::white());
+        Ok(gpu)
+    }
+
+    pub(crate) fn load_texture(&mut self, path: &Path) -> Result<TextureId, Box<dyn Error>> {
+        let pixels = Pixels::load(path)?;
+        Ok(self.upload(&pixels))
+    }
+
+    fn upload(&mut self, pixels: &Pixels) -> TextureId {
+        let size = wgpu::Extent3d {
+            width: pixels.width,
+            height: pixels.height,
+            depth_or_array_layers: 1,
+        };
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("texture"),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.queue.write_texture(
+            texture.as_image_copy(),
+            &pixels.rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(4 * pixels.width),
+                rows_per_image: Some(pixels.height),
+            },
+            size,
+        );
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("texture"),
+            layout: &self.texture_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+            ],
+        });
+        self.textures.push(bind_group);
+        TextureId::new(self.textures.len() - 1)
     }
 
     pub(crate) fn resize(&mut self, size: PhysicalSize<u32>) {
@@ -125,10 +216,11 @@ impl Gpu {
         self.surface.configure(&self.device, &self.config);
     }
 
-    pub(crate) fn render(&mut self, clear: wgpu::Color, quads: &[Quad]) {
-        let quads = &quads[..quads.len().min(MAX_QUADS)];
+    pub(crate) fn render(&mut self, clear: wgpu::Color, draws: &[Draw]) {
+        let draws = &draws[..draws.len().min(MAX_QUADS)];
+        let quads: Vec<Quad> = draws.iter().map(|draw| draw.quad).collect();
         self.queue
-            .write_buffer(&self.quad_buffer, 0, bytemuck::cast_slice(quads));
+            .write_buffer(&self.quad_buffer, 0, bytemuck::cast_slice(&quads));
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
@@ -160,7 +252,13 @@ impl Gpu {
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.screen_bind_group, &[]);
             pass.set_vertex_buffer(0, self.quad_buffer.slice(..));
-            pass.draw(0..6, 0..quads.len() as u32);
+            let mut start = 0;
+            for run in draws.chunk_by(|a, b| a.texture == b.texture) {
+                let end = start + run.len() as u32;
+                pass.set_bind_group(1, &self.textures[run[0].texture.index()], &[]);
+                pass.draw(0..6, start..end);
+                start = end;
+            }
         }
         self.queue.submit([encoder.finish()]);
         self.queue.present(frame);
