@@ -43,6 +43,10 @@ impl RoomRuntime {
         }
     }
 
+    pub(crate) fn reveal_all(&mut self) {
+        self.entered.iter_mut().for_each(|entered| *entered = true);
+    }
+
     pub(crate) fn entered(&self) -> &[bool] {
         &self.entered
     }

@@ -117,6 +117,7 @@ fn rare_prize(
 ) {
     let velocity = Vec2::new(0.0, SCATTER_SPEED);
     let uncommon = roll(2) == 0;
+    let mut artefact = false;
     let item = if uncommon {
         let vital = if roll(2) == 0 {
             Vital::Health
@@ -125,16 +126,32 @@ fn rare_prize(
         };
         Some(ItemKind::Potion(vital, PotionSize::Small))
     } else {
-        match roll(4) {
+        match roll(5) {
             0 => None,
-            1 => Some(ItemKind::Ammo(AmmoBox::Universal)),
-            2 => Some(ItemKind::Potion(Vital::Health, PotionSize::Large)),
+            1 => {
+                artefact = true;
+                None
+            }
+            2 => Some(ItemKind::Ammo(AmmoBox::Universal)),
+            3 => Some(ItemKind::Potion(Vital::Health, PotionSize::Large)),
             _ => Some(ItemKind::Potion(Vital::Armor, PotionSize::Large)),
         }
     };
     match item {
         Some(kind) => {
             prefabs::item(world, kind, center, true, velocity, textures);
+        }
+        None if artefact => {
+            let slot = world
+                .query::<&crate::components::ArtefactSlot>()
+                .with::<&Player>()
+                .iter()
+                .next()
+                .copied();
+            if let Some(slot) = slot {
+                let kind = crate::systems::unused_artefact(&slot, roll(1000));
+                prefabs::artefact_drop(world, kind, center, velocity, textures);
+            }
         }
         None => {
             let gun: Option<GunKind> = world

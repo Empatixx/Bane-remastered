@@ -4,7 +4,7 @@ use hecs::{Entity, World};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, Armor, ContactDamage, Enemy, Expiring, Health, HitFlash, Invulnerable, Player,
-    Position, Size, Spawning, Trap, TrapCooldown,
+    Position, Shielded, Size, Spawning, Trap, TrapCooldown,
 };
 use crate::geometry;
 use crate::systems::enemies::FLASH_SECONDS;
@@ -134,6 +134,11 @@ pub(crate) fn hurt_player(
     damage: i32,
     sounds: &mut Vec<AudioCommand>,
 ) -> bool {
+    let damage = if world.remove_one::<Shielded>(player).is_ok() {
+        0
+    } else {
+        damage
+    };
     if let Ok((health, armor)) = world.query_one_mut::<(&mut Health, &mut Armor)>(player) {
         if health.current <= 0 {
             return false;

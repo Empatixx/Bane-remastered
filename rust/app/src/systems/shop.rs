@@ -1,16 +1,19 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
+use crate::artefacts::ArtefactKind;
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Candle, Clip, Currency, GunDrop, Health, Hidden, InRange, Interactable, Interaction,
-    Light, Loadout, Pickup, Player, PriceTag, Shop, SpeechBubble, SpeechText, Text, Wallet,
+    Animation, ArtefactDrop, ArtefactSlot, Candle, Clip, Currency, GunDrop, Health, Hidden,
+    InRange, Interactable, Interaction, Light, Loadout, Pickup, Player, PriceTag, Shop,
+    SpeechBubble, SpeechText, Text, Wallet,
 };
 use crate::dungeon::{Dungeon, FixtureKind};
 use crate::guns::GunKind;
 use crate::items::{ItemKind, PotionSize, Vital};
 use crate::prefabs;
+use crate::systems::artefacts::{pick_up_artefact, unused_artefact};
 use crate::systems::items::use_item;
 use crate::systems::loadout::{pick_up_gun, unused_gun};
 
@@ -44,6 +47,7 @@ pub(crate) fn price_for(stock: Stock, floor: u32, roll: usize) -> i32 {
 enum Goods {
     Item(ItemKind),
     Gun(GunKind),
+    Artefact(ArtefactKind),
 }
 
 fn goods_for(world: &World, stock: Stock, roll: &mut impl FnMut(usize) -> usize) -> Option<Goods> {
@@ -59,13 +63,26 @@ fn goods_for(world: &World, stock: Stock, roll: &mut impl FnMut(usize) -> usize)
         Stock::Ammunition => Some(Goods::Item(ItemKind::Ammo(
             crate::items::AmmoBox::Universal,
         ))),
-        Stock::Offensive => world
-            .query::<&Loadout>()
-            .with::<&Player>()
-            .iter()
-            .next()
-            .and_then(|loadout| unused_gun(loadout, roll(1000) as f32 / 1000.0))
-            .map(Goods::Gun),
+        Stock::Offensive => {
+            if roll(2) == 0 {
+                let gun = world
+                    .query::<&Loadout>()
+                    .with::<&Player>()
+                    .iter()
+                    .next()
+                    .and_then(|loadout| unused_gun(loadout, roll(1000) as f32 / 1000.0));
+                if let Some(kind) = gun {
+                    return Some(Goods::Gun(kind));
+                }
+            }
+            let slot = world
+                .query::<&ArtefactSlot>()
+                .with::<&Player>()
+                .iter()
+                .next()
+                .copied()?;
+            Some(Goods::Artefact(unused_artefact(&slot, roll(1000))))
+        }
     }
 }
 
@@ -91,6 +108,10 @@ fn place(
                 textures,
             ),
             kind.spec().icon.y,
+        ),
+        Goods::Artefact(kind) => (
+            prefabs::artefact_drop(world, kind, center, Vec2::ZERO, textures),
+            kind.icon().y,
         ),
     };
     let gap = table_bottom - (center.y + height / 2.0) + PROMPT_GAP;
@@ -231,6 +252,14 @@ pub(crate) fn buy(world: &mut World, textures: &Textures, sounds: &mut Vec<Audio
             },
         );
         pick_up_gun(world, textures, sounds);
+    } else if world.get::<&ArtefactDrop>(entity).is_ok() {
+        let _ = world.insert_one(
+            entity,
+            Interactable {
+                action: Interaction::PickUpArtefact,
+            },
+        );
+        pick_up_artefact(world, textures, sounds);
     }
 }
 

@@ -1,18 +1,19 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
+use crate::artefacts::ArtefactKind;
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armageddon, Armor, Backdrop, BarKind, Boss, BossHud, BreakKind,
-    Breakable, Bullet, Button, Candle, Chase, Chest, ChestKind, Clip, Cobweb, CoinText, Color,
-    ContactDamage, Dash, DeathBurst, DeathHeal, Despawn, Drag, Enemy, EnemyBullet, Expiring,
-    EyeShooter, Flame, Floating, Fuse, GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox,
-    Hits, Homing, Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout,
-    Minion, NoDrop, OnClick, Overlay, Particle, Path, PauseUi, Pickup, Player, PlayerShadow,
-    Position, PriceTag, Prompt, RoomId, ScreenSpace, Shop, Size, SlotMachine, SlotPrice, Smash,
-    Solid, Spawning, SpeechBubble, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
-    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
-    PIP_FULL,
+    AmmoPip, AmmoText, Animation, Armageddon, Armor, ArtefactDrop, ArtefactIcon, ArtefactSlot,
+    Backdrop, BarKind, Boss, BossHud, BreakKind, Breakable, Bullet, Button, Candle, Chase, Chest,
+    ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Despawn,
+    Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Flame, Floating, Fuse, GazeWind, GunDrop,
+    GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact, Interactable, Interaction, Kin,
+    Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick, Overlay, Particle, Path,
+    PauseUi, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt, RoomId, ScreenSpace,
+    ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash, Solid, Spawning, SpeechBubble,
+    SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity, Wallet,
+    Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
@@ -42,6 +43,9 @@ pub(crate) fn player(
         Position(position),
         Velocity::default(),
         Loadout::starting(),
+        ArtefactSlot {
+            current: Some(ArtefactKind::RevealMap),
+        },
         Health {
             current: PLAYER_HEALTH,
             max: PLAYER_HEALTH,
@@ -144,6 +148,9 @@ const FLAME_DAMAGE: i32 = 1;
 const FLAME_LAST_FRAME: usize = 3;
 const EXPLOSION_LIGHT: f32 = 1.5;
 const SLOT_PROMPT_GAP: f32 = -10.0;
+const ARTEFACT_SLOT_POSITION: Vec2 = Vec2::new(585.0, 450.0);
+const ARTEFACT_FRAME: f32 = 75.0;
+const SHIELD_SIZE: Vec2 = Vec2::new(96.0, 144.0);
 const DROP_DRAG: f32 = 6.0;
 const FLOAT_SECONDS: f32 = 0.5;
 const FLOAT_RISE: f32 = 30.0;
@@ -1045,6 +1052,77 @@ pub(crate) fn slot_machine(world: &mut World, top_left: Vec2, textures: &Texture
         Layer(4),
     ));
     entity
+}
+
+pub(crate) fn artefact_hud(world: &mut World, textures: &Textures) {
+    let frame_size = Vec2::splat(ARTEFACT_FRAME);
+    screen_sprite(
+        world,
+        ARTEFACT_SLOT_POSITION,
+        frame_size,
+        textures.get("ingame/artefacthud.tga"),
+        4,
+    );
+    let icon = screen_sprite(
+        world,
+        ARTEFACT_SLOT_POSITION,
+        frame_size,
+        textures.get("ingame/artefacts/reveal_map.tga"),
+        5,
+    );
+    let _ = world.insert(
+        icon,
+        (
+            ArtefactIcon,
+            Position(ARTEFACT_SLOT_POSITION + frame_size / 2.0),
+            Hidden,
+        ),
+    );
+}
+
+pub(crate) fn artefact_drop(
+    world: &mut World,
+    kind: ArtefactKind,
+    center: Vec2,
+    velocity: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let entity = world.spawn((
+        ArtefactDrop { kind },
+        Position(center),
+        Size(kind.icon()),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get(kind.texture())),
+        Layer(0),
+        Lit,
+        Interactable {
+            action: Interaction::PickUpArtefact,
+        },
+    ));
+    if velocity != Vec2::ZERO {
+        let _ = world.insert(entity, (Velocity(velocity), Drag { rate: DROP_DRAG }));
+    }
+    entity
+}
+
+pub(crate) fn shield_aura(world: &mut World, center: Vec2, textures: &Textures) -> Entity {
+    let clip = Clip {
+        row: 0,
+        frames: 4,
+        frame_time: 0.1,
+        looping: true,
+        flipped: false,
+    };
+    world.spawn((
+        ShieldAura,
+        Position(center),
+        Size(SHIELD_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get("ingame/artefacts/magicshield.tga"), 0, 0, 4, 1),
+        Animation::new(4, 1, clip),
+        Layer(4),
+        Lit,
+    ))
 }
 
 pub(crate) fn chest(

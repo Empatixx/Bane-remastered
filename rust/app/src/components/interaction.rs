@@ -8,6 +8,7 @@ pub(crate) enum Interaction {
     Upgrade,
     NextFloor,
     PickUpGun,
+    PickUpArtefact,
     Buy,
     Spin,
 }

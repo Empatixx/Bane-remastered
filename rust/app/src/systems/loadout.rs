@@ -5,7 +5,8 @@ use winit::keyboard::KeyCode;
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Chest, ChestKind, Clip, GunDrop, InRange, Loadout, Player, Position, Size, Weapon,
+    Animation, ArtefactSlot, Chest, ChestKind, Clip, GunDrop, InRange, Loadout, Player, Position,
+    Size, Weapon,
 };
 use crate::geometry;
 use crate::guns::GunKind;
@@ -137,6 +138,18 @@ pub(crate) fn open_chests(
         crate::systems::burst_items(world, center, textures, |bound| {
             rand::random_range(0..bound)
         });
+        if kind == ChestKind::Artefact {
+            let slot = world
+                .query::<&ArtefactSlot>()
+                .with::<&Player>()
+                .iter()
+                .next()
+                .copied();
+            if let Some(slot) = slot {
+                let found = crate::systems::unused_artefact(&slot, (roll * 1000.0) as usize);
+                prefabs::artefact_drop(world, found, center, Vec2::ZERO, textures);
+            }
+        }
         if kind == ChestKind::Weapon {
             let kind = world
                 .query::<&Loadout>()
@@ -297,5 +310,35 @@ mod tests {
             let kind = unused_gun(&loadout, step as f32 / 20.0);
             assert!(kind.is_some_and(|kind| !loadout.has(kind)));
         }
+    }
+
+    #[test]
+    fn the_boss_chest_drops_an_artefact_you_do_not_hold_plus_five_items() {
+        let (mut world, textures) = setup();
+        let chest = prefabs::chest(
+            &mut world,
+            ChestKind::Artefact,
+            Vec2::new(80.0, 80.0),
+            &textures,
+        );
+        let mut sounds = Vec::new();
+        open_chests(&mut world, &textures, 0.0, &mut sounds);
+        if let Ok(mut animation) = world.get::<&mut Animation>(chest) {
+            animation.advance(1.0);
+        }
+        open_chests(&mut world, &textures, 0.0, &mut sounds);
+
+        let artefacts: Vec<crate::artefacts::ArtefactKind> = world
+            .query::<&crate::components::ArtefactDrop>()
+            .iter()
+            .map(|drop| drop.kind)
+            .collect();
+        assert_eq!(artefacts.len(), 1);
+        assert_ne!(artefacts[0], crate::artefacts::ArtefactKind::RevealMap);
+        assert_eq!(
+            world.query::<&crate::components::Pickup>().iter().count(),
+            5
+        );
+        assert_eq!(world.query::<&GunDrop>().iter().count(), 0);
     }
 }

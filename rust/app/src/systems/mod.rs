@@ -1,4 +1,5 @@
 mod animation;
+mod artefacts;
 mod bosses;
 mod camera;
 mod carry;
@@ -27,6 +28,10 @@ mod steering;
 mod ui;
 
 pub(crate) use animation::{animate, chain_animations, remove_expired};
+pub(crate) use artefacts::{
+    activate_artefact, pick_up_artefact, tick_berserk, unused_artefact, update_artefact_hud,
+    update_shield_aura,
+};
 pub(crate) use bosses::{
     clean_up_after_boss, tick_armageddon, tick_hatchers, tick_web_spitters, update_boss_hud,
 };

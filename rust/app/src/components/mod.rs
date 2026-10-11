@@ -1,5 +1,6 @@
 mod animation;
 mod appearance;
+mod artefacts;
 mod body;
 mod combat;
 mod effects;
@@ -19,6 +20,9 @@ mod ui;
 
 pub(crate) use animation::{Animation, Clip};
 pub(crate) use appearance::{Color, Layer, Sprite, Text};
+pub(crate) use artefacts::{
+    ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, ShieldAura, Shielded,
+};
 pub(crate) use body::Body;
 pub(crate) use combat::{
     Armor, Bullet, Burst, Chase, ContactDamage, Dash, Enemy, Expiring, GunDrop, Health, HitFlash,

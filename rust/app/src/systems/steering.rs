@@ -1,6 +1,7 @@
 use hecs::World;
 
-use crate::components::{Cobweb, Health, Player, Position, Size, Velocity};
+use crate::artefacts::BERSERK_SPEED;
+use crate::components::{Berserk, Cobweb, Health, Player, Position, Size, Velocity};
 use crate::geometry;
 use crate::input::Input;
 
@@ -15,18 +16,23 @@ pub(crate) fn steer_player(world: &mut World, input: &Input) {
         .iter()
         .map(|(position, size)| (position.0, size.0))
         .collect();
-    for (velocity, health, position, size) in world
-        .query_mut::<(&mut Velocity, &Health, &Position, &Size)>()
+    for (velocity, health, position, size, berserk) in world
+        .query_mut::<(&mut Velocity, &Health, &Position, &Size, Option<&Berserk>)>()
         .with::<&Player>()
     {
         let stuck = webs
             .iter()
             .any(|(web, web_size)| geometry::overlaps(position.0, size.0, *web, *web_size));
+        let boost = if berserk.is_some() {
+            BERSERK_SPEED
+        } else {
+            1.0
+        };
         let speed = if stuck {
             PLAYER_SPEED * COBWEB_SLOWDOWN
         } else {
             PLAYER_SPEED
-        };
+        } * boost;
         velocity.0 = if health.current > 0 {
             direction * speed
         } else {

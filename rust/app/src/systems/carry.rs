@@ -1,6 +1,6 @@
 use hecs::World;
 
-use crate::components::{Armor, Health, Loadout, Player, Wallet};
+use crate::components::{Armor, ArtefactSlot, Health, Loadout, Player, Wallet};
 
 #[derive(Debug, Clone)]
 pub(crate) struct Carried {
@@ -8,18 +8,20 @@ pub(crate) struct Carried {
     armor: Armor,
     wallet: Wallet,
     loadout: Loadout,
+    artefact: ArtefactSlot,
 }
 
 pub(crate) fn carried_stats(world: &World) -> Option<Carried> {
     let mut query = world
-        .query::<(&Health, &Armor, &Wallet, &Loadout)>()
+        .query::<(&Health, &Armor, &Wallet, &Loadout, &ArtefactSlot)>()
         .with::<&Player>();
-    let (health, armor, wallet, loadout) = query.iter().next()?;
+    let (health, armor, wallet, loadout, artefact) = query.iter().next()?;
     Some(Carried {
         health: *health,
         armor: *armor,
         wallet: *wallet,
         loadout: loadout.clone(),
+        artefact: *artefact,
     })
 }
 
@@ -27,14 +29,21 @@ pub(crate) fn restore_stats(world: &mut World, carried: Option<Carried>) {
     let Some(carried) = carried else {
         return;
     };
-    for (health, armor, wallet, loadout) in world
-        .query_mut::<(&mut Health, &mut Armor, &mut Wallet, &mut Loadout)>()
+    for (health, armor, wallet, loadout, artefact) in world
+        .query_mut::<(
+            &mut Health,
+            &mut Armor,
+            &mut Wallet,
+            &mut Loadout,
+            &mut ArtefactSlot,
+        )>()
         .with::<&Player>()
     {
         *health = carried.health;
         *armor = carried.armor;
         *wallet = carried.wallet;
         *loadout = carried.loadout.clone();
+        *artefact = carried.artefact;
     }
 }
 

@@ -163,6 +163,16 @@ impl Scene for InGameScene {
         }
         systems::animate_player(&mut self.world, input);
         systems::switch_guns(&mut self.world, input, &mut self.sounds);
+        if let Some(crate::artefacts::ArtefactKind::RevealMap) = systems::activate_artefact(
+            &mut self.world,
+            &mut self.physics,
+            input,
+            assets.textures.get(BULLET),
+        ) {
+            if let Some(rooms) = &mut self.rooms {
+                rooms.reveal_all();
+            }
+        }
         systems::drop_gun(
             &mut self.world,
             input,
@@ -178,12 +188,26 @@ impl Scene for InGameScene {
         );
         systems::tick_invulnerability(&mut self.world, dt);
         self.clock += dt;
+        let berserk = self
+            .world
+            .query::<&crate::components::Berserk>()
+            .iter()
+            .count()
+            > 0;
+        let (particle, phase) = if berserk {
+            (
+                "ingame/artefacts/berserkpot-particle.tga",
+                crate::artefacts::BERSERK_PHASE,
+            )
+        } else {
+            ("ingame/gazewind_particle.tga", 0.0)
+        };
         systems::spawn_gaze_wind(
             &mut self.world,
             &self.physics,
-            assets.textures.get("ingame/gazewind_particle.tga"),
+            assets.textures.get(particle),
             dt,
-            self.clock,
+            self.clock + phase,
         );
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
@@ -218,6 +242,9 @@ impl Scene for InGameScene {
         systems::collect_items(&mut self.world, &mut self.sounds);
         systems::age_items(&mut self.world, dt);
         systems::update_price_tags(&mut self.world);
+        systems::tick_berserk(&mut self.world, dt);
+        systems::update_shield_aura(&mut self.world, &assets.textures);
+        systems::update_artefact_hud(&mut self.world, &assets.textures);
         systems::update_slot_prices(&mut self.world);
         systems::tick_slot_machines(
             &mut self.world,
@@ -245,6 +272,9 @@ impl Scene for InGameScene {
             Some(Interaction::Spin) => systems::spin(&mut self.world, &mut self.sounds),
             Some(Interaction::Buy) => {
                 systems::buy(&mut self.world, &assets.textures, &mut self.sounds);
+            }
+            Some(Interaction::PickUpArtefact) => {
+                systems::pick_up_artefact(&mut self.world, &assets.textures, &mut self.sounds);
             }
             Some(Interaction::PickUpGun) => {
                 systems::pick_up_gun(&mut self.world, &assets.textures, &mut self.sounds);
@@ -367,6 +397,7 @@ impl InGameScene {
             Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
         );
         prefabs::weapon_hud(&mut self.world, textures);
+        prefabs::artefact_hud(&mut self.world, textures);
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
             self.camera.snap_to(target);
         }

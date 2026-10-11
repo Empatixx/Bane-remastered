@@ -1,4 +1,5 @@
 mod app;
+mod artefacts;
 mod assets;
 mod audio;
 mod camera;
