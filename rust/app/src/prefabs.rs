@@ -76,14 +76,14 @@ pub(crate) fn button(
     ));
     world.spawn((
         Button {
-            idle_uv: Sprite::cell_uv(0, 0, 2, 1),
-            hover_uv: Sprite::cell_uv(1, 0, 2, 1),
+            idle_uv: Sprite::cell_uv(0, 0, 1, 2),
+            hover_uv: Sprite::cell_uv(0, 1, 1, 2),
         },
         OnClick(action),
         Position(position),
         Size(BUTTON_SIZE),
         Color(Vec4::ONE),
-        Sprite::cell(texture, 0, 0, 2, 1),
+        Sprite::cell(texture, 0, 0, 1, 2),
         Layer(1),
     ))
 }
