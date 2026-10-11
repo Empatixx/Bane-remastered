@@ -163,6 +163,16 @@ impl Gpu {
         Ok(self.upload(&pixels))
     }
 
+    pub(crate) fn load_texture_with_hole(
+        &mut self,
+        path: &Path,
+        hole: [u32; 4],
+    ) -> Result<TextureId, Box<dyn Error>> {
+        let mut pixels = Pixels::load(path)?;
+        pixels.clear_rect(hole[0], hole[1], hole[2], hole[3]);
+        Ok(self.upload(&pixels))
+    }
+
     pub(crate) fn upload_alpha_mask(&mut self, width: u32, height: u32, alpha: &[u8]) -> TextureId {
         let rgba = alpha.iter().flat_map(|a| [255, 255, 255, *a]).collect();
         self.upload(&Pixels {

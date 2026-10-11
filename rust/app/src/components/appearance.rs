@@ -1,6 +1,6 @@
 use glam::Vec4;
 
-use crate::render::{FontSize, TextureId};
+use crate::render::{Align, Anchor, FontSize, TextureId};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Color(pub(crate) Vec4);
@@ -55,4 +55,18 @@ pub(crate) struct Text {
     pub(crate) content: String,
     pub(crate) color: Vec4,
     pub(crate) size: FontSize,
+    pub(crate) align: Align,
+    pub(crate) anchor: Anchor,
+}
+
+impl Text {
+    pub(crate) fn centered(content: &str, color: Vec4, size: FontSize) -> Self {
+        Self {
+            content: content.to_owned(),
+            color,
+            size,
+            align: Align::Center,
+            anchor: Anchor::Middle,
+        }
+    }
 }

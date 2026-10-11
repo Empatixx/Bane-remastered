@@ -5,7 +5,7 @@ mod quad;
 mod texture;
 
 pub(crate) use draw::Draw;
-pub(crate) use font::{FontSize, Fonts};
+pub(crate) use font::{Align, Anchor, FontSize, Fonts};
 pub(crate) use gpu::Gpu;
 pub(crate) use quad::Quad;
 pub(crate) use texture::TextureId;

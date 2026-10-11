@@ -39,4 +39,13 @@ impl Pixels {
             rgba: image.into_raw(),
         })
     }
+
+    pub(super) fn clear_rect(&mut self, x: u32, y: u32, width: u32, height: u32) {
+        for row in y..(y + height).min(self.height) {
+            for column in x..(x + width).min(self.width) {
+                let index = ((row * self.width + column) * 4 + 3) as usize;
+                self.rgba[index] = 0;
+            }
+        }
+    }
 }

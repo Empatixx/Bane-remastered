@@ -3,17 +3,20 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
-    Animation, Bullet, Button, Chase, Clip, Color, Enemy, Health, Interactable, Interaction, Layer,
-    OnClick, Player, Position, Prompt, Size, Sprite, Text, UiAction, Velocity, Weapon,
-    BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
+    ContactDamage, Enemy, Health, Hitbox, Interactable, Interaction, Layer, OnClick, PauseUi,
+    Player, Position, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, UiAction,
+    Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
-use crate::render::{FontSize, TextureId};
+use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
 use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 use crate::tilemap::{self, TileGrid, Tileset};
 
 pub(crate) const PLAYER_SIZE: Vec2 = Vec2::new(32.0, 76.0);
+const PLAYER_HEALTH: i32 = 10;
+const PLAYER_ARMOR: i32 = 5;
 
 pub(crate) fn player(
     world: &mut World,
@@ -26,6 +29,15 @@ pub(crate) fn player(
         Position(position),
         Velocity::default(),
         Weapon::pistol(),
+        Health {
+            current: PLAYER_HEALTH,
+            max: PLAYER_HEALTH,
+        },
+        Armor {
+            current: PLAYER_ARMOR,
+            max: PLAYER_ARMOR,
+        },
+        Wallet { coins: 0 },
         Size(PLAYER_SIZE),
         Color(Vec4::ONE),
         Sprite::cell(
@@ -149,11 +161,7 @@ pub(crate) fn button(
     texture: TextureId,
 ) -> Entity {
     world.spawn((
-        Text {
-            content: label.to_owned(),
-            color: BUTTON_TEXT_COLOR,
-            size: FontSize::Size27,
-        },
+        Text::centered(label, BUTTON_TEXT_COLOR, FontSize::Size27),
         Position(position),
         Layer(2),
     ));
@@ -247,6 +255,7 @@ const RAT_COLUMNS: usize = 4;
 const RAT_ROWS: usize = 2;
 const RAT_SIZE: Vec2 = Vec2::new(127.5, 55.5);
 const RAT_HEALTH: i32 = 12;
+const RAT_DAMAGE: i32 = 2;
 const RAT_SPEED: f32 = 110.0;
 const RAT_WALK: Clip = Clip {
     row: 0,
@@ -273,7 +282,9 @@ pub(crate) fn rat(
         Enemy { death: RAT_DEATH },
         Health {
             current: RAT_HEALTH,
+            max: RAT_HEALTH,
         },
+        ContactDamage(RAT_DAMAGE),
         Chase { speed: RAT_SPEED },
         Position(position),
         Velocity::default(),
@@ -286,4 +297,182 @@ pub(crate) fn rat(
     let body = physics.add_enemy(entity, position, RAT_SIZE);
     let _ = world.insert_one(entity, body);
     entity
+}
+
+pub(crate) fn status_bars(world: &mut World, textures: &Textures) {
+    for kind in BarKind::ALL {
+        let spec = kind.spec();
+        let texture_size = spec_texture_size(kind);
+        let size = texture_size * spec.scale;
+        world.spawn((
+            StatusBar {
+                kind,
+                fill: 1.0,
+                delayed: 1.0,
+            },
+            Position(spec.position + size / 2.0),
+            Size(size),
+            Color(Vec4::ONE),
+            Sprite::whole(textures.get(spec.texture)),
+            Layer(5),
+            ScreenSpace,
+        ));
+    }
+}
+
+fn spec_texture_size(kind: BarKind) -> Vec2 {
+    match kind {
+        BarKind::Health => Vec2::new(76.0, 19.0),
+        BarKind::Armor => Vec2::new(83.0, 25.0),
+    }
+}
+
+const SLOT_POSITION: Vec2 = Vec2::new(685.0, 450.0);
+const SLOT_SIZE: Vec2 = Vec2::new(225.0, 75.0);
+const GUN_ICON_SIZE: Vec2 = Vec2::new(41.0, 34.0);
+const AMMO_TEXT_POSITION: Vec2 = Vec2::new(900.0, 515.0);
+const AMMO_TEXT_COLOR: Vec4 = Vec4::new(226.0 / 255.0, 153.0 / 255.0, 117.0 / 255.0, 1.0);
+const PIP_START: Vec2 = Vec2::new(922.5, 515.0);
+const PIP_STEP: f32 = 15.0;
+const PIP_SIZE: Vec2 = Vec2::new(24.0, 24.0);
+const COIN_MARGIN: f32 = 10.0;
+const COIN_SIZE: Vec2 = Vec2::new(26.0, 26.0);
+const COIN_TEXT_GAP: f32 = 15.0;
+
+fn screen_sprite(
+    world: &mut World,
+    top_left: Vec2,
+    size: Vec2,
+    texture: TextureId,
+    layer: i32,
+) -> Entity {
+    world.spawn((
+        Position(top_left + size / 2.0),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::whole(texture),
+        Layer(layer),
+        ScreenSpace,
+    ))
+}
+
+pub(crate) fn weapon_hud(world: &mut World, textures: &Textures, clip_size: i32) {
+    screen_sprite(
+        world,
+        SLOT_POSITION,
+        SLOT_SIZE,
+        textures.get("ingame/weaponslot.tga"),
+        4,
+    );
+    let slot_center = SLOT_POSITION + SLOT_SIZE / 2.0;
+    screen_sprite(
+        world,
+        slot_center - GUN_ICON_SIZE / 2.0,
+        GUN_ICON_SIZE,
+        textures.get("ingame/guns/pistol.tga"),
+        5,
+    );
+    world.spawn((
+        AmmoText,
+        Text {
+            content: String::new(),
+            color: AMMO_TEXT_COLOR,
+            size: FontSize::Size22,
+            align: Align::Right,
+            anchor: Anchor::Baseline,
+        },
+        Position(AMMO_TEXT_POSITION),
+        Layer(6),
+        ScreenSpace,
+    ));
+    for index in 0..clip_size {
+        let top_left = Vec2::new(PIP_START.x, PIP_START.y - index as f32 * PIP_STEP);
+        world.spawn((
+            AmmoPip { index },
+            Position(top_left + PIP_SIZE / 2.0),
+            Size(PIP_SIZE),
+            Color(Vec4::ONE),
+            Sprite::cell(textures.get("ingame/ammo_hud.tga"), 0, 0, 2, 2),
+            Animation::new(2, 2, PIP_FULL),
+            Layer(5),
+            ScreenSpace,
+        ));
+    }
+}
+
+pub(crate) fn coin_hud(world: &mut World, textures: &Textures, coin: &str, text_color: Vec4) {
+    let top_left = Vec2::new(COIN_MARGIN, 540.0 - COIN_MARGIN - COIN_SIZE.y);
+    screen_sprite(world, top_left, COIN_SIZE, textures.get(coin), 5);
+    world.spawn((
+        CoinText,
+        Text {
+            content: "0".to_owned(),
+            color: text_color,
+            size: FontSize::Size22,
+            align: Align::Left,
+            anchor: Anchor::Middle,
+        },
+        Position(Vec2::new(
+            COIN_MARGIN + COIN_SIZE.x + COIN_TEXT_GAP,
+            top_left.y + COIN_SIZE.y / 2.0,
+        )),
+        Layer(6),
+        ScreenSpace,
+    ));
+}
+
+const PAUSE_BACKGROUND_SIZE: Vec2 = Vec2::new(240.0, 300.0);
+const PAUSE_TEXT_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const PAUSE_HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
+const PAUSE_BUTTONS: [(f32, &str, UiAction); 3] = [
+    (225.0, "Resume", UiAction::Resume),
+    (275.0, "Statistics", UiAction::Statistics),
+    (325.0, "Exit", UiAction::LeaveToMenu),
+];
+
+pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {
+    world.spawn((
+        PauseUi,
+        Position(Vec2::new(480.0, 270.0)),
+        Size(Vec2::new(960.0, 540.0)),
+        Color(Vec4::new(0.0, 0.0, 0.0, 0.5)),
+        Layer(7),
+        ScreenSpace,
+    ));
+    world.spawn((
+        PauseUi,
+        Position(Vec2::new(480.0, 270.0)),
+        Size(PAUSE_BACKGROUND_SIZE),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get("ingame/pausebg.tga")),
+        Layer(8),
+        ScreenSpace,
+    ));
+    let line = fonts.get(FontSize::Size22);
+    for (baseline, label, action) in PAUSE_BUTTONS {
+        let width = line.width(label);
+        let height = line.line_height();
+        world.spawn((
+            PauseUi,
+            OnClick(action),
+            TextButton {
+                idle: PAUSE_TEXT_COLOR,
+                hover: PAUSE_HOVER_COLOR,
+            },
+            Hitbox {
+                offset: Vec2::new(-5.0, -height / 2.0),
+                size: Vec2::new(width + 10.0, height + 20.0),
+            },
+            Text {
+                content: label.to_owned(),
+                color: PAUSE_TEXT_COLOR,
+                size: FontSize::Size22,
+                align: Align::Center,
+                anchor: Anchor::Baseline,
+            },
+            Position(Vec2::new(480.0, baseline)),
+            Layer(9),
+            ScreenSpace,
+        ));
+    }
 }

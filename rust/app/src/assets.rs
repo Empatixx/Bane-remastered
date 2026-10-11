@@ -3,6 +3,7 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::components::BarKind;
 use crate::render::{FontSize, Fonts, Gpu, TextureId};
 use crate::tilemap::Tileset;
 
@@ -43,6 +44,14 @@ const GAME_TEXTURES: &[&str] = &[
     "ingame/maptable.tga",
     "ingame/pot.tga",
     "ingame/scientist.tga",
+    "ingame/weaponslot.tga",
+    "ingame/guns/pistol.tga",
+    "ingame/ammo_hud.tga",
+    "ingame/banecoin.tga",
+    "ingame/green_banecoin.tga",
+    "ingame/crosshair.tga",
+    "ingame/reload_cursor.tga",
+    "ingame/pausebg.tga",
 ];
 
 #[derive(Debug, Clone, Default)]
@@ -93,6 +102,7 @@ impl Assets {
 #[derive(Debug, Clone, Copy)]
 enum Step {
     Texture(&'static str),
+    Bar(BarKind),
     Font(FontSize),
 }
 
@@ -107,6 +117,7 @@ impl Loader {
         load_texture(gpu, &mut assets.textures, LOADING_SPINNER)?;
         let mut pending: VecDeque<Step> =
             GAME_TEXTURES.iter().copied().map(Step::Texture).collect();
+        pending.extend(BarKind::ALL.map(Step::Bar));
         pending.extend(FontSize::ALL.map(Step::Font));
         Ok(Self { pending })
     }
@@ -125,6 +136,14 @@ impl Loader {
         };
         match step {
             Step::Texture(name) => load_texture(gpu, &mut assets.textures, name)?,
+            Step::Bar(kind) => {
+                let spec = kind.spec();
+                let id = gpu.load_texture_with_hole(
+                    &root().join("textures").join(spec.texture),
+                    spec.hole,
+                )?;
+                assets.textures.insert(spec.texture, id);
+            }
             Step::Font(size) => assets.fonts.load(gpu, &root().join(FONT_FILE), size)?,
         }
         if self.pending.is_empty() {

@@ -1,5 +1,6 @@
 use glam::Vec2;
 use hecs::{Entity, World};
+use winit::keyboard::KeyCode;
 
 use crate::components::BULLET_IMPACT;
 use crate::components::{
@@ -40,8 +41,11 @@ pub(crate) fn shoot(
         .query_mut::<(&Position, &mut Weapon)>()
         .with::<&Player>()
     {
-        weapon.cooldown = (weapon.cooldown - dt).max(0.0);
-        if !input.clicked() || weapon.cooldown > 0.0 {
+        weapon.advance(dt);
+        if input.just_pressed(KeyCode::KeyR) {
+            weapon.start_reload();
+        }
+        if !input.clicked() || !weapon.can_fire() {
             continue;
         }
         let to_target = target - position.0;
@@ -49,6 +53,7 @@ pub(crate) fn shoot(
             continue;
         }
         weapon.cooldown = weapon.fire_interval;
+        weapon.clip -= 1;
         let angle = to_target.to_angle() + roll.spread * weapon.inaccuracy;
         let range = weapon.max_damage - weapon.min_damage + 1;
         let damage = weapon.min_damage + ((range as f32 * roll.damage) as i32).min(range - 1);

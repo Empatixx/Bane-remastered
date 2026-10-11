@@ -10,7 +10,7 @@ use super::ingame::InGameScene;
 use super::loading::LoadingScene;
 use super::lobby::LobbyScene;
 use super::menu::MenuScene;
-use super::{Scene, SceneId, Transition};
+use super::{Cursor, Scene, SceneId, Transition};
 
 pub(crate) struct Scenes {
     current: SceneId,
@@ -55,6 +55,10 @@ impl Scenes {
     ) -> ControlFlow<()> {
         let transition = self.scene_mut().fixed_update(input, dt);
         self.apply(transition, assets)
+    }
+
+    pub(crate) fn cursor(&self) -> Cursor {
+        self.scene().cursor()
     }
 
     pub(crate) fn draws(&self, fonts: &Fonts) -> Vec<Draw> {

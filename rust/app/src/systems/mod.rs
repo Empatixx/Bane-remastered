@@ -1,7 +1,9 @@
 mod animation;
 mod camera;
+mod damage;
 mod draw;
 mod enemies;
+mod hud;
 mod interaction;
 mod player_animation;
 mod shooting;
@@ -11,11 +13,13 @@ mod ui;
 
 pub(crate) use animation::{animate, remove_expired};
 pub(crate) use camera::camera_target;
+pub(crate) use damage::{contact_damage, player_is_dead, tick_invulnerability};
 pub(crate) use draw::collect_draws;
 pub(crate) use enemies::{chase_player, reap_dead};
+pub(crate) use hud::{update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use shooting::{bullet_hits, shoot, ShotRoll};
 pub(crate) use simulation::simulate;
 pub(crate) use steering::steer_player;
-pub(crate) use ui::update_buttons;
+pub(crate) use ui::{update_buttons, update_text_buttons};

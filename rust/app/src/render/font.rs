@@ -20,6 +20,19 @@ struct Glyph {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Align {
+    Left,
+    Center,
+    Right,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Anchor {
+    Middle,
+    Baseline,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum FontSize {
     Size16,
     Size22,
@@ -160,8 +173,27 @@ impl Font {
     }
 
     pub(crate) fn draw_centered(&self, text: &str, center: Vec2, color: Vec4) -> Vec<Draw> {
-        let baseline = center.y + (self.ascent + self.descent) / 2.0;
-        let mut pen = center.x - self.width(text) / 2.0;
+        self.draw(text, center, Align::Center, Anchor::Middle, color)
+    }
+
+    pub(crate) fn draw(
+        &self,
+        text: &str,
+        point: Vec2,
+        align: Align,
+        anchor: Anchor,
+        color: Vec4,
+    ) -> Vec<Draw> {
+        let baseline = match anchor {
+            Anchor::Middle => point.y + (self.ascent + self.descent) / 2.0,
+            Anchor::Baseline => point.y,
+        };
+        let width = self.width(text);
+        let mut pen = match align {
+            Align::Left => point.x,
+            Align::Center => point.x - width / 2.0,
+            Align::Right => point.x - width,
+        };
         let mut draws = Vec::new();
         for character in text.chars() {
             let Some(glyph) = self.glyphs.get(&character) else {

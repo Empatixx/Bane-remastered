@@ -1,10 +1,10 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use hecs::World;
 use winit::keyboard::KeyCode;
 
-use crate::assets::{Assets, BULLET, TILESET};
+use crate::assets::{Assets, TILESET};
 use crate::camera::Camera;
-use crate::components::Interaction;
+use crate::components::{Interaction, UiAction};
 use crate::input::Input;
 use crate::physics::Physics;
 use crate::prefabs::{self, PLAYER_SIZE};
@@ -13,7 +13,7 @@ use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::viewport::TARGET;
 
-use super::{Scene, SceneId, Transition};
+use super::{Cursor, Pause, Scene, SceneId, Transition};
 
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
 const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
@@ -51,6 +51,7 @@ pub(crate) struct LobbyScene {
     world: World,
     physics: Physics,
     camera: Camera,
+    pause: Pause,
 }
 
 impl Scene for LobbyScene {
@@ -65,6 +66,11 @@ impl Scene for LobbyScene {
     fn leave(&mut self) {
         self.world.clear();
         self.physics = Physics::new();
+        self.pause = Pause::default();
+    }
+
+    fn cursor(&self) -> Cursor {
+        Cursor::Default
     }
 
     fn camera(&self) -> Vec2 {
@@ -113,6 +119,13 @@ impl Scene for LobbyScene {
             textures,
         );
 
+        prefabs::status_bars(&mut self.world, textures);
+        prefabs::coin_hud(
+            &mut self.world,
+            textures,
+            "ingame/green_banecoin.tga",
+            Vec4::new(236.0 / 255.0, 0.0, 0.0, 1.0),
+        );
         self.camera = Camera::new(bounds);
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
             self.camera.snap_to(target);
@@ -120,22 +133,26 @@ impl Scene for LobbyScene {
     }
 
     fn update(&mut self, input: &Input, dt: f32, assets: &Assets) -> Transition {
-        systems::shoot(
-            &mut self.world,
-            &mut self.physics,
-            input,
-            self.camera.position(),
-            assets.textures.get(BULLET),
-            dt,
-            systems::ShotRoll::random(),
-        );
+        if input.just_pressed(KeyCode::Escape) {
+            self.pause.toggle(&mut self.world, assets);
+        }
+        if self.pause.is_active() {
+            return match self.pause.update(&mut self.world, input) {
+                Some(UiAction::Resume) => {
+                    self.pause.toggle(&mut self.world, assets);
+                    Transition::None
+                }
+                Some(UiAction::LeaveToMenu) => Transition::Switch(SceneId::Menu),
+                _ => Transition::None,
+            };
+        }
         systems::animate_player(&mut self.world, input);
+        systems::tick_invulnerability(&mut self.world, dt);
+        systems::update_status_bars(&mut self.world, dt);
+        systems::update_weapon_hud(&mut self.world);
         systems::remove_expired(&mut self.world);
         if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
             self.camera.follow(target, dt);
-        }
-        if input.just_pressed(KeyCode::Escape) {
-            return Transition::Switch(SceneId::Menu);
         }
         match systems::interact(&mut self.world, input) {
             Some(Interaction::EnterPortal) => Transition::Switch(SceneId::InGame),
@@ -148,9 +165,11 @@ impl Scene for LobbyScene {
     }
 
     fn fixed_update(&mut self, input: &Input, dt: f32) -> Transition {
+        if self.pause.is_active() {
+            return Transition::None;
+        }
         systems::steer_player(&mut self.world, input);
         systems::simulate(&mut self.world, &mut self.physics, dt);
-        systems::bullet_hits(&mut self.world, &mut self.physics);
         Transition::None
     }
 }

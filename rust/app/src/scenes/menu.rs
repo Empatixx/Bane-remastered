@@ -67,7 +67,7 @@ impl Scene for MenuScene {
                 Transition::None
             }
             Some(UiAction::Exit) => Transition::Quit,
-            None => Transition::None,
+            _ => Transition::None,
         }
     }
 }

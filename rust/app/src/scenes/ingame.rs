@@ -1,9 +1,10 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::{Assets, BULLET, RAT, TILESET};
 use crate::camera::Camera;
+use crate::components::{UiAction, Weapon};
 use crate::input::Input;
 use crate::physics::Physics;
 use crate::prefabs;
@@ -11,13 +12,14 @@ use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::viewport::TARGET;
 
-use super::{Scene, SceneId, Transition};
+use super::{Cursor, Pause, Scene, SceneId, Transition};
 
 #[derive(Default)]
 pub(crate) struct InGameScene {
     world: World,
     physics: Physics,
     camera: Camera,
+    pause: Pause,
 }
 
 impl Scene for InGameScene {
@@ -32,6 +34,24 @@ impl Scene for InGameScene {
     fn leave(&mut self) {
         self.world.clear();
         self.physics = Physics::new();
+        self.pause = Pause::default();
+    }
+
+    fn cursor(&self) -> Cursor {
+        if self.pause.is_active() {
+            return Cursor::Default;
+        }
+        let reloading = self
+            .world
+            .query::<&Weapon>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .any(|weapon| weapon.reloading.is_some());
+        if reloading {
+            Cursor::Reload
+        } else {
+            Cursor::Crosshair
+        }
     }
 
     fn camera(&self) -> Vec2 {
@@ -41,6 +61,7 @@ impl Scene for InGameScene {
     fn enter(&mut self, assets: &Assets) {
         let grid = tilemap::arena();
         let bounds = grid.pixel_size();
+        let textures = &assets.textures;
         let solid_cells = prefabs::tilemap(
             &mut self.world,
             &grid,
@@ -63,6 +84,14 @@ impl Scene for InGameScene {
                 assets.textures.get(RAT),
             );
         }
+        prefabs::status_bars(&mut self.world, textures);
+        prefabs::coin_hud(
+            &mut self.world,
+            textures,
+            "ingame/banecoin.tga",
+            Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
+        );
+        prefabs::weapon_hud(&mut self.world, textures, Weapon::pistol().clip_size);
         self.camera = Camera::new(bounds);
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
             self.camera.snap_to(target);
@@ -70,6 +99,19 @@ impl Scene for InGameScene {
     }
 
     fn update(&mut self, input: &Input, dt: f32, assets: &Assets) -> Transition {
+        if input.just_pressed(KeyCode::Escape) {
+            self.pause.toggle(&mut self.world, assets);
+        }
+        if self.pause.is_active() {
+            return match self.pause.update(&mut self.world, input) {
+                Some(UiAction::Resume) => {
+                    self.pause.toggle(&mut self.world, assets);
+                    Transition::None
+                }
+                Some(UiAction::LeaveToMenu) => Transition::Switch(SceneId::Menu),
+                _ => Transition::None,
+            };
+        }
         systems::shoot(
             &mut self.world,
             &mut self.physics,
@@ -80,23 +122,30 @@ impl Scene for InGameScene {
             systems::ShotRoll::random(),
         );
         systems::animate_player(&mut self.world, input);
+        systems::tick_invulnerability(&mut self.world, dt);
+        systems::update_status_bars(&mut self.world, dt);
+        systems::update_weapon_hud(&mut self.world);
         systems::remove_expired(&mut self.world);
         if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
             self.camera.follow(target, dt);
         }
-        if input.just_pressed(KeyCode::Escape) {
-            Transition::Switch(SceneId::Lobby)
-        } else {
-            Transition::None
-        }
+        Transition::None
     }
 
     fn fixed_update(&mut self, input: &Input, dt: f32) -> Transition {
+        if self.pause.is_active() {
+            return Transition::None;
+        }
         systems::steer_player(&mut self.world, input);
         systems::chase_player(&mut self.world);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics);
         systems::reap_dead(&mut self.world, &mut self.physics);
-        Transition::None
+        systems::contact_damage(&mut self.world);
+        if systems::player_is_dead(&self.world) {
+            Transition::Switch(SceneId::Lobby)
+        } else {
+            Transition::None
+        }
     }
 }

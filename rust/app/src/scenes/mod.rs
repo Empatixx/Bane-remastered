@@ -3,6 +3,7 @@ mod loading;
 mod lobby;
 mod machine;
 mod menu;
+mod pause;
 
 use glam::Vec2;
 use hecs::World;
@@ -11,6 +12,7 @@ use crate::assets::Assets;
 use crate::input::Input;
 
 pub(crate) use machine::Scenes;
+pub(crate) use pause::Pause;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SceneId {
@@ -18,6 +20,13 @@ pub(crate) enum SceneId {
     Menu,
     Lobby,
     InGame,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Cursor {
+    Default,
+    Crosshair,
+    Reload,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,6 +42,10 @@ pub(crate) trait Scene {
     fn world_mut(&mut self) -> &mut World;
 
     fn enter(&mut self, assets: &Assets);
+
+    fn cursor(&self) -> Cursor {
+        Cursor::Default
+    }
 
     fn camera(&self) -> Vec2 {
         Vec2::ZERO
