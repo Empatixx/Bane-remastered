@@ -78,6 +78,7 @@ pub(crate) fn pick_up_gun(world: &mut World, textures: &Textures, sounds: &mut V
         return;
     };
     let _ = world.despawn(entity);
+    super::stats::record(world, super::stats::Stat::Item, 1);
     let placed = world
         .query_mut::<(&Position, &mut Loadout)>()
         .with::<&Player>()

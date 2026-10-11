@@ -52,6 +52,10 @@ impl Input {
         }
     }
 
+    pub(crate) fn any_key(&self) -> bool {
+        !self.pressed.is_empty()
+    }
+
     pub(crate) fn scrolled(&self) -> i32 {
         self.scrolled
     }

@@ -6,14 +6,15 @@ use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armageddon, Armor, ArtefactDrop, ArtefactIcon, ArtefactSlot,
     Backdrop, BarKind, Boss, BossHud, BreakKind, Breakable, Bullet, Button, Candle, Chase, Chest,
-    ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Despawn,
-    Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Flame, Floating, Fuse, GazeWind, GunDrop,
-    GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact, Interactable, Interaction, Kin,
-    Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick, Overlay, Particle, Path,
-    PauseUi, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt, RoomId, ScreenSpace,
-    ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash, Solid, Spawning, SpeechBubble,
-    SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity, Wallet,
-    Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal,
+    DeathPart, Despawn, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Flame, Floating, Fuse,
+    GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
+    Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
+    Overlay, Particle, Path, PauseUi, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt,
+    RoomId, RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash, Solid,
+    Spawning, SpeechBubble, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
+    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
@@ -23,9 +24,11 @@ use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
+use crate::systems::death_screen::{PROMPT_POSITION, SKULL_SIZE, TITLE_BASELINE};
 use crate::systems::SPIN_COST;
 use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 use crate::tilemap::{self, TileGrid, Tileset};
+use crate::viewport::TARGET;
 use rapier2d::prelude::ColliderHandle;
 
 pub(crate) const PLAYER_SIZE: Vec2 = Vec2::new(32.0, 76.0);
@@ -46,6 +49,7 @@ pub(crate) fn player(
         ArtefactSlot {
             current: Some(ArtefactKind::RevealMap),
         },
+        RunStats::default(),
         Health {
             current: PLAYER_HEALTH,
             max: PLAYER_HEALTH,
@@ -151,6 +155,7 @@ const SLOT_PROMPT_GAP: f32 = -10.0;
 const ARTEFACT_SLOT_POSITION: Vec2 = Vec2::new(585.0, 450.0);
 const ARTEFACT_FRAME: f32 = 75.0;
 const SHIELD_SIZE: Vec2 = Vec2::new(96.0, 144.0);
+const DEATH_ICON: f32 = 32.0;
 const DROP_DRAG: f32 = 6.0;
 const FLOAT_SECONDS: f32 = 0.5;
 const FLOAT_RISE: f32 = 30.0;
@@ -1123,6 +1128,122 @@ pub(crate) fn shield_aura(world: &mut World, center: Vec2, textures: &Textures) 
         Layer(4),
         Lit,
     ))
+}
+
+pub(crate) fn death_ui(world: &mut World, victory: bool, textures: &Textures) {
+    let overlay = |part, position: Vec2, size: Vec2, texture, layer| {
+        (
+            part,
+            Position(position),
+            Size(size),
+            Color(Vec4::ONE),
+            Sprite::whole(texture),
+            Layer(layer),
+            Overlay,
+            ScreenSpace,
+            Hidden,
+        )
+    };
+    world.spawn((
+        DeathPart::Dim,
+        Position(TARGET / 2.0),
+        Size(TARGET),
+        Color(Vec4::new(0.0, 0.0, 0.0, 0.0)),
+        Sprite::whole(TextureId::WHITE),
+        Layer(20),
+        Overlay,
+        ScreenSpace,
+    ));
+    world.spawn(overlay(
+        DeathPart::Skull,
+        Vec2::ZERO,
+        SKULL_SIZE,
+        textures.get("ingame/skull.tga"),
+        21,
+    ));
+    let icons = [
+        "ingame/accuracy_icon.tga",
+        "ingame/kills_icon.tga",
+        "ingame/loot_icon.tga",
+        "ingame/floor_icon.tga",
+    ];
+    for (index, icon) in icons.into_iter().enumerate() {
+        world.spawn(overlay(
+            DeathPart::Icon(index),
+            Vec2::ZERO,
+            Vec2::splat(DEATH_ICON),
+            textures.get(icon),
+            21,
+        ));
+        world.spawn((
+            DeathPart::Label(index),
+            Position(Vec2::ZERO),
+            Size(Vec2::ONE),
+            Color(Vec4::ONE),
+            Text {
+                content: String::new(),
+                color: Vec4::ONE,
+                size: FontSize::Size22,
+                align: Align::Left,
+                anchor: Anchor::Baseline,
+            },
+            Layer(22),
+            Overlay,
+            ScreenSpace,
+            Hidden,
+        ));
+        world.spawn((
+            DeathPart::Reward(index),
+            Position(Vec2::ZERO),
+            Size(Vec2::ONE),
+            Color(Vec4::ONE),
+            Text {
+                content: String::new(),
+                color: Vec4::new(236.0 / 255.0, 0.0, 0.0, 1.0),
+                size: FontSize::Size22,
+                align: Align::Left,
+                anchor: Anchor::Baseline,
+            },
+            Layer(22),
+            Overlay,
+            ScreenSpace,
+            Hidden,
+        ));
+    }
+    world.spawn((
+        DeathPart::Title,
+        Position(Vec2::new(TARGET.x / 2.0, TITLE_BASELINE)),
+        Size(Vec2::ONE),
+        Color(Vec4::ONE),
+        Text {
+            content: if victory { "Victory!" } else { "Game Over" }.to_owned(),
+            color: Vec4::ONE,
+            size: FontSize::Size32,
+            align: Align::Center,
+            anchor: Anchor::Baseline,
+        },
+        Layer(22),
+        Overlay,
+        ScreenSpace,
+        Hidden,
+    ));
+    world.spawn((
+        DeathPart::Prompt,
+        Position(PROMPT_POSITION),
+        Size(Vec2::ONE),
+        Color(Vec4::ONE),
+        Text {
+            content: "Press any key to continue...".to_owned(),
+            color: Vec4::ONE,
+            size: FontSize::Size22,
+            align: Align::Left,
+            anchor: Anchor::Baseline,
+        },
+        Layer(22),
+        Overlay,
+        ScreenSpace,
+        Hidden,
+    ));
 }
 
 pub(crate) fn chest(

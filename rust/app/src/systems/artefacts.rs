@@ -134,6 +134,7 @@ pub(crate) fn pick_up_artefact(
         return;
     };
     let _ = world.despawn(entity);
+    super::stats::record(world, super::stats::Stat::Item, 1);
     let replaced = world
         .query_mut::<(&Position, &mut ArtefactSlot)>()
         .with::<&Player>()

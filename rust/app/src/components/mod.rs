@@ -3,6 +3,7 @@ mod appearance;
 mod artefacts;
 mod body;
 mod combat;
+mod death;
 mod effects;
 mod hud;
 mod interaction;
@@ -14,6 +15,7 @@ mod objects;
 mod settings_ui;
 mod shadow;
 mod skills;
+mod stats;
 mod tags;
 mod transform;
 mod ui;
@@ -29,6 +31,7 @@ pub(crate) use combat::{
     Invulnerable, Loadout, Path, Spawning, Trap, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT,
     BULLET_IMPACT, BULLET_ROWS,
 };
+pub(crate) use death::DeathPart;
 pub(crate) use effects::{Floating, GazeWind, LightFade, Particle, RoomId, ThenPlay, TrapCooldown};
 pub(crate) use hud::{
     AmmoPip, AmmoText, BarKind, BossHud, CoinText, GunIcon, StatusBar, PIP_EMPTY, PIP_FULL,
@@ -51,6 +54,7 @@ pub(crate) use skills::{
     Armageddon, Boss, Cobweb, DeathBurst, DeathHeal, Drag, EnemyBullet, EyeShooter, Fuse, Hatcher,
     Hits, Homing, Impact, Kin, Minion, Rooted, Smash, WebSpitter,
 };
+pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
 pub(crate) use transform::{Position, Size};
 pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, TextButton, UiAction};

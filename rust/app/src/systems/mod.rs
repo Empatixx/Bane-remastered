@@ -4,6 +4,7 @@ mod bosses;
 mod camera;
 mod carry;
 mod damage;
+pub(crate) mod death_screen;
 mod draw;
 mod effects;
 mod enemies;
@@ -24,6 +25,7 @@ mod shop;
 mod simulation;
 mod skills;
 mod slot;
+mod stats;
 mod steering;
 mod ui;
 
@@ -41,6 +43,7 @@ pub(crate) use damage::{
     contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,
     trap_hits_enemies,
 };
+pub(crate) use death_screen::{update_death_ui, DeathScreen};
 pub(crate) use draw::collect_draws;
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::finish_spawning;
@@ -67,5 +70,6 @@ pub(crate) use skills::{
     tick_smashes,
 };
 pub(crate) use slot::{spin, tick_slot_machines, update_slot_prices, SPIN_COST};
+pub(crate) use stats::{current as current_stats, summarize, Summary};
 pub(crate) use steering::steer_player;
 pub(crate) use ui::{update_buttons, update_text_buttons};

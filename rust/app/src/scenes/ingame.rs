@@ -19,7 +19,6 @@ use crate::viewport::TARGET;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition};
 
-const VICTORY_SECONDS: f32 = 4.0;
 const SLOT_MACHINE_COINS: i32 = 100;
 
 #[derive(Default)]
@@ -37,7 +36,8 @@ pub(crate) struct InGameScene {
     big_map: bool,
     floor: u32,
     navigation: Navigation,
-    victory_timer: Option<f32>,
+    victory: bool,
+    death: Option<systems::DeathScreen>,
     kills_without_drop: u32,
     drag_from: Option<Vec2>,
 }
@@ -80,7 +80,7 @@ impl Scene for InGameScene {
     }
 
     fn cursor(&self) -> Cursor {
-        if self.pause.is_active() || self.big_map {
+        if self.pause.is_active() || self.big_map || self.death.is_some() {
             return Cursor::Default;
         }
         let reloading = self
@@ -102,7 +102,8 @@ impl Scene for InGameScene {
 
     fn enter(&mut self, assets: &Assets) {
         self.floor = 1;
-        self.victory_timer = None;
+        self.victory = false;
+        self.death = None;
         self.build(assets);
     }
 
@@ -113,6 +114,18 @@ impl Scene for InGameScene {
         assets: &Assets,
         _settings: &mut Settings,
     ) -> Transition {
+        if self.death.is_none() && (self.victory || systems::player_is_dead(&self.world)) {
+            self.start_death_screen(assets);
+        }
+        if let Some(screen) = &mut self.death {
+            screen.advance(dt, input.any_key());
+            systems::update_death_ui(&mut self.world, screen);
+            if screen.finished() {
+                return Transition::Switch(SceneId::Lobby);
+            }
+            systems::follow_backdrop(&mut self.world, self.camera.position());
+            return Transition::None;
+        }
         if input.just_pressed(KeyCode::Tab) && !self.pause.is_active() {
             self.set_big_map(!self.big_map);
         }
@@ -281,17 +294,11 @@ impl Scene for InGameScene {
             }
             _ => {}
         }
-        if let Some(remaining) = self.victory_timer.as_mut() {
-            *remaining -= dt;
-            if *remaining <= 0.0 {
-                return Transition::Switch(SceneId::Lobby);
-            }
-        }
         Transition::None
     }
 
     fn fixed_update(&mut self, input: &Input, dt: f32, assets: &Assets) -> Transition {
-        if self.pause.is_active() {
+        if self.pause.is_active() || self.death.is_some() {
             return Transition::None;
         }
         systems::steer_player(&mut self.world, input);
@@ -325,15 +332,20 @@ impl Scene for InGameScene {
             self.hit = true;
         }
         systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
-        if systems::player_is_dead(&self.world) {
-            Transition::Switch(SceneId::Lobby)
-        } else {
-            Transition::None
-        }
+        Transition::None
     }
 }
 
 impl InGameScene {
+    fn start_death_screen(&mut self, assets: &Assets) {
+        let stats = systems::current_stats(&self.world);
+        let summary = systems::summarize(stats, self.floor);
+        tracing::info!(victory = self.victory, ?summary, "the run is over");
+        prefabs::death_ui(&mut self.world, self.victory, &assets.textures);
+        self.death = Some(systems::DeathScreen::new(summary));
+        self.set_big_map(false);
+    }
+
     fn build(&mut self, assets: &Assets) {
         self.rng = Rng::from_clock();
         tracing::info!(seed = self.rng.seed(), "generating the dungeon");
@@ -439,7 +451,7 @@ impl InGameScene {
                     );
                     if self.floor >= crate::enemies::FINAL_FLOOR {
                         tracing::info!("the last boss is defeated");
-                        self.victory_timer = Some(VICTORY_SECONDS);
+                        self.victory = true;
                     } else {
                         let ladder_top_left = center - Vec2::new(48.0, 0.0);
                         prefabs::ladder(&mut self.world, ladder_top_left, textures);

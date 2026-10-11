@@ -133,6 +133,8 @@ pub(crate) fn shoot(
             pellets: spec.pellets,
         });
     }
+    let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
+    super::stats::record(world, super::stats::Stat::Fired, fired);
     for shot in shots {
         let aim = shot.direction.to_angle();
         for pellet in 0..shot.pellets {
@@ -173,6 +175,9 @@ pub(crate) fn bullet_hits(
             .is_some();
         if let (true, Some(entity)) = (hit_enemy, victim) {
             super::skills::count_hits(world, entity);
+            if world.get::<&crate::components::Enemy>(entity).is_ok() {
+                super::stats::record(world, super::stats::Stat::Hit, 1);
+            }
             if world.get::<&crate::components::Breakable>(entity).is_err() {
                 super::effects::show_change(world, entity, -damage, rand::random_range(0.0..1.0));
             }

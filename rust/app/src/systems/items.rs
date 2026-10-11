@@ -43,6 +43,7 @@ pub(crate) fn can_use(world: &World, item: ItemKind) -> bool {
 }
 
 pub(crate) fn use_item(world: &mut World, item: ItemKind, sounds: &mut Vec<AudioCommand>) {
+    super::stats::record(world, super::stats::Stat::Item, 1);
     match item {
         ItemKind::Coin => {
             for wallet in world.query_mut::<&mut Wallet>().with::<&Player>() {
@@ -132,6 +133,14 @@ pub(crate) fn enemy_drops(
         .filter(|(_, animation)| animation.finished())
         .map(|(position, _)| position.0)
         .collect();
+    let kills = world
+        .query::<&Animation>()
+        .with::<(&Enemy, &Expiring)>()
+        .without::<&crate::components::Minion>()
+        .iter()
+        .filter(|animation| animation.finished())
+        .count();
+    super::stats::record(world, super::stats::Stat::Kill, kills as u32);
     for position in dead {
         *kills_without_drop += 1;
         if drop_threshold_reached(*kills_without_drop, roll(DROP_ROLL_RANGE)) {
