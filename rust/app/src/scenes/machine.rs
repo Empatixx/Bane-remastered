@@ -1,12 +1,10 @@
 use std::fmt;
 use std::ops::ControlFlow;
-use std::sync::Arc;
 
-use crate::assets::Textures;
+use crate::assets::Assets;
 use crate::input::Input;
-use crate::render::{Draw, Font};
+use crate::render::{Draw, Fonts};
 use crate::systems;
-use crate::tilemap::Tileset;
 
 use super::ingame::InGameScene;
 use super::loading::LoadingScene;
@@ -31,46 +29,52 @@ impl fmt::Debug for Scenes {
 }
 
 impl Scenes {
-    pub(crate) fn new(textures: Textures, tileset: Arc<Tileset>) -> Self {
+    pub(crate) fn new(assets: &Assets) -> Self {
         let mut scenes = Self {
             current: SceneId::Loading,
             loading: LoadingScene::default(),
-            menu: MenuScene::new(textures),
-            lobby: LobbyScene::new(textures, Arc::clone(&tileset)),
-            ingame: InGameScene::new(textures, tileset),
+            menu: MenuScene::default(),
+            lobby: LobbyScene::default(),
+            ingame: InGameScene::default(),
         };
-        scenes.scene_mut().enter();
+        scenes.scene_mut().enter(assets);
         scenes
     }
 
-    pub(crate) fn update(&mut self, input: &Input, dt: f32) -> ControlFlow<()> {
-        let transition = self.scene_mut().update(input, dt);
-        self.apply(transition)
+    pub(crate) fn update(&mut self, input: &Input, dt: f32, assets: &Assets) -> ControlFlow<()> {
+        systems::animate(self.scene_mut().world_mut(), dt);
+        let transition = self.scene_mut().update(input, dt, assets);
+        self.apply(transition, assets)
     }
 
-    pub(crate) fn fixed_update(&mut self, input: &Input, dt: f32) -> ControlFlow<()> {
+    pub(crate) fn fixed_update(
+        &mut self,
+        input: &Input,
+        dt: f32,
+        assets: &Assets,
+    ) -> ControlFlow<()> {
         let transition = self.scene_mut().fixed_update(input, dt);
-        self.apply(transition)
+        self.apply(transition, assets)
     }
 
-    pub(crate) fn draws(&self, font: &Font) -> Vec<Draw> {
+    pub(crate) fn draws(&self, fonts: &Fonts) -> Vec<Draw> {
         let scene = self.scene();
-        systems::collect_draws(scene.world(), font, scene.camera())
+        systems::collect_draws(scene.world(), fonts, scene.camera())
     }
 
-    fn apply(&mut self, transition: Transition) -> ControlFlow<()> {
+    fn apply(&mut self, transition: Transition, assets: &Assets) -> ControlFlow<()> {
         match transition {
             Transition::None => {}
-            Transition::Switch(next) => self.switch(next),
+            Transition::Switch(next) => self.switch(next, assets),
             Transition::Quit => return ControlFlow::Break(()),
         }
         ControlFlow::Continue(())
     }
 
-    fn switch(&mut self, next: SceneId) {
+    fn switch(&mut self, next: SceneId, assets: &Assets) {
         self.scene_mut().leave();
         self.current = next;
-        self.scene_mut().enter();
+        self.scene_mut().enter(assets);
         tracing::info!(scene = ?next, "scene changed");
     }
 
@@ -100,57 +104,68 @@ mod tests {
 
     use super::*;
 
-    fn test_scenes() -> Scenes {
-        let tileset = Tileset::dungeon().expect("the embedded tileset is valid");
-        Scenes::new(Textures::default(), Arc::new(tileset))
+    fn loaded_assets() -> Assets {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        assets
     }
 
-    fn click_at(scenes: &mut Scenes, input: &mut Input, position: Vec2) -> ControlFlow<()> {
+    fn click_at(
+        scenes: &mut Scenes,
+        input: &mut Input,
+        assets: &Assets,
+        position: Vec2,
+    ) -> ControlFlow<()> {
         input.set_mouse(position);
-        assert!(scenes.update(input, 0.0).is_continue());
+        assert!(scenes.update(input, 0.0, assets).is_continue());
         input.handle_click(MouseButton::Left, ElementState::Pressed);
-        let flow = scenes.update(input, 0.0);
+        let flow = scenes.update(input, 0.0, assets);
         input.end_frame();
         flow
     }
 
-    fn menu() -> (Scenes, Input) {
-        let mut scenes = test_scenes();
+    fn menu() -> (Scenes, Input, Assets) {
+        let assets = loaded_assets();
+        let mut scenes = Scenes::new(&assets);
         let input = Input::default();
-        assert!(scenes.update(&input, 2.0).is_continue());
+        assert!(scenes.update(&input, 0.0, &assets).is_continue());
         assert_eq!(scenes.current, SceneId::Menu);
-        (scenes, input)
+        (scenes, input, assets)
     }
 
     #[test]
-    fn loading_switches_to_menu_when_done() {
-        let mut scenes = test_scenes();
+    fn loading_waits_until_the_assets_are_loaded() {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        let mut scenes = Scenes::new(&assets);
         let input = Input::default();
-        assert!(scenes.update(&input, 0.5).is_continue());
+
+        assert!(scenes.update(&input, 1.0, &assets).is_continue());
         assert_eq!(scenes.current, SceneId::Loading);
-        assert!(scenes.update(&input, 0.6).is_continue());
+
+        assets.mark_loaded();
+        assert!(scenes.update(&input, 0.0, &assets).is_continue());
         assert_eq!(scenes.current, SceneId::Menu);
     }
 
     #[test]
     fn play_button_opens_lobby() {
-        let (mut scenes, mut input) = menu();
-        let flow = click_at(&mut scenes, &mut input, Vec2::new(480.0, 240.0));
+        let (mut scenes, mut input, assets) = menu();
+        let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 225.0));
         assert_eq!(flow, ControlFlow::Continue(()));
         assert_eq!(scenes.current, SceneId::Lobby);
     }
 
     #[test]
     fn exit_button_quits() {
-        let (mut scenes, mut input) = menu();
-        let flow = click_at(&mut scenes, &mut input, Vec2::new(480.0, 380.0));
+        let (mut scenes, mut input, assets) = menu();
+        let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 425.0));
         assert_eq!(flow, ControlFlow::Break(()));
     }
 
     #[test]
     fn click_outside_buttons_does_nothing() {
-        let (mut scenes, mut input) = menu();
-        assert!(click_at(&mut scenes, &mut input, Vec2::new(10.0, 10.0)).is_continue());
+        let (mut scenes, mut input, assets) = menu();
+        assert!(click_at(&mut scenes, &mut input, &assets, Vec2::new(10.0, 10.0)).is_continue());
         assert_eq!(scenes.current, SceneId::Menu);
     }
 }

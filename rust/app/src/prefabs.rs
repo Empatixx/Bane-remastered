@@ -2,12 +2,12 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Bullet, Button, Chase, Clip, Color, Enemy, Health, Layer, LoadingBar, OnClick,
-    Player, Portal, Position, Size, Sprite, Text, UiAction, Velocity, Weapon, BULLET_COLUMNS,
-    BULLET_FLIGHT, BULLET_ROWS,
+    Animation, Bullet, Button, Chase, Clip, Color, Enemy, Health, Layer, OnClick, Player, Portal,
+    Position, Size, Sprite, Text, UiAction, Velocity, Weapon, BULLET_COLUMNS, BULLET_FLIGHT,
+    BULLET_ROWS,
 };
 use crate::physics::Physics;
-use crate::render::TextureId;
+use crate::render::{FontSize, TextureId};
 use crate::tilemap::{self, TileGrid, Tileset};
 
 pub(crate) fn player(world: &mut World, physics: &mut Physics, position: Vec2) -> Entity {
@@ -26,10 +26,6 @@ pub(crate) fn player(world: &mut World, physics: &mut Physics, position: Vec2) -
     entity
 }
 
-pub(crate) fn block(world: &mut World, position: Vec2, size: Vec2, color: Vec4) -> Entity {
-    world.spawn((Position(position), Size(size), Color(color)))
-}
-
 pub(crate) fn portal(world: &mut World, position: Vec2) -> Entity {
     world.spawn((
         Portal,
@@ -39,32 +35,56 @@ pub(crate) fn portal(world: &mut World, position: Vec2) -> Entity {
     ))
 }
 
-pub(crate) fn button(
-    world: &mut World,
-    position: Vec2,
-    idle: Vec4,
-    label: &str,
-    action: UiAction,
-) -> Entity {
-    label_at(world, position, label, Layer(2));
+const SPINNER_FRAMES: usize = 8;
+const SPINNER_SIZE: Vec2 = Vec2::new(68.0, 72.0);
+const SPINNER: Clip = Clip {
+    row: 0,
+    frames: SPINNER_FRAMES,
+    frame_time: 0.1,
+    looping: true,
+};
+
+pub(crate) fn spinner(world: &mut World, position: Vec2, texture: TextureId) -> Entity {
     world.spawn((
-        Button {
-            idle,
-            hover: (idle * 1.35).min(Vec4::ONE),
-        },
-        OnClick(action),
         Position(position),
-        Size(Vec2::new(240.0, 48.0)),
-        Color(idle),
+        Size(SPINNER_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(texture, 0, 0, SPINNER_FRAMES, 1),
+        Animation::new(SPINNER_FRAMES, 1, SPINNER),
+        Layer(1),
     ))
 }
 
-pub(crate) fn loading_bar(world: &mut World, position: Vec2) -> Entity {
+const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
+const BUTTON_TEXT_COLOR: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
+
+pub(crate) fn button(
+    world: &mut World,
+    position: Vec2,
+    label: &str,
+    action: UiAction,
+    texture: TextureId,
+) -> Entity {
     world.spawn((
-        LoadingBar,
+        Text {
+            content: label.to_owned(),
+            color: BUTTON_TEXT_COLOR,
+            size: FontSize::Size27,
+        },
         Position(position),
-        Size(Vec2::new(0.0, 16.0)),
-        Color(Vec4::new(0.3, 0.8, 0.5, 1.0)),
+        Layer(2),
+    ));
+    world.spawn((
+        Button {
+            idle_uv: Sprite::cell_uv(0, 0, 2, 1),
+            hover_uv: Sprite::cell_uv(1, 0, 2, 1),
+        },
+        OnClick(action),
+        Position(position),
+        Size(BUTTON_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(texture, 0, 0, 2, 1),
+        Layer(1),
     ))
 }
 
@@ -81,21 +101,6 @@ pub(crate) fn sprite(
         Color(Vec4::ONE),
         Sprite::whole(texture),
         Layer(layer),
-    ))
-}
-
-pub(crate) fn label(world: &mut World, position: Vec2, content: &str) -> Entity {
-    label_at(world, position, content, Layer(2))
-}
-
-fn label_at(world: &mut World, position: Vec2, content: &str, layer: Layer) -> Entity {
-    world.spawn((
-        Position(position),
-        Text {
-            content: content.to_owned(),
-            color: Vec4::ONE,
-        },
-        layer,
     ))
 }
 

@@ -7,6 +7,7 @@ mod menu;
 use glam::Vec2;
 use hecs::World;
 
+use crate::assets::Assets;
 use crate::input::Input;
 
 pub(crate) use machine::Scenes;
@@ -31,7 +32,7 @@ pub(crate) trait Scene {
 
     fn world_mut(&mut self) -> &mut World;
 
-    fn enter(&mut self);
+    fn enter(&mut self, assets: &Assets);
 
     fn camera(&self) -> Vec2 {
         Vec2::ZERO
@@ -41,7 +42,7 @@ pub(crate) trait Scene {
         self.world_mut().clear();
     }
 
-    fn update(&mut self, _input: &Input, _dt: f32) -> Transition {
+    fn update(&mut self, _input: &Input, _dt: f32, _assets: &Assets) -> Transition {
         Transition::None
     }
 

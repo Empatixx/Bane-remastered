@@ -7,7 +7,7 @@ use winit::event::WindowEvent;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowId};
 
-use crate::assets::Assets;
+use crate::assets::{Assets, Loader};
 use crate::game::Game;
 use crate::render::Gpu;
 use crate::viewport::TARGET;
@@ -20,6 +20,7 @@ pub(crate) struct App {
     window: Option<Arc<Window>>,
     gpu: Option<Gpu>,
     game: Option<Game>,
+    loader: Option<Loader>,
     last_frame: Instant,
     accumulator: Duration,
 }
@@ -30,6 +31,7 @@ impl App {
             window: None,
             gpu: None,
             game: None,
+            loader: None,
             last_frame: Instant::now(),
             accumulator: Duration::ZERO,
         }
@@ -47,13 +49,16 @@ impl ApplicationHandler for App {
                 return;
             }
         };
+        window.set_cursor_visible(false);
         let started = Gpu::new(Arc::clone(&window)).and_then(|mut gpu| {
-            let assets = Assets::load(&mut gpu)?;
-            Ok((gpu, assets))
+            let mut assets = Assets::new()?;
+            let loader = Loader::start(&mut gpu, &mut assets)?;
+            Ok((gpu, assets, loader))
         });
         match started {
-            Ok((gpu, assets)) => {
+            Ok((gpu, assets, loader)) => {
                 self.game = Some(Game::new(assets));
+                self.loader = Some(loader);
                 self.gpu = Some(gpu);
                 self.window = Some(window);
             }
@@ -110,9 +115,19 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        let Some(game) = &mut self.game else {
+        let (Some(game), Some(gpu)) = (&mut self.game, &mut self.gpu) else {
             return;
         };
+        if let Some(loader) = &mut self.loader {
+            if let Err(error) = loader.step(gpu, game.assets_mut()) {
+                tracing::error!(%error, "cannot load the assets");
+                event_loop.exit();
+                return;
+            }
+            if loader.is_done() {
+                self.loader = None;
+            }
+        }
         let now = Instant::now();
         let frame_time = (now - self.last_frame).min(MAX_FRAME);
         self.last_frame = now;

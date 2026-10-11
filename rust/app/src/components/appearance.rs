@@ -1,6 +1,6 @@
 use glam::Vec4;
 
-use crate::render::TextureId;
+use crate::render::{FontSize, TextureId};
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Color(pub(crate) Vec4);
@@ -50,4 +50,5 @@ pub(crate) struct Layer(pub(crate) i32);
 pub(crate) struct Text {
     pub(crate) content: String,
     pub(crate) color: Vec4,
+    pub(crate) size: FontSize,
 }

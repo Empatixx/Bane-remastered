@@ -15,6 +15,6 @@ pub(crate) use combat::{
     BULLET_ROWS,
 };
 pub(crate) use motion::Velocity;
-pub(crate) use tags::{LoadingBar, Player, Portal};
+pub(crate) use tags::{Player, Portal};
 pub(crate) use transform::{Position, Size};
 pub(crate) use ui::{Button, OnClick, UiAction};

@@ -7,7 +7,8 @@ use glam::{Vec2, Vec4};
 
 use super::{Draw, Gpu, Quad, TextureId};
 
-const ATLAS_SIZE: u32 = 512;
+const ATLAS_SIZE: u32 = 1024;
+const OVERSAMPLE: f32 = 1.0;
 const CHARSET: &str = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ";
 
 #[derive(Debug, Clone, Copy)]
@@ -16,6 +17,70 @@ struct Glyph {
     size: Vec2,
     offset: Vec2,
     advance: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum FontSize {
+    Size16,
+    Size22,
+    Size27,
+    Size32,
+}
+
+impl FontSize {
+    pub(crate) const ALL: [Self; 4] = [Self::Size16, Self::Size22, Self::Size27, Self::Size32];
+
+    fn pixels(self) -> f32 {
+        match self {
+            Self::Size16 => 16.0,
+            Self::Size22 => 22.0,
+            Self::Size27 => 27.0,
+            Self::Size32 => 32.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct Fonts {
+    size16: Font,
+    size22: Font,
+    size27: Font,
+    size32: Font,
+}
+
+impl Fonts {
+    pub(crate) fn get(&self, size: FontSize) -> &Font {
+        match size {
+            FontSize::Size16 => &self.size16,
+            FontSize::Size22 => &self.size22,
+            FontSize::Size27 => &self.size27,
+            FontSize::Size32 => &self.size32,
+        }
+    }
+
+    pub(crate) fn load(
+        &mut self,
+        gpu: &mut Gpu,
+        path: &Path,
+        size: FontSize,
+    ) -> Result<(), Box<dyn Error>> {
+        let font = Font::load(gpu, path, size.pixels())?;
+        match size {
+            FontSize::Size16 => self.size16 = font,
+            FontSize::Size22 => self.size22 = font,
+            FontSize::Size27 => self.size27 = font,
+            FontSize::Size32 => self.size32 = font,
+        }
+        Ok(())
+    }
+}
+
+fn line_height_to_em(font: &fontdue::Font, line_height: f32) -> f32 {
+    const PROBE: f32 = 100.0;
+    match font.horizontal_line_metrics(PROBE) {
+        Some(metrics) => line_height * PROBE / (metrics.ascent - metrics.descent),
+        None => line_height,
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -27,13 +92,10 @@ pub(crate) struct Font {
 }
 
 impl Font {
-    pub(crate) fn load(
-        gpu: &mut Gpu,
-        path: &Path,
-        pixel_size: f32,
-    ) -> Result<Self, Box<dyn Error>> {
+    fn load(gpu: &mut Gpu, path: &Path, pixel_size: f32) -> Result<Self, Box<dyn Error>> {
         let bytes = fs::read(path)?;
         let font = fontdue::Font::from_bytes(bytes, fontdue::FontSettings::default())?;
+        let pixel_size = line_height_to_em(&font, pixel_size) * OVERSAMPLE;
         let line = font
             .horizontal_line_metrics(pixel_size)
             .ok_or("the font has no horizontal line metrics")?;
@@ -68,9 +130,10 @@ impl Font {
                         (x + width) as f32 / atlas_size,
                         (y + height) as f32 / atlas_size,
                     ],
-                    size: Vec2::new(width as f32, height as f32),
-                    offset: Vec2::new(metrics.xmin as f32, -(metrics.ymin as f32 + height as f32)),
-                    advance: metrics.advance_width,
+                    size: Vec2::new(width as f32, height as f32) / OVERSAMPLE,
+                    offset: Vec2::new(metrics.xmin as f32, -(metrics.ymin as f32 + height as f32))
+                        / OVERSAMPLE,
+                    advance: metrics.advance_width / OVERSAMPLE,
                 },
             );
             x += width + 1;
@@ -80,8 +143,8 @@ impl Font {
         Ok(Self {
             texture: gpu.upload_alpha_mask(ATLAS_SIZE, ATLAS_SIZE, &atlas),
             glyphs,
-            ascent: line.ascent,
-            descent: line.descent,
+            ascent: line.ascent / OVERSAMPLE,
+            descent: line.descent / OVERSAMPLE,
         })
     }
 

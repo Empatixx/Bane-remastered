@@ -19,6 +19,12 @@ struct VertexOut {
     @location(1) uv: vec2<f32>,
 };
 
+fn srgb_to_linear(color: vec3<f32>) -> vec3<f32> {
+    let low = color / 12.92;
+    let high = pow((color + vec3<f32>(0.055)) / 1.055, vec3<f32>(2.4));
+    return select(high, low, color <= vec3<f32>(0.04045));
+}
+
 @vertex
 fn vs_main(@builtin(vertex_index) index: u32, instance: Instance) -> VertexOut {
     var corners = array<vec2<f32>, 6>(
@@ -37,7 +43,7 @@ fn vs_main(@builtin(vertex_index) index: u32, instance: Instance) -> VertexOut {
     );
     var out: VertexOut;
     out.position = vec4<f32>(ndc, 0.0, 1.0);
-    out.color = instance.color;
+    out.color = vec4<f32>(srgb_to_linear(instance.color.rgb), instance.color.a);
     out.uv = mix(instance.uv.xy, instance.uv.zw, corner + vec2<f32>(0.5, 0.5));
     return out;
 }

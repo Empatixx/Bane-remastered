@@ -1,16 +1,21 @@
+use std::collections::VecDeque;
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::render::{Font, Gpu, TextureId};
+use crate::render::{FontSize, Fonts, Gpu, TextureId};
 use crate::tilemap::Tileset;
 
-const FONT_SIZE: f32 = 20.0;
+const FONT_FILE: &str = "fonts/PixelFJVerdana12pt.ttf";
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct Textures {
+    pub(crate) loading_background: TextureId,
+    pub(crate) loading_spinner: TextureId,
     pub(crate) menu_background: TextureId,
     pub(crate) logo: TextureId,
+    pub(crate) button: TextureId,
+    pub(crate) cursor: TextureId,
     pub(crate) tileset: TextureId,
     pub(crate) bullet: TextureId,
     pub(crate) rat: TextureId,
@@ -20,23 +25,96 @@ pub(crate) struct Textures {
 pub(crate) struct Assets {
     pub(crate) textures: Textures,
     pub(crate) tileset: Arc<Tileset>,
-    pub(crate) font: Font,
+    pub(crate) fonts: Fonts,
+    loaded: bool,
 }
 
 impl Assets {
-    pub(crate) fn load(gpu: &mut Gpu) -> Result<Self, Box<dyn Error>> {
-        let root = root();
+    pub(crate) fn new() -> Result<Self, Box<dyn Error>> {
         Ok(Self {
-            textures: Textures {
-                menu_background: gpu.load_texture(&root.join("textures/menu/bg.png"))?,
-                logo: gpu.load_texture(&root.join("textures/menu/logo.tga"))?,
-                tileset: gpu.load_texture(&root.join("textures/ingame/tileset_2.png"))?,
-                bullet: gpu.load_texture(&root.join("textures/ingame/bullet.tga"))?,
-                rat: gpu.load_texture(&root.join("textures/ingame/rat.tga"))?,
-            },
+            textures: Textures::default(),
             tileset: Arc::new(Tileset::dungeon()?),
-            font: Font::load(gpu, &root.join("fonts/PixelFJVerdana12pt.ttf"), FONT_SIZE)?,
+            fonts: Fonts::default(),
+            loaded: false,
         })
+    }
+
+    pub(crate) fn is_loaded(&self) -> bool {
+        self.loaded
+    }
+
+    pub(crate) fn mark_loaded(&mut self) {
+        self.loaded = true;
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Step {
+    MenuBackground,
+    Logo,
+    Button,
+    Cursor,
+    Tileset,
+    Bullet,
+    Rat,
+    Font(FontSize),
+}
+
+#[derive(Debug)]
+pub(crate) struct Loader {
+    pending: VecDeque<Step>,
+}
+
+impl Loader {
+    pub(crate) fn start(gpu: &mut Gpu, assets: &mut Assets) -> Result<Self, Box<dyn Error>> {
+        let root = root();
+        assets.textures.loading_background =
+            gpu.load_texture(&root.join("textures/loading/loading.tga"))?;
+        assets.textures.loading_spinner =
+            gpu.load_texture(&root.join("textures/loading/loading_image.tga"))?;
+        let mut pending = VecDeque::from([
+            Step::MenuBackground,
+            Step::Logo,
+            Step::Button,
+            Step::Cursor,
+            Step::Tileset,
+            Step::Bullet,
+            Step::Rat,
+        ]);
+        pending.extend(FontSize::ALL.map(Step::Font));
+        Ok(Self { pending })
+    }
+
+    pub(crate) fn is_done(&self) -> bool {
+        self.pending.is_empty()
+    }
+
+    pub(crate) fn step(
+        &mut self,
+        gpu: &mut Gpu,
+        assets: &mut Assets,
+    ) -> Result<(), Box<dyn Error>> {
+        let Some(step) = self.pending.pop_front() else {
+            return Ok(());
+        };
+        let root = root();
+        let mut texture = |path: &str| gpu.load_texture(&root.join(path));
+        match step {
+            Step::MenuBackground => {
+                assets.textures.menu_background = texture("textures/menu/bg.png")?
+            }
+            Step::Logo => assets.textures.logo = texture("textures/menu/logo.tga")?,
+            Step::Button => assets.textures.button = texture("textures/menu/Menu_bar2.tga")?,
+            Step::Cursor => assets.textures.cursor = texture("textures/ingame/cursor.tga")?,
+            Step::Tileset => assets.textures.tileset = texture("textures/ingame/tileset_2.png")?,
+            Step::Bullet => assets.textures.bullet = texture("textures/ingame/bullet.tga")?,
+            Step::Rat => assets.textures.rat = texture("textures/ingame/rat.tga")?,
+            Step::Font(size) => assets.fonts.load(gpu, &root.join(FONT_FILE), size)?,
+        }
+        if self.pending.is_empty() {
+            assets.mark_loaded();
+        }
+        Ok(())
     }
 }
 

@@ -2,9 +2,9 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{Color, Layer, Position, Size, Sprite, Text};
-use crate::render::{Draw, Font, Quad, TextureId};
+use crate::render::{Draw, Fonts, Quad, TextureId};
 
-pub(crate) fn collect_draws(world: &World, font: &Font, camera: Vec2) -> Vec<Draw> {
+pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<Draw> {
     let mut layered: Vec<(Layer, Draw)> = world
         .query::<(&Position, &Size, &Color, Option<&Sprite>, Option<&Layer>)>()
         .iter()
@@ -25,7 +25,11 @@ pub(crate) fn collect_draws(world: &World, font: &Font, camera: Vec2) -> Vec<Dra
         .collect();
     for (position, text, layer) in world.query::<(&Position, &Text, Option<&Layer>)>().iter() {
         let layer = layer.copied().unwrap_or(Layer(0));
-        for draw in font.draw_centered(&text.content, position.0 - camera, text.color) {
+        for draw in
+            fonts
+                .get(text.size)
+                .draw_centered(&text.content, position.0 - camera, text.color)
+        {
             layered.push((layer, draw));
         }
     }

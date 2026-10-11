@@ -1,7 +1,7 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use hecs::World;
 
-use crate::assets::Textures;
+use crate::assets::Assets;
 use crate::components::UiAction;
 use crate::input::Input;
 use crate::prefabs;
@@ -10,19 +10,17 @@ use crate::viewport::TARGET;
 
 use super::{Scene, SceneId, Transition};
 
+const LOGO_SIZE: Vec2 = Vec2::new(228.0, 108.0);
+const LOGO_TOP_LEFT_Y: f32 = 50.0;
+const BUTTON_ROWS: [(f32, &str, UiAction); 3] = [
+    (225.0, "Play", UiAction::Play),
+    (325.0, "Settings", UiAction::Settings),
+    (425.0, "Exit", UiAction::Exit),
+];
+
 #[derive(Default)]
 pub(crate) struct MenuScene {
     world: World,
-    textures: Textures,
-}
-
-impl MenuScene {
-    pub(crate) fn new(textures: Textures) -> Self {
-        Self {
-            world: World::new(),
-            textures,
-        }
-    }
 }
 
 impl Scene for MenuScene {
@@ -34,46 +32,34 @@ impl Scene for MenuScene {
         &mut self.world
     }
 
-    fn enter(&mut self) {
+    fn enter(&mut self, assets: &Assets) {
         let x = TARGET.x / 2.0;
         prefabs::sprite(
             &mut self.world,
             TARGET / 2.0,
             TARGET,
-            self.textures.menu_background,
+            assets.textures.menu_background,
             -1,
         );
         prefabs::sprite(
             &mut self.world,
-            Vec2::new(x, 100.0),
-            Vec2::new(304.0, 144.0),
-            self.textures.logo,
+            Vec2::new(x, LOGO_TOP_LEFT_Y + LOGO_SIZE.y / 2.0),
+            LOGO_SIZE,
+            assets.textures.logo,
             0,
         );
-        prefabs::button(
-            &mut self.world,
-            Vec2::new(x, 240.0),
-            Vec4::new(0.2, 0.55, 0.3, 1.0),
-            "Hrát",
-            UiAction::Play,
-        );
-        prefabs::button(
-            &mut self.world,
-            Vec2::new(x, 310.0),
-            Vec4::new(0.25, 0.35, 0.55, 1.0),
-            "Nastavení",
-            UiAction::Settings,
-        );
-        prefabs::button(
-            &mut self.world,
-            Vec2::new(x, 380.0),
-            Vec4::new(0.6, 0.2, 0.2, 1.0),
-            "Konec",
-            UiAction::Exit,
-        );
+        for (y, label, action) in BUTTON_ROWS {
+            prefabs::button(
+                &mut self.world,
+                Vec2::new(x, y),
+                label,
+                action,
+                assets.textures.button,
+            );
+        }
     }
 
-    fn update(&mut self, input: &Input, _dt: f32) -> Transition {
+    fn update(&mut self, input: &Input, _dt: f32, _assets: &Assets) -> Transition {
         match systems::update_buttons(&mut self.world, input) {
             Some(UiAction::Play) => Transition::Switch(SceneId::Lobby),
             Some(UiAction::Settings) => {
