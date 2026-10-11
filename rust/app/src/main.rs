@@ -1,10 +1,13 @@
 mod app;
 mod components;
 mod game;
+mod geometry;
 mod input;
+mod prefabs;
 mod render;
-mod scene;
+mod scenes;
 mod systems;
+mod viewport;
 
 use winit::event_loop::{ControlFlow, EventLoop};
 

@@ -1,12 +1,15 @@
 use std::collections::HashSet;
 
 use glam::Vec2;
-use winit::event::{ElementState, KeyEvent};
+use winit::event::{ElementState, KeyEvent, MouseButton};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
 #[derive(Debug, Default)]
 pub(crate) struct Input {
     held: HashSet<KeyCode>,
+    pressed: HashSet<KeyCode>,
+    mouse: Vec2,
+    clicked: bool,
 }
 
 impl Input {
@@ -15,9 +18,42 @@ impl Input {
             return;
         };
         match event.state {
-            ElementState::Pressed => self.held.insert(code),
-            ElementState::Released => self.held.remove(&code),
-        };
+            ElementState::Pressed => {
+                if self.held.insert(code) {
+                    self.pressed.insert(code);
+                }
+            }
+            ElementState::Released => {
+                self.held.remove(&code);
+            }
+        }
+    }
+
+    pub(crate) fn handle_click(&mut self, button: MouseButton, state: ElementState) {
+        if button == MouseButton::Left && state == ElementState::Pressed {
+            self.clicked = true;
+        }
+    }
+
+    pub(crate) fn set_mouse(&mut self, position: Vec2) {
+        self.mouse = position;
+    }
+
+    pub(crate) fn end_frame(&mut self) {
+        self.pressed.clear();
+        self.clicked = false;
+    }
+
+    pub(crate) fn just_pressed(&self, code: KeyCode) -> bool {
+        self.pressed.contains(&code)
+    }
+
+    pub(crate) fn mouse(&self) -> Vec2 {
+        self.mouse
+    }
+
+    pub(crate) fn clicked(&self) -> bool {
+        self.clicked
     }
 
     pub(crate) fn direction(&self) -> Vec2 {

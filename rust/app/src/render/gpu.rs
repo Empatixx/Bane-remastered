@@ -6,6 +6,7 @@ use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
 use super::Quad;
+use crate::viewport::TARGET;
 
 const MAX_QUADS: usize = 10_000;
 
@@ -16,7 +17,6 @@ pub(crate) struct Gpu {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     pipeline: wgpu::RenderPipeline,
-    screen_buffer: wgpu::Buffer,
     screen_bind_group: wgpu::BindGroup,
     quad_buffer: wgpu::Buffer,
 }
@@ -39,7 +39,7 @@ impl Gpu {
 
         let screen_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("screen"),
-            contents: bytemuck::bytes_of(&[config.width as f32, config.height as f32]),
+            contents: bytemuck::bytes_of(&TARGET.to_array()),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let screen_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -111,7 +111,6 @@ impl Gpu {
             queue,
             config,
             pipeline,
-            screen_buffer,
             screen_bind_group,
             quad_buffer,
         })
@@ -124,11 +123,6 @@ impl Gpu {
         self.config.width = size.width;
         self.config.height = size.height;
         self.surface.configure(&self.device, &self.config);
-        self.queue.write_buffer(
-            &self.screen_buffer,
-            0,
-            bytemuck::bytes_of(&[size.width as f32, size.height as f32]),
-        );
     }
 
     pub(crate) fn render(&mut self, clear: wgpu::Color, quads: &[Quad]) {

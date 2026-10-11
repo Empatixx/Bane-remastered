@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use glam::Vec2;
 use winit::application::ApplicationHandler;
 use winit::event::WindowEvent;
 use winit::event_loop::ActiveEventLoop;
@@ -8,6 +9,7 @@ use winit::window::{Window, WindowId};
 
 use crate::game::Game;
 use crate::render::Gpu;
+use crate::viewport::TARGET;
 
 const STEP: Duration = Duration::from_nanos(1_000_000_000 / 60);
 const MAX_FRAME: Duration = Duration::from_millis(250);
@@ -59,7 +61,18 @@ impl ApplicationHandler for App {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::KeyboardInput { event, .. } => self.game.input_mut().handle_key(&event),
+            WindowEvent::KeyboardInput { event, .. } => self.game.handle_key(&event),
+            WindowEvent::MouseInput { state, button, .. } => self.game.handle_click(button, state),
+            WindowEvent::CursorMoved { position, .. } => {
+                if let Some(window) = &self.window {
+                    let size = window.inner_size();
+                    if size.width > 0 && size.height > 0 {
+                        let window_size = Vec2::new(size.width as f32, size.height as f32);
+                        let pixels = Vec2::new(position.x as f32, position.y as f32);
+                        self.game.set_mouse(pixels / window_size * TARGET);
+                    }
+                }
+            }
             WindowEvent::Resized(size) => {
                 if let Some(gpu) = &mut self.gpu {
                     gpu.resize(size);
@@ -82,15 +95,22 @@ impl ApplicationHandler for App {
         }
     }
 
-    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         let now = Instant::now();
         let frame_time = (now - self.last_frame).min(MAX_FRAME);
         self.last_frame = now;
         self.accumulator += frame_time;
 
         while self.accumulator >= STEP {
-            self.game.fixed_update(STEP.as_secs_f32());
+            if self.game.fixed_update(STEP.as_secs_f32()).is_break() {
+                event_loop.exit();
+                return;
+            }
             self.accumulator -= STEP;
+        }
+        if self.game.update(frame_time.as_secs_f32()).is_break() {
+            event_loop.exit();
+            return;
         }
 
         if let Some(window) = &self.window {
