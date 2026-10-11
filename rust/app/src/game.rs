@@ -5,19 +5,19 @@ use winit::event::{ElementState, KeyEvent, MouseButton};
 
 use crate::input::Input;
 use crate::render::Quad;
-use crate::scenes::SceneManager;
+use crate::scenes::Scenes;
 
 #[derive(Debug)]
 pub(crate) struct Game {
     input: Input,
-    scenes: SceneManager,
+    scenes: Scenes,
 }
 
 impl Game {
     pub(crate) fn new() -> Self {
         Self {
             input: Input::default(),
-            scenes: SceneManager::new(),
+            scenes: Scenes::new(),
         }
     }
 

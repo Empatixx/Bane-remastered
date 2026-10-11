@@ -1,14 +1,14 @@
 mod ingame;
 mod loading;
 mod lobby;
-mod manager;
+mod machine;
 mod menu;
 
 use hecs::World;
 
 use crate::input::Input;
 
-pub(crate) use manager::SceneManager;
+pub(crate) use machine::Scenes;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SceneId {

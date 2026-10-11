@@ -11,7 +11,7 @@ use super::lobby::LobbyScene;
 use super::menu::MenuScene;
 use super::{Scene, SceneId, Transition};
 
-pub(crate) struct SceneManager {
+pub(crate) struct Scenes {
     current: SceneId,
     loading: LoadingScene,
     menu: MenuScene,
@@ -19,25 +19,25 @@ pub(crate) struct SceneManager {
     ingame: InGameScene,
 }
 
-impl fmt::Debug for SceneManager {
+impl fmt::Debug for Scenes {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SceneManager")
+        f.debug_struct("Scenes")
             .field("current", &self.current)
             .finish()
     }
 }
 
-impl SceneManager {
+impl Scenes {
     pub(crate) fn new() -> Self {
-        let mut manager = Self {
+        let mut scenes = Self {
             current: SceneId::Loading,
             loading: LoadingScene::default(),
             menu: MenuScene::default(),
             lobby: LobbyScene::default(),
             ingame: InGameScene::default(),
         };
-        manager.scene_mut().enter();
-        manager
+        scenes.scene_mut().enter();
+        scenes
     }
 
     pub(crate) fn update(&mut self, input: &Input, dt: f32) -> ControlFlow<()> {
@@ -96,52 +96,52 @@ mod tests {
 
     use super::*;
 
-    fn click_at(manager: &mut SceneManager, input: &mut Input, position: Vec2) -> ControlFlow<()> {
+    fn click_at(scenes: &mut Scenes, input: &mut Input, position: Vec2) -> ControlFlow<()> {
         input.set_mouse(position);
-        assert!(manager.update(input, 0.0).is_continue());
+        assert!(scenes.update(input, 0.0).is_continue());
         input.handle_click(MouseButton::Left, ElementState::Pressed);
-        let flow = manager.update(input, 0.0);
+        let flow = scenes.update(input, 0.0);
         input.end_frame();
         flow
     }
 
-    fn menu() -> (SceneManager, Input) {
-        let mut manager = SceneManager::new();
+    fn menu() -> (Scenes, Input) {
+        let mut scenes = Scenes::new();
         let input = Input::default();
-        assert!(manager.update(&input, 2.0).is_continue());
-        assert_eq!(manager.current, SceneId::Menu);
-        (manager, input)
+        assert!(scenes.update(&input, 2.0).is_continue());
+        assert_eq!(scenes.current, SceneId::Menu);
+        (scenes, input)
     }
 
     #[test]
     fn loading_switches_to_menu_when_done() {
-        let mut manager = SceneManager::new();
+        let mut scenes = Scenes::new();
         let input = Input::default();
-        assert!(manager.update(&input, 0.5).is_continue());
-        assert_eq!(manager.current, SceneId::Loading);
-        assert!(manager.update(&input, 0.6).is_continue());
-        assert_eq!(manager.current, SceneId::Menu);
+        assert!(scenes.update(&input, 0.5).is_continue());
+        assert_eq!(scenes.current, SceneId::Loading);
+        assert!(scenes.update(&input, 0.6).is_continue());
+        assert_eq!(scenes.current, SceneId::Menu);
     }
 
     #[test]
     fn play_button_opens_lobby() {
-        let (mut manager, mut input) = menu();
-        let flow = click_at(&mut manager, &mut input, Vec2::new(480.0, 240.0));
+        let (mut scenes, mut input) = menu();
+        let flow = click_at(&mut scenes, &mut input, Vec2::new(480.0, 240.0));
         assert_eq!(flow, ControlFlow::Continue(()));
-        assert_eq!(manager.current, SceneId::Lobby);
+        assert_eq!(scenes.current, SceneId::Lobby);
     }
 
     #[test]
     fn exit_button_quits() {
-        let (mut manager, mut input) = menu();
-        let flow = click_at(&mut manager, &mut input, Vec2::new(480.0, 380.0));
+        let (mut scenes, mut input) = menu();
+        let flow = click_at(&mut scenes, &mut input, Vec2::new(480.0, 380.0));
         assert_eq!(flow, ControlFlow::Break(()));
     }
 
     #[test]
     fn click_outside_buttons_does_nothing() {
-        let (mut manager, mut input) = menu();
-        assert!(click_at(&mut manager, &mut input, Vec2::new(10.0, 10.0)).is_continue());
-        assert_eq!(manager.current, SceneId::Menu);
+        let (mut scenes, mut input) = menu();
+        assert!(click_at(&mut scenes, &mut input, Vec2::new(10.0, 10.0)).is_continue());
+        assert_eq!(scenes.current, SceneId::Menu);
     }
 }
