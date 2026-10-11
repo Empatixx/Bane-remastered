@@ -25,7 +25,7 @@ pub(crate) use bosses::{
     clean_up_after_boss, drag_cobwebs, tick_armageddon, tick_hatchers, tick_web_spitters,
     update_boss_hud,
 };
-pub(crate) use camera::camera_target;
+pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
 pub(crate) use damage::{
     contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,

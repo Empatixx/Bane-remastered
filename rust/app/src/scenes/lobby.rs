@@ -99,6 +99,7 @@ impl Scene for LobbyScene {
         let grid = tilemap::lobby();
         let bounds = grid.pixel_size();
         let textures = &assets.textures;
+        prefabs::backdrop(&mut self.world);
 
         let solid_cells = prefabs::tilemap(
             &mut self.world,
@@ -139,6 +140,7 @@ impl Scene for LobbyScene {
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
             self.camera.snap_to(target);
         }
+        systems::follow_backdrop(&mut self.world, self.camera.position());
     }
 
     fn update(
@@ -182,6 +184,7 @@ impl Scene for LobbyScene {
         if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
             self.camera.follow(target, dt);
         }
+        systems::follow_backdrop(&mut self.world, self.camera.position());
         match systems::interact(&mut self.world, input) {
             Some(Interaction::EnterPortal) => Transition::Switch(SceneId::InGame),
             Some(Interaction::NextFloor) | None => Transition::None,

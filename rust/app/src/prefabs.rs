@@ -3,13 +3,14 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armageddon, Armor, BarKind, Boss, BossHud, Bullet, Button, Chase,
-    Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Drag, Enemy,
-    EnemyBullet, Expiring, EyeShooter, Floating, Fuse, GazeWind, Hatcher, Health, Hitbox, Hits,
-    Homing, Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Minion, OnClick,
-    Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId, ScreenSpace,
-    Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity,
-    Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    AmmoPip, AmmoText, Animation, Armageddon, Armor, Backdrop, BarKind, Boss, BossHud, Bullet,
+    Button, Chase, Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Drag,
+    Enemy, EnemyBullet, Expiring, EyeShooter, Floating, Fuse, GazeWind, Hatcher, Health, Hitbox,
+    Hits, Homing, Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Minion,
+    OnClick, Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId,
+    ScreenSpace, Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
+    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
@@ -122,6 +123,8 @@ pub(crate) fn prop(
 const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
 const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 const BULLET_DAMAGE: i32 = 1;
+const BACKDROP_SIZE: Vec2 = Vec2::new(1000.0, 580.0);
+const BACKDROP_COLOR: Vec4 = Vec4::new(37.0 / 255.0, 19.0 / 255.0, 26.0 / 255.0, 1.0);
 const FLOAT_SECONDS: f32 = 0.5;
 const FLOAT_RISE: f32 = 30.0;
 const COBWEB_SIZE: Vec2 = Vec2::new(64.0, 64.0);
@@ -754,6 +757,18 @@ pub(crate) fn ladder(world: &mut World, top_left: Vec2, textures: &Textures) -> 
         ),
     );
     entity
+}
+
+pub(crate) fn backdrop(world: &mut World) -> Entity {
+    world.spawn((
+        Backdrop,
+        Position(Vec2::ZERO),
+        Size(BACKDROP_SIZE),
+        Color(BACKDROP_COLOR),
+        Sprite::whole(TextureId::WHITE),
+        Layer(-10),
+        Lit,
+    ))
 }
 
 pub(crate) fn floating_number(world: &mut World, change: i32, position: Vec2) -> Entity {

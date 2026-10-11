@@ -193,6 +193,7 @@ impl Scene for InGameScene {
         if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
             self.camera.follow(target, dt);
         }
+        systems::follow_backdrop(&mut self.world, self.camera.position());
         if let Some(Interaction::NextFloor) = systems::interact(&mut self.world, input) {
             self.next_floor(assets);
         }
@@ -255,6 +256,7 @@ impl InGameScene {
         };
         let bounds = dungeon.grid.pixel_size();
         let textures = &assets.textures;
+        prefabs::backdrop(&mut self.world);
         let solid_cells = prefabs::tilemap(
             &mut self.world,
             &dungeon.grid,
@@ -293,6 +295,7 @@ impl InGameScene {
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
             self.camera.snap_to(target);
         }
+        systems::follow_backdrop(&mut self.world, self.camera.position());
     }
 
     fn next_floor(&mut self, assets: &Assets) {

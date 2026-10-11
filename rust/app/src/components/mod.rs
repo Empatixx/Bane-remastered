@@ -40,6 +40,6 @@ pub(crate) use skills::{
     Armageddon, Boss, Cobweb, DeathBurst, DeathHeal, Drag, EnemyBullet, EyeShooter, Fuse, Hatcher,
     Hits, Homing, Impact, Kin, Minion, Rooted, Smash, WebSpitter,
 };
-pub(crate) use tags::{Overlay, Player, ScreenSpace};
+pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
 pub(crate) use transform::{Position, Size};
 pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, TextButton, UiAction};
