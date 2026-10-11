@@ -1,7 +1,8 @@
 use glam::Vec2;
 
 use super::animation::Clip;
-use crate::guns::{GunKind, GunSpec};
+use crate::guns::{AmmoClass, GunKind, GunSpec};
+use crate::items::AmmoBox;
 
 pub(crate) const BULLET_COLUMNS: usize = 4;
 pub(crate) const BULLET_ROWS: usize = 2;
@@ -142,6 +143,15 @@ impl Weapon {
         self.reloading.is_none() && self.cooldown <= 0.0 && self.clip > 0
     }
 
+    pub(crate) fn has_full_ammo(&self) -> bool {
+        self.ammo >= self.spec().max_ammo
+    }
+
+    pub(crate) fn add_percent(&mut self, percent: f32) {
+        let max = self.spec().max_ammo;
+        self.ammo = (self.ammo + (max as f32 * percent) as i32).min(max);
+    }
+
     pub(crate) fn start_reload(&mut self) -> bool {
         let can = self.burst.is_none()
             && self.reloading.is_none()
@@ -198,6 +208,29 @@ impl Loadout {
     #[cfg(test)]
     pub(crate) fn current_slot(&self) -> usize {
         self.current
+    }
+
+    fn takes(weapon: &Weapon, ammo: AmmoBox) -> bool {
+        match ammo {
+            AmmoBox::Universal => true,
+            AmmoBox::Shotgun => weapon.kind.ammo_class() == AmmoClass::Shotgun,
+            AmmoBox::Pistol | AmmoBox::SubMachine => weapon.kind.ammo_class() == AmmoClass::Pistol,
+        }
+    }
+
+    pub(crate) fn wants_ammo(&self, ammo: AmmoBox) -> bool {
+        self.slots
+            .iter()
+            .flatten()
+            .any(|weapon| Self::takes(weapon, ammo) && !weapon.has_full_ammo())
+    }
+
+    pub(crate) fn add_ammo(&mut self, ammo: AmmoBox) {
+        for weapon in self.slots.iter_mut().flatten() {
+            if Self::takes(weapon, ammo) {
+                weapon.add_percent(ammo.percent());
+            }
+        }
     }
 
     pub(crate) fn has(&self, kind: GunKind) -> bool {
@@ -302,6 +335,34 @@ mod tests {
         assert!(!m4.start_reload());
         m4.burst = None;
         assert!(m4.start_reload());
+    }
+
+    #[test]
+    fn pistol_ammo_does_not_feed_the_shotgun_and_universal_feeds_everything() {
+        let mut loadout = Loadout::starting();
+        for weapon in loadout.slots.iter_mut().flatten() {
+            weapon.ammo = 0;
+        }
+        loadout.add_ammo(AmmoBox::Pistol);
+        let ammo: Vec<i32> = loadout.slots.iter().flatten().map(|w| w.ammo).collect();
+        assert_eq!(ammo, vec![12, 0]);
+
+        loadout.add_ammo(AmmoBox::Universal);
+        let ammo: Vec<i32> = loadout.slots.iter().flatten().map(|w| w.ammo).collect();
+        assert_eq!(ammo, vec![72, 24]);
+    }
+
+    #[test]
+    fn full_guns_do_not_want_ammo_and_ammo_never_exceeds_the_maximum() {
+        let mut loadout = Loadout::starting();
+        assert!(!loadout.wants_ammo(AmmoBox::Universal));
+        if let Some(weapon) = loadout.current_mut() {
+            weapon.ammo = 118;
+        }
+        assert!(loadout.wants_ammo(AmmoBox::SubMachine));
+        assert!(!loadout.wants_ammo(AmmoBox::Shotgun));
+        loadout.add_ammo(AmmoBox::Universal);
+        assert_eq!(loadout.current().map(|w| w.ammo), Some(120));
     }
 
     #[test]

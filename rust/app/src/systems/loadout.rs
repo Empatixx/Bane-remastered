@@ -5,8 +5,7 @@ use winit::keyboard::KeyCode;
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Chest, ChestKind, Clip, Drag, GunDrop, InRange, Loadout, Player, Position, Size,
-    Velocity, Weapon,
+    Animation, Chest, ChestKind, Clip, GunDrop, InRange, Loadout, Player, Position, Size, Weapon,
 };
 use crate::geometry;
 use crate::guns::GunKind;
@@ -64,16 +63,6 @@ pub(crate) fn drop_gun(world: &mut World, input: &Input, camera: Vec2, textures:
     if let Some((origin, weapon)) = dropped {
         let direction = (target - origin).normalize_or(Vec2::X);
         prefabs::gun_drop(world, weapon, origin, direction * DROP_SPEED, textures);
-    }
-}
-
-pub(crate) fn slide_drops(world: &mut World, dt: f32) {
-    for (position, velocity, drag) in world
-        .query_mut::<(&mut Position, &mut Velocity, &Drag)>()
-        .with::<&GunDrop>()
-    {
-        position.0 += velocity.0 * dt;
-        velocity.0 *= (-drag.rate * dt).exp();
     }
 }
 
@@ -145,6 +134,9 @@ pub(crate) fn open_chests(
     }
     for (entity, kind, center) in finished {
         let _ = world.despawn(entity);
+        crate::systems::burst_items(world, center, textures, |bound| {
+            rand::random_range(0..bound)
+        });
         if kind == ChestKind::Weapon {
             let kind = world
                 .query::<&Loadout>()
@@ -161,6 +153,7 @@ pub(crate) fn open_chests(
 
 #[cfg(test)]
 mod tests {
+    use crate::components::Velocity;
     use crate::physics::Physics;
 
     use super::*;
@@ -223,7 +216,7 @@ mod tests {
         assert!(velocity.x > 300.0 && velocity.y.abs() < 1.0, "{velocity:?}");
 
         for _ in 0..120 {
-            slide_drops(&mut world, 1.0 / 60.0);
+            crate::systems::glide(&mut world, 1.0 / 60.0);
         }
         let entity = world.query::<Entity>().with::<&GunDrop>().iter().next();
         let entity = entity.expect("the gun lies on the floor");

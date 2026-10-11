@@ -9,6 +9,7 @@ mod game;
 mod geometry;
 mod guns;
 mod input;
+mod items;
 mod navigation;
 mod perf;
 mod physics;

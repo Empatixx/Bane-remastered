@@ -3,8 +3,8 @@ use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
-    Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Drag, Expiring, Hatcher, Health, Minion,
-    Player, Position, RoomId, Rooted, Size, Spawning, Velocity, WebSpitter,
+    Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Expiring, Hatcher, Health, Minion, Player,
+    Position, RoomId, Rooted, Size, Spawning, WebSpitter,
 };
 use crate::enemies::{self, EnemyKind};
 use crate::physics::Physics;
@@ -17,7 +17,6 @@ const HATCH_ORDER: [EnemyKind; 3] = [
 ];
 const WEB_SIDE_OFFSET: f32 = 36.0;
 const WEB_BOTTOM_INSET: f32 = 15.0;
-const WEB_STOP_SPEED: f32 = 1.0;
 
 fn player_center(world: &World) -> Option<Vec2> {
     world
@@ -134,19 +133,6 @@ pub(crate) fn tick_armageddon(
     }
 }
 
-pub(crate) fn drag_cobwebs(world: &mut World, dt: f32) {
-    for (position, velocity, drag) in world
-        .query_mut::<(&mut Position, &mut Velocity, &Drag)>()
-        .with::<&Cobweb>()
-    {
-        position.0 += velocity.0 * dt;
-        velocity.0 *= (-drag.rate * dt).exp();
-        if velocity.0.length() < WEB_STOP_SPEED {
-            velocity.0 = Vec2::ZERO;
-        }
-    }
-}
-
 pub(crate) fn clean_up_after_boss(world: &mut World) {
     let fallen = world
         .query::<&Health>()
@@ -187,7 +173,7 @@ pub(crate) fn update_boss_hud(world: &mut World) {
 #[cfg(test)]
 mod tests {
     use crate::assets::Textures;
-    use crate::components::{Chase, EnemyBullet};
+    use crate::components::{Chase, EnemyBullet, Velocity};
     use crate::systems::{chase_player, finish_spawning, reap_dead, tick_spawning};
 
     use super::*;
@@ -301,27 +287,6 @@ mod tests {
             web_velocity.x < 0.0 && web_velocity.y < 0.0,
             "{web_velocity:?}"
         );
-    }
-
-    #[test]
-    fn a_cobweb_slides_to_a_stop() {
-        let mut world = World::new();
-        let web = prefabs::cobweb(
-            &mut world,
-            Vec2::new(0.0, 0.0),
-            Vec2::new(1.0, 0.0),
-            &Textures::default(),
-        );
-        for _ in 0..600 {
-            drag_cobwebs(&mut world, 1.0 / 60.0);
-        }
-        let x = world.get::<&Position>(web).map(|p| p.0.x).unwrap_or(0.0);
-        let speed = world
-            .get::<&Velocity>(web)
-            .map(|v| v.0.length())
-            .unwrap_or(1.0);
-        assert!(x > 300.0 && x < 500.0, "{x}");
-        assert_eq!(speed, 0.0);
     }
 
     #[test]

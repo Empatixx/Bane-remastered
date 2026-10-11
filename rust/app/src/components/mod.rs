@@ -29,7 +29,10 @@ pub(crate) use hud::{
     AmmoPip, AmmoText, BarKind, BossHud, CoinText, GunIcon, StatusBar, PIP_EMPTY, PIP_FULL,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
-pub(crate) use items::{Chest, ChestKind};
+pub(crate) use items::{
+    Candle, Chest, ChestKind, Currency, Despawn, NoDrop, Pickup, PriceTag, Shop, SpeechBubble,
+    SpeechText,
+};
 pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;

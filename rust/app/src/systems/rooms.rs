@@ -16,6 +16,7 @@ const ENTER_MARGIN: usize = 2;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum RoomEvent {
     BossEntered,
+    ShopEntered,
     BossDefeated { center: Vec2 },
 }
 
@@ -150,7 +151,7 @@ fn enter(
     let fights = boss || (data.kind == RoomKind::Normal && !data.spawns.is_empty());
     if !fights {
         runtime.states[room] = RoomState::Cleared;
-        return None;
+        return (data.kind == RoomKind::Shop).then_some(RoomEvent::ShopEntered);
     }
     if boss {
         let kind = enemies::pick_boss(context.floor, rng);

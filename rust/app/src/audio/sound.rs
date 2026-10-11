@@ -17,10 +17,15 @@ pub(crate) enum SoundEffect {
     UziShoot,
     SwitchGun,
     OpenChest,
+    Coin,
+    Pickup,
+    Heal,
+    Buy,
+    Sacrifice,
 }
 
 impl SoundEffect {
-    pub(crate) const ALL: [Self; 17] = [
+    pub(crate) const ALL: [Self; 22] = [
         Self::Click,
         Self::PistolShoot,
         Self::EmptyGunShoot,
@@ -38,6 +43,11 @@ impl SoundEffect {
         Self::UziShoot,
         Self::SwitchGun,
         Self::OpenChest,
+        Self::Coin,
+        Self::Pickup,
+        Self::Heal,
+        Self::Buy,
+        Self::Sacrifice,
     ];
 
     pub(crate) fn files(self) -> &'static [&'static str] {
@@ -59,6 +69,11 @@ impl SoundEffect {
             Self::UziShoot => &["guns/uzi_shoot.ogg"],
             Self::SwitchGun => &["guns/switchgun.ogg"],
             Self::OpenChest => &["open_chest_1.ogg", "open_chest_2.ogg", "open_chest_3.ogg"],
+            Self::Coin => &["coin.ogg"],
+            Self::Pickup => &["pickup.ogg"],
+            Self::Heal => &["heal.ogg"],
+            Self::Buy => &["buy.ogg"],
+            Self::Sacrifice => &["sacrifice.ogg"],
         }
     }
 }

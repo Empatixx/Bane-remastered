@@ -6,8 +6,10 @@ mod damage;
 mod draw;
 mod effects;
 mod enemies;
+mod glide;
 mod hud;
 mod interaction;
+mod items;
 mod lighting;
 mod loadout;
 mod minimap;
@@ -16,6 +18,7 @@ mod rooms;
 mod settings_ui;
 mod shadow;
 mod shooting;
+mod shop;
 mod simulation;
 mod skills;
 mod steering;
@@ -23,8 +26,7 @@ mod ui;
 
 pub(crate) use animation::{animate, chain_animations, remove_expired};
 pub(crate) use bosses::{
-    clean_up_after_boss, drag_cobwebs, tick_armageddon, tick_hatchers, tick_web_spitters,
-    update_boss_hud,
+    clean_up_after_boss, tick_armageddon, tick_hatchers, tick_web_spitters, update_boss_hud,
 };
 pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
@@ -38,16 +40,19 @@ pub(crate) use enemies::finish_spawning;
 pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, plan_paths, reap_dead, tick_spawning,
 };
+pub(crate) use glide::glide;
 pub(crate) use hud::{update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
+pub(crate) use items::{age_items, burst_items, collect_items, enemy_drops};
 pub(crate) use lighting::collect_lights;
-pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, slide_drops, switch_guns};
+pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use minimap::{rooms_for, update_minimaps};
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use rooms::{update_rooms, RoomContext, RoomEvent, RoomRuntime};
 pub(crate) use settings_ui::update_settings_ui;
 pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{bullet_hits, shoot, ShotContext, ShotRoll};
+pub(crate) use shop::{buy, say, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use simulation::simulate;
 pub(crate) use skills::{
     burn_fuses, death_bursts, death_heals, enemy_bullet_hits, steer_homing, tick_eye_shooters,

@@ -4,17 +4,19 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armageddon, Armor, Backdrop, BarKind, Boss, BossHud, Bullet,
-    Button, Chase, Chest, ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash,
-    DeathBurst, DeathHeal, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Floating, Fuse,
+    Button, Candle, Chase, Chest, ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash,
+    DeathBurst, DeathHeal, Despawn, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Floating, Fuse,
     GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
-    Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, OnClick,
-    Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId, ScreenSpace,
-    Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity,
-    Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
+    Overlay, Particle, Path, PauseUi, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt,
+    RoomId, ScreenSpace, Shop, Size, Smash, Spawning, SpeechBubble, SpeechText, Sprite, StatusBar,
+    Text, TextButton, ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, WebSpitter,
+    BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::guns::{MAX_CLIP, PIP_SIZE};
+use crate::items::{ItemKind, DESPAWN_SECONDS};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
@@ -126,6 +128,15 @@ const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 const BULLET_DAMAGE: i32 = 1;
 const BACKDROP_SIZE: Vec2 = Vec2::new(1000.0, 580.0);
 const BACKDROP_COLOR: Vec4 = Vec4::new(37.0 / 255.0, 19.0 / 255.0, 26.0 / 255.0, 1.0);
+const PRICE_TAG_SIZE: f32 = 32.0;
+const PRICE_TAG_LIFT: f32 = 15.0;
+const PRICE_COLOR: Vec4 = Vec4::new(212.0 / 255.0, 168.0 / 255.0, 8.0 / 255.0, 1.0);
+const SAY_BOX_SIZE: Vec2 = Vec2::new(384.0, 192.0);
+const SAY_BOX_SHIFT: f32 = 80.0;
+const SAY_BOX_DROP: f32 = 20.0;
+const SAY_INSIDE_WIDTH: f32 = 240.0;
+const SAY_INSIDE_HEIGHT: f32 = 132.0;
+const SAY_COLOR: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
 const DROP_DRAG: f32 = 6.0;
 const FLOAT_SECONDS: f32 = 0.5;
 const FLOAT_RISE: f32 = 30.0;
@@ -194,7 +205,10 @@ pub(crate) fn furnishing(
                 chest(world, ChestKind::Weapon, top_left, textures);
             }
             FixtureKind::AngelStatue => place(Prop::AngelStatue, Look::DEFAULT),
-            FixtureKind::Candlestick => place(Prop::Candlestick, Look::DEFAULT),
+            FixtureKind::Candlestick => {
+                let candle = prop(world, Prop::Candlestick, top_left, Look::DEFAULT, textures);
+                let _ = world.insert_one(candle, Candle);
+            }
             FixtureKind::Pentagram => place(Prop::Pentagram, Look::DEFAULT),
             FixtureKind::Book => place(Prop::LayingBook, Look::DEFAULT),
             FixtureKind::Chains => place(Prop::Chains, Look::DEFAULT),
@@ -608,6 +622,9 @@ pub(crate) fn enemy(
     if boss {
         let _ = world.insert_one(entity, Boss);
     }
+    if kind == EnemyKind::KingSlime {
+        let _ = world.insert_one(entity, NoDrop);
+    }
     entity
 }
 
@@ -672,7 +689,7 @@ pub(crate) fn hatchling(
 ) -> Entity {
     let entity = enemy(world, kind, position, 0, textures);
     crate::systems::finish_spawning(world, physics, entity);
-    let _ = world.insert_one(entity, Minion);
+    let _ = world.insert(entity, (Minion, NoDrop));
     if let Some(room) = room {
         let _ = world.insert_one(entity, room);
     }
@@ -761,6 +778,127 @@ pub(crate) fn ladder(world: &mut World, top_left: Vec2, textures: &Textures) -> 
         ),
     );
     entity
+}
+
+pub(crate) fn item(
+    world: &mut World,
+    kind: ItemKind,
+    center: Vec2,
+    despawns: bool,
+    velocity: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let spec = kind.spec();
+    let entity = world.spawn((
+        Pickup(kind),
+        Position(center),
+        Size(spec.size),
+        Color(Vec4::ONE),
+        Sprite::cell(
+            textures.get(spec.texture),
+            0,
+            spec.clip.row,
+            spec.columns,
+            spec.rows,
+        ),
+        Animation::new(spec.columns, spec.rows, spec.clip),
+        Layer(0),
+        Lit,
+    ));
+    if despawns {
+        let _ = world.insert_one(
+            entity,
+            Despawn {
+                remaining: DESPAWN_SECONDS,
+            },
+        );
+    }
+    if velocity != Vec2::ZERO {
+        let _ = world.insert(entity, (Velocity(velocity), Drag { rate: DROP_DRAG }));
+    }
+    entity
+}
+
+pub(crate) fn for_sale(world: &mut World, entity: Entity, shop: Shop, prompt_gap: f32) {
+    let _ = world.remove_one::<Despawn>(entity);
+    let _ = world.insert(
+        entity,
+        (
+            shop,
+            Interactable {
+                action: Interaction::Buy,
+            },
+            Prompt {
+                text: "Press E to buy",
+                gap: prompt_gap,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+}
+
+pub(crate) fn price_tag(
+    world: &mut World,
+    owner: Entity,
+    texture: &str,
+    anchor_top: Vec2,
+    price: i32,
+    textures: &Textures,
+) {
+    let size = Vec2::splat(PRICE_TAG_SIZE);
+    let center = Vec2::new(anchor_top.x, anchor_top.y - size.y / 2.0 - PRICE_TAG_LIFT);
+    world.spawn((
+        PriceTag { owner },
+        Position(center),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get(texture)),
+        Layer(3),
+        Lit,
+    ));
+    world.spawn((
+        PriceTag { owner },
+        Position(center + Vec2::new(0.0, 6.0)),
+        Text {
+            content: price.to_string(),
+            color: PRICE_COLOR,
+            size: FontSize::Size22,
+            align: Align::Center,
+            anchor: Anchor::Middle,
+        },
+        Layer(4),
+    ));
+}
+
+pub(crate) fn shop_speech(world: &mut World, keeper_top_left: Vec2, textures: &Textures) {
+    let size = SAY_BOX_SIZE;
+    let top_left = keeper_top_left + Vec2::new(SAY_BOX_SHIFT - size.x, SAY_BOX_DROP);
+    world.spawn((
+        SpeechBubble {
+            remaining: 0.0,
+            message: "",
+        },
+        Position(top_left + size / 2.0),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get("ingame/shopkeeper_saybox.tga")),
+        Layer(6),
+        Hidden,
+    ));
+    world.spawn((
+        SpeechText,
+        Position(top_left + Vec2::new(SAY_INSIDE_WIDTH / 2.0, SAY_INSIDE_HEIGHT / 2.0 + 15.0)),
+        Text {
+            content: String::new(),
+            color: SAY_COLOR,
+            size: FontSize::Size22,
+            align: Align::Center,
+            anchor: Anchor::Middle,
+        },
+        Layer(7),
+        Hidden,
+    ));
 }
 
 pub(crate) fn chest(

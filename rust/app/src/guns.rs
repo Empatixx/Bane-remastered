@@ -79,7 +79,21 @@ const fn gun(
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum AmmoClass {
+    Pistol,
+    Shotgun,
+}
+
 impl GunKind {
+    pub(crate) fn ammo_class(self) -> AmmoClass {
+        if self == Self::Shotgun {
+            AmmoClass::Shotgun
+        } else {
+            AmmoClass::Pistol
+        }
+    }
+
     pub(crate) const ALL: [Self; 7] = [
         Self::Pistol,
         Self::Shotgun,

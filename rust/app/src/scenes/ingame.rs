@@ -20,6 +20,7 @@ use crate::viewport::TARGET;
 use super::{Cursor, Pause, Scene, SceneId, Transition};
 
 const VICTORY_SECONDS: f32 = 4.0;
+const SLOT_MACHINE_COINS: i32 = 100;
 
 #[derive(Default)]
 pub(crate) struct InGameScene {
@@ -37,6 +38,7 @@ pub(crate) struct InGameScene {
     floor: u32,
     navigation: Navigation,
     victory_timer: Option<f32>,
+    kills_without_drop: u32,
 }
 
 impl Scene for InGameScene {
@@ -156,7 +158,7 @@ impl Scene for InGameScene {
             self.camera.position(),
             &assets.textures,
         );
-        systems::slide_drops(&mut self.world, dt);
+        systems::glide(&mut self.world, dt);
         systems::open_chests(
             &mut self.world,
             &assets.textures,
@@ -195,7 +197,17 @@ impl Scene for InGameScene {
         }
         self.handle_room_events(events, assets);
         systems::update_boss_hud(&mut self.world);
+        systems::enemy_drops(
+            &mut self.world,
+            &mut self.kills_without_drop,
+            &assets.textures,
+            |bound| rand::random_range(0..bound),
+        );
         systems::remove_expired(&mut self.world);
+        systems::collect_items(&mut self.world, &mut self.sounds);
+        systems::age_items(&mut self.world, dt);
+        systems::update_price_tags(&mut self.world);
+        systems::tick_speech(&mut self.world, dt);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &self.rooms) {
             systems::update_minimaps(&mut self.world, rooms.entered(), rooms.current(), dt);
             if let Some(position) = player_tile(&self.world) {
@@ -210,6 +222,9 @@ impl Scene for InGameScene {
         systems::follow_backdrop(&mut self.world, self.camera.position());
         match systems::interact(&mut self.world, input) {
             Some(Interaction::NextFloor) => self.next_floor(assets),
+            Some(Interaction::Buy) => {
+                systems::buy(&mut self.world, &assets.textures, &mut self.sounds);
+            }
             Some(Interaction::PickUpGun) => {
                 systems::pick_up_gun(&mut self.world, &assets.textures, &mut self.sounds);
             }
@@ -241,7 +256,6 @@ impl Scene for InGameScene {
         systems::tick_hatchers(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::tick_web_spitters(&mut self.world, &assets.textures, dt);
         systems::tick_armageddon(&mut self.world, &mut self.physics, &assets.textures, dt);
-        systems::drag_cobwebs(&mut self.world, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::trap_hits_enemies(&mut self.world, dt);
@@ -293,6 +307,21 @@ impl InGameScene {
                 prefabs::decor(&mut self.world, *decor, textures);
             }
         }
+        systems::stock_rooms(&mut self.world, &dungeon, self.floor, textures, |bound| {
+            rand::random_range(0..bound)
+        });
+        if let Some(keeper) = dungeon
+            .rooms
+            .iter()
+            .filter_map(|room| room.furnishing.as_ref())
+            .flat_map(|furnishing| furnishing.fixtures.iter())
+            .find(|fixture| fixture.kind == crate::dungeon::FixtureKind::Shopkeeper)
+        {
+            prefabs::shop_speech(&mut self.world, keeper.top_left, textures);
+            for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
+                wallet.coins += SLOT_MACHINE_COINS;
+            }
+        }
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
         spawn_minimaps(&mut self.world, &dungeon, textures);
         self.camera = Camera::new(bounds);
@@ -333,6 +362,9 @@ impl InGameScene {
     fn handle_room_events(&mut self, events: Vec<systems::RoomEvent>, assets: &Assets) {
         for event in events {
             match event {
+                systems::RoomEvent::ShopEntered => {
+                    systems::say(&mut self.world, "Welcome to my shop!");
+                }
                 systems::RoomEvent::BossEntered => {
                     self.sounds.push(AudioCommand::Music(Soundtrack::Boss));
                 }

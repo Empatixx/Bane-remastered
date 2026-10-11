@@ -8,6 +8,7 @@ pub(crate) enum Interaction {
     Upgrade,
     NextFloor,
     PickUpGun,
+    Buy,
 }
 
 #[derive(Debug, Clone, Copy)]
