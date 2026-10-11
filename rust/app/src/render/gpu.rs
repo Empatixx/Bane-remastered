@@ -6,9 +6,10 @@ use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
+use super::light::Globals;
+use super::post::PostUniform;
 use super::texture::Pixels;
-use super::{Draw, Quad, TextureId};
-use crate::viewport::TARGET;
+use super::{Draw, Frame, Quad, TextureId};
 
 const MAX_QUADS: usize = 10_000;
 
@@ -19,11 +20,41 @@ pub(crate) struct Gpu {
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
     pipeline: wgpu::RenderPipeline,
+    globals_buffer: wgpu::Buffer,
     screen_bind_group: wgpu::BindGroup,
     texture_layout: wgpu::BindGroupLayout,
     sampler: wgpu::Sampler,
     textures: Vec<wgpu::BindGroup>,
     quad_buffer: wgpu::Buffer,
+    post: Post,
+    targets: Option<Targets>,
+}
+
+struct Post {
+    params_buffer: wgpu::Buffer,
+    params_group: wgpu::BindGroup,
+    sampler: wgpu::Sampler,
+    blit: wgpu::RenderPipeline,
+    vignette: wgpu::RenderPipeline,
+    blur: wgpu::RenderPipeline,
+}
+
+struct Targets {
+    views: [wgpu::TextureView; 2],
+    groups: [wgpu::BindGroup; 2],
+    size: (u32, u32),
+}
+
+impl std::fmt::Debug for Post {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Post")
+    }
+}
+
+impl std::fmt::Debug for Targets {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Targets").field("size", &self.size).finish()
+    }
 }
 
 impl Gpu {
@@ -42,16 +73,16 @@ impl Gpu {
             .ok_or("the surface is not supported by this adapter")?;
         surface.configure(&device, &config);
 
-        let screen_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("screen"),
-            contents: bytemuck::bytes_of(&TARGET.to_array()),
+        let globals_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("globals"),
+            contents: bytemuck::bytes_of(&Globals::new(glam::Vec2::ZERO, &[])),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let screen_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("screen"),
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
@@ -65,7 +96,7 @@ impl Gpu {
             layout: &screen_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: screen_buffer.as_entire_binding(),
+                resource: globals_buffer.as_entire_binding(),
             }],
         });
         let texture_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -122,6 +153,7 @@ impl Gpu {
                         1 => Float32x2,
                         2 => Float32x4,
                         3 => Float32x4,
+                        4 => Float32,
                     ],
                 })],
             },
@@ -142,17 +174,21 @@ impl Gpu {
             cache: None,
         });
 
+        let post = Post::new(&device, config.format, &texture_layout);
         let mut gpu = Self {
             surface,
             device,
             queue,
             config,
             pipeline,
+            globals_buffer,
             screen_bind_group,
             texture_layout,
             sampler,
             textures: Vec::new(),
             quad_buffer,
+            post,
+            targets: None,
         };
         gpu.upload(&Pixels::white());
         Ok(gpu)
@@ -245,11 +281,143 @@ impl Gpu {
         self.surface.configure(&self.device, &self.config);
     }
 
-    pub(crate) fn render(&mut self, clear: wgpu::Color, draws: &[Draw]) {
-        let draws = &draws[..draws.len().min(MAX_QUADS)];
-        let quads: Vec<Quad> = draws.iter().map(|draw| draw.quad).collect();
+    fn ensure_targets(&mut self) {
+        let size = (self.config.width, self.config.height);
+        if self
+            .targets
+            .as_ref()
+            .is_some_and(|targets| targets.size == size)
+        {
+            return;
+        }
+        let make = |label: &str| {
+            let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+                label: Some(label),
+                size: wgpu::Extent3d {
+                    width: size.0,
+                    height: size.1,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: self.config.format,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            });
+            let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some(label),
+                layout: &self.texture_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&self.post.sampler),
+                    },
+                ],
+            });
+            (view, group)
+        };
+        let (view_a, group_a) = make("target a");
+        let (view_b, group_b) = make("target b");
+        self.targets = Some(Targets {
+            views: [view_a, view_b],
+            groups: [group_a, group_b],
+            size,
+        });
+    }
+
+    fn quads_pass(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        load: wgpu::LoadOp<wgpu::Color>,
+        draws: &[Draw],
+        first_instance: u32,
+    ) {
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load,
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            ..Default::default()
+        });
+        pass.set_pipeline(&self.pipeline);
+        pass.set_bind_group(0, &self.screen_bind_group, &[]);
+        pass.set_vertex_buffer(0, self.quad_buffer.slice(..));
+        let mut start = first_instance;
+        for run in draws.chunk_by(|a, b| a.texture == b.texture) {
+            let end = start + run.len() as u32;
+            pass.set_bind_group(1, &self.textures[run[0].texture.index()], &[]);
+            pass.draw(0..6, start..end);
+            start = end;
+        }
+    }
+
+    fn post_pass(
+        &self,
+        encoder: &mut wgpu::CommandEncoder,
+        pipeline: &wgpu::RenderPipeline,
+        source: &wgpu::BindGroup,
+        target: &wgpu::TextureView,
+    ) {
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: target,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            ..Default::default()
+        });
+        pass.set_pipeline(pipeline);
+        pass.set_bind_group(0, &self.post.params_group, &[]);
+        pass.set_bind_group(1, source, &[]);
+        pass.draw(0..3, 0..1);
+    }
+
+    pub(crate) fn render(&mut self, clear: wgpu::Color, frame_data: &Frame) {
+        self.ensure_targets();
+        let layers = &frame_data.layers;
+        let budget = MAX_QUADS;
+        let scene = &layers.scene[..layers.scene.len().min(budget)];
+        let hud = &layers.hud[..layers.hud.len().min(budget - scene.len())];
+        let overlay = &layers.overlay[..layers.overlay.len().min(budget - scene.len() - hud.len())];
+        let quads: Vec<Quad> = scene
+            .iter()
+            .chain(hud)
+            .chain(overlay)
+            .map(|draw| draw.quad)
+            .collect();
         self.queue
             .write_buffer(&self.quad_buffer, 0, bytemuck::cast_slice(&quads));
+        self.queue.write_buffer(
+            &self.globals_buffer,
+            0,
+            bytemuck::bytes_of(&Globals::new(frame_data.camera, &frame_data.lights)),
+        );
+        self.queue.write_buffer(
+            &self.post.params_buffer,
+            0,
+            bytemuck::bytes_of(&PostUniform::new(
+                &frame_data.post,
+                self.config.width,
+                self.config.height,
+            )),
+        );
         let frame = match self.surface.get_current_texture() {
             wgpu::CurrentSurfaceTexture::Success(frame)
             | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
@@ -259,37 +427,144 @@ impl Gpu {
             }
             _ => return,
         };
-        let view = frame
+        let surface_view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+        let Some(targets) = &self.targets else {
+            return;
+        };
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(clear),
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                ..Default::default()
-            });
-            pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &self.screen_bind_group, &[]);
-            pass.set_vertex_buffer(0, self.quad_buffer.slice(..));
-            let mut start = 0;
-            for run in draws.chunk_by(|a, b| a.texture == b.texture) {
-                let end = start + run.len() as u32;
-                pass.set_bind_group(1, &self.textures[run[0].texture.index()], &[]);
-                pass.draw(0..6, start..end);
-                start = end;
-            }
+
+        self.quads_pass(
+            &mut encoder,
+            &targets.views[0],
+            wgpu::LoadOp::Clear(clear),
+            scene,
+            0,
+        );
+        let mut current = 0;
+        if frame_data.post.vignette_active() {
+            self.post_pass(
+                &mut encoder,
+                &self.post.vignette,
+                &targets.groups[current],
+                &targets.views[1 - current],
+            );
+            current = 1 - current;
         }
+        self.quads_pass(
+            &mut encoder,
+            &targets.views[current],
+            wgpu::LoadOp::Load,
+            hud,
+            scene.len() as u32,
+        );
+        if frame_data.post.blur_active() {
+            self.post_pass(
+                &mut encoder,
+                &self.post.blur,
+                &targets.groups[current],
+                &targets.views[1 - current],
+            );
+            current = 1 - current;
+        }
+        self.post_pass(
+            &mut encoder,
+            &self.post.blit,
+            &targets.groups[current],
+            &surface_view,
+        );
+        self.quads_pass(
+            &mut encoder,
+            &surface_view,
+            wgpu::LoadOp::Load,
+            overlay,
+            (scene.len() + hud.len()) as u32,
+        );
         self.queue.submit([encoder.finish()]);
         self.queue.present(frame);
+    }
+}
+
+impl Post {
+    fn new(
+        device: &wgpu::Device,
+        format: wgpu::TextureFormat,
+        texture_layout: &wgpu::BindGroupLayout,
+    ) -> Self {
+        let params_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("post params"),
+            size: size_of::<PostUniform>() as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let params_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("post params"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+        let params_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("post params"),
+            layout: &params_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params_buffer.as_entire_binding(),
+            }],
+        });
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("post"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            ..Default::default()
+        });
+        let shader = device.create_shader_module(wgpu::include_wgsl!("post.wgsl"));
+        let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("post"),
+            bind_group_layouts: &[Some(&params_layout), Some(texture_layout)],
+            immediate_size: 0,
+        });
+        let pipeline = |entry: &str| {
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some(entry),
+                layout: Some(&layout),
+                vertex: wgpu::VertexState {
+                    module: &shader,
+                    entry_point: Some("vs_fullscreen"),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    buffers: &[],
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &shader,
+                    entry_point: Some(entry),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    targets: &[Some(format.into())],
+                }),
+                primitive: wgpu::PrimitiveState::default(),
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                multiview_mask: None,
+                cache: None,
+            })
+        };
+        Self {
+            blit: pipeline("fs_blit"),
+            vignette: pipeline("fs_vignette"),
+            blur: pipeline("fs_blur"),
+            params_buffer,
+            params_group,
+            sampler,
+        }
     }
 }

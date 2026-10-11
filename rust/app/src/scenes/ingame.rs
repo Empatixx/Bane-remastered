@@ -8,6 +8,7 @@ use crate::camera::Camera;
 use crate::components::{UiAction, Weapon};
 use crate::input::Input;
 use crate::physics::Physics;
+use crate::postfx::SceneFx;
 use crate::prefabs;
 use crate::settings::Settings;
 use crate::systems;
@@ -23,6 +24,7 @@ pub(crate) struct InGameScene {
     camera: Camera,
     pause: Pause,
     sounds: Vec<AudioCommand>,
+    hit: bool,
 }
 
 impl Scene for InGameScene {
@@ -46,6 +48,17 @@ impl Scene for InGameScene {
 
     fn take_sounds(&mut self) -> Vec<AudioCommand> {
         std::mem::take(&mut self.sounds)
+    }
+
+    fn fx(&self) -> SceneFx {
+        SceneFx {
+            paused: self.pause.is_active(),
+            low_health: systems::player_is_low_on_health(&self.world),
+        }
+    }
+
+    fn take_hit(&mut self) -> bool {
+        std::mem::take(&mut self.hit)
     }
 
     fn cursor(&self) -> Cursor {
@@ -165,7 +178,9 @@ impl Scene for InGameScene {
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::reap_dead(&mut self.world, &mut self.physics);
-        systems::contact_damage(&mut self.world, &mut self.sounds);
+        if systems::contact_damage(&mut self.world, &mut self.sounds) {
+            self.hit = true;
+        }
         if systems::player_is_dead(&self.world) {
             Transition::Switch(SceneId::Lobby)
         } else {

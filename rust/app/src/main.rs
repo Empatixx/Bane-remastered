@@ -8,6 +8,7 @@ mod geometry;
 mod input;
 mod perf;
 mod physics;
+mod postfx;
 mod prefabs;
 mod props;
 mod render;

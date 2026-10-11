@@ -12,6 +12,7 @@ use hecs::World;
 use crate::assets::Assets;
 use crate::audio::{AudioCommand, Soundtrack};
 use crate::input::Input;
+use crate::postfx::SceneFx;
 use crate::settings::Settings;
 
 pub(crate) use machine::Scenes;
@@ -53,6 +54,14 @@ pub(crate) trait Scene {
 
     fn take_sounds(&mut self) -> Vec<AudioCommand> {
         Vec::new()
+    }
+
+    fn fx(&self) -> SceneFx {
+        SceneFx::default()
+    }
+
+    fn take_hit(&mut self) -> bool {
+        false
     }
 
     fn cursor(&self) -> Cursor {

@@ -7,7 +7,8 @@ use crate::assets::{Assets, Loader};
 use crate::audio::Audio;
 use crate::components::Sprite;
 use crate::input::Input;
-use crate::render::{Draw, Gpu, Quad};
+use crate::postfx::PostFx;
+use crate::render::{Draw, Frame, Gpu, Quad};
 use crate::scenes::{Cursor, Scenes};
 use crate::settings::{Change, Settings};
 
@@ -24,6 +25,7 @@ pub(crate) struct Game {
     assets: Assets,
     settings: Settings,
     audio: Audio,
+    postfx: PostFx,
     time: f32,
 }
 
@@ -35,6 +37,7 @@ impl Game {
             assets,
             settings,
             audio: Audio::new(),
+            postfx: PostFx::default(),
             time: 0.0,
         }
     }
@@ -92,16 +95,23 @@ impl Game {
             .scenes
             .update(&self.input, dt, &self.assets, &mut self.settings);
         self.play_scene_sounds();
+        let hit = self.scenes.take_hit();
+        self.postfx.update(dt, self.scenes.fx(), hit);
         self.input.end_frame();
         flow
     }
 
-    pub(crate) fn draws(&self) -> Vec<Draw> {
-        let mut draws = self.scenes.draws(&self.assets.fonts);
+    pub(crate) fn frame(&self) -> Frame {
+        let mut layers = self.scenes.draws(&self.assets.fonts);
         if self.assets.is_loaded() {
-            draws.push(self.cursor_draw());
+            layers.overlay.push(self.cursor_draw());
         }
-        draws
+        Frame {
+            layers,
+            post: self.postfx.params(self.time),
+            camera: self.scenes.camera(),
+            lights: self.scenes.lights(),
+        }
     }
 
     fn cursor_draw(&self) -> Draw {

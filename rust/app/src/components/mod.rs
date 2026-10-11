@@ -4,6 +4,7 @@ mod body;
 mod combat;
 mod hud;
 mod interaction;
+mod lighting;
 mod motion;
 mod settings_ui;
 mod tags;
@@ -19,11 +20,12 @@ pub(crate) use combat::{
 };
 pub(crate) use hud::{AmmoPip, AmmoText, BarKind, CoinText, StatusBar, PIP_EMPTY, PIP_FULL};
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
+pub(crate) use lighting::{Light, Lit};
 pub(crate) use motion::Velocity;
 pub(crate) use settings_ui::{
     Checkbox, Hidden, ResolutionText, SettingsTabKind, SettingsUi, SliderHandle, SliderValue,
     TabButton, TabOnly, Toggle, Volume,
 };
-pub(crate) use tags::{Player, ScreenSpace};
+pub(crate) use tags::{Overlay, Player, ScreenSpace};
 pub(crate) use transform::{Position, Size};
 pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, TextButton, UiAction};

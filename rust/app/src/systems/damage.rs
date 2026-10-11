@@ -23,7 +23,7 @@ pub(crate) fn absorb(health: &mut Health, armor: &mut Armor, damage: i32) {
 
 const LOW_HEALTH: f32 = 0.3;
 
-pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) {
+pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) -> bool {
     let Some((player, position, size)) = world
         .query::<(Entity, &Position, &Size)>()
         .with::<(&Player, &Health)>()
@@ -32,7 +32,7 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
         .next()
         .map(|(entity, position, size)| (entity, position.0, size.0))
     else {
-        return;
+        return false;
     };
     let damage = world
         .query::<(&Position, &Size, &ContactDamage)>()
@@ -43,11 +43,11 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
         })
         .map(|(_, _, damage)| damage.0);
     let Some(damage) = damage else {
-        return;
+        return false;
     };
     if let Ok((health, armor)) = world.query_one_mut::<(&mut Health, &mut Armor)>(player) {
         if health.current <= 0 {
-            return;
+            return false;
         }
         let was_low = (health.current as f32) < health.max as f32 * LOW_HEALTH;
         absorb(health, armor, damage);
@@ -66,7 +66,9 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
                 remaining: INVULNERABLE_SECONDS,
             },
         );
+        return true;
     }
+    false
 }
 
 pub(crate) fn tick_invulnerability(world: &mut World, dt: f32) {
@@ -80,6 +82,16 @@ pub(crate) fn tick_invulnerability(world: &mut World, dt: f32) {
     for entity in finished {
         let _ = world.remove_one::<Invulnerable>(entity);
     }
+}
+
+pub(crate) fn player_is_low_on_health(world: &World) -> bool {
+    world
+        .query::<&Health>()
+        .with::<&Player>()
+        .iter()
+        .any(|health| {
+            health.current > 0 && (health.current as f32) < health.max as f32 * LOW_HEALTH
+        })
 }
 
 pub(crate) fn player_is_dead(world: &World) -> bool {

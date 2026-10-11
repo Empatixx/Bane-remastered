@@ -4,9 +4,10 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
-    ContactDamage, Enemy, Health, Hitbox, Interactable, Interaction, Layer, OnClick, PauseUi,
-    Player, Position, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, UiAction,
-    Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    ContactDamage, Enemy, Health, Hitbox, Interactable, Interaction, Layer, Light, Lit, OnClick,
+    Overlay, PauseUi, Player, Position, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
+    TextButton, UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    PIP_FULL,
 };
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
@@ -49,6 +50,8 @@ pub(crate) fn player(
         ),
         Animation::new(PLAYER_COLUMNS, PLAYER_ROWS, IDLE),
         Layer(1),
+        Lit,
+        Light::rgb(Vec2::ZERO, 216.0, 156.0, 36.0, 150.0, 0.5),
     ));
     let body = physics.add_player(entity, position, PLAYER_SIZE);
     let _ = world.insert_one(entity, body);
@@ -75,7 +78,16 @@ pub(crate) fn prop(
         Color(Vec4::ONE),
         sprite,
         Layer(-1),
+        Lit,
     ));
+    if prop == Prop::Torch {
+        let offset = if look.flipped {
+            Vec2::new(0.0, -16.0)
+        } else {
+            Vec2::new(-16.0, -16.0)
+        };
+        let _ = world.insert_one(entity, Light::rgb(offset, 230.0, 201.0, 114.0, 75.0, 1.25));
+    }
     if let Some(animated) = spec.animation {
         let clip = Clip {
             row: look.row,
@@ -96,6 +108,7 @@ pub(crate) fn portal(world: &mut World, top_left: Vec2, textures: &Textures) -> 
     let _ = world.insert(
         entity,
         (
+            Light::rgb(Vec2::ZERO, 128.0, 0.0, 128.0, 50.0, 2.5),
             Interactable {
                 action: Interaction::EnterPortal,
             },
@@ -219,6 +232,7 @@ pub(crate) fn tilemap(
                     tileset.rows(),
                 ),
                 Layer(-2),
+                Lit,
             ));
             if tileset.is_solid(number) {
                 solid_cells.push((column, row));
@@ -246,6 +260,8 @@ pub(crate) fn bullet(
         Sprite::cell(texture, 0, BULLET_FLIGHT.row, BULLET_COLUMNS, BULLET_ROWS),
         Animation::new(BULLET_COLUMNS, BULLET_ROWS, BULLET_FLIGHT),
         Layer(2),
+        Lit,
+        Light::rgb(Vec2::ZERO, 255.0, 0.0, 0.0, 25.0, 0.75),
     ));
     let body = physics.add_bullet(entity, position, velocity, size);
     let _ = world.insert_one(entity, body);
@@ -294,6 +310,7 @@ pub(crate) fn rat(
         Sprite::cell(texture, 0, RAT_WALK.row, RAT_COLUMNS, RAT_ROWS),
         Animation::new(RAT_COLUMNS, RAT_ROWS, RAT_WALK),
         Layer(1),
+        Lit,
     ));
     let body = physics.add_enemy(entity, position, RAT_SIZE);
     let _ = world.insert_one(entity, body);
@@ -434,14 +451,7 @@ const PAUSE_BUTTONS: [(f32, &str, UiAction); 3] = [
 pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {
     world.spawn((
         PauseUi,
-        Position(Vec2::new(480.0, 270.0)),
-        Size(Vec2::new(960.0, 540.0)),
-        Color(Vec4::new(0.0, 0.0, 0.0, 0.5)),
-        Layer(7),
-        ScreenSpace,
-    ));
-    world.spawn((
-        PauseUi,
+        Overlay,
         Position(Vec2::new(480.0, 270.0)),
         Size(PAUSE_BACKGROUND_SIZE),
         Color(Vec4::ONE),
@@ -455,6 +465,7 @@ pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {
         let height = line.line_height();
         world.spawn((
             PauseUi,
+            Overlay,
             OnClick(action),
             TextButton {
                 idle: PAUSE_TEXT_COLOR,

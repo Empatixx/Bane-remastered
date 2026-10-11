@@ -119,7 +119,7 @@ impl ApplicationHandler for App {
                             b: 0.12,
                             a: 1.0,
                         },
-                        &game.draws(),
+                        &game.frame(),
                     );
                 }
             }

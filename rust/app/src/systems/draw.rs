@@ -2,15 +2,51 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{
-    Color, Hidden, InRange, Layer, Position, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
+    Color, Hidden, InRange, Layer, Lit, Overlay, Position, Prompt, ScreenSpace, Size, Sprite,
+    StatusBar, Text,
 };
-use crate::render::{Draw, Fonts, Quad, TextureId};
+use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
 use super::hud::bar_draws;
 
-pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<Draw> {
-    let mut layered: Vec<(Layer, Draw)> = Vec::new();
-    for (position, size, color, sprite, layer, screen) in world
+#[derive(Default)]
+struct Sorted {
+    scene: Vec<(Layer, Draw)>,
+    hud: Vec<(Layer, Draw)>,
+    overlay: Vec<(Layer, Draw)>,
+}
+
+impl Sorted {
+    fn bucket(
+        &mut self,
+        screen: Option<&ScreenSpace>,
+        overlay: Option<&Overlay>,
+    ) -> &mut Vec<(Layer, Draw)> {
+        if overlay.is_some() {
+            &mut self.overlay
+        } else if screen.is_some() {
+            &mut self.hud
+        } else {
+            &mut self.scene
+        }
+    }
+
+    fn finish(self) -> Layers {
+        let strip = |mut list: Vec<(Layer, Draw)>| {
+            list.sort_by_key(|(layer, _)| *layer);
+            list.into_iter().map(|(_, draw)| draw).collect()
+        };
+        Layers {
+            scene: strip(self.scene),
+            hud: strip(self.hud),
+            overlay: strip(self.overlay),
+        }
+    }
+}
+
+pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Layers {
+    let mut sorted = Sorted::default();
+    for (position, size, color, sprite, layer, screen, overlay, lit) in world
         .query::<(
             &Position,
             &Size,
@@ -18,6 +54,8 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<D
             Option<&Sprite>,
             Option<&Layer>,
             Option<&ScreenSpace>,
+            Option<&Overlay>,
+            Option<&Lit>,
         )>()
         .without::<&Hidden>()
         .iter()
@@ -26,33 +64,46 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<D
         let draw = match sprite {
             Some(sprite) => Draw {
                 texture: sprite.texture,
-                quad: Quad::with_uv(center, size.0, color.0, sprite.uv),
+                quad: Quad::with_uv(center, size.0, color.0, sprite.uv).lit(lit.is_some()),
             },
             None => Draw {
                 texture: TextureId::WHITE,
                 quad: Quad::new(center, size.0, color.0),
             },
         };
-        layered.push((layer.copied().unwrap_or(Layer(0)), draw));
+        sorted
+            .bucket(screen, overlay)
+            .push((layer.copied().unwrap_or(Layer(0)), draw));
     }
-    for (position, text, layer, screen) in world
-        .query::<(&Position, &Text, Option<&Layer>, Option<&ScreenSpace>)>()
+    for (position, text, layer, screen, overlay) in world
+        .query::<(
+            &Position,
+            &Text,
+            Option<&Layer>,
+            Option<&ScreenSpace>,
+            Option<&Overlay>,
+        )>()
         .without::<&Hidden>()
         .iter()
     {
         let layer = layer.copied().unwrap_or(Layer(0));
         let point = position.0 - offset(screen, camera);
-        for draw in
+        let draws =
             fonts
                 .get(text.size)
-                .draw(&text.content, point, text.align, text.anchor, text.color)
-        {
-            layered.push((layer, draw));
+                .draw(&text.content, point, text.align, text.anchor, text.color);
+        let bucket = sorted.bucket(screen, overlay);
+        for draw in draws {
+            bucket.push((layer, draw));
         }
     }
-    for (position, size, bar) in world.query::<(&Position, &Size, &StatusBar)>().iter() {
+    for (position, size, bar, screen) in world
+        .query::<(&Position, &Size, &StatusBar, Option<&ScreenSpace>)>()
+        .iter()
+    {
+        let bucket = sorted.bucket(screen, None);
         for draw in bar_draws(position.0, size.0, bar) {
-            layered.push((Layer(5), draw));
+            bucket.push((Layer(5), draw));
         }
     }
     for (position, size, prompt) in world
@@ -66,11 +117,10 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<D
             position.0.y + size.0.y / 2.0 + prompt.gap + line.line_height() / 2.0,
         ) - camera;
         for draw in line.draw_centered(prompt.text, center, prompt.color) {
-            layered.push((Layer(3), draw));
+            sorted.scene.push((Layer(3), draw));
         }
     }
-    layered.sort_by_key(|(layer, _)| *layer);
-    layered.into_iter().map(|(_, draw)| draw).collect()
+    sorted.finish()
 }
 
 fn offset(screen: Option<&ScreenSpace>, camera: Vec2) -> Vec2 {

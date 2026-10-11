@@ -4,7 +4,7 @@ use std::ops::ControlFlow;
 use crate::assets::Assets;
 use crate::audio::AudioCommand;
 use crate::input::Input;
-use crate::render::{Draw, Fonts};
+use crate::render::{Fonts, Layers, LightSource};
 use crate::settings::Settings;
 use crate::systems;
 
@@ -80,11 +80,28 @@ impl Scenes {
         self.apply(transition, assets)
     }
 
+    pub(crate) fn fx(&self) -> crate::postfx::SceneFx {
+        self.scene().fx()
+    }
+
+    pub(crate) fn take_hit(&mut self) -> bool {
+        self.scene_mut().take_hit()
+    }
+
+    pub(crate) fn camera(&self) -> glam::Vec2 {
+        self.scene().camera()
+    }
+
+    pub(crate) fn lights(&self) -> Vec<LightSource> {
+        let scene = self.scene();
+        systems::collect_lights(scene.world(), scene.camera())
+    }
+
     pub(crate) fn cursor(&self) -> Cursor {
         self.scene().cursor()
     }
 
-    pub(crate) fn draws(&self, fonts: &Fonts) -> Vec<Draw> {
+    pub(crate) fn draws(&self, fonts: &Fonts) -> Layers {
         let scene = self.scene();
         systems::collect_draws(scene.world(), fonts, scene.camera())
     }

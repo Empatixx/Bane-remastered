@@ -8,6 +8,7 @@ use crate::camera::Camera;
 use crate::components::{Interaction, UiAction};
 use crate::input::Input;
 use crate::physics::Physics;
+use crate::postfx::SceneFx;
 use crate::prefabs::{self, PLAYER_SIZE};
 use crate::props::{Look, Prop};
 use crate::settings::Settings;
@@ -78,6 +79,13 @@ impl Scene for LobbyScene {
 
     fn take_sounds(&mut self) -> Vec<AudioCommand> {
         std::mem::take(&mut self.sounds)
+    }
+
+    fn fx(&self) -> SceneFx {
+        SceneFx {
+            paused: self.pause.is_active(),
+            low_health: systems::player_is_low_on_health(&self.world),
+        }
     }
 
     fn cursor(&self) -> Cursor {

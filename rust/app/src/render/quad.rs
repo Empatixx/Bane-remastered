@@ -8,6 +8,7 @@ pub(crate) struct Quad {
     size: [f32; 2],
     color: [f32; 4],
     uv: [f32; 4],
+    lit: f32,
 }
 
 impl Quad {
@@ -21,6 +22,12 @@ impl Quad {
             size: size.to_array(),
             color: color.to_array(),
             uv,
+            lit: 0.0,
         }
+    }
+
+    pub(crate) fn lit(mut self, lit: bool) -> Self {
+        self.lit = if lit { 1.0 } else { 0.0 };
+        self
     }
 }
