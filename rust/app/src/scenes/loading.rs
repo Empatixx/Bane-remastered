@@ -4,6 +4,7 @@ use hecs::World;
 use crate::assets::{Assets, LOADING_BACKGROUND, LOADING_SPINNER};
 use crate::input::Input;
 use crate::prefabs;
+use crate::settings::Settings;
 use crate::viewport::TARGET;
 
 use super::{Scene, SceneId, Transition};
@@ -39,7 +40,13 @@ impl Scene for LoadingScene {
         );
     }
 
-    fn update(&mut self, _input: &Input, _dt: f32, assets: &Assets) -> Transition {
+    fn update(
+        &mut self,
+        _input: &Input,
+        _dt: f32,
+        assets: &Assets,
+        _settings: &mut Settings,
+    ) -> Transition {
         if assets.is_loaded() {
             Transition::Switch(SceneId::Menu)
         } else {

@@ -1,0 +1,231 @@
+use hecs::{Entity, World};
+
+use crate::components::{
+    Checkbox, Hidden, Position, ResolutionText, SettingsTabKind, Size, SliderHandle, SliderValue,
+    Sprite, TabButton, TabOnly, Text, Toggle, Volume,
+};
+use crate::geometry;
+use crate::input::Input;
+use crate::settings::{GameSettings, Settings};
+
+const ROW_COUNT: usize = 4;
+
+pub(crate) fn update_settings_ui(
+    world: &mut World,
+    input: &Input,
+    settings: &mut Settings,
+    tab: &mut SettingsTabKind,
+) {
+    select_tab(world, input, tab);
+    show_only(world, *tab);
+    update_checkboxes(world, input, settings);
+    update_sliders(world, input, settings);
+    update_resolution_text(world, settings);
+}
+
+fn select_tab(world: &mut World, input: &Input, tab: &mut SettingsTabKind) {
+    let mouse = input.mouse();
+    for (position, size, button) in world
+        .query::<(&Position, &Size, &TabButton)>()
+        .without::<&Hidden>()
+        .iter()
+    {
+        if input.clicked() && geometry::contains(position.0, size.0, mouse) {
+            *tab = button.0;
+        }
+    }
+    for (button, sprite) in world.query_mut::<(&TabButton, &mut Sprite)>() {
+        let row = usize::from(button.0 == *tab);
+        sprite.uv = Sprite::cell_uv(0, row, 1, 2);
+    }
+}
+
+fn show_only(world: &mut World, tab: SettingsTabKind) {
+    let scoped: Vec<(Entity, SettingsTabKind)> = world
+        .query::<(Entity, &TabOnly)>()
+        .iter()
+        .map(|(entity, only)| (entity, only.0))
+        .collect();
+    for (entity, only) in scoped {
+        if only == tab {
+            let _ = world.remove_one::<Hidden>(entity);
+        } else {
+            let _ = world.insert_one(entity, Hidden);
+        }
+    }
+}
+
+fn update_checkboxes(world: &mut World, input: &Input, settings: &mut Settings) {
+    let mouse = input.mouse();
+    for (position, size, checkbox, sprite) in world
+        .query_mut::<(&Position, &Size, &Checkbox, &mut Sprite)>()
+        .without::<&Hidden>()
+    {
+        let hovered = geometry::contains(position.0, size.0, mouse);
+        let state = settings.pending_mut();
+        let value = match checkbox.toggle {
+            Toggle::Vsync => &mut state.vsync,
+            Toggle::Fullscreen => &mut state.fullscreen,
+        };
+        if hovered && input.clicked() {
+            *value = !*value;
+        }
+        let row = usize::from(*value) + if hovered { 2 } else { 0 };
+        sprite.uv = Sprite::cell_uv(0, row, 1, ROW_COUNT);
+    }
+}
+
+fn volume_of(settings: &GameSettings, volume: Volume) -> f32 {
+    match volume {
+        Volume::Overall => settings.overall_volume,
+        Volume::Music => settings.music_volume,
+        Volume::Effects => settings.effects_volume,
+    }
+}
+
+fn set_volume(settings: &mut GameSettings, volume: Volume, value: f32) {
+    match volume {
+        Volume::Overall => settings.overall_volume = value,
+        Volume::Music => settings.music_volume = value,
+        Volume::Effects => settings.effects_volume = value,
+    }
+}
+
+fn update_sliders(world: &mut World, input: &Input, settings: &mut Settings) {
+    let mouse = input.mouse();
+    for (position, size, handle, sprite) in world
+        .query_mut::<(&mut Position, &Size, &mut SliderHandle, &mut Sprite)>()
+        .without::<&Hidden>()
+    {
+        if input.clicked() && geometry::contains(position.0, size.0, mouse) {
+            handle.dragging = true;
+        }
+        if !input.mouse_down() {
+            handle.dragging = false;
+        }
+        let travel = handle.track_width - size.0.x;
+        if handle.dragging && travel > 0.0 {
+            let left = (mouse.x - size.0.x / 2.0).clamp(handle.left, handle.left + travel);
+            set_volume(
+                settings.pending_mut(),
+                handle.volume,
+                (left - handle.left) / travel,
+            );
+        }
+        let value = volume_of(settings.pending(), handle.volume);
+        position.0.x = handle.left + value * travel + size.0.x / 2.0;
+        sprite.uv = Sprite::cell_uv(0, usize::from(handle.dragging), 1, 2);
+    }
+    for (value, text) in world.query_mut::<(&SliderValue, &mut Text)>() {
+        let percent = (volume_of(settings.pending(), value.0) * 100.0) as i32;
+        text.content = format!("{percent}%");
+    }
+}
+
+fn update_resolution_text(world: &mut World, settings: &Settings) {
+    let (width, height) = settings.pending().resolution();
+    for text in world.query_mut::<&mut Text>().with::<&ResolutionText>() {
+        text.content = format!("{width}x{height}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use glam::Vec2;
+    use winit::event::{ElementState, MouseButton};
+
+    use crate::components::Color;
+
+    use super::*;
+
+    fn press_at(input: &mut Input, at: Vec2) {
+        input.set_mouse(at);
+        input.handle_click(MouseButton::Left, ElementState::Pressed);
+    }
+
+    fn checkbox_world(toggle: Toggle) -> World {
+        let mut world = World::new();
+        world.spawn((
+            Position(Vec2::new(100.0, 100.0)),
+            Size(Vec2::splat(24.0)),
+            Color(glam::Vec4::ONE),
+            Sprite::cell(crate::render::TextureId::WHITE, 0, 0, 1, 4),
+            Checkbox { toggle },
+        ));
+        world
+    }
+
+    #[test]
+    fn clicking_a_checkbox_flips_its_setting() {
+        let mut world = checkbox_world(Toggle::Fullscreen);
+        let mut settings = Settings::in_memory();
+        let mut tab = SettingsTabKind::Video;
+        let mut input = Input::default();
+
+        press_at(&mut input, Vec2::new(105.0, 105.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+
+        assert!(settings.pending().fullscreen);
+    }
+
+    #[test]
+    fn clicking_next_to_a_checkbox_changes_nothing() {
+        let mut world = checkbox_world(Toggle::Vsync);
+        let mut settings = Settings::in_memory();
+        let mut tab = SettingsTabKind::Video;
+        let mut input = Input::default();
+
+        press_at(&mut input, Vec2::new(400.0, 400.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+
+        assert!(settings.pending().vsync);
+    }
+
+    #[test]
+    fn dragging_a_slider_sets_the_volume_from_the_mouse_position() {
+        let mut world = World::new();
+        world.spawn((
+            Position(Vec2::new(441.0, 233.0)),
+            Size(Vec2::splat(32.0)),
+            Sprite::cell(crate::render::TextureId::WHITE, 0, 0, 1, 2),
+            SliderHandle {
+                volume: Volume::Music,
+                left: 425.0,
+                track_width: 256.0,
+                dragging: false,
+            },
+        ));
+        let mut settings = Settings::in_memory();
+        let mut tab = SettingsTabKind::Audio;
+        let mut input = Input::default();
+
+        press_at(&mut input, Vec2::new(441.0, 233.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+        input.end_frame();
+
+        input.set_mouse(Vec2::new(425.0 + 16.0 + 112.0, 233.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+
+        assert!((settings.pending().music_volume - 0.5).abs() < 0.01);
+
+        input.handle_click(MouseButton::Left, ElementState::Released);
+        input.set_mouse(Vec2::new(900.0, 233.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+        assert!((settings.pending().music_volume - 0.5).abs() < 0.01);
+    }
+
+    #[test]
+    fn switching_tabs_hides_the_other_tabs_elements() {
+        let mut world = World::new();
+        let video = world.spawn((TabOnly(SettingsTabKind::Video),));
+        let audio = world.spawn((TabOnly(SettingsTabKind::Audio),));
+        let mut settings = Settings::in_memory();
+        let mut tab = SettingsTabKind::Audio;
+        let input = Input::default();
+
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+
+        assert!(world.get::<&Hidden>(video).is_ok());
+        assert!(world.get::<&Hidden>(audio).is_err());
+    }
+}

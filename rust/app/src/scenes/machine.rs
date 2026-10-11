@@ -4,6 +4,7 @@ use std::ops::ControlFlow;
 use crate::assets::Assets;
 use crate::input::Input;
 use crate::render::{Draw, Fonts};
+use crate::settings::Settings;
 use crate::systems;
 
 use super::ingame::InGameScene;
@@ -41,9 +42,15 @@ impl Scenes {
         scenes
     }
 
-    pub(crate) fn update(&mut self, input: &Input, dt: f32, assets: &Assets) -> ControlFlow<()> {
+    pub(crate) fn update(
+        &mut self,
+        input: &Input,
+        dt: f32,
+        assets: &Assets,
+        settings: &mut Settings,
+    ) -> ControlFlow<()> {
         systems::animate(self.scene_mut().world_mut(), dt);
-        let transition = self.scene_mut().update(input, dt, assets);
+        let transition = self.scene_mut().update(input, dt, assets, settings);
         self.apply(transition, assets)
     }
 
@@ -121,9 +128,11 @@ mod tests {
         position: Vec2,
     ) -> ControlFlow<()> {
         input.set_mouse(position);
-        assert!(scenes.update(input, 0.0, assets).is_continue());
+        assert!(scenes
+            .update(input, 0.0, assets, &mut Settings::in_memory())
+            .is_continue());
         input.handle_click(MouseButton::Left, ElementState::Pressed);
-        let flow = scenes.update(input, 0.0, assets);
+        let flow = scenes.update(input, 0.0, assets, &mut Settings::in_memory());
         input.end_frame();
         flow
     }
@@ -132,7 +141,9 @@ mod tests {
         let assets = loaded_assets();
         let mut scenes = Scenes::new(&assets);
         let input = Input::default();
-        assert!(scenes.update(&input, 0.0, &assets).is_continue());
+        assert!(scenes
+            .update(&input, 0.0, &assets, &mut Settings::in_memory())
+            .is_continue());
         assert_eq!(scenes.current, SceneId::Menu);
         (scenes, input, assets)
     }
@@ -143,11 +154,15 @@ mod tests {
         let mut scenes = Scenes::new(&assets);
         let input = Input::default();
 
-        assert!(scenes.update(&input, 1.0, &assets).is_continue());
+        assert!(scenes
+            .update(&input, 1.0, &assets, &mut Settings::in_memory())
+            .is_continue());
         assert_eq!(scenes.current, SceneId::Loading);
 
         assets.mark_loaded();
-        assert!(scenes.update(&input, 0.0, &assets).is_continue());
+        assert!(scenes
+            .update(&input, 0.0, &assets, &mut Settings::in_memory())
+            .is_continue());
         assert_eq!(scenes.current, SceneId::Menu);
     }
 

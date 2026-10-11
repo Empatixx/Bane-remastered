@@ -227,6 +227,15 @@ impl Gpu {
         TextureId::new(self.textures.len() - 1)
     }
 
+    pub(crate) fn set_vsync(&mut self, vsync: bool) {
+        self.config.present_mode = if vsync {
+            wgpu::PresentMode::Fifo
+        } else {
+            wgpu::PresentMode::AutoNoVsync
+        };
+        self.surface.configure(&self.device, &self.config);
+    }
+
     pub(crate) fn resize(&mut self, size: PhysicalSize<u32>) {
         if size.width == 0 || size.height == 0 {
             return;

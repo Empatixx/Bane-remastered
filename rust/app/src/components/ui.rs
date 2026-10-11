@@ -6,6 +6,11 @@ pub(crate) enum UiAction {
     Resume,
     Statistics,
     LeaveToMenu,
+    SettingsApply,
+    SettingsRevert,
+    SettingsExit,
+    ResolutionNext,
+    ResolutionPrevious,
 }
 
 #[derive(Debug, Clone, Copy)]

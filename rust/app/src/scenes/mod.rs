@@ -4,15 +4,18 @@ mod lobby;
 mod machine;
 mod menu;
 mod pause;
+mod settings_panel;
 
 use glam::Vec2;
 use hecs::World;
 
 use crate::assets::Assets;
 use crate::input::Input;
+use crate::settings::Settings;
 
 pub(crate) use machine::Scenes;
 pub(crate) use pause::Pause;
+pub(crate) use settings_panel::SettingsPanel;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SceneId {
@@ -55,7 +58,13 @@ pub(crate) trait Scene {
         self.world_mut().clear();
     }
 
-    fn update(&mut self, _input: &Input, _dt: f32, _assets: &Assets) -> Transition {
+    fn update(
+        &mut self,
+        _input: &Input,
+        _dt: f32,
+        _assets: &Assets,
+        _settings: &mut Settings,
+    ) -> Transition {
         Transition::None
     }
 

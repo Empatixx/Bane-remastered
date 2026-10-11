@@ -52,6 +52,13 @@ const GAME_TEXTURES: &[&str] = &[
     "ingame/crosshair.tga",
     "ingame/reload_cursor.tga",
     "ingame/pausebg.tga",
+    "menu/settings_background.tga",
+    "menu/settings_menubar.tga",
+    "menu/checkbox.tga",
+    "menu/slider.tga",
+    "menu/slider-button.tga",
+    "menu/button_arrow.tga",
+    "menu/button_arrow_rotated.tga",
 ];
 
 #[derive(Debug, Clone, Default)]

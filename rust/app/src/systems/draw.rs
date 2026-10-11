@@ -2,7 +2,7 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{
-    Color, InRange, Layer, Position, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
+    Color, Hidden, InRange, Layer, Position, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Quad, TextureId};
 
@@ -19,6 +19,7 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<D
             Option<&Layer>,
             Option<&ScreenSpace>,
         )>()
+        .without::<&Hidden>()
         .iter()
     {
         let center = position.0 - offset(screen, camera);
@@ -36,6 +37,7 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<D
     }
     for (position, text, layer, screen) in world
         .query::<(&Position, &Text, Option<&Layer>, Option<&ScreenSpace>)>()
+        .without::<&Hidden>()
         .iter()
     {
         let layer = layer.copied().unwrap_or(Layer(0));

@@ -1,14 +1,15 @@
 use glam::Vec2;
-use hecs::World;
+use hecs::{Entity, World};
 
 use crate::assets::{Assets, BUTTON, LOGO, MENU_BACKGROUND};
 use crate::components::UiAction;
 use crate::input::Input;
 use crate::prefabs;
+use crate::settings::Settings;
 use crate::systems;
 use crate::viewport::TARGET;
 
-use super::{Scene, SceneId, Transition};
+use super::{Scene, SceneId, SettingsPanel, Transition};
 
 const LOGO_SIZE: Vec2 = Vec2::new(228.0, 108.0);
 const LOGO_TOP_LEFT_Y: f32 = 50.0;
@@ -21,6 +22,8 @@ const BUTTON_ROWS: [(f32, &str, UiAction); 3] = [
 #[derive(Default)]
 pub(crate) struct MenuScene {
     world: World,
+    panel: SettingsPanel,
+    background: Option<Entity>,
 }
 
 impl Scene for MenuScene {
@@ -34,13 +37,14 @@ impl Scene for MenuScene {
 
     fn enter(&mut self, assets: &Assets) {
         let x = TARGET.x / 2.0;
-        prefabs::sprite(
+        self.panel = SettingsPanel::default();
+        self.background = Some(prefabs::sprite(
             &mut self.world,
             TARGET / 2.0,
             TARGET,
             assets.textures.get(MENU_BACKGROUND),
             -1,
-        );
+        ));
         prefabs::sprite(
             &mut self.world,
             Vec2::new(x, LOGO_TOP_LEFT_Y + LOGO_SIZE.y / 2.0),
@@ -59,11 +63,23 @@ impl Scene for MenuScene {
         }
     }
 
-    fn update(&mut self, input: &Input, _dt: f32, _assets: &Assets) -> Transition {
+    fn update(
+        &mut self,
+        input: &Input,
+        _dt: f32,
+        assets: &Assets,
+        settings: &mut Settings,
+    ) -> Transition {
+        if self.panel.is_open() {
+            self.panel.update(&mut self.world, input, settings);
+            return Transition::None;
+        }
         match systems::update_buttons(&mut self.world, input) {
             Some(UiAction::Play) => Transition::Switch(SceneId::Lobby),
             Some(UiAction::Settings) => {
-                tracing::info!("settings are not implemented yet");
+                if let Some(background) = self.background {
+                    self.panel.open(&mut self.world, assets, background);
+                }
                 Transition::None
             }
             Some(UiAction::Exit) => Transition::Quit,

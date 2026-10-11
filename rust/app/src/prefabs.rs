@@ -159,13 +159,13 @@ pub(crate) fn button(
     label: &str,
     action: UiAction,
     texture: TextureId,
-) -> Entity {
-    world.spawn((
+) -> (Entity, Entity) {
+    let text = world.spawn((
         Text::centered(label, BUTTON_TEXT_COLOR, FontSize::Size27),
         Position(position),
         Layer(2),
     ));
-    world.spawn((
+    let button = world.spawn((
         Button {
             idle_uv: Sprite::cell_uv(0, 0, 1, 2),
             hover_uv: Sprite::cell_uv(0, 1, 1, 2),
@@ -176,7 +176,8 @@ pub(crate) fn button(
         Color(Vec4::ONE),
         Sprite::cell(texture, 0, 0, 1, 2),
         Layer(1),
-    ))
+    ));
+    (button, text)
 }
 
 pub(crate) fn sprite(

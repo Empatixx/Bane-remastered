@@ -11,6 +11,7 @@ mod prefabs;
 mod props;
 mod render;
 mod scenes;
+mod settings;
 mod systems;
 mod tilemap;
 mod viewport;

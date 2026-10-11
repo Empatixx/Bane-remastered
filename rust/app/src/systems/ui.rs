@@ -1,7 +1,7 @@
 use hecs::World;
 
 use crate::components::{
-    Button, Hitbox, OnClick, Position, Size, Sprite, Text, TextButton, UiAction,
+    Button, Hidden, Hitbox, OnClick, Position, Size, Sprite, Text, TextButton, UiAction,
 };
 use crate::geometry;
 use crate::input::Input;
@@ -9,8 +9,9 @@ use crate::input::Input;
 pub(crate) fn update_buttons(world: &mut World, input: &Input) -> Option<UiAction> {
     let mouse = input.mouse();
     let mut triggered = None;
-    for (position, size, button, action, sprite) in
-        world.query_mut::<(&Position, &Size, &Button, &OnClick, &mut Sprite)>()
+    for (position, size, button, action, sprite) in world
+        .query_mut::<(&Position, &Size, &Button, &OnClick, &mut Sprite)>()
+        .without::<&Hidden>()
     {
         let hovered = geometry::contains(position.0, size.0, mouse);
         sprite.uv = if hovered {

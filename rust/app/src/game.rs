@@ -8,6 +8,7 @@ use crate::components::Sprite;
 use crate::input::Input;
 use crate::render::{Draw, Quad};
 use crate::scenes::{Cursor, Scenes};
+use crate::settings::{Change, Settings};
 
 const CURSOR_SIZE: Vec2 = Vec2::new(32.0, 32.0);
 const ARROW_HOTSPOT: Vec2 = Vec2::new(6.0, 3.5);
@@ -20,17 +21,23 @@ pub(crate) struct Game {
     input: Input,
     scenes: Scenes,
     assets: Assets,
+    settings: Settings,
     time: f32,
 }
 
 impl Game {
-    pub(crate) fn new(assets: Assets) -> Self {
+    pub(crate) fn new(assets: Assets, settings: Settings) -> Self {
         Self {
             input: Input::default(),
             scenes: Scenes::new(&assets),
             assets,
+            settings,
             time: 0.0,
         }
+    }
+
+    pub(crate) fn take_setting_changes(&mut self) -> Vec<Change> {
+        self.settings.take_changes()
     }
 
     pub(crate) fn assets_mut(&mut self) -> &mut Assets {
@@ -55,7 +62,9 @@ impl Game {
 
     pub(crate) fn update(&mut self, dt: f32) -> ControlFlow<()> {
         self.time += dt;
-        let flow = self.scenes.update(&self.input, dt, &self.assets);
+        let flow = self
+            .scenes
+            .update(&self.input, dt, &self.assets, &mut self.settings);
         self.input.end_frame();
         flow
     }

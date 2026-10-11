@@ -12,3 +12,4 @@ settings.json
 # Rust port
 /rust/target/
 /rust/.idea/
+/rust/settings.json

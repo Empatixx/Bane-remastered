@@ -1,18 +1,22 @@
+use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use glam::Vec2;
 use winit::application::ApplicationHandler;
+use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
 use winit::event_loop::ActiveEventLoop;
-use winit::window::{Window, WindowId};
+use winit::window::{Fullscreen, Window, WindowId};
 
 use crate::assets::{Assets, Loader};
 use crate::game::Game;
 use crate::perf::PerfCounter;
 use crate::render::Gpu;
+use crate::settings::{Change, Settings};
 use crate::viewport::TARGET;
 
+const SETTINGS_FILE: &str = "settings.json";
 const STEP: Duration = Duration::from_nanos(1_000_000_000 / 60);
 const MAX_FRAME: Duration = Duration::from_millis(250);
 
@@ -59,8 +63,13 @@ impl ApplicationHandler for App {
             Ok((gpu, assets, loader))
         });
         match started {
-            Ok((gpu, assets, loader)) => {
-                self.game = Some(Game::new(assets));
+            Ok((mut gpu, assets, loader)) => {
+                let mut settings = Settings::load(Path::new(SETTINGS_FILE));
+                settings.set_resolutions(monitor_resolutions(&window));
+                settings.startup_changes();
+                let mut game = Game::new(assets, settings);
+                apply_changes(&window, &mut gpu, game.take_setting_changes());
+                self.game = Some(game);
                 self.loader = Some(loader);
                 self.gpu = Some(gpu);
                 self.window = Some(window);
@@ -132,6 +141,9 @@ impl ApplicationHandler for App {
                 self.loader = None;
             }
         }
+        if let Some(window) = &self.window {
+            apply_changes(window, gpu, game.take_setting_changes());
+        }
         let now = Instant::now();
         let frame_time = (now - self.last_frame).min(MAX_FRAME);
         self.last_frame = now;
@@ -155,6 +167,42 @@ impl ApplicationHandler for App {
 
         if let Some(window) = &self.window {
             window.request_redraw();
+        }
+    }
+}
+
+fn monitor_resolutions(window: &Window) -> Vec<(u32, u32)> {
+    window
+        .current_monitor()
+        .map(|monitor| {
+            monitor
+                .video_modes()
+                .map(|mode| (mode.size().width, mode.size().height))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn apply_changes(window: &Window, gpu: &mut Gpu, changes: Vec<Change>) {
+    for change in changes {
+        match change {
+            Change::Fullscreen(fullscreen) => {
+                window.set_fullscreen(fullscreen.then_some(Fullscreen::Borderless(None)));
+            }
+            Change::Resolution(width, height) => {
+                let _ = window.request_inner_size(PhysicalSize::new(width, height));
+            }
+            Change::Vsync(vsync) => gpu.set_vsync(vsync),
+            Change::Volume {
+                overall,
+                music,
+                effects,
+            } => tracing::info!(
+                overall,
+                music,
+                effects,
+                "volume changed (audio is not implemented yet)"
+            ),
         }
     }
 }

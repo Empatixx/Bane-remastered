@@ -10,6 +10,7 @@ pub(crate) struct Input {
     pressed: HashSet<KeyCode>,
     mouse: Vec2,
     clicked: bool,
+    mouse_held: bool,
 }
 
 impl Input {
@@ -30,8 +31,15 @@ impl Input {
     }
 
     pub(crate) fn handle_click(&mut self, button: MouseButton, state: ElementState) {
-        if button == MouseButton::Left && state == ElementState::Pressed {
-            self.clicked = true;
+        if button != MouseButton::Left {
+            return;
+        }
+        match state {
+            ElementState::Pressed => {
+                self.clicked = true;
+                self.mouse_held = true;
+            }
+            ElementState::Released => self.mouse_held = false,
         }
     }
 
@@ -56,6 +64,10 @@ impl Input {
 
     pub(crate) fn mouse(&self) -> Vec2 {
         self.mouse
+    }
+
+    pub(crate) fn mouse_down(&self) -> bool {
+        self.mouse_held
     }
 
     pub(crate) fn clicked(&self) -> bool {

@@ -9,6 +9,7 @@ use crate::input::Input;
 use crate::physics::Physics;
 use crate::prefabs::{self, PLAYER_SIZE};
 use crate::props::{Look, Prop};
+use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::viewport::TARGET;
@@ -132,7 +133,13 @@ impl Scene for LobbyScene {
         }
     }
 
-    fn update(&mut self, input: &Input, dt: f32, assets: &Assets) -> Transition {
+    fn update(
+        &mut self,
+        input: &Input,
+        dt: f32,
+        assets: &Assets,
+        _settings: &mut Settings,
+    ) -> Transition {
         if input.just_pressed(KeyCode::Escape) {
             self.pause.toggle(&mut self.world, assets);
         }
