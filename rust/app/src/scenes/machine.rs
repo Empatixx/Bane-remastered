@@ -34,8 +34,8 @@ impl Scenes {
             current: SceneId::Loading,
             loading: LoadingScene::default(),
             menu: MenuScene::new(textures),
-            lobby: LobbyScene::default(),
-            ingame: InGameScene::default(),
+            lobby: LobbyScene::new(textures),
+            ingame: InGameScene::new(textures),
         };
         scenes.scene_mut().enter();
         scenes
@@ -52,7 +52,8 @@ impl Scenes {
     }
 
     pub(crate) fn draws(&self, font: &Font) -> Vec<Draw> {
-        systems::collect_draws(self.scene().world(), font)
+        let scene = self.scene();
+        systems::collect_draws(scene.world(), font, scene.camera())
     }
 
     fn apply(&mut self, transition: Transition) -> ControlFlow<()> {

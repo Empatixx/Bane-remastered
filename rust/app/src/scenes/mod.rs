@@ -4,6 +4,7 @@ mod lobby;
 mod machine;
 mod menu;
 
+use glam::Vec2;
 use hecs::World;
 
 use crate::input::Input;
@@ -31,6 +32,10 @@ pub(crate) trait Scene {
     fn world_mut(&mut self) -> &mut World;
 
     fn enter(&mut self);
+
+    fn camera(&self) -> Vec2 {
+        Vec2::ZERO
+    }
 
     fn leave(&mut self) {
         self.world_mut().clear();

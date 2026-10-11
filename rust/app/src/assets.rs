@@ -9,6 +9,7 @@ const FONT_SIZE: f32 = 20.0;
 pub(crate) struct Textures {
     pub(crate) menu_background: TextureId,
     pub(crate) logo: TextureId,
+    pub(crate) tileset: TextureId,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -24,6 +25,7 @@ impl Assets {
             textures: Textures {
                 menu_background: gpu.load_texture(&root.join("textures/menu/bg.png"))?,
                 logo: gpu.load_texture(&root.join("textures/menu/logo.tga"))?,
+                tileset: gpu.load_texture(&root.join("textures/ingame/tileset_2.png"))?,
             },
             font: Font::load(gpu, &root.join("fonts/PixelFJVerdana12pt.ttf"), FONT_SIZE)?,
         })

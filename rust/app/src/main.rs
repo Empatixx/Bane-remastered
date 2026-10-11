@@ -8,6 +8,7 @@ mod prefabs;
 mod render;
 mod scenes;
 mod systems;
+mod tilemap;
 mod viewport;
 
 use winit::event_loop::{ControlFlow, EventLoop};

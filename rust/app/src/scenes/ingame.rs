@@ -1,16 +1,30 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use hecs::World;
 use winit::keyboard::KeyCode;
 
+use crate::assets::Textures;
 use crate::input::Input;
 use crate::prefabs;
 use crate::systems;
+use crate::tilemap;
 
 use super::{Scene, SceneId, Transition};
 
 #[derive(Default)]
 pub(crate) struct InGameScene {
     world: World,
+    textures: Textures,
+    bounds: Vec2,
+    camera: Vec2,
+}
+
+impl InGameScene {
+    pub(crate) fn new(textures: Textures) -> Self {
+        Self {
+            textures,
+            ..Self::default()
+        }
+    }
 }
 
 impl Scene for InGameScene {
@@ -22,29 +36,20 @@ impl Scene for InGameScene {
         &mut self.world
     }
 
+    fn camera(&self) -> Vec2 {
+        self.camera
+    }
+
     fn enter(&mut self) {
-        prefabs::block(
-            &mut self.world,
-            Vec2::new(200.0, 200.0),
-            Vec2::new(64.0, 64.0),
-            Vec4::new(0.9, 0.3, 0.2, 1.0),
-        );
-        prefabs::block(
-            &mut self.world,
-            Vec2::new(400.0, 300.0),
-            Vec2::new(120.0, 40.0),
-            Vec4::new(0.2, 0.7, 0.4, 1.0),
-        );
-        prefabs::block(
-            &mut self.world,
-            Vec2::new(600.0, 150.0),
-            Vec2::new(80.0, 80.0),
-            Vec4::new(0.3, 0.5, 0.9, 1.0),
-        );
-        prefabs::player(&mut self.world, Vec2::new(100.0, 100.0));
+        let grid = tilemap::arena();
+        self.bounds = grid.pixel_size();
+        prefabs::tilemap(&mut self.world, &grid, self.textures.tileset);
+        prefabs::player(&mut self.world, self.bounds / 2.0);
+        self.camera = systems::follow_player(&self.world, self.bounds);
     }
 
     fn update(&mut self, input: &Input, _dt: f32) -> Transition {
+        self.camera = systems::follow_player(&self.world, self.bounds);
         if input.just_pressed(KeyCode::Escape) {
             Transition::Switch(SceneId::Lobby)
         } else {
@@ -54,7 +59,7 @@ impl Scene for InGameScene {
 
     fn fixed_update(&mut self, input: &Input, dt: f32) -> Transition {
         systems::steer_player(&mut self.world, input);
-        systems::apply_velocity(&mut self.world, dt);
+        systems::move_entities(&mut self.world, dt);
         Transition::None
     }
 }

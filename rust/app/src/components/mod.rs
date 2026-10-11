@@ -6,6 +6,6 @@ mod ui;
 
 pub(crate) use appearance::{Color, Layer, Sprite, Text};
 pub(crate) use motion::Velocity;
-pub(crate) use tags::{LoadingBar, Player, Portal};
+pub(crate) use tags::{LoadingBar, Player, Portal, Solid};
 pub(crate) use transform::{Position, Size};
 pub(crate) use ui::{Button, OnClick, UiAction};

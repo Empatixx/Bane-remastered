@@ -2,10 +2,11 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size, Sprite, Text,
+    Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size, Solid, Sprite, Text,
     UiAction, Velocity,
 };
 use crate::render::TextureId;
+use crate::tilemap::{self, TileGrid};
 
 pub(crate) fn player(world: &mut World, position: Vec2) -> Entity {
     world.spawn((
@@ -71,7 +72,7 @@ pub(crate) fn sprite(
         Position(position),
         Size(size),
         Color(Vec4::ONE),
-        Sprite(texture),
+        Sprite::whole(texture),
         Layer(layer),
     ))
 }
@@ -89,4 +90,33 @@ fn label_at(world: &mut World, position: Vec2, content: &str, layer: Layer) -> E
         },
         layer,
     ))
+}
+
+pub(crate) fn tilemap(world: &mut World, grid: &TileGrid, tileset: TextureId) {
+    for row in 0..grid.rows() {
+        for column in 0..grid.columns() {
+            let number = tilemap::tile_number(grid, column, row);
+            let (tile_column, tile_row) = (
+                number % tilemap::TILESET_COLUMNS,
+                number / tilemap::TILESET_COLUMNS,
+            );
+            let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
+            let entity = world.spawn((
+                Position(center),
+                Size(Vec2::splat(tilemap::TILE_SIZE)),
+                Color(Vec4::ONE),
+                Sprite::cell(
+                    tileset,
+                    tile_column,
+                    tile_row,
+                    tilemap::TILESET_COLUMNS,
+                    tilemap::TILESET_ROWS,
+                ),
+                Layer(-2),
+            ));
+            if tile_row > 0 {
+                let _ = world.insert_one(entity, Solid);
+            }
+        }
+    }
 }
