@@ -16,7 +16,7 @@ impl TextureId {
     }
 }
 
-pub(super) struct Pixels {
+pub(crate) struct Pixels {
     pub(super) width: u32,
     pub(super) height: u32,
     pub(super) rgba: Vec<u8>,
@@ -31,8 +31,11 @@ impl Pixels {
         }
     }
 
-    pub(super) fn load(path: &Path) -> Result<Self, Box<dyn Error>> {
-        let image = image::open(path)?.into_rgba8();
+    pub(crate) fn load(path: &Path) -> Result<Self, Box<dyn Error>> {
+        let image = image::ImageReader::open(path)?
+            .with_guessed_format()?
+            .decode()?
+            .into_rgba8();
         Ok(Self {
             width: image.width(),
             height: image.height(),

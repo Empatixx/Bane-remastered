@@ -12,4 +12,6 @@ pub(crate) use gpu::Gpu;
 pub(crate) use light::{Frame, LightSource, MAX_LIGHTS};
 pub(crate) use post::PostParams;
 pub(crate) use quad::Quad;
+#[cfg(test)]
+pub(crate) use texture::Pixels;
 pub(crate) use texture::TextureId;

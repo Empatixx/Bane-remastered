@@ -14,6 +14,7 @@ mod settings_ui;
 mod shadow;
 mod shooting;
 mod simulation;
+mod skills;
 mod steering;
 mod ui;
 
@@ -40,5 +41,9 @@ pub(crate) use settings_ui::update_settings_ui;
 pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{bullet_hits, shoot, ShotContext, ShotRoll};
 pub(crate) use simulation::simulate;
+pub(crate) use skills::{
+    burn_fuses, death_bursts, death_heals, enemy_bullet_hits, steer_homing, tick_eye_shooters,
+    tick_smashes,
+};
 pub(crate) use steering::steer_player;
 pub(crate) use ui::{update_buttons, update_text_buttons};

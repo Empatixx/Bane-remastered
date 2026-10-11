@@ -116,6 +116,7 @@ pub(crate) fn bullet_hits(
             .map(|mut health| health.current -= damage)
             .is_some();
         if let (true, Some(entity)) = (hit_enemy, victim) {
+            super::skills::count_hits(world, entity);
             let _ = world.insert_one(
                 entity,
                 HitFlash {

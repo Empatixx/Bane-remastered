@@ -235,7 +235,7 @@ impl Scene for InGameScene {
         Transition::None
     }
 
-    fn fixed_update(&mut self, input: &Input, dt: f32) -> Transition {
+    fn fixed_update(&mut self, input: &Input, dt: f32, assets: &Assets) -> Transition {
         if self.pause.is_active() {
             return Transition::None;
         }
@@ -245,12 +245,19 @@ impl Scene for InGameScene {
         systems::plan_paths(&mut self.world, &self.navigation);
         systems::chase_player(&mut self.world);
         systems::face_player(&mut self.world);
+        systems::tick_smashes(&mut self.world, &mut self.physics, &assets.textures, dt);
+        systems::tick_eye_shooters(&mut self.world, &mut self.physics, &assets.textures, dt);
+        systems::steer_homing(&mut self.world, dt);
+        systems::burn_fuses(&mut self.world, &mut self.physics, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
+        systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
+        systems::death_heals(&mut self.world);
         systems::reap_dead(&mut self.world, &mut self.physics);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
             self.hit = true;
         }
+        systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
         if systems::player_is_dead(&self.world) {
             Transition::Switch(SceneId::Lobby)
         } else {

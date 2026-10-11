@@ -77,7 +77,7 @@ impl Scenes {
         dt: f32,
         assets: &Assets,
     ) -> ControlFlow<()> {
-        let transition = self.scene_mut().fixed_update(input, dt);
+        let transition = self.scene_mut().fixed_update(input, dt, assets);
         self.apply(transition, assets)
     }
 

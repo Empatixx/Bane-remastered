@@ -4,14 +4,15 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
-    ContactDamage, Dash, Enemy, Expiring, GazeWind, Health, Hitbox, Interactable, Interaction,
-    Layer, Light, LightFade, Lit, OnClick, Overlay, Particle, Path, PauseUi, Player, PlayerShadow,
-    Position, Prompt, RoomId, ScreenSpace, Size, Spawning, Sprite, StatusBar, Text, TextButton,
+    ContactDamage, Dash, DeathBurst, DeathHeal, Enemy, EnemyBullet, Expiring, EyeShooter, Fuse,
+    GazeWind, Health, Hitbox, Hits, Homing, Impact, Interactable, Interaction, Kin, Layer, Light,
+    LightFade, Lit, OnClick, Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position,
+    Prompt, RoomId, ScreenSpace, Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton,
     ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
     PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
-use crate::enemies::{self, EnemyKind};
+use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
@@ -120,7 +121,7 @@ pub(crate) fn prop(
 
 const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
 const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
-const DASH_FORCE: f32 = 24_500_000.0;
+const BULLET_DAMAGE: i32 = 1;
 const CARPET_COLUMNS: usize = 4;
 const CARPET_ROWS: usize = 4;
 const CARPET_LAYER: i32 = -2;
@@ -497,16 +498,105 @@ pub(crate) fn enemy(
             remaining: SPAWN_SECONDS,
         },
     ));
-    if spec.dashes {
+    match spec.behavior {
+        Behavior::Plain => {}
+        Behavior::Dash => {
+            let _ = world.insert_one(
+                entity,
+                Dash {
+                    base_speed: spec.speed(),
+                    bonus_speed: enemies::speed_from_force(enemies::DASH_FORCE, size),
+                    cycle: 0.0,
+                },
+            );
+        }
+        Behavior::Smash(kind) => {
+            let _ = world.insert_one(
+                entity,
+                Smash {
+                    kind,
+                    remaining: 0.0,
+                },
+            );
+        }
+        Behavior::Burst(kind) => {
+            let _ = world.insert(entity, (DeathBurst { kind }, Hits::default()));
+        }
+        Behavior::Shoots(kind) => {
+            let _ = world.insert_one(
+                entity,
+                EyeShooter {
+                    kind,
+                    idle: spec.idle_clip(),
+                    remaining: enemies::SHOOT_COOLDOWN,
+                    attacking: false,
+                },
+            );
+        }
+        Behavior::HealsKin => {
+            let _ = world.insert_one(
+                entity,
+                DeathHeal {
+                    radius: enemies::HEAL_RADIUS,
+                    amount: 1,
+                },
+            );
+        }
+    }
+    if spec.kin {
+        let _ = world.insert_one(entity, Kin);
+    }
+    entity
+}
+
+pub(crate) fn enemy_bullet(
+    world: &mut World,
+    physics: &mut Physics,
+    kind: ProjectileKind,
+    position: Vec2,
+    direction: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let spec = kind.spec();
+    let size = spec.size();
+    let velocity = direction.normalize_or_zero() * spec.speed();
+    let idle = spec.idle_clip();
+    let [red, green, blue, radius, intensity] = spec.light;
+    let entity = world.spawn((
+        EnemyBullet,
+        Impact(spec.impact_clip()),
+        ContactDamage(BULLET_DAMAGE),
+        Position(position),
+        Velocity(velocity),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(
+            textures.get(spec.texture),
+            0,
+            idle.row,
+            spec.columns,
+            spec.rows,
+        ),
+        Animation::new(spec.columns, spec.rows, idle),
+        Layer(2),
+        Lit,
+        Light::rgb(Vec2::ZERO, red, green, blue, radius, intensity),
+        LightFade { base: intensity },
+    ));
+    if spec.homing {
         let _ = world.insert_one(
             entity,
-            Dash {
-                base_speed: spec.speed(),
-                bonus_speed: DASH_FORCE * enemies::SPEED_PER_FORCE,
-                cycle: 0.0,
+            Homing {
+                aim: position,
+                speed: spec.speed(),
             },
         );
     }
+    if let Some(seconds) = spec.lifetime {
+        let _ = world.insert_one(entity, Fuse { remaining: seconds });
+    }
+    let body = physics.add_enemy_bullet(entity, position, velocity, size);
+    let _ = world.insert_one(entity, body);
     entity
 }
 

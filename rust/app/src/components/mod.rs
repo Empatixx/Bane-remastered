@@ -10,6 +10,7 @@ mod minimap;
 mod motion;
 mod settings_ui;
 mod shadow;
+mod skills;
 mod tags;
 mod transform;
 mod ui;
@@ -33,6 +34,9 @@ pub(crate) use settings_ui::{
     TabButton, TabOnly, Toggle, Volume,
 };
 pub(crate) use shadow::PlayerShadow;
+pub(crate) use skills::{
+    DeathBurst, DeathHeal, EnemyBullet, EyeShooter, Fuse, Hits, Homing, Impact, Kin, Smash,
+};
 pub(crate) use tags::{Overlay, Player, ScreenSpace};
 pub(crate) use transform::{Position, Size};
 pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, TextButton, UiAction};

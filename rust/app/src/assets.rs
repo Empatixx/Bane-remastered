@@ -52,6 +52,14 @@ const GAME_TEXTURES: &[&str] = &[
     "ingame/ghost.tga",
     "ingame/demoneye.tga",
     "ingame/spiderling.tga",
+    "ingame/slime.tga",
+    "ingame/redslime.tga",
+    "ingame/green_spiderling.tga",
+    "ingame/purple_spiderling.tga",
+    "ingame/eye_watcher.tga",
+    "ingame/eye_watcher_projectile.tga",
+    "ingame/green_slimebullet.tga",
+    "ingame/red_slimebullet.tga",
     "ingame/shopkeeper.tga",
     "ingame/shoptable.tga",
     "ingame/slotmachine.tga",
@@ -207,4 +215,26 @@ fn load_texture(
 
 fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_listed_texture_exists_and_decodes() {
+        for name in GAME_TEXTURES {
+            let path = root().join("textures").join(name);
+            let decoded = crate::render::Pixels::load(&path);
+            assert!(decoded.is_ok(), "{name}: {:?}", decoded.err());
+        }
+    }
+
+    #[test]
+    fn texture_names_are_unique() {
+        let mut seen = std::collections::HashSet::new();
+        for name in GAME_TEXTURES {
+            assert!(seen.insert(name), "{name} is listed twice");
+        }
+    }
 }

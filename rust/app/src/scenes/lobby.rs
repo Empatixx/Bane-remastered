@@ -192,7 +192,7 @@ impl Scene for LobbyScene {
         }
     }
 
-    fn fixed_update(&mut self, input: &Input, dt: f32) -> Transition {
+    fn fixed_update(&mut self, input: &Input, dt: f32, _assets: &Assets) -> Transition {
         if self.pause.is_active() {
             return Transition::None;
         }

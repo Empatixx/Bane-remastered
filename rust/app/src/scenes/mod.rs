@@ -86,7 +86,7 @@ pub(crate) trait Scene {
         Transition::None
     }
 
-    fn fixed_update(&mut self, _input: &Input, _dt: f32) -> Transition {
+    fn fixed_update(&mut self, _input: &Input, _dt: f32, _assets: &Assets) -> Transition {
         Transition::None
     }
 }
