@@ -17,6 +17,9 @@ pub(crate) enum Prop {
     Bookshelf,
     MapTable,
     Scientist,
+    Banner,
+    Spike,
+    TorchOff,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -60,6 +63,10 @@ impl Look {
         row: 0,
         flipped: true,
     };
+
+    pub(crate) const fn row(row: usize, flipped: bool) -> Self {
+        Self { row, flipped }
+    }
 }
 
 const fn still(texture: &'static str, frame: Vec2, scale: f32) -> PropSpec {
@@ -128,6 +135,36 @@ impl Prop {
             Self::Rock => variants("ingame/rock.tga", Vec2::new(16.0, 16.0), 4.0),
             Self::Bookshelf => still("ingame/bookshelf.tga", Vec2::new(64.0, 57.0), 3.0),
             Self::MapTable => still("ingame/maptable.tga", Vec2::new(59.0, 38.0), 3.0),
+            Self::Banner => PropSpec {
+                texture: "ingame/banner.tga",
+                columns: 4,
+                rows: 1,
+                frame: Vec2::new(32.0, 32.0),
+                scale: 2.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.15,
+                }),
+            },
+            Self::Spike => PropSpec {
+                texture: "ingame/spike.tga",
+                columns: 4,
+                rows: 1,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.175,
+                }),
+            },
+            Self::TorchOff => PropSpec {
+                texture: "ingame/torch.tga",
+                columns: 4,
+                rows: 4,
+                frame: Vec2::new(32.0, 32.0),
+                scale: 2.0,
+                animation: None,
+            },
             Self::Scientist => PropSpec {
                 texture: "ingame/scientist.tga",
                 columns: 6,

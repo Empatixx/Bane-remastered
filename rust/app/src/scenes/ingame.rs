@@ -112,6 +112,11 @@ impl Scene for InGameScene {
         self.physics.add_walls(&solid_cells, TILE_SIZE);
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        for room in &dungeon.rooms {
+            for decor in &room.decor {
+                prefabs::decor(&mut self.world, *decor, textures);
+            }
+        }
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
         spawn_minimaps(&mut self.world, &dungeon, textures);
         self.camera = Camera::new(bounds);

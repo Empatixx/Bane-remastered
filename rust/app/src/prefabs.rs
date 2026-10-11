@@ -6,10 +6,10 @@ use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
     ContactDamage, Enemy, Expiring, GazeWind, Health, Hitbox, Interactable, Interaction, Layer,
     Light, LightFade, Lit, OnClick, Overlay, Particle, PauseUi, Player, PlayerShadow, Position,
-    Prompt, RoomId, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, ThenPlay, UiAction,
-    Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    Prompt, RoomId, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
+    UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
-use crate::dungeon::Direction;
+use crate::dungeon::{Decor, DecorKind, Direction, Mount};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
@@ -108,6 +108,57 @@ pub(crate) fn prop(
         let _ = world.insert_one(entity, Animation::new(spec.columns, spec.rows, clip));
     }
     entity
+}
+
+const SIDE_ROW: usize = 0;
+const TOP_ROW: usize = 1;
+const DISABLED_SIDE_ROW: usize = 2;
+const DISABLED_TOP_ROW: usize = 3;
+const SPIKE_DAMAGE: i32 = 1;
+const SPIKE_ACTIVE_FRAMES: usize = 2;
+
+pub(crate) fn decor(world: &mut World, decor: Decor, textures: &Textures) -> Entity {
+    let top_left = Vec2::new(decor.tile.0 as f32, decor.tile.1 as f32) * tilemap::TILE_SIZE;
+    match decor.kind {
+        DecorKind::Torch { mount, lit } => {
+            let (prop_kind, row) = match (lit, mount) {
+                (true, Mount::Top) => (Prop::Torch, TOP_ROW),
+                (true, _) => (Prop::Torch, SIDE_ROW),
+                (false, Mount::Top) => (Prop::TorchOff, DISABLED_TOP_ROW),
+                (false, _) => (Prop::TorchOff, DISABLED_SIDE_ROW),
+            };
+            let look = Look::row(row, mount == Mount::FacingRight);
+            prop(world, prop_kind, top_left, look, textures)
+        }
+        DecorKind::Bones { variant } => prop(
+            world,
+            Prop::Bones,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
+        DecorKind::Cobweb { variant, left } => prop(
+            world,
+            Prop::Cobweb,
+            top_left,
+            Look::row(variant, left),
+            textures,
+        ),
+        DecorKind::Banner => prop(world, Prop::Banner, top_left, Look::DEFAULT, textures),
+        DecorKind::Spike => {
+            let entity = prop(world, Prop::Spike, top_left, Look::DEFAULT, textures);
+            let _ = world.insert(
+                entity,
+                (
+                    ContactDamage(SPIKE_DAMAGE),
+                    Trap {
+                        active_frames: SPIKE_ACTIVE_FRAMES,
+                    },
+                ),
+            );
+            entity
+        }
+    }
 }
 
 const PROMPT_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);

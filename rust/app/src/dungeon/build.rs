@@ -4,6 +4,7 @@ use glam::Vec2;
 
 use crate::tilemap::{TileGrid, TILE_SIZE};
 
+use super::decor::{self, Decor};
 use super::layout::{Direction, Layout, LayoutSpec};
 use super::rng::Rng;
 use super::template::{
@@ -28,6 +29,7 @@ pub(crate) struct DungeonRoom {
     pub(crate) rows: usize,
     pub(crate) spawns: Vec<(usize, usize)>,
     pub(crate) doors: Vec<DoorSlot>,
+    pub(crate) decor: Vec<Decor>,
 }
 
 impl DungeonRoom {
@@ -168,6 +170,7 @@ impl Dungeon {
                 rows: template_rows,
                 spawns,
                 doors,
+                decor: Vec::new(),
             });
         }
 
@@ -177,6 +180,9 @@ impl Dungeon {
                     carve_corridor(&mut grid, &rooms[index], &rooms[other], direction);
                 }
             }
+        }
+        for room in &mut rooms {
+            room.decor = decor::plan(&grid, room, rng);
         }
         Ok(Self { grid, rooms })
     }

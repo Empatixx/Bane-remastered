@@ -2,7 +2,7 @@ use hecs::{Entity, World};
 
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Armor, ContactDamage, Expiring, Health, Invulnerable, Player, Position, Size,
+    Animation, Armor, ContactDamage, Expiring, Health, Invulnerable, Player, Position, Size, Trap,
 };
 use crate::geometry;
 
@@ -23,6 +23,13 @@ pub(crate) fn absorb(health: &mut Health, armor: &mut Armor, damage: i32) {
 
 const LOW_HEALTH: f32 = 0.3;
 
+fn trap_is_armed(trap: Option<&Trap>, animation: Option<&Animation>) -> bool {
+    match (trap, animation) {
+        (Some(trap), Some(animation)) => animation.frame() < trap.active_frames,
+        _ => true,
+    }
+}
+
 pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) -> bool {
     let Some((player, position, size)) = world
         .query::<(Entity, &Position, &Size)>()
@@ -35,13 +42,20 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
         return false;
     };
     let damage = world
-        .query::<(&Position, &Size, &ContactDamage)>()
+        .query::<(
+            &Position,
+            &Size,
+            &ContactDamage,
+            Option<&Trap>,
+            Option<&Animation>,
+        )>()
         .without::<&Expiring>()
         .iter()
-        .find(|(enemy_position, enemy_size, _)| {
-            geometry::overlaps(position, size, enemy_position.0, enemy_size.0)
+        .find(|(source_position, source_size, _, trap, animation)| {
+            trap_is_armed(*trap, *animation)
+                && geometry::overlaps(position, size, source_position.0, source_size.0)
         })
-        .map(|(_, _, damage)| damage.0);
+        .map(|(_, _, damage, _, _)| damage.0);
     let Some(damage) = damage else {
         return false;
     };
@@ -165,5 +179,29 @@ mod tests {
 
         tick_invulnerability(&mut world, 1.1);
         assert!(world.get::<&Invulnerable>(player).is_err());
+    }
+
+    #[test]
+    fn spikes_hurt_only_while_extended() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(32.0, 32.0),
+            &Textures::default(),
+        );
+        let decor = crate::dungeon::Decor {
+            kind: crate::dungeon::DecorKind::Spike,
+            tile: (0, 0),
+        };
+        let spike = prefabs::decor(&mut world, decor, &Textures::default());
+
+        world.get::<&mut Animation>(spike).unwrap().advance(0.4);
+        assert!(!contact_damage(&mut world, &mut Vec::new()));
+        assert!(world.get::<&Invulnerable>(player).is_err());
+
+        world.get::<&mut Animation>(spike).unwrap().advance(0.4);
+        assert!(contact_damage(&mut world, &mut Vec::new()));
     }
 }

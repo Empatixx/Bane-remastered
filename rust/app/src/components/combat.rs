@@ -48,6 +48,11 @@ pub(crate) struct Invulnerable {
 pub(crate) struct ContactDamage(pub(crate) i32);
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Trap {
+    pub(crate) active_frames: usize,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Wallet {
     pub(crate) coins: i32,
 }
