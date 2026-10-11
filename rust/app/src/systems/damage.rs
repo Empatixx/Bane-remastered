@@ -197,11 +197,17 @@ mod tests {
         };
         let spike = prefabs::decor(&mut world, decor, &Textures::default());
 
-        world.get::<&mut Animation>(spike).unwrap().advance(0.4);
+        world
+            .get::<&mut Animation>(spike)
+            .expect("the spike animates")
+            .advance(0.4);
         assert!(!contact_damage(&mut world, &mut Vec::new()));
         assert!(world.get::<&Invulnerable>(player).is_err());
 
-        world.get::<&mut Animation>(spike).unwrap().advance(0.4);
+        world
+            .get::<&mut Animation>(spike)
+            .expect("the spike animates")
+            .advance(0.4);
         assert!(contact_damage(&mut world, &mut Vec::new()));
     }
 }
