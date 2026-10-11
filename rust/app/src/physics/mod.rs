@@ -124,6 +124,13 @@ impl Physics {
         }
     }
 
+    pub(crate) fn velocity(&self, body: Body) -> Option<Vec2> {
+        self.world
+            .bodies
+            .get(body.body)
+            .map(|rigid_body| from_rapier(rigid_body.linvel()))
+    }
+
     pub(crate) fn position(&self, body: Body) -> Option<Vec2> {
         self.world
             .bodies

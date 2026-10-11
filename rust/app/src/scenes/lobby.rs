@@ -55,6 +55,7 @@ pub(crate) struct LobbyScene {
     physics: Physics,
     camera: Camera,
     pause: Pause,
+    clock: f32,
     sounds: Vec<AudioCommand>,
 }
 
@@ -177,6 +178,15 @@ impl Scene for LobbyScene {
         }
         systems::animate_player(&mut self.world, input);
         systems::tick_invulnerability(&mut self.world, dt);
+        self.clock += dt;
+        systems::spawn_gaze_wind(
+            &mut self.world,
+            &self.physics,
+            assets.textures.get("ingame/gazewind_particle.tga"),
+            dt,
+            self.clock,
+        );
+        systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world);
         systems::remove_expired(&mut self.world);

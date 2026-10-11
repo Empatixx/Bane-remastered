@@ -9,6 +9,7 @@ pub(crate) struct Quad {
     color: [f32; 4],
     uv: [f32; 4],
     lit: f32,
+    angle: f32,
 }
 
 impl Quad {
@@ -23,11 +24,21 @@ impl Quad {
             color: color.to_array(),
             uv,
             lit: 0.0,
+            angle: 0.0,
         }
     }
 
-    pub(crate) fn lit(mut self, lit: bool) -> Self {
-        self.lit = if lit { 1.0 } else { 0.0 };
+    pub(crate) fn rotated(mut self, angle: f32) -> Self {
+        self.angle = angle;
         self
+    }
+
+    pub(crate) fn lit(mut self, lit: bool) -> Self {
+        self.set_lit(lit);
+        self
+    }
+
+    pub(crate) fn set_lit(&mut self, lit: bool) {
+        self.lit = if lit { 1.0 } else { 0.0 };
     }
 }

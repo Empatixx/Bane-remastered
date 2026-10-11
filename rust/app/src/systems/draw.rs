@@ -2,12 +2,13 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{
-    Color, Hidden, InRange, Layer, Lit, Overlay, Position, Prompt, ScreenSpace, Size, Sprite,
-    StatusBar, Text,
+    Color, Hidden, InRange, Layer, Lit, Overlay, PlayerShadow, Position, Prompt, ScreenSpace, Size,
+    Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
 use super::hud::bar_draws;
+use super::shadow::shadow_draw;
 
 #[derive(Default)]
 struct Sorted {
@@ -95,6 +96,16 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Layer
         let bucket = sorted.bucket(screen, overlay);
         for draw in draws {
             bucket.push((layer, draw));
+        }
+    }
+    for (position, size, sprite, shadow) in world
+        .query::<(&Position, &Size, &Sprite, &PlayerShadow)>()
+        .without::<&Hidden>()
+        .iter()
+    {
+        if let Some(mut draw) = shadow_draw(position.0 - camera, size.0, sprite, shadow) {
+            draw.quad.set_lit(false);
+            sorted.scene.push((Layer(0), draw));
         }
     }
     for (position, size, bar, screen) in world

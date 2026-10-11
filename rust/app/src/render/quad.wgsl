@@ -25,7 +25,7 @@ struct Instance {
     @location(1) size: vec2<f32>,
     @location(2) color: vec4<f32>,
     @location(3) uv: vec4<f32>,
-    @location(4) lit: f32,
+    @location(4) lit_angle: vec2<f32>,
 };
 
 struct VertexOut {
@@ -63,7 +63,13 @@ fn vs_main(@builtin(vertex_index) index: u32, instance: Instance) -> VertexOut {
         vec2<f32>(0.5, 0.5),
     );
     let corner = corners[index];
-    let pixel = instance.center + corner * instance.size;
+    let angle = instance.lit_angle.y;
+    let offset = corner * instance.size;
+    let rotated = vec2<f32>(
+        offset.x * cos(angle) - offset.y * sin(angle),
+        offset.x * sin(angle) + offset.y * cos(angle),
+    );
+    let pixel = instance.center + rotated;
     let ndc = vec2<f32>(
         pixel.x / globals.size.x * 2.0 - 1.0,
         1.0 - pixel.y / globals.size.y * 2.0,
@@ -72,7 +78,7 @@ fn vs_main(@builtin(vertex_index) index: u32, instance: Instance) -> VertexOut {
     out.position = vec4<f32>(ndc, 0.0, 1.0);
     out.color = vec4<f32>(srgb_to_linear(instance.color.rgb), instance.color.a);
     out.uv = mix(instance.uv.xy, instance.uv.zw, corner + vec2<f32>(0.5, 0.5));
-    out.lit = instance.lit;
+    out.lit = instance.lit_angle.x;
     out.world = pixel + globals.camera;
     return out;
 }

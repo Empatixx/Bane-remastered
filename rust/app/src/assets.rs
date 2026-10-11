@@ -45,6 +45,7 @@ const GAME_TEXTURES: &[&str] = &[
     "ingame/maptable.tga",
     "ingame/pot.tga",
     "ingame/scientist.tga",
+    "ingame/gazewind_particle.tga",
     "ingame/weaponslot.tga",
     "ingame/guns/pistol.tga",
     "ingame/ammo_hud.tga",

@@ -4,10 +4,10 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
-    ContactDamage, Enemy, Health, Hitbox, Interactable, Interaction, Layer, Light, Lit, OnClick,
-    Overlay, PauseUi, Player, Position, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
-    TextButton, UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
-    PIP_FULL,
+    ContactDamage, Enemy, Expiring, GazeWind, Health, Hitbox, Interactable, Interaction, Layer,
+    Light, LightFade, Lit, OnClick, Overlay, Particle, PauseUi, Player, PlayerShadow, Position,
+    Prompt, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, UiAction, Velocity, Wallet,
+    Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
@@ -50,9 +50,16 @@ pub(crate) fn player(
         ),
         Animation::new(PLAYER_COLUMNS, PLAYER_ROWS, IDLE),
         Layer(1),
-        Lit,
-        Light::rgb(Vec2::ZERO, 216.0, 156.0, 36.0, 150.0, 0.5),
     ));
+    let _ = world.insert(
+        entity,
+        (
+            Lit,
+            Light::rgb(Vec2::ZERO, 216.0, 156.0, 36.0, 150.0, 0.5),
+            PlayerShadow::default(),
+            GazeWind::default(),
+        ),
+    );
     let body = physics.add_player(entity, position, PLAYER_SIZE);
     let _ = world.insert_one(entity, body);
     entity
@@ -262,6 +269,7 @@ pub(crate) fn bullet(
         Layer(2),
         Lit,
         Light::rgb(Vec2::ZERO, 255.0, 0.0, 0.0, 25.0, 0.75),
+        LightFade { base: 0.75 },
     ));
     let body = physics.add_bullet(entity, position, velocity, size);
     let _ = world.insert_one(entity, body);
@@ -273,7 +281,7 @@ const RAT_ROWS: usize = 2;
 const RAT_SIZE: Vec2 = Vec2::new(127.5, 55.5);
 const RAT_HEALTH: i32 = 12;
 const RAT_DAMAGE: i32 = 2;
-const RAT_SPEED: f32 = 110.0;
+const RAT_SPEED: f32 = 184.0;
 const RAT_WALK: Clip = Clip {
     row: 0,
     frames: 4,
@@ -487,4 +495,28 @@ pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {
             ScreenSpace,
         ));
     }
+}
+
+const GAZE_FRAMES: usize = 3;
+const GAZE_SIZE: Vec2 = Vec2::new(32.0, 32.0);
+const GAZE_PUFF: Clip = Clip {
+    row: 0,
+    frames: GAZE_FRAMES,
+    frame_time: 0.1,
+    looping: false,
+    flipped: false,
+};
+
+pub(crate) fn gaze_particle(world: &mut World, center: Vec2, texture: TextureId) -> Entity {
+    world.spawn((
+        Particle,
+        Expiring,
+        Position(center),
+        Size(GAZE_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(texture, 0, 0, GAZE_FRAMES, 1),
+        Animation::new(GAZE_FRAMES, 1, GAZE_PUFF),
+        Layer(0),
+        Lit,
+    ))
 }

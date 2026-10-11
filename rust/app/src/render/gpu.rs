@@ -153,7 +153,7 @@ impl Gpu {
                         1 => Float32x2,
                         2 => Float32x4,
                         3 => Float32x4,
-                        4 => Float32,
+                        4 => Float32x2,
                     ],
                 })],
             },

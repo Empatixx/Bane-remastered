@@ -44,6 +44,10 @@ impl Animation {
         self.time += dt;
     }
 
+    pub(crate) fn clip_frames(&self) -> usize {
+        self.clip.frames
+    }
+
     pub(crate) fn row(&self) -> usize {
         self.clip.row
     }
