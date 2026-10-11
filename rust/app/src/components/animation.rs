@@ -36,6 +36,10 @@ impl Animation {
         }
     }
 
+    pub(crate) fn face(&mut self, flipped: bool) {
+        self.clip.flipped = flipped;
+    }
+
     pub(crate) fn flipped(&self) -> bool {
         self.clip.flipped
     }

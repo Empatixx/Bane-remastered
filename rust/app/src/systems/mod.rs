@@ -26,7 +26,10 @@ pub(crate) use draw::collect_draws;
 pub(crate) use effects::{fade_lights, spawn_gaze_wind};
 #[cfg(test)]
 pub(crate) use enemies::finish_spawning;
-pub(crate) use enemies::{chase_player, dash, flash_hits, reap_dead, tick_spawning, SPAWN_SECONDS};
+pub(crate) use enemies::{
+    chase_player, dash, face_player, flash_hits, plan_paths, reap_dead, tick_spawning,
+    SPAWN_SECONDS,
+};
 pub(crate) use hud::{update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use lighting::collect_lights;

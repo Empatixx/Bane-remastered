@@ -8,6 +8,7 @@ use crate::camera::Camera;
 use crate::components::{BigMap, Hidden, MapSize, Minimap, UiAction, Weapon};
 use crate::dungeon::{Dungeon, Rng};
 use crate::input::Input;
+use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs;
@@ -32,6 +33,7 @@ pub(crate) struct InGameScene {
     rng: Rng,
     big_map: bool,
     floor: u32,
+    navigation: Navigation,
 }
 
 impl Scene for InGameScene {
@@ -111,6 +113,7 @@ impl Scene for InGameScene {
             assets.textures.get(TILESET),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
+        self.navigation = Navigation::new(&solid_cells);
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         for room in &dungeon.rooms {
@@ -239,7 +242,9 @@ impl Scene for InGameScene {
         systems::steer_player(&mut self.world, input);
         systems::tick_spawning(&mut self.world, &mut self.physics, dt);
         systems::dash(&mut self.world, dt);
+        systems::plan_paths(&mut self.world, &self.navigation);
         systems::chase_player(&mut self.world);
+        systems::face_player(&mut self.world);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::reap_dead(&mut self.world, &mut self.physics);

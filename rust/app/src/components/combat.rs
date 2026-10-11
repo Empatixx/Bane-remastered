@@ -1,3 +1,5 @@
+use glam::Vec2;
+
 use super::animation::Clip;
 
 pub(crate) const BULLET_COLUMNS: usize = 4;
@@ -77,6 +79,12 @@ pub(crate) struct Dash {
     pub(crate) base_speed: f32,
     pub(crate) bonus_speed: f32,
     pub(crate) cycle: f32,
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct Path {
+    pub(crate) cells: std::collections::VecDeque<Vec2>,
+    pub(crate) planned_for: Option<Vec2>,
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -1,12 +1,11 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use glam::Vec4;
-
 use crate::components::{
-    Animation, Body, Chase, Color, Dash, Enemy, Expiring, Health, HitFlash, Player, Position, Size,
-    Spawning, Velocity,
+    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Path, Player,
+    Position, Size, Spawning, Velocity,
 };
+use crate::navigation::{Navigation, CELL};
 use crate::physics::Physics;
 
 pub(crate) const SPAWN_SECONDS: f32 = 2.0;
@@ -15,22 +14,71 @@ const FLASH_STRENGTH: f32 = 0.7;
 const DASH_PERIOD: f32 = 3.0;
 const DASH_DURATION: f32 = 1.0;
 
-pub(crate) fn chase_player(world: &mut World) {
-    let target = world
-        .query::<&Position>()
+fn player_placement(world: &World) -> Option<(Vec2, Vec2)> {
+    world
+        .query::<(&Position, &Size)>()
         .with::<&Player>()
         .iter()
         .next()
-        .map(|position| position.0);
-    for (position, chase, velocity) in world
-        .query_mut::<(&Position, &Chase, &mut Velocity)>()
+        .map(|(position, size)| (position.0, size.0))
+}
+
+pub(crate) fn plan_paths(world: &mut World, navigation: &Navigation) {
+    let Some((target, target_size)) = player_placement(world) else {
+        return;
+    };
+    for (position, size, path) in world
+        .query_mut::<(&Position, &Size, &mut Path)>()
         .without::<&Expiring>()
         .without::<&Spawning>()
     {
-        velocity.0 = match target {
-            Some(target) => (target - position.0).normalize_or_zero() * chase.speed,
-            None => Vec2::ZERO,
+        let moved = path
+            .planned_for
+            .is_none_or(|planned| (target - planned).abs().max_element() > CELL);
+        if moved {
+            path.cells = navigation
+                .find_path(position.0, size.0, target, target_size)
+                .into();
+            path.planned_for = Some(target);
+        }
+    }
+}
+
+pub(crate) fn chase_player(world: &mut World) {
+    let target = player_placement(world).map(|(position, _)| position);
+    for (position, chase, velocity, path) in world
+        .query_mut::<(&Position, &Chase, &mut Velocity, Option<&mut Path>)>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+    {
+        let Some(target) = target else {
+            velocity.0 = Vec2::ZERO;
+            continue;
         };
+        let waypoint = path.and_then(|path| {
+            while path
+                .cells
+                .front()
+                .is_some_and(|next| next.distance(position.0) <= CELL)
+            {
+                path.cells.pop_front();
+            }
+            path.cells.front().copied()
+        });
+        velocity.0 = (waypoint.unwrap_or(target) - position.0).normalize_or_zero() * chase.speed;
+    }
+}
+
+pub(crate) fn face_player(world: &mut World) {
+    let Some((target, _)) = player_placement(world) else {
+        return;
+    };
+    for (position, animation) in world
+        .query_mut::<(&Position, &mut Animation)>()
+        .with::<&Enemy>()
+        .without::<&Expiring>()
+    {
+        animation.face(target.x < position.0.x);
     }
 }
 
@@ -111,7 +159,11 @@ pub(crate) fn reap_dead(world: &mut World, physics: &mut Physics) {
             velocity.0 = Vec2::ZERO;
         }
         if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
-            animation.play(enemy.death);
+            let facing = animation.flipped();
+            animation.play(Clip {
+                flipped: facing,
+                ..enemy.death
+            });
         }
     }
 }
@@ -122,6 +174,7 @@ mod tests {
 
     use crate::assets::Textures;
     use crate::enemies::EnemyKind;
+    use crate::navigation::Navigation;
     use crate::prefabs;
 
     use super::*;
@@ -261,5 +314,83 @@ mod tests {
 
         flash_hits(&mut world, FLASH_SECONDS);
         assert!(world.get::<&HitFlash>(rat).is_err());
+    }
+
+    #[test]
+    fn an_enemy_steers_around_a_wall_instead_of_into_it() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(600.0, 160.0),
+            &Textures::default(),
+        );
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(100.0, 160.0),
+        );
+        let wall: Vec<(usize, usize)> = (0..5).map(|row| (4, row)).collect();
+        let navigation = Navigation::new(&wall);
+
+        plan_paths(&mut world, &navigation);
+        chase_player(&mut world);
+
+        let path_len = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
+        assert!(path_len > 10, "{path_len}");
+        let velocity = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
+        assert!(velocity.x > 0.0, "{velocity:?}");
+    }
+
+    #[test]
+    fn a_still_target_keeps_the_planned_path() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(600.0, 160.0),
+            &Textures::default(),
+        );
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(100.0, 160.0),
+        );
+        let navigation = Navigation::new(&[]);
+
+        plan_paths(&mut world, &navigation);
+        let first = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
+        plan_paths(&mut world, &navigation);
+        let second = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
+
+        assert!(first > 0);
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn enemies_face_the_player() {
+        let (mut world, mut physics) = arena();
+        let right = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(300.0, 0.0),
+        );
+        let left = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(-300.0, 0.0),
+        );
+
+        face_player(&mut world);
+
+        let flipped = |entity| world.get::<&Animation>(entity).map(|a| a.flipped());
+        assert_eq!(flipped(right).ok(), Some(true));
+        assert_eq!(flipped(left).ok(), Some(false));
     }
 }

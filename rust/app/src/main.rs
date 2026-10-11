@@ -8,6 +8,7 @@ mod enemies;
 mod game;
 mod geometry;
 mod input;
+mod navigation;
 mod perf;
 mod physics;
 mod postfx;

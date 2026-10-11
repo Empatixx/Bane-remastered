@@ -5,7 +5,7 @@ use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
     ContactDamage, Dash, Enemy, Expiring, GazeWind, Health, Hitbox, Interactable, Interaction,
-    Layer, Light, LightFade, Lit, OnClick, Overlay, Particle, PauseUi, Player, PlayerShadow,
+    Layer, Light, LightFade, Lit, OnClick, Overlay, Particle, Path, PauseUi, Player, PlayerShadow,
     Position, Prompt, RoomId, ScreenSpace, Size, Spawning, Sprite, StatusBar, Text, TextButton,
     ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
     PIP_FULL,
@@ -478,6 +478,7 @@ pub(crate) fn enemy(
         Chase {
             speed: spec.speed(),
         },
+        Path::default(),
         Position(position),
         Velocity::default(),
         Size(size),

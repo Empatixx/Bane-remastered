@@ -19,7 +19,8 @@ pub(crate) use appearance::{Color, Layer, Sprite, Text};
 pub(crate) use body::Body;
 pub(crate) use combat::{
     Armor, Bullet, Chase, ContactDamage, Dash, Enemy, Expiring, Health, HitFlash, Invulnerable,
-    Spawning, Trap, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS,
+    Path, Spawning, Trap, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT,
+    BULLET_ROWS,
 };
 pub(crate) use effects::{GazeWind, LightFade, Particle, RoomId, ThenPlay};
 pub(crate) use hud::{AmmoPip, AmmoText, BarKind, CoinText, StatusBar, PIP_EMPTY, PIP_FULL};
