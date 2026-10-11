@@ -11,6 +11,7 @@ pub(crate) struct Input {
     mouse: Vec2,
     clicked: bool,
     mouse_held: bool,
+    scrolled: i32,
 }
 
 impl Input {
@@ -43,6 +44,18 @@ impl Input {
         }
     }
 
+    pub(crate) fn handle_scroll(&mut self, lines: f32) {
+        if lines > 0.0 {
+            self.scrolled += 1;
+        } else if lines < 0.0 {
+            self.scrolled -= 1;
+        }
+    }
+
+    pub(crate) fn scrolled(&self) -> i32 {
+        self.scrolled
+    }
+
     pub(crate) fn set_mouse(&mut self, position: Vec2) {
         self.mouse = position;
     }
@@ -50,6 +63,7 @@ impl Input {
     pub(crate) fn end_frame(&mut self) {
         self.pressed.clear();
         self.clicked = false;
+        self.scrolled = 0;
     }
 
     #[cfg(test)]

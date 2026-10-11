@@ -7,6 +7,7 @@ pub(crate) enum Interaction {
     EnterPortal,
     Upgrade,
     NextFloor,
+    PickUpGun,
 }
 
 #[derive(Debug, Clone, Copy)]

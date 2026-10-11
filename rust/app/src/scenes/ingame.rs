@@ -5,7 +5,7 @@ use winit::keyboard::KeyCode;
 use crate::assets::{Assets, BULLET, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
-use crate::components::{BigMap, Hidden, Interaction, MapSize, Minimap, UiAction, Weapon};
+use crate::components::{BigMap, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
 use crate::dungeon::{Dungeon, Rng};
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -82,10 +82,10 @@ impl Scene for InGameScene {
         }
         let reloading = self
             .world
-            .query::<&Weapon>()
+            .query::<&Loadout>()
             .with::<&crate::components::Player>()
             .iter()
-            .any(|weapon| weapon.reloading.is_some());
+            .any(|loadout| loadout.current().is_some_and(|w| w.reloading.is_some()));
         if reloading {
             Cursor::Reload
         } else {
@@ -149,6 +149,20 @@ impl Scene for InGameScene {
             );
         }
         systems::animate_player(&mut self.world, input);
+        systems::switch_guns(&mut self.world, input, &mut self.sounds);
+        systems::drop_gun(
+            &mut self.world,
+            input,
+            self.camera.position(),
+            &assets.textures,
+        );
+        systems::slide_drops(&mut self.world, dt);
+        systems::open_chests(
+            &mut self.world,
+            &assets.textures,
+            rand::random_range(0.0..1.0),
+            &mut self.sounds,
+        );
         systems::tick_invulnerability(&mut self.world, dt);
         self.clock += dt;
         systems::spawn_gaze_wind(
@@ -160,7 +174,7 @@ impl Scene for InGameScene {
         );
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
-        systems::update_weapon_hud(&mut self.world);
+        systems::update_weapon_hud(&mut self.world, &assets.textures);
         systems::fade_lights(&mut self.world);
         systems::flash_hits(&mut self.world, dt);
         systems::float_texts(&mut self.world, dt);
@@ -194,8 +208,12 @@ impl Scene for InGameScene {
             self.camera.follow(target, dt);
         }
         systems::follow_backdrop(&mut self.world, self.camera.position());
-        if let Some(Interaction::NextFloor) = systems::interact(&mut self.world, input) {
-            self.next_floor(assets);
+        match systems::interact(&mut self.world, input) {
+            Some(Interaction::NextFloor) => self.next_floor(assets),
+            Some(Interaction::PickUpGun) => {
+                systems::pick_up_gun(&mut self.world, &assets.textures, &mut self.sounds);
+            }
+            _ => {}
         }
         if let Some(remaining) = self.victory_timer.as_mut() {
             *remaining -= dt;
@@ -291,7 +309,7 @@ impl InGameScene {
             "ingame/banecoin.tga",
             Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
         );
-        prefabs::weapon_hud(&mut self.world, textures, Weapon::pistol().clip_size);
+        prefabs::weapon_hud(&mut self.world, textures);
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
             self.camera.snap_to(target);
         }
@@ -322,11 +340,10 @@ impl InGameScene {
                     self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
                     let textures = &assets.textures;
                     let chest_top_left = center - Vec2::new(32.0, 3.0 * TILE_SIZE);
-                    prefabs::prop(
+                    prefabs::chest(
                         &mut self.world,
-                        crate::props::Prop::Chest,
+                        crate::components::ChestKind::Artefact,
                         chest_top_left,
-                        crate::props::Look::DEFAULT,
                         textures,
                     );
                     if self.floor >= crate::enemies::FINAL_FLOOR {

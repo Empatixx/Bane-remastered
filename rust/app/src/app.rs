@@ -94,6 +94,15 @@ impl ApplicationHandler for App {
                     game.handle_click(button, state);
                 }
             }
+            WindowEvent::MouseWheel { delta, .. } => {
+                if let Some(game) = &mut self.game {
+                    let lines = match delta {
+                        winit::event::MouseScrollDelta::LineDelta(_, y) => y,
+                        winit::event::MouseScrollDelta::PixelDelta(position) => position.y as f32,
+                    };
+                    game.handle_scroll(lines);
+                }
+            }
             WindowEvent::CursorMoved { position, .. } => {
                 if let (Some(window), Some(game)) = (&self.window, &mut self.game) {
                     let size = window.inner_size();

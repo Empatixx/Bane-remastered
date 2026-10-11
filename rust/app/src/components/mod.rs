@@ -5,6 +5,7 @@ mod combat;
 mod effects;
 mod hud;
 mod interaction;
+mod items;
 mod lighting;
 mod minimap;
 mod motion;
@@ -19,15 +20,16 @@ pub(crate) use animation::{Animation, Clip};
 pub(crate) use appearance::{Color, Layer, Sprite, Text};
 pub(crate) use body::Body;
 pub(crate) use combat::{
-    Armor, Bullet, Chase, ContactDamage, Dash, Enemy, Expiring, Health, HitFlash, Invulnerable,
-    Path, Spawning, Trap, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT,
-    BULLET_ROWS,
+    Armor, Bullet, Burst, Chase, ContactDamage, Dash, Enemy, Expiring, GunDrop, Health, HitFlash,
+    Invulnerable, Loadout, Path, Spawning, Trap, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT,
+    BULLET_IMPACT, BULLET_ROWS,
 };
 pub(crate) use effects::{Floating, GazeWind, LightFade, Particle, RoomId, ThenPlay, TrapCooldown};
 pub(crate) use hud::{
-    AmmoPip, AmmoText, BarKind, BossHud, CoinText, StatusBar, PIP_EMPTY, PIP_FULL,
+    AmmoPip, AmmoText, BarKind, BossHud, CoinText, GunIcon, StatusBar, PIP_EMPTY, PIP_FULL,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
+pub(crate) use items::{Chest, ChestKind};
 pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;

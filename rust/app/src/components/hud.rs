@@ -76,6 +76,9 @@ pub(crate) struct StatusBar {
 pub(crate) struct BossHud;
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct GunIcon;
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct AmmoText;
 
 #[derive(Debug, Clone, Copy)]

@@ -7,6 +7,7 @@ mod dungeon;
 mod enemies;
 mod game;
 mod geometry;
+mod guns;
 mod input;
 mod navigation;
 mod perf;

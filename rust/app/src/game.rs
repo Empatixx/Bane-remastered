@@ -79,6 +79,10 @@ impl Game {
         self.input.handle_click(button, state);
     }
 
+    pub(crate) fn handle_scroll(&mut self, lines: f32) {
+        self.input.handle_scroll(lines);
+    }
+
     pub(crate) fn set_mouse(&mut self, position: Vec2) {
         self.input.set_mouse(position);
     }

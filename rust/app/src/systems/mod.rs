@@ -9,6 +9,7 @@ mod enemies;
 mod hud;
 mod interaction;
 mod lighting;
+mod loadout;
 mod minimap;
 mod player_animation;
 mod rooms;
@@ -40,6 +41,7 @@ pub(crate) use enemies::{
 pub(crate) use hud::{update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use lighting::collect_lights;
+pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, slide_drops, switch_guns};
 pub(crate) use minimap::{rooms_for, update_minimaps};
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use rooms::{update_rooms, RoomContext, RoomEvent, RoomRuntime};

@@ -1,25 +1,25 @@
 use hecs::World;
 
-use crate::components::{Armor, Health, Player, Wallet, Weapon};
+use crate::components::{Armor, Health, Loadout, Player, Wallet};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) struct Carried {
     health: Health,
     armor: Armor,
     wallet: Wallet,
-    weapon: Weapon,
+    loadout: Loadout,
 }
 
 pub(crate) fn carried_stats(world: &World) -> Option<Carried> {
     let mut query = world
-        .query::<(&Health, &Armor, &Wallet, &Weapon)>()
+        .query::<(&Health, &Armor, &Wallet, &Loadout)>()
         .with::<&Player>();
-    let (health, armor, wallet, weapon) = query.iter().next()?;
+    let (health, armor, wallet, loadout) = query.iter().next()?;
     Some(Carried {
         health: *health,
         armor: *armor,
         wallet: *wallet,
-        weapon: *weapon,
+        loadout: loadout.clone(),
     })
 }
 
@@ -27,14 +27,14 @@ pub(crate) fn restore_stats(world: &mut World, carried: Option<Carried>) {
     let Some(carried) = carried else {
         return;
     };
-    for (health, armor, wallet, weapon) in world
-        .query_mut::<(&mut Health, &mut Armor, &mut Wallet, &mut Weapon)>()
+    for (health, armor, wallet, loadout) in world
+        .query_mut::<(&mut Health, &mut Armor, &mut Wallet, &mut Loadout)>()
         .with::<&Player>()
     {
         *health = carried.health;
         *armor = carried.armor;
         *wallet = carried.wallet;
-        *weapon = carried.weapon;
+        *loadout = carried.loadout.clone();
     }
 }
 
@@ -57,13 +57,15 @@ mod tests {
     fn the_player_keeps_health_armor_coins_and_ammo_between_floors() {
         let mut first = World::new();
         player(&mut first);
-        for (health, armor, wallet, weapon) in
-            first.query_mut::<(&mut Health, &mut Armor, &mut Wallet, &mut Weapon)>()
+        for (health, armor, wallet, loadout) in
+            first.query_mut::<(&mut Health, &mut Armor, &mut Wallet, &mut Loadout)>()
         {
             health.current = 3;
             armor.current = 1;
             wallet.coins = 42;
-            weapon.ammo = 17;
+            if let Some(weapon) = loadout.current_mut() {
+                weapon.ammo = 17;
+            }
         }
 
         let carried = carried_stats(&first);
@@ -72,10 +74,17 @@ mod tests {
         restore_stats(&mut second, carried);
 
         let stats = second
-            .query::<(&Health, &Armor, &Wallet, &Weapon)>()
+            .query::<(&Health, &Armor, &Wallet, &Loadout)>()
             .with::<&Player>()
             .iter()
-            .map(|(h, a, w, g)| (h.current, a.current, w.coins, g.ammo))
+            .map(|(h, a, w, g)| {
+                (
+                    h.current,
+                    a.current,
+                    w.coins,
+                    g.current().map_or(0, |x| x.ammo),
+                )
+            })
             .next();
         assert_eq!(stats, Some((3, 1, 42, 17)));
     }

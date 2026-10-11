@@ -1,10 +1,12 @@
 use glam::{Vec2, Vec3, Vec4};
-use hecs::World;
+use hecs::{Entity, World};
 
+use crate::assets::Textures;
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, Health, Player, StatusBar, Text,
-    Wallet, Weapon, PIP_EMPTY, PIP_FULL,
+    AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, GunIcon, Health, Hidden, Loadout,
+    Player, Position, Size, Sprite, StatusBar, Text, Wallet, Weapon, PIP_EMPTY, PIP_FULL,
 };
+use crate::guns::{pip_layout, ClipStyle, PIP_SIZE};
 use crate::render::{Draw, Quad, TextureId};
 
 const DELAY_TWEEN: f32 = 0.05;
@@ -47,35 +49,88 @@ pub(crate) fn update_status_bars(world: &mut World, dt: f32) {
     }
 }
 
-pub(crate) fn update_weapon_hud(world: &mut World) {
+pub(crate) fn update_weapon_hud(world: &mut World, textures: &Textures) {
     let weapon = world
-        .query::<&Weapon>()
+        .query::<&Loadout>()
         .with::<&Player>()
         .iter()
         .next()
-        .copied();
+        .and_then(|loadout| loadout.current().copied());
     let coins = world
         .query::<&Wallet>()
         .with::<&Player>()
         .iter()
         .next()
         .map(|wallet| wallet.coins);
-    if let Some(weapon) = weapon {
-        for text in world.query_mut::<&mut Text>().with::<&AmmoText>() {
-            text.content = format!("{}/{}", weapon.clip, weapon.ammo);
-        }
-        for (pip, animation) in world.query_mut::<(&AmmoPip, &mut Animation)>() {
-            animation.switch_to(if pip.index < weapon.clip {
-                PIP_FULL
-            } else {
-                PIP_EMPTY
-            });
-        }
-    }
+    show_weapon(world, weapon, textures);
     if let Some(coins) = coins {
         for text in world.query_mut::<&mut Text>().with::<&CoinText>() {
             text.content = coins.to_string();
         }
+    }
+}
+
+fn show_weapon(world: &mut World, weapon: Option<Weapon>, textures: &Textures) {
+    let icons: Vec<Entity> = world.query::<Entity>().with::<&GunIcon>().iter().collect();
+    for text in world.query_mut::<&mut Text>().with::<&AmmoText>() {
+        text.content = weapon.map_or_else(String::new, |w| format!("{}/{}", w.clip, w.ammo));
+    }
+    for icon in icons {
+        match weapon {
+            Some(weapon) => {
+                let spec = weapon.spec();
+                let _ = world.remove_one::<Hidden>(icon);
+                if let Ok((sprite, size)) = world.query_one_mut::<(&mut Sprite, &mut Size)>(icon) {
+                    sprite.texture = textures.get(spec.texture);
+                    size.0 = spec.icon;
+                }
+            }
+            None => {
+                let _ = world.insert_one(icon, Hidden);
+            }
+        }
+    }
+    let layout = weapon.map(|w| {
+        let spec = w.spec();
+        (
+            spec.clip_style,
+            pip_layout(spec.clip_style, spec.clip_size as usize),
+        )
+    });
+    let mut hide = Vec::new();
+    let mut show = Vec::new();
+    for (entity, pip, position, sprite, animation) in
+        world.query_mut::<(Entity, &AmmoPip, &mut Position, &mut Sprite, &mut Animation)>()
+    {
+        let placed = weapon
+            .zip(layout.as_ref())
+            .and_then(|(w, (style, points))| {
+                points
+                    .get(pip.index as usize)
+                    .map(|top_left| (w, *style, *top_left))
+            });
+        match placed {
+            Some((w, style, top_left)) => {
+                position.0 = top_left + PIP_SIZE / 2.0;
+                sprite.texture = textures.get(match style {
+                    ClipStyle::Shotgun => "ingame/shotgun_ammo_hud.tga",
+                    _ => "ingame/ammo_hud.tga",
+                });
+                animation.switch_to(if pip.index < w.clip {
+                    PIP_FULL
+                } else {
+                    PIP_EMPTY
+                });
+                show.push(entity);
+            }
+            None => hide.push(entity),
+        }
+    }
+    for entity in hide {
+        let _ = world.insert_one(entity, Hidden);
+    }
+    for entity in show {
+        let _ = world.remove_one::<Hidden>(entity);
     }
 }
 

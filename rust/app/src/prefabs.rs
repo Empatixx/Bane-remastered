@@ -4,16 +4,17 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armageddon, Armor, Backdrop, BarKind, Boss, BossHud, Bullet,
-    Button, Chase, Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Drag,
-    Enemy, EnemyBullet, Expiring, EyeShooter, Floating, Fuse, GazeWind, Hatcher, Health, Hitbox,
-    Hits, Homing, Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Minion,
-    OnClick, Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId,
-    ScreenSpace, Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
-    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
-    PIP_FULL,
+    Button, Chase, Chest, ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash,
+    DeathBurst, DeathHeal, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Floating, Fuse,
+    GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
+    Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, OnClick,
+    Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId, ScreenSpace,
+    Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity,
+    Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
+use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
@@ -35,7 +36,7 @@ pub(crate) fn player(
         Player,
         Position(position),
         Velocity::default(),
-        Weapon::pistol(),
+        Loadout::starting(),
         Health {
             current: PLAYER_HEALTH,
             max: PLAYER_HEALTH,
@@ -125,6 +126,7 @@ const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 const BULLET_DAMAGE: i32 = 1;
 const BACKDROP_SIZE: Vec2 = Vec2::new(1000.0, 580.0);
 const BACKDROP_COLOR: Vec4 = Vec4::new(37.0 / 255.0, 19.0 / 255.0, 26.0 / 255.0, 1.0);
+const DROP_DRAG: f32 = 6.0;
 const FLOAT_SECONDS: f32 = 0.5;
 const FLOAT_RISE: f32 = 30.0;
 const COBWEB_SIZE: Vec2 = Vec2::new(64.0, 64.0);
@@ -188,7 +190,9 @@ pub(crate) fn furnishing(
                 place(Prop::Torch, look);
             }
             FixtureKind::Bricks => place(Prop::Bricks, Look::DEFAULT),
-            FixtureKind::Chest => place(Prop::Chest, Look::DEFAULT),
+            FixtureKind::Chest => {
+                chest(world, ChestKind::Weapon, top_left, textures);
+            }
             FixtureKind::AngelStatue => place(Prop::AngelStatue, Look::DEFAULT),
             FixtureKind::Candlestick => place(Prop::Candlestick, Look::DEFAULT),
             FixtureKind::Pentagram => place(Prop::Pentagram, Look::DEFAULT),
@@ -759,6 +763,47 @@ pub(crate) fn ladder(world: &mut World, top_left: Vec2, textures: &Textures) -> 
     entity
 }
 
+pub(crate) fn chest(
+    world: &mut World,
+    kind: ChestKind,
+    top_left: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let entity = prop(world, Prop::Chest, top_left, Look::DEFAULT, textures);
+    let _ = world.insert_one(
+        entity,
+        Chest {
+            kind,
+            opened: false,
+        },
+    );
+    entity
+}
+
+pub(crate) fn gun_drop(
+    world: &mut World,
+    weapon: Weapon,
+    center: Vec2,
+    velocity: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let spec = weapon.spec();
+    world.spawn((
+        GunDrop { weapon },
+        Position(center),
+        Velocity(velocity),
+        Drag { rate: DROP_DRAG },
+        Size(spec.icon),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get(spec.texture)),
+        Layer(0),
+        Lit,
+        Interactable {
+            action: Interaction::PickUpGun,
+        },
+    ))
+}
+
 pub(crate) fn backdrop(world: &mut World) -> Entity {
     world.spawn((
         Backdrop,
@@ -853,9 +898,6 @@ const SLOT_SIZE: Vec2 = Vec2::new(225.0, 75.0);
 const GUN_ICON_SIZE: Vec2 = Vec2::new(41.0, 34.0);
 const AMMO_TEXT_POSITION: Vec2 = Vec2::new(900.0, 515.0);
 const AMMO_TEXT_COLOR: Vec4 = Vec4::new(226.0 / 255.0, 153.0 / 255.0, 117.0 / 255.0, 1.0);
-const PIP_START: Vec2 = Vec2::new(922.5, 515.0);
-const PIP_STEP: f32 = 15.0;
-const PIP_SIZE: Vec2 = Vec2::new(24.0, 24.0);
 const COIN_MARGIN: f32 = 10.0;
 const COIN_SIZE: Vec2 = Vec2::new(26.0, 26.0);
 const COIN_TEXT_GAP: f32 = 15.0;
@@ -877,7 +919,7 @@ fn screen_sprite(
     ))
 }
 
-pub(crate) fn weapon_hud(world: &mut World, textures: &Textures, clip_size: i32) {
+pub(crate) fn weapon_hud(world: &mut World, textures: &Textures) {
     screen_sprite(
         world,
         SLOT_POSITION,
@@ -886,13 +928,14 @@ pub(crate) fn weapon_hud(world: &mut World, textures: &Textures, clip_size: i32)
         4,
     );
     let slot_center = SLOT_POSITION + SLOT_SIZE / 2.0;
-    screen_sprite(
+    let icon = screen_sprite(
         world,
         slot_center - GUN_ICON_SIZE / 2.0,
         GUN_ICON_SIZE,
         textures.get("ingame/guns/pistol.tga"),
         5,
     );
+    let _ = world.insert(icon, (GunIcon, Hidden));
     world.spawn((
         AmmoText,
         Text {
@@ -906,17 +949,17 @@ pub(crate) fn weapon_hud(world: &mut World, textures: &Textures, clip_size: i32)
         Layer(6),
         ScreenSpace,
     ));
-    for index in 0..clip_size {
-        let top_left = Vec2::new(PIP_START.x, PIP_START.y - index as f32 * PIP_STEP);
+    for index in 0..MAX_CLIP as i32 {
         world.spawn((
             AmmoPip { index },
-            Position(top_left + PIP_SIZE / 2.0),
+            Position(Vec2::ZERO),
             Size(PIP_SIZE),
             Color(Vec4::ONE),
             Sprite::cell(textures.get("ingame/ammo_hud.tga"), 0, 0, 2, 2),
             Animation::new(2, 2, PIP_FULL),
             Layer(5),
             ScreenSpace,
+            Hidden,
         ));
     }
 }

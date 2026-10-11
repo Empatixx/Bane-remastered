@@ -179,7 +179,7 @@ impl Scene for LobbyScene {
         );
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
-        systems::update_weapon_hud(&mut self.world);
+        systems::update_weapon_hud(&mut self.world, &assets.textures);
         systems::remove_expired(&mut self.world);
         if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
             self.camera.follow(target, dt);
@@ -187,7 +187,7 @@ impl Scene for LobbyScene {
         systems::follow_backdrop(&mut self.world, self.camera.position());
         match systems::interact(&mut self.world, input) {
             Some(Interaction::EnterPortal) => Transition::Switch(SceneId::InGame),
-            Some(Interaction::NextFloor) | None => Transition::None,
+            Some(Interaction::NextFloor | Interaction::PickUpGun) | None => Transition::None,
             Some(Interaction::Upgrade) => {
                 tracing::info!("the upgrade menu is not implemented yet");
                 Transition::None
