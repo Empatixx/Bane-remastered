@@ -9,7 +9,7 @@ use crate::components::{
     Prompt, RoomId, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
     UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
-use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Mount, ShopLayout};
+use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
@@ -97,6 +97,12 @@ pub(crate) fn prop(
         };
         let _ = world.insert_one(entity, Light::rgb(offset, 230.0, 201.0, 114.0, 75.0, 1.25));
     }
+    if prop == Prop::Candlestick {
+        let _ = world.insert_one(
+            entity,
+            Light::rgb(Vec2::new(0.0, -24.0), 212.0, 0.0, 0.0, 30.0, 2.0),
+        );
+    }
     if let Some(animated) = spec.animation {
         let clip = Clip {
             row: look.row,
@@ -115,6 +121,8 @@ const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 const CARPET_COLUMNS: usize = 4;
 const CARPET_ROWS: usize = 4;
 const CARPET_LAYER: i32 = -2;
+const KEY_FRAMES: usize = 2;
+const KEY_FRAME_TIME: f32 = 0.2;
 
 pub(crate) fn pot(
     world: &mut World,
@@ -128,64 +136,97 @@ pub(crate) fn pot(
     entity
 }
 
-pub(crate) fn shop(
+pub(crate) fn furnishing(
     world: &mut World,
     physics: &mut Physics,
-    layout: &ShopLayout,
+    furnishing: &Furnishing,
     textures: &Textures,
 ) {
-    let carpet = textures.get("ingame/carpet_tilemap.tga");
-    for ((column, row), number) in layout.carpet.tiles() {
-        let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
-        world.spawn((
-            Position(center),
-            Size(Vec2::splat(tilemap::TILE_SIZE)),
-            Color(Vec4::ONE),
-            Sprite::cell(
-                carpet,
-                number % CARPET_COLUMNS,
-                number / CARPET_COLUMNS,
-                CARPET_COLUMNS,
-                CARPET_ROWS,
-            ),
-            Layer(CARPET_LAYER),
-            Lit,
-        ));
+    if let Some(carpet) = &furnishing.carpet {
+        let texture = textures.get("ingame/carpet_tilemap.tga");
+        for ((column, row), number) in carpet.tiles() {
+            let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
+            world.spawn((
+                Position(center),
+                Size(Vec2::splat(tilemap::TILE_SIZE)),
+                Color(Vec4::ONE),
+                Sprite::cell(
+                    texture,
+                    number % CARPET_COLUMNS,
+                    number / CARPET_COLUMNS,
+                    CARPET_COLUMNS,
+                    CARPET_ROWS,
+                ),
+                Layer(CARPET_LAYER),
+                Lit,
+            ));
+        }
     }
-    for fixture in &layout.fixtures {
+    for fixture in &furnishing.fixtures {
+        let top_left = fixture.top_left;
+        let mut place = |kind: Prop, look: Look| {
+            prop(world, kind, top_left, look, textures);
+        };
         match fixture.kind {
-            FixtureKind::Shopkeeper => {
-                prop(
-                    world,
-                    Prop::Shopkeeper,
-                    fixture.top_left,
-                    Look::DEFAULT,
-                    textures,
-                );
+            FixtureKind::Shopkeeper => place(Prop::Shopkeeper, Look::DEFAULT),
+            FixtureKind::Table => place(Prop::ShopTable, Look::DEFAULT),
+            FixtureKind::SlotMachine => place(Prop::SlotMachine, Look::LOSE_ROW),
+            FixtureKind::Torch { right } => {
+                let look = if right { Look::FLIPPED } else { Look::DEFAULT };
+                place(Prop::Torch, look);
             }
-            FixtureKind::Table => {
-                prop(
-                    world,
-                    Prop::ShopTable,
-                    fixture.top_left,
-                    Look::DEFAULT,
-                    textures,
-                );
-            }
+            FixtureKind::Bricks => place(Prop::Bricks, Look::DEFAULT),
+            FixtureKind::Chest => place(Prop::Chest, Look::DEFAULT),
+            FixtureKind::AngelStatue => place(Prop::AngelStatue, Look::DEFAULT),
+            FixtureKind::Candlestick => place(Prop::Candlestick, Look::DEFAULT),
+            FixtureKind::Pentagram => place(Prop::Pentagram, Look::DEFAULT),
+            FixtureKind::Book => place(Prop::LayingBook, Look::DEFAULT),
+            FixtureKind::Chains => place(Prop::Chains, Look::DEFAULT),
             FixtureKind::Pot => {
-                pot(world, physics, fixture.top_left, textures);
+                pot(world, physics, top_left, textures);
             }
-            FixtureKind::SlotMachine => {
-                prop(
-                    world,
-                    Prop::SlotMachine,
-                    fixture.top_left,
-                    Look::LOSE_ROW,
-                    textures,
-                );
+            FixtureKind::Key(key) => {
+                key_hint(world, key.texture(), top_left, fixture.size, textures);
+            }
+            FixtureKind::Label { text, centered } => {
+                label(world, text, top_left, centered);
             }
         }
     }
+}
+
+fn key_hint(world: &mut World, texture: &str, top_left: Vec2, size: Vec2, textures: &Textures) {
+    let clip = Clip {
+        row: 0,
+        frames: KEY_FRAMES,
+        frame_time: KEY_FRAME_TIME,
+        looping: true,
+        flipped: false,
+    };
+    world.spawn((
+        Position(top_left + size / 2.0),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(texture), 0, 0, KEY_FRAMES, 1),
+        Animation::new(KEY_FRAMES, 1, clip),
+        Layer(-1),
+        Lit,
+    ));
+}
+
+fn label(world: &mut World, content: &str, position: Vec2, centered: bool) {
+    let align = if centered { Align::Center } else { Align::Left };
+    world.spawn((
+        Position(position),
+        Text {
+            content: content.to_owned(),
+            color: Vec4::ONE,
+            size: FontSize::Size22,
+            align,
+            anchor: Anchor::Baseline,
+        },
+        Layer(-1),
+    ));
 }
 
 const SIDE_ROW: usize = 0;

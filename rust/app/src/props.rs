@@ -23,6 +23,12 @@ pub(crate) enum Prop {
     Shopkeeper,
     ShopTable,
     SlotMachine,
+    Chest,
+    Bricks,
+    AngelStatue,
+    Candlestick,
+    Pentagram,
+    LayingBook,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -193,6 +199,32 @@ impl Prop {
                 scale: 3.0,
                 animation: None,
             },
+            Self::Chest => PropSpec {
+                texture: "ingame/chest.tga",
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.175,
+                }),
+            },
+            Self::Bricks => variants("ingame/bricks.tga", Vec2::new(16.0, 16.0), 4.0),
+            Self::AngelStatue => still("ingame/angel_statue.tga", Vec2::new(64.0, 64.0), 4.0),
+            Self::Candlestick => PropSpec {
+                texture: "ingame/candlestick.tga",
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 3.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.1,
+                }),
+            },
+            Self::Pentagram => still("ingame/pentagram.tga", Vec2::new(150.0, 80.0), 1.5),
+            Self::LayingBook => still("ingame/laying_book.tga", Vec2::new(16.0, 16.0), 4.0),
             Self::Scientist => PropSpec {
                 texture: "ingame/scientist.tga",
                 columns: 6,

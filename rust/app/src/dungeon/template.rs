@@ -135,9 +135,8 @@ pub(crate) fn is_door_slot(columns: usize, rows: usize, column: usize, row: usiz
     vertical || horizontal
 }
 
-const BUILT_IN: [&str; 27] = [
-    include_str!("../../../assets/rooms/start_a.json"),
-    include_str!("../../../assets/rooms/start_b.json"),
+const BUILT_IN: [&str; 21] = [
+    include_str!("../../../assets/rooms/start.json"),
     include_str!("../../../assets/rooms/normal_01.json"),
     include_str!("../../../assets/rooms/normal_02.json"),
     include_str!("../../../assets/rooms/normal_03.json"),
@@ -154,15 +153,10 @@ const BUILT_IN: [&str; 27] = [
     include_str!("../../../assets/rooms/normal_14.json"),
     include_str!("../../../assets/rooms/normal_15.json"),
     include_str!("../../../assets/rooms/normal_16.json"),
-    include_str!("../../../assets/rooms/treasure_a.json"),
-    include_str!("../../../assets/rooms/treasure_b.json"),
-    include_str!("../../../assets/rooms/treasure_c.json"),
+    include_str!("../../../assets/rooms/treasure.json"),
     include_str!("../../../assets/rooms/shop.json"),
-    include_str!("../../../assets/rooms/sacrifice_a.json"),
-    include_str!("../../../assets/rooms/sacrifice_b.json"),
-    include_str!("../../../assets/rooms/boss_a.json"),
-    include_str!("../../../assets/rooms/boss_b.json"),
-    include_str!("../../../assets/rooms/boss_c.json"),
+    include_str!("../../../assets/rooms/sacrifice.json"),
+    include_str!("../../../assets/rooms/boss.json"),
 ];
 
 #[derive(Debug, Clone)]

@@ -113,8 +113,8 @@ impl Scene for InGameScene {
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         for room in &dungeon.rooms {
-            if let Some(layout) = &room.shop {
-                prefabs::shop(&mut self.world, &mut self.physics, layout, textures);
+            if let Some(furnishing) = &room.furnishing {
+                prefabs::furnishing(&mut self.world, &mut self.physics, furnishing, textures);
             }
             for decor in &room.decor {
                 prefabs::decor(&mut self.world, *decor, textures);

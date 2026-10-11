@@ -5,9 +5,9 @@ use glam::Vec2;
 use crate::tilemap::{TileGrid, TILE_SIZE};
 
 use super::decor::{self, Decor};
+use super::furnish::{self, Furnishing};
 use super::layout::{Direction, Layout, LayoutSpec};
 use super::rng::Rng;
-use super::shop::{self, ShopLayout};
 use super::template::{
     door_columns, door_rows, Cell, RoomKind, Templates, CELL_COLUMNS, CELL_ROWS,
 };
@@ -31,7 +31,7 @@ pub(crate) struct DungeonRoom {
     pub(crate) spawns: Vec<(usize, usize)>,
     pub(crate) doors: Vec<DoorSlot>,
     pub(crate) decor: Vec<Decor>,
-    pub(crate) shop: Option<ShopLayout>,
+    pub(crate) furnishing: Option<Furnishing>,
 }
 
 impl DungeonRoom {
@@ -173,7 +173,7 @@ impl Dungeon {
                 spawns,
                 doors,
                 decor: Vec::new(),
-                shop: None,
+                furnishing: None,
             });
         }
 
@@ -185,11 +185,8 @@ impl Dungeon {
             }
         }
         for room in &mut rooms {
-            if room.kind == RoomKind::Shop {
-                room.shop = Some(shop::plan(room.origin, room.columns, room.rows));
-            } else {
-                room.decor = decor::plan(&grid, room, rng);
-            }
+            room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows);
+            room.decor = decor::plan(&grid, room, rng);
         }
         Ok(Self { grid, rooms })
     }

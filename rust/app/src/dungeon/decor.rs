@@ -9,9 +9,11 @@ use super::template::RoomKind;
 const TORCHES_BASE: usize = 2;
 const TILES_PER_EXTRA_TORCH: usize = 180;
 const MAX_TORCHES: usize = 5;
-const BONES: usize = 2;
-const COBWEBS: usize = 2;
-const BANNERS: usize = 2;
+const NORMAL_BONES: usize = 2;
+const NORMAL_COBWEBS: usize = 2;
+const NORMAL_BANNERS: usize = 2;
+const TREASURE_BONES: usize = 3;
+const TREASURE_COBWEBS: usize = 3;
 const MAX_SPIKES: usize = 2;
 const DISABLED_TORCH_PERCENT: usize = 10;
 const DOOR_CLEARANCE: usize = 3;
@@ -37,6 +39,43 @@ pub(crate) enum DecorKind {
 pub(crate) struct Decor {
     pub(crate) kind: DecorKind,
     pub(crate) tile: (usize, usize),
+}
+
+struct Counts {
+    torches: usize,
+    banners: usize,
+    cobwebs: usize,
+    bones: usize,
+    spikes: bool,
+}
+
+impl Counts {
+    fn for_room(room: &DungeonRoom) -> Self {
+        match room.kind {
+            RoomKind::Normal => Self {
+                torches: (TORCHES_BASE + room.columns * room.rows / TILES_PER_EXTRA_TORCH)
+                    .min(MAX_TORCHES),
+                banners: NORMAL_BANNERS,
+                cobwebs: NORMAL_COBWEBS,
+                bones: NORMAL_BONES,
+                spikes: true,
+            },
+            RoomKind::Treasure => Self {
+                torches: 0,
+                banners: 0,
+                cobwebs: TREASURE_COBWEBS,
+                bones: TREASURE_BONES,
+                spikes: false,
+            },
+            _ => Self {
+                torches: 0,
+                banners: 0,
+                cobwebs: 0,
+                bones: 0,
+                spikes: false,
+            },
+        }
+    }
 }
 
 struct Planner<'a> {
@@ -135,9 +174,8 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
     let mut wall_spots = top_faces.clone();
     wall_spots.extend(side_faces.iter().copied());
 
-    let torches =
-        (TORCHES_BASE + room.columns * room.rows / TILES_PER_EXTRA_TORCH).min(MAX_TORCHES);
-    for _ in 0..torches {
+    let counts = Counts::for_room(room);
+    for _ in 0..counts.torches {
         if let Some(spot) = planner.pick(&wall_spots, rng) {
             planner.take(spot.tile);
             decor.push(Decor {
@@ -149,7 +187,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
             });
         }
     }
-    for _ in 0..BANNERS {
+    for _ in 0..counts.banners {
         if let Some(spot) = planner.pick(&top_faces, rng) {
             planner.take(spot.tile);
             decor.push(Decor {
@@ -158,7 +196,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
             });
         }
     }
-    for _ in 0..COBWEBS {
+    for _ in 0..counts.cobwebs {
         if let Some(spot) = planner.pick(&side_faces, rng) {
             planner.take(spot.tile);
             decor.push(Decor {
@@ -181,7 +219,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
             mount: Mount::Top,
         })
         .collect();
-    for _ in 0..BONES {
+    for _ in 0..counts.bones {
         if let Some(spot) = planner.pick(&open_floor, rng) {
             planner.take(spot.tile);
             decor.push(Decor {
@@ -193,7 +231,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
         }
     }
 
-    if room.kind == RoomKind::Normal {
+    if counts.spikes {
         let spike_floor: Vec<Candidate> = open_floor
             .iter()
             .filter(|candidate| {
@@ -330,19 +368,32 @@ mod tests {
     }
 
     #[test]
-    fn shops_are_furnished_by_the_shop_layout_only() {
-        let mut shops = 0;
+    fn furnished_rooms_have_no_random_torches_and_plain_ones_have_nothing() {
+        let mut seen_treasure = false;
         for seed in 0..40 {
             for room in &dungeon(seed).rooms {
-                let is_shop = room.kind == RoomKind::Shop;
-                assert_eq!(room.shop.is_some(), is_shop);
-                if is_shop {
-                    shops += 1;
-                    assert!(room.decor.is_empty());
-                    assert_eq!((room.columns, room.rows), (20, 16));
+                let furnished = matches!(
+                    room.kind,
+                    RoomKind::Shop | RoomKind::Treasure | RoomKind::Sacrifice | RoomKind::Start
+                );
+                assert_eq!(room.furnishing.is_some(), furnished, "{:?}", room.kind);
+                if room.kind != RoomKind::Normal {
+                    assert_eq!((room.columns, room.rows), (20, 16), "{:?}", room.kind);
+                }
+                match room.kind {
+                    RoomKind::Treasure => {
+                        seen_treasure = true;
+                        assert!(room.decor.len() <= 6);
+                        assert!(room.decor.iter().all(|d| matches!(
+                            d.kind,
+                            DecorKind::Bones { .. } | DecorKind::Cobweb { .. }
+                        )));
+                    }
+                    RoomKind::Normal => {}
+                    _ => assert!(room.decor.is_empty(), "{:?}", room.kind),
                 }
             }
         }
-        assert!(shops > 0);
+        assert!(seen_treasure);
     }
 }
