@@ -12,6 +12,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs;
+use crate::profile::SharedProfile;
 use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::TILE_SIZE;
@@ -38,6 +39,7 @@ pub(crate) struct InGameScene {
     navigation: Navigation,
     victory: bool,
     death: Option<systems::DeathScreen>,
+    profile: Option<SharedProfile>,
     kills_without_drop: u32,
     drag_from: Option<Vec2>,
 }
@@ -337,10 +339,17 @@ impl Scene for InGameScene {
 }
 
 impl InGameScene {
+    pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
+        self.profile = Some(profile);
+    }
+
     fn start_death_screen(&mut self, assets: &Assets) {
         let stats = systems::current_stats(&self.world);
         let summary = systems::summarize(stats, self.floor);
         tracing::info!(victory = self.victory, ?summary, "the run is over");
+        if let Some(profile) = &self.profile {
+            profile.record_run(stats, &summary, self.victory);
+        }
         prefabs::death_ui(&mut self.world, self.victory, &assets.textures);
         self.death = Some(systems::DeathScreen::new(summary));
         self.set_big_map(false);

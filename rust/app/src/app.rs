@@ -12,11 +12,13 @@ use winit::window::{Fullscreen, Window, WindowId};
 use crate::assets::{Assets, Loader};
 use crate::game::Game;
 use crate::perf::PerfCounter;
+use crate::profile::SharedProfile;
 use crate::render::Gpu;
 use crate::settings::{Change, Settings};
 use crate::viewport::TARGET;
 
 const SETTINGS_FILE: &str = "settings.json";
+const PROFILE_FILE: &str = "profile.json";
 const STEP: Duration = Duration::from_nanos(1_000_000_000 / 60);
 const MAX_FRAME: Duration = Duration::from_millis(250);
 
@@ -67,7 +69,8 @@ impl ApplicationHandler for App {
                 let mut settings = Settings::load(Path::new(SETTINGS_FILE));
                 settings.set_resolutions(monitor_resolutions(&window));
                 settings.startup_changes();
-                let mut game = Game::new(assets, settings);
+                let profile = SharedProfile::load(Path::new(PROFILE_FILE));
+                let mut game = Game::new(assets, settings, profile);
                 apply_changes(&window, &mut gpu, game.take_setting_changes());
                 self.game = Some(game);
                 self.loader = Some(loader);

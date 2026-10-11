@@ -8,6 +8,7 @@ use crate::audio::Audio;
 use crate::components::Sprite;
 use crate::input::Input;
 use crate::postfx::PostFx;
+use crate::profile::SharedProfile;
 use crate::render::{Draw, Frame, Gpu, Quad};
 use crate::scenes::{Cursor, Scenes};
 use crate::settings::{Change, Settings};
@@ -30,10 +31,10 @@ pub(crate) struct Game {
 }
 
 impl Game {
-    pub(crate) fn new(assets: Assets, settings: Settings) -> Self {
+    pub(crate) fn new(assets: Assets, settings: Settings, profile: SharedProfile) -> Self {
         Self {
             input: Input::default(),
-            scenes: Scenes::new(&assets),
+            scenes: Scenes::new(&assets, profile),
             assets,
             settings,
             audio: Audio::new(),

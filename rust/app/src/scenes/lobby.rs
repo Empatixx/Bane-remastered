@@ -10,6 +10,7 @@ use crate::input::Input;
 use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs::{self, PLAYER_SIZE};
+use crate::profile::SharedProfile;
 use crate::props::{Look, Prop};
 use crate::settings::Settings;
 use crate::systems;
@@ -55,6 +56,13 @@ pub(crate) struct LobbyScene {
     pause: Pause,
     clock: f32,
     sounds: Vec<AudioCommand>,
+    profile: Option<SharedProfile>,
+}
+
+impl LobbyScene {
+    pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
+        self.profile = Some(profile);
+    }
 }
 
 impl Scene for LobbyScene {
@@ -137,6 +145,12 @@ impl Scene for LobbyScene {
             Vec4::new(236.0 / 255.0, 0.0, 0.0, 1.0),
         );
         self.camera = Camera::new(bounds);
+        if let Some(profile) = &self.profile {
+            let balance = i32::try_from(profile.balance()).unwrap_or(i32::MAX);
+            for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
+                wallet.coins = balance;
+            }
+        }
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
             self.camera.snap_to(target);
         }

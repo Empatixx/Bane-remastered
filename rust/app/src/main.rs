@@ -17,6 +17,7 @@ mod perf;
 mod physics;
 mod postfx;
 mod prefabs;
+mod profile;
 mod props;
 mod render;
 mod scenes;

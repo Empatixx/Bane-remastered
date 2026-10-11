@@ -4,6 +4,7 @@ use std::ops::ControlFlow;
 use crate::assets::Assets;
 use crate::audio::AudioCommand;
 use crate::input::Input;
+use crate::profile::SharedProfile;
 use crate::render::{Fonts, Layers, LightSource};
 use crate::settings::Settings;
 use crate::systems;
@@ -32,7 +33,7 @@ impl fmt::Debug for Scenes {
 }
 
 impl Scenes {
-    pub(crate) fn new(assets: &Assets) -> Self {
+    pub(crate) fn new(assets: &Assets, profile: SharedProfile) -> Self {
         let mut scenes = Self {
             current: SceneId::Loading,
             pending: Vec::new(),
@@ -41,6 +42,8 @@ impl Scenes {
             lobby: LobbyScene::default(),
             ingame: InGameScene::default(),
         };
+        scenes.lobby.attach_profile(profile.clone());
+        scenes.ingame.attach_profile(profile);
         scenes.scene_mut().enter(assets);
         scenes.queue_music();
         scenes
@@ -174,7 +177,7 @@ mod tests {
 
     fn menu() -> (Scenes, Input, Assets) {
         let assets = loaded_assets();
-        let mut scenes = Scenes::new(&assets);
+        let mut scenes = Scenes::new(&assets, SharedProfile::in_memory());
         let input = Input::default();
         assert!(scenes
             .update(&input, 0.0, &assets, &mut Settings::in_memory())
@@ -186,7 +189,7 @@ mod tests {
     #[test]
     fn loading_waits_until_the_assets_are_loaded() {
         let mut assets = Assets::new().expect("the embedded tileset is valid");
-        let mut scenes = Scenes::new(&assets);
+        let mut scenes = Scenes::new(&assets, SharedProfile::in_memory());
         let input = Input::default();
 
         assert!(scenes

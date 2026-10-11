@@ -13,3 +13,4 @@ settings.json
 /rust/target/
 /rust/.idea/
 /rust/settings.json
+/rust/profile.json
