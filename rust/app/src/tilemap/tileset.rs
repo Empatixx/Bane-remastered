@@ -217,7 +217,7 @@ mod tests {
     #[test]
     fn every_wall_of_the_built_in_layouts_gets_a_solid_tile() {
         let tileset = dungeon();
-        for grid in [crate::tilemap::lobby(), crate::tilemap::arena()] {
+        for grid in [crate::tilemap::lobby()] {
             for row in 0..grid.rows() {
                 for column in 0..grid.columns() {
                     let wall = grid.is_wall(column as isize, row as isize);

@@ -112,15 +112,7 @@ impl ApplicationHandler for App {
             WindowEvent::RedrawRequested => {
                 self.perf.frame();
                 if let (Some(gpu), Some(game)) = (&mut self.gpu, &self.game) {
-                    gpu.render(
-                        wgpu::Color {
-                            r: 0.05,
-                            g: 0.08,
-                            b: 0.12,
-                            a: 1.0,
-                        },
-                        &game.frame(),
-                    );
+                    gpu.render(wgpu::Color::BLACK, &game.frame());
                 }
             }
             _ => {}

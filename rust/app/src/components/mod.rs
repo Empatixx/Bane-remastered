@@ -20,7 +20,7 @@ pub(crate) use combat::{
     Armor, Bullet, Chase, ContactDamage, Enemy, Expiring, Health, Invulnerable, Wallet, Weapon,
     BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS,
 };
-pub(crate) use effects::{GazeWind, LightFade, Particle};
+pub(crate) use effects::{GazeWind, LightFade, Particle, RoomId, ThenPlay};
 pub(crate) use hud::{AmmoPip, AmmoText, BarKind, CoinText, StatusBar, PIP_EMPTY, PIP_FULL};
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use lighting::{Light, Lit};

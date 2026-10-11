@@ -6,14 +6,16 @@ use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
     ContactDamage, Enemy, Expiring, GazeWind, Health, Hitbox, Interactable, Interaction, Layer,
     Light, LightFade, Lit, OnClick, Overlay, Particle, PauseUi, Player, PlayerShadow, Position,
-    Prompt, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, UiAction, Velocity, Wallet,
-    Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    Prompt, RoomId, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, ThenPlay, UiAction,
+    Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
+use crate::dungeon::Direction;
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
 use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 use crate::tilemap::{self, TileGrid, Tileset};
+use rapier2d::prelude::ColliderHandle;
 
 pub(crate) const PLAYER_SIZE: Vec2 = Vec2::new(32.0, 76.0);
 const PLAYER_HEALTH: i32 = 10;
@@ -225,6 +227,9 @@ pub(crate) fn tilemap(
     let mut solid_cells = Vec::new();
     for row in 0..grid.rows() {
         for column in 0..grid.columns() {
+            if grid.is_interior(column, row) {
+                continue;
+            }
             let number = tileset.tile_number(grid, column, row);
             let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
             world.spawn((
@@ -519,4 +524,69 @@ pub(crate) fn gaze_particle(world: &mut World, center: Vec2, texture: TextureId)
         Layer(0),
         Lit,
     ))
+}
+
+const GATE_COLUMNS: usize = 6;
+const GATE_ROWS: usize = 4;
+const GATE_FRAME_TIME: f32 = 0.075;
+
+const fn gate_clip(row: usize, frames: usize, looping: bool, flipped: bool) -> Clip {
+    Clip {
+        row,
+        frames,
+        frame_time: GATE_FRAME_TIME,
+        looping,
+        flipped,
+    }
+}
+
+pub(crate) fn gate(
+    world: &mut World,
+    physics: &mut Physics,
+    tile: (usize, usize),
+    direction: Direction,
+    textures: &Textures,
+) -> (Entity, ColliderHandle) {
+    let (close_row, idle_row) = match direction {
+        Direction::Up | Direction::Down => (0, 1),
+        Direction::Left | Direction::Right => (2, 3),
+    };
+    let flipped = direction == Direction::Left;
+    let close = gate_clip(close_row, 4, false, flipped);
+    let idle = gate_clip(idle_row, 6, true, flipped);
+    let center = Vec2::new(tile.0 as f32 + 0.5, tile.1 as f32 + 0.5) * tilemap::TILE_SIZE;
+    let size = Vec2::splat(tilemap::TILE_SIZE);
+    let mut sprite = Sprite::cell(
+        textures.get("ingame/pathgate.tga"),
+        0,
+        close_row,
+        GATE_COLUMNS,
+        GATE_ROWS,
+    );
+    if flipped {
+        sprite.uv = Sprite::flipped(sprite.uv);
+    }
+    let entity = world.spawn((
+        Position(center),
+        Size(size),
+        Color(Vec4::ONE),
+        sprite,
+        Animation::new(GATE_COLUMNS, GATE_ROWS, close),
+        ThenPlay(idle),
+        Layer(-1),
+        Lit,
+    ));
+    (entity, physics.add_static_box(center, size))
+}
+
+pub(crate) fn rat_in_room(
+    world: &mut World,
+    physics: &mut Physics,
+    position: Vec2,
+    texture: TextureId,
+    room: usize,
+) -> Entity {
+    let entity = rat(world, physics, position, texture);
+    let _ = world.insert_one(entity, RoomId(room));
+    entity
 }

@@ -67,12 +67,16 @@ impl Physics {
         }
     }
 
-    pub(crate) fn add_static_box(&mut self, center: Vec2, size: Vec2) {
+    pub(crate) fn add_static_box(&mut self, center: Vec2, size: Vec2) -> ColliderHandle {
         let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
             .translation(to_rapier(center))
             .collision_groups(groups::WALLS)
             .user_data(WALL_OWNER);
-        self.world.colliders.insert(collider);
+        self.world.colliders.insert(collider)
+    }
+
+    pub(crate) fn remove_collider(&mut self, collider: ColliderHandle) {
+        self.world.remove_collider(collider);
     }
 
     pub(crate) fn add_player(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {

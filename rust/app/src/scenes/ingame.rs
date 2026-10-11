@@ -6,13 +6,14 @@ use crate::assets::{Assets, BULLET, RAT, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{UiAction, Weapon};
+use crate::dungeon::{Dungeon, Rng};
 use crate::input::Input;
 use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs;
 use crate::settings::Settings;
 use crate::systems;
-use crate::tilemap::{self, TILE_SIZE};
+use crate::tilemap::TILE_SIZE;
 use crate::viewport::TARGET;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition};
@@ -26,6 +27,9 @@ pub(crate) struct InGameScene {
     clock: f32,
     sounds: Vec<AudioCommand>,
     hit: bool,
+    dungeon: Option<Dungeon>,
+    rooms: Option<systems::RoomRuntime>,
+    rng: Rng,
 }
 
 impl Scene for InGameScene {
@@ -41,6 +45,8 @@ impl Scene for InGameScene {
         self.world.clear();
         self.physics = Physics::new();
         self.pause = Pause::default();
+        self.dungeon = None;
+        self.rooms = None;
     }
 
     fn soundtrack(&self) -> Option<Soundtrack> {
@@ -84,31 +90,30 @@ impl Scene for InGameScene {
     }
 
     fn enter(&mut self, assets: &Assets) {
-        let grid = tilemap::arena();
-        let bounds = grid.pixel_size();
+        self.rng = Rng::from_clock();
+        tracing::info!(seed = self.rng.seed(), "generating the dungeon");
+        let dungeon = match Dungeon::generate(&mut self.rng) {
+            Ok(dungeon) => dungeon,
+            Err(error) => {
+                tracing::error!(%error, "cannot generate the dungeon");
+                return;
+            }
+        };
+        let bounds = dungeon.grid.pixel_size();
         let textures = &assets.textures;
         let solid_cells = prefabs::tilemap(
             &mut self.world,
-            &grid,
+            &dungeon.grid,
             &assets.tileset,
             assets.textures.get(TILESET),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
-        prefabs::player(
-            &mut self.world,
-            &mut self.physics,
-            bounds / 2.0,
-            &assets.textures,
-        );
-        for corner in [(2.5, 2.5), (17.5, 2.5), (2.5, 9.5), (17.5, 9.5)] {
-            let position = Vec2::new(corner.0, corner.1) * TILE_SIZE;
-            prefabs::rat(
-                &mut self.world,
-                &mut self.physics,
-                position,
-                assets.textures.get(RAT),
-            );
-        }
+        let start = dungeon
+            .start_room()
+            .map_or(bounds / 2.0, |room| room.center(TILE_SIZE));
+        prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        self.rooms = Some(systems::RoomRuntime::new(&dungeon));
+        self.dungeon = Some(dungeon);
         prefabs::status_bars(&mut self.world, textures);
         prefabs::coin_hud(
             &mut self.world,
@@ -173,6 +178,20 @@ impl Scene for InGameScene {
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world);
         systems::fade_lights(&mut self.world);
+        if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
+            let context = systems::RoomContext {
+                dungeon,
+                textures: &assets.textures,
+                rat_texture: assets.textures.get(RAT),
+            };
+            systems::update_rooms(
+                rooms,
+                &context,
+                &mut self.world,
+                &mut self.physics,
+                &mut self.rng,
+            );
+        }
         systems::remove_expired(&mut self.world);
         if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
             self.camera.follow(target, dt);

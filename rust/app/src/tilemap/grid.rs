@@ -19,6 +19,23 @@ impl TileGrid {
         Self { walls }
     }
 
+    pub(crate) fn filled(columns: usize, rows: usize) -> Self {
+        Self {
+            walls: vec![vec![true; columns]; rows],
+        }
+    }
+
+    pub(crate) fn carve(&mut self, column: usize, row: usize) {
+        if let Some(cell) = self.walls.get_mut(row).and_then(|r| r.get_mut(column)) {
+            *cell = false;
+        }
+    }
+
+    pub(crate) fn is_interior(&self, column: usize, row: usize) -> bool {
+        let (x, y) = (column as isize, row as isize);
+        (-1..=1).all(|dy| (-1..=1).all(|dx| self.is_wall(x + dx, y + dy)))
+    }
+
     pub(crate) fn fill(&mut self, column: usize, row: usize) {
         if let Some(cell) = self.walls.get_mut(row).and_then(|r| r.get_mut(column)) {
             *cell = true;
