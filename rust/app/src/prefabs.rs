@@ -9,7 +9,7 @@ use crate::components::{
     Prompt, RoomId, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
     UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
-use crate::dungeon::{Decor, DecorKind, Direction, Mount};
+use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Mount, ShopLayout};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
@@ -108,6 +108,84 @@ pub(crate) fn prop(
         let _ = world.insert_one(entity, Animation::new(spec.columns, spec.rows, clip));
     }
     entity
+}
+
+const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
+const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
+const CARPET_COLUMNS: usize = 4;
+const CARPET_ROWS: usize = 4;
+const CARPET_LAYER: i32 = -2;
+
+pub(crate) fn pot(
+    world: &mut World,
+    physics: &mut Physics,
+    top_left: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let entity = prop(world, Prop::Pot, top_left, Look::DEFAULT, textures);
+    let collider_center = top_left + POT_COLLIDER_OFFSET + POT_COLLIDER_SIZE / 2.0;
+    physics.add_static_box(collider_center, POT_COLLIDER_SIZE);
+    entity
+}
+
+pub(crate) fn shop(
+    world: &mut World,
+    physics: &mut Physics,
+    layout: &ShopLayout,
+    textures: &Textures,
+) {
+    let carpet = textures.get("ingame/carpet_tilemap.tga");
+    for ((column, row), number) in layout.carpet.tiles() {
+        let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
+        world.spawn((
+            Position(center),
+            Size(Vec2::splat(tilemap::TILE_SIZE)),
+            Color(Vec4::ONE),
+            Sprite::cell(
+                carpet,
+                number % CARPET_COLUMNS,
+                number / CARPET_COLUMNS,
+                CARPET_COLUMNS,
+                CARPET_ROWS,
+            ),
+            Layer(CARPET_LAYER),
+            Lit,
+        ));
+    }
+    for fixture in &layout.fixtures {
+        match fixture.kind {
+            FixtureKind::Shopkeeper => {
+                prop(
+                    world,
+                    Prop::Shopkeeper,
+                    fixture.top_left,
+                    Look::DEFAULT,
+                    textures,
+                );
+            }
+            FixtureKind::Table => {
+                prop(
+                    world,
+                    Prop::ShopTable,
+                    fixture.top_left,
+                    Look::DEFAULT,
+                    textures,
+                );
+            }
+            FixtureKind::Pot => {
+                pot(world, physics, fixture.top_left, textures);
+            }
+            FixtureKind::SlotMachine => {
+                prop(
+                    world,
+                    Prop::SlotMachine,
+                    fixture.top_left,
+                    Look::LOSE_ROW,
+                    textures,
+                );
+            }
+        }
+    }
 }
 
 const SIDE_ROW: usize = 0;
@@ -294,7 +372,7 @@ pub(crate) fn tilemap(
                     tileset.columns(),
                     tileset.rows(),
                 ),
-                Layer(-2),
+                Layer(-3),
                 Lit,
             ));
             if tileset.is_solid(number) {

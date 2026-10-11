@@ -135,7 +135,7 @@ pub(crate) fn is_door_slot(columns: usize, rows: usize, column: usize, row: usiz
     vertical || horizontal
 }
 
-const BUILT_IN: [&str; 29] = [
+const BUILT_IN: [&str; 27] = [
     include_str!("../../../assets/rooms/start_a.json"),
     include_str!("../../../assets/rooms/start_b.json"),
     include_str!("../../../assets/rooms/normal_01.json"),
@@ -157,9 +157,7 @@ const BUILT_IN: [&str; 29] = [
     include_str!("../../../assets/rooms/treasure_a.json"),
     include_str!("../../../assets/rooms/treasure_b.json"),
     include_str!("../../../assets/rooms/treasure_c.json"),
-    include_str!("../../../assets/rooms/shop_a.json"),
-    include_str!("../../../assets/rooms/shop_b.json"),
-    include_str!("../../../assets/rooms/shop_c.json"),
+    include_str!("../../../assets/rooms/shop.json"),
     include_str!("../../../assets/rooms/sacrifice_a.json"),
     include_str!("../../../assets/rooms/sacrifice_b.json"),
     include_str!("../../../assets/rooms/boss_a.json"),

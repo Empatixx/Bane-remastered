@@ -328,4 +328,21 @@ mod tests {
         let second: Vec<Vec<Decor>> = dungeon(17).rooms.into_iter().map(|r| r.decor).collect();
         assert_eq!(first, second);
     }
+
+    #[test]
+    fn shops_are_furnished_by_the_shop_layout_only() {
+        let mut shops = 0;
+        for seed in 0..40 {
+            for room in &dungeon(seed).rooms {
+                let is_shop = room.kind == RoomKind::Shop;
+                assert_eq!(room.shop.is_some(), is_shop);
+                if is_shop {
+                    shops += 1;
+                    assert!(room.decor.is_empty());
+                    assert_eq!((room.columns, room.rows), (20, 16));
+                }
+            }
+        }
+        assert!(shops > 0);
+    }
 }

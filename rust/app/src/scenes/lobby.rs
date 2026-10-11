@@ -19,8 +19,6 @@ use crate::viewport::TARGET;
 use super::{Cursor, Pause, Scene, SceneId, Transition};
 
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
-const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
-const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 
 const PROPS: [(Prop, f32, f32, Look); 24] = [
     (Prop::WeaponRack, 22.75, 0.5, Look::DEFAULT),
@@ -118,16 +116,7 @@ impl Scene for LobbyScene {
         }
         for (x, y) in POTS {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
-            prefabs::prop(
-                &mut self.world,
-                Prop::Pot,
-                top_left,
-                Look::DEFAULT,
-                textures,
-            );
-            let collider_center = top_left + POT_COLLIDER_OFFSET + POT_COLLIDER_SIZE / 2.0;
-            self.physics
-                .add_static_box(collider_center, POT_COLLIDER_SIZE);
+            prefabs::pot(&mut self.world, &mut self.physics, top_left, textures);
         }
         prefabs::scientist(&mut self.world, Vec2::new(25.0, 6.5) * TILE_SIZE, textures);
 

@@ -20,6 +20,9 @@ pub(crate) enum Prop {
     Banner,
     Spike,
     TorchOff,
+    Shopkeeper,
+    ShopTable,
+    SlotMachine,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -62,6 +65,11 @@ impl Look {
     pub(crate) const FLIPPED: Self = Self {
         row: 0,
         flipped: true,
+    };
+
+    pub(crate) const LOSE_ROW: Self = Self {
+        row: 2,
+        flipped: false,
     };
 
     pub(crate) const fn row(row: usize, flipped: bool) -> Self {
@@ -163,6 +171,26 @@ impl Prop {
                 rows: 4,
                 frame: Vec2::new(32.0, 32.0),
                 scale: 2.0,
+                animation: None,
+            },
+            Self::Shopkeeper => PropSpec {
+                texture: "ingame/shopkeeper.tga",
+                columns: 10,
+                rows: 1,
+                frame: Vec2::new(80.0, 90.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 10,
+                    frame_time: 0.17,
+                }),
+            },
+            Self::ShopTable => still("ingame/shoptable.tga", Vec2::new(96.0, 64.0), 1.5),
+            Self::SlotMachine => PropSpec {
+                texture: "ingame/slotmachine.tga",
+                columns: 6,
+                rows: 3,
+                frame: Vec2::new(64.0, 64.0),
+                scale: 3.0,
                 animation: None,
             },
             Self::Scientist => PropSpec {
