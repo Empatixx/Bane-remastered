@@ -4,7 +4,7 @@ use rapier2d::prelude::ColliderHandle;
 
 use crate::assets::Textures;
 use crate::components::{Expiring, Player, Position, RoomId};
-use crate::dungeon::{Dungeon, Rng, RoomKind, ROOM_COLUMNS, ROOM_ROWS};
+use crate::dungeon::{Dungeon, Rng, RoomKind};
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::render::TextureId;
@@ -110,11 +110,7 @@ fn player_room(dungeon: &Dungeon, world: &World) -> Option<usize> {
     let column = (position.x / TILE_SIZE) as usize;
     let row = (position.y / TILE_SIZE) as usize;
     let room = dungeon.room_at(column, row)?;
-    let origin = dungeon.rooms[room].origin;
-    let inside = column >= origin.0 + ENTER_MARGIN
-        && column < origin.0 + ROOM_COLUMNS - ENTER_MARGIN
-        && row >= origin.1 + ENTER_MARGIN
-        && row < origin.1 + ROOM_ROWS - ENTER_MARGIN;
+    let inside = dungeon.rooms[room].contains_inner_tile(column, row, ENTER_MARGIN);
     inside.then_some(room)
 }
 

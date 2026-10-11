@@ -7,7 +7,7 @@ use crate::tilemap::{TileGrid, TILE_SIZE};
 use super::layout::{Direction, Layout, LayoutSpec};
 use super::rng::Rng;
 use super::template::{
-    Cell, RoomKind, Templates, DOOR_COLUMNS, DOOR_ROWS, ROOM_COLUMNS, ROOM_ROWS,
+    door_columns, door_rows, Cell, RoomKind, Templates, CELL_COLUMNS, CELL_ROWS,
 };
 
 pub(crate) const CORRIDOR_LENGTH: usize = 4;
@@ -24,23 +24,43 @@ pub(crate) struct DungeonRoom {
     pub(crate) kind: RoomKind,
     pub(crate) cell: (i32, i32),
     pub(crate) origin: (usize, usize),
+    pub(crate) columns: usize,
+    pub(crate) rows: usize,
     pub(crate) spawns: Vec<(usize, usize)>,
     pub(crate) doors: Vec<DoorSlot>,
 }
 
 impl DungeonRoom {
+    #[cfg(test)]
     pub(crate) fn center(&self, tile_size: f32) -> Vec2 {
         Vec2::new(
-            self.origin.0 as f32 + ROOM_COLUMNS as f32 / 2.0,
-            self.origin.1 as f32 + ROOM_ROWS as f32 / 2.0,
+            self.origin.0 as f32 + self.columns as f32 / 2.0,
+            self.origin.1 as f32 + self.rows as f32 / 2.0,
         ) * tile_size
     }
 
     pub(crate) fn contains_tile(&self, column: usize, row: usize) -> bool {
         column >= self.origin.0
-            && column < self.origin.0 + ROOM_COLUMNS
+            && column < self.origin.0 + self.columns
             && row >= self.origin.1
-            && row < self.origin.1 + ROOM_ROWS
+            && row < self.origin.1 + self.rows
+    }
+
+    pub(crate) fn contains_inner_tile(&self, column: usize, row: usize, margin: usize) -> bool {
+        column >= self.origin.0 + margin
+            && column + margin < self.origin.0 + self.columns
+            && row >= self.origin.1 + margin
+            && row + margin < self.origin.1 + self.rows
+    }
+
+    fn bounds(&self) -> (Vec2, Vec2) {
+        (
+            Vec2::new(self.origin.0 as f32, self.origin.1 as f32),
+            Vec2::new(
+                (self.origin.0 + self.columns) as f32,
+                (self.origin.1 + self.rows) as f32,
+            ),
+        )
     }
 }
 
@@ -89,14 +109,14 @@ impl Dungeon {
             .unwrap_or(0);
         let cells_x = (max_x - min_x) as usize + 1;
         let cells_y = (max_y - min_y) as usize + 1;
-        let columns = cells_x * ROOM_COLUMNS + (cells_x - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
-        let rows = cells_y * ROOM_ROWS + (cells_y - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
+        let columns = cells_x * CELL_COLUMNS + (cells_x - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
+        let rows = cells_y * CELL_ROWS + (cells_y - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
         let mut grid = TileGrid::filled(columns, rows);
 
-        let origin_of = |cell: (i32, i32)| {
+        let cell_origin = |cell: (i32, i32)| {
             (
-                (cell.0 - min_x) as usize * (ROOM_COLUMNS + CORRIDOR_LENGTH) + MARGIN,
-                (cell.1 - min_y) as usize * (ROOM_ROWS + CORRIDOR_LENGTH) + MARGIN,
+                (cell.0 - min_x) as usize * (CELL_COLUMNS + CORRIDOR_LENGTH) + MARGIN,
+                (cell.1 - min_y) as usize * (CELL_ROWS + CORRIDOR_LENGTH) + MARGIN,
             )
         };
 
@@ -105,9 +125,13 @@ impl Dungeon {
             let template = templates
                 .pick(placed.kind, rng)
                 .ok_or_else(|| format!("no template for {:?}", placed.kind))?;
-            let origin = origin_of(placed.cell);
+            let (template_columns, template_rows) = (template.columns(), template.rows());
+            let corner = cell_origin(placed.cell);
+            let origin = (
+                corner.0 + (CELL_COLUMNS - template_columns) / 2,
+                corner.1 + (CELL_ROWS - template_rows) / 2,
+            );
             let mut spawns = Vec::new();
-            let mut doors = Vec::new();
             for (row, line) in template.cells.iter().enumerate() {
                 for (column, cell) in line.iter().enumerate() {
                     let (global_column, global_row) = (origin.0 + column, origin.1 + row);
@@ -119,7 +143,8 @@ impl Dungeon {
                             spawns.push((global_column, global_row));
                         }
                         Cell::Door => {
-                            let direction = door_direction(column, row);
+                            let direction =
+                                door_direction(template_columns, template_rows, column, row);
                             if placed.links.iter().any(|(linked, _)| *linked == direction) {
                                 grid.carve(global_column, global_row);
                             }
@@ -127,16 +152,20 @@ impl Dungeon {
                     }
                 }
             }
-            for &(direction, _) in &placed.links {
-                doors.push(DoorSlot {
+            let doors = placed
+                .links
+                .iter()
+                .map(|&(direction, _)| DoorSlot {
                     direction,
-                    tiles: door_tiles(origin, direction),
-                });
-            }
+                    tiles: door_tiles(origin, template_columns, template_rows, direction),
+                })
+                .collect();
             rooms.push(DungeonRoom {
                 kind: placed.kind,
                 cell: placed.cell,
                 origin,
+                columns: template_columns,
+                rows: template_rows,
                 spawns,
                 doors,
             });
@@ -145,11 +174,40 @@ impl Dungeon {
         for (index, placed) in layout.rooms.iter().enumerate() {
             for &(direction, other) in &placed.links {
                 if index < other {
-                    carve_corridor(&mut grid, rooms[index].origin, direction);
+                    carve_corridor(&mut grid, &rooms[index], &rooms[other], direction);
                 }
             }
         }
         Ok(Self { grid, rooms })
+    }
+
+    pub(crate) fn start_position(&self) -> Option<Vec2> {
+        let room = self.start_room()?;
+        let center = (
+            room.origin.0 + room.columns / 2,
+            room.origin.1 + room.rows / 2,
+        );
+        let clear = |column: usize, row: usize| {
+            (-1..=1).all(|dy| {
+                (-1..=1).all(|dx| !self.grid.is_wall(column as isize + dx, row as isize + dy))
+            })
+        };
+        let reach = room.columns.max(room.rows);
+        for radius in 0..reach {
+            for dy in -(radius as isize)..=(radius as isize) {
+                for dx in -(radius as isize)..=(radius as isize) {
+                    if dx.abs().max(dy.abs()) != radius as isize {
+                        continue;
+                    }
+                    let column = (center.0 as isize + dx) as usize;
+                    let row = (center.1 as isize + dy) as usize;
+                    if room.contains_inner_tile(column, row, 2) && clear(column, row) {
+                        return Some(Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE);
+                    }
+                }
+            }
+        }
+        None
     }
 
     pub(crate) fn start_room(&self) -> Option<&DungeonRoom> {
@@ -157,19 +215,9 @@ impl Dungeon {
     }
 
     pub(crate) fn camera_region(&self, column: usize, row: usize) -> Option<(Vec2, Vec2)> {
-        let tile = TILE_SIZE;
-        let rect = |room: &DungeonRoom| {
-            (
-                Vec2::new(room.origin.0 as f32, room.origin.1 as f32),
-                Vec2::new(
-                    (room.origin.0 + ROOM_COLUMNS) as f32,
-                    (room.origin.1 + ROOM_ROWS) as f32,
-                ),
-            )
-        };
         if let Some(index) = self.room_at(column, row) {
-            let (min, max) = rect(&self.rooms[index]);
-            return Some((min * tile, max * tile));
+            let (min, max) = self.rooms[index].bounds();
+            return Some((min * TILE_SIZE, max * TILE_SIZE));
         }
         let point = Vec2::new(column as f32 + 0.5, row as f32 + 0.5);
         for room in &self.rooms {
@@ -177,11 +225,11 @@ impl Dungeon {
                 let Some(other) = self.neighbour(room, door.direction) else {
                     continue;
                 };
-                let (a_min, a_max) = rect(room);
-                let (b_min, b_max) = rect(other);
+                let (a_min, a_max) = room.bounds();
+                let (b_min, b_max) = other.bounds();
                 let (min, max) = (a_min.min(b_min), a_max.max(b_max));
                 if point.cmpge(min).all() && point.cmplt(max).all() {
-                    return Some((min * tile, max * tile));
+                    return Some((min * TILE_SIZE, max * TILE_SIZE));
                 }
             }
         }
@@ -201,43 +249,48 @@ impl Dungeon {
     }
 }
 
-fn door_direction(column: usize, row: usize) -> Direction {
+fn door_direction(columns: usize, rows: usize, column: usize, row: usize) -> Direction {
     if row == 0 {
         Direction::Up
-    } else if row == ROOM_ROWS - 1 {
+    } else if row == rows - 1 {
         Direction::Down
     } else if column == 0 {
         Direction::Left
     } else {
+        debug_assert_eq!(column, columns - 1);
         Direction::Right
     }
 }
 
-fn door_tiles(origin: (usize, usize), direction: Direction) -> [(usize, usize); 2] {
+fn door_tiles(
+    origin: (usize, usize),
+    columns: usize,
+    rows: usize,
+    direction: Direction,
+) -> [(usize, usize); 2] {
     match direction {
-        Direction::Up => DOOR_COLUMNS.map(|column| (origin.0 + column, origin.1)),
-        Direction::Down => DOOR_COLUMNS.map(|column| (origin.0 + column, origin.1 + ROOM_ROWS - 1)),
-        Direction::Left => DOOR_ROWS.map(|row| (origin.0, origin.1 + row)),
-        Direction::Right => DOOR_ROWS.map(|row| (origin.0 + ROOM_COLUMNS - 1, origin.1 + row)),
+        Direction::Up => door_columns(columns).map(|column| (origin.0 + column, origin.1)),
+        Direction::Down => {
+            door_columns(columns).map(|column| (origin.0 + column, origin.1 + rows - 1))
+        }
+        Direction::Left => door_rows(rows).map(|row| (origin.0, origin.1 + row)),
+        Direction::Right => door_rows(rows).map(|row| (origin.0 + columns - 1, origin.1 + row)),
     }
 }
 
-fn carve_corridor(grid: &mut TileGrid, origin: (usize, usize), direction: Direction) {
-    for step in 0..CORRIDOR_LENGTH {
-        for lane in 0..2 {
-            let (column, row) = match direction {
-                Direction::Right => (origin.0 + ROOM_COLUMNS + step, origin.1 + DOOR_ROWS[lane]),
-                Direction::Left => (
-                    origin.0 - CORRIDOR_LENGTH + step,
-                    origin.1 + DOOR_ROWS[lane],
-                ),
-                Direction::Down => (origin.0 + DOOR_COLUMNS[lane], origin.1 + ROOM_ROWS + step),
-                Direction::Up => (
-                    origin.0 + DOOR_COLUMNS[lane],
-                    origin.1 - CORRIDOR_LENGTH + step,
-                ),
-            };
-            grid.carve(column, row);
+fn carve_corridor(grid: &mut TileGrid, from: &DungeonRoom, to: &DungeonRoom, direction: Direction) {
+    let from_tiles = door_tiles(from.origin, from.columns, from.rows, direction);
+    let to_tiles = door_tiles(to.origin, to.columns, to.rows, direction.opposite());
+    for lane in 0..2 {
+        let (start, end) = (from_tiles[lane], to_tiles[lane]);
+        let (columns, rows) = (
+            start.0.min(end.0)..=start.0.max(end.0),
+            start.1.min(end.1)..=start.1.max(end.1),
+        );
+        for column in columns {
+            for row in rows.clone() {
+                grid.carve(column, row);
+            }
         }
     }
 }
@@ -276,20 +329,50 @@ mod tests {
 
     #[test]
     fn every_room_is_walkable_from_the_start_room() {
-        for seed in 0..60 {
+        for seed in 0..80 {
             let dungeon = dungeon(seed);
             let start = dungeon.start_room().expect("there is a start room");
-            let from = (start.origin.0 + 2, start.origin.1 + 2);
+            let from = start
+                .doors
+                .first()
+                .map(|door| door.tiles[0])
+                .expect("a door");
             let seen = reachable_floor(&dungeon, from);
             for room in &dungeon.rooms {
-                let center = (room.origin.0 + ROOM_COLUMNS / 2, room.origin.1 + 2);
-                assert!(
-                    seen[center.1][center.0],
-                    "seed {seed}: {:?} room is not reachable",
-                    room.kind
-                );
+                for door in &room.doors {
+                    for &(column, row) in &door.tiles {
+                        assert!(seen[row][column], "seed {seed}: unreachable door");
+                    }
+                }
                 for &(column, row) in &room.spawns {
                     assert!(seen[row][column], "seed {seed}: unreachable spawn");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn rooms_come_in_different_sizes_inside_the_same_cell_grid() {
+        let sizes: std::collections::HashSet<(usize, usize)> = (0..40)
+            .flat_map(|seed| dungeon(seed).rooms)
+            .map(|room| (room.columns, room.rows))
+            .collect();
+        assert!(sizes.len() >= 10, "only {} sizes", sizes.len());
+    }
+
+    #[test]
+    fn rooms_never_overlap_each_other() {
+        for seed in 0..60 {
+            let dungeon = dungeon(seed);
+            for (index, a) in dungeon.rooms.iter().enumerate() {
+                for b in dungeon.rooms.iter().skip(index + 1) {
+                    let (a_min, a_max) = a.bounds();
+                    let (b_min, b_max) = b.bounds();
+                    let apart = a_max.x <= b_min.x
+                        || b_max.x <= a_min.x
+                        || a_max.y <= b_min.y
+                        || b_max.y <= a_min.y;
+                    assert!(apart, "seed {seed}");
                 }
             }
         }
@@ -301,7 +384,7 @@ mod tests {
         for room in &dungeon.rooms {
             for direction in Direction::ALL {
                 let linked = room.doors.iter().any(|door| door.direction == direction);
-                let tiles = door_tiles(room.origin, direction);
+                let tiles = door_tiles(room.origin, room.columns, room.rows, direction);
                 for (column, row) in tiles {
                     assert_eq!(!dungeon.grid.is_wall(column as isize, row as isize), linked);
                 }
@@ -316,6 +399,7 @@ mod tests {
             for door in &room.doors {
                 for &(column, row) in &door.tiles {
                     assert!(room.contains_tile(column, row));
+                    assert!(!room.contains_inner_tile(column, row, 1));
                 }
             }
         }
@@ -331,7 +415,7 @@ mod tests {
             .expect("inside the room");
         assert_eq!(
             inside.1 - inside.0,
-            Vec2::new(ROOM_COLUMNS as f32, ROOM_ROWS as f32) * TILE_SIZE
+            Vec2::new(start.columns as f32, start.rows as f32) * TILE_SIZE
         );
 
         let (column, row) = door.tiles[0];
@@ -352,17 +436,21 @@ mod tests {
     }
 
     #[test]
-    fn the_start_room_is_the_one_the_player_begins_in() {
-        let dungeon = dungeon(3);
-        let start = dungeon.start_room().expect("there is a start room");
-        let center = start.center(64.0);
-        let column = (center.x / 64.0) as usize;
-        let row = (center.y / 64.0) as usize;
-        assert_eq!(
-            dungeon
-                .room_at(column, row)
-                .map(|index| dungeon.rooms[index].kind),
-            Some(RoomKind::Start)
-        );
+    fn the_player_starts_on_clear_floor_inside_the_start_room() {
+        for seed in 0..60 {
+            let dungeon = dungeon(seed);
+            let position = dungeon.start_position().expect("a start position");
+            let (column, row) = (
+                (position.x / TILE_SIZE) as usize,
+                (position.y / TILE_SIZE) as usize,
+            );
+            assert_eq!(
+                dungeon
+                    .room_at(column, row)
+                    .map(|index| dungeon.rooms[index].kind),
+                Some(RoomKind::Start)
+            );
+            assert!(!dungeon.grid.is_wall(column as isize, row as isize));
+        }
     }
 }
