@@ -148,6 +148,10 @@ impl Font {
         })
     }
 
+    pub(crate) fn line_height(&self) -> f32 {
+        self.ascent - self.descent
+    }
+
     pub(crate) fn width(&self, text: &str) -> f32 {
         text.chars()
             .filter_map(|character| self.glyphs.get(&character))

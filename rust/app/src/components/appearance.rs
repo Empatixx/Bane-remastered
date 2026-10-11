@@ -32,6 +32,10 @@ impl Sprite {
         }
     }
 
+    pub(crate) fn flipped(uv: [f32; 4]) -> [f32; 4] {
+        [uv[2], uv[1], uv[0], uv[3]]
+    }
+
     pub(crate) fn cell_uv(column: usize, row: usize, columns: usize, rows: usize) -> [f32; 4] {
         let (columns, rows) = (columns as f32, rows as f32);
         [

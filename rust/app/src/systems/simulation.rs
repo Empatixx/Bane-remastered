@@ -19,6 +19,7 @@ pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
 mod tests {
     use glam::Vec2;
 
+    use crate::assets::Textures;
     use crate::prefabs;
 
     use super::*;
@@ -42,7 +43,12 @@ mod tests {
     fn free_player_moves_with_its_velocity() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        let player = prefabs::player(&mut world, &mut physics, Vec2::new(100.0, 100.0));
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 100.0),
+            &Textures::default(),
+        );
         if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
             velocity.0 = Vec2::new(60.0, 0.0);
         }
@@ -59,7 +65,12 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         physics.add_walls(&[(3, 0)], TILE);
-        let player = prefabs::player(&mut world, &mut physics, Vec2::new(100.0, 32.0));
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 32.0),
+            &Textures::default(),
+        );
         if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
             velocity.0 = Vec2::new(240.0, 0.0);
         }
@@ -76,7 +87,12 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         physics.add_walls(&[(3, 0), (3, 1), (3, 2), (3, 3)], TILE);
-        let player = prefabs::player(&mut world, &mut physics, Vec2::new(100.0, 32.0));
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 32.0),
+            &Textures::default(),
+        );
         if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
             velocity.0 = Vec2::new(170.0, 170.0);
         }
@@ -92,7 +108,12 @@ mod tests {
     fn player_and_enemy_pass_through_each_other() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        let player = prefabs::player(&mut world, &mut physics, Vec2::new(100.0, 100.0));
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 100.0),
+            &Textures::default(),
+        );
         let rat = prefabs::rat(
             &mut world,
             &mut physics,

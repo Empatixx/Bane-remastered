@@ -1,38 +1,120 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
+use crate::assets::{Textures, PLAYER};
 use crate::components::{
-    Animation, Bullet, Button, Chase, Clip, Color, Enemy, Health, Layer, OnClick, Player, Portal,
-    Position, Size, Sprite, Text, UiAction, Velocity, Weapon, BULLET_COLUMNS, BULLET_FLIGHT,
-    BULLET_ROWS,
+    Animation, Bullet, Button, Chase, Clip, Color, Enemy, Health, Interactable, Interaction, Layer,
+    OnClick, Player, Position, Prompt, Size, Sprite, Text, UiAction, Velocity, Weapon,
+    BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
 };
 use crate::physics::Physics;
+use crate::props::{Look, Prop};
 use crate::render::{FontSize, TextureId};
+use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 use crate::tilemap::{self, TileGrid, Tileset};
 
-pub(crate) fn player(world: &mut World, physics: &mut Physics, position: Vec2) -> Entity {
-    let size = Vec2::new(32.0, 32.0);
+pub(crate) const PLAYER_SIZE: Vec2 = Vec2::new(32.0, 76.0);
+
+pub(crate) fn player(
+    world: &mut World,
+    physics: &mut Physics,
+    position: Vec2,
+    textures: &Textures,
+) -> Entity {
     let entity = world.spawn((
         Player,
         Position(position),
         Velocity::default(),
         Weapon::pistol(),
-        Size(size),
-        Color(Vec4::new(0.95, 0.85, 0.2, 1.0)),
+        Size(PLAYER_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(
+            textures.get(PLAYER),
+            0,
+            IDLE.row,
+            PLAYER_COLUMNS,
+            PLAYER_ROWS,
+        ),
+        Animation::new(PLAYER_COLUMNS, PLAYER_ROWS, IDLE),
         Layer(1),
     ));
-    let body = physics.add_player(entity, position, size);
+    let body = physics.add_player(entity, position, PLAYER_SIZE);
     let _ = world.insert_one(entity, body);
     entity
 }
 
-pub(crate) fn portal(world: &mut World, position: Vec2) -> Entity {
-    world.spawn((
-        Portal,
-        Position(position),
-        Size(Vec2::new(48.0, 72.0)),
-        Color(Vec4::new(0.6, 0.3, 0.9, 1.0)),
-    ))
+pub(crate) fn prop(
+    world: &mut World,
+    prop: Prop,
+    top_left: Vec2,
+    look: Look,
+    textures: &Textures,
+) -> Entity {
+    let spec = prop.spec();
+    let size = spec.size();
+    let texture = textures.get(spec.texture);
+    let mut sprite = Sprite::cell(texture, 0, look.row, spec.columns, spec.rows);
+    if look.flipped {
+        sprite.uv = Sprite::flipped(sprite.uv);
+    }
+    let entity = world.spawn((
+        Position(top_left + size / 2.0),
+        Size(size),
+        Color(Vec4::ONE),
+        sprite,
+        Layer(-1),
+    ));
+    if let Some(animated) = spec.animation {
+        let clip = Clip {
+            row: look.row,
+            frames: animated.frames,
+            frame_time: animated.frame_time,
+            looping: true,
+            flipped: look.flipped,
+        };
+        let _ = world.insert_one(entity, Animation::new(spec.columns, spec.rows, clip));
+    }
+    entity
+}
+
+const PROMPT_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+
+pub(crate) fn portal(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::Portal, top_left, Look::DEFAULT, textures);
+    let _ = world.insert(
+        entity,
+        (
+            Interactable {
+                action: Interaction::EnterPortal,
+            },
+            Prompt {
+                text: "Press E to enter the portal",
+                gap: 0.0,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+    entity
+}
+
+pub(crate) fn scientist(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::Scientist, top_left, Look::DEFAULT, textures);
+    let _ = world.insert(
+        entity,
+        (
+            Interactable {
+                action: Interaction::Upgrade,
+            },
+            Prompt {
+                text: "Press E to upgrade",
+                gap: 30.0,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+    entity
 }
 
 const SPINNER_FRAMES: usize = 8;
@@ -42,6 +124,7 @@ const SPINNER: Clip = Clip {
     frames: SPINNER_FRAMES,
     frame_time: 0.1,
     looping: true,
+    flipped: false,
 };
 
 pub(crate) fn spinner(world: &mut World, position: Vec2, texture: TextureId) -> Entity {
@@ -170,12 +253,14 @@ const RAT_WALK: Clip = Clip {
     frames: 4,
     frame_time: 0.12,
     looping: true,
+    flipped: false,
 };
 const RAT_DEATH: Clip = Clip {
     row: 1,
     frames: 3,
     frame_time: 0.15,
     looping: false,
+    flipped: false,
 };
 
 pub(crate) fn rat(

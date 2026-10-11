@@ -67,6 +67,14 @@ impl Physics {
         }
     }
 
+    pub(crate) fn add_static_box(&mut self, center: Vec2, size: Vec2) {
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .translation(to_rapier(center))
+            .collision_groups(groups::WALLS)
+            .user_data(WALL_OWNER);
+        self.world.colliders.insert(collider);
+    }
+
     pub(crate) fn add_player(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
         let half = size / 2.0 - Vec2::splat(PLAYER_CORNER_RADIUS);
         let body = RigidBodyBuilder::dynamic()

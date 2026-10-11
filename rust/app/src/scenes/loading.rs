@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::World;
 
-use crate::assets::Assets;
+use crate::assets::{Assets, LOADING_BACKGROUND, LOADING_SPINNER};
 use crate::input::Input;
 use crate::prefabs;
 use crate::viewport::TARGET;
@@ -29,13 +29,13 @@ impl Scene for LoadingScene {
             &mut self.world,
             TARGET / 2.0,
             TARGET,
-            assets.textures.loading_background,
+            assets.textures.get(LOADING_BACKGROUND),
             -1,
         );
         prefabs::spinner(
             &mut self.world,
             SPINNER_CENTER,
-            assets.textures.loading_spinner,
+            assets.textures.get(LOADING_SPINNER),
         );
     }
 

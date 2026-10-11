@@ -44,6 +44,12 @@ impl Input {
         self.clicked = false;
     }
 
+    #[cfg(test)]
+    pub(crate) fn press(&mut self, code: KeyCode) {
+        self.held.insert(code);
+        self.pressed.insert(code);
+    }
+
     pub(crate) fn just_pressed(&self, code: KeyCode) -> bool {
         self.pressed.contains(&code)
     }

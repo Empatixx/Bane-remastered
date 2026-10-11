@@ -1,9 +1,10 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct Clip {
     pub(crate) row: usize,
     pub(crate) frames: usize,
     pub(crate) frame_time: f32,
     pub(crate) looping: bool,
+    pub(crate) flipped: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -27,6 +28,16 @@ impl Animation {
     pub(crate) fn play(&mut self, clip: Clip) {
         self.clip = clip;
         self.time = 0.0;
+    }
+
+    pub(crate) fn switch_to(&mut self, clip: Clip) {
+        if self.clip != clip {
+            self.play(clip);
+        }
+    }
+
+    pub(crate) fn flipped(&self) -> bool {
+        self.clip.flipped
     }
 
     pub(crate) fn advance(&mut self, dt: f32) {
@@ -60,6 +71,7 @@ mod tests {
         frames: 4,
         frame_time: 0.1,
         looping: false,
+        flipped: false,
     };
 
     #[test]

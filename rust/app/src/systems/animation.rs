@@ -5,12 +5,17 @@ use crate::components::{Animation, Expiring, Sprite};
 pub(crate) fn animate(world: &mut World, dt: f32) {
     for (animation, sprite) in world.query_mut::<(&mut Animation, &mut Sprite)>() {
         animation.advance(dt);
-        sprite.uv = Sprite::cell_uv(
+        let uv = Sprite::cell_uv(
             animation.frame(),
             animation.row(),
             animation.columns,
             animation.rows,
         );
+        sprite.uv = if animation.flipped() {
+            Sprite::flipped(uv)
+        } else {
+            uv
+        };
     }
 }
 

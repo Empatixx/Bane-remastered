@@ -8,6 +8,7 @@ pub(crate) const BULLET_FLIGHT: Clip = Clip {
     frames: 4,
     frame_time: 0.07,
     looping: true,
+    flipped: false,
 };
 
 pub(crate) const BULLET_IMPACT: Clip = Clip {
@@ -15,6 +16,7 @@ pub(crate) const BULLET_IMPACT: Clip = Clip {
     frames: 4,
     frame_time: 0.07,
     looping: false,
+    flipped: false,
 };
 
 #[derive(Debug, Clone, Copy)]

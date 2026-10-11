@@ -3,7 +3,7 @@ use std::ops::ControlFlow;
 use glam::Vec2;
 use winit::event::{ElementState, KeyEvent, MouseButton};
 
-use crate::assets::Assets;
+use crate::assets::{Assets, CURSOR};
 use crate::input::Input;
 use crate::render::{Draw, Quad};
 use crate::scenes::Scenes;
@@ -58,7 +58,7 @@ impl Game {
         if self.assets.is_loaded() {
             let top_left = self.input.mouse() - CURSOR_HOTSPOT;
             draws.push(Draw {
-                texture: self.assets.textures.cursor,
+                texture: self.assets.textures.get(CURSOR),
                 quad: Quad::new(top_left + CURSOR_SIZE / 2.0, CURSOR_SIZE, glam::Vec4::ONE),
             });
         }

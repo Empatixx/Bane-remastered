@@ -96,6 +96,7 @@ pub(crate) fn bullet_hits(world: &mut World, physics: &mut Physics) {
 mod tests {
     use winit::event::{ElementState, MouseButton};
 
+    use crate::assets::Textures;
     use crate::systems::simulate;
 
     use super::*;
@@ -110,7 +111,12 @@ mod tests {
     fn setup() -> (World, Physics) {
         let mut world = World::new();
         let mut physics = Physics::new();
-        prefabs::player(&mut world, &mut physics, Vec2::new(100.0, 100.0));
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 100.0),
+            &Textures::default(),
+        );
         (world, physics)
     }
 

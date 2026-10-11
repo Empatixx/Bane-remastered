@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -8,17 +8,59 @@ use crate::tilemap::Tileset;
 
 const FONT_FILE: &str = "fonts/PixelFJVerdana12pt.ttf";
 
-#[derive(Debug, Clone, Copy, Default)]
+pub(crate) const LOADING_BACKGROUND: &str = "loading/loading.tga";
+pub(crate) const LOADING_SPINNER: &str = "loading/loading_image.tga";
+pub(crate) const MENU_BACKGROUND: &str = "menu/bg.png";
+pub(crate) const LOGO: &str = "menu/logo.tga";
+pub(crate) const BUTTON: &str = "menu/Menu_bar2.tga";
+pub(crate) const CURSOR: &str = "ingame/cursor.tga";
+pub(crate) const TILESET: &str = "ingame/tileset_2.png";
+pub(crate) const BULLET: &str = "ingame/bullet.tga";
+pub(crate) const RAT: &str = "ingame/rat.tga";
+pub(crate) const PLAYER: &str = "ingame/player.tga";
+
+const GAME_TEXTURES: &[&str] = &[
+    MENU_BACKGROUND,
+    LOGO,
+    BUTTON,
+    CURSOR,
+    TILESET,
+    BULLET,
+    RAT,
+    PLAYER,
+    "ingame/portal.tga",
+    "ingame/torch.tga",
+    "ingame/bones.tga",
+    "ingame/cobweb.tga",
+    "ingame/armorstand.tga",
+    "ingame/swords.tga",
+    "ingame/taskboard.tga",
+    "ingame/craftingtable.tga",
+    "ingame/boxes.tga",
+    "ingame/chains.tga",
+    "ingame/rock.tga",
+    "ingame/bookshelf.tga",
+    "ingame/maptable.tga",
+    "ingame/pot.tga",
+    "ingame/scientist.tga",
+];
+
+#[derive(Debug, Clone, Default)]
 pub(crate) struct Textures {
-    pub(crate) loading_background: TextureId,
-    pub(crate) loading_spinner: TextureId,
-    pub(crate) menu_background: TextureId,
-    pub(crate) logo: TextureId,
-    pub(crate) button: TextureId,
-    pub(crate) cursor: TextureId,
-    pub(crate) tileset: TextureId,
-    pub(crate) bullet: TextureId,
-    pub(crate) rat: TextureId,
+    ids: HashMap<&'static str, TextureId>,
+}
+
+impl Textures {
+    pub(crate) fn get(&self, name: &str) -> TextureId {
+        self.ids.get(name).copied().unwrap_or_else(|| {
+            tracing::warn!(name, "texture was not loaded");
+            TextureId::WHITE
+        })
+    }
+
+    fn insert(&mut self, name: &'static str, id: TextureId) {
+        self.ids.insert(name, id);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -50,13 +92,7 @@ impl Assets {
 
 #[derive(Debug, Clone, Copy)]
 enum Step {
-    MenuBackground,
-    Logo,
-    Button,
-    Cursor,
-    Tileset,
-    Bullet,
-    Rat,
+    Texture(&'static str),
     Font(FontSize),
 }
 
@@ -67,20 +103,10 @@ pub(crate) struct Loader {
 
 impl Loader {
     pub(crate) fn start(gpu: &mut Gpu, assets: &mut Assets) -> Result<Self, Box<dyn Error>> {
-        let root = root();
-        assets.textures.loading_background =
-            gpu.load_texture(&root.join("textures/loading/loading.tga"))?;
-        assets.textures.loading_spinner =
-            gpu.load_texture(&root.join("textures/loading/loading_image.tga"))?;
-        let mut pending = VecDeque::from([
-            Step::MenuBackground,
-            Step::Logo,
-            Step::Button,
-            Step::Cursor,
-            Step::Tileset,
-            Step::Bullet,
-            Step::Rat,
-        ]);
+        load_texture(gpu, &mut assets.textures, LOADING_BACKGROUND)?;
+        load_texture(gpu, &mut assets.textures, LOADING_SPINNER)?;
+        let mut pending: VecDeque<Step> =
+            GAME_TEXTURES.iter().copied().map(Step::Texture).collect();
         pending.extend(FontSize::ALL.map(Step::Font));
         Ok(Self { pending })
     }
@@ -97,25 +123,25 @@ impl Loader {
         let Some(step) = self.pending.pop_front() else {
             return Ok(());
         };
-        let root = root();
-        let mut texture = |path: &str| gpu.load_texture(&root.join(path));
         match step {
-            Step::MenuBackground => {
-                assets.textures.menu_background = texture("textures/menu/bg.png")?
-            }
-            Step::Logo => assets.textures.logo = texture("textures/menu/logo.tga")?,
-            Step::Button => assets.textures.button = texture("textures/menu/Menu_bar2.tga")?,
-            Step::Cursor => assets.textures.cursor = texture("textures/ingame/cursor.tga")?,
-            Step::Tileset => assets.textures.tileset = texture("textures/ingame/tileset_2.png")?,
-            Step::Bullet => assets.textures.bullet = texture("textures/ingame/bullet.tga")?,
-            Step::Rat => assets.textures.rat = texture("textures/ingame/rat.tga")?,
-            Step::Font(size) => assets.fonts.load(gpu, &root.join(FONT_FILE), size)?,
+            Step::Texture(name) => load_texture(gpu, &mut assets.textures, name)?,
+            Step::Font(size) => assets.fonts.load(gpu, &root().join(FONT_FILE), size)?,
         }
         if self.pending.is_empty() {
             assets.mark_loaded();
         }
         Ok(())
     }
+}
+
+fn load_texture(
+    gpu: &mut Gpu,
+    textures: &mut Textures,
+    name: &'static str,
+) -> Result<(), Box<dyn Error>> {
+    let id = gpu.load_texture(&root().join("textures").join(name))?;
+    textures.insert(name, id);
+    Ok(())
 }
 
 fn root() -> PathBuf {

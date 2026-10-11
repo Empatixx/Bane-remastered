@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::World;
 
-use crate::components::{Color, Layer, Position, Size, Sprite, Text};
+use crate::components::{Color, InRange, Layer, Position, Prompt, Size, Sprite, Text};
 use crate::render::{Draw, Fonts, Quad, TextureId};
 
 pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<Draw> {
@@ -31,6 +31,20 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Vec<D
                 .draw_centered(&text.content, position.0 - camera, text.color)
         {
             layered.push((layer, draw));
+        }
+    }
+    for (position, size, prompt) in world
+        .query::<(&Position, &Size, &Prompt)>()
+        .with::<&InRange>()
+        .iter()
+    {
+        let line = fonts.get(prompt.size);
+        let center = Vec2::new(
+            position.0.x,
+            position.0.y + size.0.y / 2.0 + prompt.gap + line.line_height() / 2.0,
+        ) - camera;
+        for draw in line.draw_centered(prompt.text, center, prompt.color) {
+            layered.push((Layer(3), draw));
         }
     }
     layered.sort_by_key(|(layer, _)| *layer);

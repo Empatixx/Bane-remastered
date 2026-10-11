@@ -49,6 +49,7 @@ pub(crate) fn reap_dead(world: &mut World, physics: &mut Physics) {
 
 #[cfg(test)]
 mod tests {
+    use crate::assets::Textures;
     use crate::prefabs;
     use crate::render::TextureId;
 
@@ -57,7 +58,12 @@ mod tests {
     fn arena() -> (World, Physics) {
         let mut world = World::new();
         let mut physics = Physics::new();
-        prefabs::player(&mut world, &mut physics, Vec2::new(0.0, 0.0));
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(0.0, 0.0),
+            &Textures::default(),
+        );
         (world, physics)
     }
 

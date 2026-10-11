@@ -1,11 +1,13 @@
 mod app;
 mod assets;
+mod camera;
 mod components;
 mod game;
 mod geometry;
 mod input;
 mod physics;
 mod prefabs;
+mod props;
 mod render;
 mod scenes;
 mod systems;

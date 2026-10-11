@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::World;
 
-use crate::assets::Assets;
+use crate::assets::{Assets, BUTTON, LOGO, MENU_BACKGROUND};
 use crate::components::UiAction;
 use crate::input::Input;
 use crate::prefabs;
@@ -38,14 +38,14 @@ impl Scene for MenuScene {
             &mut self.world,
             TARGET / 2.0,
             TARGET,
-            assets.textures.menu_background,
+            assets.textures.get(MENU_BACKGROUND),
             -1,
         );
         prefabs::sprite(
             &mut self.world,
             Vec2::new(x, LOGO_TOP_LEFT_Y + LOGO_SIZE.y / 2.0),
             LOGO_SIZE,
-            assets.textures.logo,
+            assets.textures.get(LOGO),
             0,
         );
         for (y, label, action) in BUTTON_ROWS {
@@ -54,7 +54,7 @@ impl Scene for MenuScene {
                 Vec2::new(x, y),
                 label,
                 action,
-                assets.textures.button,
+                assets.textures.get(BUTTON),
             );
         }
     }
