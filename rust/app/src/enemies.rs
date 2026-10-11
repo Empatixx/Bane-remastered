@@ -13,6 +13,14 @@ pub(crate) const HEAL_RADIUS: f32 = 200.0;
 pub(crate) const SMASH_COOLDOWN: f32 = 2.0;
 pub(crate) const SMASH_BULLETS: usize = 5;
 pub(crate) const SHOOT_COOLDOWN: f32 = 3.0;
+pub(crate) const HATCH_COOLDOWN: f32 = 2.5;
+pub(crate) const WEB_COOLDOWN: f32 = 5.0;
+pub(crate) const ARMAGEDDON_COOLDOWN: f32 = 0.15;
+pub(crate) const ARMAGEDDON_TURN: f32 = 0.25;
+pub(crate) const KING_SMASH_BULLETS: usize = 25;
+pub(crate) const COMMON_SPAWN_SECONDS: f32 = 2.0;
+pub(crate) const BOSS_SPAWN_SECONDS: f32 = 1.5;
+pub(crate) const FINAL_FLOOR: u32 = 5;
 
 pub(crate) fn speed_from_force(force: f32, size: Vec2) -> f32 {
     force / (DAMPING * size.x * size.y)
@@ -22,6 +30,7 @@ pub(crate) fn speed_from_force(force: f32, size: Vec2) -> f32 {
 pub(crate) enum ProjectileKind {
     Green,
     Red,
+    Purple,
     EyeWatcher,
 }
 
@@ -76,6 +85,7 @@ impl ProjectileKind {
         match self {
             Self::Green => slime_bullet("ingame/green_slimebullet.tga", [0.0, 200.0, 0.0]),
             Self::Red => slime_bullet("ingame/red_slimebullet.tga", [255.0, 215.0, 0.0]),
+            Self::Purple => slime_bullet("ingame/purple_slimebullet.tga", [255.0, 0.0, 255.0]),
             Self::EyeWatcher => ProjectileSpec {
                 texture: "ingame/eye_watcher_projectile.tga",
                 columns: 3,
@@ -122,6 +132,14 @@ pub(crate) enum EnemyKind {
     GreenSpiderling,
     PurpleSpiderling,
     EyeWatcher,
+    Spider,
+    KingSlime,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Role {
+    Common,
+    Boss(&'static str),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -132,6 +150,8 @@ pub(crate) enum Behavior {
     Burst(ProjectileKind),
     Shoots(ProjectileKind),
     HealsKin,
+    SpiderBoss,
+    KingSlimeBoss,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -144,10 +164,13 @@ pub(crate) struct EnemySpec {
     pub(crate) idle_frames: usize,
     pub(crate) idle_time: f32,
     pub(crate) death: Option<(usize, f32)>,
+    pub(crate) death_row: usize,
     pub(crate) health: i32,
     pub(crate) damage: i32,
     pub(crate) force: f32,
     pub(crate) min_floor: u32,
+    pub(crate) max_floor: u32,
+    pub(crate) role: Role,
     pub(crate) behavior: Behavior,
     pub(crate) kin: bool,
 }
@@ -174,7 +197,7 @@ impl EnemySpec {
     pub(crate) fn death_clip(&self) -> Clip {
         match self.death {
             Some((frames, frame_time)) => Clip {
-                row: 1,
+                row: self.death_row,
                 frames,
                 frame_time,
                 looping: false,
@@ -206,10 +229,13 @@ const fn spec(
         idle_frames: idle.0,
         idle_time: idle.1,
         death,
+        death_row: 1,
         health: stats.0,
         damage: stats.1,
         force: stats.2,
         min_floor: 0,
+        max_floor: u32::MAX,
+        role: Role::Common,
         behavior: Behavior::Plain,
         kin: false,
     }
@@ -232,7 +258,7 @@ const fn spiderling(texture: &'static str, rows: usize, stats: (i32, i32, f32)) 
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 11] = [
+    pub(crate) const ALL: [Self; 13] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -244,6 +270,8 @@ impl EnemyKind {
         Self::GreenSpiderling,
         Self::PurpleSpiderling,
         Self::EyeWatcher,
+        Self::Spider,
+        Self::KingSlime,
     ];
 
     pub(crate) fn spec(self) -> EnemySpec {
@@ -331,6 +359,36 @@ impl EnemyKind {
             Self::PurpleSpiderling => {
                 spiderling("ingame/purple_spiderling.tga", 3, (3, 1, 6_500_000.0))
             }
+            Self::Spider => EnemySpec {
+                min_floor: 1,
+                max_floor: 1,
+                death_row: 2,
+                role: Role::Boss("Spider king"),
+                behavior: Behavior::SpiderBoss,
+                ..spec(
+                    "ingame/spider.tga",
+                    (5, 3),
+                    (64.0, 40.0),
+                    3.0,
+                    (5, 0.12),
+                    Some((3, 0.15)),
+                    (75, 2, 32_500_000.0),
+                )
+            },
+            Self::KingSlime => EnemySpec {
+                min_floor: 2,
+                role: Role::Boss("King slime"),
+                behavior: Behavior::KingSlimeBoss,
+                ..spec(
+                    "ingame/kingslime.tga",
+                    (6, 2),
+                    (64.0, 48.0),
+                    4.0,
+                    (4, 0.175),
+                    Some((6, 0.065)),
+                    (90, 2, 10_000_000.0),
+                )
+            },
             Self::EyeWatcher => EnemySpec {
                 min_floor: 3,
                 behavior: Behavior::Shoots(ProjectileKind::EyeWatcher),
@@ -348,7 +406,22 @@ impl EnemyKind {
     }
 
     pub(crate) fn available_on(self, floor: u32) -> bool {
-        floor >= self.spec().min_floor
+        let spec = self.spec();
+        floor >= spec.min_floor && floor <= spec.max_floor
+    }
+
+    pub(crate) fn is_boss(self) -> bool {
+        matches!(self.spec().role, Role::Boss(_))
+    }
+}
+
+pub(crate) fn spell_clip() -> Clip {
+    Clip {
+        row: 1,
+        frames: 3,
+        frame_time: 0.15,
+        looping: false,
+        flipped: false,
     }
 }
 
@@ -363,9 +436,17 @@ pub(crate) fn attack_clip() -> Clip {
 }
 
 pub(crate) fn pick(floor: u32, rng: &mut Rng) -> EnemyKind {
+    pick_where(floor, rng, |kind| !kind.is_boss())
+}
+
+pub(crate) fn pick_boss(floor: u32, rng: &mut Rng) -> EnemyKind {
+    pick_where(floor, rng, EnemyKind::is_boss)
+}
+
+fn pick_where(floor: u32, rng: &mut Rng, wanted: impl Fn(EnemyKind) -> bool) -> EnemyKind {
     let pool: Vec<EnemyKind> = EnemyKind::ALL
         .into_iter()
-        .filter(|kind| kind.available_on(floor))
+        .filter(|kind| kind.available_on(floor) && wanted(*kind))
         .collect();
     pool[rng.below(pool.len())]
 }
@@ -416,7 +497,7 @@ mod tests {
         for _ in 0..800 {
             seen.insert(pick(5, &mut rng));
         }
-        assert_eq!(seen.len(), EnemyKind::ALL.len());
+        assert_eq!(seen.len(), EnemyKind::ALL.len() - 2);
     }
 
     #[test]
@@ -441,6 +522,31 @@ mod tests {
         assert!(!clip.looping);
         assert_eq!(clip.row, 0);
         assert_eq!(EnemyKind::Rat.spec().death_clip().row, 1);
+    }
+
+    #[test]
+    fn the_first_floor_has_the_spider_and_later_floors_the_king_slime() {
+        let mut rng = Rng::new(3);
+        for _ in 0..20 {
+            assert_eq!(pick_boss(1, &mut rng), EnemyKind::Spider);
+            assert_eq!(pick_boss(2, &mut rng), EnemyKind::KingSlime);
+            assert_eq!(pick_boss(5, &mut rng), EnemyKind::KingSlime);
+        }
+    }
+
+    #[test]
+    fn bosses_never_appear_among_common_enemies() {
+        let mut rng = Rng::new(11);
+        for _ in 0..500 {
+            assert!(!pick(1, &mut rng).is_boss());
+        }
+    }
+
+    #[test]
+    fn the_spider_dies_on_its_third_row() {
+        assert_eq!(EnemyKind::Spider.spec().death_clip().row, 2);
+        assert!((EnemyKind::Spider.spec().speed() - 282.0).abs() < 1.0);
+        assert!((EnemyKind::KingSlime.spec().speed() - 40.6).abs() < 0.5);
     }
 
     #[test]

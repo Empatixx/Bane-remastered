@@ -55,12 +55,12 @@ pub(crate) fn tick_smashes(world: &mut World, physics: &mut Physics, textures: &
         smash.remaining -= dt;
         if smash.remaining <= 0.0 {
             smash.remaining = enemies::SMASH_COOLDOWN;
-            volleys.push((position.0, smash.kind, room.copied()));
+            volleys.push((position.0, smash.kind, smash.count, room.copied()));
         }
     }
-    for (origin, kind, room) in volleys {
-        for index in 0..enemies::SMASH_BULLETS {
-            let direction = radial(index, enemies::SMASH_BULLETS);
+    for (origin, kind, count, room) in volleys {
+        for index in 0..count {
+            let direction = radial(index, count);
             fire(world, physics, kind, origin, direction, room, textures);
         }
     }

@@ -29,6 +29,7 @@ pub(crate) enum Prop {
     Candlestick,
     Pentagram,
     LayingBook,
+    Ladder,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -225,6 +226,7 @@ impl Prop {
             },
             Self::Pentagram => still("ingame/pentagram.tga", Vec2::new(150.0, 80.0), 1.5),
             Self::LayingBook => still("ingame/laying_book.tga", Vec2::new(16.0, 16.0), 4.0),
+            Self::Ladder => still("ingame/ladder.tga", Vec2::new(32.0, 32.0), 3.0),
             Self::Scientist => PropSpec {
                 texture: "ingame/scientist.tga",
                 columns: 6,

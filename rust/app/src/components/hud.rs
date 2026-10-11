@@ -22,6 +22,7 @@ pub(crate) const PIP_EMPTY: Clip = Clip {
 pub(crate) enum BarKind {
     Health,
     Armor,
+    Boss,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -34,7 +35,8 @@ pub(crate) struct BarSpec {
 }
 
 impl BarKind {
-    pub(crate) const ALL: [Self; 2] = [Self::Health, Self::Armor];
+    pub(crate) const ALL: [Self; 3] = [Self::Health, Self::Armor, Self::Boss];
+    pub(crate) const HUD: [Self; 2] = [Self::Health, Self::Armor];
 
     pub(crate) fn spec(self) -> BarSpec {
         match self {
@@ -44,6 +46,13 @@ impl BarKind {
                 scale: 3.0,
                 color: Vec3::new(0.529, 0.298, 0.262),
                 position: Vec2::new(25.0, 25.0),
+            },
+            Self::Boss => BarSpec {
+                texture: "ingame/bosshealthbar.tga",
+                hole: [19, 8, 56, 4],
+                scale: 4.0,
+                color: Vec3::new(0.529, 0.298, 0.262),
+                position: Vec2::new(320.0, 15.0),
             },
             Self::Armor => BarSpec {
                 texture: "ingame/armorBar.tga",
@@ -62,6 +71,9 @@ pub(crate) struct StatusBar {
     pub(crate) fill: f32,
     pub(crate) delayed: f32,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct BossHud;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct AmmoText;

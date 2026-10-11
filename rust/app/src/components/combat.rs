@@ -67,6 +67,7 @@ pub(crate) struct Enemy {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Spawning {
     pub(crate) remaining: f32,
+    pub(crate) total: f32,
 }
 
 #[derive(Debug, Clone, Copy)]

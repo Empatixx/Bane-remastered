@@ -5,7 +5,7 @@ use winit::keyboard::KeyCode;
 use crate::assets::{Assets, BULLET, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
-use crate::components::{BigMap, Hidden, MapSize, Minimap, UiAction, Weapon};
+use crate::components::{BigMap, Hidden, Interaction, MapSize, Minimap, UiAction, Weapon};
 use crate::dungeon::{Dungeon, Rng};
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -18,6 +18,8 @@ use crate::tilemap::TILE_SIZE;
 use crate::viewport::TARGET;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition};
+
+const VICTORY_SECONDS: f32 = 4.0;
 
 #[derive(Default)]
 pub(crate) struct InGameScene {
@@ -34,6 +36,7 @@ pub(crate) struct InGameScene {
     big_map: bool,
     floor: u32,
     navigation: Navigation,
+    victory_timer: Option<f32>,
 }
 
 impl Scene for InGameScene {
@@ -95,55 +98,9 @@ impl Scene for InGameScene {
     }
 
     fn enter(&mut self, assets: &Assets) {
-        self.rng = Rng::from_clock();
-        tracing::info!(seed = self.rng.seed(), "generating the dungeon");
-        let dungeon = match Dungeon::generate(&mut self.rng) {
-            Ok(dungeon) => dungeon,
-            Err(error) => {
-                tracing::error!(%error, "cannot generate the dungeon");
-                return;
-            }
-        };
-        let bounds = dungeon.grid.pixel_size();
-        let textures = &assets.textures;
-        let solid_cells = prefabs::tilemap(
-            &mut self.world,
-            &dungeon.grid,
-            &assets.tileset,
-            assets.textures.get(TILESET),
-        );
-        self.physics.add_walls(&solid_cells, TILE_SIZE);
-        self.navigation = Navigation::new(&solid_cells);
-        let start = dungeon.start_position().unwrap_or(bounds / 2.0);
-        prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
-        for room in &dungeon.rooms {
-            if let Some(furnishing) = &room.furnishing {
-                prefabs::furnishing(&mut self.world, &mut self.physics, furnishing, textures);
-            }
-            for decor in &room.decor {
-                prefabs::decor(&mut self.world, *decor, textures);
-            }
-        }
-        self.rooms = Some(systems::RoomRuntime::new(&dungeon));
-        spawn_minimaps(&mut self.world, &dungeon, textures);
-        self.camera = Camera::new(bounds);
-        if let Some(room) = dungeon.rooms.first() {
-            if let Some((min, max)) = dungeon.camera_region(room.origin.0 + 1, room.origin.1 + 1) {
-                self.camera.set_bounds(min, max);
-            }
-        }
-        self.dungeon = Some(dungeon);
-        prefabs::status_bars(&mut self.world, textures);
-        prefabs::coin_hud(
-            &mut self.world,
-            textures,
-            "ingame/banecoin.tga",
-            Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
-        );
-        prefabs::weapon_hud(&mut self.world, textures, Weapon::pistol().clip_size);
-        if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
-            self.camera.snap_to(target);
-        }
+        self.floor = 1;
+        self.victory_timer = None;
+        self.build(assets);
     }
 
     fn update(
@@ -206,13 +163,14 @@ impl Scene for InGameScene {
         systems::update_weapon_hud(&mut self.world);
         systems::fade_lights(&mut self.world);
         systems::flash_hits(&mut self.world, dt);
+        let mut events = Vec::new();
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
             let context = systems::RoomContext {
                 dungeon,
                 textures: &assets.textures,
                 floor: self.floor,
             };
-            systems::update_rooms(
+            events = systems::update_rooms(
                 rooms,
                 &context,
                 &mut self.world,
@@ -220,6 +178,8 @@ impl Scene for InGameScene {
                 &mut self.rng,
             );
         }
+        self.handle_room_events(events, assets);
+        systems::update_boss_hud(&mut self.world);
         systems::remove_expired(&mut self.world);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &self.rooms) {
             systems::update_minimaps(&mut self.world, rooms.entered(), rooms.current(), dt);
@@ -231,6 +191,15 @@ impl Scene for InGameScene {
         }
         if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
             self.camera.follow(target, dt);
+        }
+        if let Some(Interaction::NextFloor) = systems::interact(&mut self.world, input) {
+            self.next_floor(assets);
+        }
+        if let Some(remaining) = self.victory_timer.as_mut() {
+            *remaining -= dt;
+            if *remaining <= 0.0 {
+                return Transition::Switch(SceneId::Lobby);
+            }
         }
         Transition::None
     }
@@ -249,10 +218,15 @@ impl Scene for InGameScene {
         systems::tick_eye_shooters(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::steer_homing(&mut self.world, dt);
         systems::burn_fuses(&mut self.world, &mut self.physics, dt);
+        systems::tick_hatchers(&mut self.world, &mut self.physics, &assets.textures, dt);
+        systems::tick_web_spitters(&mut self.world, &assets.textures, dt);
+        systems::tick_armageddon(&mut self.world, &mut self.physics, &assets.textures, dt);
+        systems::drag_cobwebs(&mut self.world, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
         systems::death_heals(&mut self.world);
+        systems::clean_up_after_boss(&mut self.world);
         systems::reap_dead(&mut self.world, &mut self.physics);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
             self.hit = true;
@@ -267,6 +241,101 @@ impl Scene for InGameScene {
 }
 
 impl InGameScene {
+    fn build(&mut self, assets: &Assets) {
+        self.rng = Rng::from_clock();
+        tracing::info!(seed = self.rng.seed(), "generating the dungeon");
+        let dungeon = match Dungeon::generate(&mut self.rng) {
+            Ok(dungeon) => dungeon,
+            Err(error) => {
+                tracing::error!(%error, "cannot generate the dungeon");
+                return;
+            }
+        };
+        let bounds = dungeon.grid.pixel_size();
+        let textures = &assets.textures;
+        let solid_cells = prefabs::tilemap(
+            &mut self.world,
+            &dungeon.grid,
+            &assets.tileset,
+            assets.textures.get(TILESET),
+        );
+        self.physics.add_walls(&solid_cells, TILE_SIZE);
+        self.navigation = Navigation::new(&solid_cells);
+        let start = dungeon.start_position().unwrap_or(bounds / 2.0);
+        prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        for room in &dungeon.rooms {
+            if let Some(furnishing) = &room.furnishing {
+                prefabs::furnishing(&mut self.world, &mut self.physics, furnishing, textures);
+            }
+            for decor in &room.decor {
+                prefabs::decor(&mut self.world, *decor, textures);
+            }
+        }
+        self.rooms = Some(systems::RoomRuntime::new(&dungeon));
+        spawn_minimaps(&mut self.world, &dungeon, textures);
+        self.camera = Camera::new(bounds);
+        if let Some(room) = dungeon.rooms.first() {
+            if let Some((min, max)) = dungeon.camera_region(room.origin.0 + 1, room.origin.1 + 1) {
+                self.camera.set_bounds(min, max);
+            }
+        }
+        self.dungeon = Some(dungeon);
+        prefabs::status_bars(&mut self.world, textures);
+        prefabs::coin_hud(
+            &mut self.world,
+            textures,
+            "ingame/banecoin.tga",
+            Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
+        );
+        prefabs::weapon_hud(&mut self.world, textures, Weapon::pistol().clip_size);
+        if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
+            self.camera.snap_to(target);
+        }
+    }
+
+    fn next_floor(&mut self, assets: &Assets) {
+        let carried = systems::carried_stats(&self.world);
+        self.world.clear();
+        self.physics = Physics::new();
+        self.dungeon = None;
+        self.rooms = None;
+        self.big_map = false;
+        self.floor += 1;
+        tracing::info!(floor = self.floor, "entering the next floor");
+        self.build(assets);
+        systems::restore_stats(&mut self.world, carried);
+        self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
+    }
+
+    fn handle_room_events(&mut self, events: Vec<systems::RoomEvent>, assets: &Assets) {
+        for event in events {
+            match event {
+                systems::RoomEvent::BossEntered => {
+                    self.sounds.push(AudioCommand::Music(Soundtrack::Boss));
+                }
+                systems::RoomEvent::BossDefeated { center } => {
+                    self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
+                    let textures = &assets.textures;
+                    let chest_top_left = center - Vec2::new(32.0, 3.0 * TILE_SIZE);
+                    prefabs::prop(
+                        &mut self.world,
+                        crate::props::Prop::Chest,
+                        chest_top_left,
+                        crate::props::Look::DEFAULT,
+                        textures,
+                    );
+                    if self.floor >= crate::enemies::FINAL_FLOOR {
+                        tracing::info!("the last boss is defeated");
+                        self.victory_timer = Some(VICTORY_SECONDS);
+                    } else {
+                        let ladder_top_left = center - Vec2::new(48.0, 0.0);
+                        prefabs::ladder(&mut self.world, ladder_top_left, textures);
+                    }
+                }
+            }
+        }
+    }
+
     fn set_big_map(&mut self, open: bool) {
         self.big_map = open;
         let big: Vec<hecs::Entity> = self

@@ -3,20 +3,20 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
-    ContactDamage, Dash, DeathBurst, DeathHeal, Enemy, EnemyBullet, Expiring, EyeShooter, Fuse,
-    GazeWind, Health, Hitbox, Hits, Homing, Impact, Interactable, Interaction, Kin, Layer, Light,
-    LightFade, Lit, OnClick, Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position,
-    Prompt, RoomId, ScreenSpace, Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton,
-    ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
-    PIP_FULL,
+    AmmoPip, AmmoText, Animation, Armageddon, Armor, BarKind, Boss, BossHud, Bullet, Button, Chase,
+    Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Drag, Enemy,
+    EnemyBullet, Expiring, EyeShooter, Fuse, GazeWind, Hatcher, Health, Hitbox, Hits, Homing,
+    Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Minion, OnClick, Overlay,
+    Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId, ScreenSpace, Size,
+    Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity,
+    Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
-use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind};
+use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
-use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS, SPAWN_SECONDS};
+use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
 
@@ -122,6 +122,9 @@ pub(crate) fn prop(
 const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
 const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 const BULLET_DAMAGE: i32 = 1;
+const COBWEB_SIZE: Vec2 = Vec2::new(64.0, 64.0);
+const COBWEB_FORCE: f32 = 150_000_000.0;
+const COBWEB_DRAG: f32 = 1.5;
 const CARPET_COLUMNS: usize = 4;
 const CARPET_ROWS: usize = 4;
 const CARPET_LAYER: i32 = -2;
@@ -465,8 +468,20 @@ pub(crate) fn enemy(
     let spec = kind.spec();
     let size = spec.size();
     let idle = spec.idle_clip();
-    let health = enemies::scale_stat(spec.health, enemies::health_multiplier(floor));
-    let damage = enemies::scale_stat(spec.damage, enemies::damage_multiplier(floor));
+    let boss = matches!(spec.role, Role::Boss(_));
+    let (health, damage) = if boss {
+        (spec.health, spec.damage)
+    } else {
+        (
+            enemies::scale_stat(spec.health, enemies::health_multiplier(floor)),
+            enemies::scale_stat(spec.damage, enemies::damage_multiplier(floor)),
+        )
+    };
+    let spawn_seconds = if boss {
+        enemies::BOSS_SPAWN_SECONDS
+    } else {
+        enemies::COMMON_SPAWN_SECONDS
+    };
     let entity = world.spawn((
         Enemy {
             death: spec.death_clip(),
@@ -495,7 +510,8 @@ pub(crate) fn enemy(
         Layer(1),
         Lit,
         Spawning {
-            remaining: SPAWN_SECONDS,
+            remaining: spawn_seconds,
+            total: spawn_seconds,
         },
     ));
     match spec.behavior {
@@ -515,8 +531,42 @@ pub(crate) fn enemy(
                 entity,
                 Smash {
                     kind,
+                    count: enemies::SMASH_BULLETS,
                     remaining: 0.0,
                 },
+            );
+        }
+        Behavior::SpiderBoss => {
+            let _ = world.insert(
+                entity,
+                (
+                    Hatcher {
+                        remaining: enemies::HATCH_COOLDOWN,
+                        next: 0,
+                    },
+                    WebSpitter {
+                        remaining: enemies::WEB_COOLDOWN,
+                        casting: false,
+                        idle: spec.idle_clip(),
+                    },
+                ),
+            );
+        }
+        Behavior::KingSlimeBoss => {
+            let _ = world.insert(
+                entity,
+                (
+                    Armageddon {
+                        kind: ProjectileKind::Purple,
+                        remaining: 0.0,
+                        angle: 0.0,
+                    },
+                    Smash {
+                        kind: ProjectileKind::Purple,
+                        count: enemies::KING_SMASH_BULLETS,
+                        remaining: 0.0,
+                    },
+                ),
             );
         }
         Behavior::Burst(kind) => {
@@ -545,6 +595,9 @@ pub(crate) fn enemy(
     }
     if spec.kin {
         let _ = world.insert_one(entity, Kin);
+    }
+    if boss {
+        let _ = world.insert_one(entity, Boss);
     }
     entity
 }
@@ -600,6 +653,107 @@ pub(crate) fn enemy_bullet(
     entity
 }
 
+pub(crate) fn hatchling(
+    world: &mut World,
+    physics: &mut Physics,
+    kind: EnemyKind,
+    position: Vec2,
+    room: Option<RoomId>,
+    textures: &Textures,
+) -> Entity {
+    let entity = enemy(world, kind, position, 0, textures);
+    crate::systems::finish_spawning(world, physics, entity);
+    let _ = world.insert_one(entity, Minion);
+    if let Some(room) = room {
+        let _ = world.insert_one(entity, room);
+    }
+    entity
+}
+
+pub(crate) fn cobweb(
+    world: &mut World,
+    position: Vec2,
+    direction: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let size = COBWEB_SIZE;
+    let speed = COBWEB_FORCE / (size.x * size.y) / 60.0;
+    let clip = Clip {
+        row: 0,
+        frames: 4,
+        frame_time: 0.07,
+        looping: true,
+        flipped: false,
+    };
+    world.spawn((
+        Cobweb,
+        Position(position),
+        Velocity(direction.normalize_or_zero() * speed),
+        Drag { rate: COBWEB_DRAG },
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get("ingame/cobweb_projectile.tga"), 0, 0, 4, 1),
+        Animation::new(4, 1, clip),
+        Layer(0),
+        Lit,
+    ))
+}
+
+pub(crate) fn boss_hud(world: &mut World, name: &str, textures: &Textures) {
+    let kind = BarKind::Boss;
+    let spec = kind.spec();
+    let size = spec_texture_size(kind) * spec.scale;
+    world.spawn((
+        BossHud,
+        StatusBar {
+            kind,
+            fill: 1.0,
+            delayed: 1.0,
+        },
+        Position(spec.position + size / 2.0),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get(spec.texture)),
+        Layer(5),
+        ScreenSpace,
+    ));
+    world.spawn((
+        BossHud,
+        Position(Vec2::new(
+            spec.position.x + spec.hole[0] as f32 * spec.scale + 5.0,
+            spec.position.y + 30.0,
+        )),
+        Text {
+            content: name.to_owned(),
+            color: Vec4::new(1.0, 0.0, 0.0, 1.0),
+            size: FontSize::Size22,
+            align: Align::Left,
+            anchor: Anchor::Baseline,
+        },
+        Layer(6),
+        ScreenSpace,
+    ));
+}
+
+pub(crate) fn ladder(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::Ladder, top_left, Look::DEFAULT, textures);
+    let _ = world.insert(
+        entity,
+        (
+            Interactable {
+                action: Interaction::NextFloor,
+            },
+            Prompt {
+                text: "Press E to enter next floor",
+                gap: 0.0,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+    entity
+}
+
 pub(crate) fn enemy_in_room(
     world: &mut World,
     kind: EnemyKind,
@@ -626,7 +780,7 @@ pub(crate) fn ready_enemy(
 }
 
 pub(crate) fn status_bars(world: &mut World, textures: &Textures) {
-    for kind in BarKind::ALL {
+    for kind in BarKind::HUD {
         let spec = kind.spec();
         let texture_size = spec_texture_size(kind);
         let size = texture_size * spec.scale;
@@ -650,6 +804,7 @@ fn spec_texture_size(kind: BarKind) -> Vec2 {
     match kind {
         BarKind::Health => Vec2::new(76.0, 19.0),
         BarKind::Armor => Vec2::new(83.0, 25.0),
+        BarKind::Boss => Vec2::new(80.0, 19.0),
     }
 }
 

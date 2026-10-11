@@ -3,12 +3,11 @@ use hecs::{Entity, World};
 
 use crate::components::{
     Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Path, Player,
-    Position, Size, Spawning, Velocity,
+    Position, Rooted, Size, Spawning, Velocity,
 };
 use crate::navigation::{Navigation, CELL};
 use crate::physics::Physics;
 
-pub(crate) const SPAWN_SECONDS: f32 = 2.0;
 pub(crate) const FLASH_SECONDS: f32 = 1.0;
 const FLASH_STRENGTH: f32 = 0.7;
 const DASH_PERIOD: f32 = 3.0;
@@ -46,11 +45,21 @@ pub(crate) fn plan_paths(world: &mut World, navigation: &Navigation) {
 
 pub(crate) fn chase_player(world: &mut World) {
     let target = player_placement(world).map(|(position, _)| position);
-    for (position, chase, velocity, path) in world
-        .query_mut::<(&Position, &Chase, &mut Velocity, Option<&mut Path>)>()
+    for (position, chase, velocity, path, rooted) in world
+        .query_mut::<(
+            &Position,
+            &Chase,
+            &mut Velocity,
+            Option<&mut Path>,
+            Option<&Rooted>,
+        )>()
         .without::<&Expiring>()
         .without::<&Spawning>()
     {
+        if rooted.is_some() {
+            velocity.0 = Vec2::ZERO;
+            continue;
+        }
         let Some(target) = target else {
             velocity.0 = Vec2::ZERO;
             continue;
@@ -86,7 +95,7 @@ pub(crate) fn tick_spawning(world: &mut World, physics: &mut Physics, dt: f32) {
     let mut finished = Vec::new();
     for (entity, spawning, color) in world.query_mut::<(Entity, &mut Spawning, &mut Color)>() {
         spawning.remaining -= dt;
-        color.0.w = (1.0 - spawning.remaining / SPAWN_SECONDS).clamp(0.0, 1.0);
+        color.0.w = (1.0 - spawning.remaining / spawning.total).clamp(0.0, 1.0);
         if spawning.remaining <= 0.0 {
             finished.push(entity);
         }
@@ -173,7 +182,7 @@ mod tests {
     use glam::Vec4;
 
     use crate::assets::Textures;
-    use crate::enemies::EnemyKind;
+    use crate::enemies::{EnemyKind, COMMON_SPAWN_SECONDS};
     use crate::navigation::Navigation;
     use crate::prefabs;
 
@@ -261,12 +270,12 @@ mod tests {
         assert_eq!(velocity, Some(Vec2::ZERO));
         assert!(world.get::<&Body>(rat).is_err());
 
-        tick_spawning(&mut world, &mut physics, SPAWN_SECONDS / 2.0);
+        tick_spawning(&mut world, &mut physics, COMMON_SPAWN_SECONDS / 2.0);
         let alpha = world.get::<&Color>(rat).map(|c| c.0.w).unwrap_or(-1.0);
         assert!((alpha - 0.5).abs() < 0.01, "{alpha}");
         assert!(world.get::<&Spawning>(rat).is_ok());
 
-        tick_spawning(&mut world, &mut physics, SPAWN_SECONDS);
+        tick_spawning(&mut world, &mut physics, COMMON_SPAWN_SECONDS);
         assert!(world.get::<&Spawning>(rat).is_err());
         assert!(world.get::<&Body>(rat).is_ok());
         assert_eq!(world.get::<&Color>(rat).map(|c| c.0).ok(), Some(Vec4::ONE));

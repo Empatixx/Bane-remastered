@@ -2,7 +2,7 @@ use glam::{Vec2, Vec3, Vec4};
 use hecs::World;
 
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armor, BarKind, CoinText, Health, Player, StatusBar, Text,
+    AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, Health, Player, StatusBar, Text,
     Wallet, Weapon, PIP_EMPTY, PIP_FULL,
 };
 use crate::render::{Draw, Quad, TextureId};
@@ -28,10 +28,17 @@ pub(crate) fn update_status_bars(world: &mut World, dt: f32) {
         .iter()
         .next()
         .map(|armor| ratio(armor.current, armor.max));
+    let boss = world
+        .query::<&Health>()
+        .with::<&Boss>()
+        .iter()
+        .next()
+        .map(|health| ratio(health.current, health.max));
     for bar in world.query_mut::<&mut StatusBar>() {
         let value = match bar.kind {
             BarKind::Health => health,
             BarKind::Armor => armor,
+            BarKind::Boss => boss,
         };
         if let Some(value) = value {
             bar.fill = value;

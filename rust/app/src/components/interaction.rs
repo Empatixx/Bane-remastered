@@ -6,6 +6,7 @@ use crate::render::FontSize;
 pub(crate) enum Interaction {
     EnterPortal,
     Upgrade,
+    NextFloor,
 }
 
 #[derive(Debug, Clone, Copy)]

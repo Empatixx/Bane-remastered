@@ -35,12 +35,11 @@ pub(crate) struct DungeonRoom {
 }
 
 impl DungeonRoom {
-    #[cfg(test)]
-    pub(crate) fn center(&self, tile_size: f32) -> Vec2 {
+    pub(crate) fn pixel_center(&self) -> Vec2 {
         Vec2::new(
             self.origin.0 as f32 + self.columns as f32 / 2.0,
             self.origin.1 as f32 + self.rows as f32 / 2.0,
-        ) * tile_size
+        ) * TILE_SIZE
     }
 
     pub(crate) fn contains_tile(&self, column: usize, row: usize) -> bool {

@@ -24,7 +24,9 @@ pub(crate) use combat::{
     BULLET_ROWS,
 };
 pub(crate) use effects::{GazeWind, LightFade, Particle, RoomId, ThenPlay};
-pub(crate) use hud::{AmmoPip, AmmoText, BarKind, CoinText, StatusBar, PIP_EMPTY, PIP_FULL};
+pub(crate) use hud::{
+    AmmoPip, AmmoText, BarKind, BossHud, CoinText, StatusBar, PIP_EMPTY, PIP_FULL,
+};
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigMap, MapSize, MiniRoom, Minimap};
@@ -35,7 +37,8 @@ pub(crate) use settings_ui::{
 };
 pub(crate) use shadow::PlayerShadow;
 pub(crate) use skills::{
-    DeathBurst, DeathHeal, EnemyBullet, EyeShooter, Fuse, Hits, Homing, Impact, Kin, Smash,
+    Armageddon, Boss, Cobweb, DeathBurst, DeathHeal, Drag, EnemyBullet, EyeShooter, Fuse, Hatcher,
+    Hits, Homing, Impact, Kin, Minion, Rooted, Smash, WebSpitter,
 };
 pub(crate) use tags::{Overlay, Player, ScreenSpace};
 pub(crate) use transform::{Position, Size};

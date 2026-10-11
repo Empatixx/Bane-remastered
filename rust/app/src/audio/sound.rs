@@ -44,16 +44,19 @@ pub(crate) enum Soundtrack {
     MainMenu,
     InGame,
     ProgressRoom,
+    Boss,
 }
 
 impl Soundtrack {
-    pub(crate) const ALL: [Self; 3] = [Self::MainMenu, Self::InGame, Self::ProgressRoom];
+    pub(crate) const ALL: [Self; 4] =
+        [Self::MainMenu, Self::InGame, Self::ProgressRoom, Self::Boss];
 
     pub(crate) fn file(self) -> &'static str {
         match self {
             Self::MainMenu => "intro.ogg",
             Self::InGame => "audio.ogg",
             Self::ProgressRoom => "ambient.ogg",
+            Self::Boss => "boss.ogg",
         }
     }
 }

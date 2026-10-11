@@ -184,11 +184,11 @@ impl Scene for LobbyScene {
         }
         match systems::interact(&mut self.world, input) {
             Some(Interaction::EnterPortal) => Transition::Switch(SceneId::InGame),
+            Some(Interaction::NextFloor) | None => Transition::None,
             Some(Interaction::Upgrade) => {
                 tracing::info!("the upgrade menu is not implemented yet");
                 Transition::None
             }
-            None => Transition::None,
         }
     }
 

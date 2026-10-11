@@ -13,6 +13,12 @@ use crate::tilemap::TILE_SIZE;
 const MAX_ENEMIES: usize = 5;
 const ENTER_MARGIN: usize = 2;
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum RoomEvent {
+    BossEntered,
+    BossDefeated { center: Vec2 },
+}
+
 #[derive(Debug)]
 enum RoomState {
     Unvisited,
@@ -62,14 +68,15 @@ pub(crate) fn update_rooms(
     world: &mut World,
     physics: &mut Physics,
     rng: &mut Rng,
-) {
+) -> Vec<RoomEvent> {
+    let mut events = Vec::new();
     if let Some(index) = player_tile(context.dungeon, world) {
         runtime.current = index;
         runtime.entered[index] = true;
     }
     if let Some(room) = player_room(context.dungeon, world) {
         if matches!(runtime.states[room], RoomState::Unvisited) {
-            enter(runtime, context, room, world, physics, rng);
+            events.extend(enter(runtime, context, room, world, physics, rng));
         }
     }
     for room in 0..runtime.states.len() {
@@ -84,8 +91,15 @@ pub(crate) fn update_rooms(
                     physics.remove_collider(collider);
                 }
             }
+            let data = &context.dungeon.rooms[room];
+            if data.kind == RoomKind::Boss {
+                events.push(RoomEvent::BossDefeated {
+                    center: data.pixel_center(),
+                });
+            }
         }
     }
+    events
 }
 
 fn player_position(world: &World) -> Option<Vec2> {
@@ -130,21 +144,32 @@ fn enter(
     world: &mut World,
     physics: &mut Physics,
     rng: &mut Rng,
-) {
+) -> Option<RoomEvent> {
     let data = &context.dungeon.rooms[room];
-    let fights = matches!(data.kind, RoomKind::Normal | RoomKind::Boss) && !data.spawns.is_empty();
+    let boss = data.kind == RoomKind::Boss;
+    let fights = boss || (data.kind == RoomKind::Normal && !data.spawns.is_empty());
     if !fights {
         runtime.states[room] = RoomState::Cleared;
-        return;
+        return None;
     }
-    let mut spawns = data.spawns.clone();
-    for index in (1..spawns.len()).rev() {
-        spawns.swap(index, rng.below(index + 1));
-    }
-    for &(column, row) in spawns.iter().take(MAX_ENEMIES) {
-        let position = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE;
-        let kind = enemies::pick(context.floor, rng);
-        prefabs::enemy_in_room(world, kind, position, context.floor, context.textures, room);
+    if boss {
+        let kind = enemies::pick_boss(context.floor, rng);
+        let center = data.pixel_center();
+        let spec = kind.spec();
+        prefabs::enemy_in_room(world, kind, center, context.floor, context.textures, room);
+        if let enemies::Role::Boss(name) = spec.role {
+            prefabs::boss_hud(world, name, context.textures);
+        }
+    } else {
+        let mut spawns = data.spawns.clone();
+        for index in (1..spawns.len()).rev() {
+            spawns.swap(index, rng.below(index + 1));
+        }
+        for &(column, row) in spawns.iter().take(MAX_ENEMIES) {
+            let position = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE;
+            let kind = enemies::pick(context.floor, rng);
+            prefabs::enemy_in_room(world, kind, position, context.floor, context.textures, room);
+        }
     }
     let mut gates = Vec::new();
     for door in &data.doors {
@@ -159,6 +184,7 @@ fn enter(
         }
     }
     runtime.states[room] = RoomState::Fighting(gates);
+    boss.then_some(RoomEvent::BossEntered)
 }
 
 #[cfg(test)]
@@ -183,7 +209,7 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         let textures = Textures::default();
-        let center = dungeon.rooms[normal].center(TILE_SIZE);
+        let center = dungeon.rooms[normal].pixel_center();
         prefabs::player(&mut world, &mut physics, center, &textures);
         let mut runtime = RoomRuntime::new(&dungeon);
         let context = RoomContext {
@@ -216,7 +242,7 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         let textures = Textures::default();
-        prefabs::player(&mut world, &mut physics, start.center(TILE_SIZE), &textures);
+        prefabs::player(&mut world, &mut physics, start.pixel_center(), &textures);
         let mut runtime = RoomRuntime::new(&dungeon);
         let context = RoomContext {
             dungeon: &dungeon,
@@ -234,5 +260,92 @@ mod tests {
 
         assert!(!(0..dungeon.rooms.len()).any(|room| runtime.is_locked(room)));
         assert_eq!(world.query::<&RoomId>().iter().count(), 0);
+    }
+
+    #[test]
+    fn the_boss_room_spawns_one_boss_and_announces_the_fight_and_the_victory() {
+        let dungeon = dungeon();
+        let boss_room = dungeon
+            .rooms
+            .iter()
+            .position(|room| room.kind == RoomKind::Boss)
+            .expect("there is a boss room");
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        let center = dungeon.rooms[boss_room].pixel_center();
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            center + Vec2::new(0.0, 300.0),
+            &textures,
+        );
+        let mut runtime = RoomRuntime::new(&dungeon);
+        let context = RoomContext {
+            dungeon: &dungeon,
+            textures: &textures,
+            floor: 1,
+        };
+        let mut rng = Rng::new(5);
+
+        let events = update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
+
+        assert_eq!(events, vec![RoomEvent::BossEntered]);
+        assert!(runtime.is_locked(boss_room));
+        assert_eq!(living_enemies(&world, boss_room), 1);
+        let bosses = world.query::<&crate::components::Boss>().iter().count();
+        assert_eq!(bosses, 1);
+        assert_eq!(
+            world.query::<&crate::components::BossHud>().iter().count(),
+            2
+        );
+
+        let enemies: Vec<Entity> = world
+            .query::<(Entity, &RoomId)>()
+            .iter()
+            .map(|(entity, _)| entity)
+            .collect();
+        for entity in enemies {
+            let _ = world.insert_one(entity, Expiring);
+        }
+        let events = update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
+
+        assert_eq!(events, vec![RoomEvent::BossDefeated { center }]);
+        assert!(!runtime.is_locked(boss_room));
+    }
+
+    #[test]
+    fn ordinary_rooms_do_not_raise_boss_events() {
+        let dungeon = dungeon();
+        let normal = dungeon
+            .rooms
+            .iter()
+            .position(|room| room.kind == RoomKind::Normal)
+            .expect("there is a normal room");
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            dungeon.rooms[normal].pixel_center(),
+            &textures,
+        );
+        let mut runtime = RoomRuntime::new(&dungeon);
+        let context = RoomContext {
+            dungeon: &dungeon,
+            textures: &textures,
+            floor: 1,
+        };
+
+        let events = update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut Rng::new(2),
+        );
+
+        assert!(events.is_empty());
     }
 }
