@@ -26,7 +26,7 @@ impl App {
         Self {
             window: None,
             gpu: None,
-            game: Game::default(),
+            game: Game::new(),
             last_frame: Instant::now(),
             accumulator: Duration::ZERO,
         }
@@ -66,12 +66,15 @@ impl ApplicationHandler for App {
             }
             WindowEvent::RedrawRequested => {
                 if let Some(gpu) = &mut self.gpu {
-                    gpu.render(wgpu::Color {
-                        r: 0.05,
-                        g: 0.08,
-                        b: 0.12,
-                        a: 1.0,
-                    });
+                    gpu.render(
+                        wgpu::Color {
+                            r: 0.05,
+                            g: 0.08,
+                            b: 0.12,
+                            a: 1.0,
+                        },
+                        &self.game.quads(),
+                    );
                 }
             }
             _ => {}
