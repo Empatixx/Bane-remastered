@@ -5,9 +5,9 @@ use rapier2d::prelude::ColliderHandle;
 use crate::assets::Textures;
 use crate::components::{Expiring, Player, Position, RoomId};
 use crate::dungeon::{Dungeon, Rng, RoomKind};
+use crate::enemies;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::render::TextureId;
 use crate::tilemap::TILE_SIZE;
 
 const MAX_ENEMIES: usize = 5;
@@ -53,7 +53,7 @@ impl RoomRuntime {
 pub(crate) struct RoomContext<'a> {
     pub(crate) dungeon: &'a Dungeon,
     pub(crate) textures: &'a Textures,
-    pub(crate) rat_texture: TextureId,
+    pub(crate) floor: u32,
 }
 
 pub(crate) fn update_rooms(
@@ -143,7 +143,8 @@ fn enter(
     }
     for &(column, row) in spawns.iter().take(MAX_ENEMIES) {
         let position = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE;
-        prefabs::rat_in_room(world, physics, position, context.rat_texture, room);
+        let kind = enemies::pick(context.floor, rng);
+        prefabs::enemy_in_room(world, kind, position, context.floor, context.textures, room);
     }
     let mut gates = Vec::new();
     for door in &data.doors {
@@ -188,7 +189,7 @@ mod tests {
         let context = RoomContext {
             dungeon: &dungeon,
             textures: &textures,
-            rat_texture: TextureId::WHITE,
+            floor: 0,
         };
         let mut rng = Rng::new(1);
 
@@ -220,7 +221,7 @@ mod tests {
         let context = RoomContext {
             dungeon: &dungeon,
             textures: &textures,
-            rat_texture: TextureId::WHITE,
+            floor: 0,
         };
 
         update_rooms(

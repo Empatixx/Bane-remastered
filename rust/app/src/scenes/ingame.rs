@@ -2,7 +2,7 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 use winit::keyboard::KeyCode;
 
-use crate::assets::{Assets, BULLET, RAT, TILESET};
+use crate::assets::{Assets, BULLET, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Hidden, MapSize, Minimap, UiAction, Weapon};
@@ -31,6 +31,7 @@ pub(crate) struct InGameScene {
     rooms: Option<systems::RoomRuntime>,
     rng: Rng,
     big_map: bool,
+    floor: u32,
 }
 
 impl Scene for InGameScene {
@@ -201,11 +202,12 @@ impl Scene for InGameScene {
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world);
         systems::fade_lights(&mut self.world);
+        systems::flash_hits(&mut self.world, dt);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
             let context = systems::RoomContext {
                 dungeon,
                 textures: &assets.textures,
-                rat_texture: assets.textures.get(RAT),
+                floor: self.floor,
             };
             systems::update_rooms(
                 rooms,
@@ -235,6 +237,8 @@ impl Scene for InGameScene {
             return Transition::None;
         }
         systems::steer_player(&mut self.world, input);
+        systems::tick_spawning(&mut self.world, &mut self.physics, dt);
+        systems::dash(&mut self.world, dt);
         systems::chase_player(&mut self.world);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);

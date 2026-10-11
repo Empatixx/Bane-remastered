@@ -5,12 +5,13 @@ use winit::keyboard::KeyCode;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
 use crate::components::{
-    Animation, Body, Bullet, Expiring, Health, Player, Position, Velocity, Weapon,
+    Animation, Body, Bullet, Expiring, Health, HitFlash, Player, Position, Velocity, Weapon,
 };
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;
 use crate::render::TextureId;
+use crate::systems::enemies::FLASH_SECONDS;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ShotRoll {
@@ -114,6 +115,14 @@ pub(crate) fn bullet_hits(
             .and_then(|entity| world.get::<&mut Health>(entity).ok())
             .map(|mut health| health.current -= damage)
             .is_some();
+        if let (true, Some(entity)) = (hit_enemy, victim) {
+            let _ = world.insert_one(
+                entity,
+                HitFlash {
+                    remaining: FLASH_SECONDS,
+                },
+            );
+        }
         sounds.push(AudioCommand::Effect(if hit_enemy {
             SoundEffect::EnemyHit
         } else {
@@ -249,11 +258,11 @@ mod tests {
     fn bullet_damages_the_enemy_it_hits() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        let rat = prefabs::rat(
+        let rat = prefabs::ready_enemy(
             &mut world,
             &mut physics,
+            crate::enemies::EnemyKind::Rat,
             Vec2::new(300.0, 100.0),
-            TextureId::WHITE,
         );
         let before = world.get::<&Health>(rat).map(|h| h.current).unwrap_or(0);
         let bullet = prefabs::bullet(

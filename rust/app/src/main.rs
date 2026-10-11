@@ -4,6 +4,7 @@ mod audio;
 mod camera;
 mod components;
 mod dungeon;
+mod enemies;
 mod game;
 mod geometry;
 mod input;

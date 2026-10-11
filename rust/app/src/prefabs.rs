@@ -4,16 +4,18 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Bullet, Button, Chase, Clip, CoinText, Color,
-    ContactDamage, Enemy, Expiring, GazeWind, Health, Hitbox, Interactable, Interaction, Layer,
-    Light, LightFade, Lit, OnClick, Overlay, Particle, PauseUi, Player, PlayerShadow, Position,
-    Prompt, RoomId, ScreenSpace, Size, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
-    UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    ContactDamage, Dash, Enemy, Expiring, GazeWind, Health, Hitbox, Interactable, Interaction,
+    Layer, Light, LightFade, Lit, OnClick, Overlay, Particle, PauseUi, Player, PlayerShadow,
+    Position, Prompt, RoomId, ScreenSpace, Size, Spawning, Sprite, StatusBar, Text, TextButton,
+    ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
+use crate::enemies::{self, EnemyKind};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
-use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
+use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS, SPAWN_SECONDS};
 use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
 
@@ -118,6 +120,7 @@ pub(crate) fn prop(
 
 const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
 const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
+const DASH_FORCE: f32 = 24_500_000.0;
 const CARPET_COLUMNS: usize = 4;
 const CARPET_ROWS: usize = 4;
 const CARPET_LAYER: i32 = -2;
@@ -451,52 +454,83 @@ pub(crate) fn bullet(
     entity
 }
 
-const RAT_COLUMNS: usize = 4;
-const RAT_ROWS: usize = 2;
-const RAT_SIZE: Vec2 = Vec2::new(127.5, 55.5);
-const RAT_HEALTH: i32 = 12;
-const RAT_DAMAGE: i32 = 2;
-const RAT_SPEED: f32 = 184.0;
-const RAT_WALK: Clip = Clip {
-    row: 0,
-    frames: 4,
-    frame_time: 0.12,
-    looping: true,
-    flipped: false,
-};
-const RAT_DEATH: Clip = Clip {
-    row: 1,
-    frames: 3,
-    frame_time: 0.15,
-    looping: false,
-    flipped: false,
-};
-
-pub(crate) fn rat(
+pub(crate) fn enemy(
     world: &mut World,
-    physics: &mut Physics,
+    kind: EnemyKind,
     position: Vec2,
-    texture: TextureId,
+    floor: u32,
+    textures: &Textures,
 ) -> Entity {
+    let spec = kind.spec();
+    let size = spec.size();
+    let idle = spec.idle_clip();
+    let health = enemies::scale_stat(spec.health, enemies::health_multiplier(floor));
+    let damage = enemies::scale_stat(spec.damage, enemies::damage_multiplier(floor));
     let entity = world.spawn((
-        Enemy { death: RAT_DEATH },
-        Health {
-            current: RAT_HEALTH,
-            max: RAT_HEALTH,
+        Enemy {
+            death: spec.death_clip(),
         },
-        ContactDamage(RAT_DAMAGE),
-        Chase { speed: RAT_SPEED },
+        Health {
+            current: health,
+            max: health,
+        },
+        ContactDamage(damage),
+        Chase {
+            speed: spec.speed(),
+        },
         Position(position),
         Velocity::default(),
-        Size(RAT_SIZE),
-        Color(Vec4::ONE),
-        Sprite::cell(texture, 0, RAT_WALK.row, RAT_COLUMNS, RAT_ROWS),
-        Animation::new(RAT_COLUMNS, RAT_ROWS, RAT_WALK),
+        Size(size),
+        Color(Vec4::new(1.0, 1.0, 1.0, 0.0)),
+        Sprite::cell(
+            textures.get(spec.texture),
+            0,
+            idle.row,
+            spec.columns,
+            spec.rows,
+        ),
+        Animation::new(spec.columns, spec.rows, idle),
         Layer(1),
         Lit,
+        Spawning {
+            remaining: SPAWN_SECONDS,
+        },
     ));
-    let body = physics.add_enemy(entity, position, RAT_SIZE);
-    let _ = world.insert_one(entity, body);
+    if spec.dashes {
+        let _ = world.insert_one(
+            entity,
+            Dash {
+                base_speed: spec.speed(),
+                bonus_speed: DASH_FORCE * enemies::SPEED_PER_FORCE,
+                cycle: 0.0,
+            },
+        );
+    }
+    entity
+}
+
+pub(crate) fn enemy_in_room(
+    world: &mut World,
+    kind: EnemyKind,
+    position: Vec2,
+    floor: u32,
+    textures: &Textures,
+    room: usize,
+) -> Entity {
+    let entity = enemy(world, kind, position, floor, textures);
+    let _ = world.insert_one(entity, RoomId(room));
+    entity
+}
+
+#[cfg(test)]
+pub(crate) fn ready_enemy(
+    world: &mut World,
+    physics: &mut Physics,
+    kind: EnemyKind,
+    position: Vec2,
+) -> Entity {
+    let entity = enemy(world, kind, position, 0, &Textures::default());
+    crate::systems::finish_spawning(world, physics, entity);
     entity
 }
 
@@ -747,16 +781,4 @@ pub(crate) fn gate(
         Lit,
     ));
     (entity, physics.add_static_box(center, size))
-}
-
-pub(crate) fn rat_in_room(
-    world: &mut World,
-    physics: &mut Physics,
-    position: Vec2,
-    texture: TextureId,
-    room: usize,
-) -> Entity {
-    let entity = rat(world, physics, position, texture);
-    let _ = world.insert_one(entity, RoomId(room));
-    entity
 }

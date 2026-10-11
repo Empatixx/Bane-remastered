@@ -2,7 +2,8 @@ use hecs::{Entity, World};
 
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, ContactDamage, Expiring, Health, Invulnerable, Player, Position, Size, Trap,
+    Animation, Armor, ContactDamage, Expiring, Health, Invulnerable, Player, Position, Size,
+    Spawning, Trap,
 };
 use crate::geometry;
 
@@ -50,6 +51,7 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
             Option<&Animation>,
         )>()
         .without::<&Expiring>()
+        .without::<&Spawning>()
         .iter()
         .find(|(source_position, source_size, _, trap, animation)| {
             trap_is_armed(*trap, *animation)
@@ -121,9 +123,9 @@ mod tests {
     use glam::Vec2;
 
     use crate::assets::Textures;
+    use crate::enemies::EnemyKind;
     use crate::physics::Physics;
     use crate::prefabs;
-    use crate::render::TextureId;
 
     use super::*;
 
@@ -162,11 +164,11 @@ mod tests {
             Vec2::new(100.0, 100.0),
             &Textures::default(),
         );
-        prefabs::rat(
+        prefabs::ready_enemy(
             &mut world,
             &mut physics,
+            EnemyKind::Rat,
             Vec2::new(100.0, 100.0),
-            TextureId::WHITE,
         );
 
         contact_damage(&mut world, &mut Vec::new());

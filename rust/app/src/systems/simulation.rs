@@ -114,11 +114,11 @@ mod tests {
             Vec2::new(100.0, 100.0),
             &Textures::default(),
         );
-        let rat = prefabs::rat(
+        let rat = prefabs::ready_enemy(
             &mut world,
             &mut physics,
+            crate::enemies::EnemyKind::Rat,
             Vec2::new(200.0, 100.0),
-            crate::render::TextureId::WHITE,
         );
         if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
             velocity.0 = Vec2::new(240.0, 0.0);

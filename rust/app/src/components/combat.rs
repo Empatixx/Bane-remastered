@@ -63,6 +63,23 @@ pub(crate) struct Enemy {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Spawning {
+    pub(crate) remaining: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct HitFlash {
+    pub(crate) remaining: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Dash {
+    pub(crate) base_speed: f32,
+    pub(crate) bonus_speed: f32,
+    pub(crate) cycle: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Chase {
     pub(crate) speed: f32,
 }
