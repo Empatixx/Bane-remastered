@@ -1,7 +1,9 @@
 mod app;
 mod components;
 mod game;
-mod gpu;
+mod render;
+mod scene;
+mod systems;
 
 use winit::event_loop::{ControlFlow, EventLoop};
 

@@ -7,7 +7,7 @@ use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowId};
 
 use crate::game::Game;
-use crate::gpu::Gpu;
+use crate::render::Gpu;
 
 const STEP: Duration = Duration::from_nanos(1_000_000_000 / 60);
 const MAX_FRAME: Duration = Duration::from_millis(250);
