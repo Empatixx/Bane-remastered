@@ -1,11 +1,13 @@
+use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, ContactDamage, Expiring, Health, Invulnerable, Player, Position, Size,
-    Spawning, Trap,
+    Animation, Armor, ContactDamage, Enemy, Expiring, Health, HitFlash, Invulnerable, Player,
+    Position, Size, Spawning, Trap, TrapCooldown,
 };
 use crate::geometry;
+use crate::systems::enemies::FLASH_SECONDS;
 
 const INVULNERABLE_SECONDS: f32 = 1.0;
 
@@ -28,6 +30,66 @@ fn trap_is_armed(trap: Option<&Trap>, animation: Option<&Animation>) -> bool {
     match (trap, animation) {
         (Some(trap), Some(animation)) => animation.frame() < trap.active_frames,
         _ => true,
+    }
+}
+
+const TRAP_COOLDOWN: f32 = 1.0;
+
+pub(crate) fn trap_hits_enemies(world: &mut World, dt: f32) {
+    for cooldown in world.query_mut::<&mut TrapCooldown>() {
+        cooldown.remaining -= dt;
+    }
+    let ready: Vec<Entity> = world
+        .query::<(Entity, &TrapCooldown)>()
+        .iter()
+        .filter(|(_, cooldown)| cooldown.remaining <= 0.0)
+        .map(|(entity, _)| entity)
+        .collect();
+    for entity in ready {
+        let _ = world.remove_one::<TrapCooldown>(entity);
+    }
+    let traps: Vec<(Vec2, Vec2, i32)> = world
+        .query::<(&Position, &Size, &ContactDamage, &Trap, &Animation)>()
+        .iter()
+        .filter(|(_, _, _, trap, animation)| trap_is_armed(Some(*trap), Some(*animation)))
+        .map(|(position, size, damage, _, _)| (position.0, size.0, damage.0))
+        .collect();
+    if traps.is_empty() {
+        return;
+    }
+    let victims: Vec<(Entity, i32)> = world
+        .query::<(Entity, &Position, &Size)>()
+        .with::<(&Enemy, &Health)>()
+        .without::<&TrapCooldown>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+        .iter()
+        .filter_map(|(entity, position, size)| {
+            traps
+                .iter()
+                .find(|(trap, trap_size, _)| {
+                    geometry::overlaps(position.0, size.0, *trap, *trap_size)
+                })
+                .map(|(_, _, damage)| (entity, *damage))
+        })
+        .collect();
+    for (entity, damage) in victims {
+        if let Ok(mut health) = world.get::<&mut Health>(entity) {
+            health.current = (health.current - damage).max(0);
+        }
+        let _ = world.insert_one(
+            entity,
+            TrapCooldown {
+                remaining: TRAP_COOLDOWN,
+            },
+        );
+        let _ = world.insert_one(
+            entity,
+            HitFlash {
+                remaining: FLASH_SECONDS,
+            },
+        );
+        super::effects::show_change(world, entity, -damage, rand::random_range(0.0..1.0));
     }
 }
 
@@ -211,5 +273,38 @@ mod tests {
             .expect("the spike animates")
             .advance(0.4);
         assert!(contact_damage(&mut world, &mut Vec::new()));
+    }
+
+    #[test]
+    fn an_extended_spike_hurts_an_enemy_only_once_a_second() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        let decor = crate::dungeon::Decor {
+            kind: crate::dungeon::DecorKind::Spike,
+            tile: (10, 10),
+        };
+        let spike = prefabs::decor(&mut world, decor, &textures);
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(10.5 * 64.0, 10.5 * 64.0),
+        );
+        let health = |world: &World| world.get::<&Health>(rat).map(|h| h.current).unwrap_or(-1);
+
+        trap_hits_enemies(&mut world, 0.016);
+        assert_eq!(health(&world), 11);
+        trap_hits_enemies(&mut world, 0.5);
+        assert_eq!(health(&world), 11);
+        trap_hits_enemies(&mut world, 0.6);
+        assert_eq!(health(&world), 10);
+
+        world
+            .get::<&mut Animation>(spike)
+            .expect("the spike animates")
+            .advance(0.4);
+        trap_hits_enemies(&mut world, 1.1);
+        assert_eq!(health(&world), 10);
     }
 }

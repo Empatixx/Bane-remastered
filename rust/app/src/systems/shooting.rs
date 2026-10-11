@@ -117,6 +117,7 @@ pub(crate) fn bullet_hits(
             .is_some();
         if let (true, Some(entity)) = (hit_enemy, victim) {
             super::skills::count_hits(world, entity);
+            super::effects::show_change(world, entity, -damage, rand::random_range(0.0..1.0));
             let _ = world.insert_one(
                 entity,
                 HitFlash {

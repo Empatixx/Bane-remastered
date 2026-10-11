@@ -163,6 +163,7 @@ impl Scene for InGameScene {
         systems::update_weapon_hud(&mut self.world);
         systems::fade_lights(&mut self.world);
         systems::flash_hits(&mut self.world, dt);
+        systems::float_texts(&mut self.world, dt);
         let mut events = Vec::new();
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
             let context = systems::RoomContext {
@@ -224,6 +225,7 @@ impl Scene for InGameScene {
         systems::drag_cobwebs(&mut self.world, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
+        systems::trap_hits_enemies(&mut self.world, dt);
         systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
         systems::death_heals(&mut self.world);
         systems::clean_up_after_boss(&mut self.world);

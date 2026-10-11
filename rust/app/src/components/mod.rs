@@ -23,7 +23,7 @@ pub(crate) use combat::{
     Path, Spawning, Trap, Wallet, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT,
     BULLET_ROWS,
 };
-pub(crate) use effects::{GazeWind, LightFade, Particle, RoomId, ThenPlay};
+pub(crate) use effects::{Floating, GazeWind, LightFade, Particle, RoomId, ThenPlay, TrapCooldown};
 pub(crate) use hud::{
     AmmoPip, AmmoText, BarKind, BossHud, CoinText, StatusBar, PIP_EMPTY, PIP_FULL,
 };

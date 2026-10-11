@@ -99,6 +99,7 @@ pub(crate) fn death_heals(world: &mut World) {
         .filter(|(_, _, _, health)| health.current <= 0)
         .map(|(entity, position, heal, _)| (entity, position.0, *heal))
         .collect();
+    let mut healed: Vec<Entity> = Vec::new();
     for (entity, center, heal) in dying {
         let _ = world.remove_one::<DeathHeal>(entity);
         let box_size = Vec2::splat(heal.radius);
@@ -112,7 +113,11 @@ pub(crate) fn death_heals(world: &mut World) {
                 other != entity && geometry::overlaps(center, box_size, position.0, size.0);
             if nearby && health.current > 0 {
                 health.current = (health.current + heal.amount).min(health.max);
+                healed.push(other);
             }
+        }
+        for other in healed.drain(..) {
+            super::effects::show_change(world, other, heal.amount, rand::random_range(0.0..1.0));
         }
     }
 }

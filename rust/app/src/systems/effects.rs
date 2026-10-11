@@ -1,10 +1,10 @@
 use std::f32::consts::{PI, TAU};
 
 use glam::Vec2;
-use hecs::World;
+use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Body, Expiring, GazeWind, Light, LightFade, Particle, Position, Size,
+    Animation, Body, Expiring, Floating, GazeWind, Light, LightFade, Particle, Position, Size,
 };
 use crate::physics::Physics;
 use crate::prefabs;
@@ -54,6 +54,32 @@ fn gaze_position(center: Vec2, size: Vec2, velocity: Vec2, clock: f32) -> Vec2 {
         Vec2::new(feet.x, feet.y + WOBBLE * (PI * (1.0 + phase)).sin())
     } else {
         feet
+    }
+}
+
+pub(crate) fn show_change(world: &mut World, entity: Entity, change: i32, roll: f32) {
+    let placement = world
+        .query_one_mut::<(&Position, &Size)>(entity)
+        .map(|(position, size)| (position.0, size.0));
+    if let Ok((center, size)) = placement {
+        let top_left = center - size / 2.0;
+        let point = Vec2::new(top_left.x + roll * size.x, top_left.y + size.y / 5.0);
+        prefabs::floating_number(world, change, point);
+    }
+}
+
+pub(crate) fn float_texts(world: &mut World, dt: f32) {
+    let mut gone = Vec::new();
+    for (entity, floating, position) in world.query_mut::<(Entity, &mut Floating, &mut Position)>()
+    {
+        floating.remaining -= dt;
+        position.0 += floating.velocity * dt;
+        if floating.remaining <= 0.0 {
+            gone.push(entity);
+        }
+    }
+    for entity in gone {
+        let _ = world.despawn(entity);
     }
 }
 
@@ -132,5 +158,60 @@ mod tests {
         );
         assert_eq!(position.x, 100.0);
         assert!((position.y - 138.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn a_hit_number_rises_for_half_a_second_and_disappears() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(300.0, 300.0),
+        );
+
+        show_change(&mut world, rat, -4, 0.5);
+        let number = world
+            .query::<(&Floating, &crate::components::Text, &Position)>()
+            .iter()
+            .map(|(_, text, position)| (text.content.clone(), position.0))
+            .next();
+        let (content, start) = number.expect("a number is shown");
+        assert_eq!(content, "4");
+        assert!((start.y - (300.0 - 27.0 + 11.0)).abs() < 1.0, "{start:?}");
+
+        float_texts(&mut world, 0.25);
+        let risen = world
+            .query::<(&Floating, &Position)>()
+            .iter()
+            .map(|(_, position)| position.0.y)
+            .next();
+        assert!(risen.is_some_and(|y| y < start.y - 10.0));
+
+        float_texts(&mut world, 0.3);
+        assert_eq!(world.query::<&Floating>().iter().count(), 0);
+    }
+
+    #[test]
+    fn a_heal_number_is_green_and_signed() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(300.0, 300.0),
+        );
+
+        show_change(&mut world, rat, 1, 0.0);
+
+        let shown = world
+            .query::<&crate::components::Text>()
+            .with::<&Floating>()
+            .iter()
+            .map(|text| (text.content.clone(), text.color.y))
+            .next();
+        assert_eq!(shown, Some(("+1".to_owned(), 1.0)));
     }
 }

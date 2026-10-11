@@ -29,9 +29,10 @@ pub(crate) use camera::camera_target;
 pub(crate) use carry::{carried_stats, restore_stats};
 pub(crate) use damage::{
     contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,
+    trap_hits_enemies,
 };
 pub(crate) use draw::collect_draws;
-pub(crate) use effects::{fade_lights, spawn_gaze_wind};
+pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::finish_spawning;
 pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, plan_paths, reap_dead, tick_spawning,

@@ -5,10 +5,10 @@ use crate::assets::{Textures, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armageddon, Armor, BarKind, Boss, BossHud, Bullet, Button, Chase,
     Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Drag, Enemy,
-    EnemyBullet, Expiring, EyeShooter, Fuse, GazeWind, Hatcher, Health, Hitbox, Hits, Homing,
-    Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Minion, OnClick, Overlay,
-    Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId, ScreenSpace, Size,
-    Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity,
+    EnemyBullet, Expiring, EyeShooter, Floating, Fuse, GazeWind, Hatcher, Health, Hitbox, Hits,
+    Homing, Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Minion, OnClick,
+    Overlay, Particle, Path, PauseUi, Player, PlayerShadow, Position, Prompt, RoomId, ScreenSpace,
+    Size, Smash, Spawning, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap, UiAction, Velocity,
     Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
@@ -122,6 +122,8 @@ pub(crate) fn prop(
 const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
 const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
 const BULLET_DAMAGE: i32 = 1;
+const FLOAT_SECONDS: f32 = 0.5;
+const FLOAT_RISE: f32 = 30.0;
 const COBWEB_SIZE: Vec2 = Vec2::new(64.0, 64.0);
 const COBWEB_FORCE: f32 = 150_000_000.0;
 const COBWEB_DRAG: f32 = 1.5;
@@ -752,6 +754,29 @@ pub(crate) fn ladder(world: &mut World, top_left: Vec2, textures: &Textures) -> 
         ),
     );
     entity
+}
+
+pub(crate) fn floating_number(world: &mut World, change: i32, position: Vec2) -> Entity {
+    let (content, color) = if change > 0 {
+        (format!("+{change}"), Vec4::new(0.0, 1.0, 0.0, 1.0))
+    } else {
+        (change.abs().to_string(), Vec4::new(1.0, 0.0, 0.0, 1.0))
+    };
+    world.spawn((
+        Floating {
+            remaining: FLOAT_SECONDS,
+            velocity: Vec2::new(0.0, -FLOAT_RISE / FLOAT_SECONDS),
+        },
+        Position(position),
+        Text {
+            content,
+            color,
+            size: FontSize::Size22,
+            align: Align::Left,
+            anchor: Anchor::Baseline,
+        },
+        Layer(4),
+    ))
 }
 
 pub(crate) fn enemy_in_room(
