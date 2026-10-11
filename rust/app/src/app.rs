@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use winit::application::ApplicationHandler;
@@ -6,13 +7,15 @@ use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowId};
 
 use crate::game::Game;
+use crate::gpu::Gpu;
 
 const STEP: Duration = Duration::from_nanos(1_000_000_000 / 60);
 const MAX_FRAME: Duration = Duration::from_millis(250);
 
 #[derive(Debug)]
 pub(crate) struct App {
-    window: Option<Window>,
+    window: Option<Arc<Window>>,
+    gpu: Option<Gpu>,
     game: Game,
     last_frame: Instant,
     accumulator: Duration,
@@ -22,6 +25,7 @@ impl App {
     pub(crate) fn new() -> Self {
         Self {
             window: None,
+            gpu: None,
             game: Game::default(),
             last_frame: Instant::now(),
             accumulator: Duration::ZERO,
@@ -32,10 +36,21 @@ impl App {
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let attributes = Window::default_attributes().with_title("Bane");
-        match event_loop.create_window(attributes) {
-            Ok(window) => self.window = Some(window),
+        let window = match event_loop.create_window(attributes) {
+            Ok(window) => Arc::new(window),
             Err(error) => {
                 tracing::error!(%error, "cannot create the window");
+                event_loop.exit();
+                return;
+            }
+        };
+        match Gpu::new(Arc::clone(&window)) {
+            Ok(gpu) => {
+                self.gpu = Some(gpu);
+                self.window = Some(window);
+            }
+            Err(error) => {
+                tracing::error!(%error, "cannot start the graphics");
                 event_loop.exit();
             }
         }
@@ -44,7 +59,21 @@ impl ApplicationHandler for App {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::RedrawRequested => {}
+            WindowEvent::Resized(size) => {
+                if let Some(gpu) = &mut self.gpu {
+                    gpu.resize(size);
+                }
+            }
+            WindowEvent::RedrawRequested => {
+                if let Some(gpu) = &mut self.gpu {
+                    gpu.render(wgpu::Color {
+                        r: 0.05,
+                        g: 0.08,
+                        b: 0.12,
+                        a: 1.0,
+                    });
+                }
+            }
             _ => {}
         }
     }

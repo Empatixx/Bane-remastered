@@ -1,5 +1,6 @@
 mod app;
 mod game;
+mod gpu;
 
 use winit::event_loop::{ControlFlow, EventLoop};
 
