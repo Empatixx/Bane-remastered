@@ -78,6 +78,16 @@ impl Physics {
         self.insert(body, collider)
     }
 
+    pub(crate) fn add_enemy(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
+        let body = RigidBodyBuilder::dynamic()
+            .translation(to_rapier(position))
+            .lock_rotations();
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .collision_groups(groups::ENEMIES)
+            .user_data(owner_bits(entity));
+        self.insert(body, collider)
+    }
+
     pub(crate) fn add_bullet(
         &mut self,
         entity: Entity,

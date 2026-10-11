@@ -87,4 +87,27 @@ mod tests {
         assert!(position.x < 3.0 * TILE - 16.0 + 1.0, "x = {}", position.x);
         assert!(position.y > 150.0, "y = {}", position.y);
     }
+
+    #[test]
+    fn player_and_enemy_pass_through_each_other() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(&mut world, &mut physics, Vec2::new(100.0, 100.0));
+        let rat = prefabs::rat(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            crate::render::TextureId::WHITE,
+        );
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+            velocity.0 = Vec2::new(240.0, 0.0);
+        }
+
+        run(&mut world, &mut physics, 60);
+
+        let player_x = player_position(&world, player).x;
+        let rat_x = player_position(&world, rat).x;
+        assert!(player_x > 300.0, "player x = {player_x}");
+        assert!((rat_x - 200.0).abs() < 0.5, "rat x = {rat_x}");
+    }
 }

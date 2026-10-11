@@ -2,7 +2,9 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::components::BULLET_IMPACT;
-use crate::components::{Animation, Body, Bullet, Impact, Player, Position, Velocity, Weapon};
+use crate::components::{
+    Animation, Body, Bullet, Expiring, Health, Player, Position, Velocity, Weapon,
+};
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;
@@ -11,12 +13,14 @@ use crate::render::TextureId;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ShotRoll {
     pub(crate) spread: f32,
+    pub(crate) damage: f32,
 }
 
 impl ShotRoll {
     pub(crate) fn random() -> Self {
         Self {
             spread: rand::random_range(-1.0..=1.0),
+            damage: rand::random_range(0.0..1.0),
         }
     }
 }
@@ -46,30 +50,43 @@ pub(crate) fn shoot(
         }
         weapon.cooldown = weapon.fire_interval;
         let angle = to_target.to_angle() + roll.spread * weapon.inaccuracy;
-        shots.push((position.0, Vec2::from_angle(angle) * weapon.bullet_speed));
+        let range = weapon.max_damage - weapon.min_damage + 1;
+        let damage = weapon.min_damage + ((range as f32 * roll.damage) as i32).min(range - 1);
+        shots.push((
+            position.0,
+            Vec2::from_angle(angle) * weapon.bullet_speed,
+            damage,
+        ));
     }
-    for (position, velocity) in shots {
-        prefabs::bullet(world, physics, position, velocity, bullet_texture);
+    for (position, velocity, damage) in shots {
+        prefabs::bullet(world, physics, position, velocity, damage, bullet_texture);
     }
 }
 
 pub(crate) fn bullet_hits(world: &mut World, physics: &mut Physics) {
-    let hit: Vec<(Entity, Body)> = world
-        .query::<(Entity, &Body)>()
-        .with::<&Bullet>()
-        .without::<&Impact>()
+    let hits: Vec<(Entity, Body, i32, Vec<Owner>)> = world
+        .query::<(Entity, &Body, &Bullet)>()
+        .without::<&Expiring>()
         .iter()
-        .filter(|(_, body)| physics.touching(**body).contains(&Owner::Wall))
-        .map(|(entity, body)| (entity, *body))
+        .map(|(entity, body, bullet)| (entity, *body, bullet.damage, physics.touching(*body)))
+        .filter(|(_, _, _, touched)| !touched.is_empty())
         .collect();
-    for (entity, body) in hit {
+    for (bullet, body, damage, touched) in hits {
+        let victim = touched.iter().find_map(|owner| match owner {
+            Owner::Entity(entity) => Some(*entity),
+            Owner::Wall => None,
+        });
+        if let Some(health) = victim.and_then(|entity| world.get::<&mut Health>(entity).ok()) {
+            let mut health = health;
+            health.current -= damage;
+        }
         physics.remove(body);
-        let _ = world.remove_one::<Body>(entity);
-        let _ = world.insert_one(entity, Impact);
-        if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
+        let _ = world.remove_one::<Body>(bullet);
+        let _ = world.insert_one(bullet, Expiring);
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(bullet) {
             velocity.0 = Vec2::ZERO;
         }
-        if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+        if let Ok(mut animation) = world.get::<&mut Animation>(bullet) {
             animation.play(BULLET_IMPACT);
         }
     }
@@ -105,7 +122,10 @@ mod tests {
             camera,
             TextureId::WHITE,
             dt,
-            ShotRoll { spread: 0.0 },
+            ShotRoll {
+                spread: 0.0,
+                damage: 0.0,
+            },
         );
     }
 
@@ -159,6 +179,7 @@ mod tests {
             &mut physics,
             Vec2::new(100.0, 64.0),
             Vec2::new(700.0, 0.0),
+            1,
             TextureId::WHITE,
         );
 
@@ -167,12 +188,42 @@ mod tests {
             bullet_hits(&mut world, &mut physics);
         }
 
-        assert!(world.get::<&Impact>(bullet).is_ok());
+        assert!(world.get::<&Expiring>(bullet).is_ok());
         assert!(world.get::<&Body>(bullet).is_err());
         let position = world.get::<&Position>(bullet).map(|p| p.0).ok();
         assert!(
             position.is_some_and(|p| p.x > 184.0 && p.x < 216.0),
             "{position:?}"
         );
+    }
+
+    #[test]
+    fn bullet_damages_the_enemy_it_hits() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let rat = prefabs::rat(
+            &mut world,
+            &mut physics,
+            Vec2::new(300.0, 100.0),
+            TextureId::WHITE,
+        );
+        let before = world.get::<&Health>(rat).map(|h| h.current).unwrap_or(0);
+        let bullet = prefabs::bullet(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            Vec2::new(700.0, 0.0),
+            3,
+            TextureId::WHITE,
+        );
+
+        for _ in 0..30 {
+            simulate(&mut world, &mut physics, 1.0 / 60.0);
+            bullet_hits(&mut world, &mut physics);
+        }
+
+        let after = world.get::<&Health>(rat).map(|h| h.current).unwrap_or(0);
+        assert_eq!(before - after, 3);
+        assert!(world.get::<&Expiring>(bullet).is_ok());
     }
 }

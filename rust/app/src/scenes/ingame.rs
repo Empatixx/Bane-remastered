@@ -60,6 +60,15 @@ impl Scene for InGameScene {
             prefabs::tilemap(&mut self.world, &grid, &self.tileset, self.textures.tileset);
         self.physics.add_walls(&solid_cells, TILE_SIZE);
         prefabs::player(&mut self.world, &mut self.physics, self.bounds / 2.0);
+        for corner in [(2.5, 2.5), (17.5, 2.5), (2.5, 9.5), (17.5, 9.5)] {
+            let position = Vec2::new(corner.0, corner.1) * TILE_SIZE;
+            prefabs::rat(
+                &mut self.world,
+                &mut self.physics,
+                position,
+                self.textures.rat,
+            );
+        }
         self.camera = systems::follow_player(&self.world, self.bounds);
     }
 
@@ -74,7 +83,7 @@ impl Scene for InGameScene {
             systems::ShotRoll::random(),
         );
         systems::animate(&mut self.world, dt);
-        systems::finish_impacts(&mut self.world);
+        systems::remove_expired(&mut self.world);
         self.camera = systems::follow_player(&self.world, self.bounds);
         if input.just_pressed(KeyCode::Escape) {
             Transition::Switch(SceneId::Lobby)
@@ -85,8 +94,10 @@ impl Scene for InGameScene {
 
     fn fixed_update(&mut self, input: &Input, dt: f32) -> Transition {
         systems::steer_player(&mut self.world, input);
+        systems::chase_player(&mut self.world);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics);
+        systems::reap_dead(&mut self.world, &mut self.physics);
         Transition::None
     }
 }

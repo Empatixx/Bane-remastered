@@ -1,6 +1,6 @@
 use hecs::{Entity, World};
 
-use crate::components::{Animation, Impact, Sprite};
+use crate::components::{Animation, Expiring, Sprite};
 
 pub(crate) fn animate(world: &mut World, dt: f32) {
     for (animation, sprite) in world.query_mut::<(&mut Animation, &mut Sprite)>() {
@@ -14,10 +14,10 @@ pub(crate) fn animate(world: &mut World, dt: f32) {
     }
 }
 
-pub(crate) fn finish_impacts(world: &mut World) {
+pub(crate) fn remove_expired(world: &mut World) {
     let finished: Vec<Entity> = world
         .query::<(Entity, &Animation)>()
-        .with::<&Impact>()
+        .with::<&Expiring>()
         .iter()
         .filter(|(_, animation)| animation.finished())
         .map(|(entity, _)| entity)

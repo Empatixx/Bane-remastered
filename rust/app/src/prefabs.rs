@@ -2,8 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Bullet, Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size,
-    Sprite, Text, UiAction, Velocity, Weapon, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    Animation, Bullet, Button, Chase, Clip, Color, Enemy, Health, Layer, LoadingBar, OnClick,
+    Player, Portal, Position, Size, Sprite, Text, UiAction, Velocity, Weapon, BULLET_COLUMNS,
+    BULLET_FLIGHT, BULLET_ROWS,
 };
 use crate::physics::Physics;
 use crate::render::TextureId;
@@ -135,11 +136,12 @@ pub(crate) fn bullet(
     physics: &mut Physics,
     position: Vec2,
     velocity: Vec2,
+    damage: i32,
     texture: TextureId,
 ) -> Entity {
     let size = Vec2::splat(16.0);
     let entity = world.spawn((
-        Bullet,
+        Bullet { damage },
         Position(position),
         Velocity(velocity),
         Size(size),
@@ -149,6 +151,49 @@ pub(crate) fn bullet(
         Layer(2),
     ));
     let body = physics.add_bullet(entity, position, velocity, size);
+    let _ = world.insert_one(entity, body);
+    entity
+}
+
+const RAT_COLUMNS: usize = 4;
+const RAT_ROWS: usize = 2;
+const RAT_SIZE: Vec2 = Vec2::new(127.5, 55.5);
+const RAT_HEALTH: i32 = 12;
+const RAT_SPEED: f32 = 110.0;
+const RAT_WALK: Clip = Clip {
+    row: 0,
+    frames: 4,
+    frame_time: 0.12,
+    looping: true,
+};
+const RAT_DEATH: Clip = Clip {
+    row: 1,
+    frames: 3,
+    frame_time: 0.15,
+    looping: false,
+};
+
+pub(crate) fn rat(
+    world: &mut World,
+    physics: &mut Physics,
+    position: Vec2,
+    texture: TextureId,
+) -> Entity {
+    let entity = world.spawn((
+        Enemy { death: RAT_DEATH },
+        Health {
+            current: RAT_HEALTH,
+        },
+        Chase { speed: RAT_SPEED },
+        Position(position),
+        Velocity::default(),
+        Size(RAT_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(texture, 0, RAT_WALK.row, RAT_COLUMNS, RAT_ROWS),
+        Animation::new(RAT_COLUMNS, RAT_ROWS, RAT_WALK),
+        Layer(1),
+    ));
+    let body = physics.add_enemy(entity, position, RAT_SIZE);
     let _ = world.insert_one(entity, body);
     entity
 }

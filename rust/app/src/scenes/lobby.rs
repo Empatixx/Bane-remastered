@@ -82,7 +82,7 @@ impl Scene for LobbyScene {
             systems::ShotRoll::random(),
         );
         systems::animate(&mut self.world, dt);
-        systems::finish_impacts(&mut self.world);
+        systems::remove_expired(&mut self.world);
         self.camera = systems::follow_player(&self.world, self.bounds);
         if input.just_pressed(KeyCode::Escape) {
             Transition::Switch(SceneId::Menu)

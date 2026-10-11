@@ -18,16 +18,35 @@ pub(crate) const BULLET_IMPACT: Clip = Clip {
 };
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Bullet;
+pub(crate) struct Bullet {
+    pub(crate) damage: i32,
+}
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Impact;
+pub(crate) struct Expiring;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Health {
+    pub(crate) current: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Enemy {
+    pub(crate) death: Clip,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Chase {
+    pub(crate) speed: f32,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Weapon {
     pub(crate) fire_interval: f32,
     pub(crate) cooldown: f32,
     pub(crate) inaccuracy: f32,
+    pub(crate) min_damage: i32,
+    pub(crate) max_damage: i32,
     pub(crate) bullet_speed: f32,
 }
 
@@ -37,6 +56,8 @@ impl Weapon {
             fire_interval: 0.25,
             cooldown: 0.0,
             inaccuracy: 0.1,
+            min_damage: 1,
+            max_damage: 3,
             bullet_speed: 700.0,
         }
     }

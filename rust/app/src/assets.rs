@@ -13,6 +13,7 @@ pub(crate) struct Textures {
     pub(crate) logo: TextureId,
     pub(crate) tileset: TextureId,
     pub(crate) bullet: TextureId,
+    pub(crate) rat: TextureId,
 }
 
 #[derive(Debug, Clone)]
@@ -31,6 +32,7 @@ impl Assets {
                 logo: gpu.load_texture(&root.join("textures/menu/logo.tga"))?,
                 tileset: gpu.load_texture(&root.join("textures/ingame/tileset_2.png"))?,
                 bullet: gpu.load_texture(&root.join("textures/ingame/bullet.tga"))?,
+                rat: gpu.load_texture(&root.join("textures/ingame/rat.tga"))?,
             },
             tileset: Arc::new(Tileset::dungeon()?),
             font: Font::load(gpu, &root.join("fonts/PixelFJVerdana12pt.ttf"), FONT_SIZE)?,
