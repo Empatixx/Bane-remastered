@@ -3,22 +3,24 @@ use std::ops::ControlFlow;
 use glam::Vec2;
 use winit::event::{ElementState, KeyEvent, MouseButton};
 
-use crate::assets::Textures;
+use crate::assets::Assets;
 use crate::input::Input;
-use crate::render::Draw;
+use crate::render::{Draw, Font};
 use crate::scenes::Scenes;
 
 #[derive(Debug)]
 pub(crate) struct Game {
     input: Input,
     scenes: Scenes,
+    font: Font,
 }
 
 impl Game {
-    pub(crate) fn new(textures: Textures) -> Self {
+    pub(crate) fn new(assets: Assets) -> Self {
         Self {
             input: Input::default(),
-            scenes: Scenes::new(textures),
+            scenes: Scenes::new(assets.textures),
+            font: assets.font,
         }
     }
 
@@ -45,6 +47,6 @@ impl Game {
     }
 
     pub(crate) fn draws(&self) -> Vec<Draw> {
-        self.scenes.draws()
+        self.scenes.draws(&self.font)
     }
 }

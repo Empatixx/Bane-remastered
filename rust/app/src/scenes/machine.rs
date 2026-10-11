@@ -3,7 +3,7 @@ use std::ops::ControlFlow;
 
 use crate::assets::Textures;
 use crate::input::Input;
-use crate::render::Draw;
+use crate::render::{Draw, Font};
 use crate::systems;
 
 use super::ingame::InGameScene;
@@ -51,8 +51,8 @@ impl Scenes {
         self.apply(transition)
     }
 
-    pub(crate) fn draws(&self) -> Vec<Draw> {
-        systems::collect_draws(self.scene().world())
+    pub(crate) fn draws(&self, font: &Font) -> Vec<Draw> {
+        systems::collect_draws(self.scene().world(), font)
     }
 
     fn apply(&mut self, transition: Transition) -> ControlFlow<()> {

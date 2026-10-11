@@ -36,6 +36,11 @@ impl Scene for LoadingScene {
             glam::Vec4::new(0.12, 0.14, 0.2, 1.0),
         );
         prefabs::loading_bar(&mut self.world, center);
+        prefabs::label(
+            &mut self.world,
+            Vec2::new(center.x, center.y - 40.0),
+            "Načítání",
+        );
     }
 
     fn update(&mut self, _input: &Input, dt: f32) -> Transition {

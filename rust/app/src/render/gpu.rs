@@ -121,6 +121,7 @@ impl Gpu {
                         0 => Float32x2,
                         1 => Float32x2,
                         2 => Float32x4,
+                        3 => Float32x4,
                     ],
                 })],
             },
@@ -160,6 +161,15 @@ impl Gpu {
     pub(crate) fn load_texture(&mut self, path: &Path) -> Result<TextureId, Box<dyn Error>> {
         let pixels = Pixels::load(path)?;
         Ok(self.upload(&pixels))
+    }
+
+    pub(crate) fn upload_alpha_mask(&mut self, width: u32, height: u32, alpha: &[u8]) -> TextureId {
+        let rgba = alpha.iter().flat_map(|a| [255, 255, 255, *a]).collect();
+        self.upload(&Pixels {
+            width,
+            height,
+            rgba,
+        })
     }
 
     fn upload(&mut self, pixels: &Pixels) -> TextureId {

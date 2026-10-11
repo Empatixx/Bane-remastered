@@ -54,18 +54,21 @@ impl Scene for MenuScene {
             &mut self.world,
             Vec2::new(x, 240.0),
             Vec4::new(0.2, 0.55, 0.3, 1.0),
+            "Hrát",
             UiAction::Play,
         );
         prefabs::button(
             &mut self.world,
             Vec2::new(x, 310.0),
             Vec4::new(0.25, 0.35, 0.55, 1.0),
+            "Nastavení",
             UiAction::Settings,
         );
         prefabs::button(
             &mut self.world,
             Vec2::new(x, 380.0),
             Vec4::new(0.6, 0.2, 0.2, 1.0),
+            "Konec",
             UiAction::Exit,
         );
     }

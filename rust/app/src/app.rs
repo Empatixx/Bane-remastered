@@ -7,7 +7,7 @@ use winit::event::WindowEvent;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowId};
 
-use crate::assets::Textures;
+use crate::assets::Assets;
 use crate::game::Game;
 use crate::render::Gpu;
 use crate::viewport::TARGET;
@@ -29,7 +29,7 @@ impl App {
         Self {
             window: None,
             gpu: None,
-            game: Game::new(Textures::default()),
+            game: Game::new(Assets::default()),
             last_frame: Instant::now(),
             accumulator: Duration::ZERO,
         }
@@ -48,12 +48,12 @@ impl ApplicationHandler for App {
             }
         };
         let started = Gpu::new(Arc::clone(&window)).and_then(|mut gpu| {
-            let textures = Textures::load(&mut gpu)?;
-            Ok((gpu, textures))
+            let assets = Assets::load(&mut gpu)?;
+            Ok((gpu, assets))
         });
         match started {
-            Ok((gpu, textures)) => {
-                self.game = Game::new(textures);
+            Ok((gpu, assets)) => {
+                self.game = Game::new(assets);
                 self.gpu = Some(gpu);
                 self.window = Some(window);
             }

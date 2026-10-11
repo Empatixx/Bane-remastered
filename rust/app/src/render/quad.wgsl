@@ -10,6 +10,7 @@ struct Instance {
     @location(0) center: vec2<f32>,
     @location(1) size: vec2<f32>,
     @location(2) color: vec4<f32>,
+    @location(3) uv: vec4<f32>,
 };
 
 struct VertexOut {
@@ -37,7 +38,7 @@ fn vs_main(@builtin(vertex_index) index: u32, instance: Instance) -> VertexOut {
     var out: VertexOut;
     out.position = vec4<f32>(ndc, 0.0, 1.0);
     out.color = instance.color;
-    out.uv = corner + vec2<f32>(0.5, 0.5);
+    out.uv = mix(instance.uv.xy, instance.uv.zw, corner + vec2<f32>(0.5, 0.5));
     return out;
 }
 

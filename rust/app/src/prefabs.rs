@@ -2,8 +2,8 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size, Sprite, UiAction,
-    Velocity,
+    Button, Color, Layer, LoadingBar, OnClick, Player, Portal, Position, Size, Sprite, Text,
+    UiAction, Velocity,
 };
 use crate::render::TextureId;
 
@@ -31,7 +31,14 @@ pub(crate) fn portal(world: &mut World, position: Vec2) -> Entity {
     ))
 }
 
-pub(crate) fn button(world: &mut World, position: Vec2, idle: Vec4, action: UiAction) -> Entity {
+pub(crate) fn button(
+    world: &mut World,
+    position: Vec2,
+    idle: Vec4,
+    label: &str,
+    action: UiAction,
+) -> Entity {
+    label_at(world, position, label, Layer(2));
     world.spawn((
         Button {
             idle,
@@ -66,5 +73,20 @@ pub(crate) fn sprite(
         Color(Vec4::ONE),
         Sprite(texture),
         Layer(layer),
+    ))
+}
+
+pub(crate) fn label(world: &mut World, position: Vec2, content: &str) -> Entity {
+    label_at(world, position, content, Layer(2))
+}
+
+fn label_at(world: &mut World, position: Vec2, content: &str, layer: Layer) -> Entity {
+    world.spawn((
+        Position(position),
+        Text {
+            content: content.to_owned(),
+            color: Vec4::ONE,
+        },
+        layer,
     ))
 }
