@@ -161,13 +161,8 @@ fn rare_prize(
                 .next()
                 .and_then(|loadout| unused_gun(loadout, roll(1000) as f32 / 1000.0));
             if let Some(kind) = gun {
-                let drop = prefabs::gun_drop(
-                    world,
-                    crate::components::Weapon::new(kind),
-                    center,
-                    velocity,
-                    textures,
-                );
+                let weapon = crate::systems::loadout::fresh_weapon(world, kind);
+                let drop = prefabs::gun_drop(world, weapon, center, velocity, textures);
                 let _ = world.remove_one::<crate::components::Interactable>(drop);
                 let _ = world.insert_one(
                     drop,

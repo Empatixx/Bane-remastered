@@ -16,6 +16,7 @@ use crate::profile::SharedProfile;
 use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::TILE_SIZE;
+use crate::upgrades::Perks;
 use crate::viewport::TARGET;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition};
@@ -107,6 +108,11 @@ impl Scene for InGameScene {
         self.victory = false;
         self.death = None;
         self.build(assets);
+        let perks = self
+            .profile
+            .as_ref()
+            .map_or_else(Perks::default, SharedProfile::perks);
+        systems::apply_run_perks(&mut self.world, perks);
     }
 
     fn update(
@@ -367,6 +373,10 @@ impl InGameScene {
         };
         let bounds = dungeon.grid.pixel_size();
         let textures = &assets.textures;
+        let perks = self
+            .profile
+            .as_ref()
+            .map_or_else(Perks::default, SharedProfile::perks);
         prefabs::backdrop(&mut self.world);
         let solid_cells = prefabs::tilemap(
             &mut self.world,
@@ -378,17 +388,29 @@ impl InGameScene {
         self.navigation = Navigation::new(&solid_cells);
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        systems::apply_floor_perks(&mut self.world, perks);
         for room in &dungeon.rooms {
             if let Some(furnishing) = &room.furnishing {
-                prefabs::furnishing(&mut self.world, &mut self.physics, furnishing, textures);
+                prefabs::furnishing(
+                    &mut self.world,
+                    &mut self.physics,
+                    furnishing,
+                    perks.gamble_machine,
+                    textures,
+                );
             }
             for decor in &room.decor {
                 prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);
             }
         }
-        systems::stock_rooms(&mut self.world, &dungeon, self.floor, textures, |bound| {
-            rand::random_range(0..bound)
-        });
+        systems::stock_rooms(
+            &mut self.world,
+            &dungeon,
+            self.floor,
+            perks.discount,
+            textures,
+            |bound| rand::random_range(0..bound),
+        );
         if let Some(keeper) = dungeon
             .rooms
             .iter()
@@ -397,8 +419,10 @@ impl InGameScene {
             .find(|fixture| fixture.kind == crate::dungeon::FixtureKind::Shopkeeper)
         {
             prefabs::shop_speech(&mut self.world, keeper.top_left, textures);
-            for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
-                wallet.coins += SLOT_MACHINE_COINS;
+            if perks.gamble_machine {
+                for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
+                    wallet.coins += SLOT_MACHINE_COINS;
+                }
             }
         }
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
@@ -409,6 +433,7 @@ impl InGameScene {
                 self.camera.set_bounds(min, max);
             }
         }
+        systems::immobilize_traps(&mut self.world, perks, |bound| rand::random_range(0..bound));
         self.dungeon = Some(dungeon);
         prefabs::status_bars(&mut self.world, textures);
         prefabs::coin_hud(
@@ -442,6 +467,9 @@ impl InGameScene {
     fn handle_room_events(&mut self, events: Vec<systems::RoomEvent>, assets: &Assets) {
         for event in events {
             match event {
+                systems::RoomEvent::RoomCleared => {
+                    systems::regenerate_armor(&mut self.world);
+                }
                 systems::RoomEvent::ShopEntered => {
                     systems::say(&mut self.world, "Welcome to my shop!");
                 }

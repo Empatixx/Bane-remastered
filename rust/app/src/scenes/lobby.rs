@@ -17,7 +17,7 @@ use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::viewport::TARGET;
 
-use super::{Cursor, Pause, Scene, SceneId, Transition};
+use super::{Cursor, Pause, Scene, SceneId, Transition, UpgradeMenu};
 
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
 
@@ -54,6 +54,7 @@ pub(crate) struct LobbyScene {
     physics: Physics,
     camera: Camera,
     pause: Pause,
+    upgrades: UpgradeMenu,
     clock: f32,
     sounds: Vec<AudioCommand>,
     profile: Option<SharedProfile>,
@@ -62,6 +63,15 @@ pub(crate) struct LobbyScene {
 impl LobbyScene {
     pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
         self.profile = Some(profile);
+    }
+
+    fn refresh_wallet(&mut self) {
+        if let Some(profile) = &self.profile {
+            let balance = i32::try_from(profile.balance()).unwrap_or(i32::MAX);
+            for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
+                wallet.coins = balance;
+            }
+        }
     }
 }
 
@@ -78,6 +88,7 @@ impl Scene for LobbyScene {
         self.world.clear();
         self.physics = Physics::new();
         self.pause = Pause::default();
+        self.upgrades = UpgradeMenu::default();
     }
 
     fn soundtrack(&self) -> Option<Soundtrack> {
@@ -90,7 +101,7 @@ impl Scene for LobbyScene {
 
     fn fx(&self) -> SceneFx {
         SceneFx {
-            paused: self.pause.is_active(),
+            paused: self.pause.is_active() || self.upgrades.is_open(),
             low_health: systems::player_is_low_on_health(&self.world),
         }
     }
@@ -164,6 +175,21 @@ impl Scene for LobbyScene {
         assets: &Assets,
         _settings: &mut Settings,
     ) -> Transition {
+        if self.upgrades.is_open() {
+            if input.just_pressed(KeyCode::Escape) || input.just_pressed(KeyCode::KeyE) {
+                self.upgrades.close(&mut self.world);
+                return Transition::None;
+            }
+            if let Some(profile) = &self.profile {
+                let outcome =
+                    self.upgrades
+                        .update(&mut self.world, input, assets, profile, &mut self.sounds);
+                if outcome.is_some() {
+                    self.refresh_wallet();
+                }
+            }
+            return Transition::None;
+        }
         if input.just_pressed(KeyCode::Escape) {
             self.pause.toggle(&mut self.world, assets);
         }
@@ -202,7 +228,9 @@ impl Scene for LobbyScene {
         match systems::interact(&mut self.world, input) {
             Some(Interaction::EnterPortal) => Transition::Switch(SceneId::InGame),
             Some(Interaction::Upgrade) => {
-                tracing::info!("the upgrade menu is not implemented yet");
+                if let Some(profile) = &self.profile {
+                    self.upgrades.toggle(&mut self.world, assets, profile);
+                }
                 Transition::None
             }
             _ => Transition::None,
@@ -210,7 +238,7 @@ impl Scene for LobbyScene {
     }
 
     fn fixed_update(&mut self, input: &Input, dt: f32, _assets: &Assets) -> Transition {
-        if self.pause.is_active() {
+        if self.pause.is_active() || self.upgrades.is_open() {
             return Transition::None;
         }
         systems::steer_player(&mut self.world, input);

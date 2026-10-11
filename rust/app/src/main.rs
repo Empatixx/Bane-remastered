@@ -24,6 +24,7 @@ mod scenes;
 mod settings;
 mod systems;
 mod tilemap;
+mod upgrades;
 mod viewport;
 
 use winit::event_loop::{ControlFlow, EventLoop};

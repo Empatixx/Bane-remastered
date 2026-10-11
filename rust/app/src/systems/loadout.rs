@@ -91,6 +91,15 @@ pub(crate) fn pick_up_gun(world: &mut World, textures: &Textures, sounds: &mut V
     }
 }
 
+pub(crate) fn fresh_weapon(world: &World, kind: GunKind) -> Weapon {
+    world
+        .query::<&Loadout>()
+        .with::<&Player>()
+        .iter()
+        .next()
+        .map_or_else(|| Weapon::new(kind), |loadout| loadout.fresh(kind))
+}
+
 pub(crate) fn unused_gun(loadout: &Loadout, roll: f32) -> Option<GunKind> {
     let free: Vec<GunKind> = GunKind::ALL
         .into_iter()
@@ -159,7 +168,8 @@ pub(crate) fn open_chests(
                 .next()
                 .and_then(|loadout| unused_gun(loadout, roll));
             if let Some(kind) = kind {
-                prefabs::gun_drop(world, Weapon::new(kind), center, Vec2::ZERO, textures);
+                let weapon = fresh_weapon(world, kind);
+                prefabs::gun_drop(world, weapon, center, Vec2::ZERO, textures);
             }
         }
     }

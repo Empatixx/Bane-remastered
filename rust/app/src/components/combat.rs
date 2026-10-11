@@ -111,6 +111,7 @@ pub(crate) struct Weapon {
     pub(crate) ammo: i32,
     pub(crate) reloading: Option<f32>,
     pub(crate) burst: Option<Burst>,
+    pub(crate) ammo_scale: f32,
 }
 
 impl Weapon {
@@ -123,7 +124,19 @@ impl Weapon {
             ammo: spec.max_ammo,
             reloading: None,
             burst: None,
+            ammo_scale: 1.0,
         }
+    }
+
+    pub(crate) fn scaled(kind: GunKind, ammo_scale: f32) -> Self {
+        let mut weapon = Self::new(kind);
+        weapon.ammo_scale = ammo_scale;
+        weapon.ammo = weapon.max_ammo();
+        weapon
+    }
+
+    pub(crate) fn max_ammo(&self) -> i32 {
+        (self.spec().max_ammo as f32 * self.ammo_scale) as i32
     }
 
     #[cfg(test)]
@@ -145,11 +158,11 @@ impl Weapon {
     }
 
     pub(crate) fn has_full_ammo(&self) -> bool {
-        self.ammo >= self.spec().max_ammo
+        self.ammo >= self.max_ammo()
     }
 
     pub(crate) fn add_percent(&mut self, percent: f32) {
-        let max = self.spec().max_ammo;
+        let max = self.max_ammo();
         self.ammo = (self.ammo + (max as f32 * percent) as i32).min(max);
     }
 
@@ -181,10 +194,13 @@ impl Weapon {
     }
 }
 
+const STARTING_SLOTS: usize = 2;
+
 #[derive(Debug, Clone)]
 pub(crate) struct Loadout {
     slots: Vec<Option<Weapon>>,
     current: usize,
+    ammo_scale: f32,
 }
 
 impl Loadout {
@@ -195,7 +211,22 @@ impl Loadout {
                 Some(Weapon::new(GunKind::Shotgun)),
             ],
             current: 0,
+            ammo_scale: 1.0,
         }
+    }
+
+    pub(crate) fn apply_perks(&mut self, extra_slots: usize, ammo_scale: f32) {
+        while self.slots.len() < STARTING_SLOTS + extra_slots {
+            self.slots.push(None);
+        }
+        self.ammo_scale = ammo_scale;
+        for weapon in self.slots.iter_mut().flatten() {
+            weapon.ammo_scale = ammo_scale;
+        }
+    }
+
+    pub(crate) fn fresh(&self, kind: GunKind) -> Weapon {
+        Weapon::scaled(kind, self.ammo_scale)
     }
 
     pub(crate) fn current(&self) -> Option<&Weapon> {
@@ -261,7 +292,8 @@ impl Loadout {
         self.slots.get_mut(self.current).and_then(Option::take)
     }
 
-    pub(crate) fn add(&mut self, weapon: Weapon) -> Option<Weapon> {
+    pub(crate) fn add(&mut self, mut weapon: Weapon) -> Option<Weapon> {
+        weapon.ammo_scale = self.ammo_scale;
         let displaced = if self.slots.iter().all(Option::is_some) {
             self.drop_current()
         } else {
@@ -364,6 +396,20 @@ mod tests {
         assert!(!loadout.wants_ammo(AmmoBox::Shotgun));
         loadout.add_ammo(AmmoBox::Universal);
         assert_eq!(loadout.current().map(|w| w.ammo), Some(120));
+    }
+
+    #[test]
+    fn upgrades_add_a_slot_and_raise_the_ammo_capacity_of_every_gun() {
+        let mut loadout = Loadout::starting();
+        loadout.apply_perks(1, 1.1);
+        assert!(loadout.switch_to(2));
+        let fresh = loadout.fresh(GunKind::Uzi);
+        assert_eq!((fresh.max_ammo(), fresh.ammo), (220, 220));
+        assert_eq!(loadout.add(fresh).map(|w| w.kind), None);
+        assert!(loadout.has(GunKind::Uzi));
+        let pistol = loadout.slots[0].map(|w| (w.max_ammo(), w.ammo));
+        assert_eq!(pistol, Some((132, 120)));
+        assert!(!loadout.slots[0].is_some_and(|w| w.has_full_ammo()));
     }
 
     #[test]

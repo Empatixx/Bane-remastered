@@ -17,6 +17,7 @@ const ENTER_MARGIN: usize = 2;
 pub(crate) enum RoomEvent {
     BossEntered,
     ShopEntered,
+    RoomCleared,
     BossDefeated { center: Vec2 },
 }
 
@@ -96,6 +97,7 @@ pub(crate) fn update_rooms(
                     physics.remove_collider(collider);
                 }
             }
+            events.push(RoomEvent::RoomCleared);
             let data = &context.dungeon.rooms[room];
             if data.kind == RoomKind::Boss {
                 events.push(RoomEvent::BossDefeated {
@@ -315,7 +317,10 @@ mod tests {
         }
         let events = update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
 
-        assert_eq!(events, vec![RoomEvent::BossDefeated { center }]);
+        assert_eq!(
+            events,
+            vec![RoomEvent::RoomCleared, RoomEvent::BossDefeated { center }]
+        );
         assert!(!runtime.is_locked(boss_room));
     }
 

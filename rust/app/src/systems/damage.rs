@@ -134,6 +134,9 @@ pub(crate) fn hurt_player(
     damage: i32,
     sounds: &mut Vec<AudioCommand>,
 ) -> bool {
+    let damage = world
+        .get::<&crate::components::PlayerPerks>(player)
+        .map_or(damage, |perks| perks.0.damage_taken(damage));
     let damage = if world.remove_one::<Shielded>(player).is_ok() {
         0
     } else {

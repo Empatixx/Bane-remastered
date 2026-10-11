@@ -13,6 +13,7 @@ pub(crate) struct Animation {
     pub(crate) rows: usize,
     clip: Clip,
     time: f32,
+    held: Option<usize>,
 }
 
 impl Animation {
@@ -22,12 +23,18 @@ impl Animation {
             rows,
             clip,
             time: 0.0,
+            held: None,
         }
     }
 
     pub(crate) fn play(&mut self, clip: Clip) {
         self.clip = clip;
         self.time = 0.0;
+        self.held = None;
+    }
+
+    pub(crate) fn hold(&mut self, frame: usize) {
+        self.held = Some(frame);
     }
 
     pub(crate) fn switch_to(&mut self, clip: Clip) {
@@ -57,6 +64,9 @@ impl Animation {
     }
 
     pub(crate) fn frame(&self) -> usize {
+        if let Some(frame) = self.held {
+            return frame;
+        }
         let elapsed = (self.time / self.clip.frame_time) as usize;
         if self.clip.looping {
             elapsed % self.clip.frames

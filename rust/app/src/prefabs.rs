@@ -151,6 +151,8 @@ const SAY_COLOR: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0
 const FLAME_DAMAGE: i32 = 1;
 const FLAME_LAST_FRAME: usize = 3;
 const EXPLOSION_LIGHT: f32 = 1.5;
+const SALE_COLOR: Vec4 = Vec4::new(122.0 / 255.0, 248.0 / 255.0, 18.0 / 255.0, 1.0);
+const SALE_LIFT: f32 = 14.0;
 const SLOT_PROMPT_GAP: f32 = -10.0;
 const ARTEFACT_SLOT_POSITION: Vec2 = Vec2::new(585.0, 450.0);
 const ARTEFACT_FRAME: f32 = 75.0;
@@ -184,6 +186,7 @@ pub(crate) fn furnishing(
     world: &mut World,
     physics: &mut Physics,
     furnishing: &Furnishing,
+    gamble_machine: bool,
     textures: &Textures,
 ) {
     if let Some(carpet) = &furnishing.carpet {
@@ -215,7 +218,9 @@ pub(crate) fn furnishing(
             FixtureKind::Shopkeeper => place(Prop::Shopkeeper, Look::DEFAULT),
             FixtureKind::Table => place(Prop::ShopTable, Look::DEFAULT),
             FixtureKind::SlotMachine => {
-                slot_machine(world, top_left, textures);
+                if gamble_machine {
+                    slot_machine(world, top_left, textures);
+                }
             }
             FixtureKind::Torch { right } => {
                 let look = if right { Look::FLIPPED } else { Look::DEFAULT };
@@ -878,6 +883,7 @@ pub(crate) fn price_tag(
     texture: &str,
     anchor_top: Vec2,
     price: i32,
+    sale: Option<u32>,
     textures: &Textures,
 ) {
     let size = Vec2::splat(PRICE_TAG_SIZE);
@@ -896,13 +902,31 @@ pub(crate) fn price_tag(
         Position(center + Vec2::new(0.0, 6.0)),
         Text {
             content: price.to_string(),
-            color: PRICE_COLOR,
+            color: if sale.is_some() {
+                SALE_COLOR
+            } else {
+                PRICE_COLOR
+            },
             size: FontSize::Size22,
             align: Align::Center,
             anchor: Anchor::Middle,
         },
         Layer(4),
     ));
+    if let Some(percent) = sale {
+        world.spawn((
+            PriceTag { owner },
+            Position(center - Vec2::new(0.0, size.y / 2.0 + SALE_LIFT)),
+            Text {
+                content: format!("SALE {percent}%"),
+                color: SALE_COLOR,
+                size: FontSize::Size22,
+                align: Align::Center,
+                anchor: Anchor::Middle,
+            },
+            Layer(4),
+        ));
+    }
 }
 
 pub(crate) fn shop_speech(world: &mut World, keeper_top_left: Vec2, textures: &Textures) {

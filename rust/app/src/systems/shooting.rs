@@ -5,7 +5,8 @@ use winit::keyboard::KeyCode;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
 use crate::components::{
-    Animation, Body, Bullet, Burst, Expiring, Health, HitFlash, Loadout, Player, Position, Velocity,
+    Animation, Body, Bullet, Burst, Expiring, Health, HitFlash, Loadout, Player, PlayerPerks,
+    Position, Velocity,
 };
 use crate::guns::{GunSpec, BURST_DELAY, MAX_PELLETS};
 use crate::input::Input;
@@ -13,6 +14,7 @@ use crate::physics::{Owner, Physics};
 use crate::prefabs;
 use crate::render::TextureId;
 use crate::systems::enemies::FLASH_SECONDS;
+use crate::upgrades::Perks;
 
 const BULLET_SPEED: f32 = 700.0;
 
@@ -20,6 +22,7 @@ const BULLET_SPEED: f32 = 700.0;
 pub(crate) struct ShotRoll {
     pub(crate) spread: f32,
     pub(crate) damages: [f32; MAX_PELLETS],
+    pub(crate) critical: f32,
 }
 
 impl ShotRoll {
@@ -27,6 +30,7 @@ impl ShotRoll {
         Self {
             spread: rand::random_range(-1.0..=1.0),
             damages: std::array::from_fn(|_| rand::random_range(0.0..1.0)),
+            critical: rand::random_range(0.0..1.0),
         }
     }
 }
@@ -45,6 +49,7 @@ struct Shot {
     spec: GunSpec,
     roll: ShotRoll,
     pellets: usize,
+    perks: Perks,
 }
 
 pub(crate) fn shoot(
@@ -62,10 +67,11 @@ pub(crate) fn shoot(
     } = context;
     let target = input.mouse() + camera;
     let mut shots = Vec::new();
-    for (position, loadout) in world
-        .query_mut::<(&Position, &mut Loadout)>()
+    for (position, loadout, perks) in world
+        .query_mut::<(&Position, &mut Loadout, Option<&PlayerPerks>)>()
         .with::<&Player>()
     {
+        let perks = perks.map_or_else(Perks::default, |perks| perks.0);
         let Some(weapon) = loadout.current_mut() else {
             continue;
         };
@@ -86,6 +92,7 @@ pub(crate) fn shoot(
                         spec,
                         roll,
                         pellets: 1,
+                        perks,
                     });
                     burst.left -= 1;
                     burst.timer = BURST_DELAY;
@@ -131,6 +138,7 @@ pub(crate) fn shoot(
             spec,
             roll,
             pellets: spec.pellets,
+            perks,
         });
     }
     let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
@@ -139,7 +147,10 @@ pub(crate) fn shoot(
         let aim = shot.direction.to_angle();
         for pellet in 0..shot.pellets {
             let angle = aim + shot.spec.angle_offset(pellet, shot.roll.spread);
-            let damage = shot.spec.damage_for(shot.roll.damages[pellet]);
+            let damage = shot.perks.bullet_damage(
+                shot.spec.damage_for(shot.roll.damages[pellet]),
+                shot.roll.critical,
+            );
             prefabs::bullet(
                 world,
                 physics,
@@ -246,6 +257,7 @@ mod tests {
                 roll: ShotRoll {
                     spread: 0.0,
                     damages: [0.0; MAX_PELLETS],
+                    critical: 1.0,
                 },
             },
             &mut Vec::new(),
@@ -393,6 +405,7 @@ mod tests {
                 roll: ShotRoll {
                     spread: 0.0,
                     damages: [0.0; MAX_PELLETS],
+                    critical: 1.0,
                 },
             },
             sounds,

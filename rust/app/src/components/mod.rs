@@ -12,6 +12,7 @@ mod lighting;
 mod minimap;
 mod motion;
 mod objects;
+mod perks;
 mod settings_ui;
 mod shadow;
 mod skills;
@@ -45,6 +46,7 @@ pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
 pub(crate) use objects::{BreakKind, Breakable, Broken, Flame, SlotMachine, SlotPrice, Solid};
+pub(crate) use perks::PlayerPerks;
 pub(crate) use settings_ui::{
     Checkbox, Hidden, ResolutionText, SettingsTabKind, SettingsUi, SliderHandle, SliderValue,
     TabButton, TabOnly, Toggle, Volume,
@@ -57,4 +59,4 @@ pub(crate) use skills::{
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
 pub(crate) use transform::{Position, Size};
-pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, TextButton, UiAction};
+pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, TextButton, UiAction, UpgradeUi};

@@ -36,3 +36,6 @@ pub(crate) struct Hitbox {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct PauseUi;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct UpgradeUi;

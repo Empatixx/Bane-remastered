@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -7,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::components::RunStats;
 use crate::systems::Summary;
+use crate::upgrades::{self, Perks, Purchase, Upgrade};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -21,6 +23,7 @@ pub(crate) struct Profile {
     pub(crate) bullets_fired: u64,
     pub(crate) bullets_hit: u64,
     pub(crate) best_floor: u32,
+    pub(crate) unlocked: BTreeSet<Upgrade>,
 }
 
 impl Profile {
@@ -46,13 +49,20 @@ impl Profile {
         earned
     }
 
-    #[cfg(test)]
-    pub(crate) fn spend(&mut self, amount: u64) -> bool {
-        if self.balance < amount {
-            return false;
-        }
-        self.balance -= amount;
-        true
+    pub(crate) fn buy(&mut self, upgrade: Upgrade) -> Purchase {
+        upgrades::purchase(&mut self.unlocked, &mut self.balance, upgrade)
+    }
+
+    pub(crate) fn owns(&self, upgrade: Upgrade) -> bool {
+        upgrades::owns(&self.unlocked, upgrade)
+    }
+
+    pub(crate) fn can_buy(&self, upgrade: Upgrade) -> bool {
+        upgrades::can_buy(&self.unlocked, upgrade)
+    }
+
+    pub(crate) fn perks(&self) -> Perks {
+        Perks::from_unlocked(&self.unlocked)
     }
 
     fn load(path: &Path) -> Self {
@@ -100,9 +110,23 @@ impl SharedProfile {
         })))
     }
 
-    #[cfg(test)]
     pub(crate) fn snapshot(&self) -> Profile {
         self.0.borrow().profile.clone()
+    }
+
+    pub(crate) fn perks(&self) -> Perks {
+        self.0.borrow().profile.perks()
+    }
+
+    pub(crate) fn buy(&self, upgrade: Upgrade) -> Purchase {
+        let mut store = self.0.borrow_mut();
+        let result = store.profile.buy(upgrade);
+        if result == Purchase::Bought {
+            if let Some(path) = &store.path {
+                store.profile.save(path);
+            }
+        }
+        result
     }
 
     pub(crate) fn balance(&self) -> u64 {
@@ -177,15 +201,22 @@ mod tests {
     }
 
     #[test]
-    fn spending_needs_enough_balance() {
-        let mut profile = Profile {
-            balance: 10,
-            ..Profile::default()
-        };
-        assert!(!profile.spend(11));
-        assert_eq!(profile.balance, 10);
-        assert!(profile.spend(4));
-        assert_eq!(profile.balance, 6);
+    fn upgrades_are_paid_from_the_balance_and_remembered_across_restarts() {
+        let path = temp_path("upgrades");
+        let _ = fs::remove_file(&path);
+        let shared = SharedProfile::load(&path);
+        let (stats, summary) = run(40, 6);
+        let earned = shared.record_run(stats, &summary, true);
+        assert!(earned >= 60, "{earned}");
+
+        assert_eq!(shared.buy(Upgrade::Discount), Purchase::Bought);
+        assert_eq!(shared.balance(), earned - 60);
+        assert!(shared.perks().discount);
+
+        let reloaded = SharedProfile::load(&path);
+        assert!(reloaded.snapshot().owns(Upgrade::Discount));
+        assert_eq!(reloaded.balance(), earned - 60);
+        let _ = fs::remove_file(&path);
     }
 
     #[test]

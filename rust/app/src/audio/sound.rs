@@ -28,10 +28,11 @@ pub(crate) enum SoundEffect {
     SlotLose,
     SlotCashout,
     ShowMap,
+    TalentUnlock,
 }
 
 impl SoundEffect {
-    pub(crate) const ALL: [Self; 28] = [
+    pub(crate) const ALL: [Self; 29] = [
         Self::Click,
         Self::PistolShoot,
         Self::EmptyGunShoot,
@@ -60,6 +61,7 @@ impl SoundEffect {
         Self::SlotLose,
         Self::SlotCashout,
         Self::ShowMap,
+        Self::TalentUnlock,
     ];
 
     pub(crate) fn files(self) -> &'static [&'static str] {
@@ -92,6 +94,7 @@ impl SoundEffect {
             Self::SlotLose => &["slotmachine_lose.ogg"],
             Self::SlotCashout => &["slotmachine_cashout.ogg"],
             Self::ShowMap => &["map_1.ogg", "map_2.ogg"],
+            Self::TalentUnlock => &["talent_unlock.ogg"],
         }
     }
 }

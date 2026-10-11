@@ -100,13 +100,10 @@ fn place(
             kind.spec().size.y,
         ),
         Goods::Gun(kind) => (
-            prefabs::gun_drop(
-                world,
-                crate::components::Weapon::new(kind),
-                center,
-                Vec2::ZERO,
-                textures,
-            ),
+            {
+                let weapon = crate::systems::loadout::fresh_weapon(world, kind);
+                prefabs::gun_drop(world, weapon, center, Vec2::ZERO, textures)
+            },
             kind.spec().icon.y,
         ),
         Goods::Artefact(kind) => (
@@ -122,10 +119,20 @@ fn place(
 const PROMPT_GAP: f32 = 20.0;
 const ITEM_LIFT: f32 = 15.0;
 
+pub(crate) fn sale_for(chance: usize) -> Option<f32> {
+    match chance {
+        0..=4 => Some(0.75),
+        5..=9 => Some(0.5),
+        10..=32 => Some(0.25),
+        _ => None,
+    }
+}
+
 pub(crate) fn stock_rooms(
     world: &mut World,
     dungeon: &Dungeon,
     floor: u32,
+    discount: bool,
     textures: &Textures,
     mut roll: impl FnMut(usize) -> usize,
 ) {
@@ -140,13 +147,20 @@ pub(crate) fn stock_rooms(
             .map(|fixture| (fixture.top_left, fixture.size))
             .collect();
         tables.sort_by(|a, b| a.0.x.total_cmp(&b.0.x));
-        for ((top_left, size), stock) in tables.into_iter().zip(TABLE_STOCK) {
+        let sale = if discount { sale_for(roll(100)) } else { None };
+        let sale_slot = roll(TABLE_STOCK.len());
+        for (index, ((top_left, size), stock)) in tables.into_iter().zip(TABLE_STOCK).enumerate() {
             let center = top_left + size / 2.0 - Vec2::new(0.0, ITEM_LIFT);
             if let Some(goods) = goods_for(world, stock, &mut roll) {
-                let shop = Shop {
+                let mut shop = Shop {
                     price: price_for(stock, floor, roll(MAX_MULTIPLIER_ROLL)),
                     currency: Currency::Coins,
                 };
+                let mut sale_percent = None;
+                if let (Some(factor), true) = (sale, index == sale_slot) {
+                    shop.price = ((shop.price as f32 * factor) as i32).max(1);
+                    sale_percent = Some((factor * 100.0) as u32);
+                }
                 let entity = place(world, goods, center, shop, top_left.y + size.y, textures);
                 prefabs::price_tag(
                     world,
@@ -154,6 +168,7 @@ pub(crate) fn stock_rooms(
                     "ingame/shop_price_hud.tga",
                     Vec2::new(center.x, top_left.y),
                     shop.price,
+                    sale_percent,
                     textures,
                 );
             }
@@ -178,6 +193,7 @@ pub(crate) fn stock_rooms(
                     "ingame/sacrifice_price_hud.tga",
                     Vec2::new(center.x, pentagram.top_left.y),
                     shop.price,
+                    None,
                     textures,
                 );
             }
