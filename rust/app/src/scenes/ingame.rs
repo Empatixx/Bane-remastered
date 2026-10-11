@@ -207,6 +207,15 @@ impl Scene for InGameScene {
         systems::collect_items(&mut self.world, &mut self.sounds);
         systems::age_items(&mut self.world, dt);
         systems::update_price_tags(&mut self.world);
+        systems::update_slot_prices(&mut self.world);
+        systems::tick_slot_machines(
+            &mut self.world,
+            &assets.textures,
+            dt,
+            &mut self.sounds,
+            |bound| rand::random_range(0..bound),
+        );
+        systems::flicker_flames(&mut self.world);
         systems::tick_speech(&mut self.world, dt);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &self.rooms) {
             systems::update_minimaps(&mut self.world, rooms.entered(), rooms.current(), dt);
@@ -222,6 +231,7 @@ impl Scene for InGameScene {
         systems::follow_backdrop(&mut self.world, self.camera.position());
         match systems::interact(&mut self.world, input) {
             Some(Interaction::NextFloor) => self.next_floor(assets),
+            Some(Interaction::Spin) => systems::spin(&mut self.world, &mut self.sounds),
             Some(Interaction::Buy) => {
                 systems::buy(&mut self.world, &assets.textures, &mut self.sounds);
             }
@@ -261,6 +271,13 @@ impl Scene for InGameScene {
         systems::trap_hits_enemies(&mut self.world, dt);
         systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
         systems::death_heals(&mut self.world);
+        systems::break_objects(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+            |bound| rand::random_range(0..bound),
+        );
         systems::clean_up_after_boss(&mut self.world);
         systems::reap_dead(&mut self.world, &mut self.physics);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
@@ -304,7 +321,7 @@ impl InGameScene {
                 prefabs::furnishing(&mut self.world, &mut self.physics, furnishing, textures);
             }
             for decor in &room.decor {
-                prefabs::decor(&mut self.world, *decor, textures);
+                prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);
             }
         }
         systems::stock_rooms(&mut self.world, &dungeon, self.floor, textures, |bound| {

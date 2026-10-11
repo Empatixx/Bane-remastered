@@ -13,6 +13,7 @@ mod items;
 mod lighting;
 mod loadout;
 mod minimap;
+mod objects;
 mod player_animation;
 mod rooms;
 mod settings_ui;
@@ -21,6 +22,7 @@ mod shooting;
 mod shop;
 mod simulation;
 mod skills;
+mod slot;
 mod steering;
 mod ui;
 
@@ -47,6 +49,7 @@ pub(crate) use items::{age_items, burst_items, collect_items, enemy_drops};
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use minimap::{rooms_for, update_minimaps};
+pub(crate) use objects::{break_objects, flicker_flames};
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use rooms::{update_rooms, RoomContext, RoomEvent, RoomRuntime};
 pub(crate) use settings_ui::update_settings_ui;
@@ -58,5 +61,6 @@ pub(crate) use skills::{
     burn_fuses, death_bursts, death_heals, enemy_bullet_hits, steer_homing, tick_eye_shooters,
     tick_smashes,
 };
+pub(crate) use slot::{spin, tick_slot_machines, update_slot_prices, SPIN_COST};
 pub(crate) use steering::steer_player;
 pub(crate) use ui::{update_buttons, update_text_buttons};

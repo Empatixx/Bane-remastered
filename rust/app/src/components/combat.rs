@@ -53,7 +53,8 @@ pub(crate) struct ContactDamage(pub(crate) i32);
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Trap {
-    pub(crate) active_frames: usize,
+    pub(crate) from_frame: usize,
+    pub(crate) until_frame: usize,
 }
 
 #[derive(Debug, Clone, Copy)]

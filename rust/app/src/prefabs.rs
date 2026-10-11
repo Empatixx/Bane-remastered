@@ -3,23 +3,26 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, PLAYER};
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armageddon, Armor, Backdrop, BarKind, Boss, BossHud, Bullet,
-    Button, Candle, Chase, Chest, ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash,
-    DeathBurst, DeathHeal, Despawn, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Floating, Fuse,
-    GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
-    Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
-    Overlay, Particle, Path, PauseUi, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt,
-    RoomId, ScreenSpace, Shop, Size, Smash, Spawning, SpeechBubble, SpeechText, Sprite, StatusBar,
-    Text, TextButton, ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, WebSpitter,
-    BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
+    AmmoPip, AmmoText, Animation, Armageddon, Armor, Backdrop, BarKind, Boss, BossHud, BreakKind,
+    Breakable, Bullet, Button, Candle, Chase, Chest, ChestKind, Clip, Cobweb, CoinText, Color,
+    ContactDamage, Dash, DeathBurst, DeathHeal, Despawn, Drag, Enemy, EnemyBullet, Expiring,
+    EyeShooter, Flame, Floating, Fuse, GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox,
+    Hits, Homing, Impact, Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout,
+    Minion, NoDrop, OnClick, Overlay, Particle, Path, PauseUi, Pickup, Player, PlayerShadow,
+    Position, PriceTag, Prompt, RoomId, ScreenSpace, Shop, Size, SlotMachine, SlotPrice, Smash,
+    Solid, Spawning, SpeechBubble, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
+    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::items::{ItemKind, DESPAWN_SECONDS};
+use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
+use crate::systems::SPIN_COST;
 use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
@@ -137,6 +140,10 @@ const SAY_BOX_DROP: f32 = 20.0;
 const SAY_INSIDE_WIDTH: f32 = 240.0;
 const SAY_INSIDE_HEIGHT: f32 = 132.0;
 const SAY_COLOR: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
+const FLAME_DAMAGE: i32 = 1;
+const FLAME_LAST_FRAME: usize = 3;
+const EXPLOSION_LIGHT: f32 = 1.5;
+const SLOT_PROMPT_GAP: f32 = -10.0;
 const DROP_DRAG: f32 = 6.0;
 const FLOAT_SECONDS: f32 = 0.5;
 const FLOAT_RISE: f32 = 30.0;
@@ -195,7 +202,9 @@ pub(crate) fn furnishing(
         match fixture.kind {
             FixtureKind::Shopkeeper => place(Prop::Shopkeeper, Look::DEFAULT),
             FixtureKind::Table => place(Prop::ShopTable, Look::DEFAULT),
-            FixtureKind::SlotMachine => place(Prop::SlotMachine, Look::LOSE_ROW),
+            FixtureKind::SlotMachine => {
+                slot_machine(world, top_left, textures);
+            }
             FixtureKind::Torch { right } => {
                 let look = if right { Look::FLIPPED } else { Look::DEFAULT };
                 place(Prop::Torch, look);
@@ -213,7 +222,7 @@ pub(crate) fn furnishing(
             FixtureKind::Book => place(Prop::LayingBook, Look::DEFAULT),
             FixtureKind::Chains => place(Prop::Chains, Look::DEFAULT),
             FixtureKind::Pot => {
-                pot(world, physics, top_left, textures);
+                breakable(world, physics, BreakKind::Pot, top_left, textures);
             }
             FixtureKind::Key(key) => {
                 key_hint(world, key.texture(), top_left, fixture.size, textures);
@@ -266,9 +275,21 @@ const DISABLED_TOP_ROW: usize = 3;
 const SPIKE_DAMAGE: i32 = 1;
 const SPIKE_ACTIVE_FRAMES: usize = 2;
 
-pub(crate) fn decor(world: &mut World, decor: Decor, textures: &Textures) -> Entity {
+pub(crate) fn decor(
+    world: &mut World,
+    physics: &mut Physics,
+    decor: Decor,
+    textures: &Textures,
+) -> Entity {
     let top_left = Vec2::new(decor.tile.0 as f32, decor.tile.1 as f32) * tilemap::TILE_SIZE;
+    let centered = top_left - Vec2::splat(tilemap::TILE_SIZE);
     match decor.kind {
+        DecorKind::Pot => breakable(world, physics, BreakKind::Pot, centered, textures),
+        DecorKind::Barrel => breakable(world, physics, BreakKind::Barrel, centered, textures),
+        DecorKind::ExplosiveBarrel => {
+            breakable(world, physics, BreakKind::Explosive, centered, textures)
+        }
+        DecorKind::Flamethrower => flamethrower(world, top_left, textures),
         DecorKind::Torch { mount, lit } => {
             let (prop_kind, row) = match (lit, mount) {
                 (true, Mount::Top) => (Prop::Torch, TOP_ROW),
@@ -301,7 +322,8 @@ pub(crate) fn decor(world: &mut World, decor: Decor, textures: &Textures) -> Ent
                 (
                     ContactDamage(SPIKE_DAMAGE),
                     Trap {
-                        active_frames: SPIKE_ACTIVE_FRAMES,
+                        from_frame: 0,
+                        until_frame: SPIKE_ACTIVE_FRAMES,
                     },
                 ),
             );
@@ -899,6 +921,130 @@ pub(crate) fn shop_speech(world: &mut World, keeper_top_left: Vec2, textures: &T
         Layer(7),
         Hidden,
     ));
+}
+
+pub(crate) fn breakable(
+    world: &mut World,
+    physics: &mut Physics,
+    kind: BreakKind,
+    top_left: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let clip = Clip {
+        row: 0,
+        frames: 1,
+        frame_time: 1.0,
+        looping: true,
+        flipped: false,
+    };
+    let entity = world.spawn((
+        Breakable { kind },
+        Health {
+            current: OBJECT_HEALTH,
+            max: OBJECT_HEALTH,
+        },
+        Position(top_left + OBJECT_SIZE / 2.0),
+        Size(OBJECT_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(kind.texture()), 0, 0, 4, 2),
+        Animation::new(4, 2, clip),
+        Layer(-1),
+        Lit,
+    ));
+    let collider = kind.collider();
+    let handle = physics.add_object_box(
+        entity,
+        top_left + collider.offset + collider.size / 2.0,
+        collider.size,
+    );
+    let _ = world.insert_one(entity, Solid(handle));
+    entity
+}
+
+pub(crate) fn flamethrower(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::Flamethrower, top_left, Look::DEFAULT, textures);
+    let _ = world.insert(
+        entity,
+        (
+            Flame,
+            ContactDamage(FLAME_DAMAGE),
+            Trap {
+                from_frame: FLAME_LAST_FRAME,
+                until_frame: FLAME_LAST_FRAME + 1,
+            },
+            Light::rgb(Vec2::ZERO, 255.0, 0.0, 0.0, 50.0, 0.0),
+        ),
+    );
+    entity
+}
+
+pub(crate) fn explosion(world: &mut World, center: Vec2, textures: &Textures) {
+    let clip = Clip {
+        row: 0,
+        frames: 9,
+        frame_time: 0.08,
+        looping: false,
+        flipped: false,
+    };
+    let size = Vec2::new(128.0, 128.0);
+    world.spawn((
+        Expiring,
+        Position(center),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get("ingame/barrel_explosion.tga"), 0, 0, 9, 1),
+        Animation::new(9, 1, clip),
+        Layer(3),
+        Lit,
+        Light::rgb(Vec2::ZERO, 215.0, 40.0, 40.0, 150.0, EXPLOSION_LIGHT),
+        LightFade {
+            base: EXPLOSION_LIGHT,
+        },
+    ));
+}
+
+pub(crate) fn slot_machine(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::SlotMachine, top_left, Look::LOSE_ROW, textures);
+    let size = Prop::SlotMachine.spec().size();
+    let _ = world.insert(
+        entity,
+        (
+            SlotMachine { spinning: None },
+            Interactable {
+                action: Interaction::Spin,
+            },
+            Prompt {
+                text: "Press E to spin",
+                gap: SLOT_PROMPT_GAP,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+    let tag = Vec2::splat(PRICE_TAG_SIZE);
+    let center = Vec2::new(top_left.x + size.x / 2.0, top_left.y + tag.y / 2.0);
+    world.spawn((
+        SlotPrice { owner: entity },
+        Position(center),
+        Size(tag),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get("ingame/shop_price_hud.tga")),
+        Layer(3),
+        Lit,
+    ));
+    world.spawn((
+        SlotPrice { owner: entity },
+        Position(center + Vec2::new(0.0, 6.0)),
+        Text {
+            content: SPIN_COST.to_string(),
+            color: PRICE_COLOR,
+            size: FontSize::Size22,
+            align: Align::Center,
+            anchor: Anchor::Middle,
+        },
+        Layer(4),
+    ));
+    entity
 }
 
 pub(crate) fn chest(

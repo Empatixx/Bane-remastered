@@ -28,7 +28,9 @@ const LOW_HEALTH: f32 = 0.3;
 
 fn trap_is_armed(trap: Option<&Trap>, animation: Option<&Animation>) -> bool {
     match (trap, animation) {
-        (Some(trap), Some(animation)) => animation.frame() < trap.active_frames,
+        (Some(trap), Some(animation)) => {
+            (trap.from_frame..trap.until_frame).contains(&animation.frame())
+        }
         _ => true,
     }
 }
@@ -123,6 +125,15 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
     let Some(damage) = damage else {
         return false;
     };
+    hurt_player(world, player, damage, sounds)
+}
+
+pub(crate) fn hurt_player(
+    world: &mut World,
+    player: Entity,
+    damage: i32,
+    sounds: &mut Vec<AudioCommand>,
+) -> bool {
     if let Ok((health, armor)) = world.query_one_mut::<(&mut Health, &mut Armor)>(player) {
         if health.current <= 0 {
             return false;
@@ -259,7 +270,7 @@ mod tests {
             kind: crate::dungeon::DecorKind::Spike,
             tile: (0, 0),
         };
-        let spike = prefabs::decor(&mut world, decor, &Textures::default());
+        let spike = prefabs::decor(&mut world, &mut Physics::new(), decor, &Textures::default());
 
         world
             .get::<&mut Animation>(spike)
@@ -284,7 +295,7 @@ mod tests {
             kind: crate::dungeon::DecorKind::Spike,
             tile: (10, 10),
         };
-        let spike = prefabs::decor(&mut world, decor, &textures);
+        let spike = prefabs::decor(&mut world, &mut Physics::new(), decor, &textures);
         let rat = prefabs::ready_enemy(
             &mut world,
             &mut physics,

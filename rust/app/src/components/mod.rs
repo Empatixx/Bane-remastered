@@ -9,6 +9,7 @@ mod items;
 mod lighting;
 mod minimap;
 mod motion;
+mod objects;
 mod settings_ui;
 mod shadow;
 mod skills;
@@ -36,6 +37,7 @@ pub(crate) use items::{
 pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
+pub(crate) use objects::{BreakKind, Breakable, Broken, Flame, SlotMachine, SlotPrice, Solid};
 pub(crate) use settings_ui::{
     Checkbox, Hidden, ResolutionText, SettingsTabKind, SettingsUi, SliderHandle, SliderValue,
     TabButton, TabOnly, Toggle, Volume,

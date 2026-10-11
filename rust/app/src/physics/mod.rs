@@ -136,6 +136,19 @@ impl Physics {
         self.insert(body, collider)
     }
 
+    pub(crate) fn add_object_box(
+        &mut self,
+        entity: Entity,
+        center: Vec2,
+        size: Vec2,
+    ) -> ColliderHandle {
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .translation(to_rapier(center))
+            .collision_groups(groups::OBJECTS)
+            .user_data(owner_bits(entity));
+        self.world.colliders.insert(collider)
+    }
+
     pub(crate) fn remove(&mut self, body: Body) {
         self.world.remove_body(body.body);
     }

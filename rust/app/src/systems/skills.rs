@@ -204,15 +204,21 @@ pub(crate) fn enemy_bullet_hits(world: &mut World, physics: &mut Physics) {
         .without::<&Expiring>()
         .iter()
         .filter(|(_, body)| {
-            physics
-                .touching(**body)
-                .iter()
-                .any(|owner| matches!(owner, Owner::Wall) || is_player(world, owner))
+            physics.touching(**body).iter().any(|owner| {
+                matches!(owner, Owner::Wall) || is_player(world, owner) || is_solid(world, owner)
+            })
         })
         .map(|(entity, _)| entity)
         .collect();
     for entity in hit {
         impact(world, physics, entity);
+    }
+}
+
+fn is_solid(world: &World, owner: &Owner) -> bool {
+    match owner {
+        Owner::Entity(entity) => world.get::<&crate::components::Solid>(*entity).is_ok(),
+        Owner::Wall => false,
     }
 }
 

@@ -15,6 +15,10 @@ const NORMAL_BANNERS: usize = 2;
 const TREASURE_BONES: usize = 3;
 const TREASURE_COBWEBS: usize = 3;
 const MAX_SPIKES: usize = 2;
+const MAX_FLAMETHROWERS: usize = 1;
+const MAX_BARRELS: usize = 2;
+const MAX_EXPLOSIVE_BARRELS: usize = 3;
+const MAX_POTS: usize = 2;
 const DISABLED_TORCH_PERCENT: usize = 10;
 const DOOR_CLEARANCE: usize = 3;
 const SPIKE_WALL_CLEARANCE: isize = 2;
@@ -33,6 +37,10 @@ pub(crate) enum DecorKind {
     Cobweb { variant: usize, left: bool },
     Banner,
     Spike,
+    Pot,
+    Barrel,
+    ExplosiveBarrel,
+    Flamethrower,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,6 +55,7 @@ struct Counts {
     cobwebs: usize,
     bones: usize,
     spikes: bool,
+    objects: bool,
 }
 
 impl Counts {
@@ -59,6 +68,7 @@ impl Counts {
                 cobwebs: NORMAL_COBWEBS,
                 bones: NORMAL_BONES,
                 spikes: true,
+                objects: true,
             },
             RoomKind::Treasure => Self {
                 torches: 0,
@@ -66,6 +76,7 @@ impl Counts {
                 cobwebs: TREASURE_COBWEBS,
                 bones: TREASURE_BONES,
                 spikes: false,
+                objects: false,
             },
             _ => Self {
                 torches: 0,
@@ -73,6 +84,7 @@ impl Counts {
                 cobwebs: 0,
                 bones: 0,
                 spikes: false,
+                objects: false,
             },
         }
     }
@@ -254,6 +266,43 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
             }
         }
     }
+    if counts.objects {
+        for _ in 0..MAX_FLAMETHROWERS {
+            if let Some(spot) = planner.pick(&top_faces, rng) {
+                planner.take(spot.tile);
+                decor.push(Decor {
+                    kind: DecorKind::Flamethrower,
+                    tile: spot.tile,
+                });
+            }
+        }
+        let roomy: Vec<Candidate> = open_floor
+            .iter()
+            .filter(|candidate| {
+                let (column, row) = (candidate.tile.0 as isize, candidate.tile.1 as isize);
+                [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .iter()
+                    .all(|(dx, dy)| !planner.wall(column + dx, row + dy))
+            })
+            .copied()
+            .collect();
+        let batches = [
+            (DecorKind::ExplosiveBarrel, rng.below(MAX_EXPLOSIVE_BARRELS)),
+            (DecorKind::Barrel, rng.below(MAX_BARRELS)),
+            (DecorKind::Pot, rng.below(MAX_POTS)),
+        ];
+        for (kind, total) in batches {
+            for _ in 0..total {
+                if let Some(spot) = planner.pick(&roomy, rng) {
+                    planner.take(spot.tile);
+                    decor.push(Decor {
+                        kind,
+                        tile: spot.tile,
+                    });
+                }
+            }
+        }
+    }
     decor
 }
 
@@ -307,6 +356,7 @@ mod tests {
                     let (column, row) = (decor.tile.0 as isize, decor.tile.1 as isize);
                     match decor.kind {
                         DecorKind::Banner
+                        | DecorKind::Flamethrower
                         | DecorKind::Torch {
                             mount: Mount::Top, ..
                         } => {
@@ -328,6 +378,11 @@ mod tests {
                         | DecorKind::Cobweb { left: false, .. } => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                             assert!(dungeon.grid.is_wall(column - 1, row), "{decor:?}");
+                        }
+                        DecorKind::Pot | DecorKind::Barrel | DecorKind::ExplosiveBarrel => {
+                            for (dx, dy) in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)] {
+                                assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
+                            }
                         }
                         DecorKind::Bones { .. } | DecorKind::Spike => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");

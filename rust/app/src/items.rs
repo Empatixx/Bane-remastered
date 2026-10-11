@@ -32,7 +32,6 @@ pub(crate) enum Vital {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum PotionSize {
-    #[allow(dead_code)]
     Small,
     Large,
 }

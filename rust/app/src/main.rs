@@ -11,6 +11,7 @@ mod guns;
 mod input;
 mod items;
 mod navigation;
+mod objects;
 mod perf;
 mod physics;
 mod postfx;
