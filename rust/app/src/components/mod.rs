@@ -35,7 +35,7 @@ pub(crate) use items::{
     SpeechText,
 };
 pub(crate) use lighting::{Light, Lit};
-pub(crate) use minimap::{BigMap, MapSize, MiniRoom, Minimap};
+pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
 pub(crate) use objects::{BreakKind, Breakable, Broken, Flame, SlotMachine, SlotPrice, Solid};
 pub(crate) use settings_ui::{

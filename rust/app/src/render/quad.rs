@@ -1,6 +1,18 @@
 use bytemuck::{Pod, Zeroable};
 use glam::{Vec2, Vec4};
 
+pub(crate) const MODE_MAP: f32 = 1.0;
+pub(crate) const MODE_FOG: f32 = 2.0;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct MapRoomLook {
+    pub(crate) time: f32,
+    pub(crate) seed: f32,
+    pub(crate) links: u8,
+    pub(crate) fogged: bool,
+    pub(crate) local: [f32; 4],
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub(crate) struct Quad {
@@ -10,6 +22,8 @@ pub(crate) struct Quad {
     uv: [f32; 4],
     lit: f32,
     angle: f32,
+    fx: [f32; 4],
+    local: [f32; 4],
 }
 
 impl Quad {
@@ -25,7 +39,20 @@ impl Quad {
             uv,
             lit: 0.0,
             angle: 0.0,
+            fx: [0.0; 4],
+            local: [0.0, 0.0, 1.0, 1.0],
         }
+    }
+
+    pub(crate) fn map_room(mut self, look: MapRoomLook) -> Self {
+        self.fx = [
+            look.time,
+            look.seed,
+            f32::from(look.links),
+            if look.fogged { MODE_FOG } else { MODE_MAP },
+        ];
+        self.local = look.local;
+        self
     }
 
     pub(crate) fn rotated(mut self, angle: f32) -> Self {

@@ -39,6 +39,7 @@ pub(crate) struct InGameScene {
     navigation: Navigation,
     victory_timer: Option<f32>,
     kills_without_drop: u32,
+    drag_from: Option<Vec2>,
 }
 
 impl Scene for InGameScene {
@@ -135,6 +136,16 @@ impl Scene for InGameScene {
                 Some(UiAction::LeaveToMenu) => Transition::Switch(SceneId::Menu),
                 _ => Transition::None,
             };
+        }
+        if self.big_map {
+            if input.mouse_down() {
+                if let Some(from) = self.drag_from {
+                    systems::pan_big_maps(&mut self.world, input.mouse() - from);
+                }
+                self.drag_from = Some(input.mouse());
+            } else {
+                self.drag_from = None;
+            }
         }
         if !self.big_map {
             systems::shoot(
@@ -408,7 +419,12 @@ impl InGameScene {
     }
 
     fn set_big_map(&mut self, open: bool) {
+        if open && !self.big_map {
+            self.sounds.push(AudioCommand::Effect(SoundEffect::ShowMap));
+            systems::reset_big_map_pan(&mut self.world);
+        }
         self.big_map = open;
+        self.drag_from = None;
         let big: Vec<hecs::Entity> = self
             .world
             .query::<hecs::Entity>()
@@ -455,6 +471,7 @@ fn spawn_minimaps(world: &mut World, dungeon: &Dungeon, textures: &crate::assets
             rooms: rooms.clone(),
             current: 0,
             shown: start,
+            pan: Vec2::ZERO,
             glow: 0.0,
             icons: textures.get("ingame/minimap_icons.tga"),
             size,

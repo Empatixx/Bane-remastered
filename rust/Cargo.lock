@@ -270,6 +270,7 @@ dependencies = [
  "hecs",
  "image",
  "kira",
+ "naga",
  "noise",
  "pollster",
  "rand 0.10.3",

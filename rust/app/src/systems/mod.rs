@@ -48,7 +48,7 @@ pub(crate) use interaction::interact;
 pub(crate) use items::{age_items, burst_items, collect_items, enemy_drops};
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
-pub(crate) use minimap::{rooms_for, update_minimaps};
+pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{break_objects, flicker_flames};
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use rooms::{update_rooms, RoomContext, RoomEvent, RoomRuntime};

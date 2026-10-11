@@ -3,25 +3,20 @@ use std::collections::VecDeque;
 use glam::{Vec2, Vec4};
 use hecs::World;
 
-use crate::components::{MapSize, MiniRoom, Minimap, Sprite};
+use crate::components::{BigKind, MapSize, MiniRoom, Minimap, Sprite};
 use crate::dungeon::{Direction, RoomKind};
-use crate::render::{Draw, Quad, TextureId};
+use crate::render::{Draw, MapRoomLook, Quad};
 
 const ICON: f32 = 16.0;
 const SMALL_CENTER: Vec2 = Vec2::new(865.0, 94.0);
 const BIG_CENTER: Vec2 = Vec2::new(480.0, 270.0);
 const BIG_SCALE: f32 = 4.0;
+const BIG_WINDOW_MIN: Vec2 = Vec2::new(300.0, 90.0);
+const BIG_WINDOW_MAX: Vec2 = Vec2::new(660.0, 450.0);
 const ALPHA_DECREASE: f32 = 0.25;
 const UNVISITED_PENALTY: f32 = 0.35;
-const OUTLINE_WIDTH: f32 = 0.0625;
-const GATE_WIDTH: f32 = 0.4325;
 const SLIDE: f32 = 0.2;
-const GLOW_SPEED: f32 = 2.0;
-const GATE_COLOR: Vec4 = Vec4::new(0.8196, 0.5333, 0.4117, 1.0);
-const GLOW_COLOR: Vec3Rgb = (1.0, 0.25, 0.25);
-const FOG_TINT: (f32, f32, f32) = (0.35, 0.35, 0.42);
-
-type Vec3Rgb = (f32, f32, f32);
+const SEED_RANGE: f32 = 10.0;
 
 fn frame(kind: RoomKind) -> usize {
     match kind {
@@ -34,6 +29,20 @@ fn frame(kind: RoomKind) -> usize {
     }
 }
 
+fn link_bit(direction: Direction) -> u8 {
+    match direction {
+        Direction::Left => 1,
+        Direction::Right => 2,
+        Direction::Up => 4,
+        Direction::Down => 8,
+    }
+}
+
+fn seed_for(cell: (i32, i32)) -> f32 {
+    let hash = (cell.0 as i64 * 73_856_093) ^ (cell.1 as i64 * 19_349_663);
+    (hash.rem_euclid(1000) as f32 / 1000.0) * SEED_RANGE
+}
+
 pub(crate) fn rooms_for(
     dungeon_rooms: impl Iterator<Item = ((i32, i32), RoomKind, Vec<Direction>)>,
 ) -> Vec<MiniRoom> {
@@ -43,7 +52,7 @@ pub(crate) fn rooms_for(
             kind,
             links,
             visited: false,
-            seen: false,
+            big: BigKind::Unseen,
             distance: usize::MAX,
         })
         .collect()
@@ -51,13 +60,31 @@ pub(crate) fn rooms_for(
 
 pub(crate) fn update_minimaps(world: &mut World, visited: &[bool], current: usize, dt: f32) {
     for map in world.query_mut::<&mut Minimap>() {
+        let before = map.current;
         refresh(map, visited, current);
+        if map.current != before {
+            map.pan = Vec2::ZERO;
+        }
         let target = Vec2::new(
             map.rooms[map.current].cell.0 as f32,
             map.rooms[map.current].cell.1 as f32,
         );
         map.shown += (target - map.shown) * SLIDE.max((dt * 12.0).min(1.0));
         map.glow += dt;
+    }
+}
+
+pub(crate) fn pan_big_maps(world: &mut World, delta: Vec2) {
+    for map in world.query_mut::<&mut Minimap>() {
+        if map.size == MapSize::Big {
+            map.pan += delta;
+        }
+    }
+}
+
+pub(crate) fn reset_big_map_pan(world: &mut World) {
+    for map in world.query_mut::<&mut Minimap>() {
+        map.pan = Vec2::ZERO;
     }
 }
 
@@ -83,37 +110,31 @@ fn refresh(map: &mut Minimap, visited: &[bool], current: usize) {
         .collect();
     for room in &mut map.rooms {
         room.distance = usize::MAX;
-        room.seen = room.visited;
+        room.big = BigKind::Unseen;
     }
     let mut queue = VecDeque::from([map.current]);
     map.rooms[map.current].distance = 0;
+    map.rooms[map.current].big = BigKind::Current;
     while let Some(index) = queue.pop_front() {
         for &next in &neighbours[index] {
             if map.rooms[next].distance == usize::MAX {
                 map.rooms[next].distance = map.rooms[index].distance + 1;
+                map.rooms[next].big = match map.rooms[index].big {
+                    BigKind::Current | BigKind::Visited if map.rooms[next].visited => {
+                        BigKind::Visited
+                    }
+                    BigKind::Current | BigKind::Visited => BigKind::Unvisited,
+                    BigKind::Unvisited | BigKind::Unseen => BigKind::Unseen,
+                };
                 queue.push_back(next);
             }
-        }
-    }
-    let visited_rooms: Vec<usize> = (0..map.rooms.len())
-        .filter(|&index| map.rooms[index].visited)
-        .collect();
-    for index in visited_rooms {
-        for &next in &neighbours[index] {
-            map.rooms[next].seen = true;
         }
     }
 }
 
 fn alpha(room: &MiniRoom, size: MapSize) -> f32 {
     match size {
-        MapSize::Big => {
-            if room.seen {
-                1.0
-            } else {
-                0.0
-            }
-        }
+        MapSize::Big => room.big.alpha(),
         MapSize::Small => {
             let distance = room.distance as f32;
             1.0 - ALPHA_DECREASE * distance.powf(1.25)
@@ -126,91 +147,90 @@ fn alpha(room: &MiniRoom, size: MapSize) -> f32 {
     }
 }
 
+struct Clipped {
+    center: Vec2,
+    size: Vec2,
+    uv: [f32; 4],
+    local: [f32; 4],
+}
+
+fn clip(center: Vec2, size: Vec2, uv: [f32; 4], min: Vec2, max: Vec2) -> Option<Clipped> {
+    let low = (center - size / 2.0).max(min);
+    let high = (center + size / 2.0).min(max);
+    if high.x <= low.x || high.y <= low.y {
+        return None;
+    }
+    let from = ((low - (center - size / 2.0)) / size).to_array();
+    let to = ((high - (center - size / 2.0)) / size).to_array();
+    let mix = |a: f32, b: f32, t: f32| a + (b - a) * t;
+    Some(Clipped {
+        center: (low + high) / 2.0,
+        size: high - low,
+        uv: [
+            mix(uv[0], uv[2], from[0]),
+            mix(uv[1], uv[3], from[1]),
+            mix(uv[0], uv[2], to[0]),
+            mix(uv[1], uv[3], to[1]),
+        ],
+        local: [from[0], from[1], to[0], to[1]],
+    })
+}
+
 pub(crate) fn minimap_draws(map: &Minimap) -> Vec<Draw> {
     let (center, scale) = match map.size {
         MapSize::Small => (SMALL_CENTER, 1.0),
-        MapSize::Big => (BIG_CENTER, BIG_SCALE),
+        MapSize::Big => (BIG_CENTER + map.pan, BIG_SCALE),
     };
     let icon = ICON * scale;
     let mut draws = Vec::new();
-    for (index, room) in map.rooms.iter().enumerate() {
+    for room in &map.rooms {
         let alpha = alpha(room, map.size);
-        if alpha <= 0.0 || room.distance == usize::MAX && map.size == MapSize::Small {
+        if alpha <= 0.0 {
             continue;
         }
         let shown = Vec2::new(room.cell.0 as f32, room.cell.1 as f32) - map.shown;
         let position = center + shown * icon;
-        let tint = if room.visited {
-            Vec4::new(1.0, 1.0, 1.0, alpha)
-        } else {
-            Vec4::new(FOG_TINT.0, FOG_TINT.1, FOG_TINT.2, alpha)
+        let uv = Sprite::cell_uv(frame(room.kind), 0, 6, 1);
+        let placed = match map.size {
+            MapSize::Small => Some(Clipped {
+                center: position,
+                size: Vec2::splat(icon),
+                uv,
+                local: [0.0, 0.0, 1.0, 1.0],
+            }),
+            MapSize::Big => clip(
+                position,
+                Vec2::splat(icon),
+                uv,
+                BIG_WINDOW_MIN,
+                BIG_WINDOW_MAX,
+            ),
         };
+        let Some(placed) = placed else {
+            continue;
+        };
+        let links = room
+            .links
+            .iter()
+            .fold(0, |bits, direction| bits | link_bit(*direction));
         draws.push(Draw {
             texture: map.icons,
             quad: Quad::with_uv(
-                position,
-                Vec2::splat(icon),
-                tint,
-                Sprite::cell_uv(frame(room.kind), 0, 6, 1),
-            ),
+                placed.center,
+                placed.size,
+                Vec4::new(1.0, 1.0, 1.0, alpha),
+                placed.uv,
+            )
+            .map_room(MapRoomLook {
+                time: map.glow,
+                seed: seed_for(room.cell),
+                links,
+                fogged: !room.visited,
+                local: placed.local,
+            }),
         });
-        for direction in &room.links {
-            draws.push(solid(
-                gate_rect(position, icon, *direction),
-                Vec4::new(GATE_COLOR.x, GATE_COLOR.y, GATE_COLOR.z, alpha),
-            ));
-        }
-        if index == map.current {
-            let pulse = 0.5 + 0.5 * (map.glow * GLOW_SPEED).sin();
-            let color = Vec4::new(GLOW_COLOR.0, GLOW_COLOR.1, GLOW_COLOR.2, pulse);
-            for edge in outline(position, icon) {
-                draws.push(solid(edge, color));
-            }
-        }
     }
     draws
-}
-
-fn solid(rect: (Vec2, Vec2), color: Vec4) -> Draw {
-    Draw {
-        texture: TextureId::WHITE,
-        quad: Quad::new(rect.0, rect.1, color),
-    }
-}
-
-fn gate_rect(center: Vec2, icon: f32, direction: Direction) -> (Vec2, Vec2) {
-    let thickness = icon * OUTLINE_WIDTH;
-    let length = icon * GATE_WIDTH;
-    let offset = icon / 2.0 - thickness / 2.0;
-    match direction {
-        Direction::Left => (
-            center + Vec2::new(-offset, 0.0),
-            Vec2::new(thickness, length),
-        ),
-        Direction::Right => (
-            center + Vec2::new(offset, 0.0),
-            Vec2::new(thickness, length),
-        ),
-        Direction::Up => (
-            center + Vec2::new(0.0, -offset),
-            Vec2::new(length, thickness),
-        ),
-        Direction::Down => (
-            center + Vec2::new(0.0, offset),
-            Vec2::new(length, thickness),
-        ),
-    }
-}
-
-fn outline(center: Vec2, icon: f32) -> [(Vec2, Vec2); 4] {
-    let thickness = icon * OUTLINE_WIDTH;
-    let offset = icon / 2.0 - thickness / 2.0;
-    [
-        (center + Vec2::new(0.0, -offset), Vec2::new(icon, thickness)),
-        (center + Vec2::new(0.0, offset), Vec2::new(icon, thickness)),
-        (center + Vec2::new(-offset, 0.0), Vec2::new(thickness, icon)),
-        (center + Vec2::new(offset, 0.0), Vec2::new(thickness, icon)),
-    ]
 }
 
 #[cfg(test)]
@@ -239,8 +259,9 @@ mod tests {
             rooms,
             current: 0,
             shown: Vec2::ZERO,
+            pan: Vec2::ZERO,
             glow: 0.0,
-            icons: TextureId::WHITE,
+            icons: crate::render::TextureId::WHITE,
             size,
         };
         refresh(&mut map, &[true, false, false, false], 0);
@@ -248,12 +269,10 @@ mod tests {
     }
 
     #[test]
-    fn distances_come_from_the_current_room_and_neighbours_of_visited_rooms_are_seen() {
+    fn distances_come_from_the_current_room_and_follow_the_links() {
         let map = map(MapSize::Small);
         let distances: Vec<usize> = map.rooms.iter().map(|room| room.distance).collect();
         assert_eq!(distances, vec![0, 1, 2, 3]);
-        let seen: Vec<bool> = map.rooms.iter().map(|room| room.seen).collect();
-        assert_eq!(seen, vec![true, true, false, false]);
     }
 
     #[test]
@@ -271,23 +290,117 @@ mod tests {
     }
 
     #[test]
-    fn the_big_map_shows_only_rooms_the_player_has_seen() {
-        let map = map(MapSize::Big);
-        let shown = minimap_draws(&map).len();
-        assert!(shown > 0);
-        let seen = map.rooms.iter().filter(|room| room.seen).count();
-        assert_eq!(seen, 2);
+    fn the_big_map_uses_bane_alphas_for_current_visited_unvisited_and_unseen_rooms() {
+        let mut map = map(MapSize::Big);
+        map.rooms[1].visited = true;
+        refresh(&mut map, &[true, true, false, false], 0);
+        let kinds: Vec<BigKind> = map.rooms.iter().map(|room| room.big).collect();
+        assert_eq!(
+            kinds,
+            vec![
+                BigKind::Current,
+                BigKind::Visited,
+                BigKind::Unvisited,
+                BigKind::Unseen
+            ]
+        );
+        let alphas: Vec<f32> = map
+            .rooms
+            .iter()
+            .map(|room| alpha(room, MapSize::Big))
+            .collect();
+        assert_eq!(alphas, vec![1.0, 0.75, 0.5, 0.0]);
+        assert_eq!(minimap_draws(&map).len(), 3);
     }
 
     #[test]
-    fn the_current_room_is_outlined_and_linked_rooms_get_gate_marks() {
-        let map = map(MapSize::Small);
+    fn rooms_behind_an_unvisited_room_stay_hidden_on_the_big_map() {
+        let map = map(MapSize::Big);
+        let kinds: Vec<BigKind> = map.rooms.iter().map(|room| room.big).collect();
+        assert_eq!(
+            kinds,
+            vec![
+                BigKind::Current,
+                BigKind::Unvisited,
+                BigKind::Unseen,
+                BigKind::Unseen
+            ]
+        );
+    }
+
+    #[test]
+    fn unvisited_rooms_are_fogged_and_visited_ones_are_not_and_nothing_is_outlined() {
+        let mut map = map(MapSize::Small);
+        map.rooms[1].visited = true;
         let draws = minimap_draws(&map);
-        let solids = draws
+        assert!(draws.iter().all(|draw| draw.texture == map.icons));
+        assert_eq!(draws.len(), 3);
+    }
+
+    #[test]
+    fn links_are_packed_into_direction_bits() {
+        assert_eq!(link_bit(Direction::Left) | link_bit(Direction::Down), 9);
+    }
+
+    #[test]
+    fn the_seed_is_stable_and_within_range() {
+        for cell in [(0, 0), (3, -2), (-7, 5)] {
+            let seed = seed_for(cell);
+            assert_eq!(seed, seed_for(cell));
+            assert!((0.0..SEED_RANGE).contains(&seed));
+        }
+    }
+
+    #[test]
+    fn clipping_trims_a_room_that_sticks_out_of_the_window() {
+        let uv = [0.0, 0.0, 1.0, 1.0];
+        let inside = clip(
+            Vec2::new(400.0, 200.0),
+            Vec2::splat(64.0),
+            uv,
+            BIG_WINDOW_MIN,
+            BIG_WINDOW_MAX,
+        );
+        assert!(inside.is_some_and(|c| c.size == Vec2::splat(64.0)));
+        let edge = clip(
+            Vec2::new(300.0, 200.0),
+            Vec2::splat(64.0),
+            uv,
+            BIG_WINDOW_MIN,
+            BIG_WINDOW_MAX,
+        );
+        let edge = edge.expect("half of it is visible");
+        assert_eq!(edge.size.x, 32.0);
+        assert!((edge.uv[0] - 0.5).abs() < 1e-6 && (edge.local[0] - 0.5).abs() < 1e-6);
+        assert!(clip(
+            Vec2::new(100.0, 200.0),
+            Vec2::splat(64.0),
+            uv,
+            BIG_WINDOW_MIN,
+            BIG_WINDOW_MAX
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn panning_moves_only_the_big_map_and_resets_when_the_room_changes() {
+        let mut world = World::new();
+        world.spawn((map(MapSize::Small),));
+        world.spawn((map(MapSize::Big),));
+        pan_big_maps(&mut world, Vec2::new(10.0, -5.0));
+        let pans: Vec<(MapSize, Vec2)> = world
+            .query::<&Minimap>()
             .iter()
-            .filter(|draw| draw.texture == TextureId::WHITE)
-            .count();
-        assert!(solids >= 5, "outline (4) and a gate mark: {solids}");
+            .map(|m| (m.size, m.pan))
+            .collect();
+        assert!(pans.contains(&(MapSize::Big, Vec2::new(10.0, -5.0))));
+        assert!(pans.contains(&(MapSize::Small, Vec2::ZERO)));
+
+        update_minimaps(&mut world, &[true, true, false, false], 1, 0.1);
+        assert!(world
+            .query::<&Minimap>()
+            .iter()
+            .all(|m| m.pan == Vec2::ZERO));
     }
 
     #[test]
