@@ -1,9 +1,9 @@
-mod autotile;
 mod grid;
 mod layouts;
+mod tileset;
 
-pub(crate) use autotile::{tile_number, TILESET_COLUMNS, TILESET_ROWS};
 pub(crate) use grid::TileGrid;
 pub(crate) use layouts::{arena, lobby};
+pub(crate) use tileset::Tileset;
 
 pub(crate) const TILE_SIZE: f32 = 64.0;

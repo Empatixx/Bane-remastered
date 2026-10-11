@@ -19,7 +19,7 @@ const MAX_FRAME: Duration = Duration::from_millis(250);
 pub(crate) struct App {
     window: Option<Arc<Window>>,
     gpu: Option<Gpu>,
-    game: Game,
+    game: Option<Game>,
     last_frame: Instant,
     accumulator: Duration,
 }
@@ -29,7 +29,7 @@ impl App {
         Self {
             window: None,
             gpu: None,
-            game: Game::new(Assets::default()),
+            game: None,
             last_frame: Instant::now(),
             accumulator: Duration::ZERO,
         }
@@ -53,7 +53,7 @@ impl ApplicationHandler for App {
         });
         match started {
             Ok((gpu, assets)) => {
-                self.game = Game::new(assets);
+                self.game = Some(Game::new(assets));
                 self.gpu = Some(gpu);
                 self.window = Some(window);
             }
@@ -67,15 +67,23 @@ impl ApplicationHandler for App {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
-            WindowEvent::KeyboardInput { event, .. } => self.game.handle_key(&event),
-            WindowEvent::MouseInput { state, button, .. } => self.game.handle_click(button, state),
+            WindowEvent::KeyboardInput { event, .. } => {
+                if let Some(game) = &mut self.game {
+                    game.handle_key(&event);
+                }
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                if let Some(game) = &mut self.game {
+                    game.handle_click(button, state);
+                }
+            }
             WindowEvent::CursorMoved { position, .. } => {
-                if let Some(window) = &self.window {
+                if let (Some(window), Some(game)) = (&self.window, &mut self.game) {
                     let size = window.inner_size();
                     if size.width > 0 && size.height > 0 {
                         let window_size = Vec2::new(size.width as f32, size.height as f32);
                         let pixels = Vec2::new(position.x as f32, position.y as f32);
-                        self.game.set_mouse(pixels / window_size * TARGET);
+                        game.set_mouse(pixels / window_size * TARGET);
                     }
                 }
             }
@@ -85,7 +93,7 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::RedrawRequested => {
-                if let Some(gpu) = &mut self.gpu {
+                if let (Some(gpu), Some(game)) = (&mut self.gpu, &self.game) {
                     gpu.render(
                         wgpu::Color {
                             r: 0.05,
@@ -93,7 +101,7 @@ impl ApplicationHandler for App {
                             b: 0.12,
                             a: 1.0,
                         },
-                        &self.game.draws(),
+                        &game.draws(),
                     );
                 }
             }
@@ -102,19 +110,22 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        let Some(game) = &mut self.game else {
+            return;
+        };
         let now = Instant::now();
         let frame_time = (now - self.last_frame).min(MAX_FRAME);
         self.last_frame = now;
         self.accumulator += frame_time;
 
         while self.accumulator >= STEP {
-            if self.game.fixed_update(STEP.as_secs_f32()).is_break() {
+            if game.fixed_update(STEP.as_secs_f32()).is_break() {
                 event_loop.exit();
                 return;
             }
             self.accumulator -= STEP;
         }
-        if self.game.update(frame_time.as_secs_f32()).is_break() {
+        if game.update(frame_time.as_secs_f32()).is_break() {
             event_loop.exit();
             return;
         }

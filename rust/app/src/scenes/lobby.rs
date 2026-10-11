@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use glam::Vec2;
 use hecs::World;
 use winit::keyboard::KeyCode;
@@ -6,23 +8,26 @@ use crate::assets::Textures;
 use crate::input::Input;
 use crate::prefabs;
 use crate::systems;
-use crate::tilemap::{self, TileGrid, TILE_SIZE};
+use crate::tilemap::{self, TileGrid, Tileset, TILE_SIZE};
 
 use super::{Scene, SceneId, Transition};
 
-#[derive(Default)]
 pub(crate) struct LobbyScene {
     world: World,
     textures: Textures,
+    tileset: Arc<Tileset>,
     bounds: Vec2,
     camera: Vec2,
 }
 
 impl LobbyScene {
-    pub(crate) fn new(textures: Textures) -> Self {
+    pub(crate) fn new(textures: Textures, tileset: Arc<Tileset>) -> Self {
         Self {
+            world: World::new(),
             textures,
-            ..Self::default()
+            tileset,
+            bounds: Vec2::ZERO,
+            camera: Vec2::ZERO,
         }
     }
 }
@@ -43,7 +48,7 @@ impl Scene for LobbyScene {
     fn enter(&mut self) {
         let grid: TileGrid = tilemap::lobby();
         self.bounds = grid.pixel_size();
-        prefabs::tilemap(&mut self.world, &grid, self.textures.tileset);
+        prefabs::tilemap(&mut self.world, &grid, &self.tileset, self.textures.tileset);
         prefabs::portal(
             &mut self.world,
             Vec2::new(self.bounds.x - 2.5 * TILE_SIZE, self.bounds.y / 2.0),

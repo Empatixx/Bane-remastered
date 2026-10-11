@@ -1,7 +1,9 @@
 use std::error::Error;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use crate::render::{Font, Gpu, TextureId};
+use crate::tilemap::Tileset;
 
 const FONT_SIZE: f32 = 20.0;
 
@@ -12,9 +14,10 @@ pub(crate) struct Textures {
     pub(crate) tileset: TextureId,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(crate) struct Assets {
     pub(crate) textures: Textures,
+    pub(crate) tileset: Arc<Tileset>,
     pub(crate) font: Font,
 }
 
@@ -27,6 +30,7 @@ impl Assets {
                 logo: gpu.load_texture(&root.join("textures/menu/logo.tga"))?,
                 tileset: gpu.load_texture(&root.join("textures/ingame/tileset_2.png"))?,
             },
+            tileset: Arc::new(Tileset::dungeon()?),
             font: Font::load(gpu, &root.join("fonts/PixelFJVerdana12pt.ttf"), FONT_SIZE)?,
         })
     }

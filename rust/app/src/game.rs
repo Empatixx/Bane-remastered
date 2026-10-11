@@ -19,7 +19,7 @@ impl Game {
     pub(crate) fn new(assets: Assets) -> Self {
         Self {
             input: Input::default(),
-            scenes: Scenes::new(assets.textures),
+            scenes: Scenes::new(assets.textures, assets.tileset),
             font: assets.font,
         }
     }

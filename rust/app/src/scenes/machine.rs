@@ -1,10 +1,12 @@
 use std::fmt;
 use std::ops::ControlFlow;
+use std::sync::Arc;
 
 use crate::assets::Textures;
 use crate::input::Input;
 use crate::render::{Draw, Font};
 use crate::systems;
+use crate::tilemap::Tileset;
 
 use super::ingame::InGameScene;
 use super::loading::LoadingScene;
@@ -29,13 +31,13 @@ impl fmt::Debug for Scenes {
 }
 
 impl Scenes {
-    pub(crate) fn new(textures: Textures) -> Self {
+    pub(crate) fn new(textures: Textures, tileset: Arc<Tileset>) -> Self {
         let mut scenes = Self {
             current: SceneId::Loading,
             loading: LoadingScene::default(),
             menu: MenuScene::new(textures),
-            lobby: LobbyScene::new(textures),
-            ingame: InGameScene::new(textures),
+            lobby: LobbyScene::new(textures, Arc::clone(&tileset)),
+            ingame: InGameScene::new(textures, tileset),
         };
         scenes.scene_mut().enter();
         scenes
@@ -98,6 +100,11 @@ mod tests {
 
     use super::*;
 
+    fn test_scenes() -> Scenes {
+        let tileset = Tileset::dungeon().expect("the embedded tileset is valid");
+        Scenes::new(Textures::default(), Arc::new(tileset))
+    }
+
     fn click_at(scenes: &mut Scenes, input: &mut Input, position: Vec2) -> ControlFlow<()> {
         input.set_mouse(position);
         assert!(scenes.update(input, 0.0).is_continue());
@@ -108,7 +115,7 @@ mod tests {
     }
 
     fn menu() -> (Scenes, Input) {
-        let mut scenes = Scenes::new(Textures::default());
+        let mut scenes = test_scenes();
         let input = Input::default();
         assert!(scenes.update(&input, 2.0).is_continue());
         assert_eq!(scenes.current, SceneId::Menu);
@@ -117,7 +124,7 @@ mod tests {
 
     #[test]
     fn loading_switches_to_menu_when_done() {
-        let mut scenes = Scenes::new(Textures::default());
+        let mut scenes = test_scenes();
         let input = Input::default();
         assert!(scenes.update(&input, 0.5).is_continue());
         assert_eq!(scenes.current, SceneId::Loading);

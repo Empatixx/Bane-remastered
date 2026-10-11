@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use glam::Vec2;
 use hecs::World;
 use winit::keyboard::KeyCode;
@@ -6,23 +8,26 @@ use crate::assets::Textures;
 use crate::input::Input;
 use crate::prefabs;
 use crate::systems;
-use crate::tilemap;
+use crate::tilemap::{self, Tileset};
 
 use super::{Scene, SceneId, Transition};
 
-#[derive(Default)]
 pub(crate) struct InGameScene {
     world: World,
     textures: Textures,
+    tileset: Arc<Tileset>,
     bounds: Vec2,
     camera: Vec2,
 }
 
 impl InGameScene {
-    pub(crate) fn new(textures: Textures) -> Self {
+    pub(crate) fn new(textures: Textures, tileset: Arc<Tileset>) -> Self {
         Self {
+            world: World::new(),
             textures,
-            ..Self::default()
+            tileset,
+            bounds: Vec2::ZERO,
+            camera: Vec2::ZERO,
         }
     }
 }
@@ -43,7 +48,7 @@ impl Scene for InGameScene {
     fn enter(&mut self) {
         let grid = tilemap::arena();
         self.bounds = grid.pixel_size();
-        prefabs::tilemap(&mut self.world, &grid, self.textures.tileset);
+        prefabs::tilemap(&mut self.world, &grid, &self.tileset, self.textures.tileset);
         prefabs::player(&mut self.world, self.bounds / 2.0);
         self.camera = systems::follow_player(&self.world, self.bounds);
     }

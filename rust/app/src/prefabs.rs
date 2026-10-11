@@ -6,7 +6,7 @@ use crate::components::{
     UiAction, Velocity,
 };
 use crate::render::TextureId;
-use crate::tilemap::{self, TileGrid};
+use crate::tilemap::{self, TileGrid, Tileset};
 
 pub(crate) fn player(world: &mut World, position: Vec2) -> Entity {
     world.spawn((
@@ -92,29 +92,25 @@ fn label_at(world: &mut World, position: Vec2, content: &str, layer: Layer) -> E
     ))
 }
 
-pub(crate) fn tilemap(world: &mut World, grid: &TileGrid, tileset: TextureId) {
+pub(crate) fn tilemap(world: &mut World, grid: &TileGrid, tileset: &Tileset, texture: TextureId) {
     for row in 0..grid.rows() {
         for column in 0..grid.columns() {
-            let number = tilemap::tile_number(grid, column, row);
-            let (tile_column, tile_row) = (
-                number % tilemap::TILESET_COLUMNS,
-                number / tilemap::TILESET_COLUMNS,
-            );
+            let number = tileset.tile_number(grid, column, row);
             let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
             let entity = world.spawn((
                 Position(center),
                 Size(Vec2::splat(tilemap::TILE_SIZE)),
                 Color(Vec4::ONE),
                 Sprite::cell(
-                    tileset,
-                    tile_column,
-                    tile_row,
-                    tilemap::TILESET_COLUMNS,
-                    tilemap::TILESET_ROWS,
+                    texture,
+                    number % tileset.columns(),
+                    number / tileset.columns(),
+                    tileset.columns(),
+                    tileset.rows(),
                 ),
                 Layer(-2),
             ));
-            if tile_row > 0 {
+            if tileset.is_solid(number) {
                 let _ = world.insert_one(entity, Solid);
             }
         }
