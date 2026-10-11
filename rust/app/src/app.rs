@@ -9,6 +9,7 @@ use winit::window::{Window, WindowId};
 
 use crate::assets::{Assets, Loader};
 use crate::game::Game;
+use crate::perf::PerfCounter;
 use crate::render::Gpu;
 use crate::viewport::TARGET;
 
@@ -23,6 +24,7 @@ pub(crate) struct App {
     loader: Option<Loader>,
     last_frame: Instant,
     accumulator: Duration,
+    perf: PerfCounter,
 }
 
 impl App {
@@ -34,6 +36,7 @@ impl App {
             loader: None,
             last_frame: Instant::now(),
             accumulator: Duration::ZERO,
+            perf: PerfCounter::default(),
         }
     }
 }
@@ -98,6 +101,7 @@ impl ApplicationHandler for App {
                 }
             }
             WindowEvent::RedrawRequested => {
+                self.perf.frame();
                 if let (Some(gpu), Some(game)) = (&mut self.gpu, &self.game) {
                     gpu.render(
                         wgpu::Color {
@@ -132,6 +136,9 @@ impl ApplicationHandler for App {
         let frame_time = (now - self.last_frame).min(MAX_FRAME);
         self.last_frame = now;
         self.accumulator += frame_time;
+        if let Some((fps, ups)) = self.perf.advance(frame_time) {
+            tracing::info!(fps, ups, "performance");
+        }
 
         while self.accumulator >= STEP {
             if game.fixed_update(STEP.as_secs_f32()).is_break() {
@@ -139,6 +146,7 @@ impl ApplicationHandler for App {
                 return;
             }
             self.accumulator -= STEP;
+            self.perf.update();
         }
         if game.update(frame_time.as_secs_f32()).is_break() {
             event_loop.exit();
