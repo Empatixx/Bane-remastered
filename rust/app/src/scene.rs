@@ -1,9 +1,16 @@
 use glam::{Vec2, Vec4};
 use hecs::World;
 
-use crate::components::{Color, Position, Size};
+use crate::components::{Color, Player, Position, Size, Velocity};
 
 pub(crate) fn populate(world: &mut World) {
+    world.spawn((
+        Player,
+        Position(Vec2::new(100.0, 100.0)),
+        Velocity::default(),
+        Size(Vec2::new(48.0, 48.0)),
+        Color(Vec4::new(0.95, 0.85, 0.2, 1.0)),
+    ));
     world.spawn((
         Position(Vec2::new(200.0, 200.0)),
         Size(Vec2::new(64.0, 64.0)),

@@ -59,6 +59,7 @@ impl ApplicationHandler for App {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
+            WindowEvent::KeyboardInput { event, .. } => self.game.input_mut().handle_key(&event),
             WindowEvent::Resized(size) => {
                 if let Some(gpu) = &mut self.gpu {
                     gpu.resize(size);
@@ -88,7 +89,7 @@ impl ApplicationHandler for App {
         self.accumulator += frame_time;
 
         while self.accumulator >= STEP {
-            self.game.fixed_update();
+            self.game.fixed_update(STEP.as_secs_f32());
             self.accumulator -= STEP;
         }
 

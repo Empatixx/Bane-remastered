@@ -1,6 +1,7 @@
 mod app;
 mod components;
 mod game;
+mod input;
 mod render;
 mod scene;
 mod systems;
