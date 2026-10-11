@@ -97,7 +97,12 @@ impl SettingsPanel {
         }
     }
 
-    pub(crate) fn update(&mut self, world: &mut World, input: &Input, settings: &mut Settings) {
+    pub(crate) fn update(
+        &mut self,
+        world: &mut World,
+        input: &Input,
+        settings: &mut Settings,
+    ) -> bool {
         let action = systems::update_buttons(world, input);
         systems::update_settings_ui(world, input, settings, &mut self.tab);
         match action {
@@ -108,6 +113,7 @@ impl SettingsPanel {
             Some(UiAction::SettingsExit) => self.close(world),
             _ => {}
         }
+        action.is_some()
     }
 }
 

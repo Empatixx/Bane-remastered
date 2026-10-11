@@ -3,6 +3,7 @@ use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::{Assets, TILESET};
+use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{Interaction, UiAction};
 use crate::input::Input;
@@ -53,6 +54,7 @@ pub(crate) struct LobbyScene {
     physics: Physics,
     camera: Camera,
     pause: Pause,
+    sounds: Vec<AudioCommand>,
 }
 
 impl Scene for LobbyScene {
@@ -68,6 +70,14 @@ impl Scene for LobbyScene {
         self.world.clear();
         self.physics = Physics::new();
         self.pause = Pause::default();
+    }
+
+    fn soundtrack(&self) -> Option<Soundtrack> {
+        Some(Soundtrack::ProgressRoom)
+    }
+
+    fn take_sounds(&mut self) -> Vec<AudioCommand> {
+        std::mem::take(&mut self.sounds)
     }
 
     fn cursor(&self) -> Cursor {
@@ -144,7 +154,11 @@ impl Scene for LobbyScene {
             self.pause.toggle(&mut self.world, assets);
         }
         if self.pause.is_active() {
-            return match self.pause.update(&mut self.world, input) {
+            let action = self.pause.update(&mut self.world, input);
+            if action.is_some() {
+                self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
+            }
+            return match action {
                 Some(UiAction::Resume) => {
                     self.pause.toggle(&mut self.world, assets);
                     Transition::None

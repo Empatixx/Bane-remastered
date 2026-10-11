@@ -1,5 +1,6 @@
 mod app;
 mod assets;
+mod audio;
 mod camera;
 mod components;
 mod game;

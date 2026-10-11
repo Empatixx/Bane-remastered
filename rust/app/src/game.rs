@@ -3,10 +3,11 @@ use std::ops::ControlFlow;
 use glam::Vec2;
 use winit::event::{ElementState, KeyEvent, MouseButton};
 
-use crate::assets::Assets;
+use crate::assets::{Assets, Loader};
+use crate::audio::Audio;
 use crate::components::Sprite;
 use crate::input::Input;
-use crate::render::{Draw, Quad};
+use crate::render::{Draw, Gpu, Quad};
 use crate::scenes::{Cursor, Scenes};
 use crate::settings::{Change, Settings};
 
@@ -22,6 +23,7 @@ pub(crate) struct Game {
     scenes: Scenes,
     assets: Assets,
     settings: Settings,
+    audio: Audio,
     time: f32,
 }
 
@@ -32,16 +34,38 @@ impl Game {
             scenes: Scenes::new(&assets),
             assets,
             settings,
+            audio: Audio::new(),
             time: 0.0,
         }
     }
 
     pub(crate) fn take_setting_changes(&mut self) -> Vec<Change> {
-        self.settings.take_changes()
+        let mut window_changes = Vec::new();
+        for change in self.settings.take_changes() {
+            match change {
+                Change::Volume {
+                    overall,
+                    music,
+                    effects,
+                } => self.audio.set_volume(overall, music, effects),
+                other => window_changes.push(other),
+            }
+        }
+        window_changes
     }
 
-    pub(crate) fn assets_mut(&mut self) -> &mut Assets {
-        &mut self.assets
+    pub(crate) fn load_step(
+        &mut self,
+        gpu: &mut Gpu,
+        loader: &mut Loader,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        loader.step(gpu, &mut self.assets, &mut self.audio)
+    }
+
+    fn play_scene_sounds(&mut self) {
+        for command in self.scenes.take_sounds() {
+            self.audio.play(command);
+        }
     }
 
     pub(crate) fn handle_key(&mut self, event: &KeyEvent) {
@@ -57,7 +81,9 @@ impl Game {
     }
 
     pub(crate) fn fixed_update(&mut self, dt: f32) -> ControlFlow<()> {
-        self.scenes.fixed_update(&self.input, dt, &self.assets)
+        let flow = self.scenes.fixed_update(&self.input, dt, &self.assets);
+        self.play_scene_sounds();
+        flow
     }
 
     pub(crate) fn update(&mut self, dt: f32) -> ControlFlow<()> {
@@ -65,6 +91,7 @@ impl Game {
         let flow = self
             .scenes
             .update(&self.input, dt, &self.assets, &mut self.settings);
+        self.play_scene_sounds();
         self.input.end_frame();
         flow
     }

@@ -157,6 +157,11 @@ impl Settings {
             settings.resolution_height,
         ));
         self.changes.push(Change::Vsync(settings.vsync));
+        self.changes.push(Change::Volume {
+            overall: settings.overall_volume,
+            music: settings.music_volume,
+            effects: settings.effects_volume,
+        });
     }
 
     pub(crate) fn apply(&mut self) {
@@ -290,10 +295,10 @@ mod tests {
     }
 
     #[test]
-    fn startup_applies_everything_except_volume() {
+    fn startup_applies_every_setting() {
         let mut settings = Settings::in_memory();
         settings.startup_changes();
-        assert_eq!(settings.take_changes().len(), 3);
+        assert_eq!(settings.take_changes().len(), 4);
     }
 
     #[test]

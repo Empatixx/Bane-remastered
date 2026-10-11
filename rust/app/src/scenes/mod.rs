@@ -10,6 +10,7 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::assets::Assets;
+use crate::audio::{AudioCommand, Soundtrack};
 use crate::input::Input;
 use crate::settings::Settings;
 
@@ -45,6 +46,14 @@ pub(crate) trait Scene {
     fn world_mut(&mut self) -> &mut World;
 
     fn enter(&mut self, assets: &Assets);
+
+    fn soundtrack(&self) -> Option<Soundtrack> {
+        None
+    }
+
+    fn take_sounds(&mut self) -> Vec<AudioCommand> {
+        Vec::new()
+    }
 
     fn cursor(&self) -> Cursor {
         Cursor::Default

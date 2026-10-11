@@ -3,6 +3,7 @@ use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::{Assets, BULLET, RAT, TILESET};
+use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{UiAction, Weapon};
 use crate::input::Input;
@@ -21,6 +22,7 @@ pub(crate) struct InGameScene {
     physics: Physics,
     camera: Camera,
     pause: Pause,
+    sounds: Vec<AudioCommand>,
 }
 
 impl Scene for InGameScene {
@@ -36,6 +38,14 @@ impl Scene for InGameScene {
         self.world.clear();
         self.physics = Physics::new();
         self.pause = Pause::default();
+    }
+
+    fn soundtrack(&self) -> Option<Soundtrack> {
+        Some(Soundtrack::InGame)
+    }
+
+    fn take_sounds(&mut self) -> Vec<AudioCommand> {
+        std::mem::take(&mut self.sounds)
     }
 
     fn cursor(&self) -> Cursor {
@@ -110,7 +120,11 @@ impl Scene for InGameScene {
             self.pause.toggle(&mut self.world, assets);
         }
         if self.pause.is_active() {
-            return match self.pause.update(&mut self.world, input) {
+            let action = self.pause.update(&mut self.world, input);
+            if action.is_some() {
+                self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
+            }
+            return match action {
                 Some(UiAction::Resume) => {
                     self.pause.toggle(&mut self.world, assets);
                     Transition::None
@@ -123,10 +137,13 @@ impl Scene for InGameScene {
             &mut self.world,
             &mut self.physics,
             input,
-            self.camera.position(),
-            assets.textures.get(BULLET),
-            dt,
-            systems::ShotRoll::random(),
+            systems::ShotContext {
+                camera: self.camera.position(),
+                bullet_texture: assets.textures.get(BULLET),
+                dt,
+                roll: systems::ShotRoll::random(),
+            },
+            &mut self.sounds,
         );
         systems::animate_player(&mut self.world, input);
         systems::tick_invulnerability(&mut self.world, dt);
@@ -146,9 +163,9 @@ impl Scene for InGameScene {
         systems::steer_player(&mut self.world, input);
         systems::chase_player(&mut self.world);
         systems::simulate(&mut self.world, &mut self.physics, dt);
-        systems::bullet_hits(&mut self.world, &mut self.physics);
+        systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::reap_dead(&mut self.world, &mut self.physics);
-        systems::contact_damage(&mut self.world);
+        systems::contact_damage(&mut self.world, &mut self.sounds);
         if systems::player_is_dead(&self.world) {
             Transition::Switch(SceneId::Lobby)
         } else {

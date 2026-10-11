@@ -2,6 +2,7 @@ use glam::Vec2;
 use hecs::{Entity, World};
 use winit::keyboard::KeyCode;
 
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
 use crate::components::{
     Animation, Body, Bullet, Expiring, Health, Player, Position, Velocity, Weapon,
@@ -26,15 +27,27 @@ impl ShotRoll {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ShotContext {
+    pub(crate) camera: Vec2,
+    pub(crate) bullet_texture: TextureId,
+    pub(crate) dt: f32,
+    pub(crate) roll: ShotRoll,
+}
+
 pub(crate) fn shoot(
     world: &mut World,
     physics: &mut Physics,
     input: &Input,
-    camera: Vec2,
-    bullet_texture: TextureId,
-    dt: f32,
-    roll: ShotRoll,
+    context: ShotContext,
+    sounds: &mut Vec<AudioCommand>,
 ) {
+    let ShotContext {
+        camera,
+        bullet_texture,
+        dt,
+        roll,
+    } = context;
     let target = input.mouse() + camera;
     let mut shots = Vec::new();
     for (position, weapon) in world
@@ -43,7 +56,18 @@ pub(crate) fn shoot(
     {
         weapon.advance(dt);
         if input.just_pressed(KeyCode::KeyR) {
+            let was_reloading = weapon.reloading.is_some();
             weapon.start_reload();
+            if !was_reloading && weapon.reloading.is_some() {
+                sounds.push(AudioCommand::Effect(SoundEffect::PistolReload));
+            }
+        }
+        if input.clicked()
+            && weapon.reloading.is_none()
+            && weapon.cooldown <= 0.0
+            && weapon.clip == 0
+        {
+            sounds.push(AudioCommand::Effect(SoundEffect::EmptyGunShoot));
         }
         if !input.clicked() || !weapon.can_fire() {
             continue;
@@ -54,6 +78,7 @@ pub(crate) fn shoot(
         }
         weapon.cooldown = weapon.fire_interval;
         weapon.clip -= 1;
+        sounds.push(AudioCommand::Effect(SoundEffect::PistolShoot));
         let angle = to_target.to_angle() + roll.spread * weapon.inaccuracy;
         let range = weapon.max_damage - weapon.min_damage + 1;
         let damage = weapon.min_damage + ((range as f32 * roll.damage) as i32).min(range - 1);
@@ -68,7 +93,11 @@ pub(crate) fn shoot(
     }
 }
 
-pub(crate) fn bullet_hits(world: &mut World, physics: &mut Physics) {
+pub(crate) fn bullet_hits(
+    world: &mut World,
+    physics: &mut Physics,
+    sounds: &mut Vec<AudioCommand>,
+) {
     let hits: Vec<(Entity, Body, i32, Vec<Owner>)> = world
         .query::<(Entity, &Body, &Bullet)>()
         .without::<&Expiring>()
@@ -81,10 +110,15 @@ pub(crate) fn bullet_hits(world: &mut World, physics: &mut Physics) {
             Owner::Entity(entity) => Some(*entity),
             Owner::Wall => None,
         });
-        if let Some(health) = victim.and_then(|entity| world.get::<&mut Health>(entity).ok()) {
-            let mut health = health;
-            health.current -= damage;
-        }
+        let hit_enemy = victim
+            .and_then(|entity| world.get::<&mut Health>(entity).ok())
+            .map(|mut health| health.current -= damage)
+            .is_some();
+        sounds.push(AudioCommand::Effect(if hit_enemy {
+            SoundEffect::EnemyHit
+        } else {
+            SoundEffect::WallHit
+        }));
         physics.remove(body);
         let _ = world.remove_one::<Body>(bullet);
         let _ = world.insert_one(bullet, Expiring);
@@ -130,13 +164,16 @@ mod tests {
             world,
             physics,
             input,
-            camera,
-            TextureId::WHITE,
-            dt,
-            ShotRoll {
-                spread: 0.0,
-                damage: 0.0,
+            ShotContext {
+                camera,
+                bullet_texture: TextureId::WHITE,
+                dt,
+                roll: ShotRoll {
+                    spread: 0.0,
+                    damage: 0.0,
+                },
             },
+            &mut Vec::new(),
         );
     }
 
@@ -196,7 +233,7 @@ mod tests {
 
         for _ in 0..30 {
             simulate(&mut world, &mut physics, 1.0 / 60.0);
-            bullet_hits(&mut world, &mut physics);
+            bullet_hits(&mut world, &mut physics, &mut Vec::new());
         }
 
         assert!(world.get::<&Expiring>(bullet).is_ok());
@@ -230,7 +267,7 @@ mod tests {
 
         for _ in 0..30 {
             simulate(&mut world, &mut physics, 1.0 / 60.0);
-            bullet_hits(&mut world, &mut physics);
+            bullet_hits(&mut world, &mut physics, &mut Vec::new());
         }
 
         let after = world.get::<&Health>(rat).map(|h| h.current).unwrap_or(0);

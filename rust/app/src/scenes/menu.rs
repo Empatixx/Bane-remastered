@@ -2,6 +2,7 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::assets::{Assets, BUTTON, LOGO, MENU_BACKGROUND};
+use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::components::UiAction;
 use crate::input::Input;
 use crate::prefabs;
@@ -24,6 +25,7 @@ pub(crate) struct MenuScene {
     world: World,
     panel: SettingsPanel,
     background: Option<Entity>,
+    sounds: Vec<AudioCommand>,
 }
 
 impl Scene for MenuScene {
@@ -33,6 +35,14 @@ impl Scene for MenuScene {
 
     fn world_mut(&mut self) -> &mut World {
         &mut self.world
+    }
+
+    fn soundtrack(&self) -> Option<Soundtrack> {
+        Some(Soundtrack::MainMenu)
+    }
+
+    fn take_sounds(&mut self) -> Vec<AudioCommand> {
+        std::mem::take(&mut self.sounds)
     }
 
     fn enter(&mut self, assets: &Assets) {
@@ -71,10 +81,16 @@ impl Scene for MenuScene {
         settings: &mut Settings,
     ) -> Transition {
         if self.panel.is_open() {
-            self.panel.update(&mut self.world, input, settings);
+            if self.panel.update(&mut self.world, input, settings) {
+                self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
+            }
             return Transition::None;
         }
-        match systems::update_buttons(&mut self.world, input) {
+        let action = systems::update_buttons(&mut self.world, input);
+        if action.is_some() {
+            self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
+        }
+        match action {
             Some(UiAction::Play) => Transition::Switch(SceneId::Lobby),
             Some(UiAction::Settings) => {
                 if let Some(background) = self.background {

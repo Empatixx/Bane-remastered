@@ -2,6 +2,7 @@ use std::fmt;
 use std::ops::ControlFlow;
 
 use crate::assets::Assets;
+use crate::audio::AudioCommand;
 use crate::input::Input;
 use crate::render::{Draw, Fonts};
 use crate::settings::Settings;
@@ -15,6 +16,7 @@ use super::{Cursor, Scene, SceneId, Transition};
 
 pub(crate) struct Scenes {
     current: SceneId,
+    pending: Vec<AudioCommand>,
     loading: LoadingScene,
     menu: MenuScene,
     lobby: LobbyScene,
@@ -33,13 +35,27 @@ impl Scenes {
     pub(crate) fn new(assets: &Assets) -> Self {
         let mut scenes = Self {
             current: SceneId::Loading,
+            pending: Vec::new(),
             loading: LoadingScene::default(),
             menu: MenuScene::default(),
             lobby: LobbyScene::default(),
             ingame: InGameScene::default(),
         };
         scenes.scene_mut().enter(assets);
+        scenes.queue_music();
         scenes
+    }
+
+    pub(crate) fn take_sounds(&mut self) -> Vec<AudioCommand> {
+        let mut sounds = std::mem::take(&mut self.pending);
+        sounds.extend(self.scene_mut().take_sounds());
+        sounds
+    }
+
+    fn queue_music(&mut self) {
+        if let Some(track) = self.scene().soundtrack() {
+            self.pending.push(AudioCommand::Music(track));
+        }
     }
 
     pub(crate) fn update(
@@ -86,6 +102,7 @@ impl Scenes {
         self.scene_mut().leave();
         self.current = next;
         self.scene_mut().enter(assets);
+        self.queue_music();
         tracing::info!(scene = ?next, "scene changed");
     }
 

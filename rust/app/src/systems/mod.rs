@@ -21,7 +21,7 @@ pub(crate) use hud::{update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use settings_ui::update_settings_ui;
-pub(crate) use shooting::{bullet_hits, shoot, ShotRoll};
+pub(crate) use shooting::{bullet_hits, shoot, ShotContext, ShotRoll};
 pub(crate) use simulation::simulate;
 pub(crate) use steering::steer_player;
 pub(crate) use ui::{update_buttons, update_text_buttons};

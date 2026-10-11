@@ -1,5 +1,6 @@
 use hecs::{Entity, World};
 
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Armor, ContactDamage, Expiring, Health, Invulnerable, Player, Position, Size,
 };
@@ -20,7 +21,9 @@ pub(crate) fn absorb(health: &mut Health, armor: &mut Armor, damage: i32) {
     health.current = health.current.max(0);
 }
 
-pub(crate) fn contact_damage(world: &mut World) {
+const LOW_HEALTH: f32 = 0.3;
+
+pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) {
     let Some((player, position, size)) = world
         .query::<(Entity, &Position, &Size)>()
         .with::<(&Player, &Health)>()
@@ -46,7 +49,17 @@ pub(crate) fn contact_damage(world: &mut World) {
         if health.current <= 0 {
             return;
         }
+        let was_low = (health.current as f32) < health.max as f32 * LOW_HEALTH;
         absorb(health, armor, damage);
+        let is_low = (health.current as f32) < health.max as f32 * LOW_HEALTH;
+        sounds.push(AudioCommand::Effect(if health.current <= 0 {
+            SoundEffect::Death
+        } else {
+            SoundEffect::PlayerHurt
+        }));
+        if is_low && !was_low && health.current > 0 {
+            sounds.push(AudioCommand::Effect(SoundEffect::LowHealth));
+        }
         let _ = world.insert_one(
             player,
             Invulnerable {
@@ -130,8 +143,8 @@ mod tests {
             TextureId::WHITE,
         );
 
-        contact_damage(&mut world);
-        contact_damage(&mut world);
+        contact_damage(&mut world, &mut Vec::new());
+        contact_damage(&mut world, &mut Vec::new());
 
         let armor = world.get::<&Armor>(player).map(|a| a.current).ok();
         let health = world.get::<&Health>(player).map(|h| h.current).ok();

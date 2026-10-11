@@ -3,6 +3,7 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::audio::Audio;
 use crate::components::BarKind;
 use crate::render::{FontSize, Fonts, Gpu, TextureId};
 use crate::tilemap::Tileset;
@@ -110,6 +111,7 @@ impl Assets {
 enum Step {
     Texture(&'static str),
     Bar(BarKind),
+    Sound(&'static str),
     Font(FontSize),
 }
 
@@ -125,6 +127,7 @@ impl Loader {
         let mut pending: VecDeque<Step> =
             GAME_TEXTURES.iter().copied().map(Step::Texture).collect();
         pending.extend(BarKind::ALL.map(Step::Bar));
+        pending.extend(Audio::files().into_iter().map(Step::Sound));
         pending.extend(FontSize::ALL.map(Step::Font));
         Ok(Self { pending })
     }
@@ -137,6 +140,7 @@ impl Loader {
         &mut self,
         gpu: &mut Gpu,
         assets: &mut Assets,
+        audio: &mut Audio,
     ) -> Result<(), Box<dyn Error>> {
         let Some(step) = self.pending.pop_front() else {
             return Ok(());
@@ -151,6 +155,7 @@ impl Loader {
                 )?;
                 assets.textures.insert(spec.texture, id);
             }
+            Step::Sound(file) => audio.preload(file),
             Step::Font(size) => assets.fonts.load(gpu, &root().join(FONT_FILE), size)?,
         }
         if self.pending.is_empty() {

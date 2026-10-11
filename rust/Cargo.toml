@@ -13,3 +13,6 @@ unreachable_pub = "warn"
 
 [workspace.lints.clippy]
 unwrap_used = "warn"
+
+[profile.dev.package."*"]
+opt-level = 3

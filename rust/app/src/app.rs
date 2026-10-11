@@ -132,7 +132,7 @@ impl ApplicationHandler for App {
             return;
         };
         if let Some(loader) = &mut self.loader {
-            if let Err(error) = loader.step(gpu, game.assets_mut()) {
+            if let Err(error) = game.load_step(gpu, loader) {
                 tracing::error!(%error, "cannot load the assets");
                 event_loop.exit();
                 return;
