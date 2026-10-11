@@ -8,3 +8,7 @@ settings.json
 
 # IDE
 *.iml
+
+# Rust port
+/rust/target/
+/rust/.idea/
