@@ -69,4 +69,4 @@ pub(crate) use skills::{
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
 pub(crate) use transform::{blended, Blend, Position, Previous, Size};
-pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, TextButton, UiAction, UpgradeUi};
+pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, PulseUi, TextButton, UiAction, UpgradeUi};

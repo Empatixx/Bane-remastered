@@ -39,3 +39,6 @@ pub(crate) struct PauseUi;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct UpgradeUi;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PulseUi;

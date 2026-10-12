@@ -4,12 +4,13 @@ use hecs::{Entity, World};
 use crate::assets::{Assets, Tex, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Color, Layer, Overlay, Position, ScreenSpace, Size, Sprite, Text, UpgradeUi,
+    Color, Layer, Overlay, Position, PulseUi, ScreenSpace, Size, Sprite, Text, UpgradeUi,
 };
 use crate::input::Input;
 use crate::profile::SharedProfile;
 use crate::render::{Align, FontSize};
-use crate::upgrades::{Purchase, Quality, ROOT_CELL, Tree, Upgrade};
+use crate::rng::Rng;
+use crate::upgrades::{Purchase, Quality, ROOT_CELL, Upgrade};
 
 const TALENT: f32 = 64.0;
 const ICON: f32 = 32.0;
@@ -29,17 +30,28 @@ const PANEL_TALENT_Y: f32 = 90.0;
 const TITLE_BASELINE: f32 = 222.0;
 const DESCRIPTION_TOP: f32 = 266.0;
 const DESCRIPTION_STEP: f32 = 22.0;
-const PLATE_CENTER: Vec2 = Vec2::new(795.0, 413.0);
+const PLATE_CENTER: Vec2 = Vec2::new(795.0, 392.0);
 const PLATE_SIZE: Vec2 = Vec2::new(144.0, 57.0);
 const PLATE_HIT_HALF: Vec2 = Vec2::new(63.0, 19.5);
-const PLATE_BASELINE: f32 = 421.0;
+const PLATE_BASELINE: f32 = 400.0;
 const BUY_LABEL_X: f32 = 765.0;
 const PRICE_X: f32 = 830.0;
 const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const BLOCKED_COLOR: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
-const LOCKED_LINE: Vec4 = Vec4::new(78.0 / 255.0, 66.0 / 255.0, 84.0 / 255.0, 1.0);
+const LINE_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
 const LINE_INK: Vec4 = Vec4::new(14.0 / 255.0, 8.0 / 255.0, 12.0 / 255.0, 1.0);
+const FRAME_INSET: f32 = 8.0;
+const CAP_REACH: f32 = 4.0;
+const PULSE_LAYER: i32 = 34;
+const PULSE_SPEED: f32 = 64.0;
+const PULSE_GRID: f32 = 2.0;
+const PULSE_SIZE: f32 = 4.0;
+const PULSE_GAP: f32 = 6.0;
+const PULSE_TAIL: usize = 3;
+const PULSE_PAUSE: (f32, f32) = (0.35, 1.1);
+const PULSE_LIMIT: usize = 7;
+const PULSE_HEAD: Vec4 = Vec4::new(1.0, 0.96, 0.78, 1.0);
 const LOCKED_ICON_ALPHA: f32 = 0.6;
 const DIM_LAYER: i32 = 29;
 const BOARD_LAYER: i32 = 30;
@@ -105,14 +117,6 @@ pub(crate) fn buy_state(profile: &SharedProfile, upgrade: Upgrade) -> BuyState {
     }
 }
 
-fn branch_color(tree: Tree) -> Vec4 {
-    match tree {
-        Tree::Utility => Vec4::new(196.0 / 255.0, 116.0 / 255.0, 240.0 / 255.0, 1.0),
-        Tree::Offensive => Vec4::new(244.0 / 255.0, 96.0 / 255.0, 96.0 / 255.0, 1.0),
-        Tree::Defensive => Vec4::new(96.0 / 255.0, 214.0 / 255.0, 126.0 / 255.0, 1.0),
-    }
-}
-
 fn node_top_left(cell: (i32, i32), pan: Vec2) -> Vec2 {
     Vec2::new(
         VIEW_TOP_LEFT.x + VIEW_SIZE.x / 2.0 - TALENT / 2.0,
@@ -161,22 +165,30 @@ fn rect(top_left: Vec2, size: Vec2, color: Vec4, layer: i32) -> Element {
     }
 }
 
-fn line(elements: &mut Vec<Element>, from: Vec2, to: Vec2, color: Vec4, alpha: f32) {
-    let low = from.min(to).floor();
-    let extent = (from - to).abs().floor() + Vec2::ONE;
-    let (ink_low, ink_size, core_low, core_size) = if (from.x - to.x).abs() < 1.0 {
+fn segment(elements: &mut Vec<Element>, from: Vec2, to: Vec2, extend: (f32, f32), alpha: f32) {
+    let vertical = (from.x - to.x).abs() < 1.0;
+    let direction = if vertical {
+        Vec2::new(0.0, (to.y - from.y).signum())
+    } else {
+        Vec2::new((to.x - from.x).signum(), 0.0)
+    };
+    let start = from - direction * extend.0;
+    let end = to + direction * extend.1;
+    let low = start.min(end);
+    let length = (start - end).abs().max_element() + 1.0;
+    let (ink_low, ink_size, core_low, core_size) = if vertical {
         (
-            low - Vec2::new(2.0, 0.0),
-            Vec2::new(4.0, extent.y),
-            low - Vec2::new(1.0, 0.0),
-            Vec2::new(2.0, extent.y),
+            Vec2::new(from.x - 2.0, low.y),
+            Vec2::new(4.0, length),
+            Vec2::new(from.x - 1.0, low.y),
+            Vec2::new(2.0, length),
         )
     } else {
         (
-            low - Vec2::new(0.0, 2.0),
-            Vec2::new(extent.x, 4.0),
-            low - Vec2::new(0.0, 1.0),
-            Vec2::new(extent.x, 2.0),
+            Vec2::new(low.x, from.y - 2.0),
+            Vec2::new(length, 4.0),
+            Vec2::new(low.x, from.y - 1.0),
+            Vec2::new(length, 2.0),
         )
     };
     elements.push(rect(
@@ -188,111 +200,105 @@ fn line(elements: &mut Vec<Element>, from: Vec2, to: Vec2, color: Vec4, alpha: f
     elements.push(rect(
         core_low,
         core_size,
-        color.truncate().extend(alpha),
+        LINE_COLOR.truncate().extend(alpha),
         LINE_LAYER + 1,
     ));
 }
 
-fn cap(elements: &mut Vec<Element>, at: Vec2, horizontal: bool, color: Vec4, alpha: f32) {
-    let (ink_low, ink_size, core_low, core_size) = if horizontal {
-        (
-            at - Vec2::new(5.0, 2.0),
-            Vec2::new(10.0, 4.0),
-            at - Vec2::new(4.0, 1.0),
-            Vec2::new(8.0, 2.0),
-        )
+fn cap(elements: &mut Vec<Element>, at: Vec2, inward: Vec2, alpha: f32) {
+    let bar = if inward.x != 0.0 {
+        Vec2::new(CAP_REACH, 10.0)
     } else {
-        (
-            at - Vec2::new(2.0, 5.0),
-            Vec2::new(4.0, 10.0),
-            at - Vec2::new(1.0, 4.0),
-            Vec2::new(2.0, 8.0),
-        )
+        Vec2::new(10.0, CAP_REACH)
     };
+    let center = at + inward * (CAP_REACH / 2.0);
     elements.push(rect(
-        ink_low,
-        ink_size,
+        (center - bar / 2.0).floor(),
+        bar,
         LINE_INK.truncate().extend(alpha),
         LINE_LAYER,
     ));
     elements.push(rect(
-        core_low,
-        core_size,
-        color.truncate().extend(alpha),
+        (center - (bar - Vec2::splat(2.0)) / 2.0).floor(),
+        bar - Vec2::splat(2.0),
+        LINE_COLOR.truncate().extend(alpha),
         LINE_LAYER + 1,
     ));
 }
 
-fn connector(elements: &mut Vec<Element>, from: Vec2, to: Vec2, color: Vec4, alpha: f32) {
-    if alpha <= 0.0 {
-        return;
-    }
-    let half = Vec2::splat(TALENT / 2.0);
-    let (from_center, to_center) = (from + half, to + half);
-    if (from.y - to.y).abs() < 1.0 {
-        let (start, end) = if to.x < from.x {
-            (to.x + TALENT, from.x)
+pub(crate) fn edge_path(from: (i32, i32), to: (i32, i32)) -> Vec<Vec2> {
+    let (a, b) = (
+        node_top_left(from, Vec2::ZERO),
+        node_top_left(to, Vec2::ZERO),
+    );
+    let near = FRAME_INSET;
+    let far = TALENT - FRAME_INSET;
+    let half = TALENT / 2.0;
+    if from.1 == to.1 {
+        let (start, end) = if to.0 < from.0 {
+            (a.x + near, b.x + far)
         } else {
-            (from.x + TALENT, to.x)
+            (a.x + far, b.x + near)
         };
-        line(
-            elements,
-            Vec2::new(start, from_center.y),
-            Vec2::new(end, from_center.y),
-            color,
-            alpha,
-        );
-        cap(
-            elements,
-            Vec2::new(start, from_center.y),
-            false,
-            color,
-            alpha,
-        );
-        cap(elements, Vec2::new(end, from_center.y), false, color, alpha);
+        return vec![Vec2::new(start, a.y + half), Vec2::new(end, a.y + half)];
+    }
+    let bottom = a.y + far;
+    let top = b.y + near;
+    let middle = (bottom + (top - bottom) / 2.0).floor();
+    let mut points = vec![Vec2::new(a.x + half, bottom)];
+    if (a.x - b.x).abs() > 1.0 {
+        points.push(Vec2::new(a.x + half, middle));
+        points.push(Vec2::new(b.x + half, middle));
+    }
+    points.push(Vec2::new(b.x + half, top));
+    points
+}
+
+fn draw_path(elements: &mut Vec<Element>, points: &[Vec2], alpha: f32) {
+    if alpha <= 0.0 || points.len() < 2 {
         return;
     }
-    let bottom = from.y + TALENT;
-    let middle = (bottom + (to.y - bottom) / 2.0).floor();
-    line(
-        elements,
-        Vec2::new(from_center.x, bottom),
-        Vec2::new(from_center.x, middle),
-        color,
-        alpha,
-    );
-    if (from_center.x - to_center.x).abs() > 1.0 {
-        line(
-            elements,
-            Vec2::new(from_center.x, middle),
-            Vec2::new(to_center.x, middle),
-            color,
-            alpha,
+    let last = points.len() - 2;
+    for (index, pair) in points.windows(2).enumerate() {
+        let extend = (
+            if index > 0 { 2.0 } else { 0.0 },
+            if index < last { 2.0 } else { 0.0 },
         );
-        for x in [from_center.x, to_center.x] {
-            elements.push(rect(
-                Vec2::new(x - 2.0, middle - 2.0),
-                Vec2::splat(4.0),
-                color.truncate().extend(alpha),
-                LINE_LAYER + 1,
-            ));
-        }
+        segment(elements, pair[0], pair[1], extend, alpha);
     }
-    line(
-        elements,
-        Vec2::new(to_center.x, middle),
-        Vec2::new(to_center.x, to.y),
-        color,
-        alpha,
-    );
+    let first = points[0];
     cap(
         elements,
-        Vec2::new(from_center.x, bottom),
-        true,
-        color,
+        first,
+        (points[1] - first).normalize_or_zero(),
         alpha,
     );
-    cap(elements, Vec2::new(to_center.x, to.y), true, color, alpha);
+    let tail = points[points.len() - 1];
+    cap(
+        elements,
+        tail,
+        (points[points.len() - 2] - tail).normalize_or_zero(),
+        alpha,
+    );
+}
+
+fn path_length(points: &[Vec2]) -> f32 {
+    points
+        .windows(2)
+        .map(|pair| pair[0].distance(pair[1]))
+        .sum()
+}
+
+fn point_along(points: &[Vec2], distance: f32) -> Vec2 {
+    let mut left = distance.max(0.0);
+    for pair in points.windows(2) {
+        let length = pair[0].distance(pair[1]);
+        if left <= length {
+            return pair[0].lerp(pair[1], if length > 0.0 { left / length } else { 0.0 });
+        }
+        left -= length;
+    }
+    points[points.len() - 1]
 }
 
 fn talent(
@@ -304,12 +310,17 @@ fn talent(
     layer: i32,
 ) -> Vec<Element> {
     let def = upgrade.def();
+    let shown = if state == BuyState::Available && !selected {
+        BuyState::Locked
+    } else {
+        state
+    };
     let mut elements = vec![
         Element::Image {
             texture: tex::TALENT_FRAME,
             top_left,
             size: Vec2::splat(TALENT),
-            cell: Some((frame_row(def.quality, state), FRAME_ROWS)),
+            cell: Some((frame_row(def.quality, shown), FRAME_ROWS)),
             layer,
             alpha,
         },
@@ -356,7 +367,6 @@ pub(crate) fn layout(
             alpha: 1.0,
         },
     ];
-    let snapshot = profile.snapshot();
     let root = node_top_left(ROOT_CELL, pan);
     let root_alpha = visibility(root, Vec2::splat(TALENT));
     if root_alpha > 0.0 {
@@ -374,12 +384,11 @@ pub(crate) fn layout(
         let parent = node_top_left(upgrade.parent_cell(), pan);
         let alpha = visibility(top_left, Vec2::splat(TALENT));
         let line_alpha = alpha.min(visibility(parent, Vec2::splat(TALENT)));
-        let color = if snapshot.owns(upgrade) {
-            branch_color(upgrade.tree())
-        } else {
-            LOCKED_LINE
-        };
-        connector(&mut elements, parent, top_left, color, line_alpha);
+        let path: Vec<Vec2> = edge_path(upgrade.parent_cell(), upgrade.cell())
+            .into_iter()
+            .map(|point| point + pan)
+            .collect();
+        draw_path(&mut elements, &path, line_alpha);
         if alpha > 0.0 {
             elements.extend(talent(
                 upgrade,
@@ -413,7 +422,7 @@ fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element>
         upgrade,
         Vec2::new(centre_x - TALENT / 2.0, PANEL_TALENT_Y),
         state,
-        false,
+        true,
         1.0,
         PANEL_LAYER + 2,
     ));
@@ -497,6 +506,12 @@ pub(crate) fn on_buy_plate(point: Vec2) -> bool {
 }
 
 #[derive(Debug, Clone, Copy)]
+struct Pulse {
+    edge: usize,
+    distance: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
 struct Press {
     from: Vec2,
     pan: Vec2,
@@ -512,6 +527,9 @@ pub(crate) struct UpgradeMenu {
     press: Option<Press>,
     was_down: bool,
     dirty: bool,
+    pulses: Vec<Pulse>,
+    until_pulse: f32,
+    rng: Option<Rng>,
 }
 
 impl UpgradeMenu {
@@ -529,6 +547,8 @@ impl UpgradeMenu {
             self.pan = Vec2::ZERO;
             self.press = None;
             self.was_down = false;
+            self.pulses.clear();
+            self.until_pulse = 0.0;
             self.rebuild(world, assets, profile);
         }
     }
@@ -537,6 +557,7 @@ impl UpgradeMenu {
         self.open = false;
         self.selected = None;
         self.press = None;
+        self.pulses.clear();
         clear(world);
     }
 
@@ -608,7 +629,64 @@ impl UpgradeMenu {
             self.dirty = false;
             self.rebuild(world, assets, profile);
         }
+        self.flow(world, dt);
         outcome
+    }
+
+    fn flow(&mut self, world: &mut World, dt: f32) {
+        let old: Vec<Entity> = world.query::<Entity>().with::<&PulseUi>().iter().collect();
+        for entity in old {
+            let _ = world.despawn(entity);
+        }
+        self.until_pulse -= dt;
+        if self.until_pulse <= 0.0 && self.pulses.len() < PULSE_LIMIT {
+            let rng = self.rng.get_or_insert_with(Rng::from_clock);
+            let edge = rng.below(Upgrade::ALL.len());
+            self.until_pulse = PULSE_PAUSE.0 + (PULSE_PAUSE.1 - PULSE_PAUSE.0) * rng.float();
+            self.pulses.push(Pulse {
+                edge,
+                distance: 0.0,
+            });
+        }
+        let tail = PULSE_GAP * PULSE_TAIL as f32;
+        for pulse in &mut self.pulses {
+            pulse.distance += PULSE_SPEED * dt;
+        }
+        self.pulses.retain(|pulse| {
+            let upgrade = Upgrade::ALL[pulse.edge];
+            let length = path_length(&edge_path(upgrade.parent_cell(), upgrade.cell()));
+            pulse.distance - tail <= length
+        });
+        for pulse in &self.pulses {
+            let upgrade = Upgrade::ALL[pulse.edge];
+            let path = edge_path(upgrade.parent_cell(), upgrade.cell());
+            let length = path_length(&path);
+            let shown = visibility(node_top_left(upgrade.cell(), self.pan), Vec2::splat(TALENT))
+                .min(visibility(
+                    node_top_left(upgrade.parent_cell(), self.pan),
+                    Vec2::splat(TALENT),
+                ));
+            for piece in 0..PULSE_TAIL {
+                let at = pulse.distance - PULSE_GAP * piece as f32;
+                if at < 0.0 || at > length || shown <= 0.0 {
+                    continue;
+                }
+                let point = point_along(&path, at) + self.pan;
+                let corner =
+                    ((point - Vec2::splat(PULSE_SIZE / 2.0)) / PULSE_GRID).floor() * PULSE_GRID;
+                let fade = [1.0, 0.7, 0.4][piece.min(2)];
+                let color = if piece == 0 { PULSE_HEAD } else { LINE_COLOR };
+                world.spawn((
+                    PulseUi,
+                    Position(corner + Vec2::splat(PULSE_SIZE / 2.0)),
+                    Size(Vec2::splat(PULSE_SIZE)),
+                    Color(color.truncate().extend(fade * shown)),
+                    Layer(PULSE_LAYER),
+                    Overlay,
+                    ScreenSpace,
+                ));
+            }
+        }
     }
 
     fn rebuild(&self, world: &mut World, assets: &Assets, profile: &SharedProfile) {
@@ -620,11 +698,12 @@ impl UpgradeMenu {
 }
 
 fn clear(world: &mut World) {
-    let ui: Vec<Entity> = world
+    let mut ui: Vec<Entity> = world
         .query::<Entity>()
         .with::<&UpgradeUi>()
         .iter()
         .collect();
+    ui.extend(world.query::<Entity>().with::<&PulseUi>().iter());
     for entity in ui {
         let _ = world.despawn(entity);
     }
@@ -770,27 +849,126 @@ mod tests {
     }
 
     #[test]
-    fn the_branches_are_coloured_when_open_and_grey_when_locked() {
+    fn every_connection_has_the_same_colour_whether_the_talent_is_owned_or_not() {
         let profile = rich_profile();
-        let owned = layout(&profile, None, false, Vec2::ZERO);
-        let colours: Vec<Vec4> = owned
+        let elements = layout(&profile, None, false, Vec2::ZERO);
+        let colours: Vec<Vec4> = elements
             .iter()
             .filter_map(|element| match element {
                 Element::Rect { color, layer, .. } if *layer == LINE_LAYER + 1 => Some(*color),
                 _ => None,
             })
             .collect();
+        assert!(!colours.is_empty());
         assert!(
             colours
                 .iter()
-                .any(|c| c.x == branch_color(Tree::Offensive).x
-                    && c.y == branch_color(Tree::Offensive).y)
+                .all(|c| (c.x, c.y, c.z) == (LINE_COLOR.x, LINE_COLOR.y, LINE_COLOR.z))
         );
+    }
+
+    #[test]
+    fn connections_touch_the_visible_edge_of_the_squares_they_join() {
+        let parent = node_top_left(Upgrade::MovementSpeed.cell(), Vec2::ZERO);
+        let child = node_top_left(Upgrade::Discount.cell(), Vec2::ZERO);
+        let path = edge_path(Upgrade::MovementSpeed.cell(), Upgrade::Discount.cell());
+        assert_eq!(
+            path.first().map(|p| p.y),
+            Some(parent.y + TALENT - FRAME_INSET)
+        );
+        assert_eq!(path.last().map(|p| p.y), Some(child.y + FRAME_INSET));
+        assert_eq!(path.first().map(|p| p.x), Some(parent.x + TALENT / 2.0));
+
+        let beside = edge_path((-1, 2), (-2, 2));
+        let left = node_top_left((-1, 2), Vec2::ZERO);
+        let right = node_top_left((-2, 2), Vec2::ZERO);
+        assert_eq!(beside.first().map(|p| p.x), Some(left.x + FRAME_INSET));
+        assert_eq!(
+            beside.last().map(|p| p.x),
+            Some(right.x + TALENT - FRAME_INSET)
+        );
+
+        let diagonal = edge_path(ROOT_CELL, Upgrade::MovementSpeed.cell());
+        assert!(diagonal.len() >= 3);
         assert!(
-            colours
-                .iter()
-                .any(|c| c.x == LOCKED_LINE.x && c.y == LOCKED_LINE.y)
+            diagonal
+                .windows(2)
+                .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y)
         );
+    }
+
+    #[test]
+    fn a_buyable_talent_shows_the_yellow_frame_only_while_it_is_selected() {
+        let profile = rich_profile();
+        let frame_of = |selected: Option<Upgrade>| {
+            let elements = layout(&profile, selected, false, Vec2::ZERO);
+            let wanted = node_top_left(Upgrade::Discount.cell(), Vec2::ZERO);
+            images(&elements, tex::TALENT_FRAME)
+                .into_iter()
+                .find(|(at, _)| *at == wanted)
+                .and_then(|(_, cell)| cell)
+                .map(|(row, _)| row)
+        };
+
+        assert_eq!(
+            frame_of(None),
+            Some(frame_row(Quality::Common, BuyState::Locked))
+        );
+        assert_eq!(
+            frame_of(Some(Upgrade::Discount)),
+            Some(frame_row(Quality::Common, BuyState::Available))
+        );
+    }
+
+    #[test]
+    fn the_buy_plate_fits_inside_the_panel_between_the_text_and_the_bottom_rim() {
+        let top = PLATE_CENTER.y - PLATE_SIZE.y / 2.0;
+        let bottom = PLATE_CENTER.y + PLATE_SIZE.y / 2.0;
+        let rim_bottom = PANEL_TOP_LEFT.y + 93.0 * 3.0 + 3.0;
+        assert!(bottom < rim_bottom, "{bottom} {rim_bottom}");
+        assert!(top > DESCRIPTION_TOP + DESCRIPTION_STEP * 3.0);
+        assert!((PLATE_CENTER.x - (PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0)).abs() < 3.0);
+    }
+
+    #[test]
+    fn little_pulses_run_along_the_connections_in_chunky_steps_and_then_fade_away() {
+        let (mut menu, mut world, assets, profile) = opened();
+        menu.rng = Some(Rng::new(5));
+        let mut input = Input::default();
+        let mut seen = 0;
+        for _ in 0..240 {
+            step(&mut menu, &mut world, &assets, &profile, &mut input);
+            let pieces: Vec<Vec2> = world
+                .query::<(&Position, &Size)>()
+                .with::<&PulseUi>()
+                .iter()
+                .map(|(position, size)| position.0 - size.0 / 2.0)
+                .collect();
+            seen = seen.max(pieces.len());
+            assert!(pieces.len() <= PULSE_LIMIT * PULSE_TAIL);
+            assert!(
+                pieces
+                    .iter()
+                    .all(|at| at.x % PULSE_GRID == 0.0 && at.y % PULSE_GRID == 0.0)
+            );
+        }
+        assert!(seen >= 2, "{seen}");
+
+        menu.close(&mut world);
+        assert_eq!(world.query::<&PulseUi>().iter().count(), 0);
+    }
+
+    #[test]
+    fn a_point_travels_along_a_path_with_corners() {
+        let path = vec![
+            Vec2::new(0.0, 0.0),
+            Vec2::new(0.0, 10.0),
+            Vec2::new(10.0, 10.0),
+        ];
+        assert_eq!(path_length(&path), 20.0);
+        assert_eq!(point_along(&path, 5.0), Vec2::new(0.0, 5.0));
+        assert_eq!(point_along(&path, 15.0), Vec2::new(5.0, 10.0));
+        assert_eq!(point_along(&path, 99.0), Vec2::new(10.0, 10.0));
     }
 
     #[test]
@@ -889,7 +1067,7 @@ mod tests {
         assert!(images(&none, tex::TALENT_SELECT).is_empty());
 
         let some = layout(&profile, Some(Upgrade::MovementSpeed), false, Vec2::ZERO);
-        assert_eq!(images(&some, tex::TALENT_SELECT).len(), 1);
+        assert_eq!(images(&some, tex::TALENT_SELECT).len(), 2);
         assert_eq!(images(&some, tex::PAUSEBG).len(), 1);
     }
 
