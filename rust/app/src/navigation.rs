@@ -7,6 +7,12 @@ use crate::geometry;
 use crate::tilemap::TILE_SIZE;
 
 pub(crate) const CELL: f32 = 16.0;
+pub(crate) const SOLID_REACH: f32 = 400.0;
+
+pub(crate) fn corridor(start: Vec2, target: Vec2) -> (Vec2, Vec2) {
+    let margin = Vec2::splat(SOLID_REACH);
+    (start.min(target) - margin, start.max(target) + margin)
+}
 const STRAIGHT_COST: i32 = 10;
 const DIAGONAL_COST: i32 = 14;
 const MAX_VISITED: usize = 25_000;
@@ -39,6 +45,7 @@ impl Navigation {
         })
     }
 
+    #[cfg(test)]
     pub(crate) fn find_path(
         &self,
         start: Vec2,
@@ -46,8 +53,22 @@ impl Navigation {
         target: Vec2,
         target_size: Vec2,
     ) -> Vec<Vec2> {
+        self.find_path_around(start, size, target, target_size, &[])
+    }
+
+    pub(crate) fn find_path_around(
+        &self,
+        start: Vec2,
+        size: Vec2,
+        target: Vec2,
+        target_size: Vec2,
+        solids: &[(Vec2, Vec2)],
+    ) -> Vec<Vec2> {
         astar(start, size, target, target_size, |center| {
             self.is_blocked(center, size)
+                || solids
+                    .iter()
+                    .any(|(at, extent)| geometry::overlaps(center, size, *at, *extent))
         })
     }
 }
@@ -222,5 +243,30 @@ mod tests {
         assert!(navigation.is_blocked(Vec2::new(150.0, 150.0), Vec2::new(40.0, 40.0)));
         assert!(!navigation.is_blocked(Vec2::new(100.0, 100.0), Vec2::new(40.0, 40.0)));
         assert!(navigation.is_blocked(Vec2::new(5.0, 100.0), Vec2::new(40.0, 40.0)));
+    }
+
+    #[test]
+    fn the_path_goes_around_a_solid_object_standing_in_the_way() {
+        let navigation = wall(&[]);
+        let start = Vec2::new(200.0, 300.0);
+        let target = Vec2::new(500.0, 300.0);
+        let crate_at = (Vec2::new(350.0, 300.0), Vec2::new(64.0, 160.0));
+
+        let straight = navigation.find_path(start, SIZE, target, SIZE);
+        let around = navigation.find_path_around(start, SIZE, target, SIZE, &[crate_at]);
+
+        assert!(straight
+            .iter()
+            .any(|point| geometry::overlaps(*point, SIZE, crate_at.0, crate_at.1)));
+        assert!(!around.is_empty());
+        assert!(around
+            .iter()
+            .all(|point| !geometry::overlaps(*point, SIZE, crate_at.0, crate_at.1)));
+    }
+
+    #[test]
+    fn the_corridor_covers_both_ends_with_a_margin() {
+        let (min, max) = corridor(Vec2::new(100.0, 500.0), Vec2::new(300.0, 200.0));
+        assert!(min.x < 100.0 && min.y < 200.0 && max.x > 300.0 && max.y > 500.0);
     }
 }

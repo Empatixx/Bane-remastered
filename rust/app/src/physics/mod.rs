@@ -23,6 +23,7 @@ pub(crate) enum Owner {
 
 pub(crate) struct Physics {
     world: PhysicsWorld,
+    solids: Vec<(ColliderHandle, Vec2, Vec2)>,
 }
 
 impl fmt::Debug for Physics {
@@ -47,7 +48,10 @@ impl Physics {
             ..PhysicsWorld::default()
         };
         world.integration_parameters.length_unit = LENGTH_UNIT;
-        Self { world }
+        Self {
+            world,
+            solids: Vec::new(),
+        }
     }
 
     pub(crate) fn step(&mut self, dt: f32) {
@@ -72,11 +76,28 @@ impl Physics {
             .translation(to_rapier(center))
             .collision_groups(groups::WALLS)
             .user_data(WALL_OWNER);
-        self.world.colliders.insert(collider)
+        let handle = self.world.colliders.insert(collider);
+        self.solids.push((handle, center, size));
+        handle
     }
 
     pub(crate) fn remove_collider(&mut self, collider: ColliderHandle) {
+        self.solids.retain(|(handle, _, _)| *handle != collider);
         self.world.remove_collider(collider);
+    }
+
+    pub(crate) fn solids_within(&self, min: Vec2, max: Vec2) -> Vec<(Vec2, Vec2)> {
+        self.solids
+            .iter()
+            .filter(|(_, center, size)| {
+                let half = *size / 2.0;
+                center.x + half.x >= min.x
+                    && center.x - half.x <= max.x
+                    && center.y + half.y >= min.y
+                    && center.y - half.y <= max.y
+            })
+            .map(|(_, center, size)| (*center, *size))
+            .collect()
     }
 
     pub(crate) fn add_player(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
@@ -156,7 +177,9 @@ impl Physics {
             .translation(to_rapier(center))
             .collision_groups(groups::OBJECTS)
             .user_data(owner_bits(entity));
-        self.world.colliders.insert(collider)
+        let handle = self.world.colliders.insert(collider);
+        self.solids.push((handle, center, size));
+        handle
     }
 
     pub(crate) fn remove(&mut self, body: Body) {
@@ -229,4 +252,26 @@ fn to_rapier(vector: Vec2) -> Vector {
 
 fn from_rapier(vector: Vector) -> Vec2 {
     Vec2::new(vector.x, vector.y)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn solid_boxes_are_found_near_a_corridor_and_forgotten_when_removed() {
+        let mut physics = Physics::new();
+        let handle = physics.add_static_box(Vec2::new(300.0, 300.0), Vec2::new(64.0, 64.0));
+
+        let near = physics.solids_within(Vec2::new(200.0, 200.0), Vec2::new(400.0, 400.0));
+        assert_eq!(near, vec![(Vec2::new(300.0, 300.0), Vec2::new(64.0, 64.0))]);
+        assert!(physics
+            .solids_within(Vec2::new(1000.0, 1000.0), Vec2::new(1200.0, 1200.0))
+            .is_empty());
+
+        physics.remove_collider(handle);
+        assert!(physics
+            .solids_within(Vec2::new(200.0, 200.0), Vec2::new(400.0, 400.0))
+            .is_empty());
+    }
 }

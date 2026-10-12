@@ -6,7 +6,7 @@ use crate::components::{
     Size, Spawning, Velocity,
 };
 use crate::geometry;
-use crate::navigation::{Navigation, CELL};
+use crate::navigation::{corridor, Navigation, CELL};
 use crate::physics::Physics;
 use crate::prefabs::PET_SIZE;
 use crate::systems::enemies::FLASH_SECONDS;
@@ -199,8 +199,10 @@ pub(crate) fn plan_pet_paths(world: &mut World, physics: &mut Physics, navigatio
                 .planned_for
                 .is_none_or(|planned| (target - planned).abs().max_element() > CELL);
             if moved {
+                let (min, max) = corridor(position, target);
+                let solids = physics.solids_within(min, max);
                 path.cells = navigation
-                    .find_path(position, size, target, target_size)
+                    .find_path_around(position, size, target, target_size, &solids)
                     .into();
                 path.planned_for = Some(target);
                 pet.stranded = path.cells.is_empty();

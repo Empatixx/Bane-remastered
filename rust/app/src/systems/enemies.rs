@@ -5,7 +5,7 @@ use crate::components::{
     Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Outline, Path,
     Player, Position, Rooted, Size, Spawning, Velocity,
 };
-use crate::navigation::{Navigation, CELL};
+use crate::navigation::{corridor, Navigation, CELL};
 use crate::physics::Physics;
 
 pub(crate) const FLASH_SECONDS: f32 = 1.0;
@@ -21,7 +21,7 @@ fn player_placement(world: &World) -> Option<(Vec2, Vec2)> {
         .map(|(position, size)| (position.0, size.0))
 }
 
-pub(crate) fn plan_paths(world: &mut World, navigation: &Navigation) {
+pub(crate) fn plan_paths(world: &mut World, physics: &Physics, navigation: &Navigation) {
     let Some((target, target_size)) = player_placement(world) else {
         return;
     };
@@ -34,8 +34,10 @@ pub(crate) fn plan_paths(world: &mut World, navigation: &Navigation) {
             .planned_for
             .is_none_or(|planned| (target - planned).abs().max_element() > CELL);
         if moved {
+            let (min, max) = corridor(position.0, target);
+            let solids = physics.solids_within(min, max);
             path.cells = navigation
-                .find_path(position.0, size.0, target, target_size)
+                .find_path_around(position.0, size.0, target, target_size, &solids)
                 .into();
             path.planned_for = Some(target);
         }
@@ -357,7 +359,7 @@ mod tests {
         let wall: Vec<(usize, usize)> = (0..5).map(|row| (4, row)).collect();
         let navigation = Navigation::new(&wall);
 
-        plan_paths(&mut world, &navigation);
+        plan_paths(&mut world, &physics, &navigation);
         chase_player(&mut world);
 
         let path_len = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
@@ -384,9 +386,9 @@ mod tests {
         );
         let navigation = Navigation::new(&[]);
 
-        plan_paths(&mut world, &navigation);
+        plan_paths(&mut world, &physics, &navigation);
         let first = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
-        plan_paths(&mut world, &navigation);
+        plan_paths(&mut world, &physics, &navigation);
         let second = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
 
         assert!(first > 0);

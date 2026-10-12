@@ -323,7 +323,7 @@ impl Scene for InGameScene {
         systems::steer_player(&mut self.world, input, dt);
         systems::tick_spawning(&mut self.world, &mut self.physics, dt);
         systems::dash(&mut self.world, dt);
-        systems::plan_paths(&mut self.world, &self.navigation);
+        systems::plan_paths(&mut self.world, &self.physics, &self.navigation);
         systems::chase_player(&mut self.world);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
