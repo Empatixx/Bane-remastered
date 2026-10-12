@@ -2,8 +2,8 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{
-    Color, Hidden, InRange, Layer, Lit, MapSize, Minimap, Overlay, PlayerShadow, Position, Prompt,
-    ScreenSpace, Size, Sprite, StatusBar, Text,
+    blended, Color, Hidden, InRange, Layer, Lit, MapSize, Minimap, Overlay, PlayerShadow, Position,
+    Previous, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -51,11 +51,13 @@ pub(crate) fn collect_draws(
     fonts: &Fonts,
     camera: Vec2,
     interact_key: &str,
+    blend: f32,
 ) -> Layers {
     let mut sorted = Sorted::default();
-    for (position, size, color, sprite, layer, screen, overlay, lit) in world
+    for (position, previous, size, color, sprite, layer, screen, overlay, lit) in world
         .query::<(
             &Position,
+            Option<&Previous>,
             &Size,
             &Color,
             Option<&Sprite>,
@@ -67,7 +69,7 @@ pub(crate) fn collect_draws(
         .without::<&Hidden>()
         .iter()
     {
-        let center = position.0 - offset(screen, camera);
+        let center = blended(position.0, previous, blend) - offset(screen, camera);
         let draw = match sprite {
             Some(sprite) => Draw {
                 texture: sprite.texture,
@@ -110,12 +112,17 @@ pub(crate) fn collect_draws(
             sorted.hud.push((Layer(layer), draw));
         }
     }
-    for (position, size, sprite, shadow) in world
-        .query::<(&Position, &Size, &Sprite, &PlayerShadow)>()
+    for (position, previous, size, sprite, shadow) in world
+        .query::<(&Position, Option<&Previous>, &Size, &Sprite, &PlayerShadow)>()
         .without::<&Hidden>()
         .iter()
     {
-        if let Some(mut draw) = shadow_draw(position.0 - camera, size.0, sprite, shadow) {
+        if let Some(mut draw) = shadow_draw(
+            blended(position.0, previous, blend) - camera,
+            size.0,
+            sprite,
+            shadow,
+        ) {
             draw.quad.set_lit(false);
             sorted.scene.push((Layer(0), draw));
         }

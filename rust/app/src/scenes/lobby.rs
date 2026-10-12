@@ -5,7 +5,7 @@ use winit::keyboard::KeyCode;
 use crate::assets::{Assets, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
-use crate::components::{Interaction, UiAction};
+use crate::components::{Blend, Interaction, UiAction};
 use crate::controls::Action;
 use crate::input::Input;
 use crate::physics::Physics;
@@ -54,6 +54,7 @@ pub(crate) struct LobbyScene {
     world: World,
     physics: Physics,
     camera: Camera,
+    blend: Blend,
     pause: Pause,
     upgrades: UpgradeMenu,
     clock: f32,
@@ -115,6 +116,14 @@ impl Scene for LobbyScene {
         self.camera.position()
     }
 
+    fn set_blend(&mut self, blend: f32) {
+        self.blend = Blend(blend);
+    }
+
+    fn blend(&self) -> f32 {
+        self.blend.0
+    }
+
     fn enter(&mut self, assets: &Assets) {
         let grid = tilemap::lobby();
         let bounds = grid.pixel_size();
@@ -163,7 +172,7 @@ impl Scene for LobbyScene {
                 wallet.coins = balance;
             }
         }
-        if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
+        if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0, 1.0) {
             self.camera.snap_to(target);
         }
         systems::follow_backdrop(&mut self.world, self.camera.position());
@@ -222,7 +231,7 @@ impl Scene for LobbyScene {
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world, &assets.textures);
         systems::remove_expired(&mut self.world);
-        if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
+        if let Some(target) = systems::camera_target(&self.world, input.mouse(), self.blend.0) {
             self.camera.follow(target, dt);
         }
         systems::follow_backdrop(&mut self.world, self.camera.position());

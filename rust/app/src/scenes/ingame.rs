@@ -5,7 +5,7 @@ use winit::keyboard::KeyCode;
 use crate::assets::{Assets, BULLET, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
-use crate::components::{BigMap, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
+use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
 use crate::controls::Action;
 use crate::dungeon::{Dungeon, Rng};
 use crate::input::Input;
@@ -29,6 +29,7 @@ pub(crate) struct InGameScene {
     world: World,
     physics: Physics,
     camera: Camera,
+    blend: Blend,
     pause: Pause,
     clock: f32,
     sounds: Vec<AudioCommand>,
@@ -102,6 +103,14 @@ impl Scene for InGameScene {
 
     fn camera(&self) -> Vec2 {
         self.camera.position()
+    }
+
+    fn set_blend(&mut self, blend: f32) {
+        self.blend = Blend(blend);
+    }
+
+    fn blend(&self) -> f32 {
+        self.blend.0
     }
 
     fn enter(&mut self, assets: &Assets) {
@@ -285,7 +294,7 @@ impl Scene for InGameScene {
                 }
             }
         }
-        if let Some(target) = systems::camera_target(&self.world, input.mouse()) {
+        if let Some(target) = systems::camera_target(&self.world, input.mouse(), self.blend.0) {
             self.camera.follow(target, dt);
         }
         systems::follow_backdrop(&mut self.world, self.camera.position());
@@ -452,7 +461,7 @@ impl InGameScene {
         );
         prefabs::weapon_hud(&mut self.world, textures);
         prefabs::artefact_hud(&mut self.world, textures);
-        if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0) {
+        if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0, 1.0) {
             self.camera.snap_to(target);
         }
         systems::follow_backdrop(&mut self.world, self.camera.position());

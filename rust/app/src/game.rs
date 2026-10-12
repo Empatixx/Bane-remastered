@@ -90,6 +90,10 @@ impl Game {
         self.input.set_mouse(position);
     }
 
+    pub(crate) fn set_blend(&mut self, blend: f32) {
+        self.scenes.set_blend(blend);
+    }
+
     pub(crate) fn fixed_update(&mut self, dt: f32) -> ControlFlow<()> {
         let flow = self.scenes.fixed_update(&self.input, dt, &self.assets);
         self.play_scene_sounds();

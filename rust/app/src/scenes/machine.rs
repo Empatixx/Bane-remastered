@@ -74,6 +74,10 @@ impl Scenes {
         self.apply(transition, assets)
     }
 
+    pub(crate) fn set_blend(&mut self, blend: f32) {
+        self.scene_mut().set_blend(blend);
+    }
+
     pub(crate) fn fixed_update(
         &mut self,
         input: &Input,
@@ -98,7 +102,7 @@ impl Scenes {
 
     pub(crate) fn lights(&self) -> Vec<LightSource> {
         let scene = self.scene();
-        systems::collect_lights(scene.world(), scene.camera())
+        systems::collect_lights(scene.world(), scene.camera(), scene.blend())
     }
 
     pub(crate) fn cursor(&self) -> Cursor {
@@ -107,7 +111,13 @@ impl Scenes {
 
     pub(crate) fn draws(&self, fonts: &Fonts, interact_key: &str) -> Layers {
         let scene = self.scene();
-        systems::collect_draws(scene.world(), fonts, scene.camera(), interact_key)
+        systems::collect_draws(
+            scene.world(),
+            fonts,
+            scene.camera(),
+            interact_key,
+            scene.blend(),
+        )
     }
 
     fn apply(&mut self, transition: Transition, assets: &Assets) -> ControlFlow<()> {

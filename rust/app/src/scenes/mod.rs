@@ -74,6 +74,12 @@ pub(crate) trait Scene {
         Vec2::ZERO
     }
 
+    fn set_blend(&mut self, _blend: f32) {}
+
+    fn blend(&self) -> f32 {
+        1.0
+    }
+
     fn leave(&mut self) {
         self.world_mut().clear();
     }

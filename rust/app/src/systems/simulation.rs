@@ -1,6 +1,6 @@
-use hecs::World;
+use hecs::{Entity, World};
 
-use crate::components::{Body, Position, Velocity};
+use crate::components::{Body, Position, Previous, Velocity};
 use crate::physics::Physics;
 
 pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
@@ -8,10 +8,20 @@ pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
         physics.set_velocity(*body, velocity.0);
     }
     physics.step(dt);
-    for (body, position) in world.query_mut::<(&Body, &mut Position)>() {
+    let mut first_step = Vec::new();
+    for (entity, body, position, previous) in
+        world.query_mut::<(Entity, &Body, &mut Position, Option<&mut Previous>)>()
+    {
+        match previous {
+            Some(previous) => previous.0 = position.0,
+            None => first_step.push((entity, position.0)),
+        }
         if let Some(simulated) = physics.position(*body) {
             position.0 = simulated;
         }
+    }
+    for (entity, at) in first_step {
+        let _ = world.insert_one(entity, Previous(at));
     }
 }
 
@@ -37,6 +47,29 @@ mod tests {
             .get::<&Position>(player)
             .map(|position| position.0)
             .unwrap_or(Vec2::NAN)
+    }
+
+    #[test]
+    fn simulating_remembers_the_position_from_before_the_step() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 100.0),
+            &Textures::default(),
+        );
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+            velocity.0 = Vec2::new(60.0, 0.0);
+        }
+        run(&mut world, &mut physics, 2);
+        let now = player_position(&world, player);
+        let before = world
+            .get::<&Previous>(player)
+            .map(|p| p.0)
+            .unwrap_or(Vec2::NAN);
+        assert!(now.x > before.x);
+        assert!(before.x > 100.0);
     }
 
     #[test]

@@ -164,6 +164,7 @@ impl ApplicationHandler for App {
             self.accumulator -= STEP;
             self.perf.update();
         }
+        game.set_blend(self.accumulator.as_secs_f32() / STEP.as_secs_f32());
         if game.update(frame_time.as_secs_f32()).is_break() {
             event_loop.exit();
             return;
