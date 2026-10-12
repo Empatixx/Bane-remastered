@@ -156,7 +156,13 @@ pub(crate) fn prop(
             looping: true,
             flipped: look.flipped,
         };
-        let _ = world.insert_one(entity, Animation::new(spec.columns, spec.rows, clip));
+        let animation = Animation::new(spec.columns, spec.rows, clip);
+        let animation = if prop == Prop::Shopkeeper {
+            animation.ping_pong()
+        } else {
+            animation
+        };
+        let _ = world.insert_one(entity, animation);
     }
     entity
 }
