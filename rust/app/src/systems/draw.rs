@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    blended, Color, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay,
-    PlayerShadow, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar,
-    Text,
+    blended, Color, Frozen, Glow, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline,
+    Overlay, PlayerShadow, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite,
+    StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -74,6 +74,7 @@ pub(crate) fn collect_draws(
         frozen,
         shine,
         sky,
+        glow,
     ) in world
         .query::<(
             &Position,
@@ -90,6 +91,7 @@ pub(crate) fn collect_draws(
             Option<&Frozen>,
             Option<&Shine>,
             Option<&Sky>,
+            Option<&Glow>,
         )>()
         .without::<&Hidden>()
         .iter()
@@ -123,7 +125,11 @@ pub(crate) fn collect_draws(
                 let quad = Quad::new(center, size.0, color.0);
                 Draw {
                     texture: TextureId::WHITE,
-                    quad: sky.map_or(quad, |sky| quad.underworld(sky.0)),
+                    quad: match (sky, glow) {
+                        (Some(sky), _) => quad.underworld(sky.0),
+                        (_, Some(glow)) => quad.glowing(glow.0),
+                        _ => quad,
+                    },
                 }
             }
         };

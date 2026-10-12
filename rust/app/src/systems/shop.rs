@@ -230,7 +230,7 @@ pub(crate) fn buy(world: &mut World, textures: &Textures, sounds: &mut Vec<Audio
             .into_iter()
             .next()
             .is_some_and(|health| {
-                let enough = health.current - shop.price >= 0;
+                let enough = health.current > shop.price;
                 if enough {
                     health.current -= shop.price;
                 }
@@ -571,6 +571,23 @@ mod tests {
         let mut world = setup();
         for health in world.query_mut::<&mut Health>().with::<&Player>() {
             health.current = 1;
+        }
+        let shop = Shop {
+            price: 2,
+            currency: Currency::Health,
+        };
+        let entity = offer(&mut world, shop, ItemKind::Coin);
+
+        buy(&mut world, &Textures::default(), &mut Vec::new());
+
+        assert!(world.get::<&Shop>(entity).is_ok());
+    }
+
+    #[test]
+    fn paying_with_health_never_kills_the_player() {
+        let mut world = setup();
+        for health in world.query_mut::<&mut Health>().with::<&Player>() {
+            health.current = 2;
         }
         let shop = Shop {
             price: 2,

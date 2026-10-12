@@ -273,11 +273,109 @@ mod tests {
     use glam::Vec2;
 
     use crate::assets::Textures;
+    use crate::components::Hits;
     use crate::enemies::EnemyKind;
     use crate::physics::Physics;
     use crate::prefabs;
 
     use super::*;
+
+    fn enemy(world: &mut World, physics: &mut Physics, kind: EnemyKind) -> Entity {
+        prefabs::ready_enemy(world, physics, kind, Vec2::new(300.0, 0.0))
+    }
+
+    fn floating_numbers(world: &World) -> usize {
+        world.query::<&crate::components::Floating>().iter().count()
+    }
+
+    fn hit(world: &mut World, target: Entity, amount: i32, source: DamageSource) -> bool {
+        deal(
+            world,
+            Damage {
+                target,
+                amount,
+                source,
+            },
+        )
+    }
+
+    #[test]
+    fn every_source_clamps_at_zero_and_shows_the_number() {
+        for source in [
+            DamageSource::Bullet,
+            DamageSource::Trap,
+            DamageSource::Bite,
+            DamageSource::Explosion,
+            DamageSource::Poison,
+        ] {
+            let mut world = World::new();
+            let mut physics = Physics::new();
+            let rat = enemy(&mut world, &mut physics, EnemyKind::Rat);
+
+            assert!(hit(&mut world, rat, 1000, source));
+
+            let health = world.get::<&Health>(rat).map(|h| h.current).ok();
+            assert_eq!(health, Some(0), "{source:?}");
+            assert_eq!(floating_numbers(&world), 1, "{source:?}");
+        }
+    }
+
+    #[test]
+    fn only_bullets_count_as_hits_and_poison_does_not_flash() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let slime = enemy(&mut world, &mut physics, EnemyKind::RedSlime);
+
+        hit(&mut world, slime, 1, DamageSource::Explosion);
+        assert_eq!(world.get::<&Hits>(slime).map(|h| h.0).ok(), Some(0));
+        assert!(world.get::<&HitFlash>(slime).is_ok());
+
+        hit(&mut world, slime, 1, DamageSource::Bullet);
+        assert_eq!(world.get::<&Hits>(slime).map(|h| h.0).ok(), Some(1));
+
+        let _ = world.remove_one::<HitFlash>(slime);
+        hit(&mut world, slime, 1, DamageSource::Poison);
+        assert!(world.get::<&HitFlash>(slime).is_err());
+    }
+
+    #[test]
+    fn a_broken_object_shows_no_number_and_a_target_without_health_takes_nothing() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let barrel = prefabs::breakable(
+            &mut world,
+            &mut physics,
+            crate::components::BreakKind::Explosive,
+            Vec2::ZERO,
+            &Textures::default(),
+        );
+        assert!(hit(&mut world, barrel, 1, DamageSource::Bullet));
+        assert_eq!(floating_numbers(&world), 0);
+
+        let nothing = world.spawn((Position(Vec2::ZERO),));
+        assert!(!hit(&mut world, nothing, 1, DamageSource::Bullet));
+    }
+
+    #[test]
+    fn an_enemy_killed_by_an_explosion_bursts_and_is_reaped() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let slime = enemy(&mut world, &mut physics, EnemyKind::RedSlime);
+        hit(&mut world, slime, 1, DamageSource::Bullet);
+        hit(&mut world, slime, 1000, DamageSource::Explosion);
+
+        crate::systems::resolve_deaths(&mut world, &mut physics, &Textures::default());
+
+        assert!(world.get::<&Expiring>(slime).is_ok());
+        assert!(world.get::<&crate::components::DeathBurst>(slime).is_err());
+        assert!(
+            world
+                .query::<&crate::components::EnemyBullet>()
+                .iter()
+                .count()
+                > 0
+        );
+    }
 
     #[test]
     fn armor_absorbs_first_and_the_rest_hurts() {

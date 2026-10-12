@@ -4,6 +4,7 @@ use glam::{Vec2, Vec4};
 pub(crate) const MODE_MAP: f32 = 1.0;
 pub(crate) const MODE_FOG: f32 = 2.0;
 pub(crate) const MODE_SKY: f32 = 3.0;
+pub(crate) const MODE_GLOW: f32 = 4.0;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MapRoomLook {
@@ -74,6 +75,11 @@ impl Quad {
         self
     }
 
+    pub(crate) fn glowing(mut self, time: f32) -> Self {
+        self.fx = [time, 0.0, 0.0, MODE_GLOW];
+        self
+    }
+
     pub(crate) fn underworld(mut self, time: f32) -> Self {
         self.fx = [time, 0.0, 0.0, MODE_SKY];
         self
@@ -109,6 +115,13 @@ mod tests {
     use glam::{Vec2, Vec4};
 
     use super::*;
+
+    #[test]
+    fn the_glow_disc_has_its_own_mode_and_the_clock() {
+        let quad = Quad::new(Vec2::ZERO, Vec2::ONE, Vec4::ONE).glowing(1.5);
+        assert_eq!(quad.fx[0], 1.5);
+        assert_eq!(quad.fx[3], MODE_GLOW);
+    }
 
     #[test]
     fn the_underworld_sky_uses_its_own_mode_and_the_clock() {

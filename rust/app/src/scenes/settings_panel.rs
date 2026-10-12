@@ -59,6 +59,7 @@ const VALUE_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0,
 pub(crate) struct SettingsPanel {
     open: bool,
     tab: SettingsTabKind,
+    hidden: Vec<Entity>,
 }
 
 impl Default for SettingsPanel {
@@ -66,6 +67,7 @@ impl Default for SettingsPanel {
         Self {
             open: false,
             tab: SettingsTabKind::Video,
+            hidden: Vec::new(),
         }
     }
 }
@@ -78,7 +80,12 @@ impl SettingsPanel {
     pub(crate) fn open(&mut self, world: &mut World, assets: &Assets, hide: &[Entity]) {
         self.open = true;
         self.tab = SettingsTabKind::Video;
-        for entity in hide.iter().copied() {
+        self.hidden = hide
+            .iter()
+            .copied()
+            .filter(|entity| world.get::<&Hidden>(*entity).is_err())
+            .collect();
+        for entity in self.hidden.iter().copied() {
             let _ = world.insert_one(entity, Hidden);
         }
         spawn_panel(world, assets);
@@ -94,8 +101,7 @@ impl SettingsPanel {
         for entity in panel {
             let _ = world.despawn(entity);
         }
-        let hidden: Vec<Entity> = world.query::<Entity>().with::<&Hidden>().iter().collect();
-        for entity in hidden {
+        for entity in self.hidden.drain(..) {
             let _ = world.remove_one::<Hidden>(entity);
         }
     }
