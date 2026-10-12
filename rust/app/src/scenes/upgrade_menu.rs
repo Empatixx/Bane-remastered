@@ -25,12 +25,12 @@ const DESCRIPTION_TOP: f32 = 266.0;
 const DESCRIPTION_STEP: f32 = 22.0;
 const BUY_CENTER_X: f32 = 735.0;
 const STATUS_CENTER_X: f32 = 750.0;
-const BUTTON_TOP: f32 = 410.0;
+const BUTTON_TOP: f32 = 398.0;
 const BUTTON_HEIGHT: f32 = 36.0;
 const BUTTON_PADDING: f32 = 10.0;
-const BUTTON_BASELINE: f32 = 435.0;
+const BUTTON_BASELINE: f32 = 424.0;
 const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
-const PRICE_X: f32 = 840.0;
+const PRICE_RIGHT_X: f32 = 886.0;
 const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const BLOCKED_COLOR: Vec4 = Vec4::new(0.5, 0.5, 0.5, 1.0);
 const BASE_LAYER: i32 = 30;
@@ -210,10 +210,10 @@ fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element>
     if buy_state(profile, upgrade) == BuyState::Available {
         elements.push(Element::Label {
             content: format!("{},-", def.price),
-            position: Vec2::new(PRICE_X, BUTTON_BASELINE),
+            position: Vec2::new(PRICE_RIGHT_X, BUTTON_BASELINE),
             color: MENU_COLOR,
             size: FontSize::Size22,
-            align: Align::Left,
+            align: Align::Right,
         });
     }
     elements
