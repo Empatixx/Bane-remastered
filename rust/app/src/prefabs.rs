@@ -773,13 +773,6 @@ pub(crate) fn cobweb(
 ) -> Entity {
     let size = COBWEB_SIZE;
     let speed = COBWEB_FORCE / (size.x * size.y) / 60.0;
-    let clip = Clip {
-        row: 0,
-        frames: 4,
-        frame_time: 0.07,
-        looping: true,
-        flipped: false,
-    };
     world.spawn((
         Cobweb,
         Position(position),
@@ -787,8 +780,7 @@ pub(crate) fn cobweb(
         Drag { rate: COBWEB_DRAG },
         Size(size),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get("ingame/cobweb_projectile.tga"), 0, 0, 4, 1),
-        Animation::new(4, 1, clip),
+        Sprite::whole(textures.get("ingame/cobweb_projectile.tga")),
         Layer(0),
         Lit,
     ))

@@ -303,6 +303,22 @@ mod tests {
     }
 
     #[test]
+    fn a_thrown_web_is_one_whole_picture_and_is_not_animated() {
+        let mut world = World::new();
+        let textures = Textures::default();
+
+        let web = prefabs::cobweb(&mut world, Vec2::ZERO, Vec2::X, &textures);
+
+        let uv = world
+            .get::<&crate::components::Sprite>(web)
+            .map(|s| s.uv)
+            .ok();
+        let whole = crate::components::Sprite::whole(textures.get("ingame/cobweb_projectile.tga"));
+        assert_eq!(uv, Some(whole.uv));
+        assert!(world.get::<&Animation>(web).is_err());
+    }
+
+    #[test]
     fn a_dead_boss_takes_its_brood_and_webs_with_it() {
         let (mut world, mut physics, textures) = arena();
         let spider = boss(&mut world, &mut physics, EnemyKind::Spider);
