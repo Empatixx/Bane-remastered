@@ -6,9 +6,12 @@ mod menu;
 mod menu_buttons;
 mod menu_logo;
 mod menu_stage;
+mod panel;
 mod pause;
+mod quest_board;
 mod settings_panel;
 mod upgrade_menu;
+mod weapon_table;
 
 use glam::Vec2;
 use hecs::World;
@@ -21,8 +24,10 @@ use crate::settings::Settings;
 
 pub(crate) use machine::Scenes;
 pub(crate) use pause::Pause;
+pub(crate) use quest_board::QuestBoard;
 pub(crate) use settings_panel::SettingsPanel;
 pub(crate) use upgrade_menu::UpgradeMenu;
+pub(crate) use weapon_table::WeaponTable;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SceneId {

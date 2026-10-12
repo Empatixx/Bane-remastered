@@ -3,7 +3,7 @@ use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
 use crate::assets::Textures;
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use crate::components::{
     Animation, ArtefactDrop, Backdrop, BreakKind, Breakable, Candle, Chatty, Chest, ChestKind,
     Clip, Color, ContactDamage, Despawn, Drag, Flame, GunDrop, Health, Interactable, Interaction,
@@ -11,7 +11,7 @@ use crate::components::{
     ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
-use crate::items::{ItemKind, DESPAWN_SECONDS};
+use crate::items::{DESPAWN_SECONDS, ItemKind};
 use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
@@ -20,7 +20,7 @@ use crate::systems::SPIN_COST;
 use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
 
-use super::{label, PRICE_COLOR, PRICE_TAG_SIZE, PROMPT_COLOR};
+use super::{PRICE_COLOR, PRICE_TAG_SIZE, PROMPT_COLOR, label};
 
 pub(crate) fn prop(
     world: &mut World,
@@ -288,6 +288,50 @@ pub(crate) fn scientist(world: &mut World, top_left: Vec2, textures: &Textures) 
             },
             Prompt {
                 text: "Press E to upgrade",
+                gap: 30.0,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+    entity
+}
+
+pub(crate) fn task_board(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::TaskBoard, top_left, Look::DEFAULT, textures);
+    let _ = world.insert(
+        entity,
+        (
+            Interactable {
+                action: Interaction::Quests,
+            },
+            Prompt {
+                text: "Press E to read the board",
+                gap: 30.0,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+    entity
+}
+
+pub(crate) fn weapon_table(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(
+        world,
+        Prop::CraftingTable,
+        top_left,
+        Look::DEFAULT,
+        textures,
+    );
+    let _ = world.insert(
+        entity,
+        (
+            Interactable {
+                action: Interaction::Weapons,
+            },
+            Prompt {
+                text: "Press E to upgrade weapons",
                 gap: 30.0,
                 color: PROMPT_COLOR,
                 size: FontSize::Size22,

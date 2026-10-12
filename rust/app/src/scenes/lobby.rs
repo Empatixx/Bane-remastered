@@ -19,12 +19,12 @@ use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::viewport::TARGET;
 
-use super::{Cursor, Pause, Scene, SceneId, Transition, UpgradeMenu};
+use super::{Cursor, Pause, QuestBoard, Scene, SceneId, Transition, UpgradeMenu, WeaponTable};
 
 const TALENTS_TO_TRY_OUT: u64 = 1000;
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
 
-const PROPS: [(Prop, f32, f32, Look); 24] = [
+const PROPS: [(Prop, f32, f32, Look); 22] = [
     (Prop::WeaponRack, 22.75, 0.5, Look::DEFAULT),
     (Prop::WeaponRack, 9.25, 0.5, Look::DEFAULT),
     (Prop::Torch, 1.0, 2.0, Look::DEFAULT),
@@ -37,8 +37,6 @@ const PROPS: [(Prop, f32, f32, Look); 24] = [
     (Prop::Cobweb, 18.0, 8.0, Look::DEFAULT),
     (Prop::Armorstand, 11.5, 1.75, Look::DEFAULT),
     (Prop::Armorstand, 16.5, 1.75, Look::DEFAULT),
-    (Prop::TaskBoard, 18.5, 0.0, Look::DEFAULT),
-    (Prop::CraftingTable, 23.5, 0.5, Look::DEFAULT),
     (Prop::Box, 26.0, 7.0, Look::DEFAULT),
     (Prop::Chains, 18.0, 0.0, Look::DEFAULT),
     (Prop::Chains, 5.0, 0.0, Look::DEFAULT),
@@ -59,12 +57,18 @@ pub(crate) struct LobbyScene {
     blend: Blend,
     pause: Pause,
     upgrades: UpgradeMenu,
+    quests: QuestBoard,
+    weapons: WeaponTable,
     clock: f32,
     sounds: Vec<AudioCommand>,
     profile: Option<SharedProfile>,
 }
 
 impl LobbyScene {
+    fn panel_is_open(&self) -> bool {
+        self.upgrades.is_open() || self.quests.is_open() || self.weapons.is_open()
+    }
+
     pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
         self.profile = Some(profile);
     }
@@ -93,6 +97,8 @@ impl Scene for LobbyScene {
         self.physics = Physics::new();
         self.pause = Pause::default();
         self.upgrades = UpgradeMenu::default();
+        self.quests = QuestBoard::default();
+        self.weapons = WeaponTable::default();
     }
 
     fn soundtrack(&self) -> Option<Soundtrack> {
@@ -105,7 +111,7 @@ impl Scene for LobbyScene {
 
     fn fx(&self) -> SceneFx {
         SceneFx {
-            paused: self.pause.is_active() || self.upgrades.is_open(),
+            paused: self.pause.is_active() || self.panel_is_open(),
             low_health: systems::player_is_low_on_health(&self.world),
         }
     }
@@ -153,6 +159,8 @@ impl Scene for LobbyScene {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::prop(&mut self.world, prop, top_left, look, textures);
         }
+        prefabs::task_board(&mut self.world, Vec2::new(18.5, 0.0) * TILE_SIZE, textures);
+        prefabs::weapon_table(&mut self.world, Vec2::new(23.5, 0.5) * TILE_SIZE, textures);
         for (x, y) in POTS {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::pot(&mut self.world, &mut self.physics, top_left, textures);
@@ -189,6 +197,16 @@ impl Scene for LobbyScene {
         assets: &Assets,
         _settings: &mut Settings,
     ) -> Transition {
+        if self.quests.is_open() || self.weapons.is_open() {
+            if input.just_pressed(KeyCode::Escape) || input.action_pressed(Action::Interact) {
+                self.quests.close(&mut self.world);
+                self.weapons.close(&mut self.world);
+                return Transition::None;
+            }
+            self.quests.update(&mut self.world, input, assets);
+            self.weapons.update(&mut self.world, input, assets);
+            return Transition::None;
+        }
         if self.upgrades.is_open() {
             if input.just_pressed(KeyCode::Escape) || input.action_pressed(Action::Interact) {
                 self.upgrades.close(&mut self.world);
@@ -266,12 +284,20 @@ impl Scene for LobbyScene {
                 }
                 Transition::None
             }
+            Some(Interaction::Quests) => {
+                self.quests.toggle(&mut self.world, assets);
+                Transition::None
+            }
+            Some(Interaction::Weapons) => {
+                self.weapons.toggle(&mut self.world, assets);
+                Transition::None
+            }
             _ => Transition::None,
         }
     }
 
     fn fixed_update(&mut self, input: &Input, dt: f32, _assets: &Assets) -> Transition {
-        if self.pause.is_active() || self.upgrades.is_open() {
+        if self.pause.is_active() || self.panel_is_open() {
             return Transition::None;
         }
         systems::start_dodge(

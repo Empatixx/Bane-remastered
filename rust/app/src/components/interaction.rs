@@ -11,6 +11,8 @@ pub(crate) enum Interaction {
     PickUpArtefact,
     Buy,
     Spin,
+    Quests,
+    Weapons,
 }
 
 #[derive(Debug, Clone, Copy)]

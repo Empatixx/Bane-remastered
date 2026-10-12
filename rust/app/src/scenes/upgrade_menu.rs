@@ -161,7 +161,7 @@ fn clamp_pan(pan: Vec2) -> Vec2 {
     pan.clamp(low, high)
 }
 
-fn rect(top_left: Vec2, size: Vec2, color: Vec4, layer: i32) -> Element {
+pub(super) fn rect(top_left: Vec2, size: Vec2, color: Vec4, layer: i32) -> Element {
     Element::Rect {
         top_left,
         size,
@@ -758,7 +758,7 @@ impl UpgradeMenu {
     }
 }
 
-fn clear(world: &mut World) {
+pub(super) fn clear(world: &mut World) {
     let mut ui: Vec<Entity> = world
         .query::<Entity>()
         .with::<&UpgradeUi>()
@@ -770,7 +770,7 @@ fn clear(world: &mut World) {
     }
 }
 
-fn spawn(world: &mut World, element: Element, assets: &Assets) {
+pub(super) fn spawn(world: &mut World, element: Element, assets: &Assets) {
     match element {
         Element::Image {
             texture,
