@@ -423,27 +423,6 @@ pub(crate) fn scientist(world: &mut World, top_left: Vec2, textures: &Textures) 
     entity
 }
 
-const SPINNER_FRAMES: usize = 8;
-const SPINNER_SIZE: Vec2 = Vec2::new(68.0, 72.0);
-const SPINNER: Clip = Clip {
-    row: 0,
-    frames: SPINNER_FRAMES,
-    frame_time: 0.1,
-    looping: true,
-    flipped: false,
-};
-
-pub(crate) fn spinner(world: &mut World, position: Vec2, texture: TextureId) -> Entity {
-    world.spawn((
-        Position(position),
-        Size(SPINNER_SIZE),
-        Color(Vec4::ONE),
-        Sprite::cell(texture, 0, 0, SPINNER_FRAMES, 1),
-        Animation::new(SPINNER_FRAMES, 1, SPINNER),
-        Layer(1),
-    ))
-}
-
 const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
 const BUTTON_TEXT_COLOR: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
 
@@ -472,22 +451,6 @@ pub(crate) fn button(
         Layer(1),
     ));
     (button, text)
-}
-
-pub(crate) fn sprite(
-    world: &mut World,
-    position: Vec2,
-    size: Vec2,
-    texture: TextureId,
-    layer: i32,
-) -> Entity {
-    world.spawn((
-        Position(position),
-        Size(size),
-        Color(Vec4::ONE),
-        Sprite::whole(texture),
-        Layer(layer),
-    ))
 }
 
 pub(crate) fn tilemap(

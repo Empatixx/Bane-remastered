@@ -210,10 +210,47 @@ fn shined(color: vec4<f32>, in: VertexOut) -> vec4<f32> {
     return vec4<f32>(color.rgb + vec3<f32>(strength * 0.55), color.a);
 }
 
+fn sky_hash(p: vec2<f32>) -> f32 {
+    return fract(sin(dot(p, vec2<f32>(127.1, 311.7))) * 43758.5453);
+}
+
+fn underworld(in: VertexOut) -> vec4<f32> {
+    let time = in.fx.x;
+    let uv = in.local;
+    let p = vec2<f32>(uv.x * 1.78, uv.y);
+    let slow = map_fbm(p * 0.9 + vec2<f32>(time * 0.02, -time * 0.015), 1.3, 4.1);
+    let wisps = map_fbm(p * 1.8 + vec2<f32>(-time * 0.04, time * 0.03), 8.2, 2.7);
+    let fog = smoothstep(0.55, 1.2, slow * wisps * 1.8);
+    let heat = pow(clamp(uv.y, 0.0, 1.0), 2.2);
+    var rgb = vec3<f32>(0.008, 0.004, 0.012);
+    rgb = rgb + fog * vec3<f32>(0.11, 0.04, 0.10) * (0.35 + heat);
+    rgb = rgb + heat * vec3<f32>(0.22, 0.06, 0.02) * (0.5 + 0.5 * slow);
+    for (var layer = 0; layer < 3; layer = layer + 1) {
+        let fl = f32(layer);
+        let scale = 16.0 + fl * 12.0;
+        let rise = time * (0.05 + fl * 0.035);
+        let q = vec2<f32>(p.x * scale, (uv.y + rise) * scale * 0.9);
+        let cell = floor(q);
+        let h = sky_hash(cell + vec2<f32>(fl * 17.0, fl * 5.0));
+        let inside = fract(q) - vec2<f32>(0.5);
+        let sway = sin(time * 1.7 + h * 40.0) * 0.18;
+        let d = length(inside - vec2<f32>(sway, 0.0));
+        let twinkle = 0.6 + 0.4 * sin(time * 4.0 + h * 30.0);
+        let spark = select(0.0, 1.0, h > 0.97) * smoothstep(0.16, 0.0, d) * twinkle;
+        rgb = rgb + spark * vec3<f32>(1.0, 0.5, 0.14) * (0.6 + heat);
+    }
+    let edge = length((uv - vec2<f32>(0.5)) * vec2<f32>(1.15, 1.0));
+    rgb = rgb * mix(0.35, 1.0, smoothstep(0.95, 0.35, edge));
+    return vec4<f32>(srgb_to_linear(rgb), 1.0);
+}
+
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let uv_per_pixel = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
     let albedo = textureSample(image, image_sampler, in.uv) * in.color;
+    if (in.fx.w > 2.5) {
+        return underworld(in);
+    }
     if (in.fx.w > 0.5) {
         return map_room(in, textureSample(image, image_sampler, in.uv));
     }

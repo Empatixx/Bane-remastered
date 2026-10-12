@@ -3,7 +3,8 @@ use hecs::World;
 
 use crate::components::{
     blended, Color, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay,
-    PlayerShadow, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sprite, StatusBar, Text,
+    PlayerShadow, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar,
+    Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -72,6 +73,7 @@ pub(crate) fn collect_draws(
         hover,
         frozen,
         shine,
+        sky,
     ) in world
         .query::<(
             &Position,
@@ -87,6 +89,7 @@ pub(crate) fn collect_draws(
             Option<&Hover>,
             Option<&Frozen>,
             Option<&Shine>,
+            Option<&Sky>,
         )>()
         .without::<&Hidden>()
         .iter()
@@ -116,10 +119,13 @@ pub(crate) fn collect_draws(
                     quad: outline.map_or(quad, |outline| quad.outlined(outline.0)),
                 }
             }
-            None => Draw {
-                texture: TextureId::WHITE,
-                quad: Quad::new(center, size.0, color.0),
-            },
+            None => {
+                let quad = Quad::new(center, size.0, color.0);
+                Draw {
+                    texture: TextureId::WHITE,
+                    quad: sky.map_or(quad, |sky| quad.underworld(sky.0)),
+                }
+            }
         };
         sorted
             .bucket(screen, overlay)

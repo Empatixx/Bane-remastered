@@ -195,9 +195,11 @@ mod tests {
         let assets = loaded_assets();
         let mut scenes = Scenes::new(&assets, SharedProfile::in_memory());
         let input = Input::default();
-        assert!(scenes
-            .update(&input, 0.0, &assets, &mut Settings::in_memory())
-            .is_continue());
+        for _ in 0..40 {
+            assert!(scenes
+                .update(&input, 0.1, &assets, &mut Settings::in_memory())
+                .is_continue());
+        }
         assert_eq!(scenes.current, SceneId::Menu);
         (scenes, input, assets)
     }
@@ -214,9 +216,11 @@ mod tests {
         assert_eq!(scenes.current, SceneId::Loading);
 
         assets.mark_loaded();
-        assert!(scenes
-            .update(&input, 0.0, &assets, &mut Settings::in_memory())
-            .is_continue());
+        for _ in 0..40 {
+            assert!(scenes
+                .update(&input, 0.1, &assets, &mut Settings::in_memory())
+                .is_continue());
+        }
         assert_eq!(scenes.current, SceneId::Menu);
     }
 

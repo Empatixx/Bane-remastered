@@ -3,6 +3,7 @@ use glam::{Vec2, Vec4};
 
 pub(crate) const MODE_MAP: f32 = 1.0;
 pub(crate) const MODE_FOG: f32 = 2.0;
+pub(crate) const MODE_SKY: f32 = 3.0;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MapRoomLook {
@@ -73,6 +74,11 @@ impl Quad {
         self
     }
 
+    pub(crate) fn underworld(mut self, time: f32) -> Self {
+        self.fx = [time, 0.0, 0.0, MODE_SKY];
+        self
+    }
+
     pub(crate) fn shined(mut self, progress: f32) -> Self {
         self.fx[1] = progress;
         self
@@ -103,6 +109,13 @@ mod tests {
     use glam::{Vec2, Vec4};
 
     use super::*;
+
+    #[test]
+    fn the_underworld_sky_uses_its_own_mode_and_the_clock() {
+        let quad = Quad::new(Vec2::ZERO, Vec2::ONE, Vec4::ONE).underworld(2.5);
+        assert_eq!(quad.fx[0], 2.5);
+        assert_eq!(quad.fx[3], MODE_SKY);
+    }
 
     #[test]
     fn the_shine_goes_into_the_second_effect_slot_and_leaves_frost_alone() {
