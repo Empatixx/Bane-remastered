@@ -3,10 +3,11 @@ use hecs::{Entity, World};
 
 use crate::assets::Assets;
 use crate::components::{
-    Button, Checkbox, Color, Hidden, Layer, OnClick, Position, ResolutionText, ScreenSpace,
-    SettingsTabKind, SettingsUi, Size, SliderHandle, SliderValue, Sprite, TabButton, TabOnly, Text,
-    Toggle, UiAction, Volume,
+    Button, Checkbox, Color, Hidden, KeyBindSlot, Layer, OnClick, Position, ResolutionText,
+    ScreenSpace, SettingsTabKind, SettingsUi, Size, SliderHandle, SliderValue, Sprite, TabButton,
+    TabOnly, Text, Toggle, UiAction, Volume,
 };
+use crate::controls::Action;
 use crate::input::Input;
 use crate::prefabs;
 use crate::render::{Align, Anchor, FontSize};
@@ -44,6 +45,11 @@ const SLIDERS: [(Volume, &str, f32); 3] = [
     (Volume::Music, "Music:", 275.0),
     (Volume::Effects, "Effects:", 325.0),
 ];
+const KEY_COLUMNS: [(f32, f32); 2] = [(260.0, 420.0), (490.0, 660.0)];
+const KEY_ROW_TOP: f32 = 225.0;
+const KEY_ROW_STEP: f32 = 42.0;
+const KEY_ROWS: usize = 5;
+const KEY_SLOT: Vec2 = Vec2::new(110.0, 32.0);
 const LABEL_COLOR: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
 const VALUE_COLOR: Vec4 = Vec4::new(223.0 / 255.0, 60.0 / 255.0, 28.0 / 255.0, 1.0);
 
@@ -258,6 +264,29 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             },
         ));
         ui(world, value, 7, audio);
+    }
+
+    let controls = Some(SettingsTabKind::Controls);
+    for (index, action) in Action::ALL.into_iter().enumerate() {
+        let (label_x, key_x) = KEY_COLUMNS[index / KEY_ROWS];
+        let y = KEY_ROW_TOP + KEY_ROW_STEP * (index % KEY_ROWS) as f32;
+        spawn_label(world, action.label(), Vec2::new(label_x, y), controls);
+        let slot = world.spawn((
+            KeyBindSlot {
+                action,
+                listening: false,
+            },
+            Position(Vec2::new(key_x, y)),
+            Size(KEY_SLOT),
+            Text {
+                content: String::new(),
+                color: VALUE_COLOR,
+                size: FontSize::Size22,
+                align: Align::Center,
+                anchor: Anchor::Middle,
+            },
+        ));
+        ui(world, slot, 7, controls);
     }
 }
 

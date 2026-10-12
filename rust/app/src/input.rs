@@ -4,6 +4,8 @@ use glam::Vec2;
 use winit::event::{ElementState, KeyEvent, MouseButton};
 use winit::keyboard::{KeyCode, PhysicalKey};
 
+use crate::controls::{Action, Bindings};
+
 #[derive(Debug, Default)]
 pub(crate) struct Input {
     held: HashSet<KeyCode>,
@@ -12,6 +14,7 @@ pub(crate) struct Input {
     clicked: bool,
     mouse_held: bool,
     scrolled: i32,
+    bindings: Bindings,
 }
 
 impl Input {
@@ -50,6 +53,22 @@ impl Input {
         } else if lines < 0.0 {
             self.scrolled -= 1;
         }
+    }
+
+    pub(crate) fn set_bindings(&mut self, bindings: Bindings) {
+        self.bindings = bindings;
+    }
+
+    pub(crate) fn bindings(&self) -> &Bindings {
+        &self.bindings
+    }
+
+    pub(crate) fn action_pressed(&self, action: Action) -> bool {
+        self.just_pressed(self.bindings.key(action))
+    }
+
+    pub(crate) fn first_pressed(&self) -> Option<KeyCode> {
+        self.pressed.iter().next().copied()
     }
 
     pub(crate) fn any_key(&self) -> bool {
@@ -93,14 +112,37 @@ impl Input {
     }
 
     pub(crate) fn direction(&self) -> Vec2 {
-        let axis = |negative: KeyCode, positive: KeyCode| {
-            f32::from(u8::from(self.held.contains(&positive)))
-                - f32::from(u8::from(self.held.contains(&negative)))
+        let axis = |negative: Action, positive: Action| {
+            f32::from(u8::from(self.held.contains(&self.bindings.key(positive))))
+                - f32::from(u8::from(self.held.contains(&self.bindings.key(negative))))
         };
         Vec2::new(
-            axis(KeyCode::KeyA, KeyCode::KeyD),
-            axis(KeyCode::KeyW, KeyCode::KeyS),
+            axis(Action::MoveLeft, Action::MoveRight),
+            axis(Action::MoveUp, Action::MoveDown),
         )
         .normalize_or_zero()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn movement_and_actions_follow_the_current_bindings() {
+        let mut input = Input::default();
+        let mut bindings = Bindings::default();
+        bindings.rebind(Action::MoveRight, KeyCode::ArrowRight);
+        bindings.rebind(Action::Interact, KeyCode::KeyX);
+        input.set_bindings(bindings);
+
+        input.press(KeyCode::KeyD);
+        assert_eq!(input.direction(), Vec2::ZERO);
+        input.press(KeyCode::ArrowRight);
+        assert_eq!(input.direction(), Vec2::X);
+
+        assert!(!input.action_pressed(Action::Interact));
+        input.press(KeyCode::KeyX);
+        assert!(input.action_pressed(Action::Interact));
     }
 }

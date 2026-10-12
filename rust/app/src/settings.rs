@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use crate::controls::Bindings;
 use crate::viewport::TARGET;
 
 const FALLBACK_RESOLUTIONS: [(u32, u32); 4] = [(960, 540), (1280, 720), (1600, 900), (1920, 1080)];
@@ -17,6 +18,8 @@ pub(crate) struct GameSettings {
     pub(crate) overall_volume: f32,
     pub(crate) music_volume: f32,
     pub(crate) effects_volume: f32,
+    #[serde(default)]
+    pub(crate) controls: Bindings,
 }
 
 impl Default for GameSettings {
@@ -29,6 +32,7 @@ impl Default for GameSettings {
             overall_volume: 1.0,
             music_volume: 0.5,
             effects_volume: 0.5,
+            controls: Bindings::default(),
         }
     }
 }
@@ -61,6 +65,7 @@ pub(crate) enum Change {
         music: f32,
         effects: f32,
     },
+    Controls(Bindings),
 }
 
 #[derive(Debug)]
@@ -162,6 +167,7 @@ impl Settings {
             music: settings.music_volume,
             effects: settings.effects_volume,
         });
+        self.changes.push(Change::Controls(settings.controls));
     }
 
     pub(crate) fn apply(&mut self) {
@@ -187,6 +193,9 @@ impl Settings {
                 music: new.music_volume,
                 effects: new.effects_volume,
             });
+        }
+        if old.controls != new.controls {
+            self.changes.push(Change::Controls(new.controls));
         }
         self.applied = self.pending.clone();
         self.save();
@@ -298,7 +307,30 @@ mod tests {
     fn startup_applies_every_setting() {
         let mut settings = Settings::in_memory();
         settings.startup_changes();
-        assert_eq!(settings.take_changes().len(), 4);
+        assert_eq!(settings.take_changes().len(), 5);
+    }
+
+    #[test]
+    fn applying_new_key_bindings_reports_them_and_old_files_without_keys_still_load() {
+        use crate::controls::Action;
+        use winit::keyboard::KeyCode;
+
+        let mut settings = Settings::in_memory();
+        settings
+            .pending_mut()
+            .controls
+            .rebind(Action::Reload, KeyCode::KeyX);
+        settings.apply();
+        let changes = settings.take_changes();
+        assert!(changes
+            .iter()
+            .any(|change| matches!(change, Change::Controls(bindings) if bindings.key(Action::Reload) == KeyCode::KeyX)));
+
+        let old: GameSettings = serde_json::from_str(
+            r#"{"resolutionWidth":1280,"resolutionHeight":720,"fullscreen":false,"vsync":true,"overallVolume":1.0,"musicVolume":0.5,"effectsVolume":0.5}"#,
+        )
+        .expect("an old settings file parses");
+        assert_eq!(old.controls, crate::controls::Bindings::default());
     }
 
     #[test]

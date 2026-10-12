@@ -1,3 +1,5 @@
+use crate::controls::Action;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SettingsTabKind {
     Video,
@@ -48,3 +50,9 @@ pub(crate) struct SliderValue(pub(crate) Volume);
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ResolutionText;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct KeyBindSlot {
+    pub(crate) action: Action,
+    pub(crate) listening: bool,
+}

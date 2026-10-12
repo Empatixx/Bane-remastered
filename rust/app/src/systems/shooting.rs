@@ -1,6 +1,5 @@
 use glam::Vec2;
 use hecs::{Entity, World};
-use winit::keyboard::KeyCode;
 
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
@@ -8,6 +7,7 @@ use crate::components::{
     Animation, Body, Bullet, Burst, Expiring, Health, HitFlash, Loadout, Player, PlayerPerks,
     Position, Velocity,
 };
+use crate::controls::Action;
 use crate::guns::{GunSpec, BURST_DELAY, MAX_PELLETS};
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
@@ -77,7 +77,7 @@ pub(crate) fn shoot(
         };
         let spec = weapon.spec();
         weapon.advance(dt);
-        if input.just_pressed(KeyCode::KeyR) && weapon.start_reload() {
+        if input.action_pressed(Action::Reload) && weapon.start_reload() {
             sounds.push(AudioCommand::Effect(spec.reload));
         }
         if let Some(mut burst) = weapon.burst {
@@ -219,6 +219,7 @@ pub(crate) fn bullet_hits(
 #[cfg(test)]
 mod tests {
     use winit::event::{ElementState, MouseButton};
+    use winit::keyboard::KeyCode;
 
     use crate::assets::Textures;
     use crate::components::{Player, Weapon};

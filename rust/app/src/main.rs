@@ -4,6 +4,7 @@ mod assets;
 mod audio;
 mod camera;
 mod components;
+mod controls;
 mod dungeon;
 mod enemies;
 mod game;

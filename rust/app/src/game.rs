@@ -6,6 +6,7 @@ use winit::event::{ElementState, KeyEvent, MouseButton};
 use crate::assets::{Assets, Loader};
 use crate::audio::Audio;
 use crate::components::Sprite;
+use crate::controls::{self, Action};
 use crate::input::Input;
 use crate::postfx::PostFx;
 use crate::profile::SharedProfile;
@@ -52,6 +53,7 @@ impl Game {
                     music,
                     effects,
                 } => self.audio.set_volume(overall, music, effects),
+                Change::Controls(bindings) => self.input.set_bindings(bindings),
                 other => window_changes.push(other),
             }
         }
@@ -107,7 +109,10 @@ impl Game {
     }
 
     pub(crate) fn frame(&self) -> Frame {
-        let mut layers = self.scenes.draws(&self.assets.fonts);
+        let mut layers = self.scenes.draws(
+            &self.assets.fonts,
+            controls::key_label(self.input.bindings().key(Action::Interact)),
+        );
         if self.assets.is_loaded() {
             layers.overlay.push(self.cursor_draw());
         }

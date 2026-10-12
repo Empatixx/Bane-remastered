@@ -1,7 +1,7 @@
 use hecs::{Entity, World};
-use winit::keyboard::KeyCode;
 
 use crate::components::{InRange, Interactable, Interaction, Player, Position, Size};
+use crate::controls::Action;
 use crate::geometry;
 use crate::input::Input;
 
@@ -32,7 +32,7 @@ pub(crate) fn interact(world: &mut World, input: &Input) -> Option<Interaction> 
         }
     }
 
-    if input.just_pressed(KeyCode::KeyE) {
+    if input.action_pressed(Action::Interact) {
         all.iter()
             .find(|(_, near, _)| *near)
             .map(|(_, _, action)| *action)
@@ -44,6 +44,7 @@ pub(crate) fn interact(world: &mut World, input: &Input) -> Option<Interaction> 
 #[cfg(test)]
 mod tests {
     use glam::Vec2;
+    use winit::keyboard::KeyCode;
 
     use crate::assets::Textures;
     use crate::physics::Physics;

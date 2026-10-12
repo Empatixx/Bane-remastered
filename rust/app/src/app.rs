@@ -207,6 +207,7 @@ fn apply_changes(window: &Window, gpu: &mut Gpu, changes: Vec<Change>) {
                 effects,
                 "volume changed (audio is not implemented yet)"
             ),
+            Change::Controls(_) => {}
         }
     }
 }

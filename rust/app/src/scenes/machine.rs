@@ -105,9 +105,9 @@ impl Scenes {
         self.scene().cursor()
     }
 
-    pub(crate) fn draws(&self, fonts: &Fonts) -> Layers {
+    pub(crate) fn draws(&self, fonts: &Fonts, interact_key: &str) -> Layers {
         let scene = self.scene();
-        systems::collect_draws(scene.world(), fonts, scene.camera())
+        systems::collect_draws(scene.world(), fonts, scene.camera(), interact_key)
     }
 
     fn apply(&mut self, transition: Transition, assets: &Assets) -> ControlFlow<()> {

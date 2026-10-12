@@ -50,8 +50,8 @@ pub(crate) use objects::{BreakKind, Breakable, Broken, Flame, SlotMachine, SlotP
 pub(crate) use perks::PlayerPerks;
 pub(crate) use pet::Pet;
 pub(crate) use settings_ui::{
-    Checkbox, Hidden, ResolutionText, SettingsTabKind, SettingsUi, SliderHandle, SliderValue,
-    TabButton, TabOnly, Toggle, Volume,
+    Checkbox, Hidden, KeyBindSlot, ResolutionText, SettingsTabKind, SettingsUi, SliderHandle,
+    SliderValue, TabButton, TabOnly, Toggle, Volume,
 };
 pub(crate) use shadow::PlayerShadow;
 pub(crate) use skills::{

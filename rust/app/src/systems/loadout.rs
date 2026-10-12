@@ -8,6 +8,7 @@ use crate::components::{
     Animation, ArtefactSlot, Chest, ChestKind, Clip, GunDrop, InRange, Loadout, Player, Position,
     Size, Weapon,
 };
+use crate::controls::Action;
 use crate::geometry;
 use crate::guns::GunKind;
 use crate::input::Input;
@@ -51,7 +52,7 @@ pub(crate) fn switch_guns(world: &mut World, input: &Input, sounds: &mut Vec<Aud
 }
 
 pub(crate) fn drop_gun(world: &mut World, input: &Input, camera: Vec2, textures: &Textures) {
-    if !input.just_pressed(KeyCode::KeyQ) {
+    if !input.action_pressed(Action::DropGun) {
         return;
     }
     let target = input.mouse() + camera;

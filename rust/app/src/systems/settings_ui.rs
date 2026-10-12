@@ -1,14 +1,21 @@
+use glam::Vec4;
 use hecs::{Entity, World};
 
+use winit::keyboard::KeyCode;
+
 use crate::components::{
-    Checkbox, Hidden, Position, ResolutionText, SettingsTabKind, Size, SliderHandle, SliderValue,
-    Sprite, TabButton, TabOnly, Text, Toggle, Volume,
+    Checkbox, Hidden, KeyBindSlot, Position, ResolutionText, SettingsTabKind, Size, SliderHandle,
+    SliderValue, Sprite, TabButton, TabOnly, Text, Toggle, Volume,
 };
+use crate::controls;
 use crate::geometry;
 use crate::input::Input;
 use crate::settings::{GameSettings, Settings};
 
 const ROW_COUNT: usize = 4;
+const KEY_PROMPT: &str = "Press key";
+const KEY_COLOR: Vec4 = Vec4::new(223.0 / 255.0, 60.0 / 255.0, 28.0 / 255.0, 1.0);
+const KEY_ACTIVE_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 
 pub(crate) fn update_settings_ui(
     world: &mut World,
@@ -21,6 +28,7 @@ pub(crate) fn update_settings_ui(
     update_checkboxes(world, input, settings);
     update_sliders(world, input, settings);
     update_resolution_text(world, settings);
+    update_key_binds(world, input, settings);
 }
 
 fn select_tab(world: &mut World, input: &Input, tab: &mut SettingsTabKind) {
@@ -129,12 +137,60 @@ fn update_resolution_text(world: &mut World, settings: &Settings) {
     }
 }
 
+fn update_key_binds(world: &mut World, input: &Input, settings: &mut Settings) {
+    let mouse = input.mouse();
+    let clicked = input.clicked();
+    let mut hit = None;
+    let mut listening = None;
+    for (position, size, slot) in world
+        .query::<(&Position, &Size, &KeyBindSlot)>()
+        .without::<&Hidden>()
+        .iter()
+    {
+        if clicked && geometry::contains(position.0, size.0, mouse) {
+            hit = Some(slot.action);
+        }
+        if slot.listening {
+            listening = Some(slot.action);
+        }
+    }
+    if let (Some(action), Some(code)) = (listening, input.first_pressed()) {
+        if code == KeyCode::Escape {
+            listening = None;
+        } else if controls::is_bindable(code) {
+            settings.pending_mut().controls.rebind(action, code);
+            listening = None;
+        }
+    }
+    if clicked {
+        listening = hit.filter(|action| Some(*action) != listening);
+    }
+    for (position, size, slot, text) in
+        world.query_mut::<(&Position, &Size, &mut KeyBindSlot, &mut Text)>()
+    {
+        slot.listening = Some(slot.action) == listening;
+        let hovered = geometry::contains(position.0, size.0, mouse);
+        if slot.listening {
+            KEY_PROMPT.clone_into(&mut text.content);
+        } else {
+            let key = settings.pending().controls.key(slot.action);
+            controls::key_label(key).clone_into(&mut text.content);
+        }
+        text.color = if slot.listening || hovered {
+            KEY_ACTIVE_COLOR
+        } else {
+            KEY_COLOR
+        };
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use glam::Vec2;
     use winit::event::{ElementState, MouseButton};
 
     use crate::components::Color;
+    use crate::controls::Action;
 
     use super::*;
 
@@ -227,5 +283,93 @@ mod tests {
 
         assert!(world.get::<&Hidden>(video).is_ok());
         assert!(world.get::<&Hidden>(audio).is_err());
+    }
+
+    fn key_slot_world(action: Action) -> World {
+        let mut world = World::new();
+        world.spawn((
+            Position(Vec2::new(100.0, 100.0)),
+            Size(Vec2::new(100.0, 30.0)),
+            KeyBindSlot {
+                action,
+                listening: false,
+            },
+            Text::centered("", glam::Vec4::ONE, crate::render::FontSize::Size22),
+        ));
+        world
+    }
+
+    #[test]
+    fn clicking_a_key_slot_then_pressing_a_key_rebinds_the_action() {
+        let mut world = key_slot_world(Action::Reload);
+        let mut settings = Settings::in_memory();
+        let mut tab = SettingsTabKind::Controls;
+        let mut input = Input::default();
+
+        press_at(&mut input, Vec2::new(100.0, 100.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+        input.end_frame();
+        assert_eq!(
+            settings.pending().controls.key(Action::Reload),
+            KeyCode::KeyR
+        );
+
+        input.press(KeyCode::KeyX);
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+
+        assert_eq!(
+            settings.pending().controls.key(Action::Reload),
+            KeyCode::KeyX
+        );
+        let label = world
+            .query_mut::<&Text>()
+            .into_iter()
+            .next()
+            .map(|text| text.content.clone());
+        assert_eq!(label.as_deref(), Some("X"));
+    }
+
+    #[test]
+    fn escape_cancels_listening_and_keeps_the_old_key() {
+        let mut world = key_slot_world(Action::Reload);
+        let mut settings = Settings::in_memory();
+        let mut tab = SettingsTabKind::Controls;
+        let mut input = Input::default();
+
+        press_at(&mut input, Vec2::new(100.0, 100.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+        input.end_frame();
+        input.press(KeyCode::Escape);
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+        input.end_frame();
+        input.press(KeyCode::KeyX);
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+
+        assert_eq!(
+            settings.pending().controls.key(Action::Reload),
+            KeyCode::KeyR
+        );
+    }
+
+    #[test]
+    fn clicking_elsewhere_stops_listening() {
+        let mut world = key_slot_world(Action::Reload);
+        let mut settings = Settings::in_memory();
+        let mut tab = SettingsTabKind::Controls;
+        let mut input = Input::default();
+
+        press_at(&mut input, Vec2::new(100.0, 100.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+        input.end_frame();
+        press_at(&mut input, Vec2::new(700.0, 400.0));
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+        input.end_frame();
+        input.press(KeyCode::KeyX);
+        update_settings_ui(&mut world, &input, &mut settings, &mut tab);
+
+        assert_eq!(
+            settings.pending().controls.key(Action::Reload),
+            KeyCode::KeyR
+        );
     }
 }

@@ -6,6 +6,7 @@ use crate::assets::{Assets, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{Interaction, UiAction};
+use crate::controls::Action;
 use crate::input::Input;
 use crate::physics::Physics;
 use crate::postfx::SceneFx;
@@ -176,7 +177,7 @@ impl Scene for LobbyScene {
         _settings: &mut Settings,
     ) -> Transition {
         if self.upgrades.is_open() {
-            if input.just_pressed(KeyCode::Escape) || input.just_pressed(KeyCode::KeyE) {
+            if input.just_pressed(KeyCode::Escape) || input.action_pressed(Action::Interact) {
                 self.upgrades.close(&mut self.world);
                 return Transition::None;
             }

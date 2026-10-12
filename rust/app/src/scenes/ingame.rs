@@ -6,6 +6,7 @@ use crate::assets::{Assets, BULLET, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
+use crate::controls::Action;
 use crate::dungeon::{Dungeon, Rng};
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -134,7 +135,7 @@ impl Scene for InGameScene {
             systems::follow_backdrop(&mut self.world, self.camera.position());
             return Transition::None;
         }
-        if input.just_pressed(KeyCode::Tab) && !self.pause.is_active() {
+        if input.action_pressed(Action::Map) && !self.pause.is_active() {
             self.set_big_map(!self.big_map);
         }
         if input.just_pressed(KeyCode::Escape) {

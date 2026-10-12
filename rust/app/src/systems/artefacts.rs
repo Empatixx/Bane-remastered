@@ -1,6 +1,5 @@
 use glam::Vec2;
 use hecs::{Entity, World};
-use winit::keyboard::KeyCode;
 
 use crate::artefacts::{ArtefactKind, BERSERK_SECONDS, RING_BULLETS, RING_DAMAGE, RING_TURN};
 use crate::assets::Textures;
@@ -9,6 +8,7 @@ use crate::components::{
     Armor, ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, Hidden, InRange, Player, Position,
     ShieldAura, Shielded, Size, Sprite,
 };
+use crate::controls::Action;
 use crate::input::Input;
 use crate::physics::Physics;
 use crate::prefabs;
@@ -22,7 +22,7 @@ pub(crate) fn activate_artefact(
     input: &Input,
     bullet_texture: TextureId,
 ) -> Option<ArtefactKind> {
-    if !input.just_pressed(KeyCode::KeyF) {
+    if !input.action_pressed(Action::UseArtefact) {
         return None;
     }
     let (player, origin, kind) = world
@@ -179,6 +179,7 @@ pub(crate) fn update_artefact_hud(world: &mut World, textures: &Textures) {
 mod tests {
     use crate::components::Health;
     use crate::physics::Physics;
+    use winit::keyboard::KeyCode;
 
     use super::*;
 

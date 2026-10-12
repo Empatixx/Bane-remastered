@@ -46,7 +46,12 @@ impl Sorted {
     }
 }
 
-pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Layers {
+pub(crate) fn collect_draws(
+    world: &World,
+    fonts: &Fonts,
+    camera: Vec2,
+    interact_key: &str,
+) -> Layers {
     let mut sorted = Sorted::default();
     for (position, size, color, sprite, layer, screen, overlay, lit) in world
         .query::<(
@@ -134,7 +139,11 @@ pub(crate) fn collect_draws(world: &World, fonts: &Fonts, camera: Vec2) -> Layer
             position.0.x,
             position.0.y + size.0.y / 2.0 + prompt.gap + line.line_height() / 2.0,
         ) - camera;
-        for draw in line.draw_centered(prompt.text, center, prompt.color) {
+        let text = match prompt.text.strip_prefix("Press E ") {
+            Some(rest) => format!("Press {interact_key} {rest}"),
+            None => prompt.text.to_owned(),
+        };
+        for draw in line.draw_centered(&text, center, prompt.color) {
             sorted.scene.push((Layer(3), draw));
         }
     }
