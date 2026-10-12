@@ -361,8 +361,6 @@ impl Scene for InGameScene {
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::pet_bites(&mut self.world, dt);
         systems::trap_hits_enemies(&mut self.world, dt);
-        systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
-        systems::death_heals(&mut self.world);
         systems::break_objects(
             &mut self.world,
             &mut self.physics,
@@ -372,6 +370,9 @@ impl Scene for InGameScene {
         );
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
+        // Every enemy damage source has to run before this point, reap_dead hides kills from the death effects.
+        systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
+        systems::death_heals(&mut self.world);
         systems::clean_up_after_boss(&mut self.world);
         systems::reap_dead(&mut self.world, &mut self.physics);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
@@ -610,5 +611,48 @@ fn spawn_minimaps(world: &mut World, dungeon: &Dungeon, textures: &crate::assets
                 let _ = world.insert(entity, (BigMap, Hidden));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::components::{DeathBurst, Expiring, Health, Hits, Player, PoisonPool, Position};
+    use crate::enemies::EnemyKind;
+
+    use super::*;
+
+    #[test]
+    fn an_enemy_killed_by_poison_still_bursts_before_it_is_reaped() {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let spot = scene
+            .world
+            .query::<&Position>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .map(|position| position.0)
+            .expect("the dungeon has a player");
+        let slime = prefabs::ready_enemy(
+            &mut scene.world,
+            &mut scene.physics,
+            EnemyKind::RedSlime,
+            spot,
+        );
+        if let Ok(mut health) = scene.world.get::<&mut Health>(slime) {
+            health.current = 1;
+        }
+        let _ = scene.world.insert_one(slime, Hits(1));
+        let pool = prefabs::poison_pool(&mut scene.world, spot, &assets.textures);
+        if let Ok(mut pool) = scene.world.get::<&mut PoisonPool>(pool) {
+            pool.tick = 0.0;
+        }
+
+        scene.fixed_update(&Input::default(), 1.0 / 60.0, &assets);
+
+        assert!(scene.world.get::<&Expiring>(slime).is_ok());
+        assert!(scene.world.get::<&DeathBurst>(slime).is_err());
     }
 }

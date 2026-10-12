@@ -222,9 +222,9 @@ fn underworld(in: VertexOut) -> vec4<f32> {
     let wisps = map_fbm(p * 1.8 + vec2<f32>(-time * 0.04, time * 0.03), 8.2, 2.7);
     let fog = smoothstep(0.55, 1.2, slow * wisps * 1.8);
     let heat = pow(clamp(uv.y, 0.0, 1.0), 2.2);
-    var rgb = vec3<f32>(0.008, 0.004, 0.012);
-    rgb = rgb + fog * vec3<f32>(0.11, 0.04, 0.10) * (0.35 + heat);
-    rgb = rgb + heat * vec3<f32>(0.22, 0.06, 0.02) * (0.5 + 0.5 * slow);
+    var rgb = vec3<f32>(0.0, 0.0, 0.0);
+    rgb = rgb + fog * vec3<f32>(0.045, 0.018, 0.03) * (0.3 + heat);
+    rgb = rgb + heat * vec3<f32>(0.10, 0.03, 0.01) * (0.4 + 0.6 * slow);
     for (var layer = 0; layer < 3; layer = layer + 1) {
         let fl = f32(layer);
         let scale = 16.0 + fl * 12.0;

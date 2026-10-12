@@ -11,6 +11,8 @@ use crate::tilemap::Tileset;
 const FONT_FILE: &str = "fonts/PixelFJVerdana12pt.ttf";
 
 pub(crate) const LOGO: &str = "menu/logo.tga";
+pub(crate) const LOADING_TITLE: &str = "loading/bane_title.tga";
+pub(crate) const LOADING_SPINNER: &str = "loading/loading_image.tga";
 pub(crate) const MENU_PLATE: &str = "menu/Menu_plate.tga";
 pub(crate) const CURSOR: &str = "ingame/cursor.tga";
 pub(crate) const TILESET: &str = "ingame/tileset_2.png";
@@ -241,6 +243,8 @@ pub(crate) struct Loader {
 impl Loader {
     pub(crate) fn start(gpu: &mut Gpu, assets: &mut Assets) -> Result<Self, Box<dyn Error>> {
         load_texture(gpu, &mut assets.textures, LOGO)?;
+        load_texture(gpu, &mut assets.textures, LOADING_TITLE)?;
+        load_texture(gpu, &mut assets.textures, LOADING_SPINNER)?;
         let mut pending: VecDeque<Step> =
             GAME_TEXTURES.iter().copied().map(Step::Texture).collect();
         pending.extend(BarKind::ALL.map(Step::Bar));

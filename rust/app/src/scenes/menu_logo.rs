@@ -3,8 +3,8 @@ use std::f32::consts::TAU;
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Textures, LOGO};
 use crate::components::{Color, Layer, Light, Position, ScreenSpace, Shine, Size, Sprite};
+use crate::render::TextureId;
 
 const ENTER_SECONDS: f32 = 1.0;
 const DROP: f32 = 70.0;
@@ -30,12 +30,12 @@ fn ease_out(t: f32) -> f32 {
 }
 
 impl LogoAnim {
-    pub(crate) fn build(world: &mut World, textures: &Textures, rest: Vec2, size: Vec2) -> Self {
+    pub(crate) fn build(world: &mut World, texture: TextureId, rest: Vec2, size: Vec2) -> Self {
         let logo = world.spawn((
             Position(rest - Vec2::new(0.0, DROP)),
             Size(size),
             Color(Vec4::new(1.0, 1.0, 1.0, 0.0)),
-            Sprite::whole(textures.get(LOGO)),
+            Sprite::whole(texture),
             Layer(0),
             ScreenSpace,
             Shine(0.0),
@@ -91,7 +91,7 @@ mod tests {
         let mut world = World::new();
         let anim = LogoAnim::build(
             &mut world,
-            &Textures::default(),
+            TextureId::WHITE,
             Vec2::new(480.0, 100.0),
             Vec2::new(228.0, 108.0),
         );

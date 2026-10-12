@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::assets::{Assets, MENU_PLATE};
+use crate::assets::{Assets, LOGO, MENU_PLATE};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::components::UiAction;
 use crate::input::Input;
@@ -60,7 +60,7 @@ impl Scene for MenuScene {
         self.stage = Some(Stage::build(&mut self.world, assets));
         let logo = LogoAnim::build(
             &mut self.world,
-            &assets.textures,
+            assets.textures.get(LOGO),
             Vec2::new(x, LOGO_TOP_LEFT_Y + LOGO_SIZE.y / 2.0),
             LOGO_SIZE,
         );
