@@ -272,6 +272,7 @@ impl Gpu {
             wgpu::PresentMode::AutoNoVsync
         };
         self.surface.configure(&self.device, &self.config);
+        tracing::info!(present_mode = ?self.config.present_mode, "present mode set");
     }
 
     pub(crate) fn resize(&mut self, size: PhysicalSize<u32>) {
