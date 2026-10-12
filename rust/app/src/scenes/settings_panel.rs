@@ -3,9 +3,9 @@ use hecs::{Entity, World};
 
 use crate::assets::Assets;
 use crate::components::{
-    Button, Checkbox, Color, Hidden, KeyBindSlot, Layer, OnClick, Position, ResolutionText,
-    ScreenSpace, SettingsTabKind, SettingsUi, Size, SliderHandle, SliderValue, Sprite, TabButton,
-    TabOnly, Text, Toggle, UiAction, Volume,
+    Button, Checkbox, Color, Hidden, KeyBindSlot, LabelOf, Layer, NeedsChanges, OnClick, Position,
+    ResolutionText, ScreenSpace, SettingsTabKind, SettingsUi, Size, SliderHandle, SliderValue,
+    Sprite, TabButton, TabOnly, Text, Toggle, UiAction, Volume,
 };
 use crate::controls::Action;
 use crate::input::Input;
@@ -23,11 +23,12 @@ const TABS: [(SettingsTabKind, &str, f32); 3] = [
     (SettingsTabKind::Controls, "Controls", 560.0),
 ];
 const TAB_TOP: f32 = 128.0;
+const SIDE_ROWS: usize = 3;
 const SIDE_BUTTON_SIZE: Vec2 = Vec2::new(144.0, 57.0);
 const SIDE_BUTTONS: [(f32, &str, UiAction); 3] = [
-    (160.0, "Apply", UiAction::SettingsApply),
-    (240.0, "Revert", UiAction::SettingsRevert),
-    (320.0, "Exit", UiAction::SettingsExit),
+    (190.0, "Apply", UiAction::SettingsApply),
+    (256.0, "Revert", UiAction::SettingsRevert),
+    (322.0, "Exit", UiAction::SettingsExit),
 ];
 const LABEL_X: f32 = 275.0;
 const CHECKBOX_X: f32 = 470.0;
@@ -105,8 +106,18 @@ impl SettingsPanel {
         input: &Input,
         settings: &mut Settings,
     ) -> bool {
-        let action = systems::update_buttons(world, input);
+        let dirty = settings.has_changes();
+        let mut action = systems::update_buttons(world, input);
+        if !dirty
+            && matches!(
+                action,
+                Some(UiAction::SettingsApply | UiAction::SettingsRevert)
+            )
+        {
+            action = None;
+        }
         systems::update_settings_ui(world, input, settings, &mut self.tab);
+        systems::update_side_buttons(world, input, settings.has_changes());
         match action {
             Some(UiAction::SettingsApply) => settings.apply(),
             Some(UiAction::SettingsRevert) => settings.revert(),
@@ -164,6 +175,15 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
         if let Ok(mut size) = world.get::<&mut Size>(button) {
             size.0 = SIDE_BUTTON_SIZE;
         }
+        if let Ok((sprite, state)) = world.query_one_mut::<(&mut Sprite, &mut Button)>(button) {
+            sprite.uv = Sprite::cell_uv(0, 0, 1, SIDE_ROWS);
+            state.idle_uv = Sprite::cell_uv(0, 0, 1, SIDE_ROWS);
+            state.hover_uv = Sprite::cell_uv(0, 1, 1, SIDE_ROWS);
+        }
+        if matches!(action, UiAction::SettingsApply | UiAction::SettingsRevert) {
+            let _ = world.insert_one(button, NeedsChanges);
+        }
+        let _ = world.insert_one(text, LabelOf(button));
         ui(world, button, 8, None);
         ui(world, text, 9, None);
     }

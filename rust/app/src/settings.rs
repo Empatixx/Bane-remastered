@@ -117,6 +117,10 @@ impl Settings {
         &self.pending
     }
 
+    pub(crate) fn has_changes(&self) -> bool {
+        self.applied != self.pending
+    }
+
     pub(crate) fn pending_mut(&mut self) -> &mut GameSettings {
         &mut self.pending
     }
@@ -358,5 +362,20 @@ mod tests {
         let settings = Settings::load(&path);
         let _ = fs::remove_file(&path);
         assert_eq!(settings.pending(), &GameSettings::default());
+    }
+
+    #[test]
+    fn changes_are_reported_until_they_are_applied_or_reverted() {
+        let mut settings = Settings::in_memory();
+        assert!(!settings.has_changes());
+
+        settings.pending_mut().vsync = !settings.pending().vsync;
+        assert!(settings.has_changes());
+        settings.revert();
+        assert!(!settings.has_changes());
+
+        settings.pending_mut().fullscreen = true;
+        settings.apply();
+        assert!(!settings.has_changes());
     }
 }

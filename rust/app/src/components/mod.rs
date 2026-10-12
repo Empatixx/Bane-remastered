@@ -57,8 +57,8 @@ pub(crate) use objects::{
 pub(crate) use perks::PlayerPerks;
 pub(crate) use pet::Pet;
 pub(crate) use settings_ui::{
-    Checkbox, Hidden, KeyBindSlot, ResolutionText, SettingsTabKind, SettingsUi, SliderHandle,
-    SliderValue, TabButton, TabOnly, Toggle, Volume,
+    Checkbox, Hidden, KeyBindSlot, LabelOf, NeedsChanges, ResolutionText, SettingsTabKind,
+    SettingsUi, SliderHandle, SliderValue, TabButton, TabOnly, Toggle, Volume,
 };
 pub(crate) use shadow::PlayerShadow;
 pub(crate) use skills::{

@@ -56,3 +56,9 @@ pub(crate) struct KeyBindSlot {
     pub(crate) action: Action,
     pub(crate) listening: bool,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct NeedsChanges;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct LabelOf(pub(crate) hecs::Entity);

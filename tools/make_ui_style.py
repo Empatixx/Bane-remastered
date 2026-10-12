@@ -5,6 +5,7 @@ SCRATCH = "/private/tmp/claude-501/-Users-jirka-IdeaProjects-redissun/232009fd-0
 RIM = (225, 152, 116, 255)
 HOT = (255, 232, 110, 255)
 INK = (222, 112, 38, 255)
+DIM = (112, 100, 100, 255)
 FILL = (0, 0, 0, 110)
 PANEL_FILL = (0, 0, 0, 125)
 
@@ -107,7 +108,7 @@ def save(name, image):
 def main():
     parts = {
         "Menu_plate.tga": sheet([bracketed(plate(75, 19, RIM, FILL, 2), RIM, 3), bracketed(plate(75, 19, HOT, FILL, 2), HOT, 3)]),
-        "Menu_plate_small.tga": sheet([bracketed(plate(42, 13, RIM, FILL, 1), RIM, 3), bracketed(plate(42, 13, HOT, FILL, 1), HOT, 3)]),
+        "Menu_plate_small.tga": sheet([bracketed(plate(42, 13, RIM, FILL, 1), RIM, 3), bracketed(plate(42, 13, HOT, FILL, 1), HOT, 3), bracketed(plate(42, 13, DIM, (0, 0, 0, 70), 1), DIM, 3)]),
         "settings_menubar.tga": sheet([plate(50, 16, RIM, FILL, 2), plate(50, 16, HOT, FILL, 2)]),
         "settings_background.tga": panel(),
         "checkbox.tga": sheet([checkbox(False, False), checkbox(True, False), checkbox(False, True), checkbox(True, True)]),

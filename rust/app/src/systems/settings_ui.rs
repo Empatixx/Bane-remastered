@@ -4,8 +4,9 @@ use hecs::{Entity, World};
 use winit::keyboard::KeyCode;
 
 use crate::components::{
-    Checkbox, Hidden, KeyBindSlot, Position, ResolutionText, SettingsTabKind, Size, SliderHandle,
-    SliderValue, Sprite, TabButton, TabOnly, Text, Toggle, Volume,
+    Button, Checkbox, Hidden, KeyBindSlot, LabelOf, NeedsChanges, Position, ResolutionText,
+    SettingsTabKind, Size, SliderHandle, SliderValue, Sprite, TabButton, TabOnly, Text, Toggle,
+    Volume,
 };
 use crate::controls;
 use crate::geometry;
@@ -16,6 +17,47 @@ const ROW_COUNT: usize = 4;
 const KEY_PROMPT: &str = "Press key";
 const KEY_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
 const KEY_ACTIVE_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
+const LABEL_IDLE: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const LABEL_DISABLED: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
+const DISABLED_ROW: usize = 2;
+const SIDE_ROWS: usize = 3;
+
+pub(crate) fn update_side_buttons(world: &mut World, input: &Input, dirty: bool) {
+    let mouse = input.mouse();
+    for (button, position, size, needs) in world
+        .query::<(Entity, &Position, &Size, Option<&NeedsChanges>)>()
+        .with::<&Button>()
+        .iter()
+        .map(|(entity, position, size, needs)| (entity, *position, *size, needs.is_some()))
+        .collect::<Vec<_>>()
+    {
+        let disabled = needs && !dirty;
+        if disabled {
+            if let Ok(mut sprite) = world.get::<&mut Sprite>(button) {
+                sprite.uv = Sprite::cell_uv(0, DISABLED_ROW, 1, SIDE_ROWS);
+            }
+        }
+        let hovered = !disabled && geometry::contains(position.0, size.0, mouse);
+        let label_color = if disabled {
+            LABEL_DISABLED
+        } else if hovered {
+            KEY_ACTIVE_COLOR
+        } else {
+            LABEL_IDLE
+        };
+        let labels: Vec<Entity> = world
+            .query::<(Entity, &LabelOf)>()
+            .iter()
+            .filter(|(_, label)| label.0 == button)
+            .map(|(entity, _)| entity)
+            .collect();
+        for label in labels {
+            if let Ok(mut text) = world.get::<&mut Text>(label) {
+                text.color = label_color;
+            }
+        }
+    }
+}
 
 pub(crate) fn update_settings_ui(
     world: &mut World,
@@ -371,5 +413,56 @@ mod tests {
             settings.pending().controls.key(Action::Reload),
             KeyCode::KeyR
         );
+    }
+
+    #[test]
+    fn apply_and_revert_grey_out_when_there_is_nothing_to_change() {
+        let mut world = World::new();
+        let apply = world.spawn((
+            Position(glam::Vec2::new(100.0, 100.0)),
+            Size(glam::Vec2::new(140.0, 50.0)),
+            Button {
+                idle_uv: Sprite::cell_uv(0, 0, 1, 3),
+                hover_uv: Sprite::cell_uv(0, 1, 1, 3),
+            },
+            NeedsChanges,
+            Sprite::whole(crate::render::TextureId::WHITE),
+        ));
+        let exit = world.spawn((
+            Position(glam::Vec2::new(100.0, 200.0)),
+            Size(glam::Vec2::new(140.0, 50.0)),
+            Button {
+                idle_uv: Sprite::cell_uv(0, 0, 1, 3),
+                hover_uv: Sprite::cell_uv(0, 1, 1, 3),
+            },
+            Sprite::whole(crate::render::TextureId::WHITE),
+        ));
+        let label = |world: &mut World, button| {
+            world.spawn((
+                LabelOf(button),
+                Text::centered("x", Vec4::ONE, crate::render::FontSize::Size22),
+            ))
+        };
+        let apply_label = label(&mut world, apply);
+        let exit_label = label(&mut world, exit);
+        let input = Input::default();
+        let color =
+            |world: &World, entity| world.get::<&Text>(entity).map(|t| t.color).expect("label");
+
+        update_side_buttons(&mut world, &input, false);
+        assert_eq!(color(&world, apply_label), LABEL_DISABLED);
+        assert_eq!(color(&world, exit_label), LABEL_IDLE);
+        let uv = world.get::<&Sprite>(apply).map(|s| s.uv).expect("sprite");
+        assert_eq!(uv, Sprite::cell_uv(0, DISABLED_ROW, 1, SIDE_ROWS));
+
+        update_side_buttons(&mut world, &input, true);
+        assert_eq!(color(&world, apply_label), LABEL_IDLE);
+
+        let mut hovering = Input::default();
+        hovering.set_mouse(glam::Vec2::new(100.0, 100.0));
+        update_side_buttons(&mut world, &hovering, true);
+        assert_eq!(color(&world, apply_label), KEY_ACTIVE_COLOR);
+        update_side_buttons(&mut world, &hovering, false);
+        assert_eq!(color(&world, apply_label), LABEL_DISABLED);
     }
 }
