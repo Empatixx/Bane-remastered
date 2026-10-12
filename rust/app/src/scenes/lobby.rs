@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use hecs::World;
 use winit::keyboard::KeyCode;
 
@@ -72,6 +72,13 @@ impl LobbyScene {
             let balance = i32::try_from(profile.balance()).unwrap_or(i32::MAX);
             for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
                 wallet.coins = balance;
+            }
+            for text in self
+                .world
+                .query_mut::<&mut crate::components::Text>()
+                .with::<&crate::components::TalentText>()
+            {
+                text.content = format!("Talents: {balance}");
             }
         }
     }
@@ -159,6 +166,7 @@ impl Scene for LobbyScene {
         prefabs::scientist(&mut self.world, scientist_at, textures);
         let head = scientist_at + Vec2::new(Prop::Scientist.spec().size().x / 2.0, 0.0);
         prefabs::minimal_speech(&mut self.world, head);
+        prefabs::talent_counter(&mut self.world, scientist_at, Prop::Scientist.spec().size());
 
         let player_top_left = bounds / 2.0;
         prefabs::player(
@@ -169,19 +177,8 @@ impl Scene for LobbyScene {
         );
 
         prefabs::status_bars(&mut self.world, textures);
-        prefabs::coin_hud(
-            &mut self.world,
-            textures,
-            "ingame/green_banecoin.tga",
-            Vec4::new(236.0 / 255.0, 0.0, 0.0, 1.0),
-        );
         self.camera = Camera::new(bounds);
-        if let Some(profile) = &self.profile {
-            let balance = i32::try_from(profile.balance()).unwrap_or(i32::MAX);
-            for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
-                wallet.coins = balance;
-            }
-        }
+        self.refresh_wallet();
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0, 1.0) {
             self.camera.snap_to(target);
         }
@@ -284,5 +281,52 @@ impl Scene for LobbyScene {
         systems::tick_dodges(&mut self.world, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         Transition::None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::components::{CoinText, TalentText, Text};
+
+    use super::*;
+
+    fn lobby() -> (LobbyScene, Assets) {
+        let assets = Assets::new().expect("assets");
+        let mut scene = LobbyScene::default();
+        scene.attach_profile(SharedProfile::in_memory());
+        scene.enter(&assets);
+        (scene, assets)
+    }
+
+    #[test]
+    fn the_balance_is_shown_as_talents_at_the_scientist_and_not_as_coins_on_the_left() {
+        let (scene, _assets) = lobby();
+
+        assert_eq!(scene.world.query::<&CoinText>().iter().count(), 0);
+        let shown: Vec<String> = scene
+            .world
+            .query::<&Text>()
+            .with::<&TalentText>()
+            .iter()
+            .map(|text| text.content.clone())
+            .collect();
+        assert_eq!(shown, vec!["Talents: 0".to_owned()]);
+    }
+
+    #[test]
+    fn the_talent_plate_sits_below_the_scientist() {
+        let (scene, _assets) = lobby();
+        let scientist = Vec2::new(25.0, 6.5) * TILE_SIZE;
+        let plate = scene
+            .world
+            .query::<&crate::components::Position>()
+            .with::<&TalentText>()
+            .iter()
+            .map(|position| position.0)
+            .next()
+            .expect("the plate");
+
+        assert!(plate.y > scientist.y + Prop::Scientist.spec().size().y);
+        assert!((plate.x - (scientist.x + Prop::Scientist.spec().size().x / 2.0)).abs() < 1.0);
     }
 }

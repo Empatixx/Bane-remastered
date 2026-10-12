@@ -12,9 +12,9 @@ use crate::components::{
     Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
     Overlay, Path, PauseUi, Pet, Pickup, Player, PlayerShadow, PoisonPool, Position, PriceTag,
     Prompt, RoomId, RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash,
-    Solid, Spawning, SpeechBubble, SpeechPart, SpeechText, Sprite, StatusBar, Text, TextButton,
-    ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT,
-    BULLET_ROWS, PIP_FULL,
+    Solid, Spawning, SpeechBubble, SpeechPart, SpeechText, Sprite, StatusBar, TalentText, Text,
+    TextButton, ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS,
+    BULLET_FLIGHT, BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
@@ -1573,6 +1573,44 @@ pub(crate) fn coin_hud(world: &mut World, textures: &Textures, coin: &str, text_
         )),
         Layer(6),
         ScreenSpace,
+    ));
+}
+
+const TALENT_PLATE: Vec2 = Vec2::new(190.0, 40.0);
+const TALENT_RIM: f32 = 3.0;
+const TALENT_GAP: f32 = 22.0;
+const TALENT_RIM_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
+const TALENT_BACK_COLOR: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.6);
+const TALENT_TEXT_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+
+pub(crate) fn talent_counter(world: &mut World, npc_top_left: Vec2, npc_size: Vec2) {
+    let center = Vec2::new(
+        npc_top_left.x + npc_size.x / 2.0,
+        npc_top_left.y + npc_size.y + TALENT_GAP + TALENT_PLATE.y / 2.0,
+    );
+    world.spawn((
+        Position(center),
+        Size(TALENT_PLATE + Vec2::splat(TALENT_RIM * 2.0)),
+        Color(TALENT_RIM_COLOR),
+        Layer(3),
+    ));
+    world.spawn((
+        Position(center),
+        Size(TALENT_PLATE),
+        Color(TALENT_BACK_COLOR),
+        Layer(4),
+    ));
+    world.spawn((
+        TalentText,
+        Position(center),
+        Text {
+            content: String::new(),
+            color: TALENT_TEXT_COLOR,
+            size: FontSize::Size22,
+            align: Align::Center,
+            anchor: Anchor::Middle,
+        },
+        Layer(5),
     ));
 }
 

@@ -20,8 +20,8 @@ const HINTS: [&str; 6] = [
     "Go on, test my work!",
     "Every run teaches us.",
 ];
-const BROKE: &str = "No coins? Go loot!";
-const RICH: &str = "Rich! Buy something!";
+const BROKE: &str = "No talents? Go loot!";
+const RICH: &str = "Talents to spend!";
 const PAD_X: f32 = 14.0;
 const PAD_Y: f32 = 8.0;
 const BORDER: f32 = 2.0;
