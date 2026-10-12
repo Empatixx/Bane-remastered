@@ -8,6 +8,7 @@ use crate::camera::Camera;
 use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
 use crate::controls::Action;
 use crate::dungeon::{Dungeon, Rng};
+use crate::flow::FlowField;
 use crate::input::Input;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
@@ -40,6 +41,7 @@ pub(crate) struct InGameScene {
     big_map: bool,
     floor: u32,
     navigation: Navigation,
+    flow: FlowField,
     victory: bool,
     death: Option<systems::DeathScreen>,
     profile: Option<SharedProfile>,
@@ -333,8 +335,14 @@ impl Scene for InGameScene {
         systems::tick_dodges(&mut self.world, dt);
         systems::tick_spawning(&mut self.world, &mut self.physics, dt);
         systems::dash(&mut self.world, dt);
-        systems::plan_paths(&mut self.world, &self.physics, &self.navigation);
-        systems::chase_player(&mut self.world);
+        systems::update_flow(
+            &mut self.flow,
+            &self.world,
+            &self.physics,
+            &self.navigation,
+            dt,
+        );
+        systems::chase_player(&mut self.world, &self.flow);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
         systems::steer_pets(&mut self.world);
@@ -411,6 +419,7 @@ impl InGameScene {
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
         self.navigation = Navigation::new(&solid_cells);
+        self.flow = FlowField::default();
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         systems::apply_floor_perks(&mut self.world, perks);

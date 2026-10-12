@@ -2,10 +2,11 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Outline, Path,
-    Player, Position, Rooted, Size, Spawning, Velocity,
+    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Outline, Player,
+    Position, Rooted, Size, Spawning, Velocity,
 };
-use crate::navigation::{corridor, Navigation, CELL};
+use crate::flow::FlowField;
+use crate::navigation::Navigation;
 use crate::physics::Physics;
 
 pub(crate) const FLASH_SECONDS: f32 = 1.0;
@@ -21,39 +22,22 @@ fn player_placement(world: &World) -> Option<(Vec2, Vec2)> {
         .map(|(position, size)| (position.0, size.0))
 }
 
-pub(crate) fn plan_paths(world: &mut World, physics: &Physics, navigation: &Navigation) {
-    let Some((target, target_size)) = player_placement(world) else {
-        return;
-    };
-    for (position, size, path) in world
-        .query_mut::<(&Position, &Size, &mut Path)>()
-        .without::<&Expiring>()
-        .without::<&Spawning>()
-    {
-        let moved = path
-            .planned_for
-            .is_none_or(|planned| (target - planned).abs().max_element() > CELL);
-        if moved {
-            let (min, max) = corridor(position.0, target);
-            let solids = physics.solids_within(min, max);
-            path.cells = navigation
-                .find_path_around(position.0, size.0, target, target_size, &solids)
-                .into();
-            path.planned_for = Some(target);
-        }
+pub(crate) fn update_flow(
+    flow: &mut FlowField,
+    world: &World,
+    physics: &Physics,
+    navigation: &Navigation,
+    dt: f32,
+) {
+    if let Some((target, _)) = player_placement(world) {
+        flow.update(target, navigation, physics, dt);
     }
 }
 
-pub(crate) fn chase_player(world: &mut World) {
+pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
     let target = player_placement(world).map(|(position, _)| position);
-    for (position, chase, velocity, path, rooted) in world
-        .query_mut::<(
-            &Position,
-            &Chase,
-            &mut Velocity,
-            Option<&mut Path>,
-            Option<&Rooted>,
-        )>()
+    for (position, chase, velocity, rooted) in world
+        .query_mut::<(&Position, &Chase, &mut Velocity, Option<&Rooted>)>()
         .without::<&Expiring>()
         .without::<&Spawning>()
     {
@@ -65,17 +49,7 @@ pub(crate) fn chase_player(world: &mut World) {
             velocity.0 = Vec2::ZERO;
             continue;
         };
-        let waypoint = path.and_then(|path| {
-            while path
-                .cells
-                .front()
-                .is_some_and(|next| next.distance(position.0) <= CELL)
-            {
-                path.cells.pop_front();
-            }
-            path.cells.front().copied()
-        });
-        velocity.0 = (waypoint.unwrap_or(target) - position.0).normalize_or_zero() * chase.speed;
+        velocity.0 = flow.heading(position.0, target) * chase.speed;
     }
 }
 
@@ -217,7 +191,7 @@ mod tests {
             Vec2::new(300.0, 0.0),
         );
 
-        chase_player(&mut world);
+        chase_player(&mut world, &FlowField::default());
 
         let velocity = world.get::<&Velocity>(rat).map(|v| v.0).ok();
         assert!(
@@ -272,7 +246,7 @@ mod tests {
             &Textures::default(),
         );
 
-        chase_player(&mut world);
+        chase_player(&mut world, &FlowField::default());
         let velocity = world.get::<&Velocity>(rat).map(|v| v.0).ok();
         assert_eq!(velocity, Some(Vec2::ZERO));
         assert!(world.get::<&Body>(rat).is_err());
@@ -358,41 +332,13 @@ mod tests {
         );
         let wall: Vec<(usize, usize)> = (0..5).map(|row| (4, row)).collect();
         let navigation = Navigation::new(&wall);
+        let mut flow = FlowField::default();
 
-        plan_paths(&mut world, &physics, &navigation);
-        chase_player(&mut world);
+        update_flow(&mut flow, &world, &physics, &navigation, 0.016);
+        chase_player(&mut world, &flow);
 
-        let path_len = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
-        assert!(path_len > 10, "{path_len}");
         let velocity = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
-        assert!(velocity.x > 0.0, "{velocity:?}");
-    }
-
-    #[test]
-    fn a_still_target_keeps_the_planned_path() {
-        let mut world = World::new();
-        let mut physics = Physics::new();
-        prefabs::player(
-            &mut world,
-            &mut physics,
-            Vec2::new(600.0, 160.0),
-            &Textures::default(),
-        );
-        let rat = prefabs::ready_enemy(
-            &mut world,
-            &mut physics,
-            EnemyKind::Rat,
-            Vec2::new(100.0, 160.0),
-        );
-        let navigation = Navigation::new(&[]);
-
-        plan_paths(&mut world, &physics, &navigation);
-        let first = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
-        plan_paths(&mut world, &physics, &navigation);
-        let second = world.get::<&Path>(rat).map(|p| p.cells.len()).unwrap_or(0);
-
-        assert!(first > 0);
-        assert_eq!(first, second);
+        assert!(velocity.x > 0.0 && velocity.y > 0.0, "{velocity:?}");
     }
 
     #[test]

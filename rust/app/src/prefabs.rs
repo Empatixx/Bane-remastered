@@ -589,7 +589,6 @@ pub(crate) fn enemy(
         Chase {
             speed: spec.speed(),
         },
-        Path::default(),
         Position(position),
         Velocity::default(),
         Size(size),

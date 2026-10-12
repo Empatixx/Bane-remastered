@@ -260,7 +260,7 @@ mod tests {
         tick_web_spitters(&mut world, &textures, 0.2);
         assert!(world.get::<&Rooted>(spider).is_ok());
 
-        chase_player(&mut world);
+        chase_player(&mut world, &crate::flow::FlowField::default());
         let velocity = world
             .get::<&Velocity>(spider)
             .map(|v| v.0)
