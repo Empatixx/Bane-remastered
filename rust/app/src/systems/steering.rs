@@ -1,7 +1,9 @@
 use hecs::World;
 
 use crate::artefacts::BERSERK_SPEED;
-use crate::components::{Berserk, Cobweb, Health, Player, PlayerPerks, Position, Size, Velocity};
+use crate::components::{
+    Berserk, Cobweb, Dodge, Health, Player, PlayerPerks, Position, Size, Velocity,
+};
 use crate::geometry;
 use crate::input::Input;
 
@@ -23,7 +25,7 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
         .iter()
         .map(|(position, size)| (position.0, size.0))
         .collect();
-    for (velocity, health, position, size, berserk, perks) in world
+    for (velocity, health, position, size, berserk, perks, dodge) in world
         .query_mut::<(
             &mut Velocity,
             &Health,
@@ -31,6 +33,7 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
             &Size,
             Option<&Berserk>,
             Option<&PlayerPerks>,
+            Option<&Dodge>,
         )>()
         .with::<&Player>()
     {
@@ -47,7 +50,9 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
         } else {
             PLAYER_SPEED
         } * boost;
-        velocity.0 = if health.current > 0 {
+        velocity.0 = if let (Some(dodge), true) = (dodge, health.current > 0) {
+            dodge.direction * super::DODGE_SPEED
+        } else if health.current > 0 {
             accelerate(velocity.0, direction, speed, dt)
         } else {
             glam::Vec2::ZERO

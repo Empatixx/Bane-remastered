@@ -4,6 +4,7 @@ mod artefacts;
 mod body;
 mod combat;
 mod death;
+mod dodge;
 mod effects;
 mod hud;
 mod interaction;
@@ -34,6 +35,7 @@ pub(crate) use combat::{
     BULLET_IMPACT, BULLET_ROWS,
 };
 pub(crate) use death::DeathPart;
+pub(crate) use dodge::{Afterimage, Dodge, DodgeCooldown};
 pub(crate) use effects::{
     Floating, GazeWind, Hover, LightFade, Particle, RoomId, ThenPlay, TrapCooldown, HOVER_CYCLE,
 };

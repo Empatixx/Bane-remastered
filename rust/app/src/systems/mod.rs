@@ -5,6 +5,7 @@ mod camera;
 mod carry;
 mod damage;
 pub(crate) mod death_screen;
+mod dodge;
 mod draw;
 mod effects;
 mod enemies;
@@ -46,6 +47,7 @@ pub(crate) use damage::{
     trap_hits_enemies,
 };
 pub(crate) use death_screen::{update_death_ui, DeathScreen};
+pub(crate) use dodge::{fade_afterimages, start_dodge, tick_dodges, DODGE_SECONDS, DODGE_SPEED};
 pub(crate) use draw::collect_draws;
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::finish_spawning;

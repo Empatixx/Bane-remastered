@@ -192,7 +192,7 @@ impl Scene for InGameScene {
                 &mut self.sounds,
             );
         }
-        systems::animate_player(&mut self.world, input);
+        systems::animate_player(&mut self.world, input, &assets.textures);
         systems::switch_guns(&mut self.world, input, &mut self.sounds);
         if let Some(crate::artefacts::ArtefactKind::RevealMap) = systems::activate_artefact(
             &mut self.world,
@@ -245,6 +245,7 @@ impl Scene for InGameScene {
         systems::update_weapon_hud(&mut self.world, &assets.textures);
         systems::fade_lights(&mut self.world);
         systems::flash_hits(&mut self.world, dt);
+        systems::fade_afterimages(&mut self.world, dt);
         systems::hover_drops(&mut self.world, dt);
         systems::outline_drops(&mut self.world);
         systems::float_texts(&mut self.world, dt);
@@ -321,7 +322,13 @@ impl Scene for InGameScene {
         if self.pause.is_active() || self.death.is_some() {
             return Transition::None;
         }
+        systems::start_dodge(
+            &mut self.world,
+            input,
+            input.mouse() + self.camera.position(),
+        );
         systems::steer_player(&mut self.world, input, dt);
+        systems::tick_dodges(&mut self.world, dt);
         systems::tick_spawning(&mut self.world, &mut self.physics, dt);
         systems::dash(&mut self.world, dt);
         systems::plan_paths(&mut self.world, &self.physics, &self.navigation);

@@ -53,10 +53,11 @@ pub(crate) enum Action {
     UseArtefact,
     DropGun,
     Map,
+    Dodge,
 }
 
 impl Action {
-    pub(crate) const ALL: [Self; 9] = [
+    pub(crate) const ALL: [Self; 10] = [
         Self::MoveUp,
         Self::MoveDown,
         Self::MoveLeft,
@@ -66,6 +67,7 @@ impl Action {
         Self::UseArtefact,
         Self::DropGun,
         Self::Map,
+        Self::Dodge,
     ];
 
     fn index(self) -> usize {
@@ -86,6 +88,7 @@ impl Action {
             Self::UseArtefact => "Artefact",
             Self::DropGun => "Drop gun",
             Self::Map => "Map",
+            Self::Dodge => "Dodge",
         }
     }
 
@@ -100,6 +103,7 @@ impl Action {
             Self::UseArtefact => "useArtefact",
             Self::DropGun => "dropGun",
             Self::Map => "map",
+            Self::Dodge => "dodge",
         }
     }
 
@@ -114,6 +118,7 @@ impl Action {
             Self::UseArtefact => KeyCode::KeyF,
             Self::DropGun => KeyCode::KeyQ,
             Self::Map => KeyCode::Tab,
+            Self::Dodge => KeyCode::Space,
         }
     }
 }
@@ -142,7 +147,7 @@ fn parse_key(name: &str) -> Option<KeyCode> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Bindings {
-    keys: [KeyCode; 9],
+    keys: [KeyCode; 10],
 }
 
 impl Default for Bindings {

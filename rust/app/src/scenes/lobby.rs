@@ -217,7 +217,7 @@ impl Scene for LobbyScene {
                 _ => Transition::None,
             };
         }
-        systems::animate_player(&mut self.world, input);
+        systems::animate_player(&mut self.world, input, &assets.textures);
         systems::tick_invulnerability(&mut self.world, dt);
         self.clock += dt;
         systems::spawn_gaze_wind(

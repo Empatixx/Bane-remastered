@@ -134,6 +134,9 @@ pub(crate) fn hurt_player(
     damage: i32,
     sounds: &mut Vec<AudioCommand>,
 ) -> bool {
+    if world.get::<&Invulnerable>(player).is_ok() {
+        return false;
+    }
     let damage = world
         .get::<&crate::components::PlayerPerks>(player)
         .map_or(damage, |perks| perks.0.damage_taken(damage));
