@@ -73,15 +73,10 @@ impl SettingsPanel {
         self.open
     }
 
-    pub(crate) fn open(&mut self, world: &mut World, assets: &Assets, keep_visible: Entity) {
+    pub(crate) fn open(&mut self, world: &mut World, assets: &Assets, hide: &[Entity]) {
         self.open = true;
         self.tab = SettingsTabKind::Video;
-        let hidden: Vec<Entity> = world
-            .iter()
-            .map(|entity| entity.entity())
-            .filter(|entity| *entity != keep_visible)
-            .collect();
-        for entity in hidden {
+        for entity in hide.iter().copied() {
             let _ = world.insert_one(entity, Hidden);
         }
         spawn_panel(world, assets);

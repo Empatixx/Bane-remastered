@@ -1,19 +1,22 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Assets, BUTTON, LOGO, MENU_BACKGROUND};
+use crate::assets::{Assets, BUTTON, LOGO};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
-use crate::components::UiAction;
+use crate::components::{Color, Layer, Position, ScreenSpace, Size, UiAction};
 use crate::input::Input;
 use crate::prefabs;
 use crate::settings::Settings;
 use crate::systems;
 use crate::viewport::TARGET;
 
+use super::menu_stage::Stage;
 use super::{Scene, SceneId, SettingsPanel, Transition};
 
 const LOGO_SIZE: Vec2 = Vec2::new(228.0, 108.0);
 const LOGO_TOP_LEFT_Y: f32 = 50.0;
+const SHADE_WIDTH: f32 = 0.4;
+const SHADE_COLOR: Vec4 = Vec4::new(0.03, 0.02, 0.05, 0.45);
 const BUTTON_ROWS: [(f32, &str, UiAction); 3] = [
     (225.0, "Play", UiAction::Play),
     (325.0, "Settings", UiAction::Settings),
@@ -24,7 +27,8 @@ const BUTTON_ROWS: [(f32, &str, UiAction); 3] = [
 pub(crate) struct MenuScene {
     world: World,
     panel: SettingsPanel,
-    background: Option<Entity>,
+    stage: Option<Stage>,
+    ui: Vec<Entity>,
     sounds: Vec<AudioCommand>,
 }
 
@@ -45,41 +49,55 @@ impl Scene for MenuScene {
         std::mem::take(&mut self.sounds)
     }
 
+    fn camera(&self) -> Vec2 {
+        self.stage.as_ref().map_or(Vec2::ZERO, Stage::camera)
+    }
+
     fn enter(&mut self, assets: &Assets) {
         let x = TARGET.x / 2.0;
         self.panel = SettingsPanel::default();
-        self.background = Some(prefabs::sprite(
-            &mut self.world,
-            TARGET / 2.0,
-            TARGET,
-            assets.textures.get(MENU_BACKGROUND),
-            -1,
+        self.ui.clear();
+        self.stage = Some(Stage::build(&mut self.world, assets));
+        let shade = self.world.spawn((
+            Position(TARGET / 2.0),
+            Size(Vec2::new(TARGET.x * SHADE_WIDTH, TARGET.y)),
+            Color(SHADE_COLOR),
+            Layer(-1),
+            ScreenSpace,
         ));
-        prefabs::sprite(
+        let logo = prefabs::sprite(
             &mut self.world,
             Vec2::new(x, LOGO_TOP_LEFT_Y + LOGO_SIZE.y / 2.0),
             LOGO_SIZE,
             assets.textures.get(LOGO),
             0,
         );
+        let _ = self.world.insert_one(logo, ScreenSpace);
+        self.ui.extend([shade, logo]);
         for (y, label, action) in BUTTON_ROWS {
-            prefabs::button(
+            let (button, text) = prefabs::button(
                 &mut self.world,
                 Vec2::new(x, y),
                 label,
                 action,
                 assets.textures.get(BUTTON),
             );
+            let _ = self.world.insert_one(button, ScreenSpace);
+            let _ = self.world.insert_one(text, ScreenSpace);
+            self.ui.extend([button, text]);
         }
     }
 
     fn update(
         &mut self,
         input: &Input,
-        _dt: f32,
+        dt: f32,
         assets: &Assets,
         settings: &mut Settings,
     ) -> Transition {
+        if let Some(stage) = &mut self.stage {
+            stage.tick(&mut self.world, assets, dt);
+        }
         if self.panel.is_open() {
             if self.panel.update(&mut self.world, input, settings) {
                 self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
@@ -93,9 +111,7 @@ impl Scene for MenuScene {
         match action {
             Some(UiAction::Play) => Transition::Switch(SceneId::Lobby),
             Some(UiAction::Settings) => {
-                if let Some(background) = self.background {
-                    self.panel.open(&mut self.world, assets, background);
-                }
+                self.panel.open(&mut self.world, assets, &self.ui);
                 Transition::None
             }
             Some(UiAction::Exit) => Transition::Quit,
