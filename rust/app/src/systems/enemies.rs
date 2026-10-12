@@ -2,12 +2,13 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Outline, Player,
-    Position, Rooted, Size, Spawning, Velocity,
+    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Lurk, Outline,
+    Player, Position, Rooted, Size, Spawning, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
+use crate::systems::crowd::{ring_point, RING_RADIUS, RING_SLACK};
 
 pub(crate) const FLASH_SECONDS: f32 = 1.0;
 const DASH_PERIOD: f32 = 3.0;
@@ -36,8 +37,15 @@ pub(crate) fn update_flow(
 
 pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
     let target = player_placement(world).map(|(position, _)| position);
-    for (position, chase, velocity, rooted) in world
-        .query_mut::<(&Position, &Chase, &mut Velocity, Option<&Rooted>)>()
+    for (entity, position, chase, velocity, rooted, lurk) in world
+        .query_mut::<(
+            Entity,
+            &Position,
+            &Chase,
+            &mut Velocity,
+            Option<&Rooted>,
+            Option<&Lurk>,
+        )>()
         .without::<&Expiring>()
         .without::<&Spawning>()
     {
@@ -49,7 +57,17 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
             velocity.0 = Vec2::ZERO;
             continue;
         };
-        velocity.0 = flow.heading(position.0, target) * chase.speed;
+        let waiting = lurk.is_some() && position.0.distance(target) < RING_RADIUS + RING_SLACK;
+        velocity.0 = if waiting {
+            let spot = ring_point(target, entity);
+            if position.0.distance(spot) <= RING_SLACK / 2.0 {
+                Vec2::ZERO
+            } else {
+                (spot - position.0).normalize_or_zero() * chase.speed
+            }
+        } else {
+            flow.heading(position.0, target) * chase.speed
+        };
     }
 }
 
@@ -339,6 +357,39 @@ mod tests {
 
         let velocity = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
         assert!(velocity.x > 0.0 && velocity.y > 0.0, "{velocity:?}");
+    }
+
+    #[test]
+    fn a_waiting_enemy_holds_its_spot_on_the_ring_but_a_distant_one_still_closes_in() {
+        let (mut world, mut physics) = arena();
+        let player = Vec2::ZERO;
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(900.0, 0.0),
+        );
+        let _ = world.insert_one(rat, Lurk);
+        let flow = FlowField::default();
+
+        chase_player(&mut world, &flow);
+        let far = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
+        assert!(far.x < 0.0, "{far:?}");
+
+        let spot = ring_point(player, rat);
+        if let Ok(mut position) = world.get::<&mut Position>(rat) {
+            position.0 = spot;
+        }
+        chase_player(&mut world, &flow);
+        let held = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
+        assert_eq!(held, Vec2::ZERO);
+
+        if let Ok(mut position) = world.get::<&mut Position>(rat) {
+            position.0 = spot * 1.15;
+        }
+        chase_player(&mut world, &flow);
+        let drifting = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
+        assert!(drifting.dot(spot) < 0.0, "{drifting:?}");
     }
 
     #[test]

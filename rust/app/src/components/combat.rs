@@ -97,6 +97,9 @@ pub(crate) struct Chase {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Lurk;
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Burst {
     pub(crate) left: u32,
     pub(crate) timer: f32,
