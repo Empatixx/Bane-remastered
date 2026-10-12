@@ -76,6 +76,12 @@ impl Scene for MenuScene {
         );
         self.ui.extend(buttons.entities());
         self.buttons = Some(buttons);
+        if let Some(stage) = &mut self.stage {
+            stage.tick(&mut self.world, assets, 0.0);
+            if let Some(logo) = &mut self.logo {
+                logo.tick(&mut self.world, stage.camera(), 0.0);
+            }
+        }
     }
 
     fn update(

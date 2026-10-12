@@ -94,13 +94,15 @@ impl MenuButtons {
                 lift: 0.0,
             });
         }
-        Self {
+        let mut buttons = Self {
             rows: built,
             selected: 0,
             clock: 0.0,
             pressed: None,
             last_mouse: Vec2::NEG_INFINITY,
-        }
+        };
+        buttons.animate(world, 0.0);
+        buttons
     }
 
     pub(crate) fn entities(&self) -> Vec<Entity> {
@@ -385,5 +387,24 @@ mod tests {
     fn all_the_entities_can_be_hidden_together() {
         let (_world, buttons) = menu();
         assert_eq!(buttons.entities().len(), ROWS.len() * 4);
+    }
+
+    #[test]
+    fn freshly_built_buttons_are_already_hidden_off_to_the_side() {
+        let (world, buttons) = menu();
+
+        for row in &buttons.rows {
+            let alpha = world
+                .get::<&Color>(row.button)
+                .map(|c| c.0.w)
+                .unwrap_or(-1.0);
+            let at = world
+                .get::<&Position>(row.button)
+                .map(|p| p.0.x)
+                .unwrap_or(0.0);
+            assert_eq!(alpha, 0.0);
+            assert!(at < row.rest.x - 100.0, "{at}");
+            assert_eq!(text_alpha(&world, row.text), 0.0);
+        }
     }
 }
