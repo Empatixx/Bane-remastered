@@ -8,7 +8,7 @@ use glam::{Vec2, Vec4};
 use super::{Draw, Gpu, Quad, TextureId};
 
 const ATLAS_SIZE: u32 = 1024;
-const OVERSAMPLE: f32 = 1.0;
+const OVERSAMPLE: f32 = 2.0;
 const CHARSET: &str = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ";
 
 #[derive(Debug, Clone, Copy)]
