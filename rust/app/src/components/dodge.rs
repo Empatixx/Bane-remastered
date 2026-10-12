@@ -10,11 +10,8 @@ pub(crate) struct Dodge {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct DodgeVisual;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum DodgeBar {
-    Back,
-    Fill,
-}
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct DodgeBar;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Afterimage {
