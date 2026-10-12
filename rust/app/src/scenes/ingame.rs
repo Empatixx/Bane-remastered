@@ -371,6 +371,7 @@ impl Scene for InGameScene {
             |bound| rand::random_range(0..bound),
         );
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
+        systems::tick_frozen(&mut self.world, dt);
         systems::clean_up_after_boss(&mut self.world);
         systems::reap_dead(&mut self.world, &mut self.physics);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {

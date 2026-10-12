@@ -12,6 +12,10 @@ pub(crate) const POOL_SECONDS: f32 = 8.0;
 pub(crate) const POOL_FADE_SECONDS: f32 = 1.0;
 pub(crate) const POISON_TICK_SECONDS: f32 = 1.0;
 pub(crate) const POISON_DAMAGE: i32 = 1;
+pub(crate) const FROST_REACH: Vec2 = Vec2::new(224.0, 176.0);
+pub(crate) const FROST_ENEMY_SECONDS: f32 = 4.0;
+pub(crate) const FROST_BOSS_SECONDS: f32 = 2.0;
+pub(crate) const FROST_PLAYER_SECONDS: f32 = 1.5;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Collider {

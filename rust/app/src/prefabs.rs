@@ -1104,6 +1104,30 @@ pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) 
     ))
 }
 
+pub(crate) fn frost_burst(world: &mut World, center: Vec2, textures: &Textures) {
+    let clip = Clip {
+        row: 0,
+        frames: 9,
+        frame_time: 0.07,
+        looping: false,
+        flipped: false,
+    };
+    world.spawn((
+        Expiring,
+        Position(center),
+        Size(Vec2::new(224.0, 224.0)),
+        Color(Vec4::new(0.55, 0.85, 1.0, 0.85)),
+        Sprite::cell(textures.get("ingame/barrel_explosion.tga"), 0, 0, 9, 1),
+        Animation::new(9, 1, clip),
+        Layer(3),
+        Lit,
+        Light::rgb(Vec2::ZERO, 90.0, 170.0, 255.0, 200.0, EXPLOSION_LIGHT),
+        LightFade {
+            base: EXPLOSION_LIGHT,
+        },
+    ));
+}
+
 pub(crate) fn explosion(world: &mut World, center: Vec2, textures: &Textures) {
     let clip = Clip {
         row: 0,

@@ -51,6 +51,7 @@ pub(crate) fn tick_smashes(world: &mut World, physics: &mut Physics, textures: &
         .query_mut::<(&Position, &mut Smash, Option<&RoomId>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
+        .without::<&crate::components::Frozen>()
     {
         smash.remaining -= dt;
         if smash.remaining <= 0.0 {
@@ -133,6 +134,7 @@ pub(crate) fn tick_eye_shooters(
         .query_mut::<(&Position, &mut EyeShooter, &mut Animation, Option<&RoomId>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
+        .without::<&crate::components::Frozen>()
     {
         if shooter.attacking {
             if animation.finished() {

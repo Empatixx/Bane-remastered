@@ -32,6 +32,7 @@ pub(crate) fn start_dodge(world: &mut World, input: &Input, aim: Vec2) {
         .with::<&Player>()
         .without::<&Dodge>()
         .without::<&DodgeCooldown>()
+        .without::<&crate::components::Frozen>()
         .iter()
         .filter(|(_, _, health)| health.current > 0)
         .map(|(entity, position, _)| (entity, position.0))

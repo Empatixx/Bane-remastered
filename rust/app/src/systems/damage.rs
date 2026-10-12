@@ -115,6 +115,7 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
             Option<&Animation>,
         )>()
         .without::<&Expiring>()
+        .without::<&crate::components::Frozen>()
         .without::<&Spawning>()
         .iter()
         .find(|(source_position, source_size, _, trap, animation)| {

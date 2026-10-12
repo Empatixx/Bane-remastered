@@ -25,7 +25,7 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
         .iter()
         .map(|(position, size)| (position.0, size.0))
         .collect();
-    for (velocity, health, position, size, berserk, perks, dodge) in world
+    for (velocity, health, position, size, berserk, perks, dodge, frozen) in world
         .query_mut::<(
             &mut Velocity,
             &Health,
@@ -34,6 +34,7 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
             Option<&Berserk>,
             Option<&PlayerPerks>,
             Option<&Dodge>,
+            Option<&crate::components::Frozen>,
         )>()
         .with::<&Player>()
     {
@@ -53,6 +54,11 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
         velocity.0 = if let (Some(dodge), true) = (dodge, health.current > 0) {
             dodge.direction * super::DODGE_SPEED
         } else if health.current > 0 {
+            let direction = if frozen.is_some() {
+                glam::Vec2::ZERO
+            } else {
+                direction
+            };
             accelerate(velocity.0, direction, speed, dt)
         } else {
             glam::Vec2::ZERO

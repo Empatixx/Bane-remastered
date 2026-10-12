@@ -73,6 +73,11 @@ impl Quad {
         self
     }
 
+    pub(crate) fn frosted(mut self, strength: f32) -> Self {
+        self.fx[0] = strength;
+        self
+    }
+
     pub(crate) fn rotated(mut self, angle: f32) -> Self {
         self.angle = angle;
         self
@@ -85,5 +90,19 @@ impl Quad {
 
     pub(crate) fn set_lit(&mut self, lit: bool) {
         self.lit = if lit { 1.0 } else { 0.0 };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use glam::{Vec2, Vec4};
+
+    use super::*;
+
+    #[test]
+    fn frost_goes_into_the_first_effect_slot_and_leaves_the_map_mode_alone() {
+        let quad = Quad::new(Vec2::ZERO, Vec2::ONE, Vec4::ONE).frosted(0.7);
+        assert_eq!(quad.fx[0], 0.7);
+        assert_eq!(quad.fx[3], 0.0);
     }
 }

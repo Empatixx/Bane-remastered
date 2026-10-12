@@ -38,6 +38,7 @@ pub(crate) fn tick_hatchers(
         .query_mut::<(&Position, &mut Hatcher, Option<&RoomId>, Option<&Rooted>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
+        .without::<&crate::components::Frozen>()
     {
         if rooted.is_some() {
             continue;
@@ -63,6 +64,7 @@ pub(crate) fn tick_web_spitters(world: &mut World, textures: &Textures, dt: f32)
         .query_mut::<(Entity, &Position, &Size, &mut WebSpitter, &mut Animation)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
+        .without::<&crate::components::Frozen>()
     {
         if spitter.casting {
             if animation.finished() {
@@ -116,6 +118,7 @@ pub(crate) fn tick_armageddon(
         .query_mut::<(&Position, &mut Armageddon, Option<&RoomId>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
+        .without::<&crate::components::Frozen>()
     {
         armageddon.remaining -= dt;
         if armageddon.remaining <= 0.0 {

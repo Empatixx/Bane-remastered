@@ -1,13 +1,15 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    blended, Color, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay,
+    blended, Color, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay,
     PlayerShadow, Position, Previous, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
 use crate::viewport::TARGET;
+
+const FROST_RIM: Vec4 = Vec4::new(0.7, 0.95, 1.0, 0.9);
 
 use super::hud::bar_draws;
 use super::minimap::minimap_draws;
@@ -56,23 +58,36 @@ pub(crate) fn collect_draws(
     blend: f32,
 ) -> Layers {
     let mut sorted = Sorted::default();
-    for (position, previous, size, color, sprite, layer, screen, overlay, lit, outline, hover) in
-        world
-            .query::<(
-                &Position,
-                Option<&Previous>,
-                &Size,
-                &Color,
-                Option<&Sprite>,
-                Option<&Layer>,
-                Option<&ScreenSpace>,
-                Option<&Overlay>,
-                Option<&Lit>,
-                Option<&Outline>,
-                Option<&Hover>,
-            )>()
-            .without::<&Hidden>()
-            .iter()
+    for (
+        position,
+        previous,
+        size,
+        color,
+        sprite,
+        layer,
+        screen,
+        overlay,
+        lit,
+        outline,
+        hover,
+        frozen,
+    ) in world
+        .query::<(
+            &Position,
+            Option<&Previous>,
+            &Size,
+            &Color,
+            Option<&Sprite>,
+            Option<&Layer>,
+            Option<&ScreenSpace>,
+            Option<&Overlay>,
+            Option<&Lit>,
+            Option<&Outline>,
+            Option<&Hover>,
+            Option<&Frozen>,
+        )>()
+        .without::<&Hidden>()
+        .iter()
     {
         let bob = Vec2::new(0.0, hover.map_or(0.0, Hover::offset));
         let center = blended(position.0, previous, blend) - offset(screen, camera) + bob;
@@ -81,7 +96,16 @@ pub(crate) fn collect_draws(
         }
         let draw = match sprite {
             Some(sprite) => {
-                let quad = Quad::with_uv(center, size.0, color.0, sprite.uv).lit(lit.is_some());
+                let mut quad = Quad::with_uv(center, size.0, color.0, sprite.uv).lit(lit.is_some());
+                let frost = frozen.map_or(0.0, Frozen::strength);
+                if frost > 0.0 {
+                    quad = quad.frosted(frost).outlined(Vec4::new(
+                        FROST_RIM.x,
+                        FROST_RIM.y,
+                        FROST_RIM.z,
+                        FROST_RIM.w * frost,
+                    ));
+                }
                 Draw {
                     texture: sprite.texture,
                     quad: outline.map_or(quad, |outline| quad.outlined(outline.0)),

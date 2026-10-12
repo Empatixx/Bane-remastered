@@ -71,6 +71,7 @@ pub(crate) fn shoot(
         .query_mut::<(&Position, &mut Loadout, Option<&PlayerPerks>)>()
         .with::<&Player>()
         .without::<&crate::components::Dodge>()
+        .without::<&crate::components::Frozen>()
     {
         let perks = perks.map_or_else(Perks::default, |perks| perks.0);
         let Some(weapon) = loadout.current_mut() else {

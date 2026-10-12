@@ -2,8 +2,8 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Body, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Health, HitFlash,
-    Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
+    Animation, Body, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health,
+    HitFlash, Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
@@ -38,7 +38,7 @@ pub(crate) fn update_flow(
 
 pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
     let target = player_placement(world).map(|(position, _)| position);
-    for (position, chase, velocity, rooted, shooter, detour) in world
+    for (position, chase, velocity, rooted, shooter, detour, frozen) in world
         .query_mut::<(
             &Position,
             &Chase,
@@ -46,11 +46,12 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
             Option<&Rooted>,
             Option<(&Smash, Option<&Boss>)>,
             Option<&Detour>,
+            Option<&Frozen>,
         )>()
         .without::<&Expiring>()
         .without::<&Spawning>()
     {
-        if rooted.is_some() {
+        if rooted.is_some() || frozen.is_some() {
             velocity.0 = Vec2::ZERO;
             continue;
         }
@@ -166,6 +167,7 @@ pub(crate) fn reap_dead(world: &mut World, physics: &mut Physics) {
             let _ = world.remove_one::<Body>(entity);
         }
         let _ = world.insert_one(entity, Expiring);
+        let _ = world.remove_one::<Frozen>(entity);
         if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
             velocity.0 = Vec2::ZERO;
         }

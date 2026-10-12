@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::components::{Boss, Chase, Expiring, Position, Rooted, Spawning, Velocity};
+use crate::components::{Boss, Chase, Expiring, Frozen, Position, Rooted, Spawning, Velocity};
 
 const PERSONAL_SPACE: f32 = 56.0;
 const PUSH: f32 = 1.2;
@@ -19,13 +19,23 @@ fn bucket(position: Vec2) -> (i32, i32) {
 
 pub(crate) fn separate_chasers(world: &mut World) {
     let crowd: Vec<(Entity, Vec2, bool)> = world
-        .query::<(Entity, &Position, Option<&Rooted>, Option<&Boss>)>()
+        .query::<(
+            Entity,
+            &Position,
+            Option<&Rooted>,
+            Option<&Boss>,
+            Option<&Frozen>,
+        )>()
         .with::<&Chase>()
         .without::<&Expiring>()
         .without::<&Spawning>()
         .iter()
-        .map(|(entity, position, rooted, boss)| {
-            (entity, position.0, rooted.is_some() || boss.is_some())
+        .map(|(entity, position, rooted, boss, frozen)| {
+            (
+                entity,
+                position.0,
+                rooted.is_some() || boss.is_some() || frozen.is_some(),
+            )
         })
         .collect();
     let mut grid: HashMap<(i32, i32), Vec<usize>> = HashMap::new();

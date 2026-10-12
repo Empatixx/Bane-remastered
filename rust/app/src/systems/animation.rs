@@ -3,7 +3,10 @@ use hecs::{Entity, World};
 use crate::components::{Animation, Expiring, Sprite, ThenPlay};
 
 pub(crate) fn animate(world: &mut World, dt: f32) {
-    for (animation, sprite) in world.query_mut::<(&mut Animation, &mut Sprite)>() {
+    for (animation, sprite) in world
+        .query_mut::<(&mut Animation, &mut Sprite)>()
+        .without::<&crate::components::Frozen>()
+    {
         animation.advance(dt);
         let uv = Sprite::cell_uv(
             animation.frame(),

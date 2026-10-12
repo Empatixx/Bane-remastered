@@ -4,13 +4,15 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, BreakKind, Breakable, Broken, Clip, Color, Enemy, Expiring, Flame, Health, HitFlash,
-    Invulnerable, Light, Outline, Player, PoisonPool, Poisoned, Position, Size, Solid, Spawning,
+    Animation, Boss, BreakKind, Breakable, Broken, Clip, Color, Dodge, Enemy, Expiring, Flame,
+    Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool, Poisoned, Position,
+    Size, Solid, Spawning,
 };
 use crate::geometry;
 use crate::items::ItemKind;
 use crate::objects::{
-    EXPLOSION_DAMAGE, EXPLOSION_REACH, POISON_DAMAGE, POISON_TICK_SECONDS, POOL_FADE_SECONDS,
+    EXPLOSION_DAMAGE, EXPLOSION_REACH, FROST_BOSS_SECONDS, FROST_ENEMY_SECONDS,
+    FROST_PLAYER_SECONDS, FROST_REACH, POISON_DAMAGE, POISON_TICK_SECONDS, POOL_FADE_SECONDS,
     POOL_HITBOX,
 };
 use crate::physics::Physics;
@@ -55,6 +57,7 @@ pub(crate) fn break_objects(
         prefabs::item(world, item, center, true, Vec2::ZERO, textures);
         match kind {
             BreakKind::Explosive => explode(world, entity, center, textures, sounds),
+            BreakKind::Frost => freeze_around(world, entity, center, textures, sounds),
             BreakKind::Poison => {
                 prefabs::poison_pool(world, center + Vec2::new(0.0, POOL_DROP), textures);
             }
@@ -104,6 +107,69 @@ fn explode(
                 remaining: FLASH_SECONDS,
             },
         );
+    }
+}
+
+fn freeze_around(
+    world: &mut World,
+    source: Entity,
+    center: Vec2,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+) {
+    sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
+    prefabs::frost_burst(world, center - Vec2::new(0.0, 20.0), textures);
+    let reach = BreakKind::Frost.collider().size + FROST_REACH * 2.0;
+    let victims: Vec<(Entity, f32)> = world
+        .query::<(Entity, &Position, &Size, Option<&Player>, Option<&Boss>)>()
+        .with::<&Health>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+        .without::<&Dodge>()
+        .iter()
+        .filter(|(entity, position, size, _, _)| {
+            *entity != source && geometry::overlaps(center, reach, position.0, size.0)
+        })
+        .filter_map(|(entity, _, _, player, boss)| {
+            if player.is_some() {
+                Some((entity, FROST_PLAYER_SECONDS))
+            } else if boss.is_some() {
+                Some((entity, FROST_BOSS_SECONDS))
+            } else {
+                None
+            }
+        })
+        .collect();
+    let enemies: Vec<Entity> = world
+        .query::<(Entity, &Position, &Size)>()
+        .with::<(&Enemy, &Health)>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+        .without::<&Boss>()
+        .iter()
+        .filter(|(entity, position, size)| {
+            *entity != source && geometry::overlaps(center, reach, position.0, size.0)
+        })
+        .map(|(entity, _, _)| entity)
+        .collect();
+    for (entity, seconds) in victims {
+        let _ = world.insert_one(entity, Frozen::new(seconds));
+    }
+    for entity in enemies {
+        let _ = world.insert_one(entity, Frozen::new(FROST_ENEMY_SECONDS));
+    }
+}
+
+pub(crate) fn tick_frozen(world: &mut World, dt: f32) {
+    let mut thawed = Vec::new();
+    for (entity, frozen) in world.query_mut::<(Entity, &mut Frozen)>() {
+        frozen.remaining -= dt;
+        if frozen.remaining <= 0.0 {
+            thawed.push(entity);
+        }
+    }
+    for entity in thawed {
+        let _ = world.remove_one::<Frozen>(entity);
     }
 }
 
@@ -460,5 +526,220 @@ mod tests {
         }
         assert_eq!(world.query::<&PoisonPool>().iter().count(), 0);
         assert!(world.get::<&Poisoned>(player).is_err());
+    }
+
+    fn frozen_for(world: &World, entity: Entity) -> Option<f32> {
+        world.get::<&Frozen>(entity).map(|f| f.remaining).ok()
+    }
+
+    #[test]
+    fn a_frost_barrel_freezes_everyone_near_it_and_nobody_far_away() {
+        let (mut world, mut physics, textures) = arena();
+        let barrel = prefabs::breakable(
+            &mut world,
+            &mut physics,
+            BreakKind::Frost,
+            Vec2::new(500.0, 500.0),
+            &textures,
+        );
+        let near = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(700.0, 600.0),
+        );
+        let far = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(1800.0, 600.0),
+        );
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        if let Ok(mut position) = world.get::<&mut Position>(player) {
+            position.0 = Vec2::new(620.0, 640.0);
+        }
+
+        kill(&mut world, barrel);
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+
+        assert_eq!(
+            frozen_for(&world, near),
+            Some(crate::objects::FROST_ENEMY_SECONDS)
+        );
+        assert_eq!(frozen_for(&world, far), None);
+        assert_eq!(
+            frozen_for(&world, player),
+            Some(crate::objects::FROST_PLAYER_SECONDS)
+        );
+    }
+
+    #[test]
+    fn a_boss_stays_frozen_for_a_shorter_time_and_a_dodging_player_is_spared() {
+        let (mut world, mut physics, textures) = arena();
+        let barrel = prefabs::breakable(
+            &mut world,
+            &mut physics,
+            BreakKind::Frost,
+            Vec2::new(500.0, 500.0),
+            &textures,
+        );
+        let boss = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Spider,
+            Vec2::new(700.0, 600.0),
+        );
+        let _ = world.insert_one(boss, Boss);
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        if let Ok(mut position) = world.get::<&mut Position>(player) {
+            position.0 = Vec2::new(620.0, 640.0);
+        }
+        let _ = world.insert_one(
+            player,
+            Dodge {
+                remaining: 0.3,
+                direction: Vec2::X,
+                trail: 0.0,
+            },
+        );
+
+        kill(&mut world, barrel);
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+
+        assert_eq!(
+            frozen_for(&world, boss),
+            Some(crate::objects::FROST_BOSS_SECONDS)
+        );
+        assert_eq!(frozen_for(&world, player), None);
+    }
+
+    #[test]
+    fn ice_melts_after_its_time_and_fades_in_and_out() {
+        let (mut world, _physics, _textures) = arena();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, Frozen::new(1.0));
+        let strength = |world: &World| {
+            world
+                .get::<&Frozen>(player)
+                .map(|f| f.strength())
+                .unwrap_or(-1.0)
+        };
+        assert_eq!(strength(&world), 0.0);
+
+        tick_frozen(&mut world, 0.3);
+        assert_eq!(strength(&world), 1.0);
+
+        tick_frozen(&mut world, 0.55);
+        assert!(strength(&world) < 1.0 && strength(&world) > 0.0);
+
+        tick_frozen(&mut world, 0.2);
+        assert!(world.get::<&Frozen>(player).is_err());
+    }
+
+    #[test]
+    fn a_frozen_enemy_stands_still_does_not_shoot_and_does_not_hurt() {
+        let (mut world, mut physics, textures) = arena();
+        let slime = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Slime,
+            Vec2::new(40.0, 0.0),
+        );
+        if let Ok(mut smash) = world.get::<&mut crate::components::Smash>(slime) {
+            smash.remaining = 0.0;
+        }
+        let _ = world.insert_one(slime, Frozen::new(2.0));
+
+        crate::systems::chase_player(&mut world, &crate::flow::FlowField::default());
+        crate::systems::tick_smashes(&mut world, &mut physics, &textures, 0.016);
+
+        let velocity = world
+            .get::<&crate::components::Velocity>(slime)
+            .map(|v| v.0)
+            .unwrap_or(Vec2::X);
+        assert_eq!(velocity, Vec2::ZERO);
+        assert_eq!(
+            world
+                .query::<&crate::components::EnemyBullet>()
+                .iter()
+                .count(),
+            0
+        );
+        let mut sounds = Vec::new();
+        assert!(!crate::systems::contact_damage(&mut world, &mut sounds));
+
+        let _ = world.remove_one::<Frozen>(slime);
+        crate::systems::tick_smashes(&mut world, &mut physics, &textures, 0.016);
+        assert!(
+            world
+                .query::<&crate::components::EnemyBullet>()
+                .iter()
+                .count()
+                > 0
+        );
+    }
+
+    #[test]
+    fn a_frozen_enemy_that_dies_thaws_so_its_death_animation_can_finish() {
+        let (mut world, mut physics, textures) = arena();
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(300.0, 0.0),
+        );
+        let _ = world.insert_one(rat, Frozen::new(3.0));
+        kill(&mut world, rat);
+
+        crate::systems::reap_dead(&mut world, &mut physics);
+
+        assert!(world.get::<&Expiring>(rat).is_ok());
+        assert!(world.get::<&Frozen>(rat).is_err());
+        let _ = textures;
+    }
+
+    #[test]
+    fn a_frozen_player_cannot_walk_dodge_or_shoot() {
+        let (mut world, _physics, _textures) = arena();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, Frozen::new(2.0));
+        let mut input = crate::input::Input::default();
+        let right = input.bindings().key(crate::controls::Action::MoveRight);
+        input.press(right);
+
+        for _ in 0..10 {
+            crate::systems::steer_player(&mut world, &input, 1.0 / 60.0);
+        }
+        let speed = world
+            .get::<&crate::components::Velocity>(player)
+            .map(|v| v.0.length())
+            .unwrap_or(1.0);
+        assert!(speed < 0.01, "{speed}");
+
+        let mut dodge = crate::input::Input::default();
+        let key = dodge.bindings().key(crate::controls::Action::Dodge);
+        dodge.press(key);
+        crate::systems::start_dodge(&mut world, &dodge, Vec2::X * 500.0);
+        assert!(world.get::<&Dodge>(player).is_err());
     }
 }

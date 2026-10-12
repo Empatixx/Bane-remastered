@@ -185,6 +185,20 @@ fn outlined(color: vec4<f32>, in: VertexOut, uv_per_pixel: vec2<f32>) -> vec4<f3
     return color;
 }
 
+fn frosted(color: vec4<f32>, in: VertexOut) -> vec4<f32> {
+    let strength = in.fx.x;
+    if (in.fx.w > 0.5 || strength <= 0.0 || color.a <= 0.01) {
+        return color;
+    }
+    let luma = dot(color.rgb, vec3<f32>(0.299, 0.587, 0.114));
+    let ice = srgb_to_linear(vec3<f32>(0.42, 0.74, 1.0)) * (0.55 + luma * 1.4);
+    let facet = abs(fract((in.world.x * 0.9 + in.world.y * 0.5) / 7.0) - 0.5);
+    let shine = smoothstep(0.4, 0.5, facet) * 0.3;
+    let glint = select(0.0, 0.7, noise(floor(in.world / 3.0)) > 0.985);
+    let tinted = mix(color.rgb, ice, 0.7 * strength) + vec3<f32>(shine + glint) * strength;
+    return vec4<f32>(tinted, color.a);
+}
+
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let uv_per_pixel = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
@@ -193,7 +207,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         return map_room(in, textureSample(image, image_sampler, in.uv));
     }
     if (in.lit < 0.5) {
-        return outlined(albedo, in, uv_per_pixel);
+        return frosted(outlined(albedo, in, uv_per_pixel), in);
     }
     var light = vec3<f32>(AMBIENT_LIGHT);
     for (var i = 0u; i < globals.light_count; i = i + 1u) {
@@ -204,5 +218,8 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     }
     light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
     let shaded = linear_to_srgb(albedo.rgb) * light;
-    return outlined(vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), albedo.a), in, uv_per_pixel);
+    return frosted(
+        outlined(vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), albedo.a), in, uv_per_pixel),
+        in,
+    );
 }
