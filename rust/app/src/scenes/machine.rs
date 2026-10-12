@@ -175,14 +175,20 @@ mod tests {
         assets: &Assets,
         position: Vec2,
     ) -> ControlFlow<()> {
+        assert!(scenes
+            .update(input, 2.0, assets, &mut Settings::in_memory())
+            .is_continue());
         input.set_mouse(position);
         assert!(scenes
             .update(input, 0.0, assets, &mut Settings::in_memory())
             .is_continue());
         input.handle_click(MouseButton::Left, ElementState::Pressed);
-        let flow = scenes.update(input, 0.0, assets, &mut Settings::in_memory());
+        let pressed = scenes.update(input, 0.0, assets, &mut Settings::in_memory());
         input.end_frame();
-        flow
+        if pressed.is_break() {
+            return pressed;
+        }
+        scenes.update(input, 0.5, assets, &mut Settings::in_memory())
     }
 
     fn menu() -> (Scenes, Input, Assets) {

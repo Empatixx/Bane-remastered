@@ -3,6 +3,7 @@ mod loading;
 mod lobby;
 mod machine;
 mod menu;
+mod menu_buttons;
 mod menu_logo;
 mod menu_stage;
 mod pause;

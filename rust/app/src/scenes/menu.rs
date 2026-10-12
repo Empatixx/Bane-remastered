@@ -5,11 +5,10 @@ use crate::assets::{Assets, BUTTON};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::components::{Color, Layer, Position, ScreenSpace, Size, UiAction};
 use crate::input::Input;
-use crate::prefabs;
 use crate::settings::Settings;
-use crate::systems;
 use crate::viewport::TARGET;
 
+use super::menu_buttons::MenuButtons;
 use super::menu_logo::LogoAnim;
 use super::menu_stage::Stage;
 use super::{Scene, SceneId, SettingsPanel, Transition};
@@ -30,6 +29,7 @@ pub(crate) struct MenuScene {
     panel: SettingsPanel,
     stage: Option<Stage>,
     logo: Option<LogoAnim>,
+    buttons: Option<MenuButtons>,
     ui: Vec<Entity>,
     sounds: Vec<AudioCommand>,
 }
@@ -76,18 +76,10 @@ impl Scene for MenuScene {
         let logo_entity = logo.entity();
         self.logo = Some(logo);
         self.ui.extend([shade, logo_entity]);
-        for (y, label, action) in BUTTON_ROWS {
-            let (button, text) = prefabs::button(
-                &mut self.world,
-                Vec2::new(x, y),
-                label,
-                action,
-                assets.textures.get(BUTTON),
-            );
-            let _ = self.world.insert_one(button, ScreenSpace);
-            let _ = self.world.insert_one(text, ScreenSpace);
-            self.ui.extend([button, text]);
-        }
+        let buttons =
+            MenuButtons::build(&mut self.world, &assets.textures, BUTTON, x, &BUTTON_ROWS);
+        self.ui.extend(buttons.entities());
+        self.buttons = Some(buttons);
     }
 
     fn update(
@@ -109,10 +101,10 @@ impl Scene for MenuScene {
             }
             return Transition::None;
         }
-        let action = systems::update_buttons(&mut self.world, input);
-        if action.is_some() {
-            self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
-        }
+        let action = self
+            .buttons
+            .as_mut()
+            .and_then(|buttons| buttons.update(&mut self.world, input, dt, &mut self.sounds));
         match action {
             Some(UiAction::Play) => Transition::Switch(SceneId::Lobby),
             Some(UiAction::Settings) => {
