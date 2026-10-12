@@ -51,3 +51,10 @@ pub(crate) struct SpeechBubble {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct SpeechText;
+
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct Chatty {
+    pub(crate) cooldown: f32,
+    pub(crate) line: usize,
+    pub(crate) greeted: bool,
+}

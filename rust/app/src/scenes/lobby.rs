@@ -148,7 +148,9 @@ impl Scene for LobbyScene {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::pot(&mut self.world, &mut self.physics, top_left, textures);
         }
-        prefabs::scientist(&mut self.world, Vec2::new(25.0, 6.5) * TILE_SIZE, textures);
+        let scientist_at = Vec2::new(25.0, 6.5) * TILE_SIZE;
+        prefabs::scientist(&mut self.world, scientist_at, textures);
+        prefabs::shop_speech(&mut self.world, scientist_at, textures);
 
         let player_top_left = bounds / 2.0;
         prefabs::player(
@@ -196,6 +198,7 @@ impl Scene for LobbyScene {
                         .update(&mut self.world, input, assets, profile, &mut self.sounds);
                 if outcome.is_some() {
                     self.refresh_wallet();
+                    systems::say(&mut self.world, systems::PURCHASE);
                 }
             }
             return Transition::None;
@@ -233,6 +236,8 @@ impl Scene for LobbyScene {
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world, &assets.textures);
+        systems::chat(&mut self.world, dt);
+        systems::tick_speech(&mut self.world, dt);
         systems::remove_expired(&mut self.world);
         if let Some(target) = systems::camera_target(&self.world, input.mouse(), self.blend.0) {
             self.camera.follow(target, dt);

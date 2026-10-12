@@ -5,8 +5,8 @@ use crate::artefacts::ArtefactKind;
 use crate::assets::{Textures, PET, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armageddon, Armor, ArtefactDrop, ArtefactIcon, ArtefactSlot,
-    Backdrop, BarKind, Boss, BossHud, BreakKind, Breakable, Bullet, Button, Candle, Chase, Chest,
-    ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal,
+    Backdrop, BarKind, Boss, BossHud, BreakKind, Breakable, Bullet, Button, Candle, Chase, Chatty,
+    Chest, ChestKind, Clip, Cobweb, CoinText, Color, ContactDamage, Dash, DeathBurst, DeathHeal,
     DeathPart, Despawn, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Flame, Floating, Fuse,
     GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
     Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
@@ -406,6 +406,7 @@ pub(crate) fn scientist(world: &mut World, top_left: Vec2, textures: &Textures) 
     let _ = world.insert(
         entity,
         (
+            Chatty::default(),
             Interactable {
                 action: Interaction::Upgrade,
             },
