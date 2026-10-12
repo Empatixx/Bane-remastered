@@ -4,8 +4,7 @@ use hecs::{Entity, World};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
 use crate::components::{
-    Animation, Body, Bullet, Burst, Expiring, Health, HitFlash, Loadout, Player, PlayerPerks,
-    Position, Velocity,
+    Animation, Body, Bullet, Burst, Expiring, Loadout, Player, PlayerPerks, Position, Velocity,
 };
 use crate::controls::Action;
 use crate::guns::{GunSpec, BURST_DELAY, MAX_PELLETS};
@@ -13,7 +12,7 @@ use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;
 use crate::render::TextureId;
-use crate::systems::enemies::FLASH_SECONDS;
+use crate::systems::damage::{Damage, DamageSource};
 use crate::upgrades::Perks;
 
 const BULLET_SPEED: f32 = 700.0;
@@ -182,25 +181,16 @@ pub(crate) fn bullet_hits(
             Owner::Entity(entity) => Some(*entity),
             Owner::Wall => None,
         });
-        let hit_enemy = victim
-            .and_then(|entity| world.get::<&mut Health>(entity).ok())
-            .map(|mut health| health.current -= damage)
-            .is_some();
-        if let (true, Some(entity)) = (hit_enemy, victim) {
-            super::skills::count_hits(world, entity);
-            if world.get::<&crate::components::Enemy>(entity).is_ok() {
-                super::stats::record(world, super::stats::Stat::Hit, 1);
-            }
-            if world.get::<&crate::components::Breakable>(entity).is_err() {
-                super::effects::show_change(world, entity, -damage, rand::random_range(0.0..1.0));
-            }
-            let _ = world.insert_one(
-                entity,
-                HitFlash {
-                    remaining: FLASH_SECONDS,
+        let hit_enemy = victim.is_some_and(|target| {
+            super::damage::deal(
+                world,
+                Damage {
+                    target,
+                    amount: damage,
+                    source: DamageSource::Bullet,
                 },
-            );
-        }
+            )
+        });
         sounds.push(AudioCommand::Effect(if hit_enemy {
             SoundEffect::EnemyHit
         } else {
@@ -224,7 +214,7 @@ mod tests {
     use winit::keyboard::KeyCode;
 
     use crate::assets::Textures;
-    use crate::components::{Player, Weapon};
+    use crate::components::{Health, Player, Weapon};
     use crate::systems::simulate;
 
     use super::*;

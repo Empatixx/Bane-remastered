@@ -67,7 +67,7 @@ pub(crate) fn tick_smashes(world: &mut World, physics: &mut Physics, textures: &
     }
 }
 
-pub(crate) fn death_bursts(world: &mut World, physics: &mut Physics, textures: &Textures) {
+pub(super) fn death_bursts(world: &mut World, physics: &mut Physics, textures: &Textures) {
     let dying: Vec<(Entity, Vec2, ProjectileKind, u32, Option<RoomId>)> = world
         .query::<(
             Entity,
@@ -92,7 +92,7 @@ pub(crate) fn death_bursts(world: &mut World, physics: &mut Physics, textures: &
     }
 }
 
-pub(crate) fn death_heals(world: &mut World) {
+pub(super) fn death_heals(world: &mut World) {
     let dying: Vec<(Entity, Vec2, DeathHeal)> = world
         .query::<(Entity, &Position, &DeathHeal, &Health)>()
         .without::<&Expiring>()

@@ -210,10 +210,6 @@ fn shined(color: vec4<f32>, in: VertexOut) -> vec4<f32> {
     return vec4<f32>(color.rgb + vec3<f32>(strength * 0.55), color.a);
 }
 
-fn sky_hash(p: vec2<f32>) -> f32 {
-    return fract(sin(dot(p, vec2<f32>(127.1, 311.7))) * 43758.5453);
-}
-
 fn underworld(in: VertexOut) -> vec4<f32> {
     let time = in.fx.x;
     let uv = in.local;
@@ -225,20 +221,6 @@ fn underworld(in: VertexOut) -> vec4<f32> {
     var rgb = vec3<f32>(0.0, 0.0, 0.0);
     rgb = rgb + fog * vec3<f32>(0.045, 0.018, 0.03) * (0.3 + heat);
     rgb = rgb + heat * vec3<f32>(0.10, 0.03, 0.01) * (0.4 + 0.6 * slow);
-    for (var layer = 0; layer < 3; layer = layer + 1) {
-        let fl = f32(layer);
-        let scale = 16.0 + fl * 12.0;
-        let rise = time * (0.05 + fl * 0.035);
-        let q = vec2<f32>(p.x * scale, (uv.y + rise) * scale * 0.9);
-        let cell = floor(q);
-        let h = sky_hash(cell + vec2<f32>(fl * 17.0, fl * 5.0));
-        let inside = fract(q) - vec2<f32>(0.5);
-        let sway = sin(time * 1.7 + h * 40.0) * 0.18;
-        let d = length(inside - vec2<f32>(sway, 0.0));
-        let twinkle = 0.6 + 0.4 * sin(time * 4.0 + h * 30.0);
-        let spark = select(0.0, 1.0, h > 0.97) * smoothstep(0.16, 0.0, d) * twinkle;
-        rgb = rgb + spark * vec3<f32>(1.0, 0.5, 0.14) * (0.6 + heat);
-    }
     let edge = length((uv - vec2<f32>(0.5)) * vec2<f32>(1.15, 1.0));
     rgb = rgb * mix(0.35, 1.0, smoothstep(0.95, 0.35, edge));
     return vec4<f32>(srgb_to_linear(rgb), 1.0);

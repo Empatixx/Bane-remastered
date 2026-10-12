@@ -370,11 +370,7 @@ impl Scene for InGameScene {
         );
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
-        // After every enemy damage source: reap_dead hides kills from the death effects.
-        systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
-        systems::death_heals(&mut self.world);
-        systems::clean_up_after_boss(&mut self.world);
-        systems::reap_dead(&mut self.world, &mut self.physics);
+        systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
             self.hit = true;
         }

@@ -1,6 +1,7 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
+use crate::assets::Textures;
 use crate::components::{
     Animation, Body, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health,
     HitFlash, Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
@@ -152,7 +153,16 @@ pub(crate) fn flash_hits(world: &mut World, dt: f32) {
     }
 }
 
-pub(crate) fn reap_dead(world: &mut World, physics: &mut Physics) {
+/// The one place where enemies die: every death effect sees each kill before it is reaped,
+/// whichever system dealt the killing blow.
+pub(crate) fn resolve_deaths(world: &mut World, physics: &mut Physics, textures: &Textures) {
+    super::skills::death_bursts(world, physics, textures);
+    super::skills::death_heals(world);
+    super::bosses::clean_up_after_boss(world);
+    reap_dead(world, physics);
+}
+
+pub(super) fn reap_dead(world: &mut World, physics: &mut Physics) {
     let dead: Vec<(Entity, Enemy, Option<Body>)> = world
         .query::<(Entity, &Health, &Enemy, Option<&Body>)>()
         .without::<&Expiring>()

@@ -17,8 +17,7 @@ use crate::objects::{
 };
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::damage::hurt_player;
-use crate::systems::enemies::FLASH_SECONDS;
+use crate::systems::damage::{deal, hurt_player, Damage, DamageSource};
 
 const DEATH_CLIP: Clip = Clip {
     row: 1,
@@ -98,13 +97,12 @@ fn explode(
         if !hurt {
             continue;
         }
-        if let Ok(mut health) = world.get::<&mut Health>(entity) {
-            health.current = (health.current - EXPLOSION_DAMAGE).max(0);
-        }
-        let _ = world.insert_one(
-            entity,
-            HitFlash {
-                remaining: FLASH_SECONDS,
+        deal(
+            world,
+            Damage {
+                target: entity,
+                amount: EXPLOSION_DAMAGE,
+                source: DamageSource::Explosion,
             },
         );
     }
@@ -219,8 +217,15 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
         if hurt {
             if is_player {
                 hurt_player(world, entity, POISON_DAMAGE, sounds);
-            } else if let Ok(mut health) = world.get::<&mut Health>(entity) {
-                health.current = (health.current - POISON_DAMAGE).max(0);
+            } else {
+                deal(
+                    world,
+                    Damage {
+                        target: entity,
+                        amount: POISON_DAMAGE,
+                        source: DamageSource::Poison,
+                    },
+                );
             }
         }
         let _ = world.insert_one(entity, Poisoned);
@@ -706,7 +711,7 @@ mod tests {
         let _ = world.insert_one(rat, Frozen::new(3.0));
         kill(&mut world, rat);
 
-        crate::systems::reap_dead(&mut world, &mut physics);
+        crate::systems::enemies::reap_dead(&mut world, &mut physics);
 
         assert!(world.get::<&Expiring>(rat).is_ok());
         assert!(world.get::<&Frozen>(rat).is_err());

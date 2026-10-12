@@ -2,14 +2,14 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Clip, Enemy, Expiring, Health, HitFlash, Path, Pet, Pickup, Player, Position, Shop,
-    Size, Spawning, Velocity,
+    Animation, Clip, Enemy, Expiring, Health, Path, Pet, Pickup, Player, Position, Shop, Size,
+    Spawning, Velocity,
 };
 use crate::geometry;
 use crate::navigation::{corridor, Navigation, CELL};
 use crate::physics::Physics;
 use crate::prefabs::PET_SIZE;
-use crate::systems::enemies::FLASH_SECONDS;
+use crate::systems::damage::{Damage, DamageSource};
 
 pub(crate) const PET_COLUMNS: usize = 4;
 pub(crate) const PET_ROWS: usize = 4;
@@ -308,25 +308,24 @@ pub(crate) fn pet_bites(world: &mut World, dt: f32) {
         let Some(victim) = victim else {
             continue;
         };
-        if let Ok(mut health) = world.get::<&mut Health>(victim) {
-            health.current = (health.current - BITE_DAMAGE).max(0);
-        }
+        super::damage::deal(
+            world,
+            Damage {
+                target: victim,
+                amount: BITE_DAMAGE,
+                source: DamageSource::Bite,
+            },
+        );
         if let Ok(mut pet) = world.get::<&mut Pet>(pet) {
             pet.bite_cooldown = BITE_COOLDOWN;
         }
-        let _ = world.insert_one(
-            victim,
-            HitFlash {
-                remaining: FLASH_SECONDS,
-            },
-        );
-        super::effects::show_change(world, victim, -BITE_DAMAGE, rand::random_range(0.0..1.0));
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::assets::Textures;
+    use crate::components::HitFlash;
     use crate::enemies::EnemyKind;
     use crate::items::{ItemKind, PotionSize, Vital};
     use crate::prefabs;

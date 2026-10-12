@@ -3,11 +3,12 @@ use hecs::{Entity, World};
 
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, ContactDamage, Enemy, Expiring, Health, HitFlash, Invulnerable, Player,
-    Position, Shielded, Size, Spawning, Trap, TrapCooldown,
+    Animation, Armor, Breakable, ContactDamage, Enemy, Expiring, Health, HitFlash, Invulnerable,
+    Player, Position, Shielded, Size, Spawning, Trap, TrapCooldown,
 };
 use crate::geometry;
 use crate::systems::enemies::FLASH_SECONDS;
+use crate::systems::stats::{self, Stat};
 
 const INVULNERABLE_SECONDS: f32 = 1.0;
 const HURT_FLASH_SECONDS: f32 = 0.5;
@@ -26,6 +27,65 @@ pub(crate) fn absorb(health: &mut Health, armor: &mut Armor, damage: i32) {
 }
 
 const LOW_HEALTH: f32 = 0.3;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DamageSource {
+    Bullet,
+    Trap,
+    Bite,
+    Explosion,
+    Poison,
+}
+
+impl DamageSource {
+    fn counts_as_hit(self) -> bool {
+        self == Self::Bullet
+    }
+
+    fn flashes(self) -> bool {
+        self != Self::Poison
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Damage {
+    pub(crate) target: Entity,
+    pub(crate) amount: i32,
+    pub(crate) source: DamageSource,
+}
+
+/// The one way to hurt an enemy or a breakable object, the player is hurt through `hurt_player`.
+/// Returns whether the target could take damage at all.
+pub(crate) fn deal(world: &mut World, damage: Damage) -> bool {
+    let Damage {
+        target,
+        amount,
+        source,
+    } = damage;
+    debug_assert!(world.get::<&Player>(target).is_err(), "use hurt_player");
+    match world.get::<&mut Health>(target) {
+        Ok(mut health) => health.current = (health.current - amount).max(0),
+        Err(_) => return false,
+    }
+    if source.counts_as_hit() {
+        super::skills::count_hits(world, target);
+        if world.get::<&Enemy>(target).is_ok() {
+            stats::record(world, Stat::Hit, 1);
+        }
+    }
+    if source.flashes() {
+        let _ = world.insert_one(
+            target,
+            HitFlash {
+                remaining: FLASH_SECONDS,
+            },
+        );
+    }
+    if world.get::<&Breakable>(target).is_err() {
+        super::effects::show_change(world, target, -amount, rand::random_range(0.0..1.0));
+    }
+    true
+}
 
 fn trap_is_armed(trap: Option<&Trap>, animation: Option<&Animation>) -> bool {
     match (trap, animation) {
@@ -76,23 +136,21 @@ pub(crate) fn trap_hits_enemies(world: &mut World, dt: f32) {
                 .map(|(_, _, damage)| (entity, *damage))
         })
         .collect();
-    for (entity, damage) in victims {
-        if let Ok(mut health) = world.get::<&mut Health>(entity) {
-            health.current = (health.current - damage).max(0);
-        }
+    for (entity, amount) in victims {
+        deal(
+            world,
+            Damage {
+                target: entity,
+                amount,
+                source: DamageSource::Trap,
+            },
+        );
         let _ = world.insert_one(
             entity,
             TrapCooldown {
                 remaining: TRAP_COOLDOWN,
             },
         );
-        let _ = world.insert_one(
-            entity,
-            HitFlash {
-                remaining: FLASH_SECONDS,
-            },
-        );
-        super::effects::show_change(world, entity, -damage, rand::random_range(0.0..1.0));
     }
 }
 

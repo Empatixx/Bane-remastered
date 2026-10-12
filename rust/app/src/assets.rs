@@ -188,7 +188,6 @@ pub(crate) struct Assets {
     pub(crate) tileset: Arc<Tileset>,
     pub(crate) fonts: Fonts,
     loaded: bool,
-    progress: f32,
 }
 
 impl Assets {
@@ -198,21 +197,7 @@ impl Assets {
             tileset: Arc::new(Tileset::dungeon()?),
             fonts: Fonts::default(),
             loaded: false,
-            progress: 0.0,
         })
-    }
-
-    pub(crate) fn progress(&self) -> f32 {
-        if self.loaded {
-            1.0
-        } else {
-            self.progress
-        }
-    }
-
-    #[cfg(test)]
-    pub(crate) fn set_progress(&mut self, progress: f32) {
-        self.progress = progress;
     }
 
     pub(crate) fn is_loaded(&self) -> bool {
@@ -236,7 +221,6 @@ enum Step {
 #[derive(Debug)]
 pub(crate) struct Loader {
     pending: VecDeque<Step>,
-    total: usize,
     decoded: Vec<(&'static str, Pixels)>,
 }
 
@@ -251,10 +235,8 @@ impl Loader {
         pending.push_back(Step::Atlas);
         pending.extend(Audio::files().into_iter().map(Step::Sound));
         pending.extend(FontSize::ALL.map(Step::Font));
-        let total = pending.len().max(1);
         Ok(Self {
             pending,
-            total,
             decoded: Vec::new(),
         })
     }
@@ -291,7 +273,6 @@ impl Loader {
             Step::Sound(file) => audio.preload(file),
             Step::Font(size) => assets.fonts.load(gpu, &root().join(FONT_FILE), size)?,
         }
-        assets.progress = 1.0 - self.pending.len() as f32 / self.total as f32;
         if self.pending.is_empty() {
             assets.mark_loaded();
         }

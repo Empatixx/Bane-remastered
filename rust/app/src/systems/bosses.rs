@@ -136,7 +136,7 @@ pub(crate) fn tick_armageddon(
     }
 }
 
-pub(crate) fn clean_up_after_boss(world: &mut World) {
+pub(super) fn clean_up_after_boss(world: &mut World) {
     let fallen = world
         .query::<&Health>()
         .with::<&Boss>()
@@ -177,7 +177,8 @@ pub(crate) fn update_boss_hud(world: &mut World) {
 mod tests {
     use crate::assets::Textures;
     use crate::components::{Chase, EnemyBullet, Velocity};
-    use crate::systems::{chase_player, finish_spawning, reap_dead, tick_spawning};
+    use crate::systems::enemies::reap_dead;
+    use crate::systems::{chase_player, finish_spawning, tick_spawning};
 
     use super::*;
 
