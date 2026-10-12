@@ -8,6 +8,9 @@ pub(crate) struct Dodge {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct DodgeVisual;
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Afterimage {
     pub(crate) remaining: f32,
 }

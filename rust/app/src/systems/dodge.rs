@@ -1,9 +1,10 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
+use crate::assets::{Textures, PLAYER_DODGE};
 use crate::components::{
-    Afterimage, Color, Dodge, DodgeCooldown, Health, Invulnerable, Layer, Player, Position, Size,
-    Sprite,
+    Afterimage, Animation, Clip, Color, Dodge, DodgeCooldown, DodgeVisual, Health, Invulnerable,
+    Layer, Lit, Player, Position, Previous, Size, Sprite,
 };
 use crate::controls::Action;
 use crate::input::Input;
@@ -11,6 +12,8 @@ use crate::input::Input;
 pub(crate) const DODGE_SECONDS: f32 = 0.36;
 pub(crate) const DODGE_SPEED: f32 = 760.0;
 const DODGE_COOLDOWN: f32 = 0.9;
+const VISUAL_SIZE: Vec2 = Vec2::new(64.0, 76.0);
+const VISUAL_FRAMES: usize = 6;
 const TRAIL_INTERVAL: f32 = 0.04;
 const AFTERIMAGE_SECONDS: f32 = 0.25;
 const AFTERIMAGE_COLOR: glam::Vec4 = glam::Vec4::new(0.55, 0.8, 1.0, 0.55);
@@ -63,10 +66,12 @@ pub(crate) fn tick_dodges(world: &mut World, dt: f32) {
             finished.push(entity);
         }
     }
-    for entity in trail {
+    for _ in trail {
         let copy = world
-            .query_one_mut::<(&Position, &Size, &Sprite, Option<&Layer>)>(entity)
-            .ok()
+            .query::<(&Position, &Size, &Sprite, Option<&Layer>)>()
+            .with::<&DodgeVisual>()
+            .iter()
+            .next()
             .map(|(position, size, sprite, layer)| {
                 (
                     *position,
@@ -109,6 +114,76 @@ pub(crate) fn tick_dodges(world: &mut World, dt: f32) {
     }
 }
 
+pub(crate) fn show_dodge_visual(world: &mut World, textures: &Textures) {
+    let dodging: Option<(Entity, Position, Option<Previous>, f32, Layer)> = world
+        .query::<(Entity, &Position, Option<&Previous>, &Dodge, Option<&Layer>)>()
+        .with::<&Player>()
+        .iter()
+        .next()
+        .map(|(entity, position, previous, dodge, layer)| {
+            (
+                entity,
+                *position,
+                previous.copied(),
+                dodge.direction.x,
+                layer.copied().unwrap_or(Layer(0)),
+            )
+        });
+    let existing: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<&DodgeVisual>()
+        .iter()
+        .collect();
+    let Some((player, position, previous, direction_x, layer)) = dodging else {
+        for entity in existing {
+            let _ = world.despawn(entity);
+        }
+        for color in world.query_mut::<&mut Color>().with::<&Player>() {
+            color.0.w = 1.0;
+        }
+        return;
+    };
+    if let Ok(mut color) = world.get::<&mut Color>(player) {
+        color.0.w = 0.0;
+    }
+    let clip = Clip {
+        row: 0,
+        frames: VISUAL_FRAMES,
+        frame_time: DODGE_SECONDS / VISUAL_FRAMES as f32,
+        looping: false,
+        flipped: direction_x < 0.0,
+    };
+    if existing.is_empty() {
+        let visual = world.spawn((
+            DodgeVisual,
+            position,
+            Size(VISUAL_SIZE),
+            Color(glam::Vec4::ONE),
+            Sprite::whole(textures.get(PLAYER_DODGE)),
+            Animation::new(VISUAL_FRAMES, 1, clip),
+            layer,
+            Lit,
+        ));
+        if let Some(previous) = previous {
+            let _ = world.insert_one(visual, previous);
+        }
+        return;
+    }
+    for entity in existing {
+        if let Ok(mut at) = world.get::<&mut Position>(entity) {
+            *at = position;
+        }
+        match previous {
+            Some(previous) => {
+                let _ = world.insert_one(entity, previous);
+            }
+            None => {
+                let _ = world.remove_one::<Previous>(entity);
+            }
+        }
+    }
+}
+
 pub(crate) fn fade_afterimages(world: &mut World, dt: f32) {
     let mut gone = Vec::new();
     for (entity, image, color) in world.query_mut::<(Entity, &mut Afterimage, &mut Color)>() {
@@ -125,6 +200,7 @@ pub(crate) fn fade_afterimages(world: &mut World, dt: f32) {
 
 #[cfg(test)]
 mod tests {
+    use crate::assets::Textures;
     use crate::components::Armor;
 
     use super::*;
@@ -192,6 +268,7 @@ mod tests {
             },
         ));
         start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        show_dodge_visual(&mut world, &Textures::default());
         tick_dodges(&mut world, 0.05);
         tick_dodges(&mut world, 0.05);
         let images = world.query::<&Afterimage>().iter().count();
@@ -202,6 +279,35 @@ mod tests {
             fade_afterimages(&mut world, 0.05);
         }
         assert_eq!(world.query::<&Afterimage>().iter().count(), 0);
+    }
+
+    #[test]
+    fn the_wide_roll_picture_replaces_the_player_only_while_dodging() {
+        let mut world = World::new();
+        let hero = world.spawn((
+            Player,
+            Position(Vec2::new(100.0, 100.0)),
+            Color(glam::Vec4::ONE),
+            Health {
+                current: 10,
+                max: 10,
+            },
+        ));
+        let textures = Textures::default();
+
+        show_dodge_visual(&mut world, &textures);
+        assert_eq!(world.query::<&DodgeVisual>().iter().count(), 0);
+
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        show_dodge_visual(&mut world, &textures);
+        show_dodge_visual(&mut world, &textures);
+        assert_eq!(world.query::<&DodgeVisual>().iter().count(), 1);
+        assert_eq!(world.get::<&Color>(hero).map(|c| c.0.w).ok(), Some(0.0));
+
+        let _ = world.remove_one::<Dodge>(hero);
+        show_dodge_visual(&mut world, &textures);
+        assert_eq!(world.query::<&DodgeVisual>().iter().count(), 0);
+        assert_eq!(world.get::<&Color>(hero).map(|c| c.0.w).ok(), Some(1.0));
     }
 
     #[test]

@@ -47,7 +47,9 @@ pub(crate) use damage::{
     trap_hits_enemies,
 };
 pub(crate) use death_screen::{update_death_ui, DeathScreen};
-pub(crate) use dodge::{fade_afterimages, start_dodge, tick_dodges, DODGE_SECONDS, DODGE_SPEED};
+pub(crate) use dodge::{
+    fade_afterimages, show_dodge_visual, start_dodge, tick_dodges, DODGE_SPEED,
+};
 pub(crate) use draw::collect_draws;
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::finish_spawning;

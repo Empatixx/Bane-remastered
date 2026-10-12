@@ -192,7 +192,8 @@ impl Scene for InGameScene {
                 &mut self.sounds,
             );
         }
-        systems::animate_player(&mut self.world, input, &assets.textures);
+        systems::animate_player(&mut self.world, input);
+        systems::show_dodge_visual(&mut self.world, &assets.textures);
         systems::switch_guns(&mut self.world, input, &mut self.sounds);
         if let Some(crate::artefacts::ArtefactKind::RevealMap) = systems::activate_artefact(
             &mut self.world,

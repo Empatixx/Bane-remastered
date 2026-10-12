@@ -2,6 +2,7 @@ import math
 from PIL import Image
 
 FW, FH = 16, 38
+OUT_W = 32
 SCALE = 8
 CANVAS = 40
 
@@ -58,10 +59,10 @@ def pose(spin, torso_lean, head_bend, leg_bend):
 def crop_to_cell(frame, ground):
     box = frame.getbbox()
     if box is None:
-        return Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
+        return Image.new("RGBA", (OUT_W, FH), (0, 0, 0, 0))
     part = frame.crop(box)
-    cell = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
-    x = (FW - part.width) // 2
+    cell = Image.new("RGBA", (OUT_W, FH), (0, 0, 0, 0))
+    x = (OUT_W - part.width) // 2
     y = FH - part.height - ground
     cell.alpha_composite(part, (x, y))
     return cell
@@ -79,13 +80,13 @@ POSES = [
     (305, 14, 28, -60),
 ]
 
-sheet = Image.new("RGBA", (FW * 6, FH), (0, 0, 0, 0))
+sheet = Image.new("RGBA", (OUT_W * 6, FH), (0, 0, 0, 0))
 crouch = squash(26)
-sheet.alpha_composite(crouch, ((FW - crouch.width) // 2, FH - crouch.height))
+sheet.alpha_composite(crouch, ((OUT_W - crouch.width) // 2, FH - crouch.height))
 for index, values in enumerate(POSES):
     frame = pose(*values)
-    sheet.alpha_composite(crop_to_cell(frame, 1), ((1 + index) * FW, 0))
+    sheet.alpha_composite(crop_to_cell(frame, 1), ((1 + index) * OUT_W, 0))
 rise = squash(31)
-sheet.alpha_composite(rise, (5 * FW + (FW - rise.width) // 2, FH - rise.height))
+sheet.alpha_composite(rise, (5 * OUT_W + (OUT_W - rise.width) // 2, FH - rise.height))
 sheet.save("assets/textures/ingame/player_dodge.tga", compression=None)
 print(sheet.size)
