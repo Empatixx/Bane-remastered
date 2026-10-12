@@ -1,3 +1,4 @@
+mod ambience;
 mod animation;
 mod artefacts;
 mod bosses;
@@ -35,6 +36,7 @@ mod steering;
 mod ui;
 mod unstick;
 
+pub(crate) use ambience::{spawn_ambience, tick_ambience};
 pub(crate) use animation::{animate, chain_animations, remove_expired};
 pub(crate) use artefacts::{
     activate_artefact, pick_up_artefact, tick_berserk, unused_artefact, update_artefact_hud,

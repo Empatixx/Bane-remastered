@@ -140,6 +140,12 @@ impl Scene for LobbyScene {
 
         let portal_top_left = Vec2::new(bounds.x / 2.0 - 96.0, TILE_SIZE / 2.0);
         prefabs::portal(&mut self.world, portal_top_left, textures);
+        systems::spawn_ambience(
+            &mut self.world,
+            bounds,
+            portal_top_left + Prop::Portal.spec().size() / 2.0,
+            0x1d57,
+        );
         for (prop, x, y, look) in PROPS {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::prop(&mut self.world, prop, top_left, look, textures);
@@ -237,6 +243,7 @@ impl Scene for LobbyScene {
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world, &assets.textures);
+        systems::tick_ambience(&mut self.world, self.camera.position(), dt);
         systems::chat(&mut self.world, dt);
         systems::tick_speech(&mut self.world, dt);
         systems::fit_speech(&mut self.world, &assets.fonts);
