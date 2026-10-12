@@ -251,7 +251,7 @@ impl Scene for LobbyScene {
         if self.pause.is_active() || self.upgrades.is_open() {
             return Transition::None;
         }
-        systems::steer_player(&mut self.world, input);
+        systems::steer_player(&mut self.world, input, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         Transition::None
     }

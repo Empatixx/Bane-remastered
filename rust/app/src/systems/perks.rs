@@ -231,33 +231,35 @@ mod tests {
         let mut world = player();
         let mut input = Input::default();
         input.press(KeyCode::KeyD);
-        crate::systems::steer_player(&mut world, &input);
-        let base = world
-            .query::<&crate::components::Velocity>()
-            .with::<&Player>()
-            .iter()
-            .next()
-            .map_or(0.0, |v| v.0.x);
-        apply_floor_perks(&mut world, perks(&[Upgrade::ReducedDamageTaken]));
-        crate::systems::steer_player(&mut world, &input);
-        let boosted = world
-            .query::<&crate::components::Velocity>()
-            .with::<&Player>()
-            .iter()
-            .next()
-            .map_or(0.0, |v| v.0.x);
-        assert!(boosted > base, "{boosted} {base}");
-        assert!((boosted / base - 1.1).abs() < 0.01 || (boosted - 411.0 * 1.1).abs() < 1.0);
+        let top_speed = |world: &mut World| {
+            let mut speed = 0.0;
+            for _ in 0..240 {
+                crate::systems::steer_player(world, &input, 1.0 / 60.0);
+                speed = world
+                    .query::<&crate::components::Velocity>()
+                    .with::<&Player>()
+                    .iter()
+                    .next()
+                    .map_or(0.0, |v| v.0.x);
+            }
+            speed
+        };
+        let base = top_speed(&mut world);
+        let mut boosted_world = player();
+        apply_floor_perks(&mut boosted_world, perks(&[Upgrade::ReducedDamageTaken]));
+        let boosted = top_speed(&mut boosted_world);
+        assert!((base - 411.0).abs() < 2.0, "{base}");
+        assert!((boosted - 411.0 * 1.1).abs() < 2.0, "{boosted}");
 
-        let player_entity = world
+        let player_entity = boosted_world
             .query::<Entity>()
             .with::<&Player>()
             .iter()
             .next()
             .expect("player");
-        let before = vitals(&world);
-        crate::systems::damage::hurt_player(&mut world, player_entity, 1, &mut Vec::new());
-        assert_eq!(vitals(&world), before);
+        let before = vitals(&boosted_world);
+        crate::systems::damage::hurt_player(&mut boosted_world, player_entity, 1, &mut Vec::new());
+        assert_eq!(vitals(&boosted_world), before);
     }
 
     #[test]

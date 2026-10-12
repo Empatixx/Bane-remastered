@@ -1,6 +1,6 @@
 use hecs::{Entity, World};
 
-use crate::components::{Body, Position, Previous, Velocity};
+use crate::components::{Body, Player, Position, Previous, Velocity};
 use crate::physics::Physics;
 
 pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
@@ -22,6 +22,14 @@ pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
     }
     for (entity, at) in first_step {
         let _ = world.insert_one(entity, Previous(at));
+    }
+    for (body, velocity) in world
+        .query_mut::<(&Body, &mut Velocity)>()
+        .with::<&Player>()
+    {
+        if let Some(actual) = physics.velocity(*body) {
+            velocity.0 = actual;
+        }
     }
 }
 

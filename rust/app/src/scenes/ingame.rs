@@ -319,7 +319,7 @@ impl Scene for InGameScene {
         if self.pause.is_active() || self.death.is_some() {
             return Transition::None;
         }
-        systems::steer_player(&mut self.world, input);
+        systems::steer_player(&mut self.world, input, dt);
         systems::tick_spawning(&mut self.world, &mut self.physics, dt);
         systems::dash(&mut self.world, dt);
         systems::plan_paths(&mut self.world, &self.navigation);
