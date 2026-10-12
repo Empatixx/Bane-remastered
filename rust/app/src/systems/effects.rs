@@ -10,7 +10,6 @@ use crate::physics::Physics;
 use crate::prefabs;
 use crate::render::TextureId;
 
-const SPEED_LIMIT: f32 = 350.0;
 const COOLDOWN: f32 = 0.2;
 const MAX_PARTICLES: usize = 4;
 const WOBBLE: f32 = 16.0;
@@ -22,8 +21,8 @@ pub(crate) fn spawn_gaze_wind(
     dt: f32,
     clock: f32,
 ) {
-    let particles = world.query::<&Particle>().iter().count();
-    let mut spawn_at = None;
+    let mut particles = world.query::<&Particle>().iter().count();
+    let mut spawn_at = Vec::new();
     for (position, size, body, gaze) in
         world.query_mut::<(&Position, &Size, &Body, &mut GazeWind)>()
     {
@@ -31,14 +30,15 @@ pub(crate) fn spawn_gaze_wind(
         let Some(velocity) = physics.velocity(*body) else {
             continue;
         };
-        let running = velocity.x.abs() >= SPEED_LIMIT || velocity.y.abs() >= SPEED_LIMIT;
+        let running = velocity.x.abs() >= gaze.speed_limit || velocity.y.abs() >= gaze.speed_limit;
         if !running || gaze.cooldown > 0.0 || particles >= MAX_PARTICLES {
             continue;
         }
         gaze.cooldown = COOLDOWN;
-        spawn_at = Some(gaze_position(position.0, size.0, velocity, clock));
+        particles += 1;
+        spawn_at.push(gaze_position(position.0, size.0, velocity, clock));
     }
-    if let Some(center) = spawn_at {
+    for center in spawn_at {
         prefabs::gaze_particle(world, center, texture);
     }
 }

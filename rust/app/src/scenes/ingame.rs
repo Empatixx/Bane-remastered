@@ -314,6 +314,9 @@ impl Scene for InGameScene {
         systems::dash(&mut self.world, dt);
         systems::plan_paths(&mut self.world, &self.navigation);
         systems::chase_player(&mut self.world);
+        systems::pick_pet_targets(&mut self.world);
+        systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
+        systems::steer_pets(&mut self.world);
         systems::face_player(&mut self.world);
         systems::tick_smashes(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::tick_eye_shooters(&mut self.world, &mut self.physics, &assets.textures, dt);
@@ -324,6 +327,7 @@ impl Scene for InGameScene {
         systems::tick_armageddon(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
+        systems::pet_bites(&mut self.world, dt);
         systems::trap_hits_enemies(&mut self.world, dt);
         systems::death_bursts(&mut self.world, &mut self.physics, &assets.textures);
         systems::death_heals(&mut self.world);
@@ -389,6 +393,9 @@ impl InGameScene {
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         systems::apply_floor_perks(&mut self.world, perks);
+        if perks.pet {
+            prefabs::pet(&mut self.world, &mut self.physics, start, &assets.textures);
+        }
         for room in &dungeon.rooms {
             if let Some(furnishing) = &room.furnishing {
                 prefabs::furnishing(

@@ -1,6 +1,24 @@
-#[derive(Debug, Clone, Copy, Default)]
+pub(crate) const PLAYER_GAZE_SPEED: f32 = 350.0;
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct GazeWind {
     pub(crate) cooldown: f32,
+    pub(crate) speed_limit: f32,
+}
+
+impl GazeWind {
+    pub(crate) fn above(speed_limit: f32) -> Self {
+        Self {
+            cooldown: 0.0,
+            speed_limit,
+        }
+    }
+}
+
+impl Default for GazeWind {
+    fn default() -> Self {
+        Self::above(PLAYER_GAZE_SPEED)
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

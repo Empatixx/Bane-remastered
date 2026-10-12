@@ -17,6 +17,7 @@ mod loadout;
 mod minimap;
 mod objects;
 mod perks;
+mod pet;
 mod player_animation;
 mod rooms;
 mod settings_ui;
@@ -60,6 +61,10 @@ pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{break_objects, flicker_flames};
 pub(crate) use perks::{apply_floor_perks, apply_run_perks, immobilize_traps, regenerate_armor};
+pub(crate) use pet::{
+    pet_bites, pick_pet_targets, plan_pet_paths, steer_pets, PET_COLUMNS, PET_GAZE_SPEED, PET_IDLE,
+    PET_ROWS,
+};
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use rooms::{update_rooms, RoomContext, RoomEvent, RoomRuntime};
 pub(crate) use settings_ui::update_settings_ui;

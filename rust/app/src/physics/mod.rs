@@ -90,6 +90,16 @@ impl Physics {
         self.insert(body, collider)
     }
 
+    pub(crate) fn add_pet(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
+        let body = RigidBodyBuilder::dynamic()
+            .translation(to_rapier(position))
+            .lock_rotations();
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .collision_groups(groups::PETS)
+            .user_data(owner_bits(entity));
+        self.insert(body, collider)
+    }
+
     pub(crate) fn add_enemy(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
         let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(position))
@@ -156,6 +166,12 @@ impl Physics {
     pub(crate) fn set_velocity(&mut self, body: Body, velocity: Vec2) {
         if let Some(rigid_body) = self.world.bodies.get_mut(body.body) {
             rigid_body.set_linvel(to_rapier(velocity), true);
+        }
+    }
+
+    pub(crate) fn teleport(&mut self, body: Body, position: Vec2) {
+        if let Some(rigid_body) = self.world.bodies.get_mut(body.body) {
+            rigid_body.set_translation(to_rapier(position), true);
         }
     }
 

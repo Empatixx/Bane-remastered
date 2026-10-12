@@ -20,6 +20,7 @@ pub(crate) const TILESET: &str = "ingame/tileset_2.png";
 pub(crate) const BULLET: &str = "ingame/bullet.tga";
 pub(crate) const RAT: &str = "ingame/rat.tga";
 pub(crate) const PLAYER: &str = "ingame/player.tga";
+pub(crate) const PET: &str = "ingame/wolf_pet.tga";
 
 const GAME_TEXTURES: &[&str] = &[
     MENU_BACKGROUND,
@@ -30,6 +31,7 @@ const GAME_TEXTURES: &[&str] = &[
     BULLET,
     RAT,
     PLAYER,
+    PET,
     "ingame/portal.tga",
     "ingame/torch.tga",
     "ingame/bones.tga",

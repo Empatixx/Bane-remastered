@@ -2,7 +2,7 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
-use crate::assets::{Textures, PLAYER};
+use crate::assets::{Textures, PET, PLAYER};
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armageddon, Armor, ArtefactDrop, ArtefactIcon, ArtefactSlot,
     Backdrop, BarKind, Boss, BossHud, BreakKind, Breakable, Bullet, Button, Candle, Chase, Chest,
@@ -10,9 +10,9 @@ use crate::components::{
     DeathPart, Despawn, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Flame, Floating, Fuse,
     GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
     Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
-    Overlay, Particle, Path, PauseUi, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt,
-    RoomId, RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash, Solid,
-    Spawning, SpeechBubble, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
+    Overlay, Particle, Path, PauseUi, Pet, Pickup, Player, PlayerShadow, Position, PriceTag,
+    Prompt, RoomId, RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash,
+    Solid, Spawning, SpeechBubble, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
     UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
     PIP_FULL,
 };
@@ -26,12 +26,15 @@ use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
 use crate::systems::death_screen::{PROMPT_POSITION, SKULL_SIZE, TITLE_BASELINE};
 use crate::systems::SPIN_COST;
-use crate::systems::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
+use crate::systems::{
+    IDLE, PET_COLUMNS, PET_GAZE_SPEED, PET_IDLE, PET_ROWS, PLAYER_COLUMNS, PLAYER_ROWS,
+};
 use crate::tilemap::{self, TileGrid, Tileset};
 use crate::viewport::TARGET;
 use rapier2d::prelude::ColliderHandle;
 
 pub(crate) const PLAYER_SIZE: Vec2 = Vec2::new(32.0, 76.0);
+pub(crate) const PET_SIZE: Vec2 = Vec2::new(96.0, 96.0);
 const PLAYER_HEALTH: i32 = 10;
 const PLAYER_ARMOR: i32 = 5;
 
@@ -81,6 +84,30 @@ pub(crate) fn player(
         ),
     );
     let body = physics.add_player(entity, position, PLAYER_SIZE);
+    let _ = world.insert_one(entity, body);
+    entity
+}
+
+pub(crate) fn pet(
+    world: &mut World,
+    physics: &mut Physics,
+    position: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let entity = world.spawn((
+        Pet::default(),
+        Path::default(),
+        Position(position),
+        Velocity::default(),
+        Size(PET_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(PET), 0, PET_IDLE.row, PET_COLUMNS, PET_ROWS),
+        Animation::new(PET_COLUMNS, PET_ROWS, PET_IDLE),
+        Layer(1),
+        Lit,
+        GazeWind::above(PET_GAZE_SPEED),
+    ));
+    let body = physics.add_pet(entity, position, PET_SIZE);
     let _ = world.insert_one(entity, body);
     entity
 }

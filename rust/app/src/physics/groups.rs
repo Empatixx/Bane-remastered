@@ -6,10 +6,15 @@ const BULLET: Group = Group::GROUP_3;
 const ENEMY: Group = Group::GROUP_4;
 const ENEMY_BULLET: Group = Group::GROUP_5;
 const OBJECT: Group = Group::GROUP_6;
+const PET: Group = Group::GROUP_7;
 
 pub(super) const WALLS: InteractionGroups = InteractionGroups::new(
     WALL,
-    PLAYER.union(BULLET).union(ENEMY).union(ENEMY_BULLET),
+    PLAYER
+        .union(BULLET)
+        .union(ENEMY)
+        .union(ENEMY_BULLET)
+        .union(PET),
     InteractionTestMode::And,
 );
 
@@ -39,6 +44,13 @@ pub(super) const ENEMIES: InteractionGroups = InteractionGroups::new(
 
 pub(super) const OBJECTS: InteractionGroups = InteractionGroups::new(
     OBJECT,
-    PLAYER.union(ENEMY).union(BULLET).union(ENEMY_BULLET),
+    PLAYER
+        .union(ENEMY)
+        .union(BULLET)
+        .union(ENEMY_BULLET)
+        .union(PET),
     InteractionTestMode::And,
 );
+
+pub(super) const PETS: InteractionGroups =
+    InteractionGroups::new(PET, WALL.union(OBJECT), InteractionTestMode::And);

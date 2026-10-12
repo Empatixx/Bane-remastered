@@ -6,8 +6,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, Color, Despawn, Enemy, Expiring, Health, Loadout, NoDrop, Pickup, Player,
-    Position, Shop, Size, Wallet,
+    Animation, Armor, Color, Despawn, Enemy, Expiring, Health, Loadout, NoDrop, Pet, Pickup,
+    Player, Position, Shop, Size, Wallet,
 };
 use crate::geometry;
 use crate::items::{
@@ -78,21 +78,26 @@ pub(crate) fn use_item(world: &mut World, item: ItemKind, sounds: &mut Vec<Audio
 }
 
 pub(crate) fn collect_items(world: &mut World, sounds: &mut Vec<AudioCommand>) {
-    let player = world
+    let collectors: Vec<(Vec2, Vec2)> = world
         .query::<(&Position, &Size)>()
         .with::<&Player>()
         .iter()
-        .next()
-        .map(|(position, size)| (position.0, size.0));
-    let Some((at, extent)) = player else {
+        .chain(world.query::<(&Position, &Size)>().with::<&Pet>().iter())
+        .map(|(position, size)| (position.0, size.0))
+        .collect();
+    if collectors.is_empty() {
         return;
-    };
+    }
     let touched: Vec<(Entity, ItemKind)> = world
         .query::<(Entity, &Pickup, &Position, &Size)>()
         .without::<&Expiring>()
         .without::<&Shop>()
         .iter()
-        .filter(|(_, _, position, size)| geometry::overlaps(at, extent, position.0, size.0))
+        .filter(|(_, _, position, size)| {
+            collectors
+                .iter()
+                .any(|(at, extent)| geometry::overlaps(*at, *extent, position.0, size.0))
+        })
         .map(|(entity, pickup, _, _)| (entity, pickup.0))
         .collect();
     for (entity, item) in touched {
