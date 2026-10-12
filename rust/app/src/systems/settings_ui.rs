@@ -14,7 +14,7 @@ use crate::settings::{GameSettings, Settings};
 
 const ROW_COUNT: usize = 4;
 const KEY_PROMPT: &str = "Press key";
-const KEY_COLOR: Vec4 = Vec4::new(223.0 / 255.0, 60.0 / 255.0, 28.0 / 255.0, 1.0);
+const KEY_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
 const KEY_ACTIVE_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 
 pub(crate) fn update_settings_ui(

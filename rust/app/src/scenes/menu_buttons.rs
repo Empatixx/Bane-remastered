@@ -10,7 +10,8 @@ use crate::input::Input;
 use crate::prefabs;
 use crate::render::{Align, Anchor, FontSize};
 
-pub(crate) const BUTTON_SIZE: Vec2 = Vec2::new(224.0, 56.0);
+pub(crate) const BUTTON_SIZE: Vec2 = Vec2::new(225.0, 57.0);
+const DRAW_SIZE: Vec2 = Vec2::new(243.0, 75.0);
 const BASE_TEXT: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const HOT_TEXT: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const MARKER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
@@ -77,7 +78,7 @@ impl MenuButtons {
             let (button, text) =
                 prefabs::button(world, rest, label, action, textures.get(texture_name));
             if let Ok(mut size) = world.get::<&mut Size>(button) {
-                size.0 = BUTTON_SIZE;
+                size.0 = DRAW_SIZE;
             }
             let _ = world.insert_one(button, ScreenSpace);
             let _ = world.insert_one(text, ScreenSpace);
@@ -206,7 +207,7 @@ impl MenuButtons {
                 )
             {
                 position.0 = at;
-                size.0 = BUTTON_SIZE * scale;
+                size.0 = DRAW_SIZE * scale;
                 color.0.w = arrival;
                 let _ = sprite;
             }

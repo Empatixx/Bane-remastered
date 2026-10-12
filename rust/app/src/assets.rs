@@ -13,7 +13,6 @@ const FONT_FILE: &str = "fonts/PixelFJVerdana12pt.ttf";
 pub(crate) const LOADING_BACKGROUND: &str = "loading/loading.tga";
 pub(crate) const LOADING_SPINNER: &str = "loading/loading_image.tga";
 pub(crate) const LOGO: &str = "menu/logo.tga";
-pub(crate) const BUTTON: &str = "menu/Menu_bar2.tga";
 pub(crate) const MENU_PLATE: &str = "menu/Menu_plate.tga";
 pub(crate) const CURSOR: &str = "ingame/cursor.tga";
 pub(crate) const TILESET: &str = "ingame/tileset_2.png";
@@ -25,8 +24,8 @@ pub(crate) const PET: &str = "ingame/wolf_pet.tga";
 
 const GAME_TEXTURES: &[&str] = &[
     LOGO,
-    BUTTON,
     MENU_PLATE,
+    "menu/Menu_plate_small.tga",
     CURSOR,
     TILESET,
     BULLET,

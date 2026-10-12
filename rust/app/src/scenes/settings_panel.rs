@@ -15,14 +15,15 @@ use crate::settings::Settings;
 use crate::systems;
 
 const BACKGROUND_CENTER: Vec2 = Vec2::new(480.0, 270.0);
-const BACKGROUND_SIZE: Vec2 = Vec2::new(480.0, 320.0);
-const TAB_SIZE: Vec2 = Vec2::new(150.0, 80.0);
+const BACKGROUND_SIZE: Vec2 = Vec2::new(516.0, 354.0);
+const TAB_SIZE: Vec2 = Vec2::new(150.0, 48.0);
 const TABS: [(SettingsTabKind, &str, f32); 3] = [
     (SettingsTabKind::Video, "Video", 250.0),
     (SettingsTabKind::Audio, "Audio", 405.0),
     (SettingsTabKind::Controls, "Controls", 560.0),
 ];
-const TAB_TOP: f32 = 120.0;
+const TAB_TOP: f32 = 128.0;
+const SIDE_BUTTON_SIZE: Vec2 = Vec2::new(144.0, 57.0);
 const SIDE_BUTTONS: [(f32, &str, UiAction); 3] = [
     (160.0, "Apply", UiAction::SettingsApply),
     (240.0, "Revert", UiAction::SettingsRevert),
@@ -50,8 +51,8 @@ const KEY_ROW_TOP: f32 = 225.0;
 const KEY_ROW_STEP: f32 = 42.0;
 const KEY_ROWS: usize = 5;
 const KEY_SLOT: Vec2 = Vec2::new(110.0, 32.0);
-const LABEL_COLOR: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
-const VALUE_COLOR: Vec4 = Vec4::new(223.0 / 255.0, 60.0 / 255.0, 28.0 / 255.0, 1.0);
+const LABEL_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const VALUE_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
 
 #[derive(Debug)]
 pub(crate) struct SettingsPanel {
@@ -158,8 +159,11 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             Vec2::new(800.0, y),
             label,
             action,
-            textures.get("menu/Menu_bar2.tga"),
+            textures.get("menu/Menu_plate_small.tga"),
         );
+        if let Ok(mut size) = world.get::<&mut Size>(button) {
+            size.0 = SIDE_BUTTON_SIZE;
+        }
         ui(world, button, 8, None);
         ui(world, text, 9, None);
     }
