@@ -10,6 +10,7 @@ use crate::geometry;
 use crate::systems::enemies::FLASH_SECONDS;
 
 const INVULNERABLE_SECONDS: f32 = 1.0;
+const HURT_FLASH_SECONDS: f32 = 0.5;
 
 pub(crate) fn absorb(health: &mut Health, armor: &mut Armor, damage: i32) {
     if armor.current > 0 {
@@ -165,6 +166,12 @@ pub(crate) fn hurt_player(
             player,
             Invulnerable {
                 remaining: INVULNERABLE_SECONDS,
+            },
+        );
+        let _ = world.insert_one(
+            player,
+            crate::components::HitFlash {
+                remaining: HURT_FLASH_SECONDS,
             },
         );
         return true;

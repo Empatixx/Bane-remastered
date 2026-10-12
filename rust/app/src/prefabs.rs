@@ -810,7 +810,7 @@ pub(crate) fn boss_hud(world: &mut World, name: &str, textures: &Textures) {
         BossHud,
         Position(Vec2::new(
             spec.position.x + spec.hole[0] as f32 * spec.scale + 5.0,
-            spec.position.y + 30.0,
+            spec.position.y + 15.0,
         )),
         Text {
             content: name.to_owned(),
@@ -1082,10 +1082,17 @@ pub(crate) fn flamethrower(world: &mut World, top_left: Vec2, textures: &Texture
 }
 
 pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) -> Entity {
-    let clip = Clip {
+    let spawn = Clip {
         row: 0,
-        frames: 4,
-        frame_time: 0.2,
+        frames: 6,
+        frame_time: 0.07,
+        looping: false,
+        flipped: false,
+    };
+    let idle = Clip {
+        row: 1,
+        frames: 6,
+        frame_time: 0.14,
         looping: true,
         flipped: false,
     };
@@ -1097,8 +1104,9 @@ pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) 
         Position(center),
         Size(POOL_SIZE),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get("ingame/poison_puddle.tga"), 0, 0, 4, 1),
-        Animation::new(4, 1, clip),
+        Sprite::cell(textures.get("ingame/poison_puddle.tga"), 0, 0, 6, 2),
+        Animation::new(6, 2, spawn),
+        ThenPlay(idle),
         Layer(0),
         Lit,
     ))
@@ -1116,11 +1124,10 @@ pub(crate) fn frost_burst(world: &mut World, center: Vec2, textures: &Textures) 
         Expiring,
         Position(center),
         Size(Vec2::new(224.0, 224.0)),
-        Color(Vec4::new(0.55, 0.85, 1.0, 0.85)),
-        Sprite::cell(textures.get("ingame/barrel_explosion.tga"), 0, 0, 9, 1),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get("ingame/frost_burst.tga"), 0, 0, 9, 1),
         Animation::new(9, 1, clip),
         Layer(3),
-        Lit,
         Light::rgb(Vec2::ZERO, 90.0, 170.0, 255.0, 200.0, EXPLOSION_LIGHT),
         LightFade {
             base: EXPLOSION_LIGHT,

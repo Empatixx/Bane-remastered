@@ -90,6 +90,7 @@ const GAME_TEXTURES: &[&str] = &[
     "ingame/poison_barrel.tga",
     "ingame/frost_barrel.tga",
     "ingame/poison_puddle.tga",
+    "ingame/frost_burst.tga",
     "ingame/flamethrower.tga",
     "ingame/shop_price_hud.tga",
     "ingame/sacrifice_price_hud.tga",

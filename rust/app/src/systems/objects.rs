@@ -742,4 +742,48 @@ mod tests {
         crate::systems::start_dodge(&mut world, &dodge, Vec2::X * 500.0);
         assert!(world.get::<&Dodge>(player).is_err());
     }
+
+    #[test]
+    fn the_player_gets_a_red_outline_when_hurt_and_a_green_one_in_the_puddle() {
+        let (mut world, _physics, textures) = arena();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let outline = |world: &World| world.get::<&Outline>(player).map(|o| o.0).ok();
+
+        hurt_player(&mut world, player, 1, &mut Vec::new());
+        crate::systems::flash_hits(&mut world, 0.01);
+        let red = outline(&world).expect("outline");
+        assert!(red.x == 1.0 && red.y == 0.0 && red.w > 0.9, "{red:?}");
+
+        crate::systems::flash_hits(&mut world, 1.0);
+        assert!(outline(&world).is_none());
+
+        let at = world
+            .get::<&Position>(player)
+            .map(|p| p.0)
+            .unwrap_or_default();
+        prefabs::poison_pool(&mut world, at, &textures);
+        tick_poison(&mut world, 0.016, &mut Vec::new());
+        let green = outline(&world).expect("poison outline");
+        assert!(green.y > green.x, "{green:?}");
+    }
+
+    #[test]
+    fn a_new_puddle_splashes_in_and_then_settles_into_its_loop() {
+        let (mut world, _physics, textures) = arena();
+        let pool = prefabs::poison_pool(&mut world, Vec2::new(500.0, 500.0), &textures);
+        let row = |world: &World| world.get::<&Animation>(pool).map(|a| a.row()).unwrap_or(99);
+        assert_eq!(row(&world), 0);
+
+        for _ in 0..40 {
+            crate::systems::animate(&mut world, 0.05);
+            crate::systems::chain_animations(&mut world);
+        }
+
+        assert_eq!(row(&world), 1);
+    }
 }
