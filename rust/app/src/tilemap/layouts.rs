@@ -12,3 +12,7 @@ pub(crate) fn lobby() -> TileGrid {
     }
     grid
 }
+
+pub(crate) fn crypt() -> TileGrid {
+    TileGrid::bordered(30, 12)
+}

@@ -22,7 +22,7 @@ use super::{Cursor, Pause, Scene, SceneId, Transition, UpgradeMenu};
 
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
 
-pub(super) const PROPS: [(Prop, f32, f32, Look); 24] = [
+const PROPS: [(Prop, f32, f32, Look); 24] = [
     (Prop::WeaponRack, 22.75, 0.5, Look::DEFAULT),
     (Prop::WeaponRack, 9.25, 0.5, Look::DEFAULT),
     (Prop::Torch, 1.0, 2.0, Look::DEFAULT),

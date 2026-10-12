@@ -1,9 +1,9 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::assets::{Assets, BUTTON};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
-use crate::components::{Color, Layer, Position, ScreenSpace, Size, UiAction};
+use crate::components::UiAction;
 use crate::input::Input;
 use crate::settings::Settings;
 use crate::viewport::TARGET;
@@ -15,8 +15,6 @@ use super::{Scene, SceneId, SettingsPanel, Transition};
 
 const LOGO_SIZE: Vec2 = Vec2::new(228.0, 108.0);
 const LOGO_TOP_LEFT_Y: f32 = 50.0;
-const SHADE_WIDTH: f32 = 0.4;
-const SHADE_COLOR: Vec4 = Vec4::new(0.03, 0.02, 0.05, 0.45);
 const BUTTON_ROWS: [(f32, &str, UiAction); 3] = [
     (225.0, "Play", UiAction::Play),
     (325.0, "Settings", UiAction::Settings),
@@ -60,13 +58,6 @@ impl Scene for MenuScene {
         self.panel = SettingsPanel::default();
         self.ui.clear();
         self.stage = Some(Stage::build(&mut self.world, assets));
-        let shade = self.world.spawn((
-            Position(TARGET / 2.0),
-            Size(Vec2::new(TARGET.x * SHADE_WIDTH, TARGET.y)),
-            Color(SHADE_COLOR),
-            Layer(-1),
-            ScreenSpace,
-        ));
         let logo = LogoAnim::build(
             &mut self.world,
             &assets.textures,
@@ -75,7 +66,7 @@ impl Scene for MenuScene {
         );
         let logo_entity = logo.entity();
         self.logo = Some(logo);
-        self.ui.extend([shade, logo_entity]);
+        self.ui.push(logo_entity);
         let buttons =
             MenuButtons::build(&mut self.world, &assets.textures, BUTTON, x, &BUTTON_ROWS);
         self.ui.extend(buttons.entities());

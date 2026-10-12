@@ -12,14 +12,14 @@ use crate::render::{Align, Anchor, FontSize};
 
 pub(crate) const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
 const BASE_TEXT: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
-const LIT_TEXT: Vec4 = Vec4::new(1.0, 0.78, 0.35, 1.0);
+const HOT_TEXT: Vec4 = Vec4::new(0.42, 0.14, 0.02, 1.0);
+const MARKER_COLOR: Vec4 = Vec4::new(1.0, 0.78, 0.35, 1.0);
 const ENTER_DELAY: f32 = 0.5;
 const ENTER_STAGGER: f32 = 0.12;
 const ENTER_SECONDS: f32 = 0.5;
 const ENTER_SLIDE: f32 = 140.0;
 const LIFT_SPEED: f32 = 12.0;
 const GROW: f32 = 0.08;
-const NUDGE: f32 = 6.0;
 const MARKER_GAP: f32 = 18.0;
 const MARKER_BOUNCE: f32 = 3.0;
 const MARKER_RATE: f32 = 8.0;
@@ -53,7 +53,7 @@ fn marker(world: &mut World, glyph: &str, at: Vec2) -> Entity {
         Position(at),
         Text {
             content: glyph.to_owned(),
-            color: Vec4::new(LIT_TEXT.x, LIT_TEXT.y, LIT_TEXT.z, 0.0),
+            color: Vec4::new(MARKER_COLOR.x, MARKER_COLOR.y, MARKER_COLOR.z, 0.0),
             size: FontSize::Size27,
             align: Align::Center,
             anchor: Anchor::Middle,
@@ -193,10 +193,10 @@ impl MenuButtons {
                 _ => 0.0,
             };
             let scale = 1.0 + GROW * row.lift - squash;
-            let at = row.rest + Vec2::new(NUDGE * row.lift - (1.0 - arrival) * ENTER_SLIDE, 0.0);
+            let at = row.rest + Vec2::new(-(1.0 - arrival) * ENTER_SLIDE, 0.0);
             let bounce = (clock * MARKER_RATE).sin() * MARKER_BOUNCE * row.lift;
             let half = BUTTON_SIZE.x * scale / 2.0;
-            let tint = BASE_TEXT.lerp(LIT_TEXT, row.lift);
+            let tint = BASE_TEXT.lerp(HOT_TEXT, row.lift);
             if let Ok((position, size, color, sprite)) =
                 world.query_one_mut::<(&mut Position, &mut Size, &mut Color, &mut Sprite)>(
                     row.button,
@@ -296,7 +296,7 @@ mod tests {
                 .get::<&Position>(row.button)
                 .map(|p| p.0)
                 .unwrap_or_default();
-            assert!((at.x - row.rest.x).abs() <= NUDGE + 0.01);
+            assert!((at.x - row.rest.x).abs() < 0.01);
             assert_eq!(text_alpha(&world, row.text), 1.0);
         }
     }

@@ -4,7 +4,7 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::{Assets, TILESET};
-use crate::components::{Animation, Color, Layer, Light, Lit, Position, Size, Sprite};
+use crate::components::{Animation, Color, Layer, Lit, Position, Size, Sprite};
 use crate::dungeon::Rng;
 use crate::enemies::EnemyKind;
 use crate::prefabs;
@@ -13,18 +13,15 @@ use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::viewport::TARGET;
 
-use super::lobby::PROPS;
-
-const PAN_PERIOD: f32 = 70.0;
-const BOB_PERIOD: f32 = 43.0;
+const PAN_PERIOD: f32 = 150.0;
+const BOB_PERIOD: f32 = 97.0;
 const CRITTER_FIRST: f32 = 2.5;
 const CRITTER_PAUSE: (f32, f32) = (5.0, 11.0);
 const CRITTER_MARGIN: f32 = 180.0;
-const CRITTER_SPEED_SCALE: f32 = 0.7;
+const CRITTER_SPEED_SCALE: f32 = 0.5;
 const CRITTER_LAYER: i32 = 1;
 const CRITTER_KINDS: [EnemyKind; 3] = [EnemyKind::Rat, EnemyKind::Rat, EnemyKind::Bat];
 const PARTICLE_TEXTURE: &str = "ingame/gazewind_particle.tga";
-const PORTAL_LIGHT: (f32, f32, f32, f32, f32) = (128.0, 0.0, 128.0, 90.0, 2.5);
 const AMBIENCE_SEED: u64 = 0x5eed;
 
 #[derive(Debug, Clone, Copy)]
@@ -41,32 +38,84 @@ pub(crate) struct Stage {
 
 impl Stage {
     pub(crate) fn build(world: &mut World, assets: &Assets) -> Self {
-        let grid = tilemap::lobby();
+        let grid = tilemap::crypt();
         let bounds = grid.pixel_size();
         let textures = &assets.textures;
         prefabs::backdrop(world);
         prefabs::tilemap(world, &grid, &assets.tileset, textures.get(TILESET));
-        for (prop, x, y, look) in PROPS {
-            prefabs::prop(world, prop, Vec2::new(x, y) * TILE_SIZE, look, textures);
+        let altar = Vec2::new(bounds.x / 2.0, bounds.y * 0.55);
+        let spot = |x: f32, y: f32| altar + Vec2::new(x, y);
+        let placed: [(Prop, Vec2, Look); 29] = [
+            (Prop::AngelStatue, spot(-128.0, -283.0), Look::DEFAULT),
+            (Prop::Pentagram, spot(-112.5, -60.0), Look::DEFAULT),
+            (Prop::Candlestick, spot(-194.0, -40.0), Look::DEFAULT),
+            (Prop::Candlestick, spot(146.0, -40.0), Look::DEFAULT),
+            (Prop::Candlestick, spot(-214.0, 40.0), Look::DEFAULT),
+            (Prop::Candlestick, spot(166.0, 40.0), Look::DEFAULT),
+            (Prop::Candlestick, spot(-24.0, 80.0), Look::DEFAULT),
+            (Prop::LayingBook, spot(-330.0, -20.0), Look::DEFAULT),
+            (Prop::LayingBook, spot(270.0, 110.0), Look::DEFAULT),
+            (Prop::LayingBook, spot(-140.0, 170.0), Look::DEFAULT),
+            (Prop::Chains, Vec2::new(4.0, 0.0) * TILE_SIZE, Look::DEFAULT),
+            (Prop::Chains, Vec2::new(9.0, 0.0) * TILE_SIZE, Look::DEFAULT),
+            (
+                Prop::Chains,
+                Vec2::new(21.0, 0.0) * TILE_SIZE,
+                Look::DEFAULT,
+            ),
+            (
+                Prop::Chains,
+                Vec2::new(26.0, 0.0) * TILE_SIZE,
+                Look::DEFAULT,
+            ),
+            (Prop::Torch, Vec2::new(1.0, 2.0) * TILE_SIZE, Look::DEFAULT),
+            (Prop::Torch, Vec2::new(1.0, 8.0) * TILE_SIZE, Look::DEFAULT),
+            (Prop::Torch, Vec2::new(28.0, 2.0) * TILE_SIZE, Look::FLIPPED),
+            (Prop::Torch, Vec2::new(28.0, 8.0) * TILE_SIZE, Look::FLIPPED),
+            (
+                Prop::Torch,
+                Vec2::new(11.0, 1.0) * TILE_SIZE,
+                Look::SECOND_ROW,
+            ),
+            (
+                Prop::Torch,
+                Vec2::new(18.0, 1.0) * TILE_SIZE,
+                Look::SECOND_ROW,
+            ),
+            (Prop::Bones, Vec2::new(6.0, 9.0) * TILE_SIZE, Look::DEFAULT),
+            (
+                Prop::Bones,
+                Vec2::new(23.0, 8.0) * TILE_SIZE,
+                Look::SECOND_ROW,
+            ),
+            (
+                Prop::Bones,
+                Vec2::new(14.0, 10.0) * TILE_SIZE,
+                Look::DEFAULT,
+            ),
+            (Prop::Cobweb, Vec2::new(1.0, 1.0) * TILE_SIZE, Look::DEFAULT),
+            (
+                Prop::Cobweb,
+                Vec2::new(28.0, 1.0) * TILE_SIZE,
+                Look::FLIPPED,
+            ),
+            (Prop::Rock, Vec2::new(4.0, 6.0) * TILE_SIZE, Look::DEFAULT),
+            (
+                Prop::Rock,
+                Vec2::new(25.0, 5.0) * TILE_SIZE,
+                Look::SECOND_ROW,
+            ),
+            (Prop::Box, Vec2::new(3.0, 9.0) * TILE_SIZE, Look::DEFAULT),
+            (Prop::Box, Vec2::new(26.0, 9.0) * TILE_SIZE, Look::DEFAULT),
+        ];
+        for (prop, top_left, look) in placed {
+            prefabs::prop(world, prop, top_left, look, textures);
         }
-        let portal_top_left = Vec2::new(bounds.x / 2.0 - 96.0, TILE_SIZE / 2.0);
-        let portal = prefabs::prop(
-            world,
-            Prop::Portal,
-            portal_top_left,
-            Look::DEFAULT,
-            textures,
-        );
-        let (red, green, blue, radius, intensity) = PORTAL_LIGHT;
-        let _ = world.insert_one(
-            portal,
-            Light::rgb(Vec2::ZERO, red, green, blue, radius, intensity),
-        );
         systems::spawn_ambience(
             world,
             textures.get(PARTICLE_TEXTURE),
             bounds,
-            portal_top_left + Prop::Portal.spec().size() / 2.0,
+            altar,
             AMBIENCE_SEED,
         );
         Self {
@@ -173,7 +222,7 @@ mod tests {
 
     fn stage() -> Stage {
         Stage {
-            bounds: Vec2::new(1856.0, 640.0),
+            bounds: Vec2::new(1920.0, 768.0),
             clock: 0.0,
             until_critter: 100.0,
             rng: Rng::new(3),
@@ -185,15 +234,15 @@ mod tests {
         let mut stage = stage();
         let mut left = f32::MAX;
         let mut right: f32 = 0.0;
-        for step in 0..8400 {
+        for step in 0..18_000 {
             stage.clock = step as f32 / 60.0;
             let camera = stage.camera();
             left = left.min(camera.x);
             right = right.max(camera.x);
-            assert!(camera.x >= 0.0 && camera.x <= 1856.0 - TARGET.x + 0.01);
-            assert!(camera.y >= 0.0 && camera.y <= 640.0 - TARGET.y + 0.01);
+            assert!(camera.x >= 0.0 && camera.x <= 1920.0 - TARGET.x + 0.01);
+            assert!(camera.y >= 0.0 && camera.y <= 768.0 - TARGET.y + 0.01);
         }
-        assert!(left < 5.0 && right > 1856.0 - TARGET.x - 5.0);
+        assert!(left < 5.0 && right > 1920.0 - TARGET.x - 5.0);
     }
 
     #[test]
