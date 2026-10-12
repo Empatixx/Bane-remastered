@@ -44,6 +44,17 @@ impl Quad {
         }
     }
 
+    pub(super) fn remap_uv(&mut self, region: [f32; 4]) {
+        let [x, y, width, height] = region;
+        let [u0, v0, u1, v1] = self.uv;
+        self.uv = [
+            x + u0 * width,
+            y + v0 * height,
+            x + u1 * width,
+            y + v1 * height,
+        ];
+    }
+
     pub(crate) fn map_room(mut self, look: MapRoomLook) -> Self {
         self.fx = [
             look.time,

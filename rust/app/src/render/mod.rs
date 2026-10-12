@@ -1,3 +1,4 @@
+mod atlas;
 mod draw;
 mod font;
 mod gpu;
@@ -6,13 +7,17 @@ mod post;
 mod quad;
 mod texture;
 
+#[cfg(test)]
+pub(crate) fn pack_atlas(sizes: &[(u32, u32)], max: u32) -> Option<(u32, Vec<(u32, u32)>)> {
+    atlas::pack(sizes, max).map(|packed| (packed.size, packed.positions))
+}
+
 pub(crate) use draw::{Draw, Layers};
 pub(crate) use font::{Align, Anchor, FontSize, Fonts};
 pub(crate) use gpu::Gpu;
 pub(crate) use light::{Frame, LightSource, MAX_LIGHTS};
 pub(crate) use post::PostParams;
 pub(crate) use quad::{MapRoomLook, Quad};
-#[cfg(test)]
 pub(crate) use texture::Pixels;
 pub(crate) use texture::TextureId;
 

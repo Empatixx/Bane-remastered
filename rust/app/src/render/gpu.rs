@@ -6,6 +6,7 @@ use wgpu::util::DeviceExt;
 use winit::dpi::PhysicalSize;
 use winit::window::Window;
 
+use super::atlas;
 use super::light::Globals;
 use super::post::PostUniform;
 use super::texture::Pixels;
@@ -25,9 +26,16 @@ pub(crate) struct Gpu {
     texture_layout: wgpu::BindGroupLayout,
     sampler: wgpu::Sampler,
     textures: Vec<wgpu::BindGroup>,
+    entries: Vec<TextureEntry>,
     quad_buffer: wgpu::Buffer,
     post: Post,
     targets: Option<Targets>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct TextureEntry {
+    group: usize,
+    region: [f32; 4],
 }
 
 struct Post {
@@ -188,6 +196,7 @@ impl Gpu {
             texture_layout,
             sampler,
             textures: Vec::new(),
+            entries: Vec::new(),
             quad_buffer,
             post,
             targets: None,
@@ -201,14 +210,45 @@ impl Gpu {
         Ok(self.upload(&pixels))
     }
 
-    pub(crate) fn load_texture_with_hole(
+    pub(crate) fn upload_atlas(
         &mut self,
-        path: &Path,
-        hole: [u32; 4],
-    ) -> Result<TextureId, Box<dyn Error>> {
-        let mut pixels = Pixels::load(path)?;
-        pixels.clear_rect(hole[0], hole[1], hole[2], hole[3]);
-        Ok(self.upload(&pixels))
+        images: Vec<(&'static str, Pixels)>,
+    ) -> Result<Vec<(&'static str, TextureId)>, Box<dyn Error>> {
+        let limit = self.device.limits().max_texture_dimension_2d;
+        let sizes: Vec<(u32, u32)> = images
+            .iter()
+            .map(|(_, pixels)| (pixels.width, pixels.height))
+            .collect();
+        let packed = atlas::pack(&sizes, limit).ok_or("the textures do not fit into one atlas")?;
+        let sources: Vec<(u32, u32, &[u8])> = images
+            .iter()
+            .map(|(_, pixels)| (pixels.width, pixels.height, pixels.rgba.as_slice()))
+            .collect();
+        let rgba = atlas::assemble(&packed, &sources);
+        tracing::info!(
+            textures = images.len(),
+            size = packed.size,
+            "packed the texture atlas"
+        );
+        let group = self.create_group(&Pixels {
+            width: packed.size,
+            height: packed.size,
+            rgba,
+        });
+        let side = packed.size as f32;
+        Ok(images
+            .iter()
+            .zip(&packed.positions)
+            .map(|((name, pixels), (x, y))| {
+                let region = [
+                    *x as f32 / side,
+                    *y as f32 / side,
+                    pixels.width as f32 / side,
+                    pixels.height as f32 / side,
+                ];
+                (*name, self.register(group, region))
+            })
+            .collect())
     }
 
     pub(crate) fn upload_alpha_mask(&mut self, width: u32, height: u32, alpha: &[u8]) -> TextureId {
@@ -221,6 +261,16 @@ impl Gpu {
     }
 
     fn upload(&mut self, pixels: &Pixels) -> TextureId {
+        let group = self.create_group(pixels);
+        self.register(group, [0.0, 0.0, 1.0, 1.0])
+    }
+
+    fn register(&mut self, group: usize, region: [f32; 4]) -> TextureId {
+        self.entries.push(TextureEntry { group, region });
+        TextureId::new(self.entries.len() - 1)
+    }
+
+    fn create_group(&mut self, pixels: &Pixels) -> usize {
         let size = wgpu::Extent3d {
             width: pixels.width,
             height: pixels.height,
@@ -262,7 +312,7 @@ impl Gpu {
             ],
         });
         self.textures.push(bind_group);
-        TextureId::new(self.textures.len() - 1)
+        self.textures.len() - 1
     }
 
     pub(crate) fn set_vsync(&mut self, vsync: bool) {
@@ -359,9 +409,10 @@ impl Gpu {
         pass.set_bind_group(0, &self.screen_bind_group, &[]);
         pass.set_vertex_buffer(0, self.quad_buffer.slice(..));
         let mut start = first_instance;
-        for run in draws.chunk_by(|a, b| a.texture == b.texture) {
+        let group_of = |draw: &Draw| self.entries[draw.texture.index()].group;
+        for run in draws.chunk_by(|a, b| group_of(a) == group_of(b)) {
             let end = start + run.len() as u32;
-            pass.set_bind_group(1, &self.textures[run[0].texture.index()], &[]);
+            pass.set_bind_group(1, &self.textures[group_of(&run[0])], &[]);
             pass.draw(0..6, start..end);
             start = end;
         }
@@ -403,7 +454,11 @@ impl Gpu {
             .iter()
             .chain(hud)
             .chain(overlay)
-            .map(|draw| draw.quad)
+            .map(|draw| {
+                let mut quad = draw.quad;
+                quad.remap_uv(self.entries[draw.texture.index()].region);
+                quad
+            })
             .collect();
         self.queue
             .write_buffer(&self.quad_buffer, 0, bytemuck::cast_slice(&quads));

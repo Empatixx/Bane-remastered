@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::audio::Audio;
 use crate::components::BarKind;
-use crate::render::{FontSize, Fonts, Gpu, TextureId};
+use crate::render::{FontSize, Fonts, Gpu, Pixels, TextureId};
 use crate::tilemap::Tileset;
 
 const FONT_FILE: &str = "fonts/PixelFJVerdana12pt.ttf";
@@ -209,6 +209,7 @@ impl Assets {
 enum Step {
     Texture(&'static str),
     Bar(BarKind),
+    Atlas,
     Sound(&'static str),
     Font(FontSize),
 }
@@ -216,6 +217,7 @@ enum Step {
 #[derive(Debug)]
 pub(crate) struct Loader {
     pending: VecDeque<Step>,
+    decoded: Vec<(&'static str, Pixels)>,
 }
 
 impl Loader {
@@ -225,9 +227,13 @@ impl Loader {
         let mut pending: VecDeque<Step> =
             GAME_TEXTURES.iter().copied().map(Step::Texture).collect();
         pending.extend(BarKind::ALL.map(Step::Bar));
+        pending.push_back(Step::Atlas);
         pending.extend(Audio::files().into_iter().map(Step::Sound));
         pending.extend(FontSize::ALL.map(Step::Font));
-        Ok(Self { pending })
+        Ok(Self {
+            pending,
+            decoded: Vec::new(),
+        })
     }
 
     pub(crate) fn is_done(&self) -> bool {
@@ -244,14 +250,20 @@ impl Loader {
             return Ok(());
         };
         match step {
-            Step::Texture(name) => load_texture(gpu, &mut assets.textures, name)?,
+            Step::Texture(name) => {
+                let pixels = Pixels::load(&root().join("textures").join(name))?;
+                self.decoded.push((name, pixels));
+            }
             Step::Bar(kind) => {
                 let spec = kind.spec();
-                let id = gpu.load_texture_with_hole(
-                    &root().join("textures").join(spec.texture),
-                    spec.hole,
-                )?;
-                assets.textures.insert(spec.texture, id);
+                let pixels =
+                    Pixels::load_with_hole(&root().join("textures").join(spec.texture), spec.hole)?;
+                self.decoded.push((spec.texture, pixels));
+            }
+            Step::Atlas => {
+                for (name, id) in gpu.upload_atlas(std::mem::take(&mut self.decoded))? {
+                    assets.textures.insert(name, id);
+                }
             }
             Step::Sound(file) => audio.preload(file),
             Step::Font(size) => assets.fonts.load(gpu, &root().join(FONT_FILE), size)?,
@@ -287,6 +299,31 @@ mod tests {
             let path = root().join("textures").join(name);
             let decoded = crate::render::Pixels::load(&path);
             assert!(decoded.is_ok(), "{name}: {:?}", decoded.err());
+        }
+    }
+
+    #[test]
+    fn every_game_texture_fits_into_one_atlas_without_overlaps() {
+        let mut sizes = Vec::new();
+        for name in GAME_TEXTURES {
+            let pixels = crate::render::Pixels::load(&root().join("textures").join(name))
+                .expect("a decodable texture");
+            sizes.push(pixels.dimensions());
+        }
+        let packed = crate::render::pack_atlas(&sizes, 16384).expect("the textures fit");
+        assert!(packed.0 <= 8192, "{}", packed.0);
+        for (index, (width, height)) in sizes.iter().enumerate() {
+            let (x, y) = packed.1[index];
+            for other in 0..index {
+                let (ox, oy) = packed.1[other];
+                let (ow, oh) = sizes[other];
+                let apart = x + width <= ox || ox + ow <= x || y + height <= oy || oy + oh <= y;
+                assert!(
+                    apart,
+                    "{} overlaps {}",
+                    GAME_TEXTURES[index], GAME_TEXTURES[other]
+                );
+            }
         }
     }
 

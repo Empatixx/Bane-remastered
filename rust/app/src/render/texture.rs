@@ -22,7 +22,21 @@ pub(crate) struct Pixels {
     pub(super) rgba: Vec<u8>,
 }
 
+impl std::fmt::Debug for Pixels {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Pixels")
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .finish()
+    }
+}
+
 impl Pixels {
+    #[cfg(test)]
+    pub(crate) fn dimensions(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
+
     pub(super) fn white() -> Self {
         Self {
             width: 1,
@@ -41,6 +55,12 @@ impl Pixels {
             height: image.height(),
             rgba: image.into_raw(),
         })
+    }
+
+    pub(crate) fn load_with_hole(path: &Path, hole: [u32; 4]) -> Result<Self, Box<dyn Error>> {
+        let mut pixels = Self::load(path)?;
+        pixels.clear_rect(hole[0], hole[1], hole[2], hole[3]);
+        Ok(pixels)
     }
 
     pub(super) fn clear_rect(&mut self, x: u32, y: u32, width: u32, height: u32) {
