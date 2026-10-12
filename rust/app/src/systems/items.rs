@@ -6,8 +6,9 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, ArtefactDrop, Color, Despawn, Enemy, Expiring, GunDrop, Health, InRange,
-    Loadout, NoDrop, Outline, Pet, Pickup, Player, Position, Shop, Size, Wallet,
+    Animation, Armor, ArtefactDrop, Color, Despawn, Enemy, Expiring, GunDrop, Health, Hover,
+    InRange, Loadout, NoDrop, Outline, Pet, Pickup, Player, Position, Shop, Size, Wallet,
+    HOVER_CYCLE,
 };
 use crate::geometry;
 use crate::items::{
@@ -18,6 +19,22 @@ use crate::prefabs;
 const BURST_ITEMS: usize = 5;
 const DROP_OUTLINE: glam::Vec4 = glam::Vec4::new(1.0, 1.0, 0.0, 1.0);
 const BURST_SPEED: f32 = 333.0;
+
+pub(crate) fn hover_drops(world: &mut World, dt: f32) {
+    let fresh: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<hecs::Or<hecs::Or<&Pickup, &GunDrop>, &ArtefactDrop>>()
+        .without::<&Hover>()
+        .iter()
+        .collect();
+    for entity in fresh {
+        let cycle = rand::random_range(0.0..1.0);
+        let _ = world.insert_one(entity, Hover { cycle });
+    }
+    for hover in world.query_mut::<&mut Hover>() {
+        hover.cycle = (hover.cycle + dt / HOVER_CYCLE).rem_euclid(1.0);
+    }
+}
 
 pub(crate) fn outline_drops(world: &mut World) {
     let drops: Vec<(Entity, bool)> = world
@@ -419,5 +436,24 @@ mod tests {
         let _ = world.remove_one::<InRange>(near);
         outline_drops(&mut world);
         assert!(world.get::<&Outline>(near).is_err());
+    }
+
+    #[test]
+    fn drops_start_at_a_random_phase_and_keep_bobbing() {
+        let mut world = World::new();
+        let drop = world.spawn((ArtefactDrop {
+            kind: crate::artefacts::ArtefactKind::RingOfDeath,
+        },));
+        let other = world.spawn((Position(Vec2::ZERO),));
+
+        hover_drops(&mut world, 0.0);
+        assert!(world.get::<&Hover>(drop).is_ok());
+        assert!(world.get::<&Hover>(other).is_err());
+
+        let before = world.get::<&Hover>(drop).map(|h| h.cycle).unwrap_or(0.0);
+        hover_drops(&mut world, 0.125);
+        let after = world.get::<&Hover>(drop).map(|h| h.cycle).unwrap_or(0.0);
+        let moved = (after - before).rem_euclid(1.0);
+        assert!((moved - 0.25).abs() < 0.001, "{moved}");
     }
 }

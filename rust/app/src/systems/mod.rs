@@ -55,7 +55,9 @@ pub(crate) use enemies::{
 pub(crate) use glide::glide;
 pub(crate) use hud::{update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
-pub(crate) use items::{age_items, burst_items, collect_items, enemy_drops, outline_drops};
+pub(crate) use items::{
+    age_items, burst_items, collect_items, enemy_drops, hover_drops, outline_drops,
+};
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};

@@ -2,8 +2,8 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{
-    blended, Color, Hidden, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay, PlayerShadow,
-    Position, Previous, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
+    blended, Color, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay,
+    PlayerShadow, Position, Previous, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -56,23 +56,26 @@ pub(crate) fn collect_draws(
     blend: f32,
 ) -> Layers {
     let mut sorted = Sorted::default();
-    for (position, previous, size, color, sprite, layer, screen, overlay, lit, outline) in world
-        .query::<(
-            &Position,
-            Option<&Previous>,
-            &Size,
-            &Color,
-            Option<&Sprite>,
-            Option<&Layer>,
-            Option<&ScreenSpace>,
-            Option<&Overlay>,
-            Option<&Lit>,
-            Option<&Outline>,
-        )>()
-        .without::<&Hidden>()
-        .iter()
+    for (position, previous, size, color, sprite, layer, screen, overlay, lit, outline, hover) in
+        world
+            .query::<(
+                &Position,
+                Option<&Previous>,
+                &Size,
+                &Color,
+                Option<&Sprite>,
+                Option<&Layer>,
+                Option<&ScreenSpace>,
+                Option<&Overlay>,
+                Option<&Lit>,
+                Option<&Outline>,
+                Option<&Hover>,
+            )>()
+            .without::<&Hidden>()
+            .iter()
     {
-        let center = blended(position.0, previous, blend) - offset(screen, camera);
+        let bob = Vec2::new(0.0, hover.map_or(0.0, Hover::offset));
+        let center = blended(position.0, previous, blend) - offset(screen, camera) + bob;
         if screen.is_none() && off_screen(center, size.0) {
             continue;
         }

@@ -245,6 +245,7 @@ impl Scene for InGameScene {
         systems::update_weapon_hud(&mut self.world, &assets.textures);
         systems::fade_lights(&mut self.world);
         systems::flash_hits(&mut self.world, dt);
+        systems::hover_drops(&mut self.world, dt);
         systems::outline_drops(&mut self.world);
         systems::float_texts(&mut self.world, dt);
         let mut events = Vec::new();

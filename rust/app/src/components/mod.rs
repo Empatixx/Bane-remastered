@@ -34,7 +34,9 @@ pub(crate) use combat::{
     BULLET_IMPACT, BULLET_ROWS,
 };
 pub(crate) use death::DeathPart;
-pub(crate) use effects::{Floating, GazeWind, LightFade, Particle, RoomId, ThenPlay, TrapCooldown};
+pub(crate) use effects::{
+    Floating, GazeWind, Hover, LightFade, Particle, RoomId, ThenPlay, TrapCooldown, HOVER_CYCLE,
+};
 pub(crate) use hud::{
     AmmoPip, AmmoText, BarKind, BossHud, CoinText, GunIcon, StatusBar, PIP_EMPTY, PIP_FULL,
 };
