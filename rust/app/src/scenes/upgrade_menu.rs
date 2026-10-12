@@ -60,6 +60,10 @@ const LINE_LAYER: i32 = 31;
 const FRAME_LAYER: i32 = 32;
 const PANEL_LAYER: i32 = 40;
 const PLATE_ROWS: usize = 3;
+const COUNTER_CENTER: Vec2 = Vec2::new(795.0, 50.0);
+const COUNTER_SIZE: Vec2 = Vec2::new(243.0, 75.0);
+const COUNTER_ROWS: usize = 2;
+const COUNTER_BASELINE: f32 = 59.0;
 const FRAME_ROWS: usize = 9;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -416,10 +420,31 @@ pub(crate) fn layout(
             ));
         }
     }
+    elements.extend(counter(profile));
     if let Some(upgrade) = selected {
         elements.extend(panel(profile, upgrade, hover));
     }
     elements
+}
+
+fn counter(profile: &SharedProfile) -> Vec<Element> {
+    vec![
+        Element::Image {
+            texture: tex::MENU_PLATE,
+            top_left: COUNTER_CENTER - COUNTER_SIZE / 2.0,
+            size: COUNTER_SIZE,
+            cell: Some((0, COUNTER_ROWS)),
+            layer: PANEL_LAYER,
+            alpha: 1.0,
+        },
+        Element::Label {
+            content: format!("Talents: {}", profile.balance()),
+            position: Vec2::new(COUNTER_CENTER.x, COUNTER_BASELINE),
+            color: MENU_COLOR,
+            size: FontSize::Size27,
+            align: Align::Center,
+        },
+    ]
 }
 
 fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element> {
@@ -1099,7 +1124,7 @@ mod tests {
         let shown = labels(&elements);
         assert!(shown.contains(&"Discount".to_owned()));
         assert!(shown.contains(&"Buy".to_owned()));
-        assert!(shown.contains(&"60,-".to_owned()));
+        assert!(shown.contains(&"1,-".to_owned()));
         assert_eq!(
             images(&elements, tex::MENU_PLATE_SMALL),
             vec![(PLATE_CENTER - PLATE_SIZE / 2.0, Some((0, PLATE_ROWS)))]
@@ -1235,6 +1260,44 @@ mod tests {
         let (low, _) = pan_limits();
         assert!(menu.pan.x < -50.0);
         assert!(menu.pan.x >= low.x - 0.01);
+    }
+
+    #[test]
+    fn the_talent_balance_is_shown_in_the_menu_and_follows_a_purchase() {
+        let (mut menu, mut world, assets, profile) = opened();
+        let shown = |world: &World| -> Vec<String> {
+            world
+                .query::<&Text>()
+                .with::<&UpgradeUi>()
+                .iter()
+                .map(|text| text.content.clone())
+                .filter(|content| content.starts_with("Talents"))
+                .collect()
+        };
+        let before = profile.balance();
+        assert_eq!(shown(&world), vec![format!("Talents: {before}")]);
+
+        menu.selected = Some(Upgrade::Discount);
+        let mut input = Input::default();
+        input.set_mouse(PLATE_CENTER);
+        input.handle_click(MouseButton::Left, ElementState::Pressed);
+        let outcome = step(&mut menu, &mut world, &assets, &profile, &mut input);
+
+        assert_eq!(outcome, Some(Purchase::Bought));
+        assert_eq!(profile.balance(), before - 1);
+        assert_eq!(shown(&world), vec![format!("Talents: {}", before - 1)]);
+    }
+
+    #[test]
+    fn the_balance_plate_sits_above_the_panel_and_does_not_touch_the_talent_shown_in_it() {
+        const BOTTOM: f32 = COUNTER_CENTER.y + COUNTER_SIZE.y / 2.0;
+        const LEFT: f32 = COUNTER_CENTER.x - COUNTER_SIZE.x / 2.0;
+        const RIGHT: f32 = COUNTER_CENTER.x + COUNTER_SIZE.x / 2.0;
+        const {
+            assert!(BOTTOM <= PANEL_TALENT_Y);
+            assert!(LEFT >= PANEL_TOP_LEFT.x - 2.0);
+            assert!(RIGHT <= PANEL_TOP_LEFT.x + PANEL_SIZE.x + 2.0);
+        }
     }
 
     #[test]

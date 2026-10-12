@@ -1,13 +1,12 @@
-use crate::assets::{tex, Tex};
-use crate::palette;
+use crate::assets::{Tex, tex};
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
     AmmoPip, AmmoText, Animation, ArtefactIcon, BarKind, BossHud, CoinText, Color, Despawn,
-    GunIcon, Hidden, Interactable, Interaction, Layer, Lit, Position, PriceTag, Prompt,
-    ScreenSpace, Shop, Size, Sprite, StatusBar, TalentText, Text, PIP_FULL,
+    GunIcon, Hidden, Interactable, Interaction, Layer, Lit, PIP_FULL, Position, PriceTag, Prompt,
+    ScreenSpace, Shop, Size, Sprite, StatusBar, Text,
 };
 use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::render::{Align, Anchor, FontSize, TextureId};
@@ -256,38 +255,5 @@ pub(crate) fn coin_hud(world: &mut World, textures: &Textures, coin: Tex, text_c
         )),
         Layer(6),
         ScreenSpace,
-    ));
-}
-
-const TALENT_PLATE: Vec2 = Vec2::new(190.0, 40.0);
-const TALENT_RIM: f32 = 3.0;
-const TALENT_GAP: f32 = 22.0;
-const TALENT_RIM_COLOR: Vec4 = palette::SALMON;
-
-const TALENT_BACK_COLOR: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.6);
-const TALENT_TEXT_COLOR: Vec4 = palette::ORANGE;
-
-pub(crate) fn talent_counter(world: &mut World, npc_top_left: Vec2, npc_size: Vec2) {
-    let center = Vec2::new(
-        npc_top_left.x + npc_size.x / 2.0,
-        npc_top_left.y + npc_size.y + TALENT_GAP + TALENT_PLATE.y / 2.0,
-    );
-    world.spawn((
-        Position(center),
-        Size(TALENT_PLATE + Vec2::splat(TALENT_RIM * 2.0)),
-        Color(TALENT_RIM_COLOR),
-        Layer(3),
-    ));
-    world.spawn((
-        Position(center),
-        Size(TALENT_PLATE),
-        Color(TALENT_BACK_COLOR),
-        Layer(4),
-    ));
-    world.spawn((
-        TalentText,
-        Position(center),
-        Text::centered(String::new(), TALENT_TEXT_COLOR, FontSize::Size22),
-        Layer(5),
     ));
 }

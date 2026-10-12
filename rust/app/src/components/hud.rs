@@ -89,6 +89,3 @@ pub(crate) struct AmmoPip {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct CoinText;
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct TalentText;

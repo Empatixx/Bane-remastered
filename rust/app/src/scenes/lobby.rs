@@ -21,6 +21,7 @@ use crate::viewport::TARGET;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition, UpgradeMenu};
 
+const TALENTS_TO_TRY_OUT: u64 = 1000;
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
 
 const PROPS: [(Prop, f32, f32, Look); 24] = [
@@ -73,13 +74,6 @@ impl LobbyScene {
             let balance = i32::try_from(profile.balance()).unwrap_or(i32::MAX);
             for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
                 wallet.coins = balance;
-            }
-            for text in self
-                .world
-                .query_mut::<&mut crate::components::Text>()
-                .with::<&crate::components::TalentText>()
-            {
-                text.content = format!("Talents: {balance}");
             }
         }
     }
@@ -167,7 +161,6 @@ impl Scene for LobbyScene {
         prefabs::scientist(&mut self.world, scientist_at, textures);
         let head = scientist_at + Vec2::new(Prop::Scientist.spec().size().x / 2.0, 0.0);
         prefabs::minimal_speech(&mut self.world, head);
-        prefabs::talent_counter(&mut self.world, scientist_at, Prop::Scientist.spec().size());
 
         let player_top_left = bounds / 2.0;
         prefabs::player(
@@ -179,6 +172,9 @@ impl Scene for LobbyScene {
 
         prefabs::status_bars(&mut self.world, textures);
         self.camera = Camera::new(bounds);
+        if let Some(profile) = &self.profile {
+            profile.top_up(TALENTS_TO_TRY_OUT);
+        }
         self.refresh_wallet();
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0, 1.0) {
             self.camera.snap_to(target);
@@ -292,7 +288,7 @@ impl Scene for LobbyScene {
 
 #[cfg(test)]
 mod tests {
-    use crate::components::{CoinText, TalentText, Text};
+    use crate::components::{CoinText, Text, Wallet};
 
     use super::*;
 
@@ -305,34 +301,31 @@ mod tests {
     }
 
     #[test]
-    fn the_balance_is_shown_as_talents_at_the_scientist_and_not_as_coins_on_the_left() {
+    fn the_lobby_shows_no_balance_counter_neither_on_the_left_nor_at_the_scientist() {
         let (scene, _assets) = lobby();
 
         assert_eq!(scene.world.query::<&CoinText>().iter().count(), 0);
-        let shown: Vec<String> = scene
+        let counters = scene
             .world
             .query::<&Text>()
-            .with::<&TalentText>()
             .iter()
-            .map(|text| text.content.clone())
-            .collect();
-        assert_eq!(shown, vec!["Talents: 0".to_owned()]);
+            .filter(|text| text.content.starts_with("Talents"))
+            .count();
+        assert_eq!(counters, 0);
     }
 
     #[test]
-    fn the_talent_plate_sits_below_the_scientist() {
+    fn the_player_starts_the_lobby_with_a_thousand_talents_to_try_things_out() {
         let (scene, _assets) = lobby();
-        let scientist = Vec2::new(25.0, 6.5) * TILE_SIZE;
-        let plate = scene
-            .world
-            .query::<&crate::components::Position>()
-            .with::<&TalentText>()
-            .iter()
-            .map(|position| position.0)
-            .next()
-            .expect("the plate");
 
-        assert!(plate.y > scientist.y + Prop::Scientist.spec().size().y);
-        assert!((plate.x - (scientist.x + Prop::Scientist.spec().size().x / 2.0)).abs() < 1.0);
+        let profile = scene.profile.as_ref().expect("profile");
+        assert_eq!(profile.balance(), TALENTS_TO_TRY_OUT);
+        let coins: Vec<i32> = scene
+            .world
+            .query::<&Wallet>()
+            .iter()
+            .map(|wallet| wallet.coins)
+            .collect();
+        assert_eq!(coins, vec![TALENTS_TO_TRY_OUT as i32]);
     }
 }

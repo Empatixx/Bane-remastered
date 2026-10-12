@@ -4,6 +4,7 @@ use std::collections::BTreeSet;
 use serde::{Deserialize, Serialize};
 
 pub(crate) const ROOT_CELL: (i32, i32) = (0, 0);
+pub(crate) const TALENT_PRICE: u64 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -138,12 +139,12 @@ impl Upgrade {
 
     pub(crate) fn def(self) -> UpgradeDef {
         use Quality::{Common, Epic, Rare};
-        let make = |title, description, texture, quality, price| UpgradeDef {
+        let make = |title, description, texture, quality| UpgradeDef {
             title,
             description,
             texture,
             quality,
-            price,
+            price: TALENT_PRICE,
         };
         match self {
             Self::MovementSpeed => make(
@@ -151,84 +152,72 @@ impl Upgrade {
                 &["Increases movement speed", " by 10%"],
                 tex::TALENTS_BOOT,
                 Common,
-                20,
             ),
             Self::Discount => make(
                 "Discount",
                 &["The shop prices will", " have a chance to", " be reduced"],
                 tex::TALENTS_DISCOUNT,
                 Common,
-                60,
             ),
             Self::TrapMaster => make(
                 "Trap Master",
                 &["All traps have a 30% chance", " to be immobilized"],
                 tex::TALENTS_TRAP,
                 Rare,
-                140,
             ),
             Self::AdditionalGun => make(
                 "Additional Gun",
                 &["Adds an additional slot", " for a weapon"],
                 tex::TALENTS_EXTRAGUN,
                 Epic,
-                300,
             ),
             Self::GambleMachine => make(
                 "Gamble machine",
                 &["Unlocks the gamble machine", " in the shop"],
                 tex::TALENTS_TELEPORTATION,
                 Common,
-                500,
             ),
             Self::ImprovedHealth => make(
                 "Hero's Heart",
                 &["Increases initial health", " by 20%"],
                 tex::TALENTS_HEALTH_CROSS,
                 Common,
-                20,
             ),
             Self::ImprovedArmor => make(
                 "Improved Armor",
                 &["Increases initial armor", " by 33%"],
                 tex::TALENTS_ARMOR,
                 Common,
-                60,
             ),
             Self::ArmorRegeneration => make(
                 "Armor Regeneration",
                 &["Restores armor after", " successfully", " clearing a room"],
                 tex::TALENTS_ARMORREGEN,
                 Rare,
-                140,
             ),
             Self::EnhancedHealth => make(
                 "Titan's Heart",
                 &["Increases initial health", " by 25%"],
                 tex::TALENTS_HEALTH_CROSS2,
                 Epic,
-                300,
             ),
             Self::ReducedDamageTaken => make(
                 "Kevlar",
                 &["Reduces damage taken", " by 10%"],
                 tex::TALENTS_KEVLAR,
                 Common,
-                500,
             ),
             Self::ImprovedDamage => make(
                 "Sharpened Bullets",
                 &["Increases all damage", " by 20%"],
                 tex::TALENTS_BLOODTEAR,
                 Common,
-                20,
             ),
             Self::AdditionalAmmo => make(
                 "Additional Ammo",
                 &["Increases ammo capacity", " by 10%"],
                 tex::TALENTS_AMMO,
                 Common,
-                60,
             ),
             Self::CriticalHit => make(
                 "Critical Hit",
@@ -239,21 +228,18 @@ impl Upgrade {
                 ],
                 tex::TALENTS_CRITICALHIT,
                 Rare,
-                140,
             ),
             Self::EnhancedDamage => make(
                 "Dangerous Bullets",
                 &["Increases all damage", " by 25%"],
                 tex::TALENTS_BLOODTEAR2,
                 Epic,
-                300,
             ),
             Self::Pet => make(
                 "Pet",
                 &["Unlocks a pet that will", " help you in battle"],
                 tex::TALENTS_PET,
                 Common,
-                500,
             ),
         }
     }
@@ -393,7 +379,7 @@ mod tests {
     }
 
     #[test]
-    fn the_first_upgrade_of_every_tree_is_free_and_prices_grow() {
+    fn the_first_upgrade_of_every_tree_is_free_and_every_other_costs_one_talent() {
         let free: Vec<Upgrade> = Upgrade::ALL.into_iter().filter(|u| u.is_free()).collect();
         assert_eq!(
             free,
@@ -405,7 +391,7 @@ mod tests {
         );
         for tree in Tree::ALL {
             let prices: Vec<u64> = tree.upgrades().iter().map(|u| u.def().price).collect();
-            assert_eq!(prices, vec![20, 60, 140, 300, 500]);
+            assert_eq!(prices, vec![TALENT_PRICE; 5]);
         }
     }
 
@@ -424,9 +410,9 @@ mod tests {
     }
 
     #[test]
-    fn buying_needs_the_parent_and_the_money_and_takes_the_price() {
+    fn buying_needs_the_parent_and_the_money_and_takes_one_talent() {
         let mut unlocked = BTreeSet::new();
-        let mut balance = 70;
+        let mut balance = 1;
 
         assert_eq!(
             purchase(&mut unlocked, &mut balance, Upgrade::TrapMaster),
@@ -436,7 +422,7 @@ mod tests {
             purchase(&mut unlocked, &mut balance, Upgrade::Discount),
             Purchase::Bought
         );
-        assert_eq!(balance, 10);
+        assert_eq!(balance, 0);
         assert_eq!(
             purchase(&mut unlocked, &mut balance, Upgrade::Discount),
             Purchase::AlreadyOwned
@@ -445,7 +431,7 @@ mod tests {
             purchase(&mut unlocked, &mut balance, Upgrade::TrapMaster),
             Purchase::TooExpensive
         );
-        assert_eq!(balance, 10);
+        assert_eq!(balance, 0);
         assert_eq!(
             purchase(&mut unlocked, &mut balance, Upgrade::MovementSpeed),
             Purchase::AlreadyOwned

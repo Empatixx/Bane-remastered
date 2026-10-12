@@ -178,6 +178,17 @@ impl SharedProfile {
         self.0.borrow().profile.balance
     }
 
+    pub(crate) fn top_up(&self, minimum: u64) {
+        let mut store = self.0.borrow_mut();
+        if store.profile.balance >= minimum {
+            return;
+        }
+        store.profile.balance = minimum;
+        if let Some(path) = &store.path {
+            store.profile.save(path);
+        }
+    }
+
     pub(crate) fn record_run(&self, stats: RunStats, summary: &Summary, victory: bool) -> u64 {
         let mut store = self.0.borrow_mut();
         let earned = store.profile.record_run(stats, summary, victory);
@@ -198,6 +209,7 @@ mod tests {
     use std::fs;
 
     use crate::systems::summarize;
+    use crate::upgrades::TALENT_PRICE;
 
     use super::*;
 
@@ -254,15 +266,15 @@ mod tests {
         let shared = SharedProfile::load(&path);
         let (stats, summary) = run(40, 6);
         let earned = shared.record_run(stats, &summary, true);
-        assert!(earned >= 60, "{earned}");
+        assert!(earned >= TALENT_PRICE, "{earned}");
 
         assert_eq!(shared.buy(Upgrade::Discount), Purchase::Bought);
-        assert_eq!(shared.balance(), earned - 60);
+        assert_eq!(shared.balance(), earned - TALENT_PRICE);
         assert!(shared.perks().discount);
 
         let reloaded = SharedProfile::load(&path);
         assert!(reloaded.snapshot().owns(Upgrade::Discount));
-        assert_eq!(reloaded.balance(), earned - 60);
+        assert_eq!(reloaded.balance(), earned - TALENT_PRICE);
         let _ = fs::remove_file(&path);
     }
 
