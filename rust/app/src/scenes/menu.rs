@@ -1,7 +1,7 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Assets, BUTTON, LOGO};
+use crate::assets::{Assets, BUTTON};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::components::{Color, Layer, Position, ScreenSpace, Size, UiAction};
 use crate::input::Input;
@@ -10,6 +10,7 @@ use crate::settings::Settings;
 use crate::systems;
 use crate::viewport::TARGET;
 
+use super::menu_logo::LogoAnim;
 use super::menu_stage::Stage;
 use super::{Scene, SceneId, SettingsPanel, Transition};
 
@@ -28,6 +29,7 @@ pub(crate) struct MenuScene {
     world: World,
     panel: SettingsPanel,
     stage: Option<Stage>,
+    logo: Option<LogoAnim>,
     ui: Vec<Entity>,
     sounds: Vec<AudioCommand>,
 }
@@ -65,15 +67,15 @@ impl Scene for MenuScene {
             Layer(-1),
             ScreenSpace,
         ));
-        let logo = prefabs::sprite(
+        let logo = LogoAnim::build(
             &mut self.world,
+            &assets.textures,
             Vec2::new(x, LOGO_TOP_LEFT_Y + LOGO_SIZE.y / 2.0),
             LOGO_SIZE,
-            assets.textures.get(LOGO),
-            0,
         );
-        let _ = self.world.insert_one(logo, ScreenSpace);
-        self.ui.extend([shade, logo]);
+        let logo_entity = logo.entity();
+        self.logo = Some(logo);
+        self.ui.extend([shade, logo_entity]);
         for (y, label, action) in BUTTON_ROWS {
             let (button, text) = prefabs::button(
                 &mut self.world,
@@ -97,6 +99,9 @@ impl Scene for MenuScene {
     ) -> Transition {
         if let Some(stage) = &mut self.stage {
             stage.tick(&mut self.world, assets, dt);
+            if let Some(logo) = &mut self.logo {
+                logo.tick(&mut self.world, stage.camera(), dt);
+            }
         }
         if self.panel.is_open() {
             if self.panel.update(&mut self.world, input, settings) {

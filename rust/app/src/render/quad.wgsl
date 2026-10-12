@@ -199,6 +199,17 @@ fn frosted(color: vec4<f32>, in: VertexOut) -> vec4<f32> {
     return vec4<f32>(tinted, color.a);
 }
 
+fn shined(color: vec4<f32>, in: VertexOut) -> vec4<f32> {
+    let progress = in.fx.y;
+    if (in.fx.w > 0.5 || progress <= 0.0 || color.a <= 0.01) {
+        return color;
+    }
+    let band = in.local.x + in.local.y * 0.5;
+    let center = mix(-0.25, 1.75, progress);
+    let strength = smoothstep(0.2, 0.0, abs(band - center));
+    return vec4<f32>(color.rgb + vec3<f32>(strength * 0.55), color.a);
+}
+
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let uv_per_pixel = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
@@ -207,7 +218,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         return map_room(in, textureSample(image, image_sampler, in.uv));
     }
     if (in.lit < 0.5) {
-        return frosted(outlined(albedo, in, uv_per_pixel), in);
+        return shined(frosted(outlined(albedo, in, uv_per_pixel), in), in);
     }
     var light = vec3<f32>(AMBIENT_LIGHT);
     for (var i = 0u; i < globals.light_count; i = i + 1u) {
@@ -218,8 +229,11 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     }
     light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
     let shaded = linear_to_srgb(albedo.rgb) * light;
-    return frosted(
-        outlined(vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), albedo.a), in, uv_per_pixel),
+    return shined(
+        frosted(
+            outlined(vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), albedo.a), in, uv_per_pixel),
+            in,
+        ),
         in,
     );
 }

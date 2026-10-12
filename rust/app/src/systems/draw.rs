@@ -3,7 +3,7 @@ use hecs::World;
 
 use crate::components::{
     blended, Color, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay,
-    PlayerShadow, Position, Previous, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
+    PlayerShadow, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -71,6 +71,7 @@ pub(crate) fn collect_draws(
         outline,
         hover,
         frozen,
+        shine,
     ) in world
         .query::<(
             &Position,
@@ -85,6 +86,7 @@ pub(crate) fn collect_draws(
             Option<&Outline>,
             Option<&Hover>,
             Option<&Frozen>,
+            Option<&Shine>,
         )>()
         .without::<&Hidden>()
         .iter()
@@ -105,6 +107,9 @@ pub(crate) fn collect_draws(
                         FROST_RIM.z,
                         FROST_RIM.w * frost,
                     ));
+                }
+                if let Some(shine) = shine {
+                    quad = quad.shined(shine.0);
                 }
                 Draw {
                     texture: sprite.texture,

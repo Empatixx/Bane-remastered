@@ -73,6 +73,11 @@ impl Quad {
         self
     }
 
+    pub(crate) fn shined(mut self, progress: f32) -> Self {
+        self.fx[1] = progress;
+        self
+    }
+
     pub(crate) fn frosted(mut self, strength: f32) -> Self {
         self.fx[0] = strength;
         self
@@ -98,6 +103,14 @@ mod tests {
     use glam::{Vec2, Vec4};
 
     use super::*;
+
+    #[test]
+    fn the_shine_goes_into_the_second_effect_slot_and_leaves_frost_alone() {
+        let quad = Quad::new(Vec2::ZERO, Vec2::ONE, Vec4::ONE).shined(0.4);
+        assert_eq!(quad.fx[1], 0.4);
+        assert_eq!(quad.fx[0], 0.0);
+        assert_eq!(quad.fx[3], 0.0);
+    }
 
     #[test]
     fn frost_goes_into_the_first_effect_slot_and_leaves_the_map_mode_alone() {

@@ -9,6 +9,9 @@ pub(crate) struct Color(pub(crate) Vec4);
 pub(crate) struct Outline(pub(crate) Vec4);
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Shine(pub(crate) f32);
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Sprite {
     pub(crate) texture: TextureId,
     pub(crate) uv: [f32; 4],
