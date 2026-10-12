@@ -2,6 +2,7 @@ use glam::Vec2;
 use hecs::World;
 use winit::keyboard::KeyCode;
 
+use crate::assets::tex;
 use crate::assets::{Assets, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
@@ -149,7 +150,7 @@ impl Scene for LobbyScene {
         prefabs::portal(&mut self.world, portal_top_left, textures);
         systems::spawn_ambience(
             &mut self.world,
-            textures.get("ingame/gazewind_particle.tga"),
+            textures.get(tex::GAZEWIND_PARTICLE),
             bounds,
             portal_top_left + Prop::Portal.spec().size() / 2.0,
             0x1d57,
@@ -234,7 +235,7 @@ impl Scene for LobbyScene {
         systems::spawn_gaze_wind(
             &mut self.world,
             &self.physics,
-            assets.textures.get("ingame/gazewind_particle.tga"),
+            assets.textures.get(tex::GAZEWIND_PARTICLE),
             dt,
             self.clock,
         );
@@ -243,7 +244,7 @@ impl Scene for LobbyScene {
         systems::update_weapon_hud(&mut self.world, &assets.textures);
         systems::tick_ambience(
             &mut self.world,
-            assets.textures.get("ingame/gazewind_particle.tga"),
+            assets.textures.get(tex::GAZEWIND_PARTICLE),
             self.camera.position(),
             dt,
         );

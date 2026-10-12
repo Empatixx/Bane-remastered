@@ -2,8 +2,8 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{Color, Layer, Light, Player, Position, Size, Sprite};
-use crate::dungeon::Rng;
 use crate::render::TextureId;
+use crate::rng::Rng;
 use crate::systems::dust::{spawn_dust, DustSpec, FRAMES};
 use crate::viewport::TARGET;
 

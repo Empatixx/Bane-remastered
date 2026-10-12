@@ -23,7 +23,7 @@ pub(crate) use texture::TextureId;
 
 #[cfg(test)]
 mod shader_tests {
-    fn validate(name: &str, source: &str) {
+    fn validate(name: &str, source: &str) -> naga::Module {
         let module = naga::front::wgsl::parse_str(source)
             .unwrap_or_else(|error| panic!("{name}: {}", error.emit_to_string(source)));
         let mut validator = naga::valid::Validator::new(
@@ -33,15 +33,27 @@ mod shader_tests {
         if let Err(error) = validator.validate(&module) {
             panic!("{name}: {error:?}");
         }
+        module
     }
 
     #[test]
     fn the_quad_shader_is_valid() {
-        validate("quad.wgsl", include_str!("quad.wgsl"));
+        let _ = validate("quad.wgsl", include_str!("quad.wgsl"));
     }
 
     #[test]
     fn the_post_shader_is_valid() {
-        validate("post.wgsl", include_str!("post.wgsl"));
+        let module = validate("post.wgsl", include_str!("post.wgsl"));
+        for entry in [
+            "fs_blit",
+            "fs_vignette",
+            "fs_blur_horizontal",
+            "fs_blur_vertical",
+        ] {
+            assert!(
+                module.entry_points.iter().any(|point| point.name == entry),
+                "the pipelines in gpu.rs need {entry}"
+            );
+        }
     }
 }

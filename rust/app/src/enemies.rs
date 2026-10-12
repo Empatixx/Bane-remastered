@@ -1,7 +1,8 @@
 use glam::Vec2;
 
+use crate::assets::{tex, Tex};
 use crate::components::Clip;
-use crate::dungeon::Rng;
+use crate::rng::Rng;
 
 const DAMPING: f32 = 5.0;
 const STEP_RATE: f32 = 60.0;
@@ -36,7 +37,7 @@ pub(crate) enum ProjectileKind {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ProjectileSpec {
-    pub(crate) texture: &'static str,
+    pub(crate) texture: Tex,
     pub(crate) columns: usize,
     pub(crate) rows: usize,
     pub(crate) frame: Vec2,
@@ -83,11 +84,11 @@ impl ProjectileSpec {
 impl ProjectileKind {
     pub(crate) fn spec(self) -> ProjectileSpec {
         match self {
-            Self::Green => slime_bullet("ingame/green_slimebullet.tga", [0.0, 200.0, 0.0]),
-            Self::Red => slime_bullet("ingame/red_slimebullet.tga", [255.0, 215.0, 0.0]),
-            Self::Purple => slime_bullet("ingame/purple_slimebullet.tga", [255.0, 0.0, 255.0]),
+            Self::Green => slime_bullet(tex::GREEN_SLIMEBULLET, [0.0, 200.0, 0.0]),
+            Self::Red => slime_bullet(tex::RED_SLIMEBULLET, [255.0, 215.0, 0.0]),
+            Self::Purple => slime_bullet(tex::PURPLE_SLIMEBULLET, [255.0, 0.0, 255.0]),
             Self::EyeWatcher => ProjectileSpec {
-                texture: "ingame/eye_watcher_projectile.tga",
+                texture: tex::EYE_WATCHER_PROJECTILE,
                 columns: 3,
                 rows: 2,
                 frame: Vec2::new(16.0, 16.0),
@@ -103,7 +104,7 @@ impl ProjectileKind {
     }
 }
 
-const fn slime_bullet(texture: &'static str, color: [f32; 3]) -> ProjectileSpec {
+const fn slime_bullet(texture: Tex, color: [f32; 3]) -> ProjectileSpec {
     ProjectileSpec {
         texture,
         columns: 4,
@@ -156,7 +157,7 @@ pub(crate) enum Behavior {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct EnemySpec {
-    pub(crate) texture: &'static str,
+    pub(crate) texture: Tex,
     pub(crate) columns: usize,
     pub(crate) rows: usize,
     pub(crate) frame: Vec2,
@@ -212,7 +213,7 @@ impl EnemySpec {
 }
 
 const fn spec(
-    texture: &'static str,
+    texture: Tex,
     grid: (usize, usize),
     frame: (f32, f32),
     scale: f32,
@@ -241,7 +242,7 @@ const fn spec(
     }
 }
 
-const fn spiderling(texture: &'static str, rows: usize, stats: (i32, i32, f32)) -> EnemySpec {
+const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemySpec {
     EnemySpec {
         min_floor: 2,
         kin: true,
@@ -277,7 +278,7 @@ impl EnemyKind {
     pub(crate) fn spec(self) -> EnemySpec {
         match self {
             Self::Rat => spec(
-                "ingame/rat.tga",
+                tex::RAT,
                 (4, 2),
                 (85.0, 37.0),
                 1.5,
@@ -286,7 +287,7 @@ impl EnemyKind {
                 (12, 2, 6_500_000.0),
             ),
             Self::Snake => spec(
-                "ingame/snake.tga",
+                tex::SNAKE,
                 (9, 2),
                 (64.0, 64.0),
                 1.5,
@@ -295,7 +296,7 @@ impl EnemyKind {
                 (8, 3, 8_000_000.0),
             ),
             Self::Bat => spec(
-                "ingame/bat.tga",
+                tex::BAT,
                 (4, 2),
                 (64.0, 64.0),
                 1.5,
@@ -306,7 +307,7 @@ impl EnemyKind {
             Self::Ghost => EnemySpec {
                 behavior: Behavior::Dash,
                 ..spec(
-                    "ingame/ghost.tga",
+                    tex::GHOST,
                     (5, 2),
                     (22.0, 28.0),
                     4.0,
@@ -318,7 +319,7 @@ impl EnemyKind {
             Self::Slime => EnemySpec {
                 behavior: Behavior::Smash(ProjectileKind::Green),
                 ..spec(
-                    "ingame/slime.tga",
+                    tex::SLIME,
                     (6, 2),
                     (32.0, 24.0),
                     3.0,
@@ -330,7 +331,7 @@ impl EnemyKind {
             Self::RedSlime => EnemySpec {
                 behavior: Behavior::Burst(ProjectileKind::Red),
                 ..spec(
-                    "ingame/redslime.tga",
+                    tex::REDSLIME,
                     (6, 2),
                     (64.0, 48.0),
                     1.5,
@@ -342,7 +343,7 @@ impl EnemyKind {
             Self::DemonEye => EnemySpec {
                 min_floor: 3,
                 ..spec(
-                    "ingame/demoneye.tga",
+                    tex::DEMONEYE,
                     (4, 1),
                     (76.0, 64.0),
                     1.5,
@@ -351,14 +352,12 @@ impl EnemyKind {
                     (11, 3, 14_500_000.0),
                 )
             },
-            Self::RedSpiderling => spiderling("ingame/spiderling.tga", 2, (3, 2, 5_500_000.0)),
+            Self::RedSpiderling => spiderling(tex::SPIDERLING, 2, (3, 2, 5_500_000.0)),
             Self::GreenSpiderling => EnemySpec {
                 behavior: Behavior::HealsKin,
-                ..spiderling("ingame/green_spiderling.tga", 2, (5, 2, 5_500_000.0))
+                ..spiderling(tex::GREEN_SPIDERLING, 2, (5, 2, 5_500_000.0))
             },
-            Self::PurpleSpiderling => {
-                spiderling("ingame/purple_spiderling.tga", 3, (3, 1, 6_500_000.0))
-            }
+            Self::PurpleSpiderling => spiderling(tex::PURPLE_SPIDERLING, 3, (3, 1, 6_500_000.0)),
             Self::Spider => EnemySpec {
                 min_floor: 1,
                 max_floor: 1,
@@ -366,7 +365,7 @@ impl EnemyKind {
                 role: Role::Boss("Spider king"),
                 behavior: Behavior::SpiderBoss,
                 ..spec(
-                    "ingame/spider.tga",
+                    tex::SPIDER,
                     (5, 3),
                     (64.0, 40.0),
                     3.0,
@@ -380,7 +379,7 @@ impl EnemyKind {
                 role: Role::Boss("King slime"),
                 behavior: Behavior::KingSlimeBoss,
                 ..spec(
-                    "ingame/kingslime.tga",
+                    tex::KINGSLIME,
                     (6, 2),
                     (64.0, 48.0),
                     4.0,
@@ -393,7 +392,7 @@ impl EnemyKind {
                 min_floor: 3,
                 behavior: Behavior::Shoots(ProjectileKind::EyeWatcher),
                 ..spec(
-                    "ingame/eye_watcher.tga",
+                    tex::EYE_WATCHER,
                     (5, 2),
                     (32.0, 32.0),
                     3.0,

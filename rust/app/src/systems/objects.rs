@@ -38,16 +38,16 @@ pub(crate) fn break_objects(
     sounds: &mut Vec<AudioCommand>,
     mut roll: impl FnMut(usize) -> usize,
 ) {
-    let fallen: Vec<(Entity, BreakKind, Vec2, Solid)> = world
-        .query::<(Entity, &Breakable, &Health, &Position, &Solid)>()
+    let fallen: Vec<(Entity, BreakKind, Vec2)> = world
+        .query::<(Entity, &Breakable, &Health, &Position)>()
+        .with::<&Solid>()
         .without::<&Broken>()
         .iter()
-        .filter(|(_, _, health, _, _)| health.current <= 0)
-        .map(|(entity, breakable, _, position, solid)| (entity, breakable.kind, position.0, *solid))
+        .filter(|(_, _, health, _)| health.current <= 0)
+        .map(|(entity, breakable, _, position)| (entity, breakable.kind, position.0))
         .collect();
-    for (entity, kind, center, solid) in fallen {
-        physics.remove_collider(solid.0);
-        let _ = world.remove_one::<Solid>(entity);
+    for (entity, kind, center) in fallen {
+        physics.detach(world, entity);
         let _ = world.insert_one(entity, Broken);
         if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
             animation.play(DEATH_CLIP);

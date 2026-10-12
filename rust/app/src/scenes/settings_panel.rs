@@ -1,3 +1,5 @@
+use crate::assets::tex;
+use crate::palette;
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
@@ -52,8 +54,8 @@ const KEY_ROW_TOP: f32 = 225.0;
 const KEY_ROW_STEP: f32 = 42.0;
 const KEY_ROWS: usize = 5;
 const KEY_SLOT: Vec2 = Vec2::new(110.0, 32.0);
-const LABEL_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
-const VALUE_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
+const LABEL_COLOR: Vec4 = palette::ORANGE;
+const VALUE_COLOR: Vec4 = palette::SALMON;
 
 #[derive(Debug)]
 pub(crate) struct SettingsPanel {
@@ -149,7 +151,7 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
         Position(BACKGROUND_CENTER),
         Size(BACKGROUND_SIZE),
         Color(Vec4::ONE),
-        Sprite::whole(textures.get("menu/settings_background.tga")),
+        Sprite::whole(textures.get(tex::MENU_SETTINGS_BACKGROUND)),
     ));
     ui(world, background, 5, None);
 
@@ -160,7 +162,7 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             Position(center),
             Size(TAB_SIZE),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get("menu/settings_menubar.tga"), 0, 0, 1, 2),
+            Sprite::cell(textures.get(tex::MENU_SETTINGS_MENUBAR), 0, 0, 1, 2),
         ));
         ui(world, tab, 6, None);
         let text = world.spawn((
@@ -176,7 +178,7 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             Vec2::new(800.0, y),
             label,
             action,
-            textures.get("menu/Menu_plate_small.tga"),
+            textures.get(tex::MENU_PLATE_SMALL),
         );
         if let Ok(mut size) = world.get::<&mut Size>(button) {
             size.0 = SIDE_BUTTON_SIZE;
@@ -202,7 +204,7 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             Position(center),
             Size(Vec2::splat(CHECKBOX_SIZE)),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get("menu/checkbox.tga"), 0, 0, 1, 4),
+            Sprite::cell(textures.get(tex::MENU_CHECKBOX), 0, 0, 1, 4),
         ));
         ui(world, checkbox, 6, video);
         spawn_label(world, label, Vec2::new(LABEL_X, center.y), video);
@@ -210,34 +212,22 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
 
     let resolution_label = world.spawn((
         Position(Vec2::new(LABEL_X, 341.0)),
-        Text {
-            content: "Resolution:".to_owned(),
-            color: LABEL_COLOR,
-            size: FontSize::Size22,
-            align: Align::Left,
-            anchor: Anchor::Baseline,
-        },
+        Text::new("Resolution:".to_owned(), LABEL_COLOR, FontSize::Size22),
     ));
     ui(world, resolution_label, 7, video);
     let resolution = world.spawn((
         ResolutionText,
         Position(Vec2::new(485.0, 340.0)),
-        Text {
-            content: String::new(),
-            color: LABEL_COLOR,
-            size: FontSize::Size22,
-            align: Align::Center,
-            anchor: Anchor::Baseline,
-        },
+        Text::new(String::new(), LABEL_COLOR, FontSize::Size22).aligned(Align::Center),
     ));
     ui(world, resolution, 7, video);
     for (center_x, action, texture) in [
         (
             560.0,
             UiAction::ResolutionNext,
-            "menu/button_arrow_rotated.tga",
+            tex::MENU_BUTTON_ARROW_ROTATED,
         ),
-        (410.0, UiAction::ResolutionPrevious, "menu/button_arrow.tga"),
+        (410.0, UiAction::ResolutionPrevious, tex::MENU_BUTTON_ARROW),
     ] {
         let arrow = world.spawn((
             Button {
@@ -260,7 +250,7 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             Position(Vec2::new(SLIDER_X + SLIDER_TRACK.x / 2.0, center_y)),
             Size(SLIDER_TRACK),
             Color(Vec4::ONE),
-            Sprite::whole(textures.get("menu/slider.tga")),
+            Sprite::whole(textures.get(tex::MENU_SLIDER)),
         ));
         ui(world, track, 6, audio);
         let handle = world.spawn((
@@ -273,20 +263,14 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             Position(Vec2::new(SLIDER_X + SLIDER_HANDLE / 2.0, center_y)),
             Size(Vec2::splat(SLIDER_HANDLE)),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get("menu/slider-button.tga"), 0, 0, 1, 2),
+            Sprite::cell(textures.get(tex::MENU_SLIDER_BUTTON), 0, 0, 1, 2),
         ));
         ui(world, handle, 7, audio);
         spawn_label(world, label, Vec2::new(LABEL_X, center_y), audio);
         let value = world.spawn((
             SliderValue(volume),
             Position(Vec2::new(SLIDER_VALUE_X, center_y)),
-            Text {
-                content: String::new(),
-                color: VALUE_COLOR,
-                size: FontSize::Size22,
-                align: Align::Left,
-                anchor: Anchor::Middle,
-            },
+            Text::new(String::new(), VALUE_COLOR, FontSize::Size22).anchored(Anchor::Middle),
         ));
         ui(world, value, 7, audio);
     }
@@ -303,13 +287,7 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
             },
             Position(Vec2::new(key_x, y)),
             Size(KEY_SLOT),
-            Text {
-                content: String::new(),
-                color: VALUE_COLOR,
-                size: FontSize::Size22,
-                align: Align::Center,
-                anchor: Anchor::Middle,
-            },
+            Text::centered(String::new(), VALUE_COLOR, FontSize::Size22),
         ));
         ui(world, slot, 7, controls);
     }
@@ -318,18 +296,38 @@ fn spawn_panel(world: &mut World, assets: &Assets) {
 fn spawn_label(world: &mut World, label: &str, left_middle: Vec2, tab: Option<SettingsTabKind>) {
     let entity = world.spawn((
         Position(left_middle),
-        Text {
-            content: label.to_owned(),
-            color: LABEL_COLOR,
-            size: FontSize::Size22,
-            align: Align::Left,
-            anchor: Anchor::Middle,
-        },
+        Text::new(label.to_owned(), LABEL_COLOR, FontSize::Size22).anchored(Anchor::Middle),
         SettingsUi,
         ScreenSpace,
         Layer(7),
     ));
     if let Some(tab) = tab {
         let _ = world.insert_one(entity, TabOnly(tab));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use glam::Vec2;
+
+    use crate::components::Position;
+
+    use super::*;
+
+    #[test]
+    fn closing_shows_only_what_opening_hid() {
+        let assets = Assets::new().expect("the embedded tileset is valid");
+        let mut world = World::new();
+        let menu = world.spawn((Position(Vec2::ZERO),));
+        let big_map = world.spawn((Position(Vec2::ZERO), Hidden));
+        let mut panel = SettingsPanel::default();
+
+        panel.open(&mut world, &assets, &[menu, big_map]);
+        assert!(world.get::<&Hidden>(menu).is_ok());
+        panel.close(&mut world);
+
+        assert!(world.get::<&Hidden>(menu).is_err());
+        assert!(world.get::<&Hidden>(big_map).is_ok());
+        assert_eq!(world.query::<&SettingsUi>().iter().count(), 0);
     }
 }

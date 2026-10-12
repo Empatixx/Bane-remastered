@@ -3,7 +3,7 @@ use std::error::Error;
 
 use serde::Deserialize;
 
-use super::rng::Rng;
+use crate::rng::Rng;
 
 pub(crate) const CELL_COLUMNS: usize = 28;
 pub(crate) const CELL_ROWS: usize = 20;

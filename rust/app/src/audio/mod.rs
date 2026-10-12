@@ -139,7 +139,7 @@ impl Backend {
 
     fn play_effect(&mut self, effect: SoundEffect) {
         let files = effect.files();
-        let file = files[rand::random_range(0..files.len())];
+        let file = files[(crate::rng::cosmetic() * files.len() as f32) as usize % files.len()];
         let Some(sound) = self.load(file) else {
             return;
         };

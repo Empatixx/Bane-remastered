@@ -4,6 +4,13 @@ use crate::components::{Body, Player, Position, Previous, Velocity};
 use crate::physics::Physics;
 
 pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
+    let orphans = physics.remove_orphans(world);
+    if orphans > 0 {
+        tracing::warn!(
+            orphans,
+            "despawned without Physics::despawn, cleaned up the leftovers"
+        );
+    }
     for (body, velocity) in world.query_mut::<(&Body, &Velocity)>() {
         physics.set_velocity(*body, velocity.0);
     }
@@ -43,6 +50,50 @@ mod tests {
     use super::*;
 
     const TILE: f32 = 64.0;
+
+    #[test]
+    fn a_body_left_behind_by_a_plain_despawn_is_cleaned_up_on_the_next_step() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(100.0, 100.0),
+        );
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(300.0, 300.0),
+            &Textures::default(),
+        );
+        assert_eq!(physics.body_count(), 2);
+
+        let _ = world.despawn(rat);
+        simulate(&mut world, &mut physics, 1.0 / 60.0);
+
+        assert_eq!(physics.body_count(), 1);
+        assert!(world.get::<&Body>(player).is_ok());
+    }
+
+    #[test]
+    fn detaching_removes_the_body_and_the_object_collider_but_keeps_the_entity() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(100.0, 100.0),
+        );
+
+        physics.detach(&mut world, rat);
+
+        assert_eq!(physics.body_count(), 0);
+        assert!(world.contains(rat));
+        assert!(world.get::<&Body>(rat).is_err());
+        assert_eq!(physics.remove_orphans(&world), 0);
+    }
 
     fn run(world: &mut World, physics: &mut Physics, steps: usize) {
         for _ in 0..steps {

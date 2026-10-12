@@ -116,6 +116,7 @@ pub(crate) fn open_chests(
     world: &mut World,
     textures: &Textures,
     roll: f32,
+    mut pick: impl FnMut(usize) -> usize,
     sounds: &mut Vec<AudioCommand>,
 ) {
     let player = world
@@ -146,9 +147,7 @@ pub(crate) fn open_chests(
     }
     for (entity, kind, center) in finished {
         let _ = world.despawn(entity);
-        crate::systems::burst_items(world, center, textures, |bound| {
-            rand::random_range(0..bound)
-        });
+        crate::systems::burst_items(world, center, textures, &mut pick);
         if kind == ChestKind::Artefact {
             let slot = world
                 .query::<&ArtefactSlot>()
@@ -286,7 +285,7 @@ mod tests {
         );
         let mut sounds = Vec::new();
 
-        open_chests(&mut world, &textures, 0.0, &mut sounds);
+        open_chests(&mut world, &textures, 0.0, |_| 0, &mut sounds);
         assert_eq!(sounds.len(), 1);
         assert!(world.get::<&Chest>(chest).is_ok_and(|c| c.opened));
         assert_eq!(world.query::<&GunDrop>().iter().count(), 0);
@@ -294,7 +293,7 @@ mod tests {
         if let Ok(mut animation) = world.get::<&mut Animation>(chest) {
             animation.advance(1.0);
         }
-        open_chests(&mut world, &textures, 0.0, &mut sounds);
+        open_chests(&mut world, &textures, 0.0, |_| 0, &mut sounds);
 
         assert!(world.get::<&Chest>(chest).is_err());
         let kinds: Vec<GunKind> = world
@@ -314,7 +313,7 @@ mod tests {
             Vec2::new(900.0, 900.0),
             &textures,
         );
-        open_chests(&mut world, &textures, 0.0, &mut Vec::new());
+        open_chests(&mut world, &textures, 0.0, |_| 0, &mut Vec::new());
         assert!(world.get::<&Chest>(chest).is_ok_and(|c| !c.opened));
 
         let loadout = Loadout::starting();
@@ -334,11 +333,11 @@ mod tests {
             &textures,
         );
         let mut sounds = Vec::new();
-        open_chests(&mut world, &textures, 0.0, &mut sounds);
+        open_chests(&mut world, &textures, 0.0, |_| 0, &mut sounds);
         if let Ok(mut animation) = world.get::<&mut Animation>(chest) {
             animation.advance(1.0);
         }
-        open_chests(&mut world, &textures, 0.0, &mut sounds);
+        open_chests(&mut world, &textures, 0.0, |_| 0, &mut sounds);
 
         let artefacts: Vec<crate::artefacts::ArtefactKind> = world
             .query::<&crate::components::ArtefactDrop>()

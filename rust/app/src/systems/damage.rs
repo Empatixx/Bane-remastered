@@ -82,7 +82,7 @@ pub(crate) fn deal(world: &mut World, damage: Damage) -> bool {
         );
     }
     if world.get::<&Breakable>(target).is_err() {
-        super::effects::show_change(world, target, -amount, rand::random_range(0.0..1.0));
+        super::effects::show_change(world, target, -amount, crate::rng::cosmetic());
     }
     true
 }

@@ -1,5 +1,6 @@
 use glam::Vec2;
 
+use crate::assets::{tex, Tex};
 use crate::components::BreakKind;
 
 pub(crate) const OBJECT_SIZE: Vec2 = Vec2::new(192.0, 192.0);
@@ -37,13 +38,13 @@ impl BreakKind {
         }
     }
 
-    pub(crate) fn texture(self) -> &'static str {
+    pub(crate) fn texture(self) -> Tex {
         match self {
-            Self::Pot => "ingame/pot.tga",
-            Self::Barrel => "ingame/barrel.tga",
-            Self::Explosive => "ingame/explosive_barrel.tga",
-            Self::Poison => "ingame/poison_barrel.tga",
-            Self::Frost => "ingame/frost_barrel.tga",
+            Self::Pot => tex::POT,
+            Self::Barrel => tex::BARREL,
+            Self::Explosive => tex::EXPLOSIVE_BARREL,
+            Self::Poison => tex::POISON_BARREL,
+            Self::Frost => tex::FROST_BARREL,
         }
     }
 }

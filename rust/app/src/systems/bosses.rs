@@ -175,6 +175,7 @@ pub(crate) fn update_boss_hud(world: &mut World) {
 
 #[cfg(test)]
 mod tests {
+    use crate::assets::tex;
     use crate::assets::Textures;
     use crate::components::{Chase, EnemyBullet, Velocity};
     use crate::systems::enemies::reap_dead;
@@ -317,7 +318,7 @@ mod tests {
             .get::<&crate::components::Sprite>(web)
             .map(|s| s.uv)
             .ok();
-        let whole = crate::components::Sprite::whole(textures.get("ingame/cobweb_projectile.tga"));
+        let whole = crate::components::Sprite::whole(textures.get(tex::COBWEB_PROJECTILE));
         assert_eq!(uv, Some(whole.uv));
         assert!(world.get::<&Animation>(web).is_err());
     }

@@ -1,5 +1,6 @@
 use glam::Vec2;
 
+use crate::assets::{tex, Tex};
 use crate::tilemap::TILE_SIZE;
 
 use super::template::RoomKind;
@@ -56,17 +57,17 @@ pub(crate) enum Key {
 }
 
 impl Key {
-    pub(crate) fn texture(self) -> &'static str {
+    pub(crate) fn texture(self) -> Tex {
         match self {
-            Self::Q => "ingame/keyboard/q.tga",
-            Self::E => "ingame/keyboard/e.tga",
-            Self::F => "ingame/keyboard/f.tga",
-            Self::One => "ingame/keyboard/1.tga",
-            Self::Two => "ingame/keyboard/2.tga",
-            Self::W => "ingame/keyboard/w.tga",
-            Self::A => "ingame/keyboard/a.tga",
-            Self::S => "ingame/keyboard/s.tga",
-            Self::D => "ingame/keyboard/d.tga",
+            Self::Q => tex::KEYBOARD_Q,
+            Self::E => tex::KEYBOARD_E,
+            Self::F => tex::KEYBOARD_F,
+            Self::One => tex::KEYBOARD_1,
+            Self::Two => tex::KEYBOARD_2,
+            Self::W => tex::KEYBOARD_W,
+            Self::A => tex::KEYBOARD_A,
+            Self::S => tex::KEYBOARD_S,
+            Self::D => tex::KEYBOARD_D,
         }
     }
 }

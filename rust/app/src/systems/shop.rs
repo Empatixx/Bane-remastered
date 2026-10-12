@@ -2,6 +2,7 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
+use crate::assets::tex;
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
@@ -165,7 +166,7 @@ pub(crate) fn stock_rooms(
                 prefabs::price_tag(
                     world,
                     entity,
-                    "ingame/shop_price_hud.tga",
+                    tex::SHOP_PRICE_HUD,
                     Vec2::new(center.x, top_left.y),
                     shop.price,
                     sale_percent,
@@ -190,7 +191,7 @@ pub(crate) fn stock_rooms(
                 prefabs::price_tag(
                     world,
                     entity,
-                    "ingame/sacrifice_price_hud.tga",
+                    tex::SACRIFICE_PRICE_HUD,
                     Vec2::new(center.x, pentagram.top_left.y),
                     shop.price,
                     None,

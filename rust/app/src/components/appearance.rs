@@ -69,13 +69,27 @@ pub(crate) struct Text {
 }
 
 impl Text {
-    pub(crate) fn centered(content: &str, color: Vec4, size: FontSize) -> Self {
+    pub(crate) fn new(content: impl Into<String>, color: Vec4, size: FontSize) -> Self {
         Self {
-            content: content.to_owned(),
+            content: content.into(),
             color,
             size,
-            align: Align::Center,
-            anchor: Anchor::Middle,
+            align: Align::Left,
+            anchor: Anchor::Baseline,
         }
+    }
+
+    pub(crate) fn centered(content: impl Into<String>, color: Vec4, size: FontSize) -> Self {
+        Self::new(content, color, size)
+            .aligned(Align::Center)
+            .anchored(Anchor::Middle)
+    }
+
+    pub(crate) fn aligned(self, align: Align) -> Self {
+        Self { align, ..self }
+    }
+
+    pub(crate) fn anchored(self, anchor: Anchor) -> Self {
+        Self { anchor, ..self }
     }
 }

@@ -1,3 +1,4 @@
+use crate::assets::{tex, Tex};
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
@@ -43,7 +44,7 @@ pub(crate) enum Quality {
 pub(crate) struct UpgradeDef {
     pub(crate) title: &'static str,
     pub(crate) description: &'static [&'static str],
-    pub(crate) texture: &'static str,
+    pub(crate) texture: Tex,
     pub(crate) quality: Quality,
     pub(crate) price: u64,
 }
@@ -59,11 +60,11 @@ impl Tree {
         }
     }
 
-    pub(crate) fn icon(self) -> &'static str {
+    pub(crate) fn icon(self) -> Tex {
         match self {
-            Self::Utility => "ingame/utility_icon.tga",
-            Self::Offensive => "ingame/offense_icon.tga",
-            Self::Defensive => "ingame/defense_icon.tga",
+            Self::Utility => tex::UTILITY_ICON,
+            Self::Offensive => tex::OFFENSE_ICON,
+            Self::Defensive => tex::DEFENSE_ICON,
         }
     }
 
@@ -159,84 +160,84 @@ impl Upgrade {
             Self::MovementSpeed => make(
                 "Swiftwind Steps",
                 &["Increases movement speed", " by 10%"],
-                "ingame/talents/boot.tga",
+                tex::TALENTS_BOOT,
                 Common,
                 20,
             ),
             Self::Discount => make(
                 "Discount",
                 &["The shop prices will", " have a chance to", " be reduced"],
-                "ingame/talents/discount.tga",
+                tex::TALENTS_DISCOUNT,
                 Common,
                 60,
             ),
             Self::TrapMaster => make(
                 "Trap Master",
                 &["All traps have a 30% chance", " to be immobilized"],
-                "ingame/talents/trap.tga",
+                tex::TALENTS_TRAP,
                 Rare,
                 140,
             ),
             Self::AdditionalGun => make(
                 "Additional Gun",
                 &["Adds an additional slot", " for a weapon"],
-                "ingame/talents/extragun.tga",
+                tex::TALENTS_EXTRAGUN,
                 Epic,
                 300,
             ),
             Self::GambleMachine => make(
                 "Gamble machine",
                 &["Unlocks the gamble machine", " in the shop"],
-                "ingame/talents/teleportation.tga",
+                tex::TALENTS_TELEPORTATION,
                 Common,
                 500,
             ),
             Self::ImprovedHealth => make(
                 "Hero's Heart",
                 &["Increases initial health", " by 20%"],
-                "ingame/talents/health_cross.tga",
+                tex::TALENTS_HEALTH_CROSS,
                 Common,
                 20,
             ),
             Self::ImprovedArmor => make(
                 "Improved Armor",
                 &["Increases initial armor", " by 33%"],
-                "ingame/talents/armor.tga",
+                tex::TALENTS_ARMOR,
                 Common,
                 60,
             ),
             Self::ArmorRegeneration => make(
                 "Armor Regeneration",
                 &["Restores armor after", " successfully", " clearing a room"],
-                "ingame/talents/armorregen.tga",
+                tex::TALENTS_ARMORREGEN,
                 Rare,
                 140,
             ),
             Self::EnhancedHealth => make(
                 "Titan's Heart",
                 &["Increases initial health", " by 25%"],
-                "ingame/talents/health_cross2.tga",
+                tex::TALENTS_HEALTH_CROSS2,
                 Epic,
                 300,
             ),
             Self::ReducedDamageTaken => make(
                 "Kevlar",
                 &["Reduces damage taken", " by 10%"],
-                "ingame/talents/kevlar.tga",
+                tex::TALENTS_KEVLAR,
                 Common,
                 500,
             ),
             Self::ImprovedDamage => make(
                 "Sharpened Bullets",
                 &["Increases all damage", " by 20%"],
-                "ingame/talents/bloodtear.tga",
+                tex::TALENTS_BLOODTEAR,
                 Common,
                 20,
             ),
             Self::AdditionalAmmo => make(
                 "Additional Ammo",
                 &["Increases ammo capacity", " by 10%"],
-                "ingame/talents/ammo.tga",
+                tex::TALENTS_AMMO,
                 Common,
                 60,
             ),
@@ -247,21 +248,21 @@ impl Upgrade {
                     " chance to deal double",
                     " damage",
                 ],
-                "ingame/talents/criticalhit.tga",
+                tex::TALENTS_CRITICALHIT,
                 Rare,
                 140,
             ),
             Self::EnhancedDamage => make(
                 "Dangerous Bullets",
                 &["Increases all damage", " by 25%"],
-                "ingame/talents/bloodtear2.tga",
+                tex::TALENTS_BLOODTEAR2,
                 Epic,
                 300,
             ),
             Self::Pet => make(
                 "Pet",
                 &["Unlocks a pet that will", " help you in battle"],
-                "ingame/talents/pet.tga",
+                tex::TALENTS_PET,
                 Common,
                 500,
             ),

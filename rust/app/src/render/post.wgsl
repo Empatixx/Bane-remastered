@@ -62,21 +62,27 @@ fn fs_vignette(in: VertexOut) -> @location(0) vec4<f32> {
     return vec4<f32>(srgb_to_linear(mixed), color.a);
 }
 
-@fragment
-fn fs_blur(in: VertexOut) -> @location(0) vec4<f32> {
+fn blur(uv: vec2<f32>, direction: vec2<f32>) -> vec4<f32> {
     var kernel = array<f32, 9>(0.0093, 0.028002, 0.065984, 0.121703, 0.175713, 0.121703, 0.065984, 0.028002, 0.0093);
+    let step = direction * params.texel * params.blur;
     var color = vec4<f32>(0.0);
     var weight_sum = 0.0;
     for (var i = 0; i < 9; i = i + 1) {
         let weight = kernel[i];
-        let offset = vec2<f32>(f32(i) - 4.0, 0.0) * params.texel * params.blur;
-        color = color + textureSample(source, source_sampler, in.uv + offset) * weight;
-        if (i != 0) {
-            color = color + textureSample(source, source_sampler, in.uv - offset) * weight;
-        }
-        weight_sum = weight_sum + select(weight * 2.0, weight, i == 0);
+        color = color + textureSample(source, source_sampler, uv + step * (f32(i) - 4.0)) * weight;
+        weight_sum = weight_sum + weight;
     }
-    color = color / weight_sum;
+    return color / weight_sum;
+}
+
+@fragment
+fn fs_blur_horizontal(in: VertexOut) -> @location(0) vec4<f32> {
+    return blur(in.uv, vec2<f32>(1.0, 0.0));
+}
+
+@fragment
+fn fs_blur_vertical(in: VertexOut) -> @location(0) vec4<f32> {
+    let color = blur(in.uv, vec2<f32>(0.0, 1.0));
     let darkened = srgb_to_linear(linear_to_srgb(color.rgb) * params.darkness);
     return vec4<f32>(darkened, color.a);
 }

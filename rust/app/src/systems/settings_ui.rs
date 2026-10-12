@@ -11,13 +11,14 @@ use crate::components::{
 use crate::controls;
 use crate::geometry;
 use crate::input::Input;
+use crate::palette;
 use crate::settings::{GameSettings, Settings};
 
 const ROW_COUNT: usize = 4;
 const KEY_PROMPT: &str = "Press key";
-const KEY_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
+const KEY_COLOR: Vec4 = palette::SALMON;
 const KEY_ACTIVE_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
-const LABEL_IDLE: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const LABEL_IDLE: Vec4 = palette::ORANGE;
 const LABEL_DISABLED: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
 const DISABLED_ROW: usize = 2;
 const SIDE_ROWS: usize = 3;

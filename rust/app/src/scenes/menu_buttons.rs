@@ -2,17 +2,18 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 use winit::keyboard::KeyCode;
 
-use crate::assets::Textures;
+use crate::assets::{Tex, Textures};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{Color, Position, ScreenSpace, Size, Sprite, Text, UiAction};
 use crate::geometry;
 use crate::input::Input;
+use crate::palette;
 use crate::prefabs;
-use crate::render::{Align, Anchor, FontSize};
+use crate::render::FontSize;
 
 pub(crate) const BUTTON_SIZE: Vec2 = Vec2::new(225.0, 57.0);
 const DRAW_SIZE: Vec2 = Vec2::new(243.0, 75.0);
-const BASE_TEXT: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const BASE_TEXT: Vec4 = palette::ORANGE;
 const HOT_TEXT: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const MARKER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const LIFT_SPEED: f32 = 12.0;
@@ -44,13 +45,11 @@ pub(crate) struct MenuButtons {
 fn marker(world: &mut World, glyph: &str, at: Vec2) -> Entity {
     world.spawn((
         Position(at),
-        Text {
-            content: glyph.to_owned(),
-            color: Vec4::new(MARKER_COLOR.x, MARKER_COLOR.y, MARKER_COLOR.z, 0.0),
-            size: FontSize::Size27,
-            align: Align::Center,
-            anchor: Anchor::Middle,
-        },
+        Text::centered(
+            glyph.to_owned(),
+            Vec4::new(MARKER_COLOR.x, MARKER_COLOR.y, MARKER_COLOR.z, 0.0),
+            FontSize::Size27,
+        ),
         ScreenSpace,
         crate::components::Layer(3),
     ))
@@ -60,15 +59,14 @@ impl MenuButtons {
     pub(crate) fn build(
         world: &mut World,
         textures: &Textures,
-        texture_name: &str,
+        texture: Tex,
         x: f32,
         rows: &[(f32, &str, UiAction)],
     ) -> Self {
         let mut built = Vec::new();
         for &(y, label, action) in rows {
             let rest = Vec2::new(x, y);
-            let (button, text) =
-                prefabs::button(world, rest, label, action, textures.get(texture_name));
+            let (button, text) = prefabs::button(world, rest, label, action, textures.get(texture));
             if let Ok(mut size) = world.get::<&mut Size>(button) {
                 size.0 = DRAW_SIZE;
             }
@@ -249,7 +247,7 @@ mod tests {
         let buttons = MenuButtons::build(
             &mut world,
             &Textures::default(),
-            "menu/Menu_bar2.tga",
+            crate::assets::MENU_PLATE,
             480.0,
             &ROWS,
         );

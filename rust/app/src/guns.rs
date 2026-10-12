@@ -1,5 +1,6 @@
 use glam::Vec2;
 
+use crate::assets::{tex, Tex};
 use crate::audio::SoundEffect;
 
 pub(crate) const MAX_PELLETS: usize = 4;
@@ -34,7 +35,7 @@ pub(crate) enum ClipStyle {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct GunSpec {
-    pub(crate) texture: &'static str,
+    pub(crate) texture: Tex,
     pub(crate) icon: Vec2,
     pub(crate) min_damage: i32,
     pub(crate) max_damage: i32,
@@ -52,7 +53,7 @@ pub(crate) struct GunSpec {
 }
 
 const fn gun(
-    art: (&'static str, (f32, f32)),
+    art: (Tex, (f32, f32)),
     damage: (i32, i32),
     inaccuracy: f32,
     timing: (f32, f32),
@@ -109,7 +110,7 @@ impl GunKind {
         use SoundEffect as S;
         match self {
             Self::Pistol => gun(
-                ("ingame/guns/pistol.tga", (41.0, 34.0)),
+                (tex::GUNS_PISTOL, (41.0, 34.0)),
                 (1, 3),
                 0.1,
                 (0.25, 0.7),
@@ -120,7 +121,7 @@ impl GunKind {
             Self::Shotgun => GunSpec {
                 pellets: MAX_PELLETS,
                 ..gun(
-                    ("ingame/guns/shotgun.tga", (97.0, 36.0)),
+                    (tex::GUNS_SHOTGUN, (97.0, 36.0)),
                     (3, 5),
                     0.1,
                     (0.5, 0.7),
@@ -130,7 +131,7 @@ impl GunKind {
                 )
             },
             Self::Luger => gun(
-                ("ingame/guns/luger.tga", (50.0, 38.0)),
+                (tex::GUNS_LUGER, (50.0, 38.0)),
                 (1, 2),
                 0.35,
                 (0.25, 0.7),
@@ -139,7 +140,7 @@ impl GunKind {
                 Pistol,
             ),
             Self::Revolver => gun(
-                ("ingame/guns/revolver.tga", (71.0, 44.0)),
+                (tex::GUNS_REVOLVER, (71.0, 44.0)),
                 (4, 6),
                 0.2,
                 (0.45, 0.7),
@@ -151,7 +152,7 @@ impl GunKind {
                 auto: true,
                 burst: Some(4),
                 ..gun(
-                    ("ingame/guns/M4.tga", (98.0, 52.0)),
+                    (tex::GUNS_M4, (98.0, 52.0)),
                     (2, 2),
                     0.0,
                     (0.75, 1.3),
@@ -163,7 +164,7 @@ impl GunKind {
             Self::Uzi => GunSpec {
                 auto: true,
                 ..gun(
-                    ("ingame/guns/uzi.tga", (66.0, 58.0)),
+                    (tex::GUNS_UZI, (66.0, 58.0)),
                     (1, 2),
                     0.4,
                     (0.1, 0.7),
@@ -175,7 +176,7 @@ impl GunKind {
             Self::Thompson => GunSpec {
                 auto: true,
                 ..gun(
-                    ("ingame/guns/thompson.tga", (97.0, 47.0)),
+                    (tex::GUNS_THOMPSON, (97.0, 47.0)),
                     (1, 3),
                     0.05,
                     (0.2, 0.85),

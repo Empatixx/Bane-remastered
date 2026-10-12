@@ -2,12 +2,13 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 use winit::keyboard::KeyCode;
 
+use crate::assets::tex;
 use crate::assets::{Assets, BULLET, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
 use crate::controls::Action;
-use crate::dungeon::{Dungeon, Rng};
+use crate::dungeon::Dungeon;
 use crate::flow::FlowField;
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -15,6 +16,7 @@ use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs;
 use crate::profile::SharedProfile;
+use crate::rng::{Rng, Stream};
 use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::TILE_SIZE;
@@ -37,7 +39,10 @@ pub(crate) struct InGameScene {
     hit: bool,
     dungeon: Option<Dungeon>,
     rooms: Option<systems::RoomRuntime>,
-    rng: Rng,
+    run_seed: u64,
+    map_rng: Rng,
+    loot_rng: Rng,
+    combat_rng: Rng,
     big_map: bool,
     floor: u32,
     navigation: Navigation,
@@ -116,15 +121,7 @@ impl Scene for InGameScene {
     }
 
     fn enter(&mut self, assets: &Assets) {
-        self.floor = 1;
-        self.victory = false;
-        self.death = None;
-        self.build(assets);
-        let perks = self
-            .profile
-            .as_ref()
-            .map_or_else(Perks::default, SharedProfile::perks);
-        systems::apply_run_perks(&mut self.world, perks);
+        self.start_run(Rng::run_seed(), assets);
     }
 
     fn update(
@@ -189,7 +186,7 @@ impl Scene for InGameScene {
                     camera: self.camera.position(),
                     bullet_texture: assets.textures.get(BULLET),
                     dt,
-                    roll: systems::ShotRoll::random(),
+                    roll: systems::ShotRoll::from(&mut self.combat_rng),
                 },
                 &mut self.sounds,
             );
@@ -218,7 +215,8 @@ impl Scene for InGameScene {
         systems::open_chests(
             &mut self.world,
             &assets.textures,
-            rand::random_range(0.0..1.0),
+            self.loot_rng.float(),
+            |bound| self.loot_rng.below(bound),
             &mut self.sounds,
         );
         systems::tick_invulnerability(&mut self.world, dt);
@@ -231,11 +229,11 @@ impl Scene for InGameScene {
             > 0;
         let (particle, phase) = if berserk {
             (
-                "ingame/artefacts/berserkpot-particle.tga",
+                tex::ARTEFACTS_BERSERKPOT_PARTICLE,
                 crate::artefacts::BERSERK_PHASE,
             )
         } else {
-            ("ingame/gazewind_particle.tga", 0.0)
+            (tex::GAZEWIND_PARTICLE, 0.0)
         };
         systems::spawn_gaze_wind(
             &mut self.world,
@@ -266,7 +264,7 @@ impl Scene for InGameScene {
                 &context,
                 &mut self.world,
                 &mut self.physics,
-                &mut self.rng,
+                &mut self.map_rng,
             );
         }
         self.handle_room_events(events, assets);
@@ -275,7 +273,7 @@ impl Scene for InGameScene {
             &mut self.world,
             &mut self.kills_without_drop,
             &assets.textures,
-            |bound| rand::random_range(0..bound),
+            |bound| self.loot_rng.below(bound),
         );
         systems::remove_expired(&mut self.world);
         systems::collect_items(&mut self.world, &mut self.sounds);
@@ -290,7 +288,7 @@ impl Scene for InGameScene {
             &assets.textures,
             dt,
             &mut self.sounds,
-            |bound| rand::random_range(0..bound),
+            |bound| self.loot_rng.below(bound),
         );
         systems::flicker_flames(&mut self.world);
         systems::tick_speech(&mut self.world, dt);
@@ -366,7 +364,7 @@ impl Scene for InGameScene {
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
-            |bound| rand::random_range(0..bound),
+            |bound| self.loot_rng.below(bound),
         );
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
@@ -380,6 +378,20 @@ impl Scene for InGameScene {
 }
 
 impl InGameScene {
+    fn start_run(&mut self, seed: u64, assets: &Assets) {
+        self.floor = 1;
+        self.run_seed = seed;
+        tracing::info!(seed, "a new run starts, set BANE_SEED to replay it");
+        self.victory = false;
+        self.death = None;
+        self.build(assets);
+        let perks = self
+            .profile
+            .as_ref()
+            .map_or_else(Perks::default, SharedProfile::perks);
+        systems::apply_run_perks(&mut self.world, perks);
+    }
+
     pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
         self.profile = Some(profile);
     }
@@ -397,9 +409,11 @@ impl InGameScene {
     }
 
     fn build(&mut self, assets: &Assets) {
-        self.rng = Rng::from_clock();
-        tracing::info!(seed = self.rng.seed(), "generating the dungeon");
-        let dungeon = match Dungeon::generate(&mut self.rng) {
+        self.map_rng = Rng::stream(self.run_seed, self.floor, Stream::Map);
+        self.loot_rng = Rng::stream(self.run_seed, self.floor, Stream::Loot);
+        self.combat_rng = Rng::stream(self.run_seed, self.floor, Stream::Combat);
+        tracing::info!(floor = self.floor, "generating the dungeon");
+        let dungeon = match Dungeon::generate(&mut self.map_rng) {
             Ok(dungeon) => dungeon,
             Err(error) => {
                 tracing::error!(%error, "cannot generate the dungeon");
@@ -442,7 +456,7 @@ impl InGameScene {
             self.floor,
             perks.discount,
             textures,
-            |bound| rand::random_range(0..bound),
+            |bound| self.loot_rng.below(bound),
         );
         if let Some(keeper) = dungeon
             .rooms
@@ -466,13 +480,13 @@ impl InGameScene {
                 self.camera.set_bounds(min, max);
             }
         }
-        systems::immobilize_traps(&mut self.world, perks, |bound| rand::random_range(0..bound));
+        systems::immobilize_traps(&mut self.world, perks, |bound| self.loot_rng.below(bound));
         self.dungeon = Some(dungeon);
         prefabs::status_bars(&mut self.world, textures);
         prefabs::coin_hud(
             &mut self.world,
             textures,
-            "ingame/banecoin.tga",
+            tex::BANECOIN,
             Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
         );
         prefabs::weapon_hud(&mut self.world, textures);
@@ -586,7 +600,7 @@ fn spawn_minimaps(world: &mut World, dungeon: &Dungeon, textures: &crate::assets
             shown: start,
             pan: Vec2::ZERO,
             glow: 0.0,
-            icons: textures.get("ingame/minimap_icons.tga"),
+            icons: textures.get(tex::MINIMAP_ICONS),
             size,
         };
         let (center, frame_size, layer) = match size {
@@ -597,7 +611,7 @@ fn spawn_minimaps(world: &mut World, dungeon: &Dungeon, textures: &crate::assets
             crate::components::Position(center),
             crate::components::Size(frame_size),
             crate::components::Color(Vec4::ONE),
-            crate::components::Sprite::whole(textures.get("ingame/minimap_layout.tga")),
+            crate::components::Sprite::whole(textures.get(tex::MINIMAP_LAYOUT)),
             crate::components::Layer(layer),
             crate::components::ScreenSpace,
         ));
@@ -612,7 +626,9 @@ fn spawn_minimaps(world: &mut World, dungeon: &Dungeon, textures: &crate::assets
 
 #[cfg(test)]
 mod tests {
-    use crate::components::{DeathBurst, Expiring, Health, Hits, Player, PoisonPool, Position};
+    use crate::components::{
+        DeathBurst, Expiring, Health, Hits, Player, PoisonPool, Position, PriceTag, Shop, Trap,
+    };
     use crate::enemies::EnemyKind;
 
     use super::*;
@@ -650,5 +666,39 @@ mod tests {
 
         assert!(scene.world.get::<&Expiring>(slime).is_ok());
         assert!(scene.world.get::<&DeathBurst>(slime).is_err());
+    }
+
+    fn fingerprint(seed: u64, assets: &Assets) -> Vec<String> {
+        let mut scene = InGameScene::default();
+        scene.start_run(seed, assets);
+        let mut lines: Vec<String> = scene
+            .world
+            .query::<(&Position, Option<&Shop>, Option<&PriceTag>, Option<&Trap>)>()
+            .iter()
+            .filter(|(_, shop, tag, trap)| shop.is_some() || tag.is_some() || trap.is_some())
+            .map(|(position, shop, _, trap)| {
+                format!(
+                    "{:?} {:?} {}",
+                    position.0,
+                    shop.map(|s| s.price),
+                    trap.is_some()
+                )
+            })
+            .collect();
+        lines.sort();
+        lines.push(format!(
+            "{:?}",
+            scene.dungeon.as_ref().map(|d| d.grid.pixel_size())
+        ));
+        lines
+    }
+
+    #[test]
+    fn the_same_seed_builds_the_same_floor_with_the_same_shops_and_traps() {
+        let assets = Assets::new().expect("the embedded tileset is valid");
+        let first = fingerprint(42, &assets);
+        assert!(first.len() > 1);
+        assert_eq!(first, fingerprint(42, &assets));
+        assert_ne!(first, fingerprint(7, &assets));
     }
 }

@@ -1,3 +1,5 @@
+use crate::assets::{tex, Tex};
+use crate::palette;
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
@@ -8,7 +10,7 @@ use crate::components::{
 };
 use crate::input::Input;
 use crate::profile::SharedProfile;
-use crate::render::{Align, Anchor, FontSize};
+use crate::render::{Align, FontSize};
 use crate::upgrades::{Purchase, Quality, Tree, Upgrade, TREE_STEP, TREE_TOP};
 
 const TALENT: f32 = 64.0;
@@ -31,14 +33,14 @@ const BUTTON_PADDING: f32 = 10.0;
 const BUTTON_BASELINE: f32 = 424.0;
 const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const PRICE_RIGHT_X: f32 = 886.0;
-const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const MENU_COLOR: Vec4 = palette::ORANGE;
 const BLOCKED_COLOR: Vec4 = Vec4::new(0.5, 0.5, 0.5, 1.0);
 const BASE_LAYER: i32 = 30;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Element {
     Image {
-        texture: &'static str,
+        texture: Tex,
         top_left: Vec2,
         size: Vec2,
         cell: Option<(usize, usize)>,
@@ -99,7 +101,7 @@ fn talent(upgrade: Upgrade, top_left: Vec2, owned: bool, layer: i32) -> [Element
     let def = upgrade.def();
     [
         Element::Image {
-            texture: "ingame/talent_frame.tga",
+            texture: tex::TALENT_FRAME,
             top_left,
             size: Vec2::splat(TALENT),
             cell: Some((frame_row(def.quality, owned), 6)),
@@ -141,7 +143,7 @@ pub(crate) fn layout(
             ));
             if index > 0 {
                 elements.push(Element::Image {
-                    texture: "ingame/talent_path.tga",
+                    texture: tex::TALENT_PATH,
                     top_left: Vec2::new(column, TREE_TOP + TREE_STEP * index as f32)
                         + PATH_OFFSET
                         + Vec2::new(0.0, 0.0),
@@ -163,7 +165,7 @@ fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element>
     let snapshot = profile.snapshot();
     let centre_x = PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0;
     let mut elements = vec![Element::Image {
-        texture: "ingame/pausebg.tga",
+        texture: tex::PAUSEBG,
         top_left: PANEL_TOP_LEFT,
         size: PANEL_SIZE,
         cell: None,
@@ -357,13 +359,7 @@ fn spawn(world: &mut World, element: Element, assets: &Assets) {
             world.spawn((
                 UpgradeUi,
                 Position(position),
-                Text {
-                    content,
-                    color,
-                    size,
-                    align,
-                    anchor: Anchor::Baseline,
-                },
+                Text::new(content, color, size).aligned(align),
                 Layer(BASE_LAYER + 5),
                 Overlay,
                 ScreenSpace,
@@ -391,7 +387,7 @@ mod tests {
         profile
     }
 
-    fn images(elements: &[Element], texture: &str) -> Vec<(Vec2, Option<(usize, usize)>)> {
+    fn images(elements: &[Element], texture: Tex) -> Vec<(Vec2, Option<(usize, usize)>)> {
         elements
             .iter()
             .filter_map(|element| match element {
@@ -410,11 +406,11 @@ mod tests {
     fn the_menu_shows_three_trees_of_five_talents_with_four_paths_each() {
         let profile = SharedProfile::in_memory();
         let elements = layout(&profile, None, false);
-        assert_eq!(images(&elements, "ingame/talent_frame.tga").len(), 15);
-        assert_eq!(images(&elements, "ingame/talent_path.tga").len(), 12);
-        assert_eq!(images(&elements, "ingame/utility_icon.tga").len(), 1);
-        assert_eq!(images(&elements, "ingame/offense_icon.tga").len(), 1);
-        assert_eq!(images(&elements, "ingame/defense_icon.tga").len(), 1);
+        assert_eq!(images(&elements, tex::TALENT_FRAME).len(), 15);
+        assert_eq!(images(&elements, tex::TALENT_PATH).len(), 12);
+        assert_eq!(images(&elements, tex::UTILITY_ICON).len(), 1);
+        assert_eq!(images(&elements, tex::OFFENSE_ICON).len(), 1);
+        assert_eq!(images(&elements, tex::DEFENSE_ICON).len(), 1);
     }
 
     #[test]
@@ -482,7 +478,7 @@ mod tests {
     fn without_a_selection_there_is_no_details_panel() {
         let profile = SharedProfile::in_memory();
         let elements = layout(&profile, None, false);
-        assert!(images(&elements, "ingame/pausebg.tga").is_empty());
+        assert!(images(&elements, tex::PAUSEBG).is_empty());
     }
 
     #[test]

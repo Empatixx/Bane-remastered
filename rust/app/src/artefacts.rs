@@ -1,3 +1,4 @@
+use crate::assets::{tex, Tex};
 use glam::Vec2;
 
 pub(crate) const BERSERK_SECONDS: f32 = 15.0;
@@ -27,13 +28,13 @@ impl ArtefactKind {
         Self::RevealMap,
     ];
 
-    pub(crate) fn texture(self) -> &'static str {
+    pub(crate) fn texture(self) -> Tex {
         match self {
-            Self::RingOfDeath => "ingame/artefacts/ringofdeath.tga",
-            Self::ArmorRefill => "ingame/artefacts/armorrefill.tga",
-            Self::ShieldHorn => "ingame/artefacts/shieldhorn.tga",
-            Self::BerserkPot => "ingame/artefacts/berserkpot.tga",
-            Self::RevealMap => "ingame/artefacts/reveal_map.tga",
+            Self::RingOfDeath => tex::ARTEFACTS_RINGOFDEATH,
+            Self::ArmorRefill => tex::ARTEFACTS_ARMORREFILL,
+            Self::ShieldHorn => tex::ARTEFACTS_SHIELDHORN,
+            Self::BerserkPot => tex::ARTEFACTS_BERSERKPOT,
+            Self::RevealMap => tex::ARTEFACTS_REVEAL_MAP,
         }
     }
 

@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
-use super::rng::Rng;
 use super::template::RoomKind;
+use crate::rng::Rng;
 
 const DENSITY: f32 = 0.15;
 const ATTEMPTS: usize = 100;

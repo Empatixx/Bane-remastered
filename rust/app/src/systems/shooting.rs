@@ -12,6 +12,7 @@ use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;
 use crate::render::TextureId;
+use crate::rng::Rng;
 use crate::systems::damage::{Damage, DamageSource};
 use crate::upgrades::Perks;
 
@@ -25,11 +26,11 @@ pub(crate) struct ShotRoll {
 }
 
 impl ShotRoll {
-    pub(crate) fn random() -> Self {
+    pub(crate) fn from(rng: &mut Rng) -> Self {
         Self {
-            spread: rand::random_range(-1.0..=1.0),
-            damages: std::array::from_fn(|_| rand::random_range(0.0..1.0)),
-            critical: rand::random_range(0.0..1.0),
+            spread: rng.signed(),
+            damages: std::array::from_fn(|_| rng.float()),
+            critical: rng.float(),
         }
     }
 }
@@ -169,14 +170,14 @@ pub(crate) fn bullet_hits(
     physics: &mut Physics,
     sounds: &mut Vec<AudioCommand>,
 ) {
-    let hits: Vec<(Entity, Body, i32, Vec<Owner>)> = world
+    let hits: Vec<(Entity, i32, Vec<Owner>)> = world
         .query::<(Entity, &Body, &Bullet)>()
         .without::<&Expiring>()
         .iter()
-        .map(|(entity, body, bullet)| (entity, *body, bullet.damage, physics.touching(*body)))
-        .filter(|(_, _, _, touched)| !touched.is_empty())
+        .map(|(entity, body, bullet)| (entity, bullet.damage, physics.touching(*body)))
+        .filter(|(_, _, touched)| !touched.is_empty())
         .collect();
-    for (bullet, body, damage, touched) in hits {
+    for (bullet, damage, touched) in hits {
         let victim = touched.iter().find_map(|owner| match owner {
             Owner::Entity(entity) => Some(*entity),
             Owner::Wall => None,
@@ -196,8 +197,7 @@ pub(crate) fn bullet_hits(
         } else {
             SoundEffect::WallHit
         }));
-        physics.remove(body);
-        let _ = world.remove_one::<Body>(bullet);
+        physics.detach(world, bullet);
         let _ = world.insert_one(bullet, Expiring);
         if let Ok(mut velocity) = world.get::<&mut Velocity>(bullet) {
             velocity.0 = Vec2::ZERO;

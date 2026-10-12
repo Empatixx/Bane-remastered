@@ -3,8 +3,8 @@ use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
-    Animation, Body, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health,
-    HitFlash, Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
+    Animation, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health, HitFlash,
+    Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
@@ -163,19 +163,16 @@ pub(crate) fn resolve_deaths(world: &mut World, physics: &mut Physics, textures:
 }
 
 pub(super) fn reap_dead(world: &mut World, physics: &mut Physics) {
-    let dead: Vec<(Entity, Enemy, Option<Body>)> = world
-        .query::<(Entity, &Health, &Enemy, Option<&Body>)>()
+    let dead: Vec<(Entity, Enemy)> = world
+        .query::<(Entity, &Health, &Enemy)>()
         .without::<&Expiring>()
         .without::<&Spawning>()
         .iter()
-        .filter(|(_, health, _, _)| health.current <= 0)
-        .map(|(entity, _, enemy, body)| (entity, *enemy, body.copied()))
+        .filter(|(_, health, _)| health.current <= 0)
+        .map(|(entity, _, enemy)| (entity, *enemy))
         .collect();
-    for (entity, enemy, body) in dead {
-        if let Some(body) = body {
-            physics.remove(body);
-            let _ = world.remove_one::<Body>(entity);
-        }
+    for (entity, enemy) in dead {
+        physics.detach(world, entity);
         let _ = world.insert_one(entity, Expiring);
         let _ = world.remove_one::<Frozen>(entity);
         if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
@@ -196,6 +193,7 @@ mod tests {
     use glam::Vec4;
 
     use crate::assets::Textures;
+    use crate::components::Body;
     use crate::enemies::{EnemyKind, COMMON_SPAWN_SECONDS};
     use crate::navigation::Navigation;
     use crate::prefabs;

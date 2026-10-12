@@ -7,10 +7,10 @@ use crate::tilemap::{TileGrid, TILE_SIZE};
 use super::decor::{self, Decor};
 use super::furnish::{self, Furnishing};
 use super::layout::{Direction, Layout, LayoutSpec};
-use super::rng::Rng;
 use super::template::{
     door_columns, door_rows, Cell, RoomKind, Templates, CELL_COLUMNS, CELL_ROWS,
 };
+use crate::rng::Rng;
 
 pub(crate) const CORRIDOR_LENGTH: usize = 4;
 const MARGIN: usize = 1;

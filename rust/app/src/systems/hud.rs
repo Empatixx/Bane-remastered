@@ -1,6 +1,7 @@
 use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 
+use crate::assets::tex;
 use crate::assets::Textures;
 use crate::components::{
     AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, GunIcon, Health, Hidden, Loadout,
@@ -113,8 +114,8 @@ fn show_weapon(world: &mut World, weapon: Option<Weapon>, textures: &Textures) {
             Some((w, style, top_left)) => {
                 position.0 = top_left + PIP_SIZE / 2.0;
                 sprite.texture = textures.get(match style {
-                    ClipStyle::Shotgun => "ingame/shotgun_ammo_hud.tga",
-                    _ => "ingame/ammo_hud.tga",
+                    ClipStyle::Shotgun => tex::SHOTGUN_AMMO_HUD,
+                    _ => tex::AMMO_HUD,
                 });
                 animation.switch_to(if pip.index < w.clip {
                     PIP_FULL

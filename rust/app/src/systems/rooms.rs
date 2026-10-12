@@ -4,10 +4,11 @@ use rapier2d::prelude::ColliderHandle;
 
 use crate::assets::Textures;
 use crate::components::{Expiring, Player, Position, RoomId};
-use crate::dungeon::{Dungeon, Rng, RoomKind};
+use crate::dungeon::{Dungeon, RoomKind};
 use crate::enemies;
 use crate::physics::Physics;
 use crate::prefabs;
+use crate::rng::Rng;
 use crate::tilemap::TILE_SIZE;
 
 const MAX_ENEMIES: usize = 5;
@@ -196,7 +197,7 @@ fn enter(
 
 #[cfg(test)]
 mod tests {
-    use crate::dungeon::Rng;
+    use crate::rng::Rng;
 
     use super::*;
 

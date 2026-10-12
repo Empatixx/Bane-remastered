@@ -118,7 +118,7 @@ pub(super) fn death_heals(world: &mut World) {
             }
         }
         for other in healed.drain(..) {
-            super::effects::show_change(world, other, heal.amount, rand::random_range(0.0..1.0));
+            super::effects::show_change(world, other, heal.amount, crate::rng::cosmetic());
         }
     }
 }
@@ -235,10 +235,7 @@ fn impact(world: &mut World, physics: &mut Physics, entity: Entity) {
     let Ok(clip) = world.get::<&Impact>(entity).map(|impact| impact.0) else {
         return;
     };
-    if let Ok(body) = world.get::<&Body>(entity).map(|body| *body) {
-        physics.remove(body);
-    }
-    let _ = world.remove_one::<Body>(entity);
+    physics.detach(world, entity);
     let _ = world.remove_one::<Homing>(entity);
     let _ = world.remove_one::<Fuse>(entity);
     let _ = world.insert_one(entity, Expiring);

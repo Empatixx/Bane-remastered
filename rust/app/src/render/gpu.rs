@@ -12,7 +12,8 @@ use super::post::PostUniform;
 use super::texture::Pixels;
 use super::{Draw, Frame, Quad, TextureId};
 
-const MAX_QUADS: usize = 10_000;
+const INITIAL_QUADS: usize = 10_000;
+const MAX_QUADS: usize = 1 << 20;
 const OCCLUDED_WAIT: std::time::Duration = std::time::Duration::from_millis(16);
 
 #[derive(Debug)]
@@ -31,6 +32,8 @@ pub(crate) struct Gpu {
     quad_scratch: Vec<Quad>,
     skipped_frames: u32,
     quad_buffer: wgpu::Buffer,
+    quad_capacity: usize,
+    trimmed_frames: u32,
     post: Post,
     targets: Option<Targets>,
 }
@@ -47,7 +50,8 @@ struct Post {
     sampler: wgpu::Sampler,
     blit: wgpu::RenderPipeline,
     vignette: wgpu::RenderPipeline,
-    blur: wgpu::RenderPipeline,
+    blur_horizontal: wgpu::RenderPipeline,
+    blur_vertical: wgpu::RenderPipeline,
 }
 
 struct Targets {
@@ -137,12 +141,7 @@ impl Gpu {
             min_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
-        let quad_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("quads"),
-            size: (MAX_QUADS * size_of::<Quad>()) as u64,
-            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        let quad_buffer = quad_buffer(&device, INITIAL_QUADS);
         let shader = device.create_shader_module(wgpu::include_wgsl!("quad.wgsl"));
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("quads"),
@@ -204,6 +203,8 @@ impl Gpu {
             quad_scratch: Vec::new(),
             skipped_frames: 0,
             quad_buffer,
+            quad_capacity: INITIAL_QUADS,
+            trimmed_frames: 0,
             post,
             targets: None,
         };
@@ -424,6 +425,27 @@ impl Gpu {
         }
     }
 
+    fn reserve_quads(&mut self, scene: usize, hud: usize, overlay: usize) -> (usize, usize, usize) {
+        let wanted = scene + hud + overlay;
+        if wanted > self.quad_capacity && self.quad_capacity < MAX_QUADS {
+            self.quad_capacity = wanted.next_power_of_two().min(MAX_QUADS);
+            self.quad_buffer = quad_buffer(&self.device, self.quad_capacity);
+            tracing::info!(capacity = self.quad_capacity, "grew the quad buffer");
+        }
+        let fitted = fit_layers(scene, hud, overlay, self.quad_capacity);
+        if fitted.0 < scene {
+            self.trimmed_frames += 1;
+            if self.trimmed_frames % 600 == 1 {
+                tracing::warn!(
+                    wanted,
+                    capacity = self.quad_capacity,
+                    "too many quads, the topmost scene quads are not drawn"
+                );
+            }
+        }
+        fitted
+    }
+
     fn post_pass(
         &self,
         encoder: &mut wgpu::CommandEncoder,
@@ -455,10 +477,11 @@ impl Gpu {
             self.ensure_targets();
         }
         let layers = &frame_data.layers;
-        let budget = MAX_QUADS;
-        let scene = &layers.scene[..layers.scene.len().min(budget)];
-        let hud = &layers.hud[..layers.hud.len().min(budget - scene.len())];
-        let overlay = &layers.overlay[..layers.overlay.len().min(budget - scene.len() - hud.len())];
+        let (scene_count, hud_count, overlay_count) =
+            self.reserve_quads(layers.scene.len(), layers.hud.len(), layers.overlay.len());
+        let scene = &layers.scene[..scene_count];
+        let hud = &layers.hud[..hud_count];
+        let overlay = &layers.overlay[..overlay_count];
         let mut quads = std::mem::take(&mut self.quad_scratch);
         quads.clear();
         quads.extend(scene.iter().chain(hud).chain(overlay).map(|draw| {
@@ -572,13 +595,15 @@ impl Gpu {
             scene.len() as u32,
         );
         if frame_data.post.blur_active() {
-            self.post_pass(
-                &mut encoder,
-                &self.post.blur,
-                &targets.groups[current],
-                &targets.views[1 - current],
-            );
-            current = 1 - current;
+            for pipeline in [&self.post.blur_horizontal, &self.post.blur_vertical] {
+                self.post_pass(
+                    &mut encoder,
+                    pipeline,
+                    &targets.groups[current],
+                    &targets.views[1 - current],
+                );
+                current = 1 - current;
+            }
         }
         self.post_pass(
             &mut encoder,
@@ -671,10 +696,46 @@ impl Post {
         Self {
             blit: pipeline("fs_blit"),
             vignette: pipeline("fs_vignette"),
-            blur: pipeline("fs_blur"),
+            blur_horizontal: pipeline("fs_blur_horizontal"),
+            blur_vertical: pipeline("fs_blur_vertical"),
             params_buffer,
             params_group,
             sampler,
         }
+    }
+}
+
+fn quad_buffer(device: &wgpu::Device, capacity: usize) -> wgpu::Buffer {
+    device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("quads"),
+        size: (capacity * size_of::<Quad>()) as u64,
+        usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    })
+}
+
+/// How many quads of each layer fit into the budget: the overlay (cursor, fades) and the HUD
+/// are kept whole, the scene gives up its topmost quads first.
+fn fit_layers(scene: usize, hud: usize, overlay: usize, budget: usize) -> (usize, usize, usize) {
+    let overlay = overlay.min(budget);
+    let hud = hud.min(budget - overlay);
+    let scene = scene.min(budget - overlay - hud);
+    (scene, hud, overlay)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn everything_fits_when_there_is_room() {
+        assert_eq!(fit_layers(10, 5, 1, 100), (10, 5, 1));
+    }
+
+    #[test]
+    fn the_scene_is_trimmed_before_the_hud_and_the_cursor() {
+        assert_eq!(fit_layers(100, 5, 1, 50), (44, 5, 1));
+        assert_eq!(fit_layers(100, 60, 1, 50), (0, 49, 1));
+        assert_eq!(fit_layers(100, 60, 80, 50), (0, 0, 50));
     }
 }

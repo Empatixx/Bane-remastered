@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use crate::tilemap::TileGrid;
 
 use super::build::DungeonRoom;
-use super::rng::Rng;
 use super::template::RoomKind;
+use crate::rng::Rng;
 
 const TORCHES_BASE: usize = 2;
 const TILES_PER_EXTRA_TORCH: usize = 180;

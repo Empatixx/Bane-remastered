@@ -4,12 +4,12 @@ mod walls;
 use std::fmt;
 
 use glam::Vec2;
-use hecs::Entity;
+use hecs::{Entity, World};
 use rapier2d::prelude::{
     ColliderBuilder, ColliderHandle, PhysicsWorld, RigidBodyBuilder, RigidBodyHandle, Vector,
 };
 
-use crate::components::Body;
+use crate::components::{Body, Solid};
 
 const WALL_OWNER: u128 = 0;
 const PLAYER_CORNER_RADIUS: f32 = 2.0;
@@ -188,6 +188,56 @@ impl Physics {
 
     pub(crate) fn remove(&mut self, body: Body) {
         self.world.remove_body(body.body);
+    }
+
+    /// Takes the entity's body and object collider out of the simulation, the entity stays.
+    pub(crate) fn detach(&mut self, world: &mut World, entity: Entity) {
+        if let Ok(body) = world.remove_one::<Body>(entity) {
+            self.remove(body);
+        }
+        if let Ok(solid) = world.remove_one::<Solid>(entity) {
+            self.remove_collider(solid.0);
+        }
+    }
+
+    /// Drops what an entity still owns in the simulation after it was despawned, or lost its
+    /// `Body` or `Solid`, without `detach`. Returns how many were left behind.
+    pub(crate) fn remove_orphans(&mut self, world: &World) -> usize {
+        let bodies: Vec<RigidBodyHandle> = self
+            .world
+            .bodies
+            .iter()
+            .filter(|(handle, body)| {
+                body.colliders().iter().any(|collider| {
+                    matches!(self.owner(*collider), Some(Owner::Entity(entity))
+                        if !world.get::<&Body>(entity).is_ok_and(|held| held.body == *handle))
+                })
+            })
+            .map(|(handle, _)| handle)
+            .collect();
+        let colliders: Vec<ColliderHandle> = self
+            .world
+            .colliders
+            .iter()
+            .filter(|(_, collider)| collider.parent().is_none())
+            .filter(|(handle, _)| {
+                matches!(self.owner(*handle), Some(Owner::Entity(entity))
+                    if !world.get::<&Solid>(entity).is_ok_and(|held| held.0 == *handle))
+            })
+            .map(|(handle, _)| handle)
+            .collect();
+        for body in &bodies {
+            self.world.remove_body(*body);
+        }
+        for collider in &colliders {
+            self.remove_collider(*collider);
+        }
+        bodies.len() + colliders.len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn body_count(&self) -> usize {
+        self.world.bodies.len()
     }
 
     pub(crate) fn set_velocity(&mut self, body: Body, velocity: Vec2) {

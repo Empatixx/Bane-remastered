@@ -28,7 +28,7 @@ pub(crate) fn hover_drops(world: &mut World, dt: f32) {
         .iter()
         .collect();
     for entity in fresh {
-        let cycle = rand::random_range(0.0..1.0);
+        let cycle = crate::rng::cosmetic();
         let _ = world.insert_one(entity, Hover { cycle });
     }
     for hover in world.query_mut::<&mut Hover>() {

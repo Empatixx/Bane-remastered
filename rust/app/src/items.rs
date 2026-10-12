@@ -1,5 +1,6 @@
 use glam::Vec2;
 
+use crate::assets::{tex, Tex};
 use crate::components::Clip;
 
 pub(crate) const DESPAWN_SECONDS: f32 = 10.0;
@@ -45,7 +46,7 @@ pub(crate) enum ItemKind {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ItemSpec {
-    pub(crate) texture: &'static str,
+    pub(crate) texture: Tex,
     pub(crate) columns: usize,
     pub(crate) rows: usize,
     pub(crate) size: Vec2,
@@ -73,14 +74,14 @@ impl ItemKind {
     pub(crate) fn spec(self) -> ItemSpec {
         match self {
             Self::Coin => ItemSpec {
-                texture: "ingame/banecoin_anim.tga",
+                texture: tex::BANECOIN_ANIM,
                 columns: 4,
                 rows: 1,
                 size: Vec2::new(24.0, 24.0),
                 clip: clip(0, 4, 0.1),
             },
             Self::Ammo(AmmoBox::Universal) => ItemSpec {
-                texture: "ingame/ammobox_universal.tga",
+                texture: tex::AMMOBOX_UNIVERSAL,
                 columns: 1,
                 rows: 1,
                 size: Vec2::new(48.0, 48.0),
@@ -88,9 +89,9 @@ impl ItemKind {
             },
             Self::Ammo(box_kind) => ItemSpec {
                 texture: if box_kind == AmmoBox::Shotgun {
-                    "ingame/ammobox_shotgun.tga"
+                    tex::AMMOBOX_SHOTGUN
                 } else {
-                    "ingame/ammobox_pistol.tga"
+                    tex::AMMOBOX_PISTOL
                 },
                 columns: 8,
                 rows: 1,
@@ -98,14 +99,14 @@ impl ItemKind {
                 clip: clip(0, 8, 0.1),
             },
             Self::Potion(vital, PotionSize::Small) => ItemSpec {
-                texture: "ingame/healing_pot.tga",
+                texture: tex::HEALING_POT,
                 columns: 4,
                 rows: 2,
                 size: Vec2::new(60.0, 60.0),
                 clip: clip(vital_row(vital), 4, 0.125),
             },
             Self::Potion(vital, PotionSize::Large) => ItemSpec {
-                texture: "ingame/large_healing_pot.tga",
+                texture: tex::LARGE_HEALING_POT,
                 columns: 1,
                 rows: 2,
                 size: Vec2::new(64.0, 64.0),

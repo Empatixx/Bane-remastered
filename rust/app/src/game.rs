@@ -3,6 +3,7 @@ use std::ops::ControlFlow;
 use glam::Vec2;
 use winit::event::{ElementState, KeyEvent, MouseButton};
 
+use crate::assets::tex;
 use crate::assets::{Assets, Loader};
 use crate::audio::Audio;
 use crate::components::Sprite;
@@ -131,20 +132,12 @@ impl Game {
     fn cursor_draw(&self) -> Draw {
         let textures = &self.assets.textures;
         let (name, hotspot, uv) = match self.scenes.cursor() {
-            Cursor::Default => (
-                "ingame/cursor.tga",
-                ARROW_HOTSPOT,
-                Sprite::cell_uv(0, 0, 1, 1),
-            ),
-            Cursor::Crosshair => (
-                "ingame/crosshair.tga",
-                AIM_HOTSPOT,
-                Sprite::cell_uv(0, 0, 1, 1),
-            ),
+            Cursor::Default => (tex::CURSOR, ARROW_HOTSPOT, Sprite::cell_uv(0, 0, 1, 1)),
+            Cursor::Crosshair => (tex::CROSSHAIR, AIM_HOTSPOT, Sprite::cell_uv(0, 0, 1, 1)),
             Cursor::Reload => {
                 let frame = (self.time / RELOAD_FRAME_TIME) as usize % RELOAD_FRAMES;
                 (
-                    "ingame/reload_cursor.tga",
+                    tex::RELOAD_CURSOR,
                     AIM_HOTSPOT,
                     Sprite::cell_uv(frame, 0, RELOAD_FRAMES, 1),
                 )
