@@ -27,6 +27,7 @@ pub(crate) struct Gpu {
     sampler: wgpu::Sampler,
     textures: Vec<wgpu::BindGroup>,
     entries: Vec<TextureEntry>,
+    quad_scratch: Vec<Quad>,
     quad_buffer: wgpu::Buffer,
     post: Post,
     targets: Option<Targets>,
@@ -197,6 +198,7 @@ impl Gpu {
             sampler,
             textures: Vec::new(),
             entries: Vec::new(),
+            quad_scratch: Vec::new(),
             quad_buffer,
             post,
             targets: None,
@@ -444,24 +446,25 @@ impl Gpu {
     }
 
     pub(crate) fn render(&mut self, clear: wgpu::Color, frame_data: &Frame) {
-        self.ensure_targets();
+        let direct = !frame_data.post.vignette_active() && !frame_data.post.blur_active();
+        if !direct {
+            self.ensure_targets();
+        }
         let layers = &frame_data.layers;
         let budget = MAX_QUADS;
         let scene = &layers.scene[..layers.scene.len().min(budget)];
         let hud = &layers.hud[..layers.hud.len().min(budget - scene.len())];
         let overlay = &layers.overlay[..layers.overlay.len().min(budget - scene.len() - hud.len())];
-        let quads: Vec<Quad> = scene
-            .iter()
-            .chain(hud)
-            .chain(overlay)
-            .map(|draw| {
-                let mut quad = draw.quad;
-                quad.remap_uv(self.entries[draw.texture.index()].region);
-                quad
-            })
-            .collect();
+        let mut quads = std::mem::take(&mut self.quad_scratch);
+        quads.clear();
+        quads.extend(scene.iter().chain(hud).chain(overlay).map(|draw| {
+            let mut quad = draw.quad;
+            quad.remap_uv(self.entries[draw.texture.index()].region);
+            quad
+        }));
         self.queue
             .write_buffer(&self.quad_buffer, 0, bytemuck::cast_slice(&quads));
+        self.quad_scratch = quads;
         self.queue.write_buffer(
             &self.globals_buffer,
             0,
@@ -488,12 +491,39 @@ impl Gpu {
         let surface_view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let Some(targets) = &self.targets else {
-            return;
-        };
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+
+        if direct {
+            self.quads_pass(
+                &mut encoder,
+                &surface_view,
+                wgpu::LoadOp::Clear(clear),
+                scene,
+                0,
+            );
+            self.quads_pass(
+                &mut encoder,
+                &surface_view,
+                wgpu::LoadOp::Load,
+                hud,
+                scene.len() as u32,
+            );
+            self.quads_pass(
+                &mut encoder,
+                &surface_view,
+                wgpu::LoadOp::Load,
+                overlay,
+                (scene.len() + hud.len()) as u32,
+            );
+            self.queue.submit([encoder.finish()]);
+            self.queue.present(frame);
+            return;
+        }
+        let Some(targets) = &self.targets else {
+            return;
+        };
 
         self.quads_pass(
             &mut encoder,

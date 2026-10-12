@@ -7,6 +7,8 @@ use crate::components::{
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
+use crate::viewport::TARGET;
+
 use super::hud::bar_draws;
 use super::minimap::minimap_draws;
 use super::shadow::shadow_draw;
@@ -70,6 +72,9 @@ pub(crate) fn collect_draws(
         .iter()
     {
         let center = blended(position.0, previous, blend) - offset(screen, camera);
+        if screen.is_none() && off_screen(center, size.0) {
+            continue;
+        }
         let draw = match sprite {
             Some(sprite) => Draw {
                 texture: sprite.texture,
@@ -157,10 +162,71 @@ pub(crate) fn collect_draws(
     sorted.finish()
 }
 
+fn off_screen(center: Vec2, size: Vec2) -> bool {
+    let reach = size.length() / 2.0;
+    center.x + reach < 0.0
+        || center.x - reach > TARGET.x
+        || center.y + reach < 0.0
+        || center.y - reach > TARGET.y
+}
+
 fn offset(screen: Option<&ScreenSpace>, camera: Vec2) -> Vec2 {
     if screen.is_some() {
         Vec2::ZERO
     } else {
         camera
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::components::Color;
+
+    use super::*;
+
+    fn square(world: &mut World, at: Vec2, screen: bool) {
+        let entity = world.spawn((
+            Position(at),
+            Size(Vec2::splat(64.0)),
+            Color(glam::Vec4::ONE),
+        ));
+        if screen {
+            let _ = world.insert_one(entity, ScreenSpace);
+        }
+    }
+
+    #[test]
+    fn world_sprites_outside_the_camera_are_not_drawn() {
+        let mut world = World::new();
+        square(&mut world, Vec2::new(500.0, 300.0), false);
+        square(&mut world, Vec2::new(5000.0, 300.0), false);
+        square(&mut world, Vec2::new(500.0, -4000.0), false);
+
+        let layers = collect_draws(&world, &Fonts::default(), Vec2::ZERO, "E", 1.0);
+
+        assert_eq!(layers.scene.len(), 1);
+    }
+
+    #[test]
+    fn the_camera_decides_what_is_visible_and_screen_space_is_never_culled() {
+        let mut world = World::new();
+        square(&mut world, Vec2::new(5000.0, 300.0), false);
+        square(&mut world, Vec2::new(5000.0, 300.0), true);
+
+        let away = collect_draws(&world, &Fonts::default(), Vec2::ZERO, "E", 1.0);
+        let following = collect_draws(&world, &Fonts::default(), Vec2::new(4800.0, 0.0), "E", 1.0);
+
+        assert_eq!((away.scene.len(), away.hud.len()), (0, 1));
+        assert_eq!((following.scene.len(), following.hud.len()), (1, 1));
+    }
+
+    #[test]
+    fn a_sprite_that_only_touches_the_edge_is_still_drawn() {
+        let mut world = World::new();
+        square(&mut world, Vec2::new(-20.0, 100.0), false);
+
+        let layers = collect_draws(&world, &Fonts::default(), Vec2::ZERO, "E", 1.0);
+
+        assert_eq!(layers.scene.len(), 1);
     }
 }
