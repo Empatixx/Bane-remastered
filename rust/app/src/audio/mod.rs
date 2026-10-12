@@ -2,7 +2,7 @@ mod sound;
 
 use std::collections::HashMap;
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Duration;
 
 use kira::sound::static_sound::{StaticSoundData, StaticSoundHandle};
@@ -178,7 +178,7 @@ impl Backend {
 }
 
 fn audio_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/audio")
+    crate::storage::assets_root().join("audio")
 }
 
 #[cfg(test)]

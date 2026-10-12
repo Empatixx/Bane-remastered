@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 use std::error::Error;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 
 use crate::audio::Audio;
@@ -309,8 +309,8 @@ fn load_texture(
     Ok(())
 }
 
-fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets")
+fn root() -> &'static Path {
+    crate::storage::assets_root()
 }
 
 #[cfg(test)]

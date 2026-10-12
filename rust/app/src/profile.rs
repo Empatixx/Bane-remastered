@@ -1,12 +1,12 @@
 use std::cell::RefCell;
 use std::collections::BTreeSet;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::components::RunStats;
+use crate::storage::{self, Loaded};
 use crate::systems::Summary;
 use crate::upgrades::{self, Perks, Purchase, Upgrade};
 
@@ -23,7 +23,41 @@ pub(crate) struct Profile {
     pub(crate) bullets_fired: u64,
     pub(crate) bullets_hit: u64,
     pub(crate) best_floor: u32,
+    #[serde(deserialize_with = "known_upgrades")]
     pub(crate) unlocked: BTreeSet<Upgrade>,
+}
+
+const PROFILE_VERSION: u32 = 1;
+
+#[derive(Serialize)]
+struct Versioned<'a> {
+    version: u32,
+    #[serde(flatten)]
+    profile: &'a Profile,
+}
+
+#[derive(Deserialize)]
+struct Stored {
+    #[serde(default)]
+    version: u32,
+    #[serde(flatten)]
+    profile: Profile,
+}
+
+fn known_upgrades<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<BTreeSet<Upgrade>, D::Error> {
+    let names = Vec::<serde_json::Value>::deserialize(deserializer)?;
+    Ok(names
+        .iter()
+        .filter_map(|name| match Upgrade::deserialize(name) {
+            Ok(upgrade) => Some(upgrade),
+            Err(error) => {
+                tracing::warn!(%error, %name, "skipping an unknown upgrade from the profile");
+                None
+            }
+        })
+        .collect())
 }
 
 impl Profile {
@@ -65,20 +99,30 @@ impl Profile {
         Perks::from_unlocked(&self.unlocked)
     }
 
-    fn load(path: &Path) -> Self {
-        match fs::read_to_string(path) {
-            Ok(text) => serde_json::from_str(&text).unwrap_or_else(|error| {
-                tracing::warn!(%error, path = %path.display(), "the profile is unreadable, starting fresh");
-                Self::default()
-            }),
-            Err(_) => Self::default(),
+    fn load(path: &Path) -> (Self, bool) {
+        match storage::load_json::<Stored>(path) {
+            Loaded::Parsed(stored) if stored.version > PROFILE_VERSION => {
+                tracing::error!(
+                    version = stored.version,
+                    path = %path.display(),
+                    "the profile comes from a newer game, it will not be overwritten"
+                );
+                (stored.profile, false)
+            }
+            Loaded::Parsed(stored) => (stored.profile, true),
+            Loaded::Missing | Loaded::Corrupt => (Self::default(), true),
+            Loaded::Unreadable => (Self::default(), false),
         }
     }
 
     fn save(&self, path: &Path) {
-        let result = serde_json::to_string_pretty(self)
+        let versioned = Versioned {
+            version: PROFILE_VERSION,
+            profile: self,
+        };
+        let result = serde_json::to_string_pretty(&versioned)
             .map_err(|error| error.to_string())
-            .and_then(|text| fs::write(path, text).map_err(|error| error.to_string()));
+            .and_then(|text| storage::write_atomic(path, &text).map_err(|error| error.to_string()));
         if let Err(error) = result {
             tracing::error!(%error, path = %path.display(), "cannot save the profile");
         }
@@ -96,9 +140,10 @@ pub(crate) struct SharedProfile(Rc<RefCell<Store>>);
 
 impl SharedProfile {
     pub(crate) fn load(path: &Path) -> Self {
+        let (profile, writable) = Profile::load(path);
         Self(Rc::new(RefCell::new(Store {
-            profile: Profile::load(path),
-            path: Some(path.to_path_buf()),
+            profile,
+            path: writable.then(|| path.to_path_buf()),
         })))
     }
 
@@ -150,6 +195,8 @@ impl SharedProfile {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use crate::systems::summarize;
 
     use super::*;
@@ -242,11 +289,94 @@ mod tests {
         let broken = temp_path("broken");
         fs::write(&broken, "not json").expect("a temp file");
         assert_eq!(SharedProfile::load(&broken).snapshot(), Profile::default());
+        remove_backups(&broken);
 
         fs::write(&broken, r#"{"balance": 12}"#).expect("a temp file");
         let partial = SharedProfile::load(&broken).snapshot();
         assert_eq!((partial.balance, partial.runs), (12, 0));
         let _ = fs::remove_file(&broken);
+    }
+
+    #[test]
+    fn a_broken_profile_is_kept_as_a_backup_instead_of_being_overwritten() {
+        let path = temp_path("backup");
+        fs::write(&path, r#"{"balance": 12"#).expect("a temp file");
+
+        let shared = SharedProfile::load(&path);
+        let (stats, summary) = run(1, 1);
+        shared.record_run(stats, &summary, false);
+
+        assert_eq!(remove_backups(&path), vec![r#"{"balance": 12"#.to_owned()]);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn an_unknown_upgrade_is_skipped_without_losing_the_rest_of_the_profile() {
+        let path = temp_path("unknown");
+        fs::write(
+            &path,
+            r#"{"version": 1, "balance": 30, "unlocked": ["discount", "removed_upgrade"]}"#,
+        )
+        .expect("a temp file");
+
+        let profile = SharedProfile::load(&path).snapshot();
+
+        assert_eq!(profile.balance, 30);
+        assert_eq!(profile.unlocked, BTreeSet::from([Upgrade::Discount]));
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn the_saved_profile_carries_its_version() {
+        let path = temp_path("version");
+        let _ = fs::remove_file(&path);
+        let (stats, summary) = run(1, 1);
+        SharedProfile::load(&path).record_run(stats, &summary, false);
+
+        let saved: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&path).expect("the saved profile"))
+                .expect("valid json");
+        assert_eq!(saved["version"], PROFILE_VERSION);
+        assert_eq!(saved["runs"], 1);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn a_profile_from_a_newer_game_is_read_but_never_overwritten() {
+        let path = temp_path("newer");
+        let text = r#"{"version": 99, "balance": 5}"#;
+        fs::write(&path, text).expect("a temp file");
+
+        let shared = SharedProfile::load(&path);
+        assert_eq!(shared.balance(), 5);
+        let (stats, summary) = run(1, 1);
+        shared.record_run(stats, &summary, false);
+
+        assert_eq!(fs::read_to_string(&path).expect("the file"), text);
+        let _ = fs::remove_file(&path);
+    }
+
+    fn remove_backups(path: &Path) -> Vec<String> {
+        let prefix = format!(
+            "{}.corrupt-",
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or_default()
+        );
+        let mut contents = Vec::new();
+        let dir = path.parent().expect("a temp dir");
+        for entry in fs::read_dir(dir).expect("the temp dir").flatten() {
+            let backup = entry.path();
+            let matches = backup
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with(&prefix));
+            if matches {
+                contents.push(fs::read_to_string(&backup).unwrap_or_default());
+                let _ = fs::remove_file(backup);
+            }
+        }
+        contents
     }
 
     #[test]

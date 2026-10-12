@@ -24,6 +24,7 @@ mod props;
 mod render;
 mod scenes;
 mod settings;
+mod storage;
 mod systems;
 mod tilemap;
 mod upgrades;

@@ -1,9 +1,9 @@
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
 use crate::controls::Bindings;
+use crate::storage::{self, Loaded};
 use crate::viewport::TARGET;
 
 const FALLBACK_RESOLUTIONS: [(u32, u32); 4] = [(960, 540), (1280, 720), (1600, 900), (1920, 1080)];
@@ -79,23 +79,19 @@ pub(crate) struct Settings {
 
 impl Settings {
     pub(crate) fn load(path: &Path) -> Self {
-        let applied = match fs::read_to_string(path) {
-            Ok(text) => match serde_json::from_str::<GameSettings>(&text) {
-                Ok(settings) => {
-                    tracing::info!(path = %path.display(), "loaded settings");
-                    settings.sanitized()
-                }
-                Err(error) => {
-                    tracing::error!(%error, "failed to parse settings, using defaults");
-                    GameSettings::default()
-                }
-            },
-            Err(_) => {
-                tracing::info!("creating default settings");
-                GameSettings::default()
+        let (applied, writable) = match storage::load_json::<GameSettings>(path) {
+            Loaded::Parsed(settings) => {
+                tracing::info!(path = %path.display(), "loaded settings");
+                (settings.sanitized(), true)
             }
+            Loaded::Missing => {
+                tracing::info!("creating default settings");
+                (GameSettings::default(), true)
+            }
+            Loaded::Corrupt => (GameSettings::default(), true),
+            Loaded::Unreadable => (GameSettings::default(), false),
         };
-        Self::with(applied, Some(path.to_path_buf()))
+        Self::with(applied, writable.then(|| path.to_path_buf()))
     }
 
     fn with(applied: GameSettings, path: Option<PathBuf>) -> Self {
@@ -219,7 +215,7 @@ impl Settings {
         };
         match serde_json::to_string_pretty(&self.applied) {
             Ok(text) => {
-                if let Err(error) = fs::write(path, text) {
+                if let Err(error) = storage::write_atomic(path, &text) {
                     tracing::error!(%error, "failed to save settings");
                 }
             }
@@ -230,6 +226,8 @@ impl Settings {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
 
     #[test]
@@ -355,13 +353,31 @@ mod tests {
     }
 
     #[test]
-    fn a_corrupted_file_falls_back_to_defaults() {
+    fn a_corrupted_file_falls_back_to_defaults_and_is_kept_aside() {
         let path = std::env::temp_dir().join(format!("bane-broken-{}.json", std::process::id()));
         fs::write(&path, "{ not json").expect("writes the file");
 
         let settings = Settings::load(&path);
-        let _ = fs::remove_file(&path);
         assert_eq!(settings.pending(), &GameSettings::default());
+
+        assert!(!path.exists());
+        let dir = path.parent().expect("a temp dir");
+        let prefix = format!("bane-broken-{}.json.corrupt-", std::process::id());
+        let backups: Vec<_> = fs::read_dir(dir)
+            .expect("the temp dir")
+            .flatten()
+            .map(|entry| entry.path())
+            .filter(|backup| {
+                backup
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with(&prefix))
+            })
+            .collect();
+        assert_eq!(backups.len(), 1);
+        for backup in backups {
+            let _ = fs::remove_file(backup);
+        }
     }
 
     #[test]

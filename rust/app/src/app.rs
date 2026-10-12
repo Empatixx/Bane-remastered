@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -15,6 +14,7 @@ use crate::perf::PerfCounter;
 use crate::profile::SharedProfile;
 use crate::render::Gpu;
 use crate::settings::{Change, Settings};
+use crate::storage;
 use crate::viewport::TARGET;
 
 const SETTINGS_FILE: &str = "settings.json";
@@ -66,10 +66,10 @@ impl ApplicationHandler for App {
         });
         match started {
             Ok((mut gpu, assets, loader)) => {
-                let mut settings = Settings::load(Path::new(SETTINGS_FILE));
+                let mut settings = Settings::load(&storage::data_file(SETTINGS_FILE));
                 settings.set_resolutions(monitor_resolutions(&window));
                 settings.startup_changes();
-                let profile = SharedProfile::load(Path::new(PROFILE_FILE));
+                let profile = SharedProfile::load(&storage::data_file(PROFILE_FILE));
                 let mut game = Game::new(assets, settings, profile);
                 apply_changes(&window, &mut gpu, game.take_setting_changes());
                 self.game = Some(game);

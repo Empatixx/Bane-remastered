@@ -15,10 +15,6 @@ const DRAW_SIZE: Vec2 = Vec2::new(243.0, 75.0);
 const BASE_TEXT: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const HOT_TEXT: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const MARKER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
-const ENTER_DELAY: f32 = 0.5;
-const ENTER_STAGGER: f32 = 0.12;
-const ENTER_SECONDS: f32 = 0.5;
-const ENTER_SLIDE: f32 = 140.0;
 const LIFT_SPEED: f32 = 12.0;
 const GROW: f32 = 0.08;
 const MARKER_GAP: f32 = 18.0;
@@ -43,10 +39,6 @@ pub(crate) struct MenuButtons {
     clock: f32,
     pressed: Option<(usize, f32)>,
     last_mouse: Vec2,
-}
-
-fn ease_out(t: f32) -> f32 {
-    1.0 - (1.0 - t.clamp(0.0, 1.0)).powi(3)
 }
 
 fn marker(world: &mut World, glyph: &str, at: Vec2) -> Entity {
@@ -142,7 +134,7 @@ impl MenuButtons {
             } else {
                 self.pressed = Some((index, left));
             }
-        } else if self.clock >= ENTER_DELAY {
+        } else {
             self.read_input(input, sounds);
         }
         self.animate(world, dt);
@@ -190,8 +182,6 @@ impl MenuButtons {
         for (index, row) in self.rows.iter_mut().enumerate() {
             let target = if index == selected { 1.0 } else { 0.0 };
             row.lift += (target - row.lift) * (LIFT_SPEED * dt).min(1.0);
-            let arrival =
-                ease_out((clock - ENTER_DELAY - index as f32 * ENTER_STAGGER) / ENTER_SECONDS);
             let squash = match pressed {
                 Some((pressed_index, left)) if pressed_index == index => {
                     PRESS_SQUASH * (left / PRESS_SECONDS).clamp(0.0, 1.0).max(0.4)
@@ -199,7 +189,7 @@ impl MenuButtons {
                 _ => 0.0,
             };
             let scale = 1.0 + GROW * row.lift - squash;
-            let at = row.rest + Vec2::new(-(1.0 - arrival) * ENTER_SLIDE, 0.0);
+            let at = row.rest;
             let bounce = (clock * MARKER_RATE).sin() * MARKER_BOUNCE * row.lift;
             let half = BUTTON_SIZE.x * scale / 2.0;
             let tint = BASE_TEXT.lerp(HOT_TEXT, row.lift);
@@ -210,21 +200,21 @@ impl MenuButtons {
             {
                 position.0 = at;
                 size.0 = DRAW_SIZE * scale;
-                color.0.w = arrival;
+                color.0.w = 1.0;
                 let _ = sprite;
             }
             if let Ok((position, text)) =
                 world.query_one_mut::<(&mut Position, &mut Text)>(row.text)
             {
                 position.0 = at;
-                text.color = Vec4::new(tint.x, tint.y, tint.z, arrival);
+                text.color = Vec4::new(tint.x, tint.y, tint.z, 1.0);
             }
             for (entity, side) in [(row.left, -1.0), (row.right, 1.0)] {
                 if let Ok((position, text)) =
                     world.query_one_mut::<(&mut Position, &mut Text)>(entity)
                 {
                     position.0 = at + Vec2::new(side * (half + MARKER_GAP - side * bounce), 0.0);
-                    text.color.w = row.lift * arrival;
+                    text.color.w = row.lift;
                 }
             }
         }
@@ -282,28 +272,24 @@ mod tests {
     }
 
     #[test]
-    fn the_buttons_slide_in_one_after_another() {
+    fn the_buttons_stand_still_on_their_places_from_the_start() {
         let (mut world, mut buttons) = menu();
-        settle(&mut world, &mut buttons, ENTER_DELAY + ENTER_STAGGER + 0.1);
-
-        let first = world
-            .get::<&Position>(buttons.rows[0].button)
-            .map(|p| p.0.x)
-            .unwrap_or(0.0);
-        let last = world
-            .get::<&Position>(buttons.rows[2].button)
-            .map(|p| p.0.x)
-            .unwrap_or(0.0);
-        assert!(first > last, "{first} {last}");
-
-        settle(&mut world, &mut buttons, 2.0);
         for row in &buttons.rows {
             let at = world
                 .get::<&Position>(row.button)
                 .map(|p| p.0)
                 .unwrap_or_default();
-            assert!((at.x - row.rest.x).abs() < 0.01);
+            assert_eq!(at, row.rest);
             assert_eq!(text_alpha(&world, row.text), 1.0);
+        }
+
+        settle(&mut world, &mut buttons, 1.0);
+        for row in &buttons.rows {
+            let at = world
+                .get::<&Position>(row.button)
+                .map(|p| p.0)
+                .unwrap_or_default();
+            assert_eq!(at, row.rest);
         }
     }
 
@@ -373,38 +359,8 @@ mod tests {
     }
 
     #[test]
-    fn nothing_can_be_pressed_while_the_buttons_are_still_arriving() {
-        let (mut world, mut buttons) = menu();
-        let mut enter = Input::default();
-        enter.press(KeyCode::Enter);
-
-        buttons.update(&mut world, &enter, 0.016, &mut Vec::new());
-
-        assert!(buttons.pressed.is_none());
-    }
-
-    #[test]
     fn all_the_entities_can_be_hidden_together() {
         let (_world, buttons) = menu();
         assert_eq!(buttons.entities().len(), ROWS.len() * 4);
-    }
-
-    #[test]
-    fn freshly_built_buttons_are_already_hidden_off_to_the_side() {
-        let (world, buttons) = menu();
-
-        for row in &buttons.rows {
-            let alpha = world
-                .get::<&Color>(row.button)
-                .map(|c| c.0.w)
-                .unwrap_or(-1.0);
-            let at = world
-                .get::<&Position>(row.button)
-                .map(|p| p.0.x)
-                .unwrap_or(0.0);
-            assert_eq!(alpha, 0.0);
-            assert!(at < row.rest.x - 100.0, "{at}");
-            assert_eq!(text_alpha(&world, row.text), 0.0);
-        }
     }
 }
