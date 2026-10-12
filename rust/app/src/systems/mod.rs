@@ -32,6 +32,7 @@ mod slot;
 mod stats;
 mod steering;
 mod ui;
+mod unstick;
 
 pub(crate) use animation::{animate, chain_animations, remove_expired};
 pub(crate) use artefacts::{
@@ -88,3 +89,4 @@ pub(crate) use slot::{spin, tick_slot_machines, update_slot_prices, SPIN_COST};
 pub(crate) use stats::{current as current_stats, summarize, Summary};
 pub(crate) use steering::steer_player;
 pub(crate) use ui::{update_buttons, update_text_buttons};
+pub(crate) use unstick::watch_progress;

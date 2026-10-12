@@ -2,13 +2,14 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Body, Boss, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Lurk,
-    Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
+    Animation, Body, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Health, HitFlash,
+    Lurk, Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::systems::crowd::{ring_point, RING_RADIUS, RING_SLACK, SHOOTER_FAR, SHOOTER_NEAR};
+use crate::systems::unstick::DETOUR_ANGLE;
 
 pub(crate) const FLASH_SECONDS: f32 = 1.0;
 const DASH_PERIOD: f32 = 3.0;
@@ -37,7 +38,7 @@ pub(crate) fn update_flow(
 
 pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
     let target = player_placement(world).map(|(position, _)| position);
-    for (entity, position, chase, velocity, rooted, lurk, shooter) in world
+    for (entity, position, chase, velocity, rooted, lurk, shooter, detour) in world
         .query_mut::<(
             Entity,
             &Position,
@@ -46,6 +47,7 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
             Option<&Rooted>,
             Option<&Lurk>,
             Option<(&Smash, Option<&Boss>)>,
+            Option<&Detour>,
         )>()
         .without::<&Expiring>()
         .without::<&Spawning>()
@@ -78,6 +80,9 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
         } else {
             flow.heading(position.0, target) * chase.speed
         };
+        if let Some(detour) = detour {
+            velocity.0 = Vec2::from_angle(detour.turn * DETOUR_ANGLE).rotate(velocity.0);
+        }
     }
 }
 
@@ -434,6 +439,30 @@ mod tests {
         place(&mut world, SHOOTER_NEAR - 40.0);
         chase_player(&mut world, &flow);
         assert!(velocity(&world).x > 0.0);
+    }
+
+    #[test]
+    fn an_enemy_on_a_detour_turns_away_from_its_heading() {
+        let (mut world, mut physics) = arena();
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(300.0, 0.0),
+        );
+        let _ = world.insert_one(
+            rat,
+            Detour {
+                remaining: 0.5,
+                turn: 1.0,
+            },
+        );
+
+        chase_player(&mut world, &FlowField::default());
+
+        let velocity = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
+        assert!(velocity.y.abs() > velocity.x.abs() * 0.5, "{velocity:?}");
+        assert!(velocity.x < 0.0, "{velocity:?}");
     }
 
     #[test]

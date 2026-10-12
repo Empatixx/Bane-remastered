@@ -357,6 +357,7 @@ impl Scene for InGameScene {
         systems::tick_web_spitters(&mut self.world, &assets.textures, dt);
         systems::tick_armageddon(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
+        systems::watch_progress(&mut self.world, dt);
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::pet_bites(&mut self.world, dt);
         systems::trap_hits_enemies(&mut self.world, dt);

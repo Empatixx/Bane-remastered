@@ -13,6 +13,8 @@ use crate::components::Body;
 
 const WALL_OWNER: u128 = 0;
 const PLAYER_CORNER_RADIUS: f32 = 2.0;
+const ENEMY_CORNER_FRACTION: f32 = 0.25;
+const ENEMY_CORNER_MAX: f32 = 14.0;
 const LENGTH_UNIT: f32 = 32.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -125,7 +127,9 @@ impl Physics {
         let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(position))
             .lock_rotations();
-        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+        let radius = (size.min_element() * ENEMY_CORNER_FRACTION).min(ENEMY_CORNER_MAX);
+        let half = size / 2.0 - Vec2::splat(radius);
+        let collider = ColliderBuilder::round_cuboid(half.x, half.y, radius)
             .collision_groups(groups::ENEMIES)
             .user_data(owner_bits(entity));
         self.insert(body, collider)

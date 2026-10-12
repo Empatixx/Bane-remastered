@@ -30,9 +30,9 @@ pub(crate) use artefacts::{
 };
 pub(crate) use body::Body;
 pub(crate) use combat::{
-    Armor, Bullet, Burst, Chase, ContactDamage, Dash, Enemy, Expiring, GunDrop, Health, HitFlash,
-    Invulnerable, Loadout, Lurk, Path, Spawning, Trap, Wallet, Weapon, BULLET_COLUMNS,
-    BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS,
+    Armor, Bullet, Burst, Chase, ContactDamage, Dash, Detour, Enemy, Expiring, GunDrop, Health,
+    HitFlash, Invulnerable, Loadout, Lurk, Path, Progress, Spawning, Trap, Wallet, Weapon,
+    BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS,
 };
 pub(crate) use death::DeathPart;
 pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};

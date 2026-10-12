@@ -100,6 +100,19 @@ pub(crate) struct Chase {
 pub(crate) struct Lurk;
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Progress {
+    pub(crate) anchor: Vec2,
+    pub(crate) elapsed: f32,
+    pub(crate) turn: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Detour {
+    pub(crate) remaining: f32,
+    pub(crate) turn: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Burst {
     pub(crate) left: u32,
     pub(crate) timer: f32,

@@ -8,7 +8,7 @@ use crate::physics::Physics;
 
 const RADIUS: i32 = 48;
 const SIDE: usize = (RADIUS * 2 + 1) as usize;
-const CLEARANCE: Vec2 = Vec2::new(32.0, 32.0);
+const CLEARANCE: Vec2 = Vec2::new(56.0, 56.0);
 const STRAIGHT_COST: u32 = 10;
 const DIAGONAL_COST: u32 = 14;
 const UNREACHED: u32 = u32::MAX;
