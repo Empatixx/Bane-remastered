@@ -23,9 +23,13 @@ const PANEL_TALENT_Y: f32 = 90.0;
 const TITLE_BASELINE: f32 = 222.0;
 const DESCRIPTION_TOP: f32 = 266.0;
 const DESCRIPTION_STEP: f32 = 22.0;
-const BUTTON_TOP_LEFT: Vec2 = Vec2::new(735.0, 410.0);
-const BUTTON_SIZE: Vec2 = Vec2::new(120.0, 36.0);
+const BUY_CENTER_X: f32 = 735.0;
+const STATUS_CENTER_X: f32 = 750.0;
+const BUTTON_TOP: f32 = 410.0;
+const BUTTON_HEIGHT: f32 = 36.0;
+const BUTTON_PADDING: f32 = 10.0;
 const BUTTON_BASELINE: f32 = 435.0;
+const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const PRICE_X: f32 = 840.0;
 const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const BLOCKED_COLOR: Vec4 = Vec4::new(0.5, 0.5, 0.5, 1.0);
@@ -111,7 +115,11 @@ fn talent(upgrade: Upgrade, top_left: Vec2, owned: bool, layer: i32) -> [Element
     ]
 }
 
-pub(crate) fn layout(profile: &SharedProfile, selected: Option<Upgrade>) -> Vec<Element> {
+pub(crate) fn layout(
+    profile: &SharedProfile,
+    selected: Option<Upgrade>,
+    hover: bool,
+) -> Vec<Element> {
     let snapshot = profile.snapshot();
     let mut elements = Vec::new();
     for tree in Tree::ALL {
@@ -145,12 +153,12 @@ pub(crate) fn layout(profile: &SharedProfile, selected: Option<Upgrade>) -> Vec<
         }
     }
     if let Some(upgrade) = selected {
-        elements.extend(panel(profile, upgrade));
+        elements.extend(panel(profile, upgrade, hover));
     }
     elements
 }
 
-fn panel(profile: &SharedProfile, upgrade: Upgrade) -> Vec<Element> {
+fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element> {
     let def = upgrade.def();
     let snapshot = profile.snapshot();
     let centre_x = PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0;
@@ -183,17 +191,21 @@ fn panel(profile: &SharedProfile, upgrade: Upgrade) -> Vec<Element> {
             align: Align::Center,
         });
     }
-    let (label, color) = match buy_state(profile, upgrade) {
-        BuyState::Available => ("Buy", MENU_COLOR),
-        BuyState::Owned => ("Bought", BLOCKED_COLOR),
-        BuyState::Locked => ("Can't buy", BLOCKED_COLOR),
+    let (label, color, center_x) = match buy_state(profile, upgrade) {
+        BuyState::Available => (
+            "Buy",
+            if hover { HOVER_COLOR } else { MENU_COLOR },
+            BUY_CENTER_X,
+        ),
+        BuyState::Owned => ("Bought", BLOCKED_COLOR, STATUS_CENTER_X),
+        BuyState::Locked => ("Can't buy", BLOCKED_COLOR, STATUS_CENTER_X),
     };
     elements.push(Element::Label {
         content: label.to_owned(),
-        position: Vec2::new(BUTTON_TOP_LEFT.x, BUTTON_BASELINE),
+        position: Vec2::new(center_x, BUTTON_BASELINE),
         color,
         size: FontSize::Size22,
-        align: Align::Left,
+        align: Align::Center,
     });
     if buy_state(profile, upgrade) == BuyState::Available {
         elements.push(Element::Label {
@@ -214,17 +226,19 @@ pub(crate) fn talent_at(point: Vec2) -> Option<Upgrade> {
     })
 }
 
-pub(crate) fn on_buy_button(point: Vec2) -> bool {
-    point.x >= BUTTON_TOP_LEFT.x
-        && point.x <= BUTTON_TOP_LEFT.x + BUTTON_SIZE.x
-        && point.y >= BUTTON_TOP_LEFT.y
-        && point.y <= BUTTON_TOP_LEFT.y + BUTTON_SIZE.y
+pub(crate) fn on_buy_button(point: Vec2, text_width: f32) -> bool {
+    let half = text_width / 2.0 + BUTTON_PADDING;
+    point.x >= BUY_CENTER_X - half
+        && point.x <= BUY_CENTER_X + half
+        && point.y >= BUTTON_TOP
+        && point.y <= BUTTON_TOP + BUTTON_HEIGHT
 }
 
 #[derive(Debug, Default)]
 pub(crate) struct UpgradeMenu {
     open: bool,
     selected: Option<Upgrade>,
+    hover: bool,
 }
 
 impl UpgradeMenu {
@@ -238,6 +252,7 @@ impl UpgradeMenu {
         } else {
             self.open = true;
             self.selected = None;
+            self.hover = false;
             self.rebuild(world, assets, profile);
         }
     }
@@ -256,12 +271,24 @@ impl UpgradeMenu {
         profile: &SharedProfile,
         sounds: &mut Vec<AudioCommand>,
     ) -> Option<Purchase> {
-        if !self.open || !input.clicked() {
+        if !self.open {
             return None;
         }
         let point = input.mouse();
+        let width = assets.fonts.get(FontSize::Size22).width("Buy");
+        let hover = self
+            .selected
+            .is_some_and(|selected| buy_state(profile, selected) == BuyState::Available)
+            && on_buy_button(point, width);
+        if hover != self.hover {
+            self.hover = hover;
+            self.rebuild(world, assets, profile);
+        }
+        if !input.clicked() {
+            return None;
+        }
         let mut outcome = None;
-        if let (Some(selected), true) = (self.selected, on_buy_button(point)) {
+        if let (Some(selected), true) = (self.selected, on_buy_button(point, width)) {
             if buy_state(profile, selected) == BuyState::Available {
                 let result = profile.buy(selected);
                 if result == Purchase::Bought {
@@ -278,7 +305,7 @@ impl UpgradeMenu {
 
     fn rebuild(&self, world: &mut World, assets: &Assets, profile: &SharedProfile) {
         clear(world);
-        for element in layout(profile, self.selected) {
+        for element in layout(profile, self.selected, self.hover) {
             spawn(world, element, assets);
         }
     }
@@ -382,7 +409,7 @@ mod tests {
     #[test]
     fn the_menu_shows_three_trees_of_five_talents_with_four_paths_each() {
         let profile = SharedProfile::in_memory();
-        let elements = layout(&profile, None);
+        let elements = layout(&profile, None, false);
         assert_eq!(images(&elements, "ingame/talent_frame.tga").len(), 15);
         assert_eq!(images(&elements, "ingame/talent_path.tga").len(), 12);
         assert_eq!(images(&elements, "ingame/utility_icon.tga").len(), 1);
@@ -425,7 +452,7 @@ mod tests {
     #[test]
     fn the_details_panel_names_the_talent_and_its_price_and_state() {
         let profile = rich_profile();
-        let elements = layout(&profile, Some(Upgrade::Discount));
+        let elements = layout(&profile, Some(Upgrade::Discount), false);
         let labels: Vec<String> = elements
             .iter()
             .filter_map(|element| match element {
@@ -437,12 +464,12 @@ mod tests {
         assert!(labels.contains(&"Buy".to_owned()));
         assert!(labels.contains(&"60,-".to_owned()));
 
-        let owned = layout(&profile, Some(Upgrade::MovementSpeed));
+        let owned = layout(&profile, Some(Upgrade::MovementSpeed), false);
         assert!(owned
             .iter()
             .any(|e| matches!(e, Element::Label { content, .. } if content == "Bought")));
 
-        let locked = layout(&profile, Some(Upgrade::TrapMaster));
+        let locked = layout(&profile, Some(Upgrade::TrapMaster), false);
         assert!(locked
             .iter()
             .any(|e| matches!(e, Element::Label { content, .. } if content == "Can't buy")));
@@ -454,15 +481,16 @@ mod tests {
     #[test]
     fn without_a_selection_there_is_no_details_panel() {
         let profile = SharedProfile::in_memory();
-        let elements = layout(&profile, None);
+        let elements = layout(&profile, None, false);
         assert!(images(&elements, "ingame/pausebg.tga").is_empty());
     }
 
     #[test]
     fn the_buy_button_sits_where_bane_puts_it() {
-        assert!(on_buy_button(Vec2::new(760.0, 420.0)));
-        assert!(!on_buy_button(Vec2::new(700.0, 420.0)));
-        assert!(!on_buy_button(Vec2::new(760.0, 380.0)));
+        assert!(on_buy_button(Vec2::new(735.0, 420.0), 40.0));
+        assert!(on_buy_button(Vec2::new(760.0, 420.0), 40.0));
+        assert!(!on_buy_button(Vec2::new(700.0, 420.0), 40.0));
+        assert!(!on_buy_button(Vec2::new(735.0, 380.0), 40.0));
     }
 
     #[test]
