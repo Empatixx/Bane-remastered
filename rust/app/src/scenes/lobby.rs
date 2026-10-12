@@ -218,6 +218,9 @@ impl Scene for LobbyScene {
             };
         }
         systems::animate_player(&mut self.world, input);
+        systems::show_dodge_visual(&mut self.world, &assets.textures);
+        systems::show_dodge_cooldown(&mut self.world);
+        systems::fade_afterimages(&mut self.world, dt);
         systems::tick_invulnerability(&mut self.world, dt);
         self.clock += dt;
         systems::spawn_gaze_wind(
@@ -251,7 +254,13 @@ impl Scene for LobbyScene {
         if self.pause.is_active() || self.upgrades.is_open() {
             return Transition::None;
         }
+        systems::start_dodge(
+            &mut self.world,
+            input,
+            input.mouse() + self.camera.position(),
+        );
         systems::steer_player(&mut self.world, input, dt);
+        systems::tick_dodges(&mut self.world, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         Transition::None
     }
