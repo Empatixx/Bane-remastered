@@ -44,7 +44,7 @@ pub(crate) use bosses::{
 };
 pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
-pub(crate) use crowd::{assign_attackers, separate_chasers};
+pub(crate) use crowd::separate_chasers;
 pub(crate) use damage::{
     contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,
     trap_hits_enemies,

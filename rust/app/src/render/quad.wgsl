@@ -160,20 +160,21 @@ fn vs_main(@builtin(vertex_index) index: u32, instance: Instance) -> VertexOut {
     return out;
 }
 
+const OUTLINE_PIXELS: f32 = 1.5;
+
 const OUTLINE_OFFSETS: array<vec2<f32>, 8> = array<vec2<f32>, 8>(
     vec2<f32>(-1.0, -1.0), vec2<f32>(0.0, -1.0), vec2<f32>(1.0, -1.0),
     vec2<f32>(-1.0, 0.0), vec2<f32>(1.0, 0.0),
     vec2<f32>(-1.0, 1.0), vec2<f32>(0.0, 1.0), vec2<f32>(1.0, 1.0),
 );
 
-fn outlined(color: vec4<f32>, in: VertexOut) -> vec4<f32> {
+fn outlined(color: vec4<f32>, in: VertexOut, uv_per_pixel: vec2<f32>) -> vec4<f32> {
     if (in.outline.a <= 0.0 || color.a <= 0.1) {
         return color;
     }
-    let texel = 1.0 / vec2<f32>(textureDimensions(image));
     let center = textureSampleLevel(image, image_sampler, in.uv, 0.0).a;
     for (var i = 0; i < 8; i = i + 1) {
-        let point = clamp(in.uv + OUTLINE_OFFSETS[i] * texel, in.bounds.xy, in.bounds.zw);
+        let point = clamp(in.uv + OUTLINE_OFFSETS[i] * uv_per_pixel * OUTLINE_PIXELS, in.bounds.xy, in.bounds.zw);
         let neighbor = textureSampleLevel(image, image_sampler, point, 0.0).a;
         if (abs(center - neighbor) > 0.1) {
             let factor = select(1.0, 1.0 - center, center < 1.0);
@@ -186,12 +187,13 @@ fn outlined(color: vec4<f32>, in: VertexOut) -> vec4<f32> {
 
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
+    let uv_per_pixel = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
     let albedo = textureSample(image, image_sampler, in.uv) * in.color;
     if (in.fx.w > 0.5) {
         return map_room(in, textureSample(image, image_sampler, in.uv));
     }
     if (in.lit < 0.5) {
-        return outlined(albedo, in);
+        return outlined(albedo, in, uv_per_pixel);
     }
     var light = vec3<f32>(AMBIENT_LIGHT);
     for (var i = 0u; i < globals.light_count; i = i + 1u) {
@@ -202,5 +204,5 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     }
     light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
     let shaded = linear_to_srgb(albedo.rgb) * light;
-    return outlined(vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), albedo.a), in);
+    return outlined(vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), albedo.a), in, uv_per_pixel);
 }

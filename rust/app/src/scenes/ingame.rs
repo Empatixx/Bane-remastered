@@ -342,7 +342,6 @@ impl Scene for InGameScene {
             &self.navigation,
             dt,
         );
-        systems::assign_attackers(&mut self.world);
         systems::chase_player(&mut self.world, &self.flow);
         systems::separate_chasers(&mut self.world);
         systems::pick_pet_targets(&mut self.world);
@@ -431,13 +430,7 @@ impl InGameScene {
         }
         for room in &dungeon.rooms {
             if let Some(furnishing) = &room.furnishing {
-                prefabs::furnishing(
-                    &mut self.world,
-                    &mut self.physics,
-                    furnishing,
-                    perks.gamble_machine,
-                    textures,
-                );
+                prefabs::furnishing(&mut self.world, &mut self.physics, furnishing, textures);
             }
             for decor in &room.decor {
                 prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);

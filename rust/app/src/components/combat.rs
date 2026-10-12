@@ -97,9 +97,6 @@ pub(crate) struct Chase {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Lurk;
-
-#[derive(Debug, Clone, Copy)]
 pub(crate) struct Progress {
     pub(crate) anchor: Vec2,
     pub(crate) elapsed: f32,

@@ -219,7 +219,6 @@ pub(crate) fn furnishing(
     world: &mut World,
     physics: &mut Physics,
     furnishing: &Furnishing,
-    gamble_machine: bool,
     textures: &Textures,
 ) {
     if let Some(carpet) = &furnishing.carpet {
@@ -251,9 +250,7 @@ pub(crate) fn furnishing(
             FixtureKind::Shopkeeper => place(Prop::Shopkeeper, Look::DEFAULT),
             FixtureKind::Table => place(Prop::ShopTable, Look::DEFAULT),
             FixtureKind::SlotMachine => {
-                if gamble_machine {
-                    slot_machine(world, top_left, textures);
-                }
+                slot_machine(world, top_left, textures);
             }
             FixtureKind::Torch { right } => {
                 let look = if right { Look::FLIPPED } else { Look::DEFAULT };
