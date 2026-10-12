@@ -4,7 +4,7 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::{Assets, TILESET};
-use crate::components::{Animation, Color, Layer, Lit, Position, Size, Sprite};
+use crate::components::{Animation, Color, Layer, Lit, Position, ScreenSpace, Size, Sprite};
 use crate::dungeon::Rng;
 use crate::enemies::EnemyKind;
 use crate::prefabs;
@@ -23,6 +23,8 @@ const CRITTER_LAYER: i32 = 1;
 const CRITTER_KINDS: [EnemyKind; 3] = [EnemyKind::Rat, EnemyKind::Rat, EnemyKind::Bat];
 const PARTICLE_TEXTURE: &str = "ingame/gazewind_particle.tga";
 const AMBIENCE_SEED: u64 = 0x5eed;
+const DIM: Vec4 = Vec4::new(0.02, 0.01, 0.04, 0.5);
+const DIM_LAYER: i32 = -1;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Critter {
@@ -118,6 +120,13 @@ impl Stage {
             altar,
             AMBIENCE_SEED,
         );
+        world.spawn((
+            Position(TARGET / 2.0),
+            Size(TARGET),
+            Color(DIM),
+            Layer(DIM_LAYER),
+            ScreenSpace,
+        ));
         Self {
             bounds,
             clock: 0.0,
