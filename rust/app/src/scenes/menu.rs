@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::assets::{Assets, BUTTON};
+use crate::assets::{Assets, MENU_PLATE};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::components::UiAction;
 use crate::input::Input;
@@ -16,9 +16,9 @@ use super::{Scene, SceneId, SettingsPanel, Transition};
 const LOGO_SIZE: Vec2 = Vec2::new(228.0, 108.0);
 const LOGO_TOP_LEFT_Y: f32 = 50.0;
 const BUTTON_ROWS: [(f32, &str, UiAction); 3] = [
-    (225.0, "Play", UiAction::Play),
-    (325.0, "Settings", UiAction::Settings),
-    (425.0, "Exit", UiAction::Exit),
+    (240.0, "Play", UiAction::Play),
+    (320.0, "Settings", UiAction::Settings),
+    (400.0, "Exit", UiAction::Exit),
 ];
 
 #[derive(Default)]
@@ -67,8 +67,13 @@ impl Scene for MenuScene {
         let logo_entity = logo.entity();
         self.logo = Some(logo);
         self.ui.push(logo_entity);
-        let buttons =
-            MenuButtons::build(&mut self.world, &assets.textures, BUTTON, x, &BUTTON_ROWS);
+        let buttons = MenuButtons::build(
+            &mut self.world,
+            &assets.textures,
+            MENU_PLATE,
+            x,
+            &BUTTON_ROWS,
+        );
         self.ui.extend(buttons.entities());
         self.buttons = Some(buttons);
     }

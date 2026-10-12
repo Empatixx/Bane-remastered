@@ -10,9 +10,9 @@ use crate::input::Input;
 use crate::prefabs;
 use crate::render::{Align, Anchor, FontSize};
 
-pub(crate) const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
-const BASE_TEXT: Vec4 = Vec4::new(200.0 / 255.0, 92.0 / 255.0, 18.0 / 255.0, 1.0);
-const HOT_TEXT: Vec4 = Vec4::new(0.42, 0.14, 0.02, 1.0);
+pub(crate) const BUTTON_SIZE: Vec2 = Vec2::new(224.0, 56.0);
+const BASE_TEXT: Vec4 = Vec4::new(0.93, 0.85, 0.72, 1.0);
+const HOT_TEXT: Vec4 = Vec4::new(1.0, 0.9, 0.55, 1.0);
 const MARKER_COLOR: Vec4 = Vec4::new(1.0, 0.78, 0.35, 1.0);
 const ENTER_DELAY: f32 = 0.5;
 const ENTER_STAGGER: f32 = 0.12;
@@ -76,6 +76,9 @@ impl MenuButtons {
             let rest = Vec2::new(x, y);
             let (button, text) =
                 prefabs::button(world, rest, label, action, textures.get(texture_name));
+            if let Ok(mut size) = world.get::<&mut Size>(button) {
+                size.0 = BUTTON_SIZE;
+            }
             let _ = world.insert_one(button, ScreenSpace);
             let _ = world.insert_one(text, ScreenSpace);
             let left = marker(world, ">", rest);
@@ -243,9 +246,9 @@ mod tests {
     use super::*;
 
     const ROWS: [(f32, &str, UiAction); 3] = [
-        (225.0, "Play", UiAction::Play),
-        (325.0, "Settings", UiAction::Settings),
-        (425.0, "Exit", UiAction::Exit),
+        (240.0, "Play", UiAction::Play),
+        (320.0, "Settings", UiAction::Settings),
+        (400.0, "Exit", UiAction::Exit),
     ];
 
     fn menu() -> (World, MenuButtons) {
@@ -349,7 +352,7 @@ mod tests {
         let (mut world, mut buttons) = menu();
         settle(&mut world, &mut buttons, 2.0);
         let mut mouse = Input::default();
-        mouse.set_mouse(Vec2::new(480.0, 330.0));
+        mouse.set_mouse(Vec2::new(480.0, 322.0));
         let mut sounds = Vec::new();
 
         buttons.update(&mut world, &mouse, 0.016, &mut sounds);

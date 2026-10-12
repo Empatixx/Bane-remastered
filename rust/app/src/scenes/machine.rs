@@ -223,7 +223,7 @@ mod tests {
     #[test]
     fn play_button_opens_lobby() {
         let (mut scenes, mut input, assets) = menu();
-        let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 225.0));
+        let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 240.0));
         assert_eq!(flow, ControlFlow::Continue(()));
         assert_eq!(scenes.current, SceneId::Lobby);
     }
@@ -231,7 +231,7 @@ mod tests {
     #[test]
     fn exit_button_quits() {
         let (mut scenes, mut input, assets) = menu();
-        let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 425.0));
+        let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 400.0));
         assert_eq!(flow, ControlFlow::Break(()));
     }
 
