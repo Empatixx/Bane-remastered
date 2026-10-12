@@ -2,14 +2,13 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Path, Player,
-    Position, Rooted, Size, Spawning, Velocity,
+    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Outline, Path,
+    Player, Position, Rooted, Size, Spawning, Velocity,
 };
 use crate::navigation::{Navigation, CELL};
 use crate::physics::Physics;
 
 pub(crate) const FLASH_SECONDS: f32 = 1.0;
-const FLASH_STRENGTH: f32 = 0.7;
 const DASH_PERIOD: f32 = 3.0;
 const DASH_DURATION: f32 = 1.0;
 
@@ -135,17 +134,23 @@ pub(crate) fn dash(world: &mut World, dt: f32) {
 }
 
 pub(crate) fn flash_hits(world: &mut World, dt: f32) {
+    let mut fading = Vec::new();
     let mut done = Vec::new();
-    for (entity, flash, color) in world.query_mut::<(Entity, &mut HitFlash, &mut Color)>() {
+    for (entity, flash) in world.query_mut::<(Entity, &mut HitFlash)>() {
         flash.remaining -= dt;
-        let strength = (flash.remaining / FLASH_SECONDS).clamp(0.0, 1.0) * FLASH_STRENGTH;
-        color.0 = Vec4::new(1.0, 1.0 - strength, 1.0 - strength, color.0.w);
         if flash.remaining <= 0.0 {
             done.push(entity);
+        } else {
+            let strength = (flash.remaining / FLASH_SECONDS).clamp(0.0, 1.0);
+            fading.push((entity, strength));
         }
+    }
+    for (entity, strength) in fading {
+        let _ = world.insert_one(entity, Outline(Vec4::new(1.0, 0.0, 0.0, strength)));
     }
     for entity in done {
         let _ = world.remove_one::<HitFlash>(entity);
+        let _ = world.remove_one::<Outline>(entity);
     }
 }
 
@@ -302,7 +307,7 @@ mod tests {
     }
 
     #[test]
-    fn a_hit_tints_the_enemy_red_and_fades_back() {
+    fn a_hit_outlines_the_enemy_in_red_and_fades_back() {
         let (mut world, mut physics) = arena();
         let rat = prefabs::ready_enemy(
             &mut world,
@@ -318,11 +323,19 @@ mod tests {
         );
 
         flash_hits(&mut world, 0.01);
-        let tint = world.get::<&Color>(rat).map(|c| c.0).unwrap_or(Vec4::ONE);
-        assert!(tint.y < 0.5 && tint.x == 1.0, "{tint:?}");
+        let outline = world
+            .get::<&Outline>(rat)
+            .map(|o| o.0)
+            .unwrap_or(Vec4::ZERO);
+        assert!(
+            outline.x == 1.0 && outline.y == 0.0 && outline.w > 0.9,
+            "{outline:?}"
+        );
+        assert_eq!(world.get::<&Color>(rat).map(|c| c.0).ok(), Some(Vec4::ONE));
 
         flash_hits(&mut world, FLASH_SECONDS);
         assert!(world.get::<&HitFlash>(rat).is_err());
+        assert!(world.get::<&Outline>(rat).is_err());
     }
 
     #[test]

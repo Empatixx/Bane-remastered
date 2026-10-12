@@ -24,6 +24,7 @@ pub(crate) struct Quad {
     angle: f32,
     fx: [f32; 4],
     local: [f32; 4],
+    outline: [f32; 4],
 }
 
 impl Quad {
@@ -41,6 +42,7 @@ impl Quad {
             angle: 0.0,
             fx: [0.0; 4],
             local: [0.0, 0.0, 1.0, 1.0],
+            outline: [0.0; 4],
         }
     }
 
@@ -63,6 +65,11 @@ impl Quad {
             if look.fogged { MODE_FOG } else { MODE_MAP },
         ];
         self.local = look.local;
+        self
+    }
+
+    pub(crate) fn outlined(mut self, color: Vec4) -> Self {
+        self.outline = color.to_array();
         self
     }
 

@@ -2,8 +2,8 @@ use glam::Vec2;
 use hecs::World;
 
 use crate::components::{
-    blended, Color, Hidden, InRange, Layer, Lit, MapSize, Minimap, Overlay, PlayerShadow, Position,
-    Previous, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
+    blended, Color, Hidden, InRange, Layer, Lit, MapSize, Minimap, Outline, Overlay, PlayerShadow,
+    Position, Previous, Prompt, ScreenSpace, Size, Sprite, StatusBar, Text,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -56,7 +56,7 @@ pub(crate) fn collect_draws(
     blend: f32,
 ) -> Layers {
     let mut sorted = Sorted::default();
-    for (position, previous, size, color, sprite, layer, screen, overlay, lit) in world
+    for (position, previous, size, color, sprite, layer, screen, overlay, lit, outline) in world
         .query::<(
             &Position,
             Option<&Previous>,
@@ -67,6 +67,7 @@ pub(crate) fn collect_draws(
             Option<&ScreenSpace>,
             Option<&Overlay>,
             Option<&Lit>,
+            Option<&Outline>,
         )>()
         .without::<&Hidden>()
         .iter()
@@ -76,10 +77,13 @@ pub(crate) fn collect_draws(
             continue;
         }
         let draw = match sprite {
-            Some(sprite) => Draw {
-                texture: sprite.texture,
-                quad: Quad::with_uv(center, size.0, color.0, sprite.uv).lit(lit.is_some()),
-            },
+            Some(sprite) => {
+                let quad = Quad::with_uv(center, size.0, color.0, sprite.uv).lit(lit.is_some());
+                Draw {
+                    texture: sprite.texture,
+                    quad: outline.map_or(quad, |outline| quad.outlined(outline.0)),
+                }
+            }
             None => Draw {
                 texture: TextureId::WHITE,
                 quad: Quad::new(center, size.0, color.0),

@@ -6,8 +6,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, Color, Despawn, Enemy, Expiring, Health, Loadout, NoDrop, Pet, Pickup,
-    Player, Position, Shop, Size, Wallet,
+    Animation, Armor, ArtefactDrop, Color, Despawn, Enemy, Expiring, GunDrop, Health, InRange,
+    Loadout, NoDrop, Outline, Pet, Pickup, Player, Position, Shop, Size, Wallet,
 };
 use crate::geometry;
 use crate::items::{
@@ -16,7 +16,24 @@ use crate::items::{
 use crate::prefabs;
 
 const BURST_ITEMS: usize = 5;
+const DROP_OUTLINE: glam::Vec4 = glam::Vec4::new(1.0, 1.0, 0.0, 1.0);
 const BURST_SPEED: f32 = 333.0;
+
+pub(crate) fn outline_drops(world: &mut World) {
+    let drops: Vec<(Entity, bool)> = world
+        .query::<(Entity, Option<&InRange>)>()
+        .with::<hecs::Or<&GunDrop, &ArtefactDrop>>()
+        .iter()
+        .map(|(entity, in_range)| (entity, in_range.is_some()))
+        .collect();
+    for (entity, near) in drops {
+        if near {
+            let _ = world.insert_one(entity, Outline(DROP_OUTLINE));
+        } else {
+            let _ = world.remove_one::<Outline>(entity);
+        }
+    }
+}
 
 pub(crate) fn can_use(world: &World, item: ItemKind) -> bool {
     match item {
@@ -380,5 +397,27 @@ mod tests {
 
         assert_eq!(world.query::<&Pickup>().iter().count(), 1);
         assert_eq!(kills, 0);
+    }
+
+    #[test]
+    fn a_drop_is_outlined_in_yellow_only_while_the_player_is_close() {
+        let mut world = World::new();
+        let near = world.spawn((
+            ArtefactDrop {
+                kind: crate::artefacts::ArtefactKind::RingOfDeath,
+            },
+            InRange,
+        ));
+        let far = world.spawn((ArtefactDrop {
+            kind: crate::artefacts::ArtefactKind::RingOfDeath,
+        },));
+
+        outline_drops(&mut world);
+        assert!(world.get::<&Outline>(near).is_ok());
+        assert!(world.get::<&Outline>(far).is_err());
+
+        let _ = world.remove_one::<InRange>(near);
+        outline_drops(&mut world);
+        assert!(world.get::<&Outline>(near).is_err());
     }
 }

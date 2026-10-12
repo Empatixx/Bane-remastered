@@ -23,7 +23,7 @@ mod transform;
 mod ui;
 
 pub(crate) use animation::{Animation, Clip};
-pub(crate) use appearance::{Color, Layer, Sprite, Text};
+pub(crate) use appearance::{Color, Layer, Outline, Sprite, Text};
 pub(crate) use artefacts::{
     ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, ShieldAura, Shielded,
 };
