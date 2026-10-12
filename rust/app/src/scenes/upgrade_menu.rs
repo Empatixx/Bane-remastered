@@ -34,8 +34,8 @@ const PLATE_CENTER: Vec2 = Vec2::new(795.0, 392.0);
 const PLATE_SIZE: Vec2 = Vec2::new(144.0, 57.0);
 const PLATE_HIT_HALF: Vec2 = Vec2::new(63.0, 19.5);
 const PLATE_BASELINE: f32 = 400.0;
-const BUY_LABEL_X: f32 = 765.0;
-const PRICE_X: f32 = 830.0;
+const COST_BASELINE: f32 = 348.0;
+const COST_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
 const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const BLOCKED_COLOR: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
@@ -501,14 +501,7 @@ fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element>
             let color = if hover { HOVER_COLOR } else { MENU_COLOR };
             elements.push(Element::Label {
                 content: "Buy".to_owned(),
-                position: Vec2::new(BUY_LABEL_X, PLATE_BASELINE),
-                color,
-                size: FontSize::Size22,
-                align: Align::Center,
-            });
-            elements.push(Element::Label {
-                content: format!("{},-", def.price),
-                position: Vec2::new(PRICE_X, PLATE_BASELINE),
+                position: Vec2::new(PLATE_CENTER.x, PLATE_BASELINE),
                 color,
                 size: FontSize::Size22,
                 align: Align::Center,
@@ -528,6 +521,23 @@ fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element>
                 align: Align::Center,
             });
         }
+    }
+    if state != BuyState::Owned {
+        elements.push(Element::Label {
+            content: format!(
+                "Cost: {} talent{}",
+                def.price,
+                if def.price == 1 { "" } else { "s" }
+            ),
+            position: Vec2::new(centre_x, COST_BASELINE),
+            color: if state == BuyState::Locked {
+                BLOCKED_COLOR
+            } else {
+                COST_COLOR
+            },
+            size: FontSize::Size16,
+            align: Align::Center,
+        });
     }
     elements
 }
@@ -1124,7 +1134,8 @@ mod tests {
         let shown = labels(&elements);
         assert!(shown.contains(&"Discount".to_owned()));
         assert!(shown.contains(&"Buy".to_owned()));
-        assert!(shown.contains(&"1,-".to_owned()));
+        assert!(shown.contains(&"Cost: 1 talent".to_owned()));
+        assert!(!shown.iter().any(|text| text.ends_with(",-")));
         assert_eq!(
             images(&elements, tex::MENU_PLATE_SMALL),
             vec![(PLATE_CENTER - PLATE_SIZE / 2.0, Some((0, PLATE_ROWS)))]
@@ -1139,7 +1150,8 @@ mod tests {
 
         let locked = layout(&profile, Some(Upgrade::TrapMaster), false, Vec2::ZERO);
         assert!(labels(&locked).contains(&"Can't buy".to_owned()));
-        assert!(!labels(&locked).iter().any(|text| text.ends_with(",-")));
+        assert!(labels(&locked).contains(&"Cost: 1 talent".to_owned()));
+        assert!(!labels(&owned).iter().any(|text| text.starts_with("Cost")));
     }
 
     #[test]
