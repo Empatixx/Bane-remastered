@@ -12,9 +12,9 @@ use crate::components::{
     Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
     Overlay, Particle, Path, PauseUi, Pet, Pickup, Player, PlayerShadow, Position, PriceTag,
     Prompt, RoomId, RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash,
-    Solid, Spawning, SpeechBubble, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
-    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
-    PIP_FULL,
+    Solid, Spawning, SpeechBubble, SpeechPart, SpeechText, Sprite, StatusBar, Text, TextButton,
+    ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT,
+    BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
@@ -985,6 +985,49 @@ pub(crate) fn shop_speech(world: &mut World, keeper_top_left: Vec2, textures: &T
             anchor: Anchor::Middle,
         },
         Layer(7),
+        Hidden,
+    ));
+}
+
+const MINIMAL_BACK: Vec4 = Vec4::new(0.07, 0.06, 0.09, 0.85);
+const MINIMAL_EDGE: Vec4 = Vec4::new(0.78, 0.36, 0.07, 0.9);
+const MINIMAL_TEXT: Vec4 = Vec4::new(0.95, 0.9, 0.8, 1.0);
+const MINIMAL_RISE: f32 = 26.0;
+
+pub(crate) fn minimal_speech(world: &mut World, head: Vec2) {
+    let anchor = head - Vec2::new(0.0, MINIMAL_RISE);
+    world.spawn((
+        SpeechBubble {
+            remaining: 0.0,
+            message: "",
+        },
+        Position(anchor),
+        Size(Vec2::ZERO),
+        Color(MINIMAL_BACK),
+        Layer(7),
+        Hidden,
+    ));
+    for part in [SpeechPart::Frame, SpeechPart::Tail] {
+        world.spawn((
+            part,
+            Position(anchor),
+            Size(Vec2::ZERO),
+            Color(MINIMAL_EDGE),
+            Layer(6),
+            Hidden,
+        ));
+    }
+    world.spawn((
+        SpeechText,
+        Position(anchor),
+        Text {
+            content: String::new(),
+            color: MINIMAL_TEXT,
+            size: FontSize::Size22,
+            align: Align::Center,
+            anchor: Anchor::Middle,
+        },
+        Layer(8),
         Hidden,
     ));
 }

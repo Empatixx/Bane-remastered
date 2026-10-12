@@ -7,7 +7,7 @@ use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, ArtefactDrop, ArtefactSlot, Candle, Clip, Currency, GunDrop, Health, Hidden,
     InRange, Interactable, Interaction, Light, Loadout, Pickup, Player, PriceTag, Shop,
-    SpeechBubble, SpeechText, Text, Wallet,
+    SpeechBubble, SpeechPart, SpeechText, Text, Wallet,
 };
 use crate::dungeon::{Dungeon, FixtureKind};
 use crate::guns::GunKind;
@@ -325,6 +325,18 @@ pub(crate) fn tick_speech(world: &mut World, dt: f32) {
         bubbles.push(entity);
     }
     for entity in bubbles {
+        if visible {
+            let _ = world.remove_one::<Hidden>(entity);
+        } else {
+            let _ = world.insert_one(entity, Hidden);
+        }
+    }
+    let parts: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<&SpeechPart>()
+        .iter()
+        .collect();
+    for entity in parts {
         if visible {
             let _ = world.remove_one::<Hidden>(entity);
         } else {

@@ -45,7 +45,7 @@ pub(crate) use hud::{
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use items::{
     Candle, Chatty, Chest, ChestKind, Currency, Despawn, NoDrop, Pickup, PriceTag, Shop,
-    SpeechBubble, SpeechText,
+    SpeechBubble, SpeechPart, SpeechText,
 };
 pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};

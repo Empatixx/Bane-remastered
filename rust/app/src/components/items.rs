@@ -52,6 +52,12 @@ pub(crate) struct SpeechBubble {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct SpeechText;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum SpeechPart {
+    Frame,
+    Tail,
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct Chatty {
     pub(crate) cooldown: f32,

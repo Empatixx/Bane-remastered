@@ -150,7 +150,8 @@ impl Scene for LobbyScene {
         }
         let scientist_at = Vec2::new(25.0, 6.5) * TILE_SIZE;
         prefabs::scientist(&mut self.world, scientist_at, textures);
-        prefabs::shop_speech(&mut self.world, scientist_at, textures);
+        let head = scientist_at + Vec2::new(Prop::Scientist.spec().size().x / 2.0, 0.0);
+        prefabs::minimal_speech(&mut self.world, head);
 
         let player_top_left = bounds / 2.0;
         prefabs::player(
@@ -238,6 +239,7 @@ impl Scene for LobbyScene {
         systems::update_weapon_hud(&mut self.world, &assets.textures);
         systems::chat(&mut self.world, dt);
         systems::tick_speech(&mut self.world, dt);
+        systems::fit_speech(&mut self.world, &assets.fonts);
         systems::remove_expired(&mut self.world);
         if let Some(target) = systems::camera_target(&self.world, input.mouse(), self.blend.0) {
             self.camera.follow(target, dt);

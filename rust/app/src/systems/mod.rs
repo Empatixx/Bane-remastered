@@ -77,7 +77,7 @@ pub(crate) use pet::{
 };
 pub(crate) use player_animation::{animate_player, IDLE, PLAYER_COLUMNS, PLAYER_ROWS};
 pub(crate) use rooms::{update_rooms, RoomContext, RoomEvent, RoomRuntime};
-pub(crate) use scientist::{chat, PURCHASE};
+pub(crate) use scientist::{chat, fit_speech, PURCHASE};
 pub(crate) use settings_ui::update_settings_ui;
 pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{bullet_hits, shoot, ShotContext, ShotRoll};
