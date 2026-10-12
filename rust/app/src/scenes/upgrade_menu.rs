@@ -40,6 +40,7 @@ const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1
 const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const BLOCKED_COLOR: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
 const LINE_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
+const LINE_OFF: Vec4 = Vec4::new(110.0 / 255.0, 84.0 / 255.0, 90.0 / 255.0, 1.0);
 const LINE_INK: Vec4 = Vec4::new(14.0 / 255.0, 8.0 / 255.0, 12.0 / 255.0, 1.0);
 const FRAME_INSET: f32 = 8.0;
 const CAP_REACH: f32 = 4.0;
@@ -165,7 +166,14 @@ fn rect(top_left: Vec2, size: Vec2, color: Vec4, layer: i32) -> Element {
     }
 }
 
-fn segment(elements: &mut Vec<Element>, from: Vec2, to: Vec2, extend: (f32, f32), alpha: f32) {
+fn segment(
+    elements: &mut Vec<Element>,
+    from: Vec2,
+    to: Vec2,
+    extend: (f32, f32),
+    color: Vec4,
+    alpha: f32,
+) {
     let vertical = (from.x - to.x).abs() < 1.0;
     let direction = if vertical {
         Vec2::new(0.0, (to.y - from.y).signum())
@@ -200,12 +208,12 @@ fn segment(elements: &mut Vec<Element>, from: Vec2, to: Vec2, extend: (f32, f32)
     elements.push(rect(
         core_low,
         core_size,
-        LINE_COLOR.truncate().extend(alpha),
+        color.truncate().extend(alpha),
         LINE_LAYER + 1,
     ));
 }
 
-fn cap(elements: &mut Vec<Element>, at: Vec2, inward: Vec2, alpha: f32) {
+fn cap(elements: &mut Vec<Element>, at: Vec2, inward: Vec2, color: Vec4, alpha: f32) {
     let bar = if inward.x != 0.0 {
         Vec2::new(CAP_REACH, 10.0)
     } else {
@@ -221,7 +229,7 @@ fn cap(elements: &mut Vec<Element>, at: Vec2, inward: Vec2, alpha: f32) {
     elements.push(rect(
         (center - (bar - Vec2::splat(2.0)) / 2.0).floor(),
         bar - Vec2::splat(2.0),
-        LINE_COLOR.truncate().extend(alpha),
+        color.truncate().extend(alpha),
         LINE_LAYER + 1,
     ));
 }
@@ -254,7 +262,7 @@ pub(crate) fn edge_path(from: (i32, i32), to: (i32, i32)) -> Vec<Vec2> {
     points
 }
 
-fn draw_path(elements: &mut Vec<Element>, points: &[Vec2], alpha: f32) {
+fn draw_path(elements: &mut Vec<Element>, points: &[Vec2], color: Vec4, alpha: f32) {
     if alpha <= 0.0 || points.len() < 2 {
         return;
     }
@@ -264,13 +272,14 @@ fn draw_path(elements: &mut Vec<Element>, points: &[Vec2], alpha: f32) {
             if index > 0 { 2.0 } else { 0.0 },
             if index < last { 2.0 } else { 0.0 },
         );
-        segment(elements, pair[0], pair[1], extend, alpha);
+        segment(elements, pair[0], pair[1], extend, color, alpha);
     }
     let first = points[0];
     cap(
         elements,
         first,
         (points[1] - first).normalize_or_zero(),
+        color,
         alpha,
     );
     let tail = points[points.len() - 1];
@@ -278,6 +287,7 @@ fn draw_path(elements: &mut Vec<Element>, points: &[Vec2], alpha: f32) {
         elements,
         tail,
         (points[points.len() - 2] - tail).normalize_or_zero(),
+        color,
         alpha,
     );
 }
@@ -367,6 +377,7 @@ pub(crate) fn layout(
             alpha: 1.0,
         },
     ];
+    let snapshot = profile.snapshot();
     let root = node_top_left(ROOT_CELL, pan);
     let root_alpha = visibility(root, Vec2::splat(TALENT));
     if root_alpha > 0.0 {
@@ -388,7 +399,12 @@ pub(crate) fn layout(
             .into_iter()
             .map(|point| point + pan)
             .collect();
-        draw_path(&mut elements, &path, line_alpha);
+        let color = if snapshot.owns(upgrade) {
+            LINE_COLOR
+        } else {
+            LINE_OFF
+        };
+        draw_path(&mut elements, &path, color, line_alpha);
         if alpha > 0.0 {
             elements.extend(talent(
                 upgrade,
@@ -629,19 +645,29 @@ impl UpgradeMenu {
             self.dirty = false;
             self.rebuild(world, assets, profile);
         }
-        self.flow(world, dt);
+        self.flow(world, profile, dt);
         outcome
     }
 
-    fn flow(&mut self, world: &mut World, dt: f32) {
+    fn flow(&mut self, world: &mut World, profile: &SharedProfile, dt: f32) {
+        let active: Vec<usize> = {
+            let snapshot = profile.snapshot();
+            Upgrade::ALL
+                .iter()
+                .enumerate()
+                .filter(|(_, upgrade)| snapshot.owns(**upgrade))
+                .map(|(index, _)| index)
+                .collect()
+        };
+        self.pulses.retain(|pulse| active.contains(&pulse.edge));
         let old: Vec<Entity> = world.query::<Entity>().with::<&PulseUi>().iter().collect();
         for entity in old {
             let _ = world.despawn(entity);
         }
         self.until_pulse -= dt;
-        if self.until_pulse <= 0.0 && self.pulses.len() < PULSE_LIMIT {
+        if self.until_pulse <= 0.0 && self.pulses.len() < PULSE_LIMIT && !active.is_empty() {
             let rng = self.rng.get_or_insert_with(Rng::from_clock);
-            let edge = rng.below(Upgrade::ALL.len());
+            let edge = active[rng.below(active.len())];
             self.until_pulse = PULSE_PAUSE.0 + (PULSE_PAUSE.1 - PULSE_PAUSE.0) * rng.float();
             self.pulses.push(Pulse {
                 edge,
@@ -849,7 +875,7 @@ mod tests {
     }
 
     #[test]
-    fn every_connection_has_the_same_colour_whether_the_talent_is_owned_or_not() {
+    fn connections_to_owned_talents_are_lit_and_the_others_are_switched_off() {
         let profile = rich_profile();
         let elements = layout(&profile, None, false, Vec2::ZERO);
         let colours: Vec<Vec4> = elements
@@ -859,12 +885,28 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert!(!colours.is_empty());
-        assert!(
-            colours
-                .iter()
-                .all(|c| (c.x, c.y, c.z) == (LINE_COLOR.x, LINE_COLOR.y, LINE_COLOR.z))
-        );
+        let lit = colours
+            .iter()
+            .filter(|c| (c.x, c.y, c.z) == (LINE_COLOR.x, LINE_COLOR.y, LINE_COLOR.z))
+            .count();
+        let off = colours
+            .iter()
+            .filter(|c| (c.x, c.y, c.z) == (LINE_OFF.x, LINE_OFF.y, LINE_OFF.z))
+            .count();
+        assert!(lit > 0 && off > lit, "{lit} {off}");
+        assert_eq!(lit + off, colours.len());
+
+        let fresh = SharedProfile::in_memory();
+        let beginning = layout(&fresh, None, false, Vec2::ZERO);
+        let lit_at_start = beginning
+            .iter()
+            .filter(|element| matches!(
+                element,
+                Element::Rect { color, layer, .. }
+                    if *layer == LINE_LAYER + 1 && (color.x, color.y) == (LINE_COLOR.x, LINE_COLOR.y)
+            ))
+            .count();
+        assert!(lit_at_start > 0 && lit_at_start <= lit);
     }
 
     #[test]
@@ -931,12 +973,12 @@ mod tests {
     }
 
     #[test]
-    fn little_pulses_run_along_the_connections_in_chunky_steps_and_then_fade_away() {
+    fn little_pulses_run_only_along_connections_between_active_talents() {
         let (mut menu, mut world, assets, profile) = opened();
         menu.rng = Some(Rng::new(5));
         let mut input = Input::default();
         let mut seen = 0;
-        for _ in 0..240 {
+        for _ in 0..300 {
             step(&mut menu, &mut world, &assets, &profile, &mut input);
             let pieces: Vec<Vec2> = world
                 .query::<(&Position, &Size)>()
@@ -951,11 +993,37 @@ mod tests {
                     .iter()
                     .all(|at| at.x % PULSE_GRID == 0.0 && at.y % PULSE_GRID == 0.0)
             );
+            let snapshot = profile.snapshot();
+            assert!(
+                menu.pulses
+                    .iter()
+                    .all(|pulse| snapshot.owns(Upgrade::ALL[pulse.edge]))
+            );
         }
         assert!(seen >= 2, "{seen}");
 
         menu.close(&mut world);
         assert_eq!(world.query::<&PulseUi>().iter().count(), 0);
+    }
+
+    #[test]
+    fn at_the_start_only_the_free_first_talents_are_connected_to_the_root_and_flow() {
+        let assets = Assets::new().expect("assets");
+        let profile = SharedProfile::in_memory();
+        let mut world = World::new();
+        let mut menu = UpgradeMenu::default();
+        menu.toggle(&mut world, &assets, &profile);
+        menu.rng = Some(Rng::new(9));
+        let mut input = Input::default();
+        let mut edges = std::collections::BTreeSet::new();
+
+        for _ in 0..600 {
+            step(&mut menu, &mut world, &assets, &profile, &mut input);
+            edges.extend(menu.pulses.iter().map(|pulse| pulse.edge));
+        }
+
+        assert!(!edges.is_empty());
+        assert!(edges.iter().all(|edge| Upgrade::ALL[*edge].is_free()));
     }
 
     #[test]
