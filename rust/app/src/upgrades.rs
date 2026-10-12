@@ -1,10 +1,9 @@
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
 
-pub(crate) const TREE_TOP: f32 = 125.0;
-pub(crate) const TREE_STEP: f32 = 74.0;
+pub(crate) const ROOT_CELL: (i32, i32) = (0, 0);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -51,22 +50,6 @@ pub(crate) struct UpgradeDef {
 
 impl Tree {
     pub(crate) const ALL: [Self; 3] = [Self::Utility, Self::Offensive, Self::Defensive];
-
-    pub(crate) fn column(self) -> f32 {
-        match self {
-            Self::Utility => 364.0,
-            Self::Offensive => 464.0,
-            Self::Defensive => 564.0,
-        }
-    }
-
-    pub(crate) fn icon(self) -> Tex {
-        match self {
-            Self::Utility => tex::UTILITY_ICON,
-            Self::Offensive => tex::OFFENSE_ICON,
-            Self::Defensive => tex::DEFENSE_ICON,
-        }
-    }
 
     pub(crate) fn upgrades(self) -> [Upgrade; 5] {
         use Upgrade::*;
@@ -140,11 +123,17 @@ impl Upgrade {
         self.index() == 0
     }
 
-    pub(crate) fn top_left(self) -> (f32, f32) {
-        (
-            self.tree().column(),
-            TREE_TOP + TREE_STEP * self.index() as f32,
-        )
+    pub(crate) fn cell(self) -> (i32, i32) {
+        let column = match self.tree() {
+            Tree::Utility => -1,
+            Tree::Offensive => 0,
+            Tree::Defensive => 1,
+        };
+        (column, self.index() as i32 + 1)
+    }
+
+    pub(crate) fn parent_cell(self) -> (i32, i32) {
+        self.parent().map_or(ROOT_CELL, Self::cell)
     }
 
     pub(crate) fn def(self) -> UpgradeDef {
@@ -421,10 +410,17 @@ mod tests {
     }
 
     #[test]
-    fn the_talents_sit_in_three_columns_one_row_every_74_pixels() {
-        assert_eq!(Upgrade::Discount.top_left(), (364.0, 199.0));
-        assert_eq!(Upgrade::AdditionalAmmo.top_left(), (464.0, 199.0));
-        assert_eq!(Upgrade::ReducedDamageTaken.top_left(), (564.0, 421.0));
+    fn the_talents_sit_in_three_adjacent_columns_below_the_root() {
+        assert_eq!(Upgrade::MovementSpeed.cell(), (-1, 1));
+        assert_eq!(Upgrade::Discount.cell(), (-1, 2));
+        assert_eq!(Upgrade::AdditionalAmmo.cell(), (0, 2));
+        assert_eq!(Upgrade::ReducedDamageTaken.cell(), (1, 5));
+    }
+
+    #[test]
+    fn the_first_talent_of_each_branch_hangs_on_the_root() {
+        assert_eq!(Upgrade::ImprovedDamage.parent_cell(), ROOT_CELL);
+        assert_eq!(Upgrade::TrapMaster.parent_cell(), Upgrade::Discount.cell());
     }
 
     #[test]

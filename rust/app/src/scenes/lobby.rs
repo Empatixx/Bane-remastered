@@ -199,9 +199,14 @@ impl Scene for LobbyScene {
                 return Transition::None;
             }
             if let Some(profile) = &self.profile {
-                let outcome =
-                    self.upgrades
-                        .update(&mut self.world, input, assets, profile, &mut self.sounds);
+                let outcome = self.upgrades.update(
+                    &mut self.world,
+                    input,
+                    assets,
+                    profile,
+                    &mut self.sounds,
+                    dt,
+                );
                 if outcome.is_some() {
                     self.refresh_wallet();
                     systems::say(&mut self.world, systems::PURCHASE);

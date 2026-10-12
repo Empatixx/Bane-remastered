@@ -1,9 +1,7 @@
-use crate::assets::{tex, Tex};
-use crate::palette;
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::Assets;
+use crate::assets::{Assets, Tex, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Color, Layer, Overlay, Position, ScreenSpace, Size, Sprite, Text, UpgradeUi,
@@ -11,31 +9,45 @@ use crate::components::{
 use crate::input::Input;
 use crate::profile::SharedProfile;
 use crate::render::{Align, FontSize};
-use crate::upgrades::{Purchase, Quality, Tree, Upgrade, TREE_STEP, TREE_TOP};
+use crate::upgrades::{Purchase, Quality, ROOT_CELL, Tree, Upgrade};
 
 const TALENT: f32 = 64.0;
 const ICON: f32 = 32.0;
-const TREE_ICON: f32 = 64.0;
-const TREE_ICON_LIFT: f32 = 75.0;
-const PATH_SIZE: Vec2 = Vec2::new(16.0, 30.0);
-const PATH_OFFSET: Vec2 = Vec2::new(24.0, -20.0);
+const STEP: Vec2 = Vec2::new(80.0, 74.0);
+const VIEW_TOP_LEFT: Vec2 = Vec2::new(30.0, 20.0);
+const VIEW_SIZE: Vec2 = Vec2::new(600.0, 501.0);
+const BOARD_MARGIN: f32 = 18.0;
+const ROOT_DROP: f32 = 24.0;
+const FADE: f32 = 20.0;
+const DRAG_THRESHOLD: f32 = 5.0;
+const PAN_SPEED: f32 = 380.0;
+const PAN_MARGIN: f32 = 120.0;
+const DIM_COLOR: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.55);
 const PANEL_TOP_LEFT: Vec2 = Vec2::new(675.0, 150.0);
 const PANEL_SIZE: Vec2 = Vec2::new(240.0, 300.0);
 const PANEL_TALENT_Y: f32 = 90.0;
 const TITLE_BASELINE: f32 = 222.0;
 const DESCRIPTION_TOP: f32 = 266.0;
 const DESCRIPTION_STEP: f32 = 22.0;
-const BUY_CENTER_X: f32 = 735.0;
-const STATUS_CENTER_X: f32 = 750.0;
-const BUTTON_TOP: f32 = 398.0;
-const BUTTON_HEIGHT: f32 = 36.0;
-const BUTTON_PADDING: f32 = 10.0;
-const BUTTON_BASELINE: f32 = 424.0;
+const PLATE_CENTER: Vec2 = Vec2::new(795.0, 413.0);
+const PLATE_SIZE: Vec2 = Vec2::new(144.0, 57.0);
+const PLATE_HIT_HALF: Vec2 = Vec2::new(63.0, 19.5);
+const PLATE_BASELINE: f32 = 421.0;
+const BUY_LABEL_X: f32 = 765.0;
+const PRICE_X: f32 = 830.0;
+const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
-const PRICE_RIGHT_X: f32 = 886.0;
-const MENU_COLOR: Vec4 = palette::ORANGE;
-const BLOCKED_COLOR: Vec4 = Vec4::new(0.5, 0.5, 0.5, 1.0);
-const BASE_LAYER: i32 = 30;
+const BLOCKED_COLOR: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
+const LOCKED_LINE: Vec4 = Vec4::new(78.0 / 255.0, 66.0 / 255.0, 84.0 / 255.0, 1.0);
+const LINE_INK: Vec4 = Vec4::new(14.0 / 255.0, 8.0 / 255.0, 12.0 / 255.0, 1.0);
+const LOCKED_ICON_ALPHA: f32 = 0.6;
+const DIM_LAYER: i32 = 29;
+const BOARD_LAYER: i32 = 30;
+const LINE_LAYER: i32 = 31;
+const FRAME_LAYER: i32 = 32;
+const PANEL_LAYER: i32 = 40;
+const PLATE_ROWS: usize = 3;
+const FRAME_ROWS: usize = 9;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Element {
@@ -44,6 +56,13 @@ pub(crate) enum Element {
         top_left: Vec2,
         size: Vec2,
         cell: Option<(usize, usize)>,
+        layer: i32,
+        alpha: f32,
+    },
+    Rect {
+        top_left: Vec2,
+        size: Vec2,
+        color: Vec4,
         layer: i32,
     },
     Label {
@@ -62,27 +81,16 @@ pub(crate) enum BuyState {
     Locked,
 }
 
-pub(crate) fn frame_row(quality: Quality, owned: bool) -> usize {
+pub(crate) fn frame_row(quality: Quality, state: BuyState) -> usize {
     let base = match quality {
         Quality::Common => 0,
-        Quality::Rare => 2,
-        Quality::Epic => 4,
+        Quality::Rare => 3,
+        Quality::Epic => 6,
     };
-    if owned {
-        base
-    } else {
-        base + 1
-    }
-}
-
-pub(crate) fn path_row(tree: Tree, locked: bool) -> usize {
-    if locked {
-        return 3;
-    }
-    match tree {
-        Tree::Utility => 0,
-        Tree::Offensive => 1,
-        Tree::Defensive => 2,
+    base + match state {
+        BuyState::Owned => 0,
+        BuyState::Locked => 1,
+        BuyState::Available => 2,
     }
 }
 
@@ -97,15 +105,213 @@ pub(crate) fn buy_state(profile: &SharedProfile, upgrade: Upgrade) -> BuyState {
     }
 }
 
-fn talent(upgrade: Upgrade, top_left: Vec2, owned: bool, layer: i32) -> [Element; 2] {
+fn branch_color(tree: Tree) -> Vec4 {
+    match tree {
+        Tree::Utility => Vec4::new(196.0 / 255.0, 116.0 / 255.0, 240.0 / 255.0, 1.0),
+        Tree::Offensive => Vec4::new(244.0 / 255.0, 96.0 / 255.0, 96.0 / 255.0, 1.0),
+        Tree::Defensive => Vec4::new(96.0 / 255.0, 214.0 / 255.0, 126.0 / 255.0, 1.0),
+    }
+}
+
+fn node_top_left(cell: (i32, i32), pan: Vec2) -> Vec2 {
+    Vec2::new(
+        VIEW_TOP_LEFT.x + VIEW_SIZE.x / 2.0 - TALENT / 2.0,
+        VIEW_TOP_LEFT.y + ROOT_DROP,
+    ) + Vec2::new(cell.0 as f32 * STEP.x, cell.1 as f32 * STEP.y)
+        + pan
+}
+
+fn visibility(top_left: Vec2, size: Vec2) -> f32 {
+    let inside = (top_left - VIEW_TOP_LEFT)
+        .min(VIEW_TOP_LEFT + VIEW_SIZE - (top_left + size))
+        .min_element();
+    (inside / FADE).clamp(0.0, 1.0)
+}
+
+fn in_view(point: Vec2) -> bool {
+    point.cmpge(VIEW_TOP_LEFT).all() && point.cmple(VIEW_TOP_LEFT + VIEW_SIZE).all()
+}
+
+fn pan_limits() -> (Vec2, Vec2) {
+    let (mut low, mut high) = (ROOT_CELL, ROOT_CELL);
+    for upgrade in Upgrade::ALL {
+        let cell = upgrade.cell();
+        low = (low.0.min(cell.0), low.1.min(cell.1));
+        high = (high.0.max(cell.0), high.1.max(cell.1));
+    }
+    let origin = node_top_left(ROOT_CELL, Vec2::ZERO);
+    let tree_low = origin + Vec2::new(low.0 as f32 * STEP.x, low.1 as f32 * STEP.y);
+    let tree_high = origin + Vec2::new(high.0 as f32 * STEP.x, high.1 as f32 * STEP.y) + TALENT;
+    let minimum = VIEW_TOP_LEFT + PAN_MARGIN - tree_high;
+    let maximum = VIEW_TOP_LEFT + VIEW_SIZE - PAN_MARGIN - tree_low;
+    (minimum.min(maximum), minimum.max(maximum))
+}
+
+fn clamp_pan(pan: Vec2) -> Vec2 {
+    let (low, high) = pan_limits();
+    pan.clamp(low, high)
+}
+
+fn rect(top_left: Vec2, size: Vec2, color: Vec4, layer: i32) -> Element {
+    Element::Rect {
+        top_left,
+        size,
+        color,
+        layer,
+    }
+}
+
+fn line(elements: &mut Vec<Element>, from: Vec2, to: Vec2, color: Vec4, alpha: f32) {
+    let low = from.min(to).floor();
+    let extent = (from - to).abs().floor() + Vec2::ONE;
+    let (ink_low, ink_size, core_low, core_size) = if (from.x - to.x).abs() < 1.0 {
+        (
+            low - Vec2::new(2.0, 0.0),
+            Vec2::new(4.0, extent.y),
+            low - Vec2::new(1.0, 0.0),
+            Vec2::new(2.0, extent.y),
+        )
+    } else {
+        (
+            low - Vec2::new(0.0, 2.0),
+            Vec2::new(extent.x, 4.0),
+            low - Vec2::new(0.0, 1.0),
+            Vec2::new(extent.x, 2.0),
+        )
+    };
+    elements.push(rect(
+        ink_low,
+        ink_size,
+        LINE_INK.truncate().extend(alpha),
+        LINE_LAYER,
+    ));
+    elements.push(rect(
+        core_low,
+        core_size,
+        color.truncate().extend(alpha),
+        LINE_LAYER + 1,
+    ));
+}
+
+fn cap(elements: &mut Vec<Element>, at: Vec2, horizontal: bool, color: Vec4, alpha: f32) {
+    let (ink_low, ink_size, core_low, core_size) = if horizontal {
+        (
+            at - Vec2::new(5.0, 2.0),
+            Vec2::new(10.0, 4.0),
+            at - Vec2::new(4.0, 1.0),
+            Vec2::new(8.0, 2.0),
+        )
+    } else {
+        (
+            at - Vec2::new(2.0, 5.0),
+            Vec2::new(4.0, 10.0),
+            at - Vec2::new(1.0, 4.0),
+            Vec2::new(2.0, 8.0),
+        )
+    };
+    elements.push(rect(
+        ink_low,
+        ink_size,
+        LINE_INK.truncate().extend(alpha),
+        LINE_LAYER,
+    ));
+    elements.push(rect(
+        core_low,
+        core_size,
+        color.truncate().extend(alpha),
+        LINE_LAYER + 1,
+    ));
+}
+
+fn connector(elements: &mut Vec<Element>, from: Vec2, to: Vec2, color: Vec4, alpha: f32) {
+    if alpha <= 0.0 {
+        return;
+    }
+    let half = Vec2::splat(TALENT / 2.0);
+    let (from_center, to_center) = (from + half, to + half);
+    if (from.y - to.y).abs() < 1.0 {
+        let (start, end) = if to.x < from.x {
+            (to.x + TALENT, from.x)
+        } else {
+            (from.x + TALENT, to.x)
+        };
+        line(
+            elements,
+            Vec2::new(start, from_center.y),
+            Vec2::new(end, from_center.y),
+            color,
+            alpha,
+        );
+        cap(
+            elements,
+            Vec2::new(start, from_center.y),
+            false,
+            color,
+            alpha,
+        );
+        cap(elements, Vec2::new(end, from_center.y), false, color, alpha);
+        return;
+    }
+    let bottom = from.y + TALENT;
+    let middle = (bottom + (to.y - bottom) / 2.0).floor();
+    line(
+        elements,
+        Vec2::new(from_center.x, bottom),
+        Vec2::new(from_center.x, middle),
+        color,
+        alpha,
+    );
+    if (from_center.x - to_center.x).abs() > 1.0 {
+        line(
+            elements,
+            Vec2::new(from_center.x, middle),
+            Vec2::new(to_center.x, middle),
+            color,
+            alpha,
+        );
+        for x in [from_center.x, to_center.x] {
+            elements.push(rect(
+                Vec2::new(x - 2.0, middle - 2.0),
+                Vec2::splat(4.0),
+                color.truncate().extend(alpha),
+                LINE_LAYER + 1,
+            ));
+        }
+    }
+    line(
+        elements,
+        Vec2::new(to_center.x, middle),
+        Vec2::new(to_center.x, to.y),
+        color,
+        alpha,
+    );
+    cap(
+        elements,
+        Vec2::new(from_center.x, bottom),
+        true,
+        color,
+        alpha,
+    );
+    cap(elements, Vec2::new(to_center.x, to.y), true, color, alpha);
+}
+
+fn talent(
+    upgrade: Upgrade,
+    top_left: Vec2,
+    state: BuyState,
+    selected: bool,
+    alpha: f32,
+    layer: i32,
+) -> Vec<Element> {
     let def = upgrade.def();
-    [
+    let mut elements = vec![
         Element::Image {
             texture: tex::TALENT_FRAME,
             top_left,
             size: Vec2::splat(TALENT),
-            cell: Some((frame_row(def.quality, owned), 6)),
+            cell: Some((frame_row(def.quality, state), FRAME_ROWS)),
             layer,
+            alpha,
         },
         Element::Image {
             texture: def.texture,
@@ -113,45 +319,76 @@ fn talent(upgrade: Upgrade, top_left: Vec2, owned: bool, layer: i32) -> [Element
             size: Vec2::splat(ICON),
             cell: None,
             layer: layer + 1,
+            alpha: if state == BuyState::Locked {
+                alpha * LOCKED_ICON_ALPHA
+            } else {
+                alpha
+            },
         },
-    ]
+    ];
+    if selected {
+        elements.push(Element::Image {
+            texture: tex::TALENT_SELECT,
+            top_left,
+            size: Vec2::splat(TALENT),
+            cell: None,
+            layer: layer + 2,
+            alpha,
+        });
+    }
+    elements
 }
 
 pub(crate) fn layout(
     profile: &SharedProfile,
     selected: Option<Upgrade>,
     hover: bool,
+    pan: Vec2,
 ) -> Vec<Element> {
-    let snapshot = profile.snapshot();
-    let mut elements = Vec::new();
-    for tree in Tree::ALL {
-        let column = tree.column();
-        elements.push(Element::Image {
-            texture: tree.icon(),
-            top_left: Vec2::new(column, TREE_TOP - TREE_ICON_LIFT),
-            size: Vec2::splat(TREE_ICON),
+    let mut elements = vec![
+        rect(Vec2::ZERO, crate::viewport::TARGET, DIM_COLOR, DIM_LAYER),
+        Element::Image {
+            texture: tex::TALENT_BOARD,
+            top_left: VIEW_TOP_LEFT - Vec2::splat(BOARD_MARGIN),
+            size: VIEW_SIZE + Vec2::splat(BOARD_MARGIN * 2.0),
             cell: None,
-            layer: BASE_LAYER,
+            layer: BOARD_LAYER,
+            alpha: 1.0,
+        },
+    ];
+    let snapshot = profile.snapshot();
+    let root = node_top_left(ROOT_CELL, pan);
+    let root_alpha = visibility(root, Vec2::splat(TALENT));
+    if root_alpha > 0.0 {
+        elements.push(Element::Image {
+            texture: tex::TALENT_ROOT,
+            top_left: root,
+            size: Vec2::splat(TALENT),
+            cell: None,
+            layer: FRAME_LAYER,
+            alpha: root_alpha,
         });
-        for (index, upgrade) in tree.upgrades().into_iter().enumerate() {
-            let top_left = Vec2::new(upgrade.top_left().0, upgrade.top_left().1);
+    }
+    for upgrade in Upgrade::ALL {
+        let top_left = node_top_left(upgrade.cell(), pan);
+        let parent = node_top_left(upgrade.parent_cell(), pan);
+        let alpha = visibility(top_left, Vec2::splat(TALENT));
+        let line_alpha = alpha.min(visibility(parent, Vec2::splat(TALENT)));
+        let color = if snapshot.owns(upgrade) {
+            branch_color(upgrade.tree())
+        } else {
+            LOCKED_LINE
+        };
+        connector(&mut elements, parent, top_left, color, line_alpha);
+        if alpha > 0.0 {
             elements.extend(talent(
                 upgrade,
                 top_left,
-                snapshot.owns(upgrade),
-                BASE_LAYER,
+                buy_state(profile, upgrade),
+                selected == Some(upgrade),
+                alpha,
+                FRAME_LAYER,
             ));
-            if index > 0 {
-                elements.push(Element::Image {
-                    texture: tex::TALENT_PATH,
-                    top_left: Vec2::new(column, TREE_TOP + TREE_STEP * index as f32)
-                        + PATH_OFFSET
-                        + Vec2::new(0.0, 0.0),
-                    size: PATH_SIZE,
-                    cell: Some((path_row(tree, !snapshot.owns(upgrade)), 4)),
-                    layer: BASE_LAYER,
-                });
-            }
         }
     }
     if let Some(upgrade) = selected {
@@ -162,20 +399,23 @@ pub(crate) fn layout(
 
 fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element> {
     let def = upgrade.def();
-    let snapshot = profile.snapshot();
+    let state = buy_state(profile, upgrade);
     let centre_x = PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0;
     let mut elements = vec![Element::Image {
         texture: tex::PAUSEBG,
         top_left: PANEL_TOP_LEFT,
         size: PANEL_SIZE,
         cell: None,
-        layer: BASE_LAYER,
+        layer: PANEL_LAYER,
+        alpha: 1.0,
     }];
     elements.extend(talent(
         upgrade,
         Vec2::new(centre_x - TALENT / 2.0, PANEL_TALENT_Y),
-        snapshot.owns(upgrade),
-        BASE_LAYER + 2,
+        state,
+        false,
+        1.0,
+        PANEL_LAYER + 2,
     ));
     elements.push(Element::Label {
         content: def.title.to_owned(),
@@ -193,47 +433,74 @@ fn panel(profile: &SharedProfile, upgrade: Upgrade, hover: bool) -> Vec<Element>
             align: Align::Center,
         });
     }
-    let (label, color, center_x) = match buy_state(profile, upgrade) {
-        BuyState::Available => (
-            "Buy",
-            if hover { HOVER_COLOR } else { MENU_COLOR },
-            BUY_CENTER_X,
-        ),
-        BuyState::Owned => ("Bought", BLOCKED_COLOR, STATUS_CENTER_X),
-        BuyState::Locked => ("Can't buy", BLOCKED_COLOR, STATUS_CENTER_X),
+    let row = match state {
+        BuyState::Available if hover => 1,
+        BuyState::Available => 0,
+        BuyState::Owned | BuyState::Locked => 2,
     };
-    elements.push(Element::Label {
-        content: label.to_owned(),
-        position: Vec2::new(center_x, BUTTON_BASELINE),
-        color,
-        size: FontSize::Size22,
-        align: Align::Center,
+    elements.push(Element::Image {
+        texture: tex::MENU_PLATE_SMALL,
+        top_left: PLATE_CENTER - PLATE_SIZE / 2.0,
+        size: PLATE_SIZE,
+        cell: Some((row, PLATE_ROWS)),
+        layer: PANEL_LAYER + 2,
+        alpha: 1.0,
     });
-    if buy_state(profile, upgrade) == BuyState::Available {
-        elements.push(Element::Label {
-            content: format!("{},-", def.price),
-            position: Vec2::new(PRICE_RIGHT_X, BUTTON_BASELINE),
-            color: MENU_COLOR,
-            size: FontSize::Size22,
-            align: Align::Right,
-        });
+    match state {
+        BuyState::Available => {
+            let color = if hover { HOVER_COLOR } else { MENU_COLOR };
+            elements.push(Element::Label {
+                content: "Buy".to_owned(),
+                position: Vec2::new(BUY_LABEL_X, PLATE_BASELINE),
+                color,
+                size: FontSize::Size22,
+                align: Align::Center,
+            });
+            elements.push(Element::Label {
+                content: format!("{},-", def.price),
+                position: Vec2::new(PRICE_X, PLATE_BASELINE),
+                color,
+                size: FontSize::Size22,
+                align: Align::Center,
+            });
+        }
+        BuyState::Owned | BuyState::Locked => {
+            elements.push(Element::Label {
+                content: if state == BuyState::Owned {
+                    "Bought"
+                } else {
+                    "Can't buy"
+                }
+                .to_owned(),
+                position: Vec2::new(PLATE_CENTER.x, PLATE_BASELINE),
+                color: BLOCKED_COLOR,
+                size: FontSize::Size22,
+                align: Align::Center,
+            });
+        }
     }
     elements
 }
 
-pub(crate) fn talent_at(point: Vec2) -> Option<Upgrade> {
+pub(crate) fn talent_at(point: Vec2, pan: Vec2) -> Option<Upgrade> {
+    if !in_view(point) {
+        return None;
+    }
     Upgrade::ALL.into_iter().find(|upgrade| {
-        let (x, y) = upgrade.top_left();
-        point.x >= x && point.x <= x + TALENT && point.y >= y && point.y <= y + TALENT
+        let top_left = node_top_left(upgrade.cell(), pan);
+        point.cmpge(top_left).all() && point.cmple(top_left + TALENT).all()
     })
 }
 
-pub(crate) fn on_buy_button(point: Vec2, text_width: f32) -> bool {
-    let half = text_width / 2.0 + BUTTON_PADDING;
-    point.x >= BUY_CENTER_X - half
-        && point.x <= BUY_CENTER_X + half
-        && point.y >= BUTTON_TOP
-        && point.y <= BUTTON_TOP + BUTTON_HEIGHT
+pub(crate) fn on_buy_plate(point: Vec2) -> bool {
+    (point - PLATE_CENTER).abs().cmple(PLATE_HIT_HALF).all()
+}
+
+#[derive(Debug, Clone, Copy)]
+struct Press {
+    from: Vec2,
+    pan: Vec2,
+    moved: bool,
 }
 
 #[derive(Debug, Default)]
@@ -241,6 +508,10 @@ pub(crate) struct UpgradeMenu {
     open: bool,
     selected: Option<Upgrade>,
     hover: bool,
+    pan: Vec2,
+    press: Option<Press>,
+    was_down: bool,
+    dirty: bool,
 }
 
 impl UpgradeMenu {
@@ -255,6 +526,9 @@ impl UpgradeMenu {
             self.open = true;
             self.selected = None;
             self.hover = false;
+            self.pan = Vec2::ZERO;
+            self.press = None;
+            self.was_down = false;
             self.rebuild(world, assets, profile);
         }
     }
@@ -262,6 +536,7 @@ impl UpgradeMenu {
     pub(crate) fn close(&mut self, world: &mut World) {
         self.open = false;
         self.selected = None;
+        self.press = None;
         clear(world);
     }
 
@@ -272,42 +547,73 @@ impl UpgradeMenu {
         assets: &Assets,
         profile: &SharedProfile,
         sounds: &mut Vec<AudioCommand>,
+        dt: f32,
     ) -> Option<Purchase> {
         if !self.open {
             return None;
         }
         let point = input.mouse();
-        let width = assets.fonts.get(FontSize::Size22).width("Buy");
-        let hover = self
+        let direction = input.direction();
+        if direction != Vec2::ZERO {
+            self.pan = clamp_pan(self.pan - direction * PAN_SPEED * dt);
+            self.dirty = true;
+        }
+        let down = input.mouse_down();
+        if input.clicked() && in_view(point) {
+            self.press = Some(Press {
+                from: point,
+                pan: self.pan,
+                moved: false,
+            });
+        }
+        if let (true, Some(press)) = (down, self.press.as_mut()) {
+            if (point - press.from).length() > DRAG_THRESHOLD {
+                press.moved = true;
+            }
+            if press.moved {
+                self.pan = clamp_pan(press.pan + (point - press.from));
+                self.dirty = true;
+            }
+        }
+        if self.was_down && !down {
+            if let Some(press) = self.press.take() {
+                if !press.moved {
+                    self.selected = talent_at(point, self.pan);
+                    self.dirty = true;
+                }
+            }
+        }
+        self.was_down = down;
+        let available = self
             .selected
-            .is_some_and(|selected| buy_state(profile, selected) == BuyState::Available)
-            && on_buy_button(point, width);
+            .is_some_and(|selected| buy_state(profile, selected) == BuyState::Available);
+        let hover = available && on_buy_plate(point);
         if hover != self.hover {
             self.hover = hover;
-            self.rebuild(world, assets, profile);
-        }
-        if !input.clicked() {
-            return None;
+            self.dirty = true;
         }
         let mut outcome = None;
-        if let (Some(selected), true) = (self.selected, on_buy_button(point, width)) {
+        if let (true, true, Some(selected)) = (input.clicked(), on_buy_plate(point), self.selected)
+        {
             if buy_state(profile, selected) == BuyState::Available {
                 let result = profile.buy(selected);
                 if result == Purchase::Bought {
                     sounds.push(AudioCommand::Effect(SoundEffect::TalentUnlock));
                 }
                 outcome = Some(result);
+                self.dirty = true;
             }
-        } else {
-            self.selected = talent_at(point);
         }
-        self.rebuild(world, assets, profile);
+        if self.dirty {
+            self.dirty = false;
+            self.rebuild(world, assets, profile);
+        }
         outcome
     }
 
     fn rebuild(&self, world: &mut World, assets: &Assets, profile: &SharedProfile) {
         clear(world);
-        for element in layout(profile, self.selected, self.hover) {
+        for element in layout(profile, self.selected, self.hover, self.pan) {
             spawn(world, element, assets);
         }
     }
@@ -332,7 +638,11 @@ fn spawn(world: &mut World, element: Element, assets: &Assets) {
             size,
             cell,
             layer,
+            alpha,
         } => {
+            if alpha <= 0.0 {
+                return;
+            }
             let id = assets.textures.get(texture);
             let sprite = match cell {
                 Some((row, rows)) => Sprite::cell(id, 0, row, 1, rows),
@@ -342,8 +652,27 @@ fn spawn(world: &mut World, element: Element, assets: &Assets) {
                 UpgradeUi,
                 Position(top_left + size / 2.0),
                 Size(size),
-                Color(Vec4::ONE),
+                Color(Vec4::new(1.0, 1.0, 1.0, alpha)),
                 sprite,
+                Layer(layer),
+                Overlay,
+                ScreenSpace,
+            ));
+        }
+        Element::Rect {
+            top_left,
+            size,
+            color,
+            layer,
+        } => {
+            if color.w <= 0.0 {
+                return;
+            }
+            world.spawn((
+                UpgradeUi,
+                Position(top_left + size / 2.0),
+                Size(size),
+                Color(color),
                 Layer(layer),
                 Overlay,
                 ScreenSpace,
@@ -360,7 +689,7 @@ fn spawn(world: &mut World, element: Element, assets: &Assets) {
                 UpgradeUi,
                 Position(position),
                 Text::new(content, color, size).aligned(align),
-                Layer(BASE_LAYER + 5),
+                Layer(PANEL_LAYER + 5),
                 Overlay,
                 ScreenSpace,
             ));
@@ -370,6 +699,8 @@ fn spawn(world: &mut World, element: Element, assets: &Assets) {
 
 #[cfg(test)]
 mod tests {
+    use winit::event::{ElementState, MouseButton};
+
     use crate::components::RunStats;
     use crate::systems::summarize;
 
@@ -402,91 +733,172 @@ mod tests {
             .collect()
     }
 
-    #[test]
-    fn the_menu_shows_three_trees_of_five_talents_with_four_paths_each() {
-        let profile = SharedProfile::in_memory();
-        let elements = layout(&profile, None, false);
-        assert_eq!(images(&elements, tex::TALENT_FRAME).len(), 15);
-        assert_eq!(images(&elements, tex::TALENT_PATH).len(), 12);
-        assert_eq!(images(&elements, tex::UTILITY_ICON).len(), 1);
-        assert_eq!(images(&elements, tex::OFFENSE_ICON).len(), 1);
-        assert_eq!(images(&elements, tex::DEFENSE_ICON).len(), 1);
-    }
-
-    #[test]
-    fn frames_show_quality_and_whether_the_talent_is_owned() {
-        assert_eq!(frame_row(Quality::Common, true), 0);
-        assert_eq!(frame_row(Quality::Common, false), 1);
-        assert_eq!(frame_row(Quality::Rare, true), 2);
-        assert_eq!(frame_row(Quality::Rare, false), 3);
-        assert_eq!(frame_row(Quality::Epic, true), 4);
-        assert_eq!(frame_row(Quality::Epic, false), 5);
-    }
-
-    #[test]
-    fn locked_paths_are_grey_and_open_ones_take_the_colour_of_their_tree() {
-        assert_eq!(path_row(Tree::Utility, true), 3);
-        assert_eq!(path_row(Tree::Utility, false), 0);
-        assert_eq!(path_row(Tree::Offensive, false), 1);
-        assert_eq!(path_row(Tree::Defensive, false), 2);
-    }
-
-    #[test]
-    fn clicking_a_talent_finds_it_and_empty_space_finds_nothing() {
-        assert_eq!(
-            talent_at(Vec2::new(380.0, 140.0)),
-            Some(Upgrade::MovementSpeed)
-        );
-        assert_eq!(
-            talent_at(Vec2::new(480.0, 215.0)),
-            Some(Upgrade::AdditionalAmmo)
-        );
-        assert_eq!(talent_at(Vec2::new(10.0, 10.0)), None);
-        assert_eq!(talent_at(Vec2::new(430.0, 140.0)), None);
-    }
-
-    #[test]
-    fn the_details_panel_names_the_talent_and_its_price_and_state() {
-        let profile = rich_profile();
-        let elements = layout(&profile, Some(Upgrade::Discount), false);
-        let labels: Vec<String> = elements
+    fn labels(elements: &[Element]) -> Vec<String> {
+        elements
             .iter()
             .filter_map(|element| match element {
                 Element::Label { content, .. } => Some(content.clone()),
                 _ => None,
             })
-            .collect();
-        assert!(labels.contains(&"Discount".to_owned()));
-        assert!(labels.contains(&"Buy".to_owned()));
-        assert!(labels.contains(&"60,-".to_owned()));
-
-        let owned = layout(&profile, Some(Upgrade::MovementSpeed), false);
-        assert!(owned
-            .iter()
-            .any(|e| matches!(e, Element::Label { content, .. } if content == "Bought")));
-
-        let locked = layout(&profile, Some(Upgrade::TrapMaster), false);
-        assert!(locked
-            .iter()
-            .any(|e| matches!(e, Element::Label { content, .. } if content == "Can't buy")));
-        assert!(!locked
-            .iter()
-            .any(|e| matches!(e, Element::Label { content, .. } if content.ends_with(",-"))));
+            .collect()
     }
 
     #[test]
-    fn without_a_selection_there_is_no_details_panel() {
+    fn the_menu_shows_one_tree_with_a_root_and_fifteen_talents() {
         let profile = SharedProfile::in_memory();
-        let elements = layout(&profile, None, false);
-        assert!(images(&elements, tex::PAUSEBG).is_empty());
+        let elements = layout(&profile, None, false, Vec2::ZERO);
+        assert_eq!(images(&elements, tex::TALENT_FRAME).len(), 15);
+        assert_eq!(images(&elements, tex::TALENT_ROOT).len(), 1);
+        assert_eq!(images(&elements, tex::TALENT_BOARD).len(), 1);
+        let lines = elements
+            .iter()
+            .filter(
+                |element| matches!(element, Element::Rect { layer, .. } if *layer == LINE_LAYER),
+            )
+            .count();
+        assert!(lines > 15, "{lines}");
     }
 
     #[test]
-    fn the_buy_button_sits_where_bane_puts_it() {
-        assert!(on_buy_button(Vec2::new(735.0, 420.0), 40.0));
-        assert!(on_buy_button(Vec2::new(760.0, 420.0), 40.0));
-        assert!(!on_buy_button(Vec2::new(700.0, 420.0), 40.0));
-        assert!(!on_buy_button(Vec2::new(735.0, 380.0), 40.0));
+    fn frames_show_quality_and_the_state_of_the_talent() {
+        assert_eq!(frame_row(Quality::Common, BuyState::Owned), 0);
+        assert_eq!(frame_row(Quality::Common, BuyState::Locked), 1);
+        assert_eq!(frame_row(Quality::Common, BuyState::Available), 2);
+        assert_eq!(frame_row(Quality::Rare, BuyState::Owned), 3);
+        assert_eq!(frame_row(Quality::Epic, BuyState::Locked), 7);
+        assert_eq!(frame_row(Quality::Epic, BuyState::Available), 8);
+    }
+
+    #[test]
+    fn the_branches_are_coloured_when_open_and_grey_when_locked() {
+        let profile = rich_profile();
+        let owned = layout(&profile, None, false, Vec2::ZERO);
+        let colours: Vec<Vec4> = owned
+            .iter()
+            .filter_map(|element| match element {
+                Element::Rect { color, layer, .. } if *layer == LINE_LAYER + 1 => Some(*color),
+                _ => None,
+            })
+            .collect();
+        assert!(
+            colours
+                .iter()
+                .any(|c| c.x == branch_color(Tree::Offensive).x
+                    && c.y == branch_color(Tree::Offensive).y)
+        );
+        assert!(
+            colours
+                .iter()
+                .any(|c| c.x == LOCKED_LINE.x && c.y == LOCKED_LINE.y)
+        );
+    }
+
+    #[test]
+    fn clicking_a_talent_finds_it_and_empty_space_finds_nothing() {
+        let first = node_top_left(Upgrade::MovementSpeed.cell(), Vec2::ZERO);
+        assert_eq!(
+            talent_at(first + Vec2::splat(10.0), Vec2::ZERO),
+            Some(Upgrade::MovementSpeed)
+        );
+        let middle = node_top_left(Upgrade::AdditionalAmmo.cell(), Vec2::ZERO);
+        assert_eq!(
+            talent_at(middle + Vec2::splat(30.0), Vec2::ZERO),
+            Some(Upgrade::AdditionalAmmo)
+        );
+        assert_eq!(talent_at(Vec2::new(5.0, 5.0), Vec2::ZERO), None);
+        assert_eq!(talent_at(Vec2::new(900.0, 100.0), Vec2::ZERO), None);
+    }
+
+    #[test]
+    fn panning_moves_where_the_talents_are() {
+        let pan = Vec2::new(-30.0, 20.0);
+        let spot = node_top_left(Upgrade::Discount.cell(), pan) + Vec2::splat(20.0);
+
+        assert_eq!(talent_at(spot, pan), Some(Upgrade::Discount));
+        assert_ne!(talent_at(spot, Vec2::ZERO), Some(Upgrade::Discount));
+    }
+
+    #[test]
+    fn talents_fade_out_towards_the_edge_and_vanish_outside_the_board() {
+        let inside = node_top_left(ROOT_CELL, Vec2::ZERO);
+        assert_eq!(visibility(inside, Vec2::splat(TALENT)), 1.0);
+
+        let half = Vec2::new(VIEW_TOP_LEFT.x + 10.0, inside.y);
+        let partial = visibility(half, Vec2::splat(TALENT));
+        assert!(partial > 0.0 && partial < 1.0, "{partial}");
+
+        let outside = Vec2::new(VIEW_TOP_LEFT.x - 40.0, inside.y);
+        assert_eq!(visibility(outside, Vec2::splat(TALENT)), 0.0);
+
+        let profile = SharedProfile::in_memory();
+        let far = layout(&profile, None, false, Vec2::new(-5000.0, 0.0));
+        assert!(images(&far, tex::TALENT_FRAME).is_empty());
+    }
+
+    #[test]
+    fn the_pan_cannot_leave_the_tree_behind() {
+        let (low, high) = pan_limits();
+        assert!(low.x < 0.0 && high.x > 0.0);
+        assert_eq!(
+            clamp_pan(Vec2::new(-9999.0, 9999.0)),
+            Vec2::new(low.x, high.y)
+        );
+        assert_eq!(clamp_pan(Vec2::ZERO), Vec2::ZERO);
+    }
+
+    #[test]
+    fn the_details_panel_names_the_talent_and_its_price_and_state() {
+        let profile = rich_profile();
+        let elements = layout(&profile, Some(Upgrade::Discount), false, Vec2::ZERO);
+        let shown = labels(&elements);
+        assert!(shown.contains(&"Discount".to_owned()));
+        assert!(shown.contains(&"Buy".to_owned()));
+        assert!(shown.contains(&"60,-".to_owned()));
+        assert_eq!(
+            images(&elements, tex::MENU_PLATE_SMALL),
+            vec![(PLATE_CENTER - PLATE_SIZE / 2.0, Some((0, PLATE_ROWS)))]
+        );
+
+        let owned = layout(&profile, Some(Upgrade::MovementSpeed), false, Vec2::ZERO);
+        assert!(labels(&owned).contains(&"Bought".to_owned()));
+        assert_eq!(
+            images(&owned, tex::MENU_PLATE_SMALL)[0].1,
+            Some((2, PLATE_ROWS))
+        );
+
+        let locked = layout(&profile, Some(Upgrade::TrapMaster), false, Vec2::ZERO);
+        assert!(labels(&locked).contains(&"Can't buy".to_owned()));
+        assert!(!labels(&locked).iter().any(|text| text.ends_with(",-")));
+    }
+
+    #[test]
+    fn the_buy_plate_lights_up_while_hovered() {
+        let profile = rich_profile();
+        let hovered = layout(&profile, Some(Upgrade::Discount), true, Vec2::ZERO);
+        assert_eq!(
+            images(&hovered, tex::MENU_PLATE_SMALL)[0].1,
+            Some((1, PLATE_ROWS))
+        );
+    }
+
+    #[test]
+    fn the_selected_talent_gets_the_yellow_corners_and_without_one_there_is_no_panel() {
+        let profile = SharedProfile::in_memory();
+        let none = layout(&profile, None, false, Vec2::ZERO);
+        assert!(images(&none, tex::PAUSEBG).is_empty());
+        assert!(images(&none, tex::TALENT_SELECT).is_empty());
+
+        let some = layout(&profile, Some(Upgrade::MovementSpeed), false, Vec2::ZERO);
+        assert_eq!(images(&some, tex::TALENT_SELECT).len(), 1);
+        assert_eq!(images(&some, tex::PAUSEBG).len(), 1);
+    }
+
+    #[test]
+    fn the_buy_plate_sits_in_the_panel() {
+        assert!(on_buy_plate(PLATE_CENTER));
+        assert!(on_buy_plate(PLATE_CENTER + Vec2::new(60.0, 15.0)));
+        assert!(!on_buy_plate(PLATE_CENTER + Vec2::new(90.0, 0.0)));
+        assert!(!on_buy_plate(PLATE_CENTER - Vec2::new(0.0, 60.0)));
     }
 
     #[test]
@@ -500,5 +912,105 @@ mod tests {
             buy_state(&profile, Upgrade::TrapMaster),
             BuyState::Available
         );
+    }
+
+    fn opened() -> (UpgradeMenu, World, Assets, SharedProfile) {
+        let assets = Assets::new().expect("assets");
+        let profile = rich_profile();
+        let mut world = World::new();
+        let mut menu = UpgradeMenu::default();
+        menu.toggle(&mut world, &assets, &profile);
+        (menu, world, assets, profile)
+    }
+
+    fn step(
+        menu: &mut UpgradeMenu,
+        world: &mut World,
+        assets: &Assets,
+        profile: &SharedProfile,
+        input: &mut Input,
+    ) -> Option<Purchase> {
+        let outcome = menu.update(world, input, assets, profile, &mut Vec::new(), 1.0 / 60.0);
+        input.end_frame();
+        outcome
+    }
+
+    #[test]
+    fn a_quick_click_selects_a_talent_and_a_drag_pans_without_selecting() {
+        let (mut menu, mut world, assets, profile) = opened();
+        let mut input = Input::default();
+        let spot = node_top_left(Upgrade::Discount.cell(), Vec2::ZERO) + Vec2::splat(20.0);
+
+        input.set_mouse(spot);
+        input.handle_click(MouseButton::Left, ElementState::Pressed);
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+        input.handle_click(MouseButton::Left, ElementState::Released);
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+        assert_eq!(menu.selected, Some(Upgrade::Discount));
+
+        let start = Vec2::new(300.0, 300.0);
+        input.set_mouse(start);
+        input.handle_click(MouseButton::Left, ElementState::Pressed);
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+        input.set_mouse(start + Vec2::new(-60.0, 25.0));
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+        assert!(menu.pan.x < -50.0 && menu.pan.y > 20.0, "{:?}", menu.pan);
+        input.handle_click(MouseButton::Left, ElementState::Released);
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+        assert_eq!(menu.selected, Some(Upgrade::Discount));
+    }
+
+    #[test]
+    fn clicking_empty_space_in_the_board_clears_the_selection() {
+        let (mut menu, mut world, assets, profile) = opened();
+        let mut input = Input::default();
+        menu.selected = Some(Upgrade::Discount);
+
+        input.set_mouse(Vec2::new(80.0, 300.0));
+        input.handle_click(MouseButton::Left, ElementState::Pressed);
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+        input.handle_click(MouseButton::Left, ElementState::Released);
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+
+        assert_eq!(menu.selected, None);
+    }
+
+    #[test]
+    fn the_movement_keys_pan_the_tree_and_stay_within_the_limits() {
+        let (mut menu, mut world, assets, profile) = opened();
+        let mut input = Input::default();
+        let right = input.bindings().key(crate::controls::Action::MoveRight);
+
+        for _ in 0..600 {
+            input.press(right);
+            step(&mut menu, &mut world, &assets, &profile, &mut input);
+        }
+
+        let (low, _) = pan_limits();
+        assert!(menu.pan.x < -50.0);
+        assert!(menu.pan.x >= low.x - 0.01);
+    }
+
+    #[test]
+    fn the_buy_plate_buys_the_selected_talent_and_nothing_else() {
+        let (mut menu, mut world, assets, profile) = opened();
+        let mut input = Input::default();
+        menu.selected = Some(Upgrade::TrapMaster);
+        input.set_mouse(PLATE_CENTER);
+        input.handle_click(MouseButton::Left, ElementState::Pressed);
+        assert_eq!(
+            step(&mut menu, &mut world, &assets, &profile, &mut input),
+            None
+        );
+        assert!(!profile.snapshot().owns(Upgrade::TrapMaster));
+
+        menu.selected = Some(Upgrade::Discount);
+        input.handle_click(MouseButton::Left, ElementState::Released);
+        step(&mut menu, &mut world, &assets, &profile, &mut input);
+        input.handle_click(MouseButton::Left, ElementState::Pressed);
+        let outcome = step(&mut menu, &mut world, &assets, &profile, &mut input);
+
+        assert_eq!(outcome, Some(Purchase::Bought));
+        assert!(profile.snapshot().owns(Upgrade::Discount));
     }
 }
