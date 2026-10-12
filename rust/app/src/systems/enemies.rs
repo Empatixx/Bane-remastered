@@ -2,13 +2,13 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Body, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Lurk, Outline,
-    Player, Position, Rooted, Size, Spawning, Velocity,
+    Animation, Body, Boss, Chase, Clip, Color, Dash, Enemy, Expiring, Health, HitFlash, Lurk,
+    Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
-use crate::systems::crowd::{ring_point, RING_RADIUS, RING_SLACK};
+use crate::systems::crowd::{ring_point, RING_RADIUS, RING_SLACK, SHOOTER_FAR, SHOOTER_NEAR};
 
 pub(crate) const FLASH_SECONDS: f32 = 1.0;
 const DASH_PERIOD: f32 = 3.0;
@@ -37,7 +37,7 @@ pub(crate) fn update_flow(
 
 pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
     let target = player_placement(world).map(|(position, _)| position);
-    for (entity, position, chase, velocity, rooted, lurk) in world
+    for (entity, position, chase, velocity, rooted, lurk, shooter) in world
         .query_mut::<(
             Entity,
             &Position,
@@ -45,6 +45,7 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
             &mut Velocity,
             Option<&Rooted>,
             Option<&Lurk>,
+            Option<(&Smash, Option<&Boss>)>,
         )>()
         .without::<&Expiring>()
         .without::<&Spawning>()
@@ -57,6 +58,15 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
             velocity.0 = Vec2::ZERO;
             continue;
         };
+        let distance = position.0.distance(target);
+        if shooter.is_some_and(|(_, boss)| boss.is_none()) && distance < SHOOTER_FAR {
+            velocity.0 = if distance < SHOOTER_NEAR {
+                (position.0 - target).normalize_or_zero() * chase.speed
+            } else {
+                Vec2::ZERO
+            };
+            continue;
+        }
         let waiting = lurk.is_some() && position.0.distance(target) < RING_RADIUS + RING_SLACK;
         velocity.0 = if waiting {
             let spot = ring_point(target, entity);
@@ -390,6 +400,40 @@ mod tests {
         chase_player(&mut world, &flow);
         let drifting = world.get::<&Velocity>(rat).map(|v| v.0).unwrap_or_default();
         assert!(drifting.dot(spot) < 0.0, "{drifting:?}");
+    }
+
+    #[test]
+    fn a_slime_closes_in_to_shooting_range_then_holds_and_backs_off_when_pressed() {
+        let (mut world, mut physics) = arena();
+        let slime = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Slime,
+            Vec2::new(600.0, 0.0),
+        );
+        let flow = FlowField::default();
+        let velocity = |world: &World| {
+            world
+                .get::<&Velocity>(slime)
+                .map(|v| v.0)
+                .unwrap_or_default()
+        };
+        let place = |world: &mut World, x: f32| {
+            if let Ok(mut position) = world.get::<&mut Position>(slime) {
+                position.0 = Vec2::new(x, 0.0);
+            }
+        };
+
+        chase_player(&mut world, &flow);
+        assert!(velocity(&world).x < 0.0);
+
+        place(&mut world, SHOOTER_NEAR + 40.0);
+        chase_player(&mut world, &flow);
+        assert_eq!(velocity(&world), Vec2::ZERO);
+
+        place(&mut world, SHOOTER_NEAR - 40.0);
+        chase_player(&mut world, &flow);
+        assert!(velocity(&world).x > 0.0);
     }
 
     #[test]

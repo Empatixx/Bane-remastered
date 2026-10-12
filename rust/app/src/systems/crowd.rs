@@ -4,7 +4,7 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::components::{
-    Boss, Chase, ContactDamage, Expiring, Lurk, Player, Position, Rooted, Spawning, Velocity,
+    Boss, Chase, ContactDamage, Expiring, Lurk, Player, Position, Rooted, Smash, Spawning, Velocity,
 };
 
 const PERSONAL_SPACE: f32 = 56.0;
@@ -12,6 +12,8 @@ const PUSH: f32 = 1.2;
 pub(crate) const MAX_RUSHERS: usize = 4;
 pub(crate) const RING_RADIUS: f32 = 190.0;
 pub(crate) const RING_SLACK: f32 = 40.0;
+pub(crate) const SHOOTER_FAR: f32 = 300.0;
+pub(crate) const SHOOTER_NEAR: f32 = 200.0;
 const INCUMBENT_BONUS: f32 = 0.75;
 const GOLDEN_ANGLE: f32 = 2.399_963;
 
@@ -34,6 +36,7 @@ pub(crate) fn assign_attackers(world: &mut World) {
         .query::<(Entity, &Position, &Chase, Option<&Lurk>)>()
         .with::<&ContactDamage>()
         .without::<&Boss>()
+        .without::<&Smash>()
         .without::<&Rooted>()
         .without::<&Expiring>()
         .without::<&Spawning>()
@@ -213,6 +216,28 @@ mod tests {
 
         assert!(world.get::<&Lurk>(incumbent).is_err());
         assert!(world.get::<&Lurk>(challenger).is_ok());
+    }
+
+    #[test]
+    fn shooting_enemies_never_take_a_melee_slot_or_wait_on_the_ring() {
+        let mut world = World::new();
+        world.spawn((Player, Position(Vec2::ZERO)));
+        for index in 0..MAX_RUSHERS {
+            biter(&mut world, Vec2::new(100.0 + index as f32, 0.0));
+        }
+        let slime = biter(&mut world, Vec2::new(900.0, 0.0));
+        let _ = world.insert_one(
+            slime,
+            Smash {
+                kind: crate::enemies::ProjectileKind::Green,
+                count: 5,
+                remaining: 0.0,
+            },
+        );
+
+        assign_attackers(&mut world);
+
+        assert!(world.get::<&Lurk>(slime).is_err());
     }
 
     #[test]
