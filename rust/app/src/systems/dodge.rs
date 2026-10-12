@@ -3,8 +3,8 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, PLAYER_DODGE};
 use crate::components::{
-    Afterimage, Animation, Clip, Color, Dodge, DodgeCooldown, DodgeVisual, Health, Invulnerable,
-    Layer, Lit, Player, Position, Previous, Size, Sprite,
+    Afterimage, Animation, Clip, Color, Dodge, DodgeBar, DodgeCooldown, DodgeVisual, Health,
+    Invulnerable, Layer, Lit, Player, Position, Previous, Size, Sprite,
 };
 use crate::controls::Action;
 use crate::input::Input;
@@ -12,6 +12,11 @@ use crate::input::Input;
 pub(crate) const DODGE_SECONDS: f32 = 0.36;
 pub(crate) const DODGE_SPEED: f32 = 760.0;
 const DODGE_COOLDOWN: f32 = 0.9;
+const BAR_WIDTH: f32 = 36.0;
+const BAR_HEIGHT: f32 = 5.0;
+const BAR_DROP: f32 = 10.0;
+const BAR_BACK: glam::Vec4 = glam::Vec4::new(0.05, 0.05, 0.08, 0.7);
+const BAR_FILL: glam::Vec4 = glam::Vec4::new(0.55, 0.8, 1.0, 0.95);
 const VISUAL_SIZE: Vec2 = Vec2::new(64.0, 76.0);
 const VISUAL_FRAMES: usize = 6;
 const TRAIL_INTERVAL: f32 = 0.04;
@@ -184,6 +189,83 @@ pub(crate) fn show_dodge_visual(world: &mut World, textures: &Textures) {
     }
 }
 
+pub(crate) fn show_dodge_cooldown(world: &mut World) {
+    let waiting: Option<(Position, Option<Previous>, Size, f32)> = world
+        .query::<(&Position, Option<&Previous>, &Size, &DodgeCooldown)>()
+        .with::<&Player>()
+        .iter()
+        .next()
+        .map(|(position, previous, size, cooldown)| {
+            (
+                *position,
+                previous.copied(),
+                *size,
+                1.0 - (cooldown.remaining / DODGE_COOLDOWN).clamp(0.0, 1.0),
+            )
+        });
+    let existing: Vec<(Entity, DodgeBar)> = world
+        .query::<(Entity, &DodgeBar)>()
+        .iter()
+        .map(|(entity, bar)| (entity, *bar))
+        .collect();
+    let Some((position, previous, size, progress)) = waiting else {
+        for (entity, _) in existing {
+            let _ = world.despawn(entity);
+        }
+        return;
+    };
+    let lift = Vec2::new(0.0, size.0.y / 2.0 + BAR_DROP);
+    let fill_width = (BAR_WIDTH * progress).max(0.0);
+    let place = |bar: DodgeBar, base: Vec2| match bar {
+        DodgeBar::Back => base,
+        DodgeBar::Fill => base + Vec2::new((fill_width - BAR_WIDTH) / 2.0, 0.0),
+    };
+    if existing.is_empty() {
+        for bar in [DodgeBar::Back, DodgeBar::Fill] {
+            let entity = world.spawn((
+                bar,
+                Position(place(bar, position.0 + lift)),
+                Size(Vec2::new(
+                    if bar == DodgeBar::Back {
+                        BAR_WIDTH
+                    } else {
+                        fill_width
+                    },
+                    BAR_HEIGHT,
+                )),
+                Color(if bar == DodgeBar::Back {
+                    BAR_BACK
+                } else {
+                    BAR_FILL
+                }),
+                Layer(if bar == DodgeBar::Back { 6 } else { 7 }),
+            ));
+            if let Some(previous) = previous {
+                let _ = world.insert_one(entity, Previous(place(bar, previous.0 + lift)));
+            }
+        }
+        return;
+    }
+    for (entity, bar) in existing {
+        if let Ok(mut at) = world.get::<&mut Position>(entity) {
+            at.0 = place(bar, position.0 + lift);
+        }
+        if bar == DodgeBar::Fill {
+            if let Ok(mut bar_size) = world.get::<&mut Size>(entity) {
+                bar_size.0.x = fill_width;
+            }
+        }
+        match previous {
+            Some(previous) => {
+                let _ = world.insert_one(entity, Previous(place(bar, previous.0 + lift)));
+            }
+            None => {
+                let _ = world.remove_one::<Previous>(entity);
+            }
+        }
+    }
+}
+
 pub(crate) fn fade_afterimages(world: &mut World, dt: f32) {
     let mut gone = Vec::new();
     for (entity, image, color) in world.query_mut::<(Entity, &mut Afterimage, &mut Color)>() {
@@ -308,6 +390,41 @@ mod tests {
         show_dodge_visual(&mut world, &textures);
         assert_eq!(world.query::<&DodgeVisual>().iter().count(), 0);
         assert_eq!(world.get::<&Color>(hero).map(|c| c.0.w).ok(), Some(1.0));
+    }
+
+    #[test]
+    fn a_thin_bar_under_the_player_fills_while_the_dodge_recharges_and_then_vanishes() {
+        let mut world = World::new();
+        let hero = world.spawn((
+            Player,
+            Position(Vec2::new(100.0, 100.0)),
+            Size(Vec2::new(32.0, 76.0)),
+            DodgeCooldown {
+                remaining: DODGE_COOLDOWN,
+            },
+        ));
+
+        show_dodge_cooldown(&mut world);
+        assert_eq!(world.query::<&DodgeBar>().iter().count(), 2);
+        let fill = |world: &World| {
+            world
+                .query::<(&DodgeBar, &Size)>()
+                .iter()
+                .find(|(bar, _)| **bar == DodgeBar::Fill)
+                .map(|(_, size)| size.0.x)
+                .unwrap_or(-1.0)
+        };
+        assert_eq!(fill(&world), 0.0);
+
+        if let Ok(mut cooldown) = world.get::<&mut DodgeCooldown>(hero) {
+            cooldown.remaining = DODGE_COOLDOWN / 2.0;
+        }
+        show_dodge_cooldown(&mut world);
+        assert!((fill(&world) - BAR_WIDTH / 2.0).abs() < 0.01);
+
+        let _ = world.remove_one::<DodgeCooldown>(hero);
+        show_dodge_cooldown(&mut world);
+        assert_eq!(world.query::<&DodgeBar>().iter().count(), 0);
     }
 
     #[test]

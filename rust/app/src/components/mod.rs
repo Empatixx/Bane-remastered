@@ -35,7 +35,7 @@ pub(crate) use combat::{
     BULLET_IMPACT, BULLET_ROWS,
 };
 pub(crate) use death::DeathPart;
-pub(crate) use dodge::{Afterimage, Dodge, DodgeCooldown, DodgeVisual};
+pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};
 pub(crate) use effects::{
     Floating, GazeWind, Hover, LightFade, Particle, RoomId, ThenPlay, TrapCooldown, HOVER_CYCLE,
 };

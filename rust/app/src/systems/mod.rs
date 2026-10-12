@@ -48,7 +48,7 @@ pub(crate) use damage::{
 };
 pub(crate) use death_screen::{update_death_ui, DeathScreen};
 pub(crate) use dodge::{
-    fade_afterimages, show_dodge_visual, start_dodge, tick_dodges, DODGE_SPEED,
+    fade_afterimages, show_dodge_cooldown, show_dodge_visual, start_dodge, tick_dodges, DODGE_SPEED,
 };
 pub(crate) use draw::collect_draws;
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
