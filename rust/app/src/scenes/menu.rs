@@ -8,6 +8,7 @@ use crate::input::Input;
 use crate::settings::Settings;
 use crate::viewport::TARGET;
 
+use super::loading::{TITLE_CENTER, TITLE_SIZE};
 use super::menu_buttons::MenuButtons;
 use super::menu_logo::LogoAnim;
 use super::menu_stage::Stage;
@@ -58,11 +59,13 @@ impl Scene for MenuScene {
         self.panel = SettingsPanel::default();
         self.ui.clear();
         self.stage = Some(Stage::build(&mut self.world, assets));
-        let logo = LogoAnim::build(
+        let logo = LogoAnim::gliding(
             &mut self.world,
             assets.textures.get(LOGO),
             Vec2::new(x, LOGO_TOP_LEFT_Y + LOGO_SIZE.y / 2.0),
             LOGO_SIZE,
+            TITLE_CENTER,
+            TITLE_SIZE,
         );
         let logo_entity = logo.entity();
         self.logo = Some(logo);

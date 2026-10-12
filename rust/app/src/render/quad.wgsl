@@ -226,22 +226,10 @@ fn underworld(in: VertexOut) -> vec4<f32> {
     return vec4<f32>(srgb_to_linear(rgb), 1.0);
 }
 
-fn glow_disc(in: VertexOut) -> vec4<f32> {
-    let time = in.fx.x;
-    let d = length(in.local - vec2<f32>(0.5)) * 2.0;
-    let pulse = 0.75 + 0.25 * sin(time * 2.4);
-    let falloff = pow(clamp(1.0 - d, 0.0, 1.0), 2.4);
-    let tint = srgb_to_linear(vec3<f32>(1.0, 0.45, 0.12));
-    return vec4<f32>(tint, falloff * pulse * 0.55);
-}
-
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let uv_per_pixel = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
     let albedo = textureSample(image, image_sampler, in.uv) * in.color;
-    if (in.fx.w > 3.5) {
-        return glow_disc(in);
-    }
     if (in.fx.w > 2.5) {
         return underworld(in);
     }

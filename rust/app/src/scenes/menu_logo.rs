@@ -7,6 +7,8 @@ use crate::components::{Color, Layer, Light, Position, ScreenSpace, Shine, Size,
 use crate::render::TextureId;
 
 const ENTER_SECONDS: f32 = 1.0;
+const GLIDE_HOLD: f32 = 0.2;
+const GLIDE_SECONDS: f32 = 0.9;
 const DROP: f32 = 70.0;
 const BOB: f32 = 4.0;
 const BOB_PERIOD: f32 = 4.0;
@@ -18,11 +20,24 @@ const GLOW_BASE: f32 = 1.0;
 const GLOW_SWING: f32 = 0.35;
 const GLOW_RADIUS: f32 = 260.0;
 
+#[derive(Debug, Clone, Copy)]
+enum Entrance {
+    Drop,
+    Glide { from: Vec2, from_size: Vec2 },
+}
+
 pub(crate) struct LogoAnim {
     logo: Entity,
     glow: Entity,
     rest: Vec2,
+    size: Vec2,
+    entrance: Entrance,
     clock: f32,
+}
+
+fn ease_in_out(t: f32) -> f32 {
+    let t = t.clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
 }
 
 fn ease_out(t: f32) -> f32 {
@@ -48,8 +63,30 @@ impl LogoAnim {
             logo,
             glow,
             rest,
+            size,
+            entrance: Entrance::Drop,
             clock: 0.0,
         }
+    }
+
+    pub(crate) fn gliding(
+        world: &mut World,
+        texture: TextureId,
+        rest: Vec2,
+        size: Vec2,
+        from: Vec2,
+        from_size: Vec2,
+    ) -> Self {
+        let mut anim = Self::build(world, texture, rest, size);
+        anim.entrance = Entrance::Glide { from, from_size };
+        if let Ok((position, scale, color)) =
+            world.query_one_mut::<(&mut Position, &mut Size, &mut Color)>(anim.logo)
+        {
+            position.0 = from;
+            scale.0 = from_size;
+            color.0.w = 1.0;
+        }
+        anim
     }
 
     pub(crate) fn entity(&self) -> Entity {
@@ -58,20 +95,40 @@ impl LogoAnim {
 
     pub(crate) fn tick(&mut self, world: &mut World, camera: Vec2, dt: f32) {
         self.clock += dt;
-        let arrival = ease_out(self.clock / ENTER_SECONDS);
-        let bob = (self.clock * TAU / BOB_PERIOD).sin() * BOB * arrival;
-        let at = self.rest + Vec2::new(0.0, bob - (1.0 - arrival) * DROP);
+        let (arrival, at, scale, alpha) = match self.entrance {
+            Entrance::Drop => {
+                let arrival = ease_out(self.clock / ENTER_SECONDS);
+                let bob = (self.clock * TAU / BOB_PERIOD).sin() * BOB * arrival;
+                (
+                    arrival,
+                    self.rest + Vec2::new(0.0, bob - (1.0 - arrival) * DROP),
+                    self.size,
+                    arrival,
+                )
+            }
+            Entrance::Glide { from, from_size } => {
+                let arrival = ease_in_out((self.clock - GLIDE_HOLD) / GLIDE_SECONDS);
+                let bob = (self.clock * TAU / BOB_PERIOD).sin() * BOB * arrival;
+                (
+                    arrival,
+                    from.lerp(self.rest, arrival) + Vec2::new(0.0, bob),
+                    from_size.lerp(self.size, arrival),
+                    1.0,
+                )
+            }
+        };
         let sweep = self.clock - SHINE_START;
         let shine = if sweep >= 0.0 && sweep % SHINE_PERIOD < SHINE_SECONDS {
             ((sweep % SHINE_PERIOD) / SHINE_SECONDS).max(0.001)
         } else {
             0.0
         };
-        if let Ok((position, color, glow)) =
-            world.query_one_mut::<(&mut Position, &mut Color, &mut Shine)>(self.logo)
+        if let Ok((position, size, color, glow)) =
+            world.query_one_mut::<(&mut Position, &mut Size, &mut Color, &mut Shine)>(self.logo)
         {
             position.0 = at;
-            color.0.w = arrival;
+            size.0 = scale;
+            color.0.w = alpha;
             glow.0 = shine;
         }
         if let Ok((position, light)) = world.query_one_mut::<(&mut Position, &mut Light)>(self.glow)
@@ -186,5 +243,57 @@ mod tests {
             .map(|l| l.intensity)
             .unwrap_or(0.0);
         assert!(first > 0.0 && (first - second).abs() > 0.05);
+    }
+
+    #[test]
+    fn a_gliding_logo_starts_where_the_loading_title_was_and_settles_on_its_place() {
+        let mut world = World::new();
+        let mut anim = LogoAnim::gliding(
+            &mut world,
+            TextureId::WHITE,
+            Vec2::new(480.0, 104.0),
+            Vec2::new(228.0, 108.0),
+            Vec2::new(480.0, 200.0),
+            Vec2::new(285.0, 135.0),
+        );
+        let state = |world: &World, anim: &LogoAnim| {
+            let at = world
+                .get::<&Position>(anim.logo)
+                .map(|p| p.0)
+                .unwrap_or_default();
+            let size = world
+                .get::<&Size>(anim.logo)
+                .map(|s| s.0)
+                .unwrap_or_default();
+            let alpha = world
+                .get::<&Color>(anim.logo)
+                .map(|c| c.0.w)
+                .unwrap_or(-1.0);
+            (at, size, alpha)
+        };
+        let (at, size, alpha) = state(&world, &anim);
+        assert_eq!(
+            (at, size, alpha),
+            (Vec2::new(480.0, 200.0), Vec2::new(285.0, 135.0), 1.0)
+        );
+
+        anim.tick(&mut world, Vec2::ZERO, GLIDE_HOLD * 0.5);
+        let (held, _, _) = state(&world, &anim);
+        assert_eq!(held, Vec2::new(480.0, 200.0));
+
+        anim.tick(
+            &mut world,
+            Vec2::ZERO,
+            GLIDE_HOLD * 0.5 + GLIDE_SECONDS * 0.5,
+        );
+        let (middle, middle_size, alpha) = state(&world, &anim);
+        assert!(middle.y < 200.0 && middle.y > 104.0, "{middle:?}");
+        assert!(middle_size.x < 285.0 && middle_size.x > 228.0);
+        assert_eq!(alpha, 1.0);
+
+        anim.tick(&mut world, Vec2::ZERO, 2.0);
+        let (settled, final_size, _) = state(&world, &anim);
+        assert!((settled.y - 104.0).abs() <= BOB + 0.01, "{settled:?}");
+        assert_eq!(final_size, Vec2::new(228.0, 108.0));
     }
 }
