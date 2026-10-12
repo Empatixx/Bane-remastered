@@ -10,17 +10,17 @@ use crate::components::{
     DeathPart, Despawn, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Flame, Floating, Fuse,
     GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
     Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
-    Overlay, Path, PauseUi, Pet, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt, RoomId,
-    RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash, Solid, Spawning,
-    SpeechBubble, SpeechPart, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
-    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
-    PIP_FULL,
+    Overlay, Path, PauseUi, Pet, Pickup, Player, PlayerShadow, PoisonPool, Position, PriceTag,
+    Prompt, RoomId, RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash,
+    Solid, Spawning, SpeechBubble, SpeechPart, SpeechText, Sprite, StatusBar, Text, TextButton,
+    ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT,
+    BULLET_ROWS, PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::items::{ItemKind, DESPAWN_SECONDS};
-use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
+use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE, POOL_SECONDS, POOL_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{Align, Anchor, FontSize, Fonts, TextureId};
@@ -336,6 +336,8 @@ pub(crate) fn decor(
         DecorKind::ExplosiveBarrel => {
             breakable(world, physics, BreakKind::Explosive, centered, textures)
         }
+        DecorKind::PoisonBarrel => breakable(world, physics, BreakKind::Poison, centered, textures),
+        DecorKind::FrostBarrel => breakable(world, physics, BreakKind::Frost, centered, textures),
         DecorKind::Flamethrower => flamethrower(world, top_left, textures),
         DecorKind::Torch { mount, lit } => {
             let (prop_kind, row) = match (lit, mount) {
@@ -1077,6 +1079,29 @@ pub(crate) fn flamethrower(world: &mut World, top_left: Vec2, textures: &Texture
         ),
     );
     entity
+}
+
+pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) -> Entity {
+    let clip = Clip {
+        row: 0,
+        frames: 4,
+        frame_time: 0.2,
+        looping: true,
+        flipped: false,
+    };
+    world.spawn((
+        PoisonPool {
+            remaining: POOL_SECONDS,
+            tick: 0.0,
+        },
+        Position(center),
+        Size(POOL_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get("ingame/poison_puddle.tga"), 0, 0, 4, 1),
+        Animation::new(4, 1, clip),
+        Layer(0),
+        Lit,
+    ))
 }
 
 pub(crate) fn explosion(world: &mut World, center: Vec2, textures: &Textures) {

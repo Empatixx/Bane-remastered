@@ -4,12 +4,15 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, BreakKind, Breakable, Broken, Clip, Enemy, Expiring, Flame, Health, HitFlash,
-    Invulnerable, Light, Player, Position, Size, Solid, Spawning,
+    Animation, BreakKind, Breakable, Broken, Clip, Color, Enemy, Expiring, Flame, Health, HitFlash,
+    Invulnerable, Light, Outline, Player, PoisonPool, Poisoned, Position, Size, Solid, Spawning,
 };
 use crate::geometry;
 use crate::items::ItemKind;
-use crate::objects::{EXPLOSION_DAMAGE, EXPLOSION_REACH};
+use crate::objects::{
+    EXPLOSION_DAMAGE, EXPLOSION_REACH, POISON_DAMAGE, POISON_TICK_SECONDS, POOL_FADE_SECONDS,
+    POOL_HITBOX,
+};
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
@@ -22,6 +25,8 @@ const DEATH_CLIP: Clip = Clip {
     looping: false,
     flipped: false,
 };
+const POISON_OUTLINE: glam::Vec4 = glam::Vec4::new(0.35, 1.0, 0.25, 0.9);
+const POOL_DROP: f32 = 24.0;
 const FLAME_PEAK_INTENSITY: f32 = 3.0;
 const FLAME_LIGHT_DROP: f32 = 20.0;
 
@@ -48,8 +53,12 @@ pub(crate) fn break_objects(
         }
         let item = ItemKind::COMMON[roll(ItemKind::COMMON.len())];
         prefabs::item(world, item, center, true, Vec2::ZERO, textures);
-        if kind == BreakKind::Explosive {
-            explode(world, entity, center, textures, sounds);
+        match kind {
+            BreakKind::Explosive => explode(world, entity, center, textures, sounds),
+            BreakKind::Poison => {
+                prefabs::poison_pool(world, center + Vec2::new(0.0, POOL_DROP), textures);
+            }
+            _ => {}
         }
     }
 }
@@ -95,6 +104,75 @@ fn explode(
                 remaining: FLASH_SECONDS,
             },
         );
+    }
+}
+
+pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioCommand>) {
+    let mut pools = Vec::new();
+    let mut gone = Vec::new();
+    for (entity, pool, position, color) in
+        world.query_mut::<(Entity, &mut PoisonPool, &Position, &mut Color)>()
+    {
+        pool.remaining -= dt;
+        pool.tick -= dt;
+        color.0.w = (pool.remaining / POOL_FADE_SECONDS).clamp(0.0, 1.0);
+        if pool.remaining <= 0.0 {
+            gone.push(entity);
+            continue;
+        }
+        let due = pool.tick <= 0.0;
+        if due {
+            pool.tick = POISON_TICK_SECONDS;
+        }
+        pools.push((position.0, due));
+    }
+    for entity in gone {
+        let _ = world.despawn(entity);
+    }
+    let standing: Vec<(Entity, bool, bool)> = world
+        .query::<(Entity, &Position, &Size, Option<&Player>)>()
+        .with::<&Health>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+        .iter()
+        .filter(|(entity, _, _, player)| player.is_some() || world.get::<&Enemy>(*entity).is_ok())
+        .filter_map(|(entity, position, size, player)| {
+            let mut inside = false;
+            let mut hurt = false;
+            for (center, due) in &pools {
+                if geometry::overlaps(*center, POOL_HITBOX, position.0, size.0) {
+                    inside = true;
+                    hurt |= *due;
+                }
+            }
+            inside.then_some((entity, hurt, player.is_some()))
+        })
+        .collect();
+    let inside: Vec<Entity> = standing.iter().map(|(entity, _, _)| *entity).collect();
+    for (entity, hurt, is_player) in standing {
+        if hurt {
+            if is_player {
+                hurt_player(world, entity, POISON_DAMAGE, sounds);
+            } else if let Ok(mut health) = world.get::<&mut Health>(entity) {
+                health.current = (health.current - POISON_DAMAGE).max(0);
+            }
+        }
+        let _ = world.insert_one(entity, Poisoned);
+        if world.get::<&HitFlash>(entity).is_err() {
+            let _ = world.insert_one(entity, Outline(POISON_OUTLINE));
+        }
+    }
+    let leaving: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<&Poisoned>()
+        .iter()
+        .filter(|entity| !inside.contains(entity))
+        .collect();
+    for entity in leaving {
+        let _ = world.remove_one::<Poisoned>(entity);
+        if world.get::<&HitFlash>(entity).is_err() {
+            let _ = world.remove_one::<Outline>(entity);
+        }
     }
 }
 
@@ -289,5 +367,98 @@ mod tests {
             .unwrap_or(-1.0);
         assert!(lit > 0.5, "{lit}");
         assert!(crate::systems::contact_damage(&mut world, &mut Vec::new()));
+    }
+
+    #[test]
+    fn breaking_a_poison_barrel_leaves_a_puddle_but_a_plain_barrel_does_not() {
+        let (mut world, mut physics, textures) = arena();
+        let plain = prefabs::breakable(
+            &mut world,
+            &mut physics,
+            BreakKind::Barrel,
+            Vec2::new(500.0, 500.0),
+            &textures,
+        );
+        let poison = prefabs::breakable(
+            &mut world,
+            &mut physics,
+            BreakKind::Poison,
+            Vec2::new(900.0, 500.0),
+            &textures,
+        );
+        kill(&mut world, plain);
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        assert_eq!(world.query::<&PoisonPool>().iter().count(), 0);
+
+        kill(&mut world, poison);
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        assert_eq!(world.query::<&PoisonPool>().iter().count(), 1);
+    }
+
+    #[test]
+    fn standing_in_the_puddle_hurts_once_a_second_and_marks_green() {
+        let (mut world, mut physics, textures) = arena();
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Slime,
+            Vec2::new(700.0, 700.0),
+        );
+        let far = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Slime,
+            Vec2::new(2000.0, 700.0),
+        );
+        prefabs::poison_pool(&mut world, Vec2::new(700.0, 700.0), &textures);
+        let health =
+            |world: &World, entity| world.get::<&Health>(entity).map(|h| h.current).unwrap_or(0);
+        let start = health(&world, rat);
+        let mut sounds = Vec::new();
+
+        tick_poison(&mut world, 0.016, &mut sounds);
+        assert_eq!(health(&world, rat), start - POISON_DAMAGE);
+        assert!(world.get::<&Poisoned>(rat).is_ok());
+        assert!(world.get::<&Outline>(rat).is_ok());
+
+        tick_poison(&mut world, 0.5, &mut sounds);
+        assert_eq!(health(&world, rat), start - POISON_DAMAGE);
+
+        tick_poison(&mut world, 0.6, &mut sounds);
+        assert_eq!(health(&world, rat), start - POISON_DAMAGE * 2);
+        assert_eq!(health(&world, far), start);
+        assert!(world.get::<&Poisoned>(far).is_err());
+    }
+
+    #[test]
+    fn the_puddle_hurts_the_player_too_and_dries_up_after_a_while() {
+        let (mut world, mut physics, textures) = arena();
+        let _ = &mut physics;
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let at = world
+            .get::<&Position>(player)
+            .map(|p| p.0)
+            .unwrap_or_default();
+        if let Ok(mut armor) = world.get::<&mut crate::components::Armor>(player) {
+            armor.current = 0;
+        }
+        let before = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
+        prefabs::poison_pool(&mut world, at, &textures);
+        let mut sounds = Vec::new();
+
+        tick_poison(&mut world, 0.016, &mut sounds);
+        let after = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
+        assert_eq!(after, before - POISON_DAMAGE);
+
+        for _ in 0..20 {
+            tick_poison(&mut world, 0.5, &mut sounds);
+        }
+        assert_eq!(world.query::<&PoisonPool>().iter().count(), 0);
+        assert!(world.get::<&Poisoned>(player).is_err());
     }
 }

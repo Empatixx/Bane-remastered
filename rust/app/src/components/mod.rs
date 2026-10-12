@@ -50,7 +50,9 @@ pub(crate) use items::{
 pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
-pub(crate) use objects::{BreakKind, Breakable, Broken, Flame, SlotMachine, SlotPrice, Solid};
+pub(crate) use objects::{
+    BreakKind, Breakable, Broken, Flame, PoisonPool, Poisoned, SlotMachine, SlotPrice, Solid,
+};
 pub(crate) use perks::PlayerPerks;
 pub(crate) use pet::Pet;
 pub(crate) use settings_ui::{

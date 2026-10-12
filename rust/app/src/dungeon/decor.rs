@@ -19,6 +19,8 @@ const MAX_FLAMETHROWERS: usize = 1;
 const MAX_BARRELS: usize = 2;
 const MAX_EXPLOSIVE_BARRELS: usize = 3;
 const MAX_POTS: usize = 2;
+const MAX_POISON_BARRELS: usize = 2;
+const MAX_FROST_BARRELS: usize = 2;
 const DISABLED_TORCH_PERCENT: usize = 10;
 const DOOR_CLEARANCE: usize = 3;
 const SPIKE_WALL_CLEARANCE: isize = 2;
@@ -40,6 +42,8 @@ pub(crate) enum DecorKind {
     Pot,
     Barrel,
     ExplosiveBarrel,
+    PoisonBarrel,
+    FrostBarrel,
     Flamethrower,
 }
 
@@ -290,6 +294,8 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
             (DecorKind::ExplosiveBarrel, rng.below(MAX_EXPLOSIVE_BARRELS)),
             (DecorKind::Barrel, rng.below(MAX_BARRELS)),
             (DecorKind::Pot, rng.below(MAX_POTS)),
+            (DecorKind::PoisonBarrel, rng.below(MAX_POISON_BARRELS)),
+            (DecorKind::FrostBarrel, rng.below(MAX_FROST_BARRELS)),
         ];
         for (kind, total) in batches {
             for _ in 0..total {
@@ -379,7 +385,11 @@ mod tests {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                             assert!(dungeon.grid.is_wall(column - 1, row), "{decor:?}");
                         }
-                        DecorKind::Pot | DecorKind::Barrel | DecorKind::ExplosiveBarrel => {
+                        DecorKind::Pot
+                        | DecorKind::Barrel
+                        | DecorKind::ExplosiveBarrel
+                        | DecorKind::PoisonBarrel
+                        | DecorKind::FrostBarrel => {
                             for (dx, dy) in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)] {
                                 assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
                             }

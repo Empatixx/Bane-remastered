@@ -5,6 +5,8 @@ pub(crate) enum BreakKind {
     Pot,
     Barrel,
     Explosive,
+    Poison,
+    Frost,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -30,3 +32,12 @@ pub(crate) struct SlotMachine {
 pub(crate) struct SlotPrice {
     pub(crate) owner: hecs::Entity,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PoisonPool {
+    pub(crate) remaining: f32,
+    pub(crate) tick: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Poisoned;
