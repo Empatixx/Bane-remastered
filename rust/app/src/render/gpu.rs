@@ -13,6 +13,7 @@ use super::texture::Pixels;
 use super::{Draw, Frame, Quad, TextureId};
 
 const MAX_QUADS: usize = 10_000;
+const OCCLUDED_WAIT: std::time::Duration = std::time::Duration::from_millis(16);
 
 #[derive(Debug)]
 pub(crate) struct Gpu {
@@ -28,6 +29,7 @@ pub(crate) struct Gpu {
     textures: Vec<wgpu::BindGroup>,
     entries: Vec<TextureEntry>,
     quad_scratch: Vec<Quad>,
+    skipped_frames: u32,
     quad_buffer: wgpu::Buffer,
     post: Post,
     targets: Option<Targets>,
@@ -199,6 +201,7 @@ impl Gpu {
             textures: Vec::new(),
             entries: Vec::new(),
             quad_scratch: Vec::new(),
+            skipped_frames: 0,
             quad_buffer,
             post,
             targets: None,
@@ -486,7 +489,25 @@ impl Gpu {
                 self.surface.configure(&self.device, &self.config);
                 return;
             }
-            _ => return,
+            wgpu::CurrentSurfaceTexture::Occluded => {
+                std::thread::sleep(OCCLUDED_WAIT);
+                return;
+            }
+            other => {
+                self.skipped_frames += 1;
+                if self.skipped_frames % 600 == 1 {
+                    tracing::warn!(
+                        skipped = self.skipped_frames,
+                        "the surface gave no texture: {}",
+                        match other {
+                            wgpu::CurrentSurfaceTexture::Timeout => "timeout",
+                            wgpu::CurrentSurfaceTexture::Validation => "validation",
+                            _ => "other",
+                        }
+                    );
+                }
+                return;
+            }
         };
         let surface_view = frame
             .texture
