@@ -1,24 +1,27 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::components::{Color, Layer, Light, Lit, Player, Position, Size, Sprite};
+use crate::components::{Color, Layer, Light, Player, Position, Size, Sprite};
 use crate::dungeon::Rng;
 use crate::render::TextureId;
+use crate::systems::dust::{spawn_dust, DustSpec, FRAMES};
 use crate::viewport::TARGET;
 
 const DUST_COUNT: usize = 14;
 const DUST_PER_TICK: usize = 3;
 const DUST_MARGIN: f32 = 160.0;
 const DUST_LAYER: i32 = 2;
-const DUST_FRAMES: usize = 3;
 const DUST_SIZE: (f32, f32) = (12.0, 22.0);
 const DUST_PEAK: (f32, f32) = (0.12, 0.3);
+const DUST_LIFE: (f32, f32) = (6.0, 12.0);
 const FIREFLIES: usize = 4;
 const FIREFLY_LAYER: i32 = 3;
+const FIREFLY_SIZE: f32 = 16.0;
 const FIREFLY_FLEE_RANGE: f32 = 150.0;
 const FIREFLY_FLEE_PUSH: f32 = 0.6;
 const FIREFLY_LIGHT: f32 = 1.2;
-const FIREFLY_RADIUS: f32 = 70.0;
+const FIREFLY_RADIUS: f32 = 90.0;
+const FIREFLY_TINT: Vec4 = Vec4::new(0.85, 1.0, 0.3, 0.0);
 
 pub(crate) struct Ambience {
     rng: Rng,
@@ -26,13 +29,7 @@ pub(crate) struct Ambience {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Dust {
-    velocity: Vec2,
-    phase: f32,
-    age: f32,
-    life: f32,
-    peak: f32,
-}
+pub(crate) struct Ambient;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Firefly {
@@ -47,34 +44,40 @@ fn between(rng: &mut Rng, low: f32, high: f32) -> f32 {
     low + (high - low) * rng.float()
 }
 
-pub(crate) fn spawn_ambience(world: &mut World, bounds: Vec2, portal_center: Vec2, seed: u64) {
+pub(crate) fn spawn_ambience(
+    world: &mut World,
+    texture: TextureId,
+    bounds: Vec2,
+    portal_center: Vec2,
+    seed: u64,
+) {
     let mut rng = Rng::new(seed);
     for index in 0..FIREFLIES {
-        let home = if index < FIREFLIES / 2 {
+        let home = if index % 2 == 0 {
             let angle = between(&mut rng, 0.0, std::f32::consts::TAU);
-            let distance = between(&mut rng, 140.0, 320.0);
+            let distance = between(&mut rng, 120.0, 280.0);
             portal_center + Vec2::new(angle.cos(), angle.sin()) * distance
         } else {
-            Vec2::new(
-                between(&mut rng, 0.2, 0.8) * bounds.x,
-                between(&mut rng, 0.25, 0.8) * bounds.y,
-            )
+            let angle = between(&mut rng, 0.0, std::f32::consts::TAU);
+            let distance = between(&mut rng, 80.0, 260.0);
+            bounds / 2.0 + Vec2::new(angle.cos(), angle.sin()) * distance
         };
         let firefly = Firefly {
             home,
             reach: Vec2::new(
-                between(&mut rng, 40.0, 110.0),
-                between(&mut rng, 30.0, 80.0),
+                between(&mut rng, 70.0, 140.0),
+                between(&mut rng, 50.0, 100.0),
             ),
-            rate: Vec2::new(between(&mut rng, 0.15, 0.4), between(&mut rng, 0.2, 0.5)),
+            rate: Vec2::new(between(&mut rng, 0.5, 0.9), between(&mut rng, 0.6, 1.1)),
             phase: between(&mut rng, 0.0, std::f32::consts::TAU),
-            blink: between(&mut rng, 0.5, 1.1),
+            blink: between(&mut rng, 0.8, 1.4),
         };
         world.spawn((
             firefly,
             Position(home),
-            Size(Vec2::splat(5.0)),
-            Color(Vec4::new(0.8, 1.0, 0.35, 0.0)),
+            Size(Vec2::splat(FIREFLY_SIZE)),
+            Color(FIREFLY_TINT),
+            Sprite::cell(texture, 1, 0, FRAMES, 1),
             Layer(FIREFLY_LAYER),
             Light::rgb(Vec2::ZERO, 200.0, 255.0, 90.0, FIREFLY_RADIUS, 0.0),
         ));
@@ -96,54 +99,44 @@ pub(crate) fn tick_ambience(world: &mut World, texture: TextureId, camera: Vec2,
         .iter()
         .next()
         .map(|position| position.0);
+
+    cull_dust(world, camera);
     top_up_dust(world, &mut ambience, texture, camera);
-    drift_dust(world, ambience.clock, camera, dt);
     glow_fireflies(world, ambience.clock, player);
     let _ = world.insert_one(controller, ambience);
 }
 
 fn top_up_dust(world: &mut World, ambience: &mut Ambience, texture: TextureId, camera: Vec2) {
-    let present = world.query::<&Dust>().iter().count();
+    let present = world.query::<&Ambient>().iter().count();
     for _ in 0..DUST_COUNT.saturating_sub(present).min(DUST_PER_TICK) {
         let rng = &mut ambience.rng;
-        let at = camera + Vec2::new(between(rng, 0.0, TARGET.x), between(rng, 0.0, TARGET.y));
-        let size = between(rng, DUST_SIZE.0, DUST_SIZE.1);
-        let frame = rng.below(DUST_FRAMES);
-        let mote = Dust {
-            velocity: Vec2::new(between(rng, -6.0, 6.0), -between(rng, 3.0, 12.0)),
-            phase: between(rng, 0.0, std::f32::consts::TAU),
-            age: 0.0,
-            life: between(rng, 6.0, 12.0),
-            peak: between(rng, DUST_PEAK.0, DUST_PEAK.1),
-        };
-        world.spawn((
-            mote,
-            Position(at),
-            Size(Vec2::splat(size)),
-            Color(Vec4::new(1.0, 0.95, 0.85, 0.0)),
-            Sprite::cell(texture, frame, 0, DUST_FRAMES, 1),
-            Layer(DUST_LAYER),
-            Lit,
-        ));
+        let dust = spawn_dust(
+            world,
+            texture,
+            DustSpec {
+                at: camera + Vec2::new(between(rng, 0.0, TARGET.x), between(rng, 0.0, TARGET.y)),
+                velocity: Vec2::new(between(rng, -6.0, 6.0), -between(rng, 3.0, 12.0)),
+                size: between(rng, DUST_SIZE.0, DUST_SIZE.1),
+                life: between(rng, DUST_LIFE.0, DUST_LIFE.1),
+                peak: between(rng, DUST_PEAK.0, DUST_PEAK.1),
+                layer: DUST_LAYER,
+                seed: between(rng, 0.0, 1000.0),
+            },
+        );
+        let _ = world.insert_one(dust, Ambient);
     }
 }
 
-fn drift_dust(world: &mut World, clock: f32, camera: Vec2, dt: f32) {
-    let mut gone = Vec::new();
+fn cull_dust(world: &mut World, camera: Vec2) {
     let low = camera - Vec2::splat(DUST_MARGIN);
     let high = camera + TARGET + Vec2::splat(DUST_MARGIN);
-    for (entity, mote, position, color) in
-        world.query_mut::<(Entity, &mut Dust, &mut Position, &mut Color)>()
-    {
-        mote.age += dt;
-        let sway = (clock * 0.7 + mote.phase).sin() * 5.0;
-        position.0 += (mote.velocity + Vec2::new(sway, 0.0)) * dt;
-        let progress = (mote.age / mote.life).clamp(0.0, 1.0);
-        color.0.w = mote.peak * (progress * std::f32::consts::PI).sin();
-        if mote.age >= mote.life || position.0.cmplt(low).any() || position.0.cmpgt(high).any() {
-            gone.push(entity);
-        }
-    }
+    let gone: Vec<Entity> = world
+        .query::<(Entity, &Position)>()
+        .with::<&Ambient>()
+        .iter()
+        .filter(|(_, position)| position.0.cmplt(low).any() || position.0.cmpgt(high).any())
+        .map(|(entity, _)| entity)
+        .collect();
     for entity in gone {
         let _ = world.despawn(entity);
     }
@@ -170,19 +163,23 @@ fn glow_fireflies(world: &mut World, clock: f32, player: Option<Vec2>) {
         let wave = ((clock * firefly.blink + firefly.phase).sin() + 0.35) / 1.35;
         let glow = wave.clamp(0.0, 1.0);
         let glow = glow * glow * (3.0 - 2.0 * glow);
-        color.0.w = glow;
+        color.0.w = glow * 0.9;
         light.intensity = glow * FIREFLY_LIGHT;
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::systems::dust::Dust;
+    use crate::systems::tick_dust;
+
     use super::*;
 
     fn lobby() -> World {
         let mut world = World::new();
         spawn_ambience(
             &mut world,
+            TextureId::WHITE,
             Vec2::new(1600.0, 900.0),
             Vec2::new(800.0, 300.0),
             7,
@@ -192,28 +189,29 @@ mod tests {
 
     fn run(world: &mut World, seconds: f32) {
         let steps = (seconds * 60.0) as usize;
-        for _ in 0..steps {
+        for step in 0..steps {
             tick_ambience(world, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
+            tick_dust(world, step as f32 / 60.0, 1.0 / 60.0);
         }
     }
 
-    fn count<T: hecs::Component>(world: &World) -> usize {
-        world.query::<&T>().iter().count()
+    fn ambient(world: &World) -> usize {
+        world.query::<&Ambient>().iter().count()
     }
 
     #[test]
     fn dust_fills_the_view_up_to_a_limit_and_never_beyond() {
         let mut world = lobby();
         run(&mut world, 0.05);
-        assert!(count::<Dust>(&world) <= DUST_PER_TICK * 3);
+        assert!(ambient(&world) <= DUST_PER_TICK * 3);
         run(&mut world, 3.0);
-        assert_eq!(count::<Dust>(&world), DUST_COUNT);
+        assert_eq!(ambient(&world), DUST_COUNT);
         run(&mut world, 30.0);
-        assert!(count::<Dust>(&world) <= DUST_COUNT);
+        assert!(ambient(&world) <= DUST_COUNT);
     }
 
     #[test]
-    fn dust_fades_in_from_nothing_and_stays_faint() {
+    fn dust_stays_faint() {
         let mut world = lobby();
         run(&mut world, 5.0);
         let alphas: Vec<f32> = world
@@ -221,6 +219,7 @@ mod tests {
             .iter()
             .map(|(_, color)| color.0.w)
             .collect();
+        assert!(!alphas.is_empty());
         assert!(alphas
             .iter()
             .all(|alpha| (0.0..=DUST_PEAK.1 + 0.001).contains(alpha)));
@@ -237,20 +236,26 @@ mod tests {
             Vec2::new(10_000.0, 10_000.0),
             1.0 / 60.0,
         );
-        let far = world
-            .query::<(&Dust, &Position)>()
+        let near_origin = world
+            .query::<(&Ambient, &Position)>()
             .iter()
             .filter(|(_, position)| position.0.x < 5_000.0)
             .count();
-        assert_eq!(far, 0);
+        assert_eq!(near_origin, 0);
     }
 
     #[test]
-    fn fireflies_wander_near_home_and_blink_on_and_off() {
+    fn fireflies_travel_visibly_and_blink_on_and_off() {
         let mut world = lobby();
+        let start: Vec<Vec2> = world
+            .query::<(&Firefly, &Position)>()
+            .iter()
+            .map(|(_, position)| position.0)
+            .collect();
         let mut brightest: f32 = 0.0;
         let mut dimmest: f32 = f32::MAX;
-        for _ in 0..1200 {
+        let mut farthest: f32 = 0.0;
+        for step in 0..1200 {
             tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
             for (firefly, position, light) in world.query::<(&Firefly, &Position, &Light)>().iter()
             {
@@ -261,7 +266,16 @@ mod tests {
                 brightest = brightest.max(light.intensity);
                 dimmest = dimmest.min(light.intensity);
             }
+            if step == 120 {
+                farthest = world
+                    .query::<(&Firefly, &Position)>()
+                    .iter()
+                    .zip(&start)
+                    .map(|((_, position), from)| position.0.distance(*from))
+                    .fold(0.0, f32::max);
+            }
         }
+        assert!(farthest > 40.0, "{farthest}");
         assert!(brightest > FIREFLY_LIGHT * 0.9, "{brightest}");
         assert!(dimmest < 0.05, "{dimmest}");
     }

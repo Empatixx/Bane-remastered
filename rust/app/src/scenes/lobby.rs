@@ -142,6 +142,7 @@ impl Scene for LobbyScene {
         prefabs::portal(&mut self.world, portal_top_left, textures);
         systems::spawn_ambience(
             &mut self.world,
+            textures.get("ingame/gazewind_particle.tga"),
             bounds,
             portal_top_left + Prop::Portal.spec().size() / 2.0,
             0x1d57,
@@ -249,6 +250,7 @@ impl Scene for LobbyScene {
             self.camera.position(),
             dt,
         );
+        systems::tick_dust(&mut self.world, self.clock, dt);
         systems::chat(&mut self.world, dt);
         systems::tick_speech(&mut self.world, dt);
         systems::fit_speech(&mut self.world, &assets.fonts);

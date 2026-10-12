@@ -10,11 +10,11 @@ use crate::components::{
     DeathPart, Despawn, Drag, Enemy, EnemyBullet, Expiring, EyeShooter, Flame, Floating, Fuse,
     GazeWind, GunDrop, GunIcon, Hatcher, Health, Hidden, Hitbox, Hits, Homing, Impact,
     Interactable, Interaction, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, OnClick,
-    Overlay, Particle, Path, PauseUi, Pet, Pickup, Player, PlayerShadow, Position, PriceTag,
-    Prompt, RoomId, RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash,
-    Solid, Spawning, SpeechBubble, SpeechPart, SpeechText, Sprite, StatusBar, Text, TextButton,
-    ThenPlay, Trap, UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT,
-    BULLET_ROWS, PIP_FULL,
+    Overlay, Path, PauseUi, Pet, Pickup, Player, PlayerShadow, Position, PriceTag, Prompt, RoomId,
+    RunStats, ScreenSpace, ShieldAura, Shop, Size, SlotMachine, SlotPrice, Smash, Solid, Spawning,
+    SpeechBubble, SpeechPart, SpeechText, Sprite, StatusBar, Text, TextButton, ThenPlay, Trap,
+    UiAction, Velocity, Wallet, Weapon, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    PIP_FULL,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
@@ -1613,30 +1613,6 @@ pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {
             ScreenSpace,
         ));
     }
-}
-
-const GAZE_FRAMES: usize = 3;
-const GAZE_SIZE: Vec2 = Vec2::new(32.0, 32.0);
-const GAZE_PUFF: Clip = Clip {
-    row: 0,
-    frames: GAZE_FRAMES,
-    frame_time: 0.1,
-    looping: false,
-    flipped: false,
-};
-
-pub(crate) fn gaze_particle(world: &mut World, center: Vec2, texture: TextureId) -> Entity {
-    world.spawn((
-        Particle,
-        Expiring,
-        Position(center),
-        Size(GAZE_SIZE),
-        Color(Vec4::ONE),
-        Sprite::cell(texture, 0, 0, GAZE_FRAMES, 1),
-        Animation::new(GAZE_FRAMES, 1, GAZE_PUFF),
-        Layer(0),
-        Lit,
-    ))
 }
 
 const GATE_COLUMNS: usize = 6;

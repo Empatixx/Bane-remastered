@@ -9,6 +9,7 @@ mod damage;
 pub(crate) mod death_screen;
 mod dodge;
 mod draw;
+mod dust;
 mod effects;
 mod enemies;
 mod glide;
@@ -57,6 +58,7 @@ pub(crate) use dodge::{
     fade_afterimages, show_dodge_cooldown, show_dodge_visual, start_dodge, tick_dodges, DODGE_SPEED,
 };
 pub(crate) use draw::collect_draws;
+pub(crate) use dust::tick_dust;
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::finish_spawning;
 pub(crate) use enemies::{

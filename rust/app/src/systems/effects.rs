@@ -9,9 +9,15 @@ use crate::components::{
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::render::TextureId;
+use crate::systems::dust::{spawn_dust, DustSpec};
 
-const COOLDOWN: f32 = 0.2;
-const MAX_PARTICLES: usize = 4;
+const COOLDOWN: f32 = 0.12;
+const MAX_PARTICLES: usize = 8;
+const TRAIL_LIFE: f32 = 0.6;
+const TRAIL_PEAK: f32 = 0.45;
+const TRAIL_SIZE: (f32, f32) = (10.0, 16.0);
+const TRAIL_RISE: f32 = 16.0;
+const TRAIL_SPREAD: f32 = 12.0;
 const WOBBLE: f32 = 16.0;
 
 pub(crate) fn spawn_gaze_wind(
@@ -39,7 +45,22 @@ pub(crate) fn spawn_gaze_wind(
         spawn_at.push(gaze_position(position.0, size.0, velocity, clock));
     }
     for center in spawn_at {
-        prefabs::gaze_particle(world, center, texture);
+        let seed = clock * 7.31 + center.x * 0.013 + center.y * 0.017;
+        let jitter = |salt: f32| ((seed + salt) * 12.9898).sin().abs();
+        let dust = spawn_dust(
+            world,
+            texture,
+            DustSpec {
+                at: center,
+                velocity: Vec2::new((jitter(1.0) - 0.5) * TRAIL_SPREAD * 2.0, -TRAIL_RISE),
+                size: TRAIL_SIZE.0 + (TRAIL_SIZE.1 - TRAIL_SIZE.0) * jitter(2.0),
+                life: TRAIL_LIFE,
+                peak: TRAIL_PEAK,
+                layer: 0,
+                seed,
+            },
+        );
+        let _ = world.insert_one(dust, Particle);
     }
 }
 

@@ -244,6 +244,7 @@ impl Scene for InGameScene {
             dt,
             self.clock + phase,
         );
+        systems::tick_dust(&mut self.world, self.clock, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world, &assets.textures);
