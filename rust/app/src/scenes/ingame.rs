@@ -343,6 +343,7 @@ impl Scene for InGameScene {
             dt,
         );
         systems::chase_player(&mut self.world, &self.flow);
+        systems::separate_chasers(&mut self.world);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
         systems::steer_pets(&mut self.world);
