@@ -28,7 +28,7 @@ const DEATH_CLIP: Clip = Clip {
     flipped: false,
 };
 const POISON_OUTLINE: glam::Vec4 = glam::Vec4::new(0.35, 1.0, 0.25, 0.9);
-const POOL_DROP: f32 = 24.0;
+const POOL_DROP: f32 = 20.0;
 const FLAME_PEAK_INTENSITY: f32 = 3.0;
 const FLAME_LIGHT_DROP: f32 = 20.0;
 
