@@ -1,33 +1,32 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::components::{Color, Interactable, Interaction, Layer, Light, Player, Position, Size};
+use crate::components::{Color, Layer, Light, Lit, Player, Position, Size, Sprite};
 use crate::dungeon::Rng;
+use crate::render::TextureId;
 use crate::viewport::TARGET;
 
-const MOTES: usize = 40;
-const MOTES_PER_TICK: usize = 3;
-const MOTE_MARGIN: f32 = 160.0;
-const MOTE_LAYER: i32 = 2;
-const FIREFLIES: usize = 10;
+const DUST_COUNT: usize = 14;
+const DUST_PER_TICK: usize = 3;
+const DUST_MARGIN: f32 = 160.0;
+const DUST_LAYER: i32 = 2;
+const DUST_FRAMES: usize = 3;
+const DUST_SIZE: (f32, f32) = (12.0, 22.0);
+const DUST_PEAK: (f32, f32) = (0.12, 0.3);
+const FIREFLIES: usize = 4;
 const FIREFLY_LAYER: i32 = 3;
 const FIREFLY_FLEE_RANGE: f32 = 150.0;
 const FIREFLY_FLEE_PUSH: f32 = 0.6;
 const FIREFLY_LIGHT: f32 = 1.2;
 const FIREFLY_RADIUS: f32 = 70.0;
-const SPARK_LAYER: i32 = 3;
-const SPARK_PERIOD: f32 = 0.11;
-const SPARK_SPREAD: f32 = 90.0;
-const PORTAL_PULSE: f32 = 0.15;
 
 pub(crate) struct Ambience {
     rng: Rng,
     clock: f32,
-    spark_timer: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Mote {
+pub(crate) struct Dust {
     velocity: Vec2,
     phase: f32,
     age: f32,
@@ -42,20 +41,6 @@ pub(crate) struct Firefly {
     rate: Vec2,
     phase: f32,
     blink: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Spark {
-    velocity: Vec2,
-    phase: f32,
-    age: f32,
-    life: f32,
-    size: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct PortalGlow {
-    base: f32,
 }
 
 fn between(rng: &mut Rng, low: f32, high: f32) -> f32 {
@@ -94,23 +79,10 @@ pub(crate) fn spawn_ambience(world: &mut World, bounds: Vec2, portal_center: Vec
             Light::rgb(Vec2::ZERO, 200.0, 255.0, 90.0, FIREFLY_RADIUS, 0.0),
         ));
     }
-    let portals: Vec<(Entity, f32)> = world
-        .query::<(Entity, &Interactable, &Light)>()
-        .iter()
-        .filter(|(_, interactable, _)| interactable.action == Interaction::EnterPortal)
-        .map(|(entity, _, light)| (entity, light.intensity))
-        .collect();
-    for (entity, base) in portals {
-        let _ = world.insert_one(entity, PortalGlow { base });
-    }
-    world.spawn((Ambience {
-        rng,
-        clock: 0.0,
-        spark_timer: 0.0,
-    },));
+    world.spawn((Ambience { rng, clock: 0.0 },));
 }
 
-pub(crate) fn tick_ambience(world: &mut World, camera: Vec2, dt: f32) {
+pub(crate) fn tick_ambience(world: &mut World, texture: TextureId, camera: Vec2, dt: f32) {
     let Some(controller) = world.query::<Entity>().with::<&Ambience>().iter().next() else {
         return;
     };
@@ -118,64 +90,50 @@ pub(crate) fn tick_ambience(world: &mut World, camera: Vec2, dt: f32) {
         return;
     };
     ambience.clock += dt;
-    ambience.spark_timer -= dt;
     let player = world
         .query::<&Position>()
         .with::<&Player>()
         .iter()
         .next()
         .map(|position| position.0);
-    let portal = world
-        .query::<&Position>()
-        .with::<&PortalGlow>()
-        .iter()
-        .next()
-        .map(|position| position.0);
-
-    top_up_motes(world, &mut ambience, camera);
-    drift_motes(world, ambience.clock, camera, dt);
+    top_up_dust(world, &mut ambience, texture, camera);
+    drift_dust(world, ambience.clock, camera, dt);
     glow_fireflies(world, ambience.clock, player);
-    if let Some(portal) = portal {
-        if ambience.spark_timer <= 0.0 {
-            ambience.spark_timer = SPARK_PERIOD;
-            spawn_spark(world, &mut ambience.rng, portal);
-        }
-    }
-    rise_sparks(world, ambience.clock, dt);
-    pulse_portal(world, ambience.clock);
-
     let _ = world.insert_one(controller, ambience);
 }
 
-fn top_up_motes(world: &mut World, ambience: &mut Ambience, camera: Vec2) {
-    let present = world.query::<&Mote>().iter().count();
-    for _ in 0..MOTES.saturating_sub(present).min(MOTES_PER_TICK) {
+fn top_up_dust(world: &mut World, ambience: &mut Ambience, texture: TextureId, camera: Vec2) {
+    let present = world.query::<&Dust>().iter().count();
+    for _ in 0..DUST_COUNT.saturating_sub(present).min(DUST_PER_TICK) {
         let rng = &mut ambience.rng;
         let at = camera + Vec2::new(between(rng, 0.0, TARGET.x), between(rng, 0.0, TARGET.y));
-        let size = between(rng, 2.0, 4.0);
-        let mote = Mote {
+        let size = between(rng, DUST_SIZE.0, DUST_SIZE.1);
+        let frame = rng.below(DUST_FRAMES);
+        let mote = Dust {
             velocity: Vec2::new(between(rng, -6.0, 6.0), -between(rng, 3.0, 12.0)),
             phase: between(rng, 0.0, std::f32::consts::TAU),
             age: 0.0,
             life: between(rng, 6.0, 12.0),
-            peak: between(rng, 0.15, 0.4),
+            peak: between(rng, DUST_PEAK.0, DUST_PEAK.1),
         };
         world.spawn((
             mote,
             Position(at),
             Size(Vec2::splat(size)),
-            Color(Vec4::new(1.0, 0.95, 0.8, 0.0)),
-            Layer(MOTE_LAYER),
+            Color(Vec4::new(1.0, 0.95, 0.85, 0.0)),
+            Sprite::cell(texture, frame, 0, DUST_FRAMES, 1),
+            Layer(DUST_LAYER),
+            Lit,
         ));
     }
 }
 
-fn drift_motes(world: &mut World, clock: f32, camera: Vec2, dt: f32) {
+fn drift_dust(world: &mut World, clock: f32, camera: Vec2, dt: f32) {
     let mut gone = Vec::new();
-    let low = camera - Vec2::splat(MOTE_MARGIN);
-    let high = camera + TARGET + Vec2::splat(MOTE_MARGIN);
+    let low = camera - Vec2::splat(DUST_MARGIN);
+    let high = camera + TARGET + Vec2::splat(DUST_MARGIN);
     for (entity, mote, position, color) in
-        world.query_mut::<(Entity, &mut Mote, &mut Position, &mut Color)>()
+        world.query_mut::<(Entity, &mut Dust, &mut Position, &mut Color)>()
     {
         mote.age += dt;
         let sway = (clock * 0.7 + mote.phase).sin() * 5.0;
@@ -217,64 +175,12 @@ fn glow_fireflies(world: &mut World, clock: f32, player: Option<Vec2>) {
     }
 }
 
-fn spawn_spark(world: &mut World, rng: &mut Rng, portal: Vec2) {
-    let size = between(rng, 3.0, 5.0);
-    let spark = Spark {
-        velocity: Vec2::new(0.0, -between(rng, 35.0, 65.0)),
-        phase: between(rng, 0.0, std::f32::consts::TAU),
-        age: 0.0,
-        life: between(rng, 1.0, 2.0),
-        size,
-    };
-    let at = portal + Vec2::new(between(rng, -SPARK_SPREAD / 2.0, SPARK_SPREAD / 2.0), 10.0);
-    world.spawn((
-        spark,
-        Position(at),
-        Size(Vec2::splat(size)),
-        Color(Vec4::new(0.85, 0.35, 1.0, 0.9)),
-        Layer(SPARK_LAYER),
-    ));
-}
-
-fn rise_sparks(world: &mut World, clock: f32, dt: f32) {
-    let mut gone = Vec::new();
-    for (entity, spark, position, size, color) in
-        world.query_mut::<(Entity, &mut Spark, &mut Position, &mut Size, &mut Color)>()
-    {
-        spark.age += dt;
-        let sway = (clock * 3.0 + spark.phase).sin() * 14.0;
-        position.0 += (spark.velocity + Vec2::new(sway, 0.0)) * dt;
-        let remaining = (1.0 - spark.age / spark.life).clamp(0.0, 1.0);
-        color.0.w = 0.9 * remaining;
-        size.0 = Vec2::splat(spark.size * (0.4 + 0.6 * remaining));
-        if spark.age >= spark.life {
-            gone.push(entity);
-        }
-    }
-    for entity in gone {
-        let _ = world.despawn(entity);
-    }
-}
-
-fn pulse_portal(world: &mut World, clock: f32) {
-    for (glow, light) in world.query_mut::<(&PortalGlow, &mut Light)>() {
-        light.intensity = glow.base * (1.0 + PORTAL_PULSE * (clock * 2.2).sin());
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn lobby() -> World {
         let mut world = World::new();
-        world.spawn((
-            Position(Vec2::new(800.0, 300.0)),
-            Interactable {
-                action: Interaction::EnterPortal,
-            },
-            Light::rgb(Vec2::ZERO, 128.0, 0.0, 128.0, 50.0, 2.5),
-        ));
         spawn_ambience(
             &mut world,
             Vec2::new(1600.0, 900.0),
@@ -287,7 +193,7 @@ mod tests {
     fn run(world: &mut World, seconds: f32) {
         let steps = (seconds * 60.0) as usize;
         for _ in 0..steps {
-            tick_ambience(world, Vec2::ZERO, 1.0 / 60.0);
+            tick_ambience(world, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
         }
     }
 
@@ -299,11 +205,11 @@ mod tests {
     fn dust_fills_the_view_up_to_a_limit_and_never_beyond() {
         let mut world = lobby();
         run(&mut world, 0.05);
-        assert!(count::<Mote>(&world) <= MOTES_PER_TICK * 3);
+        assert!(count::<Dust>(&world) <= DUST_PER_TICK * 3);
         run(&mut world, 3.0);
-        assert_eq!(count::<Mote>(&world), MOTES);
+        assert_eq!(count::<Dust>(&world), DUST_COUNT);
         run(&mut world, 30.0);
-        assert!(count::<Mote>(&world) <= MOTES);
+        assert!(count::<Dust>(&world) <= DUST_COUNT);
     }
 
     #[test]
@@ -311,21 +217,28 @@ mod tests {
         let mut world = lobby();
         run(&mut world, 5.0);
         let alphas: Vec<f32> = world
-            .query::<(&Mote, &Color)>()
+            .query::<(&Dust, &Color)>()
             .iter()
             .map(|(_, color)| color.0.w)
             .collect();
-        assert!(alphas.iter().all(|alpha| (0.0..=0.4001).contains(alpha)));
-        assert!(alphas.iter().any(|alpha| *alpha > 0.05));
+        assert!(alphas
+            .iter()
+            .all(|alpha| (0.0..=DUST_PEAK.1 + 0.001).contains(alpha)));
+        assert!(alphas.iter().any(|alpha| *alpha > 0.03));
     }
 
     #[test]
     fn dust_that_drifts_out_of_view_is_removed() {
         let mut world = lobby();
         run(&mut world, 1.0);
-        tick_ambience(&mut world, Vec2::new(10_000.0, 10_000.0), 1.0 / 60.0);
+        tick_ambience(
+            &mut world,
+            TextureId::WHITE,
+            Vec2::new(10_000.0, 10_000.0),
+            1.0 / 60.0,
+        );
         let far = world
-            .query::<(&Mote, &Position)>()
+            .query::<(&Dust, &Position)>()
             .iter()
             .filter(|(_, position)| position.0.x < 5_000.0)
             .count();
@@ -338,7 +251,7 @@ mod tests {
         let mut brightest: f32 = 0.0;
         let mut dimmest: f32 = f32::MAX;
         for _ in 0..1200 {
-            tick_ambience(&mut world, Vec2::ZERO, 1.0 / 60.0);
+            tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
             for (firefly, position, light) in world.query::<(&Firefly, &Position, &Light)>().iter()
             {
                 assert!((position.0 - firefly.home)
@@ -356,7 +269,7 @@ mod tests {
     #[test]
     fn a_firefly_shies_away_from_the_player() {
         let mut world = lobby();
-        tick_ambience(&mut world, Vec2::ZERO, 0.0);
+        tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 0.0);
         let target = world
             .query::<(&Firefly, &Position)>()
             .iter()
@@ -365,7 +278,7 @@ mod tests {
             .unwrap_or_default();
         world.spawn((Player, Position(target + Vec2::new(-30.0, 0.0))));
 
-        tick_ambience(&mut world, Vec2::ZERO, 0.0);
+        tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 0.0);
 
         let after = world
             .query::<(&Firefly, &Position)>()
@@ -374,45 +287,5 @@ mod tests {
             .map(|(_, position)| position.0)
             .unwrap_or_default();
         assert!(after.x > target.x, "{after:?} {target:?}");
-    }
-
-    #[test]
-    fn sparks_rise_from_the_portal_and_burn_out() {
-        let mut world = lobby();
-        run(&mut world, 0.5);
-        let portal_y = 300.0;
-        assert!(count::<Spark>(&world) > 2);
-        run(&mut world, 1.0);
-        let highest = world
-            .query::<(&Spark, &Position)>()
-            .iter()
-            .map(|(_, position)| position.0.y)
-            .fold(f32::MAX, f32::min);
-        assert!(highest < portal_y - 10.0, "{highest}");
-        let alive_after = {
-            for spark in world.query_mut::<&mut Spark>() {
-                spark.age = spark.life;
-            }
-            tick_ambience(&mut world, Vec2::ZERO, 0.0);
-            count::<Spark>(&world)
-        };
-        assert!(alive_after <= 1);
-    }
-
-    #[test]
-    fn the_portal_light_pulses_around_its_base() {
-        let mut world = lobby();
-        let mut low: f32 = f32::MAX;
-        let mut high: f32 = 0.0;
-        for _ in 0..400 {
-            tick_ambience(&mut world, Vec2::ZERO, 1.0 / 60.0);
-            for (_, light) in world.query::<(&PortalGlow, &Light)>().iter() {
-                low = low.min(light.intensity);
-                high = high.max(light.intensity);
-            }
-        }
-        assert!(low < 2.5 && high > 2.5);
-        assert!(low >= 2.5 * (1.0 - PORTAL_PULSE) - 0.001);
-        assert!(high <= 2.5 * (1.0 + PORTAL_PULSE) + 0.001);
     }
 }

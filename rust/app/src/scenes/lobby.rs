@@ -243,7 +243,12 @@ impl Scene for LobbyScene {
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world, &assets.textures);
-        systems::tick_ambience(&mut self.world, self.camera.position(), dt);
+        systems::tick_ambience(
+            &mut self.world,
+            assets.textures.get("ingame/gazewind_particle.tga"),
+            self.camera.position(),
+            dt,
+        );
         systems::chat(&mut self.world, dt);
         systems::tick_speech(&mut self.world, dt);
         systems::fit_speech(&mut self.world, &assets.fonts);
