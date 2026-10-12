@@ -11,9 +11,9 @@ use crate::prefabs;
 use crate::render::{Align, Anchor, FontSize};
 
 pub(crate) const BUTTON_SIZE: Vec2 = Vec2::new(224.0, 56.0);
-const BASE_TEXT: Vec4 = Vec4::new(0.93, 0.85, 0.72, 1.0);
-const HOT_TEXT: Vec4 = Vec4::new(1.0, 0.9, 0.55, 1.0);
-const MARKER_COLOR: Vec4 = Vec4::new(1.0, 0.78, 0.35, 1.0);
+const BASE_TEXT: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const HOT_TEXT: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
+const MARKER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 const ENTER_DELAY: f32 = 0.5;
 const ENTER_STAGGER: f32 = 0.12;
 const ENTER_SECONDS: f32 = 0.5;

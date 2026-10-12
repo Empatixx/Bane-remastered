@@ -8,11 +8,8 @@ SCRATCH = "/private/tmp/claude-501/-Users-jirka-IdeaProjects-redissun/232009fd-0
 def plate(hover):
     image = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    outline = (16, 9, 13, 255)
-    if hover:
-        rim, fill = (240, 168, 66, 255), (74, 40, 26, 255)
-    else:
-        rim, fill = (160, 98, 62, 255), (36, 22, 30, 255)
+    rim = (255, 232, 110, 255) if hover else (225, 152, 116, 255)
+    fill = (0, 0, 0, 110)
     cut = 3
 
     def shape(inset):
@@ -22,10 +19,19 @@ def plate(hover):
             (r - cut, b), (l + cut, b), (l, b - cut), (l, t + cut),
         ]
 
-    draw.polygon(shape(0), fill=outline)
-    draw.polygon(shape(1), fill=rim)
-    draw.polygon(shape(3), fill=fill)
-    return image
+    draw.polygon(shape(0), fill=rim)
+    draw.polygon(shape(2), fill=(0, 0, 0, 0))
+    image.alpha_composite(Image.new("RGBA", (W, H), (0, 0, 0, 0)))
+    inner = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(inner).polygon(shape(2), fill=fill)
+    cleared = image.copy()
+    cleared_pixels = cleared.load()
+    inner_pixels = inner.load()
+    for y in range(H):
+        for x in range(W):
+            if inner_pixels[x, y][3] > 0:
+                cleared_pixels[x, y] = fill
+    return cleared
 
 
 def main():
@@ -34,7 +40,7 @@ def main():
     sheet.paste(plate(True), (0, H))
     sheet.save(OUT)
     scale = 4
-    bg = (28, 18, 26, 255)
+    bg = (60, 44, 52, 255)
     canvas = Image.new("RGBA", (W * scale * 2 + 60, H * scale * 3 + 80), bg)
     for index in range(3):
         for state in range(2):
