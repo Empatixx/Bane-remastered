@@ -554,10 +554,10 @@ CRACK = (37, 19, 26, 255)
 
 
 def bricks(width, height, vertical):
-    tiles = Image.open(Path(__file__).resolve().parent.parent / "assets/textures/ingame/tileset.tga").convert("RGBA")
+    tiles = Image.open(Path(__file__).resolve().parent.parent / "assets/textures/ingame/tileset_2.png").convert("RGBA")
     cell = Image.new("RGBA", (width, height))
     for index in range((height if vertical else width) // 16):
-        tile = tiles.crop(((3 + index) * 16, 0, (4 + index) * 16, 16))
+        tile = tiles.crop(((10 + index) * 16, 0, (11 + index) * 16, 16))
         cell.paste(tile, (0, index * 16) if vertical else (index * 16, 0))
     return cell
 
