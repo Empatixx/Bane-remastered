@@ -4,8 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Boss, BreakKind, Breakable, Broken, Clip, Color, Crumbling, Dodge, Enemy, Expiring,
-    Flame, Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool, PoisonTrail,
+    Animation, Boss, BreakKind, Breakable, Broken, Clip, Color, Dodge, Enemy, Expiring, Flame,
+    Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool, PoisonTrail,
     Poisoned, Position, Size, Solid, Spawning, TrailLayer,
 };
 use crate::geometry;
@@ -266,40 +266,6 @@ fn scatter(count: u32) -> u32 {
     value ^= value >> 15;
     value = value.wrapping_mul(2_246_822_519);
     value ^ (value >> 13)
-}
-
-pub(crate) fn crumble_cracked_walls(world: &mut World, texture: crate::render::TextureId, dt: f32) {
-    let mut puffs = Vec::new();
-    for (position, size, crumbling) in world
-        .query_mut::<(&Position, &Size, &mut Crumbling)>()
-        .without::<&Broken>()
-    {
-        crumbling.timer -= dt;
-        if crumbling.timer > 0.0 {
-            continue;
-        }
-        crumbling.count = crumbling.count.wrapping_add(1);
-        let roll = scatter(crumbling.count);
-        crumbling.timer = 0.9 + (roll % 100) as f32 / 100.0 * 1.4;
-        let along = ((roll >> 8) % 100) as f32 / 100.0 - 0.5;
-        let spot = position.0 + Vec2::new(along * size.0.x, size.0.y * 0.2);
-        puffs.push((spot, roll as f32));
-    }
-    for (at, seed) in puffs {
-        crate::systems::dust::spawn_dust(
-            world,
-            texture,
-            crate::systems::dust::DustSpec {
-                at,
-                velocity: Vec2::new(0.0, 16.0),
-                size: 12.0,
-                life: 1.4,
-                peak: 0.55,
-                layer: 3,
-                seed,
-            },
-        );
-    }
 }
 
 pub(crate) fn leave_poison_trails(world: &mut World, textures: &Textures) {

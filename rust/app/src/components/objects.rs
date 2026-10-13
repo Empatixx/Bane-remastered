@@ -25,12 +25,6 @@ pub(crate) struct Broken;
 pub(crate) struct Fragile;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Crumbling {
-    pub(crate) timer: f32,
-    pub(crate) count: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
 pub(crate) struct Flame;
 
 #[derive(Debug, Clone, Copy)]

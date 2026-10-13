@@ -53,8 +53,8 @@ pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
 pub(crate) use objects::{
-    BreakKind, Breakable, Broken, Crumbling, Flame, Fragile, Frozen, PoisonPool, PoisonTrail,
-    Poisoned, SlotMachine, SlotPrice, Solid, TrailLayer,
+    BreakKind, Breakable, Broken, Flame, Fragile, Frozen, PoisonPool, PoisonTrail, Poisoned,
+    SlotMachine, SlotPrice, Solid, TrailLayer,
 };
 pub(crate) use perks::PlayerPerks;
 pub(crate) use pet::Pet;
