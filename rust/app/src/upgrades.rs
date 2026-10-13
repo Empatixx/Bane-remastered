@@ -1,4 +1,4 @@
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
@@ -353,7 +353,10 @@ impl Perks {
     }
 
     pub(crate) fn damage_taken(&self, damage: i32) -> i32 {
-        (damage as f32 * self.damage_taken_scale) as i32
+        if damage <= 0 {
+            return damage;
+        }
+        ((damage as f32 * self.damage_taken_scale) as i32).max(1)
     }
 }
 
@@ -464,10 +467,11 @@ mod tests {
     }
 
     #[test]
-    fn kevlar_rounds_down_so_a_single_point_of_damage_disappears() {
+    fn kevlar_reduces_bigger_hits_but_never_cancels_a_hit_completely() {
         let kevlar = Perks::from_unlocked(&set(&[Upgrade::ReducedDamageTaken]));
-        assert_eq!(kevlar.damage_taken(1), 0);
+        assert_eq!(kevlar.damage_taken(1), 1);
         assert_eq!(kevlar.damage_taken(3), 2);
+        assert_eq!(kevlar.damage_taken(0), 0);
         assert_eq!(Perks::default().damage_taken(3), 3);
     }
 }

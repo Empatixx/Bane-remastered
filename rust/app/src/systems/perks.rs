@@ -255,7 +255,7 @@ mod tests {
             .expect("player");
         let before = vitals(&boosted_world);
         crate::systems::damage::hurt_player(&mut boosted_world, player_entity, 1, &mut Vec::new());
-        assert_eq!(vitals(&boosted_world), before);
+        assert_ne!(vitals(&boosted_world), before);
     }
 
     #[test]
