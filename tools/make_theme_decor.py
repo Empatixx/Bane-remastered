@@ -158,110 +158,6 @@ def cocoon(variant):
     return image
 
 
-EGG_SHELL = (232, 226, 190, 255)
-EGG_LIGHT = (255, 252, 230, 255)
-EGG_MID = (206, 198, 160, 255)
-EGG_DARK = (150, 142, 108, 255)
-INSIDE = (96, 82, 52, 255)
-SIZE = 64
-CX, CY = 32, 36
-EGGS = [(-4, -1, 3), (4, -2, 3), (0, 4, 3), (-6, 5, 2), (6, 4, 2)]
-
-
-def egg(image, cx, cy, radius, state="whole", pull=0):
-    draw = ImageDraw.Draw(image)
-    layer = Image.new("RGBA", image.size, CLEAR)
-    ImageDraw.Draw(layer).ellipse((cx - radius + 1, cy - radius + 2, cx + radius + 2, cy + radius + 3), fill=SHADOW)
-    image.alpha_composite(layer)
-    if state == "split":
-        for side in (-1, 1):
-            half = Image.new("RGBA", image.size, CLEAR)
-            hd = ImageDraw.Draw(half)
-            hd.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=EGG_SHELL, outline=OUTLINE)
-            hd.ellipse((cx - radius + 1, cy - radius + 1, cx + radius - 1, cy + radius - 1), fill=INSIDE if pull > 1 else EGG_MID)
-            mask = Image.new("L", image.size, 0)
-            ImageDraw.Draw(mask).rectangle(
-                (cx - radius - 2, cy - radius - 2, cx - 1, cy + radius + 2) if side < 0 else (cx, cy - radius - 2, cx + radius + 2, cy + radius + 2),
-                fill=255,
-            )
-            moved = Image.new("RGBA", image.size, CLEAR)
-            moved.paste(half, (side * pull, 0), mask)
-            image.alpha_composite(moved)
-        return
-    draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=EGG_SHELL, outline=OUTLINE)
-    draw.ellipse((cx - radius + 1, cy - radius + 1, cx + radius - 1, cy + radius - 1), fill=EGG_MID)
-    draw.point((cx - radius + 1, cy - radius + 1), fill=EGG_LIGHT)
-    draw.point((cx - radius + 2, cy - radius + 1), fill=EGG_SHELL)
-    draw.point((cx + 1, cy + 1), fill=EGG_DARK)
-    if state == "crack":
-        draw.line([(cx, cy - radius + 1), (cx - 1, cy), (cx + 1, cy + 1), (cx, cy + radius - 1)], fill=OUTLINE)
-
-
-def web_base(image):
-    draw = ImageDraw.Draw(image)
-    draw.ellipse((CX - 12, CY - 8, CX + 12, CY + 9), fill=(214, 214, 170, 60))
-    for angle in range(0, 360, 45):
-        end = (CX + 12 * math.cos(math.radians(angle)), CY + 9 * math.sin(math.radians(angle)))
-        draw.line([(CX, CY), end], fill=SILK_SHADE)
-    draw.arc((CX - 7, CY - 5, CX + 7, CY + 5), 0, 360, fill=(150, 150, 118, 170))
-
-
-def cluster(image, state, pull=0):
-    for dx, dy, radius in sorted(EGGS, key=lambda e: e[1]):
-        egg(image, CX + dx, CY + dy, radius, state, pull)
-
-
-def intact():
-    image = Image.new("RGBA", (SIZE, SIZE), CLEAR)
-    web_base(image)
-    cluster(image, "whole")
-    return image
-
-
-def shards(image, count, spread, seed):
-    rng = random.Random(seed)
-    draw = ImageDraw.Draw(image)
-    for _ in range(count):
-        x = CX + rng.randint(-spread, spread)
-        y = CY + rng.randint(-spread // 2, spread // 2 + 2)
-        w, h = rng.choice([(2, 1), (2, 2), (3, 1), (1, 2)])
-        draw.rectangle((x, y, x + w, y + h), fill=EGG_SHELL, outline=OUTLINE)
-        draw.point((x, y), fill=EGG_LIGHT)
-
-
-def breaking(stage):
-    image = Image.new("RGBA", (SIZE, SIZE), CLEAR)
-    if stage == 0:
-        web_base(image)
-        cluster(image, "crack")
-    elif stage == 1:
-        web_base(image)
-        cluster(image, "split", pull=2)
-    elif stage == 2:
-        web_base(image)
-        shards(image, 10, 9, 7)
-    else:
-        layer = Image.new("RGBA", (SIZE, SIZE), CLEAR)
-        web_base(layer)
-        faded = Image.new("RGBA", (SIZE, SIZE), CLEAR)
-        for y in range(SIZE):
-            for x in range(SIZE):
-                pixel = layer.getpixel((x, y))
-                if pixel[3] and (x * 3 + y * 7) % 5 < 2:
-                    faded.putpixel((x, y), (pixel[0], pixel[1], pixel[2], pixel[3] // 2))
-        image = faded
-        shards(image, 7, 8, 11)
-    return image
-
-
-def egg_sheet():
-    sheet = Image.new("RGBA", (SIZE * 4, SIZE * 2), CLEAR)
-    sheet.paste(intact(), (0, 0))
-    for stage in range(4):
-        sheet.paste(breaking(stage), (stage * SIZE, SIZE))
-    return sheet
-
-
 def stack(images):
     sheet = Image.new("RGBA", (16, 16 * len(images)), CLEAR)
     for index, image in enumerate(images):
@@ -274,7 +170,6 @@ def main():
     stack([crystals(4), crystals(5)]).save(OUT / "ice_crystals.tga")
     frozen_skull().save(OUT / "frozen_skull.tga")
     stack([cocoon(0), cocoon(1)]).save(OUT / "cocoon.tga")
-    egg_sheet().save(OUT / "egg_sac.tga")
 
 
 main()

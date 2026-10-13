@@ -34,7 +34,6 @@ pub(crate) struct TrapMix {
     pub(crate) crystals: usize,
     pub(crate) frozen_skulls: usize,
     pub(crate) cocoons: usize,
-    pub(crate) egg_sacs: usize,
 }
 
 const FIRST_FLOOR: Theme = Theme::Spider;
@@ -136,7 +135,6 @@ impl Theme {
             crystals: if self == Self::Ice { 3 } else { 0 },
             frozen_skulls: if self == Self::Ice { 2 } else { 0 },
             cocoons: if self == Self::Spider { 3 } else { 0 },
-            egg_sacs: if self == Self::Spider { 2 } else { 0 },
         }
     }
 }

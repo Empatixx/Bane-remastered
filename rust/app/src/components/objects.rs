@@ -7,7 +7,6 @@ pub(crate) enum BreakKind {
     Explosive,
     Poison,
     Frost,
-    EggSac,
 }
 
 #[derive(Debug, Clone, Copy)]

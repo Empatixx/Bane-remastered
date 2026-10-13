@@ -354,26 +354,6 @@ mod tests {
     }
 
     #[test]
-    fn a_spider_egg_sac_breaks_like_a_pot_and_drops_an_item() {
-        let (mut world, mut physics, textures) = arena();
-        let sac = prefabs::breakable(
-            &mut world,
-            &mut physics,
-            BreakKind::EggSac,
-            Vec2::new(500.0, 500.0),
-            &textures,
-        );
-        assert!(world.get::<&Solid>(sac).is_ok());
-
-        kill(&mut world, sac);
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
-
-        assert!(world.get::<&Broken>(sac).is_ok());
-        assert!(world.get::<&Solid>(sac).is_err());
-        assert_eq!(world.query::<&Pickup>().iter().count(), 1);
-    }
-
-    #[test]
     fn a_player_bullet_chips_an_object_and_stops_at_it() {
         let (mut world, mut physics, textures) = arena();
         let barrel = prefabs::breakable(

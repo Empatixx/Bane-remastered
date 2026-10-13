@@ -240,7 +240,6 @@ pub(crate) fn decor(
             Look::row(variant, false),
             textures,
         ),
-        DecorKind::EggSac => breakable(world, physics, BreakKind::EggSac, centered, textures),
         DecorKind::IcePatch => {
             floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
         }
