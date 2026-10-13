@@ -174,7 +174,7 @@ def tag(w, h, state):
 
 
 def note_tag():
-    w, h = 44, 12
+    w, h = 52, 14
     sheet = Image.new("RGBA", (w, h * 3), (0, 0, 0, 0))
     for i, state in enumerate(["normal", "hover", "chosen"]):
         sheet.paste(tag(w, h, state), (0, i * h))
@@ -282,7 +282,11 @@ GLYPHS = {
 }
 
 
-def glyph(rows):
+CREAM = (232, 214, 170)
+DEEP = (46, 30, 24)
+
+
+def glyph(rows, ink, outline):
     size = 11
     image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     filled = set()
@@ -293,16 +297,18 @@ def glyph(rows):
     for x, y in filled:
         for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
             if (x + dx, y + dy) not in filled:
-                image.putpixel((x + dx, y + dy), FOOT + (255,))
+                image.putpixel((x + dx, y + dy), outline + (255,))
     for x, y in filled:
-        image.putpixel((x, y), (255, 255, 255, 255))
+        image.putpixel((x, y), ink + (255,))
     return image
 
 
 def upgrade_icons():
-    sheet = Image.new("RGBA", (11, 11 * 3), (0, 0, 0, 0))
-    for i, name in enumerate(["damage", "rate", "magazine"]):
-        sheet.paste(glyph(GLYPHS[name]), (0, i * 11))
+    names = ["damage", "rate", "magazine"]
+    sheet = Image.new("RGBA", (11, 11 * 6), (0, 0, 0, 0))
+    for i, name in enumerate(names):
+        sheet.paste(glyph(GLYPHS[name], CREAM, DEEP), (0, i * 11))
+        sheet.paste(glyph(GLYPHS[name], DEEP, CREAM), (0, (i + 3) * 11))
     return sheet
 
 
@@ -310,18 +316,18 @@ def node(state):
     image = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
     line, fill, light = {
-        "owned": (FOOT, (71, 71, 120), (113, 113, 199)),
-        "available": (FOOT, (240, 240, 252), BLUE_LIGHT),
-        "locked": (BLUE_MID, (150, 150, 205), BLUE_LINE),
-        "chosen": (FOOT, (240, 240, 252), BLUE_LIGHT),
+        "owned": (LINE, CREAM, (244, 232, 210)),
+        "available": (CREAM, BROWN_DARK, BROWN),
+        "locked": (BROWN, DEEP, BROWN_DEEP),
+        "chosen": (CREAM, BROWN_DARK, BROWN),
     }[state]
-    draw.rectangle((1, 1, 14, 14), fill=line + (255,))
-    draw.rectangle((2, 2, 13, 13), fill=fill + (255,))
-    draw.line((3, 3, 12, 3), fill=light + (255,))
-    draw.line((3, 3, 3, 12), fill=light + (255,))
+    draw.rectangle((1, 1, 14, 14), fill=LINE + (255,))
+    draw.rectangle((2, 2, 13, 13), fill=line + (255,))
+    draw.rectangle((3, 3, 12, 12), fill=fill + (255,))
+    draw.line((4, 4, 11, 4), fill=light + (255,))
+    draw.line((4, 4, 4, 11), fill=light + (255,))
     if state == "chosen":
-        draw.rectangle((0, 0, 15, 15), outline=YELLOW + (255,))
-        draw.rectangle((1, 1, 14, 14), outline=FOOT + (255,))
+        draw.rectangle((0, 0, 15, 15), outline=CREAM + (255,))
     return image
 
 
@@ -348,18 +354,16 @@ def preview(images):
 def main():
     os.makedirs(OUT, exist_ok=True)
     board, desk, notes, tags, plaques = notice_board(212, 179), table(212, 179), note_paper(), note_tag(), note_plaque()
-    sheet = blueprint(88, 94)
     board.save(f"{OUT}/board_notice.tga")
     desk.save(f"{OUT}/board_wood.tga")
     notes.save(f"{OUT}/note_paper.tga")
     tags.save(f"{OUT}/note_tag.tga")
-    sheet.save(f"{OUT}/note_sheet.tga")
     plaques.save(f"{OUT}/note_plaque.tga")
     talent_icon().save(f"{OUT}/talent_icon.tga")
     upgrade_node().save(f"{OUT}/upgrade_node.tga")
     upgrade_icons().save(f"{OUT}/upgrade_icons.tga")
     preview([board, desk]).save(f"{SCRATCH}/board_a.png")
-    preview([notes, tags, sheet, plaques, talent_icon(), upgrade_node(), upgrade_icons()]).save(f"{SCRATCH}/board_b.png")
+    preview([notes, tags, plaques, talent_icon(), upgrade_node(), upgrade_icons()]).save(f"{SCRATCH}/board_b.png")
 
 
 main()

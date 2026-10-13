@@ -1,42 +1,50 @@
 use glam::{Vec2, Vec4};
 use hecs::World;
+use winit::keyboard::KeyCode;
 
 use crate::assets::{Assets, tex};
 use crate::guns::GunKind;
 use crate::input::Input;
 use crate::render::{Align, FontSize};
 
-use super::panel::{self, BLUE_INK, BLUE_SOFT, ButtonStyle, CREAM, INK, INK_SOFT, YELLOW};
+use super::panel::{self, ButtonStyle, CREAM, INK, INK_SOFT, SAND};
 use super::upgrade_menu::{Element, clear, rect, spawn};
 
 const SCALE: f32 = panel::SCALE;
 const LIST_LEFT: f32 = 204.0;
-const SEARCH_TOP: f32 = 52.0;
-const SEARCH_SIZE: Vec2 = Vec2::new(44.0 * SCALE, 36.0);
-const ROW_SIZE: Vec2 = Vec2::new(44.0 * SCALE, 12.0 * SCALE);
-const ROW_TOP: f32 = 100.0;
-const ROW_STEP: f32 = 54.0;
-const SHEET_TOP_LEFT: Vec2 = Vec2::new(404.0, 66.0);
-const SHEET_SIZE: Vec2 = Vec2::new(92.0 * SCALE, 98.0 * SCALE);
-const SHEET_INSET: f32 = SCALE;
-const CONTENT_LEFT: f32 = 44.0;
+const ROW_SIZE: Vec2 = Vec2::new(52.0 * SCALE, 14.0 * SCALE);
+const ROW_TOP: f32 = 74.0;
+const ROW_STEP: f32 = 64.0;
+const VISIBLE_ROWS: usize = 6;
+const GUN_BOX: Vec2 = Vec2::new(80.0, 40.0);
+const BAR_LEFT: f32 = 424.0;
+const BAR_WIDTH: f32 = 6.0;
+const PANEL_TOP_LEFT: Vec2 = Vec2::new(444.0, 66.0);
+const PANEL_SIZE: Vec2 = Vec2::new(330.0, 392.0);
+const CONTENT_LEFT: f32 = 20.0;
 const NODE: f32 = 48.0;
 const GLYPH: f32 = 33.0;
-const TREE_TOP: f32 = 152.0;
-const TIER_STEP: f32 = 66.0;
-const BRANCH_CENTERS: [f32; 3] = [92.0, 192.0, 292.0];
-const LABEL_BASELINE: f32 = 142.0;
-const DETAIL_BASELINE: f32 = 354.0;
+const TREE_TOP: f32 = 124.0;
+const TIER_STEP: f32 = 64.0;
+const BRANCH_CENTERS: [f32; 3] = [62.0, 168.0, 274.0];
+const LABEL_BASELINE: f32 = 114.0;
+const RULE_TOP: f32 = 316.0;
+const DETAIL_BASELINE: f32 = 346.0;
 const BUY_SIZE: Vec2 = Vec2::new(88.0, 28.0);
-const BUY_OFFSET: Vec2 = Vec2::new(256.0, 338.0);
+const BUY_OFFSET: Vec2 = Vec2::new(232.0, 336.0);
 const LINK_WIDTH: f32 = 4.0;
-const LINK_LAYER: i32 = 32;
-const ICON_LAYER: i32 = 33;
+const PANEL_LAYER: i32 = 31;
+const FILL_LAYER: i32 = 32;
+const NODE_LAYER: i32 = 33;
+const LINK_LAYER: i32 = 33;
+const ICON_LAYER: i32 = 34;
 const TIERS: usize = 3;
 const SAMPLE_GOLD: u32 = 1240;
-const SEARCH_FILL: Vec4 = Vec4::new(58.0 / 255.0, 40.0 / 255.0, 23.0 / 255.0, 1.0);
-const LINK_ON: Vec4 = Vec4::new(71.0 / 255.0, 71.0 / 255.0, 120.0 / 255.0, 1.0);
-const LINK_OFF: Vec4 = Vec4::new(113.0 / 255.0, 113.0 / 255.0, 199.0 / 255.0, 1.0);
+const PANEL_EDGE: Vec4 = Vec4::new(37.0 / 255.0, 19.0 / 255.0, 26.0 / 255.0, 1.0);
+const PANEL_FILL: Vec4 = Vec4::new(58.0 / 255.0, 40.0 / 255.0, 23.0 / 255.0, 1.0);
+const LINK_ON: Vec4 = Vec4::new(232.0 / 255.0, 214.0 / 255.0, 170.0 / 255.0, 1.0);
+const LINK_OFF: Vec4 = Vec4::new(97.0 / 255.0, 67.0 / 255.0, 38.0 / 255.0, 1.0);
+const TRACK: Vec4 = Vec4::new(122.0 / 255.0, 83.0 / 255.0, 51.0 / 255.0, 1.0);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Branch {
@@ -115,20 +123,16 @@ fn node_state(kind: GunKind, branch: Branch, tier: usize) -> NodeState {
     }
 }
 
-fn row_top_left(index: usize) -> Vec2 {
-    Vec2::new(LIST_LEFT, ROW_TOP + ROW_STEP * index as f32)
+fn max_first() -> usize {
+    GunKind::ALL.len().saturating_sub(VISIBLE_ROWS)
 }
 
-fn search_top_left() -> Vec2 {
-    Vec2::new(LIST_LEFT, SEARCH_TOP)
-}
-
-fn origin() -> Vec2 {
-    SHEET_TOP_LEFT + Vec2::splat(SHEET_INSET)
+fn row_top_left(slot: usize) -> Vec2 {
+    Vec2::new(LIST_LEFT, ROW_TOP + ROW_STEP * slot as f32)
 }
 
 fn node_top_left(branch: usize, tier: usize) -> Vec2 {
-    origin()
+    PANEL_TOP_LEFT
         + Vec2::new(
             BRANCH_CENTERS[branch] - NODE / 2.0,
             TREE_TOP + TIER_STEP * tier as f32,
@@ -136,25 +140,22 @@ fn node_top_left(branch: usize, tier: usize) -> Vec2 {
 }
 
 fn buy_top_left() -> Vec2 {
-    origin() + BUY_OFFSET
+    PANEL_TOP_LEFT + BUY_OFFSET
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Target {
-    Search,
     Weapon(usize),
     Node(usize, usize),
     Buy,
 }
 
-pub(crate) fn target_at(point: Vec2) -> Option<Target> {
-    if panel::contains(search_top_left(), SEARCH_SIZE, point) {
-        return Some(Target::Search);
-    }
-    if let Some(index) =
-        (0..GunKind::ALL.len()).find(|index| panel::contains(row_top_left(*index), ROW_SIZE, point))
+pub(crate) fn target_at(first: usize, point: Vec2) -> Option<Target> {
+    let shown = GunKind::ALL.len().min(VISIBLE_ROWS);
+    if let Some(slot) =
+        (0..shown).find(|slot| panel::contains(row_top_left(*slot), ROW_SIZE, point))
     {
-        return Some(Target::Weapon(index));
+        return Some(Target::Weapon(first + slot));
     }
     for branch in 0..Branch::ALL.len() {
         for tier in 0..TIERS {
@@ -170,18 +171,61 @@ fn per_second(interval: f32) -> String {
     format!("{:.1}/s", 1.0 / interval)
 }
 
-fn glyph(branch: usize, top_left: Vec2) -> Element {
+fn gun_picture(kind: GunKind, row: Vec2) -> Element {
+    let spec = kind.spec();
+    let scale = (GUN_BOX.x / spec.icon.x).min(GUN_BOX.y / spec.icon.y);
+    let size = (spec.icon * scale).floor();
     Element::Image {
-        texture: tex::UPGRADE_ICONS,
-        top_left: top_left + Vec2::splat((NODE - GLYPH) / 2.0),
-        size: Vec2::splat(GLYPH),
-        cell: Some((branch, Branch::ALL.len())),
+        texture: spec.texture,
+        top_left: row
+            + Vec2::new(8.0, (ROW_SIZE.y - size.y) / 2.0)
+            + Vec2::new((GUN_BOX.x - size.x) / 2.0, 0.0),
+        size,
+        cell: None,
         layer: ICON_LAYER,
         alpha: 1.0,
     }
 }
 
+fn glyph(branch: usize, top_left: Vec2, owned: bool) -> Element {
+    let row = branch + if owned { Branch::ALL.len() } else { 0 };
+    Element::Image {
+        texture: tex::UPGRADE_ICONS,
+        top_left: top_left + Vec2::splat((NODE - GLYPH) / 2.0),
+        size: Vec2::splat(GLYPH),
+        cell: Some((row, Branch::ALL.len() * 2)),
+        layer: ICON_LAYER,
+        alpha: 1.0,
+    }
+}
+
+fn scrollbar(first: usize) -> Vec<Element> {
+    let total = GunKind::ALL.len();
+    if total <= VISIBLE_ROWS {
+        return Vec::new();
+    }
+    let track = ROW_STEP * VISIBLE_ROWS as f32 - (ROW_STEP - ROW_SIZE.y);
+    let thumb = (track * VISIBLE_ROWS as f32 / total as f32).floor();
+    let travel = track - thumb;
+    let at = travel * first as f32 / max_first() as f32;
+    vec![
+        rect(
+            Vec2::new(BAR_LEFT, ROW_TOP),
+            Vec2::new(BAR_WIDTH, track),
+            PANEL_EDGE,
+            PANEL_LAYER,
+        ),
+        rect(
+            Vec2::new(BAR_LEFT + 1.0, ROW_TOP + at.floor() + 1.0),
+            Vec2::new(BAR_WIDTH - 2.0, thumb - 2.0),
+            TRACK,
+            FILL_LAYER,
+        ),
+    ]
+}
+
 pub(crate) fn layout(
+    first: usize,
     selected: usize,
     node: Option<(usize, usize)>,
     hover: Option<Target>,
@@ -199,47 +243,35 @@ pub(crate) fn layout(
         FontSize::Size22,
         Align::Right,
     ));
-    let search = search_top_left();
-    let searching = hover == Some(Target::Search);
-    elements.push(rect(
-        search,
-        SEARCH_SIZE,
-        if searching { YELLOW } else { SEARCH_FILL },
-        31,
-    ));
-    elements.push(rect(
-        search + Vec2::splat(2.0),
-        SEARCH_SIZE - Vec2::splat(4.0),
-        SEARCH_FILL,
-        32,
-    ));
-    elements.push(panel::label(
-        "Search weapons",
-        search + Vec2::new(12.0, 24.0),
-        if searching { YELLOW } else { CREAM },
-        FontSize::Size16,
-        Align::Left,
-    ));
-    for (index, other) in GunKind::ALL.iter().enumerate() {
-        let top_left = row_top_left(index);
+    for slot in 0..GunKind::ALL.len().min(VISIBLE_ROWS) {
+        let index = first + slot;
+        let other = GunKind::ALL[index];
+        let top_left = row_top_left(slot);
         let chosen = index == selected;
         let hovered = hover == Some(Target::Weapon(index));
         let row = if chosen { 2 } else { usize::from(hovered) };
         elements.push(panel::note(tex::NOTE_TAG, top_left, ROW_SIZE, row, 3));
+        elements.push(gun_picture(other, top_left));
         elements.push(panel::label(
-            name(*other),
-            top_left + Vec2::new(28.0, 32.0),
+            name(other),
+            top_left + Vec2::new(100.0, 36.0),
             if chosen { INK } else { INK_SOFT },
             FontSize::Size22,
             Align::Left,
         ));
     }
-    elements.push(panel::sheet(SHEET_TOP_LEFT, SHEET_SIZE));
-    let base = origin();
+    elements.extend(scrollbar(first));
+    elements.push(rect(PANEL_TOP_LEFT, PANEL_SIZE, PANEL_EDGE, PANEL_LAYER));
+    elements.push(rect(
+        PANEL_TOP_LEFT + Vec2::splat(3.0),
+        PANEL_SIZE - Vec2::splat(6.0),
+        PANEL_FILL,
+        FILL_LAYER,
+    ));
     elements.push(panel::label(
         name(kind),
-        base + Vec2::new(CONTENT_LEFT, 56.0),
-        BLUE_INK,
+        PANEL_TOP_LEFT + Vec2::new(CONTENT_LEFT, 44.0),
+        CREAM,
         FontSize::Size27,
         Align::Left,
     ));
@@ -252,11 +284,12 @@ pub(crate) fn layout(
     for (index, fact) in facts.into_iter().enumerate() {
         elements.push(panel::label(
             fact,
-            base + Vec2::new(
-                CONTENT_LEFT + (index % 2) as f32 * 150.0,
-                100.0 + (index / 2) as f32 * 18.0,
-            ),
-            BLUE_SOFT,
+            PANEL_TOP_LEFT
+                + Vec2::new(
+                    CONTENT_LEFT + (index % 2) as f32 * 150.0,
+                    70.0 + (index / 2) as f32 * 18.0,
+                ),
+            SAND,
             FontSize::Size16,
             Align::Left,
         ));
@@ -264,17 +297,16 @@ pub(crate) fn layout(
     for (branch, kind_of) in Branch::ALL.iter().enumerate() {
         elements.push(panel::label(
             kind_of.name(),
-            base + Vec2::new(BRANCH_CENTERS[branch], LABEL_BASELINE),
-            BLUE_INK,
+            PANEL_TOP_LEFT + Vec2::new(BRANCH_CENTERS[branch], LABEL_BASELINE),
+            SAND,
             FontSize::Size16,
             Align::Center,
         ));
         for tier in 0..TIERS {
             let top_left = node_top_left(branch, tier);
             let state = node_state(kind, *kind_of, tier);
-            let chosen = node == Some((branch, tier));
-            let hovered = hover == Some(Target::Node(branch, tier));
-            let row = if chosen || hovered {
+            let chosen = node == Some((branch, tier)) || hover == Some(Target::Node(branch, tier));
+            let row = if chosen {
                 3
             } else {
                 match state {
@@ -283,25 +315,39 @@ pub(crate) fn layout(
                     NodeState::Locked => 2,
                 }
             };
-            elements.push(panel::note(
-                tex::UPGRADE_NODE,
+            elements.push(Element::Image {
+                texture: tex::UPGRADE_NODE,
                 top_left,
-                Vec2::splat(NODE),
-                row,
-                4,
+                size: Vec2::splat(NODE),
+                cell: Some((row, 4)),
+                layer: NODE_LAYER,
+                alpha: 1.0,
+            });
+            elements.push(glyph(
+                branch,
+                top_left,
+                state == NodeState::Owned && !chosen,
             ));
-            elements.push(glyph(branch, top_left));
             if tier + 1 < TIERS {
-                let lit = state == NodeState::Owned;
                 elements.push(rect(
                     top_left + Vec2::new((NODE - LINK_WIDTH) / 2.0, NODE),
                     Vec2::new(LINK_WIDTH, TIER_STEP - NODE),
-                    if lit { LINK_ON } else { LINK_OFF },
+                    if state == NodeState::Owned {
+                        LINK_ON
+                    } else {
+                        LINK_OFF
+                    },
                     LINK_LAYER,
                 ));
             }
         }
     }
+    elements.push(rect(
+        PANEL_TOP_LEFT + Vec2::new(CONTENT_LEFT, RULE_TOP),
+        Vec2::new(PANEL_SIZE.x - CONTENT_LEFT * 2.0, 2.0),
+        LINK_OFF,
+        NODE_LAYER,
+    ));
     let (title, effect, text, style) = match node {
         Some((branch, tier)) => {
             let kind_of = Branch::ALL[branch];
@@ -332,15 +378,15 @@ pub(crate) fn layout(
     };
     elements.push(panel::label(
         title,
-        base + Vec2::new(CONTENT_LEFT, DETAIL_BASELINE),
-        BLUE_INK,
+        PANEL_TOP_LEFT + Vec2::new(CONTENT_LEFT, DETAIL_BASELINE),
+        CREAM,
         FontSize::Size22,
         Align::Left,
     ));
     elements.push(panel::label(
         effect,
-        base + Vec2::new(CONTENT_LEFT, DETAIL_BASELINE + 18.0),
-        BLUE_SOFT,
+        PANEL_TOP_LEFT + Vec2::new(CONTENT_LEFT, DETAIL_BASELINE + 20.0),
+        SAND,
         FontSize::Size16,
         Align::Left,
     ));
@@ -357,6 +403,7 @@ pub(crate) fn layout(
 #[derive(Debug, Default)]
 pub(crate) struct WeaponTable {
     open: bool,
+    first: usize,
     selected: usize,
     node: Option<(usize, usize)>,
     hover: Option<Target>,
@@ -373,6 +420,7 @@ impl WeaponTable {
             self.close(world);
         } else {
             self.open = true;
+            self.first = 0;
             self.selected = 0;
             self.node = None;
             self.hover = None;
@@ -386,11 +434,26 @@ impl WeaponTable {
         clear(world);
     }
 
+    fn scroll(&mut self, rows: i32) {
+        let moved = (self.first as i32 + rows).clamp(0, max_first() as i32) as usize;
+        if moved != self.first {
+            self.first = moved;
+            self.dirty = true;
+        }
+    }
+
     pub(crate) fn update(&mut self, world: &mut World, input: &Input, assets: &Assets) {
         if !self.open {
             return;
         }
-        let hover = target_at(input.mouse());
+        self.scroll(-input.scrolled());
+        if input.just_pressed(KeyCode::ArrowDown) {
+            self.scroll(1);
+        }
+        if input.just_pressed(KeyCode::ArrowUp) {
+            self.scroll(-1);
+        }
+        let hover = target_at(self.first, input.mouse());
         if hover != self.hover {
             self.hover = hover;
             self.dirty = true;
@@ -417,7 +480,7 @@ impl WeaponTable {
 
     fn rebuild(&self, world: &mut World, assets: &Assets) {
         clear(world);
-        for element in layout(self.selected, self.node, self.hover) {
+        for element in layout(self.first, self.selected, self.node, self.hover) {
             spawn(world, element, assets);
         }
     }
@@ -447,19 +510,58 @@ mod tests {
     }
 
     #[test]
-    fn the_list_always_names_every_weapon_next_to_the_search() {
-        let shown = labels(&layout(0, None, None));
+    fn each_visible_row_shows_the_picture_of_its_weapon() {
+        let elements = layout(0, 0, None, None);
 
-        for kind in GunKind::ALL {
-            assert!(shown.contains(&name(kind).to_string()), "{kind:?}");
+        for kind in &GunKind::ALL[..VISIBLE_ROWS] {
+            assert_eq!(images(&elements, kind.spec().texture), 1, "{kind:?}");
+            assert!(labels(&elements).contains(&name(*kind).to_string()));
         }
-        assert!(shown.contains(&"Search weapons".to_string()));
+        assert_eq!(
+            images(&elements, GunKind::ALL[VISIBLE_ROWS].spec().texture),
+            0
+        );
+    }
+
+    #[test]
+    fn scrolling_brings_the_hidden_weapons_into_view() {
+        let last = GunKind::ALL[GunKind::ALL.len() - 1];
+        let elements = layout(max_first(), 0, None, None);
+
+        assert_eq!(images(&elements, last.spec().texture), 1);
+        assert!(labels(&elements).contains(&name(last).to_string()));
+    }
+
+    #[test]
+    fn the_scroll_position_is_clamped_to_the_list() {
+        let mut table = WeaponTable::default();
+
+        table.scroll(-3);
+        assert_eq!(table.first, 0);
+        table.scroll(99);
+        assert_eq!(table.first, max_first());
+        table.scroll(-1);
+        assert_eq!(table.first, max_first().saturating_sub(1));
+    }
+
+    #[test]
+    fn a_gun_picture_never_leaves_its_box() {
+        for kind in GunKind::ALL {
+            let Element::Image { size, .. } = gun_picture(kind, Vec2::ZERO) else {
+                panic!("not an image");
+            };
+
+            assert!(
+                size.x <= GUN_BOX.x && size.y <= GUN_BOX.y,
+                "{kind:?}: {size:?}"
+            );
+        }
     }
 
     #[test]
     fn the_tree_has_three_branches_of_three_tiers_for_every_weapon() {
         for selected in 0..GunKind::ALL.len() {
-            let elements = layout(selected, None, None);
+            let elements = layout(0, selected, None, None);
 
             assert_eq!(images(&elements, tex::UPGRADE_NODE), 9);
             assert_eq!(images(&elements, tex::UPGRADE_ICONS), 9);
@@ -469,20 +571,18 @@ mod tests {
     #[test]
     fn the_header_shows_the_real_stats_of_the_selected_weapon() {
         let spec = GunKind::Shotgun.spec();
-        let shown = labels(&layout(1, None, None));
+        let shown = labels(&layout(0, 1, None, None));
 
         assert!(shown.contains(&format!("Damage {}-{}", spec.min_damage, spec.max_damage)));
         assert!(shown.contains(&format!("Clip {}", spec.clip_size)));
     }
 
     #[test]
-    fn a_chosen_node_fills_the_detail_line_and_the_buy_plaque() {
-        let kind = GunKind::ALL[0];
-        let tier = sample_level(kind, Branch::Damage);
-        let shown = labels(&layout(0, Some((0, tier.min(TIERS - 1))), None));
+    fn a_chosen_node_fills_the_detail_line() {
+        let shown = labels(&layout(0, 0, Some((0, 0)), None));
 
-        assert!(shown.contains(&format!("Damage {}", roman(tier.min(TIERS - 1)))));
-        assert!(labels(&layout(0, None, None)).contains(&"Pick an upgrade".to_string()));
+        assert!(shown.contains(&"Damage I".to_string()));
+        assert!(labels(&layout(0, 0, None, None)).contains(&"Pick an upgrade".to_string()));
     }
 
     #[test]
@@ -503,39 +603,39 @@ mod tests {
     }
 
     #[test]
-    fn the_pointer_finds_search_weapons_nodes_and_buy() {
+    fn the_pointer_follows_the_scrolled_list() {
         assert_eq!(
-            target_at(search_top_left() + Vec2::splat(4.0)),
-            Some(Target::Search)
-        );
-        assert_eq!(
-            target_at(row_top_left(3) + Vec2::splat(4.0)),
+            target_at(0, row_top_left(3) + Vec2::splat(4.0)),
             Some(Target::Weapon(3))
         );
         assert_eq!(
-            target_at(node_top_left(1, 2) + Vec2::splat(4.0)),
+            target_at(1, row_top_left(3) + Vec2::splat(4.0)),
+            Some(Target::Weapon(4))
+        );
+        assert_eq!(
+            target_at(0, node_top_left(1, 2) + Vec2::splat(4.0)),
             Some(Target::Node(1, 2))
         );
         assert_eq!(
-            target_at(buy_top_left() + Vec2::splat(4.0)),
+            target_at(0, buy_top_left() + Vec2::splat(4.0)),
             Some(Target::Buy)
         );
-        assert_eq!(target_at(Vec2::ZERO), None);
+        assert_eq!(target_at(0, Vec2::ZERO), None);
     }
 
     #[test]
     fn everything_fits_inside_the_board() {
         let board = panel::BOARD_TOP_LEFT + panel::BOARD_SIZE;
-        let list = row_top_left(GunKind::ALL.len() - 1) + ROW_SIZE;
-        let sheet = SHEET_TOP_LEFT + SHEET_SIZE;
+        let list = row_top_left(VISIBLE_ROWS - 1) + ROW_SIZE;
+        let panel_end = PANEL_TOP_LEFT + PANEL_SIZE;
         let tree = node_top_left(BRANCH_CENTERS.len() - 1, TIERS - 1) + Vec2::splat(NODE);
 
         assert!(list.y < board.y - 20.0);
-        assert!(sheet.y < board.y - 20.0);
-        assert!(sheet.x < board.x);
-        assert!(tree.y < buy_top_left().y);
-        assert!(buy_top_left().y + BUY_SIZE.y < sheet.y);
-        assert!(row_top_left(0).y > search_top_left().y + SEARCH_SIZE.y);
+        assert!(panel_end.y < board.y - 20.0);
+        assert!(panel_end.x < board.x);
+        assert!(list.x < BAR_LEFT && BAR_LEFT + BAR_WIDTH < PANEL_TOP_LEFT.x);
+        assert!(tree.y < PANEL_TOP_LEFT.y + RULE_TOP);
+        assert!(buy_top_left().y + BUY_SIZE.y < panel_end.y);
     }
 
     #[test]

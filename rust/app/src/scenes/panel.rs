@@ -20,8 +20,7 @@ pub(super) const SCALE: f32 = 4.0;
 pub(super) const INK: Vec4 = Vec4::new(58.0 / 255.0, 40.0 / 255.0, 23.0 / 255.0, 1.0);
 pub(super) const INK_SOFT: Vec4 = Vec4::new(102.0 / 255.0, 85.0 / 255.0, 63.0 / 255.0, 1.0);
 pub(super) const TAB_IDLE: Vec4 = Vec4::new(122.0 / 255.0, 83.0 / 255.0, 51.0 / 255.0, 1.0);
-pub(super) const BLUE_INK: Vec4 = Vec4::new(49.0 / 255.0, 49.0 / 255.0, 66.0 / 255.0, 1.0);
-pub(super) const BLUE_SOFT: Vec4 = Vec4::new(71.0 / 255.0, 71.0 / 255.0, 120.0 / 255.0, 1.0);
+pub(super) const SAND: Vec4 = Vec4::new(189.0 / 255.0, 171.0 / 255.0, 147.0 / 255.0, 1.0);
 pub(super) const CREAM: Vec4 = Vec4::new(240.0 / 255.0, 224.0 / 255.0, 180.0 / 255.0, 1.0);
 pub(super) const YELLOW: Vec4 = Vec4::new(1.0, 0.91, 0.43, 1.0);
 pub(super) const GRAY: Vec4 = Vec4::new(130.0 / 255.0, 112.0 / 255.0, 104.0 / 255.0, 1.0);
@@ -55,17 +54,6 @@ pub(super) fn note(texture: Tex, top_left: Vec2, size: Vec2, row: usize, rows: u
         top_left,
         size,
         cell: Some((row, rows)),
-        layer: NOTE_LAYER,
-        alpha: 1.0,
-    }
-}
-
-pub(super) fn sheet(top_left: Vec2, size: Vec2) -> Element {
-    Element::Image {
-        texture: tex::NOTE_SHEET,
-        top_left,
-        size,
-        cell: None,
         layer: NOTE_LAYER,
         alpha: 1.0,
     }
