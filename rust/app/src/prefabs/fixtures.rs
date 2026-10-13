@@ -247,7 +247,6 @@ pub(crate) fn decor(
             Look::row(variant, false),
             textures,
         ),
-        DecorKind::WebSkull => prop(world, Prop::WebSkull, top_left, Look::DEFAULT, textures),
         DecorKind::IcePatch => {
             floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
         }
@@ -573,6 +572,7 @@ fn floor_patch(
 
 pub(crate) fn surface_tile(
     world: &mut World,
+    grid: &TileGrid,
     surfaces: &Surfaces,
     tile: (usize, usize),
     surface: Surface,
@@ -583,16 +583,37 @@ pub(crate) fn surface_tile(
         Surface::Lava => Prop::LavaSurface,
         Surface::Water => Prop::WaterSurface,
     };
-    let row = surfaces.neighbours_mask(tile) * 3 + Surfaces::variant(tile);
+    let row = surfaces.liquid_row(grid, tile);
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
     let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);
     let _ = world.insert_one(entity, Layer(-2));
+    if tile.1 > 0 && grid.is_wall(tile.0 as isize, tile.1 as isize - 1) {
+        prop(world, Prop::SurfaceShade, top_left, Look::DEFAULT, textures);
+    }
     if surface == Surface::Lava && (tile.0 + tile.1 * 3).is_multiple_of(4) {
         let _ = world.insert_one(
             entity,
             Light::rgb(Vec2::ZERO, 255.0, 110.0, 20.0, 80.0, 0.9),
         );
     }
+    entity
+}
+
+pub(crate) fn shore_tile(
+    world: &mut World,
+    surface: Surface,
+    tile: (usize, usize),
+    row: usize,
+    textures: &Textures,
+) -> Entity {
+    let prop_kind = match surface {
+        Surface::Ice => Prop::IceShore,
+        Surface::Lava => Prop::LavaShore,
+        Surface::Water => Prop::WaterShore,
+    };
+    let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
+    let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);
+    let _ = world.insert_one(entity, Layer(-2));
     entity
 }
 

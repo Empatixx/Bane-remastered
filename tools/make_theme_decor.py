@@ -121,46 +121,57 @@ def frozen_skull():
     return image
 
 
+OUTLINE = (52, 48, 36, 255)
+SHADOW = (14, 10, 18, 110)
+
+
+def shadow_ellipse(image, box):
+    layer = Image.new("RGBA", image.size, CLEAR)
+    ImageDraw.Draw(layer).ellipse(box, fill=SHADOW)
+    image.alpha_composite(layer)
+
+
 def cocoon(variant):
     image = Image.new("RGBA", (16, 16), CLEAR)
+    horizontal = variant == 1
+    if horizontal:
+        shadow_ellipse(image, (1, 8, 15, 15))
+        body = (1, 3, 14, 12)
+    else:
+        shadow_ellipse(image, (3, 6, 14, 15))
+        body = (4, 1, 12, 13)
     draw = ImageDraw.Draw(image)
-    width = 4 + variant
-    draw.line([(8, 0), (8, 3)], fill=SILK_SHADE)
-    draw.ellipse((8 - width, 3, 8 + width, 15), fill=WRAP)
-    draw.ellipse((8 - width, 3, 8 + width, 15), outline=WRAP_DARK)
-    for y in range(5, 15, 3):
-        draw.line([(8 - width + 1, y), (8 + width - 1, y + 1)], fill=WRAP_DARK)
-    draw.line([(6, 5), (6, 13)], fill=SILK)
-    for y in range(4, 15, 2):
-        image.putpixel((8 - width + 2, y), SILK)
+    draw.ellipse(body, fill=WRAP, outline=OUTLINE)
+    x0, y0, x1, y1 = body
+    if horizontal:
+        for x in range(x0 + 3, x1 - 1, 3):
+            draw.line([(x, y0 + 1), (x + 1, y1 - 1)], fill=WRAP_DARK)
+        draw.line([(x0 + 2, y0 + 2), (x1 - 3, y0 + 2)], fill=SILK)
+        for start, end in (((0, 7), (x0, 7)), ((15, 7), (x1, 7)), ((1, 3), (x0 + 1, y0 + 1))):
+            draw.line([start, end], fill=SILK_SHADE)
+    else:
+        for y in range(y0 + 3, y1 - 1, 3):
+            draw.line([(x0 + 1, y), (x1 - 1, y + 1)], fill=WRAP_DARK)
+        draw.line([(x0 + 2, y0 + 2), (x0 + 2, y1 - 3)], fill=SILK)
+        for start, end in (((8, 0), (8, y0)), ((7, 15), (8, y1)), ((2, 12), (x0 + 1, y1 - 2))):
+            draw.line([start, end], fill=SILK_SHADE)
     return image
 
 
 def egg_sac(variant):
     image = Image.new("RGBA", (16, 16), CLEAR)
     draw = ImageDraw.Draw(image)
-    draw.ellipse((1, 8, 14, 15), fill=SILK_SHADE)
-    spots = [(5, 9), (10, 9), (8, 6)] if variant == 0 else [(4, 10), (8, 8), (12, 10), (7, 5)]
+    draw.ellipse((0, 4, 15, 15), fill=(214, 214, 170, 70))
+    for angle in range(0, 360, 45):
+        end = (8 + 7.5 * math.cos(math.radians(angle)), 10 + 5.5 * math.sin(math.radians(angle)))
+        draw.line([(8, 10), end], fill=SILK_SHADE)
+    spots = [(5, 9), (10, 8), (8, 12), (7, 5)] if variant == 0 else [(4, 10), (8, 8), (12, 10), (6, 13), (10, 13), (8, 4)]
     for x, y in spots:
-        draw.ellipse((x - 2, y - 2, x + 2, y + 2), fill=EGG, outline=EGG_SHADE)
-        image.putpixel((x - 1, y - 1), (255, 252, 230, 255))
+        shadow_ellipse(image, (x - 2, y - 1, x + 3, y + 3))
+    for x, y in spots:
+        draw.ellipse((x - 2, y - 2, x + 2, y + 2), fill=EGG, outline=OUTLINE)
+        image.putpixel((x - 1, y - 1), (255, 253, 235, 255))
         image.putpixel((x + 1, y + 1), EGG_SPOT)
-    for y in range(8, 15, 2):
-        image.putpixel((0, y), SILK)
-        image.putpixel((15, y), SILK)
-    return image
-
-
-def web_skull():
-    image = Image.new("RGBA", (16, 16), CLEAR)
-    skull = skull_pixels()
-    image.alpha_composite(skull, (1, 3))
-    draw = ImageDraw.Draw(image)
-    for start in ((0, 1), (7, 0), (15, 2)):
-        draw.line([start, (8, 8)], fill=SILK)
-    for radius in (3, 5):
-        draw.arc((8 - radius, 8 - radius, 8 + radius, 8 + radius), 200, 340, fill=SILK_SHADE)
-    draw.line([(0, 14), (15, 12)], fill=SILK_SHADE)
     return image
 
 
@@ -175,9 +186,8 @@ def main():
     stack([icicles(1), icicles(2), icicles(3)]).save(OUT / "icicles.tga")
     stack([crystals(4), crystals(5)]).save(OUT / "ice_crystals.tga")
     frozen_skull().save(OUT / "frozen_skull.tga")
-    stack([cocoon(0), cocoon(2)]).save(OUT / "cocoon.tga")
+    stack([cocoon(0), cocoon(1)]).save(OUT / "cocoon.tga")
     stack([egg_sac(0), egg_sac(1)]).save(OUT / "egg_sac.tga")
-    web_skull().save(OUT / "web_skull.tga")
 
 
 main()

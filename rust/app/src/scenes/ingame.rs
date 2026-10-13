@@ -512,7 +512,31 @@ impl InGameScene {
         self.navigation = Navigation::new(&solid_cells);
         self.surfaces = dungeon.surfaces.clone();
         for (tile, surface) in dungeon.surfaces.iter() {
-            prefabs::surface_tile(&mut self.world, &dungeon.surfaces, tile, surface, textures);
+            prefabs::surface_tile(
+                &mut self.world,
+                &dungeon.grid,
+                &dungeon.surfaces,
+                tile,
+                surface,
+                textures,
+            );
+        }
+        let mut shores = std::collections::BTreeSet::new();
+        for (tile, _) in dungeon.surfaces.iter() {
+            for dy in -1isize..=1 {
+                for dx in -1isize..=1 {
+                    let column = tile.0 as isize + dx;
+                    let row = tile.1 as isize + dy;
+                    if column >= 0 && row >= 0 {
+                        shores.insert((column as usize, row as usize));
+                    }
+                }
+            }
+        }
+        for tile in shores {
+            if let Some((surface, row)) = dungeon.surfaces.shore_at(&dungeon.grid, tile) {
+                prefabs::shore_tile(&mut self.world, surface, tile, row, textures);
+            }
         }
         self.flow = FlowField::default();
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);

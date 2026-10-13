@@ -36,6 +36,10 @@ pub(crate) enum Prop {
     IcePatch,
     WebPatch,
     ArrowTrap,
+    SurfaceShade,
+    IceShore,
+    LavaShore,
+    WaterShore,
     IceSurface,
     LavaSurface,
     WaterSurface,
@@ -44,7 +48,6 @@ pub(crate) enum Prop {
     FrozenSkull,
     Cocoon,
     EggSac,
-    WebSkull,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -121,7 +124,19 @@ const fn variants(texture: Tex, frame: Vec2, scale: f32) -> PropSpec {
     }
 }
 
-const SURFACE_ROWS: usize = 48;
+pub(crate) const SURFACE_ROWS: usize = 141;
+const SHORE_ROWS: usize = 40;
+
+const fn shore(texture: Tex) -> PropSpec {
+    PropSpec {
+        texture,
+        columns: 1,
+        rows: SHORE_ROWS,
+        frame: Vec2::new(16.0, 16.0),
+        scale: 4.0,
+        animation: None,
+    }
+}
 
 const fn surface(texture: Tex, frames: usize) -> PropSpec {
     PropSpec {
@@ -283,6 +298,10 @@ impl Prop {
                     frame_time: 0.2,
                 }),
             },
+            Self::SurfaceShade => still(tex::SURFACE_SHADE, Vec2::new(16.0, 16.0), 4.0),
+            Self::IceShore => shore(tex::SHORE_ICE),
+            Self::LavaShore => shore(tex::SHORE_LAVA),
+            Self::WaterShore => shore(tex::SHORE_WATER),
             Self::IceSurface => surface(tex::SURFACE_ICE, 1),
             Self::LavaSurface => surface(tex::SURFACE_LAVA, 4),
             Self::WaterSurface => surface(tex::SURFACE_WATER, 4),
@@ -298,7 +317,6 @@ impl Prop {
             Self::FrozenSkull => still(tex::FROZEN_SKULL, Vec2::new(16.0, 16.0), 4.0),
             Self::Cocoon => variants(tex::COCOON, Vec2::new(16.0, 16.0), 4.0),
             Self::EggSac => variants(tex::EGG_SAC, Vec2::new(16.0, 16.0), 4.0),
-            Self::WebSkull => still(tex::WEB_SKULL, Vec2::new(16.0, 16.0), 4.0),
             Self::IcePatch => still(tex::ICE_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::WebPatch => still(tex::WEB_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::ArrowTrap => still(tex::ARROW_TRAP, Vec2::new(16.0, 16.0), 4.0),

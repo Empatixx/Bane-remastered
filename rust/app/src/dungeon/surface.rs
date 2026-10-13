@@ -11,6 +11,30 @@ use super::template::RoomKind;
 
 const DOOR_CLEARANCE: usize = 3;
 const NEIGHBOURS: [(isize, isize); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+const DIAGONALS: [(isize, isize); 4] = [(1, -1), (1, 1), (-1, 1), (-1, -1)];
+const SHORE_VARIANTS: usize = 2;
+#[cfg(test)]
+pub(crate) const BLOB_TILES: usize = 47;
+
+fn reduce(code: u8) -> u8 {
+    let mut out = code & 0x0F;
+    for index in 0..4 {
+        let diagonal = 1u8 << (4 + index);
+        let first = 1u8 << index;
+        let second = 1u8 << ((index + 1) % 4);
+        if code & diagonal != 0 && code & first != 0 && code & second != 0 {
+            out |= diagonal;
+        }
+    }
+    out
+}
+
+fn blob_rank(code: u8) -> usize {
+    let wanted = reduce(code);
+    (0..wanted)
+        .filter(|candidate| reduce(*candidate) == *candidate)
+        .count()
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum Surface {
@@ -70,17 +94,67 @@ impl Surfaces {
         self.tiles.len()
     }
 
-    pub(crate) fn neighbours_mask(&self, tile: (usize, usize)) -> usize {
+    fn shifted(tile: (usize, usize), dx: isize, dy: isize) -> Option<(usize, usize)> {
+        let column = tile.0 as isize + dx;
+        let row = tile.1 as isize + dy;
+        (column >= 0 && row >= 0).then_some((column as usize, row as usize))
+    }
+
+    pub(crate) fn liquid_row(&self, grid: &TileGrid, tile: (usize, usize)) -> usize {
         let surface = self.at(tile);
-        let mut mask = 0;
+        let same = |dx: isize, dy: isize| match Self::shifted(tile, dx, dy) {
+            Some(next) => {
+                grid.is_wall(next.0 as isize, next.1 as isize) || self.at(next) == surface
+            }
+            None => true,
+        };
+        let mut code = 0u8;
         for (bit, (dx, dy)) in NEIGHBOURS.iter().enumerate() {
-            let column = tile.0 as isize + dx;
-            let row = tile.1 as isize + dy;
-            if column >= 0 && row >= 0 && self.at((column as usize, row as usize)) == surface {
-                mask |= 1 << bit;
+            if same(*dx, *dy) {
+                code |= 1 << bit;
             }
         }
-        mask
+        for (index, (dx, dy)) in DIAGONALS.iter().enumerate() {
+            if same(*dx, *dy) {
+                code |= 1 << (4 + index);
+            }
+        }
+        blob_rank(code) * 3 + Self::variant(tile)
+    }
+
+    pub(crate) fn shore_at(
+        &self,
+        grid: &TileGrid,
+        tile: (usize, usize),
+    ) -> Option<(Surface, usize)> {
+        if self.at(tile).is_some() || grid.is_wall(tile.0 as isize, tile.1 as isize) {
+            return None;
+        }
+        let mut mask = 0usize;
+        let mut surface = None;
+        for (bit, (dx, dy)) in NEIGHBOURS.iter().enumerate() {
+            if let Some(found) = Self::shifted(tile, *dx, *dy).and_then(|next| self.at(next)) {
+                mask |= 1 << bit;
+                surface = Some(found);
+            }
+        }
+        if mask != 0 {
+            return surface.map(|surface| {
+                (
+                    surface,
+                    mask * SHORE_VARIANTS + Self::variant(tile) % SHORE_VARIANTS,
+                )
+            });
+        }
+        for (index, (dx, dy)) in DIAGONALS.iter().enumerate() {
+            if let Some(found) = Self::shifted(tile, *dx, *dy).and_then(|next| self.at(next)) {
+                return Some((
+                    found,
+                    (16 + index) * SHORE_VARIANTS + Self::variant(tile) % SHORE_VARIANTS,
+                ));
+            }
+        }
+        None
     }
 
     pub(crate) fn variant(tile: (usize, usize)) -> usize {
@@ -281,13 +355,44 @@ mod tests {
     }
 
     #[test]
-    fn the_neighbour_mask_marks_same_surface_neighbours() {
+    fn there_are_forty_seven_distinct_liquid_shapes() {
+        let valid = (0..=255u8).filter(|code| reduce(*code) == *code).count();
+        assert_eq!(valid, BLOB_TILES);
+        assert_eq!(blob_rank(255), BLOB_TILES - 1);
+        assert_eq!(blob_rank(0), 0);
+    }
+
+    #[test]
+    fn the_surface_sprites_have_a_row_for_every_shape_and_variant() {
+        assert_eq!(crate::props::SURFACE_ROWS, BLOB_TILES * 3);
+    }
+
+    #[test]
+    fn a_diagonal_only_counts_when_both_sides_beside_it_are_liquid() {
+        assert_eq!(reduce(0b0001_0001), 0b0000_0001);
+        assert_eq!(reduce(0b0001_0011), 0b0001_0011);
+    }
+
+    #[test]
+    fn liquid_next_to_a_wall_has_no_rim_there_but_liquid_next_to_floor_has() {
+        let grid = TileGrid::bordered(8, 8);
         let mut surfaces = Surfaces::default();
-        surfaces.insert((5, 5), Surface::Ice);
-        surfaces.insert((5, 4), Surface::Ice);
-        surfaces.insert((6, 5), Surface::Lava);
-        assert_eq!(surfaces.neighbours_mask((5, 5)), 1);
-        surfaces.insert((4, 5), Surface::Ice);
-        assert_eq!(surfaces.neighbours_mask((5, 5)), 1 | 8);
+        surfaces.insert((3, 3), Surface::Water);
+        let alone = surfaces.liquid_row(&grid, (3, 3));
+        let mut beside_wall = Surfaces::default();
+        beside_wall.insert((1, 1), Surface::Water);
+        assert_ne!(alone / 3, beside_wall.liquid_row(&grid, (1, 1)) / 3);
+        assert!(beside_wall.liquid_row(&grid, (1, 1)) / 3 > alone / 3);
+    }
+
+    #[test]
+    fn floor_beside_liquid_gets_a_shore_but_far_floor_and_liquid_do_not() {
+        let grid = TileGrid::bordered(10, 10);
+        let mut surfaces = Surfaces::default();
+        surfaces.insert((4, 4), Surface::Ice);
+        assert!(surfaces.shore_at(&grid, (5, 4)).is_some());
+        assert!(surfaces.shore_at(&grid, (5, 5)).is_some());
+        assert!(surfaces.shore_at(&grid, (7, 7)).is_none());
+        assert!(surfaces.shore_at(&grid, (4, 4)).is_none());
     }
 }

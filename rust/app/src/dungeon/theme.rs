@@ -35,7 +35,6 @@ pub(crate) struct TrapMix {
     pub(crate) frozen_skulls: usize,
     pub(crate) cocoons: usize,
     pub(crate) egg_sacs: usize,
-    pub(crate) web_skulls: usize,
 }
 
 const FIRST_FLOOR: Theme = Theme::Spider;
@@ -131,14 +130,13 @@ impl Theme {
             cobwebs: if self == Self::Spider { 5 } else { 2 },
             geysers: if self == Self::Lava { 3 } else { 0 },
             ice_patches: 0,
-            web_patches: 0,
+            web_patches: if self == Self::Spider { 3 } else { 0 },
             arrow_traps: if self == Self::Temple { 2 } else { 0 },
             icicles: if self == Self::Ice { 5 } else { 0 },
             crystals: if self == Self::Ice { 3 } else { 0 },
             frozen_skulls: if self == Self::Ice { 2 } else { 0 },
             cocoons: if self == Self::Spider { 3 } else { 0 },
             egg_sacs: if self == Self::Spider { 2 } else { 0 },
-            web_skulls: if self == Self::Spider { 2 } else { 0 },
         }
     }
 }
@@ -197,6 +195,7 @@ mod tests {
         assert!(Theme::Spider.mix().cobwebs > Theme::Stone.mix().cobwebs);
         assert!(Theme::Temple.mix().spikes > Theme::Stone.mix().spikes);
         assert!(Theme::Lava.mix().geysers > 0);
+        assert!(Theme::Spider.mix().web_patches > 0);
         assert!(Theme::Temple.mix().arrow_traps > 0);
     }
 

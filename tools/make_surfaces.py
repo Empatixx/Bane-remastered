@@ -7,46 +7,94 @@ from PIL import Image
 
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "assets/textures/ingame"
 T = 16
-MASKS = 16
 VARIANTS = 3
 UP, RIGHT, DOWN, LEFT = 1, 2, 4, 8
+DIAGONALS = [(16, UP, RIGHT, (T - 1, 0)), (32, RIGHT, DOWN, (T - 1, T - 1)), (64, DOWN, LEFT, (0, T - 1)), (128, LEFT, UP, (0, 0))]
 
 
-def inside_distance(x, y, mask):
+def reduce(code):
+    out = code & 15
+    for bit, a, b, _ in DIAGONALS:
+        if code & bit and code & a and code & b:
+            out |= bit
+    return out
+
+
+VALID = [code for code in range(256) if reduce(code) == code]
+
+
+def rim_distance(x, y, code):
     distances = []
-    if not mask & UP:
+    if not code & UP:
         distances.append(y)
-    if not mask & DOWN:
+    if not code & DOWN:
         distances.append(T - 1 - y)
-    if not mask & LEFT:
+    if not code & LEFT:
         distances.append(x)
-    if not mask & RIGHT:
+    if not code & RIGHT:
         distances.append(T - 1 - x)
+    for bit, a, b, (cx, cy) in DIAGONALS:
+        if code & a and code & b and not code & bit:
+            distances.append(max(abs(x - cx), abs(y - cy)))
     return min(distances) if distances else 99
 
 
-def corner_cut(x, y, mask):
-    cuts = ((not mask & UP) and (not mask & LEFT) and x + y < 2,
-            (not mask & UP) and (not mask & RIGHT) and (T - 1 - x) + y < 2,
-            (not mask & DOWN) and (not mask & LEFT) and x + (T - 1 - y) < 2,
-            (not mask & DOWN) and (not mask & RIGHT) and (T - 1 - x) + (T - 1 - y) < 2)
+def corner_cut(x, y, code):
+    cuts = ((not code & UP) and (not code & LEFT) and x + y < 2,
+            (not code & UP) and (not code & RIGHT) and (T - 1 - x) + y < 2,
+            (not code & DOWN) and (not code & LEFT) and x + (T - 1 - y) < 2,
+            (not code & DOWN) and (not code & RIGHT) and (T - 1 - x) + (T - 1 - y) < 2)
     return any(cuts)
 
 
 def make_sheet(frames, painter):
-    sheet = Image.new("RGBA", (T * frames, T * MASKS * VARIANTS), (0, 0, 0, 0))
-    for mask in range(MASKS):
+    sheet = Image.new("RGBA", (T * frames, T * len(VALID) * VARIANTS), (0, 0, 0, 0))
+    for rank, code in enumerate(VALID):
         for variant in range(VARIANTS):
             for frame in range(frames):
                 tile = Image.new("RGBA", (T, T), (0, 0, 0, 0))
                 for y in range(T):
                     for x in range(T):
-                        if corner_cut(x, y, mask):
+                        if corner_cut(x, y, code):
                             continue
-                        colour = painter(x, y, mask, frame, inside_distance(x, y, mask), variant)
+                        colour = painter(x, y, code, frame, rim_distance(x, y, code), variant)
                         if colour:
                             tile.putpixel((x, y), colour)
-                sheet.paste(tile, (frame * T, (mask * VARIANTS + variant) * T))
+                sheet.paste(tile, (frame * T, (rank * VARIANTS + variant) * T))
+    return sheet
+
+
+SHORE_CODES = 20
+SHORE_VARIANTS = 2
+
+
+def shore_distance(x, y, code):
+    if code >= 16:
+        _, _, _, (cx, cy) = DIAGONALS[code - 16]
+        return max(abs(x - cx), abs(y - cy))
+    distances = []
+    if code & UP:
+        distances.append(y)
+    if code & DOWN:
+        distances.append(T - 1 - y)
+    if code & LEFT:
+        distances.append(x)
+    if code & RIGHT:
+        distances.append(T - 1 - x)
+    return min(distances) if distances else 99
+
+
+def make_shore(painter):
+    sheet = Image.new("RGBA", (T, T * SHORE_CODES * SHORE_VARIANTS), (0, 0, 0, 0))
+    for code in range(SHORE_CODES):
+        for variant in range(SHORE_VARIANTS):
+            tile = Image.new("RGBA", (T, T), (0, 0, 0, 0))
+            for y in range(T):
+                for x in range(T):
+                    colour = painter(x, y, shore_distance(x, y, code), variant)
+                    if colour:
+                        tile.putpixel((x, y), colour)
+            sheet.paste(tile, (0, (code * SHORE_VARIANTS + variant) * T))
     return sheet
 
 
@@ -109,7 +157,47 @@ def water(x, y, mask, frame, d, v):
     return (44, 92, 106, 255)
 
 
+def alpha_by(distance, base, reach):
+    return max(0, int(base * (1 - distance / reach)))
+
+
+def water_shore(x, y, d, v):
+    if d >= 4:
+        return None
+    if d <= 1 and noise(x, y, 90 + v) > 0.55:
+        return (160, 206, 202, 150)
+    return (30, 64, 72, alpha_by(d, 150, 4))
+
+
+def ice_shore(x, y, d, v):
+    if d >= 3:
+        return None
+    if d <= 1 and noise(x, y, 95 + v) > 0.5:
+        return (236, 250, 255, 190)
+    return (190, 226, 248, alpha_by(d, 130, 3))
+
+
+def lava_shore(x, y, d, v):
+    if d >= 4:
+        return None
+    if d <= 1 and noise(x, y, 99 + v) > 0.82:
+        return (255, 120, 30, 220)
+    return (24, 8, 8, alpha_by(d, 190, 4))
+
+
+def shade_tile():
+    tile = Image.new("RGBA", (T, T), (0, 0, 0, 0))
+    for y in range(7):
+        for x in range(T):
+            tile.putpixel((x, y), (0, 0, 0, int(150 * (1 - y / 7))))
+    return tile
+
+
 def main():
+    make_shore(water_shore).save(OUT / "shore_water.tga")
+    make_shore(ice_shore).save(OUT / "shore_ice.tga")
+    make_shore(lava_shore).save(OUT / "shore_lava.tga")
+    shade_tile().save(OUT / "surface_shade.tga")
     make_sheet(1, ice).save(OUT / "surface_ice.tga")
     make_sheet(4, lava).save(OUT / "surface_lava.tga")
     make_sheet(4, water).save(OUT / "surface_water.tga")

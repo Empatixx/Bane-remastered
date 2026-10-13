@@ -47,7 +47,6 @@ pub(crate) enum DecorKind {
     FrozenSkull,
     Cocoon { variant: usize },
     EggSac { variant: usize },
-    WebSkull,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -345,7 +344,7 @@ pub(crate) fn plan(
             })
             .copied()
             .collect();
-        let themed: [ThemedSlot; 6] = [
+        let themed: [ThemedSlot; 5] = [
             (mix.icicles, &top_faces, 3, |variant| DecorKind::Icicles {
                 variant,
             }),
@@ -361,7 +360,6 @@ pub(crate) fn plan(
             (mix.egg_sacs, &hugging, 2, |variant| DecorKind::EggSac {
                 variant,
             }),
-            (mix.web_skulls, &open_floor, 1, |_| DecorKind::WebSkull),
         ];
         for (amount, spots, variants, make) in themed {
             if amount == 0 {
@@ -501,6 +499,7 @@ mod tests {
             count_in(Theme::Temple, DecorKind::Spike) > count_in(Theme::Stone, DecorKind::Spike)
         );
         assert!(count_in(Theme::Lava, DecorKind::FireGeyser) > 0);
+        assert!(count_in(Theme::Spider, DecorKind::WebPatch) > 0);
         assert!(count_in(Theme::Temple, DecorKind::ArrowTrap) > 0);
         assert_eq!(count_in(Theme::Stone, DecorKind::FireGeyser), 0);
         assert_eq!(count_in(Theme::Sewer, DecorKind::ArrowTrap), 0);
@@ -570,8 +569,7 @@ mod tests {
                         | DecorKind::IceCrystals { .. }
                         | DecorKind::FrozenSkull
                         | DecorKind::Cocoon { .. }
-                        | DecorKind::EggSac { .. }
-                        | DecorKind::WebSkull => {
+                        | DecorKind::EggSac { .. } => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                         }
                     }
