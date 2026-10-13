@@ -7,7 +7,7 @@ use crate::components::{
     Animation, Casing, Clip, Color, Expiring, Floating, Layer, Light, LightFade, Lit, PoisonPool,
     PoisonTrail, Position, ShieldAura, Size, Sprite, Text, ThenPlay,
 };
-use crate::objects::{POOL_SECONDS, POOL_SIZE, TRAIL_SECONDS, TRAIL_SIZE};
+use crate::objects::{POOL_SECONDS, POOL_SIZE, TRAIL_DOT, TRAIL_SECONDS};
 use crate::render::{FontSize, TextureId};
 
 const EXPLOSION_LIGHT: f32 = 1.5;
@@ -165,20 +165,11 @@ pub(crate) fn casing(
     ))
 }
 
-pub(crate) fn poison_trail(world: &mut World, center: Vec2, textures: &Textures) -> Entity {
-    let spawn = Clip {
-        row: 0,
-        frames: 6,
-        frame_time: 0.07,
-        looping: false,
-        flipped: false,
-    };
-    let idle = Clip {
-        row: 1,
-        frames: 6,
-        frame_time: 0.14,
-        looping: true,
-        flipped: false,
+pub(crate) fn poison_dot(world: &mut World, center: Vec2, shade: bool) -> Entity {
+    let color = if shade {
+        Vec4::new(0.23, 0.5, 0.27, 1.0)
+    } else {
+        Vec4::new(0.35, 0.63, 0.36, 1.0)
     };
     world.spawn((
         PoisonPool {
@@ -187,11 +178,8 @@ pub(crate) fn poison_trail(world: &mut World, center: Vec2, textures: &Textures)
         },
         PoisonTrail,
         Position(center),
-        Size(TRAIL_SIZE),
-        Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::POISON_TRAIL), 0, 0, 6, 2),
-        Animation::new(6, 2, spawn),
-        ThenPlay(idle),
+        Size(TRAIL_DOT),
+        Color(color),
         Layer(0),
         Lit,
     ))
