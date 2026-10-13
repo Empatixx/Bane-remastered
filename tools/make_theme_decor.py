@@ -158,21 +158,99 @@ def cocoon(variant):
     return image
 
 
-def egg_sac(variant):
-    image = Image.new("RGBA", (16, 16), CLEAR)
+EGG_SHELL = (232, 226, 190, 255)
+EGG_LIGHT = (255, 252, 230, 255)
+EGG_MID = (206, 198, 160, 255)
+EGG_DARK = (150, 142, 108, 255)
+GOO = (122, 156, 64, 255)
+GOO_LIGHT = (176, 206, 98, 255)
+GOO_DARK = (76, 104, 44, 255)
+SIZE = 48
+EGGS = [(15, 20, 7), (30, 17, 7), (24, 30, 8), (11, 33, 6), (36, 33, 6), (23, 11, 5)]
+
+
+def egg(image, cx, cy, radius, cracked=0):
     draw = ImageDraw.Draw(image)
-    draw.ellipse((0, 4, 15, 15), fill=(214, 214, 170, 70))
-    for angle in range(0, 360, 45):
-        end = (8 + 7.5 * math.cos(math.radians(angle)), 10 + 5.5 * math.sin(math.radians(angle)))
-        draw.line([(8, 10), end], fill=SILK_SHADE)
-    spots = [(5, 9), (10, 8), (8, 12), (7, 5)] if variant == 0 else [(4, 10), (8, 8), (12, 10), (6, 13), (10, 13), (8, 4)]
-    for x, y in spots:
-        shadow_ellipse(image, (x - 2, y - 1, x + 3, y + 3))
-    for x, y in spots:
-        draw.ellipse((x - 2, y - 2, x + 2, y + 2), fill=EGG, outline=OUTLINE)
-        image.putpixel((x - 1, y - 1), (255, 253, 235, 255))
-        image.putpixel((x + 1, y + 1), EGG_SPOT)
+    layer = Image.new("RGBA", image.size, CLEAR)
+    ImageDraw.Draw(layer).ellipse((cx - radius + 2, cy - radius + 3, cx + radius + 3, cy + radius + 4), fill=SHADOW)
+    image.alpha_composite(layer)
+    draw.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=EGG_SHELL, outline=OUTLINE)
+    draw.ellipse((cx - radius + 2, cy - radius + 2, cx + radius - 1, cy + radius - 1), fill=EGG_MID)
+    draw.ellipse((cx - radius + 2, cy - radius + 2, cx + 1, cy + 1), fill=EGG_SHELL)
+    draw.rectangle((cx - radius + 3, cy - radius + 3, cx - radius + 4, cy - radius + 4), fill=EGG_LIGHT)
+    draw.point((cx + radius - 3, cy + radius - 3), fill=EGG_DARK)
+    for step in range(cracked):
+        draw.point((cx + step - 2, cy - 3 + step * 2 % 5), fill=OUTLINE)
+        draw.point((cx + step - 1, cy - 2 + step * 2 % 5), fill=OUTLINE)
+    spot = (cx + 1, cy + 1)
+    draw.point(spot, fill=EGG_SPOT)
+
+
+def web_base(image):
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((2, 8, 45, 44), fill=(214, 214, 170, 60))
+    for angle in range(0, 360, 30):
+        end = (24 + 22 * math.cos(math.radians(angle)), 26 + 18 * math.sin(math.radians(angle)))
+        draw.line([(24, 26), end], fill=SILK_SHADE)
+    for radius_x, radius_y in ((9, 7), (16, 12), (22, 17)):
+        draw.arc((24 - radius_x, 26 - radius_y, 24 + radius_x, 26 + radius_y), 0, 360, fill=(150, 150, 118, 170))
+
+
+def intact():
+    image = Image.new("RGBA", (SIZE, SIZE), CLEAR)
+    web_base(image)
+    for cx, cy, radius in sorted(EGGS, key=lambda e: e[1]):
+        egg(image, cx, cy, radius)
     return image
+
+
+def goo_splash(image, spread, density, rng):
+    draw = ImageDraw.Draw(image)
+    for _ in range(density):
+        angle = rng.uniform(0, math.tau)
+        distance = rng.uniform(2, spread)
+        x, y = 24 + math.cos(angle) * distance, 26 + math.sin(angle) * distance * 0.8
+        size = rng.choice([1, 1, 2, 2, 3])
+        colour = rng.choice([GOO, GOO, GOO_LIGHT, GOO_DARK])
+        draw.ellipse((x - size, y - size, x + size, y + size), fill=colour)
+
+
+def breaking(stage):
+    rng = random.Random(500 + stage)
+    image = Image.new("RGBA", (SIZE, SIZE), CLEAR)
+    web_base(image)
+    if stage == 0:
+        for index, (cx, cy, radius) in enumerate(sorted(EGGS, key=lambda e: e[1])):
+            egg(image, cx + rng.choice([-1, 0, 1]), cy, radius, cracked=3 + index % 2)
+        return image
+    if stage == 1:
+        goo_splash(image, 15, 22, rng)
+        for cx, cy, radius in EGGS:
+            egg(image, cx + (cx - 24) // 4, cy + (cy - 26) // 4, max(3, radius - 3), cracked=4)
+        return image
+    goo_splash(image, 20 if stage == 2 else 18, 30 if stage == 2 else 36, rng)
+    draw = ImageDraw.Draw(image)
+    for cx, cy, radius in EGGS:
+        for _ in range(3 if stage == 2 else 2):
+            x = cx + rng.randint(-radius - 3, radius + 3) * (1 if stage == 2 else 1)
+            y = cy + rng.randint(-radius, radius + 2)
+            draw.polygon([(x, y), (x + rng.randint(2, 4), y + 1), (x + 1, y + rng.randint(2, 4))], fill=EGG_SHELL, outline=OUTLINE)
+    if stage == 3:
+        draw.ellipse((9, 21, 39, 38), fill=GOO_DARK)
+        draw.ellipse((11, 22, 37, 36), fill=GOO)
+        draw.ellipse((15, 24, 25, 29), fill=GOO_LIGHT)
+        for _ in range(8):
+            x, y = rng.randint(10, 36), rng.randint(22, 36)
+            draw.polygon([(x, y), (x + 3, y), (x + 1, y + 2)], fill=EGG_SHELL, outline=OUTLINE)
+    return image
+
+
+def egg_sheet():
+    sheet = Image.new("RGBA", (SIZE * 4, SIZE * 2), CLEAR)
+    sheet.paste(intact(), (0, 0))
+    for stage in range(4):
+        sheet.paste(breaking(stage), (stage * SIZE, SIZE))
+    return sheet
 
 
 def stack(images):
@@ -187,7 +265,7 @@ def main():
     stack([crystals(4), crystals(5)]).save(OUT / "ice_crystals.tga")
     frozen_skull().save(OUT / "frozen_skull.tga")
     stack([cocoon(0), cocoon(1)]).save(OUT / "cocoon.tga")
-    stack([egg_sac(0), egg_sac(1)]).save(OUT / "egg_sac.tga")
+    egg_sheet().save(OUT / "egg_sac.tga")
 
 
 main()

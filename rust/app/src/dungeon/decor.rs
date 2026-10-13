@@ -46,7 +46,7 @@ pub(crate) enum DecorKind {
     IceCrystals { variant: usize },
     FrozenSkull,
     Cocoon { variant: usize },
-    EggSac { variant: usize },
+    EggSac,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -344,6 +344,16 @@ pub(crate) fn plan(
             })
             .copied()
             .collect();
+        let roomy_floor: Vec<Candidate> = open_floor
+            .iter()
+            .filter(|candidate| {
+                let (column, row) = (candidate.tile.0 as isize, candidate.tile.1 as isize);
+                [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .iter()
+                    .all(|(dx, dy)| !planner.wall(column + dx, row + dy))
+            })
+            .copied()
+            .collect();
         let themed: [ThemedSlot; 5] = [
             (mix.icicles, &top_faces, 3, |variant| DecorKind::Icicles {
                 variant,
@@ -357,9 +367,7 @@ pub(crate) fn plan(
             (mix.cocoons, &hugging, 2, |variant| DecorKind::Cocoon {
                 variant,
             }),
-            (mix.egg_sacs, &hugging, 2, |variant| DecorKind::EggSac {
-                variant,
-            }),
+            (mix.egg_sacs, &roomy_floor, 1, |_| DecorKind::EggSac),
         ];
         for (amount, spots, variants, make) in themed {
             if amount == 0 {
@@ -569,7 +577,7 @@ mod tests {
                         | DecorKind::IceCrystals { .. }
                         | DecorKind::FrozenSkull
                         | DecorKind::Cocoon { .. }
-                        | DecorKind::EggSac { .. } => {
+                        | DecorKind::EggSac => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                         }
                     }

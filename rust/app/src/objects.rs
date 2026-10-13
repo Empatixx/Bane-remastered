@@ -38,10 +38,12 @@ impl BreakKind {
                 offset: Vec2::new(75.0, 78.0),
                 size: Vec2::new(45.0, 45.0),
             },
-            Self::Barrel | Self::Explosive | Self::Poison | Self::Frost => Collider {
-                offset: Vec2::new(66.0, 66.0),
-                size: Vec2::new(57.0, 63.0),
-            },
+            Self::Barrel | Self::Explosive | Self::Poison | Self::Frost | Self::EggSac => {
+                Collider {
+                    offset: Vec2::new(66.0, 66.0),
+                    size: Vec2::new(57.0, 63.0),
+                }
+            }
         }
     }
 
@@ -52,6 +54,7 @@ impl BreakKind {
             Self::Explosive => tex::EXPLOSIVE_BARREL,
             Self::Poison => tex::POISON_BARREL,
             Self::Frost => tex::FROST_BARREL,
+            Self::EggSac => tex::EGG_SAC,
         }
     }
 }
@@ -68,6 +71,7 @@ mod tests {
             BreakKind::Explosive,
             BreakKind::Poison,
             BreakKind::Frost,
+            BreakKind::EggSac,
         ] {
             let collider = kind.collider();
             let center = collider.offset + collider.size / 2.0;
