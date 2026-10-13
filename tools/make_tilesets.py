@@ -201,8 +201,15 @@ def tone(tile, factor):
 TONES = [0.94, 1.05, 0.97, 1.03, 0.92, 1.07, 0.99, 1.01]
 
 
-def extra_floor(plain, name, k):
-    tile = plain.copy()
+ROTATIONS = [None, Image.ROTATE_90, Image.ROTATE_180, Image.ROTATE_270]
+
+
+def extra_floor(source, name, k):
+    column = FLOOR_COLUMNS[2 + k % 8]
+    tile = source.crop((column * TILE, 0, (column + 1) * TILE, TILE))
+    rotation = ROTATIONS[(k // 2 + k) % 4]
+    if rotation is not None:
+        tile = tile.transpose(rotation)
     if k % 2:
         tile = tile.transpose(Image.FLIP_LEFT_RIGHT)
     return tone(tile, TONES[k % len(TONES)])
@@ -230,6 +237,17 @@ def mutate_edge(tile, bodies, name, flip, rng):
             pixel = out.getpixel((x, y))
             if pixel[3] and pixel[:3] in bodies:
                 out.putpixel((x, y), shade(pixel, factor))
+    for _ in range(rng.choice([0, 1, 1, 2])):
+        length = rng.randint(3, 7)
+        x, y = rng.randint(3, 11), rng.randint(3, 11)
+        colour = None
+        for step in range(length):
+            px, py = (x + step, y) if flip == "h" else (x, y + step)
+            if 0 <= px < TILE and 0 <= py < TILE:
+                pixel = out.getpixel((px, py))
+                if pixel[3] and pixel[:3] in bodies or colour is not None and pixel[3] and shade(pixel, 1.0)[:3] != (0, 0, 0):
+                    colour = colour or shade(pixel, rng.choice([0.86, 1.12]))
+                    out.putpixel((px, py), colour)
     return out
 
 
@@ -238,7 +256,7 @@ def widen(image, name, clean):
     wide.paste(image, (0, 0))
     plain = clean.crop((6 * TILE, 0, 7 * TILE, TILE))
     for k in range(EXTRA):
-        wide.paste(extra_floor(plain, name, k), ((21 + k) * TILE, 0))
+        wide.paste(extra_floor(image, name, k), ((21 + k) * TILE, 0))
     bodies = {PALETTES[name][index] for index in (0, 2, 4, 8)}
     column = 21 + EXTRA
     for group_index, (_, sources, flip) in enumerate(EDGE_GROUPS):
