@@ -8,6 +8,7 @@ use super::decor::{self, Decor};
 use super::furnish::{self, Furnishing};
 use super::layout::{Direction, Layout, LayoutSpec};
 use super::template::{Cell, RoomKind, RoomTemplate, Templates, door_columns, door_rows};
+use super::theme::Theme;
 use crate::rng::Rng;
 
 pub(crate) const CORRIDOR_LENGTH: usize = 4;
@@ -69,19 +70,26 @@ impl DungeonRoom {
 pub(crate) struct Dungeon {
     pub(crate) grid: TileGrid,
     pub(crate) rooms: Vec<DungeonRoom>,
+    pub(crate) theme: Theme,
 }
 
 impl Dungeon {
+    #[cfg(test)]
     pub(crate) fn generate(rng: &mut Rng) -> Result<Self, Box<dyn Error>> {
+        Self::generate_themed(rng, Theme::Stone)
+    }
+
+    pub(crate) fn generate_themed(rng: &mut Rng, theme: Theme) -> Result<Self, Box<dyn Error>> {
         let templates = Templates::built_in()?;
         let spec = LayoutSpec::standard(rng);
         let layout = Layout::generate(&spec, rng).ok_or("could not lay out the rooms")?;
-        Self::build(&layout, &templates, rng)
+        Self::build(&layout, &templates, theme, rng)
     }
 
     pub(crate) fn build(
         layout: &Layout,
         templates: &Templates,
+        theme: Theme,
         rng: &mut Rng,
     ) -> Result<Self, Box<dyn Error>> {
         let min_x = layout
@@ -204,11 +212,12 @@ impl Dungeon {
                 }
             }
         }
+        let mix = theme.mix();
         for room in &mut rooms {
             room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows);
-            room.decor = decor::plan(&grid, room, rng);
+            room.decor = decor::plan(&grid, room, &mix, rng);
         }
-        Ok(Self { grid, rooms })
+        Ok(Self { grid, rooms, theme })
     }
 
     pub(crate) fn start_position(&self) -> Option<Vec2> {

@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::audio::Audio;
 use crate::components::BarKind;
+use crate::dungeon::Theme;
 use crate::render::{FontSize, Fonts, Gpu, Pixels, TextureId};
 use crate::tilemap::Tileset;
 
@@ -52,6 +53,12 @@ pub(crate) mod tex {
         MENU_PLATE_SMALL = "menu/Menu_plate_small.tga",
         CURSOR = "ingame/cursor.tga",
         TILESET = "ingame/tileset_2.png",
+        TILESET_SEWER = "ingame/tileset_sewer.png",
+        TILESET_MOSS = "ingame/tileset_moss.png",
+        TILESET_SPIDER = "ingame/tileset_spider.png",
+        TILESET_ICE = "ingame/tileset_ice.png",
+        TILESET_LAVA = "ingame/tileset_lava.png",
+        TILESET_TEMPLE = "ingame/tileset_temple.png",
         BULLET = "ingame/bullet.tga",
         RAT = "ingame/rat.tga",
         PLAYER = "ingame/player.tga",
@@ -207,6 +214,18 @@ pub(crate) use tex::{
     BULLET, LOADING_SPINNER, LOADING_TITLE, LOGO, MENU_PLATE, PET, PLAYER, PLAYER_DODGE, TILESET,
 };
 
+pub(crate) fn tileset_for(theme: Theme) -> Tex {
+    match theme {
+        Theme::Stone => tex::TILESET,
+        Theme::Sewer => tex::TILESET_SEWER,
+        Theme::Moss => tex::TILESET_MOSS,
+        Theme::Spider => tex::TILESET_SPIDER,
+        Theme::Ice => tex::TILESET_ICE,
+        Theme::Lava => tex::TILESET_LAVA,
+        Theme::Temple => tex::TILESET_TEMPLE,
+    }
+}
+
 const EARLY_TEXTURES: &[Tex] = &[tex::LOGO, tex::LOADING_TITLE, tex::LOADING_SPINNER];
 
 const GAME_TEXTURES: &[Tex] = &[
@@ -214,6 +233,12 @@ const GAME_TEXTURES: &[Tex] = &[
     tex::MENU_PLATE_SMALL,
     tex::CURSOR,
     tex::TILESET,
+    tex::TILESET_SEWER,
+    tex::TILESET_MOSS,
+    tex::TILESET_SPIDER,
+    tex::TILESET_ICE,
+    tex::TILESET_LAVA,
+    tex::TILESET_TEMPLE,
     tex::BULLET,
     tex::RAT,
     tex::PLAYER,

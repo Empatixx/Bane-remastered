@@ -5,12 +5,12 @@ use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::tex;
-use crate::assets::{Assets, BULLET, TILESET};
+use crate::assets::{Assets, BULLET, tileset_for};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
 use crate::controls::Action;
-use crate::dungeon::Dungeon;
+use crate::dungeon::{Dungeon, Theme};
 use crate::flow::FlowField;
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -462,7 +462,8 @@ impl InGameScene {
         self.loot_rng = Rng::stream(self.run_seed, self.floor, Stream::Loot);
         self.combat_rng = Rng::stream(self.run_seed, self.floor, Stream::Combat);
         tracing::info!(floor = self.floor, "generating the dungeon");
-        let dungeon = match Dungeon::generate(&mut self.map_rng) {
+        let theme = Theme::for_floor(self.run_seed, self.floor);
+        let dungeon = match Dungeon::generate_themed(&mut self.map_rng, theme) {
             Ok(dungeon) => dungeon,
             Err(error) => {
                 tracing::error!(%error, "cannot generate the dungeon");
@@ -480,7 +481,7 @@ impl InGameScene {
             &mut self.world,
             &dungeon.grid,
             &assets.tileset,
-            assets.textures.get(TILESET),
+            assets.textures.get(tileset_for(dungeon.theme)),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
         let grid = &dungeon.grid;

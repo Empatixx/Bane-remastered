@@ -4,23 +4,16 @@ use crate::tilemap::TileGrid;
 
 use super::build::DungeonRoom;
 use super::template::RoomKind;
+use super::theme::TrapMix;
 use crate::rng::Rng;
 
 const TORCHES_BASE: usize = 2;
 const TILES_PER_EXTRA_TORCH: usize = 180;
 const MAX_TORCHES: usize = 5;
 const NORMAL_BONES: usize = 2;
-const NORMAL_COBWEBS: usize = 2;
 const NORMAL_BANNERS: usize = 2;
 const TREASURE_BONES: usize = 3;
 const TREASURE_COBWEBS: usize = 3;
-const MAX_SPIKES: usize = 2;
-const MAX_FLAMETHROWERS: usize = 1;
-const MAX_BARRELS: usize = 2;
-const MAX_EXPLOSIVE_BARRELS: usize = 3;
-const MAX_POTS: usize = 2;
-const MAX_POISON_BARRELS: usize = 2;
-const MAX_FROST_BARRELS: usize = 2;
 const DISABLED_TORCH_PERCENT: usize = 10;
 const DOOR_CLEARANCE: usize = 3;
 const SPIKE_WALL_CLEARANCE: isize = 2;
@@ -63,13 +56,13 @@ struct Counts {
 }
 
 impl Counts {
-    fn for_room(room: &DungeonRoom) -> Self {
+    fn for_room(room: &DungeonRoom, mix: &TrapMix) -> Self {
         match room.kind {
             RoomKind::Normal => Self {
                 torches: (TORCHES_BASE + room.columns * room.rows / TILES_PER_EXTRA_TORCH)
                     .min(MAX_TORCHES),
                 banners: NORMAL_BANNERS,
-                cobwebs: NORMAL_COBWEBS,
+                cobwebs: mix.cobwebs,
                 bones: NORMAL_BONES,
                 spikes: true,
                 objects: true,
@@ -155,7 +148,12 @@ struct Candidate {
     mount: Mount,
 }
 
-pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<Decor> {
+pub(crate) fn plan(
+    grid: &TileGrid,
+    room: &DungeonRoom,
+    mix: &TrapMix,
+    rng: &mut Rng,
+) -> Vec<Decor> {
     let mut planner = Planner {
         grid,
         room,
@@ -199,7 +197,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
     let mut wall_spots = top_faces.clone();
     wall_spots.extend(side_faces.iter().copied());
 
-    let counts = Counts::for_room(room);
+    let counts = Counts::for_room(room, mix);
     for _ in 0..counts.torches {
         if let Some(spot) = planner.pick(&wall_spots, rng) {
             planner.take(spot.tile);
@@ -268,7 +266,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
             })
             .copied()
             .collect();
-        let spikes = 1 + rng.below(MAX_SPIKES);
+        let spikes = 1 + rng.below(mix.spikes);
         for _ in 0..spikes {
             if let Some(spot) = planner.pick(&spike_floor, rng) {
                 planner.take(spot.tile);
@@ -280,7 +278,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
         }
     }
     if counts.objects {
-        for _ in 0..MAX_FLAMETHROWERS {
+        for _ in 0..mix.flamethrowers {
             if let Some(spot) = planner.pick(&top_faces, rng) {
                 planner.take(spot.tile);
                 decor.push(Decor {
@@ -300,11 +298,11 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
             .copied()
             .collect();
         let batches = [
-            (DecorKind::ExplosiveBarrel, rng.below(MAX_EXPLOSIVE_BARRELS)),
-            (DecorKind::Barrel, rng.below(MAX_BARRELS)),
-            (DecorKind::Pot, rng.below(MAX_POTS)),
-            (DecorKind::PoisonBarrel, rng.below(MAX_POISON_BARRELS)),
-            (DecorKind::FrostBarrel, rng.below(MAX_FROST_BARRELS)),
+            (DecorKind::ExplosiveBarrel, rng.below(mix.explosive_barrels)),
+            (DecorKind::Barrel, rng.below(mix.barrels)),
+            (DecorKind::Pot, rng.below(mix.pots)),
+            (DecorKind::PoisonBarrel, rng.below(mix.poison_barrels)),
+            (DecorKind::FrostBarrel, rng.below(mix.frost_barrels)),
         ];
         for (kind, total) in batches {
             for _ in 0..total {
@@ -323,7 +321,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, rng: &mut Rng) -> Vec<De
 
 #[cfg(test)]
 mod tests {
-    use crate::dungeon::Dungeon;
+    use crate::dungeon::{Dungeon, Theme};
 
     use super::*;
 
@@ -356,6 +354,49 @@ mod tests {
         }
         assert!(torches > 40 * 8, "{torches} torches");
         assert!(spikes > 0);
+    }
+
+    fn count_in(theme: Theme, kind: DecorKind) -> usize {
+        (0..40)
+            .map(|seed| {
+                let mut rng = Rng::new(seed);
+                let dungeon = Dungeon::generate_themed(&mut rng, theme).expect("a dungeon");
+                dungeon
+                    .rooms
+                    .iter()
+                    .flat_map(|room| &room.decor)
+                    .filter(|decor| decor.kind == kind)
+                    .count()
+            })
+            .sum()
+    }
+
+    #[test]
+    fn each_theme_leans_on_its_own_hazards() {
+        assert_eq!(count_in(Theme::Sewer, DecorKind::Flamethrower), 0);
+        assert!(
+            count_in(Theme::Lava, DecorKind::Flamethrower)
+                > 2 * count_in(Theme::Stone, DecorKind::Flamethrower)
+        );
+        assert_eq!(count_in(Theme::Lava, DecorKind::FrostBarrel), 0);
+        assert!(
+            count_in(Theme::Ice, DecorKind::FrostBarrel)
+                > count_in(Theme::Stone, DecorKind::FrostBarrel)
+        );
+        assert!(
+            count_in(Theme::Sewer, DecorKind::PoisonBarrel)
+                > count_in(Theme::Stone, DecorKind::PoisonBarrel)
+        );
+        assert!(
+            count_in(Theme::Temple, DecorKind::Spike) > count_in(Theme::Stone, DecorKind::Spike)
+        );
+    }
+
+    #[test]
+    fn the_dungeon_remembers_its_theme() {
+        let mut rng = Rng::new(3);
+        let dungeon = Dungeon::generate_themed(&mut rng, Theme::Ice).expect("a dungeon");
+        assert_eq!(dungeon.theme, Theme::Ice);
     }
 
     #[test]
