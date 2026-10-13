@@ -1,6 +1,6 @@
 use glam::Vec2;
 
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use crate::tilemap::TILE_SIZE;
 
 use super::template::RoomKind;
@@ -202,7 +202,7 @@ pub(crate) fn plan(
         RoomKind::Treasure => Some(treasure(&frame)),
         RoomKind::Sacrifice => Some(sacrifice(&frame)),
         RoomKind::Start => Some(start(&frame)),
-        RoomKind::Normal | RoomKind::Boss => None,
+        RoomKind::Normal | RoomKind::Boss | RoomKind::Ambush => None,
     }
 }
 

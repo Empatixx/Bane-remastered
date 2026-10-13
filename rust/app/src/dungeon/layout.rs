@@ -49,6 +49,7 @@ pub(crate) struct LayoutSpec {
     pub(crate) shops: usize,
     pub(crate) treasures: usize,
     pub(crate) sacrifices: usize,
+    pub(crate) ambushes: usize,
 }
 
 impl LayoutSpec {
@@ -58,6 +59,7 @@ impl LayoutSpec {
             shops: 1,
             treasures: 1,
             sacrifices: rng.below(2),
+            ambushes: 1 + rng.below(2),
         }
     }
 }
@@ -86,7 +88,8 @@ impl Layout {
         }
         let specials = std::iter::repeat_n(RoomKind::Shop, spec.shops)
             .chain(std::iter::repeat_n(RoomKind::Treasure, spec.treasures))
-            .chain(std::iter::repeat_n(RoomKind::Sacrifice, spec.sacrifices));
+            .chain(std::iter::repeat_n(RoomKind::Sacrifice, spec.sacrifices))
+            .chain(std::iter::repeat_n(RoomKind::Ambush, spec.ambushes));
         for kind in specials {
             let candidates = layout.attachable(&[RoomKind::Normal]);
             let parent = *rng.pick(&candidates)?;
@@ -221,10 +224,12 @@ mod tests {
         for layout in layouts() {
             let cells: HashSet<_> = layout.rooms.iter().map(|room| room.cell).collect();
             assert_eq!(cells.len(), layout.rooms.len());
-            assert!(layout
-                .distances_from(0)
-                .iter()
-                .all(|distance| *distance != usize::MAX));
+            assert!(
+                layout
+                    .distances_from(0)
+                    .iter()
+                    .all(|distance| *distance != usize::MAX)
+            );
         }
     }
 
@@ -238,9 +243,11 @@ mod tests {
                         layout.rooms[other].cell,
                         (room.cell.0 + dx, room.cell.1 + dy)
                     );
-                    assert!(layout.rooms[other]
-                        .links
-                        .contains(&(direction.opposite(), index)));
+                    assert!(
+                        layout.rooms[other]
+                            .links
+                            .contains(&(direction.opposite(), index))
+                    );
                 }
             }
         }

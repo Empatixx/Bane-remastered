@@ -20,24 +20,26 @@ fn enemy_limit(columns: usize, rows: usize) -> usize {
 }
 const ENTER_MARGIN: usize = 2;
 const WAVE_DELAY: f32 = 1.5;
-const BIG_ROOM_AREA: usize = 500;
-const WAVE_SHARE: f32 = 0.6;
-const MIN_WAVE: usize = 3;
+const AMBUSH_WAVES: usize = 3;
+const AMBUSH_SHARE: f32 = 0.7;
+const MIN_WAVE: usize = 4;
 
-pub(crate) fn wave_plan(columns: usize, rows: usize) -> (usize, usize) {
-    let waves = if columns * rows >= BIG_ROOM_AREA {
-        3
-    } else {
-        2
-    };
-    let per_wave = ((enemy_limit(columns, rows) as f32 * WAVE_SHARE).ceil() as usize).max(MIN_WAVE);
-    (waves, per_wave)
+pub(crate) fn wave_plan(kind: RoomKind, columns: usize, rows: usize) -> (usize, usize) {
+    let limit = enemy_limit(columns, rows);
+    match kind {
+        RoomKind::Ambush => {
+            let per_wave = ((limit as f32 * AMBUSH_SHARE).ceil() as usize).max(MIN_WAVE);
+            (AMBUSH_WAVES, per_wave.min(limit))
+        }
+        _ => (1, limit),
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum RoomEvent {
     BossEntered,
     WaveStarted { number: usize, total: usize },
+    AmbushCleared { center: Vec2 },
     ShopEntered,
     RoomCleared,
     BossDefeated { center: Vec2 },
@@ -145,10 +147,14 @@ pub(crate) fn update_rooms(
                     }
                 }
                 events.push(RoomEvent::RoomCleared);
-                if data.kind == RoomKind::Boss {
-                    events.push(RoomEvent::BossDefeated {
+                match data.kind {
+                    RoomKind::Boss => events.push(RoomEvent::BossDefeated {
                         center: data.pixel_center(),
-                    });
+                    }),
+                    RoomKind::Ambush => events.push(RoomEvent::AmbushCleared {
+                        center: data.pixel_center(),
+                    }),
+                    _ => {}
                 }
                 continue;
             }
@@ -198,7 +204,7 @@ fn living_enemies(world: &World, room: usize) -> usize {
 
 fn spawn_wave(context: &RoomContext, room: usize, world: &mut World, rng: &mut Rng) {
     let data = &context.dungeon.rooms[room];
-    let (_, per_wave) = wave_plan(data.columns, data.rows);
+    let (_, per_wave) = wave_plan(data.kind, data.columns, data.rows);
     let mut spawns = data.spawns.clone();
     for index in (1..spawns.len()).rev() {
         spawns.swap(index, rng.below(index + 1));
@@ -220,7 +226,8 @@ fn enter(
 ) -> Option<RoomEvent> {
     let data = &context.dungeon.rooms[room];
     let boss = data.kind == RoomKind::Boss;
-    let fights = boss || (data.kind == RoomKind::Normal && !data.spawns.is_empty());
+    let fights = boss
+        || (matches!(data.kind, RoomKind::Normal | RoomKind::Ambush) && !data.spawns.is_empty());
     if !fights {
         runtime.states[room] = RoomState::Cleared;
         return (data.kind == RoomKind::Shop).then_some(RoomEvent::ShopEntered);
@@ -251,7 +258,7 @@ fn enter(
     let waves = if boss {
         1
     } else {
-        wave_plan(data.columns, data.rows).0
+        wave_plan(data.kind, data.columns, data.rows).0
     };
     runtime.states[room] = RoomState::Fighting(Fight {
         gates,
@@ -261,11 +268,13 @@ fn enter(
     });
     if boss {
         Some(RoomEvent::BossEntered)
-    } else {
+    } else if waves > 1 {
         Some(RoomEvent::WaveStarted {
             number: 1,
             total: waves,
         })
+    } else {
+        None
     }
 }
 
@@ -510,14 +519,17 @@ mod tests {
     }
 
     #[test]
-    fn rooms_come_in_two_or_three_waves_and_every_wave_is_at_least_a_small_group() {
-        for (columns, rows, waves) in [(22, 14, 2), (24, 16, 2), (28, 20, 3), (38, 24, 3)] {
-            let (planned, per_wave) = wave_plan(columns, rows);
-
-            assert_eq!(planned, waves, "{columns}x{rows}");
-            assert!(per_wave >= MIN_WAVE && per_wave <= enemy_limit(columns, rows));
+    fn only_an_ambush_comes_in_waves_and_a_normal_room_is_one_group() {
+        let (waves, per_wave) = wave_plan(RoomKind::Ambush, 34, 22);
+        assert_eq!(waves, AMBUSH_WAVES);
+        assert!(per_wave >= MIN_WAVE && per_wave <= enemy_limit(34, 22));
+        assert!(wave_plan(RoomKind::Ambush, 38, 24).1 > wave_plan(RoomKind::Ambush, 32, 22).1);
+        for (columns, rows) in [(22, 14), (28, 20), (38, 24)] {
+            assert_eq!(
+                wave_plan(RoomKind::Normal, columns, rows),
+                (1, enemy_limit(columns, rows))
+            );
         }
-        assert!(wave_plan(38, 24).1 > wave_plan(22, 14).1);
     }
 
     fn fight() -> (Dungeon, usize, World, Physics, Textures) {
@@ -525,8 +537,8 @@ mod tests {
         let normal = dungeon
             .rooms
             .iter()
-            .position(|room| room.kind == RoomKind::Normal)
-            .expect("there is a normal room");
+            .position(|room| room.kind == RoomKind::Ambush)
+            .expect("there is an ambush room");
         let mut world = World::new();
         let mut physics = Physics::new();
         let textures = Textures::default();
@@ -561,7 +573,7 @@ mod tests {
         let mut runtime = RoomRuntime::new(&dungeon);
         let mut rng = Rng::new(3);
         let room = &dungeon.rooms[normal];
-        let (waves, per_wave) = wave_plan(room.columns, room.rows);
+        let (waves, per_wave) = wave_plan(room.kind, room.columns, room.rows);
         let wanted = per_wave.min(room.spawns.len());
 
         let events = update_rooms(
@@ -623,7 +635,15 @@ mod tests {
             &mut rng,
             0.016,
         );
-        assert_eq!(last, vec![RoomEvent::RoomCleared]);
+        assert_eq!(
+            last,
+            vec![
+                RoomEvent::RoomCleared,
+                RoomEvent::AmbushCleared {
+                    center: room.pixel_center()
+                }
+            ]
+        );
         assert!(!runtime.is_locked(normal));
     }
 

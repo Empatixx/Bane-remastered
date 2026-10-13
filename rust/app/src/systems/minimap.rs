@@ -26,6 +26,7 @@ fn frame(kind: RoomKind) -> usize {
         RoomKind::Shop => 3,
         RoomKind::Boss => 4,
         RoomKind::Sacrifice => 5,
+        RoomKind::Ambush => 6,
     }
 }
 
@@ -190,7 +191,7 @@ pub(crate) fn minimap_draws(map: &Minimap) -> Vec<Draw> {
         }
         let shown = Vec2::new(room.cell.0 as f32, room.cell.1 as f32) - map.shown;
         let position = center + shown * icon;
-        let uv = Sprite::cell_uv(frame(room.kind), 0, 6, 1);
+        let uv = Sprite::cell_uv(frame(room.kind), 0, 7, 1);
         let placed = match map.size {
             MapSize::Small => Some(Clipped {
                 center: position,

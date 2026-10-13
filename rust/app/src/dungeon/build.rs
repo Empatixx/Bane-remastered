@@ -515,4 +515,22 @@ mod tests {
         }
         assert!(biggest >= 36 * 22, "{biggest}");
     }
+
+    #[test]
+    fn every_floor_has_one_or_two_ambush_rooms_that_are_dead_ends() {
+        for seed in 0..120 {
+            let dungeon = dungeon(seed);
+            let ambushes: Vec<_> = dungeon
+                .rooms
+                .iter()
+                .filter(|room| room.kind == RoomKind::Ambush)
+                .collect();
+
+            assert!((1..=2).contains(&ambushes.len()), "seed {seed}");
+            for room in ambushes {
+                assert_eq!(room.doors.len(), 1, "seed {seed}");
+                assert!(room.spawns.len() >= 16, "seed {seed}");
+            }
+        }
+    }
 }

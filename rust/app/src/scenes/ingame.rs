@@ -578,6 +578,14 @@ impl InGameScene {
                         prefabs::wave_banner(&mut self.world, number, total);
                     }
                 }
+                systems::RoomEvent::AmbushCleared { center } => {
+                    prefabs::chest(
+                        &mut self.world,
+                        crate::components::ChestKind::Weapon,
+                        center - Vec2::new(32.0, 32.0),
+                        &assets.textures,
+                    );
+                }
                 systems::RoomEvent::ShopEntered => {
                     systems::say(&mut self.world, "Welcome to my shop!");
                 }

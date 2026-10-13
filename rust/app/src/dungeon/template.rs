@@ -18,6 +18,7 @@ pub(crate) enum RoomKind {
     Shop,
     Boss,
     Sacrifice,
+    Ambush,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -135,7 +136,7 @@ pub(crate) fn is_door_slot(columns: usize, rows: usize, column: usize, row: usiz
     vertical || horizontal
 }
 
-const BUILT_IN: [&str; 20] = [
+const BUILT_IN: [&str; 23] = [
     include_str!("../../../assets/rooms/start.json"),
     include_str!("../../../assets/rooms/normal_05.json"),
     include_str!("../../../assets/rooms/normal_06.json"),
@@ -152,6 +153,9 @@ const BUILT_IN: [&str; 20] = [
     include_str!("../../../assets/rooms/normal_20.json"),
     include_str!("../../../assets/rooms/normal_21.json"),
     include_str!("../../../assets/rooms/normal_22.json"),
+    include_str!("../../../assets/rooms/ambush_01.json"),
+    include_str!("../../../assets/rooms/ambush_02.json"),
+    include_str!("../../../assets/rooms/ambush_03.json"),
     include_str!("../../../assets/rooms/treasure.json"),
     include_str!("../../../assets/rooms/shop.json"),
     include_str!("../../../assets/rooms/sacrifice.json"),
@@ -181,6 +185,7 @@ impl Templates {
             RoomKind::Shop,
             RoomKind::Boss,
             RoomKind::Sacrifice,
+            RoomKind::Ambush,
         ] {
             if !by_kind.contains_key(&kind) {
                 return Err(format!("no template for {kind:?}").into());
@@ -216,6 +221,7 @@ mod tests {
             RoomKind::Shop,
             RoomKind::Boss,
             RoomKind::Sacrifice,
+            RoomKind::Ambush,
         ] {
             assert!(templates.pick(kind, &mut rng).is_some(), "{kind:?}");
         }
@@ -380,6 +386,32 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn every_ambush_template_is_big_and_has_room_for_three_waves() {
+        let templates = Templates::built_in().expect("built-in templates are valid");
+        let ambushes: Vec<&RoomTemplate> = templates
+            .all()
+            .filter(|template| template.kind == RoomKind::Ambush)
+            .collect();
+
+        assert!(ambushes.len() >= 3);
+        for template in ambushes {
+            let spawns = template
+                .cells
+                .iter()
+                .flatten()
+                .filter(|cell| **cell == Cell::Spawn)
+                .count();
+
+            assert!(
+                template.columns() * template.rows() >= 32 * 22,
+                "{}",
+                template.name
+            );
+            assert!(spawns >= 16, "{} has only {spawns} spawns", template.name);
         }
     }
 }

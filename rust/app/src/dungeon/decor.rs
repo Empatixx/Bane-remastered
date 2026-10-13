@@ -74,6 +74,15 @@ impl Counts {
                 spikes: true,
                 objects: true,
             },
+            RoomKind::Ambush => Self {
+                torches: (TORCHES_BASE + room.columns * room.rows / TILES_PER_EXTRA_TORCH)
+                    .min(MAX_TORCHES),
+                banners: NORMAL_BANNERS,
+                cobwebs: 0,
+                bones: NORMAL_BONES,
+                spikes: false,
+                objects: true,
+            },
             RoomKind::Treasure => Self {
                 torches: 0,
                 banners: 0,
@@ -442,7 +451,7 @@ mod tests {
                     RoomKind::Shop | RoomKind::Treasure | RoomKind::Sacrifice | RoomKind::Start
                 );
                 assert_eq!(room.furnishing.is_some(), furnished, "{:?}", room.kind);
-                if room.kind != RoomKind::Normal {
+                if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
                     assert_eq!((room.columns, room.rows), (20, 16), "{:?}", room.kind);
                 }
                 match room.kind {
@@ -454,7 +463,7 @@ mod tests {
                             DecorKind::Bones { .. } | DecorKind::Cobweb { .. }
                         )));
                     }
-                    RoomKind::Normal => {}
+                    RoomKind::Normal | RoomKind::Ambush => {}
                     _ => assert!(room.decor.is_empty(), "{:?}", room.kind),
                 }
             }

@@ -512,6 +512,38 @@ def snake_trail_sheet():
     return sheet
 
 
+def ambush_map_icon(existing):
+    cell = 16
+    old = existing.convert("RGBA")
+    sheet = Image.new("RGBA", (cell * 7, cell), (0, 0, 0, 0))
+    sheet.paste(old.crop((0, 0, cell * 6, cell)), (0, 0))
+    tile = old.crop((cell, 0, cell * 2, cell))
+    sheet.paste(tile, (cell * 6, 0))
+    blade = (206, 206, 216, 255)
+    edge = (118, 118, 130, 255)
+    guard = (214, 48, 30, 255)
+    grip = (120, 28, 22, 255)
+    icon = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
+
+    def sword(mirror):
+        def x(value):
+            return 15 - value if mirror else value
+
+        for step in range(8):
+            icon.putpixel((x(3 + step), 2 + step), blade)
+            icon.putpixel((x(4 + step), 2 + step), edge)
+        for offset in (-1, 0, 1):
+            icon.putpixel((x(11 + offset), 10 - offset), guard)
+        icon.putpixel((x(12), 11), grip)
+        icon.putpixel((x(13), 12), grip)
+        icon.putpixel((x(13), 13), grip)
+
+    sword(False)
+    sword(True)
+    sheet.alpha_composite(icon, (cell * 6, 0))
+    return sheet
+
+
 def enemy_arrow():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -593,6 +625,9 @@ def main():
     reroll_dice().save(f"{OUT}/reroll_dice.tga")
     enemy_arrow().save(f"{OUT}/enemy_arrow.tga")
     casing_sheet().save(f"{OUT}/casing.tga")
+    icons_path = f"{OUT}/minimap_icons.tga"
+    existing = Image.open(icons_path)
+    ambush_map_icon(existing).save(icons_path)
     snake_trail_sheet().save(f"{OUT}/snake_trail.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")

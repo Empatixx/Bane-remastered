@@ -25,7 +25,7 @@ def mark(name, spots):
     save(name, data)
 
 
-def big_room(name, columns, rows, pillars, block, spawns):
+def big_room(name, columns, rows, pillars, block, spawns, kind="Normal"):
     grid = [["." for _ in range(columns)] for _ in range(rows)]
     for column in range(columns):
         grid[0][column] = grid[rows - 1][column] = "#"
@@ -46,7 +46,7 @@ def big_room(name, columns, rows, pillars, block, spawns):
     for column, row in spawns:
         assert grid[row][column] == ".", (name, column, row)
         grid[row][column] = "E"
-    save(name, {"name": name, "kind": "Normal", "rows": ["".join(row) for row in grid]})
+    save(name, {"name": name, "kind": kind, "rows": ["".join(row) for row in grid]})
 
 
 def mirrored(columns, rows, quarter):
@@ -115,6 +115,33 @@ def main():
         pillars(36, 22, [(6, 4), (12, 6), (5, 10)]),
         (16, 9, 4, 4),
         mirrored(36, 22, [(3, 3), (9, 2), (3, 8), (14, 3), (9, 9), (16, 5)]),
+    )
+    big_room(
+        "ambush_01",
+        34,
+        22,
+        pillars(34, 22, [(7, 4), (13, 9)]),
+        (15, 9, 4, 4),
+        mirrored(34, 22, [(3, 3), (10, 2), (3, 9), (14, 5), (9, 8), (6, 6)]),
+        "Ambush",
+    )
+    big_room(
+        "ambush_02",
+        38,
+        24,
+        pillars(38, 24, [(8, 5), (13, 9), (5, 10)]),
+        (17, 10, 4, 4),
+        mirrored(38, 24, [(3, 3), (11, 2), (3, 8), (15, 4), (10, 9), (7, 7), (16, 8)]),
+        "Ambush",
+    )
+    big_room(
+        "ambush_03",
+        32,
+        22,
+        pillars(32, 22, [(6, 5), (12, 8)]),
+        (13, 9, 6, 4),
+        mirrored(32, 22, [(3, 3), (9, 2), (3, 8), (13, 4), (8, 9), (5, 6)]),
+        "Ambush",
     )
 
 
