@@ -6,7 +6,7 @@ use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
     Animation, ArtefactDrop, Backdrop, BreakKind, Breakable, Candle, Chatty, Chest, ChestKind,
-    Clip, Color, ContactDamage, Despawn, Drag, Flame, GunDrop, Health, Interactable, Interaction,
+    Clip, Color, ContactDamage, Despawn, Drag, Flame, Gate, GunDrop, Health, Interactable, Interaction,
     Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text,
     ThenPlay, Trap, Velocity, Weapon,
 };
@@ -653,6 +653,7 @@ pub(crate) fn gate(
         Color(Vec4::ONE),
         sprite,
         Animation::new(GATE_COLUMNS, GATE_ROWS, close),
+        Gate(close),
         ThenPlay(idle),
         Layer(-1),
         Lit,

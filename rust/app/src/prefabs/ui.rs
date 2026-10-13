@@ -223,10 +223,9 @@ const PAUSE_TEXT_COLOR: Vec4 = palette::ORANGE;
 
 const PAUSE_HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 
-const PAUSE_BUTTONS: [(f32, &str, UiAction); 3] = [
-    (225.0, "Resume", UiAction::Resume),
-    (275.0, "Statistics", UiAction::Statistics),
-    (325.0, "Exit", UiAction::LeaveToMenu),
+const PAUSE_BUTTONS: [(f32, &str, UiAction); 2] = [
+    (250.0, "Resume", UiAction::Resume),
+    (300.0, "Exit", UiAction::LeaveToMenu),
 ];
 
 pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {

@@ -4,7 +4,6 @@ pub(crate) enum UiAction {
     Settings,
     Exit,
     Resume,
-    Statistics,
     LeaveToMenu,
     SettingsApply,
     SettingsRevert,

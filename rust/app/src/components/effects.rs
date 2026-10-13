@@ -32,6 +32,12 @@ pub(crate) struct LightFade {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ThenPlay(pub(crate) super::animation::Clip);
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Gate(pub(crate) super::animation::Clip);
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Opening(pub(crate) f32);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct RoomId(pub(crate) usize);
 

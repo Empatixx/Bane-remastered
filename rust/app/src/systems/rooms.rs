@@ -100,8 +100,8 @@ pub(crate) fn update_rooms(
                 std::mem::replace(&mut runtime.states[room], RoomState::Cleared)
             {
                 for (entity, collider) in gates {
-                    let _ = world.despawn(entity);
                     physics.remove_collider(collider);
+                    super::open_gate(world, entity);
                 }
             }
             events.push(RoomEvent::RoomCleared);
@@ -245,8 +245,23 @@ mod tests {
         for entity in enemies {
             let _ = world.insert_one(entity, Expiring);
         }
+        let gates_before = world.query::<&crate::components::Gate>().iter().count();
+        assert!(gates_before > 0);
         update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
         assert!(!runtime.is_locked(normal));
+        assert_eq!(
+            world.query::<&crate::components::Gate>().iter().count(),
+            gates_before
+        );
+        assert_eq!(
+            world.query::<&crate::components::Opening>().iter().count(),
+            gates_before
+        );
+
+        for _ in 0..60 {
+            crate::systems::tick_openings(&mut world, 1.0 / 60.0);
+        }
+        assert_eq!(world.query::<&crate::components::Gate>().iter().count(), 0);
     }
 
     #[test]

@@ -70,6 +70,7 @@ impl Scenes {
     ) -> ControlFlow<()> {
         systems::animate(self.scene_mut().world_mut(), dt);
         systems::chain_animations(self.scene_mut().world_mut());
+        systems::tick_openings(self.scene_mut().world_mut(), dt);
         let transition = self.scene_mut().update(input, dt, assets, settings);
         self.apply(transition, assets)
     }
