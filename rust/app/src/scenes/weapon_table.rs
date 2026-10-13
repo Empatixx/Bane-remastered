@@ -44,11 +44,9 @@ const PAN_SPEED: f32 = 380.0;
 const PAN_MARGIN: f32 = 120.0;
 const RARE_FROM_ROW: i32 = 3;
 const STEP: Vec2 = Vec2::new(80.0, 74.0);
-const REROLL_LEFT: f32 = CENTER_X - 114.0;
-const FIND_LEFT: f32 = CENTER_X + 6.0;
+const REROLL_LEFT: f32 = CENTER_X - 54.0;
 const ARROW_INSET: f32 = 10.0;
 const ARROW_LAYER: i32 = 36;
-const EPIC_TEXT: Vec4 = Vec4::new(226.0 / 255.0, 150.0 / 255.0, 1.0, 1.0);
 const REROLL_TOP: f32 = 462.0;
 const REROLL_SIZE: Vec2 = Vec2::new(108.0, 43.0);
 const REROLL_BASELINE: f32 = 27.0;
@@ -214,7 +212,6 @@ fn node_state(kind: GunKind, rerolls: u32, grown: &Tree, index: usize) -> BuySta
 pub(crate) struct Hover {
     buy: bool,
     reroll: bool,
-    find: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -273,21 +270,6 @@ fn root_top_left(pan: Vec2) -> Vec2 {
 
 fn reroll_top_left() -> Vec2 {
     Vec2::new(REROLL_LEFT, REROLL_TOP)
-}
-
-fn find_top_left() -> Vec2 {
-    Vec2::new(FIND_LEFT, REROLL_TOP)
-}
-
-fn mutation_index(grown: &Tree) -> Option<usize> {
-    grown.nodes.iter().position(|node| node.mutation.is_some())
-}
-
-fn pan_to(grown: &Tree, index: usize) -> Vec2 {
-    let node = &grown.nodes[index];
-    let home = cell_top_left(node.column, node.row, Vec2::ZERO);
-    let wanted = VIEW_TOP_LEFT + (VIEW_SIZE - Vec2::splat(TALENT)) / 2.0;
-    clamp_pan(grown, wanted - home)
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -378,7 +360,6 @@ pub(crate) enum Target {
     Weapon(usize),
     Node(usize),
     Reroll,
-    Find,
 }
 
 fn target_at(first: usize, grown: &Tree, pan: Vec2, point: Vec2) -> Option<Target> {
@@ -398,9 +379,6 @@ fn target_at(first: usize, grown: &Tree, pan: Vec2, point: Vec2) -> Option<Targe
                 )
             })
             .map(Target::Node);
-    }
-    if inside(point, find_top_left(), REROLL_SIZE) {
-        return Some(Target::Find);
     }
     inside(point, reroll_top_left(), REROLL_SIZE).then_some(Target::Reroll)
 }
@@ -580,19 +558,12 @@ fn plate(top_left: Vec2, text: String, hovered: bool, idle: Vec4) -> Vec<Element
 }
 
 fn plates(hover: Hover) -> Vec<Element> {
-    let mut elements = plate(
+    plate(
         reroll_top_left(),
         format!("Reroll {REROLL_COST} g"),
         hover.reroll,
         MENU_COLOR,
-    );
-    elements.extend(plate(
-        find_top_left(),
-        "Mutation".to_owned(),
-        hover.find,
-        EPIC_TEXT,
-    ));
-    elements
+    )
 }
 
 fn icon_of(node: &Node) -> Icon {
@@ -939,14 +910,6 @@ impl WeaponTable {
                     self.rerolls += 1;
                     self.regrow();
                 }
-                Some(Target::Find) => {
-                    if let Some(index) = mutation_index(&grown) {
-                        self.pan = pan_to(&grown, index);
-                        self.choice = Some(index);
-                        self.press = None;
-                        self.dirty = true;
-                    }
-                }
                 _ if in_view(point) => {
                     self.press = Some(Press {
                         from: point,
@@ -982,7 +945,6 @@ impl WeaponTable {
         let hover = Hover {
             buy: self.can_buy(&grown) && on_buy_plate(point),
             reroll: target == Some(Target::Reroll),
-            find: target == Some(Target::Find),
         };
         if hover != self.hover {
             self.hover = hover;
@@ -1160,53 +1122,20 @@ mod tests {
     }
 
     #[test]
-    fn the_mutation_button_brings_the_epic_node_into_view() {
-        for kind in GunKind::ALL {
-            for rerolls in 0..20 {
-                let grown = tree(kind, rerolls);
-                let Some(index) = mutation_index(&grown) else {
-                    panic!("no mutation");
-                };
-                let pan = pan_to(&grown, index);
-                let node = grown.nodes[index];
-                let seen = visibility(
-                    cell_top_left(node.column, node.row, pan),
-                    Vec2::splat(TALENT),
-                );
-
-                assert!(seen > 0.99, "{kind:?} {rerolls}: {seen}");
-                assert_eq!(quality_of(&node), Quality::Epic);
-            }
-        }
-    }
-
-    #[test]
-    fn arrows_show_where_the_tree_continues() {
+    fn arrows_appear_only_when_the_tree_runs_past_the_view() {
         let grown = tree(GunKind::ALL[0], 0);
         let (low, high) = pan_limits(&grown);
-        let start = more_beyond(&grown, Vec2::ZERO);
 
-        assert!(start.down);
-        assert!(!start.up);
-        let bottom = more_beyond(&grown, Vec2::new(0.0, low.y));
-        assert!(bottom.up);
-        assert!(!bottom.down);
-        let far_left = more_beyond(&grown, Vec2::new(high.x, 0.0));
-        let far_right = more_beyond(&grown, Vec2::new(low.x, 0.0));
-        assert!(far_left.right || far_right.left || far_left.left || far_right.right);
-        assert_eq!(arrows(&grown, Vec2::ZERO).len() % 5, 0);
-        assert!(!arrows(&grown, Vec2::ZERO).is_empty());
-    }
-
-    #[test]
-    fn the_pointer_finds_the_mutation_button() {
-        let grown = tree(GunKind::ALL[0], 0);
-
-        assert_eq!(
-            target_at(0, &grown, Vec2::ZERO, find_top_left() + Vec2::splat(4.0)),
-            Some(Target::Find)
-        );
-        assert!(reroll_top_left().x + REROLL_SIZE.x < find_top_left().x);
+        assert_eq!(more_beyond(&grown, Vec2::ZERO), More::default());
+        assert!(arrows(&grown, Vec2::ZERO).is_empty());
+        let down = more_beyond(&grown, Vec2::new(0.0, low.y));
+        assert!(down.up && !down.down);
+        let up = more_beyond(&grown, Vec2::new(0.0, high.y));
+        assert!(up.down && !up.up);
+        let left = more_beyond(&grown, Vec2::new(low.x, 0.0));
+        assert!(left.left);
+        assert_eq!(arrows(&grown, Vec2::new(0.0, low.y)).len() % 5, 0);
+        assert!(!arrows(&grown, Vec2::new(0.0, low.y)).is_empty());
     }
 
     #[test]
@@ -1358,7 +1287,7 @@ mod tests {
         assert!(view_end.x <= tree_end.x - 18.0);
         assert!(view_end.y < reroll_top_left().y);
         assert!(reroll_end.y < tree_end.y - 18.0);
-        assert!(widest > VIEW_SIZE.x && tallest > VIEW_SIZE.y);
+        assert!(widest <= VIEW_SIZE.x && tallest <= VIEW_SIZE.y);
         assert!(list_end.x < TREE_TOP_LEFT.x);
         assert!(tree_end.x < PANEL_TOP_LEFT.x);
     }

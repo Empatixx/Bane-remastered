@@ -1,12 +1,12 @@
 use crate::guns::GunKind;
 use crate::rng::Rng;
 
-pub(super) const HALF_COLUMNS: i32 = 3;
-pub(super) const DEPTH: i32 = 6;
+pub(super) const HALF_COLUMNS: i32 = 2;
+pub(super) const DEPTH: i32 = 4;
 pub(super) const STAT_KINDS: usize = 6;
 pub(super) const MUTATION_KINDS: usize = 6;
-const SIDE_BRANCHES: usize = 3;
-const SIDE_DEPTH: usize = 5;
+const SIDE_BRANCHES: usize = 2;
+const SIDE_DEPTH: usize = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct Node {
@@ -116,7 +116,7 @@ pub(super) fn generate(kind: GunKind, rerolls: u32) -> Tree {
         .unwrap_or(0) as u64;
     let mut rng = Rng::new(gun * 7919 + u64::from(rerolls) * 104_729 + 13);
     let mut tree = Tree::default();
-    let start = rng.below(2 * HALF_COLUMNS as usize + 1) as i32 - HALF_COLUMNS;
+    let start = rng.below(3) as i32 - 1;
     let mut last = tree.add(&mut rng, None, start, 0, None);
     for _ in 2..DEPTH {
         match tree.grow(&mut rng, Some(last), 0, false) {
@@ -129,9 +129,17 @@ pub(super) fn generate(kind: GunKind, rerolls: u32) -> Tree {
     tree.add(&mut rng, Some(last), end, 0, Some(mutation));
     let sides = 1 + rng.below(SIDE_BRANCHES);
     for branch in 1..=sides {
-        let free: Vec<i32> = (-HALF_COLUMNS..=HALF_COLUMNS)
+        let open: Vec<i32> = (-HALF_COLUMNS..=HALF_COLUMNS)
             .filter(|column| tree.fits(None, *column))
             .collect();
+        let near = |column: &i32, reach: i32| {
+            tree.nodes
+                .iter()
+                .filter(|node| node.row == 1)
+                .any(|node| (node.column - column).abs() <= reach)
+        };
+        let close: Vec<i32> = open.iter().copied().filter(|c| near(c, 1)).collect();
+        let free = if close.is_empty() { open } else { close };
         if free.is_empty() {
             break;
         }
