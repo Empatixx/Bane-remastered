@@ -10,7 +10,7 @@ use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
 use crate::controls::Action;
-use crate::dungeon::{Dungeon, Theme};
+use crate::dungeon::{Dungeon, Surfaces, Theme};
 use crate::flow::FlowField;
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -60,6 +60,7 @@ pub(crate) struct InGameScene {
     big_map: bool,
     floor: u32,
     navigation: Navigation,
+    surfaces: Surfaces,
     flow: FlowField,
     victory: bool,
     death: Option<systems::DeathScreen>,
@@ -368,7 +369,7 @@ impl Scene for InGameScene {
             input,
             input.mouse() + self.camera.position(),
         );
-        systems::steer_player(&mut self.world, input, dt);
+        systems::steer_player_on(&mut self.world, input, &self.surfaces, dt);
         systems::tick_dodges(&mut self.world, dt);
         systems::tick_spawning(&mut self.world, &mut self.physics, dt);
         systems::dash(&mut self.world, dt);
@@ -415,6 +416,7 @@ impl Scene for InGameScene {
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
         systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);
+        systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
             self.hit = true;
         }
@@ -508,6 +510,10 @@ impl InGameScene {
             |column, row| grid.is_wall(column as isize, row as isize),
         )));
         self.navigation = Navigation::new(&solid_cells);
+        self.surfaces = dungeon.surfaces.clone();
+        for (tile, surface) in dungeon.surfaces.iter() {
+            prefabs::surface_tile(&mut self.world, &dungeon.surfaces, tile, surface, textures);
+        }
         self.flow = FlowField::default();
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);

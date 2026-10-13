@@ -5,6 +5,7 @@ use crate::components::{
     Berserk, Cobweb, Dodge, FloorPatch, Health, PatchKind, Player, PlayerPerks, Position, Size,
     Velocity,
 };
+use crate::dungeon::{Surface, Surfaces};
 use crate::geometry;
 use crate::input::Input;
 
@@ -30,7 +31,13 @@ fn accelerate_with(
     (velocity + direction * acceleration * dt) * keep
 }
 
+const WATER_SLOWDOWN: f32 = 0.55;
+
 pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
+    steer_player_on(world, input, &Surfaces::default(), dt);
+}
+
+pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfaces, dt: f32) {
     let direction = input.direction();
     let webs: Vec<(glam::Vec2, glam::Vec2)> = world
         .query::<(&Position, &Size)>()
@@ -65,7 +72,9 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
             || webs
                 .iter()
                 .any(|(web, web_size)| geometry::overlaps(position.0, size.0, *web, *web_size));
-        let damping = if on(PatchKind::Ice) {
+        let ground = surfaces.at_point(position.0);
+        let stuck = stuck || ground == Some(Surface::Web);
+        let damping = if on(PatchKind::Ice) || ground == Some(Surface::Ice) {
             ICE_DAMPING
         } else {
             PLAYER_DAMPING
@@ -75,7 +84,9 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
         } else {
             1.0
         } * perks.map_or(1.0, |perks| perks.0.speed);
-        let speed = if stuck {
+        let speed = if ground == Some(Surface::Water) {
+            PLAYER_SPEED * WATER_SLOWDOWN
+        } else if stuck {
             PLAYER_SPEED * COBWEB_SLOWDOWN
         } else {
             PLAYER_SPEED
@@ -179,5 +190,44 @@ mod tests {
         let normal = run_right(&mut free, player);
         let slowed = run_right(&mut stuck, trapped);
         assert!(slowed < normal * 0.6, "{slowed} vs {normal}");
+    }
+
+    fn run_on(surface: Option<crate::dungeon::Surface>) -> f32 {
+        let (mut world, player) = walker(Vec2::new(100.0, 100.0));
+        let mut surfaces = Surfaces::default();
+        if let Some(surface) = surface {
+            surfaces.insert((1, 1), surface);
+        }
+        let mut input = Input::default();
+        input.press(winit::keyboard::KeyCode::KeyD);
+        let mut slowest: f32 = f32::MAX;
+        for _ in 0..30 {
+            world
+                .get::<&mut Position>(player)
+                .map(|mut p| p.0 = Vec2::new(96.0, 96.0))
+                .ok();
+            steer_player_on(&mut world, &input, &surfaces, STEP);
+            slowest = slowest.min(world.get::<&Velocity>(player).map_or(0.0, |v| v.0.x));
+        }
+        world
+            .get::<&Velocity>(player)
+            .map_or(0.0, |v| v.0.x)
+            .max(slowest)
+    }
+
+    #[test]
+    fn water_slows_the_player_and_ice_does_not_change_the_top_speed() {
+        let dry = run_on(None);
+        let wet = run_on(Some(crate::dungeon::Surface::Water));
+        let icy = run_on(Some(crate::dungeon::Surface::Ice));
+        assert!(wet < dry * 0.8, "{wet} vs {dry}");
+        assert!(icy < dry, "{icy} vs {dry}");
+    }
+
+    #[test]
+    fn web_tiles_slow_the_player_like_a_cobweb() {
+        let dry = run_on(None);
+        let stuck = run_on(Some(crate::dungeon::Surface::Web));
+        assert!(stuck < dry * 0.8, "{stuck} vs {dry}");
     }
 }

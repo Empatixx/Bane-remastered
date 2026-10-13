@@ -36,6 +36,10 @@ pub(crate) enum Prop {
     IcePatch,
     WebPatch,
     ArrowTrap,
+    IceSurface,
+    LavaSurface,
+    WaterSurface,
+    WebSurface,
     Icicles,
     IceCrystals,
     FrozenSkull,
@@ -115,6 +119,26 @@ const fn variants(texture: Tex, frame: Vec2, scale: f32) -> PropSpec {
         frame,
         scale,
         animation: None,
+    }
+}
+
+const SURFACE_ROWS: usize = 48;
+
+const fn surface(texture: Tex, frames: usize) -> PropSpec {
+    PropSpec {
+        texture,
+        columns: frames,
+        rows: SURFACE_ROWS,
+        frame: Vec2::new(16.0, 16.0),
+        scale: 4.0,
+        animation: if frames > 1 {
+            Some(Animated {
+                frames,
+                frame_time: 0.25,
+            })
+        } else {
+            None
+        },
     }
 }
 
@@ -260,6 +284,10 @@ impl Prop {
                     frame_time: 0.2,
                 }),
             },
+            Self::IceSurface => surface(tex::SURFACE_ICE, 1),
+            Self::LavaSurface => surface(tex::SURFACE_LAVA, 4),
+            Self::WaterSurface => surface(tex::SURFACE_WATER, 4),
+            Self::WebSurface => surface(tex::SURFACE_WEB, 1),
             Self::Icicles => PropSpec {
                 texture: tex::ICICLES,
                 columns: 1,

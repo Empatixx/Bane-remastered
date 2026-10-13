@@ -154,7 +154,7 @@ impl Planner<'_> {
 
 type ThemedSlot<'a> = (usize, &'a [Candidate], usize, fn(usize) -> DecorKind);
 
-fn patch_tiles(tile: (usize, usize)) -> [(usize, usize); 4] {
+pub(super) fn patch_tiles(tile: (usize, usize)) -> [(usize, usize); 4] {
     [
         tile,
         (tile.0 + 1, tile.1),
@@ -501,8 +501,6 @@ mod tests {
             count_in(Theme::Temple, DecorKind::Spike) > count_in(Theme::Stone, DecorKind::Spike)
         );
         assert!(count_in(Theme::Lava, DecorKind::FireGeyser) > 0);
-        assert!(count_in(Theme::Ice, DecorKind::IcePatch) > 0);
-        assert!(count_in(Theme::Spider, DecorKind::WebPatch) > 0);
         assert!(count_in(Theme::Temple, DecorKind::ArrowTrap) > 0);
         assert_eq!(count_in(Theme::Stone, DecorKind::FireGeyser), 0);
         assert_eq!(count_in(Theme::Sewer, DecorKind::ArrowTrap), 0);

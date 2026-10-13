@@ -7,6 +7,7 @@ use crate::tilemap::{TILE_SIZE, TileGrid};
 use super::decor::{self, Decor};
 use super::furnish::{self, Furnishing};
 use super::layout::{Direction, Layout, LayoutSpec};
+use super::surface::{self, Surfaces};
 use super::template::{Cell, RoomKind, RoomTemplate, Templates, door_columns, door_rows};
 use super::theme::Theme;
 use crate::rng::Rng;
@@ -71,6 +72,7 @@ pub(crate) struct Dungeon {
     pub(crate) grid: TileGrid,
     pub(crate) rooms: Vec<DungeonRoom>,
     pub(crate) theme: Theme,
+    pub(crate) surfaces: Surfaces,
 }
 
 impl Dungeon {
@@ -217,7 +219,20 @@ impl Dungeon {
             room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows);
             room.decor = decor::plan(&grid, room, &mix, rng);
         }
-        Ok(Self { grid, rooms, theme })
+        let mut surfaces = Surfaces::default();
+        if let Some(kind) = theme.surface() {
+            for room in &rooms {
+                for tile in surface::plan(&grid, room, kind, rng) {
+                    surfaces.insert(tile, kind);
+                }
+            }
+        }
+        Ok(Self {
+            grid,
+            rooms,
+            theme,
+            surfaces,
+        })
     }
 
     pub(crate) fn start_position(&self) -> Option<Vec2> {

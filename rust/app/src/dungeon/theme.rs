@@ -1,5 +1,7 @@
 use crate::rng::Rng;
 
+use super::surface::Surface;
+
 const THEME_SALT: u64 = 0x7E3A_11C5_9D42_B6F1;
 const THEME_VAR: &str = "BANE_THEME";
 
@@ -79,6 +81,16 @@ impl Theme {
         order[(floor as usize - 2) % order.len()]
     }
 
+    pub(crate) fn surface(self) -> Option<Surface> {
+        match self {
+            Self::Ice => Some(Surface::Ice),
+            Self::Lava => Some(Surface::Lava),
+            Self::Sewer => Some(Surface::Water),
+            Self::Spider => Some(Surface::Web),
+            _ => None,
+        }
+    }
+
     pub(crate) fn backdrop(self) -> [u8; 3] {
         match self {
             Self::Stone => [37, 19, 26],
@@ -119,8 +131,8 @@ impl Theme {
             frost_barrels,
             cobwebs: if self == Self::Spider { 5 } else { 2 },
             geysers: if self == Self::Lava { 3 } else { 0 },
-            ice_patches: if self == Self::Ice { 3 } else { 0 },
-            web_patches: if self == Self::Spider { 3 } else { 0 },
+            ice_patches: 0,
+            web_patches: 0,
             arrow_traps: if self == Self::Temple { 2 } else { 0 },
             icicles: if self == Self::Ice { 5 } else { 0 },
             crystals: if self == Self::Ice { 3 } else { 0 },
@@ -186,8 +198,6 @@ mod tests {
         assert!(Theme::Spider.mix().cobwebs > Theme::Stone.mix().cobwebs);
         assert!(Theme::Temple.mix().spikes > Theme::Stone.mix().spikes);
         assert!(Theme::Lava.mix().geysers > 0);
-        assert!(Theme::Ice.mix().ice_patches > 0);
-        assert!(Theme::Spider.mix().web_patches > 0);
         assert!(Theme::Temple.mix().arrow_traps > 0);
     }
 

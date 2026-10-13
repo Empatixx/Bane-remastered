@@ -10,7 +10,9 @@ use crate::components::{
     Health, Interactable, Interaction, Layer, Light, Lit, PatchKind, Pickup, Position, Prompt,
     Size, SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
 };
-use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
+use crate::dungeon::{
+    Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces,
+};
 use crate::items::{DESPAWN_SECONDS, ItemKind};
 use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
@@ -566,6 +568,32 @@ fn floor_patch(
     let _ = world.insert_one(entity, Layer(-2));
     let hitbox = patch_hitbox(world, entity, PATCH_HITBOX);
     let _ = world.insert_one(hitbox, FloorPatch(kind));
+    entity
+}
+
+pub(crate) fn surface_tile(
+    world: &mut World,
+    surfaces: &Surfaces,
+    tile: (usize, usize),
+    surface: Surface,
+    textures: &Textures,
+) -> Entity {
+    let prop_kind = match surface {
+        Surface::Ice => Prop::IceSurface,
+        Surface::Lava => Prop::LavaSurface,
+        Surface::Water => Prop::WaterSurface,
+        Surface::Web => Prop::WebSurface,
+    };
+    let row = surfaces.neighbours_mask(tile) * 3 + Surfaces::variant(tile);
+    let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
+    let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);
+    let _ = world.insert_one(entity, Layer(-2));
+    if surface == Surface::Lava && (tile.0 + tile.1 * 3).is_multiple_of(4) {
+        let _ = world.insert_one(
+            entity,
+            Light::rgb(Vec2::ZERO, 255.0, 110.0, 20.0, 80.0, 0.9),
+        );
+    }
     entity
 }
 
