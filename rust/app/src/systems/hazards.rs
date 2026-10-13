@@ -19,8 +19,9 @@ const ARROW_HITBOX: Vec2 = Vec2::new(12.0, 40.0);
 const ARROW_DAMAGE: i32 = 1;
 const ARROW_REACH: f32 = 640.0;
 const ARROW_RECHECK: f32 = 0.25;
-const IMPACT_SIZE: Vec2 = Vec2::new(96.0, 96.0);
-const IMPACT_FRAMES: usize = 6;
+const SLIT_OFFSET: f32 = 4.0;
+const IMPACT_SIZE: Vec2 = Vec2::new(64.0, 64.0);
+const IMPACT_FRAMES: usize = 4;
 const WEB_BULLET_DRAG: f32 = 30.0;
 const WEB_CATCHES_BELOW: f32 = 150.0;
 
@@ -28,7 +29,7 @@ fn impact(world: &mut World, at: Vec2, textures: &Textures) {
     let clip = Clip {
         row: 0,
         frames: IMPACT_FRAMES,
-        frame_time: 0.06,
+        frame_time: 0.09,
         looping: false,
         flipped: false,
     };
@@ -71,41 +72,67 @@ pub(crate) fn tick_arrow_traps(
             continue;
         }
         trap.timer = ARROW_PERIOD;
-        shots.push(position.0 + Vec2::new(0.0, size.0.y / 2.0 + ARROW_SIZE.y / 2.0));
+        let slit = position.0 + Vec2::new(0.0, SLIT_OFFSET);
+        shots.push((slit, size.0.y / 2.0 - SLIT_OFFSET + 2.0));
     }
-    for at in shots {
+    for (slit, free_after) in shots {
         world.spawn((
-            TrapArrow,
-            Position(at),
-            Size(ARROW_SIZE),
+            TrapArrow {
+                origin_y: slit.y,
+                travelled: 0.0,
+                free_after,
+            },
+            Position(slit),
+            Size(Vec2::new(ARROW_SIZE.x, 2.0)),
             Color(Vec4::ONE),
             Sprite::whole(textures.get(tex::TRAP_ARROW)),
             Layer(2),
             Lit,
         ));
     }
-    let flying: Vec<(Entity, Vec2)> = world
-        .query::<(Entity, &Position)>()
-        .with::<&TrapArrow>()
+    let flying: Vec<(Entity, f32, f32, f32, f32)> = world
+        .query::<(Entity, &Position, &TrapArrow)>()
         .iter()
-        .map(|(entity, position)| (entity, position.0))
+        .map(|(entity, position, arrow)| {
+            (
+                entity,
+                position.0.x,
+                arrow.origin_y,
+                arrow.travelled,
+                arrow.free_after,
+            )
+        })
         .collect();
-    for (entity, at) in flying {
-        let next = at + Vec2::new(0.0, ARROW_SPEED * dt);
-        let tip = next + Vec2::new(0.0, ARROW_SIZE.y / 2.0 - ARROW_HITBOX.y / 2.0);
-        if navigation.is_blocked(tip, ARROW_HITBOX) {
+    for (entity, x, origin_y, travelled, free_after) in flying {
+        let travelled = travelled + ARROW_SPEED * dt;
+        let tip_y = origin_y + travelled;
+        let hitbox_at = Vec2::new(x, tip_y - ARROW_HITBOX.y / 2.0);
+        let tip = Vec2::new(x, tip_y);
+        if travelled > free_after && navigation.is_blocked(hitbox_at, ARROW_HITBOX) {
             let _ = world.despawn(entity);
-            impact(world, tip + Vec2::new(0.0, ARROW_HITBOX.y / 2.0), textures);
+            impact(world, tip, textures);
             continue;
         }
-        if geometry::overlaps(next, ARROW_HITBOX, player_at, player_size) {
+        if travelled > free_after
+            && geometry::overlaps(hitbox_at, ARROW_HITBOX, player_at, player_size)
+        {
             hurt_player(world, player, ARROW_DAMAGE, sounds);
             let _ = world.despawn(entity);
-            impact(world, next + Vec2::new(0.0, ARROW_SIZE.y / 2.0), textures);
+            impact(world, tip, textures);
             continue;
         }
+        let visible = travelled.clamp(2.0, ARROW_SIZE.y);
+        if let Ok(mut arrow) = world.get::<&mut TrapArrow>(entity) {
+            arrow.travelled = travelled;
+        }
         if let Ok(mut position) = world.get::<&mut Position>(entity) {
-            position.0 = next;
+            position.0 = Vec2::new(x, tip_y - visible / 2.0);
+        }
+        if let Ok(mut size) = world.get::<&mut Size>(entity) {
+            size.0 = Vec2::new(ARROW_SIZE.x, visible);
+        }
+        if let Ok(mut sprite) = world.get::<&mut Sprite>(entity) {
+            sprite.uv[1] = 1.0 - visible / ARROW_SIZE.y;
         }
     }
 }
@@ -390,5 +417,44 @@ mod tests {
         }
 
         assert!(impacts(&world) >= 1);
+    }
+
+    #[test]
+    fn the_arrow_grows_out_of_the_slit_inside_its_own_wall_tile() {
+        let (mut world, _) = world_with_player(Vec2::new(600.0, 400.0));
+        trap_at(&mut world, Vec2::new(224.0, 96.0), 0.0);
+        let navigation = Navigation::new(&[(3, 1), (9, 15)]);
+
+        tick_arrow_traps(
+            &mut world,
+            &navigation,
+            &Textures::default(),
+            &mut Vec::new(),
+            0.016,
+        );
+        let first = world
+            .query::<&Size>()
+            .with::<&TrapArrow>()
+            .iter()
+            .next()
+            .map(|size| size.0.y);
+        assert!(first.is_some_and(|height| height < ARROW_SIZE.y / 2.0));
+
+        for _ in 0..30 {
+            tick_arrow_traps(
+                &mut world,
+                &navigation,
+                &Textures::default(),
+                &mut Vec::new(),
+                0.016,
+            );
+        }
+        let grown = world
+            .query::<&Size>()
+            .with::<&TrapArrow>()
+            .iter()
+            .next()
+            .map(|size| size.0.y);
+        assert_eq!(grown, Some(ARROW_SIZE.y));
     }
 }

@@ -172,60 +172,80 @@ def web_patch():
 
 def arrow_trap():
     image = Image.new("RGBA", (16, 16), CLEAR)
-    dark = (28, 18, 24, 255)
-    deep = (14, 8, 12, 255)
+    dark = (22, 14, 18, 255)
     edge_light = (190, 176, 158, 255)
     edge_shade = (88, 74, 74, 255)
-    for y in range(5, 14):
+    for y in range(6, 11):
         for x in range(6, 10):
             image.putpixel((x, y), dark)
-    for y in range(6, 13):
-        image.putpixel((7, y), deep)
-        image.putpixel((8, y), deep)
-    for y in range(4, 15):
+    for x in range(5, 11):
+        image.putpixel((x, 5), edge_shade)
+    for y in range(5, 12):
         image.putpixel((5, y), edge_shade)
     for x in range(5, 11):
-        image.putpixel((x, 4), edge_shade)
-    for x in range(5, 11):
-        image.putpixel((x, 14), edge_light)
-    for y in range(5, 15):
+        image.putpixel((x, 11), edge_light)
+    for y in range(6, 12):
         image.putpixel((10, y), edge_light)
-    image.putpixel((5, 14), edge_light)
-    image.putpixel((10, 4), edge_shade)
     return image
 
 
 def arrow_hit():
-    frames, size = 6, 32
+    frames, size = 4, 16
     sheet = Image.new("RGBA", (size * frames, size), CLEAR)
-    centre = (size - 1) / 2
     wood = (176, 130, 84, 255)
     wood_dark = (120, 84, 52, 255)
-    metal = (232, 232, 240, 255)
-    for frame in range(frames):
-        r = random.Random(900 + frame)
-        image = Image.new("RGBA", (size, size), CLEAR)
-        progress = frame / (frames - 1)
-        radius = 3 + frame * 2.4
-        for y in range(size):
-            for x in range(size):
-                dx, dy = x - centre, y - centre
-                distance = math.hypot(dx, dy)
-                angle = math.atan2(dy, dx)
-                spikes = 1 + 0.45 * math.sin(angle * 7 + frame * 0.9) + 0.25 * math.sin(angle * 3 - frame)
-                edge = radius * spikes
-                if distance < edge:
-                    heat = (1 - distance / max(edge, 1)) * (1 - progress * 0.75) + r.uniform(-0.08, 0.08)
-                    if progress > 0.5 and r.random() < (progress - 0.5) * 1.6:
-                        continue
-                    level = max(0, min(len(FLAME_RAMP) - 1, int(heat * len(FLAME_RAMP) + 0.6)))
-                    image.putpixel((x, y), FLAME_RAMP[level])
-        for _ in range(4 + frame * 2):
-            angle = r.uniform(0, math.tau)
-            distance = radius * r.uniform(0.9, 1.6)
-            x, y = int(centre + math.cos(angle) * distance), int(centre + math.sin(angle) * distance)
-            if 0 <= x < size and 0 <= y < size:
-                image.putpixel((x, y), r.choice([wood, wood_dark, metal, FLAME_RAMP[4]]))
+    metal = (214, 214, 224, 255)
+    metal_dark = (150, 150, 168, 255)
+    feather = (222, 222, 232, 255)
+
+    def px(image, x, y, colour):
+        if 0 <= x < size and 0 <= y < size:
+            image.putpixel((x, y), colour)
+
+    def head(image, x, y):
+        px(image, x, y, metal)
+        px(image, x - 1, y - 1, metal_dark)
+        px(image, x + 1, y - 1, metal_dark)
+        px(image, x, y - 1, metal)
+
+    def shaft(image, x, y, length, shade=0):
+        for step in range(length):
+            px(image, x, y + step, wood if (step + shade) % 2 else wood_dark)
+
+    f0 = Image.new("RGBA", (size, size), CLEAR)
+    head(f0, 8, 12)
+    shaft(f0, 8, 6, 5)
+    px(f0, 7, 5, feather)
+    px(f0, 9, 5, feather)
+    px(f0, 6, 12, (255, 238, 190, 255))
+    px(f0, 10, 12, (255, 238, 190, 255))
+
+    f1 = Image.new("RGBA", (size, size), CLEAR)
+    head(f1, 7, 13)
+    shaft(f1, 7, 11, 2)
+    shaft(f1, 9, 4, 4)
+    px(f1, 8, 3, feather)
+    px(f1, 10, 3, feather)
+    px(f1, 5, 12, wood)
+    px(f1, 11, 12, wood_dark)
+
+    f2 = Image.new("RGBA", (size, size), CLEAR)
+    head(f2, 5, 14)
+    shaft(f2, 10, 9, 3)
+    shaft(f2, 7, 12, 2, 1)
+    px(f2, 11, 7, feather)
+    px(f2, 13, 12, wood)
+    px(f2, 3, 11, wood_dark)
+    px(f2, 9, 13, wood)
+
+    f3 = Image.new("RGBA", (size, size), CLEAR)
+    px(f3, 4, 15, metal_dark)
+    px(f3, 11, 14, wood_dark)
+    px(f3, 8, 15, wood)
+    px(f3, 14, 14, wood)
+    px(f3, 2, 13, wood_dark)
+
+    for frame, image in enumerate((f0, f1, f2, f3)):
         sheet.paste(image, (frame * size, 0))
     return sheet
 

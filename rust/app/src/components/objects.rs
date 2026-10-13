@@ -54,7 +54,11 @@ pub(crate) struct ArrowTrap {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct TrapArrow;
+pub(crate) struct TrapArrow {
+    pub(crate) origin_y: f32,
+    pub(crate) travelled: f32,
+    pub(crate) free_after: f32,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct RippleTimer(pub(crate) f32);
