@@ -66,7 +66,7 @@ def recolor(source, palette):
 
 
 def in_floor(x, y):
-    return y < TILE and x // TILE in FLOOR_COLUMNS
+    return y < TILE and x // TILE < 21
 
 
 def scatter(source, out, mask, colours, chance, seed):
@@ -144,8 +144,8 @@ def crack_line(image, ox, oy, r, glow, core, mask):
 
 def cracks(source, out, glow, core, seed):
     r = random.Random(seed)
-    for column in FLOOR_COLUMNS:
-        for _ in range(r.choice([0, 0, 0, 1])):
+    for column in range(21):
+        for _ in range(r.choice([0, 0, 0, 0, 1] if column not in FLOOR_COLUMNS else [0, 0, 0, 1])):
             crack_line(out, column * TILE, 0, r, glow, core, set(map(tuple, [(60, 36, 36), (66, 40, 38), (52, 28, 28), (80, 48, 44)])))
 
 
@@ -253,6 +253,7 @@ def variant(name, source):
         scatter(source, out, BODY, [(66, 60, 78)], 0.006, 4)
     elif name == "lava":
         cracks(source, out, (214, 84, 28, 255), (255, 190, 60, 255), 5)
+        scatter(source, out, BODY, [(168, 70, 36), (214, 84, 28)], 0.006, 6)
     elif name == "temple":
         scatter(source, out, BODY, [(120, 98, 70)], 0.006, 8)
     elif name == "sewer":
