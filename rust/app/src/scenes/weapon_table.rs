@@ -42,7 +42,8 @@ const FADE: f32 = 20.0;
 const DRAG_THRESHOLD: f32 = 5.0;
 const PAN_SPEED: f32 = 380.0;
 const PAN_MARGIN: f32 = 120.0;
-const RARE_FROM_ROW: i32 = 3;
+const RARE_FROM_ROW: i32 = 2;
+const EPIC_FROM_ROW: i32 = 3;
 const STEP: Vec2 = Vec2::new(80.0, 74.0);
 const REROLL_LEFT: f32 = CENTER_X - 54.0;
 const ARROW_INSET: f32 = 10.0;
@@ -571,7 +572,7 @@ fn icon_of(node: &Node) -> Icon {
 }
 
 fn quality_of(node: &Node) -> Quality {
-    if node.mutation.is_some() {
+    if node.mutation.is_some() || node.row >= EPIC_FROM_ROW {
         Quality::Epic
     } else if node.row >= RARE_FROM_ROW {
         Quality::Rare
@@ -583,7 +584,8 @@ fn quality_of(node: &Node) -> Quality {
 fn multiplier(node: &Node) -> u32 {
     match quality_of(node) {
         Quality::Common => 1,
-        Quality::Rare | Quality::Epic => 2,
+        Quality::Rare => 2,
+        Quality::Epic => 3,
     }
 }
 
@@ -1143,7 +1145,7 @@ mod tests {
         for kind in GunKind::ALL {
             for rerolls in 0..20 {
                 for node in &tree(kind, rerolls).nodes {
-                    let expected = if node.mutation.is_some() {
+                    let expected = if node.mutation.is_some() || node.row >= EPIC_FROM_ROW {
                         Quality::Epic
                     } else if node.row >= RARE_FROM_ROW {
                         Quality::Rare
@@ -1155,6 +1157,41 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn every_tree_has_common_rare_and_epic_upgrades_besides_the_mutation() {
+        for kind in GunKind::ALL {
+            for rerolls in 0..20 {
+                let grown = tree(kind, rerolls);
+                let has = |wanted: Quality| {
+                    grown
+                        .nodes
+                        .iter()
+                        .any(|node| node.mutation.is_none() && quality_of(node) == wanted)
+                };
+
+                assert!(has(Quality::Common) && has(Quality::Rare) && has(Quality::Epic));
+            }
+        }
+    }
+
+    #[test]
+    fn an_epic_upgrade_is_worth_three_common_ones() {
+        let grown = tree(GunKind::ALL[0], 0);
+        let epic = grown
+            .nodes
+            .iter()
+            .find(|node| node.mutation.is_none() && quality_of(node) == Quality::Epic);
+        let common = grown
+            .nodes
+            .iter()
+            .find(|node| node.mutation.is_none() && quality_of(node) == Quality::Common);
+
+        let (Some(epic), Some(common)) = (epic, common) else {
+            panic!("a tree has both");
+        };
+        assert_eq!(multiplier(epic), 3 * multiplier(common));
     }
 
     #[test]
