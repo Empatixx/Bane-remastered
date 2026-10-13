@@ -189,7 +189,7 @@ pub(crate) fn poison_trail(world: &mut World, center: Vec2, textures: &Textures)
         Position(center),
         Size(TRAIL_SIZE),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::POISON_PUDDLE), 0, 0, 6, 2),
+        Sprite::cell(textures.get(tex::POISON_TRAIL), 0, 0, 6, 2),
         Animation::new(6, 2, spawn),
         ThenPlay(idle),
         Layer(0),

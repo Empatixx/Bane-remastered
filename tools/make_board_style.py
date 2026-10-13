@@ -488,6 +488,49 @@ def casing_sheet():
     return sheet
 
 
+def poison_trail_sheet():
+    rim = (34, 74, 46, 255)
+    body = (66, 132, 76, 255)
+    shade = (48, 104, 60, 255)
+    light = (118, 186, 112, 255)
+    bubble = (190, 232, 168, 255)
+    sheet = Image.new("RGBA", (96, 32), (0, 0, 0, 0))
+
+    def blob(radius):
+        cell = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+        spots = [(8, 8, radius), (6, 9, radius * 0.7), (10, 7, radius * 0.65), (9, 10, radius * 0.6)]
+        inside = set()
+        for y in range(16):
+            for x in range(16):
+                for cx, cy, r in spots:
+                    if ((x - cx) ** 2) / 1.0 + ((y - cy) ** 2) / 0.62 <= r * r:
+                        inside.add((x, y))
+                        break
+        for x, y in inside:
+            edge = any((x + dx, y + dy) not in inside for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+            lower = (x, y + 1) not in inside
+            tone = rim if edge and lower else shade if lower else rim if edge else body
+            cell.putpixel((x, y), tone)
+        for x, y in sorted(inside):
+            if (x, y - 1) in inside and (x - 1, y) in inside and (x + 1, y) in inside and (x, y + 1) in inside:
+                if (x * 3 + y * 5) % 11 == 0:
+                    cell.putpixel((x, y), light)
+        return cell, inside
+
+    for column in range(6):
+        radius = 1.5 + column * 0.95
+        cell, _ = blob(radius)
+        sheet.paste(cell, (column * 16, 0))
+    for column in range(6):
+        cell, inside = blob(6.3)
+        spots = sorted(inside)
+        if spots:
+            pick = spots[(column * 7 + 3) % len(spots)]
+            cell.putpixel(pick, bubble)
+        sheet.paste(cell, (column * 16, 16))
+    return sheet
+
+
 def enemy_arrow():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -569,6 +612,7 @@ def main():
     reroll_dice().save(f"{OUT}/reroll_dice.tga")
     enemy_arrow().save(f"{OUT}/enemy_arrow.tga")
     casing_sheet().save(f"{OUT}/casing.tga")
+    poison_trail_sheet().save(f"{OUT}/poison_trail.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
     preview([board, notes, talent_icon(), upgrade_icons(), mutation_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")

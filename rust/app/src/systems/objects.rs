@@ -13,7 +13,7 @@ use crate::items::ItemKind;
 use crate::objects::{
     EXPLOSION_DAMAGE, EXPLOSION_REACH, FROST_BOSS_SECONDS, FROST_ENEMY_SECONDS,
     FROST_PLAYER_SECONDS, FROST_REACH, POISON_DAMAGE, POISON_TICK_SECONDS, POOL_FADE_SECONDS,
-    POOL_HITBOX, TRAIL_HITBOX, TRAIL_SPACING,
+    POOL_HITBOX, TRAIL_ALPHA, TRAIL_HITBOX, TRAIL_SPACING,
 };
 use crate::physics::Physics;
 use crate::prefabs;
@@ -183,7 +183,8 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
     )>() {
         pool.remaining -= dt;
         pool.tick -= dt;
-        color.0.w = (pool.remaining / POOL_FADE_SECONDS).clamp(0.0, 1.0);
+        let strength = if trail.is_some() { TRAIL_ALPHA } else { 1.0 };
+        color.0.w = (pool.remaining / POOL_FADE_SECONDS).clamp(0.0, 1.0) * strength;
         if pool.remaining <= 0.0 {
             gone.push(entity);
             continue;

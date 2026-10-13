@@ -1,6 +1,6 @@
 use glam::Vec2;
 
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use crate::components::BreakKind;
 
 pub(crate) const OBJECT_SIZE: Vec2 = Vec2::new(192.0, 192.0);
@@ -11,8 +11,9 @@ pub(crate) const POOL_SIZE: Vec2 = Vec2::new(128.0, 128.0);
 pub(crate) const POOL_HITBOX: Vec2 = Vec2::new(96.0, 76.0);
 pub(crate) const POOL_SECONDS: f32 = 8.0;
 pub(crate) const POOL_FADE_SECONDS: f32 = 1.0;
-pub(crate) const TRAIL_SIZE: Vec2 = Vec2::new(64.0, 64.0);
-pub(crate) const TRAIL_HITBOX: Vec2 = Vec2::new(40.0, 32.0);
+pub(crate) const TRAIL_SIZE: Vec2 = Vec2::new(48.0, 48.0);
+pub(crate) const TRAIL_HITBOX: Vec2 = Vec2::new(34.0, 26.0);
+pub(crate) const TRAIL_ALPHA: f32 = 0.8;
 pub(crate) const TRAIL_SECONDS: f32 = 5.0;
 pub(crate) const TRAIL_SPACING: f32 = 44.0;
 pub(crate) const POISON_TICK_SECONDS: f32 = 1.0;
