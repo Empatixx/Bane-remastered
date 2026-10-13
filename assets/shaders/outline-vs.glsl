@@ -1,13 +1,16 @@
-#version 330
+#version 330 core
 
-uniform mat4 uProjection;
+uniform mat4 u_viewMatrix;
+uniform mat4 u_projectionMatrix;
 
-layout (location = 0) in vec2 vertices;
+layout (location = 0) in vec3 vertices;
 layout (location = 1) in vec2 textures;
 
 out vec2 tex_coords;
+out vec2 world_position;
 
 void main() {
+    world_position = vertices.xy;
     tex_coords = textures;
-    gl_Position = uProjection * vec4(vertices, 0.0f, 1.0f);
+    gl_Position = u_projectionMatrix * u_viewMatrix * vec4(vertices, 1.0);
 }

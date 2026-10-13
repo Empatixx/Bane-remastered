@@ -1,0 +1,25 @@
+package cz.empatix.upgrades.domain;
+
+public enum PlayerUpgradeName {
+    IMPROVED_MOVEMENT_SPEED,
+    DISCOUNT,
+    TRAP_MASTER,
+    ADDITIONAL_GUN,
+    GAMBLE_MACHINE,
+
+
+    IMPROVED_HEALTH,
+    IMPROVED_ARMOR,
+    ARMOR_REGENERATION,
+    ENHANCED_HEALTH,
+    REDUCED_DAMAGE_TAKEN,
+
+
+    IMPROVED_DAMAGE,
+    ADDITIONAL_AMMO,
+    CRITICAL_HIT,
+    ENHANCED_DAMAGE,
+    PET,
+
+    UNKNOWN
+}

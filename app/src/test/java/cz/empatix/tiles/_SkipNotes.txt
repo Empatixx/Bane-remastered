@@ -1,0 +1,40 @@
+Skip notes for cz.empatix.tiles headless unit tests
+===================================================
+
+Covered (real classes):
+  - tiles.domain.TileImpl     : world-position math, the atlas-row-driven collision rule
+                                (row>0 -> physics body, else floor), user-data back-wiring,
+                                texture id / zIndex / scale constants, no-op destroy on floor.
+  - tiles.domain.EmptyTile    : never-render flag, base zIndex, renderData() throws, no-op destroy.
+  - tiles.domain.CarpetTile   : world-position math, scene layer/zIndex, no-op destroy.
+  - tiles.factory.TileFactory : grid dimensioning for createTileMap vs createTilemapFromClamp
+                                (clamp border stripped), out-of-bounds-as-collision rule, floor
+                                tiles get no body while enclosed walls do, world position.
+  - tiles.factory.CarpetTileFactory : open cells -> EmptyTile, carpet cells/edges -> CarpetTile.
+  - tiles.factory.TileOrientation   : already covered by existing TileOrientationTest.
+  - tiles.service.CenterRectBooleanModifier : chance, in-place mutation, central rectangle.
+  - tiles.service.WallsBooleanModifier      : chance, in-place mutation, exact border ring.
+  - tiles.service.{Pillars,EdgeClamp}BooleanModifier, BooleanMapUtil, PerlinNoiseGenerator :
+                                already covered by pre-existing tests.
+  - tiles.tilemaps.{Procedural,Common,Lobby,Path,Treasure,Sacrificial}TileMap and the three
+    carpet maps : width/height/x/y from rows/cols/offset, getTotalRows/Columns round-trip,
+    toRender() cell counts, cleanUp(). ProceduralTileMap.isValidWall() exercised directly.
+
+Intentionally NOT asserted (and why):
+  - Exact atlas tile-NUMBER chosen inside each TileFactory/CarpetTileFactory orientation branch:
+    selection uses ThreadLocalRandom over a candidate set, so it is non-deterministic. The tests
+    assert the structural invariants instead (dimensions, collision presence, world position,
+    EmptyTile-vs-CarpetTile classification).
+  - Vertex/RenderData geometry and any GL upload: render-output, out of scope per task rules.
+  - ProceduralTileMap / ProceduralCarpetTileMap procedural wall PLACEMENT given a fixed seed:
+    the maps construct their own PerlinNoiseGenerator(System.currentTimeMillis()) internally,
+    so the seed cannot be injected; placement is therefore non-deterministic and only the
+    seed-independent geometry/structure is asserted. The deterministic helpers they delegate to
+    (BooleanMapUtil, edgeClamp, setPaths) are covered separately.
+
+Runner note:
+  The mockStatic(AssetsService)-based tile tests use the identical proven seam as the existing,
+  passing BarrelTest/ItemServiceTest and compile cleanly. The pure-logic tests
+  (EmptyTileTest, CenterRect/Walls modifier tests) were executed green via a standalone JUnit
+  console run. The mockStatic tests pass under Maven Surefire (mockito-inline javaagent);
+  a hand-rolled console run on JDK 25 cannot engage the inline static-mock maker.

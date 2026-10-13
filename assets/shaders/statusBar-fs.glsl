@@ -40,4 +40,7 @@ void main() {
     } else {
         gl_FragColor = texColor;
     }
+    if  (gl_FragColor.a == 0){
+        discard;
+    }
 }
