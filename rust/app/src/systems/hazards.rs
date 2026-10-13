@@ -19,7 +19,7 @@ const ARROW_HITBOX: Vec2 = Vec2::new(12.0, 40.0);
 const ARROW_DAMAGE: i32 = 1;
 const ARROW_REACH: f32 = 640.0;
 const ARROW_RECHECK: f32 = 0.25;
-const WEB_BULLET_DRAG: f32 = 9.0;
+const WEB_BULLET_DRAG: f32 = 30.0;
 const WEB_CATCHES_BELOW: f32 = 150.0;
 
 pub(crate) fn tick_arrow_traps(
@@ -298,6 +298,29 @@ mod tests {
 
         for _ in 0..120 {
             slow_bullets_in_webs(&mut world, &mut physics, 1.0 / 60.0);
+        }
+
+        assert!(world.get::<&Expiring>(shot).is_ok());
+    }
+
+    #[test]
+    fn a_bullet_fired_into_a_web_stops_within_a_fraction_of_its_width() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        web_at(&mut world, Vec2::new(300.0, 300.0));
+        let start = Vec2::new(252.0, 300.0);
+        let shot = bullet_at(&mut world, &mut physics, start, false);
+
+        for _ in 0..60 {
+            if let Ok(body) = world.get::<&Body>(shot).map(|body| *body) {
+                if let Some(at) = physics.position(body) {
+                    if let Ok(mut position) = world.get::<&mut Position>(shot) {
+                        position.0 = at;
+                    }
+                }
+            }
+            slow_bullets_in_webs(&mut world, &mut physics, 1.0 / 60.0);
+            physics.step(1.0 / 60.0);
         }
 
         assert!(world.get::<&Expiring>(shot).is_ok());
