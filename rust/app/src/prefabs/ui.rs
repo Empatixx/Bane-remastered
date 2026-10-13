@@ -176,7 +176,7 @@ pub(crate) fn death_ui(world: &mut World, victory: bool, textures: &Textures) {
             Color(Vec4::ONE),
             Text::new(
                 String::new(),
-                Vec4::new(236.0 / 255.0, 0.0, 0.0, 1.0),
+                Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
                 FontSize::Size22,
             ),
             Layer(22),

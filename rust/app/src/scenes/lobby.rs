@@ -434,7 +434,7 @@ mod tests {
         let (mut scene, _assets) = lobby();
         let profile = scene.profile.clone().expect("profile");
 
-        profile.bank_gold(7);
+        profile.top_up_gold(GOLD_TO_TRY_OUT + 7);
         scene.refresh_counters();
 
         let gold: Vec<String> = scene

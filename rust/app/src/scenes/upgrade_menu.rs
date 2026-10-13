@@ -841,20 +841,11 @@ pub(super) fn spawn(world: &mut World, element: Element, assets: &Assets) {
 mod tests {
     use winit::event::{ElementState, MouseButton};
 
-    use crate::components::RunStats;
-    use crate::systems::summarize;
-
     use super::*;
 
     fn rich_profile() -> SharedProfile {
         let profile = SharedProfile::in_memory();
-        let stats = RunStats {
-            fired: 500,
-            hits: 400,
-            kills: 300,
-            items: 200,
-        };
-        profile.record_run(stats, &summarize(stats, 9), true);
+        profile.top_up(1000);
         profile
     }
 

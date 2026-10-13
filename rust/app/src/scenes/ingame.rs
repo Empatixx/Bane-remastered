@@ -432,15 +432,7 @@ impl InGameScene {
         let stats = systems::current_stats(&self.world);
         let summary = systems::summarize(stats, self.floor);
         tracing::info!(victory = self.victory, ?summary, "the run is over");
-        let coins = self
-            .world
-            .query::<&crate::components::Wallet>()
-            .with::<&crate::components::Player>()
-            .iter()
-            .map(|wallet| u64::try_from(wallet.coins).unwrap_or(0))
-            .sum::<u64>();
         if let Some(profile) = &self.profile {
-            profile.bank_gold(coins);
             profile.record_run(stats, &summary, self.victory);
         }
         prefabs::death_ui(&mut self.world, self.victory, &assets.textures);

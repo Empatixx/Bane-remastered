@@ -68,7 +68,7 @@ impl Profile {
             .iter()
             .map(|reward| u64::from(*reward))
             .sum();
-        self.balance += earned;
+        self.gold += earned;
         self.total_earned += earned;
         self.runs += 1;
         if victory {
@@ -183,17 +183,6 @@ impl SharedProfile {
         self.0.borrow().profile.gold
     }
 
-    pub(crate) fn bank_gold(&self, coins: u64) {
-        if coins == 0 {
-            return;
-        }
-        let mut store = self.0.borrow_mut();
-        store.profile.gold += coins;
-        if let Some(path) = &store.path {
-            store.profile.save(path);
-        }
-    }
-
     pub(crate) fn top_up_gold(&self, minimum: u64) {
         let mut store = self.0.borrow_mut();
         if store.profile.gold >= minimum {
@@ -224,7 +213,7 @@ impl SharedProfile {
         }
         tracing::info!(
             earned,
-            balance = store.profile.balance,
+            gold = store.profile.gold,
             "the run was saved to the profile"
         );
         earned
@@ -255,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn a_finished_run_adds_its_rewards_to_the_balance_and_the_lifetime_totals() {
+    fn a_finished_run_adds_its_rewards_to_the_gold_and_the_lifetime_totals() {
         let mut profile = Profile::default();
         let (stats, summary) = run(10, 3);
         let earned = profile.record_run(stats, &summary, false);
@@ -265,7 +254,8 @@ mod tests {
             summary.rewards.iter().map(|r| u64::from(*r)).sum::<u64>()
         );
         assert!(earned > 0);
-        assert_eq!(profile.balance, earned);
+        assert_eq!(profile.gold, earned);
+        assert_eq!(profile.balance, 0);
         assert_eq!(profile.total_earned, earned);
         assert_eq!((profile.runs, profile.deaths, profile.wins), (1, 1, 0));
         assert_eq!((profile.kills, profile.items_collected), (10, 4));
@@ -291,35 +281,34 @@ mod tests {
         let path = temp_path("upgrades");
         let _ = fs::remove_file(&path);
         let shared = SharedProfile::load(&path);
-        let (stats, summary) = run(40, 6);
-        let earned = shared.record_run(stats, &summary, true);
-        assert!(earned >= TALENT_PRICE, "{earned}");
+        shared.top_up(10);
 
         assert_eq!(shared.buy(Upgrade::Discount), Purchase::Bought);
-        assert_eq!(shared.balance(), earned - TALENT_PRICE);
+        assert_eq!(shared.balance(), 10 - TALENT_PRICE);
         assert!(shared.perks().discount);
 
         let reloaded = SharedProfile::load(&path);
         assert!(reloaded.snapshot().owns(Upgrade::Discount));
-        assert_eq!(reloaded.balance(), earned - TALENT_PRICE);
+        assert_eq!(reloaded.balance(), 10 - TALENT_PRICE);
         let _ = fs::remove_file(&path);
     }
 
     #[test]
-    fn banked_gold_is_remembered_across_restarts_and_never_goes_below_what_was_banked() {
+    fn gold_from_a_run_is_remembered_across_restarts_and_the_test_top_up_never_lowers_it() {
         let path = temp_path("gold");
         let _ = fs::remove_file(&path);
         let shared = SharedProfile::load(&path);
-        shared.bank_gold(0);
-        assert_eq!(shared.gold(), 0);
-        shared.bank_gold(40);
-        shared.bank_gold(2);
-        shared.top_up_gold(10);
-        assert_eq!(shared.gold(), 42);
-        shared.top_up_gold(100);
+        let (stats, summary) = run(10, 3);
+        let earned = shared.record_run(stats, &summary, false);
+        assert!(earned > 0);
+        assert_eq!(shared.gold(), earned);
+        shared.top_up_gold(earned - 1);
+        assert_eq!(shared.gold(), earned);
+        shared.top_up_gold(earned + 100);
 
         let reloaded = SharedProfile::load(&path);
-        assert_eq!(reloaded.gold(), 100);
+        assert_eq!(reloaded.gold(), earned + 100);
+        assert_eq!(reloaded.balance(), 0);
         let _ = fs::remove_file(&path);
     }
 
@@ -343,7 +332,7 @@ mod tests {
         let earned = shared.record_run(stats, &summary, false);
 
         let reloaded = SharedProfile::load(&path);
-        assert_eq!(reloaded.balance(), earned);
+        assert_eq!(reloaded.gold(), earned);
         assert_eq!(reloaded.snapshot().kills, 7);
         let _ = fs::remove_file(&path);
     }
@@ -452,6 +441,6 @@ mod tests {
         let shared = SharedProfile::in_memory();
         let (stats, summary) = run(3, 2);
         shared.record_run(stats, &summary, false);
-        assert!(shared.balance() > 0);
+        assert!(shared.gold() > 0);
     }
 }
