@@ -141,8 +141,7 @@ mod tests {
         assert_eq!(arrows(&world).len(), 2);
 
         update_enemy_arrows(&mut world, Vec2::new(2800.0, 0.0), texture);
-        let after = arrows(&world);
-        assert_eq!(after.len(), 2);
+        assert_eq!(arrows(&world).len(), 1);
     }
 
     #[test]
