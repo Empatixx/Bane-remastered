@@ -37,7 +37,7 @@ pub(crate) use combat::{
 pub(crate) use death::DeathPart;
 pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};
 pub(crate) use effects::{
-    Floating, Gate, GazeWind, Hover, LightFade, Opening, Particle, RoomId, ThenPlay, TrapCooldown,
+    Floating, Casing, Gate, GazeWind, Hover, LightFade, Opening, Particle, RoomId, ThenPlay, TrapCooldown,
     HOVER_CYCLE,
 };
 pub(crate) use hud::{

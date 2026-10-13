@@ -7,7 +7,7 @@ use crate::components::{
     Animation, Body, Bullet, Burst, Expiring, Loadout, Player, PlayerPerks, Position, Velocity,
 };
 use crate::controls::Action;
-use crate::guns::{BURST_DELAY, GunSpec, MAX_PELLETS};
+use crate::guns::{BURST_DELAY, ClipStyle, GunSpec, MAX_PELLETS};
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;
@@ -23,6 +23,7 @@ pub(crate) struct ShotRoll {
     pub(crate) spread: f32,
     pub(crate) damages: [f32; MAX_PELLETS],
     pub(crate) critical: f32,
+    pub(crate) eject: [f32; 4],
 }
 
 impl ShotRoll {
@@ -31,6 +32,7 @@ impl ShotRoll {
             spread: rng.signed(),
             damages: std::array::from_fn(|_| rng.float()),
             critical: rng.float(),
+            eject: std::array::from_fn(|_| rng.float()),
         }
     }
 }
@@ -39,6 +41,7 @@ impl ShotRoll {
 pub(crate) struct ShotContext {
     pub(crate) camera: Vec2,
     pub(crate) bullet_texture: TextureId,
+    pub(crate) casing_texture: TextureId,
     pub(crate) dt: f32,
     pub(crate) roll: ShotRoll,
 }
@@ -62,6 +65,7 @@ pub(crate) fn shoot(
     let ShotContext {
         camera,
         bullet_texture,
+        casing_texture,
         dt,
         roll,
     } = context;
@@ -147,6 +151,14 @@ pub(crate) fn shoot(
     let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
     super::stats::record(world, super::stats::Stat::Fired, fired);
     for shot in shots {
+        prefabs::casing(
+            world,
+            shot.origin,
+            shot.direction,
+            shot.spec.clip_style == ClipStyle::Shotgun,
+            shot.roll.eject,
+            casing_texture,
+        );
         let aim = shot.direction.to_angle();
         for pellet in 0..shot.pellets {
             let angle = aim + shot.spec.angle_offset(pellet, shot.roll.spread);
@@ -248,11 +260,13 @@ mod tests {
             ShotContext {
                 camera,
                 bullet_texture: TextureId::WHITE,
+                casing_texture: TextureId::WHITE,
                 dt,
                 roll: ShotRoll {
                     spread: 0.0,
                     damages: [0.0; MAX_PELLETS],
                     critical: 1.0,
+                    eject: [0.5; 4],
                 },
             },
             &mut Vec::new(),
@@ -396,11 +410,13 @@ mod tests {
             ShotContext {
                 camera: Vec2::ZERO,
                 bullet_texture: TextureId::WHITE,
+                casing_texture: TextureId::WHITE,
                 dt,
                 roll: ShotRoll {
                     spread: 0.0,
                     damages: [0.0; MAX_PELLETS],
                     critical: 1.0,
+                    eject: [0.5; 4],
                 },
             },
             sounds,
@@ -521,5 +537,34 @@ mod tests {
             loadout.switch_to(0);
         }
         assert_eq!(current(&world).clip, 6);
+    }
+
+    #[test]
+    fn a_shot_throws_out_one_casing() {
+        let (mut world, mut physics) = setup();
+        let input = clicked_at(Vec2::new(300.0, 100.0));
+
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 1.0 / 60.0);
+
+        let casings: Vec<crate::components::Casing> = world
+            .query::<&crate::components::Casing>()
+            .iter()
+            .copied()
+            .collect();
+        assert_eq!(casings.len(), 1);
+        assert!(!casings[0].settled && casings[0].height > 0.0);
+    }
+
+    #[test]
+    fn no_shot_no_casing() {
+        let (mut world, mut physics) = setup();
+        let input = Input::default();
+
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 1.0 / 60.0);
+
+        assert_eq!(
+            world.query::<&crate::components::Casing>().iter().count(),
+            0
+        );
     }
 }

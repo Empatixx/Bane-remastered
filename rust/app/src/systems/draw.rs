@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap,
-    Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar,
-    Text, blended,
+    Casing, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize,
+    Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite,
+    StatusBar, Text, blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -93,6 +93,7 @@ pub(crate) fn collect_draws(
         )>()
         .without::<&Hidden>()
         .without::<&EnemyArrow>()
+        .without::<&Casing>()
         .iter()
     {
         let bob = Vec2::new(0.0, hover.map_or(0.0, Hover::offset));
@@ -159,6 +160,25 @@ pub(crate) fn collect_draws(
         for draw in minimap_draws(map) {
             sorted.hud.push((Layer(layer), draw));
         }
+    }
+    for (position, size, color, sprite, casing) in world
+        .query::<(&Position, &Size, &Color, &Sprite, &Casing)>()
+        .without::<&Hidden>()
+        .iter()
+    {
+        let center = position.0 - camera - Vec2::new(0.0, casing.height);
+        if off_screen(center, size.0) {
+            continue;
+        }
+        sorted.scene.push((
+            Layer(-1),
+            Draw {
+                texture: sprite.texture,
+                quad: Quad::with_uv(center, size.0, color.0, sprite.uv)
+                    .lit(true)
+                    .rotated(casing.angle),
+            },
+        ));
     }
     for (position, size, color, sprite, arrow) in world
         .query::<(&Position, &Size, &Color, &Sprite, &EnemyArrow)>()
@@ -307,5 +327,31 @@ mod tests {
 
         assert_eq!(layers.hud.len(), 1);
         assert_eq!(layers.scene.len(), 0);
+    }
+
+    #[test]
+    fn a_casing_is_drawn_once_in_the_scene_and_lifted_by_its_height() {
+        let mut world = World::new();
+        world.spawn((
+            Casing {
+                velocity: Vec2::ZERO,
+                height: 10.0,
+                rise: 0.0,
+                angle: 0.7,
+                spin: 0.0,
+                age: 0.0,
+                settled: false,
+            },
+            Position(Vec2::new(300.0, 200.0)),
+            Size(Vec2::new(12.0, 6.0)),
+            Color(glam::Vec4::ONE),
+            Sprite::whole(TextureId::WHITE),
+            Layer(-1),
+        ));
+
+        let layers = collect_draws(&world, &Fonts::default(), Vec2::ZERO, "E", 1.0);
+
+        assert_eq!(layers.scene.len(), 1);
+        assert_eq!(layers.hud.len(), 0);
     }
 }

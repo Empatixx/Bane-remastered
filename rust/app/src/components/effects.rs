@@ -33,6 +33,17 @@ pub(crate) struct LightFade {
 pub(crate) struct ThenPlay(pub(crate) super::animation::Clip);
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Casing {
+    pub(crate) velocity: glam::Vec2,
+    pub(crate) height: f32,
+    pub(crate) rise: f32,
+    pub(crate) angle: f32,
+    pub(crate) spin: f32,
+    pub(crate) age: f32,
+    pub(crate) settled: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Gate(pub(crate) super::animation::Clip);
 
 #[derive(Debug, Clone, Copy)]

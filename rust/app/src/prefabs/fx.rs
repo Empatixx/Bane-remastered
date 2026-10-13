@@ -1,16 +1,19 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::tex;
 use crate::assets::Textures;
+use crate::assets::tex;
 use crate::components::{
-    Animation, Clip, Color, Expiring, Floating, Layer, Light, LightFade, Lit, PoisonPool, Position,
-    ShieldAura, Size, Sprite, Text, ThenPlay,
+    Animation, Casing, Clip, Color, Expiring, Floating, Layer, Light, LightFade, Lit, PoisonPool,
+    Position, ShieldAura, Size, Sprite, Text, ThenPlay,
 };
 use crate::objects::{POOL_SECONDS, POOL_SIZE};
-use crate::render::FontSize;
+use crate::render::{FontSize, TextureId};
 
 const EXPLOSION_LIGHT: f32 = 1.5;
+const CASING_SIZE: Vec2 = Vec2::new(12.0, 6.0);
+const CASING_START: f32 = 14.0;
+const CASING_MUZZLE: f32 = 10.0;
 
 const SHIELD_SIZE: Vec2 = Vec2::new(96.0, 144.0);
 const FLOAT_SECONDS: f32 = 0.5;
@@ -129,5 +132,35 @@ pub(crate) fn floating_number(world: &mut World, change: i32, position: Vec2) ->
         Position(position),
         Text::new(content, color, FontSize::Size22),
         Layer(4),
+    ))
+}
+
+pub(crate) fn casing(
+    world: &mut World,
+    origin: Vec2,
+    aim: Vec2,
+    shell: bool,
+    roll: [f32; 4],
+    texture: TextureId,
+) -> Entity {
+    let forward = aim.normalize_or(Vec2::X);
+    let side = Vec2::new(-forward.y, forward.x);
+    let velocity =
+        side * (70.0 + 50.0 * roll[0]) - forward * (30.0 * roll[1]) + Vec2::new(0.0, -10.0);
+    world.spawn((
+        Casing {
+            velocity,
+            height: CASING_START,
+            rise: 120.0 + 90.0 * roll[2],
+            angle: forward.to_angle(),
+            spin: (roll[3] * 2.0 - 1.0).signum() * (10.0 + 12.0 * roll[3]),
+            age: 0.0,
+            settled: false,
+        },
+        Position(origin + forward * CASING_MUZZLE + side * 4.0),
+        Size(CASING_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(texture, 0, usize::from(shell), 1, 2),
+        Layer(-1),
     ))
 }

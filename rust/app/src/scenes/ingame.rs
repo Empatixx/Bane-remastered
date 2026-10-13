@@ -205,6 +205,7 @@ impl Scene for InGameScene {
                 systems::ShotContext {
                     camera: self.camera.position(),
                     bullet_texture: assets.textures.get(BULLET),
+                    casing_texture: assets.textures.get(tex::CASING),
                     dt,
                     roll: systems::ShotRoll::from(&mut self.combat_rng),
                 },
@@ -212,6 +213,7 @@ impl Scene for InGameScene {
             );
             self.camera.add_trauma(recoil);
         }
+        systems::tick_casings(&mut self.world, dt);
         systems::animate_player(&mut self.world, input);
         systems::show_dodge_visual(&mut self.world, &assets.textures);
         systems::show_dodge_cooldown(&mut self.world);

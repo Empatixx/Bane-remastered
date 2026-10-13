@@ -460,6 +460,34 @@ def reroll_dice():
     return sheet
 
 
+def casing_sheet():
+    sheet = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+    brass = ((70, 40, 15), (150, 95, 30), (214, 150, 50), (250, 210, 100))
+    red = ((60, 15, 30), (120, 35, 50), (186, 56, 56), (232, 110, 100))
+
+    def draw(top, body, tip, base):
+        cell = Image.new("RGBA", (8, 4), (0, 0, 0, 0))
+        out = brass[0] + (255,)
+        for x in range(8):
+            cell.putpixel((x, 0), out)
+            cell.putpixel((x, 3), out)
+        for x in range(1, 7):
+            cell.putpixel((x, 1), body[3] + (255,))
+            cell.putpixel((x, 2), body[1] + (255,))
+        for y in (1, 2):
+            cell.putpixel((0, y), out)
+            cell.putpixel((7, y), out)
+        for y in (1, 2):
+            for x in (5, 6):
+                cell.putpixel((x, y), base[3 if y == 1 else 1] + (255,))
+        cell.putpixel((1, 1), tip[2] + (255,))
+        return cell
+
+    sheet.paste(draw(0, brass, brass, brass), (0, 0))
+    sheet.paste(draw(0, red, red, brass), (0, 4))
+    return sheet
+
+
 def enemy_arrow():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -540,6 +568,7 @@ def main():
     mutation_icons().save(f"{OUT}/mutation_icons.tga")
     reroll_dice().save(f"{OUT}/reroll_dice.tga")
     enemy_arrow().save(f"{OUT}/enemy_arrow.tga")
+    casing_sheet().save(f"{OUT}/casing.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
     preview([board, notes, talent_icon(), upgrade_icons(), mutation_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")
