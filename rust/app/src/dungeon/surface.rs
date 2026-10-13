@@ -17,7 +17,6 @@ pub(crate) enum Surface {
     Ice,
     Lava,
     Water,
-    Web,
 }
 
 impl Surface {
@@ -26,7 +25,6 @@ impl Surface {
             Self::Ice => (22, 40),
             Self::Lava => (8, 14),
             Self::Water => (16, 30),
-            Self::Web => (10, 18),
         }
     }
 
@@ -35,7 +33,6 @@ impl Surface {
             Self::Ice => 5,
             Self::Lava => 3,
             Self::Water => 4,
-            Self::Web => 4,
         }
     }
 }
@@ -226,7 +223,7 @@ mod tests {
         assert_eq!(Theme::Ice.surface(), Some(Surface::Ice));
         assert_eq!(Theme::Lava.surface(), Some(Surface::Lava));
         assert_eq!(Theme::Sewer.surface(), Some(Surface::Water));
-        assert_eq!(Theme::Spider.surface(), Some(Surface::Web));
+        assert_eq!(Theme::Spider.surface(), None);
         assert_eq!(Theme::Stone.surface(), None);
         assert_eq!(Theme::Temple.surface(), None);
     }
@@ -246,7 +243,7 @@ mod tests {
     #[test]
     fn surfaces_stay_on_open_floor_away_from_doors_spawns_and_decor() {
         for seed in 0..30 {
-            for theme in [Theme::Ice, Theme::Lava, Theme::Sewer, Theme::Spider] {
+            for theme in [Theme::Ice, Theme::Lava, Theme::Sewer] {
                 let dungeon = dungeon(seed, theme);
                 for (tile, _) in dungeon.surfaces.iter() {
                     assert!(!dungeon.grid.is_wall(tile.0 as isize, tile.1 as isize));

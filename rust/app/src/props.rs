@@ -39,7 +39,6 @@ pub(crate) enum Prop {
     IceSurface,
     LavaSurface,
     WaterSurface,
-    WebSurface,
     Icicles,
     IceCrystals,
     FrozenSkull,
@@ -287,7 +286,6 @@ impl Prop {
             Self::IceSurface => surface(tex::SURFACE_ICE, 1),
             Self::LavaSurface => surface(tex::SURFACE_LAVA, 4),
             Self::WaterSurface => surface(tex::SURFACE_WATER, 4),
-            Self::WebSurface => surface(tex::SURFACE_WEB, 1),
             Self::Icicles => PropSpec {
                 texture: tex::ICICLES,
                 columns: 1,

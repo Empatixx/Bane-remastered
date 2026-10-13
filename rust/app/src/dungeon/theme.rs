@@ -86,7 +86,6 @@ impl Theme {
             Self::Ice => Some(Surface::Ice),
             Self::Lava => Some(Surface::Lava),
             Self::Sewer => Some(Surface::Water),
-            Self::Spider => Some(Surface::Web),
             _ => None,
         }
     }

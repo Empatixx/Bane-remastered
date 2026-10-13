@@ -109,24 +109,10 @@ def water(x, y, mask, frame, d, v):
     return (44, 92, 106, 255)
 
 
-def web(x, y, mask, frame, d, v):
-    colour = (214, 214, 170, 190)
-    soft = (150, 150, 118, 150)
-    shift = v * 3
-    if (x - y + shift) % 8 == 0 or (x + y + shift) % 8 == 0:
-        return colour
-    if (x - 8) ** 2 + (y - 8) ** 2 in range(30 + shift, 38 + shift):
-        return soft
-    if noise(x, y, 70 + v) > 0.9:
-        return soft
-    return (214, 214, 170, 28)
-
-
 def main():
     make_sheet(1, ice).save(OUT / "surface_ice.tga")
     make_sheet(4, lava).save(OUT / "surface_lava.tga")
     make_sheet(4, water).save(OUT / "surface_water.tga")
-    make_sheet(1, web).save(OUT / "surface_web.tga")
 
 
 main()

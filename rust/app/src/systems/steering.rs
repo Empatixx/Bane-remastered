@@ -73,7 +73,6 @@ pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfa
                 .iter()
                 .any(|(web, web_size)| geometry::overlaps(position.0, size.0, *web, *web_size));
         let ground = surfaces.at_point(position.0);
-        let stuck = stuck || ground == Some(Surface::Web);
         let damping = if on(PatchKind::Ice) || ground == Some(Surface::Ice) {
             ICE_DAMPING
         } else {
@@ -222,12 +221,5 @@ mod tests {
         let icy = run_on(Some(crate::dungeon::Surface::Ice));
         assert!(wet < dry * 0.8, "{wet} vs {dry}");
         assert!(icy < dry, "{icy} vs {dry}");
-    }
-
-    #[test]
-    fn web_tiles_slow_the_player_like_a_cobweb() {
-        let dry = run_on(None);
-        let stuck = run_on(Some(crate::dungeon::Surface::Web));
-        assert!(stuck < dry * 0.8, "{stuck} vs {dry}");
     }
 }

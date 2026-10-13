@@ -582,7 +582,6 @@ pub(crate) fn surface_tile(
         Surface::Ice => Prop::IceSurface,
         Surface::Lava => Prop::LavaSurface,
         Surface::Water => Prop::WaterSurface,
-        Surface::Web => Prop::WebSurface,
     };
     let row = surfaces.neighbours_mask(tile) * 3 + Surfaces::variant(tile);
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
