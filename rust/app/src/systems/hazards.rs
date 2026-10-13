@@ -4,10 +4,12 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::AudioCommand;
 use crate::components::{
-    ArrowTrap, Color, Health, Layer, Lit, Player, Position, Size, Sprite, TrapArrow,
+    ArrowTrap, Body, Bullet, Color, EnemyBullet, Expiring, FloorPatch, Health, Layer, Lit,
+    PatchKind, Player, Position, Size, Sprite, TrapArrow,
 };
 use crate::geometry;
 use crate::navigation::Navigation;
+use crate::physics::Physics;
 use crate::systems::damage::hurt_player;
 
 const ARROW_PERIOD: f32 = 2.4;
@@ -17,6 +19,8 @@ const ARROW_HITBOX: Vec2 = Vec2::new(12.0, 40.0);
 const ARROW_DAMAGE: i32 = 1;
 const ARROW_REACH: f32 = 640.0;
 const ARROW_RECHECK: f32 = 0.25;
+const WEB_BULLET_DRAG: f32 = 9.0;
+const WEB_CATCHES_BELOW: f32 = 150.0;
 
 pub(crate) fn tick_arrow_traps(
     world: &mut World,
@@ -79,6 +83,50 @@ pub(crate) fn tick_arrow_traps(
         if let Ok(mut position) = world.get::<&mut Position>(entity) {
             position.0 = next;
         }
+    }
+}
+
+pub(crate) fn slow_bullets_in_webs(world: &mut World, physics: &mut Physics, dt: f32) {
+    let webs: Vec<(glam::Vec2, glam::Vec2)> = world
+        .query::<(&Position, &Size, &FloorPatch)>()
+        .iter()
+        .filter(|(_, _, patch)| patch.0 == PatchKind::Web)
+        .map(|(position, size, _)| (position.0, size.0))
+        .collect();
+    if webs.is_empty() {
+        return;
+    }
+    let keep = (-WEB_BULLET_DRAG * dt).exp();
+    let mut caught = Vec::new();
+    let bullets: Vec<(Entity, Body, glam::Vec2)> = world
+        .query::<(Entity, &Body, &Position)>()
+        .without::<&Expiring>()
+        .iter()
+        .filter(|(entity, _, _)| {
+            world.get::<&Bullet>(*entity).is_ok() || world.get::<&EnemyBullet>(*entity).is_ok()
+        })
+        .map(|(entity, body, position)| (entity, *body, position.0))
+        .collect();
+    for (entity, body, at) in bullets {
+        if !webs
+            .iter()
+            .any(|(web, size)| geometry::contains(*web, *size, at))
+        {
+            continue;
+        }
+        let Some(velocity) = physics.velocity(body) else {
+            continue;
+        };
+        let slowed = velocity * keep;
+        if slowed.length() < WEB_CATCHES_BELOW {
+            caught.push(entity);
+        } else {
+            physics.set_velocity(body, slowed);
+        }
+    }
+    for entity in caught {
+        physics.detach(world, entity);
+        let _ = world.insert_one(entity, Expiring);
     }
 }
 
@@ -194,5 +242,64 @@ mod tests {
             .map(|p| p.0.y)
             .fold(0.0, f32::max);
         assert!(max_y < 3.0 * 64.0 + 40.0, "{max_y}");
+    }
+
+    fn web_at(world: &mut World, at: Vec2) {
+        world.spawn((
+            Position(at),
+            Size(Vec2::splat(96.0)),
+            FloorPatch(PatchKind::Web),
+        ));
+    }
+
+    fn bullet_at(world: &mut World, physics: &mut Physics, at: Vec2, enemy: bool) -> Entity {
+        let entity = world.spawn((Position(at),));
+        let body = if enemy {
+            let _ = world.insert_one(entity, EnemyBullet);
+            physics.add_enemy_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0))
+        } else {
+            let _ = world.insert_one(entity, Bullet { damage: 1 });
+            physics.add_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0))
+        };
+        let _ = world.insert_one(entity, body);
+        entity
+    }
+
+    fn speed(world: &World, physics: &Physics, entity: Entity) -> f32 {
+        world
+            .get::<&Body>(entity)
+            .ok()
+            .and_then(|body| physics.velocity(*body))
+            .map_or(0.0, |velocity| velocity.length())
+    }
+
+    #[test]
+    fn bullets_of_both_sides_slow_down_inside_a_web_and_not_outside() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        web_at(&mut world, Vec2::new(300.0, 300.0));
+        let player_shot = bullet_at(&mut world, &mut physics, Vec2::new(300.0, 300.0), false);
+        let enemy_shot = bullet_at(&mut world, &mut physics, Vec2::new(300.0, 310.0), true);
+        let free_shot = bullet_at(&mut world, &mut physics, Vec2::new(900.0, 900.0), false);
+
+        slow_bullets_in_webs(&mut world, &mut physics, 1.0 / 60.0);
+
+        assert!(speed(&world, &physics, player_shot) < 700.0 * 0.9);
+        assert!(speed(&world, &physics, enemy_shot) < 700.0 * 0.9);
+        assert!((speed(&world, &physics, free_shot) - 700.0).abs() < 0.5);
+    }
+
+    #[test]
+    fn a_bullet_that_stays_in_the_web_gets_caught() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        web_at(&mut world, Vec2::new(300.0, 300.0));
+        let shot = bullet_at(&mut world, &mut physics, Vec2::new(300.0, 300.0), false);
+
+        for _ in 0..120 {
+            slow_bullets_in_webs(&mut world, &mut physics, 1.0 / 60.0);
+        }
+
+        assert!(world.get::<&Expiring>(shot).is_ok());
     }
 }
