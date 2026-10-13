@@ -557,7 +557,8 @@ def bricks(width, height, vertical):
     tiles = Image.open(Path(__file__).resolve().parent.parent / "assets/textures/ingame/tileset_2.png").convert("RGBA")
     cell = Image.new("RGBA", (width, height))
     for index in range((height if vertical else width) // 16):
-        tile = tiles.crop(((10 + index) * 16, 0, (11 + index) * 16, 16))
+        column = 6 if vertical else 10 + index
+        tile = tiles.crop((column * 16, 16, (column + 1) * 16, 32))
         cell.paste(tile, (0, index * 16) if vertical else (index * 16, 0))
     return cell
 
@@ -569,9 +570,11 @@ def shade(color, factor):
 def crack(cell, vertical, seed):
     r = random.Random(seed)
     width, height = cell.size
-    base = cell.getpixel((width // 2, height // 2))
-    dark = shade(base, 0.35)
-    light = shade(base, 1.45)
+    opaque = [(x, y) for y in range(height) for x in range(width) if cell.getpixel((x, y))[3] > 0 and sum(cell.getpixel((x, y))[:3]) > 330]
+    nearest = min(opaque, key=lambda point: abs(point[0] - width // 2) + abs(point[1] - height // 2))
+    base = cell.getpixel(nearest)
+    dark = CRACK
+    light = shade(base, 0.7)
     long_side = height if vertical else width
     across = width if vertical else height
 
@@ -584,14 +587,14 @@ def crack(cell, vertical, seed):
             position += r.choice([-1, 0, 0, drift])
             position = max(1, min(across - 2, position))
             point = at(position, step)
-            if 0 <= point[0] < width and 0 <= point[1] < height:
+            if 0 <= point[0] < width and 0 <= point[1] < height and cell.getpixel(point)[3] > 0:
                 cell.putpixel(point, dark)
                 side = at(position + 1, step)
-                if step % 3 == 0 and 0 <= side[0] < width and 0 <= side[1] < height:
+                if step % 3 == 0 and 0 <= side[0] < width and 0 <= side[1] < height and cell.getpixel(side)[3] > 0:
                     cell.putpixel(side, light)
         return position
 
-    draw(r.randint(across // 3, across * 2 // 3), long_side, 1)
+    draw(nearest[0] if vertical else r.randint(across // 3, across * 2 // 3), long_side, 1)
     return cell
 
 
