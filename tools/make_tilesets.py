@@ -161,7 +161,7 @@ def variant(name, source):
         scatter(source, out, BODY, [(150, 190, 230), (190, 224, 245)], 0.012, 1)
         scatter(source, out, LEDGE, [(255, 255, 255), (200, 235, 255)], 0.03, 2)
     elif name == "spider":
-        webs(source, out, (138, 138, 156, 255), 3)
+        webs(source, out, (190, 190, 150, 255), 3)
         scatter(source, out, BODY, [(66, 60, 78)], 0.03, 4)
     elif name == "lava":
         cracks(source, out, (214, 84, 28, 255), (255, 190, 60, 255), 5)

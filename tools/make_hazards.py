@@ -97,8 +97,8 @@ def web_patch():
     size = 32
     image = Image.new("RGBA", (size, size), CLEAR)
     centre = (size - 1) / 2
-    colour = (222, 222, 232, 215)
-    soft = (190, 190, 206, 150)
+    colour = (211, 212, 167, 215)
+    soft = (145, 145, 115, 180)
     rays = 8
     for ray in range(rays):
         angle = ray * math.tau / rays + 0.2

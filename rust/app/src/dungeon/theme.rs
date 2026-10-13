@@ -71,6 +71,18 @@ impl Theme {
         order[(floor as usize - 2) % order.len()]
     }
 
+    pub(crate) fn backdrop(self) -> [u8; 3] {
+        match self {
+            Self::Stone => [37, 19, 26],
+            Self::Sewer => [14, 30, 24],
+            Self::Moss => [22, 30, 14],
+            Self::Spider => [20, 14, 26],
+            Self::Ice => [12, 28, 48],
+            Self::Lava => [52, 12, 8],
+            Self::Temple => [50, 34, 16],
+        }
+    }
+
     pub(crate) fn mix(self) -> TrapMix {
         let (
             spikes,
@@ -127,6 +139,24 @@ mod tests {
         assert_eq!(Theme::parse(" Lava "), Some(Theme::Lava));
         assert_eq!(Theme::parse("ice"), Some(Theme::Ice));
         assert_eq!(Theme::parse("nonsense"), None);
+    }
+
+    #[test]
+    fn every_theme_has_its_own_backdrop() {
+        let all = [
+            Theme::Stone,
+            Theme::Sewer,
+            Theme::Moss,
+            Theme::Spider,
+            Theme::Ice,
+            Theme::Lava,
+            Theme::Temple,
+        ];
+        for (index, theme) in all.iter().enumerate() {
+            for other in &all[index + 1..] {
+                assert_ne!(theme.backdrop(), other.backdrop());
+            }
+        }
     }
 
     #[test]

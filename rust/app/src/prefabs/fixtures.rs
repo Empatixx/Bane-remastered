@@ -656,11 +656,15 @@ pub(crate) fn gun_drop(
 }
 
 pub(crate) fn backdrop(world: &mut World) -> Entity {
+    backdrop_colored(world, BACKDROP_COLOR)
+}
+
+pub(crate) fn backdrop_colored(world: &mut World, color: Vec4) -> Entity {
     world.spawn((
         Backdrop,
         Position(Vec2::ZERO),
         Size(BACKDROP_SIZE),
-        Color(BACKDROP_COLOR),
+        Color(color),
         Sprite::whole(TextureId::WHITE),
         Layer(-10),
         Lit,

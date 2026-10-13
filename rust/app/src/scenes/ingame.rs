@@ -483,7 +483,16 @@ impl InGameScene {
             .profile
             .as_ref()
             .map_or_else(Perks::default, SharedProfile::perks);
-        prefabs::backdrop(&mut self.world);
+        let [red, green, blue] = dungeon.theme.backdrop();
+        prefabs::backdrop_colored(
+            &mut self.world,
+            glam::Vec4::new(
+                f32::from(red) / 255.0,
+                f32::from(green) / 255.0,
+                f32::from(blue) / 255.0,
+                1.0,
+            ),
+        );
         let solid_cells = prefabs::tilemap(
             &mut self.world,
             &dungeon.grid,
