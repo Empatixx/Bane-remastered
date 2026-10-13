@@ -24,7 +24,7 @@ pub(crate) struct TrapMix {
     pub(crate) poison_barrels: usize,
     pub(crate) frost_barrels: usize,
     pub(crate) cobwebs: usize,
-    pub(crate) lava_pools: usize,
+    pub(crate) geysers: usize,
     pub(crate) ice_patches: usize,
     pub(crate) web_patches: usize,
     pub(crate) arrow_traps: usize,
@@ -112,7 +112,7 @@ impl Theme {
             poison_barrels,
             frost_barrels,
             cobwebs: if self == Self::Spider { 5 } else { 2 },
-            lava_pools: if self == Self::Lava { 3 } else { 0 },
+            geysers: if self == Self::Lava { 3 } else { 0 },
             ice_patches: if self == Self::Ice { 3 } else { 0 },
             web_patches: if self == Self::Spider { 3 } else { 0 },
             arrow_traps: if self == Self::Temple { 2 } else { 0 },
@@ -173,7 +173,7 @@ mod tests {
         assert!(Theme::Sewer.mix().poison_barrels > Theme::Stone.mix().poison_barrels);
         assert!(Theme::Spider.mix().cobwebs > Theme::Stone.mix().cobwebs);
         assert!(Theme::Temple.mix().spikes > Theme::Stone.mix().spikes);
-        assert!(Theme::Lava.mix().lava_pools > 0);
+        assert!(Theme::Lava.mix().geysers > 0);
         assert!(Theme::Ice.mix().ice_patches > 0);
         assert!(Theme::Spider.mix().web_patches > 0);
         assert!(Theme::Temple.mix().arrow_traps > 0);
@@ -193,7 +193,7 @@ mod tests {
         assert_eq!(mix.cobwebs, 2);
         assert_eq!(
             (
-                mix.lava_pools,
+                mix.geysers,
                 mix.ice_patches,
                 mix.web_patches,
                 mix.arrow_traps

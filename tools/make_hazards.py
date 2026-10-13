@@ -35,39 +35,63 @@ def blob(size, seed, margin, wobble):
     return mask, inside
 
 
-def lava_frames():
-    size = 32
-    mask, depth = blob(size, 4, 2, 2.6)
-    frames = Image.new("RGBA", (size * 4, size), CLEAR)
-    r = random.Random(11)
-    bubbles = [(r.randrange(8, 24), r.randrange(8, 24), r.random()) for _ in range(6)]
-    for frame in range(4):
-        image = Image.new("RGBA", (size, size), CLEAR)
-        for y in range(size):
-            for x in range(size):
-                if not mask[y][x]:
-                    continue
-                d = depth[(x, y)]
-                if d < 1.2:
-                    colour = ROCK_DARK
-                elif d < 2.4:
-                    colour = ROCK if (x + y) % 3 else ROCK_LIGHT
-                elif d < 3.4:
-                    colour = LAVA_DEEP
-                else:
-                    wave = math.sin((x * 0.7 + y * 0.5) + frame * 1.57) + math.sin(y * 0.9 - frame * 1.57)
-                    colour = LAVA_HOT if wave > 1.25 else LAVA if wave > -0.6 else LAVA_DEEP
-                image.putpixel((x, y), colour)
-        for x, y, phase in bubbles:
-            step = (frame + int(phase * 4)) % 4
-            if step in (1, 2) and mask[y][x] and depth[(x, y)] > 4:
-                image.putpixel((x, y), LAVA_CORE)
-                if step == 2:
-                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                        if mask[y + dy][x + dx] and depth[(x + dx, y + dy)] > 3.4:
-                            image.putpixel((x + dx, y + dy), LAVA_HOT)
-        frames.paste(image, (frame * size, 0))
-    return frames
+def geyser_frames():
+    width, height, count = 16, 32, 8
+    sheet = Image.new("RGBA", (width * count, height), CLEAR)
+    r = random.Random(3)
+
+    def rim(image, glow):
+        for y in range(24, 32):
+            for x in range(16):
+                dx, dy = (x - 7.5) / 7.5, (y - 28) / 4.2
+                d = dx * dx + dy * dy
+                if d < 1.0:
+                    image.putpixel((x, y), ROCK_DARK if d > 0.78 else ROCK if (x + y) % 3 else ROCK_LIGHT)
+        for y in range(26, 31):
+            for x in range(3, 13):
+                dx, dy = (x - 7.5) / 4.8, (y - 28.2) / 2.2
+                if dx * dx + dy * dy < 1.0:
+                    image.putpixel((x, y), glow)
+
+    def flame(image, base, reach, half_width, wobble):
+        for step in range(reach):
+            y = base - step
+            if y < 0:
+                break
+            ratio = step / max(reach, 1)
+            width_here = max(1.0, half_width * (1.0 - ratio * 0.85))
+            centre = 7.5 + wobble * math.sin(step * 0.5 + wobble)
+            for x in range(16):
+                distance = abs(x - centre)
+                if distance < width_here:
+                    inner = distance < width_here * 0.45
+                    if ratio > 0.8 and r.random() < 0.4:
+                        continue
+                    colour = LAVA_CORE if inner and ratio < 0.7 else LAVA_HOT if inner or ratio < 0.5 else LAVA
+                    if distance > width_here - 1.0 and ratio > 0.3:
+                        colour = LAVA_DEEP
+                    image.putpixel((x, y), colour)
+
+    plan = [
+        (LAVA_DEEP, 0, 0),
+        (LAVA_DEEP, 0, 0),
+        (LAVA, 3, 1.5),
+        (LAVA_HOT, 6, 2.5),
+        (LAVA_HOT, 14, 4.5),
+        (LAVA_CORE, 26, 5.5),
+        (LAVA_CORE, 28, 5.0),
+        (LAVA, 12, 3.0),
+    ]
+    for frame, (glow, reach, half_width) in enumerate(plan):
+        image = Image.new("RGBA", (width, height), CLEAR)
+        rim(image, glow)
+        if reach:
+            flame(image, 28, reach, half_width, 0.8 + frame * 0.3)
+            if frame in (5, 6):
+                for _ in range(5):
+                    image.putpixel((r.randrange(2, 14), r.randrange(0, 8)), LAVA_HOT)
+        sheet.paste(image, (frame * width, 0))
+    return sheet
 
 
 def ice_patch():
@@ -173,7 +197,7 @@ def trap_arrow():
 
 
 def main():
-    lava_frames().save(OUT / "lava_pool.tga")
+    geyser_frames().save(OUT / "fire_geyser.tga")
     ice_patch().save(OUT / "ice_patch.tga")
     web_patch().save(OUT / "web_patch.tga")
     arrow_trap().save(OUT / "arrow_trap.tga")

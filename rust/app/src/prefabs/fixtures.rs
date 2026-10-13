@@ -215,7 +215,7 @@ pub(crate) fn decor(
         DecorKind::PoisonBarrel => breakable(world, physics, BreakKind::Poison, centered, textures),
         DecorKind::FrostBarrel => breakable(world, physics, BreakKind::Frost, centered, textures),
         DecorKind::Flamethrower => flamethrower(world, top_left, textures),
-        DecorKind::LavaPool => lava_pool(world, top_left, textures),
+        DecorKind::FireGeyser => fire_geyser(world, top_left, textures),
         DecorKind::IcePatch => {
             floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
         }
@@ -494,7 +494,9 @@ pub(crate) fn breakable(
     entity
 }
 
-const LAVA_DAMAGE: i32 = 1;
+const GEYSER_DAMAGE: i32 = 1;
+const GEYSER_FIRST_ARMED_FRAME: usize = 5;
+const GEYSER_LAST_ARMED_FRAME: usize = 6;
 const PATCH_HITBOX: f32 = 96.0;
 const ARROW_TRAP_START: f32 = 0.8;
 
@@ -505,17 +507,21 @@ fn patch_hitbox(world: &mut World, visual: Entity, side: f32) -> Entity {
     world.spawn((Position(center), Size(Vec2::splat(side))))
 }
 
-fn lava_pool(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
-    let entity = prop(world, Prop::LavaPool, top_left, Look::DEFAULT, textures);
+fn fire_geyser(world: &mut World, tile_top_left: Vec2, textures: &Textures) -> Entity {
+    let top_left = tile_top_left - Vec2::new(0.0, tilemap::TILE_SIZE);
+    let entity = prop(world, Prop::FireGeyser, top_left, Look::DEFAULT, textures);
     let _ = world.insert(
         entity,
         (
-            Layer(-2),
-            Light::rgb(Vec2::ZERO, 255.0, 110.0, 20.0, 80.0, 1.2),
+            Layer(1),
+            ContactDamage(GEYSER_DAMAGE),
+            Trap {
+                from_frame: GEYSER_FIRST_ARMED_FRAME,
+                until_frame: GEYSER_LAST_ARMED_FRAME + 1,
+            },
+            Light::rgb(Vec2::new(0.0, 40.0), 255.0, 110.0, 20.0, 90.0, 1.2),
         ),
     );
-    let hitbox = patch_hitbox(world, entity, PATCH_HITBOX);
-    let _ = world.insert_one(hitbox, ContactDamage(LAVA_DAMAGE));
     entity
 }
 
