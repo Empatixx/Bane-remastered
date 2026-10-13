@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::World;
 
-use crate::components::{blended, Backdrop, Player, Position, Previous, Size};
+use crate::components::{Backdrop, Player, Position, Previous, Size, blended};
 use crate::viewport::TARGET;
 
 const MOUSE_PULL: f32 = 10.0;

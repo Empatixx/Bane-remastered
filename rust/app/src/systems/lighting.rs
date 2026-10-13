@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::World;
 
-use crate::components::{blended, Hidden, Light, Position, Previous};
+use crate::components::{Hidden, Light, Position, Previous, blended};
 use crate::render::{LightSource, MAX_LIGHTS};
 use crate::viewport::TARGET;
 
@@ -63,8 +63,10 @@ mod tests {
         let world = world_with_lights(MAX_LIGHTS + 20);
         let lights = collect_lights(&world, Vec2::new(0.0, 0.0), 1.0);
         assert_eq!(lights.len(), MAX_LIGHTS);
-        assert!(lights
-            .iter()
-            .all(|light| light.position.x <= 100.0 * MAX_LIGHTS as f32));
+        assert!(
+            lights
+                .iter()
+                .all(|light| light.position.x <= 100.0 * MAX_LIGHTS as f32)
+        );
     }
 }

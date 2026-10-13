@@ -372,14 +372,16 @@ mod tests {
         let edge = edge.expect("half of it is visible");
         assert_eq!(edge.size.x, 32.0);
         assert!((edge.uv[0] - 0.5).abs() < 1e-6 && (edge.local[0] - 0.5).abs() < 1e-6);
-        assert!(clip(
-            Vec2::new(100.0, 200.0),
-            Vec2::splat(64.0),
-            uv,
-            BIG_WINDOW_MIN,
-            BIG_WINDOW_MAX
-        )
-        .is_none());
+        assert!(
+            clip(
+                Vec2::new(100.0, 200.0),
+                Vec2::splat(64.0),
+                uv,
+                BIG_WINDOW_MIN,
+                BIG_WINDOW_MAX
+            )
+            .is_none()
+        );
     }
 
     #[test]
@@ -397,10 +399,12 @@ mod tests {
         assert!(pans.contains(&(MapSize::Small, Vec2::ZERO)));
 
         update_minimaps(&mut world, &[true, true, false, false], 1, 0.1);
-        assert!(world
-            .query::<&Minimap>()
-            .iter()
-            .all(|m| m.pan == Vec2::ZERO));
+        assert!(
+            world
+                .query::<&Minimap>()
+                .iter()
+                .all(|m| m.pan == Vec2::ZERO)
+        );
     }
 
     #[test]

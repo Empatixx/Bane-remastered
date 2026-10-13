@@ -7,7 +7,7 @@ use crate::components::{
     Animation, Body, Bullet, Burst, Expiring, Loadout, Player, PlayerPerks, Position, Velocity,
 };
 use crate::controls::Action;
-use crate::guns::{GunSpec, BURST_DELAY, MAX_PELLETS};
+use crate::guns::{BURST_DELAY, GunSpec, MAX_PELLETS};
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;

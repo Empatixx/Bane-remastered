@@ -17,7 +17,7 @@ use crate::objects::{
 };
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::damage::{deal, hurt_player, Damage, DamageSource};
+use crate::systems::damage::{Damage, DamageSource, deal, hurt_player};
 
 const DEATH_CLIP: Clip = Clip {
     row: 1,

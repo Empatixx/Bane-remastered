@@ -249,9 +249,11 @@ mod tests {
             .map(|(velocity, bullet)| (velocity.0, bullet.damage))
             .collect();
         assert_eq!(bullets.len(), 50);
-        assert!(bullets
-            .iter()
-            .all(|(velocity, damage)| *damage == 2 && (velocity.length() - 700.0).abs() < 0.1));
+        assert!(
+            bullets
+                .iter()
+                .all(|(velocity, damage)| *damage == 2 && (velocity.length() - 700.0).abs() < 0.1)
+        );
         let first = bullets[0].0.to_angle();
         let second = bullets[1].0.to_angle();
         assert!(((second - first).rem_euclid(std::f32::consts::TAU) - 0.15).abs() < 1e-3);

@@ -9,7 +9,7 @@ use crate::components::{
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::render::TextureId;
-use crate::systems::dust::{spawn_dust, DustSpec};
+use crate::systems::dust::{DustSpec, spawn_dust};
 
 const COOLDOWN: f32 = 0.12;
 const MAX_PARTICLES: usize = 8;

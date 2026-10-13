@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::assets::{Textures, PLAYER_DODGE};
+use crate::assets::{PLAYER_DODGE, Textures};
 use crate::components::{
     Afterimage, Animation, Clip, Color, Dodge, DodgeBar, DodgeCooldown, DodgeVisual, Health,
     Invulnerable, Layer, Lit, Player, Position, Previous, Size, Sprite,

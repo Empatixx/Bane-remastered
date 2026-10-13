@@ -4,7 +4,7 @@ use hecs::{Entity, World};
 use crate::components::{Color, Layer, Light, Player, Position, Size, Sprite};
 use crate::render::TextureId;
 use crate::rng::Rng;
-use crate::systems::dust::{spawn_dust, DustSpec, FRAMES};
+use crate::systems::dust::{DustSpec, FRAMES, spawn_dust};
 use crate::viewport::TARGET;
 
 const DUST_COUNT: usize = 14;
@@ -220,9 +220,11 @@ mod tests {
             .map(|(_, color)| color.0.w)
             .collect();
         assert!(!alphas.is_empty());
-        assert!(alphas
-            .iter()
-            .all(|alpha| (0.0..=DUST_PEAK.1 + 0.001).contains(alpha)));
+        assert!(
+            alphas
+                .iter()
+                .all(|alpha| (0.0..=DUST_PEAK.1 + 0.001).contains(alpha))
+        );
         assert!(alphas.iter().any(|alpha| *alpha > 0.03));
     }
 
@@ -259,10 +261,12 @@ mod tests {
             tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
             for (firefly, position, light) in world.query::<(&Firefly, &Position, &Light)>().iter()
             {
-                assert!((position.0 - firefly.home)
-                    .abs()
-                    .cmple(firefly.reach + Vec2::splat(1.0))
-                    .all());
+                assert!(
+                    (position.0 - firefly.home)
+                        .abs()
+                        .cmple(firefly.reach + Vec2::splat(1.0))
+                        .all()
+                );
                 brightest = brightest.max(light.intensity);
                 dimmest = dimmest.min(light.intensity);
             }

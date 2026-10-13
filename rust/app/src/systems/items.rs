@@ -6,13 +6,12 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, ArtefactDrop, Color, Despawn, Enemy, Expiring, GunDrop, Health, Hover,
-    InRange, Loadout, NoDrop, Outline, Pet, Pickup, Player, Position, Shop, Size, Wallet,
-    HOVER_CYCLE,
+    Animation, Armor, ArtefactDrop, Color, Despawn, Enemy, Expiring, GunDrop, HOVER_CYCLE, Health,
+    Hover, InRange, Loadout, NoDrop, Outline, Pet, Pickup, Player, Position, Shop, Size, Wallet,
 };
 use crate::geometry;
 use crate::items::{
-    drop_threshold_reached, ItemKind, Vital, BLINK_PERIOD, BLINK_SECONDS, DROP_ROLL_RANGE,
+    BLINK_PERIOD, BLINK_SECONDS, DROP_ROLL_RANGE, ItemKind, Vital, drop_threshold_reached,
 };
 use crate::prefabs;
 
@@ -207,7 +206,7 @@ pub(crate) fn burst_items(
 #[cfg(test)]
 mod tests {
     use crate::components::Velocity;
-    use crate::items::{AmmoBox, PotionSize, DESPAWN_SECONDS};
+    use crate::items::{AmmoBox, DESPAWN_SECONDS, PotionSize};
     use crate::physics::Physics;
 
     use super::*;

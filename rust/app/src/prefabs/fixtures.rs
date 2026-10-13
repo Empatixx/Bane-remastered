@@ -6,9 +6,9 @@ use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
     Animation, ArtefactDrop, Backdrop, BreakKind, Breakable, Candle, Chatty, Chest, ChestKind,
-    Clip, Color, ContactDamage, Despawn, Drag, Flame, GunDrop, Health, Interactable,
-    Interaction, Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine, SlotPrice, Solid,
-    Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
+    Clip, Color, ContactDamage, Despawn, Drag, Flame, GunDrop, Health, Interactable, Interaction,
+    Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text,
+    ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::items::{DESPAWN_SECONDS, ItemKind};
@@ -16,7 +16,7 @@ use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{FontSize, TextureId};
-use crate::systems::SPIN_COST;
+use crate::systems::{SLOT_COLUMNS, SLOT_IDLE, SLOT_ROWS, SPIN_COST};
 use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
 
@@ -497,6 +497,7 @@ pub(crate) fn slot_machine(world: &mut World, top_left: Vec2, textures: &Texture
         entity,
         (
             SlotMachine { spinning: None },
+            Animation::new(SLOT_COLUMNS, SLOT_ROWS, SLOT_IDLE),
             Interactable {
                 action: Interaction::Spin,
             },

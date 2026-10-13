@@ -2,8 +2,8 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
-use crate::assets::tex;
 use crate::assets::Textures;
+use crate::assets::tex;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, ArtefactDrop, ArtefactSlot, Candle, Clip, Currency, GunDrop, Health, Hidden,

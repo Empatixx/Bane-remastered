@@ -194,7 +194,7 @@ mod tests {
 
     use crate::assets::Textures;
     use crate::components::Body;
-    use crate::enemies::{EnemyKind, COMMON_SPAWN_SECONDS};
+    use crate::enemies::{COMMON_SPAWN_SECONDS, EnemyKind};
     use crate::navigation::Navigation;
     use crate::prefabs;
 

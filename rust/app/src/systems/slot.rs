@@ -18,6 +18,9 @@ pub(crate) const SPIN_SECONDS: f32 = 2.0;
 const TOTAL_CHANCE: usize = 150;
 const SCATTER_SPEED: f32 = 417.0;
 
+pub(crate) const SLOT_COLUMNS: usize = 6;
+pub(crate) const SLOT_ROWS: usize = 3;
+
 const SPIN: Clip = Clip {
     row: 0,
     frames: 4,
@@ -39,6 +42,8 @@ const LOSE: Clip = Clip {
     looping: true,
     flipped: false,
 };
+
+pub(crate) const SLOT_IDLE: Clip = LOSE;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Outcome {
@@ -313,9 +318,11 @@ mod tests {
 
         assert_eq!(coins(&world), 7);
         assert_eq!(sounds, vec![AudioCommand::Effect(SoundEffect::SlotSpin)]);
-        assert!(world
-            .get::<&SlotMachine>(machine)
-            .is_ok_and(|m| m.spinning.is_some()));
+        assert!(
+            world
+                .get::<&SlotMachine>(machine)
+                .is_ok_and(|m| m.spinning.is_some())
+        );
     }
 
     #[test]
@@ -323,9 +330,11 @@ mod tests {
         let (mut world, machine, _) = setup(4);
         spin(&mut world, &mut Vec::new());
         assert_eq!(coins(&world), 4);
-        assert!(world
-            .get::<&SlotMachine>(machine)
-            .is_ok_and(|m| m.spinning.is_none()));
+        assert!(
+            world
+                .get::<&SlotMachine>(machine)
+                .is_ok_and(|m| m.spinning.is_none())
+        );
     }
 
     fn spin_with(chance: usize) -> (World, Vec<AudioCommand>) {
@@ -406,5 +415,49 @@ mod tests {
             2
         );
         let _ = machine;
+    }
+
+    fn clip_of(world: &World, machine: Entity) -> Option<Clip> {
+        world.get::<&Animation>(machine).ok().map(|a| a.clip())
+    }
+
+    #[test]
+    fn the_machine_has_an_animation_that_matches_its_sheet() {
+        let (world, machine, _textures) = setup(0);
+
+        assert_eq!(clip_of(&world, machine), Some(SLOT_IDLE));
+        let spec = crate::props::Prop::SlotMachine.spec();
+        assert_eq!((spec.columns, spec.rows), (SLOT_COLUMNS, SLOT_ROWS));
+        const { assert!(SPIN.frames <= SLOT_COLUMNS && WIN.frames <= SLOT_COLUMNS) };
+        const { assert!(SPIN.row < SLOT_ROWS && WIN.row < SLOT_ROWS && LOSE.row < SLOT_ROWS) };
+    }
+
+    #[test]
+    fn spinning_plays_the_reels_and_the_result_plays_when_they_stop() {
+        let (mut world, machine, textures) = setup(SPIN_COST);
+        let mut sounds = Vec::new();
+
+        spin(&mut world, &mut sounds);
+        assert_eq!(clip_of(&world, machine), Some(SPIN));
+
+        tick_slot_machines(
+            &mut world,
+            &textures,
+            SPIN_SECONDS + 0.1,
+            &mut sounds,
+            |_| 5,
+        );
+        assert_eq!(clip_of(&world, machine), Some(WIN));
+
+        let (mut world, machine, textures) = setup(SPIN_COST);
+        spin(&mut world, &mut sounds);
+        tick_slot_machines(
+            &mut world,
+            &textures,
+            SPIN_SECONDS + 0.1,
+            &mut sounds,
+            |_| 100,
+        );
+        assert_eq!(clip_of(&world, machine), Some(LOSE));
     }
 }

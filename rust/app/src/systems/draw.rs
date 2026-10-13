@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    blended, Color, DropShadow, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap,
-    Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar,
-    Text,
+    Color, DropShadow, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline,
+    Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text,
+    blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -221,11 +221,7 @@ fn off_screen(center: Vec2, size: Vec2) -> bool {
 }
 
 fn offset(screen: Option<&ScreenSpace>, camera: Vec2) -> Vec2 {
-    if screen.is_some() {
-        Vec2::ZERO
-    } else {
-        camera
-    }
+    if screen.is_some() { Vec2::ZERO } else { camera }
 }
 
 #[cfg(test)]

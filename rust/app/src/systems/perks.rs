@@ -170,11 +170,7 @@ mod tests {
         let mut index = 0;
         immobilize_traps(&mut world, perks(&[Upgrade::TrapMaster]), |_| {
             index += 1;
-            if index % 2 == 0 {
-                100
-            } else {
-                0
-            }
+            if index % 2 == 0 { 100 } else { 0 }
         });
 
         let harmless = spikes

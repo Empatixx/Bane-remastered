@@ -175,8 +175,8 @@ pub(crate) fn update_boss_hud(world: &mut World) {
 
 #[cfg(test)]
 mod tests {
-    use crate::assets::tex;
     use crate::assets::Textures;
+    use crate::assets::tex;
     use crate::components::{Chase, EnemyBullet, Velocity};
     use crate::systems::enemies::reap_dead;
     use crate::systems::{chase_player, finish_spawning, tick_spawning};
