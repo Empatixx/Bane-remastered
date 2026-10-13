@@ -222,7 +222,8 @@ EDGE_GROUPS = [
     ("right", [4], "v"),
 ]
 EDGE_VARIANTS = 8
-TOTAL_COLUMNS = 21 + EXTRA + EDGE_VARIANTS * len(EDGE_GROUPS)
+PLAIN_EXTRA = 8
+TOTAL_COLUMNS = 21 + EXTRA + EDGE_VARIANTS * len(EDGE_GROUPS) + PLAIN_EXTRA
 
 
 def mutate_edge(tile, bodies, name, flip, rng):
@@ -265,11 +266,24 @@ def widen(image, name, clean):
             tile = image.crop((sources[k % len(sources)] * TILE, 0, (sources[k % len(sources)] + 1) * TILE, TILE))
             wide.paste(mutate_edge(tile, bodies, name, flip, rng), (column * TILE, 0))
             column += 1
+    for k in range(PLAIN_EXTRA):
+        wide.paste(tone(plain, TONES[k]), ((TOTAL_COLUMNS - PLAIN_EXTRA + k) * TILE, 0))
     return wide
 
 
+def trim_edges(image, columns):
+    out = image.copy()
+    for column in columns:
+        body = image.getpixel((column * TILE + 8, 8))
+        for y in range(TILE):
+            for x in range(TILE):
+                if x in (0, TILE - 1) or y in (0, TILE - 1):
+                    out.putpixel((column * TILE + x, y), body)
+    return out
+
+
 def variant(name, source):
-    return recolor(source, PALETTES[name])
+    return trim_edges(recolor(source, PALETTES[name]), FLOOR_COLUMNS)
 
 
 def main():

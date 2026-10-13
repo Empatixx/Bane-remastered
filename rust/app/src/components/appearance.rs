@@ -26,6 +26,8 @@ pub(crate) struct Sprite {
     pub(crate) uv: [f32; 4],
 }
 
+const CELL_INSET: f32 = 0.0015;
+
 impl Sprite {
     pub(crate) fn whole(texture: TextureId) -> Self {
         Self {
@@ -54,10 +56,10 @@ impl Sprite {
     pub(crate) fn cell_uv(column: usize, row: usize, columns: usize, rows: usize) -> [f32; 4] {
         let (columns, rows) = (columns as f32, rows as f32);
         [
-            column as f32 / columns,
-            row as f32 / rows,
-            (column + 1) as f32 / columns,
-            (row + 1) as f32 / rows,
+            (column as f32 + CELL_INSET) / columns,
+            (row as f32 + CELL_INSET) / rows,
+            ((column + 1) as f32 - CELL_INSET) / columns,
+            ((row + 1) as f32 - CELL_INSET) / rows,
         ]
     }
 }

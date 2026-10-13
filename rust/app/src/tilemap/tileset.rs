@@ -22,6 +22,8 @@ struct RuleFile {
     name: String,
     pattern: [String; 3],
     tiles: Vec<usize>,
+    #[serde(default)]
+    plain: Vec<usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,6 +56,7 @@ impl Cell {
 struct Rule {
     pattern: [Cell; 9],
     tiles: Vec<usize>,
+    plain: Vec<usize>,
 }
 
 impl Rule {
@@ -118,21 +121,20 @@ impl Tileset {
         self.rules
             .iter()
             .find(|rule| rule.matches(&neighborhood))
-            .map_or(0, |rule| {
-                rule.tiles[self.variant_index(column, row, rule.tiles.len())]
-            })
+            .map_or(0, |rule| self.pick(rule, column, row))
     }
 
-    fn variant_index(&self, column: usize, row: usize, count: usize) -> usize {
-        if !self.clustered {
-            return scatter_index(column, row, count);
+    fn pick(&self, rule: &Rule, column: usize, row: usize) -> usize {
+        if self.clustered && !rule.plain.is_empty() {
+            let hash =
+                (column as u32).wrapping_mul(2_654_435_761) ^ (row as u32).wrapping_mul(40_503);
+            return if hash % 100 < DECORATED_PERCENT {
+                rule.tiles[scatter_index(column, row, rule.tiles.len())]
+            } else {
+                rule.plain[patch_index(column, row, rule.plain.len())]
+            };
         }
-        let hash = (column as u32).wrapping_mul(2_654_435_761) ^ (row as u32).wrapping_mul(40_503);
-        if hash % 100 < SPRINKLE_PERCENT {
-            scatter_index(column, row, count)
-        } else {
-            patch_index(column, row, count)
-        }
+        rule.tiles[scatter_index(column, row, rule.tiles.len())]
     }
 
     fn check_covers_every_neighborhood(&self) -> Result<(), Box<dyn Error>> {
@@ -158,12 +160,19 @@ fn parse_rule(rule: &RuleFile, tile_count: usize) -> Result<Rule, Box<dyn Error>
                 .ok_or_else(|| format!("rule {}: unknown symbol '{symbol}'", rule.name))?;
         }
     }
-    if rule.tiles.is_empty() || rule.tiles.iter().any(|tile| *tile >= tile_count) {
+    if rule.tiles.is_empty()
+        || rule
+            .tiles
+            .iter()
+            .chain(&rule.plain)
+            .any(|tile| *tile >= tile_count)
+    {
         return Err(format!("rule {}: tiles are empty or outside the tileset", rule.name).into());
     }
     Ok(Rule {
         pattern,
         tiles: rule.tiles.clone(),
+        plain: rule.plain.clone(),
     })
 }
 
@@ -181,7 +190,7 @@ fn scatter_index(column: usize, row: usize, count: usize) -> usize {
 }
 
 const PATCH: usize = 3;
-const SPRINKLE_PERCENT: u32 = 22;
+const DECORATED_PERCENT: u32 = 34;
 
 fn lattice(x: usize, y: usize) -> f32 {
     let mut hash = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA6B);
@@ -246,31 +255,43 @@ mod tests {
     }
 
     #[test]
-    fn the_wide_tileset_groups_similar_floor_tiles_but_still_mixes_them() {
+    fn the_wide_tileset_groups_plain_floor_in_patches_and_scatters_the_marked_tiles() {
         let wide = Tileset::dungeon_wide().expect("the wide tileset is valid");
-        let plain = dungeon();
         let grid = TileGrid::bordered(60, 60);
-        let mut counts = std::collections::HashMap::new();
-        let (mut same_wide, mut same_plain, mut pairs) = (0, 0, 0);
+        let marked = |tile: usize| (12..=19).contains(&tile) || (21..=28).contains(&tile);
+        let (mut marked_count, mut total) = (0, 0);
+        let (mut plain_pairs, mut plain_same, mut marked_same, mut marked_pairs) = (0, 0, 0, 0);
+        let mut distinct = std::collections::HashSet::new();
         for row in 2..grid.rows() - 2 {
             for column in 2..grid.columns() - 3 {
                 let here = wide.tile_number(&grid, column, row);
-                *counts.entry(here).or_insert(0usize) += 1;
-                if here == wide.tile_number(&grid, column + 1, row) {
-                    same_wide += 1;
+                let next = wide.tile_number(&grid, column + 1, row);
+                distinct.insert(here);
+                total += 1;
+                if marked(here) {
+                    marked_count += 1;
+                    if marked(next) {
+                        marked_pairs += 1;
+                        if here == next {
+                            marked_same += 1;
+                        }
+                    }
+                } else if !marked(next) {
+                    plain_pairs += 1;
+                    if here == next {
+                        plain_same += 1;
+                    }
                 }
-                if plain.tile_number(&grid, column, row)
-                    == plain.tile_number(&grid, column + 1, row)
-                {
-                    same_plain += 1;
-                }
-                pairs += 1;
             }
         }
-        assert!(counts.len() > 15, "{} different tiles", counts.len());
+        let share = marked_count as f32 / total as f32;
+        assert!((0.2..0.5).contains(&share), "{share}");
+        assert!(distinct.len() > 15, "{} different tiles", distinct.len());
+        let plain_ratio = plain_same as f32 / plain_pairs as f32;
+        assert!(plain_ratio > 0.2, "{plain_ratio}");
         assert!(
-            pairs > 0 && same_wide > same_plain / 2,
-            "{same_wide} vs {same_plain}"
+            marked_pairs == 0 || (marked_same as f32 / marked_pairs as f32) < 0.2,
+            "{marked_same} of {marked_pairs}"
         );
     }
 

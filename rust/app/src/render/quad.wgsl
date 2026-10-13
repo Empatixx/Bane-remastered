@@ -128,12 +128,19 @@ fn vs_main(@builtin(vertex_index) index: u32, instance: Instance) -> VertexOut {
     );
     let corner = corners[index];
     let angle = instance.lit_angle.y;
-    let offset = corner * instance.size;
-    let rotated = vec2<f32>(
-        offset.x * cos(angle) - offset.y * sin(angle),
-        offset.x * sin(angle) + offset.y * cos(angle),
-    );
-    let pixel = instance.center + rotated;
+    var pixel: vec2<f32>;
+    if (angle == 0.0) {
+        let low = round(instance.center - instance.size * 0.5);
+        let high = max(round(instance.center + instance.size * 0.5), low + min(vec2<f32>(1.0), instance.size));
+        pixel = mix(low, high, corner + vec2<f32>(0.5, 0.5));
+    } else {
+        let offset = corner * instance.size;
+        let rotated = vec2<f32>(
+            offset.x * cos(angle) - offset.y * sin(angle),
+            offset.x * sin(angle) + offset.y * cos(angle),
+        );
+        pixel = instance.center + rotated;
+    }
     let ndc = vec2<f32>(
         pixel.x / globals.size.x * 2.0 - 1.0,
         1.0 - pixel.y / globals.size.y * 2.0,
