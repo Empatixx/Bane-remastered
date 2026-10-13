@@ -273,6 +273,7 @@ impl Scene for InGameScene {
             dt,
             self.clock + phase,
         );
+        systems::crumble_cracked_walls(&mut self.world, assets.textures.get(particle), dt);
         systems::tick_dust(&mut self.world, self.clock, dt);
         if self.in_secret_room() {
             systems::tick_ambience(

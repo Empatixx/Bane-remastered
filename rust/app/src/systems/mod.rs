@@ -1,11 +1,11 @@
 mod ambience;
 mod animation;
 mod arrows;
-mod casings;
 mod artefacts;
 mod bosses;
 mod camera;
 mod carry;
+mod casings;
 mod crowd;
 mod damage;
 pub(crate) mod death_screen;
@@ -41,6 +41,7 @@ mod unstick;
 
 pub(crate) use ambience::{spawn_ambience, spawn_dust_cloud, tick_ambience};
 pub(crate) use animation::{animate, chain_animations, open_gate, remove_expired, tick_openings};
+pub(crate) use arrows::update_enemy_arrows;
 pub(crate) use artefacts::{
     activate_artefact, pick_up_artefact, tick_berserk, unused_artefact, update_artefact_hud,
     update_shield_aura,
@@ -48,6 +49,7 @@ pub(crate) use artefacts::{
 pub(crate) use bosses::{tick_armageddon, tick_hatchers, tick_web_spitters, update_boss_hud};
 pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
+pub(crate) use casings::tick_casings;
 pub(crate) use crowd::separate_chasers;
 pub(crate) use damage::{
     contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,
@@ -55,7 +57,8 @@ pub(crate) use damage::{
 };
 pub(crate) use death_screen::{DeathScreen, update_death_ui};
 pub(crate) use dodge::{
-    DODGE_SPEED, fade_afterimages, spawn_afterimage, show_dodge_cooldown, show_dodge_visual, start_dodge, tick_dodges,
+    DODGE_SPEED, fade_afterimages, show_dodge_cooldown, show_dodge_visual, spawn_afterimage,
+    start_dodge, tick_dodges,
 };
 pub(crate) use draw::collect_draws;
 pub(crate) use dust::tick_dust;
@@ -65,8 +68,6 @@ pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, resolve_deaths, tick_spawning, update_flow,
 };
 pub(crate) use glide::glide;
-pub(crate) use arrows::update_enemy_arrows;
-pub(crate) use casings::tick_casings;
 pub(crate) use hud::{update_lobby_counters, update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use items::{
@@ -76,7 +77,8 @@ pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{
-    break_objects, flicker_flames, leave_poison_trails, tick_frozen, tick_poison,
+    break_objects, crumble_cracked_walls, flicker_flames, leave_poison_trails, tick_frozen,
+    tick_poison,
 };
 pub(crate) use perks::{apply_floor_perks, apply_run_perks, immobilize_traps, regenerate_armor};
 pub(crate) use pet::{

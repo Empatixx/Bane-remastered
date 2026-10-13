@@ -552,6 +552,12 @@ STONE_DARK = (89, 80, 89, 255)
 CRACK = (37, 19, 26, 255)
 
 
+WARM = (176, 140, 118, 255)
+WARM_LIGHT = (222, 182, 146, 255)
+WARM_DARK = (120, 88, 84, 255)
+GLOW = (255, 196, 110, 255)
+
+
 def bricks(width, height, vertical):
     cell = Image.new("RGBA", (width, height), STONE_OUT)
     draw = ImageDraw.Draw(cell)
@@ -562,15 +568,15 @@ def bricks(width, height, vertical):
         if vertical:
             for x in range(0, height + 4, 8):
                 x0 = x - offset
-                draw.rectangle((y0, x0 + 1, y0 + 2, x0 + 6), fill=STONE)
-                draw.line((y0, x0 + 1, y0, x0 + 6), fill=STONE_LIGHT)
-                draw.line((y0 + 2, x0 + 1, y0 + 2, x0 + 6), fill=STONE_MID)
+                draw.rectangle((y0, x0 + 1, y0 + 2, x0 + 6), fill=WARM)
+                draw.line((y0, x0 + 1, y0, x0 + 6), fill=WARM_LIGHT)
+                draw.line((y0 + 2, x0 + 1, y0 + 2, x0 + 6), fill=WARM_DARK)
         else:
             for x in range(0, width + 8, 8):
                 x0 = x - offset
-                draw.rectangle((x0 + 1, y0, x0 + 6, y0 + 2), fill=STONE)
-                draw.line((x0 + 1, y0, x0 + 6, y0), fill=STONE_LIGHT)
-                draw.line((x0 + 1, y0 + 2, x0 + 6, y0 + 2), fill=STONE_MID)
+                draw.rectangle((x0 + 1, y0, x0 + 6, y0 + 2), fill=WARM)
+                draw.line((x0 + 1, y0, x0 + 6, y0), fill=WARM_LIGHT)
+                draw.line((x0 + 1, y0 + 2, x0 + 6, y0 + 2), fill=WARM_DARK)
     return cell
 
 
@@ -579,16 +585,28 @@ def crack(cell, vertical, seed):
     width, height = cell.size
     long_side = height if vertical else width
     across = width if vertical else height
-    position = r.randint(across // 3, across * 2 // 3)
+    position = across // 2
+    path = []
     for step in range(long_side):
         position += r.choice([-1, 0, 0, 1])
         position = max(1, min(across - 2, position))
-        point = (position, step) if vertical else (step, position)
-        cell.putpixel(point, CRACK)
-        if step % 5 == 2:
-            side = (position + 1, step) if vertical else (step, position + 1)
+        path.append((position, step) if vertical else (step, position))
+    for index, point in enumerate(path):
+        for spread in (-1, 0, 1):
+            side = (point[0] + spread, point[1]) if vertical else (point[0], point[1] + spread)
             if 0 <= side[0] < width and 0 <= side[1] < height:
-                cell.putpixel(side, STONE_DARK)
+                if spread == 0:
+                    cell.putpixel(side, CRACK)
+                elif index % 2 == 0:
+                    cell.putpixel(side, GLOW)
+    for hole in range(3):
+        at = r.randrange(3, long_side - 3)
+        point = path[at]
+        for dx in (0, 1):
+            for dy in (0, 1):
+                spot = (point[0] + dx, point[1] + dy)
+                if 0 <= spot[0] < width and 0 <= spot[1] < height:
+                    cell.putpixel(spot, STONE_OUT)
     return cell
 
 
@@ -604,7 +622,7 @@ def crumble(cell, stage, vertical, seed):
                 nx, ny = x + (shift[0] if r.random() < 0.5 else 0), y + (shift[1] if r.random() < 0.5 else 0)
                 if 0 <= nx < width and 0 <= ny < height:
                     out.putpixel((nx, ny), cell.getpixel((x, y)))
-    dust = (158, 142, 136, 140) if stage < 3 else (158, 142, 136, 70)
+    dust = (200, 176, 150, 150) if stage < 3 else (200, 176, 150, 70)
     for _ in range([6, 10, 12, 6][stage]):
         out.putpixel((r.randrange(width), r.randrange(height)), dust)
     return out

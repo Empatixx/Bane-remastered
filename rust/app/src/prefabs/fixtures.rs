@@ -6,9 +6,9 @@ use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
     Animation, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty, Chest,
-    ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, Fragile, Gate, GunDrop, Health,
-    Interactable, Interaction, Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine,
-    SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
+    ChestKind, Clip, Color, ContactDamage, Crumbling, Despawn, Drag, Flame, Fragile, Gate, GunDrop,
+    Health, Interactable, Interaction, Layer, Light, Lit, Pickup, Position, Prompt, Size,
+    SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::items::{DESPAWN_SECONDS, ItemKind};
@@ -701,6 +701,11 @@ pub(crate) fn cracked_wall(
             kind: BreakKind::Cracked,
         },
         Fragile,
+        Crumbling {
+            timer: 0.5,
+            count: 0,
+        },
+        Light::rgb(Vec2::ZERO, 255.0, 170.0, 80.0, 90.0, 0.45),
         Health {
             current: EXPLOSION_DAMAGE,
             max: EXPLOSION_DAMAGE,
