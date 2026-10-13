@@ -163,6 +163,7 @@ def drips(source, out, colour, seed):
 
 
 EXTRA = 8
+ORIGINAL_EXTRAS = [6, 6, 6, 6, 6, 5, 14, 17]
 ACCENT = {
     "grey": None,
     "ice": (190, 225, 245, 255),
@@ -231,7 +232,12 @@ def widen(image, name, clean):
     wide.paste(image, (0, 0))
     plain = clean.crop((6 * TILE, 0, 7 * TILE, TILE))
     for k in range(EXTRA):
-        wide.paste(extra_floor(plain, name, k), (image.width + k * TILE, 0))
+        if name == "grey":
+            column = ORIGINAL_EXTRAS[k]
+            tile = image.crop((column * TILE, 0, (column + 1) * TILE, TILE))
+        else:
+            tile = extra_floor(plain, name, k)
+        wide.paste(tile, (image.width + k * TILE, 0))
     return wide
 
 
