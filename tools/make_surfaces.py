@@ -47,7 +47,7 @@ def corner_cut(x, y, code):
     return any(cuts)
 
 
-def make_sheet(frames, painter):
+def make_sheet(frames, painter, tag_body=False):
     sheet = Image.new("RGBA", (T * frames, T * len(VALID) * VARIANTS), (0, 0, 0, 0))
     for rank, code in enumerate(VALID):
         for variant in range(VARIANTS):
@@ -57,7 +57,10 @@ def make_sheet(frames, painter):
                     for x in range(T):
                         if corner_cut(x, y, code):
                             continue
-                        colour = painter(x, y, code, frame, rim_distance(x, y, code), variant)
+                        distance = rim_distance(x, y, code)
+                        colour = painter(x, y, code, frame, distance, variant)
+                        if colour and tag_body and distance >= 2:
+                            colour = colour[:3] + (250,)
                         if colour:
                             tile.putpixel((x, y), colour)
                 sheet.paste(tile, (frame * T, (rank * VARIANTS + variant) * T))
@@ -240,9 +243,9 @@ def main():
     make_shore(ice_shore).save(OUT / "shore_ice.tga")
     make_shore(lava_shore).save(OUT / "shore_lava.tga")
     shade_tile().save(OUT / "surface_shade.tga")
-    make_sheet(1, ice).save(OUT / "surface_ice.tga")
-    make_sheet(4, lava).save(OUT / "surface_lava.tga")
-    make_sheet(WATER_FRAMES, water).save(OUT / "surface_water.tga")
+    make_sheet(1, ice, True).save(OUT / "surface_ice.tga")
+    make_sheet(4, lava, True).save(OUT / "surface_lava.tga")
+    make_sheet(WATER_FRAMES, water, True).save(OUT / "surface_water.tga")
 
 
 main()

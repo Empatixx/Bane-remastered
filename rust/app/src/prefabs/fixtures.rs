@@ -7,8 +7,8 @@ use crate::assets::{Tex, tex};
 use crate::components::{
     Animation, ArrowTrap, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty,
     Chest, ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, FloorPatch, Gate, GunDrop,
-    Health, Interactable, Interaction, Layer, Light, Lit, PatchKind, Pickup, Position, Prompt,
-    Size, SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
+    Health, Interactable, Interaction, Layer, Light, Liquid, Lit, PatchKind, Pickup, Position,
+    Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{
     Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces,
@@ -579,7 +579,20 @@ pub(crate) fn surface_tile(
     let row = surfaces.liquid_row(grid, tile);
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
     let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);
-    let _ = world.insert_one(entity, Layer(-2));
+    let _ = world.insert(
+        entity,
+        (
+            Layer(-2),
+            Liquid {
+                kind: match surface {
+                    Surface::Water => 1.0,
+                    Surface::Ice => 2.0,
+                    Surface::Lava => 3.0,
+                },
+                time: 0.0,
+            },
+        ),
+    );
     if tile.1 > 0 && grid.is_wall(tile.0 as isize, tile.1 as isize - 1) {
         prop(world, Prop::SurfaceShade, top_left, Look::DEFAULT, textures);
     }

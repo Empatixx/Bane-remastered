@@ -4,6 +4,7 @@ use glam::{Vec2, Vec4};
 pub(crate) const MODE_MAP: f32 = 1.0;
 pub(crate) const MODE_FOG: f32 = 2.0;
 pub(crate) const MODE_SKY: f32 = 3.0;
+pub(crate) const MODE_LIQUID: f32 = 4.0;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MapRoomLook {
@@ -79,6 +80,11 @@ impl Quad {
         self
     }
 
+    pub(crate) fn liquid(mut self, kind: f32, time: f32) -> Self {
+        self.fx = [time, kind, 0.0, MODE_LIQUID];
+        self
+    }
+
     pub(crate) fn shined(mut self, progress: f32) -> Self {
         self.fx[1] = progress;
         self
@@ -109,6 +115,12 @@ mod tests {
     use glam::{Vec2, Vec4};
 
     use super::*;
+
+    #[test]
+    fn liquid_quads_carry_their_kind_and_the_clock() {
+        let quad = Quad::new(Vec2::ZERO, Vec2::ONE, Vec4::ONE).liquid(2.0, 7.5);
+        assert_eq!(quad.fx, [7.5, 2.0, 0.0, MODE_LIQUID]);
+    }
 
     #[test]
     fn the_underworld_sky_uses_its_own_mode_and_the_clock() {

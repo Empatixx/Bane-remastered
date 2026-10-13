@@ -15,6 +15,12 @@ pub(crate) struct Shine(pub(crate) f32);
 pub(crate) struct Sky(pub(crate) f32);
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Liquid {
+    pub(crate) kind: f32,
+    pub(crate) time: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Sprite {
     pub(crate) texture: TextureId,
     pub(crate) uv: [f32; 4],

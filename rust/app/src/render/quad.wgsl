@@ -218,8 +218,101 @@ fn underworld(in: VertexOut) -> vec4<f32> {
     return vec4<f32>(srgb_to_linear(rgb), 1.0);
 }
 
+fn value_noise(p: vec2<f32>) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    let u = f * f * (3.0 - 2.0 * f);
+    let a = noise(i);
+    let b = noise(i + vec2<f32>(1.0, 0.0));
+    let c = noise(i + vec2<f32>(0.0, 1.0));
+    let d = noise(i + vec2<f32>(1.0, 1.0));
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+
+fn flow_fbm(p: vec2<f32>) -> f32 {
+    return value_noise(p) * 0.55 + value_noise(p * 2.03 + vec2<f32>(7.1, 3.7)) * 0.3
+        + value_noise(p * 4.1 + vec2<f32>(1.9, 8.3)) * 0.15;
+}
+
+const LIQUID_PIXEL: f32 = 4.0;
+
+fn water_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+    let a = flow_fbm(px * 0.05 + vec2<f32>(t * 0.035, t * 0.012));
+    let b = flow_fbm(px * 0.085 - vec2<f32>(t * 0.02, -t * 0.04) + vec2<f32>(11.0, 5.0));
+    let f = a * 0.6 + b * 0.4;
+    var rgb = vec3<f32>(46.0, 68.0, 32.0) / 255.0;
+    if (f > 0.42) { rgb = vec3<f32>(62.0, 88.0, 38.0) / 255.0; }
+    if (f > 0.54) { rgb = vec3<f32>(88.0, 112.0, 48.0) / 255.0; }
+    if (f > 0.64) { rgb = vec3<f32>(116.0, 136.0, 62.0) / 255.0; }
+    let scum = flow_fbm(px * 0.03 + vec2<f32>(-t * 0.01, t * 0.008) + vec2<f32>(40.0, 2.0));
+    if (scum > 0.64 && f < 0.6) { rgb = vec3<f32>(92.0, 78.0, 44.0) / 255.0; }
+    let ripple = abs(sin(px.x * 0.33 + a * 9.0 + t * 0.9)) * abs(sin(px.y * 0.27 - b * 8.0 - t * 0.7));
+    if (ripple < 0.035) { rgb = vec3<f32>(150.0, 170.0, 84.0) / 255.0; }
+    let step_time = floor(t * 2.0);
+    if (noise(px + vec2<f32>(step_time * 3.1, step_time * 1.7)) > 0.9965) {
+        rgb = vec3<f32>(214.0, 226.0, 130.0) / 255.0;
+    }
+    return rgb;
+}
+
+fn ice_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+    let a = flow_fbm(px * 0.04 + vec2<f32>(3.0, 9.0));
+    var rgb = vec3<f32>(118.0, 172.0, 214.0) / 255.0;
+    if (a > 0.46) { rgb = vec3<f32>(132.0, 184.0, 224.0) / 255.0; }
+    if (a > 0.62) { rgb = vec3<f32>(152.0, 200.0, 234.0) / 255.0; }
+    let crack = abs(flow_fbm(px * 0.11 + vec2<f32>(17.0, 4.0)) - 0.5);
+    if (crack < 0.012) { rgb = vec3<f32>(206.0, 232.0, 250.0) / 255.0; }
+    let sheen = fract((px.x * 0.7 + px.y * 0.45 - t * 9.0) / 70.0);
+    if (sheen < 0.05) { rgb = vec3<f32>(228.0, 246.0, 255.0) / 255.0; }
+    if (noise(px + floor(t * 3.0)) > 0.9985) { rgb = vec3<f32>(255.0); }
+    return rgb;
+}
+
+fn lava_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+    let a = flow_fbm(px * 0.06 + vec2<f32>(t * 0.05, -t * 0.03));
+    let b = flow_fbm(px * 0.11 + vec2<f32>(-t * 0.04, t * 0.06) + vec2<f32>(5.0, 13.0));
+    let f = a * 0.55 + b * 0.45;
+    var rgb = vec3<f32>(150.0, 40.0, 22.0) / 255.0;
+    if (f > 0.40) { rgb = vec3<f32>(200.0, 66.0, 26.0) / 255.0; }
+    if (f > 0.52) { rgb = vec3<f32>(236.0, 112.0, 34.0) / 255.0; }
+    if (f > 0.62) { rgb = vec3<f32>(255.0, 168.0, 56.0) / 255.0; }
+    let ridge = abs(a - 0.5);
+    if (ridge < 0.025) { rgb = vec3<f32>(255.0, 226.0, 110.0) / 255.0; }
+    if (f < 0.3) { rgb = vec3<f32>(74.0, 24.0, 20.0) / 255.0; }
+    return rgb;
+}
+
+fn liquid_color(kind: f32, world: vec2<f32>, t: f32) -> vec3<f32> {
+    let px = floor(world / LIQUID_PIXEL);
+    if (kind > 2.5) { return lava_color(px, t); }
+    if (kind > 1.5) { return ice_color(px, t); }
+    return water_color(px, t);
+}
+
+fn liquid(in: VertexOut) -> vec4<f32> {
+    let texel = textureSample(image, image_sampler, in.uv);
+    if (texel.a < 0.05) {
+        return vec4<f32>(0.0);
+    }
+    var rgb = texel.rgb * in.color.rgb;
+    if (texel.a < 0.995) {
+        rgb = srgb_to_linear(liquid_color(in.fx.y, in.world, in.fx.x)) * in.color.rgb;
+    }
+    if (in.lit < 0.5) {
+        return vec4<f32>(rgb, 1.0);
+    }
+    let screen = (in.world - globals.camera) / globals.size;
+    var light = textureSampleLevel(lightmap, lightmap_sampler, screen, 0.0).rgb;
+    light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
+    let shaded = linear_to_srgb(rgb) * light;
+    return vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), 1.0);
+}
+
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
+    if (in.fx.w > 3.5) {
+        return liquid(in);
+    }
     let uv_per_pixel = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
     let albedo = textureSample(image, image_sampler, in.uv) * in.color;
     if (in.fx.w > 2.5) {

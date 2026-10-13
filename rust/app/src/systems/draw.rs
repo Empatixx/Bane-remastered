@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Casing, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize,
-    Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite,
-    StatusBar, Text, blended,
+    Casing, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Liquid, Lit,
+    MapSize, Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky,
+    Sprite, StatusBar, Text, blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -74,6 +74,7 @@ pub(crate) fn collect_draws(
         frozen,
         shine,
         sky,
+        liquid,
     ) in world
         .query::<(
             &Position,
@@ -90,6 +91,7 @@ pub(crate) fn collect_draws(
             Option<&Frozen>,
             Option<&Shine>,
             Option<&Sky>,
+            Option<&Liquid>,
         )>()
         .without::<&Hidden>()
         .without::<&EnemyArrow>()
@@ -104,6 +106,9 @@ pub(crate) fn collect_draws(
         let draw = match sprite {
             Some(sprite) => {
                 let mut quad = Quad::with_uv(center, size.0, color.0, sprite.uv).lit(lit.is_some());
+                if let Some(liquid) = liquid {
+                    quad = quad.liquid(liquid.kind, liquid.time);
+                }
                 let frost = frozen.map_or(0.0, Frozen::strength);
                 if frost > 0.0 {
                     quad = quad.frosted(frost).outlined(Vec4::new(

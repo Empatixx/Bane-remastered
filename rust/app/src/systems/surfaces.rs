@@ -4,8 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::AudioCommand;
 use crate::components::{
-    Animation, Clip, Color, Dodge, Expiring, Health, Layer, Player, Position, RippleTimer, Size,
-    Sprite, Velocity,
+    Animation, Clip, Color, Dodge, Expiring, Health, Layer, Liquid, Player, Position, RippleTimer,
+    Size, Sprite, Velocity,
 };
 use crate::dungeon::{Surface, Surfaces};
 use crate::systems::damage::hurt_player;
@@ -30,6 +30,12 @@ pub(crate) fn burn_on_lava(world: &mut World, surfaces: &Surfaces, sounds: &mut 
     };
     if surfaces.at_point(at) == Some(Surface::Lava) {
         hurt_player(world, player, LAVA_DAMAGE, sounds);
+    }
+}
+
+pub(crate) fn sync_liquids(world: &mut World, clock: f32) {
+    for liquid in world.query_mut::<&mut Liquid>() {
+        liquid.time = clock;
     }
 }
 
@@ -185,5 +191,25 @@ mod tests {
         surfaces.insert((4, 4), Surface::Water);
         let count = run(&surfaces, (4, 4), 300.0, 60);
         assert!((3..=6).contains(&count), "{count}");
+    }
+
+    #[test]
+    fn every_liquid_tile_follows_the_same_clock() {
+        let mut world = World::new();
+        let a = world.spawn((Liquid {
+            kind: 1.0,
+            time: 0.0,
+        },));
+        let b = world.spawn((Liquid {
+            kind: 3.0,
+            time: 5.0,
+        },));
+        sync_liquids(&mut world, 12.5);
+        for entity in [a, b] {
+            assert_eq!(
+                world.get::<&Liquid>(entity).map(|l| l.time).ok(),
+                Some(12.5)
+            );
+        }
     }
 }
