@@ -73,7 +73,7 @@ impl LayoutSpec {
             treasures: 1,
             sacrifices: rng.below(2),
             ambushes: 1 + rng.below(2),
-            secrets: usize::from(rng.below(10) < 7),
+            secrets: 0,
         }
     }
 }

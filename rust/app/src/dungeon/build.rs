@@ -561,7 +561,8 @@ mod tests {
     fn a_secret_room_is_a_dead_end_behind_one_door_of_a_normal_room_and_has_no_enemies() {
         let mut found = 0;
         for seed in 0..120 {
-            let dungeon = dungeon(seed);
+            let dungeon = Dungeon::generate_with(&mut Rng::new(seed), Some(RoomKind::Secret))
+                .expect("a secret room layout");
             for room in dungeon
                 .rooms
                 .iter()
