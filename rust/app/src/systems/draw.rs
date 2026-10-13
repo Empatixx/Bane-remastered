@@ -92,6 +92,7 @@ pub(crate) fn collect_draws(
             Option<&Sky>,
         )>()
         .without::<&Hidden>()
+        .without::<&EnemyArrow>()
         .iter()
     {
         let bob = Vec2::new(0.0, hover.map_or(0.0, Hover::offset));
@@ -287,5 +288,24 @@ mod tests {
         let layers = collect_draws(&world, &Fonts::default(), Vec2::ZERO, "E", 1.0);
 
         assert_eq!(layers.scene.len(), 1);
+    }
+
+    #[test]
+    fn an_enemy_arrow_is_drawn_once_and_not_a_second_time_without_its_rotation() {
+        let mut world = World::new();
+        world.spawn((
+            EnemyArrow { angle: 1.0 },
+            Position(Vec2::new(40.0, 270.0)),
+            Size(Vec2::splat(18.0)),
+            Color(glam::Vec4::ONE),
+            Sprite::whole(TextureId::WHITE),
+            Layer(4),
+            ScreenSpace,
+        ));
+
+        let layers = collect_draws(&world, &Fonts::default(), Vec2::ZERO, "E", 1.0);
+
+        assert_eq!(layers.hud.len(), 1);
+        assert_eq!(layers.scene.len(), 0);
     }
 }
