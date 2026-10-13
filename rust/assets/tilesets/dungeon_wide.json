@@ -1,5 +1,6 @@
 {
   "columns": 61,
+  "clustered": true,
   "rows": 2,
   "solid_from_row": 1,
   "rules": [

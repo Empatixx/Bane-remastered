@@ -10,6 +10,8 @@ const DUNGEON_WIDE: &str = include_str!("../../../assets/tilesets/dungeon_wide.j
 #[derive(Debug, Deserialize)]
 struct TilesetFile {
     columns: usize,
+    #[serde(default)]
+    clustered: bool,
     rows: usize,
     solid_from_row: usize,
     rules: Vec<RuleFile>,
@@ -66,6 +68,7 @@ impl Rule {
 #[derive(Debug)]
 pub(crate) struct Tileset {
     columns: usize,
+    clustered: bool,
     rows: usize,
     solid_from_row: usize,
     rules: Vec<Rule>,
@@ -89,6 +92,7 @@ impl Tileset {
             .collect::<Result<Vec<_>, _>>()?;
         let tileset = Self {
             columns: file.columns,
+            clustered: file.clustered,
             rows: file.rows,
             solid_from_row: file.solid_from_row,
             rules,
@@ -115,8 +119,20 @@ impl Tileset {
             .iter()
             .find(|rule| rule.matches(&neighborhood))
             .map_or(0, |rule| {
-                rule.tiles[variant_index(column, row, rule.tiles.len())]
+                rule.tiles[self.variant_index(column, row, rule.tiles.len())]
             })
+    }
+
+    fn variant_index(&self, column: usize, row: usize, count: usize) -> usize {
+        if !self.clustered {
+            return scatter_index(column, row, count);
+        }
+        let hash = (column as u32).wrapping_mul(2_654_435_761) ^ (row as u32).wrapping_mul(40_503);
+        if hash % 100 < SPRINKLE_PERCENT {
+            scatter_index(column, row, count)
+        } else {
+            patch_index(column, row, count)
+        }
     }
 
     fn check_covers_every_neighborhood(&self) -> Result<(), Box<dyn Error>> {
@@ -159,9 +175,34 @@ fn neighborhood(grid: &TileGrid, column: usize, row: usize) -> [bool; 9] {
     })
 }
 
-fn variant_index(column: usize, row: usize, count: usize) -> usize {
+fn scatter_index(column: usize, row: usize, count: usize) -> usize {
     let hash = (column as u32).wrapping_mul(73_856_093) ^ (row as u32).wrapping_mul(19_349_663);
     (hash as usize) % count
+}
+
+const PATCH: usize = 3;
+const SPRINKLE_PERCENT: u32 = 22;
+
+fn lattice(x: usize, y: usize) -> f32 {
+    let mut hash = (x as u32).wrapping_mul(0x9E37_79B1) ^ (y as u32).wrapping_mul(0x85EB_CA6B);
+    hash ^= hash >> 15;
+    hash = hash.wrapping_mul(0x2C1B_3C6D);
+    hash ^= hash >> 12;
+    (hash >> 8) as f32 / (1u32 << 24) as f32
+}
+
+fn smooth(t: f32) -> f32 {
+    t * t * (3.0 - 2.0 * t)
+}
+
+fn patch_index(column: usize, row: usize, count: usize) -> usize {
+    let (cx, cy) = (column / PATCH, row / PATCH);
+    let fx = smooth((column % PATCH) as f32 / PATCH as f32);
+    let fy = smooth((row % PATCH) as f32 / PATCH as f32);
+    let top = lattice(cx, cy) * (1.0 - fx) + lattice(cx + 1, cy) * fx;
+    let bottom = lattice(cx, cy + 1) * (1.0 - fx) + lattice(cx + 1, cy + 1) * fx;
+    let value = top * (1.0 - fy) + bottom * fy;
+    ((value * count as f32) as usize).min(count - 1)
 }
 
 #[cfg(test)]
@@ -202,6 +243,35 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn the_wide_tileset_groups_similar_floor_tiles_but_still_mixes_them() {
+        let wide = Tileset::dungeon_wide().expect("the wide tileset is valid");
+        let plain = dungeon();
+        let grid = TileGrid::bordered(60, 60);
+        let mut counts = std::collections::HashMap::new();
+        let (mut same_wide, mut same_plain, mut pairs) = (0, 0, 0);
+        for row in 2..grid.rows() - 2 {
+            for column in 2..grid.columns() - 3 {
+                let here = wide.tile_number(&grid, column, row);
+                *counts.entry(here).or_insert(0usize) += 1;
+                if here == wide.tile_number(&grid, column + 1, row) {
+                    same_wide += 1;
+                }
+                if plain.tile_number(&grid, column, row)
+                    == plain.tile_number(&grid, column + 1, row)
+                {
+                    same_plain += 1;
+                }
+                pairs += 1;
+            }
+        }
+        assert!(counts.len() > 15, "{} different tiles", counts.len());
+        assert!(
+            pairs > 0 && same_wide > same_plain / 2,
+            "{same_wide} vs {same_plain}"
+        );
     }
 
     #[test]

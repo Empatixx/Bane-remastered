@@ -40,7 +40,7 @@ def main():
             if rule["name"] == name:
                 rule["tiles"] = rule["tiles"] + extras
     out = ROOT / "dungeon_wide.json"
-    lines = ["{", f'  "columns": {data["columns"]},', f'  "rows": {data["rows"]},', f'  "solid_from_row": {data["solid_from_row"]},', '  "rules": [']
+    lines = ["{", f'  "columns": {data["columns"]},', '  "clustered": true,', f'  "rows": {data["rows"]},', f'  "solid_from_row": {data["solid_from_row"]},', '  "rules": [']
     for position, rule in enumerate(data["rules"]):
         comma = "," if position < len(data["rules"]) - 1 else ""
         lines.append(
