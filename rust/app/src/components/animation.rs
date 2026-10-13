@@ -54,6 +54,10 @@ impl Animation {
         self.clip.flipped = flipped;
     }
 
+    pub(crate) fn clip(&self) -> Clip {
+        self.clip
+    }
+
     pub(crate) fn flipped(&self) -> bool {
         self.clip.flipped
     }

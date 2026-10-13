@@ -6,7 +6,7 @@ use crate::components::{
     Spawning, Velocity,
 };
 use crate::geometry;
-use crate::navigation::{corridor, Navigation, CELL};
+use crate::navigation::{CELL, Navigation, corridor};
 use crate::physics::Physics;
 use crate::prefabs::PET_SIZE;
 use crate::systems::damage::{Damage, DamageSource};
@@ -19,11 +19,14 @@ const SPEED: f32 = 520.0;
 const AREA: f32 = 500.0;
 const TELEPORT_DISTANCE: f32 = 550.0;
 const STOP_DISTANCE: f32 = 100.0;
+const FOLLOW_SPEED: f32 = 430.0;
+const FOLLOW_RAMP: f32 = 120.0;
+const IDLE_SPEED: f32 = 40.0;
+const TURN_RATIO: f32 = 1.4;
 const BITE_DAMAGE: i32 = 1;
 const BITE_COOLDOWN: f32 = 0.2;
 const MOVE_FRAME_TIME: f32 = 0.1;
 const IDLE_FRAME_TIME: f32 = 0.25;
-const SIDE_THRESHOLD: f32 = 0.3;
 
 const fn clip(row: usize, frames: usize, frame_time: f32, flipped: bool) -> Clip {
     Clip {
@@ -87,9 +90,9 @@ fn nearest_loot(world: &World, center: Vec2, skip: &[Entity]) -> Option<Entity> 
                 && super::items::can_use(world, pickup.0)
         })
         .min_by(|a, b| {
-            a.2 .0
+            a.2.0
                 .distance_squared(center)
-                .total_cmp(&b.2 .0.distance_squared(center))
+                .total_cmp(&b.2.0.distance_squared(center))
         })
         .map(|(entity, _, _)| entity)
 }
@@ -105,9 +108,9 @@ fn nearest_enemy(world: &World, center: Vec2, skip: &[Entity]) -> Option<Entity>
             !skip.contains(entity) && health.current > 0 && in_area(center, position.0)
         })
         .min_by(|a, b| {
-            a.1 .0
+            a.1.0
                 .distance_squared(center)
-                .total_cmp(&b.1 .0.distance_squared(center))
+                .total_cmp(&b.1.0.distance_squared(center))
         })
         .map(|(entity, _, _)| entity)
 }
@@ -226,10 +229,20 @@ pub(crate) fn plan_pet_paths(world: &mut World, physics: &mut Physics, navigatio
     }
 }
 
-fn direction(position: Vec2, path: &mut Path, target: Vec2, stop_near: bool) -> Vec2 {
-    if stop_near && position.distance(target) < STOP_DISTANCE {
-        return Vec2::ZERO;
+fn follow_speed(distance: f32) -> f32 {
+    let beyond = distance - STOP_DISTANCE;
+    if beyond <= 0.0 {
+        return 0.0;
     }
+    if beyond <= FOLLOW_RAMP {
+        return FOLLOW_SPEED * beyond / FOLLOW_RAMP;
+    }
+    let catch_up = ((beyond - FOLLOW_RAMP) / (TELEPORT_DISTANCE - STOP_DISTANCE - FOLLOW_RAMP))
+        .clamp(0.0, 1.0);
+    FOLLOW_SPEED + (SPEED - FOLLOW_SPEED) * catch_up
+}
+
+fn direction(position: Vec2, path: &mut Path, target: Vec2) -> Vec2 {
     while path
         .cells
         .front()
@@ -241,17 +254,19 @@ fn direction(position: Vec2, path: &mut Path, target: Vec2, stop_near: bool) -> 
     (waypoint - position).normalize_or_zero()
 }
 
-fn clip_for(direction: Vec2) -> Clip {
-    if direction.x > SIDE_THRESHOLD {
-        RIGHT
-    } else if direction.x < -SIDE_THRESHOLD {
-        LEFT
+fn clip_for(direction: Vec2, current: Clip) -> Clip {
+    let sideways = current == RIGHT || current == LEFT;
+    let horizontal = if sideways {
+        direction.x.abs() * TURN_RATIO > direction.y.abs()
+    } else {
+        direction.x.abs() > direction.y.abs() * TURN_RATIO
+    };
+    if horizontal {
+        if direction.x > 0.0 { RIGHT } else { LEFT }
     } else if direction.y > 0.0 {
         BOTTOM
-    } else if direction.y < 0.0 {
-        TOP
     } else {
-        PET_IDLE
+        TOP
     }
 }
 
@@ -271,11 +286,20 @@ pub(crate) fn steer_pets(world: &mut World) {
         else {
             continue;
         };
-        let direction = target.map_or(Vec2::ZERO, |target| {
-            direction(position.0, path, target, goal == owner)
+        let (direction, speed) = target.map_or((Vec2::ZERO, 0.0), |target| {
+            let speed = if goal == owner {
+                follow_speed(position.0.distance(target))
+            } else {
+                SPEED
+            };
+            (direction(position.0, path, target), speed)
         });
-        velocity.0 = direction * SPEED;
-        animation.switch_to(clip_for(direction));
+        velocity.0 = direction * speed;
+        if speed < IDLE_SPEED {
+            animation.switch_to(PET_IDLE);
+        } else {
+            animation.switch_to(clip_for(direction, animation.clip()));
+        }
     }
 }
 
@@ -428,9 +452,11 @@ mod tests {
         );
         think(&mut world, &mut physics, &Navigation::default());
         assert!(velocity(&world, pet).y < 0.0);
-        assert!(world
-            .get::<&Pet>(pet)
-            .is_ok_and(|pet| pet.enemy == Some(rat)));
+        assert!(
+            world
+                .get::<&Pet>(pet)
+                .is_ok_and(|pet| pet.enemy == Some(rat))
+        );
 
         drop_item(
             &mut world,
@@ -572,5 +598,45 @@ mod tests {
             .map_or(-1, |wallet| wallet.coins);
         assert_eq!(coins, 1);
         assert_eq!(world.query::<&Pickup>().iter().count(), 0);
+    }
+
+    #[test]
+    fn the_pet_follows_slower_than_its_full_speed_near_the_owner_and_never_outruns_a_walking_player()
+     {
+        assert_eq!(follow_speed(STOP_DISTANCE - 1.0), 0.0);
+        assert_eq!(follow_speed(STOP_DISTANCE), 0.0);
+        let mut last = 0.0;
+        for step in 0..=60 {
+            let speed = follow_speed(STOP_DISTANCE + step as f32 * 8.0);
+            assert!(speed >= last, "{step}: {speed} < {last}");
+            last = speed;
+        }
+        assert!(follow_speed(STOP_DISTANCE + FOLLOW_RAMP) <= FOLLOW_SPEED);
+        assert!(follow_speed(STOP_DISTANCE + FOLLOW_RAMP / 4.0) < 150.0);
+        assert!((follow_speed(TELEPORT_DISTANCE) - SPEED).abs() < 0.01);
+    }
+
+    #[test]
+    fn the_walk_animation_does_not_flip_while_the_direction_wobbles_around_a_diagonal() {
+        let mut clip = RIGHT;
+        for wobble in [0.9, 1.1, 0.95, 1.05, 1.0, 0.92] {
+            let direction = Vec2::new(wobble, 1.0).normalize();
+            clip = clip_for(direction, clip);
+            assert_eq!(clip, RIGHT, "{wobble}");
+        }
+        let mut clip = BOTTOM;
+        for wobble in [0.9, 1.1, 0.95, 1.05, 1.0, 0.92] {
+            let direction = Vec2::new(wobble, 1.0).normalize();
+            clip = clip_for(direction, clip);
+            assert_eq!(clip, BOTTOM, "{wobble}");
+        }
+    }
+
+    #[test]
+    fn a_clear_turn_changes_the_walk_animation() {
+        assert_eq!(clip_for(Vec2::new(1.0, 0.1).normalize(), BOTTOM), RIGHT);
+        assert_eq!(clip_for(Vec2::new(-1.0, 0.1).normalize(), TOP), LEFT);
+        assert_eq!(clip_for(Vec2::new(0.1, 1.0).normalize(), RIGHT), BOTTOM);
+        assert_eq!(clip_for(Vec2::new(0.1, -1.0).normalize(), LEFT), TOP);
     }
 }
