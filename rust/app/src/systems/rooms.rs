@@ -19,19 +19,42 @@ fn enemy_limit(columns: usize, rows: usize) -> usize {
     (columns * rows / AREA_PER_ENEMY).clamp(MIN_ENEMIES, MAX_ENEMIES)
 }
 const ENTER_MARGIN: usize = 2;
+const WAVE_DELAY: f32 = 1.5;
+const BIG_ROOM_AREA: usize = 500;
+const WAVE_SHARE: f32 = 0.6;
+const MIN_WAVE: usize = 3;
+
+pub(crate) fn wave_plan(columns: usize, rows: usize) -> (usize, usize) {
+    let waves = if columns * rows >= BIG_ROOM_AREA {
+        3
+    } else {
+        2
+    };
+    let per_wave = ((enemy_limit(columns, rows) as f32 * WAVE_SHARE).ceil() as usize).max(MIN_WAVE);
+    (waves, per_wave)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum RoomEvent {
     BossEntered,
+    WaveStarted { number: usize, total: usize },
     ShopEntered,
     RoomCleared,
     BossDefeated { center: Vec2 },
 }
 
 #[derive(Debug)]
+struct Fight {
+    gates: Vec<(Entity, ColliderHandle)>,
+    wave: usize,
+    waves: usize,
+    delay: Option<f32>,
+}
+
+#[derive(Debug)]
 enum RoomState {
     Unvisited,
-    Fighting(Vec<(Entity, ColliderHandle)>),
+    Fighting(Fight),
     Cleared,
 }
 
@@ -81,6 +104,7 @@ pub(crate) fn update_rooms(
     world: &mut World,
     physics: &mut Physics,
     rng: &mut Rng,
+    dt: f32,
 ) -> Vec<RoomEvent> {
     let mut events = Vec::new();
     if let Some(index) = player_tile(context.dungeon, world) {
@@ -93,24 +117,45 @@ pub(crate) fn update_rooms(
         }
     }
     for room in 0..runtime.states.len() {
-        let finished = matches!(runtime.states[room], RoomState::Fighting(_))
-            && living_enemies(world, room) == 0;
-        if finished {
-            if let RoomState::Fighting(gates) =
-                std::mem::replace(&mut runtime.states[room], RoomState::Cleared)
-            {
-                for (entity, collider) in gates {
-                    physics.remove_collider(collider);
-                    super::open_gate(world, entity);
+        if !matches!(runtime.states[room], RoomState::Fighting(_))
+            || living_enemies(world, room) > 0
+        {
+            continue;
+        }
+        let data = &context.dungeon.rooms[room];
+        let next_wave = match &mut runtime.states[room] {
+            RoomState::Fighting(fight) if fight.wave < fight.waves => {
+                let delay = fight.delay.get_or_insert(WAVE_DELAY);
+                *delay -= dt;
+                if *delay <= 0.0 {
+                    fight.delay = None;
+                    fight.wave += 1;
+                    Some((fight.wave, fight.waves))
+                } else {
+                    None
                 }
             }
-            events.push(RoomEvent::RoomCleared);
-            let data = &context.dungeon.rooms[room];
-            if data.kind == RoomKind::Boss {
-                events.push(RoomEvent::BossDefeated {
-                    center: data.pixel_center(),
-                });
+            _ => {
+                if let RoomState::Fighting(fight) =
+                    std::mem::replace(&mut runtime.states[room], RoomState::Cleared)
+                {
+                    for (entity, collider) in fight.gates {
+                        physics.remove_collider(collider);
+                        super::open_gate(world, entity);
+                    }
+                }
+                events.push(RoomEvent::RoomCleared);
+                if data.kind == RoomKind::Boss {
+                    events.push(RoomEvent::BossDefeated {
+                        center: data.pixel_center(),
+                    });
+                }
+                continue;
             }
+        };
+        if let Some((number, total)) = next_wave {
+            spawn_wave(context, room, world, rng);
+            events.push(RoomEvent::WaveStarted { number, total });
         }
     }
     events
@@ -151,6 +196,20 @@ fn living_enemies(world: &World, room: usize) -> usize {
         .count()
 }
 
+fn spawn_wave(context: &RoomContext, room: usize, world: &mut World, rng: &mut Rng) {
+    let data = &context.dungeon.rooms[room];
+    let (_, per_wave) = wave_plan(data.columns, data.rows);
+    let mut spawns = data.spawns.clone();
+    for index in (1..spawns.len()).rev() {
+        spawns.swap(index, rng.below(index + 1));
+    }
+    for &(column, row) in spawns.iter().take(per_wave) {
+        let position = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE;
+        let kind = enemies::pick(context.floor, rng);
+        prefabs::enemy_in_room(world, kind, position, context.floor, context.textures, room);
+    }
+}
+
 fn enter(
     runtime: &mut RoomRuntime,
     context: &RoomContext,
@@ -175,15 +234,7 @@ fn enter(
             prefabs::boss_hud(world, name, context.textures);
         }
     } else {
-        let mut spawns = data.spawns.clone();
-        for index in (1..spawns.len()).rev() {
-            spawns.swap(index, rng.below(index + 1));
-        }
-        for &(column, row) in spawns.iter().take(enemy_limit(data.columns, data.rows)) {
-            let position = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE;
-            let kind = enemies::pick(context.floor, rng);
-            prefabs::enemy_in_room(world, kind, position, context.floor, context.textures, room);
-        }
+        spawn_wave(context, room, world, rng);
     }
     let mut gates = Vec::new();
     for door in &data.doors {
@@ -197,8 +248,25 @@ fn enter(
             ));
         }
     }
-    runtime.states[room] = RoomState::Fighting(gates);
-    boss.then_some(RoomEvent::BossEntered)
+    let waves = if boss {
+        1
+    } else {
+        wave_plan(data.columns, data.rows).0
+    };
+    runtime.states[room] = RoomState::Fighting(Fight {
+        gates,
+        wave: 1,
+        waves,
+        delay: None,
+    });
+    if boss {
+        Some(RoomEvent::BossEntered)
+    } else {
+        Some(RoomEvent::WaveStarted {
+            number: 1,
+            total: waves,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -233,7 +301,14 @@ mod tests {
         };
         let mut rng = Rng::new(1);
 
-        update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
+        update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            2.0,
+        );
         assert!(runtime.is_locked(normal));
         assert!(living_enemies(&world, normal) > 0);
 
@@ -247,7 +322,32 @@ mod tests {
         }
         let gates_before = world.query::<&crate::components::Gate>().iter().count();
         assert!(gates_before > 0);
-        update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
+        for _ in 0..4 {
+            update_rooms(
+                &mut runtime,
+                &context,
+                &mut world,
+                &mut physics,
+                &mut rng,
+                2.0,
+            );
+            let enemies: Vec<Entity> = world
+                .query::<(Entity, &RoomId)>()
+                .iter()
+                .map(|(entity, _)| entity)
+                .collect();
+            for entity in enemies {
+                let _ = world.insert_one(entity, Expiring);
+            }
+        }
+        update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            2.0,
+        );
         assert!(!runtime.is_locked(normal));
         assert_eq!(
             world.query::<&crate::components::Gate>().iter().count(),
@@ -285,6 +385,7 @@ mod tests {
             &mut world,
             &mut physics,
             &mut Rng::new(1),
+            2.0,
         );
 
         assert!(!(0..dungeon.rooms.len()).any(|room| runtime.is_locked(room)));
@@ -317,7 +418,14 @@ mod tests {
         };
         let mut rng = Rng::new(5);
 
-        let events = update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
+        let events = update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            2.0,
+        );
 
         assert_eq!(events, vec![RoomEvent::BossEntered]);
         assert!(runtime.is_locked(boss_room));
@@ -337,7 +445,14 @@ mod tests {
         for entity in enemies {
             let _ = world.insert_one(entity, Expiring);
         }
-        let events = update_rooms(&mut runtime, &context, &mut world, &mut physics, &mut rng);
+        let events = update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            2.0,
+        );
 
         assert_eq!(
             events,
@@ -376,9 +491,13 @@ mod tests {
             &mut world,
             &mut physics,
             &mut Rng::new(2),
+            2.0,
         );
 
-        assert!(events.is_empty());
+        assert!(events.iter().all(|event| !matches!(
+            event,
+            RoomEvent::BossEntered | RoomEvent::BossDefeated { .. }
+        )));
     }
 
     #[test]
@@ -388,5 +507,174 @@ mod tests {
         assert!(enemy_limit(34, 22) > MIN_ENEMIES);
         assert!(enemy_limit(38, 24) > enemy_limit(34, 22));
         assert_eq!(enemy_limit(60, 40), MAX_ENEMIES);
+    }
+
+    #[test]
+    fn rooms_come_in_two_or_three_waves_and_every_wave_is_at_least_a_small_group() {
+        for (columns, rows, waves) in [(22, 14, 2), (24, 16, 2), (28, 20, 3), (38, 24, 3)] {
+            let (planned, per_wave) = wave_plan(columns, rows);
+
+            assert_eq!(planned, waves, "{columns}x{rows}");
+            assert!(per_wave >= MIN_WAVE && per_wave <= enemy_limit(columns, rows));
+        }
+        assert!(wave_plan(38, 24).1 > wave_plan(22, 14).1);
+    }
+
+    fn fight() -> (Dungeon, usize, World, Physics, Textures) {
+        let dungeon = dungeon();
+        let normal = dungeon
+            .rooms
+            .iter()
+            .position(|room| room.kind == RoomKind::Normal)
+            .expect("there is a normal room");
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            dungeon.rooms[normal].pixel_center(),
+            &textures,
+        );
+        (dungeon, normal, world, physics, textures)
+    }
+
+    fn kill_everyone(world: &mut World) {
+        let enemies: Vec<Entity> = world
+            .query::<(Entity, &RoomId)>()
+            .iter()
+            .map(|(entity, _)| entity)
+            .collect();
+        for entity in enemies {
+            let _ = world.insert_one(entity, Expiring);
+        }
+    }
+
+    #[test]
+    fn an_ambush_room_sends_its_enemies_in_waves_and_stays_locked_until_the_last_one_is_dead() {
+        let (dungeon, normal, mut world, mut physics, textures) = fight();
+        let context = RoomContext {
+            dungeon: &dungeon,
+            textures: &textures,
+            floor: 1,
+        };
+        let mut runtime = RoomRuntime::new(&dungeon);
+        let mut rng = Rng::new(3);
+        let room = &dungeon.rooms[normal];
+        let (waves, per_wave) = wave_plan(room.columns, room.rows);
+        let wanted = per_wave.min(room.spawns.len());
+
+        let events = update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            0.016,
+        );
+        assert_eq!(
+            events,
+            vec![RoomEvent::WaveStarted {
+                number: 1,
+                total: waves
+            }]
+        );
+        assert_eq!(living_enemies(&world, normal), wanted);
+
+        for number in 2..=waves {
+            kill_everyone(&mut world);
+            let early = update_rooms(
+                &mut runtime,
+                &context,
+                &mut world,
+                &mut physics,
+                &mut rng,
+                0.5,
+            );
+            assert!(early.is_empty(), "the next wave waits a moment");
+            assert!(runtime.is_locked(normal));
+            assert_eq!(living_enemies(&world, normal), 0);
+
+            let later = update_rooms(
+                &mut runtime,
+                &context,
+                &mut world,
+                &mut physics,
+                &mut rng,
+                1.5,
+            );
+            assert_eq!(
+                later,
+                vec![RoomEvent::WaveStarted {
+                    number,
+                    total: waves
+                }]
+            );
+            assert_eq!(living_enemies(&world, normal), wanted);
+            assert!(runtime.is_locked(normal));
+        }
+
+        kill_everyone(&mut world);
+        let last = update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            0.016,
+        );
+        assert_eq!(last, vec![RoomEvent::RoomCleared]);
+        assert!(!runtime.is_locked(normal));
+    }
+
+    #[test]
+    fn the_boss_room_is_a_single_wave() {
+        let dungeon = dungeon();
+        let boss = dungeon
+            .rooms
+            .iter()
+            .position(|room| room.kind == RoomKind::Boss)
+            .expect("there is a boss room");
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            dungeon.rooms[boss].pixel_center(),
+            &textures,
+        );
+        let context = RoomContext {
+            dungeon: &dungeon,
+            textures: &textures,
+            floor: 1,
+        };
+        let mut runtime = RoomRuntime::new(&dungeon);
+        let mut rng = Rng::new(5);
+
+        update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            0.016,
+        );
+        kill_everyone(&mut world);
+        let events = update_rooms(
+            &mut runtime,
+            &context,
+            &mut world,
+            &mut physics,
+            &mut rng,
+            0.016,
+        );
+
+        assert!(events.contains(&RoomEvent::RoomCleared));
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, RoomEvent::WaveStarted { .. }))
+        );
     }
 }

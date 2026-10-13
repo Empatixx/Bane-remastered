@@ -5,7 +5,7 @@ use crate::assets::Textures;
 use crate::assets::tex;
 use crate::components::{
     Animation, Casing, Clip, Color, Expiring, Floating, Layer, Light, LightFade, Lit, PoisonPool,
-    PoisonTrail, Position, ShieldAura, Size, Sprite, Text, ThenPlay,
+    PoisonTrail, Position, ScreenSpace, ShieldAura, Size, Sprite, Text, ThenPlay,
 };
 use crate::objects::{POOL_SECONDS, POOL_SIZE, TRAIL_DOT, TRAIL_SECONDS, TRAIL_VARIANTS};
 use crate::render::{FontSize, TextureId};
@@ -194,5 +194,25 @@ pub(crate) fn poison_dot(
         sprite,
         Layer(0),
         Lit,
+    ))
+}
+
+const WAVE_BANNER_SECONDS: f32 = 1.8;
+const WAVE_BANNER_AT: Vec2 = Vec2::new(480.0, 110.0);
+
+pub(crate) fn wave_banner(world: &mut World, number: usize, total: usize) -> Entity {
+    world.spawn((
+        Floating {
+            remaining: WAVE_BANNER_SECONDS,
+            velocity: Vec2::new(0.0, -6.0),
+        },
+        Position(WAVE_BANNER_AT),
+        Text::centered(
+            format!("Wave {number}/{total}"),
+            Vec4::new(1.0, 0.85, 0.2, 1.0),
+            FontSize::Size32,
+        ),
+        Layer(6),
+        ScreenSpace,
     ))
 }

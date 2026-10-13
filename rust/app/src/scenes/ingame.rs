@@ -296,6 +296,7 @@ impl Scene for InGameScene {
                 &mut self.world,
                 &mut self.physics,
                 &mut self.map_rng,
+                dt,
             );
         }
         self.handle_room_events(events, assets);
@@ -571,6 +572,11 @@ impl InGameScene {
             match event {
                 systems::RoomEvent::RoomCleared => {
                     systems::regenerate_armor(&mut self.world);
+                }
+                systems::RoomEvent::WaveStarted { number, total } => {
+                    if total > 1 {
+                        prefabs::wave_banner(&mut self.world, number, total);
+                    }
                 }
                 systems::RoomEvent::ShopEntered => {
                     systems::say(&mut self.world, "Welcome to my shop!");
