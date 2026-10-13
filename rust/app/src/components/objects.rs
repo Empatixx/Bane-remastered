@@ -57,6 +57,9 @@ pub(crate) struct ArrowTrap {
 pub(crate) struct TrapArrow;
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct RippleTimer(pub(crate) f32);
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct PoisonTrail;
 
 #[derive(Debug, Clone, Copy)]

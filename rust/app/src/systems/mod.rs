@@ -102,6 +102,6 @@ pub(crate) use slot::{
 };
 pub(crate) use stats::{Summary, current as current_stats, summarize};
 pub(crate) use steering::{steer_player, steer_player_on};
-pub(crate) use surfaces::burn_on_lava;
+pub(crate) use surfaces::{burn_on_lava, ripple_on_water};
 pub(crate) use ui::{update_buttons, update_text_buttons};
 pub(crate) use unstick::watch_progress;

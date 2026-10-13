@@ -146,15 +146,19 @@ def lava(x, y, mask, frame, d, v):
 
 def water(x, y, mask, frame, d, v):
     if d == 0:
-        return (150, 196, 190, 255) if noise(x, y, v + frame) > 0.4 else (110, 160, 160, 255)
+        return (150, 170, 84, 255) if noise(x, y, v + frame) > 0.4 else (112, 138, 62, 255)
     if d == 1:
-        return (74, 130, 140, 255)
+        return (78, 104, 46, 255)
     n = smooth_noise(x + v * 6 + frame * 2, y + v * 4, 31 + v)
+    if n > 0.8:
+        return (132, 150, 72, 255)
     if n > 0.74:
-        return (118, 184, 182, 255)
+        return (104, 124, 56, 255)
     if n > 0.42:
-        return (60, 116, 128, 255)
-    return (44, 92, 106, 255)
+        return (62, 88, 38, 255)
+    if noise(x, y, 120 + v) > 0.985:
+        return (96, 74, 40, 255)
+    return (46, 68, 32, 255)
 
 
 def alpha_by(distance, base, reach):
@@ -164,9 +168,9 @@ def alpha_by(distance, base, reach):
 def water_shore(x, y, d, v):
     if d >= 4:
         return None
-    if d <= 1 and noise(x, y, 90 + v) > 0.55:
-        return (160, 206, 202, 150)
-    return (30, 64, 72, alpha_by(d, 150, 4))
+    if d <= 1 and noise(x, y, 90 + v) > 0.6:
+        return (150, 164, 80, 160)
+    return (36, 52, 28, alpha_by(d, 160, 4))
 
 
 def ice_shore(x, y, d, v):
@@ -193,7 +197,34 @@ def shade_tile():
     return tile
 
 
+RIPPLE_FRAMES = 6
+RIPPLE_SIZE = 32
+
+
+def ripple_sheet():
+    sheet = Image.new("RGBA", (RIPPLE_SIZE * RIPPLE_FRAMES, RIPPLE_SIZE), (0, 0, 0, 0))
+    centre = (RIPPLE_SIZE - 1) / 2
+    for frame in range(RIPPLE_FRAMES):
+        radius = 3 + frame * 2.6
+        fade = frame / (RIPPLE_FRAMES - 1)
+        for y in range(RIPPLE_SIZE):
+            for x in range(RIPPLE_SIZE):
+                dx, dy = (x - centre), (y - centre) / 0.78
+                distance = math.hypot(dx, dy)
+                for ring, offset in enumerate((0.0, -3.2)):
+                    r = radius + offset
+                    if r < 1.5:
+                        continue
+                    if abs(distance - r) < 0.75:
+                        keep = noise(x, y, 200 + frame) > fade * (0.9 if ring == 0 else 1.15)
+                        if keep:
+                            colour = (186, 204, 112, 255) if ring == 0 else (130, 154, 76, 255)
+                            sheet.putpixel((frame * RIPPLE_SIZE + x, y), colour)
+    return sheet
+
+
 def main():
+    ripple_sheet().save(OUT / "ripple.tga")
     make_shore(water_shore).save(OUT / "shore_water.tga")
     make_shore(ice_shore).save(OUT / "shore_ice.tga")
     make_shore(lava_shore).save(OUT / "shore_lava.tga")
