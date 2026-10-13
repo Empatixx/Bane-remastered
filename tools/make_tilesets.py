@@ -188,46 +188,26 @@ def line(tile, start, end, colour):
     draw.line([start, end], fill=colour)
 
 
+def dots(tile, rng, colours, amount):
+    placed = []
+    for _ in range(amount * 6):
+        if len(placed) >= amount:
+            break
+        x, y = rng.randrange(1, TILE - 1), rng.randrange(1, TILE - 1)
+        if all(abs(x - px) > 1 or abs(y - py) > 1 for px, py in placed):
+            tile.putpixel((x, y), rng.choice(colours))
+            placed.append((x, y))
+
+
 def extra_floor(plain, name, k):
     r = random.Random(1000 + k * 17 + len(name))
     tile = plain.copy()
     base = plain.getpixel((8, 8))
-    dark, light = shade(base, 0.8), shade(base, 1.22)
+    colours = [shade(base, 0.82), shade(base, 1.2)]
     accent = ACCENT[name]
-    pick = lambda: accent if accent and r.random() < (0.15 if name == "lava" else 0.45) else r.choice([dark, light])
-    kind = k % EXTRA
-    if kind == 0:
-        y = r.randrange(4, 12)
-        line(tile, (r.randrange(0, 4), y), (r.randrange(10, 16), y + r.choice([-1, 0, 1])), pick())
-    elif kind == 1:
-        x = r.randrange(4, 12)
-        line(tile, (x, r.randrange(0, 4)), (x + r.choice([-1, 0, 1]), r.randrange(10, 16)), pick())
-    elif kind == 2:
-        x, y = r.randrange(3, 7), r.randrange(3, 7)
-        line(tile, (x, y), (x + r.randrange(4, 8), y), pick())
-        line(tile, (x, y), (x, y + r.randrange(4, 8)), pick())
-    elif kind == 3:
-        x, y = r.randrange(9, 13), r.randrange(9, 13)
-        line(tile, (x, y), (x - r.randrange(4, 8), y), pick())
-        line(tile, (x, y), (x, y - r.randrange(4, 8)), pick())
-    elif kind == 4:
-        x, y = r.randrange(2, 6), r.randrange(2, 6)
-        line(tile, (x, y), (x + r.randrange(6, 10), y + r.randrange(6, 10)), pick())
-    elif kind == 5:
-        y = r.randrange(5, 11)
-        colour = pick()
-        line(tile, (0, y), (7, y), colour)
-        line(tile, (8, y + 2), (15, y + 2), colour)
-    elif kind == 6:
-        for _ in range(r.randint(3, 5)):
-            x, y = r.randrange(2, 14), r.randrange(2, 14)
-            tile.putpixel((x, y), pick())
-            tile.putpixel((min(15, x + 1), y), pick())
-    else:
-        x, y = r.randrange(4, 12), r.randrange(4, 12)
-        colour = pick()
-        line(tile, (x - 2, y), (x + 2, y), colour)
-        line(tile, (x, y - 2), (x, y + 2), colour)
+    if accent and name != "lava":
+        colours.append(accent)
+    dots(tile, r, colours, [2, 3, 3, 4, 4, 5, 6, 7][k % EXTRA])
     return tile
 
 
@@ -253,20 +233,10 @@ def mutate_edge(tile, bodies, name, flip, rng):
     base = out.getpixel(body[0])
     dark, light = shade(base, 0.8), shade(base, 1.22)
     accent = ACCENT[name]
-    colours = [dark, light] + ([accent] if accent else [])
+    colours = [dark, light] + ([accent] if accent and name != "lava" else [])
     for _ in range(rng.randint(2, 5)):
         x, y = rng.choice(body)
         out.putpixel((x, y), rng.choice(colours))
-    for _ in range(rng.randint(1, 2)):
-        x, y = rng.choice(body)
-        colour = rng.choice(colours)
-        length = rng.randint(2, 5)
-        for step in range(length):
-            px, py = (x + step, y) if rng.random() < 0.5 or flip == "h" else (x, y + step)
-            if flip == "v" and rng.random() < 0.5:
-                px, py = x, y + step
-            if 0 <= px < TILE and 0 <= py < TILE and out.getpixel((px, py))[:3] in bodies:
-                out.putpixel((px, py), colour)
     return out
 
 
@@ -294,7 +264,6 @@ def variant(name, source):
     elif name == "spider":
         scatter(source, out, BODY, [(66, 60, 78)], 0.006, 4)
     elif name == "lava":
-        cracks(source, out, (214, 84, 28, 255), (255, 190, 60, 255), 5)
         scatter(source, out, BODY, [(168, 70, 36), (214, 84, 28)], 0.006, 6)
     elif name == "temple":
         scatter(source, out, BODY, [(120, 98, 70)], 0.006, 8)
