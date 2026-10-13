@@ -8,14 +8,18 @@ use crate::components::{
 use crate::render::TextureId;
 use crate::viewport::TARGET;
 
-const ARROW_SIZE: Vec2 = Vec2::new(20.0, 20.0);
+const ARROW_SIZE: Vec2 = Vec2::new(18.0, 18.0);
 const EDGE_INSET: f32 = 20.0;
-const ARROW_ALPHA: f32 = 0.5;
+const SEEN_MARGIN: f32 = 20.0;
+const ARROW_ALPHA: f32 = 0.3;
 const MERGE_DISTANCE: f32 = 44.0;
 
-pub(crate) fn arrow_at(screen: Vec2, half: Vec2) -> Option<(Vec2, f32)> {
+pub(crate) fn arrow_at(screen: Vec2) -> Option<(Vec2, f32)> {
     let center = TARGET / 2.0;
-    let seen = (screen - half).cmpge(Vec2::ZERO).all() && (screen + half).cmple(TARGET).all();
+    let seen = screen.x > -SEEN_MARGIN
+        && screen.x < TARGET.x + SEEN_MARGIN
+        && screen.y > -SEEN_MARGIN
+        && screen.y < TARGET.y + SEEN_MARGIN;
     if seen {
         return None;
     }
@@ -49,13 +53,13 @@ pub(crate) fn update_enemy_arrows(world: &mut World, camera: Vec2, texture: Text
         let _ = world.despawn(entity);
     }
     let arrows: Vec<(Vec2, f32)> = world
-        .query::<(&Position, &Size, &Health)>()
+        .query::<(&Position, &Health)>()
         .with::<(&Enemy, &RoomId)>()
         .without::<&Expiring>()
         .without::<&Spawning>()
         .iter()
-        .filter(|(_, _, health)| health.current > 0)
-        .filter_map(|(position, size, _)| arrow_at(position.0 - camera, size.0 / 2.0))
+        .filter(|(_, health)| health.current > 0)
+        .filter_map(|(position, _)| arrow_at(position.0 - camera))
         .collect();
     for (position, angle) in merged(arrows) {
         world.spawn((
@@ -95,8 +99,8 @@ mod tests {
 
     #[test]
     fn an_enemy_on_the_screen_gets_no_arrow_and_one_far_to_the_right_gets_one_on_the_right_edge() {
-        assert_eq!(arrow_at(Vec2::new(300.0, 200.0), Vec2::splat(20.0)), None);
-        let (at, angle) = arrow_at(Vec2::new(3000.0, 270.0), Vec2::splat(20.0)).expect("an arrow");
+        assert_eq!(arrow_at(Vec2::new(300.0, 200.0)), None);
+        let (at, angle) = arrow_at(Vec2::new(3000.0, 270.0)).expect("an arrow");
 
         assert!((at.x - (TARGET.x - EDGE_INSET)).abs() < 0.01);
         assert!((at.y - 270.0).abs() < 0.01);
@@ -111,7 +115,7 @@ mod tests {
             (Vec2::new(0.0, -2000.0), -std::f32::consts::FRAC_PI_2),
             (Vec2::new(-2000.0, 0.0), std::f32::consts::PI),
         ] {
-            let (at, angle) = arrow_at(center + offset, Vec2::splat(20.0)).expect("an arrow");
+            let (at, angle) = arrow_at(center + offset).expect("an arrow");
 
             assert!((angle.abs() - expected.abs()).abs() < 0.001, "{offset:?}");
             assert!(at.x >= EDGE_INSET - 0.01 && at.x <= TARGET.x - EDGE_INSET + 0.01);
@@ -121,8 +125,7 @@ mod tests {
 
     #[test]
     fn a_diagonal_enemy_gets_an_arrow_in_the_matching_corner_area() {
-        let (at, angle) = arrow_at(TARGET / 2.0 + Vec2::new(2000.0, 2000.0), Vec2::splat(20.0))
-            .expect("an arrow");
+        let (at, angle) = arrow_at(TARGET / 2.0 + Vec2::new(2000.0, 2000.0)).expect("an arrow");
 
         assert!(at.x > TARGET.x / 2.0 && at.y > TARGET.y / 2.0);
         assert!((angle - std::f32::consts::FRAC_PI_4).abs() < 0.001);
@@ -216,17 +219,5 @@ mod tests {
             "points down towards the living one: {found:?}"
         );
         let _ = living;
-    }
-
-    #[test]
-    fn an_enemy_cut_by_the_screen_edge_gets_an_arrow_and_a_fully_visible_one_does_not() {
-        let half = Vec2::splat(60.0);
-
-        assert_eq!(arrow_at(Vec2::new(480.0, 270.0), half), None);
-        assert_eq!(arrow_at(Vec2::new(120.0, 100.0), half), None);
-        let (at, angle) = arrow_at(Vec2::new(700.0, 20.0), half).expect("cut at the top");
-        assert!(at.y < TARGET.y / 2.0 && at.x > TARGET.x / 2.0);
-        assert!(angle < 0.0 && angle > -std::f32::consts::FRAC_PI_2);
-        assert!(arrow_at(Vec2::new(940.0, 270.0), half).is_some());
     }
 }
