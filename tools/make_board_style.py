@@ -1,5 +1,6 @@
 import os
 import random
+from pathlib import Path
 import sys
 
 from PIL import Image, ImageDraw
@@ -553,42 +554,44 @@ CRACK = (37, 19, 26, 255)
 
 
 def bricks(width, height, vertical):
-    cell = Image.new("RGBA", (width, height), STONE_OUT)
-    draw = ImageDraw.Draw(cell)
-    rows = height // 4 if not vertical else width // 4
-    for index in range(rows):
-        y0 = index * 4
-        offset = 4 if index % 2 else 0
-        if vertical:
-            for x in range(0, height + 4, 8):
-                x0 = x - offset
-                draw.rectangle((y0, x0 + 1, y0 + 2, x0 + 6), fill=STONE)
-                draw.line((y0, x0 + 1, y0, x0 + 6), fill=STONE_LIGHT)
-                draw.line((y0 + 2, x0 + 1, y0 + 2, x0 + 6), fill=STONE_MID)
-        else:
-            for x in range(0, width + 8, 8):
-                x0 = x - offset
-                draw.rectangle((x0 + 1, y0, x0 + 6, y0 + 2), fill=STONE)
-                draw.line((x0 + 1, y0, x0 + 6, y0), fill=STONE_LIGHT)
-                draw.line((x0 + 1, y0 + 2, x0 + 6, y0 + 2), fill=STONE_MID)
+    tiles = Image.open(Path(__file__).resolve().parent.parent / "assets/textures/ingame/tileset.tga").convert("RGBA")
+    cell = Image.new("RGBA", (width, height))
+    for index in range((height if vertical else width) // 16):
+        tile = tiles.crop(((3 + index) * 16, 0, (4 + index) * 16, 16))
+        cell.paste(tile, (0, index * 16) if vertical else (index * 16, 0))
     return cell
+
+
+def shade(color, factor):
+    return tuple(min(255, int(channel * factor)) for channel in color[:3]) + (255,)
 
 
 def crack(cell, vertical, seed):
     r = random.Random(seed)
     width, height = cell.size
+    base = cell.getpixel((width // 2, height // 2))
+    dark = shade(base, 0.35)
+    light = shade(base, 1.45)
     long_side = height if vertical else width
     across = width if vertical else height
-    position = r.randint(across // 3, across * 2 // 3)
-    for step in range(long_side):
-        position += r.choice([-1, 0, 0, 1])
-        position = max(1, min(across - 2, position))
-        point = (position, step) if vertical else (step, position)
-        cell.putpixel(point, CRACK)
-        if step % 5 == 2:
-            side = (position + 1, step) if vertical else (step, position + 1)
-            if 0 <= side[0] < width and 0 <= side[1] < height:
-                cell.putpixel(side, STONE_DARK)
+
+    def at(a, b):
+        return (b, a) if vertical else (a, b)
+
+    def draw(start, length, drift):
+        position = start
+        for step in range(length):
+            position += r.choice([-1, 0, 0, drift])
+            position = max(1, min(across - 2, position))
+            point = at(position, step)
+            if 0 <= point[0] < width and 0 <= point[1] < height:
+                cell.putpixel(point, dark)
+                side = at(position + 1, step)
+                if step % 3 == 0 and 0 <= side[0] < width and 0 <= side[1] < height:
+                    cell.putpixel(side, light)
+        return position
+
+    draw(r.randint(across // 3, across * 2 // 3), long_side, 1)
     return cell
 
 
