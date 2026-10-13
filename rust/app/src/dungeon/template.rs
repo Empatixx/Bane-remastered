@@ -135,12 +135,8 @@ pub(crate) fn is_door_slot(columns: usize, rows: usize, column: usize, row: usiz
     vertical || horizontal
 }
 
-const BUILT_IN: [&str; 24] = [
+const BUILT_IN: [&str; 20] = [
     include_str!("../../../assets/rooms/start.json"),
-    include_str!("../../../assets/rooms/normal_01.json"),
-    include_str!("../../../assets/rooms/normal_02.json"),
-    include_str!("../../../assets/rooms/normal_03.json"),
-    include_str!("../../../assets/rooms/normal_04.json"),
     include_str!("../../../assets/rooms/normal_05.json"),
     include_str!("../../../assets/rooms/normal_06.json"),
     include_str!("../../../assets/rooms/normal_07.json"),
@@ -148,14 +144,14 @@ const BUILT_IN: [&str; 24] = [
     include_str!("../../../assets/rooms/normal_09.json"),
     include_str!("../../../assets/rooms/normal_10.json"),
     include_str!("../../../assets/rooms/normal_11.json"),
-    include_str!("../../../assets/rooms/normal_12.json"),
     include_str!("../../../assets/rooms/normal_13.json"),
-    include_str!("../../../assets/rooms/normal_14.json"),
-    include_str!("../../../assets/rooms/normal_15.json"),
     include_str!("../../../assets/rooms/normal_16.json"),
     include_str!("../../../assets/rooms/normal_17.json"),
     include_str!("../../../assets/rooms/normal_18.json"),
     include_str!("../../../assets/rooms/normal_19.json"),
+    include_str!("../../../assets/rooms/normal_20.json"),
+    include_str!("../../../assets/rooms/normal_21.json"),
+    include_str!("../../../assets/rooms/normal_22.json"),
     include_str!("../../../assets/rooms/treasure.json"),
     include_str!("../../../assets/rooms/shop.json"),
     include_str!("../../../assets/rooms/sacrifice.json"),
@@ -345,5 +341,45 @@ mod tests {
             .unwrap_or(0);
 
         assert!(biggest >= 36 * 22, "{biggest}");
+    }
+
+    #[test]
+    fn no_normal_room_is_small() {
+        let templates = Templates::built_in().expect("built-in templates are valid");
+        for template in templates
+            .all()
+            .filter(|template| template.kind == RoomKind::Normal)
+        {
+            let area = template.columns() * template.rows();
+
+            assert!(area >= 300, "{} is only {area}", template.name);
+        }
+    }
+
+    #[test]
+    fn no_room_has_a_passage_only_one_tile_wide() {
+        let templates = Templates::built_in().expect("built-in templates are valid");
+        for template in templates.all() {
+            let (columns, rows) = (template.columns(), template.rows());
+            let wall = |column: isize, row: isize| {
+                column < 0
+                    || row < 0
+                    || column >= columns as isize
+                    || row >= rows as isize
+                    || template.cells[row as usize][column as usize] == Cell::Wall
+            };
+            for row in 1..rows as isize - 1 {
+                for column in 1..columns as isize - 1 {
+                    if matches!(
+                        template.cells[row as usize][column as usize],
+                        Cell::Floor | Cell::Spawn
+                    ) {
+                        let squeezed = (wall(column - 1, row) && wall(column + 1, row))
+                            || (wall(column, row - 1) && wall(column, row + 1));
+                        assert!(!squeezed, "{} at {column},{row}", template.name);
+                    }
+                }
+            }
+        }
     }
 }
