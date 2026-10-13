@@ -247,157 +247,185 @@ def talent_icon():
 
 import math
 
-OUTLINE = (37, 19, 26)
+GOLD_RAMP = ((70, 40, 15), (150, 95, 30), (214, 150, 50), (250, 210, 100))
+STEEL_RAMP = ((40, 36, 60), (86, 86, 120), (130, 132, 170), (190, 192, 225))
+RED_RAMP = ((60, 15, 30), (120, 35, 50), (180, 65, 70), (230, 120, 110))
+TEAL_RAMP = ((15, 50, 50), (25, 120, 110), (40, 170, 150), (110, 230, 200))
+PURPLE_RAMP = ((45, 15, 55), (100, 40, 110), (150, 70, 160), (210, 130, 215))
+GREEN_RAMP = ((15, 50, 25), (35, 110, 50), (60, 165, 80), (140, 225, 140))
+ICE_RAMP = ((30, 50, 80), (70, 120, 170), (130, 190, 225), (220, 245, 255))
+ORANGE_RAMP = ((70, 25, 15), (160, 60, 20), (225, 110, 35), (255, 190, 90))
+PINK_RAMP = ((60, 20, 40), (140, 70, 95), (205, 130, 150), (245, 200, 210))
+DARK_RAMP = ((20, 8, 16), (30, 14, 24), (44, 20, 34), (70, 36, 52))
 
 
-def outlined(shape):
-    layer = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
-    layer.paste(shape, (1, 1))
-    out = Image.new("RGBA", layer.size, (0, 0, 0, 0))
-    mask = layer.split()[3]
-    for dx in (-1, 0, 1):
-        for dy in (-1, 0, 1):
-            if dx or dy:
-                out.paste(OUTLINE + (255,), (dx, dy), mask)
-    out.alpha_composite(layer)
-    return out
+class Icon:
+    def __init__(self):
+        self.layers = []
 
+    def layer(self, ramp, paint):
+        mask = Image.new("L", (16, 16), 0)
+        paint(ImageDraw.Draw(mask))
+        self.layers.append((ramp, mask))
+        return self
 
-def canvas():
-    layer = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    return layer, ImageDraw.Draw(layer)
+    def render(self):
+        out = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
+        solid = Image.new("L", (18, 18), 0)
+        for ramp, mask in self.layers:
+            shape = Image.new("L", (18, 18), 0)
+            shape.paste(mask, (1, 1))
+            pixels = shape.load()
+
+            def lit(x, y):
+                return 0 <= x < 18 and 0 <= y < 18 and pixels[x, y] > 0
+
+            for y in range(18):
+                for x in range(18):
+                    if not lit(x, y):
+                        continue
+                    up = not lit(x, y - 1) or not lit(x - 1, y)
+                    down = not lit(x, y + 1) or not lit(x + 1, y)
+                    tone = ramp[3] if up and not down else ramp[1] if down and not up else ramp[2]
+                    out.putpixel((x, y), tone + (255,))
+                    solid.putpixel((x, y), 255)
+        line = self.layers[0][0][0]
+        edge = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
+        spots = solid.load()
+        for y in range(18):
+            for x in range(18):
+                if spots[x, y]:
+                    continue
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < 18 and 0 <= ny < 18 and spots[nx, ny]:
+                        edge.putpixel((x, y), line + (255,))
+                        break
+        edge.alpha_composite(out)
+        return edge
 
 
 def icon_damage():
-    layer, d = canvas()
-    d.rectangle((5, 8, 10, 14), fill=(214, 170, 70, 255))
-    d.rectangle((5, 8, 5, 14), fill=(168, 118, 40, 255))
-    d.rectangle((10, 8, 10, 14), fill=(244, 208, 112, 255))
-    d.line((5, 14, 10, 14), fill=(150, 100, 40, 255))
-    d.line((5, 8, 10, 8), fill=(150, 100, 40, 255))
-    d.polygon([(5, 7), (10, 7), (9, 4), (8, 3), (7, 3), (6, 4)], fill=(200, 202, 214, 255))
-    d.line((6, 5, 6, 7), fill=(246, 246, 255, 255))
-    d.line((9, 5, 9, 7), fill=(150, 152, 168, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(GOLD_RAMP, lambda d: d.rectangle((5, 8, 10, 14), fill=255))
+        .layer(STEEL_RAMP, lambda d: d.polygon([(5, 8), (10, 8), (9, 4), (8, 2), (7, 2), (6, 4)], fill=255))
+        .render()
+    )
 
 
 def icon_rate():
-    layer, d = canvas()
-    d.polygon([(10, 0), (3, 9), (7, 9), (5, 15), (13, 6), (8, 6), (11, 0)], fill=(255, 214, 60, 255))
-    d.polygon([(10, 2), (6, 8), (9, 8), (7, 12), (11, 7), (8, 7), (10, 3)], fill=(255, 244, 150, 255))
-    d.line((5, 14, 12, 6), fill=(236, 150, 30, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(ORANGE_RAMP, lambda d: d.polygon([(10, 0), (3, 9), (7, 9), (5, 15), (13, 6), (8, 6), (11, 0)], fill=255))
+        .render()
+    )
 
 
 def icon_magazine():
-    layer, d = canvas()
-    for x in (4, 7, 10):
-        d.rectangle((x, 3, x + 1, 7), fill=(236, 196, 80, 255))
-        d.point((x, 3), fill=(255, 240, 170, 255))
-        d.point((x + 1, 3), fill=(190, 140, 50, 255))
-    d.rectangle((3, 7, 12, 14), fill=(120, 126, 142, 255))
-    d.rectangle((3, 7, 12, 8), fill=(160, 166, 182, 255))
-    d.rectangle((3, 13, 12, 14), fill=(80, 84, 100, 255))
-    d.line((5, 9, 5, 12), fill=(90, 94, 110, 255))
-    d.line((8, 9, 8, 12), fill=(90, 94, 110, 255))
-    d.line((11, 9, 11, 12), fill=(90, 94, 110, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(STEEL_RAMP, lambda d: d.rectangle((3, 7, 12, 14), fill=255))
+        .layer(GOLD_RAMP, lambda d: [d.rectangle((x, 2, x + 1, 6), fill=255) for x in (4, 7, 10)])
+        .layer(DARK_RAMP, lambda d: [d.rectangle((x, 9, x, 12), fill=255) for x in (5, 8, 11)])
+        .render()
+    )
 
 
 def icon_reload():
-    layer, d = canvas()
-    d.arc((2, 3, 13, 14), start=60, end=345, fill=(80, 160, 250, 255), width=2)
-    d.arc((3, 4, 12, 13), start=60, end=345, fill=(150, 210, 255, 255), width=1)
-    d.polygon([(8, 0), (14, 4), (8, 8)], fill=(180, 226, 255, 255))
-    d.polygon([(9, 2), (12, 4), (9, 6)], fill=(80, 160, 250, 255))
-    return outlined(layer)
+    def arc(d):
+        d.arc((2, 3, 13, 14), start=60, end=345, fill=255, width=3)
+
+    return (
+        Icon()
+        .layer(TEAL_RAMP, arc)
+        .layer(TEAL_RAMP, lambda d: d.polygon([(8, 0), (14, 4), (8, 8)], fill=255))
+        .render()
+    )
 
 
 def icon_accuracy():
-    layer, d = canvas()
-    d.ellipse((3, 3, 12, 12), outline=(236, 72, 72, 255), width=1)
-    for box in ((7, 0, 8, 4), (7, 11, 8, 15), (0, 7, 4, 8), (11, 7, 15, 8)):
-        d.rectangle(box, fill=(236, 72, 72, 255))
-    d.rectangle((7, 7, 8, 8), fill=(255, 232, 232, 255))
-    d.point((4, 4), fill=(255, 150, 150, 255))
-    return outlined(layer)
+    def paint(d):
+        d.ellipse((3, 3, 12, 12), outline=255, width=2)
+        for box in ((7, 0, 8, 4), (7, 11, 8, 15), (0, 7, 4, 8), (11, 7, 15, 8)):
+            d.rectangle(box, fill=255)
+
+    return (
+        Icon()
+        .layer(RED_RAMP, paint)
+        .layer(PINK_RAMP, lambda d: d.rectangle((7, 7, 8, 8), fill=255))
+        .render()
+    )
 
 
 def icon_crit():
-    layer, d = canvas()
-    d.polygon([(8, 0), (10, 6), (16, 8), (10, 10), (8, 16), (6, 10), (0, 8), (6, 6)], fill=(250, 90, 60, 255))
-    d.polygon([(8, 3), (9, 7), (13, 8), (9, 9), (8, 13), (7, 9), (3, 8), (7, 7)], fill=(255, 226, 96, 255))
-    d.rectangle((7, 7, 8, 8), fill=(255, 255, 230, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(PURPLE_RAMP, lambda d: d.polygon([(8, 0), (10, 6), (16, 8), (10, 10), (8, 16), (6, 10), (0, 8), (6, 6)], fill=255))
+        .layer(PINK_RAMP, lambda d: d.polygon([(8, 4), (9, 7), (12, 8), (9, 9), (8, 12), (7, 9), (4, 8), (7, 7)], fill=255))
+        .render()
+    )
 
 
 def icon_piercing():
-    layer, d = canvas()
-    d.rectangle((7, 1, 8, 14), fill=(132, 132, 146, 255))
-    d.line((7, 1, 7, 14), fill=(176, 176, 190, 255))
-    d.rectangle((0, 7, 11, 8), fill=(140, 226, 236, 255))
-    d.line((0, 7, 11, 7), fill=(210, 250, 255, 255))
-    d.polygon([(15, 7), (10, 3), (10, 12)], fill=(120, 214, 232, 255))
-    d.polygon([(14, 7), (11, 5), (11, 8)], fill=(210, 250, 255, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(STEEL_RAMP, lambda d: d.rectangle((7, 1, 8, 14), fill=255))
+        .layer(ICE_RAMP, lambda d: (d.rectangle((0, 7, 11, 8), fill=255), d.polygon([(15, 7), (10, 3), (10, 12)], fill=255)))
+        .render()
+    )
 
 
 def icon_explosive():
-    layer, d = canvas()
     points = []
     for i in range(16):
         radius = 8 if i % 2 == 0 else 4.5
         angle = math.pi * i / 8
         points.append((7.5 + radius * math.cos(angle), 7.5 + radius * math.sin(angle)))
-    d.polygon(points, fill=(255, 130, 30, 255))
-    d.ellipse((4, 4, 11, 11), fill=(255, 206, 70, 255))
-    d.ellipse((6, 6, 9, 9), fill=(255, 250, 200, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(ORANGE_RAMP, lambda d: d.polygon(points, fill=255))
+        .layer(GOLD_RAMP, lambda d: d.ellipse((4, 4, 11, 11), fill=255))
+        .render()
+    )
 
 
 def icon_venom():
-    layer, d = canvas()
-    d.polygon([(8, 0), (3, 8), (13, 8)], fill=(82, 200, 92, 255))
-    d.ellipse((3, 5, 12, 14), fill=(82, 200, 92, 255))
-    d.ellipse((6, 9, 12, 14), fill=(44, 150, 66, 255))
-    d.rectangle((5, 8, 6, 10), fill=(200, 252, 190, 255))
-    d.point((8, 3), fill=(200, 252, 190, 255))
-    return outlined(layer)
+    def paint(d):
+        d.polygon([(8, 0), (3, 8), (13, 8)], fill=255)
+        d.ellipse((3, 5, 12, 14), fill=255)
+
+    return Icon().layer(GREEN_RAMP, paint).render()
 
 
 def icon_frost():
-    layer, d = canvas()
-    for k in range(3):
-        angle = math.pi * k / 3
-        dx, dy = 7.2 * math.cos(angle), 7.2 * math.sin(angle)
-        d.line((7.5 - dx, 7.5 - dy, 7.5 + dx, 7.5 + dy), fill=(170, 228, 255, 255), width=1)
-    for k in range(6):
-        angle = math.pi * k / 3
-        tip = (7.5 + 5.2 * math.cos(angle), 7.5 + 5.2 * math.sin(angle))
-        for side in (-0.9, 0.9):
-            end = (tip[0] + 2.3 * math.cos(angle + side), tip[1] + 2.3 * math.sin(angle + side))
-            d.line((tip[0], tip[1], end[0], end[1]), fill=(120, 190, 250, 255), width=1)
-    d.ellipse((6, 6, 9, 9), fill=(240, 252, 255, 255))
-    return outlined(layer)
+    def paint(d):
+        for k in range(3):
+            angle = math.pi * k / 3
+            dx, dy = 7.2 * math.cos(angle), 7.2 * math.sin(angle)
+            d.line((7.5 - dx, 7.5 - dy, 7.5 + dx, 7.5 + dy), fill=255, width=2)
+        d.ellipse((5, 5, 10, 10), fill=255)
+
+    return Icon().layer(ICE_RAMP, paint).render()
 
 
 def icon_ricochet():
-    layer, d = canvas()
-    d.rectangle((0, 0, 1, 15), fill=(132, 132, 146, 255))
-    d.line([(3, 13), (7, 5), (10, 11), (13, 4)], fill=(232, 110, 232, 255), width=2)
-    d.line([(4, 12), (7, 6)], fill=(250, 180, 250, 255), width=1)
-    d.polygon([(15, 0), (9, 2), (14, 7)], fill=(250, 170, 250, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(STEEL_RAMP, lambda d: d.rectangle((0, 0, 1, 15), fill=255))
+        .layer(PURPLE_RAMP, lambda d: (d.line([(3, 13), (7, 5), (10, 11), (13, 4)], fill=255, width=2), d.polygon([(15, 0), (9, 2), (14, 7)], fill=255)))
+        .render()
+    )
 
 
 def icon_deadeye():
-    layer, d = canvas()
-    d.polygon([(0, 8), (5, 3), (11, 3), (16, 8), (11, 13), (5, 13)], fill=(240, 236, 232, 255))
-    d.ellipse((5, 4, 11, 12), fill=(224, 52, 52, 255))
-    d.ellipse((7, 6, 9, 10), fill=(30, 12, 16, 255))
-    d.point((6, 5), fill=(255, 190, 190, 255))
-    d.point((7, 6), fill=(255, 255, 255, 255))
-    return outlined(layer)
+    return (
+        Icon()
+        .layer(PINK_RAMP, lambda d: d.polygon([(0, 8), (5, 3), (11, 3), (16, 8), (11, 13), (5, 13)], fill=255))
+        .layer(RED_RAMP, lambda d: d.ellipse((5, 4, 11, 12), fill=255))
+        .layer(DARK_RAMP, lambda d: d.ellipse((7, 6, 9, 10), fill=255))
+        .render()
+    )
 
 
 UPGRADE_ICONS = [icon_damage, icon_rate, icon_magazine, icon_reload, icon_accuracy, icon_crit]

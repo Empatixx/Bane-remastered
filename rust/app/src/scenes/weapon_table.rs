@@ -36,7 +36,7 @@ const CENTER_X: f32 = TREE_TOP_LEFT.x + TREE_SIZE.x / 2.0;
 const TITLE_Y: f32 = 60.0;
 const FACTS_Y: f32 = 82.0;
 const VIEW_TOP_LEFT: Vec2 = Vec2::new(TREE_TOP_LEFT.x + 18.0, 96.0);
-const VIEW_SIZE: Vec2 = Vec2::new(TREE_SIZE.x - 36.0, 360.0);
+const VIEW_SIZE: Vec2 = Vec2::new(TREE_SIZE.x - 36.0, 404.0);
 const ROOT_TOP: f32 = VIEW_TOP_LEFT.y + 8.0;
 const FADE: f32 = 20.0;
 const DRAG_THRESHOLD: f32 = 5.0;
@@ -45,12 +45,12 @@ const PAN_MARGIN: f32 = 120.0;
 const RARE_FROM_ROW: i32 = 2;
 const EPIC_FROM_ROW: i32 = 3;
 const STEP: Vec2 = Vec2::new(80.0, 74.0);
-const REROLL_LEFT: f32 = CENTER_X - 54.0;
 const ARROW_INSET: f32 = 10.0;
 const ARROW_LAYER: i32 = 36;
-const REROLL_TOP: f32 = 462.0;
-const REROLL_SIZE: Vec2 = Vec2::new(108.0, 43.0);
-const REROLL_BASELINE: f32 = 27.0;
+const REROLL_CENTER: Vec2 = Vec2::new(PLATE_CENTER.x, 506.0);
+const REROLL_COST_BASELINE: f32 = 464.0;
+const HINT_BASELINE: f32 = 492.0;
+const HINT: &str = "Drag or WASD to move the tree";
 const GLYPH: f32 = 36.0;
 const MUTATION_COST: u32 = 800;
 const REROLL_COST: u32 = 100;
@@ -270,7 +270,7 @@ fn root_top_left(pan: Vec2) -> Vec2 {
 }
 
 fn reroll_top_left() -> Vec2 {
-    Vec2::new(REROLL_LEFT, REROLL_TOP)
+    REROLL_CENTER - PLATE_SIZE / 2.0
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -381,7 +381,7 @@ fn target_at(first: usize, grown: &Tree, pan: Vec2, point: Vec2) -> Option<Targe
             })
             .map(Target::Node);
     }
-    inside(point, reroll_top_left(), REROLL_SIZE).then_some(Target::Reroll)
+    inside(point, reroll_top_left(), PLATE_SIZE).then_some(Target::Reroll)
 }
 
 fn on_buy_plate(point: Vec2) -> bool {
@@ -535,36 +535,45 @@ fn links(kind: GunKind, rerolls: u32, grown: &Tree, pan: Vec2) -> Vec<Element> {
     elements
 }
 
-fn plate(top_left: Vec2, text: String, hovered: bool, idle: Vec4) -> Vec<Element> {
+fn reroll_plate(hover: Hover) -> Vec<Element> {
     vec![
         Element::Image {
             texture: tex::MENU_PLATE_SMALL,
-            top_left,
-            size: REROLL_SIZE,
-            cell: Some((usize::from(hovered), PLATE_ROWS)),
+            top_left: reroll_top_left(),
+            size: PLATE_SIZE,
+            cell: Some((usize::from(hover.reroll), PLATE_ROWS)),
             layer: FRAME_LAYER,
             alpha: 1.0,
         },
         Element::Label {
-            content: text,
-            position: Vec2::new(
-                top_left.x + REROLL_SIZE.x / 2.0,
-                top_left.y + REROLL_BASELINE,
-            ),
-            color: if hovered { HOVER_COLOR } else { idle },
+            content: "Reroll".to_owned(),
+            position: Vec2::new(REROLL_CENTER.x, REROLL_CENTER.y + 8.0),
+            color: if hover.reroll {
+                HOVER_COLOR
+            } else {
+                MENU_COLOR
+            },
+            size: FontSize::Size22,
+            align: Align::Center,
+        },
+        Element::Label {
+            content: format!("Cost: {REROLL_COST} gold"),
+            position: Vec2::new(REROLL_CENTER.x, REROLL_COST_BASELINE),
+            color: COST_COLOR,
             size: FontSize::Size16,
             align: Align::Center,
         },
     ]
 }
 
-fn plates(hover: Hover) -> Vec<Element> {
-    plate(
-        reroll_top_left(),
-        format!("Reroll {REROLL_COST} g"),
-        hover.reroll,
-        MENU_COLOR,
-    )
+fn hint() -> Element {
+    Element::Label {
+        content: HINT.to_owned(),
+        position: Vec2::new(CENTER_X, HINT_BASELINE),
+        color: LINE_OFF,
+        size: FontSize::Size16,
+        align: Align::Center,
+    }
 }
 
 fn icon_of(node: &Node) -> Icon {
@@ -791,7 +800,8 @@ pub(crate) fn layout(
         ));
     }
     elements.extend(arrows(&grown, pan));
-    elements.extend(plates(hover));
+    elements.push(hint());
+    elements.extend(reroll_plate(hover));
     elements.push(Element::Image {
         texture: tex::MENU_PLATE,
         top_left: COUNTER_CENTER - COUNTER_SIZE / 2.0,
@@ -1219,7 +1229,9 @@ mod tests {
         let after = layout(0, 0, None, 1, Vec2::ZERO, Hover::default());
 
         assert_ne!(before, after);
-        assert!(labels(&after).contains(&format!("Reroll {REROLL_COST} g")));
+        assert!(labels(&after).contains(&"Reroll".to_string()));
+        assert!(labels(&after).contains(&format!("Cost: {REROLL_COST} gold")));
+        assert!(labels(&after).contains(&HINT.to_string()));
     }
 
     #[test]
@@ -1314,7 +1326,7 @@ mod tests {
         let tree_end = TREE_TOP_LEFT + TREE_SIZE;
         let last_row = row_top_left(VISIBLE_ROWS - 1) + ROW_SIZE;
         let view_end = VIEW_TOP_LEFT + VIEW_SIZE;
-        let reroll_end = reroll_top_left() + REROLL_SIZE;
+        let reroll_end = reroll_top_left() + PLATE_SIZE;
         let widest = (2 * weapon_tree::HALF_COLUMNS) as f32 * STEP.x + TALENT;
         let tallest = weapon_tree::DEPTH as f32 * STEP.y + TALENT;
 
@@ -1322,8 +1334,11 @@ mod tests {
         assert!(BAR_LEFT + BAR_WIDTH < list_end.x - 12.0);
         const { assert!(VIEW_TOP_LEFT.x >= TREE_TOP_LEFT.x + 18.0) };
         assert!(view_end.x <= tree_end.x - 18.0);
-        assert!(view_end.y < reroll_top_left().y);
-        assert!(reroll_end.y < tree_end.y - 18.0);
+        assert!(view_end.y <= tree_end.y - 18.0);
+        assert!(reroll_end.y < crate::viewport::TARGET.y);
+        assert!(reroll_top_left().x >= PANEL_TOP_LEFT.x);
+        assert!(reroll_top_left().y > PANEL_TOP_LEFT.y + PANEL_SIZE.y + 14.0);
+        assert!(HINT_BASELINE < view_end.y);
         assert!(widest <= VIEW_SIZE.x && tallest <= VIEW_SIZE.y);
         assert!(list_end.x < TREE_TOP_LEFT.x);
         assert!(tree_end.x < PANEL_TOP_LEFT.x);
