@@ -3,7 +3,7 @@ import random
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "assets/textures/ingame"
 FW, FH = 32, 20
@@ -74,39 +74,43 @@ def bloated_sheet():
 
 CLOUD = 48
 CLOUD_FRAMES = 6
-PUFF = [(70, 120, 46, 110), (96, 150, 60, 130), (136, 188, 82, 150), (196, 232, 120, 175)]
+PUFF = [(88, 132, 66, 150), (122, 168, 84, 140), (168, 210, 112, 150), (214, 240, 150, 165)]
+
+
+def shifted(mask, dx, dy):
+    out = Image.new("L", mask.size, 0)
+    out.paste(mask, (dx, dy))
+    return out
+
+
+def puff_mask(row, index):
+    mask = Image.new("L", (CLOUD, CLOUD), 0)
+    d = ImageDraw.Draw(mask)
+    grow = min(1.0, 0.25 + 0.15 * (index + 1)) if row == 0 else 1.0
+    base = [(24, 24, 11), (14, 19, 8), (24, 12, 8), (35, 18, 8), (36, 30, 8), (24, 36, 8), (13, 31, 8), (6, 8, 3), (42, 10, 2), (41, 41, 3), (6, 41, 2)]
+    for n, (cx, cy, radius) in enumerate(base):
+        bob = math.sin(index * 1.05 + n * 1.7) * (1.8 if row == 1 else 0.0)
+        bob_y = math.cos(index * 0.9 + n * 2.1) * (1.6 if row == 1 else 0.0)
+        px = 24 + (cx - 24) * grow + bob
+        py = 24 + (cy - 24) * grow + bob_y
+        rad = max(2.0, radius * grow)
+        d.ellipse((px - rad, py - rad, px + rad, py + rad), fill=255)
+    return mask
 
 
 def cloud_frame(row, index):
+    mask = puff_mask(row, index)
+    wide = mask.filter(ImageFilter.MaxFilter(3))
+    outline = ImageChops.subtract(wide, mask)
+    light = ImageChops.subtract(mask, shifted(mask, 3, 3))
+    dark = ImageChops.subtract(mask, shifted(mask, -3, -3))
     image = Image.new("RGBA", (CLOUD, CLOUD), (0, 0, 0, 0))
-    grow = (index + 1) / CLOUD_FRAMES if row == 0 else 1.0
-    puffs = [(24, 24, 16), (15, 20, 10), (33, 19, 10), (17, 32, 10), (32, 31, 11), (24, 13, 8), (24, 36, 8)]
-    for y in range(CLOUD):
-        for x in range(CLOUD):
-            density = 0.0
-            for n, (cx, cy, radius) in enumerate(puffs):
-                sway = math.sin(index * 1.05 + n * 1.7) * (2.2 if row == 1 else 0.0)
-                sway_y = math.cos(index * 0.9 + n * 2.1) * (1.8 if row == 1 else 0.0)
-                px = 24 + (cx - 24) * grow + sway
-                py = 24 + (cy - 24) * grow + sway_y
-                rad = max(2.0, radius * grow)
-                distance = math.hypot(x - px, y - py) / rad
-                if distance < 1.0:
-                    density = max(density, 1.0 - distance ** 1.4)
-            if density <= 0.0:
-                continue
-            chance = density * (0.85 if row == 0 else 0.8)
-            value = noise(x, y, index + row * 40)
-            if value < chance:
-                level = 3 if density > 0.75 and value < 0.25 else 2 if density > 0.45 else 1 if density > 0.2 else 0
-                image.putpixel((x, y), PUFF[level])
+    image.paste(Image.new("RGBA", image.size, PUFF[1]), mask=mask)
+    image.paste(Image.new("RGBA", image.size, PUFF[0]), mask=dark.point(lambda v: 255 if v > 0 else 0))
+    image.paste(Image.new("RGBA", image.size, PUFF[2]), mask=light.point(lambda v: 255 if v > 0 else 0))
+    image.paste(Image.new("RGBA", image.size, PUFF[3]), mask=ImageChops.subtract(light, shifted(light, 2, 2)).point(lambda v: 255 if v > 0 else 0))
+    image.paste(Image.new("RGBA", image.size, (58, 98, 48, 170)), mask=outline.point(lambda v: 255 if v > 0 else 0))
     return image
-
-
-def noise(x, y, seed):
-    value = (x * 374761393 + y * 668265263 + seed * 2147483647) & 0xFFFFFFFF
-    value = ((value ^ (value >> 13)) * 1274126177) & 0xFFFFFFFF
-    return ((value ^ (value >> 16)) & 0xFFFF) / 65535.0
 
 
 def cloud_sheet():
