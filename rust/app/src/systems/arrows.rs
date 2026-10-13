@@ -12,6 +12,7 @@ const ARROW_SIZE: Vec2 = Vec2::new(18.0, 18.0);
 const EDGE_INSET: f32 = 20.0;
 const SEEN_MARGIN: f32 = 20.0;
 const ARROW_ALPHA: f32 = 0.3;
+const MERGE_DISTANCE: f32 = 44.0;
 
 pub(crate) fn arrow_at(screen: Vec2) -> Option<(Vec2, f32)> {
     let center = TARGET / 2.0;
@@ -27,6 +28,19 @@ pub(crate) fn arrow_at(screen: Vec2) -> Option<(Vec2, f32)> {
     let scale = (reach.x / direction.x.abs().max(f32::EPSILON))
         .min(reach.y / direction.y.abs().max(f32::EPSILON));
     Some((center + direction * scale, direction.y.atan2(direction.x)))
+}
+
+fn merged(arrows: Vec<(Vec2, f32)>) -> Vec<(Vec2, f32)> {
+    let mut kept: Vec<(Vec2, f32)> = Vec::new();
+    for arrow in arrows {
+        if kept
+            .iter()
+            .all(|(position, _)| position.distance(arrow.0) > MERGE_DISTANCE)
+        {
+            kept.push(arrow);
+        }
+    }
+    kept
 }
 
 pub(crate) fn update_enemy_arrows(world: &mut World, camera: Vec2, texture: TextureId) {
@@ -46,7 +60,7 @@ pub(crate) fn update_enemy_arrows(world: &mut World, camera: Vec2, texture: Text
         .filter(|(_, health)| health.current > 0)
         .filter_map(|(position, _)| arrow_at(position.0 - camera))
         .collect();
-    for (position, angle) in arrows {
+    for (position, angle) in merged(arrows) {
         world.spawn((
             EnemyArrow { angle },
             Position(position),
@@ -143,5 +157,37 @@ mod tests {
         update_enemy_arrows(&mut world, Vec2::ZERO, texture);
 
         assert!(arrows(&world).is_empty());
+    }
+
+    #[test]
+    fn enemies_in_nearly_the_same_direction_share_one_arrow() {
+        let mut world = World::new();
+        room_enemy(&mut world, Vec2::new(3000.0, 300.0));
+        room_enemy(&mut world, Vec2::new(3100.0, 320.0));
+        room_enemy(&mut world, Vec2::new(3300.0, 280.0));
+        let texture = Textures::default().get(crate::assets::tex::ENEMY_ARROW);
+
+        update_enemy_arrows(&mut world, Vec2::ZERO, texture);
+
+        assert_eq!(arrows(&world).len(), 1);
+    }
+
+    #[test]
+    fn enemies_in_different_directions_keep_their_own_arrows() {
+        let mut world = World::new();
+        room_enemy(&mut world, Vec2::new(3000.0, 300.0));
+        room_enemy(&mut world, Vec2::new(-2500.0, 300.0));
+        room_enemy(&mut world, Vec2::new(500.0, 3000.0));
+        let texture = Textures::default().get(crate::assets::tex::ENEMY_ARROW);
+
+        update_enemy_arrows(&mut world, Vec2::ZERO, texture);
+
+        let found = arrows(&world);
+        assert_eq!(found.len(), 3);
+        for (index, a) in found.iter().enumerate() {
+            for b in &found[index + 1..] {
+                assert!(a.0.distance(b.0) > MERGE_DISTANCE);
+            }
+        }
     }
 }
