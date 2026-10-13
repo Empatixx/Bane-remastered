@@ -65,12 +65,16 @@ def recolor(source, palette):
     return out
 
 
+def in_floor(x, y):
+    return y < TILE and x // TILE in FLOOR_COLUMNS
+
+
 def scatter(source, out, mask, colours, chance, seed):
     r = random.Random(seed)
     for y in range(source.height):
         for x in range(source.width):
             pixel = source.getpixel((x, y))
-            if pixel[3] and pixel[:3] in mask and r.random() < chance:
+            if in_floor(x, y) and pixel[3] and pixel[:3] in mask and r.random() < chance:
                 out.putpixel((x, y), r.choice(colours) + (255,))
 
 
@@ -85,7 +89,7 @@ def clumps(source, out, mask, colours, count, seed, reach=2):
                 for dy in range(-reach, reach + 1):
                     for dx in range(-reach, reach + 1):
                         x, y = cx + dx, cy + dy
-                        if not (0 <= x < source.width and 0 <= y < source.height):
+                        if not (0 <= x < source.width and 0 <= y < source.height) or not in_floor(x, y):
                             continue
                         pixel = source.getpixel((x, y))
                         if pixel[3] and pixel[:3] in mask and r.random() < 0.75 - 0.2 * (abs(dx) + abs(dy)):
@@ -158,7 +162,7 @@ def drips(source, out, colour, seed):
                 if y + step >= source.height:
                     break
                 pixel = source.getpixel((x, y + step))
-                if pixel[3] and pixel[:3] in BODY:
+                if in_floor(x, y + step) and pixel[3] and pixel[:3] in BODY:
                     out.putpixel((x, y + step), colour)
 
 
@@ -244,22 +248,18 @@ def widen(image, name, clean):
 def variant(name, source):
     out = recolor(source, PALETTES[name])
     if name == "ice":
-        scatter(source, out, BODY, [(150, 190, 230)], 0.004, 1)
-        scatter(source, out, LEDGE, [(255, 255, 255), (200, 235, 255)], 0.03, 2)
+        scatter(source, out, BODY, [(150, 190, 230), (200, 232, 250)], 0.008, 1)
     elif name == "spider":
-        webs(source, out, (190, 190, 150, 255), 3)
         scatter(source, out, BODY, [(66, 60, 78)], 0.006, 4)
     elif name == "lava":
         cracks(source, out, (214, 84, 28, 255), (255, 190, 60, 255), 5)
-        scatter(source, out, LEDGE, [(168, 70, 40), (230, 120, 50)], 0.015, 6)
     elif name == "temple":
-        scatter(source, out, LEDGE, [(255, 208, 64), (232, 176, 40)], 0.07, 7)
         scatter(source, out, BODY, [(120, 98, 70)], 0.006, 8)
     elif name == "sewer":
         drips(source, out, (80, 130, 96, 255), 9)
-        clumps(source, out, BODY | LEDGE, [(88, 140, 70), (110, 160, 80)], 1, 10, 1)
+        clumps(source, out, BODY, [(88, 140, 70), (110, 160, 80)], 1, 10, 1)
     elif name == "moss":
-        clumps(source, out, BODY | LEDGE, [(62, 110, 48), (88, 150, 58), (112, 176, 70)], 3, 11, 2)
+        clumps(source, out, BODY, [(62, 110, 48), (88, 150, 58), (112, 176, 70)], 2, 11, 2)
     return out
 
 
@@ -267,8 +267,7 @@ def main():
     out_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT
     source = Image.open(SOURCE).convert("RGBA").crop((0, 0, 21 * TILE, 2 * TILE))
     names = list(PALETTES)
-    results = {"grey": widen(source, "grey", source)}
-    results["grey"].save(SOURCE)
+    results = {"grey": source}
     for name in names:
         image = widen(variant(name, source), name, recolor(source, PALETTES[name]))
         image.save(out_dir / f"tileset_{name}.png")
@@ -277,7 +276,7 @@ def main():
     gap = 14
     sheet = Image.new(
         "RGBA",
-        (results["grey"].width * scale, (source.height * scale + gap) * len(results)),
+        (max(image.width for image in results.values()) * scale, (source.height * scale + gap) * len(results)),
         (24, 20, 28, 255),
     )
     draw = ImageDraw.Draw(sheet)

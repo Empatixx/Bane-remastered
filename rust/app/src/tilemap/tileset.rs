@@ -5,6 +5,7 @@ use serde::Deserialize;
 use super::TileGrid;
 
 const DUNGEON: &str = include_str!("../../../assets/tilesets/dungeon.json");
+const DUNGEON_WIDE: &str = include_str!("../../../assets/tilesets/dungeon_wide.json");
 
 #[derive(Debug, Deserialize)]
 struct TilesetFile {
@@ -73,6 +74,10 @@ pub(crate) struct Tileset {
 impl Tileset {
     pub(crate) fn dungeon() -> Result<Self, Box<dyn Error>> {
         Self::parse(DUNGEON)
+    }
+
+    pub(crate) fn dungeon_wide() -> Result<Self, Box<dyn Error>> {
+        Self::parse(DUNGEON_WIDE)
     }
 
     pub(crate) fn parse(json: &str) -> Result<Self, Box<dyn Error>> {
@@ -178,6 +183,22 @@ mod tests {
                     tileset.is_solid(number),
                     grid.is_wall(column as isize, row as isize),
                     "tile {column},{row} -> {number}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_wide_tileset_covers_every_neighborhood_and_keeps_walls_solid() {
+        let tileset = Tileset::dungeon_wide().expect("the wide tileset is valid");
+        assert!(tileset.columns() > dungeon().columns());
+        let grid = TileGrid::bordered(8, 6);
+        for row in 0..grid.rows() {
+            for column in 0..grid.columns() {
+                let number = tileset.tile_number(&grid, column, row);
+                assert_eq!(
+                    tileset.is_solid(number),
+                    grid.is_wall(column as isize, row as isize)
                 );
             }
         }

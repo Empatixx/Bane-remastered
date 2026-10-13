@@ -418,15 +418,25 @@ impl Textures {
 pub(crate) struct Assets {
     pub(crate) textures: Textures,
     pub(crate) tileset: Arc<Tileset>,
+    wide_tileset: Arc<Tileset>,
     pub(crate) fonts: Fonts,
     loaded: bool,
 }
 
 impl Assets {
+    pub(crate) fn tileset_of(&self, theme: Theme) -> &Tileset {
+        if theme == Theme::Stone {
+            &self.tileset
+        } else {
+            &self.wide_tileset
+        }
+    }
+
     pub(crate) fn new() -> Result<Self, Box<dyn Error>> {
         Ok(Self {
             textures: Textures::default(),
             tileset: Arc::new(Tileset::dungeon()?),
+            wide_tileset: Arc::new(Tileset::dungeon_wide()?),
             fonts: Fonts::default(),
             loaded: false,
         })

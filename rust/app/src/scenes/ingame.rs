@@ -496,7 +496,7 @@ impl InGameScene {
         let solid_cells = prefabs::tilemap(
             &mut self.world,
             &dungeon.grid,
-            &assets.tileset,
+            assets.tileset_of(dungeon.theme),
             assets.textures.get(tileset_for(dungeon.theme)),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
