@@ -73,7 +73,7 @@ def bloated_sheet():
 
 
 CLOUD = 48
-CLOUD_FRAMES = 6
+CLOUD_FRAMES = 8
 PUFF = [(88, 132, 66, 150), (122, 168, 84, 140), (168, 210, 112, 150), (214, 240, 150, 165)]
 
 
@@ -83,41 +83,50 @@ def shifted(mask, dx, dy):
     return out
 
 
-def puff_mask(row, index):
-    mask = Image.new("L", (CLOUD, CLOUD), 0)
+def solid(mask):
+    return mask.point(lambda v: 255 if v > 0 else 0)
+
+
+def draw_puff(image, cx, cy, radius, alpha):
+    mask = Image.new("L", image.size, 0)
     d = ImageDraw.Draw(mask)
-    grow = min(1.0, 0.25 + 0.15 * (index + 1)) if row == 0 else 1.0
-    base = [(24, 24, 11), (14, 19, 8), (24, 12, 8), (35, 18, 8), (36, 30, 8), (24, 36, 8), (13, 31, 8), (6, 8, 3), (42, 10, 2), (41, 41, 3), (6, 41, 2)]
-    for n, (cx, cy, radius) in enumerate(base):
-        bob = math.sin(index * 1.05 + n * 1.7) * (1.8 if row == 1 else 0.0)
-        bob_y = math.cos(index * 0.9 + n * 2.1) * (1.6 if row == 1 else 0.0)
-        px = 24 + (cx - 24) * grow + bob
-        py = 24 + (cy - 24) * grow + bob_y
-        rad = max(2.0, radius * grow)
-        d.ellipse((px - rad, py - rad, px + rad, py + rad), fill=255)
-    return mask
-
-
-def cloud_frame(row, index):
-    mask = puff_mask(row, index)
+    d.ellipse((cx - radius, cy - radius, cx + radius, cy + radius), fill=255)
+    lobe = max(1.5, radius * 0.6)
+    for dx, dy in ((-0.7, -0.4), (0.8, -0.2), (0.1, 0.8)):
+        px, py = cx + dx * radius * 0.75, cy + dy * radius * 0.75
+        d.ellipse((px - lobe, py - lobe, px + lobe, py + lobe), fill=255)
     wide = mask.filter(ImageFilter.MaxFilter(3))
     outline = ImageChops.subtract(wide, mask)
-    light = ImageChops.subtract(mask, shifted(mask, 3, 3))
-    dark = ImageChops.subtract(mask, shifted(mask, -3, -3))
+    light = ImageChops.subtract(mask, shifted(mask, 2, 2))
+    dark = ImageChops.subtract(mask, shifted(mask, -2, -2))
+    layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
+    layer.paste(Image.new("RGBA", image.size, (110, 158, 74, alpha)), mask=mask)
+    layer.paste(Image.new("RGBA", image.size, (74, 120, 56, alpha)), mask=solid(dark))
+    layer.paste(Image.new("RGBA", image.size, (170, 210, 112, alpha)), mask=solid(light))
+    layer.paste(Image.new("RGBA", image.size, (64, 104, 52, min(255, alpha + 30))), mask=solid(outline))
+    image.alpha_composite(layer)
+
+
+PUFFS = [(0.3, 8, 5.5), (1.4, 12, 6.5), (2.5, 15, 5), (3.6, 10, 6), (4.7, 16, 4.5), (5.6, 11, 5.5), (0.9, 5, 5), (3.1, 4, 4.5)]
+
+
+def cloud_frame(index):
     image = Image.new("RGBA", (CLOUD, CLOUD), (0, 0, 0, 0))
-    image.paste(Image.new("RGBA", image.size, PUFF[1]), mask=mask)
-    image.paste(Image.new("RGBA", image.size, PUFF[0]), mask=dark.point(lambda v: 255 if v > 0 else 0))
-    image.paste(Image.new("RGBA", image.size, PUFF[2]), mask=light.point(lambda v: 255 if v > 0 else 0))
-    image.paste(Image.new("RGBA", image.size, PUFF[3]), mask=ImageChops.subtract(light, shifted(light, 2, 2)).point(lambda v: 255 if v > 0 else 0))
-    image.paste(Image.new("RGBA", image.size, (58, 98, 48, 170)), mask=outline.point(lambda v: 255 if v > 0 else 0))
+    t = index / (CLOUD_FRAMES - 1)
+    ease = 1 - (1 - t) ** 2
+    alpha = int(120 * (1 - t ** 1.6)) + 8
+    for angle, distance, radius in PUFFS:
+        d = distance * (0.25 + 1.15 * ease)
+        cx = 24 + math.cos(angle) * d
+        cy = 24 + math.sin(angle) * d * 0.9
+        draw_puff(image, cx, cy, max(1.5, radius * (0.55 + 0.55 * ease) * (1 - 0.35 * t * t)), alpha)
     return image
 
 
 def cloud_sheet():
-    sheet = Image.new("RGBA", (CLOUD * CLOUD_FRAMES, CLOUD * 2), (0, 0, 0, 0))
-    for row in range(2):
-        for index in range(CLOUD_FRAMES):
-            sheet.paste(cloud_frame(row, index), (index * CLOUD, row * CLOUD))
+    sheet = Image.new("RGBA", (CLOUD * CLOUD_FRAMES, CLOUD), (0, 0, 0, 0))
+    for index in range(CLOUD_FRAMES):
+        sheet.paste(cloud_frame(index), (index * CLOUD, 0))
     return sheet
 
 
