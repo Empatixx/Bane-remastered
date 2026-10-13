@@ -14,6 +14,7 @@ use super::menu_logo::LogoAnim;
 use super::menu_stage::Stage;
 use super::{Scene, SceneId, SettingsPanel, Transition};
 
+const REVEAL_SECONDS: f32 = 0.4;
 const LOGO_SIZE: Vec2 = Vec2::new(228.0, 108.0);
 const LOGO_TOP_LEFT_Y: f32 = 50.0;
 const BUTTON_ROWS: [(f32, &str, UiAction); 3] = [
@@ -78,6 +79,8 @@ impl Scene for MenuScene {
             &BUTTON_ROWS,
         );
         self.ui.extend(buttons.entities());
+        let mut buttons = buttons;
+        buttons.set_reveal(&mut self.world, 0.0);
         self.buttons = Some(buttons);
         if let Some(stage) = &mut self.stage {
             stage.tick(&mut self.world, assets, 0.0);
@@ -100,6 +103,13 @@ impl Scene for MenuScene {
                 logo.tick(&mut self.world, stage.camera(), dt);
             }
         }
+        let reveal = self
+            .logo
+            .as_ref()
+            .map_or(1.0, |logo| logo.arrived_for() / REVEAL_SECONDS);
+        if let Some(buttons) = &mut self.buttons {
+            buttons.set_reveal(&mut self.world, reveal);
+        }
         if self.panel.is_open() {
             if self.panel.update(&mut self.world, input, settings) {
                 self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
@@ -119,5 +129,41 @@ impl Scene for MenuScene {
             Some(UiAction::Exit) => Transition::Quit,
             _ => Transition::None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::components::{Button, Color};
+
+    use super::*;
+
+    fn alpha(scene: &MenuScene) -> f32 {
+        scene
+            .world
+            .query::<(&Button, &Color)>()
+            .iter()
+            .map(|(_, color)| color.0.w)
+            .fold(1.0, f32::min)
+    }
+
+    #[test]
+    fn the_buttons_wait_for_the_logo_to_reach_its_place_and_then_fade_in() {
+        let assets = Assets::new().expect("assets");
+        let mut scene = MenuScene::default();
+        let mut settings = Settings::in_memory();
+        scene.enter(&assets);
+        assert_eq!(alpha(&scene), 0.0);
+
+        let input = Input::default();
+        scene.update(&input, 0.5, &assets, &mut settings);
+        assert_eq!(alpha(&scene), 0.0);
+
+        scene.update(&input, 0.7, &assets, &mut settings);
+        let fading = alpha(&scene);
+        assert!(fading > 0.0 && fading < 1.0, "{fading}");
+
+        scene.update(&input, 1.0, &assets, &mut settings);
+        assert_eq!(alpha(&scene), 1.0);
     }
 }

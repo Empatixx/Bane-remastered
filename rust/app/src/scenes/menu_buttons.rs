@@ -40,6 +40,7 @@ pub(crate) struct MenuButtons {
     clock: f32,
     pressed: Option<(usize, f32)>,
     last_mouse: Vec2,
+    reveal: f32,
 }
 
 fn marker(world: &mut World, glyph: &str, at: Vec2) -> Entity {
@@ -90,9 +91,18 @@ impl MenuButtons {
             clock: 0.0,
             pressed: None,
             last_mouse: Vec2::NEG_INFINITY,
+            reveal: 1.0,
         };
         buttons.animate(world, 0.0);
         buttons
+    }
+
+    pub(crate) fn set_reveal(&mut self, world: &mut World, reveal: f32) {
+        let reveal = reveal.clamp(0.0, 1.0);
+        if reveal != self.reveal {
+            self.reveal = reveal;
+            self.animate(world, 0.0);
+        }
     }
 
     pub(crate) fn entities(&self) -> Vec<Entity> {
@@ -132,7 +142,7 @@ impl MenuButtons {
             } else {
                 self.pressed = Some((index, left));
             }
-        } else {
+        } else if self.reveal >= 1.0 {
             self.read_input(input, sounds);
         }
         self.animate(world, dt);
@@ -177,6 +187,7 @@ impl MenuButtons {
         let clock = self.clock;
         let selected = self.selected;
         let pressed = self.pressed;
+        let reveal = self.reveal;
         for (index, row) in self.rows.iter_mut().enumerate() {
             let target = if index == selected { 1.0 } else { 0.0 };
             row.lift += (target - row.lift) * (LIFT_SPEED * dt).min(1.0);
@@ -198,21 +209,21 @@ impl MenuButtons {
             {
                 position.0 = at;
                 size.0 = DRAW_SIZE * scale;
-                color.0.w = 1.0;
+                color.0.w = reveal;
                 let _ = sprite;
             }
             if let Ok((position, text)) =
                 world.query_one_mut::<(&mut Position, &mut Text)>(row.text)
             {
                 position.0 = at;
-                text.color = Vec4::new(tint.x, tint.y, tint.z, 1.0);
+                text.color = Vec4::new(tint.x, tint.y, tint.z, reveal);
             }
             for (entity, side) in [(row.left, -1.0), (row.right, 1.0)] {
                 if let Ok((position, text)) =
                     world.query_one_mut::<(&mut Position, &mut Text)>(entity)
                 {
                     position.0 = at + Vec2::new(side * (half + MARKER_GAP - side * bounce), 0.0);
-                    text.color.w = row.lift;
+                    text.color.w = row.lift * reveal;
                 }
             }
         }
@@ -360,5 +371,42 @@ mod tests {
     fn all_the_entities_can_be_hidden_together() {
         let (_world, buttons) = menu();
         assert_eq!(buttons.entities().len(), ROWS.len() * 4);
+    }
+
+    fn button_alpha(world: &World, buttons: &MenuButtons) -> f32 {
+        buttons
+            .rows
+            .first()
+            .and_then(|row| world.get::<&Color>(row.button).ok().map(|color| color.0.w))
+            .unwrap_or(-1.0)
+    }
+
+    #[test]
+    fn hidden_buttons_are_invisible_and_cannot_be_pressed() {
+        let (mut world, mut buttons) = menu();
+        buttons.set_reveal(&mut world, 0.0);
+        assert_eq!(button_alpha(&world, &buttons), 0.0);
+
+        let mut input = Input::default();
+        input.press(KeyCode::Enter);
+        let fired = buttons.update(&mut world, &input, 1.0 / 60.0, &mut Vec::new());
+        assert_eq!(fired, None);
+        assert_eq!(buttons.pressed, None);
+    }
+
+    #[test]
+    fn revealing_fades_the_buttons_in_and_makes_them_usable() {
+        let (mut world, mut buttons) = menu();
+        buttons.set_reveal(&mut world, 0.0);
+
+        buttons.set_reveal(&mut world, 0.5);
+        assert!((button_alpha(&world, &buttons) - 0.5).abs() < 0.001);
+
+        buttons.set_reveal(&mut world, 1.0);
+        assert_eq!(button_alpha(&world, &buttons), 1.0);
+        let mut input = Input::default();
+        input.press(KeyCode::Enter);
+        buttons.update(&mut world, &input, 1.0 / 60.0, &mut Vec::new());
+        assert!(buttons.pressed.is_some());
     }
 }

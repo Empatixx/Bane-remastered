@@ -93,6 +93,14 @@ impl LogoAnim {
         self.logo
     }
 
+    pub(crate) fn arrived_for(&self) -> f32 {
+        let arrival = match self.entrance {
+            Entrance::Drop => ENTER_SECONDS,
+            Entrance::Glide { .. } => GLIDE_HOLD + GLIDE_SECONDS,
+        };
+        (self.clock - arrival).max(0.0)
+    }
+
     pub(crate) fn tick(&mut self, world: &mut World, camera: Vec2, dt: f32) {
         self.clock += dt;
         let (arrival, at, scale, alpha) = match self.entrance {
@@ -295,5 +303,23 @@ mod tests {
         let (settled, final_size, _) = state(&world, &anim);
         assert!((settled.y - 104.0).abs() <= BOB + 0.01, "{settled:?}");
         assert_eq!(final_size, Vec2::new(228.0, 108.0));
+    }
+
+    #[test]
+    fn the_arrival_time_counts_from_the_moment_the_logo_reaches_its_place() {
+        let mut world = World::new();
+        let mut anim = LogoAnim::gliding(
+            &mut world,
+            TextureId::WHITE,
+            Vec2::new(480.0, 100.0),
+            Vec2::new(228.0, 108.0),
+            Vec2::new(480.0, 270.0),
+            Vec2::new(400.0, 190.0),
+        );
+        anim.tick(&mut world, Vec2::ZERO, GLIDE_HOLD + GLIDE_SECONDS - 0.1);
+        assert_eq!(anim.arrived_for(), 0.0);
+
+        anim.tick(&mut world, Vec2::ZERO, 0.6);
+        assert!((anim.arrived_for() - 0.5).abs() < 0.001);
     }
 }
