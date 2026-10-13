@@ -175,6 +175,31 @@ def water(x, y, mask, frame, d, v):
     return (46, 68, 32, 255)
 
 
+def bog(x, y, mask, frame, d, v):
+    if d == 0:
+        return (122, 108, 66, 255) if noise(x, y, v) > 0.4 else (96, 84, 50, 255)
+    if d == 1:
+        return (70, 58, 36, 255)
+    n = smooth_noise(x + v * 6, y + v * 4, 61 + v)
+    if noise(x, y, 400 + v) > 0.985:
+        return (96, 128, 60, 255)
+    if n > 0.72:
+        return (84, 112, 52, 255)
+    if n > 0.5:
+        return (86, 70, 42, 255)
+    if n > 0.3:
+        return (66, 54, 34, 255)
+    return (52, 42, 28, 255)
+
+
+def bog_shore(x, y, d, v):
+    if d >= 4:
+        return None
+    if d <= 1 and noise(x, y, 410 + v) > 0.65:
+        return (110, 130, 64, 255)
+    return (50, 40, 26, alpha_by(d, 150, 4))
+
+
 def alpha_by(distance, base, reach):
     return max(0, int(base * (1 - distance / reach)))
 
@@ -240,6 +265,8 @@ def ripple_sheet():
 def main():
     ripple_sheet().save(OUT / "ripple.tga")
     make_shore(water_shore).save(OUT / "shore_water.tga")
+    make_shore(bog_shore).save(OUT / "shore_bog.tga")
+    make_sheet(1, bog, True).save(OUT / "surface_bog.tga")
     make_shore(ice_shore).save(OUT / "shore_ice.tga")
     make_shore(lava_shore).save(OUT / "shore_lava.tga")
     shade_tile().save(OUT / "surface_shade.tga")

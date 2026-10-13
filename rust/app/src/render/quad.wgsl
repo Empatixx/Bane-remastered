@@ -277,8 +277,24 @@ fn lava_color(px: vec2<f32>, t: f32) -> vec3<f32> {
     return rgb;
 }
 
+fn bog_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+    let a = flow_fbm(px * 0.05 + vec2<f32>(t * 0.004, t * 0.002) + vec2<f32>(21.0, 6.0));
+    let b = flow_fbm(px * 0.11 + vec2<f32>(3.0, 18.0));
+    let f = a * 0.65 + b * 0.35;
+    var rgb = vec3<f32>(52.0, 42.0, 28.0) / 255.0;
+    if (f > 0.40) { rgb = vec3<f32>(66.0, 54.0, 34.0) / 255.0; }
+    if (f > 0.52) { rgb = vec3<f32>(86.0, 70.0, 42.0) / 255.0; }
+    if (f > 0.64) { rgb = vec3<f32>(84.0, 112.0, 52.0) / 255.0; }
+    let bubble_cycle = floor(t * 0.4 + noise(floor(px / 14.0)) * 7.0);
+    let bubble = noise(floor(px / 14.0) + vec2<f32>(bubble_cycle * 5.3, 1.7));
+    let local = fract(px / 14.0) - vec2<f32>(0.5);
+    if (bubble > 0.9 && length(local) < 0.16) { rgb = vec3<f32>(104.0, 92.0, 56.0) / 255.0; }
+    return rgb;
+}
+
 fn liquid_color(kind: f32, world: vec2<f32>, t: f32) -> vec3<f32> {
     let px = floor(world / LIQUID_PIXEL);
+    if (kind > 3.5) { return bog_color(px, t); }
     if (kind > 2.5) { return lava_color(px, t); }
     if (kind > 1.5) { return ice_color(px, t); }
     return water_color(px, t);

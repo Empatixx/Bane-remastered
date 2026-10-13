@@ -45,6 +45,7 @@ pub(crate) enum DecorKind {
     Icicles { variant: usize },
     IceCrystals { variant: usize },
     FrozenSkull,
+    Mushrooms { variant: usize },
     Cocoon { variant: usize },
 }
 
@@ -343,7 +344,10 @@ pub(crate) fn plan(
             })
             .copied()
             .collect();
-        let themed: [ThemedSlot; 4] = [
+        let themed: [ThemedSlot; 5] = [
+            (mix.mushrooms, &hugging, 2, |variant| DecorKind::Mushrooms {
+                variant,
+            }),
             (mix.icicles, &top_faces, 3, |variant| DecorKind::Icicles {
                 variant,
             }),
@@ -496,6 +500,15 @@ mod tests {
         );
         assert_eq!(count_in(Theme::Lava, DecorKind::FireGeyser), 0);
         assert!(count_in(Theme::Spider, DecorKind::WebPatch) > 0);
+        assert!(
+            count_in(Theme::Moss, DecorKind::Mushrooms { variant: 0 })
+                + count_in(Theme::Moss, DecorKind::Mushrooms { variant: 1 })
+                > 0
+        );
+        assert_eq!(
+            count_in(Theme::Stone, DecorKind::Mushrooms { variant: 0 }),
+            0
+        );
         assert!(count_in(Theme::Temple, DecorKind::ArrowTrap) > 0);
         assert_eq!(count_in(Theme::Stone, DecorKind::FireGeyser), 0);
         assert_eq!(count_in(Theme::Sewer, DecorKind::ArrowTrap), 0);
@@ -564,6 +577,7 @@ mod tests {
                         | DecorKind::Spike
                         | DecorKind::IceCrystals { .. }
                         | DecorKind::FrozenSkull
+                        | DecorKind::Mushrooms { .. }
                         | DecorKind::Cocoon { .. } => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                         }

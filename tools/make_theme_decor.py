@@ -158,6 +158,42 @@ def cocoon(variant):
     return image
 
 
+CAP = (168, 70, 60, 255)
+CAP_LIGHT = (214, 116, 96, 255)
+CAP_DARK = (110, 44, 48, 255)
+CAP_SPOT = (240, 226, 190, 255)
+STEM = (222, 214, 184, 255)
+STEM_SHADE = (160, 148, 118, 255)
+GLOW_CAP = (110, 190, 130, 255)
+GLOW_LIGHT = (176, 236, 170, 255)
+GLOW_DARK = (52, 112, 84, 255)
+
+
+def mushroom(image, cx, base, height, radius, cap, light, dark, spots):
+    draw = ImageDraw.Draw(image)
+    stem_top = base - height
+    draw.rectangle((cx - 1, stem_top, cx, base), fill=STEM)
+    draw.line([(cx, stem_top), (cx, base)], fill=STEM_SHADE)
+    draw.ellipse((cx - radius, stem_top - radius + 1, cx + radius, stem_top + radius - 1), fill=cap, outline=OUTLINE)
+    draw.arc((cx - radius + 1, stem_top - radius + 2, cx + radius - 1, stem_top + radius - 2), 200, 300, fill=light)
+    draw.line([(cx - radius + 1, stem_top + 1), (cx + radius - 1, stem_top + 1)], fill=dark)
+    for dx, dy in spots:
+        image.putpixel((cx + dx, stem_top + dy), CAP_SPOT)
+
+
+def mushrooms(variant):
+    image = Image.new("RGBA", (16, 16), CLEAR)
+    shadow_ellipse(image, (1, 11, 15, 16))
+    if variant == 0:
+        mushroom(image, 5, 13, 4, 3, CAP, CAP_LIGHT, CAP_DARK, [(-1, -2), (1, -1)])
+        mushroom(image, 10, 14, 6, 4, GLOW_CAP, GLOW_LIGHT, GLOW_DARK, [(-1, -3), (2, -2)])
+    else:
+        mushroom(image, 4, 14, 3, 2, GLOW_CAP, GLOW_LIGHT, GLOW_DARK, [(0, -1)])
+        mushroom(image, 8, 13, 5, 3, CAP, CAP_LIGHT, CAP_DARK, [(-1, -2)])
+        mushroom(image, 12, 14, 4, 3, GLOW_CAP, GLOW_LIGHT, GLOW_DARK, [(1, -2)])
+    return image
+
+
 def stack(images):
     sheet = Image.new("RGBA", (16, 16 * len(images)), CLEAR)
     for index, image in enumerate(images):
@@ -170,6 +206,7 @@ def main():
     stack([crystals(4), crystals(5)]).save(OUT / "ice_crystals.tga")
     frozen_skull().save(OUT / "frozen_skull.tga")
     stack([cocoon(0), cocoon(1)]).save(OUT / "cocoon.tga")
+    stack([mushrooms(0), mushrooms(1)]).save(OUT / "mushrooms.tga")
 
 
 main()

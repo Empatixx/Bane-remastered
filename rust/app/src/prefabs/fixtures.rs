@@ -233,6 +233,20 @@ pub(crate) fn decor(
             textures,
         ),
         DecorKind::FrozenSkull => prop(world, Prop::FrozenSkull, top_left, Look::DEFAULT, textures),
+        DecorKind::Mushrooms { variant } => {
+            let entity = prop(
+                world,
+                Prop::Mushrooms,
+                top_left,
+                Look::row(variant, false),
+                textures,
+            );
+            let _ = world.insert_one(
+                entity,
+                Light::rgb(Vec2::new(0.0, 8.0), 120.0, 230.0, 150.0, 55.0, 0.8),
+            );
+            entity
+        }
         DecorKind::Cocoon { variant } => prop(
             world,
             Prop::Cocoon,
@@ -575,6 +589,7 @@ pub(crate) fn surface_tile(
         Surface::Ice => Prop::IceSurface,
         Surface::Lava => Prop::LavaSurface,
         Surface::Water => Prop::WaterSurface,
+        Surface::Bog => Prop::BogSurface,
     };
     let row = surfaces.liquid_row(grid, tile);
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
@@ -588,6 +603,7 @@ pub(crate) fn surface_tile(
                     Surface::Water => 1.0,
                     Surface::Ice => 2.0,
                     Surface::Lava => 3.0,
+                    Surface::Bog => 4.0,
                 },
                 time: 0.0,
             },
@@ -616,6 +632,7 @@ pub(crate) fn shore_tile(
         Surface::Ice => Prop::IceShore,
         Surface::Lava => Prop::LavaShore,
         Surface::Water => Prop::WaterShore,
+        Surface::Bog => Prop::BogShore,
     };
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
     let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);

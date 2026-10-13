@@ -32,6 +32,7 @@ fn accelerate_with(
 }
 
 const WATER_SLOWDOWN: f32 = 0.55;
+const BOG_SLOWDOWN: f32 = 0.45;
 
 pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
     steer_player_on(world, input, &Surfaces::default(), dt);
@@ -85,6 +86,8 @@ pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfa
         } * perks.map_or(1.0, |perks| perks.0.speed);
         let speed = if ground == Some(Surface::Water) {
             PLAYER_SPEED * WATER_SLOWDOWN
+        } else if ground == Some(Surface::Bog) {
+            PLAYER_SPEED * BOG_SLOWDOWN
         } else if stuck {
             PLAYER_SPEED * COBWEB_SLOWDOWN
         } else {
@@ -221,5 +224,12 @@ mod tests {
         let icy = run_on(Some(crate::dungeon::Surface::Ice));
         assert!(wet < dry * 0.8, "{wet} vs {dry}");
         assert!(icy < dry, "{icy} vs {dry}");
+    }
+
+    #[test]
+    fn bog_slows_the_player_like_a_heavy_mud() {
+        let dry = run_on(None);
+        let mud = run_on(Some(crate::dungeon::Surface::Bog));
+        assert!(mud < dry * 0.7, "{mud} vs {dry}");
     }
 }
