@@ -47,8 +47,9 @@ const EPIC_FROM_ROW: i32 = 3;
 const STEP: Vec2 = Vec2::new(80.0, 74.0);
 const ARROW_INSET: f32 = 10.0;
 const ARROW_LAYER: i32 = 36;
-const REROLL_CENTER: Vec2 = Vec2::new(PLATE_CENTER.x, 506.0);
-const REROLL_COST_BASELINE: f32 = 464.0;
+const DICE_SIZE: Vec2 = Vec2::new(54.0, 54.0);
+const REROLL_CENTER: Vec2 = Vec2::new(PLATE_CENTER.x, 488.0);
+const REROLL_COST_BASELINE: f32 = 532.0;
 const HINT_BASELINE: f32 = 492.0;
 const HINT: &str = "Drag or WASD to move the tree";
 const GLYPH: f32 = 36.0;
@@ -270,7 +271,7 @@ fn root_top_left(pan: Vec2) -> Vec2 {
 }
 
 fn reroll_top_left() -> Vec2 {
-    REROLL_CENTER - PLATE_SIZE / 2.0
+    REROLL_CENTER - DICE_SIZE / 2.0
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -381,7 +382,7 @@ fn target_at(first: usize, grown: &Tree, pan: Vec2, point: Vec2) -> Option<Targe
             })
             .map(Target::Node);
     }
-    inside(point, reroll_top_left(), PLATE_SIZE).then_some(Target::Reroll)
+    inside(point, reroll_top_left(), DICE_SIZE).then_some(Target::Reroll)
 }
 
 fn on_buy_plate(point: Vec2) -> bool {
@@ -538,28 +539,21 @@ fn links(kind: GunKind, rerolls: u32, grown: &Tree, pan: Vec2) -> Vec<Element> {
 fn reroll_plate(hover: Hover) -> Vec<Element> {
     vec![
         Element::Image {
-            texture: tex::MENU_PLATE_SMALL,
+            texture: tex::REROLL_DICE,
             top_left: reroll_top_left(),
-            size: PLATE_SIZE,
-            cell: Some((usize::from(hover.reroll), PLATE_ROWS)),
+            size: DICE_SIZE,
+            cell: Some((usize::from(hover.reroll), 2)),
             layer: FRAME_LAYER,
             alpha: 1.0,
         },
         Element::Label {
-            content: "Reroll".to_owned(),
-            position: Vec2::new(REROLL_CENTER.x, REROLL_CENTER.y + 8.0),
+            content: format!("{REROLL_COST} gold"),
+            position: Vec2::new(REROLL_CENTER.x, REROLL_COST_BASELINE),
             color: if hover.reroll {
                 HOVER_COLOR
             } else {
-                MENU_COLOR
+                COST_COLOR
             },
-            size: FontSize::Size22,
-            align: Align::Center,
-        },
-        Element::Label {
-            content: format!("Cost: {REROLL_COST} gold"),
-            position: Vec2::new(REROLL_CENTER.x, REROLL_COST_BASELINE),
-            color: COST_COLOR,
             size: FontSize::Size16,
             align: Align::Center,
         },
@@ -1229,8 +1223,8 @@ mod tests {
         let after = layout(0, 0, None, 1, Vec2::ZERO, Hover::default());
 
         assert_ne!(before, after);
-        assert!(labels(&after).contains(&"Reroll".to_string()));
-        assert!(labels(&after).contains(&format!("Cost: {REROLL_COST} gold")));
+        assert_eq!(images(&after, tex::REROLL_DICE), 1);
+        assert!(labels(&after).contains(&format!("{REROLL_COST} gold")));
         assert!(labels(&after).contains(&HINT.to_string()));
     }
 
@@ -1326,7 +1320,7 @@ mod tests {
         let tree_end = TREE_TOP_LEFT + TREE_SIZE;
         let last_row = row_top_left(VISIBLE_ROWS - 1) + ROW_SIZE;
         let view_end = VIEW_TOP_LEFT + VIEW_SIZE;
-        let reroll_end = reroll_top_left() + PLATE_SIZE;
+        let reroll_end = reroll_top_left() + DICE_SIZE;
         let widest = (2 * weapon_tree::HALF_COLUMNS) as f32 * STEP.x + TALENT;
         let tallest = weapon_tree::DEPTH as f32 * STEP.y + TALENT;
 
@@ -1335,9 +1329,10 @@ mod tests {
         const { assert!(VIEW_TOP_LEFT.x >= TREE_TOP_LEFT.x + 18.0) };
         assert!(view_end.x <= tree_end.x - 18.0);
         assert!(view_end.y <= tree_end.y - 18.0);
-        assert!(reroll_end.y < crate::viewport::TARGET.y);
+        const { assert!(REROLL_COST_BASELINE < crate::viewport::TARGET.y) };
+        assert!(reroll_end.y < REROLL_COST_BASELINE - 12.0);
         assert!(reroll_top_left().x >= PANEL_TOP_LEFT.x);
-        assert!(reroll_top_left().y > PANEL_TOP_LEFT.y + PANEL_SIZE.y + 14.0);
+        assert!(reroll_top_left().y > PANEL_TOP_LEFT.y + PANEL_SIZE.y + 8.0);
         assert!(HINT_BASELINE < view_end.y);
         assert!(widest <= VIEW_SIZE.x && tallest <= VIEW_SIZE.y);
         assert!(list_end.x < TREE_TOP_LEFT.x);

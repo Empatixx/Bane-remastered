@@ -260,8 +260,9 @@ DARK_RAMP = ((20, 8, 16), (30, 14, 24), (44, 20, 34), (70, 36, 52))
 
 
 class Icon:
-    def __init__(self):
+    def __init__(self, outline=None):
         self.layers = []
+        self.outline = outline
 
     def layer(self, ramp, paint):
         mask = Image.new("L", (16, 16), 0)
@@ -289,7 +290,7 @@ class Icon:
                     tone = ramp[3] if up and not down else ramp[1] if down and not up else ramp[2]
                     out.putpixel((x, y), tone + (255,))
                     solid.putpixel((x, y), 255)
-        line = self.layers[0][0][0]
+        line = self.outline or self.layers[0][0][0]
         edge = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
         spots = solid.load()
         for y in range(18):
@@ -428,6 +429,30 @@ def icon_deadeye():
     )
 
 
+BONE_TOP = ((70, 40, 40), (190, 165, 150), (240, 225, 205), (255, 248, 235))
+BONE_LEFT = ((70, 40, 40), (160, 130, 120), (215, 192, 172), (240, 224, 205))
+BONE_RIGHT = ((70, 40, 40), (120, 92, 92), (172, 148, 140), (205, 185, 170))
+PIP_RAMP = ((40, 14, 28), (60, 20, 40), (90, 30, 55), (120, 50, 75))
+HOT_YELLOW = (255, 232, 110)
+
+
+def dice(hover):
+    top = BONE_TOP if not hover else tuple(tuple(min(255, c + 12) for c in tone) for tone in BONE_TOP)
+    icon = Icon(HOT_YELLOW if hover else None)
+    icon.layer(top, lambda d: d.polygon([(8, 1), (14, 4), (8, 7), (2, 4)], fill=255))
+    icon.layer(BONE_LEFT, lambda d: d.polygon([(2, 5), (7, 8), (7, 14), (2, 11)], fill=255))
+    icon.layer(BONE_RIGHT, lambda d: d.polygon([(9, 8), (14, 5), (14, 11), (9, 14)], fill=255))
+    icon.layer(PIP_RAMP, lambda d: [d.rectangle(box, fill=255) for box in ((7, 3, 8, 4), (3, 8, 4, 9), (5, 11, 6, 12), (10, 9, 11, 10), (12, 7, 13, 8), (11, 12, 12, 13))])
+    return icon.render()
+
+
+def reroll_dice():
+    sheet = Image.new("RGBA", (18, 36), (0, 0, 0, 0))
+    sheet.paste(dice(False), (0, 0))
+    sheet.paste(dice(True), (0, 18))
+    return sheet
+
+
 UPGRADE_ICONS = [icon_damage, icon_rate, icon_magazine, icon_reload, icon_accuracy, icon_crit]
 MUTATION_ICONS = [icon_piercing, icon_explosive, icon_venom, icon_frost, icon_ricochet, icon_deadeye]
 
@@ -497,6 +522,7 @@ def main():
     talent_icon().save(f"{OUT}/talent_icon.tga")
     upgrade_icons().save(f"{OUT}/upgrade_icons.tga")
     mutation_icons().save(f"{OUT}/mutation_icons.tga")
+    reroll_dice().save(f"{OUT}/reroll_dice.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
     preview([board, notes, talent_icon(), upgrade_icons(), mutation_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")
