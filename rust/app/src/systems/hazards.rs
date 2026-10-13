@@ -73,7 +73,7 @@ pub(crate) fn tick_arrow_traps(
         }
         trap.timer = ARROW_PERIOD;
         let slit = position.0 + Vec2::new(0.0, SLIT_OFFSET);
-        shots.push((slit, size.0.y / 2.0 - SLIT_OFFSET + 2.0));
+        shots.push((slit, size.0.y / 2.0 - SLIT_OFFSET + ARROW_HITBOX.y + 2.0));
     }
     for (slit, free_after) in shots {
         world.spawn((
