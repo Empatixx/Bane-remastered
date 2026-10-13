@@ -11,7 +11,13 @@ use crate::prefabs;
 use crate::rng::Rng;
 use crate::tilemap::TILE_SIZE;
 
-const MAX_ENEMIES: usize = 5;
+const MIN_ENEMIES: usize = 5;
+const MAX_ENEMIES: usize = 12;
+const AREA_PER_ENEMY: usize = 100;
+
+fn enemy_limit(columns: usize, rows: usize) -> usize {
+    (columns * rows / AREA_PER_ENEMY).clamp(MIN_ENEMIES, MAX_ENEMIES)
+}
 const ENTER_MARGIN: usize = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -173,7 +179,7 @@ fn enter(
         for index in (1..spawns.len()).rev() {
             spawns.swap(index, rng.below(index + 1));
         }
-        for &(column, row) in spawns.iter().take(MAX_ENEMIES) {
+        for &(column, row) in spawns.iter().take(enemy_limit(data.columns, data.rows)) {
             let position = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE;
             let kind = enemies::pick(context.floor, rng);
             prefabs::enemy_in_room(world, kind, position, context.floor, context.textures, room);
@@ -358,5 +364,14 @@ mod tests {
         );
 
         assert!(events.is_empty());
+    }
+
+    #[test]
+    fn bigger_rooms_hold_more_enemies_but_the_old_sizes_keep_their_limit() {
+        assert_eq!(enemy_limit(16, 10), MIN_ENEMIES);
+        assert_eq!(enemy_limit(28, 20), MIN_ENEMIES);
+        assert!(enemy_limit(32, 22) > MIN_ENEMIES);
+        assert!(enemy_limit(44, 28) > enemy_limit(32, 22));
+        assert_eq!(enemy_limit(60, 40), MAX_ENEMIES);
     }
 }

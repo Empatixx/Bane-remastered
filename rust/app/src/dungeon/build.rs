@@ -2,14 +2,12 @@ use std::error::Error;
 
 use glam::Vec2;
 
-use crate::tilemap::{TileGrid, TILE_SIZE};
+use crate::tilemap::{TILE_SIZE, TileGrid};
 
 use super::decor::{self, Decor};
 use super::furnish::{self, Furnishing};
 use super::layout::{Direction, Layout, LayoutSpec};
-use super::template::{
-    door_columns, door_rows, Cell, RoomKind, Templates, CELL_COLUMNS, CELL_ROWS,
-};
+use super::template::{Cell, RoomKind, RoomTemplate, Templates, door_columns, door_rows};
 use crate::rng::Rng;
 
 pub(crate) const CORRIDOR_LENGTH: usize = 4;
@@ -112,27 +110,50 @@ impl Dungeon {
             .unwrap_or(0);
         let cells_x = (max_x - min_x) as usize + 1;
         let cells_y = (max_y - min_y) as usize + 1;
-        let columns = cells_x * CELL_COLUMNS + (cells_x - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
-        let rows = cells_y * CELL_ROWS + (cells_y - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
+        let mut picked: Vec<&RoomTemplate> = Vec::with_capacity(layout.rooms.len());
+        for placed in &layout.rooms {
+            picked.push(
+                templates
+                    .pick(placed.kind, rng)
+                    .ok_or_else(|| format!("no template for {:?}", placed.kind))?,
+            );
+        }
+        let mut widths = vec![0; cells_x];
+        let mut heights = vec![0; cells_y];
+        for (placed, template) in layout.rooms.iter().zip(&picked) {
+            let (x, y) = (
+                (placed.cell.0 - min_x) as usize,
+                (placed.cell.1 - min_y) as usize,
+            );
+            widths[x] = widths[x].max(template.columns());
+            heights[y] = heights[y].max(template.rows());
+        }
+        let offsets = |sizes: &[usize]| {
+            let mut at = MARGIN;
+            sizes
+                .iter()
+                .map(|size| {
+                    let start = at;
+                    at += size + CORRIDOR_LENGTH;
+                    start
+                })
+                .collect::<Vec<usize>>()
+        };
+        let (column_starts, row_starts) = (offsets(&widths), offsets(&heights));
+        let columns = widths.iter().sum::<usize>() + (cells_x - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
+        let rows = heights.iter().sum::<usize>() + (cells_y - 1) * CORRIDOR_LENGTH + 2 * MARGIN;
         let mut grid = TileGrid::filled(columns, rows);
 
-        let cell_origin = |cell: (i32, i32)| {
-            (
-                (cell.0 - min_x) as usize * (CELL_COLUMNS + CORRIDOR_LENGTH) + MARGIN,
-                (cell.1 - min_y) as usize * (CELL_ROWS + CORRIDOR_LENGTH) + MARGIN,
-            )
-        };
-
         let mut rooms = Vec::with_capacity(layout.rooms.len());
-        for placed in &layout.rooms {
-            let template = templates
-                .pick(placed.kind, rng)
-                .ok_or_else(|| format!("no template for {:?}", placed.kind))?;
+        for (placed, template) in layout.rooms.iter().zip(&picked) {
             let (template_columns, template_rows) = (template.columns(), template.rows());
-            let corner = cell_origin(placed.cell);
+            let (x, y) = (
+                (placed.cell.0 - min_x) as usize,
+                (placed.cell.1 - min_y) as usize,
+            );
             let origin = (
-                corner.0 + (CELL_COLUMNS - template_columns) / 2,
-                corner.1 + (CELL_ROWS - template_rows) / 2,
+                column_starts[x] + (widths[x] - template_columns) / 2,
+                row_starts[y] + (heights[y] - template_rows) / 2,
             );
             let mut spawns = Vec::new();
             for (row, line) in template.cells.iter().enumerate() {
@@ -461,5 +482,37 @@ mod tests {
             );
             assert!(!dungeon.grid.is_wall(column as isize, row as isize));
         }
+    }
+
+    #[test]
+    fn no_normal_room_is_left_without_enemies() {
+        for seed in 0..120 {
+            let dungeon = dungeon(seed);
+            for room in dungeon
+                .rooms
+                .iter()
+                .filter(|room| room.kind == RoomKind::Normal)
+            {
+                assert!(
+                    room.spawns.len() >= 6,
+                    "seed {seed}: {} spawns",
+                    room.spawns.len()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn big_rooms_fit_inside_the_grid_and_still_connect() {
+        let mut biggest = 0;
+        for seed in 0..120 {
+            let dungeon = dungeon(seed);
+            for room in &dungeon.rooms {
+                biggest = biggest.max(room.columns * room.rows);
+                assert!(room.origin.0 + room.columns < dungeon.grid.columns());
+                assert!(room.origin.1 + room.rows < dungeon.grid.rows());
+            }
+        }
+        assert!(biggest >= 40 * 26, "{biggest}");
     }
 }

@@ -5,8 +5,8 @@ use serde::Deserialize;
 
 use crate::rng::Rng;
 
-pub(crate) const CELL_COLUMNS: usize = 28;
-pub(crate) const CELL_ROWS: usize = 20;
+pub(crate) const MAX_COLUMNS: usize = 44;
+pub(crate) const MAX_ROWS: usize = 30;
 pub(crate) const MIN_COLUMNS: usize = 16;
 pub(crate) const MIN_ROWS: usize = 10;
 
@@ -48,12 +48,12 @@ impl RoomTemplate {
         let name = file.name;
         let rows = file.rows.len();
         let columns = file.rows.first().map_or(0, |line| line.chars().count());
-        if !(MIN_ROWS..=CELL_ROWS).contains(&rows) || !rows.is_multiple_of(2) {
-            return Err(format!("{name}: rows must be even and {MIN_ROWS}-{CELL_ROWS}").into());
+        if !(MIN_ROWS..=MAX_ROWS).contains(&rows) || !rows.is_multiple_of(2) {
+            return Err(format!("{name}: rows must be even and {MIN_ROWS}-{MAX_ROWS}").into());
         }
-        if !(MIN_COLUMNS..=CELL_COLUMNS).contains(&columns) || !columns.is_multiple_of(2) {
+        if !(MIN_COLUMNS..=MAX_COLUMNS).contains(&columns) || !columns.is_multiple_of(2) {
             return Err(
-                format!("{name}: columns must be even and {MIN_COLUMNS}-{CELL_COLUMNS}").into(),
+                format!("{name}: columns must be even and {MIN_COLUMNS}-{MAX_COLUMNS}").into(),
             );
         }
         let mut cells = Vec::with_capacity(rows);
@@ -72,7 +72,7 @@ impl RoomTemplate {
                     other => {
                         return Err(
                             format!("{name}: unknown symbol '{other}' at {column},{row}").into(),
-                        )
+                        );
                     }
                 });
             }
@@ -135,7 +135,7 @@ pub(crate) fn is_door_slot(columns: usize, rows: usize, column: usize, row: usiz
     vertical || horizontal
 }
 
-const BUILT_IN: [&str; 21] = [
+const BUILT_IN: [&str; 24] = [
     include_str!("../../../assets/rooms/start.json"),
     include_str!("../../../assets/rooms/normal_01.json"),
     include_str!("../../../assets/rooms/normal_02.json"),
@@ -153,6 +153,9 @@ const BUILT_IN: [&str; 21] = [
     include_str!("../../../assets/rooms/normal_14.json"),
     include_str!("../../../assets/rooms/normal_15.json"),
     include_str!("../../../assets/rooms/normal_16.json"),
+    include_str!("../../../assets/rooms/normal_17.json"),
+    include_str!("../../../assets/rooms/normal_18.json"),
+    include_str!("../../../assets/rooms/normal_19.json"),
     include_str!("../../../assets/rooms/treasure.json"),
     include_str!("../../../assets/rooms/shop.json"),
     include_str!("../../../assets/rooms/sacrifice.json"),
@@ -278,5 +281,69 @@ mod tests {
     fn odd_sizes_unknown_symbols_and_wrong_sizes_are_rejected() {
         let json = "{\"name\":\"tiny\",\"kind\":\"Normal\",\"rows\":[\"###\"]}";
         assert!(RoomTemplate::parse(json).is_err());
+    }
+
+    #[test]
+    fn every_normal_template_has_enemy_spawns_so_no_fighting_room_is_empty() {
+        let templates = Templates::built_in().expect("built-in templates are valid");
+        for template in templates
+            .all()
+            .filter(|template| template.kind == RoomKind::Normal)
+        {
+            let spawns = template
+                .cells
+                .iter()
+                .flatten()
+                .filter(|cell| **cell == Cell::Spawn)
+                .count();
+
+            assert!(spawns >= 6, "{} has only {spawns} spawns", template.name);
+        }
+    }
+
+    #[test]
+    fn spawns_stay_away_from_the_door_slots() {
+        let templates = Templates::built_in().expect("built-in templates are valid");
+        for template in templates.all() {
+            let (columns, rows) = (template.columns(), template.rows());
+            for (row, line) in template.cells.iter().enumerate() {
+                for (column, cell) in line.iter().enumerate() {
+                    if *cell != Cell::Spawn {
+                        continue;
+                    }
+                    for door_column in door_columns(columns) {
+                        let near_top = row < 3 && column.abs_diff(door_column) < 3;
+                        let near_bottom = row + 3 >= rows && column.abs_diff(door_column) < 3;
+                        assert!(
+                            !near_top && !near_bottom,
+                            "{} at {column},{row}",
+                            template.name
+                        );
+                    }
+                    for door_row in door_rows(rows) {
+                        let near_left = column < 3 && row.abs_diff(door_row) < 3;
+                        let near_right = column + 3 >= columns && row.abs_diff(door_row) < 3;
+                        assert!(
+                            !near_left && !near_right,
+                            "{} at {column},{row}",
+                            template.name
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn there_are_big_rooms_among_the_normal_templates() {
+        let templates = Templates::built_in().expect("built-in templates are valid");
+        let biggest = templates
+            .all()
+            .filter(|template| template.kind == RoomKind::Normal)
+            .map(|template| template.columns() * template.rows())
+            .max()
+            .unwrap_or(0);
+
+        assert!(biggest >= 40 * 26, "{biggest}");
     }
 }
