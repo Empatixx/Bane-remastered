@@ -461,11 +461,12 @@ def reroll_dice():
 
 
 def enemy_arrow():
-    def paint(d):
-        d.rectangle((1, 6, 8, 9), fill=255)
-        d.polygon([(7, 1), (15, 7), (15, 8), (7, 14)], fill=255)
-
-    return Icon().layer(RED_RAMP, paint).render()
+    image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    soft = (232, 96, 96, 255)
+    draw.line([(6, 3), (12, 9), (6, 15)], fill=soft, width=3)
+    draw.line([(7, 4), (11, 9), (7, 14)], fill=(255, 170, 160, 255), width=1)
+    return image
 
 
 UPGRADE_ICONS = [icon_damage, icon_rate, icon_magazine, icon_reload, icon_accuracy, icon_crit]

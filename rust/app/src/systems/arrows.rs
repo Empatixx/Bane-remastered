@@ -8,10 +8,10 @@ use crate::components::{
 use crate::render::TextureId;
 use crate::viewport::TARGET;
 
-const ARROW_SIZE: Vec2 = Vec2::new(24.0, 24.0);
-const EDGE_INSET: f32 = 26.0;
+const ARROW_SIZE: Vec2 = Vec2::new(18.0, 18.0);
+const EDGE_INSET: f32 = 20.0;
 const SEEN_MARGIN: f32 = 20.0;
-const ARROW_ALPHA: f32 = 0.55;
+const ARROW_ALPHA: f32 = 0.3;
 
 pub(crate) fn arrow_at(screen: Vec2) -> Option<(Vec2, f32)> {
     let center = TARGET / 2.0;
