@@ -8,7 +8,7 @@ use crate::components::{
     Size, Sprite, Velocity,
 };
 use crate::dungeon::{Surface, Surfaces};
-use crate::systems::damage::hurt_player;
+use crate::systems::damage::hurt_player_through_armor;
 
 const LAVA_DAMAGE: i32 = 1;
 const RIPPLE_EVERY: f32 = 0.2;
@@ -29,7 +29,7 @@ pub(crate) fn burn_on_lava(world: &mut World, surfaces: &Surfaces, sounds: &mut 
         return;
     };
     if surfaces.at_point(at) == Some(Surface::Lava) {
-        hurt_player(world, player, LAVA_DAMAGE, sounds);
+        hurt_player_through_armor(world, player, LAVA_DAMAGE, sounds);
     }
 }
 
@@ -135,6 +135,19 @@ mod tests {
         burn_on_lava(&mut world, &surfaces, &mut Vec::new());
         assert_eq!(health(&world, player), 9);
         assert!(world.get::<&Invulnerable>(player).is_ok());
+    }
+
+    #[test]
+    fn lava_burns_through_the_armor_straight_into_health() {
+        let mut surfaces = Surfaces::default();
+        surfaces.insert((4, 4), Surface::Lava);
+        let (mut world, player) = standing_at((4, 4));
+        if let Ok(mut armor) = world.get::<&mut Armor>(player) {
+            armor.current = 3;
+        }
+        burn_on_lava(&mut world, &surfaces, &mut Vec::new());
+        assert_eq!(health(&world, player), 9);
+        assert_eq!(world.get::<&Armor>(player).map(|a| a.current).ok(), Some(3));
     }
 
     #[test]

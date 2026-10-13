@@ -194,6 +194,25 @@ pub(crate) fn hurt_player(
     damage: i32,
     sounds: &mut Vec<AudioCommand>,
 ) -> bool {
+    hurt(world, player, damage, false, sounds)
+}
+
+pub(crate) fn hurt_player_through_armor(
+    world: &mut World,
+    player: Entity,
+    damage: i32,
+    sounds: &mut Vec<AudioCommand>,
+) -> bool {
+    hurt(world, player, damage, true, sounds)
+}
+
+fn hurt(
+    world: &mut World,
+    player: Entity,
+    damage: i32,
+    through_armor: bool,
+    sounds: &mut Vec<AudioCommand>,
+) -> bool {
     if world.get::<&Invulnerable>(player).is_ok() {
         return false;
     }
@@ -210,7 +229,11 @@ pub(crate) fn hurt_player(
             return false;
         }
         let was_low = (health.current as f32) < health.max as f32 * LOW_HEALTH;
-        absorb(health, armor, damage);
+        if through_armor {
+            health.current = (health.current - damage).max(0);
+        } else {
+            absorb(health, armor, damage);
+        }
         let is_low = (health.current as f32) < health.max as f32 * LOW_HEALTH;
         sounds.push(AudioCommand::Effect(if health.current <= 0 {
             SoundEffect::Death

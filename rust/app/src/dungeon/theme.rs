@@ -127,7 +127,7 @@ impl Theme {
             poison_barrels,
             frost_barrels,
             cobwebs: if self == Self::Spider { 5 } else { 2 },
-            geysers: if self == Self::Lava { 3 } else { 0 },
+            geysers: 0,
             ice_patches: 0,
             web_patches: if self == Self::Spider { 3 } else { 0 },
             arrow_traps: if self == Self::Temple { 2 } else { 0 },
@@ -192,7 +192,7 @@ mod tests {
         assert!(Theme::Sewer.mix().poison_barrels > Theme::Stone.mix().poison_barrels);
         assert!(Theme::Spider.mix().cobwebs > Theme::Stone.mix().cobwebs);
         assert!(Theme::Temple.mix().spikes > Theme::Stone.mix().spikes);
-        assert!(Theme::Lava.mix().geysers > 0);
+        assert_eq!(Theme::Lava.mix().geysers, 0);
         assert!(Theme::Spider.mix().web_patches > 0);
         assert!(Theme::Temple.mix().arrow_traps > 0);
     }

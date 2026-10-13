@@ -494,7 +494,7 @@ mod tests {
         assert!(
             count_in(Theme::Temple, DecorKind::Spike) > count_in(Theme::Stone, DecorKind::Spike)
         );
-        assert!(count_in(Theme::Lava, DecorKind::FireGeyser) > 0);
+        assert_eq!(count_in(Theme::Lava, DecorKind::FireGeyser), 0);
         assert!(count_in(Theme::Spider, DecorKind::WebPatch) > 0);
         assert!(count_in(Theme::Temple, DecorKind::ArrowTrap) > 0);
         assert_eq!(count_in(Theme::Stone, DecorKind::FireGeyser), 0);
