@@ -55,7 +55,8 @@ pub(crate) fn update_enemy_arrows(world: &mut World, camera: Vec2, texture: Text
     let arrows: Vec<(Vec2, f32)> = world
         .query::<(&Position, &Health)>()
         .with::<(&Enemy, &RoomId)>()
-        .without::<(&Expiring, &Spawning)>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
         .iter()
         .filter(|(_, health)| health.current > 0)
         .filter_map(|(position, _)| arrow_at(position.0 - camera))
@@ -82,7 +83,10 @@ mod tests {
     use super::*;
 
     fn room_enemy(world: &mut World, at: Vec2) -> Entity {
-        prefabs::enemy_in_room(world, EnemyKind::Slime, at, 1, &Textures::default(), 0)
+        let entity =
+            prefabs::enemy_in_room(world, EnemyKind::Slime, at, 1, &Textures::default(), 0);
+        let _ = world.remove_one::<Spawning>(entity);
+        entity
     }
 
     fn arrows(world: &World) -> Vec<(Vec2, f32)> {
@@ -188,5 +192,32 @@ mod tests {
                 assert!(a.0.distance(b.0) > MERGE_DISTANCE);
             }
         }
+    }
+
+    #[test]
+    fn enemies_that_are_still_spawning_or_already_expiring_get_no_arrow() {
+        let mut world = World::new();
+        let spawning = room_enemy(&mut world, Vec2::new(3000.0, 300.0));
+        let _ = world.insert_one(
+            spawning,
+            Spawning {
+                remaining: 1.0,
+                total: 1.0,
+            },
+        );
+        let expiring = room_enemy(&mut world, Vec2::new(-3000.0, 300.0));
+        let _ = world.insert_one(expiring, Expiring);
+        let living = room_enemy(&mut world, Vec2::new(500.0, 3000.0));
+        let texture = Textures::default().get(crate::assets::tex::ENEMY_ARROW);
+
+        update_enemy_arrows(&mut world, Vec2::ZERO, texture);
+
+        let found = arrows(&world);
+        assert_eq!(found.len(), 1);
+        assert!(
+            found[0].1 > 1.0,
+            "points down towards the living one: {found:?}"
+        );
+        let _ = living;
     }
 }
