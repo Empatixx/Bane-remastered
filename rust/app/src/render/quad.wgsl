@@ -236,7 +236,10 @@ fn flow_fbm(p: vec2<f32>) -> f32 {
 
 const LIQUID_PIXEL: f32 = 4.0;
 
-fn water_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+const WATER_SPEED: f32 = 0.4;
+
+fn water_color(px: vec2<f32>, clock: f32) -> vec3<f32> {
+    let t = clock * WATER_SPEED;
     let a = flow_fbm(px * 0.05 + vec2<f32>(t * 0.035, t * 0.012));
     let b = flow_fbm(px * 0.085 - vec2<f32>(t * 0.02, -t * 0.04) + vec2<f32>(11.0, 5.0));
     let f = a * 0.6 + b * 0.4;
