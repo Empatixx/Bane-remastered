@@ -43,14 +43,10 @@ pub(crate) struct PoisonPool {
 pub(crate) struct PoisonTrail;
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct PoisonBurn {
-    pub(crate) remaining: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
 pub(crate) struct TrailLayer {
     pub(crate) spent: f32,
     pub(crate) last: glam::Vec2,
+    pub(crate) count: u32,
 }
 
 #[derive(Debug, Clone, Copy)]

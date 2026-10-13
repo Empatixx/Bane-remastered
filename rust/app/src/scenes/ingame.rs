@@ -403,7 +403,7 @@ impl Scene for InGameScene {
             &mut self.sounds,
             |bound| self.loot_rng.below(bound),
         );
-        systems::leave_poison_trails(&mut self.world);
+        systems::leave_poison_trails(&mut self.world, &assets.textures);
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
         systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);

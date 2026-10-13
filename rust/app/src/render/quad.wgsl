@@ -165,8 +165,9 @@ fn outlined(color: vec4<f32>, in: VertexOut, uv_per_pixel: vec2<f32>) -> vec4<f3
     }
     let center = textureSampleLevel(image, image_sampler, in.uv, 0.0).a;
     for (var i = 0; i < 8; i = i + 1) {
-        let point = clamp(in.uv + OUTLINE_OFFSETS[i] * uv_per_pixel * OUTLINE_PIXELS, in.bounds.xy, in.bounds.zw);
-        let neighbor = textureSampleLevel(image, image_sampler, point, 0.0).a;
+        let point = in.uv + OUTLINE_OFFSETS[i] * uv_per_pixel * OUTLINE_PIXELS;
+        let within = all(point >= in.bounds.xy) && all(point <= in.bounds.zw);
+        let neighbor = select(0.0, textureSampleLevel(image, image_sampler, clamp(point, in.bounds.xy, in.bounds.zw), 0.0).a, within);
         if (abs(center - neighbor) > 0.1) {
             let factor = select(1.0, 1.0 - center, center < 1.0);
             let rim = vec3<f32>(srgb_to_linear(in.outline.rgb));

@@ -5,15 +5,15 @@ use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, Boss, BreakKind, Breakable, Broken, Clip, Color, Dodge, Enemy, Expiring, Flame,
-    Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonBurn, PoisonPool,
-    PoisonTrail, Poisoned, Position, Size, Solid, Spawning, TrailLayer,
+    Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool, PoisonTrail,
+    Poisoned, Position, Size, Solid, Spawning, TrailLayer,
 };
 use crate::geometry;
 use crate::items::ItemKind;
 use crate::objects::{
     EXPLOSION_DAMAGE, EXPLOSION_REACH, FROST_BOSS_SECONDS, FROST_ENEMY_SECONDS,
     FROST_PLAYER_SECONDS, FROST_REACH, POISON_DAMAGE, POISON_TICK_SECONDS, POOL_FADE_SECONDS,
-    POOL_HITBOX, TRAIL_ALPHA, TRAIL_HITBOX, TRAIL_SPACING,
+    POOL_HITBOX, TRAIL_ALPHA, TRAIL_HITBOX, TRAIL_JITTER, TRAIL_SPACING, TRAIL_VARIANTS,
 };
 use crate::physics::Physics;
 use crate::prefabs;
@@ -198,7 +198,7 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
     for entity in gone {
         let _ = world.despawn(entity);
     }
-    let standing: Vec<(Entity, bool, bool, bool)> = world
+    let standing: Vec<(Entity, bool, bool)> = world
         .query::<(Entity, &Position, &Size, Option<&Player>)>()
         .with::<&Health>()
         .without::<&Expiring>()
@@ -208,7 +208,6 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
         .filter_map(|(entity, position, size, player)| {
             let mut inside = false;
             let mut hurt = false;
-            let mut on_trail = false;
             for (center, due, trail) in &pools {
                 if *trail && player.is_none() {
                     continue;
@@ -216,21 +215,14 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
                 let hitbox = if *trail { TRAIL_HITBOX } else { POOL_HITBOX };
                 if geometry::overlaps(*center, hitbox, position.0, size.0) {
                     inside = true;
-                    if *trail {
-                        on_trail = true;
-                    } else {
-                        hurt |= *due;
-                    }
+                    hurt |= player.is_some() || *due;
                 }
             }
-            inside.then_some((entity, hurt, player.is_some(), on_trail))
+            inside.then_some((entity, hurt, player.is_some()))
         })
         .collect();
     let inside: Vec<Entity> = standing.iter().map(|(entity, ..)| *entity).collect();
-    for (entity, mut hurt, is_player, on_trail) in standing {
-        if on_trail {
-            hurt |= burn(world, entity);
-        }
+    for (entity, hurt, is_player) in standing {
         if hurt {
             if is_player {
                 hurt_player(world, entity, POISON_DAMAGE, sounds);
@@ -250,7 +242,6 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
             let _ = world.insert_one(entity, Outline(POISON_OUTLINE));
         }
     }
-    cool_burns(world, dt);
     let leaving: Vec<Entity> = world
         .query::<Entity>()
         .with::<&Poisoned>()
@@ -265,33 +256,14 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
     }
 }
 
-fn burn(world: &mut World, entity: Entity) -> bool {
-    if world.get::<&PoisonBurn>(entity).is_ok() {
-        return false;
-    }
-    let _ = world.insert_one(
-        entity,
-        PoisonBurn {
-            remaining: POISON_TICK_SECONDS,
-        },
-    );
-    true
+fn scatter(count: u32) -> u32 {
+    let mut value = count.wrapping_mul(2_654_435_761).wrapping_add(0x9E37_79B9);
+    value ^= value >> 15;
+    value = value.wrapping_mul(2_246_822_519);
+    value ^ (value >> 13)
 }
 
-fn cool_burns(world: &mut World, dt: f32) {
-    let mut over = Vec::new();
-    for (entity, burn) in world.query_mut::<(Entity, &mut PoisonBurn)>() {
-        burn.remaining -= dt;
-        if burn.remaining <= 0.0 {
-            over.push(entity);
-        }
-    }
-    for entity in over {
-        let _ = world.remove_one::<PoisonBurn>(entity);
-    }
-}
-
-pub(crate) fn leave_poison_trails(world: &mut World) {
+pub(crate) fn leave_poison_trails(world: &mut World, textures: &Textures) {
     let mut drops = Vec::new();
     for (position, layer) in world
         .query_mut::<(&Position, &mut TrailLayer)>()
@@ -301,18 +273,26 @@ pub(crate) fn leave_poison_trails(world: &mut World) {
         let mut from = layer.last;
         let mut left = position.0.distance(from);
         let direction = (position.0 - from).normalize_or_zero();
+        let side = Vec2::new(-direction.y, direction.x);
         while layer.spent + left >= TRAIL_SPACING {
             let step = TRAIL_SPACING - layer.spent;
             from += direction * step;
             left -= step;
             layer.spent = 0.0;
-            drops.push(from);
+            layer.count = layer.count.wrapping_add(1);
+            let roll = scatter(layer.count);
+            let wobble = ((roll >> 8) % 5) as f32 / 2.0 - 1.0;
+            drops.push((
+                from + side * wobble * TRAIL_JITTER,
+                (roll % TRAIL_VARIANTS as u32) as usize,
+                roll & 0x8000 != 0,
+            ));
         }
         layer.spent += left;
         layer.last = position.0;
     }
-    for (index, at) in drops.into_iter().enumerate() {
-        prefabs::poison_dot(world, at, index % 2 == 0);
+    for (at, variant, flipped) in drops {
+        prefabs::poison_dot(world, at, variant, flipped, textures);
     }
 }
 
@@ -892,14 +872,14 @@ mod tests {
 
     #[test]
     fn a_moving_snake_leaves_a_continuous_line_along_the_path_it_crawled() {
-        let (mut world, mut physics, _textures) = arena();
+        let (mut world, mut physics, textures) = arena();
         let snake = prefabs::ready_enemy(
             &mut world,
             &mut physics,
             crate::enemies::EnemyKind::Snake,
             Vec2::new(500.0, 500.0),
         );
-        leave_poison_trails(&mut world);
+        leave_poison_trails(&mut world, &textures);
         assert!(dots(&world).is_empty());
 
         for step in 1..=10 {
@@ -909,15 +889,15 @@ mod tests {
                     500.0 + (step as f32 * 0.7).sin() * 9.0,
                 );
             }
-            leave_poison_trails(&mut world);
+            leave_poison_trails(&mut world, &textures);
         }
 
         let mut line = dots(&world);
         line.sort_by(|a, b| a.x.total_cmp(&b.x));
-        assert!(line.len() >= 50, "{}", line.len());
+        assert!(line.len() >= 25, "{}", line.len());
         assert!(
             line.windows(2)
-                .all(|pair| pair[0].distance(pair[1]) <= TRAIL_SPACING + 0.5),
+                .all(|pair| pair[0].distance(pair[1]) <= TRAIL_SPACING + 2.0 * TRAIL_JITTER + 0.5),
             "the line has gaps"
         );
         assert!(line[0].x < 530.0 && line[line.len() - 1].x > 700.0);
@@ -925,7 +905,7 @@ mod tests {
 
     #[test]
     fn a_still_snake_leaves_nothing() {
-        let (mut world, mut physics, _textures) = arena();
+        let (mut world, mut physics, textures) = arena();
         prefabs::ready_enemy(
             &mut world,
             &mut physics,
@@ -934,7 +914,7 @@ mod tests {
         );
 
         for _ in 0..30 {
-            leave_poison_trails(&mut world);
+            leave_poison_trails(&mut world, &textures);
         }
 
         assert!(dots(&world).is_empty());
@@ -942,13 +922,15 @@ mod tests {
 
     #[test]
     fn standing_on_the_line_hurts_the_player_once_a_second_not_once_per_dot_but_enemies_are_safe() {
-        let (mut world, mut physics, _textures) = arena();
+        let (mut world, mut physics, textures) = arena();
         without_armor(&mut world);
         for offset in 0..8 {
             prefabs::poison_dot(
                 &mut world,
                 Vec2::new(offset as f32 * TRAIL_SPACING, 0.0),
+                offset,
                 offset % 2 == 0,
+                &textures,
             );
         }
         let rat = prefabs::ready_enemy(
@@ -979,8 +961,8 @@ mod tests {
 
     #[test]
     fn the_line_fades_and_disappears_after_its_time() {
-        let (mut world, _physics, _textures) = arena();
-        let dot = prefabs::poison_dot(&mut world, Vec2::new(900.0, 900.0), true);
+        let (mut world, _physics, textures) = arena();
+        let dot = prefabs::poison_dot(&mut world, Vec2::new(900.0, 900.0), 0, false, &textures);
 
         tick_poison(
             &mut world,
@@ -996,13 +978,68 @@ mod tests {
 
     #[test]
     fn a_player_next_to_the_line_is_not_hurt() {
-        let (mut world, _physics, _textures) = arena();
+        let (mut world, _physics, textures) = arena();
         without_armor(&mut world);
-        prefabs::poison_dot(&mut world, Vec2::new(300.0, 0.0), true);
+        prefabs::poison_dot(&mut world, Vec2::new(300.0, 0.0), 0, false, &textures);
         let before = player_life(&world);
 
         tick_poison(&mut world, 0.1, &mut Vec::new());
 
         assert_eq!(player_life(&world), before);
+    }
+
+    #[test]
+    fn a_pool_that_is_already_old_hurts_the_player_the_moment_he_steps_in_like_a_spike() {
+        let (mut world, _physics, textures) = arena();
+        without_armor(&mut world);
+        let pool = prefabs::poison_pool(&mut world, Vec2::new(0.0, 0.0), &textures);
+        if let Ok(mut pool) = world.get::<&mut PoisonPool>(pool) {
+            pool.tick = 0.7;
+        }
+        let start = player_life(&world).unwrap_or(0);
+
+        step(&mut world);
+
+        assert_eq!(player_life(&world), Some(start - POISON_DAMAGE));
+    }
+
+    #[test]
+    fn the_snake_line_is_made_of_different_little_textures_and_gives_the_same_line_twice_for_the_same_walk()
+     {
+        let walk = || {
+            let (mut world, mut physics, textures) = arena();
+            let snake = prefabs::ready_enemy(
+                &mut world,
+                &mut physics,
+                crate::enemies::EnemyKind::Snake,
+                Vec2::new(500.0, 500.0),
+            );
+            leave_poison_trails(&mut world, &textures);
+            for step in 1..=40 {
+                if let Ok(mut position) = world.get::<&mut Position>(snake) {
+                    position.0 = Vec2::new(500.0 + step as f32 * 10.0, 500.0);
+                }
+                leave_poison_trails(&mut world, &textures);
+            }
+            let mut found: Vec<(i32, i32, i32)> = world
+                .query::<(&Position, &crate::components::Sprite)>()
+                .with::<&PoisonTrail>()
+                .iter()
+                .map(|(position, sprite)| {
+                    (
+                        position.0.x as i32,
+                        position.0.y as i32,
+                        (sprite.uv[0] * 1000.0) as i32,
+                    )
+                })
+                .collect();
+            found.sort();
+            found
+        };
+
+        let first = walk();
+        let variants: std::collections::HashSet<i32> = first.iter().map(|d| d.2).collect();
+        assert!(variants.len() >= 4, "{variants:?}");
+        assert_eq!(first, walk());
     }
 }

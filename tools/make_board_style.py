@@ -488,6 +488,30 @@ def casing_sheet():
     return sheet
 
 
+def snake_trail_sheet():
+    rim = (30, 66, 42, 255)
+    body = (62, 128, 72, 255)
+    deep = (44, 98, 58, 255)
+    light = (116, 184, 108, 255)
+    shine = (186, 230, 164, 255)
+    variants = [
+        [".XXXX.", "XBBLBX", "XBBBBX", "XDBBDX", ".XDDX.", "......"],
+        ["..XX..", ".XBBX.", "XBLBBX", "XBBBDX", ".XDDX.", "..XX.."],
+        [".XXX..", "XBBBX.", "XBSBBX", "XBBBBX", ".XDBDX", "..XXX."],
+        ["......", ".XXXX.", "XBBLBX", "XBBBBX", "XDBBDX", ".XXXX."],
+        ["X.XX..", "XBBBX.", "XBLBBX", ".XBBBX", ".XDBDX", "..XXX."],
+        ["..XXX.", ".XBBBX", "XBBSBX", "XBBBDX", ".XDDX.", ".X..X."],
+    ]
+    palette = {"X": rim, "B": body, "D": deep, "L": light, "S": shine}
+    sheet = Image.new("RGBA", (6 * len(variants), 6), (0, 0, 0, 0))
+    for index, rows in enumerate(variants):
+        for y, row in enumerate(rows):
+            for x, key in enumerate(row):
+                if key in palette:
+                    sheet.putpixel((index * 6 + x, y), palette[key])
+    return sheet
+
+
 def enemy_arrow():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -569,6 +593,7 @@ def main():
     reroll_dice().save(f"{OUT}/reroll_dice.tga")
     enemy_arrow().save(f"{OUT}/enemy_arrow.tga")
     casing_sheet().save(f"{OUT}/casing.tga")
+    snake_trail_sheet().save(f"{OUT}/snake_trail.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
     preview([board, notes, talent_icon(), upgrade_icons(), mutation_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")

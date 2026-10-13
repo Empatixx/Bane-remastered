@@ -194,6 +194,7 @@ pub(crate) fn enemy(
                 TrailLayer {
                     spent: 0.0,
                     last: position,
+                    count: 0,
                 },
             );
         }
