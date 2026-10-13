@@ -19,6 +19,7 @@ mod hazards;
 mod hud;
 mod interaction;
 mod items;
+mod leapers;
 mod lighting;
 mod loadout;
 mod minimap;
@@ -76,6 +77,7 @@ pub(crate) use interaction::interact;
 pub(crate) use items::{
     age_items, burst_items, collect_items, enemy_drops, hover_drops, outline_drops,
 };
+pub(crate) use leapers::tick_leapers;
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};

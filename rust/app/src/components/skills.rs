@@ -28,6 +28,23 @@ pub(crate) struct Minion;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Rooted;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LeapStage {
+    Stalk,
+    Crouch,
+    Airborne,
+    Rest,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Leaper {
+    pub(crate) stage: LeapStage,
+    pub(crate) timer: f32,
+    pub(crate) target: Vec2,
+    pub(crate) damage: i32,
+    pub(crate) idle: Clip,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Hatcher {
     pub(crate) remaining: f32,

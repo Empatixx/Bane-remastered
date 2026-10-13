@@ -130,9 +130,98 @@ def cloud_sheet():
     return sheet
 
 
+SW, SH = 40, 32
+BLACK = (12, 12, 14, 255)
+GHOST = (62, 58, 62, 255)
+BODY = (30, 28, 30, 255)
+BODY_L = (52, 48, 50, 255)
+CAP = (196, 160, 70, 255)
+CAP_L = (232, 200, 108, 255)
+CAP_D = (132, 100, 44, 255)
+EYE = (214, 52, 44, 255)
+FANG = (240, 240, 232, 255)
+GROUND = 29
+
+
+def strider_leg(d, hip, foot, lift, colour):
+    hx, hy = hip
+    fx, fy = foot
+    kx = hx + (fx - hx) * 0.55 + (4 if fx > hx else -4)
+    ky = hy - lift
+    d.line([(hx, hy), (kx, ky)], fill=colour)
+    d.line([(kx, ky), (fx, fy)], fill=colour)
+    if colour == BLACK:
+        d.point((kx, ky - 1), fill=colour)
+
+
+def strider(feet_front, feet_back, body_y, lift, lean=0, cap_shift=0, eyes=True):
+    im = Image.new("RGBA", (SW, SH), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    cx, cy = 19 + lean, body_y
+    hips = [(-3, -4), (0, -1), (4, 3), (7, 7)]
+    for (hx, fx), foot_x in zip([(-3, 0), (0, 0), (4, 0), (7, 0)], feet_back):
+        strider_leg(d, (cx + hx, cy + 2), (cx + foot_x, GROUND - 2), max(2, lift - 1), GHOST)
+    d.ellipse((cx - 9, cy - 5, cx + 4, cy + 5), fill=BODY)
+    d.ellipse((cx - 8, cy - 6 + cap_shift, cx + 3, cy + 1 + cap_shift), fill=CAP)
+    d.arc((cx - 8, cy - 6 + cap_shift, cx + 3, cy + cap_shift), 190, 290, fill=CAP_L)
+    d.line([(cx - 6, cy - 2 + cap_shift), (cx, cy - 2 + cap_shift)], fill=CAP_D)
+    d.ellipse((cx + 3, cy - 3, cx + 11, cy + 4), fill=BODY)
+    d.arc((cx + 3, cy - 3, cx + 11, cy + 3), 200, 300, fill=BODY_L)
+    if eyes:
+        for ex, ey in [(9, -1), (11, -1), (8, 1), (10, 1), (12, 1), (10, 3)]:
+            d.point((cx + ex - 1, cy + ey), fill=EYE)
+    d.line([(cx + 10, cy + 5), (cx + 10, cy + 7)], fill=FANG)
+    d.line([(cx + 12, cy + 5), (cx + 12, cy + 7)], fill=FANG)
+    for (hx, _), foot_x in zip([(-4, 0), (-1, 0), (3, 0), (7, 0)], feet_front):
+        strider_leg(d, (cx + hx, cy + 3), (cx + foot_x, GROUND), lift, BLACK)
+    return im
+
+
+def stride(step):
+    phase = step / 5 * math.tau
+    bob = round(math.sin(phase * 2))
+    front = [-13 + round(math.sin(phase + i * 1.6) * 3) for i in range(4)]
+    front = [front[0], -7 + round(math.sin(phase + 1.6) * 3), 6 + round(math.sin(phase + 3.2) * 3), 14 + round(math.sin(phase + 4.8) * 3)]
+    back = [-12, -6, 4, 12]
+    back = [b + round(math.sin(phase + i * 1.6 + 1.2) * 3) for i, b in enumerate(back)]
+    return strider(front, back, 11 + bob, 6)
+
+
+def sheet_strider():
+    sheet = Image.new("RGBA", (SW * 5, SH * 5), (0, 0, 0, 0))
+    for i in range(5):
+        sheet.paste(stride(i), (i * SW, 0))
+    standing_f = [-13, -7, 6, 14]
+    standing_b = [-12, -6, 4, 12]
+    sheet.paste(strider([-12, -6, 5, 12], [-11, -5, 4, 11], 14, 4, lean=-1), (0, SH))
+    sheet.paste(strider([-10, -5, 3, 9], [-9, -4, 3, 8], 20, 2, lean=-2, eyes=False), (SW, SH))
+    final = strider([-7, -3, 2, 6], [-6, -2, 2, 5], 24, 1, lean=-3, eyes=False)
+    for y in range(SH):
+        for x in range(SW):
+            if (x + y) % 2 == 0 and final.getpixel((x, y))[3]:
+                final.putpixel((x, y), (0, 0, 0, 0))
+    sheet.paste(final, (SW * 2, SH))
+    sheet.paste(strider([-11, -6, 6, 13], [-10, -5, 5, 11], 17, 3), (0, SH * 2))
+    sheet.paste(strider([-9, -5, 5, 10], [-8, -4, 4, 9], 21, 1, lean=1), (SW, SH * 2))
+    sheet.paste(strider([-17, -10, 12, 18], [-15, -8, 10, 16], 6, 9, lean=1), (0, SH * 3))
+    sheet.paste(strider([-12, -6, 6, 12], [-11, -5, 5, 11], 23, 1, lean=0), (0, SH * 4))
+    sheet.paste(strider([-12, -6, 6, 12], [-11, -5, 5, 11], 16, 3, lean=0), (SW, SH * 4))
+    return sheet
+
+
+def leap_mark():
+    image = Image.new("RGBA", (32, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(image)
+    d.ellipse((1, 1, 30, 14), fill=(60, 16, 20, 110), outline=(226, 80, 56, 210))
+    d.ellipse((5, 4, 26, 11), outline=(226, 80, 56, 140))
+    return image
+
+
 def main():
     bloated_sheet().save(OUT / "bloated_spider.tga")
     cloud_sheet().save(OUT / "toxic_cloud.tga")
+    sheet_strider().save(OUT / "stilt_spider.tga")
+    leap_mark().save(OUT / "leap_mark.tga")
 
 
 main()

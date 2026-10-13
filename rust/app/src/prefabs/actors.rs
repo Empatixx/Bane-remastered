@@ -8,9 +8,9 @@ use crate::components::{
     Animation, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, Boss,
     Bullet, Chase, Cobweb, Color, ContactDamage, Dash, DeathBurst, DeathCloud, DeathHeal, Drag,
     DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse, GazeWind, Hatcher, Health, Hits, Homing,
-    Impact, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, Path, Pet, Player,
-    Position, RoomId, RunStats, Size, Smash, Spawning, Sprite, TrailLayer, Velocity, Wallet,
-    WebSpitter,
+    Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout, Minion, NoDrop, Path,
+    Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning, Sprite, TrailLayer, Velocity,
+    Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -251,6 +251,18 @@ pub(crate) fn enemy(
                         remaining: 0.0,
                     },
                 ),
+            );
+        }
+        Behavior::Leaps => {
+            let _ = world.insert_one(
+                entity,
+                Leaper {
+                    stage: LeapStage::Stalk,
+                    timer: enemies::LEAP_FIRST_COOLDOWN,
+                    target: position,
+                    damage,
+                    idle,
+                },
             );
         }
         Behavior::ToxicBurst => {

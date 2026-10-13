@@ -135,6 +135,7 @@ pub(crate) enum EnemyKind {
     PurpleSpiderling,
     EyeWatcher,
     BloatedSpider,
+    StiltSpider,
     Spider,
     KingSlime,
 }
@@ -155,6 +156,7 @@ pub(crate) enum Behavior {
     Shoots(ProjectileKind),
     HealsKin,
     ToxicBurst,
+    Leaps,
     SpiderBoss,
     KingSlimeBoss,
 }
@@ -266,7 +268,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 14] = [
+    pub(crate) const ALL: [Self; 15] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -278,6 +280,7 @@ impl EnemyKind {
         Self::GreenSpiderling,
         Self::PurpleSpiderling,
         Self::BloatedSpider,
+        Self::StiltSpider,
         Self::EyeWatcher,
         Self::Spider,
         Self::KingSlime,
@@ -374,6 +377,22 @@ impl EnemyKind {
                 kin: false,
                 ..spiderling(tex::BLOATED_SPIDER, 2, (5, 1, 4_800_000.0))
             },
+            Self::StiltSpider => EnemySpec {
+                behavior: Behavior::Leaps,
+                death_row: 1,
+                kin: false,
+                min_floor: 1,
+                theme: Some(Theme::Spider),
+                ..spec(
+                    tex::STILT_SPIDER,
+                    (5, 5),
+                    (40.0, 32.0),
+                    2.5,
+                    (5, 0.14),
+                    Some((3, 0.18)),
+                    (7, 1, 3_600_000.0),
+                )
+            },
             Self::Spider => EnemySpec {
                 min_floor: 1,
                 max_floor: 1,
@@ -431,6 +450,45 @@ impl EnemyKind {
 
     pub(crate) fn is_boss(self) -> bool {
         matches!(self.spec().role, Role::Boss(_))
+    }
+}
+
+pub(crate) const LEAP_FIRST_COOLDOWN: f32 = 1.4;
+pub(crate) const LEAP_COOLDOWN: f32 = 2.4;
+pub(crate) const LEAP_MIN_DISTANCE: f32 = 150.0;
+pub(crate) const LEAP_MAX_DISTANCE: f32 = 420.0;
+pub(crate) const LEAP_CROUCH_SECONDS: f32 = 0.5;
+pub(crate) const LEAP_AIR_SECONDS: f32 = 0.5;
+pub(crate) const LEAP_REST_SECONDS: f32 = 0.8;
+pub(crate) const LEAP_LANDING_RADIUS: f32 = 112.0;
+
+pub(crate) fn crouch_clip() -> Clip {
+    Clip {
+        row: 2,
+        frames: 2,
+        frame_time: LEAP_CROUCH_SECONDS / 2.0,
+        looping: false,
+        flipped: false,
+    }
+}
+
+pub(crate) fn air_clip() -> Clip {
+    Clip {
+        row: 3,
+        frames: 1,
+        frame_time: LEAP_AIR_SECONDS,
+        looping: true,
+        flipped: false,
+    }
+}
+
+pub(crate) fn landing_clip() -> Clip {
+    Clip {
+        row: 4,
+        frames: 2,
+        frame_time: LEAP_REST_SECONDS / 2.0,
+        looping: false,
+        flipped: false,
     }
 }
 
@@ -527,8 +585,10 @@ mod tests {
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
         assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 2);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 2 - 4);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 2 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
+        assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
+        assert!(spider_floor.contains(&EnemyKind::StiltSpider));
     }
 
     #[test]
