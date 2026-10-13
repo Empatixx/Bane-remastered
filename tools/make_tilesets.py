@@ -158,17 +158,15 @@ def drips(source, out, colour, seed):
 def variant(name, source):
     out = recolor(source, PALETTES[name])
     if name == "ice":
-        scatter(source, out, BODY, [(150, 190, 230), (190, 224, 245)], 0.012, 1)
+        scatter(source, out, BODY, [(150, 190, 230)], 0.004, 1)
         scatter(source, out, LEDGE, [(255, 255, 255), (200, 235, 255)], 0.03, 2)
     elif name == "spider":
         webs(source, out, (190, 190, 150, 255), 3)
-        scatter(source, out, BODY, [(66, 60, 78)], 0.03, 4)
     elif name == "lava":
         cracks(source, out, (214, 84, 28, 255), (255, 190, 60, 255), 5)
         scatter(source, out, LEDGE, [(168, 70, 40), (230, 120, 50)], 0.04, 6)
     elif name == "temple":
         scatter(source, out, LEDGE, [(255, 208, 64), (232, 176, 40)], 0.07, 7)
-        scatter(source, out, BODY, [(120, 98, 70)], 0.04, 8)
     elif name == "sewer":
         drips(source, out, (80, 130, 96, 255), 9)
         clumps(source, out, BODY | LEDGE, [(88, 140, 70), (110, 160, 80)], 1, 10, 1)
