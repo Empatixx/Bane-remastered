@@ -246,15 +246,9 @@ fn water_color(px: vec2<f32>, clock: f32) -> vec3<f32> {
     var rgb = vec3<f32>(46.0, 68.0, 32.0) / 255.0;
     if (f > 0.42) { rgb = vec3<f32>(62.0, 88.0, 38.0) / 255.0; }
     if (f > 0.54) { rgb = vec3<f32>(88.0, 112.0, 48.0) / 255.0; }
-    if (f > 0.64) { rgb = vec3<f32>(116.0, 136.0, 62.0) / 255.0; }
-    let scum = flow_fbm(px * 0.03 + vec2<f32>(-t * 0.01, t * 0.008) + vec2<f32>(40.0, 2.0));
+    if (f > 0.66) { rgb = vec3<f32>(116.0, 136.0, 62.0) / 255.0; }
+    let scum = flow_fbm(px * 0.03 + vec2<f32>(40.0, 2.0));
     if (scum > 0.64 && f < 0.6) { rgb = vec3<f32>(92.0, 78.0, 44.0) / 255.0; }
-    let ripple = abs(sin(px.x * 0.33 + a * 9.0 + t * 0.9)) * abs(sin(px.y * 0.27 - b * 8.0 - t * 0.7));
-    if (ripple < 0.035) { rgb = vec3<f32>(150.0, 170.0, 84.0) / 255.0; }
-    let step_time = floor(t * 2.0);
-    if (noise(px + vec2<f32>(step_time * 3.1, step_time * 1.7)) > 0.9965) {
-        rgb = vec3<f32>(214.0, 226.0, 130.0) / 255.0;
-    }
     return rgb;
 }
 
