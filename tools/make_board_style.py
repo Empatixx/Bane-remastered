@@ -286,6 +286,77 @@ CREAM = (232, 214, 170)
 DEEP = (46, 30, 24)
 
 
+MUTATION_GLYPHS = [
+    [
+        ".........",
+        ".....X...",
+        "......X..",
+        "XXXXXXXXX",
+        "......X..",
+        ".....X...",
+        ".........",
+        ".........",
+        ".........",
+    ],
+    [
+        "X...X...X",
+        ".X.XXX.X.",
+        "..XXXXX..",
+        ".XXXXXXX.",
+        "XXXXXXXXX",
+        ".XXXXXXX.",
+        "..XXXXX..",
+        ".X.XXX.X.",
+        "X...X...X",
+    ],
+    [
+        "....X....",
+        "....X....",
+        "...XXX...",
+        "..XXXXX..",
+        ".XXXXXXX.",
+        ".XXXXXXX.",
+        ".XXXXXXX.",
+        "..XXXXX..",
+        "...XXX...",
+    ],
+    [
+        "....X....",
+        ".X..X..X.",
+        "..X.X.X..",
+        "...XXX...",
+        "XXXXXXXXX",
+        "...XXX...",
+        "..X.X.X..",
+        ".X..X..X.",
+        "....X....",
+    ],
+    [
+        ".........",
+        ".XXXXXXX.",
+        ".......X.",
+        "......X..",
+        ".....X...",
+        "....X....",
+        "...X.....",
+        ".XXXXXXX.",
+        ".........",
+    ],
+    [
+        "....X....",
+        "..XXXXX..",
+        ".XX.X.XX.",
+        ".X..X..X.",
+        "XXXXXXXXX",
+        ".X..X..X.",
+        ".XX.X.XX.",
+        "..XXXXX..",
+        "....X....",
+    ],
+]
+EPIC_INK = (226, 150, 255)
+
+
 def glyph(rows, ink, outline):
     size = 11
     image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
@@ -311,10 +382,10 @@ def upgrade_icons():
     return sheet
 
 
-def upgrade_node():
-    sheet = Image.new("RGBA", (16, 64), (0, 0, 0, 0))
-    for i, state in enumerate(["owned", "available", "locked", "chosen"]):
-        sheet.paste(node(state), (0, i * 16))
+def mutation_icons():
+    sheet = Image.new("RGBA", (11, 11 * len(MUTATION_GLYPHS)), (0, 0, 0, 0))
+    for i, rows in enumerate(MUTATION_GLYPHS):
+        sheet.paste(glyph(rows, EPIC_INK, LINE), (0, i * 11))
     return sheet
 
 
@@ -367,9 +438,10 @@ def main():
     notes.save(f"{OUT}/note_paper.tga")
     talent_icon().save(f"{OUT}/talent_icon.tga")
     upgrade_icons().save(f"{OUT}/upgrade_icons.tga")
+    mutation_icons().save(f"{OUT}/mutation_icons.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
-    preview([board, notes, talent_icon(), upgrade_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")
+    preview([board, notes, talent_icon(), upgrade_icons(), mutation_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")
 
 
 main()

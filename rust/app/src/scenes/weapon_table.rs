@@ -2,7 +2,7 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 use winit::keyboard::KeyCode;
 
-use crate::assets::{Assets, tex};
+use crate::assets::{Assets, Tex, tex};
 use crate::guns::GunKind;
 use crate::input::Input;
 use crate::render::{Align, FontSize};
@@ -32,21 +32,32 @@ const NAME_BASELINE: f32 = 62.0;
 const BAR_LEFT: f32 = 204.0;
 const BAR_WIDTH: f32 = 4.0;
 const CENTER_X: f32 = TREE_TOP_LEFT.x + TREE_SIZE.x / 2.0;
-const TITLE_Y: f32 = 66.0;
-const FACTS_Y: f32 = 90.0;
-const ROOT_TOP: f32 = 106.0;
-const TREE_STEP: Vec2 = Vec2::new(120.0, 86.0);
-const NODE_TOP: f32 = 226.0;
-const LABEL_BASELINE: f32 = 492.0;
+const TITLE_Y: f32 = 60.0;
+const FACTS_Y: f32 = 82.0;
+const ROOT_TOP: f32 = 94.0;
+const TREE_STEP: Vec2 = Vec2::new(120.0, 72.0);
+const NODE_TOP: f32 = 186.0;
+const RULE_Y: f32 = 340.0;
+const MUTATION_LABEL: f32 = 362.0;
+const MUTATION_TOP: f32 = 372.0;
+const MUTATION_NAME: f32 = 454.0;
+const REROLL_TOP: f32 = 462.0;
+const REROLL_SIZE: Vec2 = Vec2::new(108.0, 43.0);
+const REROLL_BASELINE: f32 = 27.0;
 const GLYPH: f32 = 32.0;
-const TIERS: usize = 3;
+const TIERS: usize = 2;
+const OFFERS: usize = 3;
+const MUTATION_COST: u32 = 400;
+const REROLL_COST: u32 = 100;
 const SAMPLE_GOLD: u32 = 1240;
 const ROW_FILL: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.5);
 const ROW_BACK: Vec4 = Vec4::new(0.28, 0.2, 0.2, 0.6);
 const ROW_RIM: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
+const EPIC_TEXT: Vec4 = Vec4::new(226.0 / 255.0, 150.0 / 255.0, 1.0, 1.0);
 const ROW_LAYER: i32 = 31;
 const GUN_LAYER: i32 = 33;
 const BAR_LAYER: i32 = 32;
+const RULE_LAYER: i32 = 31;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Branch {
@@ -75,6 +86,63 @@ impl Branch {
     }
 }
 
+struct Mutation {
+    short: &'static str,
+    name: &'static str,
+    description: [&'static str; 2],
+}
+
+const MUTATIONS: [Mutation; 6] = [
+    Mutation {
+        short: "Piercing",
+        name: "Piercing Rounds",
+        description: ["Bullets pierce", "the first enemy"],
+    },
+    Mutation {
+        short: "Explosive",
+        name: "Explosive Rounds",
+        description: ["Hits explode and hurt", "enemies nearby"],
+    },
+    Mutation {
+        short: "Venom",
+        name: "Venom Rounds",
+        description: ["Hits poison and leave", "a toxic pool"],
+    },
+    Mutation {
+        short: "Frost",
+        name: "Frost Rounds",
+        description: ["Hits chill and", "slow enemies"],
+    },
+    Mutation {
+        short: "Ricochet",
+        name: "Ricochet",
+        description: ["Bullets bounce", "off walls once"],
+    },
+    Mutation {
+        short: "Deadeye",
+        name: "Deadeye",
+        description: ["Every fifth shot", "is a critical hit"],
+    },
+];
+
+fn offer(kind: GunKind, rerolls: u32) -> [usize; OFFERS] {
+    let gun = GunKind::ALL
+        .iter()
+        .position(|other| *other == kind)
+        .unwrap_or(0) as u32;
+    let mut state = gun
+        .wrapping_mul(7919)
+        .wrapping_add(rerolls.wrapping_mul(104_729))
+        .wrapping_add(13);
+    let mut pool: Vec<usize> = (0..MUTATIONS.len()).collect();
+    let mut picked = [0; OFFERS];
+    for slot in &mut picked {
+        state = state.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+        *slot = pool.remove((state >> 16) as usize % pool.len());
+    }
+    picked
+}
+
 fn name(kind: GunKind) -> &'static str {
     match kind {
         GunKind::Pistol => "Pistol",
@@ -88,7 +156,7 @@ fn name(kind: GunKind) -> &'static str {
 }
 
 fn roman(tier: usize) -> &'static str {
-    ["I", "II", "III"][tier.min(TIERS - 1)]
+    ["I", "II"][tier.min(TIERS - 1)]
 }
 
 fn sample_level(kind: GunKind, branch: Branch) -> usize {
@@ -118,6 +186,24 @@ fn node_state(kind: GunKind, branch: Branch, tier: usize) -> BuyState {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Choice {
+    Node(usize, usize),
+    Mutation(usize),
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct Hover {
+    buy: bool,
+    reroll: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Icon {
+    Branch(usize),
+    Mutation(usize),
+}
+
 fn max_first() -> usize {
     GunKind::ALL.len().saturating_sub(VISIBLE_ROWS)
 }
@@ -137,33 +223,47 @@ fn node_top_left(branch: usize, tier: usize) -> Vec2 {
     )
 }
 
+fn mutation_top_left(slot: usize) -> Vec2 {
+    Vec2::new(column_x(slot) - TALENT / 2.0, MUTATION_TOP)
+}
+
 fn root_top_left() -> Vec2 {
     Vec2::new(CENTER_X - TALENT / 2.0, ROOT_TOP)
+}
+
+fn reroll_top_left() -> Vec2 {
+    Vec2::new(CENTER_X - REROLL_SIZE.x / 2.0, REROLL_TOP)
+}
+
+fn inside(point: Vec2, top_left: Vec2, size: Vec2) -> bool {
+    point.cmpge(top_left).all() && point.cmple(top_left + size).all()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Target {
     Weapon(usize),
-    Node(usize, usize),
+    Choice(Choice),
+    Reroll,
 }
 
 pub(crate) fn target_at(first: usize, point: Vec2) -> Option<Target> {
     let shown = GunKind::ALL.len().min(VISIBLE_ROWS);
-    if let Some(slot) = (0..shown).find(|slot| {
-        let top_left = row_top_left(*slot);
-        point.cmpge(top_left).all() && point.cmple(top_left + ROW_SIZE).all()
-    }) {
+    if let Some(slot) = (0..shown).find(|slot| inside(point, row_top_left(*slot), ROW_SIZE)) {
         return Some(Target::Weapon(first + slot));
     }
     for branch in 0..Branch::ALL.len() {
         for tier in 0..TIERS {
-            let top_left = node_top_left(branch, tier);
-            if point.cmpge(top_left).all() && point.cmple(top_left + TALENT).all() {
-                return Some(Target::Node(branch, tier));
+            if inside(point, node_top_left(branch, tier), Vec2::splat(TALENT)) {
+                return Some(Target::Choice(Choice::Node(branch, tier)));
             }
         }
     }
-    None
+    for slot in 0..OFFERS {
+        if inside(point, mutation_top_left(slot), Vec2::splat(TALENT)) {
+            return Some(Target::Choice(Choice::Mutation(slot)));
+        }
+    }
+    inside(point, reroll_top_left(), REROLL_SIZE).then_some(Target::Reroll)
 }
 
 fn on_buy_plate(point: Vec2) -> bool {
@@ -193,7 +293,8 @@ fn gun_picture(kind: GunKind, row: Vec2) -> Element {
 }
 
 fn node(
-    branch: usize,
+    icon: Icon,
+    quality: Quality,
     top_left: Vec2,
     state: BuyState,
     selected: bool,
@@ -204,20 +305,24 @@ fn node(
     } else {
         state
     };
+    let (texture, row, rows) = match icon {
+        Icon::Branch(branch) => (tex::UPGRADE_ICONS, branch, Branch::ALL.len()),
+        Icon::Mutation(index) => (tex::MUTATION_ICONS, index, MUTATIONS.len()),
+    };
     let mut elements = vec![
         Element::Image {
             texture: tex::TALENT_FRAME,
             top_left,
             size: Vec2::splat(TALENT),
-            cell: Some((frame_row(Quality::Common, shown), FRAME_ROWS)),
+            cell: Some((frame_row(quality, shown), FRAME_ROWS)),
             layer,
             alpha: 1.0,
         },
         Element::Image {
-            texture: tex::UPGRADE_ICONS,
+            texture,
             top_left: top_left + Vec2::splat((TALENT - GLYPH) / 2.0),
             size: Vec2::splat(GLYPH),
-            cell: Some((branch, Branch::ALL.len())),
+            cell: Some((row, rows)),
             layer: layer + 1,
             alpha: if state == BuyState::Locked {
                 LOCKED_ICON_ALPHA
@@ -239,7 +344,7 @@ fn node(
     elements
 }
 
-fn board(texture: crate::assets::Tex, top_left: Vec2, size: Vec2) -> Element {
+fn board(texture: Tex, top_left: Vec2, size: Vec2) -> Element {
     Element::Image {
         texture,
         top_left,
@@ -311,10 +416,88 @@ fn links(kind: GunKind) -> Vec<Element> {
     elements
 }
 
-fn detail(kind: GunKind, branch: usize, tier: usize, hover: bool) -> Vec<Element> {
-    let kind_of = Branch::ALL[branch];
-    let state = node_state(kind, kind_of, tier);
+fn mutation_row(kind: GunKind, rerolls: u32, choice: Option<Choice>, hover: Hover) -> Vec<Element> {
+    let mut elements = vec![
+        rect(
+            Vec2::new(TREE_TOP_LEFT.x + 40.0, RULE_Y),
+            Vec2::new(TREE_SIZE.x - 80.0, 2.0),
+            LINE_OFF,
+            RULE_LAYER,
+        ),
+        Element::Label {
+            content: "Choose a mutation".to_owned(),
+            position: Vec2::new(CENTER_X, MUTATION_LABEL),
+            color: EPIC_TEXT,
+            size: FontSize::Size16,
+            align: Align::Center,
+        },
+    ];
+    for (slot, index) in offer(kind, rerolls).into_iter().enumerate() {
+        elements.extend(node(
+            Icon::Mutation(index),
+            Quality::Epic,
+            mutation_top_left(slot),
+            BuyState::Owned,
+            choice == Some(Choice::Mutation(slot)),
+            FRAME_LAYER,
+        ));
+        elements.push(Element::Label {
+            content: MUTATIONS[index].short.to_owned(),
+            position: Vec2::new(column_x(slot), MUTATION_NAME),
+            color: ROW_RIM,
+            size: FontSize::Size16,
+            align: Align::Center,
+        });
+    }
+    let top_left = reroll_top_left();
+    elements.push(Element::Image {
+        texture: tex::MENU_PLATE_SMALL,
+        top_left,
+        size: REROLL_SIZE,
+        cell: Some((usize::from(hover.reroll), PLATE_ROWS)),
+        layer: FRAME_LAYER,
+        alpha: 1.0,
+    });
+    elements.push(Element::Label {
+        content: format!("Reroll {REROLL_COST} g"),
+        position: Vec2::new(CENTER_X, top_left.y + REROLL_BASELINE),
+        color: if hover.reroll {
+            HOVER_COLOR
+        } else {
+            MENU_COLOR
+        },
+        size: FontSize::Size16,
+        align: Align::Center,
+    });
+    elements
+}
+
+fn detail(kind: GunKind, choice: Choice, rerolls: u32, hover: bool) -> Vec<Element> {
     let centre_x = PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0;
+    let (icon, quality, state, title, lines, price) = match choice {
+        Choice::Node(branch, tier) => {
+            let kind_of = Branch::ALL[branch];
+            (
+                Icon::Branch(branch),
+                Quality::Common,
+                node_state(kind, kind_of, tier),
+                format!("{} {}", kind_of.name(), roman(tier)),
+                kind_of.description(),
+                cost(tier),
+            )
+        }
+        Choice::Mutation(slot) => {
+            let index = offer(kind, rerolls)[slot];
+            (
+                Icon::Mutation(index),
+                Quality::Epic,
+                BuyState::Available,
+                MUTATIONS[index].name.to_owned(),
+                MUTATIONS[index].description,
+                MUTATION_COST,
+            )
+        }
+    };
     let mut elements = vec![Element::Image {
         texture: tex::PAUSEBG,
         top_left: PANEL_TOP_LEFT,
@@ -324,20 +507,21 @@ fn detail(kind: GunKind, branch: usize, tier: usize, hover: bool) -> Vec<Element
         alpha: 1.0,
     }];
     elements.extend(node(
-        branch,
+        icon,
+        quality,
         Vec2::new(centre_x - TALENT / 2.0, PANEL_TALENT_Y),
         state,
         true,
         PANEL_LAYER + 2,
     ));
     elements.push(Element::Label {
-        content: format!("{} {}", kind_of.name(), roman(tier)),
+        content: title,
         position: Vec2::new(centre_x, TITLE_BASELINE),
         color: MENU_COLOR,
         size: FontSize::Size22,
         align: Align::Center,
     });
-    for (index, line) in kind_of.description().iter().enumerate() {
+    for (index, line) in lines.iter().enumerate() {
         elements.push(Element::Label {
             content: (*line).to_owned(),
             position: Vec2::new(centre_x, DESCRIPTION_TOP + DESCRIPTION_STEP * index as f32),
@@ -374,7 +558,7 @@ fn detail(kind: GunKind, branch: usize, tier: usize, hover: bool) -> Vec<Element
     });
     if state != BuyState::Owned {
         elements.push(Element::Label {
-            content: format!("Cost: {} gold", cost(tier)),
+            content: format!("Cost: {price} gold"),
             position: Vec2::new(centre_x, COST_BASELINE),
             color: if state == BuyState::Locked {
                 BLOCKED_COLOR
@@ -391,8 +575,9 @@ fn detail(kind: GunKind, branch: usize, tier: usize, hover: bool) -> Vec<Element
 pub(crate) fn layout(
     first: usize,
     selected: usize,
-    node_choice: Option<(usize, usize)>,
-    hover_buy: bool,
+    choice: Option<Choice>,
+    rerolls: u32,
+    hover: Hover,
 ) -> Vec<Element> {
     let kind = GunKind::ALL[selected.min(GunKind::ALL.len() - 1)];
     let spec = kind.spec();
@@ -406,8 +591,12 @@ pub(crate) fn layout(
         let other = GunKind::ALL[index];
         let top_left = row_top_left(slot);
         let chosen = index == selected;
-        let rim = if chosen { HOVER_COLOR } else { ROW_RIM };
-        elements.push(rect(top_left, ROW_SIZE, rim, ROW_LAYER));
+        elements.push(rect(
+            top_left,
+            ROW_SIZE,
+            if chosen { HOVER_COLOR } else { ROW_RIM },
+            ROW_LAYER,
+        ));
         elements.push(rect(
             top_left + Vec2::splat(2.0),
             ROW_SIZE - Vec2::splat(4.0),
@@ -455,23 +644,18 @@ pub(crate) fn layout(
     });
     elements.extend(links(kind));
     for (branch, kind_of) in Branch::ALL.iter().enumerate() {
-        elements.push(Element::Label {
-            content: kind_of.name().to_owned(),
-            position: Vec2::new(column_x(branch), LABEL_BASELINE),
-            color: ROW_RIM,
-            size: FontSize::Size16,
-            align: Align::Center,
-        });
         for tier in 0..TIERS {
             elements.extend(node(
-                branch,
+                Icon::Branch(branch),
+                Quality::Common,
                 node_top_left(branch, tier),
                 node_state(kind, *kind_of, tier),
-                node_choice == Some((branch, tier)),
+                choice == Some(Choice::Node(branch, tier)),
                 FRAME_LAYER,
             ));
         }
     }
+    elements.extend(mutation_row(kind, rerolls, choice, hover));
     elements.push(Element::Image {
         texture: tex::MENU_PLATE,
         top_left: COUNTER_CENTER - COUNTER_SIZE / 2.0,
@@ -487,8 +671,8 @@ pub(crate) fn layout(
         size: FontSize::Size27,
         align: Align::Center,
     });
-    if let Some((branch, tier)) = node_choice {
-        elements.extend(detail(kind, branch, tier, hover_buy));
+    if let Some(choice) = choice {
+        elements.extend(detail(kind, choice, rerolls, hover.buy));
     }
     elements
 }
@@ -498,8 +682,9 @@ pub(crate) struct WeaponTable {
     open: bool,
     first: usize,
     selected: usize,
-    node: Option<(usize, usize)>,
-    hover_buy: bool,
+    choice: Option<Choice>,
+    rerolls: u32,
+    hover: Hover,
     dirty: bool,
 }
 
@@ -512,18 +697,17 @@ impl WeaponTable {
         if self.open {
             self.close(world);
         } else {
-            self.open = true;
-            self.first = 0;
-            self.selected = 0;
-            self.node = None;
-            self.hover_buy = false;
+            *self = Self {
+                open: true,
+                ..Self::default()
+            };
             self.rebuild(world, assets);
         }
     }
 
     pub(crate) fn close(&mut self, world: &mut World) {
         self.open = false;
-        self.hover_buy = false;
+        self.hover = Hover::default();
         clear(world);
     }
 
@@ -532,6 +716,17 @@ impl WeaponTable {
         if moved != self.first {
             self.first = moved;
             self.dirty = true;
+        }
+    }
+
+    fn can_buy(&self) -> bool {
+        match self.choice {
+            Some(Choice::Node(branch, tier)) => {
+                node_state(GunKind::ALL[self.selected], Branch::ALL[branch], tier)
+                    == BuyState::Available
+            }
+            Some(Choice::Mutation(_)) => true,
+            None => false,
         }
     }
 
@@ -547,24 +742,32 @@ impl WeaponTable {
             self.scroll(-1);
         }
         let point = input.mouse();
-        let can_buy = self.node.is_some_and(|(branch, tier)| {
-            node_state(GunKind::ALL[self.selected], Branch::ALL[branch], tier)
-                == BuyState::Available
-        });
-        let hover_buy = can_buy && on_buy_plate(point);
-        if hover_buy != self.hover_buy {
-            self.hover_buy = hover_buy;
+        let target = target_at(self.first, point);
+        let hover = Hover {
+            buy: self.can_buy() && on_buy_plate(point),
+            reroll: target == Some(Target::Reroll),
+        };
+        if hover != self.hover {
+            self.hover = hover;
             self.dirty = true;
         }
         if input.clicked() {
-            match target_at(self.first, point) {
+            match target {
                 Some(Target::Weapon(index)) if index != self.selected => {
                     self.selected = index;
-                    self.node = None;
+                    self.choice = None;
+                    self.rerolls = 0;
                     self.dirty = true;
                 }
-                Some(Target::Node(branch, tier)) => {
-                    self.node = Some((branch, tier));
+                Some(Target::Choice(choice)) => {
+                    self.choice = Some(choice);
+                    self.dirty = true;
+                }
+                Some(Target::Reroll) => {
+                    self.rerolls += 1;
+                    if matches!(self.choice, Some(Choice::Mutation(_))) {
+                        self.choice = None;
+                    }
                     self.dirty = true;
                 }
                 _ => {}
@@ -578,7 +781,13 @@ impl WeaponTable {
 
     fn rebuild(&self, world: &mut World, assets: &Assets) {
         clear(world);
-        for element in layout(self.first, self.selected, self.node, self.hover_buy) {
+        for element in layout(
+            self.first,
+            self.selected,
+            self.choice,
+            self.rerolls,
+            self.hover,
+        ) {
             spawn(world, element, assets);
         }
     }
@@ -598,7 +807,7 @@ mod tests {
             .collect()
     }
 
-    fn images(elements: &[Element], wanted: crate::assets::Tex) -> usize {
+    fn images(elements: &[Element], wanted: Tex) -> usize {
         elements
             .iter()
             .filter(
@@ -607,9 +816,13 @@ mod tests {
             .count()
     }
 
+    fn plain(first: usize, selected: usize) -> Vec<Element> {
+        layout(first, selected, None, 0, Hover::default())
+    }
+
     #[test]
     fn each_visible_row_shows_the_picture_of_its_weapon() {
-        let elements = layout(0, 0, None, false);
+        let elements = plain(0, 0);
 
         for kind in &GunKind::ALL[..VISIBLE_ROWS] {
             assert_eq!(images(&elements, kind.spec().texture), 1, "{kind:?}");
@@ -624,7 +837,7 @@ mod tests {
     #[test]
     fn scrolling_brings_the_hidden_weapons_into_view() {
         let last = GunKind::ALL[GunKind::ALL.len() - 1];
-        let elements = layout(max_first(), 0, None, false);
+        let elements = plain(max_first(), 0);
 
         assert_eq!(images(&elements, last.spec().texture), 1);
         assert!(labels(&elements).contains(&name(last).to_string()));
@@ -657,31 +870,75 @@ mod tests {
     }
 
     #[test]
-    fn the_tree_has_three_branches_of_three_tiers_for_every_weapon() {
+    fn the_tree_has_three_branches_of_two_tiers_and_three_offered_mutations() {
         for selected in 0..GunKind::ALL.len() {
-            let elements = layout(0, selected, None, false);
+            let elements = plain(0, selected);
 
             assert_eq!(images(&elements, tex::TALENT_FRAME), 9);
-            assert_eq!(images(&elements, tex::UPGRADE_ICONS), 9);
+            assert_eq!(images(&elements, tex::UPGRADE_ICONS), 6);
+            assert_eq!(images(&elements, tex::MUTATION_ICONS), OFFERS);
             assert_eq!(images(&elements, tex::TALENT_ROOT), 1);
         }
     }
 
     #[test]
-    fn the_detail_panel_appears_only_for_a_chosen_node() {
-        let without = layout(0, 0, None, false);
-        let with = layout(0, 0, Some((0, 0)), false);
+    fn an_offer_has_distinct_mutations_and_is_stable() {
+        for kind in GunKind::ALL {
+            for rerolls in 0..20 {
+                let picked = offer(kind, rerolls);
 
-        assert_eq!(images(&without, tex::PAUSEBG), 0);
+                assert!(picked.iter().all(|index| *index < MUTATIONS.len()));
+                assert!(picked[0] != picked[1] && picked[1] != picked[2] && picked[0] != picked[2]);
+                assert_eq!(picked, offer(kind, rerolls));
+            }
+        }
+    }
+
+    #[test]
+    fn rerolling_changes_the_offer() {
+        for kind in GunKind::ALL {
+            let first = offer(kind, 0);
+
+            assert!(
+                (1..20).any(|rerolls| offer(kind, rerolls) != first),
+                "{kind:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_offered_mutations_are_named_under_their_cards_and_a_reroll_button_is_shown() {
+        let shown = labels(&plain(0, 0));
+
+        for index in offer(GunKind::ALL[0], 0) {
+            assert!(shown.contains(&MUTATIONS[index].short.to_string()));
+        }
+        assert!(shown.contains(&format!("Reroll {REROLL_COST} g")));
+    }
+
+    #[test]
+    fn a_chosen_mutation_opens_the_detail_panel_with_its_description() {
+        let index = offer(GunKind::ALL[0], 0)[1];
+        let with = layout(0, 0, Some(Choice::Mutation(1)), 0, Hover::default());
+        let shown = labels(&with);
+
         assert_eq!(images(&with, tex::PAUSEBG), 1);
-        assert!(labels(&with).contains(&"Damage I".to_string()));
-        assert!(labels(&with).iter().any(|text| text.starts_with("Cost: ")));
+        assert!(shown.contains(&MUTATIONS[index].name.to_string()));
+        assert!(shown.contains(&format!("Cost: {MUTATION_COST} gold")));
+        assert_eq!(images(&plain(0, 0), tex::PAUSEBG), 0);
+    }
+
+    #[test]
+    fn a_chosen_node_fills_the_detail_panel() {
+        let shown = labels(&layout(0, 0, Some(Choice::Node(0, 0)), 0, Hover::default()));
+
+        assert!(shown.contains(&"Damage I".to_string()));
     }
 
     #[test]
     fn the_header_shows_the_real_stats_of_the_selected_weapon() {
         let spec = GunKind::Shotgun.spec();
-        let shown = labels(&layout(0, 1, None, false)).join(" ");
+        let shown = labels(&plain(0, 1)).join(" ");
 
         assert!(shown.contains(&format!("Damage {}-{}", spec.min_damage, spec.max_damage)));
         assert!(shown.contains(&format!("Clip {}", spec.clip_size)));
@@ -703,19 +960,26 @@ mod tests {
     }
 
     #[test]
-    fn the_pointer_follows_the_scrolled_list() {
+    fn the_pointer_finds_weapons_nodes_mutations_and_reroll() {
+        let near = Vec2::splat(4.0);
+
         assert_eq!(
-            target_at(0, row_top_left(3) + Vec2::splat(4.0)),
+            target_at(0, row_top_left(3) + near),
             Some(Target::Weapon(3))
         );
         assert_eq!(
-            target_at(1, row_top_left(3) + Vec2::splat(4.0)),
+            target_at(1, row_top_left(3) + near),
             Some(Target::Weapon(4))
         );
         assert_eq!(
-            target_at(0, node_top_left(1, 2) + Vec2::splat(4.0)),
-            Some(Target::Node(1, 2))
+            target_at(0, node_top_left(1, 1) + near),
+            Some(Target::Choice(Choice::Node(1, 1)))
         );
+        assert_eq!(
+            target_at(0, mutation_top_left(2) + near),
+            Some(Target::Choice(Choice::Mutation(2)))
+        );
+        assert_eq!(target_at(0, reroll_top_left() + near), Some(Target::Reroll));
         assert_eq!(target_at(0, Vec2::ZERO), None);
         assert!(on_buy_plate(PLATE_CENTER));
     }
@@ -726,12 +990,18 @@ mod tests {
         let tree_end = TREE_TOP_LEFT + TREE_SIZE;
         let last_row = row_top_left(VISIBLE_ROWS - 1) + ROW_SIZE;
         let last_node = node_top_left(Branch::ALL.len() - 1, TIERS - 1) + Vec2::splat(TALENT);
+        let last_card = mutation_top_left(OFFERS - 1) + Vec2::splat(TALENT);
+        let reroll_end = reroll_top_left() + REROLL_SIZE;
 
         assert!(last_row.y < list_end.y - 12.0);
         assert!(BAR_LEFT + BAR_WIDTH < list_end.x - 12.0);
-        assert!(last_node.x < tree_end.x - 18.0);
-        assert!(last_node.y < LABEL_BASELINE - 16.0);
-        assert!(LABEL_BASELINE < tree_end.y - 12.0);
+        assert!(last_node.y < RULE_Y);
+        const { assert!(RULE_Y < MUTATION_LABEL - 12.0) };
+        const { assert!(MUTATION_LABEL < MUTATION_TOP) };
+        assert!(last_card.y < MUTATION_NAME - 12.0);
+        assert!(MUTATION_NAME < reroll_top_left().y);
+        assert!(reroll_end.y < tree_end.y - 18.0);
+        assert!(last_card.x < tree_end.x - 18.0);
         assert!(list_end.x < TREE_TOP_LEFT.x);
         assert!(tree_end.x < PANEL_TOP_LEFT.x);
     }
@@ -739,6 +1009,6 @@ mod tests {
     #[test]
     fn upgrade_costs_grow_with_the_tier() {
         assert!(cost(1) > cost(0));
-        assert!(cost(2) > cost(1));
+        assert!(MUTATION_COST > cost(TIERS - 1));
     }
 }
