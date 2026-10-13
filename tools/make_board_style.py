@@ -268,6 +268,39 @@ GLYPHS = {
         "..XX.....",
         ".........",
     ],
+    "reload": [
+        ".XXXXX...",
+        "X.....XXX",
+        "X......XX",
+        "X.......X",
+        "X.......X",
+        "X.......X",
+        ".X.....X.",
+        "..XXXXX..",
+        ".........",
+    ],
+    "accuracy": [
+        "....X....",
+        "....X....",
+        ".........",
+        ".........",
+        "XX..X..XX",
+        ".........",
+        ".........",
+        "....X....",
+        "....X....",
+    ],
+    "crit": [
+        "....X....",
+        "...XXX...",
+        "...XXX...",
+        ".XXXXXXX.",
+        "XXXXXXXXX",
+        ".XXXXXXX.",
+        "...XXX...",
+        "...XXX...",
+        "....X....",
+    ],
     "magazine": [
         ".........",
         ".X..X..X.",
@@ -375,8 +408,8 @@ def glyph(rows, ink, outline):
 
 
 def upgrade_icons():
-    names = ["damage", "rate", "magazine"]
-    sheet = Image.new("RGBA", (11, 11 * 3), (0, 0, 0, 0))
+    names = ["damage", "rate", "magazine", "reload", "accuracy", "crit"]
+    sheet = Image.new("RGBA", (11, 11 * len(names)), (0, 0, 0, 0))
     for i, name in enumerate(names):
         sheet.paste(glyph(GLYPHS[name], TALENT_ORANGE, LINE), (0, i * 11))
     return sheet
