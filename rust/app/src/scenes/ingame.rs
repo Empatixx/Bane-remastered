@@ -392,7 +392,7 @@ impl Scene for InGameScene {
         systems::burn_fuses(&mut self.world, &mut self.physics, dt);
         systems::tick_hatchers(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::tick_web_spitters(&mut self.world, &assets.textures, dt);
-        systems::tick_leapers(&mut self.world, &assets.textures, &mut self.sounds, dt);
+        systems::tick_leapers(&mut self.world, &mut self.sounds, dt);
         systems::tick_armageddon(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);

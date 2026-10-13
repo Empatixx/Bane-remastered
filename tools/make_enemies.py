@@ -209,19 +209,10 @@ def sheet_strider():
     return sheet
 
 
-def leap_mark():
-    image = Image.new("RGBA", (32, 16), (0, 0, 0, 0))
-    d = ImageDraw.Draw(image)
-    d.ellipse((1, 1, 30, 14), fill=(60, 16, 20, 110), outline=(226, 80, 56, 210))
-    d.ellipse((5, 4, 26, 11), outline=(226, 80, 56, 140))
-    return image
-
-
 def main():
     bloated_sheet().save(OUT / "bloated_spider.tga")
     cloud_sheet().save(OUT / "toxic_cloud.tga")
     sheet_strider().save(OUT / "stilt_spider.tga")
-    leap_mark().save(OUT / "leap_mark.tga")
 
 
 main()

@@ -20,6 +20,8 @@ const PENTAGRAM_SIZE: Vec2 = Vec2::new(225.0, 120.0);
 const BOOK_SIZE: Vec2 = Vec2::new(64.0, 64.0);
 const CHAINS_SIZE: Vec2 = Vec2::new(64.0, 128.0);
 const KEY_SIZE: Vec2 = Vec2::new(33.0, 36.0);
+const SPACE_KEY_SIZE: Vec2 = Vec2::new(99.0, 36.0);
+const SPACE_LABEL_GAP_X: f32 = 120.0;
 
 const TABLES: usize = 3;
 const SHOP_CARPET_COLUMNS: usize = 2;
@@ -54,6 +56,7 @@ pub(crate) enum Key {
     A,
     S,
     D,
+    Space,
 }
 
 impl Key {
@@ -68,6 +71,7 @@ impl Key {
             Self::A => tex::KEYBOARD_A,
             Self::S => tex::KEYBOARD_S,
             Self::D => tex::KEYBOARD_D,
+            Self::Space => tex::KEYBOARD_SPACE,
         }
     }
 }
@@ -342,6 +346,20 @@ fn start(frame: &Frame) -> Furnishing {
             Vec2::ZERO,
         ));
     }
+    let space_top = HINT_TOP + hints.len() as f32 * HINT_STEP;
+    fixtures.push(frame.place(
+        FixtureKind::Key(Key::Space),
+        Vec2::new(middle, space_top),
+        SPACE_KEY_SIZE,
+    ));
+    fixtures.push(frame.place(
+        FixtureKind::Label {
+            text: "Dodge",
+            centered: false,
+        },
+        Vec2::new(middle + SPACE_LABEL_GAP_X, space_top + LABEL_GAP.y),
+        Vec2::ZERO,
+    ));
     let movement = [
         (Key::W, -150.0, MOVEMENT_TOP),
         (Key::S, -150.0, MOVEMENT_TOP + HINT_STEP),
@@ -417,10 +435,11 @@ mod tests {
     }
 
     #[test]
-    fn the_start_room_teaches_seven_keys() {
+    fn the_start_room_teaches_ten_keys_including_the_dodge_space_bar() {
         let room = furnish(RoomKind::Start, 20, 16);
-        assert_eq!(count(&room, |k| matches!(k, FixtureKind::Key(_))), 9);
-        assert_eq!(count(&room, |k| matches!(k, FixtureKind::Label { .. })), 6);
+        assert_eq!(count(&room, |k| matches!(k, FixtureKind::Key(_))), 10);
+        assert_eq!(count(&room, |k| matches!(k, FixtureKind::Label { .. })), 7);
+        assert_eq!(count(&room, |k| *k == FixtureKind::Key(Key::Space)), 1);
     }
 
     #[test]

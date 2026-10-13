@@ -1,16 +1,13 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::assets::{Textures, tex};
 use crate::audio::AudioCommand;
 use crate::components::{
-    Animation, Color, ContactDamage, Despawn, Dodge, Expiring, Frozen, Health, Layer, LeapStage,
-    Leaper, Player, Position, Rooted, Size, Spawning, Sprite, Velocity,
+    Animation, ContactDamage, Dodge, Expiring, Frozen, Health, Layer, LeapStage, Leaper, Player,
+    Position, Rooted, Spawning, Velocity,
 };
 use crate::enemies;
 use crate::systems::damage::hurt_player;
-
-const MARK_SIZE: Vec2 = Vec2::new(224.0, 112.0);
 
 struct Event {
     entity: Entity,
@@ -19,8 +16,8 @@ struct Event {
 }
 
 enum Step {
-    Crouch(Vec2),
-    Launch,
+    Crouch,
+    Launch(Vec2),
     Land,
     Recover,
 }
@@ -35,12 +32,7 @@ fn player_at(world: &World) -> Option<(Entity, Vec2)> {
         .next()
 }
 
-pub(crate) fn tick_leapers(
-    world: &mut World,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_leapers(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
     let target = player_at(world);
     let mut events = Vec::new();
     for (entity, position, leaper, velocity) in world
@@ -61,7 +53,7 @@ pub(crate) fn tick_leapers(
                             events.push(Event {
                                 entity,
                                 position: position.0,
-                                step: Step::Crouch(at),
+                                step: Step::Crouch,
                             });
                         }
                     }
@@ -70,10 +62,11 @@ pub(crate) fn tick_leapers(
             LeapStage::Crouch => {
                 velocity.0 = Vec2::ZERO;
                 if leaper.timer <= 0.0 {
+                    let at = target.map_or(position.0, |(_, at)| at);
                     events.push(Event {
                         entity,
                         position: position.0,
-                        step: Step::Launch,
+                        step: Step::Launch(at),
                     });
                 }
             }
@@ -101,7 +94,7 @@ pub(crate) fn tick_leapers(
         }
     }
     for event in events {
-        apply(world, textures, sounds, target, event);
+        apply(world, sounds, target, event);
     }
 }
 
@@ -117,35 +110,24 @@ fn play(world: &mut World, entity: Entity, clip: crate::components::Clip) {
 
 fn apply(
     world: &mut World,
-    textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
     target: Option<(Entity, Vec2)>,
     event: Event,
 ) {
     let entity = event.entity;
     match event.step {
-        Step::Crouch(at) => {
+        Step::Crouch => {
             let _ = world.insert_one(entity, Rooted);
             if let Ok(mut leaper) = world.get::<&mut Leaper>(entity) {
                 leaper.stage = LeapStage::Crouch;
                 leaper.timer = enemies::LEAP_CROUCH_SECONDS;
-                leaper.target = at;
             }
             play(world, entity, enemies::crouch_clip());
-            world.spawn((
-                Despawn {
-                    remaining: enemies::LEAP_CROUCH_SECONDS + enemies::LEAP_AIR_SECONDS + 0.3,
-                },
-                Position(at),
-                Size(MARK_SIZE),
-                Color(Vec4::ONE),
-                Sprite::whole(textures.get(tex::LEAP_MARK)),
-                Layer(-1),
-            ));
         }
-        Step::Launch => {
+        Step::Launch(at) => {
             let _ = world.remove_one::<ContactDamage>(entity);
             if let Ok(mut leaper) = world.get::<&mut Leaper>(entity) {
+                leaper.target = at;
                 leaper.stage = LeapStage::Airborne;
                 leaper.timer = enemies::LEAP_AIR_SECONDS;
             }
@@ -199,6 +181,7 @@ fn apply(
 
 #[cfg(test)]
 mod tests {
+    use crate::assets::Textures;
     use crate::components::Armor;
     use crate::enemies::EnemyKind;
     use crate::physics::Physics;
@@ -232,7 +215,7 @@ mod tests {
     fn run(world: &mut World, seconds: f32) {
         let mut sounds = Vec::new();
         for _ in 0..(seconds / STEP) as usize {
-            tick_leapers(world, &Textures::default(), &mut sounds, STEP);
+            tick_leapers(world, &mut sounds, STEP);
         }
     }
 
@@ -244,12 +227,11 @@ mod tests {
     }
 
     #[test]
-    fn it_crouches_and_marks_the_landing_when_the_player_is_in_range() {
+    fn it_crouches_without_showing_where_it_will_land_when_the_player_is_in_range() {
         let (mut world, _, spider) = arena(300.0);
         run(&mut world, enemies::LEAP_FIRST_COOLDOWN + 0.1);
         assert_eq!(stage(&world, spider), LeapStage::Crouch);
         assert!(world.get::<&Rooted>(spider).is_ok());
-        assert_eq!(world.query::<&Despawn>().iter().count(), 1);
     }
 
     #[test]
@@ -292,7 +274,7 @@ mod tests {
         let (mut safe_world, safe_player, _) = arena(300.0);
         run(
             &mut safe_world,
-            enemies::LEAP_FIRST_COOLDOWN + enemies::LEAP_CROUCH_SECONDS + 0.05,
+            enemies::LEAP_FIRST_COOLDOWN + enemies::LEAP_CROUCH_SECONDS + 0.1,
         );
         if let Ok(mut position) = safe_world.get::<&mut Position>(safe_player) {
             position.0 += Vec2::new(0.0, 400.0);
