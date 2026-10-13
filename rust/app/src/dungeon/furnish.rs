@@ -21,7 +21,8 @@ const BOOK_SIZE: Vec2 = Vec2::new(64.0, 64.0);
 const CHAINS_SIZE: Vec2 = Vec2::new(64.0, 128.0);
 const KEY_SIZE: Vec2 = Vec2::new(33.0, 36.0);
 const SPACE_KEY_SIZE: Vec2 = Vec2::new(99.0, 36.0);
-const SPACE_LABEL_GAP_X: f32 = 120.0;
+const SPACE_LABEL_GAP_X: f32 = 12.0;
+const SPACE_BELOW_MOVEMENT: f32 = 55.0;
 
 const TABLES: usize = 3;
 const SHOP_CARPET_COLUMNS: usize = 2;
@@ -346,20 +347,6 @@ fn start(frame: &Frame) -> Furnishing {
             Vec2::ZERO,
         ));
     }
-    let space_top = HINT_TOP + hints.len() as f32 * HINT_STEP;
-    fixtures.push(frame.place(
-        FixtureKind::Key(Key::Space),
-        Vec2::new(middle, space_top),
-        SPACE_KEY_SIZE,
-    ));
-    fixtures.push(frame.place(
-        FixtureKind::Label {
-            text: "Dodge",
-            centered: false,
-        },
-        Vec2::new(middle + SPACE_LABEL_GAP_X, space_top + LABEL_GAP.y),
-        Vec2::ZERO,
-    ));
     let movement = [
         (Key::W, -150.0, MOVEMENT_TOP),
         (Key::S, -150.0, MOVEMENT_TOP + HINT_STEP),
@@ -376,6 +363,24 @@ fn start(frame: &Frame) -> Furnishing {
             centered: true,
         },
         Vec2::new(label_center, MOVEMENT_LABEL_TOP),
+        Vec2::ZERO,
+    ));
+    let space_top = MOVEMENT_LABEL_TOP + SPACE_BELOW_MOVEMENT;
+    let space_left = label_center - SPACE_KEY_SIZE.x / 2.0;
+    fixtures.push(frame.place(
+        FixtureKind::Key(Key::Space),
+        Vec2::new(space_left, space_top),
+        SPACE_KEY_SIZE,
+    ));
+    fixtures.push(frame.place(
+        FixtureKind::Label {
+            text: "Dodge",
+            centered: false,
+        },
+        Vec2::new(
+            space_left + SPACE_KEY_SIZE.x + SPACE_LABEL_GAP_X,
+            space_top + LABEL_GAP.y,
+        ),
         Vec2::ZERO,
     ));
     Furnishing {
