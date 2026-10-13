@@ -216,6 +216,36 @@ pub(crate) fn decor(
         DecorKind::FrostBarrel => breakable(world, physics, BreakKind::Frost, centered, textures),
         DecorKind::Flamethrower => flamethrower(world, top_left, textures),
         DecorKind::FireGeyser => fire_geyser(world, top_left, textures),
+        DecorKind::Icicles { variant } => prop(
+            world,
+            Prop::Icicles,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
+        DecorKind::IceCrystals { variant } => prop(
+            world,
+            Prop::IceCrystals,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
+        DecorKind::FrozenSkull => prop(world, Prop::FrozenSkull, top_left, Look::DEFAULT, textures),
+        DecorKind::Cocoon { variant } => prop(
+            world,
+            Prop::Cocoon,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
+        DecorKind::EggSac { variant } => prop(
+            world,
+            Prop::EggSac,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
+        DecorKind::WebSkull => prop(world, Prop::WebSkull, top_left, Look::DEFAULT, textures),
         DecorKind::IcePatch => {
             floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
         }

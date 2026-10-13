@@ -42,6 +42,12 @@ pub(crate) enum DecorKind {
     IcePatch,
     WebPatch,
     ArrowTrap,
+    Icicles { variant: usize },
+    IceCrystals { variant: usize },
+    FrozenSkull,
+    Cocoon { variant: usize },
+    EggSac { variant: usize },
+    WebSkull,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -145,6 +151,8 @@ impl Planner<'_> {
         rng.pick(&usable).map(|candidate| **candidate)
     }
 }
+
+type ThemedSlot<'a> = (usize, &'a [Candidate], usize, fn(usize) -> DecorKind);
 
 fn patch_tiles(tile: (usize, usize)) -> [(usize, usize); 4] {
     [
@@ -327,6 +335,48 @@ pub(crate) fn plan(
                 }
             }
         }
+        let hugging: Vec<Candidate> = open_floor
+            .iter()
+            .filter(|candidate| {
+                let (column, row) = (candidate.tile.0 as isize, candidate.tile.1 as isize);
+                [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .iter()
+                    .any(|(dx, dy)| planner.wall(column + dx, row + dy))
+            })
+            .copied()
+            .collect();
+        let themed: [ThemedSlot; 6] = [
+            (mix.icicles, &top_faces, 3, |variant| DecorKind::Icicles {
+                variant,
+            }),
+            (mix.crystals, &hugging, 2, |variant| {
+                DecorKind::IceCrystals { variant }
+            }),
+            (mix.frozen_skulls, &open_floor, 1, |_| {
+                DecorKind::FrozenSkull
+            }),
+            (mix.cocoons, &hugging, 2, |variant| DecorKind::Cocoon {
+                variant,
+            }),
+            (mix.egg_sacs, &hugging, 2, |variant| DecorKind::EggSac {
+                variant,
+            }),
+            (mix.web_skulls, &open_floor, 1, |_| DecorKind::WebSkull),
+        ];
+        for (amount, spots, variants, make) in themed {
+            if amount == 0 {
+                continue;
+            }
+            for _ in 0..1 + rng.below(amount) {
+                if let Some(spot) = planner.pick(spots, rng) {
+                    planner.take(spot.tile);
+                    decor.push(Decor {
+                        kind: make(rng.below(variants)),
+                        tile: spot.tile,
+                    });
+                }
+            }
+        }
         if mix.arrow_traps > 0 {
             for _ in 0..1 + rng.below(mix.arrow_traps) {
                 if let Some(spot) = planner.pick(&top_faces, rng) {
@@ -480,6 +530,7 @@ mod tests {
                         DecorKind::Banner
                         | DecorKind::Flamethrower
                         | DecorKind::ArrowTrap
+                        | DecorKind::Icicles { .. }
                         | DecorKind::Torch {
                             mount: Mount::Top, ..
                         } => {
@@ -516,7 +567,13 @@ mod tests {
                                 assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
                             }
                         }
-                        DecorKind::Bones { .. } | DecorKind::Spike => {
+                        DecorKind::Bones { .. }
+                        | DecorKind::Spike
+                        | DecorKind::IceCrystals { .. }
+                        | DecorKind::FrozenSkull
+                        | DecorKind::Cocoon { .. }
+                        | DecorKind::EggSac { .. }
+                        | DecorKind::WebSkull => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                         }
                     }

@@ -28,6 +28,12 @@ pub(crate) struct TrapMix {
     pub(crate) ice_patches: usize,
     pub(crate) web_patches: usize,
     pub(crate) arrow_traps: usize,
+    pub(crate) icicles: usize,
+    pub(crate) crystals: usize,
+    pub(crate) frozen_skulls: usize,
+    pub(crate) cocoons: usize,
+    pub(crate) egg_sacs: usize,
+    pub(crate) web_skulls: usize,
 }
 
 const FIRST_FLOOR: Theme = Theme::Spider;
@@ -116,6 +122,12 @@ impl Theme {
             ice_patches: if self == Self::Ice { 3 } else { 0 },
             web_patches: if self == Self::Spider { 3 } else { 0 },
             arrow_traps: if self == Self::Temple { 2 } else { 0 },
+            icicles: if self == Self::Ice { 5 } else { 0 },
+            crystals: if self == Self::Ice { 3 } else { 0 },
+            frozen_skulls: if self == Self::Ice { 2 } else { 0 },
+            cocoons: if self == Self::Spider { 3 } else { 0 },
+            egg_sacs: if self == Self::Spider { 2 } else { 0 },
+            web_skulls: if self == Self::Spider { 2 } else { 0 },
         }
     }
 }

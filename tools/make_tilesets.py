@@ -188,27 +188,24 @@ def line(tile, start, end, colour):
     draw.line([start, end], fill=colour)
 
 
-def dots(tile, rng, colours, amount):
-    placed = []
-    for _ in range(amount * 6):
-        if len(placed) >= amount:
-            break
-        x, y = rng.randrange(1, TILE - 1), rng.randrange(1, TILE - 1)
-        if all(abs(x - px) > 1 or abs(y - py) > 1 for px, py in placed):
-            tile.putpixel((x, y), rng.choice(colours))
-            placed.append((x, y))
+def tone(tile, factor):
+    out = tile.copy()
+    for y in range(tile.height):
+        for x in range(tile.width):
+            pixel = tile.getpixel((x, y))
+            if pixel[3]:
+                out.putpixel((x, y), shade(pixel, factor) if pixel[:3] != (0, 0, 0) else pixel)
+    return out
+
+
+TONES = [0.94, 1.05, 0.97, 1.03, 0.92, 1.07, 0.99, 1.01]
 
 
 def extra_floor(plain, name, k):
-    r = random.Random(1000 + k * 17 + len(name))
     tile = plain.copy()
-    base = plain.getpixel((8, 8))
-    colours = [shade(base, 0.82), shade(base, 1.2)]
-    accent = ACCENT[name]
-    if accent and name != "lava":
-        colours.append(accent)
-    dots(tile, r, colours, [2, 3, 3, 4, 4, 5, 6, 7][k % EXTRA])
-    return tile
+    if k % 2:
+        tile = tile.transpose(Image.FLIP_LEFT_RIGHT)
+    return tone(tile, TONES[k % len(TONES)])
 
 
 EDGE_GROUPS = [
@@ -227,16 +224,12 @@ def mutate_edge(tile, bodies, name, flip, rng):
         out = out.transpose(Image.FLIP_LEFT_RIGHT)
     if flip == "v" and rng.random() < 0.5:
         out = out.transpose(Image.FLIP_TOP_BOTTOM)
-    body = [(x, y) for y in range(TILE) for x in range(TILE) if out.getpixel((x, y))[:3] in bodies and out.getpixel((x, y))[3]]
-    if not body:
-        return out
-    base = out.getpixel(body[0])
-    dark, light = shade(base, 0.8), shade(base, 1.22)
-    accent = ACCENT[name]
-    colours = [dark, light] + ([accent] if accent and name != "lava" else [])
-    for _ in range(rng.randint(2, 5)):
-        x, y = rng.choice(body)
-        out.putpixel((x, y), rng.choice(colours))
+    factor = rng.choice(TONES)
+    for y in range(TILE):
+        for x in range(TILE):
+            pixel = out.getpixel((x, y))
+            if pixel[3] and pixel[:3] in bodies:
+                out.putpixel((x, y), shade(pixel, factor))
     return out
 
 
@@ -258,21 +251,7 @@ def widen(image, name, clean):
 
 
 def variant(name, source):
-    out = recolor(source, PALETTES[name])
-    if name == "ice":
-        scatter(source, out, BODY, [(150, 190, 230), (200, 232, 250)], 0.008, 1)
-    elif name == "spider":
-        scatter(source, out, BODY, [(66, 60, 78)], 0.006, 4)
-    elif name == "lava":
-        scatter(source, out, BODY, [(168, 70, 36), (214, 84, 28)], 0.006, 6)
-    elif name == "temple":
-        scatter(source, out, BODY, [(120, 98, 70)], 0.006, 8)
-    elif name == "sewer":
-        drips(source, out, (80, 130, 96, 255), 9)
-        clumps(source, out, BODY, [(88, 140, 70), (110, 160, 80)], 1, 10, 1)
-    elif name == "moss":
-        clumps(source, out, BODY, [(62, 110, 48), (88, 150, 58), (112, 176, 70)], 2, 11, 2)
-    return out
+    return recolor(source, PALETTES[name])
 
 
 def main():
