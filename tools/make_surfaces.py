@@ -144,20 +144,31 @@ def lava(x, y, mask, frame, d, v):
     return (170, 44, 22, 255)
 
 
+WATER_FRAMES = 8
+
+
 def water(x, y, mask, frame, d, v):
+    phase = frame / WATER_FRAMES * math.tau + v * 2.1
     if d == 0:
-        return (150, 170, 84, 255) if noise(x, y, v + frame) > 0.4 else (112, 138, 62, 255)
+        return (150, 170, 84, 255) if noise(x, y, v + frame // 2) > 0.45 else (112, 138, 62, 255)
     if d == 1:
-        return (78, 104, 46, 255)
-    n = smooth_noise(x + v * 6 + frame * 2, y + v * 4, 31 + v)
+        return (78, 104, 46, 255) if (x + y + frame) % 4 else (96, 120, 54, 255)
+    drift_x, drift_y = 3.2 * math.cos(phase), 2.4 * math.sin(phase)
+    n = smooth_noise(x + v * 6 + drift_x, y + v * 4 + drift_y, 31 + v)
+    slow = smooth_noise(x * 0.5 - drift_y, y * 0.5 + drift_x, 51 + v)
+    band = math.sin((x * 0.62 + y * 0.38) + phase * 2) + math.sin((x * 0.2 - y * 0.7) - phase)
+    if noise(x, y, 300 + v * 11 + frame // 2) > 0.994:
+        return (214, 226, 130, 255)
+    if band > 1.65 and n > 0.4:
+        return (132, 150, 72, 255)
     if n > 0.8:
         return (132, 150, 72, 255)
     if n > 0.74:
         return (104, 124, 56, 255)
+    if slow > 0.72 and n > 0.3:
+        return (92, 78, 44, 255)
     if n > 0.42:
         return (62, 88, 38, 255)
-    if noise(x, y, 120 + v) > 0.985:
-        return (96, 74, 40, 255)
     return (46, 68, 32, 255)
 
 
@@ -231,7 +242,7 @@ def main():
     shade_tile().save(OUT / "surface_shade.tga")
     make_sheet(1, ice).save(OUT / "surface_ice.tga")
     make_sheet(4, lava).save(OUT / "surface_lava.tga")
-    make_sheet(4, water).save(OUT / "surface_water.tga")
+    make_sheet(WATER_FRAMES, water).save(OUT / "surface_water.tga")
 
 
 main()

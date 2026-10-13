@@ -303,7 +303,7 @@ impl Prop {
             Self::WaterShore => shore(tex::SHORE_WATER),
             Self::IceSurface => surface(tex::SURFACE_ICE, 1),
             Self::LavaSurface => surface(tex::SURFACE_LAVA, 4),
-            Self::WaterSurface => surface(tex::SURFACE_WATER, 4),
+            Self::WaterSurface => surface(tex::SURFACE_WATER, 8),
             Self::Icicles => PropSpec {
                 texture: tex::ICICLES,
                 columns: 1,
