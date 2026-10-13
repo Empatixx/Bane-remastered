@@ -35,14 +35,21 @@ const BAR_WIDTH: f32 = 4.0;
 const CENTER_X: f32 = TREE_TOP_LEFT.x + TREE_SIZE.x / 2.0;
 const TITLE_Y: f32 = 60.0;
 const FACTS_Y: f32 = 82.0;
-const ROOT_TOP: f32 = 92.0;
+const VIEW_TOP_LEFT: Vec2 = Vec2::new(TREE_TOP_LEFT.x + 18.0, 96.0);
+const VIEW_SIZE: Vec2 = Vec2::new(TREE_SIZE.x - 36.0, 360.0);
+const ROOT_TOP: f32 = VIEW_TOP_LEFT.y + 8.0;
+const FADE: f32 = 20.0;
+const DRAG_THRESHOLD: f32 = 5.0;
+const PAN_SPEED: f32 = 380.0;
+const PAN_MARGIN: f32 = 120.0;
+const RARE_FROM_ROW: i32 = 3;
 const STEP: Vec2 = Vec2::new(80.0, 74.0);
 const REROLL_LEFT: f32 = CENTER_X - 54.0;
 const REROLL_TOP: f32 = 462.0;
 const REROLL_SIZE: Vec2 = Vec2::new(108.0, 43.0);
 const REROLL_BASELINE: f32 = 27.0;
-const GLYPH: f32 = 32.0;
-const MUTATION_COST: u32 = 500;
+const GLYPH: f32 = 36.0;
+const MUTATION_COST: u32 = 800;
 const REROLL_COST: u32 = 100;
 const SAMPLE_GOLD: u32 = 1240;
 const NUMERALS: [&str; 3] = ["I", "II", "III"];
@@ -55,33 +62,54 @@ const BAR_LAYER: i32 = 32;
 
 struct Stat {
     name: &'static str,
-    description: [&'static str; 2],
+    amount: u32,
+    unit: &'static str,
+    noun: &'static str,
+    second: &'static str,
 }
 
 const STATS: [Stat; 6] = [
     Stat {
         name: "Damage",
-        description: ["+5% damage", "on every shot"],
+        amount: 5,
+        unit: "%",
+        noun: "damage",
+        second: "on every shot",
     },
     Stat {
         name: "Fire rate",
-        description: ["+4% fire rate", "less time between shots"],
+        amount: 4,
+        unit: "%",
+        noun: "fire rate",
+        second: "less time between shots",
     },
     Stat {
         name: "Magazine",
-        description: ["+1 round", "in the magazine"],
+        amount: 1,
+        unit: "",
+        noun: "magazine size",
+        second: "more rounds before reload",
     },
     Stat {
         name: "Reload",
-        description: ["+6% reload speed", "back in the fight sooner"],
+        amount: 6,
+        unit: "%",
+        noun: "reload speed",
+        second: "back in the fight sooner",
     },
     Stat {
         name: "Accuracy",
-        description: ["-8% spread", "bullets fly straighter"],
+        amount: 8,
+        unit: "%",
+        noun: "less spread",
+        second: "bullets fly straighter",
     },
     Stat {
         name: "Crit",
-        description: ["+4% critical chance", "crits deal double damage"],
+        amount: 4,
+        unit: "%",
+        noun: "crit chance",
+        second: "crits deal double damage",
     },
 ];
 
@@ -198,15 +226,44 @@ fn row_top_left(slot: usize) -> Vec2 {
     Vec2::new(ROW_LEFT, ROW_TOP + ROW_STEP * slot as f32)
 }
 
-fn cell_top_left(column: i32, row: i32) -> Vec2 {
+fn cell_top_left(column: i32, row: i32, pan: Vec2) -> Vec2 {
     Vec2::new(
         CENTER_X + column as f32 * STEP.x - TALENT / 2.0,
         ROOT_TOP + row as f32 * STEP.y,
-    )
+    ) + pan
 }
 
-fn root_top_left() -> Vec2 {
-    cell_top_left(0, 0)
+fn visibility(top_left: Vec2, size: Vec2) -> f32 {
+    let inside = (top_left - VIEW_TOP_LEFT)
+        .min(VIEW_TOP_LEFT + VIEW_SIZE - (top_left + size))
+        .min_element();
+    (inside / FADE).clamp(0.0, 1.0)
+}
+
+fn in_view(point: Vec2) -> bool {
+    inside(point, VIEW_TOP_LEFT, VIEW_SIZE)
+}
+
+fn pan_limits(grown: &Tree) -> (Vec2, Vec2) {
+    let (mut low, mut high) = ((0, 0), (0, 0));
+    for node in &grown.nodes {
+        low = (low.0.min(node.column), low.1.min(node.row));
+        high = (high.0.max(node.column), high.1.max(node.row));
+    }
+    let tree_low = cell_top_left(low.0, low.1, Vec2::ZERO);
+    let tree_high = cell_top_left(high.0, high.1, Vec2::ZERO) + TALENT;
+    let minimum = VIEW_TOP_LEFT + PAN_MARGIN - tree_high;
+    let maximum = VIEW_TOP_LEFT + VIEW_SIZE - PAN_MARGIN - tree_low;
+    (minimum.min(maximum), minimum.max(maximum))
+}
+
+fn clamp_pan(grown: &Tree, pan: Vec2) -> Vec2 {
+    let (low, high) = pan_limits(grown);
+    pan.clamp(low, high)
+}
+
+fn root_top_left(pan: Vec2) -> Vec2 {
+    cell_top_left(0, 0, pan)
 }
 
 fn reroll_top_left() -> Vec2 {
@@ -224,19 +281,23 @@ pub(crate) enum Target {
     Reroll,
 }
 
-fn target_at(first: usize, grown: &Tree, point: Vec2) -> Option<Target> {
+fn target_at(first: usize, grown: &Tree, pan: Vec2, point: Vec2) -> Option<Target> {
     let shown = GunKind::ALL.len().min(VISIBLE_ROWS);
     if let Some(slot) = (0..shown).find(|slot| inside(point, row_top_left(*slot), ROW_SIZE)) {
         return Some(Target::Weapon(first + slot));
     }
-    if let Some(index) = grown.nodes.iter().position(|node| {
-        inside(
-            point,
-            cell_top_left(node.column, node.row),
-            Vec2::splat(TALENT),
-        )
-    }) {
-        return Some(Target::Node(index));
+    if in_view(point) {
+        return grown
+            .nodes
+            .iter()
+            .position(|node| {
+                inside(
+                    point,
+                    cell_top_left(node.column, node.row, pan),
+                    Vec2::splat(TALENT),
+                )
+            })
+            .map(Target::Node);
     }
     inside(point, reroll_top_left(), REROLL_SIZE).then_some(Target::Reroll)
 }
@@ -273,8 +334,12 @@ fn node_elements(
     top_left: Vec2,
     state: BuyState,
     selected: bool,
+    alpha: f32,
     layer: i32,
 ) -> Vec<Element> {
+    if alpha <= 0.0 {
+        return Vec::new();
+    }
     let shown = if state == BuyState::Available && !selected {
         BuyState::Locked
     } else {
@@ -291,7 +356,7 @@ fn node_elements(
             size: Vec2::splat(TALENT),
             cell: Some((frame_row(quality, shown), FRAME_ROWS)),
             layer,
-            alpha: 1.0,
+            alpha,
         },
         Element::Image {
             texture,
@@ -300,9 +365,9 @@ fn node_elements(
             cell: Some((row, rows)),
             layer: layer + 1,
             alpha: if state == BuyState::Locked {
-                LOCKED_ICON_ALPHA
+                alpha * LOCKED_ICON_ALPHA
             } else {
-                1.0
+                alpha
             },
         },
     ];
@@ -313,7 +378,7 @@ fn node_elements(
             size: Vec2::splat(TALENT),
             cell: None,
             layer: layer + 2,
-            alpha: 1.0,
+            alpha,
         });
     }
     elements
@@ -354,7 +419,7 @@ fn scrollbar(first: usize) -> Vec<Element> {
     ]
 }
 
-fn links(kind: GunKind, rerolls: u32, grown: &Tree) -> Vec<Element> {
+fn links(kind: GunKind, rerolls: u32, grown: &Tree, pan: Vec2) -> Vec<Element> {
     let mut elements = Vec::new();
     let near = FRAME_INSET;
     let far = TALENT - FRAME_INSET;
@@ -362,8 +427,10 @@ fn links(kind: GunKind, rerolls: u32, grown: &Tree) -> Vec<Element> {
         let (from_column, from_row) = node.parent.map_or((0, 0), |parent| {
             (grown.nodes[parent].column, grown.nodes[parent].row)
         });
-        let start = cell_top_left(from_column, from_row);
-        let end = cell_top_left(node.column, node.row);
+        let start = cell_top_left(from_column, from_row, pan);
+        let end = cell_top_left(node.column, node.row, pan);
+        let alpha =
+            visibility(start, Vec2::splat(TALENT)).min(visibility(end, Vec2::splat(TALENT)));
         let bottom = start.y + far;
         let top = end.y + near;
         let from_x = start.x + TALENT / 2.0;
@@ -380,7 +447,7 @@ fn links(kind: GunKind, rerolls: u32, grown: &Tree) -> Vec<Element> {
             &mut elements,
             &points,
             if lit { LINE_COLOR } else { LINE_OFF },
-            1.0,
+            alpha,
         );
     }
     elements
@@ -421,8 +488,41 @@ fn icon_of(node: &Node) -> Icon {
 fn quality_of(node: &Node) -> Quality {
     if node.mutation.is_some() {
         Quality::Epic
+    } else if node.row >= RARE_FROM_ROW {
+        Quality::Rare
     } else {
         Quality::Common
+    }
+}
+
+fn multiplier(node: &Node) -> u32 {
+    match quality_of(node) {
+        Quality::Common => 1,
+        Quality::Rare | Quality::Epic => 2,
+    }
+}
+
+fn describe(node: &Node) -> (String, [String; 2]) {
+    match node.mutation {
+        Some(id) => (
+            MUTATIONS[id].name.to_owned(),
+            MUTATIONS[id].description.map(str::to_owned),
+        ),
+        None => {
+            let stat = &STATS[node.stat];
+            (
+                stat.name.to_owned(),
+                [
+                    format!(
+                        "+{}{} {}",
+                        stat.amount * multiplier(node),
+                        stat.unit,
+                        stat.noun
+                    ),
+                    stat.second.to_owned(),
+                ],
+            )
+        }
     }
 }
 
@@ -430,12 +530,11 @@ fn detail(kind: GunKind, rerolls: u32, grown: &Tree, index: usize, hover: bool) 
     let centre_x = PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0;
     let node = &grown.nodes[index];
     let state = node_state(kind, rerolls, grown, index);
-    let (title, lines) = match node.mutation {
-        Some(id) => (MUTATIONS[id].name.to_owned(), MUTATIONS[id].description),
-        None => (
-            format!("{} {}", STATS[node.stat].name, numeral(grown, index)),
-            STATS[node.stat].description,
-        ),
+    let (name_of, lines) = describe(node);
+    let title = if node.mutation.is_some() {
+        name_of
+    } else {
+        format!("{} {}", name_of, numeral(grown, index))
     };
     let mut elements = vec![Element::Image {
         texture: tex::PAUSEBG,
@@ -451,6 +550,7 @@ fn detail(kind: GunKind, rerolls: u32, grown: &Tree, index: usize, hover: bool) 
         Vec2::new(centre_x - TALENT / 2.0, PANEL_TALENT_Y),
         state,
         true,
+        1.0,
         PANEL_LAYER + 2,
     ));
     elements.push(Element::Label {
@@ -462,7 +562,7 @@ fn detail(kind: GunKind, rerolls: u32, grown: &Tree, index: usize, hover: bool) 
     });
     for (line_index, line) in lines.iter().enumerate() {
         elements.push(Element::Label {
-            content: (*line).to_owned(),
+            content: line.clone(),
             position: Vec2::new(
                 centre_x,
                 DESCRIPTION_TOP + DESCRIPTION_STEP * line_index as f32,
@@ -519,6 +619,7 @@ pub(crate) fn layout(
     selected: usize,
     choice: Option<usize>,
     rerolls: u32,
+    pan: Vec2,
     hover: Hover,
 ) -> Vec<Element> {
     let kind = GunKind::ALL[selected.min(GunKind::ALL.len() - 1)];
@@ -577,22 +678,28 @@ pub(crate) fn layout(
         size: FontSize::Size16,
         align: Align::Center,
     });
-    elements.push(Element::Image {
-        texture: tex::TALENT_ROOT,
-        top_left: root_top_left(),
-        size: Vec2::splat(TALENT),
-        cell: None,
-        layer: FRAME_LAYER,
-        alpha: 1.0,
-    });
-    elements.extend(links(kind, rerolls, &grown));
+    let root = root_top_left(pan);
+    let root_alpha = visibility(root, Vec2::splat(TALENT));
+    if root_alpha > 0.0 {
+        elements.push(Element::Image {
+            texture: tex::TALENT_ROOT,
+            top_left: root,
+            size: Vec2::splat(TALENT),
+            cell: None,
+            layer: FRAME_LAYER,
+            alpha: root_alpha,
+        });
+    }
+    elements.extend(links(kind, rerolls, &grown, pan));
     for (index, node) in grown.nodes.iter().enumerate() {
+        let top_left = cell_top_left(node.column, node.row, pan);
         elements.extend(node_elements(
             icon_of(node),
             quality_of(node),
-            cell_top_left(node.column, node.row),
+            top_left,
             node_state(kind, rerolls, &grown, index),
             choice == Some(index),
+            visibility(top_left, Vec2::splat(TALENT)),
             FRAME_LAYER,
         ));
     }
@@ -618,6 +725,13 @@ pub(crate) fn layout(
     elements
 }
 
+#[derive(Debug, Clone, Copy)]
+struct Press {
+    from: Vec2,
+    pan: Vec2,
+    moved: bool,
+}
+
 #[derive(Debug, Default)]
 pub(crate) struct WeaponTable {
     open: bool,
@@ -625,6 +739,9 @@ pub(crate) struct WeaponTable {
     selected: usize,
     choice: Option<usize>,
     rerolls: u32,
+    pan: Vec2,
+    press: Option<Press>,
+    was_down: bool,
     hover: Hover,
     dirty: bool,
 }
@@ -648,6 +765,7 @@ impl WeaponTable {
 
     pub(crate) fn close(&mut self, world: &mut World) {
         self.open = false;
+        self.press = None;
         self.hover = Hover::default();
         clear(world);
     }
@@ -660,6 +778,13 @@ impl WeaponTable {
         }
     }
 
+    fn regrow(&mut self) {
+        self.choice = None;
+        self.pan = Vec2::ZERO;
+        self.press = None;
+        self.dirty = true;
+    }
+
     fn can_buy(&self, grown: &Tree) -> bool {
         self.choice.is_some_and(|index| {
             index < grown.nodes.len()
@@ -668,7 +793,7 @@ impl WeaponTable {
         })
     }
 
-    pub(crate) fn update(&mut self, world: &mut World, input: &Input, assets: &Assets) {
+    pub(crate) fn update(&mut self, world: &mut World, input: &Input, assets: &Assets, dt: f32) {
         if !self.open {
             return;
         }
@@ -681,7 +806,56 @@ impl WeaponTable {
         }
         let grown = tree(GunKind::ALL[self.selected], self.rerolls);
         let point = input.mouse();
-        let target = target_at(self.first, &grown, point);
+        let direction = input.direction();
+        if direction != Vec2::ZERO {
+            self.pan = clamp_pan(&grown, self.pan - direction * PAN_SPEED * dt);
+            self.dirty = true;
+        }
+        let target = target_at(self.first, &grown, self.pan, point);
+        let down = input.mouse_down();
+        if input.clicked() {
+            match target {
+                Some(Target::Weapon(index)) if index != self.selected => {
+                    self.selected = index;
+                    self.rerolls = 0;
+                    self.regrow();
+                }
+                Some(Target::Reroll) => {
+                    self.rerolls += 1;
+                    self.regrow();
+                }
+                _ if in_view(point) => {
+                    self.press = Some(Press {
+                        from: point,
+                        pan: self.pan,
+                        moved: false,
+                    });
+                }
+                _ => {}
+            }
+        }
+        if let (true, Some(press)) = (down, self.press.as_mut()) {
+            if (point - press.from).length() > DRAG_THRESHOLD {
+                press.moved = true;
+            }
+            if press.moved {
+                self.pan = clamp_pan(&grown, press.pan + (point - press.from));
+                self.dirty = true;
+            }
+        }
+        if self.was_down && !down {
+            if let Some(press) = self.press.take() {
+                if !press.moved {
+                    self.choice = match target {
+                        Some(Target::Node(index)) => Some(index),
+                        _ => None,
+                    };
+                    self.dirty = true;
+                }
+            }
+        }
+        self.was_down = down;
+        let grown = tree(GunKind::ALL[self.selected], self.rerolls);
         let hover = Hover {
             buy: self.can_buy(&grown) && on_buy_plate(point),
             reroll: target == Some(Target::Reroll),
@@ -689,26 +863,6 @@ impl WeaponTable {
         if hover != self.hover {
             self.hover = hover;
             self.dirty = true;
-        }
-        if input.clicked() {
-            match target {
-                Some(Target::Weapon(index)) if index != self.selected => {
-                    self.selected = index;
-                    self.choice = None;
-                    self.rerolls = 0;
-                    self.dirty = true;
-                }
-                Some(Target::Node(index)) => {
-                    self.choice = Some(index);
-                    self.dirty = true;
-                }
-                Some(Target::Reroll) => {
-                    self.rerolls += 1;
-                    self.choice = None;
-                    self.dirty = true;
-                }
-                _ => {}
-            }
         }
         if self.dirty {
             self.dirty = false;
@@ -723,6 +877,7 @@ impl WeaponTable {
             self.selected,
             self.choice,
             self.rerolls,
+            self.pan,
             self.hover,
         ) {
             spawn(world, element, assets);
@@ -754,7 +909,7 @@ mod tests {
     }
 
     fn plain(first: usize, selected: usize) -> Vec<Element> {
-        layout(first, selected, None, 0, Hover::default())
+        layout(first, selected, None, 0, Vec2::ZERO, Hover::default())
     }
 
     #[test]
@@ -813,7 +968,7 @@ mod tests {
     }
 
     #[test]
-    fn the_drawn_tree_matches_the_generated_one() {
+    fn only_the_nodes_inside_the_view_are_drawn() {
         for kind in GunKind::ALL {
             for rerolls in 0..10 {
                 let grown = tree(kind, rerolls);
@@ -821,20 +976,107 @@ mod tests {
                     .iter()
                     .position(|other| *other == kind)
                     .unwrap_or(0);
-                let elements = layout(0, selected, None, rerolls, Hover::default());
+                let elements = layout(0, selected, None, rerolls, Vec2::ZERO, Hover::default());
+                let visible = grown
+                    .nodes
+                    .iter()
+                    .filter(|node| {
+                        visibility(
+                            cell_top_left(node.column, node.row, Vec2::ZERO),
+                            Vec2::splat(TALENT),
+                        ) > 0.0
+                    })
+                    .count();
 
-                assert_eq!(images(&elements, tex::TALENT_FRAME), grown.nodes.len());
-                assert_eq!(images(&elements, tex::MUTATION_ICONS), 1);
-                assert_eq!(images(&elements, tex::UPGRADE_ICONS), grown.nodes.len() - 1);
-                assert_eq!(images(&elements, tex::TALENT_ROOT), 1);
+                assert_eq!(images(&elements, tex::TALENT_FRAME), visible);
             }
         }
     }
 
     #[test]
+    fn panning_brings_the_far_nodes_into_view() {
+        let grown = tree(GunKind::ALL[0], 0);
+        let (low, high) = pan_limits(&grown);
+        let deepest = grown.nodes.iter().map(|node| node.row).max().unwrap_or(0);
+
+        assert!(low.y < 0.0 || high.y < 0.0 || high.y > 0.0);
+        let down = Vec2::new(0.0, low.y);
+        let elements = layout(0, 0, None, 0, down, Hover::default());
+        let seen = grown
+            .nodes
+            .iter()
+            .filter(|node| {
+                visibility(
+                    cell_top_left(node.column, node.row, down),
+                    Vec2::splat(TALENT),
+                ) > 0.0
+            })
+            .count();
+
+        assert_eq!(images(&elements, tex::TALENT_FRAME), seen);
+        assert!(deepest == weapon_tree::DEPTH);
+        assert!(grown.nodes.iter().any(|node| node.row == deepest
+            && visibility(
+                cell_top_left(node.column, node.row, down),
+                Vec2::splat(TALENT)
+            ) > 0.0));
+    }
+
+    #[test]
+    fn the_pan_is_clamped_to_the_tree() {
+        let grown = tree(GunKind::ALL[0], 0);
+        let (low, high) = pan_limits(&grown);
+
+        assert_eq!(clamp_pan(&grown, Vec2::splat(1e6)), high);
+        assert_eq!(clamp_pan(&grown, Vec2::splat(-1e6)), low);
+        assert_eq!(
+            clamp_pan(&grown, Vec2::ZERO).clamp(low, high),
+            clamp_pan(&grown, Vec2::ZERO)
+        );
+    }
+
+    #[test]
+    fn deeper_nodes_are_rare_and_the_mutation_is_epic() {
+        for kind in GunKind::ALL {
+            for rerolls in 0..20 {
+                for node in &tree(kind, rerolls).nodes {
+                    let expected = if node.mutation.is_some() {
+                        Quality::Epic
+                    } else if node.row >= RARE_FROM_ROW {
+                        Quality::Rare
+                    } else {
+                        Quality::Common
+                    };
+
+                    assert_eq!(quality_of(node), expected);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_rare_upgrade_is_worth_twice_a_common_one() {
+        let grown = tree(GunKind::ALL[0], 0);
+        let common = grown
+            .nodes
+            .iter()
+            .find(|node| node.mutation.is_none() && quality_of(node) == Quality::Common);
+        let rare = grown
+            .nodes
+            .iter()
+            .find(|node| node.mutation.is_none() && quality_of(node) == Quality::Rare);
+
+        let (Some(common), Some(rare)) = (common, rare) else {
+            panic!("a tree has both");
+        };
+        assert_eq!(multiplier(rare), 2 * multiplier(common));
+        assert!(describe(rare).1[0] != describe(common).1[0] || rare.stat != common.stat);
+    }
+
+    #[test]
     fn rerolling_changes_the_tree_that_is_drawn() {
         let before = plain(0, 0);
-        let after = layout(0, 0, None, 1, Hover::default());
+        let after = layout(0, 0, None, 1, Vec2::ZERO, Hover::default());
 
         assert_ne!(before, after);
         assert!(labels(&after).contains(&format!("Reroll {REROLL_COST} g")));
@@ -843,7 +1085,7 @@ mod tests {
     #[test]
     fn a_chosen_node_opens_the_detail_panel_with_its_description() {
         let grown = tree(GunKind::ALL[0], 0);
-        let with = layout(0, 0, Some(0), 0, Hover::default());
+        let with = layout(0, 0, Some(0), 0, Vec2::ZERO, Hover::default());
         let shown = labels(&with);
 
         assert_eq!(images(&with, tex::PAUSEBG), 1);
@@ -859,7 +1101,7 @@ mod tests {
             panic!("no mutation");
         };
         let id = grown.nodes[index].mutation.unwrap_or(0);
-        let shown = labels(&layout(0, 0, Some(index), 0, Hover::default()));
+        let shown = labels(&layout(0, 0, Some(index), 0, Vec2::ZERO, Hover::default()));
 
         assert!(shown.contains(&MUTATIONS[id].name.to_string()));
         assert!(shown.contains(&format!("Cost: {MUTATION_COST} gold")));
@@ -902,22 +1144,27 @@ mod tests {
         let node = grown.nodes[0];
 
         assert_eq!(
-            target_at(0, &grown, row_top_left(3) + near),
+            target_at(0, &grown, Vec2::ZERO, row_top_left(3) + near),
             Some(Target::Weapon(3))
         );
         assert_eq!(
-            target_at(1, &grown, row_top_left(3) + near),
+            target_at(1, &grown, Vec2::ZERO, row_top_left(3) + near),
             Some(Target::Weapon(4))
         );
         assert_eq!(
-            target_at(0, &grown, cell_top_left(node.column, node.row) + near),
+            target_at(
+                0,
+                &grown,
+                Vec2::ZERO,
+                cell_top_left(node.column, node.row, Vec2::ZERO) + near
+            ),
             Some(Target::Node(0))
         );
         assert_eq!(
-            target_at(0, &grown, reroll_top_left() + near),
+            target_at(0, &grown, Vec2::ZERO, reroll_top_left() + near),
             Some(Target::Reroll)
         );
-        assert_eq!(target_at(0, &grown, Vec2::ZERO), None);
+        assert_eq!(target_at(0, &grown, Vec2::ZERO, Vec2::ZERO), None);
         assert!(on_buy_plate(PLATE_CENTER));
     }
 
@@ -926,17 +1173,18 @@ mod tests {
         let list_end = LIST_TOP_LEFT + LIST_SIZE;
         let tree_end = TREE_TOP_LEFT + TREE_SIZE;
         let last_row = row_top_left(VISIBLE_ROWS - 1) + ROW_SIZE;
-        let low = cell_top_left(-weapon_tree::HALF_COLUMNS, weapon_tree::DEPTH);
-        let high =
-            cell_top_left(weapon_tree::HALF_COLUMNS, weapon_tree::DEPTH) + Vec2::splat(TALENT);
+        let view_end = VIEW_TOP_LEFT + VIEW_SIZE;
         let reroll_end = reroll_top_left() + REROLL_SIZE;
+        let widest = (2 * weapon_tree::HALF_COLUMNS) as f32 * STEP.x + TALENT;
+        let tallest = weapon_tree::DEPTH as f32 * STEP.y + TALENT;
 
         assert!(last_row.y < list_end.y - 12.0);
         assert!(BAR_LEFT + BAR_WIDTH < list_end.x - 12.0);
-        assert!(low.x > TREE_TOP_LEFT.x + 18.0);
-        assert!(high.x < tree_end.x - 18.0);
-        assert!(high.y < reroll_top_left().y);
+        const { assert!(VIEW_TOP_LEFT.x >= TREE_TOP_LEFT.x + 18.0) };
+        assert!(view_end.x <= tree_end.x - 18.0);
+        assert!(view_end.y < reroll_top_left().y);
         assert!(reroll_end.y < tree_end.y - 18.0);
+        assert!(widest > VIEW_SIZE.x && tallest > VIEW_SIZE.y);
         assert!(list_end.x < TREE_TOP_LEFT.x);
         assert!(tree_end.x < PANEL_TOP_LEFT.x);
     }

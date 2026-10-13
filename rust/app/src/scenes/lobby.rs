@@ -204,7 +204,7 @@ impl Scene for LobbyScene {
                 return Transition::None;
             }
             self.quests.update(&mut self.world, input, assets);
-            self.weapons.update(&mut self.world, input, assets);
+            self.weapons.update(&mut self.world, input, assets, dt);
             return Transition::None;
         }
         if self.upgrades.is_open() {

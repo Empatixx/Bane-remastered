@@ -245,181 +245,178 @@ def talent_icon():
     return image
 
 
-GLYPHS = {
-    "damage": [
-        ".........",
-        "....X....",
-        "...XXX...",
-        "...XXX...",
-        "...XXX...",
-        "...XXX...",
-        "..XXXXX..",
-        "..XXXXX..",
-        ".........",
-    ],
-    "rate": [
-        ".........",
-        ".....XX..",
-        "....XX...",
-        "...XX....",
-        "..XXXXX..",
-        "....XX...",
-        "...XX....",
-        "..XX.....",
-        ".........",
-    ],
-    "reload": [
-        ".XXXXX...",
-        "X.....XXX",
-        "X......XX",
-        "X.......X",
-        "X.......X",
-        "X.......X",
-        ".X.....X.",
-        "..XXXXX..",
-        ".........",
-    ],
-    "accuracy": [
-        "....X....",
-        "....X....",
-        ".........",
-        ".........",
-        "XX..X..XX",
-        ".........",
-        ".........",
-        "....X....",
-        "....X....",
-    ],
-    "crit": [
-        "....X....",
-        "...XXX...",
-        "...XXX...",
-        ".XXXXXXX.",
-        "XXXXXXXXX",
-        ".XXXXXXX.",
-        "...XXX...",
-        "...XXX...",
-        "....X....",
-    ],
-    "magazine": [
-        ".........",
-        ".X..X..X.",
-        "XXXXXXXXX",
-        "XX.XX.XX.",
-        "XX.XX.XX.",
-        "XX.XX.XX.",
-        "XX.XX.XX.",
-        "XXXXXXXXX",
-        ".........",
-    ],
-}
+import math
+
+OUTLINE = (37, 19, 26)
 
 
-CREAM = (232, 214, 170)
-DEEP = (46, 30, 24)
+def outlined(shape):
+    layer = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
+    layer.paste(shape, (1, 1))
+    out = Image.new("RGBA", layer.size, (0, 0, 0, 0))
+    mask = layer.split()[3]
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            if dx or dy:
+                out.paste(OUTLINE + (255,), (dx, dy), mask)
+    out.alpha_composite(layer)
+    return out
 
 
-MUTATION_GLYPHS = [
-    [
-        ".........",
-        ".....X...",
-        "......X..",
-        "XXXXXXXXX",
-        "......X..",
-        ".....X...",
-        ".........",
-        ".........",
-        ".........",
-    ],
-    [
-        "X...X...X",
-        ".X.XXX.X.",
-        "..XXXXX..",
-        ".XXXXXXX.",
-        "XXXXXXXXX",
-        ".XXXXXXX.",
-        "..XXXXX..",
-        ".X.XXX.X.",
-        "X...X...X",
-    ],
-    [
-        "....X....",
-        "....X....",
-        "...XXX...",
-        "..XXXXX..",
-        ".XXXXXXX.",
-        ".XXXXXXX.",
-        ".XXXXXXX.",
-        "..XXXXX..",
-        "...XXX...",
-    ],
-    [
-        "....X....",
-        ".X..X..X.",
-        "..X.X.X..",
-        "...XXX...",
-        "XXXXXXXXX",
-        "...XXX...",
-        "..X.X.X..",
-        ".X..X..X.",
-        "....X....",
-    ],
-    [
-        ".........",
-        ".XXXXXXX.",
-        ".......X.",
-        "......X..",
-        ".....X...",
-        "....X....",
-        "...X.....",
-        ".XXXXXXX.",
-        ".........",
-    ],
-    [
-        "....X....",
-        "..XXXXX..",
-        ".XX.X.XX.",
-        ".X..X..X.",
-        "XXXXXXXXX",
-        ".X..X..X.",
-        ".XX.X.XX.",
-        "..XXXXX..",
-        "....X....",
-    ],
-]
-EPIC_INK = (226, 150, 255)
+def canvas():
+    layer = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    return layer, ImageDraw.Draw(layer)
 
 
-def glyph(rows, ink, outline):
-    size = 11
-    image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    filled = set()
-    for y, row in enumerate(rows):
-        for x, key in enumerate(row):
-            if key == "X":
-                filled.add((x + 1, y + 1))
-    for x, y in filled:
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            if (x + dx, y + dy) not in filled:
-                image.putpixel((x + dx, y + dy), outline + (255,))
-    for x, y in filled:
-        image.putpixel((x, y), ink + (255,))
-    return image
+def icon_damage():
+    layer, d = canvas()
+    d.rectangle((5, 8, 10, 14), fill=(214, 170, 70, 255))
+    d.rectangle((5, 8, 5, 14), fill=(168, 118, 40, 255))
+    d.rectangle((10, 8, 10, 14), fill=(244, 208, 112, 255))
+    d.line((5, 14, 10, 14), fill=(150, 100, 40, 255))
+    d.line((5, 8, 10, 8), fill=(150, 100, 40, 255))
+    d.polygon([(5, 7), (10, 7), (9, 4), (8, 3), (7, 3), (6, 4)], fill=(200, 202, 214, 255))
+    d.line((6, 5, 6, 7), fill=(246, 246, 255, 255))
+    d.line((9, 5, 9, 7), fill=(150, 152, 168, 255))
+    return outlined(layer)
+
+
+def icon_rate():
+    layer, d = canvas()
+    d.polygon([(10, 0), (3, 9), (7, 9), (5, 15), (13, 6), (8, 6), (11, 0)], fill=(255, 214, 60, 255))
+    d.polygon([(10, 2), (6, 8), (9, 8), (7, 12), (11, 7), (8, 7), (10, 3)], fill=(255, 244, 150, 255))
+    d.line((5, 14, 12, 6), fill=(236, 150, 30, 255))
+    return outlined(layer)
+
+
+def icon_magazine():
+    layer, d = canvas()
+    for x in (4, 7, 10):
+        d.rectangle((x, 3, x + 1, 7), fill=(236, 196, 80, 255))
+        d.point((x, 3), fill=(255, 240, 170, 255))
+        d.point((x + 1, 3), fill=(190, 140, 50, 255))
+    d.rectangle((3, 7, 12, 14), fill=(120, 126, 142, 255))
+    d.rectangle((3, 7, 12, 8), fill=(160, 166, 182, 255))
+    d.rectangle((3, 13, 12, 14), fill=(80, 84, 100, 255))
+    d.line((5, 9, 5, 12), fill=(90, 94, 110, 255))
+    d.line((8, 9, 8, 12), fill=(90, 94, 110, 255))
+    d.line((11, 9, 11, 12), fill=(90, 94, 110, 255))
+    return outlined(layer)
+
+
+def icon_reload():
+    layer, d = canvas()
+    d.arc((2, 3, 13, 14), start=60, end=345, fill=(80, 160, 250, 255), width=2)
+    d.arc((3, 4, 12, 13), start=60, end=345, fill=(150, 210, 255, 255), width=1)
+    d.polygon([(8, 0), (14, 4), (8, 8)], fill=(180, 226, 255, 255))
+    d.polygon([(9, 2), (12, 4), (9, 6)], fill=(80, 160, 250, 255))
+    return outlined(layer)
+
+
+def icon_accuracy():
+    layer, d = canvas()
+    d.ellipse((3, 3, 12, 12), outline=(236, 72, 72, 255), width=1)
+    for box in ((7, 0, 8, 4), (7, 11, 8, 15), (0, 7, 4, 8), (11, 7, 15, 8)):
+        d.rectangle(box, fill=(236, 72, 72, 255))
+    d.rectangle((7, 7, 8, 8), fill=(255, 232, 232, 255))
+    d.point((4, 4), fill=(255, 150, 150, 255))
+    return outlined(layer)
+
+
+def icon_crit():
+    layer, d = canvas()
+    d.polygon([(8, 0), (10, 6), (16, 8), (10, 10), (8, 16), (6, 10), (0, 8), (6, 6)], fill=(250, 90, 60, 255))
+    d.polygon([(8, 3), (9, 7), (13, 8), (9, 9), (8, 13), (7, 9), (3, 8), (7, 7)], fill=(255, 226, 96, 255))
+    d.rectangle((7, 7, 8, 8), fill=(255, 255, 230, 255))
+    return outlined(layer)
+
+
+def icon_piercing():
+    layer, d = canvas()
+    d.rectangle((7, 1, 8, 14), fill=(132, 132, 146, 255))
+    d.line((7, 1, 7, 14), fill=(176, 176, 190, 255))
+    d.rectangle((0, 7, 11, 8), fill=(140, 226, 236, 255))
+    d.line((0, 7, 11, 7), fill=(210, 250, 255, 255))
+    d.polygon([(15, 7), (10, 3), (10, 12)], fill=(120, 214, 232, 255))
+    d.polygon([(14, 7), (11, 5), (11, 8)], fill=(210, 250, 255, 255))
+    return outlined(layer)
+
+
+def icon_explosive():
+    layer, d = canvas()
+    points = []
+    for i in range(16):
+        radius = 8 if i % 2 == 0 else 4.5
+        angle = math.pi * i / 8
+        points.append((7.5 + radius * math.cos(angle), 7.5 + radius * math.sin(angle)))
+    d.polygon(points, fill=(255, 130, 30, 255))
+    d.ellipse((4, 4, 11, 11), fill=(255, 206, 70, 255))
+    d.ellipse((6, 6, 9, 9), fill=(255, 250, 200, 255))
+    return outlined(layer)
+
+
+def icon_venom():
+    layer, d = canvas()
+    d.polygon([(8, 0), (3, 8), (13, 8)], fill=(82, 200, 92, 255))
+    d.ellipse((3, 5, 12, 14), fill=(82, 200, 92, 255))
+    d.ellipse((6, 9, 12, 14), fill=(44, 150, 66, 255))
+    d.rectangle((5, 8, 6, 10), fill=(200, 252, 190, 255))
+    d.point((8, 3), fill=(200, 252, 190, 255))
+    return outlined(layer)
+
+
+def icon_frost():
+    layer, d = canvas()
+    for k in range(3):
+        angle = math.pi * k / 3
+        dx, dy = 7.2 * math.cos(angle), 7.2 * math.sin(angle)
+        d.line((7.5 - dx, 7.5 - dy, 7.5 + dx, 7.5 + dy), fill=(170, 228, 255, 255), width=1)
+    for k in range(6):
+        angle = math.pi * k / 3
+        tip = (7.5 + 5.2 * math.cos(angle), 7.5 + 5.2 * math.sin(angle))
+        for side in (-0.9, 0.9):
+            end = (tip[0] + 2.3 * math.cos(angle + side), tip[1] + 2.3 * math.sin(angle + side))
+            d.line((tip[0], tip[1], end[0], end[1]), fill=(120, 190, 250, 255), width=1)
+    d.ellipse((6, 6, 9, 9), fill=(240, 252, 255, 255))
+    return outlined(layer)
+
+
+def icon_ricochet():
+    layer, d = canvas()
+    d.rectangle((0, 0, 1, 15), fill=(132, 132, 146, 255))
+    d.line([(3, 13), (7, 5), (10, 11), (13, 4)], fill=(232, 110, 232, 255), width=2)
+    d.line([(4, 12), (7, 6)], fill=(250, 180, 250, 255), width=1)
+    d.polygon([(15, 0), (9, 2), (14, 7)], fill=(250, 170, 250, 255))
+    return outlined(layer)
+
+
+def icon_deadeye():
+    layer, d = canvas()
+    d.polygon([(0, 8), (5, 3), (11, 3), (16, 8), (11, 13), (5, 13)], fill=(240, 236, 232, 255))
+    d.ellipse((5, 4, 11, 12), fill=(224, 52, 52, 255))
+    d.ellipse((7, 6, 9, 10), fill=(30, 12, 16, 255))
+    d.point((6, 5), fill=(255, 190, 190, 255))
+    d.point((7, 6), fill=(255, 255, 255, 255))
+    return outlined(layer)
+
+
+UPGRADE_ICONS = [icon_damage, icon_rate, icon_magazine, icon_reload, icon_accuracy, icon_crit]
+MUTATION_ICONS = [icon_piercing, icon_explosive, icon_venom, icon_frost, icon_ricochet, icon_deadeye]
+
+
+def icon_sheet(makers):
+    sheet = Image.new("RGBA", (18, 18 * len(makers)), (0, 0, 0, 0))
+    for i, maker in enumerate(makers):
+        sheet.paste(maker(), (0, i * 18))
+    return sheet
 
 
 def upgrade_icons():
-    names = ["damage", "rate", "magazine", "reload", "accuracy", "crit"]
-    sheet = Image.new("RGBA", (11, 11 * len(names)), (0, 0, 0, 0))
-    for i, name in enumerate(names):
-        sheet.paste(glyph(GLYPHS[name], TALENT_ORANGE, LINE), (0, i * 11))
-    return sheet
+    return icon_sheet(UPGRADE_ICONS)
 
 
 def mutation_icons():
-    sheet = Image.new("RGBA", (11, 11 * len(MUTATION_GLYPHS)), (0, 0, 0, 0))
-    for i, rows in enumerate(MUTATION_GLYPHS):
-        sheet.paste(glyph(rows, EPIC_INK, LINE), (0, i * 11))
-    return sheet
+    return icon_sheet(MUTATION_ICONS)
 
 
 PAUSE = "assets/textures/ingame/pausebg.tga"

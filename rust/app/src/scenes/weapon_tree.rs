@@ -1,12 +1,12 @@
 use crate::guns::GunKind;
 use crate::rng::Rng;
 
-pub(super) const HALF_COLUMNS: i32 = 2;
-pub(super) const DEPTH: i32 = 4;
+pub(super) const HALF_COLUMNS: i32 = 3;
+pub(super) const DEPTH: i32 = 6;
 pub(super) const STAT_KINDS: usize = 6;
 pub(super) const MUTATION_KINDS: usize = 6;
-const SIDE_BRANCHES: usize = 2;
-const SIDE_DEPTH: usize = 3;
+const SIDE_BRANCHES: usize = 3;
+const SIDE_DEPTH: usize = 5;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct Node {
@@ -145,17 +145,19 @@ pub(super) fn generate(kind: GunKind, rerolls: u32) -> Tree {
                 None => break,
             }
         }
-        if tree.nodes[tip].row >= 2 && rng.below(2) == 0 {
-            let members: Vec<usize> = (0..tree.nodes.len())
-                .filter(|index| {
-                    tree.nodes[*index].branch == branch
-                        && tree.nodes[*index].row < tree.nodes[tip].row
-                })
-                .collect();
-            let from = members[rng.below(members.len())];
-            if let Some(fork) = tree.grow(&mut rng, Some(from), branch, false) {
-                if tree.nodes[fork].row < DEPTH - 1 && rng.below(2) == 0 {
-                    tree.grow(&mut rng, Some(fork), branch, true);
+        for _ in 0..2 {
+            if tree.nodes[tip].row >= 2 && rng.below(2) == 0 {
+                let members: Vec<usize> = (0..tree.nodes.len())
+                    .filter(|index| {
+                        tree.nodes[*index].branch == branch
+                            && tree.nodes[*index].row < tree.nodes[tip].row
+                    })
+                    .collect();
+                let from = members[rng.below(members.len())];
+                if let Some(fork) = tree.grow(&mut rng, Some(from), branch, false) {
+                    if tree.nodes[fork].row < DEPTH - 1 && rng.below(2) == 0 {
+                        tree.grow(&mut rng, Some(fork), branch, true);
+                    }
                 }
             }
         }
