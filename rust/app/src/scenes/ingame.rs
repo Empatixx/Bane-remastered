@@ -397,6 +397,13 @@ impl Scene for InGameScene {
         systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
         systems::pet_bites(&mut self.world, dt);
         systems::trap_hits_enemies(&mut self.world, dt);
+        systems::tick_arrow_traps(
+            &mut self.world,
+            &self.navigation,
+            &assets.textures,
+            &mut self.sounds,
+            dt,
+        );
         systems::break_objects(
             &mut self.world,
             &mut self.physics,

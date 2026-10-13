@@ -15,6 +15,7 @@ mod dust;
 mod effects;
 mod enemies;
 mod glide;
+mod hazards;
 mod hud;
 mod interaction;
 mod items;
@@ -65,6 +66,7 @@ pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, resolve_deaths, tick_spawning, update_flow,
 };
 pub(crate) use glide::glide;
+pub(crate) use hazards::tick_arrow_traps;
 pub(crate) use arrows::update_enemy_arrows;
 pub(crate) use casings::tick_casings;
 pub(crate) use hud::{update_lobby_counters, update_status_bars, update_weapon_hud};

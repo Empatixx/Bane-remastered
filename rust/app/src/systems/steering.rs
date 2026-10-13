@@ -2,7 +2,8 @@ use hecs::World;
 
 use crate::artefacts::BERSERK_SPEED;
 use crate::components::{
-    Berserk, Cobweb, Dodge, Health, Player, PlayerPerks, Position, Size, Velocity,
+    Berserk, Cobweb, Dodge, FloorPatch, Health, PatchKind, Player, PlayerPerks, Position, Size,
+    Velocity,
 };
 use crate::geometry;
 use crate::input::Input;
@@ -10,10 +11,22 @@ use crate::input::Input;
 const PLAYER_SPEED: f32 = 411.0;
 const COBWEB_SLOWDOWN: f32 = 0.5;
 const PLAYER_DAMPING: f32 = 5.0;
+const ICE_DAMPING: f32 = 1.1;
 
+#[cfg(test)]
 fn accelerate(velocity: glam::Vec2, direction: glam::Vec2, top_speed: f32, dt: f32) -> glam::Vec2 {
-    let keep = (1.0 - PLAYER_DAMPING * dt).max(0.0);
-    let acceleration = top_speed * PLAYER_DAMPING / keep.max(f32::EPSILON);
+    accelerate_with(velocity, direction, top_speed, PLAYER_DAMPING, dt)
+}
+
+fn accelerate_with(
+    velocity: glam::Vec2,
+    direction: glam::Vec2,
+    top_speed: f32,
+    damping: f32,
+    dt: f32,
+) -> glam::Vec2 {
+    let keep = (1.0 - damping * dt).max(0.0);
+    let acceleration = top_speed * damping / keep.max(f32::EPSILON);
     (velocity + direction * acceleration * dt) * keep
 }
 
@@ -24,6 +37,11 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
         .with::<&Cobweb>()
         .iter()
         .map(|(position, size)| (position.0, size.0))
+        .collect();
+    let patches: Vec<(glam::Vec2, glam::Vec2, PatchKind)> = world
+        .query::<(&Position, &Size, &FloorPatch)>()
+        .iter()
+        .map(|(position, size, patch)| (position.0, size.0, patch.0))
         .collect();
     for (velocity, health, position, size, berserk, perks, dodge, frozen) in world
         .query_mut::<(
@@ -38,9 +56,20 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
         )>()
         .with::<&Player>()
     {
-        let stuck = webs
-            .iter()
-            .any(|(web, web_size)| geometry::overlaps(position.0, size.0, *web, *web_size));
+        let on = |wanted: PatchKind| {
+            patches.iter().any(|(at, patch_size, kind)| {
+                *kind == wanted && geometry::overlaps(position.0, size.0, *at, *patch_size)
+            })
+        };
+        let stuck = on(PatchKind::Web)
+            || webs
+                .iter()
+                .any(|(web, web_size)| geometry::overlaps(position.0, size.0, *web, *web_size));
+        let damping = if on(PatchKind::Ice) {
+            ICE_DAMPING
+        } else {
+            PLAYER_DAMPING
+        };
         let boost = if berserk.is_some() {
             BERSERK_SPEED
         } else {
@@ -59,7 +88,7 @@ pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
             } else {
                 direction
             };
-            accelerate(velocity.0, direction, speed, dt)
+            accelerate_with(velocity.0, direction, speed, damping, dt)
         } else {
             glam::Vec2::ZERO
         };
@@ -101,5 +130,54 @@ mod tests {
         let mut velocity = Vec2::new(411.0, 0.0);
         velocity = accelerate(velocity, -Vec2::X, 411.0, STEP);
         assert!(velocity.x > 0.0, "{velocity}");
+    }
+
+    #[test]
+    fn on_ice_the_player_keeps_sliding_much_longer() {
+        let stop = |damping: f32| {
+            let mut velocity = Vec2::new(411.0, 0.0);
+            let mut steps = 0;
+            while velocity.x > 5.0 && steps < 1000 {
+                velocity = accelerate_with(velocity, Vec2::ZERO, 411.0, damping, STEP);
+                steps += 1;
+            }
+            steps
+        };
+        assert!(stop(ICE_DAMPING) > 3 * stop(PLAYER_DAMPING));
+    }
+
+    fn walker(at: Vec2) -> (hecs::World, hecs::Entity) {
+        let mut world = hecs::World::new();
+        let player = world.spawn((
+            Player,
+            Velocity(Vec2::ZERO),
+            Health { current: 5, max: 5 },
+            Position(at),
+            Size(Vec2::splat(40.0)),
+        ));
+        (world, player)
+    }
+
+    fn run_right(world: &mut hecs::World, player: hecs::Entity) -> f32 {
+        let mut input = Input::default();
+        input.press(winit::keyboard::KeyCode::KeyD);
+        for _ in 0..120 {
+            steer_player(world, &input, STEP);
+        }
+        world.get::<&Velocity>(player).map_or(0.0, |v| v.0.x)
+    }
+
+    #[test]
+    fn a_web_patch_halves_the_top_speed() {
+        let (mut free, player) = walker(Vec2::new(100.0, 100.0));
+        let (mut stuck, trapped) = walker(Vec2::new(100.0, 100.0));
+        stuck.spawn((
+            Position(Vec2::new(100.0, 100.0)),
+            Size(Vec2::splat(96.0)),
+            FloorPatch(PatchKind::Web),
+        ));
+        let normal = run_right(&mut free, player);
+        let slowed = run_right(&mut stuck, trapped);
+        assert!(slowed < normal * 0.6, "{slowed} vs {normal}");
     }
 }

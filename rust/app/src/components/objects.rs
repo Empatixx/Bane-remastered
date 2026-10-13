@@ -39,6 +39,23 @@ pub(crate) struct PoisonPool {
     pub(crate) tick: f32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum PatchKind {
+    Ice,
+    Web,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct FloorPatch(pub(crate) PatchKind);
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ArrowTrap {
+    pub(crate) timer: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct TrapArrow;
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct PoisonTrail;
 

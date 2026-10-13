@@ -5,10 +5,10 @@ use crate::artefacts::ArtefactKind;
 use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
-    Animation, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty, Chest,
-    ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, Gate, GunDrop, Health,
-    Interactable, Interaction, Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine,
-    SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
+    Animation, ArrowTrap, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty,
+    Chest, ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, FloorPatch, Gate, GunDrop,
+    Health, Interactable, Interaction, Layer, Light, Lit, PatchKind, Pickup, Position, Prompt,
+    Size, SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::items::{DESPAWN_SECONDS, ItemKind};
@@ -215,6 +215,23 @@ pub(crate) fn decor(
         DecorKind::PoisonBarrel => breakable(world, physics, BreakKind::Poison, centered, textures),
         DecorKind::FrostBarrel => breakable(world, physics, BreakKind::Frost, centered, textures),
         DecorKind::Flamethrower => flamethrower(world, top_left, textures),
+        DecorKind::LavaPool => lava_pool(world, top_left, textures),
+        DecorKind::IcePatch => {
+            floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
+        }
+        DecorKind::WebPatch => {
+            floor_patch(world, Prop::WebPatch, PatchKind::Web, top_left, textures)
+        }
+        DecorKind::ArrowTrap => {
+            let entity = prop(world, Prop::ArrowTrap, top_left, Look::DEFAULT, textures);
+            let _ = world.insert_one(
+                entity,
+                ArrowTrap {
+                    timer: ARROW_TRAP_START + (decor.tile.0 % 5) as f32 * 0.35,
+                },
+            );
+            entity
+        }
         DecorKind::Torch { mount, lit } => {
             let (prop_kind, row) = match (lit, mount) {
                 (true, Mount::Top) => (Prop::Torch, TOP_ROW),
@@ -474,6 +491,45 @@ pub(crate) fn breakable(
             BodyOffset(top_left + OBJECT_SIZE / 2.0 - collider_center),
         ),
     );
+    entity
+}
+
+const LAVA_DAMAGE: i32 = 1;
+const PATCH_HITBOX: f32 = 96.0;
+const ARROW_TRAP_START: f32 = 0.8;
+
+fn patch_hitbox(world: &mut World, visual: Entity, side: f32) -> Entity {
+    let center = world
+        .get::<&Position>(visual)
+        .map_or(Vec2::ZERO, |position| position.0);
+    world.spawn((Position(center), Size(Vec2::splat(side))))
+}
+
+fn lava_pool(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::LavaPool, top_left, Look::DEFAULT, textures);
+    let _ = world.insert(
+        entity,
+        (
+            Layer(-2),
+            Light::rgb(Vec2::ZERO, 255.0, 110.0, 20.0, 80.0, 1.2),
+        ),
+    );
+    let hitbox = patch_hitbox(world, entity, PATCH_HITBOX);
+    let _ = world.insert_one(hitbox, ContactDamage(LAVA_DAMAGE));
+    entity
+}
+
+fn floor_patch(
+    world: &mut World,
+    patch: Prop,
+    kind: PatchKind,
+    top_left: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let entity = prop(world, patch, top_left, Look::DEFAULT, textures);
+    let _ = world.insert_one(entity, Layer(-2));
+    let hitbox = patch_hitbox(world, entity, PATCH_HITBOX);
+    let _ = world.insert_one(hitbox, FloorPatch(kind));
     entity
 }
 

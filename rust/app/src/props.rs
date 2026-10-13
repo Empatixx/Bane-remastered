@@ -1,4 +1,4 @@
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use glam::Vec2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,6 +32,10 @@ pub(crate) enum Prop {
     LayingBook,
     Ladder,
     Flamethrower,
+    LavaPool,
+    IcePatch,
+    WebPatch,
+    ArrowTrap,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -239,6 +243,20 @@ impl Prop {
                     frame_time: 0.175,
                 }),
             },
+            Self::LavaPool => PropSpec {
+                texture: tex::LAVA_POOL,
+                columns: 4,
+                rows: 1,
+                frame: Vec2::new(32.0, 32.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.3,
+                }),
+            },
+            Self::IcePatch => still(tex::ICE_PATCH, Vec2::new(32.0, 32.0), 4.0),
+            Self::WebPatch => still(tex::WEB_PATCH, Vec2::new(32.0, 32.0), 4.0),
+            Self::ArrowTrap => still(tex::ARROW_TRAP, Vec2::new(16.0, 16.0), 4.0),
             Self::Ladder => still(tex::LADDER, Vec2::new(32.0, 32.0), 3.0),
             Self::Scientist => PropSpec {
                 texture: tex::SCIENTIST,

@@ -432,6 +432,37 @@ mod tests {
     }
 
     #[test]
+    fn standing_in_lava_hurts_and_a_pool_elsewhere_does_not() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(96.0, 96.0),
+            &Textures::default(),
+        );
+        if let Ok(mut armor) = world.get::<&mut Armor>(player) {
+            armor.current = 0;
+        }
+        let far = crate::dungeon::Decor {
+            kind: crate::dungeon::DecorKind::LavaPool,
+            tile: (10, 10),
+        };
+        prefabs::decor(&mut world, &mut Physics::new(), far, &Textures::default());
+        assert!(!contact_damage(&mut world, &mut Vec::new()));
+
+        let near = crate::dungeon::Decor {
+            kind: crate::dungeon::DecorKind::LavaPool,
+            tile: (1, 1),
+        };
+        prefabs::decor(&mut world, &mut Physics::new(), near, &Textures::default());
+        let before = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
+        assert!(contact_damage(&mut world, &mut Vec::new()));
+        let after = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
+        assert_eq!(after, before - 1);
+    }
+
+    #[test]
     fn spikes_hurt_only_while_extended() {
         let mut world = World::new();
         let mut physics = Physics::new();

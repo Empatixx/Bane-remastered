@@ -38,6 +38,10 @@ pub(crate) enum DecorKind {
     PoisonBarrel,
     FrostBarrel,
     Flamethrower,
+    LavaPool,
+    IcePatch,
+    WebPatch,
+    ArrowTrap,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -140,6 +144,15 @@ impl Planner<'_> {
             .collect();
         rng.pick(&usable).map(|candidate| **candidate)
     }
+}
+
+fn patch_tiles(tile: (usize, usize)) -> [(usize, usize); 4] {
+    [
+        tile,
+        (tile.0 + 1, tile.1),
+        (tile.0, tile.1 + 1),
+        (tile.0 + 1, tile.1 + 1),
+    ]
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -278,6 +291,53 @@ pub(crate) fn plan(
         }
     }
     if counts.objects {
+        let patch_floor: Vec<Candidate> = open_floor
+            .iter()
+            .filter(|candidate| {
+                let (column, row) = (candidate.tile.0 as isize, candidate.tile.1 as isize);
+                (-1..=2).all(|dy| (-1..=2).all(|dx| !planner.wall(column + dx, row + dy)))
+            })
+            .copied()
+            .collect();
+        for (kind, amount) in [
+            (DecorKind::LavaPool, mix.lava_pools),
+            (DecorKind::IcePatch, mix.ice_patches),
+            (DecorKind::WebPatch, mix.web_patches),
+        ] {
+            if amount == 0 {
+                continue;
+            }
+            for _ in 0..1 + rng.below(amount) {
+                let usable: Vec<&Candidate> = patch_floor
+                    .iter()
+                    .filter(|candidate| {
+                        patch_tiles(candidate.tile)
+                            .iter()
+                            .all(|&tile| planner.free(tile) && planner.away_from_doors(tile))
+                    })
+                    .collect();
+                if let Some(spot) = rng.pick(&usable).map(|candidate| **candidate) {
+                    for tile in patch_tiles(spot.tile) {
+                        planner.take(tile);
+                    }
+                    decor.push(Decor {
+                        kind,
+                        tile: spot.tile,
+                    });
+                }
+            }
+        }
+        if mix.arrow_traps > 0 {
+            for _ in 0..1 + rng.below(mix.arrow_traps) {
+                if let Some(spot) = planner.pick(&top_faces, rng) {
+                    planner.take(spot.tile);
+                    decor.push(Decor {
+                        kind: DecorKind::ArrowTrap,
+                        tile: spot.tile,
+                    });
+                }
+            }
+        }
         for _ in 0..mix.flamethrowers {
             if let Some(spot) = planner.pick(&top_faces, rng) {
                 planner.take(spot.tile);
@@ -390,6 +450,12 @@ mod tests {
         assert!(
             count_in(Theme::Temple, DecorKind::Spike) > count_in(Theme::Stone, DecorKind::Spike)
         );
+        assert!(count_in(Theme::Lava, DecorKind::LavaPool) > 0);
+        assert!(count_in(Theme::Ice, DecorKind::IcePatch) > 0);
+        assert!(count_in(Theme::Spider, DecorKind::WebPatch) > 0);
+        assert!(count_in(Theme::Temple, DecorKind::ArrowTrap) > 0);
+        assert_eq!(count_in(Theme::Stone, DecorKind::LavaPool), 0);
+        assert_eq!(count_in(Theme::Sewer, DecorKind::ArrowTrap), 0);
     }
 
     #[test]
@@ -413,6 +479,7 @@ mod tests {
                     match decor.kind {
                         DecorKind::Banner
                         | DecorKind::Flamethrower
+                        | DecorKind::ArrowTrap
                         | DecorKind::Torch {
                             mount: Mount::Top, ..
                         } => {
@@ -441,6 +508,11 @@ mod tests {
                         | DecorKind::PoisonBarrel
                         | DecorKind::FrostBarrel => {
                             for (dx, dy) in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)] {
+                                assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
+                            }
+                        }
+                        DecorKind::LavaPool | DecorKind::IcePatch | DecorKind::WebPatch => {
+                            for (dx, dy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
                                 assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
                             }
                         }
