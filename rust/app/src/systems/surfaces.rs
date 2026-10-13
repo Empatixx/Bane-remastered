@@ -10,13 +10,17 @@ use crate::components::{
 use crate::dungeon::{Surface, Surfaces};
 use crate::systems::damage::hurt_player_through_armor;
 
-const LAVA_DAMAGE: i32 = 1;
+const LAVA_DAMAGE: i32 = 2;
 const RIPPLE_EVERY: f32 = 0.2;
 const RIPPLE_MIN_SPEED: f32 = 40.0;
 const RIPPLE_SIZE: Vec2 = Vec2::new(96.0, 96.0);
 const RIPPLE_FRAMES: usize = 6;
 
-pub(crate) fn burn_on_lava(world: &mut World, surfaces: &Surfaces, sounds: &mut Vec<AudioCommand>) {
+pub(crate) fn burn_on_lava(
+    world: &mut World,
+    surfaces: &Surfaces,
+    sounds: &mut Vec<AudioCommand>,
+) -> bool {
     let Some((player, at)) = world
         .query::<(Entity, &Position, &Health)>()
         .with::<&Player>()
@@ -26,11 +30,10 @@ pub(crate) fn burn_on_lava(world: &mut World, surfaces: &Surfaces, sounds: &mut 
         .map(|(entity, position, _)| (entity, position.0))
         .next()
     else {
-        return;
+        return false;
     };
-    if surfaces.at_point(at) == Some(Surface::Lava) {
-        hurt_player_through_armor(world, player, LAVA_DAMAGE, sounds);
-    }
+    surfaces.at_point(at) == Some(Surface::Lava)
+        && hurt_player_through_armor(world, player, LAVA_DAMAGE, sounds)
 }
 
 pub(crate) fn sync_liquids(world: &mut World, clock: f32) {
@@ -133,7 +136,7 @@ mod tests {
 
         let (mut world, player) = standing_at((4, 4));
         burn_on_lava(&mut world, &surfaces, &mut Vec::new());
-        assert_eq!(health(&world, player), 9);
+        assert_eq!(health(&world, player), 8);
         assert!(world.get::<&Invulnerable>(player).is_ok());
     }
 
@@ -146,8 +149,31 @@ mod tests {
             armor.current = 3;
         }
         burn_on_lava(&mut world, &surfaces, &mut Vec::new());
-        assert_eq!(health(&world, player), 9);
+        assert_eq!(health(&world, player), 8);
         assert_eq!(world.get::<&Armor>(player).map(|a| a.current).ok(), Some(3));
+    }
+
+    #[test]
+    fn a_player_standing_on_a_real_lava_tile_of_a_generated_floor_is_burned() {
+        use crate::dungeon::{Dungeon, Theme};
+        use crate::rng::Rng;
+
+        let mut found = 0;
+        for seed in 0..10 {
+            let dungeon =
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Lava).expect("a dungeon");
+            let Some((tile, _)) = dungeon.surfaces.iter().next() else {
+                continue;
+            };
+            let (mut world, player) = standing_at(tile);
+            if let Ok(mut armor) = world.get::<&mut Armor>(player) {
+                armor.current = 5;
+            }
+            burn_on_lava(&mut world, &dungeon.surfaces, &mut Vec::new());
+            assert_eq!(health(&world, player), 8, "seed {seed} tile {tile:?}");
+            found += 1;
+        }
+        assert!(found > 0);
     }
 
     #[test]

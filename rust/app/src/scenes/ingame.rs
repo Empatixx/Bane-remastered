@@ -417,7 +417,9 @@ impl Scene for InGameScene {
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
         systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);
-        systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds);
+        if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds) {
+            self.hit = true;
+        }
         systems::sync_liquids(&mut self.world, self.clock);
         systems::ripple_on_water(&mut self.world, &self.surfaces, &assets.textures, dt);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
