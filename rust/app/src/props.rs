@@ -247,8 +247,8 @@ impl Prop {
                 texture: tex::FIRE_GEYSER,
                 columns: 8,
                 rows: 1,
-                frame: Vec2::new(16.0, 32.0),
-                scale: 4.0,
+                frame: Vec2::new(32.0, 64.0),
+                scale: 2.0,
                 animation: Some(Animated {
                     frames: 8,
                     frame_time: 0.2,

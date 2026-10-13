@@ -141,7 +141,7 @@ def crack_line(image, ox, oy, r, glow, core, mask):
 def cracks(source, out, glow, core, seed):
     r = random.Random(seed)
     for column in FLOOR_COLUMNS:
-        for _ in range(r.choice([1, 1, 2, 2, 3])):
+        for _ in range(r.choice([0, 0, 0, 1])):
             crack_line(out, column * TILE, 0, r, glow, core, set(map(tuple, [(60, 36, 36), (66, 40, 38), (52, 28, 28), (80, 48, 44)])))
 
 
@@ -189,7 +189,7 @@ def extra_floor(plain, name, k):
     base = plain.getpixel((8, 8))
     dark, light = shade(base, 0.8), shade(base, 1.22)
     accent = ACCENT[name]
-    pick = lambda: accent if accent and r.random() < 0.45 else r.choice([dark, light])
+    pick = lambda: accent if accent and r.random() < (0.15 if name == "lava" else 0.45) else r.choice([dark, light])
     kind = k % EXTRA
     if kind == 0:
         y = r.randrange(4, 12)
@@ -245,7 +245,7 @@ def variant(name, source):
         scatter(source, out, BODY, [(66, 60, 78)], 0.006, 4)
     elif name == "lava":
         cracks(source, out, (214, 84, 28, 255), (255, 190, 60, 255), 5)
-        scatter(source, out, LEDGE, [(168, 70, 40), (230, 120, 50)], 0.04, 6)
+        scatter(source, out, LEDGE, [(168, 70, 40), (230, 120, 50)], 0.015, 6)
     elif name == "temple":
         scatter(source, out, LEDGE, [(255, 208, 64), (232, 176, 40)], 0.07, 7)
         scatter(source, out, BODY, [(120, 98, 70)], 0.006, 8)
