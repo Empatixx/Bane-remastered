@@ -244,7 +244,11 @@ fn enter(
         spawn_wave(context, room, world, rng);
     }
     let mut gates = Vec::new();
-    for door in &data.doors {
+    for door in data
+        .doors
+        .iter()
+        .filter(|door| door.leads_to != RoomKind::Secret)
+    {
         for &tile in &door.tiles {
             gates.push(prefabs::gate(
                 world,

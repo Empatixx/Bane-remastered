@@ -14,6 +14,8 @@ const NORMAL_COBWEBS: usize = 2;
 const NORMAL_BANNERS: usize = 2;
 const TREASURE_BONES: usize = 3;
 const TREASURE_COBWEBS: usize = 3;
+const SECRET_COBWEBS: usize = 6;
+const SECRET_BONES: usize = 5;
 const MAX_SPIKES: usize = 2;
 const MAX_FLAMETHROWERS: usize = 1;
 const MAX_BARRELS: usize = 2;
@@ -82,6 +84,14 @@ impl Counts {
                 bones: NORMAL_BONES,
                 spikes: false,
                 objects: true,
+            },
+            RoomKind::Secret => Self {
+                torches: 0,
+                banners: 0,
+                cobwebs: SECRET_COBWEBS,
+                bones: SECRET_BONES,
+                spikes: false,
+                objects: false,
             },
             RoomKind::Treasure => Self {
                 torches: 0,
@@ -448,10 +458,17 @@ mod tests {
             for room in &dungeon(seed).rooms {
                 let furnished = matches!(
                     room.kind,
-                    RoomKind::Shop | RoomKind::Treasure | RoomKind::Sacrifice | RoomKind::Start
+                    RoomKind::Shop
+                        | RoomKind::Treasure
+                        | RoomKind::Sacrifice
+                        | RoomKind::Start
+                        | RoomKind::Secret
                 );
                 assert_eq!(room.furnishing.is_some(), furnished, "{:?}", room.kind);
-                if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
+                if !matches!(
+                    room.kind,
+                    RoomKind::Normal | RoomKind::Ambush | RoomKind::Secret
+                ) {
                     assert_eq!((room.columns, room.rows), (20, 16), "{:?}", room.kind);
                 }
                 match room.kind {
@@ -463,7 +480,7 @@ mod tests {
                             DecorKind::Bones { .. } | DecorKind::Cobweb { .. }
                         )));
                     }
-                    RoomKind::Normal | RoomKind::Ambush => {}
+                    RoomKind::Normal | RoomKind::Ambush | RoomKind::Secret => {}
                     _ => assert!(room.decor.is_empty(), "{:?}", room.kind),
                 }
             }

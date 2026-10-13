@@ -7,6 +7,7 @@ pub(crate) enum BreakKind {
     Explosive,
     Poison,
     Frost,
+    Cracked,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -19,6 +20,9 @@ pub(crate) struct Solid(pub(crate) ColliderHandle);
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Broken;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Fragile;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Flame;

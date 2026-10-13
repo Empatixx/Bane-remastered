@@ -30,19 +30,19 @@ pub(crate) use artefacts::{
 };
 pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{
-    Armor, Bullet, Burst, Chase, ContactDamage, Dash, Detour, Enemy, Expiring, GunDrop, Health,
-    HitFlash, Invulnerable, Loadout, Path, Progress, Spawning, Trap, Wallet, Weapon,
-    BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS,
+    Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
+    ContactDamage, Dash, Detour, Enemy, Expiring, GunDrop, Health, HitFlash, Invulnerable, Loadout,
+    Path, Progress, Spawning, Trap, Wallet, Weapon,
 };
 pub(crate) use death::DeathPart;
 pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};
 pub(crate) use effects::{
-    Floating, Casing, Gate, GazeWind, Hover, LightFade, Opening, Particle, RoomId, ThenPlay, TrapCooldown,
-    HOVER_CYCLE,
+    Casing, Floating, Gate, GazeWind, HOVER_CYCLE, Hover, LightFade, Opening, Particle, RoomId,
+    ThenPlay, TrapCooldown,
 };
 pub(crate) use hud::{
-    AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon, StatusBar,
-    TalentCount, PIP_EMPTY, PIP_FULL,
+    AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon, PIP_EMPTY,
+    PIP_FULL, StatusBar, TalentCount,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use items::{
@@ -53,8 +53,8 @@ pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
 pub(crate) use objects::{
-    BreakKind, Breakable, Broken, Flame, Frozen, PoisonPool, PoisonTrail, Poisoned, SlotMachine, SlotPrice, TrailLayer,
-    Solid,
+    BreakKind, Breakable, Broken, Flame, Fragile, Frozen, PoisonPool, PoisonTrail, Poisoned,
+    SlotMachine, SlotPrice, Solid, TrailLayer,
 };
 pub(crate) use perks::PlayerPerks;
 pub(crate) use pet::Pet;
@@ -69,5 +69,5 @@ pub(crate) use skills::{
 };
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
-pub(crate) use transform::{blended, Blend, Position, Previous, Size};
+pub(crate) use transform::{Blend, Position, Previous, Size, blended};
 pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, PulseUi, TextButton, UiAction, UpgradeUi};

@@ -52,6 +52,11 @@ pub(crate) fn break_objects(
         if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
             animation.play(DEATH_CLIP);
         }
+        if kind == BreakKind::Cracked {
+            let _ = world.insert_one(entity, Expiring);
+            sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
+            continue;
+        }
         let item = ItemKind::COMMON[roll(ItemKind::COMMON.len())];
         prefabs::item(world, item, center, true, Vec2::ZERO, textures);
         match kind {
@@ -1041,5 +1046,101 @@ mod tests {
         let variants: std::collections::HashSet<i32> = first.iter().map(|d| d.2).collect();
         assert!(variants.len() >= 4, "{variants:?}");
         assert_eq!(first, walk());
+    }
+
+    fn wall_scene() -> (World, Physics, Textures, Entity) {
+        let (mut world, mut physics, textures) = arena();
+        let wall = prefabs::cracked_wall(
+            &mut world,
+            &mut physics,
+            [(10, 4), (11, 4)],
+            crate::dungeon::Direction::Up,
+            &textures,
+        );
+        (world, physics, textures, wall)
+    }
+
+    #[test]
+    fn a_cracked_wall_shrugs_off_bullets_and_only_an_explosion_breaks_it() {
+        let (mut world, mut physics, textures, wall) = wall_scene();
+        let life = |world: &World| world.get::<&Health>(wall).map(|health| health.current).ok();
+        let start = life(&world);
+
+        for source in [DamageSource::Bullet, DamageSource::Trap, DamageSource::Bite] {
+            assert!(!deal(
+                &mut world,
+                Damage {
+                    target: wall,
+                    amount: 5,
+                    source
+                }
+            ));
+        }
+        assert_eq!(life(&world), start);
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        assert!(world.get::<&Broken>(wall).is_err());
+
+        deal(
+            &mut world,
+            Damage {
+                target: wall,
+                amount: crate::objects::EXPLOSION_DAMAGE,
+                source: DamageSource::Explosion,
+            },
+        );
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+
+        assert!(world.get::<&Broken>(wall).is_ok());
+        assert!(world.get::<&Solid>(wall).is_err());
+        assert!(world.get::<&Expiring>(wall).is_ok());
+        assert!(
+            physics
+                .solids_within(Vec2::new(0.0, 0.0), Vec2::new(2000.0, 2000.0))
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn a_broken_cracked_wall_drops_nothing_and_crumbles_away() {
+        let (mut world, mut physics, textures, wall) = wall_scene();
+        if let Ok(mut health) = world.get::<&mut Health>(wall) {
+            health.current = 0;
+        }
+
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        assert_eq!(
+            world.query::<&crate::components::Pickup>().iter().count(),
+            0
+        );
+
+        for _ in 0..20 {
+            crate::systems::animate(&mut world, 0.05);
+            crate::systems::remove_expired(&mut world);
+        }
+        assert!(world.get::<&Position>(wall).is_err());
+    }
+
+    #[test]
+    fn an_exploding_barrel_next_to_the_wall_breaks_it() {
+        let (mut world, mut physics, textures, wall) = wall_scene();
+        let spot = world
+            .get::<&Position>(wall)
+            .map(|position| position.0)
+            .unwrap_or_default();
+        let barrel = prefabs::breakable(
+            &mut world,
+            &mut physics,
+            BreakKind::Explosive,
+            spot + Vec2::new(-96.0, 40.0),
+            &textures,
+        );
+        if let Ok(mut health) = world.get::<&mut Health>(barrel) {
+            health.current = 0;
+        }
+
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+
+        assert!(world.get::<&Broken>(wall).is_ok());
     }
 }

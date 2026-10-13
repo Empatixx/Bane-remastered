@@ -6,13 +6,13 @@ use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
     Animation, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty, Chest,
-    ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, Gate, GunDrop, Health,
+    ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, Fragile, Gate, GunDrop, Health,
     Interactable, Interaction, Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine,
     SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::items::{DESPAWN_SECONDS, ItemKind};
-use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
+use crate::objects::{EXPLOSION_DAMAGE, OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{FontSize, TextureId};
@@ -663,4 +663,57 @@ pub(crate) fn gate(
         Lit,
     ));
     (entity, physics.add_static_box(center, size))
+}
+
+pub(crate) fn cracked_wall(
+    world: &mut World,
+    physics: &mut Physics,
+    tiles: [(usize, usize); 2],
+    direction: Direction,
+    textures: &Textures,
+) -> Entity {
+    let vertical = matches!(direction, Direction::Left | Direction::Right);
+    let center = tiles
+        .iter()
+        .map(|(column, row)| Vec2::new(*column as f32 + 0.5, *row as f32 + 0.5))
+        .sum::<Vec2>()
+        / 2.0
+        * tilemap::TILE_SIZE;
+    let size = if vertical {
+        Vec2::new(tilemap::TILE_SIZE, tilemap::TILE_SIZE * 2.0)
+    } else {
+        Vec2::new(tilemap::TILE_SIZE * 2.0, tilemap::TILE_SIZE)
+    };
+    let texture = if vertical {
+        tex::CRACKED_WALL_V
+    } else {
+        tex::CRACKED_WALL_H
+    };
+    let clip = Clip {
+        row: 0,
+        frames: 1,
+        frame_time: 1.0,
+        looping: true,
+        flipped: false,
+    };
+    let entity = world.spawn((
+        Breakable {
+            kind: BreakKind::Cracked,
+        },
+        Fragile,
+        Health {
+            current: EXPLOSION_DAMAGE,
+            max: EXPLOSION_DAMAGE,
+        },
+        Position(center),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(texture), 0, 0, 4, 2),
+        Animation::new(4, 2, clip),
+        Layer(-1),
+        Lit,
+    ));
+    let handle = physics.add_static_box(center, size);
+    let _ = world.insert_one(entity, Solid(handle));
+    entity
 }

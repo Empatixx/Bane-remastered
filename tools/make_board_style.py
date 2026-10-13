@@ -544,6 +544,111 @@ def ambush_map_icon(existing):
     return sheet
 
 
+STONE_OUT = (37, 19, 26, 255)
+STONE_LIGHT = (207, 194, 176, 255)
+STONE = (158, 142, 136, 255)
+STONE_MID = (125, 112, 113, 255)
+STONE_DARK = (89, 80, 89, 255)
+CRACK = (37, 19, 26, 255)
+
+
+def bricks(width, height, vertical):
+    cell = Image.new("RGBA", (width, height), STONE_OUT)
+    draw = ImageDraw.Draw(cell)
+    rows = height // 4 if not vertical else width // 4
+    for index in range(rows):
+        y0 = index * 4
+        offset = 4 if index % 2 else 0
+        if vertical:
+            for x in range(0, height + 4, 8):
+                x0 = x - offset
+                draw.rectangle((y0, x0 + 1, y0 + 2, x0 + 6), fill=STONE)
+                draw.line((y0, x0 + 1, y0, x0 + 6), fill=STONE_LIGHT)
+                draw.line((y0 + 2, x0 + 1, y0 + 2, x0 + 6), fill=STONE_MID)
+        else:
+            for x in range(0, width + 8, 8):
+                x0 = x - offset
+                draw.rectangle((x0 + 1, y0, x0 + 6, y0 + 2), fill=STONE)
+                draw.line((x0 + 1, y0, x0 + 6, y0), fill=STONE_LIGHT)
+                draw.line((x0 + 1, y0 + 2, x0 + 6, y0 + 2), fill=STONE_MID)
+    return cell
+
+
+def crack(cell, vertical, seed):
+    r = random.Random(seed)
+    width, height = cell.size
+    long_side = height if vertical else width
+    across = width if vertical else height
+    position = r.randint(across // 3, across * 2 // 3)
+    for step in range(long_side):
+        position += r.choice([-1, 0, 0, 1])
+        position = max(1, min(across - 2, position))
+        point = (position, step) if vertical else (step, position)
+        cell.putpixel(point, CRACK)
+        if step % 5 == 2:
+            side = (position + 1, step) if vertical else (step, position + 1)
+            if 0 <= side[0] < width and 0 <= side[1] < height:
+                cell.putpixel(side, STONE_DARK)
+    return cell
+
+
+def crumble(cell, stage, vertical, seed):
+    r = random.Random(seed + stage)
+    width, height = cell.size
+    out = Image.new("RGBA", cell.size, (0, 0, 0, 0))
+    keep = [0.8, 0.5, 0.25, 0.0][stage]
+    for y in range(height):
+        for x in range(width):
+            if r.random() < keep:
+                shift = (0, stage * 2) if vertical else (stage * 2, 0)
+                nx, ny = x + (shift[0] if r.random() < 0.5 else 0), y + (shift[1] if r.random() < 0.5 else 0)
+                if 0 <= nx < width and 0 <= ny < height:
+                    out.putpixel((nx, ny), cell.getpixel((x, y)))
+    dust = (158, 142, 136, 140) if stage < 3 else (158, 142, 136, 70)
+    for _ in range([6, 10, 12, 6][stage]):
+        out.putpixel((r.randrange(width), r.randrange(height)), dust)
+    return out
+
+
+def cracked_wall_sheet(vertical):
+    size = (16, 32) if vertical else (32, 16)
+    sheet = Image.new("RGBA", (size[0] * 4, size[1] * 2), (0, 0, 0, 0))
+    base = crack(bricks(size[0], size[1], vertical), vertical, 7)
+    sheet.paste(base, (0, 0))
+    for stage in range(4):
+        sheet.paste(crumble(base, stage, vertical, 11), (stage * size[0], size[1]))
+    return sheet
+
+
+def secret_map_icon(existing):
+    cell = 16
+    old = existing.convert("RGBA")
+    sheet = Image.new("RGBA", (cell * 8, cell), (0, 0, 0, 0))
+    sheet.paste(old.crop((0, 0, cell * 7, cell)), (0, 0))
+    sheet.paste(old.crop((cell, 0, cell * 2, cell)), (cell * 7, 0))
+    gold = (250, 214, 60, 255)
+    dark = (150, 96, 20, 255)
+    icon = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
+    shape = [
+        "..XXXX..",
+        ".XXXXXX.",
+        "XX....XX",
+        "......XX",
+        "....XXX.",
+        "...XX...",
+        "...XX...",
+        "........",
+        "...XX...",
+        "...XX...",
+    ]
+    for y, row in enumerate(shape):
+        for x, key in enumerate(row):
+            if key == "X":
+                icon.putpixel((4 + x, 2 + y), dark if y % 2 == 0 and x % 3 == 0 else gold)
+    sheet.alpha_composite(icon, (cell * 7, 0))
+    return sheet
+
+
 def enemy_arrow():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -628,6 +733,9 @@ def main():
     icons_path = f"{OUT}/minimap_icons.tga"
     existing = Image.open(icons_path)
     ambush_map_icon(existing).save(icons_path)
+    secret_map_icon(Image.open(icons_path)).save(icons_path)
+    cracked_wall_sheet(False).save(f"{OUT}/cracked_wall_h.tga")
+    cracked_wall_sheet(True).save(f"{OUT}/cracked_wall_v.tga")
     snake_trail_sheet().save(f"{OUT}/snake_trail.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
