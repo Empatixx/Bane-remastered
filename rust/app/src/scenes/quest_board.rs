@@ -1,25 +1,28 @@
 use glam::Vec2;
 use hecs::World;
 
-use crate::assets::Assets;
+use crate::assets::{Assets, tex};
 use crate::input::Input;
 use crate::render::{Align, FontSize};
 
-use super::panel::{
-    self, ACCENT, BOARD_CENTER_X, BOARD_TOP_LEFT, ButtonStyle, GOLD, GRAY, ORANGE, SALMON, YELLOW,
-};
-use super::upgrade_menu::{Element, clear, spawn};
+use super::panel::{self, BOARD_CENTER_X, GREEN, INK, RED, SCALE, TAB_IDLE, TRACK_BROWN};
+use super::upgrade_menu::{Element, clear, rect, spawn};
 
-const LIST_LEFT: f32 = 204.0;
-const CARD_SIZE: Vec2 = Vec2::new(552.0, 66.0);
-const CARD_TOP: f32 = 108.0;
-const CARD_STEP: f32 = 76.0;
-const TAB_SIZE: Vec2 = Vec2::new(150.0, 30.0);
-const TAB_TOP: f32 = 62.0;
-const TAB_GAP: f32 = 12.0;
-const CLAIM_SIZE: Vec2 = Vec2::new(96.0, 28.0);
-const BAR_SIZE: Vec2 = Vec2::new(300.0, 8.0);
-const TITLE_BASELINE: f32 = 52.0;
+const COLUMNS: usize = 3;
+const NOTE_SIZE: Vec2 = Vec2::new(44.0 * SCALE, 50.0 * SCALE);
+const NOTE_ORIGIN: Vec2 = Vec2::new(218.0, 171.0);
+const NOTE_STEP: Vec2 = Vec2::new(176.0, 198.0);
+const NOTE_JITTER: [f32; 6] = [0.0, 3.0, -2.0, 3.0, -2.0, 4.0];
+const NOTE_INSET: f32 = SCALE;
+const VISIBLE: Vec2 = Vec2::new(160.0, 184.0);
+const NOTE_ROWS: usize = 4;
+const TAB_SIZE: Vec2 = Vec2::new(150.0, 34.0);
+const TAB_TOP: f32 = 14.0;
+const TAB_GAP: f32 = 24.0;
+const BAR_SIZE: Vec2 = Vec2::new(128.0, 8.0);
+const DETAIL_WIDTH: usize = 17;
+const TAB_LAYER: i32 = 32;
+const ICON_SIZE: Vec2 = Vec2::new(27.0, 27.0);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Tab {
@@ -43,82 +46,54 @@ struct Entry {
     detail: &'static str,
     progress: u32,
     goal: u32,
-    reward: &'static str,
+    talents: u32,
 }
 
-const TASKS: [Entry; 5] = [
+const TASKS: [Entry; 3] = [
     Entry {
         title: "Crypt Cleaner",
         detail: "Defeat 100 enemies",
         progress: 64,
         goal: 100,
-        reward: "+1 talent",
+        talents: 1,
     },
     Entry {
         title: "Gold Digger",
         detail: "Collect 500 gold in a single run",
         progress: 500,
         goal: 500,
-        reward: "+1 talent",
+        talents: 1,
     },
     Entry {
         title: "Deep Delver",
         detail: "Reach floor 5",
         progress: 3,
         goal: 5,
-        reward: "+1 talent",
-    },
-    Entry {
-        title: "Barrel Breaker",
-        detail: "Destroy 30 barrels",
-        progress: 12,
-        goal: 30,
-        reward: "+1 talent",
-    },
-    Entry {
-        title: "Gun Collector",
-        detail: "Pick up 5 different weapons",
-        progress: 2,
-        goal: 5,
-        reward: "+1 talent",
+        talents: 1,
     },
 ];
 
-const CHALLENGES: [Entry; 5] = [
+const CHALLENGES: [Entry; 3] = [
     Entry {
         title: "Untouched",
         detail: "Clear a floor without taking damage",
         progress: 0,
         goal: 1,
-        reward: "+2 talents",
-    },
-    Entry {
-        title: "Speed Runner",
-        detail: "Clear a floor in under 90 seconds",
-        progress: 0,
-        goal: 1,
-        reward: "+2 talents",
+        talents: 2,
     },
     Entry {
         title: "Pistol Only",
         detail: "Reach floor 3 using only the pistol",
         progress: 1,
         goal: 3,
-        reward: "+3 talents",
-    },
-    Entry {
-        title: "Poisoned Well",
-        detail: "Defeat 20 enemies with poison",
-        progress: 20,
-        goal: 20,
-        reward: "+2 talents",
+        talents: 3,
     },
     Entry {
         title: "Boss Slayer",
         detail: "Defeat a boss without dodging",
         progress: 0,
         goal: 1,
-        reward: "+5 talents",
+        talents: 5,
     },
 ];
 
@@ -129,12 +104,14 @@ fn entries(tab: Tab) -> &'static [Entry] {
     }
 }
 
-fn card_top_left(index: usize) -> Vec2 {
-    Vec2::new(LIST_LEFT, CARD_TOP + CARD_STEP * index as f32)
-}
-
-fn claim_top_left(index: usize) -> Vec2 {
-    card_top_left(index) + Vec2::new(CARD_SIZE.x - CLAIM_SIZE.x - 12.0, 30.0)
+fn note_top_left(index: usize) -> Vec2 {
+    let column = (index % COLUMNS) as f32;
+    let row = (index / COLUMNS) as f32;
+    NOTE_ORIGIN
+        + Vec2::new(
+            NOTE_STEP.x * column,
+            NOTE_STEP.y * row + NOTE_JITTER[index % 6],
+        )
 }
 
 fn tab_top_left(tab: Tab) -> Vec2 {
@@ -149,7 +126,7 @@ fn tab_top_left(tab: Tab) -> Vec2 {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Target {
     Tab(Tab),
-    Card(usize),
+    Note(usize),
 }
 
 pub(crate) fn target_at(tab: Tab, point: Vec2) -> Option<Target> {
@@ -160,96 +137,101 @@ pub(crate) fn target_at(tab: Tab, point: Vec2) -> Option<Target> {
         return Some(Target::Tab(*found));
     }
     (0..entries(tab).len())
-        .find(|index| panel::contains(card_top_left(*index), CARD_SIZE, point))
-        .map(Target::Card)
+        .find(|index| {
+            panel::contains(
+                note_top_left(*index) + Vec2::splat(NOTE_INSET),
+                VISIBLE,
+                point,
+            )
+        })
+        .map(Target::Note)
 }
 
 pub(crate) fn layout(tab: Tab, hover: Option<Target>) -> Vec<Element> {
-    let mut elements = panel::frame();
-    elements.push(panel::label(
-        "Notice Board",
-        Vec2::new(BOARD_CENTER_X, BOARD_TOP_LEFT.y + TITLE_BASELINE - 20.0),
-        ORANGE,
-        FontSize::Size32,
-        Align::Center,
-    ));
+    let mut elements = panel::frame(tex::BOARD_NOTICE);
     for other in Tab::ALL {
-        let style = if other == tab {
-            ButtonStyle::Hover
-        } else if hover == Some(Target::Tab(other)) {
-            ButtonStyle::Normal
-        } else {
-            ButtonStyle::Disabled
-        };
-        elements.extend(panel::button(
-            tab_top_left(other),
-            TAB_SIZE,
+        let top_left = tab_top_left(other);
+        let chosen = other == tab;
+        let hovered = hover == Some(Target::Tab(other));
+        elements.push(panel::label(
             other.name(),
-            style,
-            FontSize::Size22,
+            Vec2::new(top_left.x + TAB_SIZE.x / 2.0, top_left.y + 24.0),
+            if chosen || hovered { INK } else { TAB_IDLE },
+            FontSize::Size27,
+            Align::Center,
         ));
+        if chosen {
+            elements.push(rect(
+                top_left + Vec2::new(10.0, 29.0),
+                Vec2::new(TAB_SIZE.x - 20.0, 3.0),
+                INK,
+                TAB_LAYER,
+            ));
+        }
     }
     for (index, entry) in entries(tab).iter().enumerate() {
-        let top_left = card_top_left(index);
+        let corner = note_top_left(index);
+        let origin = corner + Vec2::splat(NOTE_INSET);
         let done = entry.progress >= entry.goal;
-        let hovered = hover == Some(Target::Card(index));
-        let rim = if hovered {
-            YELLOW
-        } else if done {
-            GOLD
-        } else {
-            SALMON
-        };
-        elements.extend(panel::card(top_left, CARD_SIZE, rim, done));
+        let hovered = hover == Some(Target::Note(index));
+        let row = usize::from(hovered) + 2 * usize::from(done);
+        elements.push(panel::note(
+            tex::NOTE_PAPER,
+            corner,
+            NOTE_SIZE,
+            row,
+            NOTE_ROWS,
+        ));
         elements.push(panel::label(
             entry.title,
-            top_left + Vec2::new(14.0, 24.0),
-            if hovered { YELLOW } else { ORANGE },
+            origin + Vec2::new(VISIBLE.x / 2.0, 50.0),
+            INK,
             FontSize::Size22,
-            Align::Left,
+            Align::Center,
         ));
-        elements.push(panel::label(
-            entry.detail,
-            top_left + Vec2::new(14.0, 44.0),
-            GRAY,
-            FontSize::Size16,
-            Align::Left,
-        ));
-        let fraction = entry.progress.min(entry.goal) as f32 / entry.goal as f32;
+        for (line, text) in panel::wrap(entry.detail, DETAIL_WIDTH)
+            .into_iter()
+            .enumerate()
+        {
+            elements.push(panel::label(
+                text,
+                origin + Vec2::new(VISIBLE.x / 2.0, 76.0 + 17.0 * line as f32),
+                INK,
+                FontSize::Size16,
+                Align::Center,
+            ));
+        }
+        let shown = entry.progress.min(entry.goal);
         elements.extend(panel::bar(
-            top_left + Vec2::new(14.0, 52.0),
+            origin + Vec2::new((VISIBLE.x - BAR_SIZE.x) / 2.0, 118.0),
             BAR_SIZE,
-            fraction,
-            if done { GOLD } else { ACCENT },
+            shown as f32 / entry.goal as f32,
+            if done { GREEN } else { RED },
+            TRACK_BROWN,
         ));
         elements.push(panel::label(
-            format!("{}/{}", entry.progress.min(entry.goal), entry.goal),
-            top_left + Vec2::new(14.0 + BAR_SIZE.x + 10.0, 60.0),
-            GRAY,
-            FontSize::Size16,
-            Align::Left,
-        ));
-        elements.push(panel::label(
-            entry.reward,
-            top_left + Vec2::new(CARD_SIZE.x - 12.0 - CLAIM_SIZE.x / 2.0, 22.0),
-            GOLD,
+            format!("{shown}/{}", entry.goal),
+            origin + Vec2::new(VISIBLE.x / 2.0, 146.0),
+            INK,
             FontSize::Size16,
             Align::Center,
         ));
-        let style = match (done, hovered) {
-            (true, true) => ButtonStyle::Hover,
-            (true, false) => ButtonStyle::Normal,
-            (false, _) => ButtonStyle::Disabled,
-        };
-        elements.extend(panel::button(
-            claim_top_left(index),
-            CLAIM_SIZE,
-            if done { "Claim" } else { "Locked" },
-            style,
-            FontSize::Size16,
+        let middle = origin.x + VISIBLE.x / 2.0;
+        elements.push(panel::label(
+            format!("+{}", entry.talents),
+            Vec2::new(middle + 2.0, origin.y + 171.0),
+            INK,
+            FontSize::Size22,
+            Align::Right,
+        ));
+        elements.push(panel::note(
+            tex::TALENT_ICON,
+            Vec2::new(middle + 8.0, origin.y + 148.0),
+            ICON_SIZE,
+            0,
+            1,
         ));
     }
-    elements.push(panel::footer());
     elements
 }
 
@@ -336,43 +318,78 @@ mod tests {
             .collect()
     }
 
+    fn papers(elements: &[Element]) -> Vec<usize> {
+        elements
+            .iter()
+            .filter_map(|element| match element {
+                Element::Image {
+                    texture,
+                    cell: Some((row, _)),
+                    ..
+                } if *texture == tex::NOTE_PAPER => Some(*row),
+                _ => None,
+            })
+            .collect()
+    }
+
     #[test]
-    fn each_tab_lists_its_own_entries() {
+    fn each_tab_pins_its_own_papers() {
         let tasks = labels(&layout(Tab::Tasks, None));
         let challenges = labels(&layout(Tab::Challenges, None));
 
         assert!(tasks.contains(&"Crypt Cleaner".to_string()));
         assert!(!tasks.contains(&"Untouched".to_string()));
         assert!(challenges.contains(&"Untouched".to_string()));
+        assert_eq!(papers(&layout(Tab::Tasks, None)).len(), TASKS.len());
     }
 
     #[test]
-    fn only_finished_entries_offer_a_claim() {
-        let shown = labels(&layout(Tab::Tasks, None));
+    fn finished_papers_carry_the_stamp_and_hovered_ones_are_lifted() {
+        let calm = papers(&layout(Tab::Tasks, None));
+        let lifted = papers(&layout(Tab::Tasks, Some(Target::Note(0))));
 
-        assert_eq!(shown.iter().filter(|text| *text == "Claim").count(), 1);
-        assert_eq!(shown.iter().filter(|text| *text == "Locked").count(), 4);
+        assert_eq!(calm.iter().filter(|row| **row >= 2).count(), 1);
+        assert_eq!(calm[0], 0);
+        assert_eq!(lifted[0], 1);
     }
 
     #[test]
-    fn the_pointer_finds_tabs_and_cards() {
+    fn every_paper_shows_its_reward_as_a_talent_icon() {
+        let icons = |tab| {
+            layout(tab, None)
+                .iter()
+                .filter(|element| matches!(element, Element::Image { texture, .. } if *texture == tex::TALENT_ICON))
+                .count()
+        };
+
+        assert_eq!(icons(Tab::Tasks), TASKS.len());
+        assert_eq!(icons(Tab::Challenges), CHALLENGES.len());
+    }
+
+    #[test]
+    fn the_pointer_finds_tabs_and_papers() {
         let tab = tab_top_left(Tab::Challenges) + Vec2::splat(5.0);
-        let card = card_top_left(2) + Vec2::splat(5.0);
+        let paper = note_top_left(2) + Vec2::splat(20.0);
 
         assert_eq!(
             target_at(Tab::Tasks, tab),
             Some(Target::Tab(Tab::Challenges))
         );
-        assert_eq!(target_at(Tab::Tasks, card), Some(Target::Card(2)));
+        assert_eq!(target_at(Tab::Tasks, paper), Some(Target::Note(2)));
         assert_eq!(target_at(Tab::Tasks, Vec2::ZERO), None);
     }
 
     #[test]
-    fn every_card_fits_inside_the_board() {
-        let last = card_top_left(TASKS.len() - 1) + CARD_SIZE;
+    fn every_paper_fits_on_the_board() {
         let board = panel::BOARD_TOP_LEFT + panel::BOARD_SIZE;
+        for index in 0..TASKS.len() {
+            let far = note_top_left(index) + NOTE_SIZE;
 
-        assert!(last.y < board.y - 20.0);
-        assert!(last.x < board.x);
+            assert!(
+                far.x < board.x && far.y < board.y - 12.0,
+                "{index}: {far:?}"
+            );
+        }
+        assert!(note_top_left(0).y > TAB_TOP + TAB_SIZE.y);
     }
 }
