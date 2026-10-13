@@ -126,6 +126,7 @@ impl Game {
             post: self.postfx.params(self.time),
             camera: self.scenes.camera(),
             lights: self.scenes.lights(),
+            occluders: self.scenes.occluders(),
         }
     }
 

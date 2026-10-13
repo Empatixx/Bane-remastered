@@ -89,10 +89,19 @@ impl Scene for LoadingScene {
         if assets.is_loaded() {
             self.finished_for += dt;
             if self.finished_for >= HOLD_SECONDS {
-                return Transition::Switch(SceneId::Menu);
+                return Transition::Switch(first_scene());
             }
         }
         Transition::None
+    }
+}
+
+/// `BANE_START=lobby` or `BANE_START=dungeon` skips straight there, for working on the game.
+fn first_scene() -> SceneId {
+    match std::env::var("BANE_START").as_deref() {
+        Ok("lobby") => SceneId::Lobby,
+        Ok("dungeon") => SceneId::InGame,
+        _ => SceneId::Menu,
     }
 }
 

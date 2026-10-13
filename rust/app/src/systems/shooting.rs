@@ -58,7 +58,7 @@ pub(crate) fn shoot(
     input: &Input,
     context: ShotContext,
     sounds: &mut Vec<AudioCommand>,
-) {
+) -> f32 {
     let ShotContext {
         camera,
         bullet_texture,
@@ -143,6 +143,7 @@ pub(crate) fn shoot(
             perks,
         });
     }
+    let recoil: f32 = shots.iter().map(|shot| shot.spec.shake).sum();
     let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
     super::stats::record(world, super::stats::Stat::Fired, fired);
     for shot in shots {
@@ -163,6 +164,7 @@ pub(crate) fn shoot(
             );
         }
     }
+    recoil
 }
 
 pub(crate) fn bullet_hits(

@@ -40,8 +40,7 @@ pub(crate) use effects::{
     Floating, GazeWind, Hover, LightFade, Particle, RoomId, ThenPlay, TrapCooldown, HOVER_CYCLE,
 };
 pub(crate) use hud::{
-    AmmoPip, AmmoText, BarKind, BossHud, CoinText, GunIcon, StatusBar, PIP_EMPTY,
-    PIP_FULL,
+    AmmoPip, AmmoText, BarKind, BossHud, CoinText, GunIcon, StatusBar, PIP_EMPTY, PIP_FULL,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use items::{
@@ -61,7 +60,7 @@ pub(crate) use settings_ui::{
     Checkbox, Hidden, KeyBindSlot, LabelOf, NeedsChanges, ResolutionText, SettingsTabKind,
     SettingsUi, SliderHandle, SliderValue, TabButton, TabOnly, Toggle, Volume,
 };
-pub(crate) use shadow::PlayerShadow;
+pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
     Armageddon, Boss, Cobweb, DeathBurst, DeathHeal, Drag, EnemyBullet, EyeShooter, Fuse, Hatcher,
     Hits, Homing, Impact, Kin, Minion, Rooted, Smash, WebSpitter,

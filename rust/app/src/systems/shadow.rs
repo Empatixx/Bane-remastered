@@ -1,9 +1,9 @@
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
 
 use glam::{Vec2, Vec4};
-use hecs::World;
+use hecs::{Entity, World};
 
-use crate::components::{Hidden, Light, Player, PlayerShadow, Position, Size, Sprite};
+use crate::components::{DropShadow, Hidden, Light, Position, Sprite};
 use crate::render::{Draw, Quad};
 
 const MAX_DISTANCE: f32 = 400.0;
@@ -14,32 +14,26 @@ const VISIBLE_INTENSITY: f32 = 0.01;
 const FADE_OUT_TARGET: f32 = 0.0;
 
 pub(crate) fn update_shadow(world: &mut World, dt: f32) {
-    let Some((center, _)) = world
-        .query::<(&Position, &Size)>()
-        .with::<&Player>()
-        .iter()
-        .next()
-        .map(|(position, size)| (position.0, size.0))
-    else {
-        return;
-    };
-    let strongest = world
-        .query::<(&Position, &Light)>()
-        .without::<&Player>()
+    let lights: Vec<(Entity, Vec2, f32)> = world
+        .query::<(Entity, &Position, &Light)>()
         .without::<&Hidden>()
         .iter()
-        .filter_map(|(position, light)| {
-            let source = position.0 + light.offset;
-            let distance = center.distance(source);
-            (distance <= MAX_DISTANCE).then(|| {
-                let strength = light.intensity / (distance * distance * 0.0001 + 1.0);
-                (strength, source, distance, light.intensity)
+        .map(|(entity, position, light)| (entity, position.0 + light.offset, light.intensity))
+        .collect();
+    let t = (SPEED * dt).min(1.0);
+    for (entity, position, shadow) in world.query_mut::<(Entity, &Position, &mut DropShadow)>() {
+        let center = position.0;
+        let strongest = lights
+            .iter()
+            .filter(|(owner, _, _)| *owner != entity)
+            .filter_map(|&(_, source, intensity)| {
+                let distance = center.distance(source);
+                (distance <= MAX_DISTANCE).then(|| {
+                    let strength = intensity / (distance * distance * 0.0001 + 1.0);
+                    (strength, source, distance, intensity)
+                })
             })
-        })
-        .max_by(|a, b| a.0.total_cmp(&b.0));
-
-    for shadow in world.query_mut::<&mut PlayerShadow>().with::<&Player>() {
-        let t = (SPEED * dt).min(1.0);
+            .max_by(|a, b| a.0.total_cmp(&b.0));
         let (target_intensity, target_length) = match strongest {
             Some((_, source, distance, light_intensity)) => {
                 let away = center - source;
@@ -74,7 +68,7 @@ pub(crate) fn shadow_draw(
     position: Vec2,
     size: Vec2,
     sprite: &Sprite,
-    shadow: &PlayerShadow,
+    shadow: &DropShadow,
 ) -> Option<Draw> {
     if shadow.intensity < VISIBLE_INTENSITY {
         return None;
@@ -126,9 +120,60 @@ mod tests {
         world
     }
 
-    fn shadow(world: &World) -> PlayerShadow {
+    #[test]
+    fn an_object_drops_its_shadow_away_from_the_player_light() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(500.0, 300.0),
+            &Textures::default(),
+        );
+        let barrel = world.spawn((Position(Vec2::new(500.0, 400.0)), DropShadow::default()));
+
+        for _ in 0..60 {
+            update_shadow(&mut world, 1.0 / 60.0);
+        }
+
+        let shadow = world
+            .get::<&DropShadow>(barrel)
+            .map(|s| *s)
+            .unwrap_or_default();
+        assert!(shadow.intensity > VISIBLE_INTENSITY);
+        assert!(
+            shadow.angle.abs() < 0.05,
+            "points down, away from the player: {}",
+            shadow.angle
+        );
+    }
+
+    #[test]
+    fn the_own_light_of_an_entity_does_not_drop_its_shadow() {
+        let mut world = World::new();
+        let candle = world.spawn((
+            Position(Vec2::new(100.0, 100.0)),
+            Light {
+                offset: Vec2::ZERO,
+                color: glam::Vec3::ONE,
+                radius: 30.0,
+                intensity: 2.0,
+            },
+            DropShadow::default(),
+        ));
+
+        update_shadow(&mut world, 1.0);
+
+        let shadow = world
+            .get::<&DropShadow>(candle)
+            .map(|s| *s)
+            .unwrap_or_default();
+        assert!(shadow.intensity < VISIBLE_INTENSITY);
+    }
+
+    fn shadow(world: &World) -> DropShadow {
         world
-            .query::<&PlayerShadow>()
+            .query::<&DropShadow>()
             .iter()
             .next()
             .copied()

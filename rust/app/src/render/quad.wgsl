@@ -1,22 +1,13 @@
-const MAX_LIGHTS: u32 = 64u;
-const AMBIENT_LIGHT: f32 = 0.6;
 const NOISE_INTENSITY: f32 = 0.10;
-
-struct Light {
-    position: vec2<f32>,
-    radius: f32,
-    intensity: f32,
-    color: vec4<f32>,
-};
 
 struct Globals {
     size: vec2<f32>,
     camera: vec2<f32>,
-    light_count: u32,
-    lights: array<Light, 64>,
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;
+@group(0) @binding(1) var lightmap: texture_2d<f32>;
+@group(0) @binding(2) var lightmap_sampler: sampler;
 @group(1) @binding(0) var image: texture_2d<f32>;
 @group(1) @binding(1) var image_sampler: sampler;
 
@@ -239,13 +230,8 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     if (in.lit < 0.5) {
         return shined(frosted(outlined(albedo, in, uv_per_pixel), in), in);
     }
-    var light = vec3<f32>(AMBIENT_LIGHT);
-    for (var i = 0u; i < globals.light_count; i = i + 1u) {
-        let source = globals.lights[i];
-        let distance = length(source.position - in.world) / source.radius;
-        let attenuation = clamp(1.0 / (1.0 + distance * distance), 0.0, 1.0);
-        light = light + attenuation * source.intensity * source.color.rgb;
-    }
+    let screen = (in.world - globals.camera) / globals.size;
+    var light = textureSampleLevel(lightmap, lightmap_sampler, screen, 0.0).rgb;
     light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
     let shaded = linear_to_srgb(albedo.rgb) * light;
     return shined(

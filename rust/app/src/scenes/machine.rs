@@ -5,7 +5,7 @@ use crate::assets::Assets;
 use crate::audio::AudioCommand;
 use crate::input::Input;
 use crate::profile::SharedProfile;
-use crate::render::{Fonts, Layers, LightSource};
+use crate::render::{Fonts, Layers, LightSource, Occluders};
 use crate::settings::Settings;
 use crate::systems;
 
@@ -103,6 +103,10 @@ impl Scenes {
     pub(crate) fn lights(&self) -> Vec<LightSource> {
         let scene = self.scene();
         systems::collect_lights(scene.world(), scene.camera(), scene.blend())
+    }
+
+    pub(crate) fn occluders(&self) -> Option<std::sync::Arc<Occluders>> {
+        self.scene().occluders()
     }
 
     pub(crate) fn cursor(&self) -> Cursor {

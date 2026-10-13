@@ -50,6 +50,7 @@ pub(crate) struct GunSpec {
     pub(crate) shoot: SoundEffect,
     pub(crate) reload: SoundEffect,
     pub(crate) clip_style: ClipStyle,
+    pub(crate) shake: f32,
 }
 
 const fn gun(
@@ -77,6 +78,7 @@ const fn gun(
         shoot: sounds.0,
         reload: sounds.1,
         clip_style,
+        shake: 0.35,
     }
 }
 
@@ -120,6 +122,7 @@ impl GunKind {
             ),
             Self::Shotgun => GunSpec {
                 pellets: MAX_PELLETS,
+                shake: 0.6,
                 ..gun(
                     (tex::GUNS_SHOTGUN, (97.0, 36.0)),
                     (3, 5),
@@ -130,27 +133,34 @@ impl GunKind {
                     Shotgun,
                 )
             },
-            Self::Luger => gun(
-                (tex::GUNS_LUGER, (50.0, 38.0)),
-                (1, 2),
-                0.35,
-                (0.25, 0.7),
-                (9, 150),
-                (S::PistolShoot, S::PistolReload),
-                Pistol,
-            ),
-            Self::Revolver => gun(
-                (tex::GUNS_REVOLVER, (71.0, 44.0)),
-                (4, 6),
-                0.2,
-                (0.45, 0.7),
-                (6, 60),
-                (S::RevolverShoot, S::PistolReload),
-                Pistol,
-            ),
+            Self::Luger => GunSpec {
+                shake: 0.3,
+                ..gun(
+                    (tex::GUNS_LUGER, (50.0, 38.0)),
+                    (1, 2),
+                    0.35,
+                    (0.25, 0.7),
+                    (9, 150),
+                    (S::PistolShoot, S::PistolReload),
+                    Pistol,
+                )
+            },
+            Self::Revolver => GunSpec {
+                shake: 0.5,
+                ..gun(
+                    (tex::GUNS_REVOLVER, (71.0, 44.0)),
+                    (4, 6),
+                    0.2,
+                    (0.45, 0.7),
+                    (6, 60),
+                    (S::RevolverShoot, S::PistolReload),
+                    Pistol,
+                )
+            },
             Self::M4 => GunSpec {
                 auto: true,
                 burst: Some(4),
+                shake: 0.2,
                 ..gun(
                     (tex::GUNS_M4, (98.0, 52.0)),
                     (2, 2),
@@ -163,6 +173,7 @@ impl GunKind {
             },
             Self::Uzi => GunSpec {
                 auto: true,
+                shake: 0.12,
                 ..gun(
                     (tex::GUNS_UZI, (66.0, 58.0)),
                     (1, 2),
@@ -175,6 +186,7 @@ impl GunKind {
             },
             Self::Thompson => GunSpec {
                 auto: true,
+                shake: 0.18,
                 ..gun(
                     (tex::GUNS_THOMPSON, (97.0, 47.0)),
                     (1, 3),
@@ -231,6 +243,18 @@ pub(crate) fn pip_layout(style: ClipStyle, clip_size: usize) -> Vec<Vec2> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn holding_the_trigger_never_pins_the_screen_shake() {
+        for kind in GunKind::ALL {
+            let spec = kind.spec();
+            let per_second = spec.shake / spec.fire_interval;
+            assert!(
+                per_second < crate::camera::TRAUMA_DECAY,
+                "{kind:?} adds {per_second} trauma a second"
+            );
+        }
+    }
 
     #[test]
     fn every_gun_fits_the_clip_hud() {

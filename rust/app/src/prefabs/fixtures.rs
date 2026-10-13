@@ -6,9 +6,9 @@ use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
     Animation, ArtefactDrop, Backdrop, BreakKind, Breakable, Candle, Chatty, Chest, ChestKind,
-    Clip, Color, ContactDamage, Despawn, Drag, Flame, GunDrop, Health, Interactable, Interaction,
-    Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text,
-    ThenPlay, Trap, Velocity, Weapon,
+    Clip, Color, ContactDamage, Despawn, Drag, Flame, GunDrop, Health, Interactable,
+    Interaction, Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine, SlotPrice, Solid,
+    Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::items::{DESPAWN_SECONDS, ItemKind};
@@ -469,7 +469,7 @@ pub(crate) fn breakable(
         top_left + collider.offset + collider.size / 2.0,
         collider.size,
     );
-    let _ = world.insert_one(entity, Solid(handle));
+    let _ = world.insert(entity, (Solid(handle),));
     entity
 }
 

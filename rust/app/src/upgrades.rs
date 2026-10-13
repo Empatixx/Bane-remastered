@@ -1,4 +1,4 @@
-use crate::assets::{Tex, tex};
+use crate::assets::{tex, Tex};
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};

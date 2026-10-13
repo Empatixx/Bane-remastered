@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use glam::{Vec2, Vec4};
 use hecs::World;
 use winit::keyboard::KeyCode;
@@ -16,6 +18,7 @@ use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs;
 use crate::profile::SharedProfile;
+use crate::render::Occluders;
 use crate::rng::{Rng, Stream};
 use crate::settings::Settings;
 use crate::systems;
@@ -26,6 +29,16 @@ use crate::viewport::TARGET;
 use super::{Cursor, Pause, Scene, SceneId, Transition};
 
 const SLOT_MACHINE_COINS: i32 = 100;
+const BOSS_DEFEATED_SHAKE: f32 = 1.0;
+
+fn impact_shake(effect: SoundEffect) -> f32 {
+    match effect {
+        SoundEffect::Explosion => 0.8,
+        SoundEffect::Death => 0.7,
+        SoundEffect::PlayerHurt => 0.5,
+        _ => 0.0,
+    }
+}
 
 #[derive(Default)]
 pub(crate) struct InGameScene {
@@ -38,6 +51,7 @@ pub(crate) struct InGameScene {
     sounds: Vec<AudioCommand>,
     hit: bool,
     dungeon: Option<Dungeon>,
+    occluders: Option<Arc<Occluders>>,
     rooms: Option<systems::RoomRuntime>,
     run_seed: u64,
     map_rng: Rng,
@@ -68,6 +82,7 @@ impl Scene for InGameScene {
         self.physics = Physics::new();
         self.pause = Pause::default();
         self.dungeon = None;
+        self.occluders = None;
         self.rooms = None;
         self.big_map = false;
     }
@@ -109,7 +124,11 @@ impl Scene for InGameScene {
     }
 
     fn camera(&self) -> Vec2 {
-        self.camera.position()
+        self.camera.view()
+    }
+
+    fn occluders(&self) -> Option<Arc<Occluders>> {
+        self.occluders.clone()
     }
 
     fn set_blend(&mut self, blend: f32) {
@@ -131,6 +150,7 @@ impl Scene for InGameScene {
         assets: &Assets,
         _settings: &mut Settings,
     ) -> Transition {
+        self.camera.update_shake(dt);
         if self.death.is_none() && (self.victory || systems::player_is_dead(&self.world)) {
             self.start_death_screen(assets);
         }
@@ -140,7 +160,7 @@ impl Scene for InGameScene {
             if screen.finished() {
                 return Transition::Switch(SceneId::Lobby);
             }
-            systems::follow_backdrop(&mut self.world, self.camera.position());
+            systems::follow_backdrop(&mut self.world, self.camera.view());
             return Transition::None;
         }
         if input.action_pressed(Action::Map) && !self.pause.is_active() {
@@ -178,7 +198,7 @@ impl Scene for InGameScene {
             }
         }
         if !self.big_map {
-            systems::shoot(
+            let recoil = systems::shoot(
                 &mut self.world,
                 &mut self.physics,
                 input,
@@ -190,6 +210,7 @@ impl Scene for InGameScene {
                 },
                 &mut self.sounds,
             );
+            self.camera.add_trauma(recoil);
         }
         systems::animate_player(&mut self.world, input);
         systems::show_dodge_visual(&mut self.world, &assets.textures);
@@ -303,7 +324,7 @@ impl Scene for InGameScene {
         if let Some(target) = systems::camera_target(&self.world, input.mouse(), self.blend.0) {
             self.camera.follow(target, dt);
         }
-        systems::follow_backdrop(&mut self.world, self.camera.position());
+        systems::follow_backdrop(&mut self.world, self.camera.view());
         match systems::interact(&mut self.world, input) {
             Some(Interaction::NextFloor) => self.next_floor(assets),
             Some(Interaction::Spin) => systems::spin(&mut self.world, &mut self.sounds),
@@ -318,6 +339,7 @@ impl Scene for InGameScene {
             }
             _ => {}
         }
+        self.feel_impacts();
         Transition::None
     }
 
@@ -373,6 +395,7 @@ impl Scene for InGameScene {
             self.hit = true;
         }
         systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
+        self.feel_impacts();
         Transition::None
     }
 }
@@ -390,6 +413,15 @@ impl InGameScene {
             .as_ref()
             .map_or_else(Perks::default, SharedProfile::perks);
         systems::apply_run_perks(&mut self.world, perks);
+    }
+
+    /// Shakes the screen for the hard hits of this step, read from the sounds they made.
+    fn feel_impacts(&mut self) {
+        for command in &self.sounds {
+            if let AudioCommand::Effect(effect) = command {
+                self.camera.add_trauma(impact_shake(*effect));
+            }
+        }
     }
 
     pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
@@ -434,6 +466,13 @@ impl InGameScene {
             assets.textures.get(TILESET),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
+        let grid = &dungeon.grid;
+        self.occluders = Some(Arc::new(Occluders::new(
+            grid.columns(),
+            grid.rows(),
+            TILE_SIZE,
+            |column, row| grid.is_wall(column as isize, row as isize),
+        )));
         self.navigation = Navigation::new(&solid_cells);
         self.flow = FlowField::default();
         let start = dungeon.start_position().unwrap_or(bounds / 2.0);
@@ -494,7 +533,7 @@ impl InGameScene {
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0, 1.0) {
             self.camera.snap_to(target);
         }
-        systems::follow_backdrop(&mut self.world, self.camera.position());
+        systems::follow_backdrop(&mut self.world, self.camera.view());
     }
 
     fn next_floor(&mut self, assets: &Assets) {
@@ -524,6 +563,7 @@ impl InGameScene {
                     self.sounds.push(AudioCommand::Music(Soundtrack::Boss));
                 }
                 systems::RoomEvent::BossDefeated { center } => {
+                    self.camera.add_trauma(BOSS_DEFEATED_SHAKE);
                     self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
                     let textures = &assets.textures;
                     let chest_top_left = center - Vec2::new(32.0, 3.0 * TILE_SIZE);
@@ -632,6 +672,25 @@ mod tests {
     use crate::enemies::EnemyKind;
 
     use super::*;
+
+    #[test]
+    fn explosions_and_hurt_shake_the_view_but_not_the_aim() {
+        let mut scene = InGameScene {
+            camera: Camera::new(Vec2::new(5000.0, 5000.0)),
+            ..InGameScene::default()
+        };
+        scene.camera.snap_to(Vec2::new(500.0, 500.0));
+        scene
+            .sounds
+            .push(AudioCommand::Effect(SoundEffect::Explosion));
+
+        scene.feel_impacts();
+        scene.camera.update_shake(0.05);
+
+        assert_ne!(scene.camera(), scene.camera.position());
+        assert_eq!(scene.camera.position(), Vec2::new(500.0, 500.0));
+        assert_eq!(impact_shake(SoundEffect::Coin), 0.0);
+    }
 
     #[test]
     fn an_enemy_killed_by_poison_still_bursts_before_it_is_reaped() {

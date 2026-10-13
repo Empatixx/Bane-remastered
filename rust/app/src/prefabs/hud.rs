@@ -1,12 +1,12 @@
-use crate::assets::{Tex, tex};
+use crate::assets::{tex, Tex};
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
     AmmoPip, AmmoText, Animation, ArtefactIcon, BarKind, BossHud, CoinText, Color, Despawn,
-    GunIcon, Hidden, Interactable, Interaction, Layer, Lit, PIP_FULL, Position, PriceTag, Prompt,
-    ScreenSpace, Shop, Size, Sprite, StatusBar, Text,
+    GunIcon, Hidden, Interactable, Interaction, Layer, Lit, Position, PriceTag, Prompt,
+    ScreenSpace, Shop, Size, Sprite, StatusBar, Text, PIP_FULL,
 };
 use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::render::{Align, Anchor, FontSize, TextureId};

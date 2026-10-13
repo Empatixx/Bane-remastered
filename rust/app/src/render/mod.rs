@@ -15,7 +15,7 @@ pub(crate) fn pack_atlas(sizes: &[(u32, u32)], max: u32) -> Option<(u32, Vec<(u3
 pub(crate) use draw::{Draw, Layers};
 pub(crate) use font::{Align, Anchor, FontSize, Fonts};
 pub(crate) use gpu::Gpu;
-pub(crate) use light::{Frame, LightSource, MAX_LIGHTS};
+pub(crate) use light::{Frame, LightSource, Occluders, MAX_LIGHTS};
 pub(crate) use post::PostParams;
 pub(crate) use quad::{MapRoomLook, Quad};
 pub(crate) use texture::Pixels;
@@ -39,6 +39,14 @@ mod shader_tests {
     #[test]
     fn the_quad_shader_is_valid() {
         let _ = validate("quad.wgsl", include_str!("quad.wgsl"));
+    }
+
+    #[test]
+    fn the_lightmap_shader_is_valid() {
+        let module = validate("lightmap.wgsl", include_str!("lightmap.wgsl"));
+        for entry in ["vs_fullscreen", "fs_light"] {
+            assert!(module.entry_points.iter().any(|point| point.name == entry));
+        }
     }
 
     #[test]

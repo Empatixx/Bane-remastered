@@ -6,9 +6,9 @@ use crate::assets::tex;
 use crate::assets::{Textures, PET, PLAYER};
 use crate::components::{
     Animation, Armageddon, Armor, ArtefactSlot, Boss, Bullet, Chase, Cobweb, Color, ContactDamage,
-    Dash, DeathBurst, DeathHeal, Drag, Enemy, EnemyBullet, EyeShooter, Fuse, GazeWind, Hatcher,
-    Health, Hits, Homing, Impact, Kin, Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, Path,
-    Pet, Player, PlayerShadow, Position, RoomId, RunStats, Size, Smash, Spawning, Sprite, Velocity,
+    Dash, DeathBurst, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse, GazeWind,
+    Hatcher, Health, Hits, Homing, Impact, Kin, Layer, Light, LightFade, Lit, Loadout, Minion,
+    NoDrop, Path, Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning, Sprite, Velocity,
     Wallet, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
@@ -65,7 +65,7 @@ pub(crate) fn player(
         (
             Lit,
             Light::rgb(Vec2::ZERO, 216.0, 156.0, 36.0, 150.0, 0.5),
-            PlayerShadow::default(),
+            DropShadow::default(),
             GazeWind::default(),
         ),
     );

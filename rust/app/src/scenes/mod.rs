@@ -14,6 +14,8 @@ mod upgrade_menu;
 mod weapon_table;
 mod weapon_tree;
 
+use std::sync::Arc;
+
 use glam::Vec2;
 use hecs::World;
 
@@ -21,6 +23,7 @@ use crate::assets::Assets;
 use crate::audio::{AudioCommand, Soundtrack};
 use crate::input::Input;
 use crate::postfx::SceneFx;
+use crate::render::Occluders;
 use crate::settings::Settings;
 
 pub(crate) use machine::Scenes;
@@ -81,6 +84,10 @@ pub(crate) trait Scene {
 
     fn camera(&self) -> Vec2 {
         Vec2::ZERO
+    }
+
+    fn occluders(&self) -> Option<Arc<Occluders>> {
+        None
     }
 
     fn set_blend(&mut self, _blend: f32) {}

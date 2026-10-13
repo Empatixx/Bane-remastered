@@ -10,10 +10,13 @@ use super::atlas;
 use super::light::Globals;
 use super::post::PostUniform;
 use super::texture::Pixels;
-use super::{Draw, Frame, Quad, TextureId};
+use super::{Draw, Frame, Occluders, Quad, TextureId};
+use crate::viewport::TARGET;
 
 const INITIAL_QUADS: usize = 10_000;
 const MAX_QUADS: usize = 1 << 20;
+const LIGHTMAP_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
+const LIGHTMAP_SCALE: f32 = 0.5;
 const OCCLUDED_WAIT: std::time::Duration = std::time::Duration::from_millis(16);
 
 #[derive(Debug)]
@@ -36,6 +39,25 @@ pub(crate) struct Gpu {
     trimmed_frames: u32,
     post: Post,
     targets: Option<Targets>,
+    light: Lighting,
+}
+
+/// Renders the light of the visible area, walls casting shadows, into a small texture that the
+/// quads read their light from.
+struct Lighting {
+    pipeline: wgpu::RenderPipeline,
+    layout: wgpu::BindGroupLayout,
+    group: wgpu::BindGroup,
+    lightmap: wgpu::TextureView,
+    occluders: u64,
+}
+
+impl std::fmt::Debug for Lighting {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Lighting")
+            .field("occluders", &self.occluders)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -90,29 +112,64 @@ impl Gpu {
 
         let globals_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("globals"),
-            contents: bytemuck::bytes_of(&Globals::new(glam::Vec2::ZERO, &[])),
+            contents: bytemuck::bytes_of(&Globals::new(glam::Vec2::ZERO, &[], None)),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+        let light = Lighting::new(&device, &queue, &globals_buffer);
+        let lightmap_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("lightmap"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
         });
         let screen_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("screen"),
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
                 },
-                count: None,
-            }],
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
         });
         let screen_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("screen"),
             layout: &screen_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: globals_buffer.as_entire_binding(),
-            }],
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: globals_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&light.lightmap),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&lightmap_sampler),
+                },
+            ],
         });
         let texture_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("texture"),
@@ -207,6 +264,7 @@ impl Gpu {
             trimmed_frames: 0,
             post,
             targets: None,
+            light,
         };
         gpu.upload(&Pixels::white());
         Ok(gpu)
@@ -495,8 +553,16 @@ impl Gpu {
         self.queue.write_buffer(
             &self.globals_buffer,
             0,
-            bytemuck::bytes_of(&Globals::new(frame_data.camera, &frame_data.lights)),
+            bytemuck::bytes_of(&Globals::new(
+                frame_data.camera,
+                &frame_data.lights,
+                frame_data.occluders.as_deref(),
+            )),
         );
+        if let Some(occluders) = &frame_data.occluders {
+            self.light
+                .set_occluders(&self.device, &self.queue, &self.globals_buffer, occluders);
+        }
         self.queue.write_buffer(
             &self.post.params_buffer,
             0,
@@ -539,6 +605,7 @@ impl Gpu {
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        self.light.draw(&mut encoder);
 
         if direct {
             self.quads_pass(
@@ -703,6 +770,182 @@ impl Post {
             sampler,
         }
     }
+}
+
+impl Lighting {
+    fn new(device: &wgpu::Device, queue: &wgpu::Queue, globals: &wgpu::Buffer) -> Self {
+        let size = (TARGET * LIGHTMAP_SCALE).as_uvec2();
+        let lightmap = device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("lightmap"),
+                size: wgpu::Extent3d {
+                    width: size.x,
+                    height: size.y,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: LIGHTMAP_FORMAT,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                    | wgpu::TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("light"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+            ],
+        });
+        let shader = device.create_shader_module(wgpu::include_wgsl!("lightmap.wgsl"));
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("light"),
+            bind_group_layouts: &[Some(&layout)],
+            immediate_size: 0,
+        });
+        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("light"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_fullscreen"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                buffers: &[],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_light"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                targets: &[Some(LIGHTMAP_FORMAT.into())],
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview_mask: None,
+            cache: None,
+        });
+        let empty = occluder_texture(device, queue, (1, 1), &[0]);
+        let group = light_group(device, &layout, globals, &empty);
+        Self {
+            pipeline,
+            layout,
+            group,
+            lightmap,
+            occluders: 0,
+        }
+    }
+
+    fn set_occluders(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        globals: &wgpu::Buffer,
+        occluders: &Occluders,
+    ) {
+        if self.occluders == occluders.id() {
+            return;
+        }
+        let texture = occluder_texture(device, queue, occluders.size(), occluders.cells());
+        self.group = light_group(device, &self.layout, globals, &texture);
+        self.occluders = occluders.id();
+    }
+
+    fn draw(&self, encoder: &mut wgpu::CommandEncoder) {
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("light"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view: &self.lightmap,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            ..Default::default()
+        });
+        pass.set_pipeline(&self.pipeline);
+        pass.set_bind_group(0, &self.group, &[]);
+        pass.draw(0..3, 0..1);
+    }
+}
+
+fn occluder_texture(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    (columns, rows): (u32, u32),
+    cells: &[u8],
+) -> wgpu::TextureView {
+    let size = wgpu::Extent3d {
+        width: columns.max(1),
+        height: rows.max(1),
+        depth_or_array_layers: 1,
+    };
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("occluders"),
+        size,
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::R8Unorm,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        view_formats: &[],
+    });
+    if cells.len() as u32 == size.width * size.height {
+        queue.write_texture(
+            texture.as_image_copy(),
+            cells,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(size.width),
+                rows_per_image: Some(size.height),
+            },
+            size,
+        );
+    }
+    texture.create_view(&wgpu::TextureViewDescriptor::default())
+}
+
+fn light_group(
+    device: &wgpu::Device,
+    layout: &wgpu::BindGroupLayout,
+    globals: &wgpu::Buffer,
+    occluders: &wgpu::TextureView,
+) -> wgpu::BindGroup {
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("light"),
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: globals.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureView(occluders),
+            },
+        ],
+    })
 }
 
 fn quad_buffer(device: &wgpu::Device, capacity: usize) -> wgpu::Buffer {

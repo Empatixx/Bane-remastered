@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use glam::Vec2;
 use hecs::World;
 use winit::keyboard::KeyCode;
@@ -14,6 +16,7 @@ use crate::postfx::SceneFx;
 use crate::prefabs::{self, PLAYER_SIZE};
 use crate::profile::SharedProfile;
 use crate::props::{Look, Prop};
+use crate::render::Occluders;
 use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
@@ -59,6 +62,7 @@ pub(crate) struct LobbyScene {
     upgrades: UpgradeMenu,
     quests: QuestBoard,
     weapons: WeaponTable,
+    occluders: Option<Arc<Occluders>>,
     clock: f32,
     sounds: Vec<AudioCommand>,
     profile: Option<SharedProfile>,
@@ -99,6 +103,11 @@ impl Scene for LobbyScene {
         self.upgrades = UpgradeMenu::default();
         self.quests = QuestBoard::default();
         self.weapons = WeaponTable::default();
+        self.occluders = None;
+    }
+
+    fn occluders(&self) -> Option<Arc<Occluders>> {
+        self.occluders.clone()
     }
 
     fn soundtrack(&self) -> Option<Soundtrack> {
@@ -145,6 +154,12 @@ impl Scene for LobbyScene {
             textures.get(TILESET),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
+        self.occluders = Some(Arc::new(Occluders::new(
+            grid.columns(),
+            grid.rows(),
+            TILE_SIZE,
+            |column, row| grid.is_wall(column as isize, row as isize),
+        )));
 
         let portal_top_left = Vec2::new(bounds.x / 2.0 - 96.0, TILE_SIZE / 2.0);
         prefabs::portal(&mut self.world, portal_top_left, textures);

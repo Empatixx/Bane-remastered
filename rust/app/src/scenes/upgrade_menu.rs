@@ -1,7 +1,7 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Assets, Tex, tex};
+use crate::assets::{tex, Assets, Tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Color, Layer, Overlay, Position, PulseUi, ScreenSpace, Size, Sprite, Text, UpgradeUi,
@@ -10,7 +10,7 @@ use crate::input::Input;
 use crate::profile::SharedProfile;
 use crate::render::{Align, FontSize};
 use crate::rng::Rng;
-use crate::upgrades::{Purchase, Quality, ROOT_CELL, Upgrade};
+use crate::upgrades::{Purchase, Quality, Upgrade, ROOT_CELL};
 
 pub(super) const TALENT: f32 = 64.0;
 pub(super) const ICON: f32 = 32.0;
@@ -967,11 +967,9 @@ mod tests {
 
         let diagonal = edge_path(ROOT_CELL, Upgrade::MovementSpeed.cell());
         assert!(diagonal.len() >= 3);
-        assert!(
-            diagonal
-                .windows(2)
-                .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y)
-        );
+        assert!(diagonal
+            .windows(2)
+            .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y));
     }
 
     #[test]
@@ -1023,17 +1021,14 @@ mod tests {
                 .collect();
             seen = seen.max(pieces.len());
             assert!(pieces.len() <= PULSE_LIMIT * PULSE_TAIL);
-            assert!(
-                pieces
-                    .iter()
-                    .all(|at| at.x % PULSE_GRID == 0.0 && at.y % PULSE_GRID == 0.0)
-            );
+            assert!(pieces
+                .iter()
+                .all(|at| at.x % PULSE_GRID == 0.0 && at.y % PULSE_GRID == 0.0));
             let snapshot = profile.snapshot();
-            assert!(
-                menu.pulses
-                    .iter()
-                    .all(|pulse| snapshot.owns(Upgrade::ALL[pulse.edge]))
-            );
+            assert!(menu
+                .pulses
+                .iter()
+                .all(|pulse| snapshot.owns(Upgrade::ALL[pulse.edge])));
         }
         assert!(seen >= 2, "{seen}");
 
