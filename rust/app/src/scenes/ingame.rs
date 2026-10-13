@@ -325,6 +325,11 @@ impl Scene for InGameScene {
             self.camera.follow(target, dt);
         }
         systems::follow_backdrop(&mut self.world, self.camera.view());
+        systems::update_enemy_arrows(
+            &mut self.world,
+            self.camera.view(),
+            assets.textures.get(tex::ENEMY_ARROW),
+        );
         match systems::interact(&mut self.world, input) {
             Some(Interaction::NextFloor) => self.next_floor(assets),
             Some(Interaction::Spin) => systems::spin(&mut self.world, &mut self.sounds),

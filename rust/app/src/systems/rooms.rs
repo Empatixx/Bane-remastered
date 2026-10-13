@@ -370,8 +370,8 @@ mod tests {
     fn bigger_rooms_hold_more_enemies_but_the_old_sizes_keep_their_limit() {
         assert_eq!(enemy_limit(16, 10), MIN_ENEMIES);
         assert_eq!(enemy_limit(28, 20), MIN_ENEMIES);
-        assert!(enemy_limit(32, 22) > MIN_ENEMIES);
-        assert!(enemy_limit(44, 28) > enemy_limit(32, 22));
+        assert!(enemy_limit(34, 22) > MIN_ENEMIES);
+        assert!(enemy_limit(38, 24) > enemy_limit(34, 22));
         assert_eq!(enemy_limit(60, 40), MAX_ENEMIES);
     }
 }

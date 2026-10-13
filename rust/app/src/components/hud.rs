@@ -1,4 +1,4 @@
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use glam::{Vec2, Vec3};
 
 use super::animation::Clip;
@@ -95,3 +95,8 @@ pub(crate) struct TalentCount;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct GoldCount;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct EnemyArrow {
+    pub(crate) angle: f32,
+}

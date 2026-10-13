@@ -344,6 +344,6 @@ mod tests {
             .max()
             .unwrap_or(0);
 
-        assert!(biggest >= 40 * 26, "{biggest}");
+        assert!(biggest >= 36 * 22, "{biggest}");
     }
 }

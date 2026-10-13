@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Color, DropShadow, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap, Outline,
-    Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text,
-    blended,
+    Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Lit, MapSize, Minimap,
+    Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar,
+    Text, blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -158,6 +158,19 @@ pub(crate) fn collect_draws(
         for draw in minimap_draws(map) {
             sorted.hud.push((Layer(layer), draw));
         }
+    }
+    for (position, size, color, sprite, arrow) in world
+        .query::<(&Position, &Size, &Color, &Sprite, &EnemyArrow)>()
+        .without::<&Hidden>()
+        .iter()
+    {
+        sorted.hud.push((
+            Layer(4),
+            Draw {
+                texture: sprite.texture,
+                quad: Quad::with_uv(position.0, size.0, color.0, sprite.uv).rotated(arrow.angle),
+            },
+        ));
     }
     for (position, previous, size, sprite, shadow, layer) in world
         .query::<(

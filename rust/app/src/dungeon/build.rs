@@ -513,6 +513,6 @@ mod tests {
                 assert!(room.origin.1 + room.rows < dungeon.grid.rows());
             }
         }
-        assert!(biggest >= 40 * 26, "{biggest}");
+        assert!(biggest >= 36 * 22, "{biggest}");
     }
 }

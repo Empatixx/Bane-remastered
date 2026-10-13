@@ -19,7 +19,7 @@ def mark(name, spots):
     data = load(name)
     rows = [list(row) for row in data["rows"]]
     for column, row in spots:
-        assert rows[row][column] == ".", (name, column, row, rows[row][column])
+        assert rows[row][column] in ".E", (name, column, row, rows[row][column])
         rows[row][column] = "E"
     data["rows"] = ["".join(row) for row in rows]
     save(name, data)
@@ -74,28 +74,27 @@ def main():
     mark("normal_15", [(2, 2), (17, 2), (9, 3), (2, 9), (17, 9), (9, 8)])
     big_room(
         "normal_17",
-        32,
-        22,
-        pillars(32, 22, [(6, 4), (11, 8)]),
-        (14, 9, 4, 4),
-        mirrored(32, 22, [(3, 3), (9, 2), (3, 8), (13, 5), (7, 10)]),
+        30,
+        20,
+        pillars(30, 20, [(5, 3), (9, 7)]),
+        (13, 8, 4, 4),
+        mirrored(30, 20, [(3, 3), (8, 2), (3, 8), (11, 4), (7, 8)]),
     )
     big_room(
         "normal_18",
-        38,
-        24,
-        pillars(38, 24, [(6, 4), (12, 8), (4, 9)]),
-        (16, 10, 6, 4),
-        mirrored(38, 24, [(3, 3), (10, 2), (3, 10), (14, 6), (8, 10), (15, 3)]),
+        34,
+        22,
+        pillars(34, 22, [(6, 4), (10, 8)]),
+        (14, 9, 6, 4),
+        mirrored(34, 22, [(3, 3), (9, 2), (3, 9), (13, 6), (8, 10)]),
     )
     big_room(
         "normal_19",
-        44,
-        28,
-        pillars(44, 28, [(7, 5), (14, 9), (5, 11), (17, 3)]),
-        (19, 12, 6, 4),
-        mirrored(44, 28, [(3, 3), (11, 2), (3, 12), (16, 6), (10, 11), (19, 4), (17, 10), (7, 8)]),
+        38,
+        24,
+        pillars(38, 24, [(6, 4), (11, 8), (4, 9)]),
+        (16, 10, 6, 4),
+        mirrored(38, 24, [(3, 3), (9, 2), (3, 10), (14, 6), (8, 10), (14, 3)]),
     )
-
 
 main()

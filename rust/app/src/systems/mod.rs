@@ -1,5 +1,6 @@
 mod ambience;
 mod animation;
+mod arrows;
 mod artefacts;
 mod bosses;
 mod camera;
@@ -63,6 +64,7 @@ pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, resolve_deaths, tick_spawning, update_flow,
 };
 pub(crate) use glide::glide;
+pub(crate) use arrows::update_enemy_arrows;
 pub(crate) use hud::{update_lobby_counters, update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use items::{

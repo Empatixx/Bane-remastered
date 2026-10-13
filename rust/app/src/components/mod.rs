@@ -40,8 +40,8 @@ pub(crate) use effects::{
     Floating, GazeWind, Hover, LightFade, Particle, RoomId, ThenPlay, TrapCooldown, HOVER_CYCLE,
 };
 pub(crate) use hud::{
-    AmmoPip, AmmoText, BarKind, BossHud, CoinText, GoldCount, GunIcon, StatusBar, TalentCount,
-    PIP_EMPTY, PIP_FULL,
+    AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon, StatusBar,
+    TalentCount, PIP_EMPTY, PIP_FULL,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use items::{

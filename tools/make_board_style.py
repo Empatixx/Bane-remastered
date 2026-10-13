@@ -460,6 +460,14 @@ def reroll_dice():
     return sheet
 
 
+def enemy_arrow():
+    def paint(d):
+        d.rectangle((1, 6, 8, 9), fill=255)
+        d.polygon([(7, 1), (15, 7), (15, 8), (7, 14)], fill=255)
+
+    return Icon().layer(RED_RAMP, paint).render()
+
+
 UPGRADE_ICONS = [icon_damage, icon_rate, icon_magazine, icon_reload, icon_accuracy, icon_crit]
 MUTATION_ICONS = [icon_piercing, icon_explosive, icon_venom, icon_frost, icon_ricochet, icon_deadeye]
 
@@ -530,6 +538,7 @@ def main():
     upgrade_icons().save(f"{OUT}/upgrade_icons.tga")
     mutation_icons().save(f"{OUT}/mutation_icons.tga")
     reroll_dice().save(f"{OUT}/reroll_dice.tga")
+    enemy_arrow().save(f"{OUT}/enemy_arrow.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
     preview([board, notes, talent_icon(), upgrade_icons(), mutation_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")
