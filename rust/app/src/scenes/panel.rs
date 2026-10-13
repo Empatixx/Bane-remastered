@@ -1,6 +1,6 @@
 use glam::{Vec2, Vec4};
 
-use crate::assets::{Tex, tex};
+use crate::assets::Tex;
 use crate::render::{Align, FontSize};
 
 use super::upgrade_menu::{Element, rect};
@@ -18,21 +18,9 @@ const BAR_LAYER: i32 = 33;
 pub(super) const SCALE: f32 = 4.0;
 
 pub(super) const INK: Vec4 = Vec4::new(58.0 / 255.0, 40.0 / 255.0, 23.0 / 255.0, 1.0);
-pub(super) const INK_SOFT: Vec4 = Vec4::new(102.0 / 255.0, 85.0 / 255.0, 63.0 / 255.0, 1.0);
 pub(super) const TAB_IDLE: Vec4 = Vec4::new(122.0 / 255.0, 83.0 / 255.0, 51.0 / 255.0, 1.0);
-pub(super) const SAND: Vec4 = Vec4::new(189.0 / 255.0, 171.0 / 255.0, 147.0 / 255.0, 1.0);
-pub(super) const CREAM: Vec4 = Vec4::new(240.0 / 255.0, 224.0 / 255.0, 180.0 / 255.0, 1.0);
-pub(super) const YELLOW: Vec4 = Vec4::new(1.0, 0.91, 0.43, 1.0);
-pub(super) const GRAY: Vec4 = Vec4::new(130.0 / 255.0, 112.0 / 255.0, 104.0 / 255.0, 1.0);
 pub(super) const RED: Vec4 = Vec4::new(176.0 / 255.0, 58.0 / 255.0, 44.0 / 255.0, 1.0);
 pub(super) const GREEN: Vec4 = Vec4::new(56.0 / 255.0, 140.0 / 255.0, 76.0 / 255.0, 1.0);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum ButtonStyle {
-    Normal,
-    Hover,
-    Disabled,
-}
 
 pub(super) fn frame(board: Tex) -> Vec<Element> {
     vec![
@@ -109,36 +97,6 @@ pub(super) fn wrap(text: &str, width: usize) -> Vec<String> {
     lines
 }
 
-pub(super) fn plaque(
-    top_left: Vec2,
-    size: Vec2,
-    text: &str,
-    style: ButtonStyle,
-    font: FontSize,
-) -> Vec<Element> {
-    let (row, ink) = match style {
-        ButtonStyle::Normal => (0, CREAM),
-        ButtonStyle::Hover => (1, YELLOW),
-        ButtonStyle::Disabled => (2, GRAY),
-    };
-    let baseline = top_left.y
-        + size.y / 2.0
-        + match font {
-            FontSize::Size16 => 5.0,
-            _ => 7.0,
-        };
-    vec![
-        note(tex::NOTE_PLAQUE, top_left, size, row, 3),
-        label(
-            text,
-            Vec2::new(top_left.x + size.x / 2.0, baseline),
-            ink,
-            font,
-            Align::Center,
-        ),
-    ]
-}
-
 pub(super) fn contains(top_left: Vec2, size: Vec2, point: Vec2) -> bool {
     point.cmpge(top_left).all() && point.cmple(top_left + size).all()
 }
@@ -146,6 +104,7 @@ pub(super) fn contains(top_left: Vec2, size: Vec2, point: Vec2) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assets::tex;
 
     #[test]
     fn a_bar_fills_by_its_fraction_and_stays_inside_its_track() {
@@ -163,28 +122,6 @@ mod tests {
         assert!(widths(0.0).is_empty());
         assert_eq!(widths(0.4), vec![40.0]);
         assert_eq!(widths(7.0), vec![100.0]);
-    }
-
-    #[test]
-    fn plaques_change_their_ink_with_the_style() {
-        let colour_of = |style: ButtonStyle| {
-            plaque(
-                Vec2::ZERO,
-                Vec2::new(88.0, 28.0),
-                "Go",
-                style,
-                FontSize::Size16,
-            )
-            .iter()
-            .find_map(|element| match element {
-                Element::Label { color, .. } => Some(*color),
-                _ => None,
-            })
-        };
-
-        assert_eq!(colour_of(ButtonStyle::Normal), Some(CREAM));
-        assert_eq!(colour_of(ButtonStyle::Hover), Some(YELLOW));
-        assert_eq!(colour_of(ButtonStyle::Disabled), Some(GRAY));
     }
 
     #[test]

@@ -305,30 +305,10 @@ def glyph(rows, ink, outline):
 
 def upgrade_icons():
     names = ["damage", "rate", "magazine"]
-    sheet = Image.new("RGBA", (11, 11 * 6), (0, 0, 0, 0))
+    sheet = Image.new("RGBA", (11, 11 * 3), (0, 0, 0, 0))
     for i, name in enumerate(names):
-        sheet.paste(glyph(GLYPHS[name], CREAM, DEEP), (0, i * 11))
-        sheet.paste(glyph(GLYPHS[name], DEEP, CREAM), (0, (i + 3) * 11))
+        sheet.paste(glyph(GLYPHS[name], TALENT_ORANGE, LINE), (0, i * 11))
     return sheet
-
-
-def node(state):
-    image = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(image)
-    line, fill, light = {
-        "owned": (LINE, CREAM, (244, 232, 210)),
-        "available": (CREAM, BROWN_DARK, BROWN),
-        "locked": (BROWN, DEEP, BROWN_DEEP),
-        "chosen": (CREAM, BROWN_DARK, BROWN),
-    }[state]
-    draw.rectangle((1, 1, 14, 14), fill=LINE + (255,))
-    draw.rectangle((2, 2, 13, 13), fill=line + (255,))
-    draw.rectangle((3, 3, 12, 12), fill=fill + (255,))
-    draw.line((4, 4, 11, 4), fill=light + (255,))
-    draw.line((4, 4, 4, 11), fill=light + (255,))
-    if state == "chosen":
-        draw.rectangle((0, 0, 15, 15), outline=CREAM + (255,))
-    return image
 
 
 def upgrade_node():
@@ -336,6 +316,35 @@ def upgrade_node():
     for i, state in enumerate(["owned", "available", "locked", "chosen"]):
         sheet.paste(node(state), (0, i * 16))
     return sheet
+
+
+PAUSE = "assets/textures/ingame/pausebg.tga"
+TALENT_RIM = (225, 152, 116)
+TALENT_ORANGE = (222, 112, 38)
+
+
+def style_board(w, h):
+    pause = Image.open(PAUSE).convert("RGBA")
+    pw, ph = pause.size
+    margin = 6
+    out = Image.new("RGBA", (w + margin * 2, h + margin * 2), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(out)
+    draw.rectangle((margin, margin, margin + w - 1, margin + h - 1), fill=TALENT_RIM + (255,))
+    draw.rectangle((margin + 1, margin + 1, margin + w - 2, margin + h - 2), fill=(0, 0, 0, 150))
+    corners = (
+        ((0, 0), (0, 0)),
+        ((pw - 20, 0), (w + margin * 2 - 20, 0)),
+        ((0, ph - 20), (0, h + margin * 2 - 20)),
+        ((pw - 20, ph - 20), (w + margin * 2 - 20, h + margin * 2 - 20)),
+    )
+    for (sx, sy), (dx, dy) in corners:
+        crop = pause.crop((sx, sy, sx + 20, sy + 20))
+        pixels = crop.load()
+        for y in range(20):
+            for x in range(20):
+                if pixels[x, y][3] == 255:
+                    out.putpixel((dx + x, dy + y), pixels[x, y])
+    return out
 
 
 def preview(images):
@@ -353,17 +362,14 @@ def preview(images):
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    board, desk, notes, tags, plaques = notice_board(212, 179), table(212, 179), note_paper(), note_tag(), note_plaque()
+    board, notes = notice_board(212, 179), note_paper()
     board.save(f"{OUT}/board_notice.tga")
-    desk.save(f"{OUT}/board_wood.tga")
     notes.save(f"{OUT}/note_paper.tga")
-    tags.save(f"{OUT}/note_tag.tga")
-    plaques.save(f"{OUT}/note_plaque.tga")
     talent_icon().save(f"{OUT}/talent_icon.tga")
-    upgrade_node().save(f"{OUT}/upgrade_node.tga")
     upgrade_icons().save(f"{OUT}/upgrade_icons.tga")
-    preview([board, desk]).save(f"{SCRATCH}/board_a.png")
-    preview([notes, tags, plaques, talent_icon(), upgrade_node(), upgrade_icons()]).save(f"{SCRATCH}/board_b.png")
+    style_board(60, 159).save(f"{OUT}/weapon_list.tga")
+    style_board(130, 159).save(f"{OUT}/weapon_tree.tga")
+    preview([board, notes, talent_icon(), upgrade_icons(), style_board(60, 159), style_board(130, 159)]).save(f"{SCRATCH}/board_a.png")
 
 
 main()

@@ -12,8 +12,8 @@ use crate::render::{Align, FontSize};
 use crate::rng::Rng;
 use crate::upgrades::{Purchase, Quality, ROOT_CELL, Upgrade};
 
-const TALENT: f32 = 64.0;
-const ICON: f32 = 32.0;
+pub(super) const TALENT: f32 = 64.0;
+pub(super) const ICON: f32 = 32.0;
 const STEP: Vec2 = Vec2::new(80.0, 74.0);
 const VIEW_TOP_LEFT: Vec2 = Vec2::new(30.0, 20.0);
 const VIEW_SIZE: Vec2 = Vec2::new(600.0, 501.0);
@@ -23,26 +23,26 @@ const FADE: f32 = 20.0;
 const DRAG_THRESHOLD: f32 = 5.0;
 const PAN_SPEED: f32 = 380.0;
 const PAN_MARGIN: f32 = 120.0;
-const DIM_COLOR: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.55);
-const PANEL_TOP_LEFT: Vec2 = Vec2::new(675.0, 150.0);
-const PANEL_SIZE: Vec2 = Vec2::new(240.0, 300.0);
-const PANEL_TALENT_Y: f32 = 90.0;
-const TITLE_BASELINE: f32 = 222.0;
-const DESCRIPTION_TOP: f32 = 266.0;
-const DESCRIPTION_STEP: f32 = 22.0;
-const PLATE_CENTER: Vec2 = Vec2::new(795.0, 392.0);
-const PLATE_SIZE: Vec2 = Vec2::new(144.0, 57.0);
-const PLATE_HIT_HALF: Vec2 = Vec2::new(63.0, 19.5);
-const PLATE_BASELINE: f32 = 400.0;
-const COST_BASELINE: f32 = 348.0;
-const COST_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
-const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
-const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
-const BLOCKED_COLOR: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
-const LINE_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
-const LINE_OFF: Vec4 = Vec4::new(110.0 / 255.0, 84.0 / 255.0, 90.0 / 255.0, 1.0);
+pub(super) const DIM_COLOR: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.55);
+pub(super) const PANEL_TOP_LEFT: Vec2 = Vec2::new(675.0, 150.0);
+pub(super) const PANEL_SIZE: Vec2 = Vec2::new(240.0, 300.0);
+pub(super) const PANEL_TALENT_Y: f32 = 90.0;
+pub(super) const TITLE_BASELINE: f32 = 222.0;
+pub(super) const DESCRIPTION_TOP: f32 = 266.0;
+pub(super) const DESCRIPTION_STEP: f32 = 22.0;
+pub(super) const PLATE_CENTER: Vec2 = Vec2::new(795.0, 392.0);
+pub(super) const PLATE_SIZE: Vec2 = Vec2::new(144.0, 57.0);
+pub(super) const PLATE_HIT_HALF: Vec2 = Vec2::new(63.0, 19.5);
+pub(super) const PLATE_BASELINE: f32 = 400.0;
+pub(super) const COST_BASELINE: f32 = 348.0;
+pub(super) const COST_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
+pub(super) const MENU_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+pub(super) const HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
+pub(super) const BLOCKED_COLOR: Vec4 = Vec4::new(112.0 / 255.0, 100.0 / 255.0, 100.0 / 255.0, 1.0);
+pub(super) const LINE_COLOR: Vec4 = Vec4::new(225.0 / 255.0, 152.0 / 255.0, 116.0 / 255.0, 1.0);
+pub(super) const LINE_OFF: Vec4 = Vec4::new(110.0 / 255.0, 84.0 / 255.0, 90.0 / 255.0, 1.0);
 const LINE_INK: Vec4 = Vec4::new(14.0 / 255.0, 8.0 / 255.0, 12.0 / 255.0, 1.0);
-const FRAME_INSET: f32 = 8.0;
+pub(super) const FRAME_INSET: f32 = 8.0;
 const CAP_REACH: f32 = 4.0;
 const PULSE_LAYER: i32 = 34;
 const PULSE_SPEED: f32 = 64.0;
@@ -53,18 +53,18 @@ const PULSE_TAIL: usize = 3;
 const PULSE_PAUSE: (f32, f32) = (0.35, 1.1);
 const PULSE_LIMIT: usize = 7;
 const PULSE_HEAD: Vec4 = Vec4::new(1.0, 0.96, 0.78, 1.0);
-const LOCKED_ICON_ALPHA: f32 = 0.6;
-const DIM_LAYER: i32 = 29;
-const BOARD_LAYER: i32 = 30;
+pub(super) const LOCKED_ICON_ALPHA: f32 = 0.6;
+pub(super) const DIM_LAYER: i32 = 29;
+pub(super) const BOARD_LAYER: i32 = 30;
 const LINE_LAYER: i32 = 31;
-const FRAME_LAYER: i32 = 32;
-const PANEL_LAYER: i32 = 40;
-const PLATE_ROWS: usize = 3;
-const COUNTER_CENTER: Vec2 = Vec2::new(795.0, 50.0);
-const COUNTER_SIZE: Vec2 = Vec2::new(243.0, 75.0);
-const COUNTER_ROWS: usize = 2;
-const COUNTER_BASELINE: f32 = 59.0;
-const FRAME_ROWS: usize = 9;
+pub(super) const FRAME_LAYER: i32 = 32;
+pub(super) const PANEL_LAYER: i32 = 40;
+pub(super) const PLATE_ROWS: usize = 3;
+pub(super) const COUNTER_CENTER: Vec2 = Vec2::new(795.0, 50.0);
+pub(super) const COUNTER_SIZE: Vec2 = Vec2::new(243.0, 75.0);
+pub(super) const COUNTER_ROWS: usize = 2;
+pub(super) const COUNTER_BASELINE: f32 = 59.0;
+pub(super) const FRAME_ROWS: usize = 9;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Element {
@@ -266,7 +266,7 @@ pub(crate) fn edge_path(from: (i32, i32), to: (i32, i32)) -> Vec<Vec2> {
     points
 }
 
-fn draw_path(elements: &mut Vec<Element>, points: &[Vec2], color: Vec4, alpha: f32) {
+pub(super) fn draw_path(elements: &mut Vec<Element>, points: &[Vec2], color: Vec4, alpha: f32) {
     if alpha <= 0.0 || points.len() < 2 {
         return;
     }
