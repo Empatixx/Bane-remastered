@@ -223,12 +223,27 @@ const PAUSE_TEXT_COLOR: Vec4 = palette::ORANGE;
 
 const PAUSE_HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 
-const PAUSE_BUTTONS: [(f32, &str, UiAction); 2] = [
-    (250.0, "Resume", UiAction::Resume),
-    (300.0, "Exit", UiAction::LeaveToMenu),
+pub(crate) const PAUSE_GAME: [(&str, UiAction); 3] = [
+    ("Resume", UiAction::Resume),
+    ("Die", UiAction::Die),
+    ("Exit Game", UiAction::ExitGame),
 ];
 
-pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {
+pub(crate) const PAUSE_LOBBY: [(&str, UiAction); 3] = [
+    ("Resume", UiAction::Resume),
+    ("Main Menu", UiAction::LeaveToMenu),
+    ("Exit Game", UiAction::ExitGame),
+];
+
+const PAUSE_CENTER: f32 = 275.0;
+const PAUSE_STEP: f32 = 50.0;
+
+pub(crate) fn pause_ui(
+    world: &mut World,
+    textures: &Textures,
+    fonts: &Fonts,
+    buttons: &[(&str, UiAction)],
+) {
     world.spawn((
         PauseUi,
         Overlay,
@@ -240,7 +255,9 @@ pub(crate) fn pause_ui(world: &mut World, textures: &Textures, fonts: &Fonts) {
         ScreenSpace,
     ));
     let line = fonts.get(FontSize::Size22);
-    for (baseline, label, action) in PAUSE_BUTTONS {
+    let middle = (buttons.len() as f32 - 1.0) / 2.0;
+    for (index, (label, action)) in buttons.iter().copied().enumerate() {
+        let baseline = PAUSE_CENTER + PAUSE_STEP * (index as f32 - middle);
         let width = line.width(label);
         let height = line.line_height();
         world.spawn((

@@ -276,7 +276,8 @@ impl Scene for LobbyScene {
             return Transition::None;
         }
         if input.just_pressed(KeyCode::Escape) {
-            self.pause.toggle(&mut self.world, assets);
+            self.pause
+                .toggle(&mut self.world, assets, &prefabs::PAUSE_LOBBY);
         }
         if self.pause.is_active() {
             let action = self.pause.update(&mut self.world, input);
@@ -285,10 +286,12 @@ impl Scene for LobbyScene {
             }
             return match action {
                 Some(UiAction::Resume) => {
-                    self.pause.toggle(&mut self.world, assets);
+                    self.pause
+                        .toggle(&mut self.world, assets, &prefabs::PAUSE_LOBBY);
                     Transition::None
                 }
                 Some(UiAction::LeaveToMenu) => Transition::Switch(SceneId::Menu),
+                Some(UiAction::ExitGame) => Transition::Quit,
                 _ => Transition::None,
             };
         }
@@ -480,5 +483,41 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn the_lobby_pause_menu_offers_resume_main_menu_and_exit_game_and_exit_game_quits() {
+        let (mut scene, assets) = lobby();
+        let mut input = Input::default();
+        input.press(KeyCode::Escape);
+        scene.update(&input, 0.0, &assets, &mut Settings::in_memory());
+
+        let mut labels: Vec<String> = scene
+            .world
+            .query::<&Text>()
+            .with::<&crate::components::TextButton>()
+            .iter()
+            .map(|text| text.content.clone())
+            .collect();
+        labels.sort();
+        assert_eq!(labels, vec!["Exit Game", "Main Menu", "Resume"]);
+
+        let at = scene
+            .world
+            .query::<(&crate::components::Position, &Text)>()
+            .with::<&crate::components::TextButton>()
+            .iter()
+            .find(|(_, text)| text.content == "Exit Game")
+            .map(|(position, _)| position.0)
+            .expect("the button");
+        let mut click = Input::default();
+        click.set_mouse(at);
+        click.handle_click(
+            winit::event::MouseButton::Left,
+            winit::event::ElementState::Pressed,
+        );
+        let transition = scene.update(&click, 0.0, &assets, &mut Settings::in_memory());
+
+        assert!(matches!(transition, Transition::Quit));
     }
 }

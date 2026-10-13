@@ -170,7 +170,8 @@ impl Scene for InGameScene {
             if self.big_map {
                 self.set_big_map(false);
             } else {
-                self.pause.toggle(&mut self.world, assets);
+                self.pause
+                    .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
             }
         }
         if self.pause.is_active() {
@@ -180,10 +181,17 @@ impl Scene for InGameScene {
             }
             return match action {
                 Some(UiAction::Resume) => {
-                    self.pause.toggle(&mut self.world, assets);
+                    self.pause
+                        .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
                     Transition::None
                 }
-                Some(UiAction::LeaveToMenu) => Transition::Switch(SceneId::Menu),
+                Some(UiAction::Die) => {
+                    self.pause
+                        .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
+                    self.start_death_screen(assets);
+                    Transition::None
+                }
+                Some(UiAction::ExitGame) => Transition::Quit,
                 _ => Transition::None,
             };
         }
@@ -766,5 +774,83 @@ mod tests {
         assert!(first.len() > 1);
         assert_eq!(first, fingerprint(42, &assets));
         assert_ne!(first, fingerprint(7, &assets));
+    }
+
+    fn paused_game() -> (InGameScene, Assets) {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let mut input = Input::default();
+        input.press(KeyCode::Escape);
+        scene.update(&input, 0.0, &assets, &mut Settings::in_memory());
+        assert!(scene.pause.is_active());
+        (scene, assets)
+    }
+
+    fn press_button(scene: &mut InGameScene, assets: &Assets, label: &str) -> Transition {
+        let at = scene
+            .world
+            .query::<(&Position, &crate::components::Text)>()
+            .with::<&crate::components::TextButton>()
+            .iter()
+            .find(|(_, text)| text.content == label)
+            .map(|(position, _)| position.0)
+            .expect("the button is on the pause menu");
+        let mut input = Input::default();
+        input.set_mouse(at);
+        input.handle_click(
+            winit::event::MouseButton::Left,
+            winit::event::ElementState::Pressed,
+        );
+        scene.update(&input, 0.0, assets, &mut Settings::in_memory())
+    }
+
+    #[test]
+    fn the_pause_menu_offers_resume_die_and_exit_game() {
+        let (scene, _assets) = paused_game();
+
+        let mut labels: Vec<String> = scene
+            .world
+            .query::<&crate::components::Text>()
+            .with::<&crate::components::TextButton>()
+            .iter()
+            .map(|text| text.content.clone())
+            .collect();
+        labels.sort();
+
+        assert_eq!(labels, vec!["Die", "Exit Game", "Resume"]);
+    }
+
+    #[test]
+    fn die_ends_the_run_and_shows_the_death_screen() {
+        let (mut scene, assets) = paused_game();
+        assert!(scene.death.is_none());
+
+        let transition = press_button(&mut scene, &assets, "Die");
+
+        assert!(matches!(transition, Transition::None));
+        assert!(scene.death.is_some());
+        assert!(!scene.pause.is_active());
+    }
+
+    #[test]
+    fn exit_game_quits_the_whole_game() {
+        let (mut scene, assets) = paused_game();
+
+        let transition = press_button(&mut scene, &assets, "Exit Game");
+
+        assert!(matches!(transition, Transition::Quit));
+    }
+
+    #[test]
+    fn resume_closes_the_pause_menu_and_keeps_playing() {
+        let (mut scene, assets) = paused_game();
+
+        let transition = press_button(&mut scene, &assets, "Resume");
+
+        assert!(matches!(transition, Transition::None));
+        assert!(!scene.pause.is_active());
+        assert!(scene.death.is_none());
     }
 }

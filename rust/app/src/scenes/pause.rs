@@ -16,10 +16,15 @@ impl Pause {
         self.active
     }
 
-    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets) {
+    pub(crate) fn toggle(
+        &mut self,
+        world: &mut World,
+        assets: &Assets,
+        buttons: &[(&str, UiAction)],
+    ) {
         self.active = !self.active;
         if self.active {
-            prefabs::pause_ui(world, &assets.textures, &assets.fonts);
+            prefabs::pause_ui(world, &assets.textures, &assets.fonts, buttons);
         } else {
             let ui: Vec<Entity> = world.query::<Entity>().with::<&PauseUi>().iter().collect();
             for entity in ui {
