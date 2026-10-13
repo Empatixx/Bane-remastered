@@ -3,13 +3,13 @@ use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
 use crate::assets::tex;
-use crate::assets::{Textures, PET, PLAYER};
+use crate::assets::{PET, PLAYER, Textures};
 use crate::components::{
-    Animation, Armageddon, Armor, ArtefactSlot, Boss, Bullet, Chase, Cobweb, Color, ContactDamage,
-    Dash, DeathBurst, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse, GazeWind,
-    Hatcher, Health, Hits, Homing, Impact, Kin, Layer, Light, LightFade, Lit, Loadout, Minion,
-    NoDrop, Path, Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning, Sprite, Velocity,
-    Wallet, WebSpitter, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS,
+    Animation, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, Boss,
+    Bullet, Chase, Cobweb, Color, ContactDamage, Dash, DeathBurst, DeathHeal, Drag, DropShadow,
+    Enemy, EnemyBullet, EyeShooter, Fuse, GazeWind, Hatcher, Health, Hits, Homing, Impact, Kin,
+    Layer, Light, LightFade, Lit, Loadout, Minion, NoDrop, Path, Pet, Player, Position, RoomId,
+    RunStats, Size, Smash, Spawning, Sprite, TrailLayer, Velocity, Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -188,6 +188,15 @@ pub(crate) fn enemy(
     ));
     match spec.behavior {
         Behavior::Plain => {}
+        Behavior::PoisonTrail => {
+            let _ = world.insert_one(
+                entity,
+                TrailLayer {
+                    spent: 0.0,
+                    last: position,
+                },
+            );
+        }
         Behavior::Dash => {
             let _ = world.insert_one(
                 entity,
@@ -195,6 +204,7 @@ pub(crate) fn enemy(
                     base_speed: spec.speed(),
                     bonus_speed: enemies::speed_from_force(enemies::DASH_FORCE, size),
                     cycle: 0.0,
+                    trail: 0.0,
                 },
             );
         }

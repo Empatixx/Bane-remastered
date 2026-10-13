@@ -55,7 +55,7 @@ pub(crate) use damage::{
 };
 pub(crate) use death_screen::{DeathScreen, update_death_ui};
 pub(crate) use dodge::{
-    DODGE_SPEED, fade_afterimages, show_dodge_cooldown, show_dodge_visual, start_dodge, tick_dodges,
+    DODGE_SPEED, fade_afterimages, spawn_afterimage, show_dodge_cooldown, show_dodge_visual, start_dodge, tick_dodges,
 };
 pub(crate) use draw::collect_draws;
 pub(crate) use dust::tick_dust;
@@ -75,7 +75,9 @@ pub(crate) use items::{
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
-pub(crate) use objects::{break_objects, flicker_flames, tick_frozen, tick_poison};
+pub(crate) use objects::{
+    break_objects, flicker_flames, leave_poison_trails, tick_frozen, tick_poison,
+};
 pub(crate) use perks::{apply_floor_perks, apply_run_perks, immobilize_traps, regenerate_armor};
 pub(crate) use pet::{
     PET_COLUMNS, PET_GAZE_SPEED, PET_IDLE, PET_ROWS, pet_bites, pick_pet_targets, plan_pet_paths,

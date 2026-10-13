@@ -64,6 +64,25 @@ pub(crate) fn start_dodge(world: &mut World, input: &Input, aim: Vec2) {
     }
 }
 
+pub(crate) fn spawn_afterimage(
+    world: &mut World,
+    position: Position,
+    size: Size,
+    sprite: Sprite,
+    layer: Layer,
+) {
+    world.spawn((
+        position,
+        size,
+        sprite,
+        Color(AFTERIMAGE_COLOR),
+        Layer(layer.0 - 1),
+        Afterimage {
+            remaining: AFTERIMAGE_SECONDS,
+        },
+    ));
+}
+
 pub(crate) fn tick_dodges(world: &mut World, dt: f32) {
     let mut finished = Vec::new();
     let mut trail = Vec::new();
@@ -93,16 +112,7 @@ pub(crate) fn tick_dodges(world: &mut World, dt: f32) {
                 )
             });
         if let Some((position, size, sprite, layer)) = copy {
-            world.spawn((
-                position,
-                size,
-                sprite,
-                Color(AFTERIMAGE_COLOR),
-                Layer(layer.0 - 1),
-                Afterimage {
-                    remaining: AFTERIMAGE_SECONDS,
-                },
-            ));
+            spawn_afterimage(world, position, size, sprite, layer);
         }
     }
     for entity in finished {

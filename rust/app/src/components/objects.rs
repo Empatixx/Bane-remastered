@@ -40,6 +40,15 @@ pub(crate) struct PoisonPool {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct PoisonTrail;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct TrailLayer {
+    pub(crate) spent: f32,
+    pub(crate) last: glam::Vec2,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Poisoned;
 
 const FROST_FADE_IN: f32 = 0.2;

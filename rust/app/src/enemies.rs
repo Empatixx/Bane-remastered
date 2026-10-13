@@ -1,6 +1,6 @@
 use glam::Vec2;
 
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use crate::components::Clip;
 use crate::rng::Rng;
 
@@ -147,6 +147,7 @@ pub(crate) enum Role {
 pub(crate) enum Behavior {
     Plain,
     Dash,
+    PoisonTrail,
     Smash(ProjectileKind),
     Burst(ProjectileKind),
     Shoots(ProjectileKind),
@@ -286,15 +287,18 @@ impl EnemyKind {
                 Some((3, 0.15)),
                 (12, 2, 6_500_000.0),
             ),
-            Self::Snake => spec(
-                tex::SNAKE,
-                (9, 2),
-                (64.0, 64.0),
-                1.5,
-                (9, 0.125),
-                Some((5, 0.1)),
-                (8, 3, 8_000_000.0),
-            ),
+            Self::Snake => EnemySpec {
+                behavior: Behavior::PoisonTrail,
+                ..spec(
+                    tex::SNAKE,
+                    (9, 2),
+                    (64.0, 64.0),
+                    1.5,
+                    (9, 0.125),
+                    Some((5, 0.1)),
+                    (8, 3, 8_000_000.0),
+                )
+            },
             Self::Bat => spec(
                 tex::BAT,
                 (4, 2),

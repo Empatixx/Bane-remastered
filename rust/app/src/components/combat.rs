@@ -83,6 +83,7 @@ pub(crate) struct Dash {
     pub(crate) base_speed: f32,
     pub(crate) bonus_speed: f32,
     pub(crate) cycle: f32,
+    pub(crate) trail: f32,
 }
 
 #[derive(Debug, Clone, Default)]

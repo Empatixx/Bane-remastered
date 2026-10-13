@@ -4,7 +4,7 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::components::{
     Animation, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health, HitFlash,
-    Outline, Player, Position, Rooted, Size, Smash, Spawning, Velocity,
+    Layer, Outline, Player, Position, Rooted, Size, Smash, Spawning, Sprite, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
@@ -14,6 +14,7 @@ use crate::systems::unstick::DETOUR_ANGLE;
 
 pub(crate) const FLASH_SECONDS: f32 = 0.3;
 const DASH_PERIOD: f32 = 3.0;
+const DASH_TRAIL_INTERVAL: f32 = 0.04;
 const DASH_DURATION: f32 = 1.0;
 
 fn player_placement(world: &World) -> Option<(Vec2, Vec2)> {
@@ -118,17 +119,39 @@ pub(crate) fn finish_spawning(world: &mut World, physics: &mut Physics, entity: 
 }
 
 pub(crate) fn dash(world: &mut World, dt: f32) {
-    for (dash, chase) in world
-        .query_mut::<(&mut Dash, &mut Chase)>()
+    let mut trail = Vec::new();
+    for (entity, dash, chase) in world
+        .query_mut::<(Entity, &mut Dash, &mut Chase)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
     {
         dash.cycle = (dash.cycle + dt) % DASH_PERIOD;
-        chase.speed = if dash.cycle < DASH_DURATION {
+        let dashing = dash.cycle < DASH_DURATION;
+        chase.speed = if dashing {
             dash.base_speed + dash.bonus_speed
         } else {
             dash.base_speed
         };
+        dash.trail -= dt;
+        if dashing && dash.trail <= 0.0 {
+            dash.trail = DASH_TRAIL_INTERVAL;
+            trail.push(entity);
+        }
+    }
+    for entity in trail {
+        let copy = world
+            .query_one_mut::<(&Position, &Size, &Sprite, Option<&Layer>)>(entity)
+            .map(|(position, size, sprite, layer)| {
+                (
+                    *position,
+                    *size,
+                    *sprite,
+                    layer.copied().unwrap_or(Layer(0)),
+                )
+            });
+        if let Ok((position, size, sprite, layer)) = copy {
+            super::spawn_afterimage(world, position, size, sprite, layer);
+        }
     }
 }
 
@@ -451,5 +474,71 @@ mod tests {
         let flipped = |entity| world.get::<&Animation>(entity).map(|a| a.flipped());
         assert_eq!(flipped(right).ok(), Some(true));
         assert_eq!(flipped(left).ok(), Some(false));
+    }
+
+    #[test]
+    fn a_dashing_ghost_leaves_fading_afterimages_like_the_player_and_a_calm_one_does_not() {
+        let (mut world, mut physics) = arena();
+        let ghost = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Ghost,
+            Vec2::new(300.0, 0.0),
+        );
+        let images = |world: &World| {
+            world
+                .query::<&crate::components::Afterimage>()
+                .iter()
+                .count()
+        };
+
+        for _ in 0..30 {
+            dash(&mut world, 1.0 / 60.0);
+        }
+        let during = images(&world);
+        assert!(during >= 8, "{during}");
+        let copy = world
+            .query::<(&crate::components::Afterimage, &Position, &Sprite)>()
+            .iter()
+            .next()
+            .map(|(_, position, _)| position.0);
+        assert_eq!(copy, world.get::<&Position>(ghost).map(|p| p.0).ok());
+
+        for _ in 0..30 {
+            dash(&mut world, 1.0 / 60.0);
+        }
+        let after_burst = images(&world);
+        for _ in 0..60 {
+            dash(&mut world, 1.0 / 60.0);
+        }
+        assert_eq!(images(&world), after_burst);
+
+        for _ in 0..40 {
+            crate::systems::fade_afterimages(&mut world, 1.0 / 60.0);
+        }
+        assert_eq!(images(&world), 0);
+    }
+
+    #[test]
+    fn other_enemies_do_not_leave_afterimages() {
+        let (mut world, mut physics) = arena();
+        prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(300.0, 0.0),
+        );
+
+        for _ in 0..60 {
+            dash(&mut world, 1.0 / 60.0);
+        }
+
+        assert_eq!(
+            world
+                .query::<&crate::components::Afterimage>()
+                .iter()
+                .count(),
+            0
+        );
     }
 }
