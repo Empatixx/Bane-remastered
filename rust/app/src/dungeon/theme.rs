@@ -30,10 +30,12 @@ pub(crate) struct TrapMix {
     pub(crate) arrow_traps: usize,
 }
 
-const VARIED: [Theme; 6] = [
+const FIRST_FLOOR: Theme = Theme::Spider;
+
+const LATER: [Theme; 6] = [
+    Theme::Stone,
     Theme::Sewer,
     Theme::Moss,
-    Theme::Spider,
     Theme::Ice,
     Theme::Lava,
     Theme::Temple,
@@ -61,10 +63,10 @@ impl Theme {
             return theme;
         }
         if floor <= 1 {
-            return Self::Stone;
+            return FIRST_FLOOR;
         }
         let mut rng = Rng::new(run_seed ^ THEME_SALT);
-        let mut order = VARIED;
+        let mut order = LATER;
         for index in (1..order.len()).rev() {
             order.swap(index, rng.below(index + 1));
         }
@@ -123,12 +125,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_first_floor_is_plain_stone_and_the_next_ones_never_repeat_a_theme() {
+    fn the_first_floor_is_the_spider_nest_and_no_floor_repeats_a_theme() {
         for seed in 0..50 {
-            assert_eq!(Theme::for_floor(seed, 1), Theme::Stone);
-            let themes: Vec<Theme> = (2..=5).map(|floor| Theme::for_floor(seed, floor)).collect();
+            let themes: Vec<Theme> = (1..=5).map(|floor| Theme::for_floor(seed, floor)).collect();
+            assert_eq!(themes[0], Theme::Spider);
             for (index, theme) in themes.iter().enumerate() {
-                assert_ne!(*theme, Theme::Stone);
                 assert!(!themes[..index].contains(theme), "seed {seed}: {themes:?}");
             }
         }
