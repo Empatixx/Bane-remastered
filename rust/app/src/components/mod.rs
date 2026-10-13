@@ -28,7 +28,7 @@ pub(crate) use appearance::{Color, Layer, Outline, Shine, Sky, Sprite, Text};
 pub(crate) use artefacts::{
     ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, ShieldAura, Shielded,
 };
-pub(crate) use body::Body;
+pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{
     Armor, Bullet, Burst, Chase, ContactDamage, Dash, Detour, Enemy, Expiring, GunDrop, Health,
     HitFlash, Invulnerable, Loadout, Path, Progress, Spawning, Trap, Wallet, Weapon,

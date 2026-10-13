@@ -16,6 +16,7 @@ const PLAYER_CORNER_RADIUS: f32 = 2.0;
 const ENEMY_CORNER_FRACTION: f32 = 0.25;
 const ENEMY_CORNER_MAX: f32 = 14.0;
 const LENGTH_UNIT: f32 = 32.0;
+const OBJECT_DAMPING: f32 = 5.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Owner {
@@ -59,6 +60,11 @@ impl Physics {
     pub(crate) fn step(&mut self, dt: f32) {
         self.world.integration_parameters.dt = dt;
         self.world.step();
+        for (handle, center, _) in &mut self.solids {
+            if let Some(collider) = self.world.colliders.get(*handle) {
+                *center = from_rapier(collider.translation());
+            }
+        }
     }
 
     pub(crate) fn add_walls(&mut self, solid_cells: &[(usize, usize)], tile_size: f32) {
@@ -171,19 +177,19 @@ impl Physics {
         self.insert(body, collider)
     }
 
-    pub(crate) fn add_object_box(
-        &mut self,
-        entity: Entity,
-        center: Vec2,
-        size: Vec2,
-    ) -> ColliderHandle {
-        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+    pub(crate) fn add_object_body(&mut self, entity: Entity, center: Vec2, size: Vec2) -> Body {
+        let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(center))
+            .linear_damping(OBJECT_DAMPING)
+            .lock_rotations();
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .friction(0.0)
+            .restitution(0.0)
             .collision_groups(groups::OBJECTS)
             .user_data(owner_bits(entity));
-        let handle = self.world.colliders.insert(collider);
-        self.solids.push((handle, center, size));
-        handle
+        let body = self.insert(body, collider);
+        self.solids.push((body.collider, center, size));
+        body
     }
 
     pub(crate) fn remove(&mut self, body: Body) {
@@ -319,13 +325,17 @@ mod tests {
 
         let near = physics.solids_within(Vec2::new(200.0, 200.0), Vec2::new(400.0, 400.0));
         assert_eq!(near, vec![(Vec2::new(300.0, 300.0), Vec2::new(64.0, 64.0))]);
-        assert!(physics
-            .solids_within(Vec2::new(1000.0, 1000.0), Vec2::new(1200.0, 1200.0))
-            .is_empty());
+        assert!(
+            physics
+                .solids_within(Vec2::new(1000.0, 1000.0), Vec2::new(1200.0, 1200.0))
+                .is_empty()
+        );
 
         physics.remove_collider(handle);
-        assert!(physics
-            .solids_within(Vec2::new(200.0, 200.0), Vec2::new(400.0, 400.0))
-            .is_empty());
+        assert!(
+            physics
+                .solids_within(Vec2::new(200.0, 200.0), Vec2::new(400.0, 400.0))
+                .is_empty()
+        );
     }
 }

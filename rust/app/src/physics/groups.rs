@@ -14,7 +14,8 @@ pub(super) const WALLS: InteractionGroups = InteractionGroups::new(
         .union(BULLET)
         .union(ENEMY)
         .union(ENEMY_BULLET)
-        .union(PET),
+        .union(PET)
+        .union(OBJECT),
     InteractionTestMode::And,
 );
 
@@ -45,6 +46,8 @@ pub(super) const ENEMIES: InteractionGroups = InteractionGroups::new(
 pub(super) const OBJECTS: InteractionGroups = InteractionGroups::new(
     OBJECT,
     PLAYER
+        .union(WALL)
+        .union(OBJECT)
         .union(ENEMY)
         .union(BULLET)
         .union(ENEMY_BULLET)

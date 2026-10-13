@@ -5,10 +5,10 @@ use crate::artefacts::ArtefactKind;
 use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
-    Animation, ArtefactDrop, Backdrop, BreakKind, Breakable, Candle, Chatty, Chest, ChestKind,
-    Clip, Color, ContactDamage, Despawn, Drag, Flame, Gate, GunDrop, Health, Interactable, Interaction,
-    Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text,
-    ThenPlay, Trap, Velocity, Weapon,
+    Animation, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty, Chest,
+    ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, Gate, GunDrop, Health,
+    Interactable, Interaction, Layer, Light, Lit, Pickup, Position, Prompt, Size, SlotMachine,
+    SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount};
 use crate::items::{DESPAWN_SECONDS, ItemKind};
@@ -464,12 +464,16 @@ pub(crate) fn breakable(
         Lit,
     ));
     let collider = kind.collider();
-    let handle = physics.add_object_box(
+    let collider_center = top_left + collider.offset + collider.size / 2.0;
+    let body = physics.add_object_body(entity, collider_center, collider.size);
+    let _ = world.insert(
         entity,
-        top_left + collider.offset + collider.size / 2.0,
-        collider.size,
+        (
+            Solid(body.collider),
+            body,
+            BodyOffset(top_left + OBJECT_SIZE / 2.0 - collider_center),
+        ),
     );
-    let _ = world.insert(entity, (Solid(handle),));
     entity
 }
 
