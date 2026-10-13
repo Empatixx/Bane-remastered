@@ -631,10 +631,11 @@ impl InGameScene {
                     }
                 }
                 systems::RoomEvent::AmbushCleared { center } => {
+                    let spot = systems::chest_spot(&self.navigation, center);
                     prefabs::chest(
                         &mut self.world,
                         crate::components::ChestKind::Weapon,
-                        center - Vec2::new(32.0, 32.0),
+                        spot,
                         &assets.textures,
                     );
                 }

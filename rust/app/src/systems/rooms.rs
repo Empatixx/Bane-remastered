@@ -6,6 +6,7 @@ use crate::assets::Textures;
 use crate::components::{Expiring, Player, Position, RoomId};
 use crate::dungeon::{Dungeon, RoomKind};
 use crate::enemies;
+use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::rng::Rng;
@@ -276,6 +277,30 @@ fn enter(
     } else {
         None
     }
+}
+
+const CHEST_SEARCH_RADIUS: i32 = 8;
+const CHEST_ROOMY: f32 = 3.0;
+
+pub(crate) fn chest_spot(navigation: &Navigation, center: Vec2) -> Vec2 {
+    let base = (center / TILE_SIZE).floor();
+    let mut tiles: Vec<(i32, i32)> = (-CHEST_SEARCH_RADIUS..=CHEST_SEARCH_RADIUS)
+        .flat_map(|dy| (-CHEST_SEARCH_RADIUS..=CHEST_SEARCH_RADIUS).map(move |dx| (dx, dy)))
+        .collect();
+    tiles.sort_by_key(|(dx, dy)| dx * dx + dy * dy);
+    let tile_center = |(dx, dy): (i32, i32)| {
+        (base + Vec2::new(dx as f32, dy as f32) + Vec2::splat(0.5)) * TILE_SIZE
+    };
+    for clearance in [CHEST_ROOMY, 1.0] {
+        let found = tiles
+            .iter()
+            .map(|offset| tile_center(*offset))
+            .find(|at| !navigation.is_blocked(*at, Vec2::splat(TILE_SIZE * clearance)));
+        if let Some(at) = found {
+            return at - Vec2::splat(TILE_SIZE / 2.0);
+        }
+    }
+    center - Vec2::splat(TILE_SIZE / 2.0)
 }
 
 #[cfg(test)]
@@ -696,5 +721,73 @@ mod tests {
                 .iter()
                 .any(|event| matches!(event, RoomEvent::WaveStarted { .. }))
         );
+    }
+
+    #[test]
+    fn the_chest_stays_where_it_is_when_the_middle_is_free() {
+        let navigation = Navigation::new(&[(0, 0), (40, 40)]);
+        let center = Vec2::new(10.0 * TILE_SIZE, 10.0 * TILE_SIZE);
+        let spot = chest_spot(&navigation, center);
+        assert!((spot + Vec2::splat(TILE_SIZE / 2.0) - center).length() < TILE_SIZE);
+    }
+
+    #[test]
+    fn the_chest_moves_out_of_a_wall_in_the_middle_of_the_room() {
+        let mut walls = vec![(40, 40)];
+        for column in 9..=11 {
+            for row in 9..=11 {
+                walls.push((column, row));
+            }
+        }
+        let navigation = Navigation::new(&walls);
+        let center = Vec2::new(10.5 * TILE_SIZE, 10.5 * TILE_SIZE);
+        let spot = chest_spot(&navigation, center);
+        let middle = spot + Vec2::splat(TILE_SIZE / 2.0);
+        assert!(!navigation.is_blocked(middle, Vec2::splat(TILE_SIZE)));
+        assert!(!navigation.is_blocked(middle, Vec2::splat(TILE_SIZE * 3.0)));
+    }
+
+    #[test]
+    fn a_cramped_room_still_finds_a_single_free_tile() {
+        let mut walls = vec![(40, 40)];
+        for column in 8..=12 {
+            for row in 8..=12 {
+                if (column, row) != (10, 10) {
+                    walls.push((column, row));
+                }
+            }
+        }
+        let navigation = Navigation::new(&walls);
+        let center = Vec2::new(10.5 * TILE_SIZE, 10.5 * TILE_SIZE);
+        let spot = chest_spot(&navigation, center);
+        let middle = spot + Vec2::splat(TILE_SIZE / 2.0);
+        assert!(!navigation.is_blocked(middle, Vec2::splat(TILE_SIZE)));
+    }
+
+    #[test]
+    fn every_ambush_room_of_generated_floors_gets_its_chest_on_free_floor() {
+        let mut checked = 0;
+        for seed in 0..80 {
+            let dungeon = Dungeon::generate(&mut Rng::new(seed)).expect("a dungeon");
+            let walls: Vec<(usize, usize)> = (0..dungeon.grid.rows())
+                .flat_map(|row| (0..dungeon.grid.columns()).map(move |column| (column, row)))
+                .filter(|(column, row)| dungeon.grid.is_wall(*column as isize, *row as isize))
+                .collect();
+            let navigation = Navigation::new(&walls);
+            for room in dungeon
+                .rooms
+                .iter()
+                .filter(|room| room.kind == RoomKind::Ambush)
+            {
+                let spot = chest_spot(&navigation, room.pixel_center());
+                let middle = spot + Vec2::splat(TILE_SIZE / 2.0);
+                assert!(
+                    !navigation.is_blocked(middle, Vec2::splat(TILE_SIZE)),
+                    "seed {seed}"
+                );
+                checked += 1;
+            }
+        }
+        assert!(checked > 40, "{checked}");
     }
 }
