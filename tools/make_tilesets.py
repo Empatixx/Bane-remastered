@@ -97,7 +97,7 @@ def webs(source, out, colour, seed):
     columns, rows = source.width // TILE, source.height // TILE
     for row in range(rows):
         for column in range(columns):
-            if r.random() < 0.45:
+            if row == 0 or r.random() < 0.5:
                 continue
             ox, oy = column * TILE, row * TILE
             flip_x, flip_y = r.random() < 0.5, r.random() < 0.5
