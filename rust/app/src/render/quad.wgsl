@@ -259,8 +259,6 @@ fn ice_color(px: vec2<f32>, t: f32) -> vec3<f32> {
     if (a > 0.62) { rgb = vec3<f32>(152.0, 200.0, 234.0) / 255.0; }
     let crack = abs(flow_fbm(px * 0.11 + vec2<f32>(17.0, 4.0)) - 0.5);
     if (crack < 0.012) { rgb = vec3<f32>(206.0, 232.0, 250.0) / 255.0; }
-    let sheen = fract((px.x * 0.7 + px.y * 0.45 - t * 9.0) / 70.0);
-    if (sheen < 0.05) { rgb = vec3<f32>(228.0, 246.0, 255.0) / 255.0; }
     if (noise(px + floor(t * 3.0)) > 0.9985) { rgb = vec3<f32>(255.0); }
     return rgb;
 }
