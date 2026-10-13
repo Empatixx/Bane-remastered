@@ -114,12 +114,12 @@ def cloud_frame(index):
     image = Image.new("RGBA", (CLOUD, CLOUD), (0, 0, 0, 0))
     t = index / (CLOUD_FRAMES - 1)
     ease = 1 - (1 - t) ** 2
-    alpha = int(120 * (1 - t ** 1.6)) + 8
+    alpha = int(125 * (1 - t ** 3)) + 6
     for angle, distance, radius in PUFFS:
         d = distance * (0.25 + 1.15 * ease)
         cx = 24 + math.cos(angle) * d
         cy = 24 + math.sin(angle) * d * 0.9
-        draw_puff(image, cx, cy, max(1.5, radius * (0.55 + 0.55 * ease) * (1 - 0.35 * t * t)), alpha)
+        draw_puff(image, cx, cy, max(1.5, radius * (0.55 + 0.55 * ease) * (1 - 0.78 * t * t)), alpha)
     return image
 
 
