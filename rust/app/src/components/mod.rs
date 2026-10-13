@@ -64,7 +64,7 @@ pub(crate) use settings_ui::{
 };
 pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
-    Armageddon, Boss, Cobweb, DeathBurst, DeathHeal, Drag, EnemyBullet, EyeShooter, Fuse, Hatcher,
+    Armageddon, Boss, Cobweb, DeathBurst, DeathCloud, DeathHeal, Drag, EnemyBullet, EyeShooter, Fuse, Hatcher,
     Hits, Homing, Impact, Kin, Minion, Rooted, Smash, WebSpitter,
 };
 pub(crate) use stats::RunStats;

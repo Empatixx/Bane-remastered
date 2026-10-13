@@ -19,6 +19,9 @@ const SHIELD_SIZE: Vec2 = Vec2::new(96.0, 144.0);
 const FLOAT_SECONDS: f32 = 0.5;
 const FLOAT_RISE: f32 = 30.0;
 
+const TOXIC_CLOUD_SECONDS: f32 = 5.0;
+const TOXIC_CLOUD_SIZE: Vec2 = Vec2::new(144.0, 144.0);
+
 pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) -> Entity {
     let spawn = Clip {
         row: 0,
@@ -47,6 +50,36 @@ pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) 
         ThenPlay(idle),
         Layer(0),
         Lit,
+    ))
+}
+
+pub(crate) fn toxic_cloud(world: &mut World, center: Vec2, textures: &Textures) -> Entity {
+    let spawn = Clip {
+        row: 0,
+        frames: 6,
+        frame_time: 0.06,
+        looping: false,
+        flipped: false,
+    };
+    let idle = Clip {
+        row: 1,
+        frames: 6,
+        frame_time: 0.14,
+        looping: true,
+        flipped: false,
+    };
+    world.spawn((
+        PoisonPool {
+            remaining: TOXIC_CLOUD_SECONDS,
+            tick: 0.0,
+        },
+        Position(center),
+        Size(TOXIC_CLOUD_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::TOXIC_CLOUD), 0, 0, 6, 2),
+        Animation::new(6, 2, spawn),
+        ThenPlay(idle),
+        Layer(2),
     ))
 }
 

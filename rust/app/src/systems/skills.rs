@@ -5,8 +5,9 @@ use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
-    Animation, Body, Clip, DeathBurst, DeathHeal, EnemyBullet, Expiring, EyeShooter, Fuse, Health,
-    Hits, Homing, Impact, Kin, Player, Position, RoomId, Size, Smash, Spawning, Velocity,
+    Animation, Body, Clip, DeathBurst, DeathCloud, DeathHeal, EnemyBullet, Expiring, EyeShooter,
+    Fuse, Health, Hits, Homing, Impact, Kin, Player, Position, RoomId, Size, Smash, Spawning,
+    Velocity,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::geometry;
@@ -89,6 +90,20 @@ pub(super) fn death_bursts(world: &mut World, physics: &mut Physics, textures: &
         for direction in burst_directions(hits as usize) {
             fire(world, physics, kind, origin, direction, room, textures);
         }
+    }
+}
+
+pub(super) fn death_clouds(world: &mut World, textures: &Textures) {
+    let dying: Vec<(Entity, Vec2)> = world
+        .query::<(Entity, &Position, &DeathCloud, &Health)>()
+        .without::<&Expiring>()
+        .iter()
+        .filter(|(_, _, _, health)| health.current <= 0)
+        .map(|(entity, position, _, _)| (entity, position.0))
+        .collect();
+    for (entity, at) in dying {
+        let _ = world.remove_one::<DeathCloud>(entity);
+        prefabs::toxic_cloud(world, at, textures);
     }
 }
 

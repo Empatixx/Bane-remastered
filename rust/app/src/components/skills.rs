@@ -57,6 +57,9 @@ pub(crate) struct Armageddon {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct DeathCloud;
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct DeathBurst {
     pub(crate) kind: ProjectileKind,
 }

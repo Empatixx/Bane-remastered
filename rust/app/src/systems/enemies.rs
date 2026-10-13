@@ -180,6 +180,7 @@ pub(crate) fn flash_hits(world: &mut World, dt: f32) {
 /// whichever system dealt the killing blow.
 pub(crate) fn resolve_deaths(world: &mut World, physics: &mut Physics, textures: &Textures) {
     super::skills::death_bursts(world, physics, textures);
+    super::skills::death_clouds(world, textures);
     super::skills::death_heals(world);
     super::bosses::clean_up_after_boss(world);
     reap_dead(world, physics);
@@ -539,6 +540,39 @@ mod tests {
                 .iter()
                 .count(),
             0
+        );
+    }
+
+    #[test]
+    fn a_killed_bloated_spider_bursts_into_a_poison_cloud_exactly_once() {
+        let (mut world, mut physics) = arena();
+        let spider = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::BloatedSpider,
+            Vec2::new(400.0, 400.0),
+        );
+        resolve_deaths(&mut world, &mut physics, &Textures::default());
+        assert_eq!(
+            world
+                .query::<&crate::components::PoisonPool>()
+                .iter()
+                .count(),
+            0
+        );
+
+        if let Ok(mut health) = world.get::<&mut crate::components::Health>(spider) {
+            health.current = 0;
+        }
+        resolve_deaths(&mut world, &mut physics, &Textures::default());
+        resolve_deaths(&mut world, &mut physics, &Textures::default());
+
+        assert_eq!(
+            world
+                .query::<&crate::components::PoisonPool>()
+                .iter()
+                .count(),
+            1
         );
     }
 }

@@ -2,6 +2,7 @@ use glam::Vec2;
 
 use crate::assets::{Tex, tex};
 use crate::components::Clip;
+use crate::dungeon::Theme;
 use crate::rng::Rng;
 
 const DAMPING: f32 = 5.0;
@@ -133,6 +134,7 @@ pub(crate) enum EnemyKind {
     GreenSpiderling,
     PurpleSpiderling,
     EyeWatcher,
+    BloatedSpider,
     Spider,
     KingSlime,
 }
@@ -152,6 +154,7 @@ pub(crate) enum Behavior {
     Burst(ProjectileKind),
     Shoots(ProjectileKind),
     HealsKin,
+    ToxicBurst,
     SpiderBoss,
     KingSlimeBoss,
 }
@@ -175,6 +178,7 @@ pub(crate) struct EnemySpec {
     pub(crate) role: Role,
     pub(crate) behavior: Behavior,
     pub(crate) kin: bool,
+    pub(crate) theme: Option<Theme>,
 }
 
 impl EnemySpec {
@@ -240,13 +244,15 @@ const fn spec(
         role: Role::Common,
         behavior: Behavior::Plain,
         kin: false,
+        theme: None,
     }
 }
 
 const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemySpec {
     EnemySpec {
-        min_floor: 2,
+        min_floor: 1,
         kin: true,
+        theme: Some(Theme::Spider),
         ..spec(
             texture,
             (5, rows),
@@ -260,7 +266,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 13] = [
+    pub(crate) const ALL: [Self; 14] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -271,6 +277,7 @@ impl EnemyKind {
         Self::RedSpiderling,
         Self::GreenSpiderling,
         Self::PurpleSpiderling,
+        Self::BloatedSpider,
         Self::EyeWatcher,
         Self::Spider,
         Self::KingSlime,
@@ -362,6 +369,11 @@ impl EnemyKind {
                 ..spiderling(tex::GREEN_SPIDERLING, 2, (5, 2, 5_500_000.0))
             },
             Self::PurpleSpiderling => spiderling(tex::PURPLE_SPIDERLING, 3, (3, 1, 6_500_000.0)),
+            Self::BloatedSpider => EnemySpec {
+                behavior: Behavior::ToxicBurst,
+                kin: false,
+                ..spiderling(tex::BLOATED_SPIDER, 2, (5, 1, 4_800_000.0))
+            },
             Self::Spider => EnemySpec {
                 min_floor: 1,
                 max_floor: 1,
@@ -413,6 +425,10 @@ impl EnemyKind {
         floor >= spec.min_floor && floor <= spec.max_floor
     }
 
+    pub(crate) fn available_in(self, floor: u32, theme: Theme) -> bool {
+        self.available_on(floor) && self.spec().theme.is_none_or(|own| own == theme)
+    }
+
     pub(crate) fn is_boss(self) -> bool {
         matches!(self.spec().role, Role::Boss(_))
     }
@@ -438,18 +454,23 @@ pub(crate) fn attack_clip() -> Clip {
     }
 }
 
-pub(crate) fn pick(floor: u32, rng: &mut Rng) -> EnemyKind {
-    pick_where(floor, rng, |kind| !kind.is_boss())
+pub(crate) fn pick(floor: u32, theme: Theme, rng: &mut Rng) -> EnemyKind {
+    pick_where(floor, theme, rng, |kind| !kind.is_boss())
 }
 
 pub(crate) fn pick_boss(floor: u32, rng: &mut Rng) -> EnemyKind {
-    pick_where(floor, rng, EnemyKind::is_boss)
+    pick_where(floor, Theme::Stone, rng, EnemyKind::is_boss)
 }
 
-fn pick_where(floor: u32, rng: &mut Rng, wanted: impl Fn(EnemyKind) -> bool) -> EnemyKind {
+fn pick_where(
+    floor: u32,
+    theme: Theme,
+    rng: &mut Rng,
+    wanted: impl Fn(EnemyKind) -> bool,
+) -> EnemyKind {
     let pool: Vec<EnemyKind> = EnemyKind::ALL
         .into_iter()
-        .filter(|kind| kind.available_on(floor) && wanted(*kind))
+        .filter(|kind| kind.available_in(floor, theme) && wanted(*kind))
         .collect();
     pool[rng.below(pool.len())]
 }
@@ -481,8 +502,11 @@ mod tests {
     #[test]
     fn tougher_enemies_appear_only_on_later_floors() {
         assert!(EnemyKind::Rat.available_on(0));
-        assert!(!EnemyKind::RedSpiderling.available_on(1));
-        assert!(EnemyKind::RedSpiderling.available_on(2));
+        assert!(EnemyKind::RedSpiderling.available_on(1));
+        assert!(EnemyKind::RedSpiderling.available_in(1, Theme::Spider));
+        assert!(!EnemyKind::RedSpiderling.available_in(1, Theme::Stone));
+        assert!(!EnemyKind::BloatedSpider.available_in(3, Theme::Lava));
+        assert!(EnemyKind::Rat.available_in(1, Theme::Lava));
         assert!(!EnemyKind::DemonEye.available_on(2));
         assert!(EnemyKind::DemonEye.available_on(3));
         assert!(!EnemyKind::EyeWatcher.available_on(2));
@@ -493,14 +517,18 @@ mod tests {
     fn picking_respects_the_floor() {
         let mut rng = Rng::new(7);
         for _ in 0..200 {
-            let kind = pick(0, &mut rng);
-            assert!(kind.available_on(0), "{kind:?}");
+            let kind = pick(0, Theme::Stone, &mut rng);
+            assert!(kind.available_in(0, Theme::Stone), "{kind:?}");
         }
-        let mut seen = std::collections::HashSet::new();
-        for _ in 0..800 {
-            seen.insert(pick(5, &mut rng));
+        let mut spider_floor = std::collections::HashSet::new();
+        let mut stone_floor = std::collections::HashSet::new();
+        for _ in 0..1500 {
+            spider_floor.insert(pick(5, Theme::Spider, &mut rng));
+            stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(seen.len(), EnemyKind::ALL.len() - 2);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 2);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 2 - 4);
+        assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
     }
 
     #[test]
@@ -541,8 +569,17 @@ mod tests {
     fn bosses_never_appear_among_common_enemies() {
         let mut rng = Rng::new(11);
         for _ in 0..500 {
-            assert!(!pick(1, &mut rng).is_boss());
+            assert!(!pick(1, Theme::Spider, &mut rng).is_boss());
         }
+    }
+
+    #[test]
+    fn the_bloated_spider_bursts_into_a_cloud_when_it_dies() {
+        assert_eq!(
+            EnemyKind::BloatedSpider.spec().behavior,
+            Behavior::ToxicBurst
+        );
+        assert_eq!(EnemyKind::BloatedSpider.spec().theme, Some(Theme::Spider));
     }
 
     #[test]

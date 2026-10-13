@@ -212,7 +212,7 @@ fn spawn_wave(context: &RoomContext, room: usize, world: &mut World, rng: &mut R
     }
     for &(column, row) in spawns.iter().take(per_wave) {
         let position = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * TILE_SIZE;
-        let kind = enemies::pick(context.floor, rng);
+        let kind = enemies::pick(context.floor, context.dungeon.theme, rng);
         prefabs::enemy_in_room(world, kind, position, context.floor, context.textures, room);
     }
 }
