@@ -172,32 +172,62 @@ def web_patch():
 
 def arrow_trap():
     image = Image.new("RGBA", (16, 16), CLEAR)
-    stone = (158, 142, 136, 255)
-    light = (207, 194, 176, 255)
-    shade = (125, 112, 113, 255)
-    dark = (37, 19, 26, 255)
-    for y in range(16):
-        for x in range(16):
-            image.putpixel((x, y), stone)
-    for x in range(16):
-        image.putpixel((x, 0), light)
-        image.putpixel((x, 15), shade)
-    for y in range(16):
-        image.putpixel((0, y), light)
-        image.putpixel((15, y), shade)
+    dark = (28, 18, 24, 255)
+    deep = (14, 8, 12, 255)
+    edge_light = (190, 176, 158, 255)
+    edge_shade = (88, 74, 74, 255)
     for y in range(5, 14):
-        for x in range(5, 11):
+        for x in range(6, 10):
             image.putpixel((x, y), dark)
-    for x in range(6, 10):
-        image.putpixel((x, 5), (60, 36, 36, 255))
-    for y in range(8, 13):
-        image.putpixel((7, y), (120, 90, 60, 255))
-        image.putpixel((8, y), (120, 90, 60, 255))
-    image.putpixel((7, 13), (200, 200, 210, 255))
-    image.putpixel((8, 13), (200, 200, 210, 255))
-    for corner in ((2, 2), (13, 2), (2, 13), (13, 13)):
-        image.putpixel(corner, shade)
+    for y in range(6, 13):
+        image.putpixel((7, y), deep)
+        image.putpixel((8, y), deep)
+    for y in range(4, 15):
+        image.putpixel((5, y), edge_shade)
+    for x in range(5, 11):
+        image.putpixel((x, 4), edge_shade)
+    for x in range(5, 11):
+        image.putpixel((x, 14), edge_light)
+    for y in range(5, 15):
+        image.putpixel((10, y), edge_light)
+    image.putpixel((5, 14), edge_light)
+    image.putpixel((10, 4), edge_shade)
     return image
+
+
+def arrow_hit():
+    frames, size = 6, 32
+    sheet = Image.new("RGBA", (size * frames, size), CLEAR)
+    centre = (size - 1) / 2
+    wood = (176, 130, 84, 255)
+    wood_dark = (120, 84, 52, 255)
+    metal = (232, 232, 240, 255)
+    for frame in range(frames):
+        r = random.Random(900 + frame)
+        image = Image.new("RGBA", (size, size), CLEAR)
+        progress = frame / (frames - 1)
+        radius = 3 + frame * 2.4
+        for y in range(size):
+            for x in range(size):
+                dx, dy = x - centre, y - centre
+                distance = math.hypot(dx, dy)
+                angle = math.atan2(dy, dx)
+                spikes = 1 + 0.45 * math.sin(angle * 7 + frame * 0.9) + 0.25 * math.sin(angle * 3 - frame)
+                edge = radius * spikes
+                if distance < edge:
+                    heat = (1 - distance / max(edge, 1)) * (1 - progress * 0.75) + r.uniform(-0.08, 0.08)
+                    if progress > 0.5 and r.random() < (progress - 0.5) * 1.6:
+                        continue
+                    level = max(0, min(len(FLAME_RAMP) - 1, int(heat * len(FLAME_RAMP) + 0.6)))
+                    image.putpixel((x, y), FLAME_RAMP[level])
+        for _ in range(4 + frame * 2):
+            angle = r.uniform(0, math.tau)
+            distance = radius * r.uniform(0.9, 1.6)
+            x, y = int(centre + math.cos(angle) * distance), int(centre + math.sin(angle) * distance)
+            if 0 <= x < size and 0 <= y < size:
+                image.putpixel((x, y), r.choice([wood, wood_dark, metal, FLAME_RAMP[4]]))
+        sheet.paste(image, (frame * size, 0))
+    return sheet
 
 
 def trap_arrow():
@@ -228,6 +258,7 @@ def main():
     ice_patch().save(OUT / "ice_patch.tga")
     web_patch().save(OUT / "web_patch.tga")
     arrow_trap().save(OUT / "arrow_trap.tga")
+    arrow_hit().save(OUT / "arrow_hit.tga")
     trap_arrow().save(OUT / "trap_arrow.tga")
 
 

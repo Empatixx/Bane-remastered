@@ -4,8 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::AudioCommand;
 use crate::components::{
-    ArrowTrap, Body, Bullet, Color, EnemyBullet, Expiring, FloorPatch, Health, Layer, Lit,
-    PatchKind, Player, Position, Size, Sprite, TrapArrow,
+    Animation, ArrowTrap, Body, Bullet, Clip, Color, EnemyBullet, Expiring, FloorPatch, Health,
+    Layer, Lit, PatchKind, Player, Position, Size, Sprite, TrapArrow,
 };
 use crate::geometry;
 use crate::navigation::Navigation;
@@ -19,8 +19,30 @@ const ARROW_HITBOX: Vec2 = Vec2::new(12.0, 40.0);
 const ARROW_DAMAGE: i32 = 1;
 const ARROW_REACH: f32 = 640.0;
 const ARROW_RECHECK: f32 = 0.25;
+const IMPACT_SIZE: Vec2 = Vec2::new(96.0, 96.0);
+const IMPACT_FRAMES: usize = 6;
 const WEB_BULLET_DRAG: f32 = 30.0;
 const WEB_CATCHES_BELOW: f32 = 150.0;
+
+fn impact(world: &mut World, at: Vec2, textures: &Textures) {
+    let clip = Clip {
+        row: 0,
+        frames: IMPACT_FRAMES,
+        frame_time: 0.06,
+        looping: false,
+        flipped: false,
+    };
+    world.spawn((
+        Expiring,
+        Position(at),
+        Size(IMPACT_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::ARROW_HIT), 0, 0, IMPACT_FRAMES, 1),
+        Animation::new(IMPACT_FRAMES, 1, clip),
+        Layer(3),
+        Lit,
+    ));
+}
 
 pub(crate) fn tick_arrow_traps(
     world: &mut World,
@@ -73,11 +95,13 @@ pub(crate) fn tick_arrow_traps(
         let tip = next + Vec2::new(0.0, ARROW_SIZE.y / 2.0 - ARROW_HITBOX.y / 2.0);
         if navigation.is_blocked(tip, ARROW_HITBOX) {
             let _ = world.despawn(entity);
+            impact(world, tip + Vec2::new(0.0, ARROW_HITBOX.y / 2.0), textures);
             continue;
         }
         if geometry::overlaps(next, ARROW_HITBOX, player_at, player_size) {
             hurt_player(world, player, ARROW_DAMAGE, sounds);
             let _ = world.despawn(entity);
+            impact(world, next + Vec2::new(0.0, ARROW_SIZE.y / 2.0), textures);
             continue;
         }
         if let Ok(mut position) = world.get::<&mut Position>(entity) {
@@ -220,7 +244,7 @@ mod tests {
 
     #[test]
     fn an_arrow_stops_at_a_wall() {
-        let (mut world, _) = world_with_player(Vec2::new(900.0, 900.0));
+        let (mut world, _) = world_with_player(Vec2::new(600.0, 400.0));
         trap_at(&mut world, Vec2::new(200.0, 100.0), 0.0);
         let navigation = Navigation::new(&[(3, 3), (3, 4)]);
 
@@ -324,5 +348,47 @@ mod tests {
         }
 
         assert!(world.get::<&Expiring>(shot).is_ok());
+    }
+
+    fn impacts(world: &World) -> usize {
+        world.query::<&Expiring>().iter().count()
+    }
+
+    #[test]
+    fn an_arrow_that_hits_a_wall_leaves_a_hit_animation() {
+        let (mut world, _) = world_with_player(Vec2::new(600.0, 400.0));
+        trap_at(&mut world, Vec2::new(200.0, 100.0), 0.0);
+        let navigation = Navigation::new(&[(3, 3), (3, 4)]);
+
+        for _ in 0..80 {
+            tick_arrow_traps(
+                &mut world,
+                &navigation,
+                &Textures::default(),
+                &mut Vec::new(),
+                0.016,
+            );
+        }
+
+        assert!(impacts(&world) >= 1);
+    }
+
+    #[test]
+    fn an_arrow_that_hits_the_player_leaves_a_hit_animation_too() {
+        let (mut world, _) = world_with_player(Vec2::new(200.0, 300.0));
+        trap_at(&mut world, Vec2::new(200.0, 100.0), 0.0);
+        let navigation = Navigation::new(&[]);
+
+        for _ in 0..40 {
+            tick_arrow_traps(
+                &mut world,
+                &navigation,
+                &Textures::default(),
+                &mut Vec::new(),
+                0.016,
+            );
+        }
+
+        assert!(impacts(&world) >= 1);
     }
 }
