@@ -274,14 +274,6 @@ impl Scene for InGameScene {
             self.clock + phase,
         );
         systems::tick_dust(&mut self.world, self.clock, dt);
-        if self.in_secret_room() {
-            systems::tick_ambience(
-                &mut self.world,
-                assets.textures.get(particle),
-                self.camera.position(),
-                dt,
-            );
-        }
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world, &assets.textures);
@@ -536,22 +528,6 @@ impl InGameScene {
                 }
             }
         }
-        for room in &dungeon.rooms {
-            for door in room
-                .doors
-                .iter()
-                .filter(|door| door.leads_to == crate::dungeon::RoomKind::Secret)
-            {
-                prefabs::cracked_wall(
-                    &mut self.world,
-                    &mut self.physics,
-                    door.tiles,
-                    door.direction,
-                    textures,
-                );
-            }
-        }
-        systems::spawn_dust_cloud(&mut self.world, self.run_seed);
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
         spawn_minimaps(&mut self.world, &dungeon, textures);
         self.camera = Camera::new(bounds);
@@ -589,16 +565,6 @@ impl InGameScene {
         self.build(assets);
         systems::restore_stats(&mut self.world, carried);
         self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
-    }
-
-    fn in_secret_room(&self) -> bool {
-        match (&self.dungeon, &self.rooms) {
-            (Some(dungeon), Some(rooms)) => dungeon
-                .rooms
-                .get(rooms.current())
-                .is_some_and(|room| room.kind == crate::dungeon::RoomKind::Secret),
-            _ => false,
-        }
     }
 
     fn handle_room_events(&mut self, events: Vec<systems::RoomEvent>, assets: &Assets) {

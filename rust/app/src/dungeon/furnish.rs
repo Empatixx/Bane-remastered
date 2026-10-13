@@ -200,7 +200,6 @@ pub(crate) fn plan(
     match kind {
         RoomKind::Shop => Some(shop(&frame)),
         RoomKind::Treasure => Some(treasure(&frame)),
-        RoomKind::Secret => Some(secret(&frame)),
         RoomKind::Sacrifice => Some(sacrifice(&frame)),
         RoomKind::Start => Some(start(&frame)),
         RoomKind::Normal | RoomKind::Boss | RoomKind::Ambush => None,
@@ -280,33 +279,6 @@ fn treasure(frame: &Frame) -> Furnishing {
     ];
     Furnishing {
         carpet: Some(frame.carpet(TREASURE_CARPET_COLUMNS, TREASURE_CARPET_ROWS)),
-        fixtures,
-    }
-}
-
-fn secret(frame: &Frame) -> Furnishing {
-    let (width, height) = (frame.width(), frame.height());
-    let at = |kind, column, row, size| frame.place(kind, frame.tiles(column, row), size);
-    let fixtures = vec![
-        frame.place(
-            FixtureKind::Chest,
-            Vec2::new(
-                width / 2.0 - CHEST_SIZE.x / 2.0,
-                height / 2.0 - CHEST_SIZE.y / 2.0,
-            ),
-            CHEST_SIZE,
-        ),
-        at(FixtureKind::Candlestick, 5.5, 5.0, CANDLESTICK_SIZE),
-        at(FixtureKind::Candlestick, 10.0, 6.5, CANDLESTICK_SIZE),
-        at(FixtureKind::Book, 3.0, 8.0, BOOK_SIZE),
-        at(FixtureKind::Book, 12.0, 2.5, BOOK_SIZE),
-        at(FixtureKind::Chains, 4.5, 1.0, CHAINS_SIZE),
-        at(FixtureKind::Chains, 11.0, 1.0, CHAINS_SIZE),
-        at(FixtureKind::Bricks, 1.5, 9.0, BRICKS_SIZE),
-        at(FixtureKind::Bricks, 13.5, 9.5, BRICKS_SIZE),
-    ];
-    Furnishing {
-        carpet: None,
         fixtures,
     }
 }
@@ -514,16 +486,5 @@ mod tests {
         assert!(TOP.contains(&number(8, 4).unwrap_or(99)));
         assert!(LEFT.contains(&number(2, 8).unwrap_or(99)));
         assert_eq!(tiles.len(), 16 * 8);
-    }
-
-    #[test]
-    fn a_secret_room_is_a_dusty_forgotten_chamber_without_a_carpet_or_torches() {
-        let room = furnish(RoomKind::Secret, 16, 12);
-
-        assert_eq!(count(&room, |k| *k == FixtureKind::Chest), 1);
-        assert_eq!(count(&room, |k| *k == FixtureKind::Candlestick), 2);
-        assert_eq!(count(&room, |k| *k == FixtureKind::Chains), 2);
-        assert_eq!(count(&room, |k| matches!(k, FixtureKind::Torch { .. })), 0);
-        assert!(room.carpet.is_none());
     }
 }

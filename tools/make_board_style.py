@@ -1,6 +1,5 @@
 import os
 import random
-from pathlib import Path
 import sys
 
 from PIL import Image, ImageDraw
@@ -545,116 +544,6 @@ def ambush_map_icon(existing):
     return sheet
 
 
-STONE_OUT = (37, 19, 26, 255)
-STONE_LIGHT = (207, 194, 176, 255)
-STONE = (158, 142, 136, 255)
-STONE_MID = (125, 112, 113, 255)
-STONE_DARK = (89, 80, 89, 255)
-CRACK = (37, 19, 26, 255)
-
-
-def bricks(width, height, vertical):
-    tiles = Image.open(Path(__file__).resolve().parent.parent / "assets/textures/ingame/tileset_2.png").convert("RGBA")
-    cell = Image.new("RGBA", (width, height))
-    for index in range((height if vertical else width) // 16):
-        column = 6 if vertical else 10 + index
-        tile = tiles.crop((column * 16, 16, (column + 1) * 16, 32))
-        cell.paste(tile, (0, index * 16) if vertical else (index * 16, 0))
-    return cell
-
-
-def shade(color, factor):
-    return tuple(min(255, int(channel * factor)) for channel in color[:3]) + (255,)
-
-
-def crack(cell, vertical, seed):
-    r = random.Random(seed)
-    width, height = cell.size
-    opaque = [(x, y) for y in range(height) for x in range(width) if cell.getpixel((x, y))[3] > 0 and sum(cell.getpixel((x, y))[:3]) > 330]
-    nearest = min(opaque, key=lambda point: abs(point[0] - width // 2) + abs(point[1] - height // 2))
-    base = cell.getpixel(nearest)
-    dark = CRACK
-    light = shade(base, 0.7)
-    long_side = height if vertical else width
-    across = width if vertical else height
-
-    def at(a, b):
-        return (b, a) if vertical else (a, b)
-
-    def draw(start, length, drift):
-        position = start
-        for step in range(length):
-            position += r.choice([-1, 0, 0, drift])
-            position = max(1, min(across - 2, position))
-            point = at(position, step)
-            if 0 <= point[0] < width and 0 <= point[1] < height and cell.getpixel(point)[3] > 0:
-                cell.putpixel(point, dark)
-                side = at(position + 1, step)
-                if step % 3 == 0 and 0 <= side[0] < width and 0 <= side[1] < height and cell.getpixel(side)[3] > 0:
-                    cell.putpixel(side, light)
-        return position
-
-    draw(nearest[0] if vertical else r.randint(across // 3, across * 2 // 3), long_side, 1)
-    return cell
-
-
-def crumble(cell, stage, vertical, seed):
-    r = random.Random(seed + stage)
-    width, height = cell.size
-    out = Image.new("RGBA", cell.size, (0, 0, 0, 0))
-    keep = [0.8, 0.5, 0.25, 0.0][stage]
-    for y in range(height):
-        for x in range(width):
-            if r.random() < keep:
-                shift = (0, stage * 2) if vertical else (stage * 2, 0)
-                nx, ny = x + (shift[0] if r.random() < 0.5 else 0), y + (shift[1] if r.random() < 0.5 else 0)
-                if 0 <= nx < width and 0 <= ny < height:
-                    out.putpixel((nx, ny), cell.getpixel((x, y)))
-    dust = (158, 142, 136, 140) if stage < 3 else (158, 142, 136, 70)
-    for _ in range([6, 10, 12, 6][stage]):
-        out.putpixel((r.randrange(width), r.randrange(height)), dust)
-    return out
-
-
-def cracked_wall_sheet(vertical):
-    size = (16, 32) if vertical else (32, 16)
-    sheet = Image.new("RGBA", (size[0] * 4, size[1] * 2), (0, 0, 0, 0))
-    base = crack(bricks(size[0], size[1], vertical), vertical, 7)
-    sheet.paste(base, (0, 0))
-    for stage in range(4):
-        sheet.paste(crumble(base, stage, vertical, 11), (stage * size[0], size[1]))
-    return sheet
-
-
-def secret_map_icon(existing):
-    cell = 16
-    old = existing.convert("RGBA")
-    sheet = Image.new("RGBA", (cell * 8, cell), (0, 0, 0, 0))
-    sheet.paste(old.crop((0, 0, cell * 7, cell)), (0, 0))
-    sheet.paste(old.crop((cell, 0, cell * 2, cell)), (cell * 7, 0))
-    gold = (250, 214, 60, 255)
-    dark = (150, 96, 20, 255)
-    icon = Image.new("RGBA", (cell, cell), (0, 0, 0, 0))
-    shape = [
-        "..XXXX..",
-        ".XXXXXX.",
-        "XX....XX",
-        "......XX",
-        "....XXX.",
-        "...XX...",
-        "...XX...",
-        "........",
-        "...XX...",
-        "...XX...",
-    ]
-    for y, row in enumerate(shape):
-        for x, key in enumerate(row):
-            if key == "X":
-                icon.putpixel((4 + x, 2 + y), dark if y % 2 == 0 and x % 3 == 0 else gold)
-    sheet.alpha_composite(icon, (cell * 7, 0))
-    return sheet
-
-
 def enemy_arrow():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
@@ -739,9 +628,6 @@ def main():
     icons_path = f"{OUT}/minimap_icons.tga"
     existing = Image.open(icons_path)
     ambush_map_icon(existing).save(icons_path)
-    secret_map_icon(Image.open(icons_path)).save(icons_path)
-    cracked_wall_sheet(False).save(f"{OUT}/cracked_wall_h.tga")
-    cracked_wall_sheet(True).save(f"{OUT}/cracked_wall_v.tga")
     snake_trail_sheet().save(f"{OUT}/snake_trail.tga")
     style_board(60, 159).save(f"{OUT}/weapon_list.tga")
     style_board(130, 159).save(f"{OUT}/weapon_tree.tga")

@@ -50,22 +50,9 @@ pub(crate) struct LayoutSpec {
     pub(crate) treasures: usize,
     pub(crate) sacrifices: usize,
     pub(crate) ambushes: usize,
-    pub(crate) secrets: usize,
 }
 
 impl LayoutSpec {
-    pub(crate) fn only(kind: RoomKind) -> Self {
-        let count = |wanted: RoomKind| usize::from(kind == wanted);
-        Self {
-            normals: 1,
-            shops: count(RoomKind::Shop),
-            treasures: count(RoomKind::Treasure),
-            sacrifices: count(RoomKind::Sacrifice),
-            ambushes: count(RoomKind::Ambush),
-            secrets: count(RoomKind::Secret),
-        }
-    }
-
     pub(crate) fn standard(rng: &mut Rng) -> Self {
         Self {
             normals: 5,
@@ -73,7 +60,6 @@ impl LayoutSpec {
             treasures: 1,
             sacrifices: rng.below(2),
             ambushes: 1 + rng.below(2),
-            secrets: 0,
         }
     }
 }
@@ -103,8 +89,7 @@ impl Layout {
         let specials = std::iter::repeat_n(RoomKind::Shop, spec.shops)
             .chain(std::iter::repeat_n(RoomKind::Treasure, spec.treasures))
             .chain(std::iter::repeat_n(RoomKind::Sacrifice, spec.sacrifices))
-            .chain(std::iter::repeat_n(RoomKind::Ambush, spec.ambushes))
-            .chain(std::iter::repeat_n(RoomKind::Secret, spec.secrets));
+            .chain(std::iter::repeat_n(RoomKind::Ambush, spec.ambushes));
         for kind in specials {
             let candidates = layout.attachable(&[RoomKind::Normal]);
             let parent = *rng.pick(&candidates)?;

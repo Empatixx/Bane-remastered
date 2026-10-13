@@ -85,13 +85,6 @@ pub(crate) fn spawn_ambience(
     world.spawn((Ambience { rng, clock: 0.0 },));
 }
 
-pub(crate) fn spawn_dust_cloud(world: &mut World, seed: u64) {
-    world.spawn((Ambience {
-        rng: Rng::new(seed),
-        clock: 0.0,
-    },));
-}
-
 pub(crate) fn tick_ambience(world: &mut World, texture: TextureId, camera: Vec2, dt: f32) {
     let Some(controller) = world.query::<Entity>().with::<&Ambience>().iter().next() else {
         return;
@@ -312,17 +305,5 @@ mod tests {
             .map(|(_, position)| position.0)
             .unwrap_or_default();
         assert!(after.x > target.x, "{after:?} {target:?}");
-    }
-
-    #[test]
-    fn a_dust_cloud_alone_fills_the_view_with_dust_and_no_fireflies() {
-        let mut world = World::new();
-        spawn_dust_cloud(&mut world, 5);
-        for _ in 0..30 {
-            tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 0.05);
-        }
-
-        assert!(world.query::<&Ambient>().iter().count() > 5);
-        assert_eq!(world.query::<&Firefly>().iter().count(), 0);
     }
 }

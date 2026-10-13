@@ -19,7 +19,6 @@ pub(crate) enum RoomKind {
     Boss,
     Sacrifice,
     Ambush,
-    Secret,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,22 +41,6 @@ pub(crate) struct RoomTemplate {
     pub(crate) name: String,
     pub(crate) kind: RoomKind,
     pub(crate) cells: Vec<Vec<Cell>>,
-}
-
-impl RoomKind {
-    pub(crate) fn from_name(name: &str) -> Option<Self> {
-        match name.to_ascii_lowercase().as_str() {
-            "start" => Some(Self::Start),
-            "normal" => Some(Self::Normal),
-            "treasure" => Some(Self::Treasure),
-            "shop" => Some(Self::Shop),
-            "boss" => Some(Self::Boss),
-            "sacrifice" => Some(Self::Sacrifice),
-            "ambush" => Some(Self::Ambush),
-            "secret" => Some(Self::Secret),
-            _ => None,
-        }
-    }
 }
 
 impl RoomTemplate {
@@ -153,7 +136,7 @@ pub(crate) fn is_door_slot(columns: usize, rows: usize, column: usize, row: usiz
     vertical || horizontal
 }
 
-const BUILT_IN: [&str; 24] = [
+const BUILT_IN: [&str; 23] = [
     include_str!("../../../assets/rooms/start.json"),
     include_str!("../../../assets/rooms/normal_05.json"),
     include_str!("../../../assets/rooms/normal_06.json"),
@@ -173,7 +156,6 @@ const BUILT_IN: [&str; 24] = [
     include_str!("../../../assets/rooms/ambush_01.json"),
     include_str!("../../../assets/rooms/ambush_02.json"),
     include_str!("../../../assets/rooms/ambush_03.json"),
-    include_str!("../../../assets/rooms/secret_01.json"),
     include_str!("../../../assets/rooms/treasure.json"),
     include_str!("../../../assets/rooms/shop.json"),
     include_str!("../../../assets/rooms/sacrifice.json"),
@@ -204,7 +186,6 @@ impl Templates {
             RoomKind::Boss,
             RoomKind::Sacrifice,
             RoomKind::Ambush,
-            RoomKind::Secret,
         ] {
             if !by_kind.contains_key(&kind) {
                 return Err(format!("no template for {kind:?}").into());
@@ -241,7 +222,6 @@ mod tests {
             RoomKind::Boss,
             RoomKind::Sacrifice,
             RoomKind::Ambush,
-            RoomKind::Secret,
         ] {
             assert!(templates.pick(kind, &mut rng).is_some(), "{kind:?}");
         }

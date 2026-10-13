@@ -17,7 +17,6 @@ const MARGIN: usize = 1;
 pub(crate) struct DoorSlot {
     pub(crate) direction: Direction,
     pub(crate) tiles: [(usize, usize); 2],
-    pub(crate) leads_to: RoomKind,
 }
 
 #[derive(Debug, Clone)]
@@ -70,28 +69,14 @@ impl DungeonRoom {
 pub(crate) struct Dungeon {
     pub(crate) grid: TileGrid,
     pub(crate) rooms: Vec<DungeonRoom>,
-    focus: Option<usize>,
 }
 
 impl Dungeon {
     pub(crate) fn generate(rng: &mut Rng) -> Result<Self, Box<dyn Error>> {
-        let focus = std::env::var("BANE_ROOM")
-            .ok()
-            .and_then(|name| RoomKind::from_name(&name));
-        Self::generate_with(rng, focus)
-    }
-
-    pub(crate) fn generate_with(
-        rng: &mut Rng,
-        focus: Option<RoomKind>,
-    ) -> Result<Self, Box<dyn Error>> {
         let templates = Templates::built_in()?;
-        let spec = focus.map_or_else(|| LayoutSpec::standard(rng), LayoutSpec::only);
+        let spec = LayoutSpec::standard(rng);
         let layout = Layout::generate(&spec, rng).ok_or("could not lay out the rooms")?;
-        let mut dungeon = Self::build(&layout, &templates, rng)?;
-        dungeon.focus =
-            focus.and_then(|kind| dungeon.rooms.iter().position(|room| room.kind == kind));
-        Ok(dungeon)
+        Self::build(&layout, &templates, rng)
     }
 
     pub(crate) fn build(
@@ -194,10 +179,9 @@ impl Dungeon {
             let doors = placed
                 .links
                 .iter()
-                .map(|&(direction, other)| DoorSlot {
+                .map(|&(direction, _)| DoorSlot {
                     direction,
                     tiles: door_tiles(origin, template_columns, template_rows, direction),
-                    leads_to: layout.rooms[other].kind,
                 })
                 .collect();
             rooms.push(DungeonRoom {
@@ -224,18 +208,11 @@ impl Dungeon {
             room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows);
             room.decor = decor::plan(&grid, room, rng);
         }
-        Ok(Self {
-            grid,
-            rooms,
-            focus: None,
-        })
+        Ok(Self { grid, rooms })
     }
 
     pub(crate) fn start_position(&self) -> Option<Vec2> {
-        let room = self
-            .focus
-            .and_then(|index| self.rooms.get(index))
-            .or_else(|| self.start_room())?;
+        let room = self.start_room()?;
         let center = (
             room.origin.0 + room.columns / 2,
             room.origin.1 + room.rows / 2,
@@ -555,68 +532,5 @@ mod tests {
                 assert!(room.spawns.len() >= 16, "seed {seed}");
             }
         }
-    }
-
-    #[test]
-    fn a_secret_room_is_a_dead_end_behind_one_door_of_a_normal_room_and_has_no_enemies() {
-        let mut found = 0;
-        for seed in 0..120 {
-            let dungeon = Dungeon::generate_with(&mut Rng::new(seed), Some(RoomKind::Secret))
-                .expect("a secret room layout");
-            for room in dungeon
-                .rooms
-                .iter()
-                .filter(|room| room.kind == RoomKind::Secret)
-            {
-                found += 1;
-                assert_eq!(room.doors.len(), 1, "seed {seed}");
-                assert!(room.spawns.is_empty());
-                let behind: usize = dungeon
-                    .rooms
-                    .iter()
-                    .map(|other| {
-                        other
-                            .doors
-                            .iter()
-                            .filter(|door| door.leads_to == RoomKind::Secret)
-                            .count()
-                    })
-                    .sum();
-                assert_eq!(
-                    behind,
-                    dungeon
-                        .rooms
-                        .iter()
-                        .filter(|r| r.kind == RoomKind::Secret)
-                        .count()
-                );
-            }
-        }
-        assert!(found > 40, "{found}");
-    }
-
-    #[test]
-    fn the_room_preview_starts_the_player_inside_the_asked_room() {
-        for kind in [RoomKind::Secret, RoomKind::Ambush, RoomKind::Shop] {
-            let mut rng = Rng::new(9);
-            let dungeon = Dungeon::generate_with(&mut rng, Some(kind)).expect("a dungeon");
-            let start = dungeon.start_position().expect("a start position");
-            let (column, row) = (
-                (start.x / TILE_SIZE) as usize,
-                (start.y / TILE_SIZE) as usize,
-            );
-
-            let inside = dungeon
-                .room_at(column, row)
-                .map(|index| dungeon.rooms[index].kind);
-            assert_eq!(inside, Some(kind));
-        }
-    }
-
-    #[test]
-    fn room_names_for_the_preview_are_understood() {
-        assert_eq!(RoomKind::from_name("Secret"), Some(RoomKind::Secret));
-        assert_eq!(RoomKind::from_name("ambush"), Some(RoomKind::Ambush));
-        assert_eq!(RoomKind::from_name("nonsense"), None);
     }
 }

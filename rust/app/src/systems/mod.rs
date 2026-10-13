@@ -39,7 +39,7 @@ mod steering;
 mod ui;
 mod unstick;
 
-pub(crate) use ambience::{spawn_ambience, spawn_dust_cloud, tick_ambience};
+pub(crate) use ambience::{spawn_ambience, tick_ambience};
 pub(crate) use animation::{animate, chain_animations, open_gate, remove_expired, tick_openings};
 pub(crate) use artefacts::{
     activate_artefact, pick_up_artefact, tick_berserk, unused_artefact, update_artefact_hud,

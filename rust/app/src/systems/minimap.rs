@@ -27,7 +27,6 @@ fn frame(kind: RoomKind) -> usize {
         RoomKind::Boss => 4,
         RoomKind::Sacrifice => 5,
         RoomKind::Ambush => 6,
-        RoomKind::Secret => 7,
     }
 }
 
@@ -135,9 +134,6 @@ fn refresh(map: &mut Minimap, visited: &[bool], current: usize) {
 }
 
 fn alpha(room: &MiniRoom, size: MapSize) -> f32 {
-    if room.kind == RoomKind::Secret && !room.visited {
-        return 0.0;
-    }
     match size {
         MapSize::Big => room.big.alpha(),
         MapSize::Small => {
@@ -195,7 +191,7 @@ pub(crate) fn minimap_draws(map: &Minimap) -> Vec<Draw> {
         }
         let shown = Vec2::new(room.cell.0 as f32, room.cell.1 as f32) - map.shown;
         let position = center + shown * icon;
-        let uv = Sprite::cell_uv(frame(room.kind), 0, 8, 1);
+        let uv = Sprite::cell_uv(frame(room.kind), 0, 7, 1);
         let placed = match map.size {
             MapSize::Small => Some(Clipped {
                 center: position,
@@ -426,22 +422,5 @@ mod tests {
             .map(|map| map.shown.x)
             .unwrap_or(0.0);
         assert!(shown > 0.0 && shown <= 1.0, "{shown}");
-    }
-
-    #[test]
-    fn a_secret_room_stays_off_the_map_until_the_player_has_been_in_it() {
-        let room = |visited| MiniRoom {
-            cell: (0, 1),
-            kind: RoomKind::Secret,
-            links: vec![Direction::Up],
-            visited,
-            big: BigKind::Visited,
-            distance: 1,
-        };
-
-        for size in [MapSize::Small, MapSize::Big] {
-            assert_eq!(alpha(&room(false), size), 0.0);
-        }
-        assert!(alpha(&room(true), MapSize::Small) > 0.0);
     }
 }
