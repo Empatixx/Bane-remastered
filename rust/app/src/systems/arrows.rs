@@ -8,9 +8,9 @@ use crate::components::{
 use crate::render::TextureId;
 use crate::viewport::TARGET;
 
-const ARROW_SIZE: Vec2 = Vec2::new(18.0, 18.0);
+const ARROW_SIZE: Vec2 = Vec2::new(20.0, 20.0);
 const EDGE_INSET: f32 = 20.0;
-const ARROW_ALPHA: f32 = 0.3;
+const ARROW_ALPHA: f32 = 0.5;
 const MERGE_DISTANCE: f32 = 44.0;
 
 pub(crate) fn arrow_at(screen: Vec2, half: Vec2) -> Option<(Vec2, f32)> {

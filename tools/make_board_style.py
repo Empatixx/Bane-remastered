@@ -463,9 +463,9 @@ def reroll_dice():
 def enemy_arrow():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    soft = (232, 96, 96, 255)
+    soft = (255, 112, 104, 255)
     draw.line([(6, 3), (12, 9), (6, 15)], fill=soft, width=3)
-    draw.line([(7, 4), (11, 9), (7, 14)], fill=(255, 170, 160, 255), width=1)
+    draw.line([(7, 4), (11, 9), (7, 14)], fill=(255, 200, 190, 255), width=1)
     return image
 
 
