@@ -528,6 +528,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn every_theme_backdrop_matches_the_darkest_colour_of_its_tileset() {
+        for theme in [
+            Theme::Stone,
+            Theme::Sewer,
+            Theme::Moss,
+            Theme::Spider,
+            Theme::Ice,
+            Theme::Lava,
+            Theme::Temple,
+        ] {
+            let path = root().join("textures").join(tileset_for(theme).path());
+            let image = image::open(&path).expect("the tileset opens").to_rgba8();
+            let [red, green, blue] = theme.backdrop();
+            let found = image
+                .pixels()
+                .any(|pixel| pixel.0 == [red, green, blue, 255]);
+            assert!(found, "{theme:?} backdrop is not in {}", path.display());
+        }
+    }
+
+    #[test]
     fn every_texture_key_is_loaded_by_one_of_the_lists() {
         let bars: Vec<Tex> = BarKind::ALL
             .iter()

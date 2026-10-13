@@ -76,12 +76,12 @@ impl Theme {
     pub(crate) fn backdrop(self) -> [u8; 3] {
         match self {
             Self::Stone => [37, 19, 26],
-            Self::Sewer => [14, 30, 24],
-            Self::Moss => [22, 30, 14],
-            Self::Spider => [20, 14, 26],
-            Self::Ice => [12, 28, 48],
-            Self::Lava => [52, 12, 8],
-            Self::Temple => [50, 34, 16],
+            Self::Sewer => [16, 26, 22],
+            Self::Moss => [22, 24, 16],
+            Self::Spider => [14, 10, 16],
+            Self::Ice => [14, 24, 40],
+            Self::Lava => [20, 8, 8],
+            Self::Temple => [36, 24, 18],
         }
     }
 
