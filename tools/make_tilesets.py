@@ -118,24 +118,31 @@ def webs(source, out, colour, seed):
                         out.putpixel((px, py), colour)
 
 
+FLOOR_COLUMNS = [5, 6] + list(range(12, 20))
+DIRECTIONS = [(0, 1), (1, 0), (1, 1), (1, -1), (0, -1), (-1, 0), (-1, 1), (-1, -1)]
+
+
+def crack_line(image, ox, oy, r, glow, core, mask):
+    dx, dy = r.choice(DIRECTIONS)
+    x, y = r.randrange(3, TILE - 3), r.randrange(3, TILE - 3)
+    for _ in range(r.randint(5, 11)):
+        if 0 <= x < TILE and 0 <= y < TILE:
+            pixel = image.getpixel((ox + x, oy + y))
+            if pixel[3] and pixel[:3] in mask:
+                image.putpixel((ox + x, oy + y), core if r.random() < 0.35 else glow)
+        if dx == 0:
+            x += r.choice([-1, 0, 0, 1])
+        elif dy == 0:
+            y += r.choice([-1, 0, 0, 1])
+        x += dx
+        y += dy
+
+
 def cracks(source, out, glow, core, seed):
     r = random.Random(seed)
-    columns, rows = source.width // TILE, source.height // TILE
-    for row in range(rows):
-        for column in range(columns):
-            if r.random() < 0.4:
-                continue
-            x = column * TILE + r.randrange(3, TILE - 3)
-            y = row * TILE + r.randrange(2, 5)
-            for _ in range(r.randint(5, 9)):
-                if 0 <= x < source.width and 0 <= y < source.height:
-                    pixel = source.getpixel((x, y))
-                    if pixel[3] and pixel[:3] in BODY:
-                        out.putpixel((x, y), glow)
-                        if r.random() < 0.4:
-                            out.putpixel((x, y), core)
-                y += 1
-                x += r.choice([-1, 0, 0, 1])
+    for column in FLOOR_COLUMNS:
+        for _ in range(r.choice([1, 1, 2, 2, 3])):
+            crack_line(out, column * TILE, 0, r, glow, core, set(map(tuple, [(60, 36, 36), (66, 40, 38), (52, 28, 28), (80, 48, 44)])))
 
 
 def drips(source, out, colour, seed):
@@ -153,6 +160,79 @@ def drips(source, out, colour, seed):
                 pixel = source.getpixel((x, y + step))
                 if pixel[3] and pixel[:3] in BODY:
                     out.putpixel((x, y + step), colour)
+
+
+EXTRA = 8
+ACCENT = {
+    "grey": None,
+    "ice": (190, 225, 245, 255),
+    "spider": (96, 88, 112, 255),
+    "lava": (214, 84, 28, 255),
+    "temple": (176, 140, 80, 255),
+    "sewer": (70, 112, 90, 255),
+    "moss": (76, 112, 56, 255),
+}
+
+
+def shade(colour, factor):
+    return tuple(min(255, int(channel * factor)) for channel in colour[:3]) + (255,)
+
+
+def line(tile, start, end, colour):
+    draw = ImageDraw.Draw(tile)
+    draw.line([start, end], fill=colour)
+
+
+def extra_floor(plain, name, k):
+    r = random.Random(1000 + k * 17 + len(name))
+    tile = plain.copy()
+    base = plain.getpixel((8, 8))
+    dark, light = shade(base, 0.8), shade(base, 1.22)
+    accent = ACCENT[name]
+    pick = lambda: accent if accent and r.random() < 0.45 else r.choice([dark, light])
+    kind = k % EXTRA
+    if kind == 0:
+        y = r.randrange(4, 12)
+        line(tile, (r.randrange(0, 4), y), (r.randrange(10, 16), y + r.choice([-1, 0, 1])), pick())
+    elif kind == 1:
+        x = r.randrange(4, 12)
+        line(tile, (x, r.randrange(0, 4)), (x + r.choice([-1, 0, 1]), r.randrange(10, 16)), pick())
+    elif kind == 2:
+        x, y = r.randrange(3, 7), r.randrange(3, 7)
+        line(tile, (x, y), (x + r.randrange(4, 8), y), pick())
+        line(tile, (x, y), (x, y + r.randrange(4, 8)), pick())
+    elif kind == 3:
+        x, y = r.randrange(9, 13), r.randrange(9, 13)
+        line(tile, (x, y), (x - r.randrange(4, 8), y), pick())
+        line(tile, (x, y), (x, y - r.randrange(4, 8)), pick())
+    elif kind == 4:
+        x, y = r.randrange(2, 6), r.randrange(2, 6)
+        line(tile, (x, y), (x + r.randrange(6, 10), y + r.randrange(6, 10)), pick())
+    elif kind == 5:
+        y = r.randrange(5, 11)
+        colour = pick()
+        line(tile, (0, y), (7, y), colour)
+        line(tile, (8, y + 2), (15, y + 2), colour)
+    elif kind == 6:
+        for _ in range(r.randint(3, 5)):
+            x, y = r.randrange(2, 14), r.randrange(2, 14)
+            tile.putpixel((x, y), pick())
+            tile.putpixel((min(15, x + 1), y), pick())
+    else:
+        x, y = r.randrange(4, 12), r.randrange(4, 12)
+        colour = pick()
+        line(tile, (x - 2, y), (x + 2, y), colour)
+        line(tile, (x, y - 2), (x, y + 2), colour)
+    return tile
+
+
+def widen(image, name, clean):
+    wide = Image.new("RGBA", (image.width + EXTRA * TILE, image.height), (0, 0, 0, 0))
+    wide.paste(image, (0, 0))
+    plain = clean.crop((6 * TILE, 0, 7 * TILE, TILE))
+    for k in range(EXTRA):
+        wide.paste(extra_floor(plain, name, k), (image.width + k * TILE, 0))
+    return wide
 
 
 def variant(name, source):
@@ -179,18 +259,19 @@ def variant(name, source):
 
 def main():
     out_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT
-    source = Image.open(SOURCE).convert("RGBA")
+    source = Image.open(SOURCE).convert("RGBA").crop((0, 0, 21 * TILE, 2 * TILE))
     names = list(PALETTES)
-    results = {"grey": source}
+    results = {"grey": widen(source, "grey", source)}
+    results["grey"].save(SOURCE)
     for name in names:
-        image = variant(name, source)
+        image = widen(variant(name, source), name, recolor(source, PALETTES[name]))
         image.save(out_dir / f"tileset_{name}.png")
         results[name] = image
     scale = 3
     gap = 14
     sheet = Image.new(
         "RGBA",
-        (source.width * scale, (source.height * scale + gap) * len(results)),
+        (results["grey"].width * scale, (source.height * scale + gap) * len(results)),
         (24, 20, 28, 255),
     )
     draw = ImageDraw.Draw(sheet)
