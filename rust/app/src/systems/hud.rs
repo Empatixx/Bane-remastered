@@ -1,13 +1,14 @@
 use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::tex;
 use crate::assets::Textures;
+use crate::assets::tex;
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, GunIcon, Health, Hidden, Loadout,
-    Player, Position, Size, Sprite, StatusBar, Text, Wallet, Weapon, PIP_EMPTY, PIP_FULL,
+    AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, GoldCount, GunIcon, Health,
+    Hidden, Loadout, PIP_EMPTY, PIP_FULL, Player, Position, Size, Sprite, StatusBar, TalentCount,
+    Text, Wallet, Weapon,
 };
-use crate::guns::{pip_layout, ClipStyle, PIP_SIZE};
+use crate::guns::{ClipStyle, PIP_SIZE, pip_layout};
 use crate::render::{Draw, Quad, TextureId};
 
 const DELAY_TWEEN: f32 = 0.05;
@@ -68,6 +69,15 @@ pub(crate) fn update_weapon_hud(world: &mut World, textures: &Textures) {
         for text in world.query_mut::<&mut Text>().with::<&CoinText>() {
             text.content = coins.to_string();
         }
+    }
+}
+
+pub(crate) fn update_lobby_counters(world: &mut World, talents: u64, gold: u64) {
+    for text in world.query_mut::<&mut Text>().with::<&TalentCount>() {
+        text.content = talents.to_string();
+    }
+    for text in world.query_mut::<&mut Text>().with::<&GoldCount>() {
+        text.content = gold.to_string();
     }
 }
 

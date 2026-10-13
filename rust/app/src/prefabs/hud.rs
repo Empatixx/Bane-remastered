@@ -1,12 +1,12 @@
-use crate::assets::{tex, Tex};
+use crate::assets::{Tex, tex};
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
     AmmoPip, AmmoText, Animation, ArtefactIcon, BarKind, BossHud, CoinText, Color, Despawn,
-    GunIcon, Hidden, Interactable, Interaction, Layer, Lit, Position, PriceTag, Prompt,
-    ScreenSpace, Shop, Size, Sprite, StatusBar, Text, PIP_FULL,
+    GoldCount, GunIcon, Hidden, Interactable, Interaction, Layer, Lit, PIP_FULL, Position,
+    PriceTag, Prompt, ScreenSpace, Shop, Size, Sprite, StatusBar, TalentCount, Text,
 };
 use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::render::{Align, Anchor, FontSize, TextureId};
@@ -256,4 +256,43 @@ pub(crate) fn coin_hud(world: &mut World, textures: &Textures, coin: Tex, text_c
         Layer(6),
         ScreenSpace,
     ));
+}
+
+const COUNTER_RIGHT: f32 = 944.0;
+const COUNTER_TOP: f32 = 14.0;
+const COUNTER_ICON: Vec2 = Vec2::new(26.0, 26.0);
+const COUNTER_STEP: f32 = 34.0;
+const COUNTER_GAP: f32 = 10.0;
+const COUNTER_TEXT_WIDTH: f32 = 72.0;
+
+pub(crate) fn lobby_counters(
+    world: &mut World,
+    textures: &Textures,
+    talent_color: Vec4,
+    gold_color: Vec4,
+) {
+    let rows = [
+        (tex::TALENT_ICON, talent_color, true),
+        (tex::BANECOIN, gold_color, false),
+    ];
+    for (index, (icon, color, talents)) in rows.into_iter().enumerate() {
+        let top = COUNTER_TOP + COUNTER_STEP * index as f32;
+        let icon_left = COUNTER_RIGHT - COUNTER_TEXT_WIDTH - COUNTER_GAP - COUNTER_ICON.x;
+        screen_sprite(
+            world,
+            Vec2::new(icon_left, top),
+            COUNTER_ICON,
+            textures.get(icon),
+            5,
+        );
+        let text = Text::new("0".to_owned(), color, FontSize::Size22)
+            .aligned(Align::Right)
+            .anchored(Anchor::Middle);
+        let position = Position(Vec2::new(COUNTER_RIGHT, top + COUNTER_ICON.y / 2.0));
+        if talents {
+            world.spawn((TalentCount, text, position, Layer(6), ScreenSpace));
+        } else {
+            world.spawn((GoldCount, text, position, Layer(6), ScreenSpace));
+        }
+    }
 }

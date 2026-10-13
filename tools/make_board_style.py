@@ -446,10 +446,17 @@ def dice(hover):
     return icon.render()
 
 
+
+
 def reroll_dice():
-    sheet = Image.new("RGBA", (18, 36), (0, 0, 0, 0))
-    sheet.paste(dice(False), (0, 0))
-    sheet.paste(dice(True), (0, 18))
+    idle, hot = dice(False), dice(True)
+    sheet = Image.new("RGBA", (18, 18 * 8), (0, 0, 0, 0))
+    sheet.paste(idle, (0, 0))
+    sheet.paste(hot, (0, 18))
+    mirrored = idle.transpose(Image.FLIP_LEFT_RIGHT)
+    frames = [idle.rotate(90), idle.rotate(180), idle.rotate(270), mirrored, mirrored.rotate(90), mirrored.rotate(180)]
+    for i, frame in enumerate(frames):
+        sheet.paste(frame, (0, 18 * (2 + i)))
     return sheet
 
 

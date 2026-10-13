@@ -14,6 +14,7 @@ use crate::upgrades::{self, Perks, Purchase, Upgrade};
 #[serde(default, rename_all = "camelCase")]
 pub(crate) struct Profile {
     pub(crate) balance: u64,
+    pub(crate) gold: u64,
     pub(crate) total_earned: u64,
     pub(crate) runs: u64,
     pub(crate) wins: u64,
@@ -178,6 +179,32 @@ impl SharedProfile {
         self.0.borrow().profile.balance
     }
 
+    pub(crate) fn gold(&self) -> u64 {
+        self.0.borrow().profile.gold
+    }
+
+    pub(crate) fn bank_gold(&self, coins: u64) {
+        if coins == 0 {
+            return;
+        }
+        let mut store = self.0.borrow_mut();
+        store.profile.gold += coins;
+        if let Some(path) = &store.path {
+            store.profile.save(path);
+        }
+    }
+
+    pub(crate) fn top_up_gold(&self, minimum: u64) {
+        let mut store = self.0.borrow_mut();
+        if store.profile.gold >= minimum {
+            return;
+        }
+        store.profile.gold = minimum;
+        if let Some(path) = &store.path {
+            store.profile.save(path);
+        }
+    }
+
     pub(crate) fn top_up(&self, minimum: u64) {
         let mut store = self.0.borrow_mut();
         if store.profile.balance >= minimum {
@@ -275,6 +302,35 @@ mod tests {
         let reloaded = SharedProfile::load(&path);
         assert!(reloaded.snapshot().owns(Upgrade::Discount));
         assert_eq!(reloaded.balance(), earned - TALENT_PRICE);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn banked_gold_is_remembered_across_restarts_and_never_goes_below_what_was_banked() {
+        let path = temp_path("gold");
+        let _ = fs::remove_file(&path);
+        let shared = SharedProfile::load(&path);
+        shared.bank_gold(0);
+        assert_eq!(shared.gold(), 0);
+        shared.bank_gold(40);
+        shared.bank_gold(2);
+        shared.top_up_gold(10);
+        assert_eq!(shared.gold(), 42);
+        shared.top_up_gold(100);
+
+        let reloaded = SharedProfile::load(&path);
+        assert_eq!(reloaded.gold(), 100);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn a_profile_from_before_gold_starts_with_none() {
+        let path = temp_path("no-gold");
+        fs::write(&path, r#"{"version": 1, "balance": 30}"#).expect("a temp file");
+
+        let shared = SharedProfile::load(&path);
+
+        assert_eq!((shared.balance(), shared.gold()), (30, 0));
         let _ = fs::remove_file(&path);
     }
 

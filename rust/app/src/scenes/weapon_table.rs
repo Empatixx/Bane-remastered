@@ -55,7 +55,11 @@ const HINT: &str = "Drag or WASD to move the tree";
 const GLYPH: f32 = 36.0;
 const MUTATION_COST: u32 = 800;
 const REROLL_COST: u32 = 100;
-const SAMPLE_GOLD: u32 = 1240;
+const ROLL_TIME: f32 = 0.7;
+const ROLL_FRAMES: usize = 6;
+const ROLL_FPS: f32 = 14.0;
+const ROLL_HOP: f32 = 22.0;
+const DICE_ROWS: usize = 2 + ROLL_FRAMES;
 const NUMERALS: [&str; 3] = ["I", "II", "III"];
 const ROW_FILL: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.5);
 const ROW_BACK: Vec4 = Vec4::new(0.28, 0.2, 0.2, 0.6);
@@ -190,9 +194,9 @@ fn cost(node: &Node) -> u32 {
     }
 }
 
-fn node_state(kind: GunKind, rerolls: u32, grown: &Tree, index: usize) -> BuyState {
+fn node_state(kind: GunKind, rerolls: u32, gold: u64, grown: &Tree, index: usize) -> BuyState {
     let node = &grown.nodes[index];
-    let affordable = cost(node) <= SAMPLE_GOLD;
+    let affordable = u64::from(cost(node)) <= gold;
     if node.mutation.is_some() {
         return if reach(kind, rerolls, 0) >= node.row - 1 && affordable {
             BuyState::Available
@@ -502,7 +506,7 @@ fn scrollbar(first: usize) -> Vec<Element> {
     ]
 }
 
-fn links(kind: GunKind, rerolls: u32, grown: &Tree, pan: Vec2) -> Vec<Element> {
+fn links(kind: GunKind, rerolls: u32, gold: u64, grown: &Tree, pan: Vec2) -> Vec<Element> {
     let mut elements = Vec::new();
     let near = FRAME_INSET;
     let far = TALENT - FRAME_INSET;
@@ -525,7 +529,7 @@ fn links(kind: GunKind, rerolls: u32, grown: &Tree, pan: Vec2) -> Vec<Element> {
             points.push(Vec2::new(to_x, middle));
         }
         points.push(Vec2::new(to_x, top));
-        let lit = node_state(kind, rerolls, grown, index) == BuyState::Owned;
+        let lit = node_state(kind, rerolls, gold, grown, index) == BuyState::Owned;
         draw_path(
             &mut elements,
             &points,
@@ -536,24 +540,33 @@ fn links(kind: GunKind, rerolls: u32, grown: &Tree, pan: Vec2) -> Vec<Element> {
     elements
 }
 
-fn reroll_plate(hover: Hover) -> Vec<Element> {
+fn dice_frame(hover: bool, roll: Option<f32>) -> (usize, f32) {
+    match roll {
+        Some(time) => {
+            let spin = 2 + (time * ROLL_FPS) as usize % ROLL_FRAMES;
+            let hop = -(time / ROLL_TIME * std::f32::consts::PI).sin().max(0.0) * ROLL_HOP;
+            (spin, hop)
+        }
+        None => (usize::from(hover), 0.0),
+    }
+}
+
+fn reroll_plate(hover: Hover, roll: Option<f32>) -> Vec<Element> {
+    let (row, hop) = dice_frame(hover.reroll, roll);
+    let lit = hover.reroll && roll.is_none();
     vec![
         Element::Image {
             texture: tex::REROLL_DICE,
-            top_left: reroll_top_left(),
+            top_left: reroll_top_left() + Vec2::new(0.0, hop),
             size: DICE_SIZE,
-            cell: Some((usize::from(hover.reroll), 2)),
+            cell: Some((row, DICE_ROWS)),
             layer: FRAME_LAYER,
             alpha: 1.0,
         },
         Element::Label {
             content: format!("{REROLL_COST} gold"),
             position: Vec2::new(REROLL_CENTER.x, REROLL_COST_BASELINE),
-            color: if hover.reroll {
-                HOVER_COLOR
-            } else {
-                COST_COLOR
-            },
+            color: if lit { HOVER_COLOR } else { COST_COLOR },
             size: FontSize::Size16,
             align: Align::Center,
         },
@@ -616,10 +629,17 @@ fn describe(node: &Node) -> (String, [String; 2]) {
     }
 }
 
-fn detail(kind: GunKind, rerolls: u32, grown: &Tree, index: usize, hover: bool) -> Vec<Element> {
+fn detail(
+    kind: GunKind,
+    rerolls: u32,
+    gold: u64,
+    grown: &Tree,
+    index: usize,
+    hover: bool,
+) -> Vec<Element> {
     let centre_x = PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0;
     let node = &grown.nodes[index];
-    let state = node_state(kind, rerolls, grown, index);
+    let state = node_state(kind, rerolls, gold, grown, index);
     let (name_of, lines) = describe(node);
     let title = if node.mutation.is_some() {
         name_of
@@ -704,14 +724,29 @@ fn detail(kind: GunKind, rerolls: u32, grown: &Tree, index: usize, hover: bool) 
     elements
 }
 
-pub(crate) fn layout(
-    first: usize,
-    selected: usize,
-    choice: Option<usize>,
-    rerolls: u32,
-    pan: Vec2,
-    hover: Hover,
-) -> Vec<Element> {
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct Shown {
+    pub(crate) first: usize,
+    pub(crate) selected: usize,
+    pub(crate) choice: Option<usize>,
+    pub(crate) rerolls: u32,
+    pub(crate) pan: Vec2,
+    pub(crate) hover: Hover,
+    pub(crate) gold: u64,
+    pub(crate) roll: Option<f32>,
+}
+
+pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
+    let Shown {
+        first,
+        selected,
+        choice,
+        rerolls,
+        pan,
+        hover,
+        gold,
+        roll,
+    } = *shown;
     let kind = GunKind::ALL[selected.min(GunKind::ALL.len() - 1)];
     let spec = kind.spec();
     let grown = tree(kind, rerolls);
@@ -780,14 +815,14 @@ pub(crate) fn layout(
             alpha: root_alpha,
         });
     }
-    elements.extend(links(kind, rerolls, &grown, pan));
+    elements.extend(links(kind, rerolls, gold, &grown, pan));
     for (index, node) in grown.nodes.iter().enumerate() {
         let top_left = cell_top_left(node.column, node.row, pan);
         elements.extend(node_elements(
             icon_of(node),
             quality_of(node),
             top_left,
-            node_state(kind, rerolls, &grown, index),
+            node_state(kind, rerolls, gold, &grown, index),
             choice == Some(index),
             visibility(top_left, Vec2::splat(TALENT)),
             FRAME_LAYER,
@@ -795,7 +830,7 @@ pub(crate) fn layout(
     }
     elements.extend(arrows(&grown, pan));
     elements.push(hint());
-    elements.extend(reroll_plate(hover));
+    elements.extend(reroll_plate(hover, roll));
     elements.push(Element::Image {
         texture: tex::MENU_PLATE,
         top_left: COUNTER_CENTER - COUNTER_SIZE / 2.0,
@@ -805,14 +840,14 @@ pub(crate) fn layout(
         alpha: 1.0,
     });
     elements.push(Element::Label {
-        content: format!("Gold: {SAMPLE_GOLD}"),
+        content: format!("Gold: {gold}"),
         position: Vec2::new(COUNTER_CENTER.x, COUNTER_BASELINE),
         color: MENU_COLOR,
         size: FontSize::Size27,
         align: Align::Center,
     });
     if let Some(index) = choice.filter(|index| *index < grown.nodes.len()) {
-        elements.extend(detail(kind, rerolls, &grown, index, hover.buy));
+        elements.extend(detail(kind, rerolls, gold, &grown, index, hover.buy));
     }
     elements
 }
@@ -835,6 +870,8 @@ pub(crate) struct WeaponTable {
     press: Option<Press>,
     was_down: bool,
     hover: Hover,
+    gold: u64,
+    roll: Option<f32>,
     dirty: bool,
 }
 
@@ -843,12 +880,13 @@ impl WeaponTable {
         self.open
     }
 
-    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets) {
+    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets, gold: u64) {
         if self.open {
             self.close(world);
         } else {
             *self = Self {
                 open: true,
+                gold,
                 ..Self::default()
             };
             self.rebuild(world, assets);
@@ -870,6 +908,20 @@ impl WeaponTable {
         }
     }
 
+    fn tick_roll(&mut self, dt: f32) {
+        let Some(time) = self.roll else {
+            return;
+        };
+        self.dirty = true;
+        if time + dt >= ROLL_TIME {
+            self.roll = None;
+            self.rerolls += 1;
+            self.regrow();
+        } else {
+            self.roll = Some(time + dt);
+        }
+    }
+
     fn regrow(&mut self) {
         self.choice = None;
         self.pan = Vec2::ZERO;
@@ -880,8 +932,13 @@ impl WeaponTable {
     fn can_buy(&self, grown: &Tree) -> bool {
         self.choice.is_some_and(|index| {
             index < grown.nodes.len()
-                && node_state(GunKind::ALL[self.selected], self.rerolls, grown, index)
-                    == BuyState::Available
+                && node_state(
+                    GunKind::ALL[self.selected],
+                    self.rerolls,
+                    self.gold,
+                    grown,
+                    index,
+                ) == BuyState::Available
         })
     }
 
@@ -889,6 +946,7 @@ impl WeaponTable {
         if !self.open {
             return;
         }
+        self.tick_roll(dt);
         self.scroll(-input.scrolled());
         if input.just_pressed(KeyCode::ArrowDown) {
             self.scroll(1);
@@ -910,11 +968,14 @@ impl WeaponTable {
                 Some(Target::Weapon(index)) if index != self.selected => {
                     self.selected = index;
                     self.rerolls = 0;
+                    self.roll = None;
                     self.regrow();
                 }
                 Some(Target::Reroll) => {
-                    self.rerolls += 1;
-                    self.regrow();
+                    if self.roll.is_none() {
+                        self.roll = Some(0.0);
+                        self.dirty = true;
+                    }
                 }
                 _ if in_view(point) => {
                     self.press = Some(Press {
@@ -964,14 +1025,16 @@ impl WeaponTable {
 
     fn rebuild(&self, world: &mut World, assets: &Assets) {
         clear(world);
-        for element in layout(
-            self.first,
-            self.selected,
-            self.choice,
-            self.rerolls,
-            self.pan,
-            self.hover,
-        ) {
+        for element in layout(&Shown {
+            first: self.first,
+            selected: self.selected,
+            choice: self.choice,
+            rerolls: self.rerolls,
+            pan: self.pan,
+            hover: self.hover,
+            gold: self.gold,
+            roll: self.roll,
+        }) {
             spawn(world, element, assets);
         }
     }
@@ -980,6 +1043,15 @@ impl WeaponTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const TEST_GOLD: u64 = 1240;
+
+    fn base() -> Shown {
+        Shown {
+            gold: TEST_GOLD,
+            ..Shown::default()
+        }
+    }
 
     fn labels(elements: &[Element]) -> Vec<String> {
         elements
@@ -1001,7 +1073,11 @@ mod tests {
     }
 
     fn plain(first: usize, selected: usize) -> Vec<Element> {
-        layout(first, selected, None, 0, Vec2::ZERO, Hover::default())
+        layout(&Shown {
+            first,
+            selected,
+            ..base()
+        })
     }
 
     #[test]
@@ -1068,7 +1144,11 @@ mod tests {
                     .iter()
                     .position(|other| *other == kind)
                     .unwrap_or(0);
-                let elements = layout(0, selected, None, rerolls, Vec2::ZERO, Hover::default());
+                let elements = layout(&Shown {
+                    selected,
+                    rerolls,
+                    ..base()
+                });
                 let visible = grown
                     .nodes
                     .iter()
@@ -1093,7 +1173,10 @@ mod tests {
 
         assert!(low.y < 0.0 || high.y < 0.0 || high.y > 0.0);
         let down = Vec2::new(0.0, low.y);
-        let elements = layout(0, 0, None, 0, down, Hover::default());
+        let elements = layout(&Shown {
+            pan: down,
+            ..base()
+        });
         let seen = grown
             .nodes
             .iter()
@@ -1220,7 +1303,10 @@ mod tests {
     #[test]
     fn rerolling_changes_the_tree_that_is_drawn() {
         let before = plain(0, 0);
-        let after = layout(0, 0, None, 1, Vec2::ZERO, Hover::default());
+        let after = layout(&Shown {
+            rerolls: 1,
+            ..base()
+        });
 
         assert_ne!(before, after);
         assert_eq!(images(&after, tex::REROLL_DICE), 1);
@@ -1231,7 +1317,10 @@ mod tests {
     #[test]
     fn a_chosen_node_opens_the_detail_panel_with_its_description() {
         let grown = tree(GunKind::ALL[0], 0);
-        let with = layout(0, 0, Some(0), 0, Vec2::ZERO, Hover::default());
+        let with = layout(&Shown {
+            choice: Some(0),
+            ..base()
+        });
         let shown = labels(&with);
 
         assert_eq!(images(&with, tex::PAUSEBG), 1);
@@ -1247,7 +1336,10 @@ mod tests {
             panic!("no mutation");
         };
         let id = grown.nodes[index].mutation.unwrap_or(0);
-        let shown = labels(&layout(0, 0, Some(index), 0, Vec2::ZERO, Hover::default()));
+        let shown = labels(&layout(&Shown {
+            choice: Some(index),
+            ..base()
+        }));
 
         assert!(shown.contains(&MUTATIONS[id].name.to_string()));
         assert!(shown.contains(&format!("Cost: {MUTATION_COST} gold")));
@@ -1259,12 +1351,12 @@ mod tests {
             for rerolls in 0..20 {
                 let grown = tree(kind, rerolls);
                 for (index, node) in grown.nodes.iter().enumerate() {
-                    if node_state(kind, rerolls, &grown, index) != BuyState::Available {
+                    if node_state(kind, rerolls, TEST_GOLD, &grown, index) != BuyState::Available {
                         continue;
                     }
                     if let Some(parent) = node.parent {
                         assert_eq!(
-                            node_state(kind, rerolls, &grown, parent),
+                            node_state(kind, rerolls, TEST_GOLD, &grown, parent),
                             BuyState::Owned,
                             "{kind:?} {rerolls} {index}"
                         );
@@ -1358,5 +1450,53 @@ mod tests {
                 .filter(|node| node.mutation.is_none())
                 .all(|node| cost(node) < MUTATION_COST)
         );
+    }
+
+    #[test]
+    fn a_reroll_spins_the_dice_first_and_regrows_the_tree_when_it_stops() {
+        let mut table = WeaponTable {
+            open: true,
+            pan: Vec2::new(5.0, 5.0),
+            ..WeaponTable::default()
+        };
+        table.roll = Some(0.0);
+
+        table.tick_roll(ROLL_TIME / 2.0);
+        assert_eq!(table.rerolls, 0);
+        assert!(table.roll.is_some());
+
+        table.tick_roll(ROLL_TIME);
+        assert_eq!(table.rerolls, 1);
+        assert_eq!(table.roll, None);
+        assert_eq!(table.pan, Vec2::ZERO);
+    }
+
+    #[test]
+    fn the_dice_rests_hovers_and_tumbles_with_a_hop() {
+        assert_eq!(dice_frame(false, None), (0, 0.0));
+        assert_eq!(dice_frame(true, None), (1, 0.0));
+        let (row, hop) = dice_frame(true, Some(ROLL_TIME / 2.0));
+        assert!((2..DICE_ROWS).contains(&row));
+        assert!(hop < -ROLL_HOP / 2.0);
+        let rows: std::collections::HashSet<usize> = (0..14)
+            .map(|step| dice_frame(false, Some(step as f32 / ROLL_FPS)).0)
+            .collect();
+        assert_eq!(rows.len(), ROLL_FRAMES);
+    }
+
+    #[test]
+    fn the_counter_and_the_prices_follow_the_real_gold() {
+        let none = layout(&Shown { gold: 0, ..base() });
+        let rich = layout(&Shown {
+            gold: 99_999,
+            ..base()
+        });
+
+        assert!(labels(&none).contains(&"Gold: 0".to_string()));
+        assert!(labels(&rich).contains(&"Gold: 99999".to_string()));
+        let grown = tree(GunKind::ALL[0], 0);
+        assert!((0..grown.nodes.len()).all(|index| {
+            node_state(GunKind::ALL[0], 0, 0, &grown, index) != BuyState::Available
+        }));
     }
 }

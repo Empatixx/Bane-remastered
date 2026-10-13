@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use hecs::World;
 use winit::keyboard::KeyCode;
 
@@ -11,6 +11,7 @@ use crate::camera::Camera;
 use crate::components::{Blend, Interaction, UiAction};
 use crate::controls::Action;
 use crate::input::Input;
+use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs::{self, PLAYER_SIZE};
@@ -20,11 +21,15 @@ use crate::render::Occluders;
 use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
+use crate::upgrades::Perks;
 use crate::viewport::TARGET;
 
 use super::{Cursor, Pause, QuestBoard, Scene, SceneId, Transition, UpgradeMenu, WeaponTable};
 
 const TALENTS_TO_TRY_OUT: u64 = 1000;
+const GOLD_TO_TRY_OUT: u64 = 5000;
+const TALENT_COUNTER_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
+const GOLD_COUNTER_COLOR: Vec4 = Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0);
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
 
 const PROPS: [(Prop, f32, f32, Look); 22] = [
@@ -63,6 +68,7 @@ pub(crate) struct LobbyScene {
     quests: QuestBoard,
     weapons: WeaponTable,
     occluders: Option<Arc<Occluders>>,
+    navigation: Navigation,
     clock: f32,
     sounds: Vec<AudioCommand>,
     profile: Option<SharedProfile>,
@@ -75,6 +81,12 @@ impl LobbyScene {
 
     pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
         self.profile = Some(profile);
+    }
+
+    fn refresh_counters(&mut self) {
+        if let Some(profile) = &self.profile {
+            systems::update_lobby_counters(&mut self.world, profile.balance(), profile.gold());
+        }
     }
 
     fn refresh_wallet(&mut self) {
@@ -104,6 +116,7 @@ impl Scene for LobbyScene {
         self.quests = QuestBoard::default();
         self.weapons = WeaponTable::default();
         self.occluders = None;
+        self.navigation = Navigation::default();
     }
 
     fn occluders(&self) -> Option<Arc<Occluders>> {
@@ -154,6 +167,7 @@ impl Scene for LobbyScene {
             textures.get(TILESET),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
+        self.navigation = Navigation::new(&solid_cells);
         self.occluders = Some(Arc::new(Occluders::new(
             grid.columns(),
             grid.rows(),
@@ -193,12 +207,29 @@ impl Scene for LobbyScene {
             textures,
         );
 
+        let perks = self
+            .profile
+            .as_ref()
+            .map_or_else(Perks::default, SharedProfile::perks);
+        if perks.pet {
+            let beside = player_top_left + PLAYER_SIZE / 2.0 + Vec2::new(-80.0, 0.0);
+            prefabs::pet(&mut self.world, &mut self.physics, beside, textures);
+        }
+
         prefabs::status_bars(&mut self.world, textures);
+        prefabs::lobby_counters(
+            &mut self.world,
+            textures,
+            TALENT_COUNTER_COLOR,
+            GOLD_COUNTER_COLOR,
+        );
         self.camera = Camera::new(bounds);
         if let Some(profile) = &self.profile {
             profile.top_up(TALENTS_TO_TRY_OUT);
+            profile.top_up_gold(GOLD_TO_TRY_OUT);
         }
         self.refresh_wallet();
+        self.refresh_counters();
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0, 1.0) {
             self.camera.snap_to(target);
         }
@@ -212,6 +243,7 @@ impl Scene for LobbyScene {
         assets: &Assets,
         _settings: &mut Settings,
     ) -> Transition {
+        self.refresh_counters();
         if self.quests.is_open() || self.weapons.is_open() {
             if input.just_pressed(KeyCode::Escape) || input.action_pressed(Action::Interact) {
                 self.quests.close(&mut self.world);
@@ -304,7 +336,8 @@ impl Scene for LobbyScene {
                 Transition::None
             }
             Some(Interaction::Weapons) => {
-                self.weapons.toggle(&mut self.world, assets);
+                let gold = self.profile.as_ref().map_or(0, SharedProfile::gold);
+                self.weapons.toggle(&mut self.world, assets, gold);
                 Transition::None
             }
             _ => Transition::None,
@@ -322,6 +355,9 @@ impl Scene for LobbyScene {
         );
         systems::steer_player(&mut self.world, input, dt);
         systems::tick_dodges(&mut self.world, dt);
+        systems::pick_pet_targets(&mut self.world);
+        systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
+        systems::steer_pets(&mut self.world);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         Transition::None
     }
@@ -368,5 +404,81 @@ mod tests {
             .map(|wallet| wallet.coins)
             .collect();
         assert_eq!(coins, vec![TALENTS_TO_TRY_OUT as i32]);
+    }
+
+    #[test]
+    fn the_lobby_hud_shows_the_talents_and_the_gold_of_the_profile() {
+        let (scene, _assets) = lobby();
+
+        let talents: Vec<String> = scene
+            .world
+            .query::<&Text>()
+            .with::<&crate::components::TalentCount>()
+            .iter()
+            .map(|text| text.content.clone())
+            .collect();
+        let gold: Vec<String> = scene
+            .world
+            .query::<&Text>()
+            .with::<&crate::components::GoldCount>()
+            .iter()
+            .map(|text| text.content.clone())
+            .collect();
+
+        assert_eq!(talents, vec![TALENTS_TO_TRY_OUT.to_string()]);
+        assert_eq!(gold, vec![GOLD_TO_TRY_OUT.to_string()]);
+    }
+
+    #[test]
+    fn the_lobby_hud_follows_the_gold_when_it_changes() {
+        let (mut scene, _assets) = lobby();
+        let profile = scene.profile.clone().expect("profile");
+
+        profile.bank_gold(7);
+        scene.refresh_counters();
+
+        let gold: Vec<String> = scene
+            .world
+            .query::<&Text>()
+            .with::<&crate::components::GoldCount>()
+            .iter()
+            .map(|text| text.content.clone())
+            .collect();
+        assert_eq!(gold, vec![(GOLD_TO_TRY_OUT + 7).to_string()]);
+    }
+
+    #[test]
+    fn the_pet_waits_in_the_lobby_only_for_a_player_who_owns_it() {
+        let (without, _assets) = lobby();
+        assert_eq!(
+            without
+                .world
+                .query::<&crate::components::Pet>()
+                .iter()
+                .count(),
+            0
+        );
+
+        let assets = Assets::new().expect("assets");
+        let profile = SharedProfile::in_memory();
+        profile.top_up(TALENTS_TO_TRY_OUT);
+        for _ in 0..8 {
+            for upgrade in crate::upgrades::Upgrade::ALL {
+                profile.buy(upgrade);
+            }
+        }
+        assert!(profile.perks().pet);
+        let mut scene = LobbyScene::default();
+        scene.attach_profile(profile);
+        scene.enter(&assets);
+
+        assert_eq!(
+            scene
+                .world
+                .query::<&crate::components::Pet>()
+                .iter()
+                .count(),
+            1
+        );
     }
 }

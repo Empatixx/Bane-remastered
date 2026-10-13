@@ -63,7 +63,7 @@ pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, resolve_deaths, tick_spawning, update_flow,
 };
 pub(crate) use glide::glide;
-pub(crate) use hud::{update_status_bars, update_weapon_hud};
+pub(crate) use hud::{update_lobby_counters, update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use items::{
     age_items, burst_items, collect_items, enemy_drops, hover_drops, outline_drops,
