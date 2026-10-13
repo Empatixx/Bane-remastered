@@ -231,17 +231,59 @@ def extra_floor(plain, name, k):
     return tile
 
 
+EDGE_GROUPS = [
+    ("below", [9, 10], "h"),
+    ("above", [1, 2], "h"),
+    ("left", [7], "v"),
+    ("right", [4], "v"),
+]
+EDGE_VARIANTS = 8
+TOTAL_COLUMNS = 21 + EXTRA + EDGE_VARIANTS * len(EDGE_GROUPS)
+
+
+def mutate_edge(tile, bodies, name, flip, rng):
+    out = tile.copy()
+    if flip == "h" and rng.random() < 0.5:
+        out = out.transpose(Image.FLIP_LEFT_RIGHT)
+    if flip == "v" and rng.random() < 0.5:
+        out = out.transpose(Image.FLIP_TOP_BOTTOM)
+    body = [(x, y) for y in range(TILE) for x in range(TILE) if out.getpixel((x, y))[:3] in bodies and out.getpixel((x, y))[3]]
+    if not body:
+        return out
+    base = out.getpixel(body[0])
+    dark, light = shade(base, 0.8), shade(base, 1.22)
+    accent = ACCENT[name]
+    colours = [dark, light] + ([accent] if accent else [])
+    for _ in range(rng.randint(2, 5)):
+        x, y = rng.choice(body)
+        out.putpixel((x, y), rng.choice(colours))
+    for _ in range(rng.randint(1, 2)):
+        x, y = rng.choice(body)
+        colour = rng.choice(colours)
+        length = rng.randint(2, 5)
+        for step in range(length):
+            px, py = (x + step, y) if rng.random() < 0.5 or flip == "h" else (x, y + step)
+            if flip == "v" and rng.random() < 0.5:
+                px, py = x, y + step
+            if 0 <= px < TILE and 0 <= py < TILE and out.getpixel((px, py))[:3] in bodies:
+                out.putpixel((px, py), colour)
+    return out
+
+
 def widen(image, name, clean):
-    wide = Image.new("RGBA", (image.width + EXTRA * TILE, image.height), (0, 0, 0, 0))
+    wide = Image.new("RGBA", (TOTAL_COLUMNS * TILE, image.height), (0, 0, 0, 0))
     wide.paste(image, (0, 0))
     plain = clean.crop((6 * TILE, 0, 7 * TILE, TILE))
     for k in range(EXTRA):
-        if name == "grey":
-            column = ORIGINAL_EXTRAS[k]
-            tile = image.crop((column * TILE, 0, (column + 1) * TILE, TILE))
-        else:
-            tile = extra_floor(plain, name, k)
-        wide.paste(tile, (image.width + k * TILE, 0))
+        wide.paste(extra_floor(plain, name, k), ((21 + k) * TILE, 0))
+    bodies = {PALETTES[name][index] for index in (0, 2, 4, 8)}
+    column = 21 + EXTRA
+    for group_index, (_, sources, flip) in enumerate(EDGE_GROUPS):
+        for k in range(EDGE_VARIANTS):
+            rng = random.Random(7000 + group_index * 100 + k)
+            tile = image.crop((sources[k % len(sources)] * TILE, 0, (sources[k % len(sources)] + 1) * TILE, TILE))
+            wide.paste(mutate_edge(tile, bodies, name, flip, rng), (column * TILE, 0))
+            column += 1
     return wide
 
 
