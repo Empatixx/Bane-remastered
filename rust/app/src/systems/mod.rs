@@ -121,7 +121,7 @@ pub(crate) use player_animation::animate_player;
 pub(crate) use portal::tint_portal;
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
 pub(crate) use rules::toughen_enemies;
-pub(crate) use scientist::{PURCHASE, chat, fit_speech};
+pub(crate) use scientist::{PURCHASE, Repertoire, Standing, chat, fit_speech};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};
 pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{

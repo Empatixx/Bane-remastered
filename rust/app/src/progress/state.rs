@@ -55,7 +55,8 @@ pub(crate) struct BoardView {
     pub(crate) challenges: Vec<NoteView>,
 }
 
-fn known<'de, D, T, C>(deserializer: D) -> Result<C, D::Error>
+/// Reads a list, dropping the entries this version of the game does not know.
+pub(crate) fn known<'de, D, T, C>(deserializer: D) -> Result<C, D::Error>
 where
     D: Deserializer<'de>,
     T: DeserializeOwned,
@@ -121,6 +122,10 @@ impl ProgressState {
         let mut rng = Rng::new(self.seed ^ self.draws.wrapping_mul(0x9E37_79B9_7F4A_7C15));
         self.draws = self.draws.wrapping_add(1);
         missions::draw(&mut rng, &taken)
+    }
+
+    pub(crate) fn completed(&self, id: ChallengeId) -> bool {
+        self.completed.contains(&id)
     }
 
     pub(crate) fn selected(&self) -> Option<ChallengeId> {

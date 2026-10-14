@@ -43,12 +43,63 @@ Po nákupu talentu nebo vylepšení zbraně Vědec řekne „Excellent choice!�
 
 Vědec mluví sám, když jsi poblíž (asi do 5–6 dlaždic). Mezi větami dělá pauzu nejméně **7 sekund**
 a nemluví, když zrovna zní jiná bublina. Když odejdeš daleko (asi 12 dlaždic) a vrátíš se, pozdraví tě znovu.
+Co říká, závisí na tvém postupu, který si hra pamatuje v profilu.
 
-1. **Pozdrav** při každém příchodu, střídavě: „Welcome back!“ / „Ah, my test subject!“
-2. Pak střídá:
+1. **Jednorázové zprávy** — když se v posledním runu stalo něco nového (nejhlubší patro, první zabitý boss,
+   výhra…), Vědec to řekne jako úplně první, ještě před pozdravem. Každou zprávu řekne **jen jednou**;
+   co nestihneš slyšet (třeba když hned vlezeš do portálu), počká na další návštěvu. Najednou čeká
+   nejvýš 4 zprávy, ty nejdůležitější: výhra → první boss → nové patro → challenge → smrti → zabití.
+2. **Pozdrav** při příchodu, střídavě dvě věty podle toho, kde jsi.
+3. Pak střídá:
    - když nemáš žádné talenty → „No talents? Go loot!“
    - když máš aspoň 100 talentů → „Talents to spend!“
-   - jinak některou z nápověd:
+   - jinak některou z nápověd; k obecným nápovědám přibývají věty, které si postupem „odemkneš“.
+
+#### Jednorázové zprávy
+
+| Kdy | Co Vědec řekne |
+|---|---|
+| 1. smrt | „Back already! Good. Good. Nothing is lost.“ |
+| 5. smrt | „Five times. You are holding together nicely.“ |
+| 10. smrt | „Ten! Twelve took forty. You are my finest work.“ |
+| 20. smrt | „Still you. Still whole. Remarkable.“ |
+| 50. smrt | „Fifty. I stopped counting. I did not.“ |
+| 100. smrt | „A hundred of you. And still the same one.“ |
+| Nové nejhlubší patro 2 | „Floor two! Most of them never got past two.“ |
+| Nové nejhlubší patro 3 | „Floor three! Deeper than most. Tell me everything.“ |
+| Nové nejhlubší patro 4 | „Floor four. It gets quiet down there, yes?“ |
+| Nové nejhlubší patro 5 (bez výhry) | „The last floor! The bottom is so close now.“ |
+| První zabitý Spider king | „You cut a stitch! The spiders hold the wound shut.“ |
+| První zabitý King slime | „The king slime... Do not ask what it was made of.“ |
+| První zabitý Sewer ogre | „The ogre dug the drains. The wound took him first.“ |
+| První zabitý Stone golem | „Temple stone. It guarded out of habit, poor thing.“ |
+| První zabitý Argus | „You closed the Eye? It was... mine. Never mind.“ |
+| První zabitý Hellhound | „The hound. Do not listen to it. Dogs lie.“ |
+| První zabitý Mimic | „A chest with teeth! Bring me a tooth next time.“ |
+| 1. výhra | „You reached the bottom. Now we can begin.“ |
+| 2. výhra | „It is open. It is finally open!“ |
+| Další výhry (střídavě) | „Again! Our work goes so well.“ / „The bottom again. Splendid, partner.“ |
+| Poprvé splněná challenge **Bane** | „You went without my work. And came back.“ |
+| Poprvé splněná jiná challenge | „A clean sample! I wrote it all down.“ |
+| 100 zabití celkem | „A hundred specimens! I am out of jars.“ |
+| 500 zabití celkem | „Five hundred. The wound grows them back, you know.“ |
+| 1 000 zabití celkem | „A thousand. Do you dream of them? I do.“ |
+| 5 000 zabití celkem | „Five thousand. It must be getting hungry.“ |
+
+Když jeden run překročí víc hranic najednou (třeba z patra 1 rovnou na 4), řekne jen tu nejvyšší.
+Patro 5 dosažené výhrou komentuje věta o výhře, ne o patře.
+
+#### Pozdravy
+
+| Kdy | Pozdrav |
+|---|---|
+| Ještě jsi neodehrál žádný run | „A new subject! Welcome, welcome.“ / „The portal is ready. Just step in.“ |
+| Máš aspoň jednu výhru | „Ah, my finest work!“ / „Welcome back, partner!“ |
+| Jinak | „Welcome back!“ / „Ah, my test subject!“ |
+
+#### Nápovědy
+
+Obecné nápovědy platí vždy:
 
 | Nápovědy Vědce |
 |---|
@@ -58,6 +109,17 @@ a nemluví, když zrovna zní jiná bublina. Když odejdeš daleko (asi 12 dlaž
 | Pots hide coins! |
 | Go on, test my work! |
 | Every run teaches us. |
+
+K nim se přidají:
+
+| Podmínka | Věta |
+|---|---|
+| Aspoň jedna smrt | „Death is only data, subject.“ |
+| Nejhlubší patro aspoň 3 | „Go deeper. Bring back what you see.“ |
+| Zabil jsi Arguse | „Argus watched you. So did I.“ |
+| Máš talent Pet | „It followed you. I did not plan that.“ |
+| Splněná challenge Bane | „...What did it show you?“ |
+| Aspoň jedna výhra | „Rest. Tomorrow we go down together.“ a „Our work has only begun.“ |
 
 ### Dekorace
 
@@ -72,13 +134,13 @@ a nemluví, když zrovna zní jiná bublina. Když odejdeš daleko (asi 12 dlaž
 
 ## Známé nesrovnalosti
 
-- Vědec má jen 2 pozdravy a 6 nápověd a nereaguje na tvůj postup (nejhlubší patro, počet smrtí), přestože si je hra pamatuje.
+- Zabité bossy si hra pamatuje teprve od verze s Vědcovými replikami; u staršího profilu proto Vědec okomentuje „první“ zabití bosse, i když jsi ho už dřív porazil.
 - „Excellent choice!“ je jediná reakce na jakýkoli nákup.
 - Mazlíček sedí vedle tebe; podle příběhu by to měl být vlk čekající u portálu.
 
 ## Nápady na rozšíření
 
-- Repliky Vědce podle nejhlubšího patra a počtu smrtí, víc reakcí na nákup.
+- Víc reakcí Vědce na nákup (příběh navrhuje třeba „Cleaned it myself. Mostly.“).
 - Laboratoř, která se mění s postupem — trofeje poražených bossů, nové dekorace po vítězství.
 - Cvičná střelnice s figurínou pro vyzkoušení zbraní a jejich vylepšení.
 - Stůl s mapou by mohl ukazovat statistiky profilu nebo historii runů.

@@ -6,11 +6,14 @@ use std::rc::Rc;
 use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::components::RunStats;
-use crate::progress::{BoardView, ChallengeId, ProgressState, RunOutcome, RunRecord};
+use crate::enemies::EnemyKind;
+use crate::progress::{
+    self, BoardView, ChallengeId, ProgressState, Remark, RunOutcome, RunRecord, Tally, known,
+};
 use crate::rng::Rng;
 use crate::rules::RunRules;
 use crate::storage::{self, Loaded};
-use crate::systems::Summary;
+use crate::systems::{Standing, Summary};
 use crate::guns::GunKind;
 use crate::upgrades::{self, Perks, Purchase, Upgrade};
 use crate::weapon_upgrades::{WeaponMods, WeaponProgress};
@@ -35,6 +38,12 @@ pub(crate) struct Profile {
     pub(crate) weapons: BTreeMap<GunKind, WeaponProgress>,
     #[serde(deserialize_with = "lenient_progress")]
     pub(crate) progress: ProgressState,
+    /// Bosses the player has killed at least once, for the Scientist's first-kill remarks.
+    #[serde(deserialize_with = "known")]
+    pub(crate) bosses_slain: BTreeSet<EnemyKind>,
+    /// One-time Scientist remarks waiting for the next lobby visit.
+    #[serde(deserialize_with = "known")]
+    pub(crate) remarks: Vec<Remark>,
 }
 
 const PROFILE_VERSION: u32 = 1;
@@ -98,7 +107,17 @@ fn lenient_progress<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Progre
 }
 
 impl Profile {
+    fn tally(&self) -> Tally {
+        Tally {
+            deaths: self.deaths,
+            wins: self.wins,
+            kills: self.kills,
+            best_floor: self.best_floor,
+        }
+    }
+
     pub(crate) fn record_run(&mut self, stats: RunStats, summary: &Summary, victory: bool) -> u64 {
+        let before = self.tally();
         let earned: u64 = summary
             .rewards
             .iter()
@@ -117,7 +136,28 @@ impl Profile {
         self.bullets_fired += u64::from(stats.fired);
         self.bullets_hit += u64::from(stats.hits.min(stats.fired));
         self.best_floor = self.best_floor.max(summary.floor);
+        let new_bosses: Vec<EnemyKind> = EnemyKind::ALL
+            .into_iter()
+            .filter(|kind| kind.is_boss() && stats.kills_of(*kind) > 0)
+            .filter(|kind| self.bosses_slain.insert(*kind))
+            .collect();
+        let fresh = progress::remarks::after_run(before, self.tally(), &new_bosses);
+        progress::remarks::queue(&mut self.remarks, fresh);
         earned
+    }
+
+    /// What the Scientist knows about the player.
+    pub(crate) fn standing(&self) -> Standing {
+        Standing {
+            runs: self.runs,
+            wins: self.wins,
+            deaths: self.deaths,
+            best_floor: self.best_floor,
+            bosses_slain: self.bosses_slain.iter().copied().collect(),
+            has_pet: self.perks().pet,
+            went_without: self.progress.completed(ChallengeId::Bane),
+            remarks: self.remarks.clone(),
+        }
     }
 
     pub(crate) fn buy(&mut self, upgrade: Upgrade) -> Purchase {
@@ -279,9 +319,17 @@ impl SharedProfile {
             let outcome = profile.progress.finish_run(record);
             if let Some((_, talents)) = outcome.challenge {
                 profile.balance += u64::from(talents);
+                if let Some(id) = record.challenge {
+                    progress::remarks::queue(&mut profile.remarks, [Remark::Challenge(id)]);
+                }
             }
             outcome
         })
+    }
+
+    /// Forgets a one-time remark once the Scientist has said it.
+    pub(crate) fn heard(&self, remark: Remark) {
+        self.change(|profile| profile.remarks.retain(|waiting| *waiting != remark));
     }
 
     pub(crate) fn snapshot(&self) -> Profile {
@@ -435,6 +483,79 @@ mod tests {
         assert_eq!((profile.runs, profile.wins, profile.deaths), (2, 1, 1));
         assert_eq!(profile.kills, 12);
         assert_eq!(profile.best_floor, 5);
+    }
+
+    #[test]
+    fn a_run_queues_the_scientists_remarks_and_remembers_the_bosses_slain() {
+        let mut profile = Profile::default();
+        let (mut stats, _) = run(10, 3);
+        stats.kills_of[EnemyKind::Spider.index()] = 1;
+        stats.kills_of[EnemyKind::Rat.index()] = 9;
+        let summary = summarize(stats, 3);
+        profile.record_run(stats, &summary, false);
+
+        assert_eq!(
+            profile.bosses_slain.iter().copied().collect::<Vec<_>>(),
+            vec![EnemyKind::Spider]
+        );
+        assert_eq!(
+            profile.remarks,
+            vec![
+                Remark::FirstBoss(EnemyKind::Spider),
+                Remark::Depth(3),
+                Remark::Deaths(1)
+            ]
+        );
+
+        profile.remarks.clear();
+        profile.record_run(stats, &summary, false);
+        assert!(profile.remarks.is_empty(), "{:?}", profile.remarks);
+    }
+
+    #[test]
+    fn a_heard_remark_is_forgotten_and_a_finished_challenge_is_remarked() {
+        let shared = SharedProfile::in_memory();
+        let (stats, summary) = run(10, 5);
+        shared.record_run(stats, &summary, true);
+        shared.finish_run(&RunRecord {
+            stats,
+            floor: 5,
+            victory: true,
+            challenge: Some(ChallengeId::Bane),
+        });
+        let waiting = shared.snapshot().remarks;
+        assert_eq!(waiting[0], Remark::Win(1));
+        assert!(waiting.contains(&Remark::Challenge(ChallengeId::Bane)), "{waiting:?}");
+
+        shared.heard(Remark::Win(1));
+
+        assert!(!shared.snapshot().remarks.contains(&Remark::Win(1)));
+    }
+
+    #[test]
+    fn a_profile_from_before_remarks_loads_and_unknown_bosses_are_dropped() {
+        let path = temp_path("remarks");
+        fs::write(
+            &path,
+            r#"{"version": 1, "runs": 4, "bossesSlain": ["argus", "the_heart"],
+                "remarks": [{"depth": 3}, {"unheard_of": 1}]}"#,
+        )
+        .expect("a temp file");
+
+        let profile = SharedProfile::load(&path).snapshot();
+
+        assert_eq!(profile.runs, 4);
+        assert_eq!(
+            profile.bosses_slain.into_iter().collect::<Vec<_>>(),
+            vec![EnemyKind::Argus]
+        );
+        assert_eq!(profile.remarks, vec![Remark::Depth(3)]);
+        let _ = fs::remove_file(&path);
+
+        fs::write(&path, r#"{"version": 1, "runs": 4}"#).expect("a temp file");
+        let old = SharedProfile::load(&path).snapshot();
+        assert!(old.bosses_slain.is_empty() && old.remarks.is_empty());
+        let _ = fs::remove_file(&path);
     }
 
     #[test]

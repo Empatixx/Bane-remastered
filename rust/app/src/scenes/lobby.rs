@@ -204,7 +204,11 @@ impl Scene for LobbyScene {
             prefabs::pot(&mut self.world, &mut self.physics, top_left, textures);
         }
         let scientist_at = Vec2::new(25.0, 6.5) * TILE_SIZE;
-        prefabs::scientist(&mut self.world, scientist_at, textures);
+        let scientist = prefabs::scientist(&mut self.world, scientist_at, textures);
+        if let Some(profile) = &self.profile {
+            let repertoire = systems::Repertoire::of(&profile.snapshot().standing());
+            let _ = self.world.insert_one(scientist, repertoire);
+        }
         let head = scientist_at + Vec2::new(Prop::Scientist.spec().size().x / 2.0, 0.0);
         prefabs::minimal_speech(&mut self.world, head);
 
@@ -359,7 +363,11 @@ impl Scene for LobbyScene {
             dt,
         );
         systems::tick_dust(&mut self.world, self.clock, dt);
-        systems::chat(&mut self.world, dt);
+        if let Some(remark) = systems::chat(&mut self.world, dt) {
+            if let Some(profile) = &self.profile {
+                profile.heard(remark);
+            }
+        }
         systems::tick_speech(&mut self.world, dt);
         systems::fit_speech(&mut self.world, &assets.fonts);
         systems::remove_expired(&mut self.world);
@@ -439,6 +447,47 @@ mod tests {
             .filter(|text| text.content.starts_with("Talents"))
             .count();
         assert_eq!(counters, 0);
+    }
+
+    #[test]
+    fn the_scientist_tells_a_waiting_remark_once_and_the_profile_forgets_it() {
+        let assets = Assets::new().expect("assets");
+        let profile = SharedProfile::in_memory();
+        let stats = crate::components::RunStats::default();
+        profile.record_run(stats, &systems::summarize(stats, 1), false);
+        assert_eq!(
+            profile.snapshot().remarks,
+            vec![crate::progress::Remark::Deaths(1)]
+        );
+        let mut scene = LobbyScene::default();
+        scene.attach_profile(profile.clone());
+        scene.enter(&assets);
+        let scientist = scene
+            .world
+            .query::<&crate::components::Position>()
+            .with::<&crate::components::Chatty>()
+            .iter()
+            .next()
+            .map(|position| position.0)
+            .expect("the scientist");
+        for position in scene
+            .world
+            .query_mut::<&mut crate::components::Position>()
+            .with::<&crate::components::Player>()
+        {
+            position.0 = scientist;
+        }
+
+        scene.update(&Input::default(), 0.016, &assets, &mut Settings::in_memory());
+
+        let said = scene
+            .world
+            .query::<&crate::components::SpeechBubble>()
+            .iter()
+            .next()
+            .map(|bubble| bubble.message);
+        assert_eq!(said, Some("Back already! Good. Good. Nothing is lost."));
+        assert!(profile.snapshot().remarks.is_empty());
     }
 
     #[test]
