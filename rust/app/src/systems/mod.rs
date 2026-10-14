@@ -32,6 +32,7 @@ mod ogre;
 mod perks;
 mod pet;
 mod player_animation;
+mod portal;
 mod rooms;
 mod rules;
 mod scientist;
@@ -104,6 +105,7 @@ pub(crate) use pet::{
     steer_pets,
 };
 pub(crate) use player_animation::{IDLE, PLAYER_COLUMNS, PLAYER_ROWS, animate_player};
+pub(crate) use portal::{PORTAL_LIGHT, tint_portal};
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
 pub(crate) use scientist::{PURCHASE, chat, fit_speech};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};

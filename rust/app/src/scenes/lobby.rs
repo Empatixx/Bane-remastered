@@ -24,6 +24,7 @@ use crate::tilemap::{self, TILE_SIZE};
 use crate::upgrades::Perks;
 use crate::viewport::TARGET;
 
+use super::quest_board::BoardAction;
 use super::weapon_table::Outcome as WeaponOutcome;
 use super::{Cursor, Pause, QuestBoard, Scene, SceneId, Transition, UpgradeMenu, WeaponTable};
 
@@ -178,6 +179,10 @@ impl Scene for LobbyScene {
 
         let portal_top_left = Vec2::new(bounds.x / 2.0 - 96.0, TILE_SIZE / 2.0);
         prefabs::portal(&mut self.world, portal_top_left, textures);
+        systems::tint_portal(
+            &mut self.world,
+            self.profile.as_ref().and_then(SharedProfile::accent),
+        );
         systems::spawn_ambience(
             &mut self.world,
             textures.get(tex::GAZEWIND_PARTICLE),
@@ -254,8 +259,20 @@ impl Scene for LobbyScene {
                 self.weapons.close(&mut self.world);
                 return Transition::None;
             }
-            self.quests.update(&mut self.world, input, assets);
             if let Some(profile) = self.profile.clone() {
+                match self.quests.update(&mut self.world, input, assets, &profile) {
+                    Some(BoardAction::Claimed(_)) => {
+                        self.refresh_wallet();
+                        self.refresh_counters();
+                        systems::say(&mut self.world, "Talents earned!");
+                        self.sounds.push(AudioCommand::Effect(SoundEffect::Coin));
+                    }
+                    Some(BoardAction::Toggled) => {
+                        systems::tint_portal(&mut self.world, profile.accent());
+                        self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
+                    }
+                    None => {}
+                }
                 let outcome = self.weapons.update(
                     &mut self.world,
                     input,
@@ -355,7 +372,9 @@ impl Scene for LobbyScene {
                 Transition::None
             }
             Some(Interaction::Quests) => {
-                self.quests.toggle(&mut self.world, assets);
+                if let Some(profile) = &self.profile {
+                    self.quests.toggle(&mut self.world, assets, profile);
+                }
                 Transition::None
             }
             Some(Interaction::Weapons) => {
@@ -390,6 +409,8 @@ impl Scene for LobbyScene {
 #[cfg(test)]
 mod tests {
     use crate::components::{CoinText, Text, Wallet};
+    use crate::progress::ChallengeId;
+    use crate::scenes::quest_board;
 
     use super::*;
 
@@ -540,5 +561,30 @@ mod tests {
         let transition = scene.update(&click, 0.0, &assets, &mut Settings::in_memory());
 
         assert!(matches!(transition, Transition::Quit));
+    }
+
+    #[test]
+    fn clicking_a_challenge_note_selects_it_and_clicking_again_cancels_it() {
+        let (mut scene, assets) = lobby();
+        let profile = scene.profile.clone().expect("profile");
+        scene.quests.toggle(&mut scene.world, &assets, &profile);
+        let click = |at: Vec2| {
+            let mut input = Input::default();
+            input.set_mouse(at);
+            input.handle_click(
+                winit::event::MouseButton::Left,
+                winit::event::ElementState::Pressed,
+            );
+            input
+        };
+        let tab = quest_board::tab_top_left(quest_board::Tab::Challenges) + Vec2::splat(5.0);
+        scene.update(&click(tab), 0.0, &assets, &mut Settings::in_memory());
+        let note = quest_board::note_top_left(0) + Vec2::splat(20.0);
+
+        scene.update(&click(note), 0.0, &assets, &mut Settings::in_memory());
+        assert_eq!(profile.challenge(), Some(ChallengeId::ALL[0]));
+
+        scene.update(&click(note), 0.0, &assets, &mut Settings::in_memory());
+        assert_eq!(profile.challenge(), None);
     }
 }

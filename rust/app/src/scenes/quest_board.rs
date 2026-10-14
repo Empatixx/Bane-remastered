@@ -3,6 +3,8 @@ use hecs::World;
 
 use crate::assets::{Assets, tex};
 use crate::input::Input;
+use crate::profile::SharedProfile;
+use crate::progress::{BoardView, ChallengeId, NoteView};
 use crate::render::{Align, FontSize};
 
 use super::panel::{self, BOARD_CENTER_X, GREEN, INK, RED, SCALE, TAB_IDLE, TRACK_BROWN};
@@ -23,6 +25,7 @@ const BAR_SIZE: Vec2 = Vec2::new(128.0, 8.0);
 const DETAIL_WIDTH: usize = 17;
 const TAB_LAYER: i32 = 32;
 const ICON_SIZE: Vec2 = Vec2::new(27.0, 27.0);
+pub(crate) const ACTIVE_MARK: &str = "Active";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Tab {
@@ -41,70 +44,14 @@ impl Tab {
     }
 }
 
-struct Entry {
-    title: &'static str,
-    detail: &'static str,
-    progress: u32,
-    goal: u32,
-    talents: u32,
-}
-
-const TASKS: [Entry; 3] = [
-    Entry {
-        title: "Crypt Cleaner",
-        detail: "Defeat 100 enemies",
-        progress: 64,
-        goal: 100,
-        talents: 1,
-    },
-    Entry {
-        title: "Gold Digger",
-        detail: "Collect 500 gold in a single run",
-        progress: 500,
-        goal: 500,
-        talents: 1,
-    },
-    Entry {
-        title: "Deep Delver",
-        detail: "Reach floor 5",
-        progress: 3,
-        goal: 5,
-        talents: 1,
-    },
-];
-
-const CHALLENGES: [Entry; 3] = [
-    Entry {
-        title: "Untouched",
-        detail: "Clear a floor without taking damage",
-        progress: 0,
-        goal: 1,
-        talents: 2,
-    },
-    Entry {
-        title: "Pistol Only",
-        detail: "Reach floor 3 using only the pistol",
-        progress: 1,
-        goal: 3,
-        talents: 3,
-    },
-    Entry {
-        title: "Boss Slayer",
-        detail: "Defeat a boss without dodging",
-        progress: 0,
-        goal: 1,
-        talents: 5,
-    },
-];
-
-fn entries(tab: Tab) -> &'static [Entry] {
+fn notes(tab: Tab, view: &BoardView) -> &[NoteView] {
     match tab {
-        Tab::Tasks => &TASKS,
-        Tab::Challenges => &CHALLENGES,
+        Tab::Tasks => &view.missions,
+        Tab::Challenges => &view.challenges,
     }
 }
 
-fn note_top_left(index: usize) -> Vec2 {
+pub(crate) fn note_top_left(index: usize) -> Vec2 {
     let column = (index % COLUMNS) as f32;
     let row = (index / COLUMNS) as f32;
     NOTE_ORIGIN
@@ -114,7 +61,7 @@ fn note_top_left(index: usize) -> Vec2 {
         )
 }
 
-fn tab_top_left(tab: Tab) -> Vec2 {
+pub(crate) fn tab_top_left(tab: Tab) -> Vec2 {
     let index = Tab::ALL.iter().position(|other| *other == tab).unwrap_or(0) as f32;
     let width = TAB_SIZE.x * Tab::ALL.len() as f32 + TAB_GAP * (Tab::ALL.len() - 1) as f32;
     Vec2::new(
@@ -129,14 +76,14 @@ pub(crate) enum Target {
     Note(usize),
 }
 
-pub(crate) fn target_at(tab: Tab, point: Vec2) -> Option<Target> {
+pub(crate) fn target_at(tab: Tab, view: &BoardView, point: Vec2) -> Option<Target> {
     if let Some(found) = Tab::ALL
         .iter()
         .find(|other| panel::contains(tab_top_left(**other), TAB_SIZE, point))
     {
         return Some(Target::Tab(*found));
     }
-    (0..entries(tab).len())
+    (0..notes(tab, view).len())
         .find(|index| {
             panel::contains(
                 note_top_left(*index) + Vec2::splat(NOTE_INSET),
@@ -147,7 +94,7 @@ pub(crate) fn target_at(tab: Tab, point: Vec2) -> Option<Target> {
         .map(Target::Note)
 }
 
-pub(crate) fn layout(tab: Tab, hover: Option<Target>) -> Vec<Element> {
+pub(crate) fn layout(tab: Tab, view: &BoardView, hover: Option<Target>) -> Vec<Element> {
     let mut elements = panel::frame(tex::BOARD_NOTICE);
     for other in Tab::ALL {
         let top_left = tab_top_left(other);
@@ -169,10 +116,10 @@ pub(crate) fn layout(tab: Tab, hover: Option<Target>) -> Vec<Element> {
             ));
         }
     }
-    for (index, entry) in entries(tab).iter().enumerate() {
+    for (index, note) in notes(tab, view).iter().enumerate() {
         let corner = note_top_left(index);
         let origin = corner + Vec2::splat(NOTE_INSET);
-        let done = entry.progress >= entry.goal;
+        let done = note.done;
         let hovered = hover == Some(Target::Note(index));
         let row = usize::from(hovered) + 2 * usize::from(done);
         elements.push(panel::note(
@@ -183,13 +130,22 @@ pub(crate) fn layout(tab: Tab, hover: Option<Target>) -> Vec<Element> {
             NOTE_ROWS,
         ));
         elements.push(panel::label(
-            entry.title,
+            &note.title,
             origin + Vec2::new(VISIBLE.x / 2.0, 50.0),
             INK,
             FontSize::Size22,
             Align::Center,
         ));
-        for (line, text) in panel::wrap(entry.detail, DETAIL_WIDTH)
+        if note.active {
+            elements.push(panel::label(
+                ACTIVE_MARK,
+                origin + Vec2::new(VISIBLE.x / 2.0, 28.0),
+                GREEN,
+                FontSize::Size16,
+                Align::Center,
+            ));
+        }
+        for (line, text) in panel::wrap(&note.detail, DETAIL_WIDTH)
             .into_iter()
             .enumerate()
         {
@@ -201,16 +157,16 @@ pub(crate) fn layout(tab: Tab, hover: Option<Target>) -> Vec<Element> {
                 Align::Center,
             ));
         }
-        let shown = entry.progress.min(entry.goal);
+        let shown = note.progress.min(note.goal);
         elements.extend(panel::bar(
             origin + Vec2::new((VISIBLE.x - BAR_SIZE.x) / 2.0, 118.0),
             BAR_SIZE,
-            shown as f32 / entry.goal as f32,
+            shown as f32 / note.goal as f32,
             if done { GREEN } else { RED },
             TRACK_BROWN,
         ));
         elements.push(panel::label(
-            format!("{shown}/{}", entry.goal),
+            format!("{shown}/{}", note.goal),
             origin + Vec2::new(VISIBLE.x / 2.0, 146.0),
             INK,
             FontSize::Size16,
@@ -218,7 +174,7 @@ pub(crate) fn layout(tab: Tab, hover: Option<Target>) -> Vec<Element> {
         ));
         let middle = origin.x + VISIBLE.x / 2.0;
         elements.push(panel::label(
-            format!("+{}", entry.talents),
+            format!("+{}", note.talents),
             Vec2::new(middle + 2.0, origin.y + 171.0),
             INK,
             FontSize::Size22,
@@ -235,9 +191,16 @@ pub(crate) fn layout(tab: Tab, hover: Option<Target>) -> Vec<Element> {
     elements
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BoardAction {
+    Claimed(u32),
+    Toggled,
+}
+
 #[derive(Debug)]
 pub(crate) struct QuestBoard {
     open: bool,
+    view: BoardView,
     tab: Tab,
     hover: Option<Target>,
     dirty: bool,
@@ -247,6 +210,7 @@ impl Default for QuestBoard {
     fn default() -> Self {
         Self {
             open: false,
+            view: BoardView::default(),
             tab: Tab::Tasks,
             hover: None,
             dirty: false,
@@ -259,12 +223,13 @@ impl QuestBoard {
         self.open
     }
 
-    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets) {
+    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets, profile: &SharedProfile) {
         if self.open {
             self.close(world);
         } else {
             self.open = true;
             self.hover = None;
+            self.view = profile.board();
             self.rebuild(world, assets);
         }
     }
@@ -275,18 +240,42 @@ impl QuestBoard {
         clear(world);
     }
 
-    pub(crate) fn update(&mut self, world: &mut World, input: &Input, assets: &Assets) {
+    pub(crate) fn update(
+        &mut self,
+        world: &mut World,
+        input: &Input,
+        assets: &Assets,
+        profile: &SharedProfile,
+    ) -> Option<BoardAction> {
         if !self.open {
-            return;
+            return None;
         }
-        let hover = target_at(self.tab, input.mouse());
+        let hover = target_at(self.tab, &self.view, input.mouse());
         if hover != self.hover {
             self.hover = hover;
             self.dirty = true;
         }
-        if let (true, Some(Target::Tab(tab))) = (input.clicked(), hover) {
-            if tab != self.tab {
-                self.tab = tab;
+        let mut action = None;
+        if let (true, Some(target)) = (input.clicked(), hover) {
+            match (target, self.tab) {
+                (Target::Tab(tab), _) => {
+                    if tab != self.tab {
+                        self.tab = tab;
+                        self.dirty = true;
+                    }
+                }
+                (Target::Note(index), Tab::Tasks) => {
+                    action = profile.claim_mission(index).map(BoardAction::Claimed);
+                }
+                (Target::Note(index), Tab::Challenges) => {
+                    if let Some(id) = ChallengeId::ALL.get(index) {
+                        profile.toggle_challenge(*id);
+                        action = Some(BoardAction::Toggled);
+                    }
+                }
+            }
+            if action.is_some() {
+                self.view = profile.board();
                 self.dirty = true;
             }
         }
@@ -294,11 +283,12 @@ impl QuestBoard {
             self.dirty = false;
             self.rebuild(world, assets);
         }
+        action
     }
 
     fn rebuild(&self, world: &mut World, assets: &Assets) {
         clear(world);
-        for element in layout(self.tab, self.hover) {
+        for element in layout(self.tab, &self.view, self.hover) {
             spawn(world, element, assets);
         }
     }
@@ -332,21 +322,44 @@ mod tests {
             .collect()
     }
 
+    fn view() -> BoardView {
+        let note = |title: &str, done, active| NoteView {
+            title: title.to_owned(),
+            detail: "Defeat 100 enemies".to_owned(),
+            progress: if done { 1 } else { 0 },
+            goal: 1,
+            talents: 2,
+            done,
+            active,
+        };
+        BoardView {
+            missions: vec![
+                note("Crypt Cleaner", false, false),
+                note("Gold Digger", true, false),
+                note("Deep Delver", false, false),
+            ],
+            challenges: vec![note("Horde", false, true), note("Bane", true, false)],
+        }
+    }
+
     #[test]
     fn each_tab_pins_its_own_papers() {
-        let tasks = labels(&layout(Tab::Tasks, None));
-        let challenges = labels(&layout(Tab::Challenges, None));
+        let tasks = labels(&layout(Tab::Tasks, &view(), None));
+        let challenges = labels(&layout(Tab::Challenges, &view(), None));
 
         assert!(tasks.contains(&"Crypt Cleaner".to_string()));
-        assert!(!tasks.contains(&"Untouched".to_string()));
-        assert!(challenges.contains(&"Untouched".to_string()));
-        assert_eq!(papers(&layout(Tab::Tasks, None)).len(), TASKS.len());
+        assert!(!tasks.contains(&"Horde".to_string()));
+        assert!(challenges.contains(&"Horde".to_string()));
+        assert_eq!(
+            papers(&layout(Tab::Tasks, &view(), None)).len(),
+            view().missions.len()
+        );
     }
 
     #[test]
     fn finished_papers_carry_the_stamp_and_hovered_ones_are_lifted() {
-        let calm = papers(&layout(Tab::Tasks, None));
-        let lifted = papers(&layout(Tab::Tasks, Some(Target::Note(0))));
+        let calm = papers(&layout(Tab::Tasks, &view(), None));
+        let lifted = papers(&layout(Tab::Tasks, &view(), Some(Target::Note(0))));
 
         assert_eq!(calm.iter().filter(|row| **row >= 2).count(), 1);
         assert_eq!(calm[0], 0);
@@ -356,14 +369,14 @@ mod tests {
     #[test]
     fn every_paper_shows_its_reward_as_a_talent_icon() {
         let icons = |tab| {
-            layout(tab, None)
+            layout(tab, &view(), None)
                 .iter()
                 .filter(|element| matches!(element, Element::Image { texture, .. } if *texture == tex::TALENT_ICON))
                 .count()
         };
 
-        assert_eq!(icons(Tab::Tasks), TASKS.len());
-        assert_eq!(icons(Tab::Challenges), CHALLENGES.len());
+        assert_eq!(icons(Tab::Tasks), view().missions.len());
+        assert_eq!(icons(Tab::Challenges), view().challenges.len());
     }
 
     #[test]
@@ -372,17 +385,17 @@ mod tests {
         let paper = note_top_left(2) + Vec2::splat(20.0);
 
         assert_eq!(
-            target_at(Tab::Tasks, tab),
+            target_at(Tab::Tasks, &view(), tab),
             Some(Target::Tab(Tab::Challenges))
         );
-        assert_eq!(target_at(Tab::Tasks, paper), Some(Target::Note(2)));
-        assert_eq!(target_at(Tab::Tasks, Vec2::ZERO), None);
+        assert_eq!(target_at(Tab::Tasks, &view(), paper), Some(Target::Note(2)));
+        assert_eq!(target_at(Tab::Tasks, &view(), Vec2::ZERO), None);
     }
 
     #[test]
     fn every_paper_fits_on_the_board() {
         let board = panel::BOARD_TOP_LEFT + panel::BOARD_SIZE;
-        for index in 0..TASKS.len() {
+        for index in 0..view().missions.len() {
             let far = note_top_left(index) + NOTE_SIZE;
 
             assert!(
@@ -391,5 +404,15 @@ mod tests {
             );
         }
         assert!(note_top_left(0).y > TAB_TOP + TAB_SIZE.y);
+    }
+
+    #[test]
+    fn the_active_challenge_is_marked_and_the_others_are_not() {
+        let marks = labels(&layout(Tab::Challenges, &view(), None))
+            .iter()
+            .filter(|label| *label == ACTIVE_MARK)
+            .count();
+        assert_eq!(marks, 1);
+        assert!(!labels(&layout(Tab::Tasks, &view(), None)).contains(&ACTIVE_MARK.to_owned()));
     }
 }
