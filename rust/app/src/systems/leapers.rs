@@ -1,7 +1,7 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::audio::AudioCommand;
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, ContactDamage, Dodge, Expiring, Frozen, Health, Layer, LeapStage, Leaper, Player,
     Position, Rooted, Spawning, Velocity,
@@ -118,6 +118,7 @@ fn apply(
     let entity = event.entity;
     match event.step {
         Step::Crouch => {
+            sounds.push(AudioCommand::At(SoundEffect::LeaperCrouch, event.position));
             let _ = world.insert_one(entity, Rooted);
             if let Ok(mut leaper) = world.get::<&mut Leaper>(entity) {
                 leaper.stage = LeapStage::Crouch;
@@ -138,6 +139,7 @@ fn apply(
             }
         }
         Step::Land => {
+            sounds.push(AudioCommand::At(SoundEffect::LeaperLand, event.position));
             let (damage, landed) = world
                 .get::<&Leaper>(entity)
                 .map(|leaper| (leaper.damage, leaper.target))
@@ -267,6 +269,30 @@ mod tests {
         run(&mut world, enemies::LEAP_AIR_SECONDS + 0.1);
         assert_eq!(stage(&world, spider), LeapStage::Rest);
         assert!(world.get::<&ContactDamage>(spider).is_ok());
+    }
+
+    #[test]
+    fn a_leaper_chitters_as_it_crouches_and_thumps_when_it_lands() {
+        let (mut world, _, _) = arena(300.0);
+        let mut sounds = Vec::new();
+        let seconds = enemies::LEAP_FIRST_COOLDOWN
+            + enemies::LEAP_CROUCH_SECONDS
+            + enemies::LEAP_AIR_SECONDS
+            + 0.1;
+        for _ in 0..(seconds / STEP) as usize {
+            tick_leapers(&mut world, &mut sounds, STEP);
+        }
+        let effects: Vec<SoundEffect> = sounds
+            .iter()
+            .filter_map(|command| match command {
+                AudioCommand::At(effect, _) => Some(*effect),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            effects,
+            vec![SoundEffect::LeaperCrouch, SoundEffect::LeaperLand]
+        );
     }
 
     #[test]

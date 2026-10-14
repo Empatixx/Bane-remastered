@@ -2,6 +2,7 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, Boss, Charge, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health,
     HitFlash, Layer, Outline, Player, Position, Puddle, Revives, Rooted, Size, Smash, Spawning,
@@ -207,15 +208,19 @@ fn collapse_into_puddles(world: &mut World, physics: &mut Physics) {
     }
 }
 
-pub(crate) fn dash(world: &mut World, dt: f32) {
+pub(crate) fn dash(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
     let mut trail = Vec::new();
-    for (entity, dash, chase) in world
-        .query_mut::<(Entity, &mut Dash, &mut Chase)>()
+    for (entity, position, dash, chase) in world
+        .query_mut::<(Entity, &Position, &mut Dash, &mut Chase)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
     {
+        let before = dash.cycle;
         dash.cycle = (dash.cycle + dt) % DASH_PERIOD;
         let dashing = dash.cycle < DASH_DURATION;
+        if dashing && (before == 0.0 || before >= DASH_DURATION || dash.cycle < before) {
+            sounds.push(AudioCommand::At(SoundEffect::GhostDash, position.0));
+        }
         chase.speed = if dashing {
             dash.base_speed + dash.bonus_speed
         } else {
@@ -267,11 +272,16 @@ pub(crate) fn flash_hits(world: &mut World, dt: f32) {
 
 /// The one place where enemies die: every death effect sees each kill before it is reaped,
 /// whichever system dealt the killing blow.
-pub(crate) fn resolve_deaths(world: &mut World, physics: &mut Physics, textures: &Textures) {
+pub(crate) fn resolve_deaths(
+    world: &mut World,
+    physics: &mut Physics,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+) {
     collapse_into_puddles(world, physics);
-    super::skills::death_bursts(world, physics, textures);
-    super::skills::death_clouds(world, textures);
-    super::skills::death_heals(world);
+    super::skills::death_bursts(world, physics, textures, sounds);
+    super::skills::death_clouds(world, textures, sounds);
+    super::skills::death_heals(world, sounds);
     super::bosses::clean_up_after_boss(world);
     reap_dead(world, physics);
 }
@@ -445,12 +455,34 @@ mod tests {
         let base = EnemyKind::Ghost.spec().speed();
         let speed = |world: &World| world.get::<&Chase>(ghost).map(|c| c.speed).unwrap_or(0.0);
 
-        dash(&mut world, 0.5);
+        dash(&mut world, &mut Vec::new(), 0.5);
         assert!(speed(&world) > base * 3.0);
-        dash(&mut world, 1.0);
+        dash(&mut world, &mut Vec::new(), 1.0);
         assert!((speed(&world) - base).abs() < 0.01);
-        dash(&mut world, 1.6);
+        dash(&mut world, &mut Vec::new(), 1.6);
         assert!(speed(&world) > base * 3.0);
+    }
+
+    #[test]
+    fn a_ghost_whooshes_once_at_the_start_of_every_dash() {
+        let (mut world, mut physics) = arena();
+        prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Ghost,
+            Vec2::new(300.0, 0.0),
+        );
+        let mut sounds = Vec::new();
+
+        for _ in 0..5 * 60 {
+            dash(&mut world, &mut sounds, 1.0 / 60.0);
+        }
+
+        assert_eq!(sounds.len(), 2);
+        assert!(matches!(
+            sounds[0],
+            AudioCommand::At(SoundEffect::GhostDash, _)
+        ));
     }
 
     #[test]
@@ -610,7 +642,7 @@ mod tests {
         };
 
         for _ in 0..30 {
-            dash(&mut world, 1.0 / 60.0);
+            dash(&mut world, &mut Vec::new(), 1.0 / 60.0);
         }
         let during = images(&world);
         assert!(during >= 8, "{during}");
@@ -622,11 +654,11 @@ mod tests {
         assert_eq!(copy, world.get::<&Position>(ghost).map(|p| p.0).ok());
 
         for _ in 0..30 {
-            dash(&mut world, 1.0 / 60.0);
+            dash(&mut world, &mut Vec::new(), 1.0 / 60.0);
         }
         let after_burst = images(&world);
         for _ in 0..60 {
-            dash(&mut world, 1.0 / 60.0);
+            dash(&mut world, &mut Vec::new(), 1.0 / 60.0);
         }
         assert_eq!(images(&world), after_burst);
 
@@ -647,7 +679,7 @@ mod tests {
         );
 
         for _ in 0..60 {
-            dash(&mut world, 1.0 / 60.0);
+            dash(&mut world, &mut Vec::new(), 1.0 / 60.0);
         }
 
         assert_eq!(
@@ -668,7 +700,7 @@ mod tests {
             EnemyKind::BloatedSpider,
             Vec2::new(400.0, 400.0),
         );
-        resolve_deaths(&mut world, &mut physics, &Textures::default());
+        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
         assert_eq!(
             world
                 .query::<&crate::components::PoisonPool>()
@@ -680,8 +712,8 @@ mod tests {
         if let Ok(mut health) = world.get::<&mut crate::components::Health>(spider) {
             health.current = 0;
         }
-        resolve_deaths(&mut world, &mut physics, &Textures::default());
-        resolve_deaths(&mut world, &mut physics, &Textures::default());
+        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
 
         assert_eq!(
             world
@@ -696,7 +728,7 @@ mod tests {
         if let Ok(mut health) = world.get::<&mut Health>(entity) {
             health.current = 0;
         }
-        resolve_deaths(world, physics, &Textures::default());
+        resolve_deaths(world, physics, &Textures::default(), &mut Vec::new());
     }
 
     fn wait(world: &mut World, physics: &mut Physics, seconds: f32) {
@@ -787,7 +819,7 @@ mod tests {
             },
         ));
 
-        resolve_deaths(&mut world, &mut physics, &Textures::default());
+        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
 
         assert!(world.get::<&Expiring>(slime).is_ok());
         let _ = world.despawn(boss);

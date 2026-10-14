@@ -4,6 +4,7 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, Body, Clip, DeathBurst, DeathCloud, DeathHeal, EnemyBullet, Expiring, EyeShooter,
     Fuse, Health, Hits, Homing, Impact, Kin, Player, Position, RoomId, Size, Smash, Spawning,
@@ -46,7 +47,20 @@ fn fire(
     }
 }
 
-pub(crate) fn tick_smashes(world: &mut World, physics: &mut Physics, textures: &Textures, dt: f32) {
+fn smash_sound(kind: ProjectileKind) -> SoundEffect {
+    match kind {
+        ProjectileKind::Purple => SoundEffect::KingSmash,
+        _ => SoundEffect::SlimeSmash,
+    }
+}
+
+pub(crate) fn tick_smashes(
+    world: &mut World,
+    physics: &mut Physics,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+    dt: f32,
+) {
     let mut volleys = Vec::new();
     for (position, smash, room) in world
         .query_mut::<(&Position, &mut Smash, Option<&RoomId>)>()
@@ -61,6 +75,7 @@ pub(crate) fn tick_smashes(world: &mut World, physics: &mut Physics, textures: &
         }
     }
     for (origin, kind, count, room) in volleys {
+        sounds.push(AudioCommand::At(smash_sound(kind), origin));
         for index in 0..count {
             let direction = radial(index, count);
             fire(world, physics, kind, origin, direction, room, textures);
@@ -68,7 +83,12 @@ pub(crate) fn tick_smashes(world: &mut World, physics: &mut Physics, textures: &
     }
 }
 
-pub(super) fn death_bursts(world: &mut World, physics: &mut Physics, textures: &Textures) {
+pub(super) fn death_bursts(
+    world: &mut World,
+    physics: &mut Physics,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+) {
     let dying: Vec<(Entity, Vec2, ProjectileKind, u32, Option<RoomId>)> = world
         .query::<(
             Entity,
@@ -87,13 +107,14 @@ pub(super) fn death_bursts(world: &mut World, physics: &mut Physics, textures: &
         .collect();
     for (entity, origin, kind, hits, room) in dying {
         let _ = world.remove_one::<DeathBurst>(entity);
+        sounds.push(AudioCommand::At(SoundEffect::SlimeBurst, origin));
         for direction in burst_directions(hits as usize) {
             fire(world, physics, kind, origin, direction, room, textures);
         }
     }
 }
 
-pub(super) fn death_clouds(world: &mut World, textures: &Textures) {
+pub(super) fn death_clouds(world: &mut World, textures: &Textures, sounds: &mut Vec<AudioCommand>) {
     let dying: Vec<(Entity, Vec2)> = world
         .query::<(Entity, &Position, &DeathCloud, &Health)>()
         .without::<&Expiring>()
@@ -103,11 +124,12 @@ pub(super) fn death_clouds(world: &mut World, textures: &Textures) {
         .collect();
     for (entity, at) in dying {
         let _ = world.remove_one::<DeathCloud>(entity);
+        sounds.push(AudioCommand::At(SoundEffect::ToxicBurst, at));
         prefabs::toxic_cloud(world, at, textures);
     }
 }
 
-pub(super) fn death_heals(world: &mut World) {
+pub(super) fn death_heals(world: &mut World, sounds: &mut Vec<AudioCommand>) {
     let dying: Vec<(Entity, Vec2, DeathHeal)> = world
         .query::<(Entity, &Position, &DeathHeal, &Health)>()
         .without::<&Expiring>()
@@ -118,6 +140,7 @@ pub(super) fn death_heals(world: &mut World) {
     let mut healed: Vec<Entity> = Vec::new();
     for (entity, center, heal) in dying {
         let _ = world.remove_one::<DeathHeal>(entity);
+        sounds.push(AudioCommand::At(SoundEffect::KinHeal, center));
         let box_size = Vec2::splat(heal.radius);
         for (other, position, size, health) in world
             .query_mut::<(Entity, &Position, &Size, &mut Health)>()
@@ -142,6 +165,7 @@ pub(crate) fn tick_eye_shooters(
     world: &mut World,
     physics: &mut Physics,
     textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
     dt: f32,
 ) {
     let seen = world
@@ -175,6 +199,7 @@ pub(crate) fn tick_eye_shooters(
             shooter.remaining -= dt;
             if shooter.remaining <= 0.0 {
                 shooter.attacking = true;
+                sounds.push(AudioCommand::At(SoundEffect::EyeCharge, position.0));
                 animation.play(Clip {
                     flipped: animation.flipped(),
                     ..enemies::attack_clip()
@@ -183,6 +208,7 @@ pub(crate) fn tick_eye_shooters(
         }
     }
     for (origin, kind, room) in shots {
+        sounds.push(AudioCommand::At(SoundEffect::EyeShoot, origin));
         let spawn = origin - Vec2::new(0.0, kind.spec().size().y / 2.0);
         fire(world, physics, kind, spawn, Vec2::ZERO, room, textures);
     }
@@ -338,13 +364,13 @@ mod tests {
             Vec2::new(500.0, 500.0),
         );
 
-        tick_smashes(&mut world, &mut physics, &textures, 1.0 / 60.0);
+        tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 1.0 / 60.0);
         assert_eq!(bullets(&world), 5);
 
-        tick_smashes(&mut world, &mut physics, &textures, 1.0);
+        tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 1.0);
         assert_eq!(bullets(&world), 5);
 
-        tick_smashes(&mut world, &mut physics, &textures, 1.1);
+        tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 1.1);
         assert_eq!(bullets(&world), 10);
     }
 
@@ -357,7 +383,7 @@ mod tests {
             EnemyKind::Slime,
             Vec2::new(500.0, 500.0),
         );
-        tick_smashes(&mut world, &mut physics, &textures, 1.0 / 60.0);
+        tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 1.0 / 60.0);
 
         let sum: Vec2 = world
             .query::<&Velocity>()
@@ -381,16 +407,16 @@ mod tests {
             hits.0 = 3;
         }
 
-        death_bursts(&mut world, &mut physics, &textures);
+        death_bursts(&mut world, &mut physics, &textures, &mut Vec::new());
         assert_eq!(bullets(&world), 0);
 
         if let Ok(mut health) = world.get::<&mut Health>(slime) {
             health.current = 0;
         }
-        death_bursts(&mut world, &mut physics, &textures);
+        death_bursts(&mut world, &mut physics, &textures, &mut Vec::new());
         assert_eq!(bullets(&world), 6);
 
-        death_bursts(&mut world, &mut physics, &textures);
+        death_bursts(&mut world, &mut physics, &textures, &mut Vec::new());
         assert_eq!(bullets(&world), 6);
     }
 
@@ -430,7 +456,7 @@ mod tests {
             health.current = 0;
         }
 
-        death_heals(&mut world);
+        death_heals(&mut world, &mut Vec::new());
 
         let health = |entity| {
             world
@@ -451,9 +477,9 @@ mod tests {
             Vec2::new(500.0, 500.0),
         );
 
-        tick_eye_shooters(&mut world, &mut physics, &textures, 2.9);
+        tick_eye_shooters(&mut world, &mut physics, &textures, &mut Vec::new(), 2.9);
         assert_eq!(bullets(&world), 0);
-        tick_eye_shooters(&mut world, &mut physics, &textures, 0.2);
+        tick_eye_shooters(&mut world, &mut physics, &textures, &mut Vec::new(), 0.2);
         let attacking = world.get::<&EyeShooter>(eye).map(|s| s.attacking).ok();
         assert_eq!(attacking, Some(true));
         assert_eq!(bullets(&world), 0);
@@ -461,7 +487,7 @@ mod tests {
         if let Ok(mut animation) = world.get::<&mut Animation>(eye) {
             animation.advance(1.0);
         }
-        tick_eye_shooters(&mut world, &mut physics, &textures, 0.016);
+        tick_eye_shooters(&mut world, &mut physics, &textures, &mut Vec::new(), 0.016);
 
         assert_eq!(bullets(&world), 1);
         assert_eq!(world.query::<&Homing>().iter().count(), 1);
@@ -560,7 +586,7 @@ mod tests {
         let before = world.get::<&EyeShooter>(eye).map(|s| s.remaining).ok();
 
         for _ in 0..10 {
-            tick_eye_shooters(&mut world, &mut physics, &textures, 1.0);
+            tick_eye_shooters(&mut world, &mut physics, &textures, &mut Vec::new(), 1.0);
             if let Ok(mut animation) = world.get::<&mut Animation>(eye) {
                 animation.advance(1.0);
             }

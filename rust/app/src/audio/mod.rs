@@ -1,4 +1,5 @@
 mod sound;
+mod spatial;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -7,12 +8,19 @@ use std::time::Duration;
 
 use kira::sound::static_sound::{StaticSoundData, StaticSoundHandle};
 use kira::track::{TrackBuilder, TrackHandle};
-use kira::{AudioManager, AudioManagerSettings, Decibels, DefaultBackend, Tween};
+use kira::{AudioManager, AudioManagerSettings, Decibels, DefaultBackend, Panning, Tween};
 
-pub(crate) use sound::{AudioCommand, SoundEffect, Soundtrack};
+pub(crate) use sound::{AudioCommand, Placement, SoundEffect, Soundtrack};
+pub(crate) use spatial::{Throttle, resolve};
 
 const CROSSFADE: Duration = Duration::from_secs(2);
 const VOLUME_TWEEN: Duration = Duration::from_millis(50);
+/// How far a world sound's pitch may wander either way, so a crowd does not sound robotic.
+const PITCH_SPREAD: f64 = 0.07;
+const CENTERED: Placement = Placement {
+    volume: 1.0,
+    pan: 0.0,
+};
 
 struct Backend {
     _manager: AudioManager<DefaultBackend>,
@@ -73,6 +81,8 @@ impl Audio {
         match command {
             AudioCommand::Effect(effect) => backend.play_effect(effect),
             AudioCommand::Music(track) => backend.play_music(track),
+            AudioCommand::At(effect, _) => backend.play_placed(effect, CENTERED),
+            AudioCommand::Placed(effect, placement) => backend.play_placed(effect, placement),
         }
     }
 
@@ -137,12 +147,30 @@ impl Backend {
         }
     }
 
-    fn play_effect(&mut self, effect: SoundEffect) {
+    fn pick(&mut self, effect: SoundEffect) -> Option<StaticSoundData> {
         let files = effect.files();
         let file = files[(crate::rng::cosmetic() * files.len() as f32) as usize % files.len()];
-        let Some(sound) = self.load(file) else {
+        self.load(file)
+    }
+
+    fn play_effect(&mut self, effect: SoundEffect) {
+        let Some(sound) = self.pick(effect) else {
             return;
         };
+        if let Err(error) = self.effects.play(sound) {
+            tracing::warn!(%error, "cannot play the effect");
+        }
+    }
+
+    fn play_placed(&mut self, effect: SoundEffect, placement: Placement) {
+        let Some(sound) = self.pick(effect) else {
+            return;
+        };
+        let rate = 1.0 + (f64::from(crate::rng::cosmetic()) - 0.5) * 2.0 * PITCH_SPREAD;
+        let sound = sound
+            .volume(decibels(placement.volume))
+            .panning(Panning(placement.pan))
+            .playback_rate(rate);
         if let Err(error) = self.effects.play(sound) {
             tracing::warn!(%error, "cannot play the effect");
         }
@@ -204,6 +232,8 @@ mod tests {
         let mut audio = Audio::silent();
         audio.play(AudioCommand::Effect(SoundEffect::Click));
         audio.play(AudioCommand::Music(Soundtrack::MainMenu));
+        audio.play(AudioCommand::At(SoundEffect::OgreRoar, glam::Vec2::ZERO));
+        audio.play(AudioCommand::Placed(SoundEffect::SlimeSmash, CENTERED));
         audio.set_volume(1.0, 0.5, 0.5);
         audio.preload("menuclick.ogg");
     }

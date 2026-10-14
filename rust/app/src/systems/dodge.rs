@@ -2,6 +2,7 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::assets::{PLAYER_DODGE, Textures};
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Afterimage, Animation, Clip, Color, Dodge, DodgeBar, DodgeCooldown, DodgeVisual, Health,
     Invulnerable, Layer, Lit, Player, PlayerPerks, Position, Previous, Size, Sprite,
@@ -23,7 +24,12 @@ const TRAIL_INTERVAL: f32 = 0.04;
 const AFTERIMAGE_SECONDS: f32 = 0.25;
 const AFTERIMAGE_COLOR: glam::Vec4 = glam::Vec4::new(0.55, 0.8, 1.0, 0.55);
 
-pub(crate) fn start_dodge(world: &mut World, input: &Input, aim: Vec2) {
+pub(crate) fn start_dodge(
+    world: &mut World,
+    input: &Input,
+    aim: Vec2,
+    sounds: &mut Vec<AudioCommand>,
+) {
     if !input.action_pressed(Action::Dodge) {
         return;
     }
@@ -63,6 +69,7 @@ pub(crate) fn start_dodge(world: &mut World, input: &Input, aim: Vec2) {
                 remaining: DODGE_TOTAL,
             },
         );
+        sounds.push(AudioCommand::Effect(SoundEffect::Dodge));
     }
 }
 
@@ -298,11 +305,23 @@ mod tests {
         let mut world = World::new();
         let hero = player(&mut world);
 
-        start_dodge(&mut world, &pressed(), Vec2::new(100.0, 400.0));
+        start_dodge(&mut world, &pressed(), Vec2::new(100.0, 400.0), &mut Vec::new());
 
         let dodge = world.get::<&Dodge>(hero).map(|d| d.direction).ok();
         assert_eq!(dodge, Some(Vec2::Y));
         assert!(world.get::<&Invulnerable>(hero).is_ok());
+    }
+
+    #[test]
+    fn starting_a_dodge_plays_the_dash_sound_once() {
+        let mut world = World::new();
+        player(&mut world);
+        let mut sounds = Vec::new();
+
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut sounds);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut sounds);
+
+        assert_eq!(sounds, vec![AudioCommand::Effect(SoundEffect::Dodge)]);
     }
 
     #[test]
@@ -315,7 +334,7 @@ mod tests {
         };
         world.insert_one(hero, PlayerPerks(perks)).expect("perks");
 
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
 
         assert!(world.get::<&Dodge>(hero).is_err());
     }
@@ -330,7 +349,7 @@ mod tests {
         };
         world.insert_one(hero, PlayerPerks(perks)).expect("perks");
 
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
 
         assert!(world.get::<&Dodge>(hero).is_ok());
     }
@@ -339,17 +358,17 @@ mod tests {
     fn a_dodge_ends_by_itself_and_then_needs_a_cooldown() {
         let mut world = World::new();
         let hero = player(&mut world);
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
 
         tick_dodges(&mut world, DODGE_SECONDS + 0.01);
         assert!(world.get::<&Dodge>(hero).is_err());
         assert!(world.get::<&DodgeCooldown>(hero).is_ok());
 
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
         assert!(world.get::<&Dodge>(hero).is_err());
 
         tick_dodges(&mut world, 5.0);
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
         assert!(world.get::<&Dodge>(hero).is_ok());
     }
 
@@ -366,7 +385,7 @@ mod tests {
                 max: 10,
             },
         ));
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
         show_dodge_visual(&mut world, &Textures::default());
         tick_dodges(&mut world, 0.05);
         tick_dodges(&mut world, 0.05);
@@ -397,7 +416,7 @@ mod tests {
         show_dodge_visual(&mut world, &textures);
         assert_eq!(world.query::<&DodgeVisual>().iter().count(), 0);
 
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
         show_dodge_visual(&mut world, &textures);
         show_dodge_visual(&mut world, &textures);
         assert_eq!(world.query::<&DodgeVisual>().iter().count(), 1);
@@ -455,7 +474,7 @@ mod tests {
             health.current = 0;
         }
 
-        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
 
         assert!(world.get::<&Dodge>(hero).is_err());
     }

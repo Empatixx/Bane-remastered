@@ -2,6 +2,7 @@ use glam::Vec2;
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Expiring, Hatcher, Health, Minion, Player,
     Position, Puddle, Revives, RoomId, Rooted, Size, Spawning, WebSpitter,
@@ -17,6 +18,8 @@ const HATCH_ORDER: [EnemyKind; 3] = [
 ];
 const WEB_SIDE_OFFSET: f32 = 36.0;
 const WEB_BOTTOM_INSET: f32 = 15.0;
+/// The king slime's spiral fires several times a second; only every few shots get a sound.
+const SPIRAL_SOUND_EVERY: u32 = 3;
 
 fn player_center(world: &World) -> Option<Vec2> {
     world
@@ -32,6 +35,7 @@ pub(crate) fn tick_hatchers(
     world: &mut World,
     physics: &mut Physics,
     textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
     dt: f32,
 ) {
     let mut hatches = Vec::new();
@@ -53,11 +57,17 @@ pub(crate) fn tick_hatchers(
         }
     }
     for (origin, kind, room) in hatches {
+        sounds.push(AudioCommand::At(SoundEffect::SpiderHatch, origin));
         prefabs::hatchling(world, physics, kind, origin, room, textures);
     }
 }
 
-pub(crate) fn tick_web_spitters(world: &mut World, textures: &Textures, dt: f32) {
+pub(crate) fn tick_web_spitters(
+    world: &mut World,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+    dt: f32,
+) {
     let target = player_center(world);
     let mut casts = Vec::new();
     let mut spits = Vec::new();
@@ -81,6 +91,7 @@ pub(crate) fn tick_web_spitters(world: &mut World, textures: &Textures, dt: f32)
             spitter.remaining -= dt;
             if spitter.remaining <= 0.0 {
                 spitter.casting = true;
+                sounds.push(AudioCommand::At(SoundEffect::WebCharge, position.0));
                 animation.play(Clip {
                     flipped: animation.flipped(),
                     ..enemies::spell_clip()
@@ -104,6 +115,7 @@ pub(crate) fn tick_web_spitters(world: &mut World, textures: &Textures, dt: f32)
             position.y + size.y / 2.0 - WEB_BOTTOM_INSET,
         );
         let direction = target.map_or(Vec2::X, |target| target - origin);
+        sounds.push(AudioCommand::At(SoundEffect::WebSpit, origin));
         prefabs::cobweb(world, origin, direction, textures);
     }
 }
@@ -112,6 +124,7 @@ pub(crate) fn tick_armageddon(
     world: &mut World,
     physics: &mut Physics,
     textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
     dt: f32,
 ) {
     let mut shots = Vec::new();
@@ -126,6 +139,10 @@ pub(crate) fn tick_armageddon(
             armageddon.remaining = enemies::ARMAGEDDON_COOLDOWN;
             armageddon.angle += enemies::ARMAGEDDON_TURN;
             let direction = Vec2::new(armageddon.angle.cos(), armageddon.angle.sin());
+            let shot = (armageddon.angle / enemies::ARMAGEDDON_TURN).round() as u32;
+            if shot.is_multiple_of(SPIRAL_SOUND_EVERY) {
+                sounds.push(AudioCommand::At(SoundEffect::KingSpiral, position.0));
+            }
             shots.push((position.0, armageddon.kind, direction, room.copied()));
         }
     }
@@ -261,11 +278,11 @@ mod tests {
         let (mut world, mut physics, textures) = arena();
         boss(&mut world, &mut physics, EnemyKind::Spider);
 
-        tick_hatchers(&mut world, &mut physics, &textures, 2.4);
+        tick_hatchers(&mut world, &mut physics, &textures, &mut Vec::new(), 2.4);
         assert_eq!(count::<Minion>(&world), 0);
-        tick_hatchers(&mut world, &mut physics, &textures, 0.2);
-        tick_hatchers(&mut world, &mut physics, &textures, 2.6);
-        tick_hatchers(&mut world, &mut physics, &textures, 2.6);
+        tick_hatchers(&mut world, &mut physics, &textures, &mut Vec::new(), 0.2);
+        tick_hatchers(&mut world, &mut physics, &textures, &mut Vec::new(), 2.6);
+        tick_hatchers(&mut world, &mut physics, &textures, &mut Vec::new(), 2.6);
 
         assert_eq!(count::<Minion>(&world), 3);
         let kin_hp: Vec<i32> = {
@@ -285,7 +302,7 @@ mod tests {
     fn hatchlings_are_active_immediately() {
         let (mut world, mut physics, textures) = arena();
         boss(&mut world, &mut physics, EnemyKind::Spider);
-        tick_hatchers(&mut world, &mut physics, &textures, 2.6);
+        tick_hatchers(&mut world, &mut physics, &textures, &mut Vec::new(), 2.6);
 
         assert_eq!(count::<Spawning>(&world), 0);
         let rooted = count::<Rooted>(&world);
@@ -297,9 +314,9 @@ mod tests {
         let (mut world, mut physics, textures) = arena();
         let spider = boss(&mut world, &mut physics, EnemyKind::Spider);
 
-        tick_web_spitters(&mut world, &textures, 4.9);
+        tick_web_spitters(&mut world, &textures, &mut Vec::new(), 4.9);
         assert!(world.get::<&Rooted>(spider).is_err());
-        tick_web_spitters(&mut world, &textures, 0.2);
+        tick_web_spitters(&mut world, &textures, &mut Vec::new(), 0.2);
         assert!(world.get::<&Rooted>(spider).is_ok());
 
         chase_player(&mut world, &crate::flow::FlowField::default());
@@ -308,13 +325,13 @@ mod tests {
             .map(|v| v.0)
             .unwrap_or(Vec2::X);
         assert_eq!(velocity, Vec2::ZERO);
-        tick_hatchers(&mut world, &mut physics, &textures, 10.0);
+        tick_hatchers(&mut world, &mut physics, &textures, &mut Vec::new(), 10.0);
         assert_eq!(count::<Minion>(&world), 0);
 
         if let Ok(mut animation) = world.get::<&mut Animation>(spider) {
             animation.advance(1.0);
         }
-        tick_web_spitters(&mut world, &textures, 0.016);
+        tick_web_spitters(&mut world, &textures, &mut Vec::new(), 0.016);
 
         assert!(world.get::<&Rooted>(spider).is_err());
         assert_eq!(count::<Cobweb>(&world), 1);
@@ -336,11 +353,11 @@ mod tests {
         let (mut world, mut physics, textures) = arena();
         boss(&mut world, &mut physics, EnemyKind::KingSlime);
 
-        tick_armageddon(&mut world, &mut physics, &textures, 0.016);
-        tick_armageddon(&mut world, &mut physics, &textures, 0.16);
+        tick_armageddon(&mut world, &mut physics, &textures, &mut Vec::new(), 0.016);
+        tick_armageddon(&mut world, &mut physics, &textures, &mut Vec::new(), 0.16);
         assert_eq!(count::<EnemyBullet>(&world), 2);
 
-        crate::systems::tick_smashes(&mut world, &mut physics, &textures, 0.016);
+        crate::systems::tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 0.016);
         assert_eq!(count::<EnemyBullet>(&world), 27);
     }
 
@@ -364,7 +381,7 @@ mod tests {
     fn a_dead_boss_takes_its_brood_and_webs_with_it() {
         let (mut world, mut physics, textures) = arena();
         let spider = boss(&mut world, &mut physics, EnemyKind::Spider);
-        tick_hatchers(&mut world, &mut physics, &textures, 2.6);
+        tick_hatchers(&mut world, &mut physics, &textures, &mut Vec::new(), 2.6);
         prefabs::cobweb(&mut world, Vec2::ZERO, Vec2::X, &textures);
 
         clean_up_after_boss(&mut world);

@@ -30,6 +30,7 @@ pub(crate) enum Cmd {
     Spit,
     Lure,
     Shield(bool),
+    Sound(SoundEffect),
 }
 
 fn clip(row: usize) -> Clip {
@@ -128,15 +129,16 @@ pub(crate) fn step(
             mimic.last = Some(attack);
             mimic.stage = MimicStage::Winding;
             commands.push(Cmd::Root);
-            let (row, windup) = match attack {
-                MimicAttack::Hop => (1, enemies::MIMIC_HOP_WINDUP),
-                MimicAttack::Bite => (2, enemies::MIMIC_BITE_WINDUP),
-                MimicAttack::Spit => (3, enemies::MIMIC_SPIT_WINDUP),
-                MimicAttack::Lure => (3, enemies::MIMIC_LURE_WINDUP),
-                MimicAttack::Rest => (4, enemies::MIMIC_REST_WINDUP),
+            let (row, windup, sound) = match attack {
+                MimicAttack::Hop => (1, enemies::MIMIC_HOP_WINDUP, SoundEffect::MimicCreak),
+                MimicAttack::Bite => (2, enemies::MIMIC_BITE_WINDUP, SoundEffect::MimicChomp),
+                MimicAttack::Spit => (3, enemies::MIMIC_SPIT_WINDUP, SoundEffect::MimicGurgle),
+                MimicAttack::Lure => (3, enemies::MIMIC_LURE_WINDUP, SoundEffect::MimicJingle),
+                MimicAttack::Rest => (4, enemies::MIMIC_REST_WINDUP, SoundEffect::MimicShut),
             };
             mimic.timer = windup;
             commands.push(Cmd::Play(clip(row)));
+            commands.push(Cmd::Sound(sound));
         }
         MimicStage::Winding => {
             mimic.timer -= dt;
@@ -242,6 +244,7 @@ pub(crate) fn tick_mimic(
             if let Ok(mut mimic) = world.get::<&mut MimicBoss>(entity) {
                 mimic.enraged = true;
             }
+            sounds.push(AudioCommand::At(SoundEffect::MimicRage, at));
             if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
                 chase.speed *= enemies::MIMIC_RAGE_SPEED;
             }
@@ -315,6 +318,7 @@ fn execute(
     let side = if mirrored { -1.0 } else { 1.0 };
     match command {
         Cmd::Play(clip) => play(world, entity, clip),
+        Cmd::Sound(effect) => sounds.push(AudioCommand::At(effect, at)),
         Cmd::Root => {
             let _ = world.insert_one(entity, Rooted);
         }
@@ -524,6 +528,23 @@ mod tests {
                 choose_attack(&mut boss, 200.0, enemies::MIMIC_MOB_LIMIT, 0),
                 MimicAttack::Spit
             );
+        }
+    }
+
+    #[test]
+    fn every_wind_up_announces_its_attack_with_a_sound() {
+        for seed in 0..40 {
+            let mut boss = mimic();
+            boss.seed = seed * 7919 + 1;
+            let commands = step(&mut boss, 200.0, 0, 0, 0.02);
+            let expected = match boss.attack {
+                MimicAttack::Hop => SoundEffect::MimicCreak,
+                MimicAttack::Bite => SoundEffect::MimicChomp,
+                MimicAttack::Spit => SoundEffect::MimicGurgle,
+                MimicAttack::Lure => SoundEffect::MimicJingle,
+                MimicAttack::Rest => SoundEffect::MimicShut,
+            };
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
         }
     }
 

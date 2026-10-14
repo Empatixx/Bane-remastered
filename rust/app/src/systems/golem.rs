@@ -37,6 +37,7 @@ pub(crate) enum Cmd {
     Boulder,
     Rain(u32),
     AimBeam,
+    Sound(SoundEffect),
 }
 
 pub(crate) fn slam_clip() -> Clip {
@@ -148,19 +149,23 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
                     GolemAttack::Slam => {
                         golem.timer = enemies::GOLEM_SLAM_WINDUP;
                         commands.push(Cmd::Play(slam_clip()));
+                        commands.push(Cmd::Sound(SoundEffect::GolemSlam));
                     }
                     GolemAttack::Throw => {
                         golem.timer = enemies::GOLEM_THROW_WINDUP;
                         commands.push(Cmd::Play(throw_clip()));
+                        commands.push(Cmd::Sound(SoundEffect::GolemThrow));
                     }
                     GolemAttack::Rain => {
                         golem.timer = enemies::GOLEM_RAIN_WINDUP;
                         commands.push(Cmd::Play(rain_clip()));
+                        commands.push(Cmd::Sound(SoundEffect::GolemRain));
                     }
                     GolemAttack::Laser => {
                         golem.timer = enemies::GOLEM_LASER_CHARGE;
                         commands.push(Cmd::Play(laser_clip()));
                         commands.push(Cmd::AimBeam);
+                        commands.push(Cmd::Sound(SoundEffect::LaserCharge));
                     }
                 }
             }
@@ -191,6 +196,7 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
                     GolemAttack::Laser => {
                         golem.stage = GolemStage::Acting;
                         golem.timer = enemies::GOLEM_LASER_SECONDS;
+                        commands.push(Cmd::Sound(SoundEffect::LaserFire));
                     }
                 }
             }
@@ -296,6 +302,7 @@ pub(crate) fn tick_golem(
             if let Ok(mut golem) = world.get::<&mut GolemBoss>(entity) {
                 golem.enraged = true;
             }
+            sounds.push(AudioCommand::At(SoundEffect::GolemRage, at));
             if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
                 chase.speed *= enemies::GOLEM_RAGE_SPEED;
             }
@@ -357,6 +364,7 @@ fn execute(
     let room = world.get::<&RoomId>(entity).map(|room| *room).ok();
     match command {
         Cmd::Play(clip) => play(world, entity, clip),
+        Cmd::Sound(effect) => sounds.push(AudioCommand::At(effect, at)),
         Cmd::Root => {
             let _ = world.insert_one(entity, Rooted);
         }
@@ -481,7 +489,7 @@ pub(crate) fn tick_rock_falls(
     for (shadow, rock, ground, room) in landed {
         let _ = world.despawn(shadow);
         let _ = world.despawn(rock);
-        sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
+        sounds.push(AudioCommand::At(SoundEffect::WallHit, ground));
         let burst = Clip {
             row: 1,
             frames: 4,
@@ -774,6 +782,34 @@ mod tests {
             assert_ne!(Some(attack), last);
             last = Some(attack);
         }
+    }
+
+    #[test]
+    fn every_wind_up_announces_its_attack_with_a_sound() {
+        for seed in 0..40 {
+            let mut boss = golem();
+            boss.seed = seed * 7919 + 1;
+            let commands = step(&mut boss, 200.0, 0.02);
+            let expected = match boss.attack {
+                GolemAttack::Slam => SoundEffect::GolemSlam,
+                GolemAttack::Throw => SoundEffect::GolemThrow,
+                GolemAttack::Rain => SoundEffect::GolemRain,
+                GolemAttack::Laser => SoundEffect::LaserCharge,
+            };
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+        }
+    }
+
+    #[test]
+    fn the_laser_hums_once_it_starts_firing() {
+        let mut boss = golem();
+        boss.attack = GolemAttack::Laser;
+        boss.last = Some(GolemAttack::Laser);
+        boss.stage = GolemStage::Winding;
+        boss.timer = 0.01;
+        let commands = step(&mut boss, 200.0, 0.02);
+        assert!(commands.contains(&Cmd::Sound(SoundEffect::LaserFire)));
+        assert_eq!(boss.stage, GolemStage::Acting);
     }
 
     #[test]
