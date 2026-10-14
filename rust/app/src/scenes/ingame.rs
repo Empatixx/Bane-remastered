@@ -756,7 +756,11 @@ impl InGameScene {
                         self.victory = true;
                     } else {
                         let ladder_top_left = center - Vec2::new(48.0, 0.0);
-                        prefabs::ladder(&mut self.world, ladder_top_left, textures);
+                        let theme = self
+                            .dungeon
+                            .as_ref()
+                            .map_or(Theme::Stone, |dungeon| dungeon.theme);
+                        prefabs::ladder(&mut self.world, ladder_top_left, theme, textures);
                     }
                 }
             }

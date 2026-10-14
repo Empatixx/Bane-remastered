@@ -152,6 +152,12 @@ pub(crate) mod tex {
         COBWEB_PROJECTILE = "ingame/cobweb_projectile.tga",
         PURPLE_SLIMEBULLET = "ingame/purple_slimebullet.tga",
         LADDER = "ingame/ladder.tga",
+        LADDER_SEWER = "ingame/ladder_sewer.tga",
+        LADDER_MOSS = "ingame/ladder_moss.tga",
+        LADDER_SPIDER = "ingame/ladder_spider.tga",
+        LADDER_ICE = "ingame/ladder_ice.tga",
+        LADDER_LAVA = "ingame/ladder_lava.tga",
+        LADDER_TEMPLE = "ingame/ladder_temple.tga",
         SNAKE = "ingame/snake.tga",
         BAT = "ingame/bat.tga",
         GHOST = "ingame/ghost.tga",
@@ -263,6 +269,18 @@ pub(crate) fn tileset_for(theme: Theme) -> Tex {
     }
 }
 
+pub(crate) fn ladder_for(theme: Theme) -> Tex {
+    match theme {
+        Theme::Stone => tex::LADDER,
+        Theme::Sewer => tex::LADDER_SEWER,
+        Theme::Moss => tex::LADDER_MOSS,
+        Theme::Spider => tex::LADDER_SPIDER,
+        Theme::Ice => tex::LADDER_ICE,
+        Theme::Lava => tex::LADDER_LAVA,
+        Theme::Temple => tex::LADDER_TEMPLE,
+    }
+}
+
 const EARLY_TEXTURES: &[Tex] = &[tex::LOGO, tex::LOADING_TITLE, tex::LOADING_SPINNER];
 
 const GAME_TEXTURES: &[Tex] = &[
@@ -369,6 +387,12 @@ const GAME_TEXTURES: &[Tex] = &[
     tex::COBWEB_PROJECTILE,
     tex::PURPLE_SLIMEBULLET,
     tex::LADDER,
+    tex::LADDER_SEWER,
+    tex::LADDER_MOSS,
+    tex::LADDER_SPIDER,
+    tex::LADDER_ICE,
+    tex::LADDER_LAVA,
+    tex::LADDER_TEMPLE,
     tex::SNAKE,
     tex::BAT,
     tex::GHOST,
