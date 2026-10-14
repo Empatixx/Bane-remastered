@@ -3,7 +3,7 @@ import random
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "assets/textures/ingame"
 
@@ -262,6 +262,103 @@ def shatter(base, cells, spread, fall, keep, seed):
     return result
 
 
+def disc(image, cx, cy, radius, light_bias=True):
+    for y in range(cy - radius - 1, cy + radius + 2):
+        for x in range(cx - radius - 1, cx + radius + 2):
+            d = math.hypot(x - cx, y - cy)
+            if d > radius + 0.5 or not (0 <= x < image.width and 0 <= y < image.height):
+                continue
+            if d > radius - 0.9:
+                colour = OUTLINE
+            else:
+                light = (-(x - cx) - (y - cy)) / (2.0 * radius)
+                colour = EYE_HL if light > 0.62 else EYE_L if light > 0.3 else EYE_M if light > -0.1 else EYE
+                if light < -0.45:
+                    colour = EYE_D
+            image.putpixel((x, y), colour)
+
+
+def shot_sheet():
+    size = 12
+    sheet = Image.new("RGBA", (size * 3, size * 2), CLEAR)
+    for frame, radius in enumerate((4, 5, 4)):
+        cell = Image.new("RGBA", (size, size), CLEAR)
+        disc(cell, 6, 6, radius)
+        for dx, dy in ((0, 0),):
+            cell.putpixel((6 + (frame - 1), 6 + (1 - frame % 2)), TRIM)
+        sheet.paste(cell, (frame * size, 0))
+    rng = random.Random(3)
+    for frame in range(3):
+        cell = Image.new("RGBA", (size, size), CLEAR)
+        reach = 2 + frame * 2
+        for index in range(6):
+            angle = index * math.tau / 6 + 0.3
+            for step in range(reach - 1, reach + 1):
+                x, y = round(6 + math.cos(angle) * step), round(6 + math.sin(angle) * step)
+                if 0 <= x < size and 0 <= y < size:
+                    cell.putpixel((x, y), (EYE_L, EYE_M, EYE_D)[frame])
+        if frame == 0:
+            disc(cell, 6, 6, 2)
+        sheet.paste(cell, (frame * size, size))
+    return sheet
+
+
+def orbit_eye(frame, death=False):
+    size = 24
+    image = Image.new("RGBA", (size, size), CLEAR)
+    d = ImageDraw.Draw(image)
+    wave = (0, 1, 0, -1)[frame % 4]
+    if not death:
+        for x in (8, 12, 15):
+            for y in range(17, 20 + (x % 3)):
+                image.putpixel((x + (wave if y > 19 else 0), y), CLOAK)
+            image.putpixel((x + wave, 20 + (x % 3)), OUTLINE)
+        disc(image, 12, 11, 8)
+        px, py = 12 + (1 if frame != 2 else 0), 11
+        d.rectangle((px - 1, py - 1, px + 1, py + 1), fill=OUTLINE)
+        image.putpixel((px - 4, py - 4), EYE_HL)
+        d.arc((4, 0, 20, 12), 200, 340, fill=CLOAK_L)
+        if frame == 3:
+            for y in range(6, 9):
+                for x in range(5, 20):
+                    if image.getpixel((x, y))[3]:
+                        image.putpixel((x, y), CLOAK_D)
+        return image
+    if frame == 0:
+        disc(image, 12, 11, 9)
+        for index in range(5):
+            angle = index * math.tau / 5 + 0.5
+            for step in range(0, 8):
+                x, y = round(12 + math.cos(angle) * step), round(11 + math.sin(angle) * step)
+                image.putpixel((x, y), OUTLINE)
+    elif frame == 1:
+        for index in range(10):
+            angle = index * math.tau / 10 + 0.2
+            for step in range(4, 11):
+                x, y = round(12 + math.cos(angle) * step), round(11 + math.sin(angle) * step)
+                if 0 <= x < size and 0 <= y < size:
+                    image.putpixel((x, y), BURST if step < 8 else BURST_D)
+        disc(image, 12, 11, 3)
+    elif frame == 2:
+        for index in range(7):
+            angle = index * math.tau / 7 + 0.4
+            x, y = round(12 + math.cos(angle) * 8), round(11 + math.sin(angle) * 8)
+            d.rectangle((x - 1, y - 1, x + 1, y + 1), fill=EYE_M, outline=OUTLINE)
+    else:
+        for index in range(5):
+            x, y = 3 + index * 4, 19 + (index % 2) * 2
+            d.rectangle((x, y, x + 2, y + 1), fill=CLOAK, outline=OUTLINE)
+    return image
+
+
+def orbit_sheet():
+    sheet = Image.new("RGBA", (24 * 4, 24 * 2), CLEAR)
+    for frame in range(4):
+        sheet.paste(orbit_eye(frame), (frame * 24, 0))
+        sheet.paste(orbit_eye(frame, True), (frame * 24, 24))
+    return sheet
+
+
 def main():
     sheet = Image.new("RGBA", (SIZE * FRAMES_PER_ROW, SIZE * 4), CLEAR)
     rows = [
@@ -274,6 +371,8 @@ def main():
         for column, frame in enumerate(frames):
             sheet.paste(frame, (column * SIZE, row * SIZE))
     sheet.save(OUT / "argus.tga")
+    shot_sheet().save(OUT / "argus_shot.tga")
+    orbit_sheet().save(OUT / "argus_orbit.tga")
 
 
 main()

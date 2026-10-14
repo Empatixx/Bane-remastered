@@ -414,13 +414,7 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
-        systems::tick_gaze(
-            &mut self.world,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            dt,
-        );
+        systems::tick_orbiters(&mut self.world, &mut self.physics, dt);
         systems::separate_chasers(&mut self.world);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);

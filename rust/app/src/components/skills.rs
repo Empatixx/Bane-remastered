@@ -47,8 +47,8 @@ pub(crate) enum GolemStage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ArgusAttack {
     Volley,
-    Gaze,
-    Summon,
+    Barrage,
+    Shield,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,6 +59,12 @@ pub(crate) enum ArgusStage {
     Recovering,
     FadingOut,
     FadingIn,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Orbiter {
+    pub(crate) owner: hecs::Entity,
+    pub(crate) angle: f32,
 }
 
 #[derive(Debug, Clone, Copy)]

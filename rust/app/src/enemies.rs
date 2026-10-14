@@ -67,14 +67,16 @@ pub(crate) const ARGUS_VOLLEY_EVERY: f32 = 0.4;
 pub(crate) const ARGUS_VOLLEY_RING: usize = 10;
 pub(crate) const ARGUS_VOLLEY_RAGE_RING: usize = 14;
 pub(crate) const ARGUS_SHOT_DAMAGE: i32 = 1;
-pub(crate) const ARGUS_GAZE_CHARGE: f32 = 0.6;
-pub(crate) const ARGUS_GAZE_SECONDS: f32 = 2.2;
-pub(crate) const ARGUS_GAZE_TURN: f32 = 0.55;
-pub(crate) const ARGUS_GAZE_RAGE_TURN: f32 = 0.9;
-pub(crate) const ARGUS_GAZE_DAMAGE: i32 = 2;
-pub(crate) const ARGUS_SUMMON_WINDUP: f32 = 0.6;
-pub(crate) const ARGUS_SUMMON_COUNT: usize = 3;
-pub(crate) const ARGUS_SUMMON_LIMIT: usize = 5;
+pub(crate) const ARGUS_BARRAGE_WINDUP: f32 = 0.6;
+pub(crate) const ARGUS_BARRAGE_SHOTS: u32 = 14;
+pub(crate) const ARGUS_BARRAGE_RAGE_SHOTS: u32 = 22;
+pub(crate) const ARGUS_BARRAGE_EVERY: f32 = 0.13;
+pub(crate) const ARGUS_BARRAGE_SPREAD: f32 = 0.16;
+pub(crate) const ARGUS_SHIELD_WINDUP: f32 = 0.6;
+pub(crate) const ARGUS_ORBIT_COUNT: usize = 4;
+pub(crate) const ARGUS_ORBIT_RAGE_COUNT: usize = 6;
+pub(crate) const ARGUS_ORBIT_RADIUS: f32 = 185.0;
+pub(crate) const ARGUS_ORBIT_SPEED: f32 = 1.4;
 pub(crate) const ARGUS_RECOVER: f32 = 0.5;
 pub(crate) const ARGUS_TELEPORT_EVERY: u32 = 3;
 pub(crate) const ARGUS_FADE: f32 = 0.35;
@@ -160,10 +162,17 @@ impl ProjectileKind {
                 lifetime: Some(5.0),
             },
             Self::ArgusShot => ProjectileSpec {
-                homing: false,
+                texture: tex::ARGUS_SHOT,
+                columns: 3,
+                rows: 2,
+                frame: Vec2::new(12.0, 12.0),
+                scale: 3.0,
+                idle: (3, 0.08),
+                impact: (3, 0.07),
+                light: [255.0, 140.0, 50.0, 22.0, 0.5],
                 force: 26_000_000.0,
+                homing: false,
                 lifetime: Some(4.0),
-                ..Self::EyeWatcher.spec()
             },
             Self::GolemRock => ProjectileSpec {
                 texture: tex::GOLEM_ROCK,
@@ -231,6 +240,7 @@ pub(crate) enum EnemyKind {
     Golem,
     MiniGolem,
     Argus,
+    ArgusEye,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -364,7 +374,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 18] = [
+    pub(crate) const ALL: [Self; 19] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -381,6 +391,7 @@ impl EnemyKind {
         Self::Golem,
         Self::MiniGolem,
         Self::Argus,
+        Self::ArgusEye,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -551,7 +562,20 @@ impl EnemyKind {
                     4.0,
                     (6, 0.14),
                     Some((8, 0.1)),
-                    (120, 2, 9_000_000.0),
+                    (120, 2, 2_500_000.0),
+                )
+            },
+            Self::ArgusEye => EnemySpec {
+                death_row: 1,
+                role: Role::Summoned,
+                ..spec(
+                    tex::ARGUS_ORBIT,
+                    (4, 2),
+                    (24.0, 24.0),
+                    3.0,
+                    (4, 0.2),
+                    Some((4, 0.1)),
+                    (4, 1, 0.0),
                 )
             },
             Self::MiniGolem => EnemySpec {
@@ -751,8 +775,8 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 5);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 5 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 6);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 6 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));

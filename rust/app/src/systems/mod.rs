@@ -46,7 +46,7 @@ mod unstick;
 
 pub(crate) use ambience::{spawn_ambience, tick_ambience};
 pub(crate) use animation::{animate, chain_animations, open_gate, remove_expired, tick_openings};
-pub(crate) use argus::{tick_argus, tick_gaze};
+pub(crate) use argus::{tick_argus, tick_orbiters};
 pub(crate) use arrows::update_enemy_arrows;
 pub(crate) use artefacts::{
     activate_artefact, pick_up_artefact, tick_berserk, unused_artefact, update_artefact_hud,

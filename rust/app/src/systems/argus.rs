@@ -1,31 +1,33 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Textures, tex};
+use crate::assets::Textures;
 use crate::audio::AudioCommand;
 use crate::components::{
     ArgusAttack, ArgusBoss, ArgusStage, Body, Chase, Clip, Color, ContactDamage, Expiring, Frozen,
-    Minion, Position, RoomId, Rooted, Spawning,
+    Health, Orbiter, Position, RoomId, Rooted, Spawning,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{BeamStyle, aim, draw_beam, play, player_at, turn_towards, unit};
+use crate::systems::golem::{play, player_at, unit};
 
-const EYE_LIFT: f32 = 36.0;
+const SPRITE_SCALE: f32 = 4.0;
+const EYES: [(f32, f32); 7] = [
+    (35.0, 23.0),
+    (17.0, 30.0),
+    (49.0, 29.0),
+    (21.0, 44.0),
+    (44.0, 45.0),
+    (30.0, 48.0),
+    (36.0, 40.0),
+];
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
-const SUMMON_RADIUS: f32 = 150.0;
 const HOP_NEAR: f32 = 260.0;
 const HOP_FAR: f32 = 480.0;
 const HOP_ROOM: f32 = 140.0;
-const ARGUS_BEAM: BeamStyle = BeamStyle {
-    glow: Vec4::new(1.0, 0.45, 0.15, 0.5),
-    core: Vec4::new(1.0, 0.94, 0.72, 1.0),
-    light: [255.0, 140.0, 50.0],
-    spark: tex::SPARK_WARM,
-    damage: enemies::ARGUS_GAZE_DAMAGE,
-};
+const ORBIT_SQUASH: f32 = 0.8;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Cmd {
@@ -33,9 +35,9 @@ pub(crate) enum Cmd {
     Root,
     Free,
     Ring(f32),
-    Summon,
+    Shot(u32),
+    Shield,
     Teleport,
-    AimBeam,
 }
 
 fn clip(row: usize, frame_time: f32, looping: bool) -> Clip {
@@ -52,24 +54,27 @@ pub(crate) fn volley_clip() -> Clip {
     clip(2, 0.11, true)
 }
 
-pub(crate) fn gaze_clip() -> Clip {
+pub(crate) fn aim_clip() -> Clip {
     clip(1, 0.1, false)
 }
 
-pub(crate) fn choose_attack(argus: &mut ArgusBoss, minions: usize) -> ArgusAttack {
-    let summon = if minions >= enemies::ARGUS_SUMMON_LIMIT {
-        0.0
+pub(crate) fn choose_attack(argus: &mut ArgusBoss, orbiters: usize) -> ArgusAttack {
+    let wanted = orbit_count(argus.enraged);
+    let shield = if orbiters == 0 {
+        6.0
+    } else if orbiters < wanted {
+        2.0
     } else {
-        1.5
+        0.0
     };
     let weights = [
         (ArgusAttack::Volley, 3.0),
-        (ArgusAttack::Gaze, 2.5),
-        (ArgusAttack::Summon, summon),
+        (ArgusAttack::Barrage, 3.0),
+        (ArgusAttack::Shield, shield),
     ];
     let total: f32 = weights
         .iter()
-        .filter(|(attack, _)| Some(*attack) != argus.last)
+        .filter(|(attack, weight)| Some(*attack) != argus.last && *weight > 0.0)
         .map(|(_, weight)| weight)
         .sum();
     let mut roll = unit(&mut argus.seed) * total;
@@ -85,7 +90,15 @@ pub(crate) fn choose_attack(argus: &mut ArgusBoss, minions: usize) -> ArgusAttac
     ArgusAttack::Volley
 }
 
-pub(crate) fn step(argus: &mut ArgusBoss, minions: usize, dt: f32) -> Vec<Cmd> {
+pub(crate) fn orbit_count(enraged: bool) -> usize {
+    if enraged {
+        enemies::ARGUS_ORBIT_RAGE_COUNT
+    } else {
+        enemies::ARGUS_ORBIT_COUNT
+    }
+}
+
+pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> {
     let mut commands = Vec::new();
     match argus.stage {
         ArgusStage::Float => {
@@ -100,7 +113,7 @@ pub(crate) fn step(argus: &mut ArgusBoss, minions: usize, dt: f32) -> Vec<Cmd> {
                 argus.timer = enemies::ARGUS_FADE;
                 return commands;
             }
-            let attack = choose_attack(argus, minions);
+            let attack = choose_attack(argus, orbiters);
             argus.attack = attack;
             argus.last = Some(attack);
             argus.stage = ArgusStage::Winding;
@@ -109,13 +122,12 @@ pub(crate) fn step(argus: &mut ArgusBoss, minions: usize, dt: f32) -> Vec<Cmd> {
                     argus.timer = enemies::ARGUS_VOLLEY_WINDUP;
                     commands.push(Cmd::Play(volley_clip()));
                 }
-                ArgusAttack::Gaze => {
-                    argus.timer = enemies::ARGUS_GAZE_CHARGE;
-                    commands.push(Cmd::Play(gaze_clip()));
-                    commands.push(Cmd::AimBeam);
+                ArgusAttack::Barrage => {
+                    argus.timer = enemies::ARGUS_BARRAGE_WINDUP;
+                    commands.push(Cmd::Play(aim_clip()));
                 }
-                ArgusAttack::Summon => {
-                    argus.timer = enemies::ARGUS_SUMMON_WINDUP;
+                ArgusAttack::Shield => {
+                    argus.timer = enemies::ARGUS_SHIELD_WINDUP;
                     commands.push(Cmd::Play(volley_clip()));
                 }
             }
@@ -125,6 +137,8 @@ pub(crate) fn step(argus: &mut ArgusBoss, minions: usize, dt: f32) -> Vec<Cmd> {
             if argus.timer > 0.0 {
                 return commands;
             }
+            argus.pulse = 0.0;
+            argus.pulses = 0;
             match argus.attack {
                 ArgusAttack::Volley => {
                     argus.stage = ArgusStage::Acting;
@@ -134,15 +148,18 @@ pub(crate) fn step(argus: &mut ArgusBoss, minions: usize, dt: f32) -> Vec<Cmd> {
                         enemies::ARGUS_VOLLEY_PULSES
                     };
                     argus.timer = pulses as f32 * enemies::ARGUS_VOLLEY_EVERY - 0.05;
-                    argus.pulse = 0.0;
-                    argus.pulses = 0;
                 }
-                ArgusAttack::Gaze => {
+                ArgusAttack::Barrage => {
                     argus.stage = ArgusStage::Acting;
-                    argus.timer = enemies::ARGUS_GAZE_SECONDS;
+                    let shots = if argus.enraged {
+                        enemies::ARGUS_BARRAGE_RAGE_SHOTS
+                    } else {
+                        enemies::ARGUS_BARRAGE_SHOTS
+                    };
+                    argus.timer = shots as f32 * enemies::ARGUS_BARRAGE_EVERY - 0.05;
                 }
-                ArgusAttack::Summon => {
-                    commands.push(Cmd::Summon);
+                ArgusAttack::Shield => {
+                    commands.push(Cmd::Shield);
                     argus.stage = ArgusStage::Recovering;
                     argus.timer = enemies::ARGUS_RECOVER;
                 }
@@ -150,14 +167,21 @@ pub(crate) fn step(argus: &mut ArgusBoss, minions: usize, dt: f32) -> Vec<Cmd> {
         }
         ArgusStage::Acting => {
             argus.timer -= dt;
-            if argus.attack == ArgusAttack::Volley {
-                argus.pulse -= dt;
-                while argus.pulse <= 0.0 && argus.timer > 0.0 {
-                    argus.angle += 0.37;
-                    commands.push(Cmd::Ring(argus.angle));
-                    argus.pulses += 1;
-                    argus.pulse += enemies::ARGUS_VOLLEY_EVERY;
+            argus.pulse -= dt;
+            while argus.pulse <= 0.0 && argus.timer > 0.0 {
+                match argus.attack {
+                    ArgusAttack::Volley => {
+                        argus.angle += 0.37;
+                        commands.push(Cmd::Ring(argus.angle));
+                        argus.pulse += enemies::ARGUS_VOLLEY_EVERY;
+                    }
+                    ArgusAttack::Barrage => {
+                        commands.push(Cmd::Shot(argus.pulses));
+                        argus.pulse += enemies::ARGUS_BARRAGE_EVERY;
+                    }
+                    ArgusAttack::Shield => break,
                 }
+                argus.pulses += 1;
             }
             if argus.timer <= 0.0 {
                 argus.stage = ArgusStage::Recovering;
@@ -206,6 +230,20 @@ pub(crate) fn fade(argus: &ArgusBoss) -> f32 {
     }
 }
 
+pub(crate) fn eye_offset(index: u32) -> Vec2 {
+    let (x, y) = EYES[index as usize % EYES.len()];
+    Vec2::new(x - 32.0, y - 32.0) * SPRITE_SCALE
+}
+
+fn orbiters_of(world: &World, owner: Entity) -> Vec<f32> {
+    world
+        .query::<&Orbiter>()
+        .iter()
+        .filter(|orbiter| orbiter.owner == owner)
+        .map(|orbiter| orbiter.angle)
+        .collect()
+}
+
 pub(crate) fn tick_argus(
     world: &mut World,
     physics: &mut Physics,
@@ -215,9 +253,8 @@ pub(crate) fn tick_argus(
     dt: f32,
 ) {
     let target = player_at(world).map(|(_, position, _)| position);
-    let minions = world.query::<&Minion>().iter().count();
     let bosses: Vec<(Entity, Vec2, i32, i32)> = world
-        .query::<(Entity, &Position, &crate::components::Health, &ArgusBoss)>()
+        .query::<(Entity, &Position, &Health, &ArgusBoss)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .without::<&Frozen>()
@@ -236,11 +273,12 @@ pub(crate) fn tick_argus(
                 chase.speed *= enemies::ARGUS_RAGE_SPEED;
             }
         }
+        let orbiters = orbiters_of(world, entity).len();
         let (commands, alpha, enraged) = {
             let Ok(mut argus) = world.get::<&mut ArgusBoss>(entity) else {
                 continue;
             };
-            let commands = step(&mut argus, minions, dt);
+            let commands = step(&mut argus, orbiters, dt);
             (commands, fade(&argus), argus.enraged)
         };
         if let Ok(mut color) = world.get::<&mut Color>(entity) {
@@ -252,6 +290,28 @@ pub(crate) fn tick_argus(
                 world, physics, navigation, textures, entity, at, target, command,
             );
         }
+    }
+}
+
+fn shoot(
+    world: &mut World,
+    physics: &mut Physics,
+    textures: &Textures,
+    room: Option<RoomId>,
+    origin: Vec2,
+    direction: Vec2,
+) {
+    let bullet = prefabs::enemy_bullet(
+        world,
+        physics,
+        ProjectileKind::ArgusShot,
+        origin,
+        direction,
+        textures,
+    );
+    let _ = world.insert_one(bullet, ContactDamage(enemies::ARGUS_SHOT_DAMAGE));
+    if let Some(room) = room {
+        let _ = world.insert_one(bullet, room);
     }
 }
 
@@ -267,6 +327,9 @@ fn execute(
     command: Cmd,
 ) {
     let room = world.get::<&RoomId>(entity).map(|room| *room).ok();
+    let enraged = world
+        .get::<&ArgusBoss>(entity)
+        .is_ok_and(|argus| argus.enraged);
     match command {
         Cmd::Play(clip) => play(world, entity, clip),
         Cmd::Root => {
@@ -276,9 +339,6 @@ fn execute(
             let _ = world.remove_one::<Rooted>(entity);
         }
         Cmd::Ring(offset) => {
-            let enraged = world
-                .get::<&ArgusBoss>(entity)
-                .is_ok_and(|argus| argus.enraged);
             let count = if enraged {
                 enemies::ARGUS_VOLLEY_RAGE_RING
             } else {
@@ -286,30 +346,47 @@ fn execute(
             };
             for index in 0..count {
                 let angle = offset + index as f32 / count as f32 * std::f32::consts::TAU;
-                let bullet = prefabs::enemy_bullet(
-                    world,
-                    physics,
-                    ProjectileKind::ArgusShot,
-                    at,
-                    Vec2::from_angle(angle),
-                    textures,
-                );
-                let _ = world.insert_one(bullet, ContactDamage(enemies::ARGUS_SHOT_DAMAGE));
-                if let Some(room) = room {
-                    let _ = world.insert_one(bullet, room);
-                }
+                shoot(world, physics, textures, room, at, Vec2::from_angle(angle));
             }
         }
-        Cmd::Summon => {
-            let mut seed = (at.x as u32) ^ ((at.y as u32) << 9) ^ 0x51ED_270B;
-            let turn = unit(&mut seed) * std::f32::consts::TAU;
-            for index in 0..enemies::ARGUS_SUMMON_COUNT {
-                let angle = turn
-                    + index as f32 / enemies::ARGUS_SUMMON_COUNT as f32 * std::f32::consts::TAU;
-                let spot = at + Vec2::from_angle(angle) * SUMMON_RADIUS;
-                if !navigation.is_blocked(spot, Vec2::splat(60.0)) {
-                    prefabs::hatchling(world, physics, EnemyKind::DemonEye, spot, room, textures);
-                }
+        Cmd::Shot(index) => {
+            let Some(player) = player else {
+                return;
+            };
+            let shots = if enraged { 2 } else { 1 };
+            let mut seed = index.wrapping_mul(0x9E37_79B1) ^ (at.x as u32);
+            for shot in 0..shots {
+                let origin = at + eye_offset(index + shot);
+                let aimed = (player - origin).to_angle();
+                let jitter = (unit(&mut seed) - 0.5) * 2.0 * enemies::ARGUS_BARRAGE_SPREAD;
+                shoot(
+                    world,
+                    physics,
+                    textures,
+                    room,
+                    origin,
+                    Vec2::from_angle(aimed + jitter),
+                );
+            }
+        }
+        Cmd::Shield => {
+            let wanted = orbit_count(enraged);
+            let existing = orbiters_of(world, entity);
+            let missing = wanted.saturating_sub(existing.len());
+            let base = existing.first().copied().unwrap_or(0.0);
+            for index in 0..missing {
+                let slot = existing.len() + index;
+                let angle = base + slot as f32 / wanted as f32 * std::f32::consts::TAU;
+                let spot = at + Vec2::from_angle(angle) * enemies::ARGUS_ORBIT_RADIUS;
+                let eye =
+                    prefabs::hatchling(world, physics, EnemyKind::ArgusEye, spot, room, textures);
+                let _ = world.insert_one(
+                    eye,
+                    Orbiter {
+                        owner: entity,
+                        angle,
+                    },
+                );
             }
         }
         Cmd::Teleport => {
@@ -333,61 +410,41 @@ fn execute(
                 break;
             }
         }
-        Cmd::AimBeam => {
-            if let Some(player) = player {
-                if let Ok(mut argus) = world.get::<&mut ArgusBoss>(entity) {
-                    argus.angle = aim(at - Vec2::new(0.0, EYE_LIFT), player);
-                }
-            }
-        }
     }
 }
 
-pub(crate) fn tick_gaze(
-    world: &mut World,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
-    let player = player_at(world).map(|(_, position, _)| position);
-    let firing: Vec<(Entity, Vec2, bool)> = world
-        .query::<(Entity, &Position, &ArgusBoss)>()
+pub(crate) fn tick_orbiters(world: &mut World, physics: &mut Physics, dt: f32) {
+    let orbiters: Vec<(Entity, Orbiter)> = world
+        .query::<(Entity, &Orbiter)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .iter()
-        .filter(|(_, _, argus)| {
-            argus.attack == ArgusAttack::Gaze && argus.stage == ArgusStage::Acting
-        })
-        .map(|(entity, position, argus)| (entity, position.0, argus.enraged))
+        .map(|(entity, orbiter)| (entity, *orbiter))
         .collect();
-    for (entity, at, enraged) in firing {
-        let eye = at - Vec2::new(0.0, EYE_LIFT);
-        let angle = {
-            let Ok(mut argus) = world.get::<&mut ArgusBoss>(entity) else {
-                continue;
-            };
-            if let Some(player) = player {
-                let rate = if enraged {
-                    enemies::ARGUS_GAZE_RAGE_TURN
-                } else {
-                    enemies::ARGUS_GAZE_TURN
-                };
-                argus.angle = turn_towards(argus.angle, aim(eye, player), rate * dt);
+    for (entity, orbiter) in orbiters {
+        let owner = world
+            .get::<&Position>(orbiter.owner)
+            .ok()
+            .zip(world.get::<&Health>(orbiter.owner).ok())
+            .filter(|(_, health)| health.current > 0)
+            .map(|(position, _)| position.0);
+        let Some(center) = owner else {
+            if let Ok(mut health) = world.get::<&mut Health>(entity) {
+                health.current = 0;
             }
-            argus.angle
+            continue;
         };
-        draw_beam(world, navigation, textures, sounds, eye, angle, ARGUS_BEAM);
-        if enraged {
-            draw_beam(
-                world,
-                navigation,
-                textures,
-                sounds,
-                eye,
-                angle + std::f32::consts::PI,
-                ARGUS_BEAM,
-            );
+        let angle = orbiter.angle + enemies::ARGUS_ORBIT_SPEED * dt;
+        if let Ok(mut stored) = world.get::<&mut Orbiter>(entity) {
+            stored.angle = angle;
+        }
+        let spot = center
+            + Vec2::new(angle.cos(), angle.sin() * ORBIT_SQUASH) * enemies::ARGUS_ORBIT_RADIUS;
+        if let Ok(mut position) = world.get::<&mut Position>(entity) {
+            position.0 = spot;
+        }
+        if let Ok(body) = world.get::<&Body>(entity) {
+            physics.teleport(*body, spot);
         }
     }
 }
@@ -424,7 +481,7 @@ mod tests {
     }
 
     #[test]
-    fn attacks_never_repeat_and_summoning_stops_at_the_limit() {
+    fn attacks_never_repeat_and_the_shield_is_only_rebuilt_when_eyes_are_missing() {
         let mut boss = argus();
         let mut last = None;
         for _ in 0..200 {
@@ -436,8 +493,8 @@ mod tests {
         boss.last = None;
         for _ in 0..200 {
             assert_ne!(
-                choose_attack(&mut boss, enemies::ARGUS_SUMMON_LIMIT),
-                ArgusAttack::Summon
+                choose_attack(&mut boss, enemies::ARGUS_ORBIT_COUNT),
+                ArgusAttack::Shield
             );
         }
     }
@@ -460,14 +517,14 @@ mod tests {
     }
 
     #[test]
-    fn a_summon_calls_the_minions_once() {
+    fn a_shield_attack_raises_the_orbiting_eyes_once() {
         let mut boss = argus();
         boss.stage = ArgusStage::Winding;
-        boss.attack = ArgusAttack::Summon;
+        boss.attack = ArgusAttack::Shield;
         boss.timer = 0.01;
         let summons = run(&mut boss, 1.0)
             .iter()
-            .filter(|command| **command == Cmd::Summon)
+            .filter(|command| **command == Cmd::Shield)
             .count();
         assert_eq!(summons, 1);
     }
@@ -484,6 +541,20 @@ mod tests {
         assert!((fade(&boss) - 0.5).abs() < 1e-4);
         boss.stage = ArgusStage::FadingIn;
         assert!((fade(&boss) - 0.5).abs() < 1e-4);
+    }
+
+    #[test]
+    fn a_barrage_fires_one_aimed_shot_per_pulse() {
+        let mut boss = argus();
+        boss.stage = ArgusStage::Winding;
+        boss.attack = ArgusAttack::Barrage;
+        boss.last = Some(ArgusAttack::Barrage);
+        boss.timer = 0.01;
+        let shots = run(&mut boss, 3.0)
+            .iter()
+            .filter(|command| matches!(command, Cmd::Shot(_)))
+            .count();
+        assert_eq!(shots, enemies::ARGUS_BARRAGE_SHOTS as usize);
     }
 
     #[test]
