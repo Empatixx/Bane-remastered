@@ -554,6 +554,9 @@ impl InGameScene {
     }
 
     fn start_death_screen(&mut self, assets: &Assets) {
+        if self.death.is_some() {
+            return;
+        }
         let stats = systems::current_stats(&self.world);
         let summary = systems::summarize(stats, self.floor);
         tracing::info!(victory = self.victory, ?summary, "the run is over");
@@ -1032,6 +1035,23 @@ mod tests {
             .filter(|shop| shop.currency == Currency::Coins)
             .count();
         assert_eq!(coin_offers, 0);
+    }
+
+    #[test]
+    fn a_run_is_recorded_once_however_often_the_death_screen_starts() {
+        let assets = Assets::new().expect("the embedded tileset is valid");
+        let profile = SharedProfile::in_memory();
+        let mut scene = InGameScene::default();
+        scene.attach_profile(profile.clone());
+        scene.start_run(7, &assets);
+
+        scene.start_death_screen(&assets);
+        let (runs, board) = (profile.snapshot().runs, profile.board());
+        scene.start_death_screen(&assets);
+
+        assert_eq!(runs, 1);
+        assert_eq!(profile.snapshot().runs, 1);
+        assert_eq!(profile.board(), board);
     }
 
     #[test]
