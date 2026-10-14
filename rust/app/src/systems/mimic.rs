@@ -12,7 +12,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
-use crate::systems::golem::{play, player_at, spark, spawn_rock, unit};
+use crate::systems::golem::{play, player_at, spark, spawn_rock};
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
 const MOUTH: Vec2 = Vec2::new(44.0, 29.0);
@@ -44,19 +44,22 @@ fn clip(row: usize) -> Clip {
 }
 
 fn forced_attack() -> Option<MimicAttack> {
-    match std::env::var(ATTACK_VAR)
-        .ok()?
-        .trim()
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "hop" => Some(MimicAttack::Hop),
-        "bite" => Some(MimicAttack::Bite),
-        "spit" => Some(MimicAttack::Spit),
-        "lure" => Some(MimicAttack::Lure),
-        "rest" => Some(MimicAttack::Rest),
-        _ => None,
-    }
+    static FORCED: std::sync::OnceLock<Option<MimicAttack>> = std::sync::OnceLock::new();
+    *FORCED.get_or_init(|| {
+        match std::env::var(ATTACK_VAR)
+            .ok()?
+            .trim()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "hop" => Some(MimicAttack::Hop),
+            "bite" => Some(MimicAttack::Bite),
+            "spit" => Some(MimicAttack::Spit),
+            "lure" => Some(MimicAttack::Lure),
+            "rest" => Some(MimicAttack::Rest),
+            _ => None,
+        }
+    })
 }
 
 pub(crate) fn choose_attack(
@@ -90,7 +93,7 @@ pub(crate) fn choose_attack(
         .filter(|(attack, weight)| allowed(*attack, *weight))
         .map(|(_, weight)| weight)
         .sum();
-    let mut roll = unit(&mut mimic.seed) * total;
+    let mut roll = crate::rng::roll(&mut mimic.seed) * total;
     for (attack, weight) in weights {
         if !allowed(attack, weight) {
             continue;
@@ -381,8 +384,8 @@ fn execute(
             let mouth = at + Vec2::new(side * MOUTH.x, MOUTH.y);
             let mut seed = (at.x as u32).wrapping_mul(2_246_822_519) ^ (at.y as u32);
             for _ in 0..16 {
-                let angle = (unit(&mut seed) - 0.5) * 1.5;
-                let speed = 140.0 + unit(&mut seed) * 260.0;
+                let angle = (crate::rng::roll(&mut seed) - 0.5) * 1.5;
+                let speed = 140.0 + crate::rng::roll(&mut seed) * 260.0;
                 let velocity = Vec2::new(side * angle.cos(), angle.sin() - 0.35) * speed;
                 spark(world, textures, tex::MIMIC_DROOL, mouth, velocity);
             }
@@ -393,9 +396,11 @@ fn execute(
             };
             let mut seed = (at.x as u32).wrapping_mul(2_654_435_761) ^ (player.y as u32);
             for index in 0..enemies::MIMIC_BAITS {
-                let angle = (index as f32 + unit(&mut seed) * 0.6) / enemies::MIMIC_BAITS as f32
+                let angle = (index as f32 + crate::rng::roll(&mut seed) * 0.6)
+                    / enemies::MIMIC_BAITS as f32
                     * std::f32::consts::TAU;
-                let spot = player + Vec2::from_angle(angle) * (120.0 + unit(&mut seed) * 120.0);
+                let spot = player
+                    + Vec2::from_angle(angle) * (120.0 + crate::rng::roll(&mut seed) * 120.0);
                 if navigation.is_blocked(spot, Vec2::splat(48.0)) {
                     continue;
                 }

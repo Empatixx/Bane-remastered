@@ -68,34 +68,24 @@ fn clip(row: usize, frames: usize, frame_time: f32, looping: bool) -> Clip {
     }
 }
 
-fn next(seed: &mut u32) -> u32 {
-    let mut x = (*seed).max(1);
-    x ^= x << 13;
-    x ^= x >> 17;
-    x ^= x << 5;
-    *seed = x;
-    x
-}
-
-pub(crate) fn unit(seed: &mut u32) -> f32 {
-    (next(seed) >> 8) as f32 / (1u32 << 24) as f32
-}
-
 const ATTACK_VAR: &str = "BANE_GOLEM_ATTACK";
 
 fn forced_attack() -> Option<GolemAttack> {
-    match std::env::var(ATTACK_VAR)
-        .ok()?
-        .trim()
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "slam" => Some(GolemAttack::Slam),
-        "throw" => Some(GolemAttack::Throw),
-        "rain" => Some(GolemAttack::Rain),
-        "laser" => Some(GolemAttack::Laser),
-        _ => None,
-    }
+    static FORCED: std::sync::OnceLock<Option<GolemAttack>> = std::sync::OnceLock::new();
+    *FORCED.get_or_init(|| {
+        match std::env::var(ATTACK_VAR)
+            .ok()?
+            .trim()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "slam" => Some(GolemAttack::Slam),
+            "throw" => Some(GolemAttack::Throw),
+            "rain" => Some(GolemAttack::Rain),
+            "laser" => Some(GolemAttack::Laser),
+            _ => None,
+        }
+    })
 }
 
 pub(crate) fn choose_attack(golem: &mut GolemBoss, distance: f32) -> GolemAttack {
@@ -114,7 +104,7 @@ pub(crate) fn choose_attack(golem: &mut GolemBoss, distance: f32) -> GolemAttack
         .filter(|(attack, _)| Some(*attack) != golem.last)
         .map(|(_, weight)| weight)
         .sum();
-    let mut roll = unit(&mut golem.seed) * total;
+    let mut roll = crate::rng::roll(&mut golem.seed) * total;
     for (attack, weight) in weights {
         if Some(attack) == golem.last {
             continue;
@@ -415,7 +405,11 @@ fn execute(
             } else {
                 enemies::GOLEM_RAIN_SPREAD
             };
-            let jitter = Vec2::new(unit(&mut seed) - 0.5, unit(&mut seed) - 0.5) * 2.0 * spread;
+            let jitter = Vec2::new(
+                crate::rng::roll(&mut seed) - 0.5,
+                crate::rng::roll(&mut seed) - 0.5,
+            ) * 2.0
+                * spread;
             drop_rock(world, textures, player + jitter, room);
         }
         Cmd::AimBeam => {
@@ -544,7 +538,7 @@ pub(crate) fn tick_rock_falls(
         let mut seed =
             (ground.x as u32).wrapping_mul(2_654_435_761) ^ (ground.y as u32).rotate_left(11);
         let minions = world.query::<&Minion>().iter().count();
-        if unit(&mut seed) < enemies::GOLEM_MINION_CHANCE
+        if crate::rng::roll(&mut seed) < enemies::GOLEM_MINION_CHANCE
             && minions < enemies::GOLEM_MINION_LIMIT
             && !navigation.is_blocked(ground, Vec2::splat(60.0))
         {
@@ -694,8 +688,8 @@ pub(crate) fn draw_beam(
     ));
     let mut seed = (eye.x as u32).wrapping_mul(2_654_435_761) ^ (end.y as u32) ^ (angle.to_bits());
     for _ in 0..3 {
-        let along = unit(&mut seed) * length;
-        let side = Vec2::new(-direction.y, direction.x) * (unit(&mut seed) - 0.5) * 2.0;
+        let along = crate::rng::roll(&mut seed) * length;
+        let side = Vec2::new(-direction.y, direction.x) * (crate::rng::roll(&mut seed) - 0.5) * 2.0;
         spark(
             world,
             textures,
@@ -706,7 +700,7 @@ pub(crate) fn draw_beam(
     }
     if length < enemies::GOLEM_LASER_REACH - BEAM_STEP {
         for _ in 0..3 {
-            let spread = (unit(&mut seed) - 0.5) * 2.2;
+            let spread = (crate::rng::roll(&mut seed) - 0.5) * 2.2;
             let away = -direction;
             let back = Vec2::from_angle(away.y.atan2(away.x) + spread);
             spark(
@@ -714,7 +708,7 @@ pub(crate) fn draw_beam(
                 textures,
                 style.spark,
                 end,
-                back * (140.0 + unit(&mut seed) * 160.0),
+                back * (140.0 + crate::rng::roll(&mut seed) * 160.0),
             );
         }
     }

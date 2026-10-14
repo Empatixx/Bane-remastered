@@ -12,7 +12,7 @@ use crate::navigation::Navigation;
 use crate::prefabs;
 use crate::props::{Look, Prop};
 use crate::systems::damage::hurt_player_through_armor;
-use crate::systems::golem::{player_body, unit};
+use crate::systems::golem::player_body;
 use crate::tilemap::TILE_SIZE;
 
 const COLD: f32 = 0.32;
@@ -57,7 +57,11 @@ pub(crate) fn plan(navigation: &Navigation, room: TileRect, seed: &mut u32) -> V
             }
             let distance = wall_distance(navigation, column, row, enemies::HOUND_MAGMA_DEPTH + 1);
             if distance <= enemies::HOUND_MAGMA_DEPTH {
-                tiles.push((distance, (unit(seed) * 1000.0) as u32, (column, row)));
+                tiles.push((
+                    distance,
+                    (crate::rng::roll(seed) * 1000.0) as u32,
+                    (column, row),
+                ));
             }
         }
     }

@@ -100,9 +100,37 @@ pub(crate) fn cosmetic() -> f32 {
     COSMETIC.with(|rng| rng.borrow_mut().float())
 }
 
+/// Tiny per-entity generator for `Copy` components that carry a `seed: u32` (the bosses).
+/// `Rng` is the run-level generator; this one only advances a single `u32` in place.
+pub(crate) fn roll(seed: &mut u32) -> f32 {
+    let mut x = (*seed).max(1);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    *seed = x;
+    (x >> 8) as f32 / (1u32 << 24) as f32
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn roll_keeps_the_sequence_of_the_old_boss_generator() {
+        let mut seed = 7;
+        let rolls: Vec<f32> = (0..5).map(|_| roll(&mut seed)).collect();
+        let expected = [7392, 1_837_458, 15_164_865, 11_992_146, 11_151_727]
+            .map(|bits| bits as f32 / (1u32 << 24) as f32);
+        assert_eq!(rolls, expected);
+        assert!(rolls.iter().all(|value| (0.0..1.0).contains(value)));
+    }
+
+    #[test]
+    fn roll_treats_seed_zero_like_seed_one() {
+        let (mut zero, mut one) = (0, 1);
+        assert_eq!(roll(&mut zero), roll(&mut one));
+        assert_eq!(zero, one);
+    }
 
     #[test]
     fn the_same_seed_gives_the_same_sequence() {

@@ -11,7 +11,7 @@ use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{play, player_at, unit};
+use crate::systems::golem::{play, player_at};
 
 const SPRITE_SCALE: f32 = 4.0;
 const EYES: [(f32, f32); 7] = [
@@ -78,7 +78,7 @@ pub(crate) fn choose_attack(argus: &mut ArgusBoss, orbiters: usize) -> ArgusAtta
         .filter(|(attack, weight)| Some(*attack) != argus.last && *weight > 0.0)
         .map(|(_, weight)| weight)
         .sum();
-    let mut roll = unit(&mut argus.seed) * total;
+    let mut roll = crate::rng::roll(&mut argus.seed) * total;
     for (attack, weight) in weights {
         if Some(attack) == argus.last || weight == 0.0 {
             continue;
@@ -368,7 +368,8 @@ fn execute(
             for shot in 0..shots {
                 let origin = at + eye_offset(index + shot);
                 let aimed = (player - origin).to_angle();
-                let jitter = (unit(&mut seed) - 0.5) * 2.0 * enemies::ARGUS_BARRAGE_SPREAD;
+                let jitter =
+                    (crate::rng::roll(&mut seed) - 0.5) * 2.0 * enemies::ARGUS_BARRAGE_SPREAD;
                 shoot(
                     world,
                     physics,
@@ -402,8 +403,8 @@ fn execute(
         Cmd::Teleport => {
             let mut seed = (at.x as u32).wrapping_mul(2_246_822_519) ^ (at.y as u32);
             for _ in 0..16 {
-                let angle = unit(&mut seed) * std::f32::consts::TAU;
-                let distance = HOP_NEAR + unit(&mut seed) * (HOP_FAR - HOP_NEAR);
+                let angle = crate::rng::roll(&mut seed) * std::f32::consts::TAU;
+                let distance = HOP_NEAR + crate::rng::roll(&mut seed) * (HOP_FAR - HOP_NEAR);
                 let spot = at + Vec2::from_angle(angle) * distance;
                 if player.is_some_and(|player| player.distance(spot) < HOP_ROOM) {
                     continue;

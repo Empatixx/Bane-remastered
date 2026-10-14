@@ -202,17 +202,8 @@ fn apply_changes(window: &Window, gpu: &mut Gpu, changes: Vec<Change>) {
                 let _ = window.request_inner_size(PhysicalSize::new(width, height));
             }
             Change::Vsync(vsync) => gpu.set_vsync(vsync),
-            Change::Volume {
-                overall,
-                music,
-                effects,
-            } => tracing::info!(
-                overall,
-                music,
-                effects,
-                "volume changed (audio is not implemented yet)"
-            ),
-            Change::Controls(_) => {}
+            // Both are consumed by `Game::take_setting_changes` before reaching the window.
+            Change::Volume { .. } | Change::Controls(_) => {}
         }
     }
 }

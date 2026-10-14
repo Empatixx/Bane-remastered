@@ -12,7 +12,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::golem::{
-    BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, turn_towards, unit,
+    BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, turn_towards,
 };
 
 const SPRITE_SCALE: f32 = 2.4;
@@ -56,17 +56,20 @@ fn clip(row: usize, frame_time: f32) -> Clip {
 }
 
 fn forced_attack() -> Option<HoundAttack> {
-    match std::env::var(ATTACK_VAR)
-        .ok()?
-        .trim()
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "lunge" | "charge" => Some(HoundAttack::Lunge),
-        "breath" => Some(HoundAttack::Breath),
-        "howl" => Some(HoundAttack::Howl),
-        _ => None,
-    }
+    static FORCED: std::sync::OnceLock<Option<HoundAttack>> = std::sync::OnceLock::new();
+    *FORCED.get_or_init(|| {
+        match std::env::var(ATTACK_VAR)
+            .ok()?
+            .trim()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "lunge" | "charge" => Some(HoundAttack::Lunge),
+            "breath" => Some(HoundAttack::Breath),
+            "howl" => Some(HoundAttack::Howl),
+            _ => None,
+        }
+    })
 }
 
 pub(crate) fn choose_attack(hound: &mut HoundBoss, distance: f32) -> HoundAttack {
@@ -84,7 +87,7 @@ pub(crate) fn choose_attack(hound: &mut HoundBoss, distance: f32) -> HoundAttack
         .filter(|(attack, _)| Some(*attack) != hound.last)
         .map(|(_, weight)| weight)
         .sum();
-    let mut roll = unit(&mut hound.seed) * total;
+    let mut roll = crate::rng::roll(&mut hound.seed) * total;
     for (attack, weight) in weights {
         if Some(attack) == hound.last {
             continue;

@@ -3,7 +3,7 @@ use hecs::{Entity, World};
 
 use crate::components::{Charge, Clip, Expiring, Frozen, Hopper, Position, Rooted, Spawning};
 use crate::enemies;
-use crate::systems::golem::{play, player_at, unit};
+use crate::systems::golem::{play, player_at};
 
 fn hop_clip() -> Clip {
     Clip {
@@ -34,7 +34,7 @@ pub(crate) fn tick_hoppers(world: &mut World, dt: f32) {
                 play(world, entity, hopper.idle);
                 let mut seed = (at.x as u32).wrapping_mul(2_654_435_761) ^ (at.y as u32);
                 hopper.hopping = false;
-                hopper.timer = enemies::HOP_REST * (0.8 + unit(&mut seed) * 0.5);
+                hopper.timer = enemies::HOP_REST * (0.8 + crate::rng::roll(&mut seed) * 0.5);
             } else {
                 let direction = target.map_or(Vec2::X, |player| (player - at).normalize_or_zero());
                 let _ = world.remove_one::<Rooted>(entity);

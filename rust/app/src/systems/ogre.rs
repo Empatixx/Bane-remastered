@@ -11,7 +11,7 @@ use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{play, player_at, spawn_rock, unit};
+use crate::systems::golem::{play, player_at, spawn_rock};
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const RING_DROP: f32 = 110.0;
@@ -42,18 +42,21 @@ fn clip(row: usize) -> Clip {
 }
 
 fn forced_attack() -> Option<OgreAttack> {
-    match std::env::var(ATTACK_VAR)
-        .ok()?
-        .trim()
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "jump" | "stomp" => Some(OgreAttack::Jump),
-        "throw" => Some(OgreAttack::Throw),
-        "slam" => Some(OgreAttack::Slam),
-        "roar" => Some(OgreAttack::Roar),
-        _ => None,
-    }
+    static FORCED: std::sync::OnceLock<Option<OgreAttack>> = std::sync::OnceLock::new();
+    *FORCED.get_or_init(|| {
+        match std::env::var(ATTACK_VAR)
+            .ok()?
+            .trim()
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "jump" | "stomp" => Some(OgreAttack::Jump),
+            "throw" => Some(OgreAttack::Throw),
+            "slam" => Some(OgreAttack::Slam),
+            "roar" => Some(OgreAttack::Roar),
+            _ => None,
+        }
+    })
 }
 
 pub(crate) fn choose_attack(ogre: &mut OgreBoss, distance: f32, rats: usize) -> OgreAttack {
@@ -83,7 +86,7 @@ pub(crate) fn choose_attack(ogre: &mut OgreBoss, distance: f32, rats: usize) -> 
         .filter(|(attack, weight)| allowed(*attack, *weight))
         .map(|(_, weight)| weight)
         .sum();
-    let mut roll = unit(&mut ogre.seed) * total;
+    let mut roll = crate::rng::roll(&mut ogre.seed) * total;
     for (attack, weight) in weights {
         if !allowed(attack, weight) {
             continue;
@@ -281,7 +284,7 @@ fn execute(
             for index in 0..count {
                 let angle = toward.to_angle()
                     + (index as f32 - (count as f32 - 1.0) / 2.0) * 0.7
-                    + (unit(&mut seed) - 0.5) * 0.3;
+                    + (crate::rng::roll(&mut seed) - 0.5) * 0.3;
                 let spot = at + HAND + Vec2::from_angle(angle) * RAT_RADIUS;
                 if navigation.is_blocked(spot, Vec2::splat(40.0)) {
                     continue;
