@@ -334,13 +334,13 @@ fn set_charge(world: &mut World, entity: Entity, on: bool, at: Vec2, player: Opt
     }
 }
 
-pub(crate) fn beam_angle(base: f32, wobble: f32, head: usize, heads: usize) -> f32 {
+pub(crate) fn beam_angle(origin: Vec2, point: Vec2, wobble: f32, head: usize, heads: usize) -> f32 {
     let t = if heads <= 1 {
         0.0
     } else {
         head as f32 / (heads - 1) as f32 - 0.5
     };
-    base + wobble * enemies::HOUND_BREATH_WOBBLE + t * enemies::HOUND_BREATH_FAN * 2.0
+    aim(origin, point) + wobble * enemies::HOUND_BREATH_WOBBLE + t * enemies::HOUND_BREATH_FAN * 2.0
 }
 
 fn warn(world: &mut World, navigation: &Navigation, ray: Ray) {
@@ -411,10 +411,17 @@ pub(crate) fn tick_flames(
         };
         let heads = if enraged { 3 } else { 2 };
         let wobble = (timer * 4.0).sin();
+        let reach = main.distance(
+            world
+                .get::<&HoundBoss>(entity)
+                .map_or(main, |hound| hound.aim_at),
+        );
+        let point = main + Vec2::from_angle(angle) * reach;
         for head in 0..heads {
+            let eye = at + head_offset(head, mirrored);
             let ray = Ray {
-                eye: at + head_offset(head, mirrored),
-                angle: beam_angle(angle, wobble, head, heads),
+                eye,
+                angle: beam_angle(eye, point, wobble, head, heads),
                 phase: timer * 16.0 + head as f32,
             };
             if firing {
@@ -523,12 +530,13 @@ mod tests {
     }
 
     #[test]
-    fn the_flame_beams_wobble_and_fan_out() {
-        let start = beam_angle(0.0, -1.0, 1, 3);
-        let end = beam_angle(0.0, 1.0, 1, 3);
-        assert!(end - start > 0.2);
-        let left = beam_angle(0.0, 0.0, 0, 3);
-        let right = beam_angle(0.0, 0.0, 2, 3);
-        assert!(right - left > 0.5);
+    fn every_flame_beam_points_at_the_same_aim_point_with_only_a_small_spread() {
+        let point = Vec2::new(500.0, 0.0);
+        let centre = beam_angle(Vec2::ZERO, point, 0.0, 0, 1);
+        assert!(centre.abs() < 1e-4);
+        let upper = beam_angle(Vec2::new(0.0, -60.0), point, 0.0, 0, 2);
+        let lower = beam_angle(Vec2::new(0.0, 60.0), point, 0.0, 1, 2);
+        assert!(upper > 0.0 && lower < 0.0 || (upper - lower).abs() < 0.8);
+        assert!(upper.abs() < 0.4 && lower.abs() < 0.4);
     }
 }
