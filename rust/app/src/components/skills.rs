@@ -44,6 +44,39 @@ pub(crate) enum GolemStage {
     Recovering,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ArgusAttack {
+    Volley,
+    Gaze,
+    Summon,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ArgusStage {
+    Float,
+    Winding,
+    Acting,
+    Recovering,
+    FadingOut,
+    FadingIn,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ArgusBoss {
+    pub(crate) stage: ArgusStage,
+    pub(crate) attack: ArgusAttack,
+    pub(crate) last: Option<ArgusAttack>,
+    pub(crate) timer: f32,
+    pub(crate) cooldown: f32,
+    pub(crate) pulse: f32,
+    pub(crate) pulses: u32,
+    pub(crate) angle: f32,
+    pub(crate) attacks: u32,
+    pub(crate) enraged: bool,
+    pub(crate) seed: u32,
+    pub(crate) idle: Clip,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct GolemBoss {
     pub(crate) stage: GolemStage,

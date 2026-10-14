@@ -72,9 +72,11 @@ def rock_shadow():
     return im
 
 
-def spark_sheet():
+def spark_sheet(warm=False):
     sheet = Image.new("RGBA", (16, 4), (0, 0, 0, 0))
     colours = [GLOW_HOT, GLOW, GLOW_D, (30, 64, 150, 255)]
+    if warm:
+        colours = [(255, 232, 160, 255), (250, 157, 81, 255), (225, 112, 40, 255), (162, 43, 97, 255)]
     for i in range(4):
         d = ImageDraw.Draw(sheet)
         size = 4 - i
@@ -87,6 +89,7 @@ def main():
     projectile_sheet(16, 5, True).save(OUT / "golem_boulder.tga")
     rock_shadow().save(OUT / "rock_shadow.tga")
     spark_sheet().save(OUT / "spark.tga")
+    spark_sheet(True).save(OUT / "spark_warm.tga")
 
 
 main()

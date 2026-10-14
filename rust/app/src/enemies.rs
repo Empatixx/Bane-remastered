@@ -55,6 +55,29 @@ pub(crate) const GOLEM_LASER_REACH: f32 = 1100.0;
 pub(crate) const GOLEM_LASER_WIDTH: f32 = 26.0;
 pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_NEAR: f32 = 340.0;
+pub(crate) const ARGUS_FIRST_COOLDOWN: f32 = 2.0;
+pub(crate) const ARGUS_COOLDOWN: f32 = 1.7;
+pub(crate) const ARGUS_RAGE_COOLDOWN: f32 = 0.9;
+pub(crate) const ARGUS_RAGE_AT: f32 = 0.5;
+pub(crate) const ARGUS_RAGE_SPEED: f32 = 1.3;
+pub(crate) const ARGUS_VOLLEY_WINDUP: f32 = 0.5;
+pub(crate) const ARGUS_VOLLEY_PULSES: u32 = 5;
+pub(crate) const ARGUS_VOLLEY_RAGE_PULSES: u32 = 7;
+pub(crate) const ARGUS_VOLLEY_EVERY: f32 = 0.4;
+pub(crate) const ARGUS_VOLLEY_RING: usize = 10;
+pub(crate) const ARGUS_VOLLEY_RAGE_RING: usize = 14;
+pub(crate) const ARGUS_SHOT_DAMAGE: i32 = 1;
+pub(crate) const ARGUS_GAZE_CHARGE: f32 = 0.6;
+pub(crate) const ARGUS_GAZE_SECONDS: f32 = 2.2;
+pub(crate) const ARGUS_GAZE_TURN: f32 = 0.55;
+pub(crate) const ARGUS_GAZE_RAGE_TURN: f32 = 0.9;
+pub(crate) const ARGUS_GAZE_DAMAGE: i32 = 2;
+pub(crate) const ARGUS_SUMMON_WINDUP: f32 = 0.6;
+pub(crate) const ARGUS_SUMMON_COUNT: usize = 3;
+pub(crate) const ARGUS_SUMMON_LIMIT: usize = 5;
+pub(crate) const ARGUS_RECOVER: f32 = 0.5;
+pub(crate) const ARGUS_TELEPORT_EVERY: u32 = 3;
+pub(crate) const ARGUS_FADE: f32 = 0.35;
 
 pub(crate) fn speed_from_force(force: f32, size: Vec2) -> f32 {
     force / (DAMPING * size.x * size.y)
@@ -68,6 +91,7 @@ pub(crate) enum ProjectileKind {
     EyeWatcher,
     GolemRock,
     Boulder,
+    ArgusShot,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -135,6 +159,12 @@ impl ProjectileKind {
                 homing: true,
                 lifetime: Some(5.0),
             },
+            Self::ArgusShot => ProjectileSpec {
+                homing: false,
+                force: 26_000_000.0,
+                lifetime: Some(4.0),
+                ..Self::EyeWatcher.spec()
+            },
             Self::GolemRock => ProjectileSpec {
                 texture: tex::GOLEM_ROCK,
                 columns: 4,
@@ -200,6 +230,7 @@ pub(crate) enum EnemyKind {
     KingSlime,
     Golem,
     MiniGolem,
+    Argus,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -223,6 +254,7 @@ pub(crate) enum Behavior {
     SpiderBoss,
     KingSlimeBoss,
     GolemBoss,
+    ArgusBoss,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -332,7 +364,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 17] = [
+    pub(crate) const ALL: [Self; 18] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -348,6 +380,7 @@ impl EnemyKind {
         Self::EyeWatcher,
         Self::Golem,
         Self::MiniGolem,
+        Self::Argus,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -505,6 +538,22 @@ impl EnemyKind {
                     (110, 2, 17_000_000.0),
                 )
             },
+            Self::Argus => EnemySpec {
+                min_floor: 2,
+                death_row: 3,
+                themes: &[Theme::Temple, Theme::Ice, Theme::Moss, Theme::Sewer],
+                role: Role::Boss("Argus"),
+                behavior: Behavior::ArgusBoss,
+                ..spec(
+                    tex::ARGUS,
+                    (8, 4),
+                    (64.0, 64.0),
+                    4.0,
+                    (6, 0.14),
+                    Some((8, 0.1)),
+                    (120, 2, 9_000_000.0),
+                )
+            },
             Self::MiniGolem => EnemySpec {
                 role: Role::Summoned,
                 ..spec(
@@ -621,6 +670,7 @@ const BOSS_VAR: &str = "BANE_BOSS";
 fn boss_named(name: &str) -> Option<EnemyKind> {
     match name.trim().to_ascii_lowercase().as_str() {
         "golem" => Some(EnemyKind::Golem),
+        "argus" => Some(EnemyKind::Argus),
         "spider" => Some(EnemyKind::Spider),
         "slime" | "kingslime" => Some(EnemyKind::KingSlime),
         _ => None,
@@ -701,8 +751,8 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 4);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 4 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 5);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 5 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));
@@ -745,29 +795,36 @@ mod tests {
         let mut rng = Rng::new(3);
         for _ in 0..20 {
             assert_eq!(pick_boss(1, Theme::Spider, &mut rng), EnemyKind::Spider);
-            assert_eq!(pick_boss(2, Theme::Ice, &mut rng), EnemyKind::KingSlime);
-            assert_eq!(pick_boss(5, Theme::Sewer, &mut rng), EnemyKind::KingSlime);
         }
     }
 
     #[test]
     fn stone_temple_and_lava_floors_can_have_the_golem_and_others_never() {
         let mut rng = Rng::new(5);
-        for theme in [Theme::Stone, Theme::Temple, Theme::Lava] {
-            let seen: std::collections::HashSet<EnemyKind> =
-                (0..200).map(|_| pick_boss(3, theme, &mut rng)).collect();
-            assert!(seen.contains(&EnemyKind::Golem), "{theme:?}");
-            assert!(seen.contains(&EnemyKind::KingSlime), "{theme:?}");
+        let seen = |theme, rng: &mut Rng| -> std::collections::HashSet<EnemyKind> {
+            (0..300).map(|_| pick_boss(3, theme, rng)).collect()
+        };
+        for theme in [Theme::Stone, Theme::Lava] {
+            let bosses = seen(theme, &mut rng);
+            assert!(bosses.contains(&EnemyKind::Golem), "{theme:?}");
+            assert!(bosses.contains(&EnemyKind::KingSlime), "{theme:?}");
+            assert!(!bosses.contains(&EnemyKind::Argus), "{theme:?}");
         }
         for theme in [Theme::Ice, Theme::Sewer, Theme::Moss] {
-            assert!((0..100).all(|_| pick_boss(3, theme, &mut rng) == EnemyKind::KingSlime));
+            let bosses = seen(theme, &mut rng);
+            assert!(bosses.contains(&EnemyKind::Argus), "{theme:?}");
+            assert!(bosses.contains(&EnemyKind::KingSlime), "{theme:?}");
+            assert!(!bosses.contains(&EnemyKind::Golem), "{theme:?}");
         }
+        let temple = seen(Theme::Temple, &mut rng);
+        assert!(temple.contains(&EnemyKind::Golem) && temple.contains(&EnemyKind::Argus));
     }
 
     #[test]
     fn boss_names_for_previews_are_parsed() {
         assert_eq!(boss_named(" Golem "), Some(EnemyKind::Golem));
         assert_eq!(boss_named("slime"), Some(EnemyKind::KingSlime));
+        assert_eq!(boss_named("argus"), Some(EnemyKind::Argus));
         assert_eq!(boss_named("nothing"), None);
     }
 

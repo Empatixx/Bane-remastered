@@ -1,7 +1,7 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Textures, tex};
+use crate::assets::{Tex, Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, BeamPart, Chase, Clip, Color, ContactDamage, Despawn, Dodge, Drag, Expiring,
@@ -74,14 +74,19 @@ fn next(seed: &mut u32) -> u32 {
     x
 }
 
-fn unit(seed: &mut u32) -> f32 {
+pub(crate) fn unit(seed: &mut u32) -> f32 {
     (next(seed) >> 8) as f32 / (1u32 << 24) as f32
 }
 
 const ATTACK_VAR: &str = "BANE_GOLEM_ATTACK";
 
 fn forced_attack() -> Option<GolemAttack> {
-    match std::env::var(ATTACK_VAR).ok()?.trim().to_ascii_lowercase().as_str() {
+    match std::env::var(ATTACK_VAR)
+        .ok()?
+        .trim()
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "slam" => Some(GolemAttack::Slam),
         "throw" => Some(GolemAttack::Throw),
         "rain" => Some(GolemAttack::Rain),
@@ -225,7 +230,7 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
     commands
 }
 
-fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
+pub(crate) fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
     world
         .query::<(Entity, &Position, &Size, &Health)>()
         .with::<&Player>()
@@ -235,7 +240,7 @@ fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
         .next()
 }
 
-fn play(world: &mut World, entity: Entity, clip: Clip) {
+pub(crate) fn play(world: &mut World, entity: Entity, clip: Clip) {
     if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
         let facing = animation.flipped();
         animation.play(Clip {
@@ -245,12 +250,12 @@ fn play(world: &mut World, entity: Entity, clip: Clip) {
     }
 }
 
-fn aim(from: Vec2, to: Vec2) -> f32 {
+pub(crate) fn aim(from: Vec2, to: Vec2) -> f32 {
     let direction = to - from;
     direction.y.atan2(direction.x)
 }
 
-fn turn_towards(current: f32, wanted: f32, step: f32) -> f32 {
+pub(crate) fn turn_towards(current: f32, wanted: f32, step: f32) -> f32 {
     let mut difference = wanted - current;
     while difference > std::f32::consts::PI {
         difference -= std::f32::consts::TAU;
@@ -536,14 +541,14 @@ fn distance_to_segment(point: Vec2, a: Vec2, b: Vec2) -> f32 {
     point.distance(a + line * t)
 }
 
-fn clear_beam(world: &mut World) {
+pub(crate) fn clear_beam(world: &mut World) {
     let parts: Vec<Entity> = world.query::<Entity>().with::<&BeamPart>().iter().collect();
     for part in parts {
         let _ = world.despawn(part);
     }
 }
 
-fn spark(world: &mut World, textures: &Textures, at: Vec2, velocity: Vec2) {
+fn spark(world: &mut World, textures: &Textures, sprite: Tex, at: Vec2, velocity: Vec2) {
     let burn = Clip {
         row: 0,
         frames: SPARK_FRAMES,
@@ -558,10 +563,100 @@ fn spark(world: &mut World, textures: &Textures, at: Vec2, velocity: Vec2) {
         Drag { rate: 3.0 },
         Size(Vec2::splat(SPARK_SIZE)),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::SPARK), 0, 0, SPARK_FRAMES, 1),
-        Animation::new(SPARK_FRAMES, 1, burn),
+        Sprite::cell(textures.get(sprite), 0, 0, SPARK_FRAMES, 1),
+        Animation::new(burn.frames, 1, burn),
         Layer(5),
     ));
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct BeamStyle {
+    pub(crate) glow: Vec4,
+    pub(crate) core: Vec4,
+    pub(crate) light: [f32; 3],
+    pub(crate) spark: Tex,
+    pub(crate) damage: i32,
+}
+
+pub(crate) const BLUE_BEAM: BeamStyle = BeamStyle {
+    glow: Vec4::new(0.2, 0.5, 1.0, 0.5),
+    core: Vec4::new(0.85, 0.96, 1.0, 1.0),
+    light: [60.0, 140.0, 255.0],
+    spark: tex::SPARK,
+    damage: enemies::GOLEM_LASER_DAMAGE,
+};
+
+pub(crate) fn draw_beam(
+    world: &mut World,
+    navigation: &Navigation,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+    eye: Vec2,
+    angle: f32,
+    style: BeamStyle,
+) {
+    let player = player_at(world);
+    let end = beam_end(navigation, eye, angle);
+    let direction = Vec2::from_angle(angle);
+    let length = eye.distance(end);
+    let mut distance = 0.0;
+    while distance <= length {
+        let at = eye + direction * distance;
+        world.spawn((
+            BeamPart,
+            Position(at),
+            Size(Vec2::splat(BEAM_GLOW)),
+            Color(style.glow),
+            Layer(4),
+        ));
+        world.spawn((
+            BeamPart,
+            Position(at),
+            Size(Vec2::splat(BEAM_CORE)),
+            Color(style.core),
+            Layer(5),
+        ));
+        distance += BEAM_STEP;
+    }
+    let [red, green, blue] = style.light;
+    world.spawn((
+        BeamPart,
+        Position(end),
+        Light::rgb(Vec2::ZERO, red, green, blue, 140.0, 1.6),
+    ));
+    let mut seed = (eye.x as u32).wrapping_mul(2_654_435_761) ^ (end.y as u32) ^ (angle.to_bits());
+    for _ in 0..3 {
+        let along = unit(&mut seed) * length;
+        let side = Vec2::new(-direction.y, direction.x) * (unit(&mut seed) - 0.5) * 2.0;
+        spark(
+            world,
+            textures,
+            style.spark,
+            eye + direction * along + side * 18.0,
+            side * 70.0 + direction * 20.0,
+        );
+    }
+    if length < enemies::GOLEM_LASER_REACH - BEAM_STEP {
+        for _ in 0..3 {
+            let spread = (unit(&mut seed) - 0.5) * 2.2;
+            let away = -direction;
+            let back = Vec2::from_angle(away.y.atan2(away.x) + spread);
+            spark(
+                world,
+                textures,
+                style.spark,
+                end,
+                back * (140.0 + unit(&mut seed) * 160.0),
+            );
+        }
+    }
+    if let Some((player, player_position, size)) = player {
+        let flying = world.get::<&Dodge>(player).is_ok();
+        let reach = enemies::GOLEM_LASER_WIDTH / 2.0 + size.x.min(size.y) / 2.0;
+        if !flying && distance_to_segment(player_position, eye, end) < reach {
+            hurt_player(world, player, style.damage, sounds);
+        }
+    }
 }
 
 pub(crate) fn tick_laser(
@@ -599,65 +694,7 @@ pub(crate) fn tick_laser(
             }
             golem.beam_angle
         };
-        let end = beam_end(navigation, eye, angle);
-        let direction = Vec2::from_angle(angle);
-        let length = eye.distance(end);
-        let mut distance = 0.0;
-        while distance <= length {
-            let at = eye + direction * distance;
-            world.spawn((
-                BeamPart,
-                Position(at),
-                Size(Vec2::splat(BEAM_GLOW)),
-                Color(Vec4::new(0.2, 0.5, 1.0, 0.5)),
-                Layer(4),
-            ));
-            world.spawn((
-                BeamPart,
-                Position(at),
-                Size(Vec2::splat(BEAM_CORE)),
-                Color(Vec4::new(0.85, 0.96, 1.0, 1.0)),
-                Layer(5),
-            ));
-            distance += BEAM_STEP;
-        }
-        world.spawn((
-            BeamPart,
-            Position(end),
-            Light::rgb(Vec2::ZERO, 60.0, 140.0, 255.0, 140.0, 1.6),
-        ));
-        let mut seed =
-            (eye.x as u32).wrapping_mul(2_654_435_761) ^ (end.y as u32) ^ (angle.to_bits());
-        for _ in 0..3 {
-            let along = unit(&mut seed) * length;
-            let side = Vec2::new(-direction.y, direction.x) * (unit(&mut seed) - 0.5) * 2.0;
-            spark(
-                world,
-                textures,
-                eye + direction * along + side * 18.0,
-                side * 70.0 + direction * 20.0,
-            );
-        }
-        if length < enemies::GOLEM_LASER_REACH - BEAM_STEP {
-            for _ in 0..3 {
-                let spread = (unit(&mut seed) - 0.5) * 2.2;
-                let away = -direction;
-                let back = Vec2::from_angle(away.y.atan2(away.x) + spread);
-                spark(
-                    world,
-                    textures,
-                    end,
-                    back * (140.0 + unit(&mut seed) * 160.0),
-                );
-            }
-        }
-        if let Some((player, player_position, size)) = player {
-            let flying = world.get::<&Dodge>(player).is_ok();
-            let reach = enemies::GOLEM_LASER_WIDTH / 2.0 + size.x.min(size.y) / 2.0;
-            if !flying && distance_to_segment(player_position, eye, end) < reach {
-                hurt_player(world, player, enemies::GOLEM_LASER_DAMAGE, sounds);
-            }
-        }
+        draw_beam(world, navigation, textures, sounds, eye, angle, BLUE_BEAM);
     }
 }
 
