@@ -54,6 +54,30 @@ def scaled(frame, fx, fy, floor):
     return out
 
 
+def slump(frame, floor, height, width, lean, wobble, phase):
+    bbox = frame.getbbox()
+    out = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+    if not bbox:
+        return out
+    left, top, right, bottom = bbox
+    cx = (left + right) / 2
+    span = max(1, bottom - top)
+    for y in range(top, bottom):
+        t = (bottom - 1 - y) / span
+        dest = floor - 1 - round((bottom - 1 - y) * height)
+        sway = round(lean * t * t + math.sin(y * 0.85 + phase) * wobble * t)
+        for x in range(left, right):
+            p = frame.getpixel((x, y))
+            if not p[3]:
+                continue
+            nx = round(cx + (x - cx) * width) + sway
+            if 0 <= nx < frame.width and 0 <= dest < frame.height:
+                out.putpixel((nx, dest), p)
+                if width < 0.95 and 0 <= nx + 1 < frame.width and out.getpixel((nx + 1, dest))[3] == 0 and x + 1 < right and frame.getpixel((x + 1, y))[3]:
+                    out.putpixel((nx + 1, dest), p)
+    return out
+
+
 def pixels_where(frame, test):
     return [(x, y) for y in range(frame.height) for x in range(frame.width) if frame.getpixel((x, y))[3] and test(frame.getpixel((x, y)))]
 
@@ -247,13 +271,13 @@ def eye_watcher():
     socket = (26, 12, 20)
     eye_points = pixels_where(idle, is_eye_orange)
     eye = centroid(eye_points)
-    cracked = bulge(shifted(idle, 0, -1), [(x, y - 1) for x, y in eye_points], (255, 214, 96), (255, 244, 170))
+    cracked = draw_cracks(shifted(idle, 0, -1), (eye[0], eye[1] - 1), (60, 22, 18), 4)
     empty = clear(idle, eye_points, socket)
-    f1 = blobs(shifted(empty, 0, 1), (eye[0], eye[1] + 1))
+    f1 = burst(shifted(empty, 0, 1), (eye[0], eye[1] + 1), 3, 10, 9, GOO, 0.3)
 
-    f2 = scaled(empty, 0.92, 0.9, 31)
-    f3 = scaled(empty, 0.78, 0.66, 31)
-    f4 = scaled(empty, 0.62, 0.46, 31)
+    f2 = slump(empty, 31, 0.9, 0.94, 3, 1.0, 0.0)
+    f3 = slump(empty, 31, 0.62, 0.8, 5, 1.6, 1.3)
+    f4 = slump(darken(empty, (20, 10, 16), 0.12), 31, 0.4, 0.68, 4, 2.0, 2.6)
     frames = [cracked, f1, f2, f3, f4]
     out = Image.new("RGBA", (160, 96), (0, 0, 0, 0))
     out.paste(sheet, (0, 0))
