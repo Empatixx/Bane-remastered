@@ -1120,7 +1120,7 @@ mod tests {
         let shown = labels(&elements);
         assert!(shown.contains(&"Discount".to_owned()));
         assert!(shown.contains(&"Buy".to_owned()));
-        assert!(shown.contains(&"Cost: 1 talent".to_owned()));
+        assert!(shown.contains(&"Cost: 2 talents".to_owned()));
         assert!(!shown.iter().any(|text| text.ends_with(",-")));
         assert_eq!(
             images(&elements, tex::MENU_PLATE_SMALL),
@@ -1136,7 +1136,7 @@ mod tests {
 
         let locked = layout(&profile, Some(Upgrade::TrapMaster), false, Vec2::ZERO);
         assert!(labels(&locked).contains(&"Can't buy".to_owned()));
-        assert!(labels(&locked).contains(&"Cost: 1 talent".to_owned()));
+        assert!(labels(&locked).contains(&"Cost: 3 talents".to_owned()));
         assert!(!labels(&owned).iter().any(|text| text.starts_with("Cost")));
     }
 
@@ -1282,8 +1282,9 @@ mod tests {
         let outcome = step(&mut menu, &mut world, &assets, &profile, &mut input);
 
         assert_eq!(outcome, Some(Purchase::Bought));
-        assert_eq!(profile.balance(), before - 1);
-        assert_eq!(shown(&world), vec![format!("Talents: {}", before - 1)]);
+        let after = before - Upgrade::Discount.def().price;
+        assert_eq!(profile.balance(), after);
+        assert_eq!(shown(&world), vec![format!("Talents: {after}")]);
     }
 
     #[test]

@@ -60,8 +60,15 @@ pub(crate) struct Summary {
     pub(crate) rewards: [u32; 4],
 }
 
+/// The accuracy reward only pays in full after this many shots, so one lucky hit isn't worth it.
+const ACCURACY_FULL_SHOTS: u32 = 50;
+
 fn growth(floor: u32, factor: f64, amount: f64) -> u32 {
     (factor * f64::from(floor).powf(1.02) * amount.powf(1.01)) as u32
+}
+
+fn shot_weight(fired: u32) -> f64 {
+    f64::from(fired.min(ACCURACY_FULL_SHOTS)) / f64::from(ACCURACY_FULL_SHOTS)
 }
 
 pub(crate) fn summarize(stats: RunStats, floor: u32) -> Summary {
@@ -76,7 +83,7 @@ pub(crate) fn summarize(stats: RunStats, floor: u32) -> Summary {
         items: stats.items,
         floor,
         rewards: [
-            growth(floor, 2.0, accuracy * 100.0),
+            growth(floor, 2.0, accuracy * 100.0 * shot_weight(stats.fired)),
             growth(floor, 2.0, f64::from(stats.kills)),
             growth(floor, 4.0, f64::from(stats.items)),
             floor.saturating_sub(1) * 5,
@@ -190,5 +197,28 @@ mod tests {
         assert!(summary.rewards[2] > summary.rewards[1] / 2);
         let first_floor = summarize(RunStats::default(), 1);
         assert_eq!(first_floor.rewards, [0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn one_lucky_hit_is_not_worth_a_full_accuracy_reward() {
+        let lucky = summarize(
+            RunStats {
+                fired: 1,
+                hits: 1,
+                ..RunStats::default()
+            },
+            1,
+        );
+        let steady = summarize(
+            RunStats {
+                fired: ACCURACY_FULL_SHOTS,
+                hits: ACCURACY_FULL_SHOTS,
+                ..RunStats::default()
+            },
+            1,
+        );
+        assert_eq!(lucky.accuracy_percent, 100);
+        assert!(lucky.rewards[0] * 10 < steady.rewards[0]);
+        assert_eq!(steady.rewards[0], growth(1, 2.0, 100.0));
     }
 }

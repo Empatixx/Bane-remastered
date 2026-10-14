@@ -28,8 +28,10 @@ use super::quest_board::BoardAction;
 use super::weapon_table::Outcome as WeaponOutcome;
 use super::{Cursor, Pause, QuestBoard, Scene, SceneId, Transition, UpgradeMenu, WeaponTable};
 
-const TALENTS_TO_TRY_OUT: u64 = 1000;
-const GOLD_TO_TRY_OUT: u64 = 5000;
+/// `BANE_RICH=1` tops the profile up on every lobby visit, for trying out upgrades.
+const RICH_VAR: &str = "BANE_RICH";
+const RICH_TALENTS: u64 = 1000;
+const RICH_GOLD: u64 = 5000;
 const TALENT_COUNTER_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 / 255.0, 1.0);
 const GOLD_COUNTER_COLOR: Vec4 = Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0);
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
@@ -235,8 +237,10 @@ impl Scene for LobbyScene {
         );
         self.camera = Camera::new(bounds);
         if let Some(profile) = &self.profile {
-            profile.top_up(TALENTS_TO_TRY_OUT);
-            profile.top_up_gold(GOLD_TO_TRY_OUT);
+            if std::env::var_os(RICH_VAR).is_some() {
+                profile.top_up(RICH_TALENTS);
+                profile.top_up_gold(RICH_GOLD);
+            }
         }
         self.refresh_wallet();
         self.refresh_counters();
@@ -438,18 +442,19 @@ mod tests {
     }
 
     #[test]
-    fn the_player_starts_the_lobby_with_a_thousand_talents_to_try_things_out() {
+    fn the_lobby_hands_out_no_free_talents_or_gold() {
         let (scene, _assets) = lobby();
 
         let profile = scene.profile.as_ref().expect("profile");
-        assert_eq!(profile.balance(), TALENTS_TO_TRY_OUT);
+        assert_eq!(profile.balance(), 0);
+        assert_eq!(profile.gold(), 0);
         let coins: Vec<i32> = scene
             .world
             .query::<&Wallet>()
             .iter()
             .map(|wallet| wallet.coins)
             .collect();
-        assert_eq!(coins, vec![TALENTS_TO_TRY_OUT as i32]);
+        assert_eq!(coins, vec![0]);
     }
 
     #[test]
@@ -471,8 +476,8 @@ mod tests {
             .map(|text| text.content.clone())
             .collect();
 
-        assert_eq!(talents, vec![TALENTS_TO_TRY_OUT.to_string()]);
-        assert_eq!(gold, vec![GOLD_TO_TRY_OUT.to_string()]);
+        assert_eq!(talents, vec!["0".to_owned()]);
+        assert_eq!(gold, vec!["0".to_owned()]);
     }
 
     #[test]
@@ -480,7 +485,7 @@ mod tests {
         let (mut scene, _assets) = lobby();
         let profile = scene.profile.clone().expect("profile");
 
-        profile.top_up_gold(GOLD_TO_TRY_OUT + 7);
+        profile.top_up_gold(7);
         scene.refresh_counters();
 
         let gold: Vec<String> = scene
@@ -490,7 +495,7 @@ mod tests {
             .iter()
             .map(|text| text.content.clone())
             .collect();
-        assert_eq!(gold, vec![(GOLD_TO_TRY_OUT + 7).to_string()]);
+        assert_eq!(gold, vec!["7".to_owned()]);
     }
 
     #[test]
@@ -507,7 +512,7 @@ mod tests {
 
         let assets = Assets::new().expect("assets");
         let profile = SharedProfile::in_memory();
-        profile.top_up(TALENTS_TO_TRY_OUT);
+        profile.top_up(RICH_TALENTS);
         for _ in 0..8 {
             for upgrade in crate::upgrades::Upgrade::ALL {
                 profile.buy(upgrade);

@@ -4,7 +4,8 @@ use std::collections::BTreeSet;
 use serde::{Deserialize, Serialize};
 
 pub(crate) const ROOT_CELL: (i32, i32) = (0, 0);
-pub(crate) const TALENT_PRICE: u64 = 1;
+/// Talent price by its row in the tree: the first row is free, deeper rows cost more.
+const ROW_PRICES: [u64; 5] = [0, 2, 3, 5, 5];
 const CRIT_CHANCE: f32 = 0.1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -140,12 +141,13 @@ impl Upgrade {
 
     pub(crate) fn def(self) -> UpgradeDef {
         use Quality::{Common, Epic, Rare};
+        let price = ROW_PRICES[self.index()];
         let make = |title, description, texture, quality| UpgradeDef {
             title,
             description,
             texture,
             quality,
-            price: TALENT_PRICE,
+            price,
         };
         match self {
             Self::MovementSpeed => make(
@@ -400,7 +402,7 @@ mod tests {
     }
 
     #[test]
-    fn the_first_upgrade_of_every_tree_is_free_and_every_other_costs_one_talent() {
+    fn the_first_upgrade_of_every_tree_is_free_and_deeper_rows_cost_more() {
         let free: Vec<Upgrade> = Upgrade::ALL.into_iter().filter(|u| u.is_free()).collect();
         assert_eq!(
             free,
@@ -412,7 +414,7 @@ mod tests {
         );
         for tree in Tree::ALL {
             let prices: Vec<u64> = tree.upgrades().iter().map(|u| u.def().price).collect();
-            assert_eq!(prices, vec![TALENT_PRICE; 5]);
+            assert_eq!(prices, ROW_PRICES.to_vec());
         }
     }
 
@@ -431,9 +433,9 @@ mod tests {
     }
 
     #[test]
-    fn buying_needs_the_parent_and_the_money_and_takes_one_talent() {
+    fn buying_needs_the_parent_and_the_money_and_takes_the_price() {
         let mut unlocked = BTreeSet::new();
-        let mut balance = 1;
+        let mut balance = Upgrade::Discount.def().price;
 
         assert_eq!(
             purchase(&mut unlocked, &mut balance, Upgrade::TrapMaster),

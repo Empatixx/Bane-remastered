@@ -379,7 +379,6 @@ mod tests {
     use std::fs;
 
     use crate::systems::summarize;
-    use crate::upgrades::TALENT_PRICE;
 
     use super::*;
 
@@ -446,12 +445,13 @@ mod tests {
         shared.top_up(10);
 
         assert_eq!(shared.buy(Upgrade::Discount), Purchase::Bought);
-        assert_eq!(shared.balance(), 10 - TALENT_PRICE);
+        let price = Upgrade::Discount.def().price;
+        assert_eq!(shared.balance(), 10 - price);
         assert!(shared.perks().discount);
 
         let reloaded = SharedProfile::load(&path);
         assert!(reloaded.snapshot().owns(Upgrade::Discount));
-        assert_eq!(reloaded.balance(), 10 - TALENT_PRICE);
+        assert_eq!(reloaded.balance(), 10 - price);
         let _ = fs::remove_file(&path);
     }
 
