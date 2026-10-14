@@ -4,8 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Chase, Clip, Color, Expiring, Frozen, Health, Minion, OgreAttack, OgreBoss, OgreStage,
-    Position, RoomId, Rooted, Spawning,
+    Animation, Chase, Clip, Color, Expiring, Frozen, Health, Minion, OgreAttack, OgreBoss,
+    OgreStage, Position, RoomId, Rooted, Spawning,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
@@ -15,6 +15,7 @@ use crate::systems::golem::{play, player_at, spawn_rock, unit};
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const RING_DROP: f32 = 110.0;
+const CLUB_REACH: Vec2 = Vec2::new(91.0, 133.0);
 const HAND: Vec2 = Vec2::new(-110.0, -10.0);
 const RAT_RADIUS: f32 = 70.0;
 const ATTACK_VAR: &str = "BANE_OGRE_ATTACK";
@@ -246,20 +247,28 @@ fn execute(
         }
         Cmd::Fan => {
             sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
-            let aim = player.map_or(Vec2::Y, |player| player - at).to_angle();
-            let origin = at + Vec2::new(0.0, RING_DROP * 0.6);
-            for index in 0..enemies::OGRE_SLAM_FAN {
-                let t = index as f32 / (enemies::OGRE_SLAM_FAN - 1) as f32 - 0.5;
-                spawn_rock(
-                    world,
-                    physics,
-                    ProjectileKind::GolemRock,
-                    origin,
-                    Vec2::from_angle(aim + t * enemies::OGRE_SLAM_SPREAD * 2.0),
-                    enemies::OGRE_STOMP_DAMAGE,
-                    room,
-                    textures,
-                );
+            let mirrored = world
+                .get::<&Animation>(entity)
+                .is_ok_and(|animation| animation.flipped());
+            let side = if mirrored { -1.0 } else { 1.0 };
+            let origin = at + Vec2::new(side * CLUB_REACH.x, CLUB_REACH.y);
+            let aim = player.map_or(Vec2::Y, |player| player - origin).to_angle();
+            for layer in 0..2 {
+                let count = enemies::OGRE_SLAM_FAN;
+                for index in 0..count {
+                    let t = (index as f32 + layer as f32 * 0.5) / (count - 1) as f32 - 0.5;
+                    let direction = Vec2::from_angle(aim + t * enemies::OGRE_SLAM_SPREAD * 2.0);
+                    spawn_rock(
+                        world,
+                        physics,
+                        ProjectileKind::GolemRock,
+                        origin + direction * layer as f32 * 45.0,
+                        direction,
+                        enemies::OGRE_STOMP_DAMAGE,
+                        room,
+                        textures,
+                    );
+                }
             }
         }
         Cmd::Rats(count) => {
