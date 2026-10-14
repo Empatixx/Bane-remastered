@@ -55,6 +55,30 @@ pub(crate) const GOLEM_LASER_REACH: f32 = 1100.0;
 pub(crate) const GOLEM_LASER_WIDTH: f32 = 26.0;
 pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_NEAR: f32 = 340.0;
+pub(crate) const MIMIC_FIRST_COOLDOWN: f32 = 2.2;
+pub(crate) const MIMIC_COOLDOWN: f32 = 2.6;
+pub(crate) const MIMIC_RAGE_COOLDOWN: f32 = 1.5;
+pub(crate) const MIMIC_RAGE_AT: f32 = 0.5;
+pub(crate) const MIMIC_RAGE_SPEED: f32 = 1.3;
+pub(crate) const MIMIC_NEAR: f32 = 330.0;
+pub(crate) const MIMIC_HOP_WINDUP: f32 = 0.2;
+pub(crate) const MIMIC_HOP_SECONDS: f32 = 0.45;
+pub(crate) const MIMIC_HOP_SPEED: f32 = 6.0;
+pub(crate) const MIMIC_HOP_RECOVER: f32 = 0.3;
+pub(crate) const MIMIC_HOP_RING: usize = 14;
+pub(crate) const MIMIC_BITE_WINDUP: f32 = 0.28;
+pub(crate) const MIMIC_BITE_SECONDS: f32 = 0.13;
+pub(crate) const MIMIC_BITE_SPEED: f32 = 4.0;
+pub(crate) const MIMIC_BITE_RECOVER: f32 = 0.4;
+pub(crate) const MIMIC_BITE_FAN: usize = 7;
+pub(crate) const MIMIC_BITE_SPREAD: f32 = 0.5;
+pub(crate) const MIMIC_SPIT_WINDUP: f32 = 0.32;
+pub(crate) const MIMIC_SPIT_RECOVER: f32 = 0.55;
+pub(crate) const MIMIC_MOB_LIMIT: usize = 4;
+pub(crate) const MIMIC_REST_WINDUP: f32 = 0.3;
+pub(crate) const MIMIC_REST_SECONDS: f32 = 2.2;
+pub(crate) const MIMIC_REST_RECOVER: f32 = 0.3;
+pub(crate) const MIMIC_SPLINTER_DAMAGE: i32 = 2;
 pub(crate) const HOUND_FIRST_COOLDOWN: f32 = 2.2;
 pub(crate) const HOUND_COOLDOWN: f32 = 2.4;
 pub(crate) const HOUND_RAGE_COOLDOWN: f32 = 1.3;
@@ -311,6 +335,7 @@ pub(crate) enum EnemyKind {
     ArgusEye,
     Ogre,
     Hellhound,
+    Mimic,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -337,6 +362,7 @@ pub(crate) enum Behavior {
     ArgusBoss,
     OgreBoss,
     HoundBoss,
+    MimicBoss,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -450,7 +476,7 @@ impl EnemyKind {
         Self::ALL.iter().position(|kind| *kind == self).unwrap_or(0)
     }
 
-    pub(crate) const ALL: [Self; 21] = [
+    pub(crate) const ALL: [Self; 22] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -470,6 +496,7 @@ impl EnemyKind {
         Self::ArgusEye,
         Self::Ogre,
         Self::Hellhound,
+        Self::Mimic,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -643,6 +670,22 @@ impl EnemyKind {
                     (120, 2, 2_500_000.0),
                 )
             },
+            Self::Mimic => EnemySpec {
+                min_floor: 2,
+                death_row: 5,
+                themes: &[Theme::Stone, Theme::Temple],
+                role: Role::Boss("Mimic"),
+                behavior: Behavior::MimicBoss,
+                ..spec(
+                    tex::MIMIC,
+                    (8, 6),
+                    (156.0, 148.0),
+                    2.4,
+                    (8, 0.12),
+                    Some((8, 0.12)),
+                    (115, 2, 45_000_000.0),
+                )
+            },
             Self::Hellhound => EnemySpec {
                 min_floor: 2,
                 death_row: 4,
@@ -807,6 +850,7 @@ fn boss_named(name: &str) -> Option<EnemyKind> {
         "argus" => Some(EnemyKind::Argus),
         "ogre" => Some(EnemyKind::Ogre),
         "hound" | "hellhound" => Some(EnemyKind::Hellhound),
+        "mimic" => Some(EnemyKind::Mimic),
         "spider" => Some(EnemyKind::Spider),
         "slime" | "kingslime" => Some(EnemyKind::KingSlime),
         _ => None,
@@ -887,8 +931,8 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 8);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 8 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 9);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 9 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));
@@ -964,6 +1008,18 @@ mod tests {
                 "{theme:?}"
             );
         }
+        for theme in [Theme::Stone, Theme::Temple] {
+            assert!(
+                seen(theme, &mut rng).contains(&EnemyKind::Mimic),
+                "{theme:?}"
+            );
+        }
+        for theme in [Theme::Lava, Theme::Ice, Theme::Sewer, Theme::Moss] {
+            assert!(
+                !seen(theme, &mut rng).contains(&EnemyKind::Mimic),
+                "{theme:?}"
+            );
+        }
         assert!(seen(Theme::Lava, &mut rng).contains(&EnemyKind::Hellhound));
         for theme in [
             Theme::Stone,
@@ -988,6 +1044,7 @@ mod tests {
         assert_eq!(boss_named("argus"), Some(EnemyKind::Argus));
         assert_eq!(boss_named("ogre"), Some(EnemyKind::Ogre));
         assert_eq!(boss_named("hound"), Some(EnemyKind::Hellhound));
+        assert_eq!(boss_named("mimic"), Some(EnemyKind::Mimic));
         assert_eq!(boss_named("nothing"), None);
     }
 

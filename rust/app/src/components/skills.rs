@@ -79,6 +79,38 @@ pub(crate) struct MagmaSpreader {
     pub(crate) timer: f32,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Sealed;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MimicAttack {
+    Hop,
+    Bite,
+    Spit,
+    Rest,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum MimicStage {
+    Walk,
+    Winding,
+    Acting,
+    Recovering,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct MimicBoss {
+    pub(crate) stage: MimicStage,
+    pub(crate) attack: MimicAttack,
+    pub(crate) last: Option<MimicAttack>,
+    pub(crate) timer: f32,
+    pub(crate) cooldown: f32,
+    pub(crate) charging: bool,
+    pub(crate) enraged: bool,
+    pub(crate) seed: u32,
+    pub(crate) idle: Clip,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum HoundAttack {
     Lunge,

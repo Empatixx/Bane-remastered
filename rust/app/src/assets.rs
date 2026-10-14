@@ -144,6 +144,25 @@ pub(crate) mod tex {
         GUNS_M4 = "ingame/guns/M4.tga",
         GUNS_UZI = "ingame/guns/uzi.tga",
         GUNS_THOMPSON = "ingame/guns/thompson.tga",
+        GUNS_SNIPER = "ingame/guns/sniper.tga",
+        GUNS_RPG = "ingame/guns/rpg.tga",
+        GUNS_MINIGUN = "ingame/guns/minigun.tga",
+        GUNS_CROSSBOW = "ingame/guns/crossbow.tga",
+        GUNS_FLAMETHROWER = "ingame/guns/flamethrower.tga",
+        ROUND_TRACER = "ingame/rounds/tracer.tga",
+        ROUND_SLUG = "ingame/rounds/slug.tga",
+        ROUND_ROCKET = "ingame/rounds/rocket.tga",
+        ROUND_BOLT = "ingame/rounds/bolt.tga",
+        ROUND_FLAME = "ingame/rounds/flame.tga",
+        GUNS_BLASTER = "ingame/guns/blaster.tga",
+        GUNS_PLASMA_RIFLE = "ingame/guns/plasma_rifle.tga",
+        GUNS_TESLA_GUN = "ingame/guns/tesla_gun.tga",
+        GUNS_RAILGUN = "ingame/guns/railgun.tga",
+        ROUND_LASER = "ingame/rounds/laser.tga",
+        ROUND_PLASMA = "ingame/rounds/plasma.tga",
+        ROUND_SPARK = "ingame/rounds/spark.tga",
+        ROUND_RAIL = "ingame/rounds/rail.tga",
+        ROUND_ARC = "ingame/rounds/arc.tga",
         SHOTGUN_AMMO_HUD = "ingame/shotgun_ammo_hud.tga",
         SPIDER = "ingame/spider.tga",
         KINGSLIME = "ingame/kingslime.tga",
@@ -204,6 +223,7 @@ pub(crate) mod tex {
         SPARK = "ingame/spark.tga",
         OGRE = "ingame/ogre.tga",
         HELLHOUND = "ingame/hellhound.tga",
+        MIMIC = "ingame/mimic.tga",
         HOUND_SPARK = "ingame/hound_spark.tga",
         HOUND_MAGMA = "ingame/hound_magma.tga",
         ARGUS = "ingame/argus.tga",
@@ -355,6 +375,25 @@ const GAME_TEXTURES: &[Tex] = &[
     tex::GUNS_M4,
     tex::GUNS_UZI,
     tex::GUNS_THOMPSON,
+    tex::GUNS_SNIPER,
+    tex::GUNS_RPG,
+    tex::GUNS_MINIGUN,
+    tex::GUNS_CROSSBOW,
+    tex::GUNS_FLAMETHROWER,
+    tex::ROUND_TRACER,
+    tex::ROUND_SLUG,
+    tex::ROUND_ROCKET,
+    tex::ROUND_BOLT,
+    tex::ROUND_FLAME,
+    tex::GUNS_BLASTER,
+    tex::GUNS_PLASMA_RIFLE,
+    tex::GUNS_TESLA_GUN,
+    tex::GUNS_RAILGUN,
+    tex::ROUND_LASER,
+    tex::ROUND_PLASMA,
+    tex::ROUND_SPARK,
+    tex::ROUND_RAIL,
+    tex::ROUND_ARC,
     tex::SHOTGUN_AMMO_HUD,
     tex::SPIDER,
     tex::KINGSLIME,
@@ -415,6 +454,7 @@ const GAME_TEXTURES: &[Tex] = &[
     tex::SPARK,
     tex::OGRE,
     tex::HELLHOUND,
+    tex::MIMIC,
     tex::HOUND_SPARK,
     tex::HOUND_MAGMA,
     tex::ARGUS,
@@ -539,7 +579,11 @@ impl Loader {
         }
         let mut pending: VecDeque<Step> =
             GAME_TEXTURES.iter().copied().map(Step::Texture).collect();
-        pending.extend(holed.iter().map(|(texture, hole)| Step::Holed(*texture, *hole)));
+        pending.extend(
+            holed
+                .iter()
+                .map(|(texture, hole)| Step::Holed(*texture, *hole)),
+        );
         pending.push_back(Step::Atlas);
         pending.extend(Audio::files().into_iter().map(Step::Sound));
         pending.extend(FontSize::ALL.map(Step::Font));

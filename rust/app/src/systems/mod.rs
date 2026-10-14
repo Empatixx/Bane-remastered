@@ -26,6 +26,7 @@ mod leapers;
 mod lighting;
 mod loadout;
 mod magma;
+mod mimic;
 mod minimap;
 mod objects;
 mod ogre;
@@ -90,26 +91,26 @@ pub(crate) use leapers::tick_leapers;
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use magma::{clear_magma, tick_magma, tick_magma_spread};
+pub(crate) use mimic::tick_mimic;
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_chilled, tick_frozen, tick_poison,
 };
 pub(crate) use ogre::tick_ogre;
-pub(crate) use rules::toughen_enemies;
 pub(crate) use perks::{
     apply_floor_perks, apply_run_perks, apply_weapon_mods, immobilize_traps, regenerate_armor,
 };
-pub(crate) use pet::{
-    pet_bites, pick_pet_targets, plan_pet_paths,
-    steer_pets,
-};
+pub(crate) use pet::{pet_bites, pick_pet_targets, plan_pet_paths, steer_pets};
 pub(crate) use player_animation::animate_player;
 pub(crate) use portal::tint_portal;
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
+pub(crate) use rules::toughen_enemies;
 pub(crate) use scientist::{PURCHASE, chat, fit_speech};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};
 pub(crate) use shadow::update_shadow;
-pub(crate) use shooting::{ShotContext, ShotRoll, bullet_hits, shoot};
+pub(crate) use shooting::{
+    RoundTextures, ShotContext, ShotRoll, bullet_hits, burn_out_rounds, shoot,
+};
 pub(crate) use shop::{buy, fit_price_boxes, say, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use simulation::simulate;
 pub(crate) use skills::{

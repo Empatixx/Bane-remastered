@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Casing, Chilled, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Liquid,
-    Lit, MapSize, Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size,
-    Sky, Sprite, StatusBar, Text, blended,
+    Casing, Chilled, Color, DropShadow, EnemyArrow, Frozen, Heading, Hidden, Hover, InRange, Layer,
+    Liquid, Lit, MapSize, Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace,
+    Shine, Size, Sky, Sprite, StatusBar, Text, blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -72,7 +72,7 @@ pub(crate) fn collect_draws(
         outline,
         hover,
         frozen,
-        shine,
+        (shine, heading),
         sky,
         liquid,
     ) in world
@@ -89,7 +89,7 @@ pub(crate) fn collect_draws(
             Option<&Outline>,
             Option<&Hover>,
             (Option<&Frozen>, Option<&Chilled>),
-            Option<&Shine>,
+            (Option<&Shine>, Option<&Heading>),
             Option<&Sky>,
             Option<&Liquid>,
         )>()
@@ -123,6 +123,9 @@ pub(crate) fn collect_draws(
                 }
                 if let Some(shine) = shine {
                     quad = quad.shined(shine.0);
+                }
+                if let Some(heading) = heading {
+                    quad = quad.rotated(heading.0);
                 }
                 Draw {
                     texture: sprite.texture,

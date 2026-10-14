@@ -11,6 +11,7 @@ import cz.empatix.render.domain.RenderScene;
 import cz.empatix.render.domain.Vertex;
 import cz.empatix.render.service.Camera;
 import cz.empatix.render.shaderbindings.OutlineBinding;
+import cz.empatix.guns.service.GunService;
 import cz.empatix.textureatlas.domain.TextureAtlas;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
@@ -83,12 +84,12 @@ public class WeaponDrop implements ItemDrop {
 
     @Override
     public int getWidth() {
-        return texture.width();
+        return texture.width() * GunService.GUN_TEXTURE_SCALE;
     }
 
     @Override
     public int getHeight() {
-        return texture.height();
+        return texture.height() * GunService.GUN_TEXTURE_SCALE;
     }
 
     @Override

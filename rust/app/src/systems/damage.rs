@@ -63,6 +63,9 @@ pub(crate) fn deal(world: &mut World, damage: Damage) -> bool {
         source,
     } = damage;
     debug_assert!(world.get::<&Player>(target).is_err(), "use hurt_player");
+    if world.get::<&crate::components::Sealed>(target).is_ok() {
+        return false;
+    }
     match world.get::<&mut Health>(target) {
         Ok(mut health) => health.current = (health.current - amount).max(0),
         Err(_) => return false,

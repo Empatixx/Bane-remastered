@@ -219,7 +219,7 @@ impl Scene for InGameScene {
                 input,
                 systems::ShotContext {
                     camera: self.camera.position(),
-                    bullet_texture: assets.textures.get(BULLET),
+                    rounds: systems::RoundTextures::load(&assets.textures),
                     casing_texture: assets.textures.get(tex::CASING),
                     dt,
                     roll: systems::ShotRoll::from(&mut self.combat_rng),
@@ -404,6 +404,13 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
+        systems::tick_mimic(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+            dt,
+        );
         systems::tick_hound(
             &mut self.world,
             &mut self.physics,
@@ -474,6 +481,7 @@ impl Scene for InGameScene {
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::watch_progress(&mut self.world, dt);
+        systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(
             &mut self.world,
             &mut self.physics,

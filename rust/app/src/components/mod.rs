@@ -24,7 +24,7 @@ mod transform;
 mod ui;
 
 pub(crate) use animation::{Animation, Clip};
-pub(crate) use appearance::{Color, Layer, Liquid, Outline, Shine, Sky, Sprite, Text};
+pub(crate) use appearance::{Color, Heading, Layer, Liquid, Outline, Shine, Sky, Sprite, Text};
 pub(crate) use artefacts::{
     ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, ShieldAura, Shielded,
 };
@@ -68,8 +68,8 @@ pub(crate) use skills::{
     ArgusAttack, ArgusBoss, ArgusStage, Armageddon, BeamPart, Boss, Charge, Cobweb, DeathBurst,
     DeathCloud, DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse, GolemAttack,
     GolemBoss, GolemStage, Hatcher, Hits, Homing, HoundAttack, HoundBoss, HoundStage, Impact, Kin,
-    LeapStage, Leaper, Magma, MagmaSpreader, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter,
-    RockFall, Rooted, Smash, WebSpitter,
+    LeapStage, Leaper, Magma, MagmaSpreader, MimicAttack, MimicBoss, MimicStage, Minion,
+    OgreAttack, OgreBoss, OgreStage, Orbiter, RockFall, Rooted, Sealed, Smash, WebSpitter,
 };
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};

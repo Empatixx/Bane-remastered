@@ -156,6 +156,15 @@ fn name(kind: GunKind) -> &'static str {
         GunKind::M4 => "M4",
         GunKind::Uzi => "Uzi",
         GunKind::Thompson => "Thompson",
+        GunKind::Sniper => "Sniper",
+        GunKind::Rpg => "RPG",
+        GunKind::Minigun => "Minigun",
+        GunKind::Crossbow => "Crossbow",
+        GunKind::Flamethrower => "Flamethrower",
+        GunKind::Blaster => "Blaster",
+        GunKind::PlasmaRifle => "Plasma Rifle",
+        GunKind::TeslaGun => "Tesla Gun",
+        GunKind::Railgun => "Railgun",
     }
 }
 

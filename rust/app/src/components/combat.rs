@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 use super::animation::Clip;
-use crate::guns::{AmmoClass, GunKind, GunSpec, Mutation};
+use crate::guns::{AmmoClass, GunKind, GunSpec, Mutation, Round};
 use crate::items::AmmoBox;
 use crate::weapon_upgrades::{GunMods, WeaponMods};
 
@@ -31,6 +31,9 @@ pub(crate) struct Bullet {
     pub(crate) bounces: u32,
     pub(crate) mutation: Option<Mutation>,
     pub(crate) last_hit: Option<hecs::Entity>,
+    pub(crate) round: Round,
+    /// Seconds left before a short-lived round burns out in the air.
+    pub(crate) lifetime: Option<f32>,
 }
 
 impl Bullet {
@@ -41,6 +44,19 @@ impl Bullet {
             bounces: 0,
             mutation: None,
             last_hit: None,
+            round: Round::Bullet,
+            lifetime: None,
+        }
+    }
+
+    /// The bullet as the given round: it keeps its mutation and adds what the round does.
+    pub(crate) fn as_round(self, round: Round) -> Self {
+        let spec = round.spec();
+        Self {
+            pierce: self.pierce.saturating_add(spec.pierce),
+            round,
+            lifetime: spec.lifetime,
+            ..self
         }
     }
 
