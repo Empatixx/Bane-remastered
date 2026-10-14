@@ -55,27 +55,29 @@ pub(crate) const GOLEM_LASER_REACH: f32 = 1100.0;
 pub(crate) const GOLEM_LASER_WIDTH: f32 = 26.0;
 pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_NEAR: f32 = 340.0;
-pub(crate) const OGRE_FIRST_COOLDOWN: f32 = 1.8;
-pub(crate) const OGRE_COOLDOWN: f32 = 1.6;
-pub(crate) const OGRE_RAGE_COOLDOWN: f32 = 0.8;
+pub(crate) const OGRE_FIRST_COOLDOWN: f32 = 2.4;
+pub(crate) const OGRE_COOLDOWN: f32 = 3.0;
+pub(crate) const OGRE_RAGE_COOLDOWN: f32 = 1.8;
 pub(crate) const OGRE_RAGE_AT: f32 = 0.5;
 pub(crate) const OGRE_RAGE_SPEED: f32 = 1.35;
 pub(crate) const OGRE_NEAR: f32 = 380.0;
-pub(crate) const OGRE_STOMP_WINDUP: f32 = 0.42;
-pub(crate) const OGRE_STOMP_RECOVER: f32 = 0.5;
-pub(crate) const OGRE_STOMP_RING: usize = 18;
+pub(crate) const OGRE_JUMP_WINDUP: f32 = 0.5;
+pub(crate) const OGRE_JUMP_RECOVER: f32 = 0.6;
+pub(crate) const OGRE_JUMP_RING: usize = 16;
+pub(crate) const OGRE_JUMP_RINGS: usize = 3;
+pub(crate) const OGRE_JUMP_GAP: f32 = 55.0;
 pub(crate) const OGRE_STOMP_DAMAGE: i32 = 2;
 pub(crate) const OGRE_THROW_WINDUP: f32 = 0.38;
 pub(crate) const OGRE_THROW_RECOVER: f32 = 0.45;
-pub(crate) const OGRE_THROW_RATS: usize = 3;
+pub(crate) const OGRE_THROW_RATS: usize = 2;
 pub(crate) const OGRE_SLAM_WINDUP: f32 = 0.45;
 pub(crate) const OGRE_SLAM_RECOVER: f32 = 0.45;
 pub(crate) const OGRE_SLAM_FAN: usize = 9;
 pub(crate) const OGRE_SLAM_SPREAD: f32 = 0.9;
 pub(crate) const OGRE_ROAR_WINDUP: f32 = 0.32;
 pub(crate) const OGRE_ROAR_RECOVER: f32 = 0.55;
-pub(crate) const OGRE_ROAR_RATS: usize = 4;
-pub(crate) const OGRE_RAT_LIMIT: usize = 9;
+pub(crate) const OGRE_ROAR_RATS: usize = 3;
+pub(crate) const OGRE_RAT_LIMIT: usize = 6;
 pub(crate) const ARGUS_FIRST_COOLDOWN: f32 = 2.0;
 pub(crate) const ARGUS_COOLDOWN: f32 = 1.7;
 pub(crate) const ARGUS_RAGE_COOLDOWN: f32 = 0.9;
@@ -597,7 +599,7 @@ impl EnemyKind {
                 behavior: Behavior::OgreBoss,
                 ..spec(
                     tex::OGRE,
-                    (8, 6),
+                    (8, 7),
                     (80.0, 80.0),
                     3.5,
                     (8, 0.11),

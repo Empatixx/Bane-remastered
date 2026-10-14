@@ -63,7 +63,7 @@ pub(crate) enum ArgusStage {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum OgreAttack {
-    Stomp,
+    Jump,
     Throw,
     Slam,
     Roar,

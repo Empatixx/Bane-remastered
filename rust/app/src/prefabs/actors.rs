@@ -259,7 +259,7 @@ pub(crate) fn enemy(
                 entity,
                 OgreBoss {
                     stage: OgreStage::Walk,
-                    attack: OgreAttack::Stomp,
+                    attack: OgreAttack::Jump,
                     last: None,
                     timer: 0.0,
                     cooldown: enemies::OGRE_FIRST_COOLDOWN,

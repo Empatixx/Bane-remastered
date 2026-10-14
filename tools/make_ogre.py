@@ -351,6 +351,20 @@ def death():
     return frames
 
 
+def jump():
+    poses = [
+        dict(bob=2, kneel=3, jaw=1, larm=2, rarm=2),
+        dict(bob=5, kneel=6, sway=0, jaw=2, larm=4, rarm=4),
+        dict(bob=-3, lleg=7, rleg=7, kneel=0, jaw=3, larm=-8, rarm=-5, hdy=1),
+        dict(bob=-7, lleg=10, rleg=10, jaw=4, larm=-12, rarm=-8, hdy=1),
+        dict(bob=-3, lleg=7, rleg=7, jaw=4, larm=-9, rarm=-6),
+        dict(bob=5, kneel=5, jaw=6, larm=4, rarm=3, hdy=3),
+        dict(bob=3, jaw=3, larm=1, rarm=1, hdy=1),
+        dict(bob=0, jaw=1),
+    ]
+    return [ogre(**pose) for pose in poses]
+
+
 def roar():
     poses = [
         dict(bob=0, jaw=1),
@@ -366,7 +380,7 @@ def roar():
 
 
 def main():
-    rows = [walk(), stomp(), throw(), slam(), roar(), death()]
+    rows = [walk(), stomp(), throw(), slam(), roar(), death(), jump()]
     sheet = Image.new("RGBA", (W * COLUMNS, H * len(rows)), CLEAR)
     for row, frames in enumerate(rows):
         for column, frame in enumerate(frames):

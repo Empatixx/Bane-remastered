@@ -46,7 +46,7 @@ fn forced_attack() -> Option<OgreAttack> {
         .to_ascii_lowercase()
         .as_str()
     {
-        "stomp" => Some(OgreAttack::Stomp),
+        "jump" | "stomp" => Some(OgreAttack::Jump),
         "throw" => Some(OgreAttack::Throw),
         "slam" => Some(OgreAttack::Slam),
         "roar" => Some(OgreAttack::Roar),
@@ -61,7 +61,7 @@ pub(crate) fn choose_attack(ogre: &mut OgreBoss, distance: f32, rats: usize) -> 
     let close = distance < enemies::OGRE_NEAR;
     let crowded = rats >= enemies::OGRE_RAT_LIMIT;
     let weights = [
-        (OgreAttack::Stomp, if close { 4.0 } else { 1.0 }),
+        (OgreAttack::Jump, if close { 4.0 } else { 1.0 }),
         (OgreAttack::Slam, if close { 3.0 } else { 1.0 }),
         (
             OgreAttack::Throw,
@@ -91,7 +91,7 @@ pub(crate) fn choose_attack(ogre: &mut OgreBoss, distance: f32, rats: usize) -> 
         }
         roll -= weight;
     }
-    OgreAttack::Stomp
+    OgreAttack::Jump
 }
 
 pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> Vec<Cmd> {
@@ -106,7 +106,7 @@ pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> 
                 ogre.stage = OgreStage::Winding;
                 commands.push(Cmd::Root);
                 let (row, windup) = match attack {
-                    OgreAttack::Stomp => (1, enemies::OGRE_STOMP_WINDUP),
+                    OgreAttack::Jump => (6, enemies::OGRE_JUMP_WINDUP),
                     OgreAttack::Throw => (2, enemies::OGRE_THROW_WINDUP),
                     OgreAttack::Slam => (3, enemies::OGRE_SLAM_WINDUP),
                     OgreAttack::Roar => (4, enemies::OGRE_ROAR_WINDUP),
@@ -119,7 +119,7 @@ pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> 
             ogre.timer -= dt;
             if ogre.timer <= 0.0 {
                 let (command, recover) = match ogre.attack {
-                    OgreAttack::Stomp => (Cmd::Ring, enemies::OGRE_STOMP_RECOVER),
+                    OgreAttack::Jump => (Cmd::Ring, enemies::OGRE_JUMP_RECOVER),
                     OgreAttack::Throw => (
                         Cmd::Rats(enemies::OGRE_THROW_RATS),
                         enemies::OGRE_THROW_RECOVER,
@@ -224,18 +224,24 @@ fn execute(
         Cmd::Ring => {
             sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
             let origin = at + Vec2::new(0.0, RING_DROP);
-            for index in 0..enemies::OGRE_STOMP_RING {
-                let angle = index as f32 / enemies::OGRE_STOMP_RING as f32 * std::f32::consts::TAU;
-                spawn_rock(
-                    world,
-                    physics,
-                    ProjectileKind::GolemRock,
-                    origin,
-                    Vec2::from_angle(angle),
-                    enemies::OGRE_STOMP_DAMAGE,
-                    room,
-                    textures,
-                );
+            for ring in 0..enemies::OGRE_JUMP_RINGS {
+                let count = enemies::OGRE_JUMP_RING;
+                let reach = ring as f32 * enemies::OGRE_JUMP_GAP;
+                let turn = ring as f32 * 0.5 / count as f32 * std::f32::consts::TAU;
+                for index in 0..count {
+                    let angle = turn + index as f32 / count as f32 * std::f32::consts::TAU;
+                    let direction = Vec2::from_angle(angle);
+                    spawn_rock(
+                        world,
+                        physics,
+                        ProjectileKind::GolemRock,
+                        origin + direction * reach,
+                        direction,
+                        enemies::OGRE_STOMP_DAMAGE,
+                        room,
+                        textures,
+                    );
+                }
             }
         }
         Cmd::Fan => {
@@ -280,7 +286,7 @@ mod tests {
     fn ogre() -> OgreBoss {
         OgreBoss {
             stage: OgreStage::Walk,
-            attack: OgreAttack::Stomp,
+            attack: OgreAttack::Jump,
             last: None,
             timer: 0.0,
             cooldown: 0.0,
@@ -313,16 +319,16 @@ mod tests {
         boss.last = None;
         for _ in 0..200 {
             let attack = choose_attack(&mut boss, 600.0, enemies::OGRE_RAT_LIMIT);
-            assert!(matches!(attack, OgreAttack::Stomp | OgreAttack::Slam));
+            assert!(matches!(attack, OgreAttack::Jump | OgreAttack::Slam));
         }
     }
 
     #[test]
-    fn a_stomp_roots_rings_and_frees_the_ogre_again() {
+    fn a_jump_roots_rings_and_frees_the_ogre_again() {
         let mut boss = ogre();
         boss.stage = OgreStage::Winding;
-        boss.attack = OgreAttack::Stomp;
-        boss.last = Some(OgreAttack::Stomp);
+        boss.attack = OgreAttack::Jump;
+        boss.last = Some(OgreAttack::Jump);
         boss.timer = 0.01;
         let commands = run(&mut boss, 1.0);
         assert!(commands.contains(&Cmd::Ring));
