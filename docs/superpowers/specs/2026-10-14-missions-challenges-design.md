@@ -96,7 +96,7 @@ Numbers are starting values to be tuned in play.
 
 - A plain struct with a neutral `Default`:
   `player_max_health: Option<i32>`, `player_damage: f32`, `enemy_health: f32`,
-  `enemy_damage: f32`, `allowed_guns: Option<Vec<GunKind>>`, `shops: bool`,
+  `enemy_damage: f32`, `only_gun: Option<GunKind>`, `shops: bool`,
   `dodge: bool`, `armor_regen: bool`.
 - `InGameScene` receives it when a run starts (`start_run`) and keeps it for the run.
 - It is read only where it applies:
