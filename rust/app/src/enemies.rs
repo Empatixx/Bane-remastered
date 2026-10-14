@@ -506,15 +506,14 @@ impl EnemyKind {
                 )
             },
             Self::MiniGolem => EnemySpec {
-                death_row: 7,
                 role: Role::Summoned,
                 ..spec(
-                    tex::GOLEM,
-                    (14, 8),
-                    (100.0, 100.0),
-                    1.1,
-                    (4, 0.175),
-                    Some((14, 0.06)),
+                    tex::MINI_GOLEM,
+                    (6, 2),
+                    (32.0, 32.0),
+                    3.0,
+                    (4, 0.16),
+                    Some((6, 0.11)),
                     (6, 1, 9_000_000.0),
                 )
             },
