@@ -1,184 +1,98 @@
-import math
-import random
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
-OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "assets/textures/ingame"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "assets/textures/ingame"
 
-CLEAR = (0, 0, 0, 0)
-OUTLINE = (112, 92, 132, 255)
-BODY_D = (172, 152, 188, 255)
-BODY = (210, 196, 222, 255)
-BODY_L = (238, 230, 246, 255)
-BODY_H = (255, 255, 255, 255)
-STRAND = (226, 214, 236, 255)
-EYE = (60, 40, 70, 255)
-FANG = (255, 250, 236, 255)
-CW, CH = 40, 32
-PUDDLE = 9
-COLUMNS = 6
-
-
-WIDEST = 0.62
-FOOT = 0.8
+PALETTE = {
+    (136, 203, 89, 255): (224, 212, 236, 255),
+    (51, 112, 8, 255): (118, 98, 142, 255),
+    (160, 216, 121, 255): (248, 244, 252, 255),
+    (93, 173, 38, 255): (186, 168, 204, 255),
+    (109, 186, 57, 255): (204, 188, 220, 255),
+}
+STRAND = (236, 228, 244, 255)
+STRAND_D = (176, 156, 196, 255)
+BUBBLE = (250, 248, 255, 255)
+SRC_W, SRC_H = 32, 24
+CELL_W, CELL_H = 32, 32
+LIFT = 6
 
 
-def half_width(rx, t, y, wobble):
-    s_ = -1.0 + 1.78 * min(1.0, max(0.0, t))
-    p = 2.0 if s_ < 0 else 2.4
-    return rx * max(0.0, 1 - abs(s_) ** p) ** (1 / p) * 1.06 + math.sin(y * 0.6 + wobble) * 0.35
+def recolor(cell):
+    out = Image.new("RGBA", cell.size, (0, 0, 0, 0))
+    for y in range(cell.height):
+        for x in range(cell.width):
+            pixel = cell.getpixel((x, y))
+            if pixel[3]:
+                out.putpixel((x, y), PALETTE.get(pixel, pixel))
+    return out
 
 
-def blob(d, cx, base, rx, ry, wobble=0.0):
-    top = base - ry * 2
-    for y in range(int(top), int(base) + 1):
-        t = (y - top) / max(1.0, base - top)
-        half = half_width(rx, t, y, wobble)
-        d.line((cx - half - 1, y, cx + half + 1, y), fill=OUTLINE)
-    for y in range(int(top) + 1, int(base)):
-        t = (y - top) / max(1.0, base - top)
-        half = half_width(rx, t, y, wobble)
-        colour = BODY if t < 0.62 else BODY_D
-        d.line((cx - half, y, cx + half, y), fill=colour)
-    d.ellipse((cx - rx * 0.65, top + ry * 0.3, cx - rx * 0.05, top + ry * 0.75), fill=BODY_L)
-    d.point((cx - rx * 0.5, top + ry * 0.4), fill=BODY_H)
-    d.point((cx - rx * 0.4, top + ry * 0.4), fill=BODY_H)
-    return top
-
-
-def face(d, cx, top, base, jaw=0):
-    y = top + (base - top) * 0.45
-    for ex in (cx - 5, cx + 3):
-        d.rectangle((ex, y, ex + 2, y + 2), fill=EYE)
-        d.point((ex, y), fill=BODY_H)
-    d.line((cx - 4, y + 6 + jaw, cx + 4, y + 6 + jaw), fill=EYE)
-    d.point((cx - 3, y + 7 + jaw), fill=FANG)
-    d.point((cx + 3, y + 7 + jaw), fill=FANG)
-
-
-def bubbles(d, cx, top, base, phase):
-    for index, (dx, dy, r) in enumerate(((-7, 0.35, 2), (6, 0.55, 3), (1, 0.2, 1))):
-        x = cx + dx + math.sin(phase + index) * 0.8
-        y = top + (base - top) * dy - math.cos(phase + index) * 0.8
-        d.ellipse((x - r, y - r, x + r, y + r), outline=BODY_L)
-        d.point((x - r + 1, y - r + 1), fill=BODY_H)
-
-
-def drool(d, cx, base, length, sway):
-    x = cx - 8 + sway
-    d.line((x, base - 1, x + sway * 0.3, base + length), fill=STRAND)
-    d.ellipse((x - 1 + sway * 0.3, base + length - 1, x + 1 + sway * 0.3, base + length + 2), fill=BODY_L)
-    x2 = cx + 7 - sway
-    d.line((x2, base - 1, x2, base + length - 2), fill=STRAND)
-    d.point((x2, base + length - 1), fill=BODY_H)
-
-
-def idle(frame):
-    image = Image.new("RGBA", (CW, CH), CLEAR)
-    d = ImageDraw.Draw(image)
-    breathe = (0, 1, 0, -1)[frame]
-    base = 27
-    top = blob(d, 20, base, 14 + breathe, 10 - breathe, frame * 1.3)
-    face(d, 20, top, base)
-    bubbles(d, 20, top, base, frame * 1.4)
-    drool(d, 20, base, 3 + (frame % 2) * 2, (0, 1, 0, -1)[frame])
+def place(cell, dy=0):
+    image = Image.new("RGBA", (CELL_W, CELL_H), (0, 0, 0, 0))
+    image.paste(cell, (0, LIFT + dy), cell)
     return image
 
 
-def hop(frame):
-    poses = [
-        (15, 7, 27, 0),
-        (11, 11, 28, 0),
-        (9, 12, 25, 1),
-        (9, 11, 23, 1),
-        (14, 8, 27, 0),
-        (14, 9, 27, 0),
-    ]
-    rx, ry, base, jaw = poses[frame]
-    image = Image.new("RGBA", (CW, CH), CLEAR)
-    d = ImageDraw.Draw(image)
-    top = blob(d, 20, base, rx, ry, frame)
-    face(d, 20, top, base, jaw)
-    bubbles(d, 20, top, base, frame)
-    if frame in (2, 3):
-        d.line((20, base + 1, 20, base + 6), fill=STRAND)
-        d.point((20, base + 7), fill=BODY_H)
-    elif frame < 2 or frame > 3:
-        drool(d, 20, base, 2, 0)
-    return image
+def bottom_edge(image, x):
+    for y in range(CELL_H - 1, -1, -1):
+        if image.getpixel((x, y))[3]:
+            return y
+    return None
 
 
-def death(frame):
-    image = Image.new("RGBA", (CW, CH), CLEAR)
-    d = ImageDraw.Draw(image)
-    rng = random.Random(frame + 4)
-    if frame == 0:
-        top = blob(d, 20, 27, 15, 8, 0)
-        face(d, 20, top, 27, 2)
-        d.point((20, 29), fill=STRAND)
-    elif frame == 1:
-        top = blob(d, 20, 28, 17, 5, 0)
-        for k in range(6):
-            x, y = 20 + rng.uniform(-16, 16), 20 - rng.uniform(0, 8)
-            d.ellipse((x - 2, y - 2, x + 2, y + 2), fill=BODY_L, outline=OUTLINE)
-    else:
-        spread = min(frame * 2 + 4, PUDDLE)
-        d.ellipse((20 - spread, 27 - 3, 20 + spread, 29), fill=OUTLINE)
-        d.ellipse((20 - spread + 1, 27 - 2, 20 + spread - 1, 28), fill=BODY_D if frame < 5 else BODY)
-        if frame < 5:
-            d.ellipse((20 - spread + 3, 26, 20 + spread - 3, 27), fill=BODY_L)
-        for k in range(max(0, 9 - frame * 2)):
-            x = 20 + rng.uniform(-1, 1) * (8 + frame * 3)
-            y = 28 - rng.uniform(2, 16) * (1 - frame / 6)
-            r = rng.choice((1, 1, 2))
-            d.ellipse((x - r, y - r, x + r, y + r), fill=BODY_L, outline=OUTLINE if r > 1 else None)
-    return image
+def drool(image, columns, length):
+    for x in columns:
+        edge = bottom_edge(image, x)
+        if edge is None or edge + length >= CELL_H:
+            continue
+        for step in range(1, length + 1):
+            image.putpixel((x, edge + step), STRAND if step % 2 else STRAND_D)
+        if edge + length + 1 < CELL_H:
+            image.putpixel((x, edge + length + 1), BUBBLE)
 
 
-def puddle(d, spread, shine=True):
-    d.ellipse((20 - spread, 27 - 3, 20 + spread, 29), fill=OUTLINE)
-    d.ellipse((20 - spread + 1, 27 - 2, 20 + spread - 1, 28), fill=BODY)
-    if shine:
-        d.ellipse((20 - spread + 3, 26, 20 + spread - 4, 27), fill=BODY_L)
-
-
-def reform(frame):
-    """The puddle left by the first death pulls itself back together into a slime."""
-    image = Image.new("RGBA", (CW, CH), CLEAR)
-    d = ImageDraw.Draw(image)
-    rng = random.Random(frame + 40)
-    if frame == 0:
-        puddle(d, PUDDLE)
-        for _ in range(3):
-            x, y = 20 + rng.uniform(-6, 6), 24 - rng.uniform(0, 3)
-            d.point((x, y), fill=BODY_H)
-        return image
-    poses = [None, (11, 3, 28), (10, 6, 28), (9, 11, 27), (16, 7, 27), (14, 10, 27)]
-    rx, ry, base = poses[frame]
-    top = blob(d, 20, base, rx, ry, frame)
-    if frame >= 3:
-        face(d, 20, top, base)
-    if frame == 5:
-        bubbles(d, 20, top, base, 0)
-    for _ in range(max(0, 4 - frame)):
-        x, y = 20 + rng.uniform(-rx, rx), top - rng.uniform(1, 4)
-        d.ellipse((x - 1, y - 1, x + 1, y + 1), fill=BODY_L)
-    return image
+def bubbles(image, spots):
+    for x, y in spots:
+        if 0 < x < CELL_W - 1 and 0 < y < CELL_H - 1 and image.getpixel((x, y))[3]:
+            for dx, dy in ((0, 0),):
+                image.putpixel((x + dx, y + dy), BUBBLE)
+            for dx, dy in ((1, 0), (0, 1)):
+                if image.getpixel((x + dx, y + dy))[3]:
+                    image.putpixel((x + dx, y + dy), (214, 200, 230, 255))
 
 
 def main():
-    rows = [
-        [idle(i) for i in range(4)],
-        [death(i) for i in range(6)],
-        [hop(i) for i in range(6)],
-        [reform(i) for i in range(6)],
+    source = Image.open(ROOT / "assets/textures/ingame/slime.tga").convert("RGBA")
+    cells = [[recolor(source.crop((c * SRC_W, r * SRC_H, (c + 1) * SRC_W, (r + 1) * SRC_H))) for c in range(6)] for r in range(2)]
+    idle = [place(cells[0][i]) for i in range(4)]
+    for index, frame in enumerate(idle):
+        drool(frame, (9 + index % 2, 22 - index % 3), 1 + index % 2)
+        bubbles(frame, ((12 + index, 17), (21 - index, 19), (17, 14 + index % 2)))
+    death = [place(cells[1][i]) for i in range(6)]
+    for index in (0, 1):
+        drool(death[index], (10, 21), 1)
+        bubbles(death[index], ((13, 17), (20, 18)))
+    hop = [
+        place(cells[0][1], 1),
+        place(cells[0][3], -2),
+        place(cells[0][3], -5),
+        place(cells[0][3], -6),
+        place(cells[0][1], 0),
+        place(cells[0][0], 0),
     ]
-    sheet = Image.new("RGBA", (CW * COLUMNS, CH * len(rows)), CLEAR)
+    for index, frame in enumerate(hop):
+        drool(frame, (11, 20), 2 + (1 if index in (2, 3) else 0))
+        bubbles(frame, ((14, 15), (20, 17)))
+    reform = list(reversed(death))
+    rows = [idle, death, hop, reform]
+    sheet = Image.new("RGBA", (CELL_W * 6, CELL_H * 4), (0, 0, 0, 0))
     for row, frames in enumerate(rows):
         for column, frame in enumerate(frames):
-            sheet.paste(frame, (column * CW, row * CH))
+            sheet.paste(frame, (column * CELL_W, row * CELL_H))
     sheet.save(OUT / "saliva_slime.tga")
 
 
