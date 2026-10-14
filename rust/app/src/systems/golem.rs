@@ -576,14 +576,14 @@ pub(crate) fn tick_laser(
                 BeamPart,
                 Position(at),
                 Size(Vec2::splat(BEAM_GLOW)),
-                Color(Vec4::new(1.0, 0.55, 0.16, 0.5)),
+                Color(Vec4::new(0.2, 0.5, 1.0, 0.5)),
                 Layer(4),
             ));
             world.spawn((
                 BeamPart,
                 Position(at),
                 Size(Vec2::splat(BEAM_CORE)),
-                Color(Vec4::new(1.0, 0.97, 0.78, 1.0)),
+                Color(Vec4::new(0.85, 0.96, 1.0, 1.0)),
                 Layer(5),
             ));
             distance += BEAM_STEP;
@@ -591,7 +591,7 @@ pub(crate) fn tick_laser(
         world.spawn((
             BeamPart,
             Position(end),
-            Light::rgb(Vec2::ZERO, 255.0, 160.0, 60.0, 140.0, 1.6),
+            Light::rgb(Vec2::ZERO, 60.0, 140.0, 255.0, 140.0, 1.6),
         ));
         let mut seed =
             (eye.x as u32).wrapping_mul(2_654_435_761) ^ (end.y as u32) ^ (angle.to_bits());

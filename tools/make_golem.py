@@ -14,9 +14,9 @@ STONE = (116, 112, 124, 255)
 STONE_L = (158, 154, 166, 255)
 MOSS = (86, 112, 62, 255)
 MOSS_L = (122, 150, 82, 255)
-GLOW = (255, 214, 92, 255)
-GLOW_HOT = (255, 248, 190, 255)
-GLOW_D = (226, 128, 44, 255)
+GLOW = (96, 196, 255, 255)
+GLOW_HOT = (222, 246, 255, 255)
+GLOW_D = (48, 120, 232, 255)
 DARK = (22, 18, 28, 255)
 
 
@@ -74,7 +74,7 @@ def rock_shadow():
 
 def spark_sheet():
     sheet = Image.new("RGBA", (16, 4), (0, 0, 0, 0))
-    colours = [GLOW_HOT, GLOW, GLOW_D, (150, 84, 36, 255)]
+    colours = [GLOW_HOT, GLOW, GLOW_D, (30, 64, 150, 255)]
     for i in range(4):
         d = ImageDraw.Draw(sheet)
         size = 4 - i
@@ -83,8 +83,8 @@ def spark_sheet():
 
 
 def main():
-    projectile_sheet(12, 21, False).save(OUT / "golem_rock.tga")
-    projectile_sheet(32, 5, True).save(OUT / "golem_boulder.tga")
+    projectile_sheet(6, 21, False).save(OUT / "golem_rock.tga")
+    projectile_sheet(16, 5, True).save(OUT / "golem_boulder.tga")
     rock_shadow().save(OUT / "rock_shadow.tga")
     spark_sheet().save(OUT / "spark.tga")
 
