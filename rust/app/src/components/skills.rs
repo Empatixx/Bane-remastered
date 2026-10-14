@@ -61,6 +61,41 @@ pub(crate) enum ArgusStage {
     FadingIn,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Scorch {
+    pub(crate) remaining: f32,
+    pub(crate) total: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum HoundAttack {
+    Lunge,
+    Breath,
+    Howl,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum HoundStage {
+    Prowl,
+    Winding,
+    Acting,
+    Recovering,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct HoundBoss {
+    pub(crate) stage: HoundStage,
+    pub(crate) attack: HoundAttack,
+    pub(crate) last: Option<HoundAttack>,
+    pub(crate) timer: f32,
+    pub(crate) cooldown: f32,
+    pub(crate) pulse: f32,
+    pub(crate) charging: bool,
+    pub(crate) enraged: bool,
+    pub(crate) seed: u32,
+    pub(crate) idle: Clip,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum OgreAttack {
     Jump,

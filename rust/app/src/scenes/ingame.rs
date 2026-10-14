@@ -400,6 +400,14 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
+        systems::tick_hound(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+            dt,
+        );
+        systems::tick_scorches(&mut self.world, &mut self.sounds, dt);
         systems::tick_ogre(
             &mut self.world,
             &mut self.physics,

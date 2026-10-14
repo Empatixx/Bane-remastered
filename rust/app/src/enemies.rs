@@ -55,6 +55,28 @@ pub(crate) const GOLEM_LASER_REACH: f32 = 1100.0;
 pub(crate) const GOLEM_LASER_WIDTH: f32 = 26.0;
 pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_NEAR: f32 = 340.0;
+pub(crate) const HOUND_FIRST_COOLDOWN: f32 = 2.2;
+pub(crate) const HOUND_COOLDOWN: f32 = 2.4;
+pub(crate) const HOUND_RAGE_COOLDOWN: f32 = 1.3;
+pub(crate) const HOUND_RAGE_AT: f32 = 0.5;
+pub(crate) const HOUND_RAGE_SPEED: f32 = 1.25;
+pub(crate) const HOUND_NEAR: f32 = 360.0;
+pub(crate) const HOUND_LUNGE_WINDUP: f32 = 0.32;
+pub(crate) const HOUND_LUNGE_SECONDS: f32 = 0.85;
+pub(crate) const HOUND_LUNGE_SPEED: f32 = 3.6;
+pub(crate) const HOUND_LUNGE_RECOVER: f32 = 0.6;
+pub(crate) const HOUND_TRAIL_EVERY: f32 = 0.05;
+pub(crate) const HOUND_TRAIL_SECONDS: f32 = 1.6;
+pub(crate) const HOUND_BREATH_WINDUP: f32 = 0.25;
+pub(crate) const HOUND_BREATH_SECONDS: f32 = 0.55;
+pub(crate) const HOUND_BREATH_EVERY: f32 = 0.08;
+pub(crate) const HOUND_BREATH_SPREAD: f32 = 0.14;
+pub(crate) const HOUND_BREATH_RECOVER: f32 = 0.45;
+pub(crate) const HOUND_HOWL_WINDUP: f32 = 0.3;
+pub(crate) const HOUND_HOWL_RECOVER: f32 = 0.55;
+pub(crate) const HOUND_HOWL_RING: usize = 14;
+pub(crate) const HOUND_HOWL_RAGE_RING: usize = 20;
+pub(crate) const HOUND_FIRE_DAMAGE: i32 = 1;
 pub(crate) const OGRE_FIRST_COOLDOWN: f32 = 2.4;
 pub(crate) const OGRE_COOLDOWN: f32 = 3.0;
 pub(crate) const OGRE_RAGE_COOLDOWN: f32 = 1.8;
@@ -117,6 +139,7 @@ pub(crate) enum ProjectileKind {
     GolemRock,
     Boulder,
     ArgusShot,
+    Fireball,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -183,6 +206,19 @@ impl ProjectileKind {
                 force: 35_000_000.0,
                 homing: true,
                 lifetime: Some(5.0),
+            },
+            Self::Fireball => ProjectileSpec {
+                texture: tex::ARGUS_SHOT,
+                columns: 3,
+                rows: 2,
+                frame: Vec2::new(12.0, 12.0),
+                scale: 3.4,
+                idle: (3, 0.06),
+                impact: (3, 0.06),
+                light: [255.0, 120.0, 30.0, 26.0, 0.6],
+                force: 46_000_000.0,
+                homing: false,
+                lifetime: Some(0.9),
             },
             Self::ArgusShot => ProjectileSpec {
                 texture: tex::ARGUS_SHOT,
@@ -265,6 +301,7 @@ pub(crate) enum EnemyKind {
     Argus,
     ArgusEye,
     Ogre,
+    Hellhound,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -290,6 +327,7 @@ pub(crate) enum Behavior {
     GolemBoss,
     ArgusBoss,
     OgreBoss,
+    HoundBoss,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -399,7 +437,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 20] = [
+    pub(crate) const ALL: [Self; 21] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -418,6 +456,7 @@ impl EnemyKind {
         Self::Argus,
         Self::ArgusEye,
         Self::Ogre,
+        Self::Hellhound,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -591,6 +630,22 @@ impl EnemyKind {
                     (120, 2, 2_500_000.0),
                 )
             },
+            Self::Hellhound => EnemySpec {
+                min_floor: 2,
+                death_row: 4,
+                themes: &[Theme::Lava],
+                role: Role::Boss("Hellhound"),
+                behavior: Behavior::HoundBoss,
+                ..spec(
+                    tex::HELLHOUND,
+                    (8, 5),
+                    (128.0, 84.0),
+                    2.4,
+                    (8, 0.07),
+                    Some((8, 0.1)),
+                    (110, 2, 22_000_000.0),
+                )
+            },
             Self::Ogre => EnemySpec {
                 min_floor: 2,
                 death_row: 5,
@@ -738,6 +793,7 @@ fn boss_named(name: &str) -> Option<EnemyKind> {
         "golem" => Some(EnemyKind::Golem),
         "argus" => Some(EnemyKind::Argus),
         "ogre" => Some(EnemyKind::Ogre),
+        "hound" | "hellhound" => Some(EnemyKind::Hellhound),
         "spider" => Some(EnemyKind::Spider),
         "slime" | "kingslime" => Some(EnemyKind::KingSlime),
         _ => None,
@@ -818,8 +874,8 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 7);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 7 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 8);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 8 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));
@@ -895,6 +951,19 @@ mod tests {
                 "{theme:?}"
             );
         }
+        assert!(seen(Theme::Lava, &mut rng).contains(&EnemyKind::Hellhound));
+        for theme in [
+            Theme::Stone,
+            Theme::Ice,
+            Theme::Temple,
+            Theme::Sewer,
+            Theme::Moss,
+        ] {
+            assert!(
+                !seen(theme, &mut rng).contains(&EnemyKind::Hellhound),
+                "{theme:?}"
+            );
+        }
         let temple = seen(Theme::Temple, &mut rng);
         assert!(temple.contains(&EnemyKind::Golem) && temple.contains(&EnemyKind::Argus));
     }
@@ -905,6 +974,7 @@ mod tests {
         assert_eq!(boss_named("slime"), Some(EnemyKind::KingSlime));
         assert_eq!(boss_named("argus"), Some(EnemyKind::Argus));
         assert_eq!(boss_named("ogre"), Some(EnemyKind::Ogre));
+        assert_eq!(boss_named("hound"), Some(EnemyKind::Hellhound));
         assert_eq!(boss_named("nothing"), None);
     }
 
