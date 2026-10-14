@@ -255,6 +255,7 @@ fn hurt(
                 remaining: HURT_FLASH_SECONDS,
             },
         );
+        stats::record(world, Stat::Hurt, 1);
         return true;
     }
     false
@@ -550,5 +551,14 @@ mod tests {
             .advance(0.4);
         trap_hits_enemies(&mut world, 1.1);
         assert_eq!(health(&world), 10);
+    }
+
+    #[test]
+    fn hurting_the_player_is_recorded_for_the_floor() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(&mut world, &mut physics, Vec2::ZERO, &Textures::default());
+        assert!(hurt_player(&mut world, player, 1, &mut Vec::new()));
+        assert_eq!(stats::current(&world).hurt_this_floor, 1);
     }
 }

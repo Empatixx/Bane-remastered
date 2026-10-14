@@ -445,6 +445,10 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
+    pub(crate) fn index(self) -> usize {
+        Self::ALL.iter().position(|kind| *kind == self).unwrap_or(0)
+    }
+
     pub(crate) const ALL: [Self; 21] = [
         Self::Rat,
         Self::Snake,

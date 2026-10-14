@@ -328,6 +328,7 @@ mod tests {
             hits: 20,
             kills,
             items: 4,
+            ..RunStats::default()
         };
         (stats, summarize(stats, floor))
     }

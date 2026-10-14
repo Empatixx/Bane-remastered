@@ -82,6 +82,7 @@ pub(crate) fn use_item(world: &mut World, item: ItemKind, sounds: &mut Vec<Audio
             for wallet in world.query_mut::<&mut Wallet>().with::<&Player>() {
                 wallet.coins += 1;
             }
+            super::stats::record(world, super::stats::Stat::Gold, 1);
             sounds.push(AudioCommand::Effect(SoundEffect::Coin));
         }
         ItemKind::Ammo(ammo) => {
@@ -171,14 +172,17 @@ pub(crate) fn enemy_drops(
         .filter(|(_, animation)| animation.finished())
         .map(|(position, _)| position.0)
         .collect();
-    let kills = world
-        .query::<&Animation>()
-        .with::<(&Enemy, &Expiring)>()
+    let killed: Vec<crate::enemies::EnemyKind> = world
+        .query::<(&Enemy, &Animation)>()
+        .with::<&Expiring>()
         .without::<&crate::components::Minion>()
         .iter()
-        .filter(|animation| animation.finished())
-        .count();
-    super::stats::record(world, super::stats::Stat::Kill, kills as u32);
+        .filter(|(_, animation)| animation.finished())
+        .map(|(enemy, _)| enemy.kind)
+        .collect();
+    for kind in killed {
+        super::stats::record(world, super::stats::Stat::Kill(kind), 1);
+    }
     for position in dead {
         *kills_without_drop += 1;
         if drop_threshold_reached(*kills_without_drop, roll(DROP_ROLL_RANGE)) {
@@ -413,6 +417,36 @@ mod tests {
 
         assert_eq!(world.query::<&Pickup>().iter().count(), 1);
         assert_eq!(kills, 0);
+    }
+
+    #[test]
+    fn a_boss_that_finishes_dying_counts_as_a_kill_of_its_kind() {
+        let (mut world, textures) = arena();
+        let mut physics = Physics::new();
+        let golem = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Golem,
+            Vec2::new(400.0, 0.0),
+        );
+        let _ = world.insert_one(golem, Expiring);
+        if let Ok(mut animation) = world.get::<&mut Animation>(golem) {
+            animation.play(crate::enemies::EnemyKind::Golem.spec().death_clip());
+            animation.advance(5.0);
+        }
+
+        enemy_drops(&mut world, &mut 0, &textures, |_| 0);
+
+        let stats = super::super::stats::current(&world);
+        assert_eq!(stats.kills_of(crate::enemies::EnemyKind::Golem), 1);
+        assert_eq!(stats.kills, 1);
+    }
+
+    #[test]
+    fn picking_up_a_coin_adds_to_gold() {
+        let (mut world, _) = arena();
+        use_item(&mut world, ItemKind::Coin, &mut Vec::new());
+        assert_eq!(super::super::stats::current(&world).gold, 1);
     }
 
     #[test]

@@ -200,6 +200,7 @@ mod tests {
             hits: 10,
             kills: 8,
             items: 6,
+            ..RunStats::default()
         };
         DeathScreen::new(summarize(stats, 3))
     }

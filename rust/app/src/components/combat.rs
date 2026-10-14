@@ -91,6 +91,7 @@ pub(crate) struct Wallet {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Enemy {
     pub(crate) death: Clip,
+    pub(crate) kind: crate::enemies::EnemyKind,
 }
 
 #[derive(Debug, Clone, Copy)]

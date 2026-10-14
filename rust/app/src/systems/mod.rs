@@ -115,7 +115,9 @@ pub(crate) use skills::{
 pub(crate) use slot::{
     SLOT_COLUMNS, SLOT_IDLE, SLOT_ROWS, SPIN_COST, spin, tick_slot_machines, update_slot_prices,
 };
-pub(crate) use stats::{Summary, current as current_stats, summarize};
+pub(crate) use stats::{
+    Summary, close_floor as close_stats_floor, current as current_stats, summarize,
+};
 pub(crate) use steering::{steer_player, steer_player_on};
 pub(crate) use surfaces::{burn_on_lava, ripple_on_water, sync_liquids};
 pub(crate) use ui::{update_buttons, update_text_buttons};
