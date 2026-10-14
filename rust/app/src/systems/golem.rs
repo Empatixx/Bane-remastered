@@ -576,6 +576,14 @@ pub(crate) struct BeamStyle {
     pub(crate) light: [f32; 3],
     pub(crate) spark: Tex,
     pub(crate) damage: i32,
+    pub(crate) wave: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Ray {
+    pub(crate) eye: Vec2,
+    pub(crate) angle: f32,
+    pub(crate) phase: f32,
 }
 
 pub(crate) const BLUE_BEAM: BeamStyle = BeamStyle {
@@ -584,6 +592,7 @@ pub(crate) const BLUE_BEAM: BeamStyle = BeamStyle {
     light: [60.0, 140.0, 255.0],
     spark: tex::SPARK,
     damage: enemies::GOLEM_LASER_DAMAGE,
+    wave: 0.0,
 };
 
 pub(crate) fn draw_beam(
@@ -591,10 +600,10 @@ pub(crate) fn draw_beam(
     navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
-    eye: Vec2,
-    angle: f32,
+    ray: Ray,
     style: BeamStyle,
 ) {
+    let Ray { eye, angle, phase } = ray;
     let player = player_at(world);
     let end = beam_end(navigation, eye, angle);
     let direction = Vec2::from_angle(angle);
@@ -605,7 +614,9 @@ pub(crate) fn draw_beam(
         world.spawn((
             BeamPart,
             Position(at),
-            Size(Vec2::splat(BEAM_GLOW)),
+            Size(Vec2::splat(
+                BEAM_GLOW + style.wave * (phase + distance * 0.09).sin(),
+            )),
             Color(style.glow),
             Layer(4),
         ));
@@ -694,7 +705,12 @@ pub(crate) fn tick_laser(
             }
             golem.beam_angle
         };
-        draw_beam(world, navigation, textures, sounds, eye, angle, BLUE_BEAM);
+        let ray = Ray {
+            eye,
+            angle,
+            phase: 0.0,
+        };
+        draw_beam(world, navigation, textures, sounds, ray, BLUE_BEAM);
     }
 }
 

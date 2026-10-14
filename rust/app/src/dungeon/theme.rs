@@ -62,6 +62,18 @@ impl Theme {
         }
     }
 
+    pub(crate) fn ladder_texture(self) -> Tex {
+        match self {
+            Self::Stone => tex::LADDER,
+            Self::Sewer => tex::LADDER_SEWER,
+            Self::Moss => tex::LADDER_MOSS,
+            Self::Spider => tex::LADDER_SPIDER,
+            Self::Ice => tex::LADDER_ICE,
+            Self::Lava => tex::LADDER_LAVA,
+            Self::Temple => tex::LADDER_TEMPLE,
+        }
+    }
+
     /// Every theme but stone is drawn with the wide tileset layout.
     pub(crate) fn wide_tiles(self) -> bool {
         self != Self::Stone
@@ -180,6 +192,10 @@ mod tests {
             all.iter().map(|theme| theme.tileset_texture()).collect();
 
         assert_eq!(textures.len(), all.len());
+        let ladders: std::collections::HashSet<_> =
+            all.iter().map(|theme| theme.ladder_texture()).collect();
+        assert_eq!(ladders.len(), all.len());
+        assert_eq!(Theme::Stone.ladder_texture(), tex::LADDER);
         assert_eq!(Theme::Stone.tileset_texture(), tex::TILESET);
         assert_eq!(Theme::Lava.tileset_texture(), tex::TILESET_LAVA);
         assert!(!Theme::Stone.wide_tiles());

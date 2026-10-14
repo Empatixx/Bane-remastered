@@ -12,7 +12,7 @@ use crate::components::{
     Trap, Velocity, Weapon,
 };
 use crate::dungeon::{
-    Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces,
+    Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces, Theme,
 };
 use crate::items::{DESPAWN_SECONDS, ItemKind};
 use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
@@ -434,8 +434,17 @@ pub(crate) fn tilemap(
     solid_cells
 }
 
-pub(crate) fn ladder(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+pub(crate) fn ladder(
+    world: &mut World,
+    top_left: Vec2,
+    theme: Theme,
+    textures: &Textures,
+) -> Entity {
     let entity = prop(world, Prop::Ladder, top_left, Look::DEFAULT, textures);
+    let _ = world.insert_one(
+        entity,
+        Sprite::cell(textures.get(theme.ladder_texture()), 0, 0, 1, 1),
+    );
     let _ = world.insert(
         entity,
         (
