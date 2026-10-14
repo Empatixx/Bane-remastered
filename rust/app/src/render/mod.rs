@@ -55,6 +55,7 @@ mod shader_tests {
         for entry in [
             "fs_blit",
             "fs_vignette",
+            "fs_slow",
             "fs_blur_horizontal",
             "fs_blur_vertical",
         ] {

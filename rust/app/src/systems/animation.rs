@@ -1,13 +1,23 @@
 use hecs::{Entity, World};
 
-use crate::components::{Animation, Expiring, Gate, Opening, Sprite, ThenPlay};
+use crate::components::{Animation, Enemy, EnemyBullet, Expiring, Gate, Opening, Sprite, ThenPlay};
 
 pub(crate) fn animate(world: &mut World, dt: f32) {
-    for (animation, sprite) in world
-        .query_mut::<(&mut Animation, &mut Sprite)>()
+    let hostile_dt = dt * super::time_scale(world);
+    for (animation, sprite, enemy, enemy_bullet) in world
+        .query_mut::<(
+            &mut Animation,
+            &mut Sprite,
+            Option<&Enemy>,
+            Option<&EnemyBullet>,
+        )>()
         .without::<&crate::components::Frozen>()
     {
-        animation.advance(dt);
+        if enemy.is_some() || enemy_bullet.is_some() {
+            animation.advance(hostile_dt);
+        } else {
+            animation.advance(dt);
+        }
         let uv = Sprite::cell_uv(
             animation.frame(),
             animation.row(),
@@ -104,6 +114,38 @@ mod tests {
 
     fn shown_frame(world: &World, entity: Entity) -> Option<usize> {
         world.get::<&Animation>(entity).ok().map(|a| a.frame())
+    }
+
+    #[test]
+    fn the_hourglass_slows_enemy_animations_but_not_the_rest() {
+        let mut world = World::new();
+        let player = prefabs::player(
+            &mut world,
+            &mut Physics::new(),
+            glam::Vec2::ZERO,
+            &Textures::default(),
+        );
+        let _ = world.insert_one(
+            player,
+            crate::components::TimeSlow {
+                remaining: crate::artefacts::TIME_SLOW_SECONDS / 2.0,
+            },
+        );
+        let clip = crate::clip::Clip {
+            row: 0,
+            frames: 4,
+            frame_time: 0.1,
+            looping: true,
+            flipped: false,
+        };
+        let sprite = Sprite::whole(crate::render::TextureId::WHITE);
+        let shot = world.spawn((EnemyBullet, Animation::new(4, 1, clip), sprite));
+        let torch = world.spawn((Animation::new(4, 1, clip), sprite));
+
+        animate(&mut world, 0.25);
+
+        assert_eq!(shown_frame(&world, shot), Some(0));
+        assert_eq!(shown_frame(&world, torch), Some(2));
     }
 
     #[test]

@@ -7,6 +7,8 @@ pub(crate) struct PostParams {
     pub(crate) vignette: f32,
     pub(crate) time: f32,
     pub(crate) time_based: bool,
+    pub(crate) time_slow: f32,
+    pub(crate) clock: f32,
 }
 
 impl PostParams {
@@ -16,6 +18,10 @@ impl PostParams {
 
     pub(crate) fn vignette_active(&self) -> bool {
         self.vignette > 0.0 || self.time_based
+    }
+
+    pub(crate) fn time_slow_active(&self) -> bool {
+        self.time_slow > 0.0
     }
 }
 
@@ -28,7 +34,9 @@ pub(super) struct PostUniform {
     vignette: f32,
     time: f32,
     time_based: f32,
-    padding: f32,
+    time_slow: f32,
+    clock: f32,
+    padding: [f32; 3],
 }
 
 impl PostUniform {
@@ -40,7 +48,9 @@ impl PostUniform {
             vignette: params.vignette,
             time: params.time,
             time_based: if params.time_based { 1.0 } else { 0.0 },
-            padding: 0.0,
+            time_slow: params.time_slow,
+            clock: params.clock,
+            padding: [0.0; 3],
         }
     }
 }
@@ -51,7 +61,7 @@ mod tests {
 
     #[test]
     fn the_uniform_has_the_size_the_shader_expects() {
-        assert_eq!(size_of::<PostUniform>(), 32);
+        assert_eq!(size_of::<PostUniform>(), 48);
     }
 
     #[test]
@@ -68,5 +78,10 @@ mod tests {
             ..PostParams::default()
         }
         .vignette_active());
+        assert!(PostParams {
+            time_slow: 0.5,
+            ..PostParams::default()
+        }
+        .time_slow_active());
     }
 }
