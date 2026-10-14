@@ -13,6 +13,7 @@ use crate::viewport::TARGET;
 const FROST_RIM: Vec4 = Vec4::new(0.7, 0.95, 1.0, 0.9);
 
 use super::hud::bar_draws;
+use super::lightning::Bolt;
 use super::minimap::minimap_draws;
 use super::shadow::shadow_draw;
 
@@ -96,6 +97,7 @@ pub(crate) fn collect_draws(
         .without::<&Hidden>()
         .without::<&EnemyArrow>()
         .without::<&Casing>()
+        .without::<&Bolt>()
         .iter()
     {
         let bob = Vec2::new(0.0, hover.map_or(0.0, Hover::offset));
@@ -185,6 +187,22 @@ pub(crate) fn collect_draws(
                 quad: Quad::with_uv(center, size.0, color.0, sprite.uv)
                     .lit(true)
                     .rotated(casing.angle),
+            },
+        ));
+    }
+    for (position, size, color, sprite, layer, bolt) in world
+        .query::<(&Position, &Size, &Color, &Sprite, &Layer, &Bolt)>()
+        .iter()
+    {
+        let center = position.0 - camera;
+        if off_screen(center, size.0) {
+            continue;
+        }
+        sorted.scene.push((
+            *layer,
+            Draw {
+                texture: sprite.texture,
+                quad: Quad::with_uv(center, size.0, color.0, sprite.uv).rotated(bolt.angle),
             },
         ));
     }
