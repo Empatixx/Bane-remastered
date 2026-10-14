@@ -8,10 +8,10 @@ use crate::components::{
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
     BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
     DeathBurst, DeathCloud, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse,
-    GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Health, Hits, Homing, Impact, Kin,
-    Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout, Minion, NoDrop, OgreAttack, OgreBoss,
-    OgreStage, Path, Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning, Sprite,
-    TrailLayer, Velocity, Wallet, WebSpitter,
+    GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Health, Hits, Homing, HoundAttack,
+    HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout,
+    Minion, NoDrop, OgreAttack, OgreBoss, OgreStage, Path, Pet, Player, Position, RoomId, RunStats,
+    Size, Smash, Spawning, Sprite, TrailLayer, Velocity, Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -252,6 +252,23 @@ pub(crate) fn enemy(
                         remaining: 0.0,
                     },
                 ),
+            );
+        }
+        Behavior::HoundBoss => {
+            let _ = world.insert_one(
+                entity,
+                HoundBoss {
+                    stage: HoundStage::Prowl,
+                    attack: HoundAttack::Lunge,
+                    last: None,
+                    timer: 0.0,
+                    cooldown: enemies::HOUND_FIRST_COOLDOWN,
+                    pulse: 0.0,
+                    charging: false,
+                    enraged: false,
+                    seed: 0x27D4_EB2F ^ (position.x as u32).wrapping_mul(19) ^ (position.y as u32),
+                    idle,
+                },
             );
         }
         Behavior::OgreBoss => {
