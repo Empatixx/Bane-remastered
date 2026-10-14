@@ -12,6 +12,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::golem::{play, player_at};
+use crate::systems::hostile::Hostile;
 
 const SPRITE_SCALE: f32 = 4.0;
 const EYES: [(f32, f32); 7] = [
@@ -249,14 +250,12 @@ fn orbiters_of(world: &World, owner: Entity) -> Vec<f32> {
         .collect()
 }
 
-pub(crate) fn tick_argus(
-    world: &mut World,
-    physics: &mut Physics,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_argus(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let bosses: Vec<(Entity, Vec2, i32, i32)> = world
         .query::<(Entity, &Position, &Health, &ArgusBoss)>()

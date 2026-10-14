@@ -13,6 +13,7 @@ use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
 use crate::systems::golem::{play, player_at, spark, spawn_rock};
+use crate::systems::hostile::Hostile;
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
 const MOUTH: Vec2 = Vec2::new(44.0, 29.0);
@@ -220,14 +221,12 @@ pub(crate) fn step(
     commands
 }
 
-pub(crate) fn tick_mimic(
-    world: &mut World,
-    physics: &mut Physics,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_mimic(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let mobs = world.query::<&Minion>().iter().count();
     let baits = world.query::<&Bait>().iter().count();
@@ -431,12 +430,10 @@ fn spawn_bait(world: &mut World, at: Vec2, textures: &Textures) -> Entity {
     ))
 }
 
-pub(crate) fn tick_baits(
-    world: &mut World,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_baits(world: &mut World, hostile: &mut Hostile<'_>) {
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let player = player_at(world);
     let mut gone = Vec::new();
     let mut snapped = Vec::new();
@@ -588,8 +585,17 @@ mod tests {
         let mut world = World::new();
         let textures = Textures::default();
         let bait = spawn_bait(&mut world, Vec2::new(100.0, 100.0), &textures);
+        let mut physics = Physics::new();
+        let navigation = Navigation::new(&[]);
         let mut sounds = Vec::new();
-        tick_baits(&mut world, &textures, &mut sounds, 0.1);
+        let mut hostile = Hostile {
+            physics: &mut physics,
+            navigation: &navigation,
+            textures: &textures,
+            sounds: &mut sounds,
+            dt: 0.1,
+        };
+        tick_baits(&mut world, &mut hostile);
         assert!(world.get::<&Bait>(bait).is_ok());
         world.despawn(bait).ok();
         clear_baits(&mut world);

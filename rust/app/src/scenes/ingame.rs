@@ -510,58 +510,25 @@ impl Scene for InGameScene {
             dt,
         );
         systems::chase_player(&mut self.world, &self.flow, hostile_dt);
-        systems::tick_golem(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_rock_falls(
-            &mut self.world,
-            &mut self.physics,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_icicle_bats(&mut self.world, &assets.textures, hostile_dt);
-        systems::tick_ember_rats(&mut self.world, &mut self.sounds, self.clock);
-        systems::tick_swoopers(&mut self.world, &mut self.sounds, hostile_dt);
-        systems::tick_magma_slimes(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
-        systems::tick_worms(
-            &mut self.world,
-            &mut self.physics,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_ashes(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
+        let mut hostile = systems::Hostile {
+            physics: &mut self.physics,
+            navigation: &self.navigation,
+            textures: &assets.textures,
+            sounds: &mut self.sounds,
+            dt: hostile_dt,
+        };
+        systems::tick_golem(&mut self.world, &mut hostile);
+        systems::tick_rock_falls(&mut self.world, &mut hostile);
+        systems::tick_icicle_bats(&mut self.world, &mut hostile);
+        systems::tick_ember_rats(&mut self.world, &mut *hostile.sounds, self.clock);
+        systems::tick_swoopers(&mut self.world, &mut hostile);
+        systems::tick_magma_slimes(&mut self.world, &mut hostile);
+        systems::tick_worms(&mut self.world, &mut hostile);
+        systems::tick_ashes(&mut self.world, &mut hostile);
         systems::tick_hoppers(&mut self.world, hostile_dt);
-        systems::tick_baits(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
-        systems::tick_mimic(
-            &mut self.world,
-            &mut self.physics,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_hound(
-            &mut self.world,
-            &mut self.physics,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
+        systems::tick_baits(&mut self.world, &mut hostile);
+        systems::tick_mimic(&mut self.world, &mut hostile);
+        systems::tick_hound(&mut self.world, &mut hostile);
         let boss_room = self.dungeon.as_ref().and_then(|dungeon| {
             dungeon
                 .rooms
@@ -569,44 +536,12 @@ impl Scene for InGameScene {
                 .find(|room| room.kind == RoomKind::Boss)
                 .map(|room| (room.origin.0, room.origin.1, room.columns, room.rows))
         });
-        systems::tick_magma_spread(
-            &mut self.world,
-            &self.navigation,
-            boss_room,
-            &assets.textures,
-            hostile_dt,
-        );
-        systems::tick_magma(&mut self.world, &mut self.sounds, hostile_dt);
-        systems::tick_ogre(
-            &mut self.world,
-            &mut self.physics,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_argus(
-            &mut self.world,
-            &mut self.physics,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_laser(
-            &mut self.world,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_flames(
-            &mut self.world,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
+        systems::tick_magma_spread(&mut self.world, &mut hostile, boss_room);
+        systems::tick_magma(&mut self.world, &mut hostile);
+        systems::tick_ogre(&mut self.world, &mut hostile);
+        systems::tick_argus(&mut self.world, &mut hostile);
+        systems::tick_laser(&mut self.world, &mut hostile);
+        systems::tick_flames(&mut self.world, &mut hostile);
         systems::tick_orbiters(&mut self.world, &mut self.physics, hostile_dt);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
@@ -680,13 +615,14 @@ impl Scene for InGameScene {
         systems::tick_ghosts(&mut self.world, dt);
         systems::tick_turrets(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::trap_hits_enemies(&mut self.world, dt);
-        systems::tick_arrow_traps(
-            &mut self.world,
-            &self.navigation,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
+        let mut hostile = systems::Hostile {
+            physics: &mut self.physics,
+            navigation: &self.navigation,
+            textures: &assets.textures,
+            sounds: &mut self.sounds,
+            dt: hostile_dt,
+        };
+        systems::tick_arrow_traps(&mut self.world, &mut hostile);
         systems::break_objects(
             &mut self.world,
             &mut self.physics,

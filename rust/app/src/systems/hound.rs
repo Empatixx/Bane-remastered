@@ -14,6 +14,7 @@ use crate::prefabs;
 use crate::systems::golem::{
     BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, turn_towards,
 };
+use crate::systems::hostile::Hostile;
 
 const SPRITE_SCALE: f32 = 2.4;
 const CELL: Vec2 = Vec2::new(64.0, 42.0);
@@ -202,14 +203,12 @@ fn head_offset(index: usize, mirrored: bool) -> Vec2 {
     Vec2::new(if mirrored { -offset.x } else { offset.x }, offset.y)
 }
 
-pub(crate) fn tick_hound(
-    world: &mut World,
-    physics: &mut Physics,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_hound(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let bosses: Vec<(Entity, Vec2, i32, i32)> = world
         .query::<(Entity, &Position, &Health, &HoundBoss)>()
@@ -369,13 +368,11 @@ fn warn(world: &mut World, navigation: &Navigation, ray: Ray) {
     }
 }
 
-pub(crate) fn tick_flames(
-    world: &mut World,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_flames(world: &mut World, hostile: &mut Hostile<'_>) {
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let active: Vec<(Entity, Vec2, bool, bool, f32)> = world
         .query::<(Entity, &Position, &HoundBoss)>()

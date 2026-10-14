@@ -2,15 +2,14 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
-use crate::audio::AudioCommand;
 use crate::components::{
     Animation, ArrowTrap, Body, Bullet, Clip, Color, EnemyBullet, Expiring, FloorPatch, Health,
     Layer, Lit, PatchKind, Player, Position, Size, Sprite, TrapArrow,
 };
 use crate::geometry;
-use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::systems::damage::hurt_player;
+use crate::systems::hostile::Hostile;
 
 const ARROW_PERIOD: f32 = 2.4;
 const ARROW_SPEED: f32 = 520.0;
@@ -45,13 +44,11 @@ fn impact(world: &mut World, at: Vec2, textures: &Textures) {
     ));
 }
 
-pub(crate) fn tick_arrow_traps(
-    world: &mut World,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_arrow_traps(world: &mut World, hostile: &mut Hostile<'_>) {
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let Some((player, player_at, player_size)) = world
         .query::<(Entity, &Position, &Size)>()
         .with::<(&Player, &Health)>()
@@ -184,6 +181,7 @@ pub(crate) fn slow_bullets_in_webs(world: &mut World, physics: &mut Physics, dt:
 #[cfg(test)]
 mod tests {
     use crate::components::{Armor, Invulnerable};
+    use crate::navigation::Navigation;
     use crate::physics::Physics;
     use crate::prefabs;
 
@@ -196,6 +194,19 @@ mod tests {
             armor.current = 0;
         }
         (world, player)
+    }
+
+    fn tick_traps(world: &mut World, navigation: &Navigation, dt: f32) {
+        let mut physics = Physics::new();
+        let mut sounds = Vec::new();
+        let mut hostile = Hostile {
+            physics: &mut physics,
+            navigation,
+            textures: &Textures::default(),
+            sounds: &mut sounds,
+            dt,
+        };
+        tick_arrow_traps(world, &mut hostile);
     }
 
     fn trap_at(world: &mut World, at: Vec2, timer: f32) {
@@ -212,13 +223,7 @@ mod tests {
         trap_at(&mut world, Vec2::new(200.0, 100.0), 0.0);
         let navigation = Navigation::new(&[]);
 
-        tick_arrow_traps(
-            &mut world,
-            &navigation,
-            &Textures::default(),
-            &mut Vec::new(),
-            0.016,
-        );
+        tick_traps(&mut world, &navigation, 0.016);
 
         assert_eq!(arrows(&world), 1);
         let y = world
@@ -236,13 +241,7 @@ mod tests {
         trap_at(&mut world, Vec2::new(200.0, 100.0), 0.0);
         let navigation = Navigation::new(&[]);
 
-        tick_arrow_traps(
-            &mut world,
-            &navigation,
-            &Textures::default(),
-            &mut Vec::new(),
-            0.016,
-        );
+        tick_traps(&mut world, &navigation, 0.016);
 
         assert_eq!(arrows(&world), 0);
     }
@@ -255,13 +254,7 @@ mod tests {
         let before = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
 
         for _ in 0..90 {
-            tick_arrow_traps(
-                &mut world,
-                &navigation,
-                &Textures::default(),
-                &mut Vec::new(),
-                0.016,
-            );
+            tick_traps(&mut world, &navigation, 0.016);
         }
 
         let after = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
@@ -276,13 +269,7 @@ mod tests {
         let navigation = Navigation::new(&[(3, 3), (3, 4)]);
 
         for _ in 0..60 {
-            tick_arrow_traps(
-                &mut world,
-                &navigation,
-                &Textures::default(),
-                &mut Vec::new(),
-                0.016,
-            );
+            tick_traps(&mut world, &navigation, 0.016);
         }
 
         assert!(world.query::<&TrapArrow>().iter().all(|_| false) || arrows(&world) <= 1);
@@ -388,13 +375,7 @@ mod tests {
         let navigation = Navigation::new(&[(3, 3), (3, 4)]);
 
         for _ in 0..80 {
-            tick_arrow_traps(
-                &mut world,
-                &navigation,
-                &Textures::default(),
-                &mut Vec::new(),
-                0.016,
-            );
+            tick_traps(&mut world, &navigation, 0.016);
         }
 
         assert!(impacts(&world) >= 1);
@@ -407,13 +388,7 @@ mod tests {
         let navigation = Navigation::new(&[]);
 
         for _ in 0..40 {
-            tick_arrow_traps(
-                &mut world,
-                &navigation,
-                &Textures::default(),
-                &mut Vec::new(),
-                0.016,
-            );
+            tick_traps(&mut world, &navigation, 0.016);
         }
 
         assert!(impacts(&world) >= 1);
@@ -425,13 +400,7 @@ mod tests {
         trap_at(&mut world, Vec2::new(224.0, 96.0), 0.0);
         let navigation = Navigation::new(&[(3, 1), (9, 15)]);
 
-        tick_arrow_traps(
-            &mut world,
-            &navigation,
-            &Textures::default(),
-            &mut Vec::new(),
-            0.016,
-        );
+        tick_traps(&mut world, &navigation, 0.016);
         let first = world
             .query::<&Size>()
             .with::<&TrapArrow>()
@@ -441,13 +410,7 @@ mod tests {
         assert!(first.is_some_and(|height| height < ARROW_SIZE.y / 2.0));
 
         for _ in 0..30 {
-            tick_arrow_traps(
-                &mut world,
-                &navigation,
-                &Textures::default(),
-                &mut Vec::new(),
-                0.016,
-            );
+            tick_traps(&mut world, &navigation, 0.016);
         }
         let grown = world
             .query::<&Size>()

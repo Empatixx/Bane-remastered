@@ -12,6 +12,7 @@ use crate::components::{
 use crate::enemies;
 use crate::physics::Physics;
 use crate::prefabs;
+use crate::systems::hostile::Hostile;
 
 const ICICLE_SIZE: Vec2 = Vec2::new(30.0, 45.0);
 const ICICLE_SHADOW: Vec2 = Vec2::new(56.0, 26.0);
@@ -41,7 +42,9 @@ pub(crate) fn chill_player(world: &mut World, player: Entity) {
 }
 
 /// Icicle bats near the player drop an icicle on where the player stands.
-pub(crate) fn tick_icicle_bats(world: &mut World, textures: &Textures, dt: f32) {
+pub(crate) fn tick_icicle_bats(world: &mut World, hostile: &mut Hostile<'_>) {
+    let textures = hostile.textures;
+    let dt = hostile.dt;
     let Some((_, player, _)) = super::golem::player_body(world) else {
         return;
     };
@@ -258,21 +261,20 @@ mod tests {
             EnemyKind::IcicleBat,
             at + Vec2::new(200.0, 0.0),
         );
-        tick_icicle_bats(
+        crate::systems::hostile::tick_for_test(
             &mut world,
-            &Textures::default(),
+            &mut physics,
             enemies::ICICLE_COOLDOWN * 2.0,
+            tick_icicle_bats,
         );
         assert_eq!(world.query::<&FallingRock>().iter().count(), 1);
 
         let before = toughness(&world, player);
-        crate::systems::tick_rock_falls(
+        crate::systems::hostile::tick_for_test(
             &mut world,
             &mut physics,
-            &crate::navigation::Navigation::default(),
-            &Textures::default(),
-            &mut Vec::new(),
             enemies::ICICLE_FALL + 0.1,
+            crate::systems::tick_rock_falls,
         );
         assert_eq!(world.query::<&FallingRock>().iter().count(), 0);
         assert!(toughness(&world, player) < before);

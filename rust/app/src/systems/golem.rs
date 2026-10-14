@@ -14,6 +14,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
+use crate::systems::hostile::Hostile;
 
 const ROCK_RING_ORIGIN_DROP: f32 = 60.0;
 const EYE_HEIGHT: f32 = 45.0;
@@ -269,13 +270,11 @@ pub(crate) fn turn_towards(current: f32, wanted: f32, step: f32) -> f32 {
     current + difference.clamp(-step, step)
 }
 
-pub(crate) fn tick_golem(
-    world: &mut World,
-    physics: &mut Physics,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let target = player_at(world);
     let golems: Vec<(Entity, Vec2, i32, i32)> = world
         .query::<(Entity, &Position, &Health, &GolemBoss)>()
@@ -454,14 +453,12 @@ pub(crate) fn drop_rock(
     ));
 }
 
-pub(crate) fn tick_rock_falls(
-    world: &mut World,
-    physics: &mut Physics,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_rock_falls(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let mut landed = Vec::new();
     for (entity, fall, position) in world.query_mut::<(Entity, &mut RockFall, &Position)>() {
         fall.remaining -= dt;
@@ -721,13 +718,11 @@ pub(crate) fn draw_beam(
     }
 }
 
-pub(crate) fn tick_laser(
-    world: &mut World,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_laser(world: &mut World, hostile: &mut Hostile<'_>) {
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     clear_beam(world);
     let player = player_at(world);
     let firing: Vec<(Entity, Vec2, bool)> = world

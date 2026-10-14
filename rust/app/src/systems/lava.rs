@@ -19,6 +19,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
+use crate::systems::hostile::Hostile;
 
 const EMBER_GLOW: [f32; 3] = [255.0, 120.0, 30.0];
 const SWOOP_RANGE: f32 = 460.0;
@@ -118,7 +119,9 @@ pub(crate) fn tick_ember_rats(world: &mut World, sounds: &mut Vec<AudioCommand>,
 // ---------- flame bat ----------
 
 /// Flame bats circle, flare up for a moment, then swoop fast through the player.
-pub(crate) fn tick_swoopers(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
+pub(crate) fn tick_swoopers(world: &mut World, hostile: &mut Hostile<'_>) {
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let player = player_at(world).map(|(_, at, _)| at);
     let mut flare = Vec::new();
     let mut calm = Vec::new();
@@ -204,13 +207,11 @@ pub(crate) fn death_ashes(world: &mut World, physics: &mut Physics, textures: &T
 }
 
 /// Ash that is shot apart is gone; ash left alone rises as a new flame bat.
-pub(crate) fn tick_ashes(
-    world: &mut World,
-    physics: &mut Physics,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_ashes(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let mut gone = Vec::new();
     let mut risen = Vec::new();
     for (entity, ash, health, position, room) in
@@ -244,12 +245,10 @@ pub(crate) fn tick_ashes(
 
 /// Magma slimes take turns between molten (fast, open to hits) and crusted
 /// (slow, bullets do nothing), and lob magma at the player.
-pub(crate) fn tick_magma_slimes(
-    world: &mut World,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_magma_slimes(world: &mut World, hostile: &mut Hostile<'_>) {
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let player = player_at(world).map(|(_, at, _)| at);
     let mut turned = Vec::new();
     let mut lobs = Vec::new();
@@ -368,14 +367,12 @@ pub(crate) fn magma_lands(
 
 /// Lava worms come up out of the floor near the player, spit a few magma
 /// shots, sink, and come up somewhere else. Only while up can they be hit.
-pub(crate) fn tick_worms(
-    world: &mut World,
-    physics: &mut Physics,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_worms(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let player = player_at(world).map(|(_, at, _)| at);
     let mut changes: Vec<(Entity, WormStage, Vec2, Burrower)> = Vec::new();
     let mut shots: Vec<(Entity, Vec2)> = Vec::new();
@@ -591,19 +588,34 @@ mod tests {
             at + Vec2::new(200.0, 0.0),
         );
         let base = world.get::<&Swooper>(bat).expect("swooper").base_speed;
-        tick_swoopers(&mut world, &mut Vec::new(), enemies::SWOOP_EVERY * 2.0);
+        crate::systems::hostile::tick_for_test(
+            &mut world,
+            &mut physics,
+            enemies::SWOOP_EVERY * 2.0,
+            tick_swoopers,
+        );
         assert_eq!(
             world.get::<&Swooper>(bat).expect("bat").stage,
             SwoopStage::Windup
         );
         assert_eq!(world.get::<&Chase>(bat).expect("bat").speed, 0.0);
-        tick_swoopers(&mut world, &mut Vec::new(), enemies::SWOOP_WINDUP + 0.01);
+        crate::systems::hostile::tick_for_test(
+            &mut world,
+            &mut physics,
+            enemies::SWOOP_WINDUP + 0.01,
+            tick_swoopers,
+        );
         assert_eq!(
             world.get::<&Swooper>(bat).expect("bat").stage,
             SwoopStage::Dive
         );
         assert!(world.get::<&Chase>(bat).expect("bat").speed > base * 3.0);
-        tick_swoopers(&mut world, &mut Vec::new(), enemies::SWOOP_DIVE + 0.01);
+        crate::systems::hostile::tick_for_test(
+            &mut world,
+            &mut physics,
+            enemies::SWOOP_DIVE + 0.01,
+            tick_swoopers,
+        );
         assert_eq!(
             world.get::<&Swooper>(bat).expect("bat").stage,
             SwoopStage::Circle
@@ -632,12 +644,11 @@ mod tests {
         death_ashes(&mut world, &mut physics, &textures);
         let _ = world.despawn(bat);
         assert_eq!(world.query::<&AshPile>().iter().count(), 1);
-        tick_ashes(
+        crate::systems::hostile::tick_for_test(
             &mut world,
             &mut physics,
-            &textures,
-            &mut Vec::new(),
             enemies::ASH_REBIRTH + 0.1,
+            tick_ashes,
         );
         assert_eq!(world.query::<&AshPile>().iter().count(), 0);
         assert_eq!(bats(&world), 1);
@@ -665,7 +676,7 @@ mod tests {
             .next()
             .expect("ash");
         hit(&mut world, ash, enemies::ASH_HEALTH);
-        tick_ashes(&mut world, &mut physics, &textures, &mut Vec::new(), 0.1);
+        crate::systems::hostile::tick_for_test(&mut world, &mut physics, 0.1, tick_ashes);
         assert_eq!(world.query::<&AshPile>().iter().count(), 0);
         assert_eq!(bats(&world), 1, "shot ash never rises");
     }
@@ -680,20 +691,20 @@ mod tests {
             Vec2::new(100.0, 100.0),
         );
         let full = world.get::<&Health>(slime).expect("slime").current;
-        tick_magma_slimes(
+        crate::systems::hostile::tick_for_test(
             &mut world,
-            &Textures::default(),
-            &mut Vec::new(),
+            &mut physics,
             enemies::MAGMA_TURN + 0.01,
+            tick_magma_slimes,
         );
         assert!(world.get::<&MagmaShell>(slime).expect("slime").crusted);
         hit(&mut world, slime, 2);
         assert_eq!(world.get::<&Health>(slime).expect("slime").current, full);
-        tick_magma_slimes(
+        crate::systems::hostile::tick_for_test(
             &mut world,
-            &Textures::default(),
-            &mut Vec::new(),
+            &mut physics,
             enemies::MAGMA_TURN + 0.01,
+            tick_magma_slimes,
         );
         hit(&mut world, slime, 2);
         assert!(world.get::<&Health>(slime).expect("slime").current < full);
@@ -709,11 +720,11 @@ mod tests {
             EnemyKind::MagmaSlime,
             at + Vec2::new(250.0, 0.0),
         );
-        tick_magma_slimes(
+        crate::systems::hostile::tick_for_test(
             &mut world,
-            &Textures::default(),
-            &mut Vec::new(),
+            &mut physics,
             enemies::MORTAR_EVERY * 2.0,
+            tick_magma_slimes,
         );
         let target = world
             .query::<(&RockFall, &Position)>()
@@ -723,13 +734,11 @@ mod tests {
             .expect("a lobbed ball");
         assert_eq!(target, at);
         let before = toughness(&world, player);
-        crate::systems::tick_rock_falls(
+        crate::systems::hostile::tick_for_test(
             &mut world,
             &mut physics,
-            &crate::navigation::Navigation::default(),
-            &Textures::default(),
-            &mut Vec::new(),
             enemies::MORTAR_FLIGHT + 0.1,
+            crate::systems::tick_rock_falls,
         );
         assert!(toughness(&world, player) < before);
     }
@@ -739,14 +748,7 @@ mod tests {
     }
 
     fn step(world: &mut World, physics: &mut Physics, seconds: f32) {
-        tick_worms(
-            world,
-            physics,
-            &Navigation::default(),
-            &Textures::default(),
-            &mut Vec::new(),
-            seconds,
-        );
+        crate::systems::hostile::tick_for_test(world, physics, seconds, tick_worms);
     }
 
     fn magma_shots(world: &World) -> usize {

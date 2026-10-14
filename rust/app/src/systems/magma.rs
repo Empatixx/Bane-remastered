@@ -2,7 +2,6 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
-use crate::audio::AudioCommand;
 use crate::components::{
     Color, Dodge, Health, HoundBoss, Layer, Light, Liquid, Magma, MagmaSpreader, Size,
 };
@@ -13,6 +12,7 @@ use crate::prefabs;
 use crate::props::{Look, Prop};
 use crate::systems::damage::hurt_player_through_armor;
 use crate::systems::golem::player_body;
+use crate::systems::hostile::Hostile;
 use crate::tilemap::TILE_SIZE;
 
 const COLD: f32 = 0.32;
@@ -71,11 +71,12 @@ pub(crate) fn plan(navigation: &Navigation, room: TileRect, seed: &mut u32) -> V
 
 pub(crate) fn tick_magma_spread(
     world: &mut World,
-    navigation: &Navigation,
+    hostile: &mut Hostile<'_>,
     room: Option<TileRect>,
-    textures: &Textures,
-    dt: f32,
 ) {
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let dt = hostile.dt;
     let Some(room) = room else {
         return;
     };
@@ -161,7 +162,9 @@ pub(crate) fn burns(magma: &Magma) -> bool {
     heat(magma) >= 1.0 && cooling(magma) > 0.0
 }
 
-pub(crate) fn tick_magma(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
+pub(crate) fn tick_magma(world: &mut World, hostile: &mut Hostile<'_>) {
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let mut gone = Vec::new();
     for (entity, magma, color, light, size) in
         world.query_mut::<(Entity, &mut Magma, &mut Color, &mut Light, &Size)>()

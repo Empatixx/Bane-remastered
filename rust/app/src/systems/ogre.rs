@@ -12,6 +12,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::golem::{play, player_at, spawn_rock};
+use crate::systems::hostile::Hostile;
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const RING_DROP: f32 = 110.0;
@@ -158,14 +159,12 @@ pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> 
     commands
 }
 
-pub(crate) fn tick_ogre(
-    world: &mut World,
-    physics: &mut Physics,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    dt: f32,
-) {
+pub(crate) fn tick_ogre(world: &mut World, hostile: &mut Hostile<'_>) {
+    let physics = &mut *hostile.physics;
+    let navigation = hostile.navigation;
+    let textures = hostile.textures;
+    let sounds = &mut *hostile.sounds;
+    let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let rats = world.query::<&Minion>().iter().count();
     let bosses: Vec<(Entity, Vec2, i32, i32)> = world
