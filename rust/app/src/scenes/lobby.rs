@@ -8,8 +8,11 @@ use crate::assets::tex;
 use crate::assets::{Assets, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
-use crate::components::{Blend, Interaction, UiAction};
+use crate::components::{
+    Blend, Hidden, Interaction, Loadout, Player, UiAction, Weapon, WeaponSlot,
+};
 use crate::controls::Action;
+use crate::guns::GunKind;
 use crate::input::Input;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
@@ -18,6 +21,7 @@ use crate::prefabs::{self, PLAYER_SIZE};
 use crate::profile::SharedProfile;
 use crate::props::{Look, Prop};
 use crate::render::Occluders;
+use crate::rng::Rng;
 use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::{self, TILE_SIZE};
@@ -36,8 +40,16 @@ const TALENT_COUNTER_COLOR: Vec4 = Vec4::new(222.0 / 255.0, 112.0 / 255.0, 38.0 
 const GOLD_COUNTER_COLOR: Vec4 = Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0);
 const POTS: [(f32, f32); 3] = [(14.0, 6.0), (13.0, 6.0), (12.0, 6.0)];
 
-const PROPS: [(Prop, f32, f32, Look); 22] = [
-    (Prop::WeaponRack, 22.75, 0.5, Look::DEFAULT),
+/// Practice targets in a loose group at the far end of the range, close enough
+/// for chain lightning to jump between them.
+const DUMMIES: [(f32, f32); 4] = [(35.6, 4.0), (37.4, 2.8), (37.4, 5.4), (39.2, 4.1)];
+/// The weapon table stands in the range, so a fresh upgrade can be tried out right away.
+const WEAPON_TABLE_AT: (f32, f32) = (30.5, 0.5);
+/// Where the range keeps its ammo, by the door.
+const AMMO_CRATE_AT: (f32, f32) = (30.3, 7.0);
+
+const PROPS: &[(Prop, f32, f32, Look)] = &[
+    // The hall.
     (Prop::WeaponRack, 9.25, 0.5, Look::DEFAULT),
     (Prop::Torch, 1.0, 2.0, Look::DEFAULT),
     (Prop::Torch, 10.0, 2.0, Look::FLIPPED),
@@ -47,18 +59,34 @@ const PROPS: [(Prop, f32, f32, Look); 22] = [
     (Prop::Bones, 23.0, 4.0, Look::DEFAULT),
     (Prop::Cobweb, 10.0, 1.0, Look::SECOND_ROW),
     (Prop::Cobweb, 18.0, 8.0, Look::DEFAULT),
+    (Prop::Cobweb, 27.0, 1.0, Look::FLIPPED),
     (Prop::Armorstand, 11.5, 1.75, Look::DEFAULT),
     (Prop::Armorstand, 16.5, 1.75, Look::DEFAULT),
     (Prop::Box, 26.0, 7.0, Look::DEFAULT),
     (Prop::Chains, 18.0, 0.0, Look::DEFAULT),
     (Prop::Chains, 5.0, 0.0, Look::DEFAULT),
-    (Prop::Rock, 26.0, 4.0, Look::DEFAULT),
+    (Prop::Rock, 25.0, 6.0, Look::DEFAULT),
     (Prop::Rock, 17.0, 5.0, Look::SECOND_ROW),
     (Prop::Rock, 3.0, 3.0, Look::DEFAULT),
     (Prop::Rock, 8.0, 7.0, Look::SECOND_ROW),
     (Prop::Bookshelf, 2.0, 0.0, Look::DEFAULT),
     (Prop::Bookshelf, 6.0, 0.0, Look::DEFAULT),
     (Prop::MapTable, 5.0, 5.0, Look::DEFAULT),
+    (Prop::Banner, 23.0, 0.0, Look::DEFAULT),
+    (Prop::Banner, 25.5, 0.0, Look::DEFAULT),
+    (Prop::LayingBook, 4.8, 3.0, Look::DEFAULT),
+    (Prop::LayingBook, 8.6, 2.8, Look::SECOND_ROW),
+    (Prop::Mushrooms, 1.2, 7.8, Look::DEFAULT),
+    (Prop::Mushrooms, 2.1, 8.0, Look::SECOND_ROW),
+    // The shooting range.
+    (Prop::WeaponRack, 35.5, 0.5, Look::DEFAULT),
+    (Prop::WeaponRack, 37.0, 0.5, Look::DEFAULT),
+    (Prop::Torch, 30.0, 2.0, Look::DEFAULT),
+    (Prop::Torch, 40.0, 2.0, Look::FLIPPED),
+    (Prop::Banner, 39.0, 0.0, Look::DEFAULT),
+    (Prop::Box, 39.6, 7.6, Look::DEFAULT),
+    (Prop::Bones, 36.5, 7.6, Look::SECOND_ROW),
+    (Prop::Cobweb, 40.0, 8.0, Look::FLIPPED),
 ];
 
 #[derive(Default)]
@@ -76,9 +104,84 @@ pub(crate) struct LobbyScene {
     clock: f32,
     sounds: Vec<AudioCommand>,
     profile: Option<SharedProfile>,
+    combat_rng: Rng,
+    /// The gun the range gave out, kept with its ammo while the player is in the hall.
+    range_gun: Option<Weapon>,
 }
 
 impl LobbyScene {
+    /// Hands the range gun over on the way in and takes it back on the way out,
+    /// and shows the weapon slot of the HUD only while it is in hand.
+    fn arm_for_range(&mut self) {
+        let armed = self.in_range();
+        for loadout in self.world.query_mut::<&mut Loadout>().with::<&Player>() {
+            match (armed, loadout.current().is_some()) {
+                (true, false) => {
+                    let gun = self
+                        .range_gun
+                        .take()
+                        .unwrap_or_else(|| loadout.fresh(GunKind::Pistol));
+                    loadout.add(gun);
+                }
+                (false, true) => self.range_gun = loadout.drop_current(),
+                _ => {}
+            }
+        }
+        let slots: Vec<_> = self
+            .world
+            .query::<hecs::Entity>()
+            .with::<&WeaponSlot>()
+            .iter()
+            .collect();
+        for slot in slots {
+            if armed {
+                let _ = self.world.remove_one::<Hidden>(slot);
+            } else {
+                let _ = self.world.insert_one(slot, Hidden);
+            }
+        }
+    }
+
+    fn held_gun(&self) -> Option<GunKind> {
+        self.world
+            .query::<&Loadout>()
+            .with::<&Player>()
+            .iter()
+            .find_map(|loadout| loadout.current().map(|weapon| weapon.kind))
+    }
+
+    /// Swaps the gun in hand for a fresh one of `kind`.
+    fn hand_over(&mut self, kind: GunKind) {
+        for loadout in self.world.query_mut::<&mut Loadout>().with::<&Player>() {
+            let fresh = loadout.fresh(kind);
+            loadout.drop_current();
+            loadout.add(fresh);
+        }
+    }
+
+    /// Fills the gun in hand and says which reload sound fits it.
+    fn refill_ammo(&mut self) -> Option<SoundEffect> {
+        self.world
+            .query_mut::<&mut Loadout>()
+            .with::<&Player>()
+            .into_iter()
+            .find_map(|loadout| loadout.current_mut())
+            .map(|weapon| {
+                weapon.refill();
+                weapon.spec().reload
+            })
+    }
+
+    /// Guns only fire in the shooting range, never in the hall.
+    fn in_range(&self) -> bool {
+        let range_left = tilemap::RANGE_START as f32 * TILE_SIZE;
+        self.world
+            .query::<&crate::components::Position>()
+            .with::<&Player>()
+            .iter()
+            .any(|position| position.0.x > range_left)
+    }
+
     fn panel_is_open(&self) -> bool {
         self.upgrades.is_open() || self.quests.is_open() || self.weapons.is_open()
     }
@@ -180,11 +283,17 @@ impl Scene for LobbyScene {
             |column, row| grid.is_wall(column as isize, row as isize),
         )));
 
-        let portal_top_left = Vec2::new(bounds.x / 2.0 - 96.0, TILE_SIZE / 2.0);
+        // The hall, not the whole lobby, centres the portal and the start.
+        let hall_middle = Vec2::new(tilemap::HALL_COLUMNS as f32 * TILE_SIZE, bounds.y) / 2.0;
+        let portal_top_left = Vec2::new(hall_middle.x - 96.0, TILE_SIZE / 2.0);
         prefabs::portal(&mut self.world, portal_top_left, textures);
         systems::tint_portal(
             &mut self.world,
             self.profile.as_ref().and_then(SharedProfile::accent),
+        );
+        systems::sign_portal(
+            &mut self.world,
+            self.profile.as_ref().and_then(SharedProfile::challenge),
         );
         systems::spawn_ambience(
             &mut self.world,
@@ -193,12 +302,29 @@ impl Scene for LobbyScene {
             portal_top_left + Prop::Portal.spec().size() / 2.0,
             0x1d57,
         );
-        for (prop, x, y, look) in PROPS {
+        for &(prop, x, y, look) in PROPS {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::prop(&mut self.world, prop, top_left, look, textures);
         }
         prefabs::task_board(&mut self.world, Vec2::new(18.5, 0.0) * TILE_SIZE, textures);
-        prefabs::weapon_table(&mut self.world, Vec2::new(23.5, 0.5) * TILE_SIZE, textures);
+        prefabs::weapon_table(
+            &mut self.world,
+            Vec2::new(WEAPON_TABLE_AT.0, WEAPON_TABLE_AT.1) * TILE_SIZE,
+            textures,
+        );
+        for (x, y) in DUMMIES {
+            prefabs::training_dummy(
+                &mut self.world,
+                &mut self.physics,
+                Vec2::new(x, y) * TILE_SIZE,
+                textures,
+            );
+        }
+        prefabs::ammo_crate(
+            &mut self.world,
+            Vec2::new(AMMO_CRATE_AT.0, AMMO_CRATE_AT.1) * TILE_SIZE,
+            textures,
+        );
         for (x, y) in POTS {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::pot(&mut self.world, &mut self.physics, top_left, textures);
@@ -212,13 +338,19 @@ impl Scene for LobbyScene {
         let head = scientist_at + Vec2::new(Prop::Scientist.spec().size().x / 2.0, 0.0);
         prefabs::minimal_speech(&mut self.world, head);
 
-        let player_top_left = bounds / 2.0;
+        let player_top_left = hall_middle;
         prefabs::player(
             &mut self.world,
             &mut self.physics,
             player_top_left + PLAYER_SIZE / 2.0,
             textures,
         );
+
+        // The hall is no place for guns; the range hands one over.
+        for loadout in self.world.query_mut::<&mut Loadout>().with::<&Player>() {
+            loadout.clear();
+        }
+        self.range_gun = None;
 
         let perks = self
             .profile
@@ -233,6 +365,7 @@ impl Scene for LobbyScene {
         }
 
         prefabs::status_bars(&mut self.world, textures);
+        prefabs::weapon_hud(&mut self.world, textures);
         prefabs::lobby_counters(
             &mut self.world,
             textures,
@@ -278,6 +411,7 @@ impl Scene for LobbyScene {
                     }
                     Some(BoardAction::Toggled) => {
                         systems::tint_portal(&mut self.world, profile.accent());
+                        systems::sign_portal(&mut self.world, profile.challenge());
                         self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
                     }
                     None => {}
@@ -296,6 +430,11 @@ impl Scene for LobbyScene {
                 }
                 if outcome == Some(WeaponOutcome::Bought) {
                     systems::say(&mut self.world, systems::PURCHASE);
+                }
+                if let Some(WeaponOutcome::Picked(kind)) = outcome {
+                    self.hand_over(kind);
+                    self.sounds
+                        .push(AudioCommand::Effect(SoundEffect::SwitchGun));
                 }
             }
             return Transition::None;
@@ -340,6 +479,28 @@ impl Scene for LobbyScene {
                 _ => Transition::None,
             };
         }
+        self.arm_for_range();
+        let recoil = if !self.in_range() {
+            0.0
+        } else {
+            systems::shoot(
+                &mut self.world,
+                &mut self.physics,
+                input,
+                systems::ShotContext {
+                    camera: self.camera.position(),
+                    rounds: systems::RoundTextures::load(&assets.textures),
+                    casing_texture: assets.textures.get(tex::CASING),
+                    dt,
+                    roll: systems::ShotRoll::from(&mut self.combat_rng),
+                },
+                &mut self.sounds,
+            )
+        };
+        self.camera.add_trauma(recoil);
+        systems::tick_casings(&mut self.world, dt);
+        systems::flash_hits(&mut self.world, dt);
+        systems::float_texts(&mut self.world, dt);
         systems::animate_player(&mut self.world, input);
         systems::show_dodge_visual(&mut self.world, &assets.textures);
         systems::show_dodge_cooldown(&mut self.world);
@@ -390,8 +551,16 @@ impl Scene for LobbyScene {
                 Transition::None
             }
             Some(Interaction::Weapons) => {
+                let held = self.held_gun();
                 if let Some(profile) = &self.profile {
-                    self.weapons.toggle(&mut self.world, assets, profile);
+                    self.weapons.toggle(&mut self.world, assets, profile, held);
+                }
+                Transition::None
+            }
+            Some(Interaction::RefillAmmo) => {
+                if let Some(reload) = self.refill_ammo() {
+                    self.sounds.push(AudioCommand::Effect(reload));
+                    systems::say(&mut self.world, "Full ammo!");
                 }
                 Transition::None
             }
@@ -399,7 +568,7 @@ impl Scene for LobbyScene {
         }
     }
 
-    fn fixed_update(&mut self, input: &Input, dt: f32, _assets: &Assets) -> Transition {
+    fn fixed_update(&mut self, input: &Input, dt: f32, assets: &Assets) -> Transition {
         if self.pause.is_active() || self.panel_is_open() {
             return Transition::None;
         }
@@ -415,6 +584,14 @@ impl Scene for LobbyScene {
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
         systems::steer_pets(&mut self.world);
         systems::simulate(&mut self.world, &mut self.physics, dt);
+        systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
+        systems::bullet_hits(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+        );
+        systems::tick_dummies(&mut self.world, dt);
         Transition::None
     }
 }
@@ -616,6 +793,261 @@ mod tests {
         let transition = scene.update(&click, 0.0, &assets, &mut Settings::in_memory());
 
         assert!(matches!(transition, Transition::Quit));
+    }
+
+    fn click_at(at: Vec2) -> Input {
+        let mut input = Input::default();
+        input.set_mouse(at);
+        input.handle_click(
+            winit::event::MouseButton::Left,
+            winit::event::ElementState::Pressed,
+        );
+        input
+    }
+
+    /// The dummy nearest the range door.
+    fn dummy_center(scene: &LobbyScene) -> Vec2 {
+        scene
+            .world
+            .query::<&crate::components::Position>()
+            .with::<&crate::components::TrainingDummy>()
+            .iter()
+            .map(|position| position.0)
+            .min_by(|a, b| a.x.total_cmp(&b.x))
+            .expect("the lobby has training dummies")
+    }
+
+    fn put_player(scene: &mut LobbyScene, at: Vec2) {
+        let player = scene
+            .world
+            .query::<(&crate::components::Body, &mut crate::components::Position)>()
+            .with::<&Player>()
+            .iter()
+            .map(|(body, position)| {
+                position.0 = at;
+                *body
+            })
+            .next()
+            .expect("player");
+        scene.physics.teleport(player, at);
+    }
+
+    fn range_spot() -> Vec2 {
+        Vec2::new(
+            (tilemap::RANGE_START as f32 + 1.0) * TILE_SIZE,
+            (tilemap::RANGE_DOOR[0] as f32 + 1.0) * TILE_SIZE,
+        )
+    }
+
+    fn bullets(scene: &LobbyScene) -> usize {
+        scene
+            .world
+            .query::<&crate::components::Bullet>()
+            .iter()
+            .count()
+    }
+
+    #[test]
+    fn shooting_the_training_dummy_shows_the_damage_per_second() {
+        let (mut scene, assets) = lobby();
+        put_player(&mut scene, range_spot());
+        let aim = dummy_center(&scene) - scene.camera.position();
+        scene.update(
+            &click_at(aim),
+            1.0 / 60.0,
+            &assets,
+            &mut Settings::in_memory(),
+        );
+        assert!(bullets(&scene) > 0, "a click in the range fires");
+
+        let idle = Input::default();
+        for _ in 0..120 {
+            scene.fixed_update(&idle, 1.0 / 60.0, &assets);
+        }
+        let readout = scene
+            .world
+            .query::<(
+                &crate::components::Position,
+                &crate::components::TrainingDummy,
+            )>()
+            .iter()
+            .min_by(|a, b| a.0.0.x.total_cmp(&b.0.0.x))
+            .expect("dummy")
+            .1
+            .readout;
+        let shown = scene
+            .world
+            .get::<&Text>(readout)
+            .expect("readout")
+            .content
+            .clone();
+        assert!(shown.ends_with("DPS"), "{shown:?}");
+    }
+
+    fn slot_hidden(scene: &LobbyScene) -> bool {
+        scene
+            .world
+            .query::<Option<&Hidden>>()
+            .with::<&WeaponSlot>()
+            .iter()
+            .all(|hidden| hidden.is_some())
+    }
+
+    fn step(scene: &mut LobbyScene, assets: &Assets) {
+        scene.update(
+            &Input::default(),
+            1.0 / 60.0,
+            assets,
+            &mut Settings::in_memory(),
+        );
+    }
+
+    fn held(scene: &LobbyScene) -> Option<Weapon> {
+        scene
+            .world
+            .query::<&Loadout>()
+            .with::<&Player>()
+            .iter()
+            .find_map(|loadout| loadout.current().copied())
+    }
+
+    #[test]
+    fn the_gun_and_its_hud_come_out_in_the_range_and_go_away_in_the_hall() {
+        let (mut scene, assets) = lobby();
+        step(&mut scene, &assets);
+        assert!(held(&scene).is_none(), "empty hands in the hall");
+        assert!(slot_hidden(&scene));
+
+        put_player(&mut scene, range_spot());
+        step(&mut scene, &assets);
+        let mut gun = held(&scene).expect("a gun in the range");
+        assert!(!slot_hidden(&scene));
+
+        gun.clip -= 3;
+        for loadout in scene.world.query_mut::<&mut Loadout>().with::<&Player>() {
+            *loadout.current_mut().expect("gun") = gun;
+        }
+        put_player(&mut scene, Vec2::new(5.0, 5.0) * TILE_SIZE);
+        step(&mut scene, &assets);
+        assert!(held(&scene).is_none());
+        assert!(slot_hidden(&scene));
+
+        put_player(&mut scene, range_spot());
+        step(&mut scene, &assets);
+        assert_eq!(
+            held(&scene).map(|gun| gun.clip),
+            Some(gun.clip),
+            "the same gun comes back"
+        );
+    }
+
+    #[test]
+    fn picking_a_gun_at_the_table_puts_it_in_hand() {
+        let (mut scene, assets) = lobby();
+        put_player(&mut scene, range_spot());
+        step(&mut scene, &assets);
+        let profile = scene.profile.clone().expect("profile");
+        let held_kind = scene_held_kind(&scene);
+        scene
+            .weapons
+            .toggle(&mut scene.world, &assets, &profile, held_kind);
+        let row = super::super::weapon_table::row_top_left(1) + Vec2::splat(10.0);
+        scene.update(
+            &click_at(row),
+            1.0 / 60.0,
+            &assets,
+            &mut Settings::in_memory(),
+        );
+        assert_eq!(held(&scene).map(|gun| gun.kind), Some(GunKind::ALL[1]));
+    }
+
+    fn scene_held_kind(scene: &LobbyScene) -> Option<GunKind> {
+        held(scene).map(|gun| gun.kind)
+    }
+
+    #[test]
+    fn the_range_ammo_runs_out_and_the_crate_fills_it_back_up() {
+        let (mut scene, assets) = lobby();
+        put_player(&mut scene, range_spot());
+        let aim = dummy_center(&scene) - scene.camera.position();
+        scene.update(
+            &click_at(aim),
+            1.0 / 60.0,
+            &assets,
+            &mut Settings::in_memory(),
+        );
+        let fired = held(&scene).expect("gun");
+        assert!(
+            fired.clip < fired.clip_size(),
+            "the range does not hand out endless ammo"
+        );
+
+        assert!(scene.refill_ammo().is_some());
+        let full = held(&scene).expect("gun");
+        assert_eq!((full.clip, full.ammo), (full.clip_size(), full.max_ammo()));
+    }
+
+    #[test]
+    fn guns_stay_quiet_in_the_hall() {
+        let (mut scene, assets) = lobby();
+        let aim = dummy_center(&scene) - scene.camera.position();
+        scene.update(
+            &click_at(aim),
+            1.0 / 60.0,
+            &assets,
+            &mut Settings::in_memory(),
+        );
+        assert_eq!(bullets(&scene), 0);
+    }
+
+    #[test]
+    fn the_portal_stays_in_the_middle_of_the_hall() {
+        let (scene, _assets) = lobby();
+        let portal = scene
+            .world
+            .query::<(
+                &crate::components::Interactable,
+                &crate::components::Position,
+            )>()
+            .iter()
+            .find(|(interactable, _)| interactable.action == Interaction::EnterPortal)
+            .map(|(_, position)| position.0)
+            .expect("portal");
+        assert_eq!(portal.x, tilemap::HALL_COLUMNS as f32 * TILE_SIZE / 2.0);
+    }
+
+    #[test]
+    fn the_weapon_table_and_the_dummies_are_in_the_range() {
+        let (scene, _assets) = lobby();
+        let range_left = tilemap::RANGE_START as f32 * TILE_SIZE;
+        let table = scene
+            .world
+            .query::<(
+                &crate::components::Interactable,
+                &crate::components::Position,
+            )>()
+            .iter()
+            .find(|(interactable, _)| interactable.action == Interaction::Weapons)
+            .map(|(_, position)| position.0)
+            .expect("weapon table");
+        assert!(table.x > range_left);
+        assert!(dummy_center(&scene).x > range_left);
+    }
+
+    #[test]
+    fn a_click_into_an_open_board_does_not_fire() {
+        let (mut scene, assets) = lobby();
+        put_player(&mut scene, range_spot());
+        let profile = scene.profile.clone().expect("profile");
+        scene.quests.toggle(&mut scene.world, &assets, &profile);
+        let aim = dummy_center(&scene) - scene.camera.position();
+        scene.update(
+            &click_at(aim),
+            1.0 / 60.0,
+            &assets,
+            &mut Settings::in_memory(),
+        );
+        assert_eq!(bullets(&scene), 0);
     }
 
     #[test]

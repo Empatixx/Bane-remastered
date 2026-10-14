@@ -97,7 +97,13 @@ pub(crate) fn shed_trails(world: &mut World, textures: &TrailTextures, dt: f32, 
 }
 
 /// Sparks scattered along a lightning arc between two points.
-pub(crate) fn arc_motes(world: &mut World, texture: TextureId, from: Vec2, to: Vec2) {
+pub(crate) fn arc_motes(
+    world: &mut World,
+    texture: TextureId,
+    sparks: Trail,
+    from: Vec2,
+    to: Vec2,
+) {
     let span = to - from;
     for index in 0..ARC_MOTES {
         let along = (index as f32 + 0.5) / ARC_MOTES as f32;
@@ -107,7 +113,7 @@ pub(crate) fn arc_motes(world: &mut World, texture: TextureId, from: Vec2, to: V
             spread: ARC_SCATTER,
             size: ARC_MOTE_SIZE,
             life: ARC_MOTE_LIFE,
-            ..Trail::VOLT
+            ..sparks
         };
         shed(world, texture, scatter, at, span, seed);
     }
@@ -203,6 +209,7 @@ mod tests {
         arc_motes(
             &mut world,
             TextureId::WHITE,
+            Trail::VOLT,
             Vec2::ZERO,
             Vec2::new(200.0, 0.0),
         );

@@ -9,7 +9,7 @@ use crate::components::{
     Chest, ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, FloorPatch, Gate, GunDrop,
     Health, Interactable, Interaction, Layer, Light, Liquid, Lit, PatchKind, Pickup, Position,
     PriceBox, PriceDigits, Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay,
-    Trap, Velocity, Weapon,
+    TrainingDummy, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{
     Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces, Theme,
@@ -109,6 +109,46 @@ pub(crate) fn pot(
     let entity = prop(world, Prop::Pot, top_left, Look::DEFAULT, textures);
     let collider_center = top_left + POT_COLLIDER_OFFSET + POT_COLLIDER_SIZE / 2.0;
     physics.add_static_box(collider_center, POT_COLLIDER_SIZE);
+    entity
+}
+
+/// Big enough that no single hit can empty it; the dummy refills it every tick.
+pub(crate) const DUMMY_HEALTH: i32 = 1_000_000;
+const DUMMY_COLLIDER_OFFSET: Vec2 = Vec2::new(15.0, 9.0);
+const DUMMY_COLLIDER_SIZE: Vec2 = Vec2::new(42.0, 57.0);
+const DUMMY_READOUT_LIFT: f32 = 40.0;
+const DUMMY_READOUT_LAYER: i32 = 4;
+
+pub(crate) fn training_dummy(
+    world: &mut World,
+    physics: &mut Physics,
+    top_left: Vec2,
+    textures: &Textures,
+) -> Entity {
+    let size = Prop::TrainingDummy.spec().size();
+    let readout = world.spawn((
+        Position(top_left + Vec2::new(size.x / 2.0, -DUMMY_READOUT_LIFT)),
+        Text::centered(String::new(), PROMPT_COLOR, FontSize::Size22),
+        Layer(DUMMY_READOUT_LAYER),
+    ));
+    let entity = prop(world, Prop::TrainingDummy, top_left, Look::DEFAULT, textures);
+    let collider_center = top_left + DUMMY_COLLIDER_OFFSET + DUMMY_COLLIDER_SIZE / 2.0;
+    let body = physics.add_fixed_object(entity, collider_center, DUMMY_COLLIDER_SIZE);
+    let _ = world.insert(
+        entity,
+        (
+            TrainingDummy {
+                readout,
+                recent: Vec::new(),
+            },
+            Health {
+                current: DUMMY_HEALTH,
+                max: DUMMY_HEALTH,
+            },
+            Solid(body.collider),
+            body,
+        ),
+    );
     entity
 }
 
@@ -383,6 +423,29 @@ pub(crate) fn task_board(world: &mut World, top_left: Vec2, textures: &Textures)
         ),
     );
     entity
+}
+
+const AMMO_CRATE_SIZE: Vec2 = Vec2::new(80.0, 80.0);
+
+/// A box of every kind of ammo; the range uses it to fill the gun back up.
+pub(crate) fn ammo_crate(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    world.spawn((
+        Position(top_left + AMMO_CRATE_SIZE / 2.0),
+        Size(AMMO_CRATE_SIZE),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get(tex::AMMOBOX_UNIVERSAL)),
+        Layer(-1),
+        Lit,
+        Interactable {
+            action: Interaction::RefillAmmo,
+        },
+        Prompt {
+            text: "Press E to refill ammo",
+            gap: 10.0,
+            color: PROMPT_COLOR,
+            size: FontSize::Size22,
+        },
+    ))
 }
 
 pub(crate) fn weapon_table(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {

@@ -180,23 +180,28 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
             Option<&Trap>,
             Option<&Animation>,
             Option<&Enemy>,
+            Option<&crate::components::Chills>,
         )>()
         .without::<&Expiring>()
         .without::<&crate::components::Frozen>()
         .without::<&Spawning>()
         .iter()
         .find(
-            |(source_position, source_size, _, trap, animation, enemy)| {
+            |(source_position, source_size, _, trap, animation, enemy, _)| {
                 !(cloaked && enemy.is_some())
                     && trap_is_armed(*trap, *animation)
                     && geometry::overlaps(position, size, source_position.0, source_size.0)
             },
         )
-        .map(|(_, _, damage, _, _, _)| damage.0);
-    let Some(damage) = damage else {
+        .map(|(_, _, damage, _, _, _, chills)| (damage.0, chills.is_some()));
+    let Some((damage, chills)) = damage else {
         return false;
     };
-    hurt_player(world, player, damage, sounds)
+    let hurt = hurt_player(world, player, damage, sounds);
+    if hurt && chills {
+        super::frost::chill_player(world, player);
+    }
+    hurt
 }
 
 pub(crate) fn hurt_player(

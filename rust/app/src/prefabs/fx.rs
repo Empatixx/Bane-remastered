@@ -80,6 +80,26 @@ pub(crate) fn toxic_cloud(world: &mut World, center: Vec2, textures: &Textures) 
     ))
 }
 
+/// A small frosty puff where an icicle shatters.
+pub(crate) fn ice_shatter(world: &mut World, center: Vec2, textures: &Textures) {
+    let clip = Clip {
+        row: 0,
+        frames: 9,
+        frame_time: 0.05,
+        looping: false,
+        flipped: false,
+    };
+    world.spawn((
+        Expiring,
+        Position(center),
+        Size(Vec2::new(84.0, 84.0)),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::FROST_BURST), 0, 0, 9, 1),
+        Animation::new(9, 1, clip),
+        Layer(3),
+    ));
+}
+
 pub(crate) fn frost_burst(world: &mut World, center: Vec2, textures: &Textures) {
     let clip = Clip {
         row: 0,
@@ -141,7 +161,14 @@ pub(crate) fn blast(world: &mut World, center: Vec2, size: Vec2, textures: &Text
 }
 
 /// A lightning bolt between two points that flickers once and goes away.
-pub(crate) fn arc(world: &mut World, from: Vec2, to: Vec2, textures: &Textures) {
+pub(crate) fn arc(
+    world: &mut World,
+    from: Vec2,
+    to: Vec2,
+    bolt: crate::guns::Bolt,
+    textures: &Textures,
+) {
+    let [red, green, blue] = bolt.light;
     let span = to - from;
     world.spawn((
         Expiring,
@@ -150,7 +177,7 @@ pub(crate) fn arc(world: &mut World, from: Vec2, to: Vec2, textures: &Textures) 
         Color(Vec4::ONE),
         Heading(span.to_angle()),
         Sprite::cell(
-            textures.get(tex::ROUND_ARC),
+            textures.get(bolt.arc),
             0,
             BULLET_IMPACT.row,
             BULLET_COLUMNS,
@@ -158,7 +185,7 @@ pub(crate) fn arc(world: &mut World, from: Vec2, to: Vec2, textures: &Textures) 
         ),
         Animation::new(BULLET_COLUMNS, BULLET_ROWS, BULLET_IMPACT),
         Layer(3),
-        Light::rgb(Vec2::ZERO, 80.0, 160.0, 255.0, 60.0, 1.0),
+        Light::rgb(Vec2::ZERO, red, green, blue, 60.0, 1.0),
         LightFade { base: 1.0 },
     ));
 }

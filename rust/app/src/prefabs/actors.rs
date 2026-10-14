@@ -7,7 +7,8 @@ use crate::assets::{PET, PLAYER, Textures};
 use crate::components::{
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
     BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
-    DeathBurst, DeathCloud, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse,
+    Chills, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, DropShadow, Enemy,
+    EnemyBullet, EyeShooter, Fuse, IcicleDropper,
     GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Heading, Health, Hits, Homing, Hopper,
     HoundAttack, HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade,
     Lit, Loadout, MagmaSpreader, MimicAttack, MimicBoss, MimicStage, Minion, NoDrop, OgreAttack,
@@ -259,6 +260,19 @@ pub(crate) fn enemy(
                 ),
             );
         }
+        Behavior::Chills => {
+            let _ = world.insert_one(entity, Chills);
+        }
+        Behavior::DropsIcicles => {
+            // Bats in one room do not all drop at once.
+            let stagger = (position.x as u32 ^ position.y as u32) % 10;
+            let _ = world.insert_one(
+                entity,
+                IcicleDropper {
+                    remaining: enemies::ICICLE_COOLDOWN * (0.5 + stagger as f32 * 0.1),
+                },
+            );
+        }
         Behavior::Hops => {
             let _ = world.insert_one(entity, Rooted);
             let _ = world.insert_one(
@@ -405,6 +419,15 @@ pub(crate) fn enemy(
     if kind == EnemyKind::KingSlime {
         let _ = world.insert_one(entity, NoDrop);
     }
+    if kind == EnemyKind::SnowSlime {
+        let _ = world.insert_one(
+            entity,
+            DeathSplit {
+                kind: EnemyKind::SnowSlimeling,
+                count: enemies::SNOW_SPLIT,
+            },
+        );
+    }
     entity
 }
 
@@ -456,6 +479,9 @@ pub(crate) fn enemy_bullet(
     }
     let body = physics.add_enemy_bullet(entity, position, velocity, size);
     let _ = world.insert_one(entity, body);
+    if kind == ProjectileKind::Snow {
+        let _ = world.insert_one(entity, Chills);
+    }
     entity
 }
 

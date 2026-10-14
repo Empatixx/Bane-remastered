@@ -461,6 +461,7 @@ impl Scene for InGameScene {
             &mut self.sounds,
             hostile_dt,
         );
+        systems::tick_icicle_bats(&mut self.world, &assets.textures, hostile_dt);
         systems::tick_hoppers(&mut self.world, hostile_dt);
         systems::tick_baits(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
         systems::tick_mimic(
@@ -1125,6 +1126,20 @@ mod tests {
         let mut scene = InGameScene::default();
         scene.attach_profile(profile);
         scene
+    }
+
+    #[test]
+    fn a_pistol_only_run_starts_with_the_pistol_in_hand() {
+        let assets = Assets::new().expect("the embedded tileset is valid");
+        let mut scene = scene_with_challenge(ChallengeId::PistolOnly);
+        scene.start_run(7, &assets);
+        let held = scene
+            .world
+            .query::<&Loadout>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .find_map(|loadout| loadout.current().map(|weapon| weapon.kind));
+        assert_eq!(held, Some(crate::guns::GunKind::Pistol));
     }
 
     #[test]

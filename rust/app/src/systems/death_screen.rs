@@ -21,6 +21,8 @@ const DIM_ALPHA: f32 = 0.7;
 const DIM_FADE_IN: f32 = 1.0;
 const FADE_OUT: f32 = 0.8;
 const BLINK: f32 = 0.2;
+/// Keys pressed this soon after dying (a dodge, say) do not skip the screen.
+const SKIP_GUARD: f32 = 0.5;
 
 #[derive(Debug, Clone)]
 pub(crate) struct DeathScreen {
@@ -53,8 +55,12 @@ impl DeathScreen {
         SKULL_TIME + ROW_TIME * ROWS as f32 + ROW_TIME * index as f32
     }
 
+    fn shown_in_full() -> f32 {
+        Self::reward_start(ROWS - 1) + ROW_TIME
+    }
+
     pub(crate) fn ready(&self) -> bool {
-        self.elapsed > Self::reward_start(ROWS - 1) + ROW_TIME
+        self.elapsed > Self::shown_in_full()
     }
 
     pub(crate) fn finished(&self) -> bool {
@@ -67,6 +73,9 @@ impl DeathScreen {
             *time += dt;
         } else if any_key && self.ready() {
             self.continued = Some(0.0);
+        } else if any_key && self.elapsed > SKIP_GUARD {
+            // The first key skips the reveal, the next one continues.
+            self.elapsed = Self::shown_in_full() + f32::EPSILON * 64.0;
         }
     }
 
@@ -299,7 +308,7 @@ mod tests {
     #[test]
     fn you_cannot_continue_before_everything_is_shown_and_then_any_key_does() {
         let mut screen = screen();
-        screen.advance(3.0, true);
+        screen.advance(3.0, false);
         assert!(screen.continued.is_none());
         screen.advance(4.0, false);
         assert!(screen.ready());
@@ -308,6 +317,27 @@ mod tests {
         assert!(!screen.finished());
         screen.advance(1.0, false);
         assert!(screen.finished());
+    }
+
+    #[test]
+    fn the_first_key_skips_the_reveal_and_the_second_continues() {
+        let mut screen = screen();
+        screen.advance(1.0, true);
+        assert!(screen.ready());
+        assert!(screen.continued.is_none(), "skipping does not leave yet");
+        for index in 0..ROWS {
+            assert_eq!(screen.reward(index), Some(screen.summary.rewards[index]));
+        }
+        screen.advance(0.016, true);
+        assert!(screen.continued.is_some());
+    }
+
+    #[test]
+    fn a_key_pressed_right_as_you_die_does_not_skip() {
+        let mut screen = screen();
+        screen.advance(0.1, true);
+        assert!(!screen.ready());
+        assert!(!screen.title_visible());
     }
 
     #[test]

@@ -3,6 +3,7 @@ pub(crate) enum SoundEffect {
     Click,
     PistolShoot,
     EmptyGunShoot,
+    EnergyEmpty,
     PistolReload,
     WallHit,
     EnemyHit,
@@ -32,6 +33,7 @@ pub(crate) enum SoundEffect {
     TeslaShoot,
     TeslaReload,
     TeslaZap,
+    ArcShoot,
     RailgunShoot,
     RailgunReload,
     SwitchGun,
@@ -94,10 +96,11 @@ pub(crate) enum SoundEffect {
 }
 
 impl SoundEffect {
-    pub(crate) const ALL: [Self; 91] = [
+    pub(crate) const ALL: [Self; 93] = [
         Self::Click,
         Self::PistolShoot,
         Self::EmptyGunShoot,
+        Self::EnergyEmpty,
         Self::PistolReload,
         Self::WallHit,
         Self::EnemyHit,
@@ -127,6 +130,7 @@ impl SoundEffect {
         Self::TeslaShoot,
         Self::TeslaReload,
         Self::TeslaZap,
+        Self::ArcShoot,
         Self::RailgunShoot,
         Self::RailgunReload,
         Self::SwitchGun,
@@ -193,6 +197,7 @@ impl SoundEffect {
             Self::Click => &["menuclick.ogg"],
             Self::PistolShoot => &["guns/pistol_shoot_1.ogg", "guns/pistol_shoot_2.ogg"],
             Self::EmptyGunShoot => &["guns/empty_gun_shoot.ogg"],
+            Self::EnergyEmpty => &["guns/energy_empty.ogg"],
             Self::PistolReload => &["guns/pistol_reload.ogg"],
             Self::WallHit => &["guns/wall_hit.ogg"],
             Self::EnemyHit => &["guns/enemy_hit.ogg"],
@@ -234,6 +239,7 @@ impl SoundEffect {
             Self::TeslaShoot => &["guns/tesla_shoot.ogg"],
             Self::TeslaReload => &["guns/tesla_reload.ogg"],
             Self::TeslaZap => &["guns/tesla_zap_1.ogg", "guns/tesla_zap_2.ogg"],
+            Self::ArcShoot => &["guns/arc_shoot.ogg"],
             Self::RailgunShoot => &["guns/railgun_shoot.ogg"],
             Self::RailgunReload => &["guns/railgun_reload.ogg"],
             Self::SwitchGun => &["guns/switchgun.ogg"],

@@ -147,27 +147,6 @@ const MUTATIONS: [Mutation; 6] = [
     },
 ];
 
-fn name(kind: GunKind) -> &'static str {
-    match kind {
-        GunKind::Pistol => "Pistol",
-        GunKind::Shotgun => "Shotgun",
-        GunKind::Luger => "Luger",
-        GunKind::Revolver => "Revolver",
-        GunKind::M4 => "M4",
-        GunKind::Uzi => "Uzi",
-        GunKind::Thompson => "Thompson",
-        GunKind::Sniper => "Sniper",
-        GunKind::Rpg => "RPG",
-        GunKind::Minigun => "Minigun",
-        GunKind::Crossbow => "Crossbow",
-        GunKind::Flamethrower => "Flamethrower",
-        GunKind::Blaster => "Blaster",
-        GunKind::PlasmaRifle => "Plasma Rifle",
-        GunKind::TeslaGun => "Tesla Gun",
-        GunKind::Railgun => "Railgun",
-    }
-}
-
 fn numeral(tree: &Tree, index: usize) -> &'static str {
     let stat = tree.nodes[index].stat;
     let before = tree.nodes[..index]
@@ -203,7 +182,7 @@ fn max_first() -> usize {
     GunKind::ALL.len().saturating_sub(VISIBLE_ROWS)
 }
 
-fn row_top_left(slot: usize) -> Vec2 {
+pub(crate) fn row_top_left(slot: usize) -> Vec2 {
     Vec2::new(ROW_LEFT, ROW_TOP + ROW_STEP * slot as f32)
 }
 
@@ -750,7 +729,7 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
         ));
         elements.push(gun_picture(other, top_left));
         elements.push(Element::Label {
-            content: name(other).to_owned(),
+            content: other.name().to_owned(),
             position: Vec2::new(top_left.x + ROW_SIZE.x / 2.0, top_left.y + NAME_BASELINE),
             color: if chosen { HOVER_COLOR } else { MENU_COLOR },
             size: FontSize::Size22,
@@ -759,7 +738,7 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
     }
     elements.extend(scrollbar(first));
     elements.push(Element::Label {
-        content: name(kind).to_owned(),
+        content: kind.name().to_owned(),
         position: Vec2::new(CENTER_X, TITLE_Y),
         color: MENU_COLOR,
         size: FontSize::Size27,
@@ -843,6 +822,8 @@ struct Press {
 pub(crate) enum Outcome {
     Bought,
     Rerolled,
+    /// Another gun was chosen from the list; the range hands it over.
+    Picked(GunKind),
 }
 
 #[derive(Debug, Default)]
@@ -867,12 +848,24 @@ impl WeaponTable {
         self.open
     }
 
-    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets, profile: &SharedProfile) {
+    /// Opens on the gun in hand, or the first one when the hands are empty.
+    pub(crate) fn toggle(
+        &mut self,
+        world: &mut World,
+        assets: &Assets,
+        profile: &SharedProfile,
+        held: Option<GunKind>,
+    ) {
         if self.open {
             self.close(world);
         } else {
+            let selected = held
+                .and_then(|held| GunKind::ALL.iter().position(|kind| *kind == held))
+                .unwrap_or(0);
             *self = Self {
                 open: true,
+                selected,
+                first: selected.min(max_first()),
                 ..Self::default()
             };
             self.refresh(profile);
@@ -991,6 +984,7 @@ impl WeaponTable {
                     self.selected = index;
                     self.refresh(profile);
                     self.regrow();
+                    outcome = Some(Outcome::Picked(self.kind()));
                 }
                 Some(Target::Reroll) => {
                     if self.roll.is_none() && self.can_reroll() {
@@ -1129,7 +1123,7 @@ mod tests {
 
         for kind in &GunKind::ALL[..VISIBLE_ROWS] {
             assert_eq!(images(&elements, kind.spec().texture), 1, "{kind:?}");
-            assert!(labels(&elements).contains(&name(*kind).to_string()));
+            assert!(labels(&elements).contains(&kind.name().to_string()));
         }
         assert_eq!(
             images(&elements, GunKind::ALL[VISIBLE_ROWS].spec().texture),
@@ -1143,7 +1137,7 @@ mod tests {
         let elements = plain(max_first(), 0);
 
         assert_eq!(images(&elements, last.spec().texture), 1);
-        assert!(labels(&elements).contains(&name(last).to_string()));
+        assert!(labels(&elements).contains(&last.name().to_string()));
     }
 
     #[test]

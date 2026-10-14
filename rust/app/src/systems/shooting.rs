@@ -7,12 +7,12 @@ use crate::components::BULLET_IMPACT;
 use crate::components::{
     Animation, Body, Boss, Breakable, Bullet, Burst, CHILL_SECONDS, CHILL_STACKS_TO_FREEZE,
     Chilled, Enemy, Expiring, Friendly, Frozen, Heading, Health, InfiniteAmmo, Loadout, Phantom,
-    Player, PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, Velocity,
+    Player, PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, TrainingDummy, Velocity,
 };
 use crate::controls::Action;
 use crate::geometry;
 use crate::guns::Mutation;
-use crate::guns::{BURST_DELAY, ClipStyle, GunSpec, MAX_PELLETS, Round};
+use crate::guns::{BURST_DELAY, GunSpec, MAX_PELLETS, Round};
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;
@@ -177,9 +177,9 @@ pub(crate) fn shoot(
             continue;
         }
         if !infinite && weapon.clip == 0 {
-            sounds.push(AudioCommand::Effect(SoundEffect::EmptyGunShoot));
-            if spec.auto {
-                weapon.cooldown = spec.fire_interval;
+            // One dry sound per pull, not one per fire interval while held.
+            if input.clicked() {
+                sounds.push(AudioCommand::Effect(spec.empty));
             }
             continue;
         }
@@ -227,7 +227,7 @@ pub(crate) fn shoot(
                 world,
                 shot.origin,
                 shot.direction,
-                shot.spec.clip_style == ClipStyle::Shotgun,
+                shot.spec.pellets > 1,
                 shot.roll.eject,
                 casing_texture,
             );
@@ -312,7 +312,16 @@ pub(crate) fn bullet_hits(
             splash(world, struck, bullet.damage, at);
         }
         if let Some(target) = struck.filter(|_| round.chains > 0) {
-            chain_lightning(world, target, bullet.damage, round.chains, textures, sounds);
+            let jumps = (round.chains, round.chain_falloff);
+            chain_lightning(
+                world,
+                target,
+                bullet.damage,
+                jumps,
+                round.bolt,
+                textures,
+                sounds,
+            );
         }
         if let Some(target) = victim.filter(|_| hit_enemy) {
             mutate_hit(world, target, bullet, at, textures);
@@ -491,14 +500,19 @@ fn splash(world: &mut World, struck: Option<Entity>, damage: i32, at: Vec2) {
 }
 
 /// The hit jumps as lightning to the nearest enemy it has not struck yet, then on from there.
+/// Lightning jumps from the hit to the nearest enemy (or practice dummy) not struck yet,
+/// `jumps.0` times, each jump keeping `jumps.1` of the damage before it.
 fn chain_lightning(
     world: &mut World,
     first: Entity,
     damage: i32,
-    jumps: u32,
+    jumps: (u32, f32),
+    bolt: crate::guns::Bolt,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
 ) {
+    let (jumps, falloff) = jumps;
+    let mut amount = damage as f32;
     let Ok(start) = world.get::<&Position>(first).map(|position| position.0) else {
         return;
     };
@@ -506,31 +520,35 @@ fn chain_lightning(
     let mut from = start;
     for _ in 0..jumps {
         let next = world
-            .query::<(Entity, &Position)>()
-            .with::<(&Enemy, &Health)>()
+            .query::<(Entity, &Position, Option<&Enemy>, Option<&TrainingDummy>)>()
+            .with::<&Health>()
             .without::<&Expiring>()
             .without::<&Spawning>()
             .iter()
-            .filter(|(entity, position)| {
-                !struck.contains(entity) && position.0.distance(from) <= CHAIN_REACH
+            .filter(|(entity, position, enemy, dummy)| {
+                (enemy.is_some() || dummy.is_some())
+                    && !struck.contains(entity)
+                    && position.0.distance(from) <= CHAIN_REACH
             })
-            .map(|(entity, position)| (entity, position.0))
+            .map(|(entity, position, ..)| (entity, position.0))
             .min_by(|a, b| a.1.distance(from).total_cmp(&b.1.distance(from)));
         let Some((target, to)) = next else {
             break;
         };
-        prefabs::arc(world, from, to, textures);
+        prefabs::arc(world, from, to, bolt, textures);
         super::trails::arc_motes(
             world,
-            textures.get(crate::assets::tex::ROUND_MOTE_VOLT),
+            textures.get(bolt.sparks.texture),
+            bolt.sparks,
             from,
             to,
         );
+        amount *= falloff;
         super::damage::deal(
             world,
             Damage {
                 target,
-                amount: damage,
+                amount: (amount.round() as i32).max(1),
                 source: DamageSource::Bullet,
             },
         );
@@ -920,6 +938,61 @@ mod tests {
             vec![AudioCommand::Effect(SoundEffect::ShotgunReload)]
         );
         assert!(current(&world).reloading.is_some());
+    }
+
+    fn empty_clip(world: &mut World) {
+        for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
+            if let Some(weapon) = loadout.current_mut() {
+                weapon.clip = 0;
+            }
+        }
+    }
+
+    #[test]
+    fn holding_the_trigger_on_an_empty_auto_gun_clicks_only_once() {
+        let (mut world, mut physics) = setup();
+        give(&mut world, crate::guns::GunKind::PlasmaRifle);
+        empty_clip(&mut world);
+        let mut sounds = Vec::new();
+        let target = Vec2::new(500.0, 100.0);
+        fire_with_sounds(
+            &mut world,
+            &mut physics,
+            &clicked_at(target),
+            0.016,
+            &mut sounds,
+        );
+        for _ in 0..30 {
+            fire_with_sounds(
+                &mut world,
+                &mut physics,
+                &held_at(target),
+                0.016,
+                &mut sounds,
+            );
+        }
+        assert_eq!(sounds, vec![AudioCommand::Effect(SoundEffect::EnergyEmpty)]);
+    }
+
+    #[test]
+    fn energy_guns_fizzle_and_powder_guns_click_when_empty() {
+        use crate::guns::GunKind;
+        for kind in GunKind::ALL {
+            let energy = matches!(
+                kind,
+                GunKind::Blaster
+                    | GunKind::PlasmaRifle
+                    | GunKind::TeslaGun
+                    | GunKind::Railgun
+                    | GunKind::ArcCaster
+            );
+            let expected = if energy {
+                SoundEffect::EnergyEmpty
+            } else {
+                SoundEffect::EmptyGunShoot
+            };
+            assert_eq!(kind.spec().empty, expected, "{kind:?}");
+        }
     }
 
     #[test]
@@ -1457,6 +1530,39 @@ mod tests {
             .map(|(rat, before)| health(&world, *rat) < before)
             .collect();
         assert_eq!(hurt, vec![true, true, true, false]);
+    }
+
+    #[test]
+    fn an_arc_jumps_along_four_more_targets_losing_a_quarter_each_time() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let dummies: Vec<Entity> = (0..6)
+            .map(|index| {
+                prefabs::training_dummy(
+                    &mut world,
+                    &mut physics,
+                    Vec2::new(300.0, 100.0 + 120.0 * index as f32),
+                    &crate::assets::Textures::default(),
+                )
+            })
+            .collect();
+        let first = world.get::<&Position>(dummies[0]).expect("dummy").0;
+        prefabs::bullet(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, first.y),
+            Vec2::new(600.0, 0.0),
+            Bullet::plain(100).as_round(Round::Arc),
+            TextureId::WHITE,
+        );
+
+        run_rounds(&mut world, &mut physics, 20);
+
+        let taken: Vec<i32> = dummies
+            .iter()
+            .map(|dummy| prefabs::DUMMY_HEALTH - health(&world, *dummy))
+            .collect();
+        assert_eq!(taken, vec![100, 75, 56, 42, 32, 0]);
     }
 
     #[test]

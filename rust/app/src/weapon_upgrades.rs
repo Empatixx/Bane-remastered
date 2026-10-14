@@ -2,7 +2,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::guns::{GunKind, GunSpec, MAX_CLIP, Mutation};
+use crate::guns::{ClipStyle, GunKind, GunSpec, MAX_CLIP, Mutation};
+
+/// How much charge a magazine step adds to a laser gun's battery.
+const BATTERY_PER_MAGAZINE: i32 = 5;
 use crate::upgrades::{Purchase, Quality};
 pub(crate) use crate::weapon_tree::Stat;
 use crate::weapon_tree::{self, Node, Tree};
@@ -188,7 +191,12 @@ impl GunMods {
         GunSpec {
             damage_scale: spec.damage_scale * (1.0 + self.damage),
             fire_interval: spec.fire_interval / (1.0 + self.fire_rate).max(MIN_INTERVAL_SCALE),
-            clip_size: (spec.clip_size + self.magazine).min(MAX_CLIP as i32),
+            clip_size: if spec.clip_style == ClipStyle::Battery {
+                // A bigger battery: no pips to fit, a step holds a few more shots.
+                spec.clip_size + self.magazine * BATTERY_PER_MAGAZINE
+            } else {
+                (spec.clip_size + self.magazine).min(MAX_CLIP as i32)
+            },
             reload_time: spec.reload_time / (1.0 + self.reload),
             inaccuracy: spec.inaccuracy * (1.0 - self.accuracy).max(0.0),
             crit_chance: spec.crit_chance + self.crit,
@@ -379,7 +387,11 @@ mod tests {
             assert!(better.fire_interval < spec.fire_interval);
             assert!(better.reload_time < spec.reload_time);
             assert_eq!(better.inaccuracy, 0.0);
-            assert_eq!(better.clip_size, MAX_CLIP as i32);
+            if spec.clip_style == ClipStyle::Battery {
+                assert!(better.clip_size > spec.clip_size);
+            } else {
+                assert_eq!(better.clip_size, MAX_CLIP as i32);
+            }
             assert_eq!(better.mutation, Some(Mutation::Deadeye));
             assert_eq!(GunMods::default().apply(spec).clip_size, spec.clip_size);
         }

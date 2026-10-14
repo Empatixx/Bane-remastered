@@ -221,8 +221,28 @@ pub(crate) struct GolemBoss {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct RockFall {
     pub(crate) remaining: f32,
+    /// The whole fall, for placing the rock on its way down.
+    pub(crate) duration: f32,
     pub(crate) rock: hecs::Entity,
     pub(crate) room: Option<crate::components::RoomId>,
+    pub(crate) icicle: bool,
+}
+
+/// Damage from this (a bite, a snowball) also chills the player.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Chills;
+
+/// Breaks into smaller enemies when it dies.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct DeathSplit {
+    pub(crate) kind: crate::enemies::EnemyKind,
+    pub(crate) count: u32,
+}
+
+/// An icicle bat's wait until it drops the next icicle.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct IcicleDropper {
+    pub(crate) remaining: f32,
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -7,7 +7,7 @@ use crate::components::{
     AMMO_TEXT_COLOR, AmmoPip, AmmoText, Animation, ArtefactIcon, BarKind, BossHud, CoinText,
     Color, Despawn, GoldCount, GunIcon, Hidden, InfinityMark, Interactable, Interaction, Layer,
     Lit, PIP_FULL, Position, PriceBox, PriceDigits, PriceTag, Prompt, ScreenSpace, Shop, Size,
-    Sprite, StatusBar, TalentCount, Text,
+    Sprite, StatusBar, TalentCount, Text, WeaponSlot, BATTERY_CENTER, BATTERY_SIZE, BatteryPart,
 };
 use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::sheets::infinity;
@@ -188,6 +188,8 @@ const SLOT_SIZE: Vec2 = Vec2::new(225.0, 75.0);
 
 const GUN_ICON_SIZE: Vec2 = Vec2::new(41.0, 34.0);
 
+const BATTERY_HOLLOW: Vec4 = Vec4::new(0.08, 0.08, 0.11, 0.9);
+
 const AMMO_TEXT_POSITION: Vec2 = Vec2::new(900.0, 515.0);
 
 const INFINITY_SIZE: Vec2 = Vec2::new(40.0, 20.0);
@@ -215,13 +217,14 @@ fn screen_sprite(
 }
 
 pub(crate) fn weapon_hud(world: &mut World, textures: &Textures) {
-    screen_sprite(
+    let slot = screen_sprite(
         world,
         SLOT_POSITION,
         SLOT_SIZE,
         textures.get(tex::WEAPONSLOT),
         4,
     );
+    let _ = world.insert_one(slot, WeaponSlot);
     let slot_center = SLOT_POSITION + SLOT_SIZE / 2.0;
     let icon = screen_sprite(
         world,
@@ -251,6 +254,36 @@ pub(crate) fn weapon_hud(world: &mut World, textures: &Textures) {
             infinity::ROWS,
         ),
         Animation::new(infinity::COLUMNS, infinity::ROWS, infinity::GLINT),
+        Layer(6),
+        ScreenSpace,
+        Hidden,
+    ));
+    world.spawn((
+        BatteryPart::Hollow,
+        Position(BATTERY_CENTER),
+        Size(Vec2::ZERO),
+        Color(BATTERY_HOLLOW),
+        Sprite::whole(TextureId::WHITE),
+        Layer(4),
+        ScreenSpace,
+        Hidden,
+    ));
+    world.spawn((
+        BatteryPart::Charge,
+        Position(BATTERY_CENTER),
+        Size(Vec2::ZERO),
+        Color(Vec4::ONE),
+        Sprite::whole(TextureId::WHITE),
+        Layer(5),
+        ScreenSpace,
+        Hidden,
+    ));
+    world.spawn((
+        BatteryPart::Frame,
+        Position(BATTERY_CENTER),
+        Size(BATTERY_SIZE),
+        Color(Vec4::ONE),
+        Sprite::whole(textures.get(tex::BATTERY_HUD)),
         Layer(6),
         ScreenSpace,
         Hidden,

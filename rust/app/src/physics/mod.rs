@@ -177,6 +177,17 @@ impl Physics {
         self.insert(body, collider)
     }
 
+    /// An object that bullets hit but nothing can push, like the training dummy.
+    pub(crate) fn add_fixed_object(&mut self, entity: Entity, center: Vec2, size: Vec2) -> Body {
+        let body = RigidBodyBuilder::fixed().translation(to_rapier(center));
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .collision_groups(groups::OBJECTS)
+            .user_data(owner_bits(entity));
+        let body = self.insert(body, collider);
+        self.solids.push((body.collider, center, size));
+        body
+    }
+
     pub(crate) fn add_object_body(&mut self, entity: Entity, center: Vec2, size: Vec2) -> Body {
         let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(center))

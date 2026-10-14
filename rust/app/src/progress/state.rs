@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer, Serialize};
 
-use super::challenges::ChallengeId;
+use super::challenges::{ChallengeId, offered};
 use super::missions::{self, ActiveMission};
 use crate::components::RunStats;
 use crate::rng::Rng;
@@ -42,6 +42,8 @@ pub(crate) struct RunOutcome {
 pub(crate) struct NoteView {
     pub(crate) title: String,
     pub(crate) detail: String,
+    pub(crate) rules: Vec<String>,
+    pub(crate) challenge: Option<ChallengeId>,
     pub(crate) progress: u32,
     pub(crate) goal: u32,
     pub(crate) talents: u32,
@@ -187,6 +189,8 @@ impl ProgressState {
                 .map(|mission| NoteView {
                     title: mission.title(),
                     detail: mission.detail(),
+                    rules: Vec::new(),
+                    challenge: None,
                     progress: mission.progress.min(mission.target),
                     goal: mission.target,
                     talents: mission.reward,
@@ -194,14 +198,16 @@ impl ProgressState {
                     active: false,
                 })
                 .collect(),
-            challenges: ChallengeId::ALL
+            challenges: offered(self.selected, &self.completed)
                 .into_iter()
                 .map(|id| {
                     let spec = id.spec();
                     let done = self.completed.contains(&id);
                     NoteView {
                         title: spec.title.to_owned(),
-                        detail: spec.detail.to_owned(),
+                        detail: id.goal(),
+                        rules: spec.rules.describe(),
+                        challenge: Some(id),
                         progress: u32::from(done),
                         goal: 1,
                         talents: spec.reward,

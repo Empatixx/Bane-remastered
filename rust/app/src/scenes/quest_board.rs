@@ -1,10 +1,10 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::assets::{Assets, tex};
 use crate::input::Input;
 use crate::profile::SharedProfile;
-use crate::progress::{BoardView, ChallengeId, NoteView};
+use crate::progress::{BoardView, NoteView};
 use crate::render::{Align, FontSize};
 
 use super::panel::{self, BOARD_CENTER_X, GREEN, INK, RED, SCALE, TAB_IDLE, TRACK_BROWN};
@@ -25,7 +25,19 @@ const BAR_SIZE: Vec2 = Vec2::new(128.0, 8.0);
 const DETAIL_WIDTH: usize = 17;
 const TAB_LAYER: i32 = 32;
 const ICON_SIZE: Vec2 = Vec2::new(27.0, 27.0);
+const FRAME_WIDTH: f32 = 4.0;
+const INFO_TOP_LEFT: Vec2 = Vec2::new(214.0, 316.0);
+const INFO_SIZE: Vec2 = Vec2::new(532.0, 150.0);
+const INFO_LINE: f32 = 28.0;
+const INFO_WIDTH: usize = 44;
+const INFO_PAPER: Vec4 = Vec4::new(232.0 / 255.0, 220.0 / 255.0, 194.0 / 255.0, 1.0);
 pub(crate) const ACTIVE_MARK: &str = "Active";
+const ACTIVE_STAMP: &str = "ACTIVE";
+const NO_CHALLENGE: &str = "No challenge chosen";
+const PICK_HINT: &str = "Click a card to take on its challenge";
+const TAKE_HINT: &str = "Click to take on this challenge";
+const DROP_HINT: &str = "Click again to give it up";
+const ACTIVE_HINT: &str = "It applies to your next run through the portal";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Tab {
@@ -94,6 +106,197 @@ pub(crate) fn target_at(tab: Tab, view: &BoardView, point: Vec2) -> Option<Targe
         .map(Target::Note)
 }
 
+/// The challenge tab: its cards, and a paper under them that says what the
+/// hovered (or else the active) challenge does and what a click will do.
+fn challenge_header(view: &BoardView, hover: Option<Target>) -> Vec<(String, FontSize, Vec4)> {
+    let hovered = match hover {
+        Some(Target::Note(index)) => view.challenges.get(index),
+        _ => None,
+    };
+    let Some(note) = hovered.or_else(|| view.challenges.iter().find(|note| note.active)) else {
+        return vec![
+            (NO_CHALLENGE.to_owned(), FontSize::Size27, INK),
+            (PICK_HINT.to_owned(), FontSize::Size22, RED),
+        ];
+    };
+    let mut lines = vec![(
+        if note.active {
+            format!("{ACTIVE_MARK}: {}", note.title)
+        } else {
+            note.title.clone()
+        },
+        FontSize::Size27,
+        if note.active { GREEN } else { INK },
+    )];
+    for line in panel::wrap(&note.rules.join(", "), INFO_WIDTH) {
+        lines.push((line, FontSize::Size22, INK));
+    }
+    let reward = if note.done {
+        "already beaten".to_owned()
+    } else {
+        format!("reward {} talents", note.talents)
+    };
+    lines.push((format!("{} - {reward}", note.detail), FontSize::Size22, INK));
+    let hint = match (note.active, hovered.is_some()) {
+        (true, true) => DROP_HINT,
+        (true, false) => ACTIVE_HINT,
+        (false, _) => TAKE_HINT,
+    };
+    lines.push((hint.to_owned(), FontSize::Size22, RED));
+    lines
+}
+
+fn outline(top_left: Vec2, size: Vec2, color: Vec4, layer: i32) -> [Element; 4] {
+    let edge = FRAME_WIDTH;
+    [
+        rect(top_left, Vec2::new(size.x, edge), color, layer),
+        rect(
+            top_left + Vec2::new(0.0, size.y - edge),
+            Vec2::new(size.x, edge),
+            color,
+            layer,
+        ),
+        rect(top_left, Vec2::new(edge, size.y), color, layer),
+        rect(
+            top_left + Vec2::new(size.x - edge, 0.0),
+            Vec2::new(edge, size.y),
+            color,
+            layer,
+        ),
+    ]
+}
+
+fn reward(elements: &mut Vec<Element>, origin: Vec2, talents: u32) {
+    let middle = origin.x + VISIBLE.x / 2.0;
+    elements.push(panel::label(
+        format!("+{talents}"),
+        Vec2::new(middle + 2.0, origin.y + 171.0),
+        INK,
+        FontSize::Size22,
+        Align::Right,
+    ));
+    elements.push(panel::note(
+        tex::TALENT_ICON,
+        Vec2::new(middle + 8.0, origin.y + 148.0),
+        ICON_SIZE,
+        0,
+        1,
+    ));
+}
+
+fn task_note(elements: &mut Vec<Element>, index: usize, note: &NoteView, hovered: bool) {
+    let corner = note_top_left(index);
+    let origin = corner + Vec2::splat(NOTE_INSET);
+    let done = note.done;
+    let row = usize::from(hovered) + 2 * usize::from(done);
+    elements.push(panel::note(
+        tex::NOTE_PAPER,
+        corner,
+        NOTE_SIZE,
+        row,
+        NOTE_ROWS,
+    ));
+    elements.push(panel::label(
+        &note.title,
+        origin + Vec2::new(VISIBLE.x / 2.0, 50.0),
+        INK,
+        FontSize::Size22,
+        Align::Center,
+    ));
+    for (line, text) in panel::wrap(&note.detail, DETAIL_WIDTH)
+        .into_iter()
+        .enumerate()
+    {
+        elements.push(panel::label(
+            text,
+            origin + Vec2::new(VISIBLE.x / 2.0, 76.0 + 17.0 * line as f32),
+            INK,
+            FontSize::Size16,
+            Align::Center,
+        ));
+    }
+    let shown = note.progress.min(note.goal);
+    elements.extend(panel::bar(
+        origin + Vec2::new((VISIBLE.x - BAR_SIZE.x) / 2.0, 118.0),
+        BAR_SIZE,
+        shown as f32 / note.goal as f32,
+        if done { GREEN } else { RED },
+        TRACK_BROWN,
+    ));
+    elements.push(panel::label(
+        format!("{shown}/{}", note.goal),
+        origin + Vec2::new(VISIBLE.x / 2.0, 146.0),
+        INK,
+        FontSize::Size16,
+        Align::Center,
+    ));
+    reward(elements, origin, note.talents);
+}
+
+fn challenge_card(elements: &mut Vec<Element>, index: usize, note: &NoteView, hovered: bool) {
+    let corner = note_top_left(index);
+    let origin = corner + Vec2::splat(NOTE_INSET);
+    let row = usize::from(hovered) + 2 * usize::from(note.done);
+    elements.push(panel::note(
+        tex::CHALLENGE_PAPER,
+        corner,
+        NOTE_SIZE,
+        row,
+        NOTE_ROWS,
+    ));
+    if note.active {
+        elements.extend(outline(
+            origin - Vec2::splat(FRAME_WIDTH),
+            VISIBLE + Vec2::splat(FRAME_WIDTH * 2.0),
+            GREEN,
+            TAB_LAYER,
+        ));
+        elements.push(panel::label(
+            ACTIVE_STAMP,
+            origin + Vec2::new(10.0, 26.0),
+            GREEN,
+            FontSize::Size16,
+            Align::Left,
+        ));
+    }
+    elements.push(panel::label(
+        &note.title,
+        origin + Vec2::new(VISIBLE.x / 2.0, 56.0),
+        INK,
+        FontSize::Size22,
+        Align::Center,
+    ));
+    let lines = note.rules.iter().chain(std::iter::once(&note.detail));
+    for (line, text) in lines.enumerate() {
+        elements.push(panel::label(
+            text,
+            origin + Vec2::new(VISIBLE.x / 2.0, 82.0 + 18.0 * line as f32),
+            if line == note.rules.len() { RED } else { INK },
+            FontSize::Size16,
+            Align::Center,
+        ));
+    }
+    if !note.done {
+        reward(elements, origin, note.talents);
+    }
+}
+
+fn info_paper(elements: &mut Vec<Element>, lines: Vec<(String, FontSize, Vec4)>) {
+    elements.push(rect(INFO_TOP_LEFT, INFO_SIZE, INFO_PAPER, TAB_LAYER));
+    elements.extend(outline(INFO_TOP_LEFT, INFO_SIZE, INK, TAB_LAYER + 1));
+    let count = lines.len() as f32;
+    let first = INFO_TOP_LEFT.y + INFO_SIZE.y / 2.0 - INFO_LINE * (count - 1.0) / 2.0 + 8.0;
+    for (index, (text, size, color)) in lines.into_iter().enumerate() {
+        elements.push(panel::label(
+            text,
+            Vec2::new(BOARD_CENTER_X, first + INFO_LINE * index as f32),
+            color,
+            size,
+            Align::Center,
+        ));
+    }
+}
+
 pub(crate) fn layout(tab: Tab, view: &BoardView, hover: Option<Target>) -> Vec<Element> {
     let mut elements = panel::frame(tex::BOARD_NOTICE);
     for other in Tab::ALL {
@@ -117,79 +320,14 @@ pub(crate) fn layout(tab: Tab, view: &BoardView, hover: Option<Target>) -> Vec<E
         }
     }
     for (index, note) in notes(tab, view).iter().enumerate() {
-        let corner = note_top_left(index);
-        let origin = corner + Vec2::splat(NOTE_INSET);
-        let done = note.done;
         let hovered = hover == Some(Target::Note(index));
-        let row = usize::from(hovered) + 2 * usize::from(done);
-        elements.push(panel::note(
-            tex::NOTE_PAPER,
-            corner,
-            NOTE_SIZE,
-            row,
-            NOTE_ROWS,
-        ));
-        elements.push(panel::label(
-            &note.title,
-            origin + Vec2::new(VISIBLE.x / 2.0, 50.0),
-            INK,
-            FontSize::Size22,
-            Align::Center,
-        ));
-        if note.active {
-            elements.push(panel::label(
-                ACTIVE_MARK,
-                origin + Vec2::new(VISIBLE.x / 2.0, 28.0),
-                GREEN,
-                FontSize::Size16,
-                Align::Center,
-            ));
+        match tab {
+            Tab::Tasks => task_note(&mut elements, index, note, hovered),
+            Tab::Challenges => challenge_card(&mut elements, index, note, hovered),
         }
-        for (line, text) in panel::wrap(&note.detail, DETAIL_WIDTH)
-            .into_iter()
-            .enumerate()
-        {
-            elements.push(panel::label(
-                text,
-                origin + Vec2::new(VISIBLE.x / 2.0, 76.0 + 17.0 * line as f32),
-                INK,
-                FontSize::Size16,
-                Align::Center,
-            ));
-        }
-        let shown = note.progress.min(note.goal);
-        elements.extend(panel::bar(
-            origin + Vec2::new((VISIBLE.x - BAR_SIZE.x) / 2.0, 118.0),
-            BAR_SIZE,
-            shown as f32 / note.goal as f32,
-            if done { GREEN } else { RED },
-            TRACK_BROWN,
-        ));
-        elements.push(panel::label(
-            format!("{shown}/{}", note.goal),
-            origin + Vec2::new(VISIBLE.x / 2.0, 146.0),
-            INK,
-            FontSize::Size16,
-            Align::Center,
-        ));
-        if tab == Tab::Challenges && done {
-            continue;
-        }
-        let middle = origin.x + VISIBLE.x / 2.0;
-        elements.push(panel::label(
-            format!("+{}", note.talents),
-            Vec2::new(middle + 2.0, origin.y + 171.0),
-            INK,
-            FontSize::Size22,
-            Align::Right,
-        ));
-        elements.push(panel::note(
-            tex::TALENT_ICON,
-            Vec2::new(middle + 8.0, origin.y + 148.0),
-            ICON_SIZE,
-            0,
-            1,
-        ));
+    }
+    if tab == Tab::Challenges {
+        info_paper(&mut elements, challenge_header(view, hover));
     }
     elements
 }
@@ -271,8 +409,13 @@ impl QuestBoard {
                     action = profile.claim_mission(index).map(|_| BoardAction::Claimed);
                 }
                 (Target::Note(index), Tab::Challenges) => {
-                    if let Some(id) = ChallengeId::ALL.get(index) {
-                        profile.toggle_challenge(*id);
+                    if let Some(id) = self
+                        .view
+                        .challenges
+                        .get(index)
+                        .and_then(|note| note.challenge)
+                    {
+                        profile.toggle_challenge(id);
                         action = Some(BoardAction::Toggled);
                     }
                 }
@@ -300,6 +443,7 @@ impl QuestBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::progress::ChallengeId;
 
     fn labels(elements: &[Element]) -> Vec<String> {
         elements
@@ -329,11 +473,17 @@ mod tests {
         let note = |title: &str, done, active| NoteView {
             title: title.to_owned(),
             detail: "Defeat 100 enemies".to_owned(),
+            rules: vec!["No shops".to_owned(), "No dodge".to_owned()],
+            challenge: None,
             progress: if done { 1 } else { 0 },
             goal: 1,
             talents: 2,
             done,
             active,
+        };
+        let challenge = |id, done, active| NoteView {
+            challenge: Some(id),
+            ..note(id.spec().title, done, active)
         };
         BoardView {
             missions: vec![
@@ -341,7 +491,10 @@ mod tests {
                 note("Gold Digger", true, false),
                 note("Deep Delver", false, false),
             ],
-            challenges: vec![note("Horde", false, true), note("Bane", true, false)],
+            challenges: vec![
+                challenge(ChallengeId::Horde, false, true),
+                challenge(ChallengeId::Bane, true, false),
+            ],
         }
     }
 
@@ -419,12 +572,78 @@ mod tests {
     }
 
     #[test]
-    fn the_active_challenge_is_marked_and_the_others_are_not() {
-        let marks = labels(&layout(Tab::Challenges, &view(), None))
+    fn the_active_challenge_is_stamped_and_framed_and_the_others_are_not() {
+        let challenges = layout(Tab::Challenges, &view(), None);
+        let stamps = labels(&challenges)
             .iter()
-            .filter(|label| *label == ACTIVE_MARK)
+            .filter(|label| *label == ACTIVE_STAMP)
             .count();
-        assert_eq!(marks, 1);
-        assert!(!labels(&layout(Tab::Tasks, &view(), None)).contains(&ACTIVE_MARK.to_owned()));
+        let frames = challenges
+            .iter()
+            .filter(|element| {
+                matches!(element, Element::Rect { color, layer, .. }
+                    if *color == GREEN && *layer == TAB_LAYER)
+            })
+            .count();
+        assert_eq!(stamps, 1);
+        assert_eq!(frames, 4);
+        assert!(!labels(&layout(Tab::Tasks, &view(), None)).contains(&ACTIVE_STAMP.to_owned()));
+    }
+
+    #[test]
+    fn challenges_are_pinned_on_their_own_paper() {
+        let count = |tab, paper| {
+            layout(tab, &view(), None)
+                .iter()
+                .filter(|element| matches!(element, Element::Image { texture, .. } if *texture == paper))
+                .count()
+        };
+        assert_eq!(count(Tab::Challenges, tex::CHALLENGE_PAPER), 2);
+        assert_eq!(count(Tab::Challenges, tex::NOTE_PAPER), 0);
+        assert_eq!(count(Tab::Tasks, tex::CHALLENGE_PAPER), 0);
+    }
+
+    #[test]
+    fn the_info_paper_names_the_challenge_its_rules_and_what_a_click_does() {
+        let calm = labels(&layout(Tab::Challenges, &view(), None));
+        assert!(calm.contains(&format!("{ACTIVE_MARK}: Horde")));
+        assert!(calm.contains(&"No shops, No dodge".to_owned()));
+        assert!(calm.contains(&ACTIVE_HINT.to_owned()));
+
+        let on_active = labels(&layout(Tab::Challenges, &view(), Some(Target::Note(0))));
+        assert!(on_active.contains(&DROP_HINT.to_owned()));
+
+        let on_other = labels(&layout(Tab::Challenges, &view(), Some(Target::Note(1))));
+        assert!(on_other.contains(&"Bane".to_owned()));
+        assert!(!on_other.contains(&format!("{ACTIVE_MARK}: Horde")));
+        assert!(on_other.contains(&TAKE_HINT.to_owned()));
+
+        let mut idle = view();
+        idle.challenges
+            .iter_mut()
+            .for_each(|note| note.active = false);
+        let idle = labels(&layout(Tab::Challenges, &idle, None));
+        assert!(idle.contains(&NO_CHALLENGE.to_owned()));
+        assert!(idle.contains(&PICK_HINT.to_owned()));
+        assert!(!labels(&layout(Tab::Tasks, &view(), None)).contains(&PICK_HINT.to_owned()));
+    }
+
+    #[test]
+    fn challenge_text_fits_its_card_and_the_info_paper_fits_under_the_cards() {
+        for id in ChallengeId::ALL {
+            for line in id.spec().rules.describe().iter().chain([&id.goal()]) {
+                assert!(line.len() <= DETAIL_WIDTH + 1, "{id:?}: {line}");
+            }
+            assert!(id.spec().rules.describe().len() <= 3, "{id:?}");
+        }
+        let cards_bottom = (0..3)
+            .map(|index| note_top_left(index).y + NOTE_SIZE.y)
+            .fold(0.0, f32::max);
+        let board = panel::BOARD_TOP_LEFT + panel::BOARD_SIZE;
+        assert!(INFO_TOP_LEFT.y > cards_bottom);
+        assert!(INFO_TOP_LEFT.y + INFO_SIZE.y < board.y - 12.0);
+        assert!(
+            INFO_TOP_LEFT.x > panel::BOARD_TOP_LEFT.x && INFO_TOP_LEFT.x + INFO_SIZE.x < board.x
+        );
     }
 }

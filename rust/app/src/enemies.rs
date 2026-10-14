@@ -23,6 +23,27 @@ pub(crate) const KING_SMASH_BULLETS: usize = 25;
 pub(crate) const COMMON_SPAWN_SECONDS: f32 = 2.0;
 pub(crate) const BOSS_SPAWN_SECONDS: f32 = 1.5;
 pub(crate) const FINAL_FLOOR: u32 = 5;
+/// Every theme but ice, where the frost rat, icicle bat and snow slime take over.
+const NOT_ICE: &[Theme] = &[
+    Theme::Stone,
+    Theme::Sewer,
+    Theme::Moss,
+    Theme::Spider,
+    Theme::Lava,
+    Theme::Temple,
+];
+/// Seconds between two icicles from one icicle bat, and how close the player must be.
+pub(crate) const ICICLE_COOLDOWN: f32 = 3.5;
+pub(crate) const ICICLE_RANGE: f32 = 420.0;
+/// Seconds from the shadow showing to the icicle landing.
+pub(crate) const ICICLE_FALL: f32 = 0.9;
+pub(crate) const ICICLE_DAMAGE: i32 = 1;
+pub(crate) const ICICLE_RADIUS: f32 = 34.0;
+/// How many slimelings a snow slime breaks into.
+pub(crate) const SNOW_SPLIT: u32 = 2;
+/// Chill hits on the player in a row that freeze them, and for how long.
+pub(crate) const PLAYER_FREEZE_STACKS: u32 = 3;
+pub(crate) const PLAYER_FREEZE_SECONDS: f32 = 1.0;
 pub(crate) const GOLEM_ROCK_RING: usize = 16;
 pub(crate) const GOLEM_BOULDER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_ROCK_DAMAGE: i32 = 2;
@@ -183,6 +204,8 @@ pub(crate) enum ProjectileKind {
     Ember,
     MimicCoin,
     MimicTooth,
+    /// The snow slime's snowball: it chills, and enough of them freeze.
+    Snow,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -235,6 +258,7 @@ impl ProjectileKind {
     pub(crate) fn spec(self) -> ProjectileSpec {
         match self {
             Self::Green => slime_bullet(tex::GREEN_SLIMEBULLET, [0.0, 200.0, 0.0]),
+            Self::Snow => slime_bullet(tex::SNOWBALL, [150.0, 220.0, 255.0]),
             Self::Red => slime_bullet(tex::RED_SLIMEBULLET, [255.0, 215.0, 0.0]),
             Self::Purple => slime_bullet(tex::PURPLE_SLIMEBULLET, [255.0, 0.0, 255.0]),
             Self::EyeWatcher => ProjectileSpec {
@@ -376,6 +400,10 @@ pub(crate) enum EnemyKind {
     Hellhound,
     Mimic,
     SalivaSlime,
+    FrostRat,
+    IcicleBat,
+    SnowSlime,
+    SnowSlimeling,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -404,6 +432,10 @@ pub(crate) enum Behavior {
     HoundBoss,
     MimicBoss,
     Hops,
+    /// Touching it (a bite, say) chills.
+    Chills,
+    /// Now and then it drops an icicle on the player, shadow first.
+    DropsIcicles,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -519,7 +551,7 @@ impl EnemyKind {
         Self::ALL.iter().position(|kind| *kind == self).unwrap_or(0)
     }
 
-    pub(crate) const ALL: [Self; 23] = [
+    pub(crate) const ALL: [Self; 27] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -543,19 +575,39 @@ impl EnemyKind {
         Self::SalivaSlime,
         Self::Spider,
         Self::KingSlime,
+        Self::FrostRat,
+        Self::IcicleBat,
+        Self::SnowSlime,
+        Self::SnowSlimeling,
     ];
 
     pub(crate) fn spec(self) -> EnemySpec {
         match self {
-            Self::Rat => spec(
-                tex::RAT,
-                (4, 2),
-                (85.0, 37.0),
-                1.5,
-                (4, 0.12),
-                Some((3, 0.15)),
-                (12, 2, 6_500_000.0),
-            ),
+            Self::Rat => EnemySpec {
+                themes: NOT_ICE,
+                ..spec(
+                    tex::RAT,
+                    (4, 2),
+                    (85.0, 37.0),
+                    1.5,
+                    (4, 0.12),
+                    Some((3, 0.15)),
+                    (12, 2, 6_500_000.0),
+                )
+            },
+            Self::FrostRat => EnemySpec {
+                behavior: Behavior::Chills,
+                themes: &[Theme::Ice],
+                ..spec(
+                    tex::FROST_RAT,
+                    (4, 2),
+                    (85.0, 37.0),
+                    1.5,
+                    (4, 0.12),
+                    Some((3, 0.15)),
+                    (14, 2, 6_500_000.0),
+                )
+            },
             Self::Snake => EnemySpec {
                 behavior: Behavior::PoisonTrail,
                 ..spec(
@@ -568,15 +620,31 @@ impl EnemyKind {
                     (8, 3, 8_000_000.0),
                 )
             },
-            Self::Bat => spec(
-                tex::BAT,
-                (4, 2),
-                (64.0, 64.0),
-                1.5,
-                (4, 0.125),
-                Some((4, 0.1)),
-                (9, 2, 14_500_000.0),
-            ),
+            Self::Bat => EnemySpec {
+                themes: NOT_ICE,
+                ..spec(
+                    tex::BAT,
+                    (4, 2),
+                    (64.0, 64.0),
+                    1.5,
+                    (4, 0.125),
+                    Some((4, 0.1)),
+                    (9, 2, 14_500_000.0),
+                )
+            },
+            Self::IcicleBat => EnemySpec {
+                behavior: Behavior::DropsIcicles,
+                themes: &[Theme::Ice],
+                ..spec(
+                    tex::ICICLE_BAT,
+                    (4, 2),
+                    (64.0, 64.0),
+                    1.5,
+                    (4, 0.125),
+                    Some((4, 0.1)),
+                    (10, 2, 14_500_000.0),
+                )
+            },
             Self::Ghost => EnemySpec {
                 behavior: Behavior::Dash,
                 ..spec(
@@ -591,6 +659,7 @@ impl EnemyKind {
             },
             Self::Slime => EnemySpec {
                 behavior: Behavior::Smash(ProjectileKind::Green),
+                themes: NOT_ICE,
                 ..spec(
                     tex::SLIME,
                     (6, 2),
@@ -599,6 +668,34 @@ impl EnemyKind {
                     (4, 0.175),
                     Some((6, 0.065)),
                     (9, 1, 1_000_000.0),
+                )
+            },
+            Self::SnowSlime => EnemySpec {
+                behavior: Behavior::Smash(ProjectileKind::Snow),
+                themes: &[Theme::Ice],
+                ..spec(
+                    tex::SNOW_SLIME,
+                    (6, 2),
+                    (32.0, 24.0),
+                    3.0,
+                    (4, 0.175),
+                    Some((6, 0.065)),
+                    (11, 1, 1_000_000.0),
+                )
+            },
+            // What a snow slime breaks into: small, quick to die, and it chills on touch.
+            Self::SnowSlimeling => EnemySpec {
+                behavior: Behavior::Chills,
+                role: Role::Summoned,
+                themes: &[Theme::Ice],
+                ..spec(
+                    tex::SNOW_SLIME,
+                    (6, 2),
+                    (32.0, 24.0),
+                    1.8,
+                    (4, 0.15),
+                    Some((6, 0.065)),
+                    (4, 1, 1_000_000.0),
                 )
             },
             Self::RedSlime => EnemySpec {
@@ -983,8 +1080,10 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 10);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 10 - 5);
+        // The frost rat, icicle bat, snow slime and slimeling live only on ice.
+        let ice_only = 4;
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 10 - ice_only);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 10 - 5 - ice_only);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));

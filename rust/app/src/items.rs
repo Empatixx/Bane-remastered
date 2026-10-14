@@ -2,6 +2,7 @@ use glam::Vec2;
 
 use crate::assets::{tex, Tex};
 use crate::clip::Clip;
+use crate::guns::AmmoClass;
 
 pub(crate) const DESPAWN_SECONDS: f32 = 10.0;
 pub(crate) const BLINK_SECONDS: f32 = 2.0;
@@ -13,14 +14,42 @@ pub(crate) enum AmmoBox {
     Shotgun,
     SubMachine,
     Universal,
+    Rifle,
+    Rocket,
+    /// A battery cell for the laser and lightning guns.
+    Energy,
 }
 
 impl AmmoBox {
     pub(crate) fn percent(self) -> f32 {
         match self {
             Self::Pistol | Self::SubMachine => 0.10,
-            Self::Shotgun => 0.25,
+            Self::Shotgun | Self::Rifle | Self::Energy => 0.25,
+            Self::Rocket => 0.34,
             Self::Universal => 0.5,
+        }
+    }
+
+    /// The kind of gun it feeds; the universal box feeds all of them.
+    pub(crate) fn class(self) -> Option<AmmoClass> {
+        match self {
+            Self::Pistol | Self::SubMachine => Some(AmmoClass::Pistol),
+            Self::Shotgun => Some(AmmoClass::Shotgun),
+            Self::Rifle => Some(AmmoClass::Rifle),
+            Self::Rocket => Some(AmmoClass::Rocket),
+            Self::Energy => Some(AmmoClass::Energy),
+            Self::Universal => None,
+        }
+    }
+
+    /// The box that feeds a kind of gun.
+    pub(crate) fn feeding(class: AmmoClass) -> Self {
+        match class {
+            AmmoClass::Pistol => Self::Pistol,
+            AmmoClass::Shotgun => Self::Shotgun,
+            AmmoClass::Rifle => Self::Rifle,
+            AmmoClass::Rocket => Self::Rocket,
+            AmmoClass::Energy => Self::Energy,
         }
     }
 }
@@ -88,10 +117,12 @@ impl ItemKind {
                 clip: clip(0, 1, 1.0),
             },
             Self::Ammo(box_kind) => ItemSpec {
-                texture: if box_kind == AmmoBox::Shotgun {
-                    tex::AMMOBOX_SHOTGUN
-                } else {
-                    tex::AMMOBOX_PISTOL
+                texture: match box_kind {
+                    AmmoBox::Shotgun => tex::AMMOBOX_SHOTGUN,
+                    AmmoBox::Rifle => tex::AMMOBOX_RIFLE,
+                    AmmoBox::Rocket => tex::AMMOBOX_ROCKET,
+                    AmmoBox::Energy => tex::AMMOBOX_ENERGY,
+                    _ => tex::AMMOBOX_PISTOL,
                 },
                 columns: 8,
                 rows: 1,

@@ -51,21 +51,26 @@ pub(crate) fn outline_drops(world: &mut World) {
     }
 }
 
+/// Turns a rolled ammo box that no held gun could use into the box the
+/// emptiest held gun needs, so rifle rounds, rockets and batteries drop for
+/// the guns that take them.
 pub(crate) fn common_drop(world: &World, kind: ItemKind) -> ItemKind {
     let ItemKind::Ammo(ammo) = kind else {
         return kind;
     };
-    let accepts = |ammo| {
-        world
-            .query::<&Loadout>()
-            .with::<&Player>()
-            .iter()
-            .next()
-            .is_none_or(|loadout| loadout.accepts_ammo(ammo))
+    let mut loadouts = world.query::<&Loadout>().with::<&Player>();
+    let Some(loadout) = loadouts.iter().next() else {
+        return kind;
     };
-    if accepts(ammo) {
+    if loadout.accepts_ammo(ammo) && loadout.feeds_a_held_gun(ammo) {
+        return kind;
+    }
+    if let Some(class) = loadout.neediest() {
+        return ItemKind::Ammo(AmmoBox::feeding(class));
+    }
+    if loadout.accepts_ammo(ammo) {
         kind
-    } else if accepts(AmmoBox::Pistol) {
+    } else if loadout.accepts_ammo(AmmoBox::Pistol) {
         ItemKind::Ammo(AmmoBox::Pistol)
     } else {
         ItemKind::Ammo(AmmoBox::Shotgun)
@@ -552,5 +557,21 @@ mod tests {
         let after = world.get::<&Hover>(drop).map(|h| h.cycle).unwrap_or(0.0);
         let moved = (after - before).rem_euclid(1.0);
         assert!((moved - 0.25).abs() < 0.001, "{moved}");
+    }
+
+    #[test]
+    fn a_laser_gun_that_runs_low_gets_battery_cells_from_drops() {
+        let (mut world, _textures) = arena();
+        for loadout in world.query_mut::<&mut Loadout>() {
+            loadout.clear();
+            let mut tesla = crate::components::Weapon::new(crate::guns::GunKind::TeslaGun);
+            tesla.clip = 0;
+            loadout.add(tesla);
+        }
+        assert_eq!(
+            common_drop(&world, ItemKind::Ammo(AmmoBox::Shotgun)),
+            ItemKind::Ammo(AmmoBox::Energy)
+        );
+        assert_eq!(common_drop(&world, ItemKind::Coin), ItemKind::Coin);
     }
 }

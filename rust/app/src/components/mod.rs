@@ -18,8 +18,8 @@ mod pet;
 mod settings_ui;
 mod shadow;
 mod skills;
-mod summons;
 mod stats;
+mod summons;
 mod tags;
 mod transform;
 mod ui;
@@ -31,7 +31,6 @@ pub(crate) use artefacts::{
     HealPercent, InfiniteAmmo, MidasTouch, Phantom, PlaceTurret, ShieldAura, Shielded,
     SummonGhosts, TimeSlow,
 };
-pub(crate) use summons::{Ghost, Summoned, Turret, TurretStage};
 pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{
     Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
@@ -45,8 +44,9 @@ pub(crate) use effects::{
     RoomId, ThenPlay, Trailing, TrapCooldown,
 };
 pub(crate) use hud::{
-    AMMO_TEXT_COLOR, AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount,
-    GunIcon, InfinityMark, PIP_EMPTY, PIP_FULL, StatusBar, TalentCount,
+    AMMO_TEXT_COLOR, AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon,
+    InfinityMark, PIP_EMPTY, PIP_FULL, StatusBar, TalentCount, WeaponSlot, BATTERY_CENTER,
+    BATTERY_SIZE, BATTERY_WINDOW, BatteryPart,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use items::{
@@ -59,7 +59,7 @@ pub(crate) use motion::Velocity;
 pub(crate) use objects::{
     ArrowTrap, BreakKind, Breakable, Broken, CHILL_SECONDS, CHILL_SLOWDOWN, CHILL_STACKS_TO_FREEZE,
     Chilled, Flame, FloorPatch, Friendly, Frozen, PatchKind, PoisonPool, PoisonTrail, Poisoned,
-    RippleTimer, SlotMachine, SlotPrice, Solid, TrailLayer, TrapArrow,
+    RippleTimer, SlotMachine, SlotPrice, Solid, TrailLayer, TrainingDummy, TrapArrow,
 };
 pub(crate) use perks::{HitRoll, PlayerPerks};
 pub(crate) use pet::Pet;
@@ -70,13 +70,15 @@ pub(crate) use settings_ui::{
 pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
     ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Bait, BeamPart, Boss, Charge, Cobweb,
-    DeathBurst, DeathCloud, DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse,
+    Chills, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, EnemyBullet,
+    EyeShooter, FallingRock, Fuse, IcicleDropper,
     GolemAttack, GolemBoss, GolemStage, Hatcher, Hits, Homing, Hopper, HoundAttack, HoundBoss,
     HoundStage, Impact, Kin, LeapStage, Leaper, Magma, MagmaSpreader, MimicAttack, MimicBoss,
     MimicStage, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter, RockFall, Rooted, Sealed, Smash,
     WebSpitter,
 };
 pub(crate) use stats::RunStats;
+pub(crate) use summons::{Ghost, Summoned, Turret, TurretStage};
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
 pub(crate) use transform::{Blend, Position, Previous, Size, blended};
 pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, PulseUi, TextButton, UiAction, UpgradeUi};

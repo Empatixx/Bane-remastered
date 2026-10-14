@@ -20,6 +20,15 @@ pub(crate) struct Solid(pub(crate) ColliderHandle);
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Broken;
 
+/// A practice target in the lobby: it takes every hit, never falls and
+/// shows the damage per second it took lately on its `readout` text.
+#[derive(Debug, Clone)]
+pub(crate) struct TrainingDummy {
+    pub(crate) readout: hecs::Entity,
+    /// Each recent hit as how long ago it landed and how much it dealt.
+    pub(crate) recent: Vec<(f32, i32)>,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Flame;
 

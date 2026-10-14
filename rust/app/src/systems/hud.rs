@@ -4,9 +4,10 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::assets::tex;
 use crate::components::{
-    AMMO_TEXT_COLOR, AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, Color,
-    GoldCount, GunIcon, Health, Hidden, InfinityMark, Loadout, PIP_EMPTY, PIP_FULL, Player,
-    Position, Size, Sprite, StatusBar, TalentCount, Text, Wallet, Weapon,
+    AMMO_TEXT_COLOR, AmmoPip, AmmoText, Animation, Armor, BATTERY_CENTER, BATTERY_SIZE,
+    BATTERY_WINDOW, BarKind, BatteryPart, Boss, CoinText, Color, GoldCount, GunIcon, Health,
+    Hidden, InfinityMark, Loadout, PIP_EMPTY, PIP_FULL, Player, Position, Size, Sprite, StatusBar,
+    TalentCount, Text, Wallet, Weapon,
 };
 use crate::guns::{ClipStyle, PIP_SIZE, pip_layout};
 use crate::render::{Draw, Quad, TextureId};
@@ -106,6 +107,7 @@ fn show_weapon(
     let icons: Vec<Entity> = world.query::<Entity>().with::<&GunIcon>().iter().collect();
     for text in world.query_mut::<&mut Text>().with::<&AmmoText>() {
         text.content = match (weapon, gold) {
+            (Some(w), None) if w.runs_on_battery() => format!("{}%", charge_percent(&w)),
             (Some(w), None) => format!("{}/{}", w.clip, w.ammo),
             _ => String::new(),
         };
@@ -172,6 +174,8 @@ fn show_weapon(
                 position.0 = top_left + PIP_SIZE / 2.0;
                 sprite.texture = textures.get(match style {
                     ClipStyle::Shotgun => tex::SHOTGUN_AMMO_HUD,
+                    ClipStyle::Rifle => tex::RIFLE_AMMO_HUD,
+                    ClipStyle::Rocket => tex::ROCKET_AMMO_HUD,
                     _ => tex::AMMO_HUD,
                 });
                 animation.switch_to(if gold.is_some() || pip.index < w.clip {
@@ -184,11 +188,58 @@ fn show_weapon(
             None => hide.push(entity),
         }
     }
+    let battery = weapon.filter(|w| w.spec().clip_style == ClipStyle::Battery);
+    let charge = match (battery, gold) {
+        (Some(_), Some(_)) => Some(1.0),
+        (Some(w), None) => Some(charge_percent(&w) as f32 / 100.0),
+        (None, _) => None,
+    };
+    for (entity, part, position, size, color) in
+        world.query_mut::<(Entity, &BatteryPart, &mut Position, &mut Size, &mut Color)>()
+    {
+        let Some(charge) = charge else {
+            hide.push(entity);
+            continue;
+        };
+        let (offset, window) = BATTERY_WINDOW;
+        let bottom = BATTERY_CENTER.y - BATTERY_SIZE.y / 2.0 + offset.y + window.y;
+        let left = BATTERY_CENTER.x - BATTERY_SIZE.x / 2.0 + offset.x;
+        match part {
+            BatteryPart::Charge => {
+                let height = (window.y * charge).round();
+                size.0 = Vec2::new(window.x, height);
+                position.0 = Vec2::new(left + window.x / 2.0, bottom - height / 2.0);
+                color.0 = gold.map_or_else(|| charge_color(charge), |_| GOLD);
+            }
+            BatteryPart::Hollow => {
+                size.0 = window;
+                position.0 = Vec2::new(left, bottom - window.y) + window / 2.0;
+            }
+            BatteryPart::Frame => {}
+        }
+        show.push(entity);
+    }
     for entity in hide {
         let _ = world.insert_one(entity, Hidden);
     }
     for entity in show {
         let _ = world.remove_one::<Hidden>(entity);
+    }
+}
+
+/// How full the battery in a laser gun is, rounded up so a last shot never reads 0%.
+fn charge_percent(weapon: &Weapon) -> i32 {
+    let size = weapon.clip_size().max(1);
+    (weapon.clip * 100 + size - 1) / size
+}
+
+fn charge_color(charge: f32) -> Vec4 {
+    if charge > 0.5 {
+        Vec4::new(60.0 / 255.0, 200.0 / 255.0, 230.0 / 255.0, 1.0)
+    } else if charge > 0.2 {
+        Vec4::new(240.0 / 255.0, 200.0 / 255.0, 60.0 / 255.0, 1.0)
+    } else {
+        Vec4::new(220.0 / 255.0, 60.0 / 255.0, 50.0 / 255.0, 1.0)
     }
 }
 
@@ -351,5 +402,59 @@ mod tests {
     fn the_pip_shimmer_travels_along_the_pips_over_time() {
         assert_ne!(shimmer(0.0, 0), shimmer(0.0, 3));
         assert_ne!(shimmer(0.0, 2), shimmer(0.4, 2));
+    }
+
+    fn armed_with(kind: crate::guns::GunKind, clip: i32) -> World {
+        let mut world = World::new();
+        let mut loadout = Loadout::starting();
+        loadout.drop_current();
+        let mut weapon = Weapon::new(kind);
+        weapon.clip = clip;
+        loadout.add(weapon);
+        world.spawn((Player, loadout));
+        crate::prefabs::weapon_hud(&mut world, &Textures::default());
+        update_weapon_hud(&mut world, &Textures::default(), None);
+        world
+    }
+
+    fn shown<T: hecs::Component>(world: &World) -> usize {
+        world.query::<&T>().without::<&Hidden>().iter().count()
+    }
+
+    fn ammo_text(world: &World) -> String {
+        world
+            .query::<&Text>()
+            .with::<&AmmoText>()
+            .iter()
+            .next()
+            .expect("ammo text")
+            .content
+            .clone()
+    }
+
+    #[test]
+    fn a_laser_gun_shows_one_battery_with_its_charge_instead_of_rounds() {
+        let world = armed_with(crate::guns::GunKind::TeslaGun, 20);
+        assert_eq!(shown::<AmmoPip>(&world), 0);
+        assert_eq!(shown::<BatteryPart>(&world), 3);
+        assert_eq!(ammo_text(&world), "25%");
+        let charge = world
+            .query::<(&BatteryPart, &Size)>()
+            .iter()
+            .find(|(part, _)| **part == BatteryPart::Charge)
+            .map(|(_, size)| size.0.y)
+            .expect("charge");
+        assert!((charge - (BATTERY_WINDOW.1.y * 0.25).round()).abs() < 0.5);
+    }
+
+    #[test]
+    fn a_rifle_shows_rounds_and_no_battery() {
+        let world = armed_with(crate::guns::GunKind::Sniper, 3);
+        assert_eq!(shown::<BatteryPart>(&world), 0);
+        assert_eq!(shown::<AmmoPip>(&world), 5);
+        assert_eq!(
+            ammo_text(&world),
+            format!("3/{}", crate::guns::GunKind::Sniper.spec().max_ammo)
+        );
     }
 }

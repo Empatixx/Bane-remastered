@@ -36,6 +36,7 @@ pub(crate) enum GunKind {
     PlasmaRifle,
     TeslaGun,
     Railgun,
+    ArcCaster,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -78,6 +79,12 @@ pub(crate) enum ClipStyle {
     Pistol,
     Shotgun,
     SubMachine,
+    /// Long rifle rounds, one above the other.
+    Rifle,
+    Rocket,
+    /// No rounds and no reload: one battery holds all the charge (the clip)
+    /// and drains by percent until a battery cell tops it up.
+    Battery,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -93,6 +100,7 @@ pub(crate) enum Round {
     Plasma,
     Spark,
     Rail,
+    Arc,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -110,9 +118,35 @@ pub(crate) struct RoundSpec {
     pub(crate) splash: bool,
     /// How many more enemies a hit jumps to as lightning.
     pub(crate) chains: u32,
+    /// What part of the damage is left after each jump of the lightning.
+    pub(crate) chain_falloff: f32,
+    /// How the lightning looks when it jumps.
+    pub(crate) bolt: Bolt,
     pub(crate) light: [f32; 3],
     /// Motes the round sheds behind itself while it flies.
     pub(crate) trail: Option<Trail>,
+}
+
+/// The colour of chain lightning: the arc drawn between two targets, its glow
+/// and the sparks it scatters.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Bolt {
+    pub(crate) arc: Tex,
+    pub(crate) light: [f32; 3],
+    pub(crate) sparks: Trail,
+}
+
+impl Bolt {
+    pub(crate) const BLUE: Self = Self {
+        arc: tex::ROUND_ARC,
+        light: [80.0, 160.0, 255.0],
+        sparks: Trail::VOLT,
+    };
+    pub(crate) const VIOLET: Self = Self {
+        arc: tex::ROUND_ARC_VIOLET,
+        light: [170.0, 80.0, 255.0],
+        sparks: Trail::ARC,
+    };
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -136,6 +170,14 @@ impl Trail {
         spread: 90.0,
         every: 0.02,
     };
+    pub(crate) const ARC: Self = Self {
+        texture: tex::ROUND_MOTE_VOLT,
+        tint: [0.85, 0.6, 1.0],
+        size: 14.0,
+        life: 0.3,
+        spread: 110.0,
+        every: 0.02,
+    };
     pub(crate) const LASER: Self = Self {
         texture: tex::ROUND_MOTE_LASER,
         tint: [1.0, 0.5, 0.55],
@@ -147,7 +189,7 @@ impl Trail {
 }
 
 impl Round {
-    pub(crate) const ALL: [Self; 10] = [
+    pub(crate) const ALL: [Self; 11] = [
         Self::Bullet,
         Self::Tracer,
         Self::Slug,
@@ -158,6 +200,7 @@ impl Round {
         Self::Plasma,
         Self::Spark,
         Self::Rail,
+        Self::Arc,
     ];
 
     pub(crate) fn spec(self) -> RoundSpec {
@@ -171,6 +214,8 @@ impl Round {
             blast: false,
             splash: false,
             chains: 0,
+            chain_falloff: 1.0,
+            bolt: Bolt::BLUE,
             light: [255.0, 0.0, 0.0],
             trail: None,
         };
@@ -228,6 +273,14 @@ impl Round {
                 light: [60.0, 220.0, 240.0],
                 ..round(tex::ROUND_RAIL, (48.0, 16.0), 1800.0)
             },
+            Self::Arc => RoundSpec {
+                chains: 4,
+                chain_falloff: 0.75,
+                bolt: Bolt::VIOLET,
+                light: [170.0, 90.0, 255.0],
+                trail: Some(Trail::ARC),
+                ..round(tex::ROUND_SPARK_VIOLET, (20.0, 20.0), 650.0)
+            },
         }
     }
 
@@ -235,7 +288,7 @@ impl Round {
     pub(crate) fn turns(self) -> bool {
         !matches!(
             self,
-            Self::Bullet | Self::Flame | Self::Plasma | Self::Spark
+            Self::Bullet | Self::Flame | Self::Plasma | Self::Spark | Self::Arc
         )
     }
 }
@@ -256,6 +309,8 @@ pub(crate) struct GunSpec {
     pub(crate) burst: Option<u32>,
     pub(crate) shoot: SoundEffect,
     pub(crate) reload: SoundEffect,
+    /// Played once per trigger pull while the clip is empty.
+    pub(crate) empty: SoundEffect,
     pub(crate) clip_style: ClipStyle,
     pub(crate) shake: f32,
     pub(crate) damage_scale: f32,
@@ -288,6 +343,7 @@ const fn gun(
         burst: None,
         shoot: sounds.0,
         reload: sounds.1,
+        empty: SoundEffect::EmptyGunShoot,
         clip_style,
         shake: 0.35,
         damage_scale: 1.0,
@@ -301,18 +357,26 @@ const fn gun(
 pub(crate) enum AmmoClass {
     Pistol,
     Shotgun,
+    Rifle,
+    Rocket,
+    /// The laser and lightning guns run on batteries.
+    Energy,
 }
 
 impl GunKind {
     pub(crate) fn ammo_class(self) -> AmmoClass {
-        if self == Self::Shotgun {
-            AmmoClass::Shotgun
-        } else {
-            AmmoClass::Pistol
+        match self {
+            Self::Shotgun => AmmoClass::Shotgun,
+            Self::Sniper => AmmoClass::Rifle,
+            Self::Rpg => AmmoClass::Rocket,
+            Self::Blaster | Self::PlasmaRifle | Self::TeslaGun | Self::Railgun | Self::ArcCaster => {
+                AmmoClass::Energy
+            }
+            _ => AmmoClass::Pistol,
         }
     }
 
-    pub(crate) const ALL: [Self; 16] = [
+    pub(crate) const ALL: [Self; 17] = [
         Self::Pistol,
         Self::Shotgun,
         Self::Luger,
@@ -329,7 +393,30 @@ impl GunKind {
         Self::PlasmaRifle,
         Self::TeslaGun,
         Self::Railgun,
+        Self::ArcCaster,
     ];
+
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            Self::Pistol => "Pistol",
+            Self::Shotgun => "Shotgun",
+            Self::Luger => "Luger",
+            Self::Revolver => "Revolver",
+            Self::M4 => "M4",
+            Self::Uzi => "Uzi",
+            Self::Thompson => "Thompson",
+            Self::Sniper => "Sniper",
+            Self::Rpg => "RPG",
+            Self::Minigun => "Minigun",
+            Self::Crossbow => "Crossbow",
+            Self::Flamethrower => "Flamethrower",
+            Self::Blaster => "Blaster",
+            Self::PlasmaRifle => "Plasma Rifle",
+            Self::TeslaGun => "Tesla Gun",
+            Self::Railgun => "Railgun",
+            Self::ArcCaster => "Arc Caster",
+        }
+    }
 
     /// The stable name of the weapon, the same one the profile is saved under.
     pub(crate) fn key(self) -> &'static str {
@@ -350,11 +437,12 @@ impl GunKind {
             Self::PlasmaRifle => "plasma_rifle",
             Self::TeslaGun => "tesla_gun",
             Self::Railgun => "railgun",
+            Self::ArcCaster => "arc_caster",
         }
     }
 
     pub(crate) fn spec(self) -> GunSpec {
-        use ClipStyle::{Pistol, Shotgun, SubMachine};
+        use ClipStyle::{Battery, Pistol, Rifle, Rocket, Shotgun, SubMachine};
         use SoundEffect as S;
         match self {
             Self::Pistol => gun(
@@ -454,7 +542,7 @@ impl GunKind {
                     (1.1, 1.6),
                     (5, 40),
                     (S::SniperShoot, S::SniperReload),
-                    Shotgun,
+                    Rifle,
                 )
             },
             Self::Rpg => GunSpec {
@@ -467,7 +555,7 @@ impl GunKind {
                     (1.4, 1.8),
                     (1, 12),
                     (S::RpgShoot, S::RpgReload),
-                    Shotgun,
+                    Rocket,
                 )
             },
             Self::Minigun => GunSpec {
@@ -514,54 +602,74 @@ impl GunKind {
             Self::Blaster => GunSpec {
                 shake: 0.2,
                 round: Round::Laser,
+                empty: S::EnergyEmpty,
                 ..gun(
                     (tex::GUNS_BLASTER, (56.0, 38.0)),
                     (2, 4),
                     0.05,
                     (0.22, 1.0),
-                    (12, 144),
+                    (144, 0),
                     (S::BlasterShoot, S::BlasterReload),
-                    Pistol,
+                    Battery,
                 )
             },
             Self::PlasmaRifle => GunSpec {
                 auto: true,
                 shake: 0.12,
                 round: Round::Plasma,
+                empty: S::EnergyEmpty,
                 ..gun(
                     (tex::GUNS_PLASMA_RIFLE, (104.0, 46.0)),
                     (2, 3),
                     0.12,
                     (0.16, 1.4),
-                    (24, 240),
+                    (240, 0),
                     (S::PlasmaShoot, S::PlasmaReload),
-                    SubMachine,
+                    Battery,
                 )
             },
             Self::TeslaGun => GunSpec {
                 shake: 0.3,
                 round: Round::Spark,
+                empty: S::EnergyEmpty,
                 ..gun(
                     (tex::GUNS_TESLA_GUN, (96.0, 50.0)),
                     (3, 5),
                     0.1,
                     (0.55, 1.2),
-                    (8, 80),
+                    (80, 0),
                     (S::TeslaShoot, S::TeslaReload),
-                    Shotgun,
+                    Battery,
                 )
             },
             Self::Railgun => GunSpec {
                 shake: 1.0,
                 round: Round::Rail,
+                empty: S::EnergyEmpty,
                 ..gun(
                     (tex::GUNS_RAILGUN, (132.0, 40.0)),
                     (14, 20),
                     0.0,
                     (1.6, 2.0),
-                    (3, 24),
+                    (24, 0),
                     (S::RailgunShoot, S::RailgunReload),
-                    Shotgun,
+                    Battery,
+                )
+            },
+            // Weak alone, but every hit arcs on to four more targets, each taking less.
+            Self::ArcCaster => GunSpec {
+                auto: true,
+                shake: 0.1,
+                round: Round::Arc,
+                empty: S::EnergyEmpty,
+                ..gun(
+                    (tex::GUNS_ARC_CASTER, (100.0, 48.0)),
+                    (2, 3),
+                    0.08,
+                    (0.22, 1.3),
+                    (200, 0),
+                    (S::ArcShoot, S::TeslaReload),
+                    Battery,
                 )
             },
         }
@@ -597,9 +705,10 @@ pub(crate) fn pip_layout(style: ClipStyle, clip_size: usize) -> Vec<Vec2> {
         ClipStyle::Pistol => (0..clip_size)
             .map(|index| Vec2::new(PIPS_RIGHT, PIPS_BOTTOM - index as f32 * PIPS_STEP))
             .collect(),
-        ClipStyle::Shotgun => (0..clip_size)
+        ClipStyle::Shotgun | ClipStyle::Rifle | ClipStyle::Rocket => (0..clip_size)
             .map(|index| Vec2::new(PIPS_RIGHT, PIPS_BOTTOM - index as f32 * PIPS_STEP_SHOTGUN))
             .collect(),
+        ClipStyle::Battery => Vec::new(),
         ClipStyle::SubMachine => {
             let half = clip_size.div_ceil(2);
             (0..2)
@@ -637,9 +746,16 @@ mod tests {
     fn every_gun_fits_the_clip_hud() {
         for kind in GunKind::ALL {
             let spec = kind.spec();
-            assert!(spec.clip_size as usize <= MAX_CLIP, "{kind:?}");
+            let battery = spec.clip_style == ClipStyle::Battery;
+            assert!(battery || spec.clip_size as usize <= MAX_CLIP, "{kind:?}");
+            assert!(!battery || spec.max_ammo == 0, "{kind:?} keeps no spare charge");
             let pips = pip_layout(spec.clip_style, spec.clip_size as usize);
-            assert_eq!(pips.len(), spec.clip_size as usize, "{kind:?}");
+            let shown = if spec.clip_style == ClipStyle::Battery {
+                0
+            } else {
+                spec.clip_size as usize
+            };
+            assert_eq!(pips.len(), shown, "{kind:?}");
             assert!(spec.pellets <= MAX_PELLETS);
         }
     }
@@ -743,8 +859,28 @@ mod tests {
                 GunKind::Thompson,
                 GunKind::Minigun,
                 GunKind::Flamethrower,
-                GunKind::PlasmaRifle
+                GunKind::PlasmaRifle,
+                GunKind::ArcCaster
             ]
         );
+    }
+
+    #[test]
+    fn the_arc_caster_throws_violet_lightning_and_the_tesla_blue() {
+        assert_eq!(GunKind::ArcCaster.spec().round.spec().bolt, Bolt::VIOLET);
+        assert_eq!(GunKind::TeslaGun.spec().round.spec().bolt, Bolt::BLUE);
+    }
+
+    #[test]
+    fn laser_guns_run_on_batteries_the_sniper_on_rifle_rounds_and_the_rpg_on_rockets() {
+        for kind in GunKind::ALL {
+            let battery = kind.spec().clip_style == ClipStyle::Battery;
+            assert_eq!(battery, kind.ammo_class() == AmmoClass::Energy, "{kind:?}");
+        }
+        assert_eq!(GunKind::Sniper.ammo_class(), AmmoClass::Rifle);
+        assert_eq!(GunKind::Sniper.spec().clip_style, ClipStyle::Rifle);
+        assert_eq!(GunKind::Rpg.ammo_class(), AmmoClass::Rocket);
+        assert_eq!(GunKind::Rpg.spec().clip_style, ClipStyle::Rocket);
+        assert_eq!(GunKind::Shotgun.ammo_class(), AmmoClass::Shotgun);
     }
 }

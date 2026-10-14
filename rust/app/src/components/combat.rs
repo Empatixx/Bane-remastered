@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 use super::animation::Clip;
-use crate::guns::{AmmoClass, GunKind, GunSpec, Mutation, Round};
+use crate::guns::{AmmoClass, ClipStyle, GunKind, GunSpec, Mutation, Round};
 use crate::items::AmmoBox;
 use crate::weapon_upgrades::{GunMods, WeaponMods};
 
@@ -249,17 +249,48 @@ impl Weapon {
         self.reloading.is_none() && self.cooldown <= 0.0 && self.clip > 0
     }
 
+    /// A laser gun keeps all its charge in one battery and never reloads.
+    pub(crate) fn runs_on_battery(&self) -> bool {
+        self.spec().clip_style == ClipStyle::Battery
+    }
+
     pub(crate) fn has_full_ammo(&self) -> bool {
-        self.ammo >= self.max_ammo()
+        if self.runs_on_battery() {
+            self.clip >= self.clip_size()
+        } else {
+            self.ammo >= self.max_ammo()
+        }
+    }
+
+    /// How much of its ammo the gun still has, from 0 to 1.
+    pub(crate) fn fullness(&self) -> f32 {
+        if self.runs_on_battery() {
+            self.clip as f32 / self.clip_size().max(1) as f32
+        } else {
+            self.ammo as f32 / self.max_ammo().max(1) as f32
+        }
+    }
+
+    /// A full clip and a full reserve, any reload called off.
+    pub(crate) fn refill(&mut self) {
+        self.clip = self.clip_size();
+        self.ammo = self.max_ammo();
+        self.reloading = None;
     }
 
     pub(crate) fn add_percent(&mut self, percent: f32) {
+        if self.runs_on_battery() {
+            let size = self.clip_size();
+            self.clip = (self.clip + (size as f32 * percent) as i32).min(size);
+            return;
+        }
         let max = self.max_ammo();
         self.ammo = (self.ammo + (max as f32 * percent) as i32).min(max);
     }
 
     pub(crate) fn start_reload(&mut self) -> bool {
-        let can = self.burst.is_none()
+        let can = !self.runs_on_battery()
+            && self.burst.is_none()
             && self.reloading.is_none()
             && self.ammo > 0
             && self.clip < self.clip_size();
@@ -367,19 +398,32 @@ impl Loadout {
     }
 
     fn takes(weapon: &Weapon, ammo: AmmoBox) -> bool {
-        match ammo {
-            AmmoBox::Universal => true,
-            AmmoBox::Shotgun => weapon.kind.ammo_class() == AmmoClass::Shotgun,
-            AmmoBox::Pistol | AmmoBox::SubMachine => weapon.kind.ammo_class() == AmmoClass::Pistol,
-        }
+        ammo.class()
+            .is_none_or(|class| weapon.kind.ammo_class() == class)
     }
 
     pub(crate) fn accepts_ammo(&self, ammo: AmmoBox) -> bool {
-        match (self.only, ammo) {
-            (_, AmmoBox::Universal) | (None, _) => true,
-            (Some(only), AmmoBox::Shotgun) => only.ammo_class() == AmmoClass::Shotgun,
-            (Some(only), _) => only.ammo_class() == AmmoClass::Pistol,
+        match (self.only, ammo.class()) {
+            (_, None) | (None, _) => true,
+            (Some(only), Some(class)) => only.ammo_class() == class,
         }
+    }
+
+    /// The kind of ammo the held gun that is emptiest needs, if any gun needs some.
+    pub(crate) fn neediest(&self) -> Option<AmmoClass> {
+        self.slots
+            .iter()
+            .flatten()
+            .filter(|weapon| !weapon.has_full_ammo())
+            .min_by(|a, b| a.fullness().total_cmp(&b.fullness()))
+            .map(|weapon| weapon.kind.ammo_class())
+    }
+
+    pub(crate) fn feeds_a_held_gun(&self, ammo: AmmoBox) -> bool {
+        self.slots
+            .iter()
+            .flatten()
+            .any(|weapon| Self::takes(weapon, ammo))
     }
 
     pub(crate) fn wants_ammo(&self, ammo: AmmoBox) -> bool {
@@ -418,6 +462,12 @@ impl Loadout {
 
     pub(crate) fn previous(&mut self) {
         self.current = (self.current + self.slots.len() - 1) % self.slots.len();
+    }
+
+    /// Empty hands: every slot free and the first one current.
+    pub(crate) fn clear(&mut self) {
+        self.slots.iter_mut().for_each(|slot| *slot = None);
+        self.current = 0;
     }
 
     pub(crate) fn drop_current(&mut self) -> Option<Weapon> {
@@ -599,5 +649,37 @@ mod tests {
         assert_eq!(loadout.current().map(|w| w.kind), Some(GunKind::Pistol));
         loadout.switch_to(1);
         assert_eq!(loadout.current().map(|w| w.kind), Some(GunKind::Luger));
+    }
+
+    #[test]
+    fn each_box_feeds_only_its_own_guns_and_the_universal_box_feeds_all() {
+        let mut tesla = Weapon::new(GunKind::TeslaGun);
+        tesla.clip = 0;
+        let mut loadout = Loadout::starting();
+        loadout.drop_current();
+        loadout.add(tesla);
+        assert!(loadout.wants_ammo(AmmoBox::Energy));
+        assert!(!loadout.wants_ammo(AmmoBox::Pistol) || loadout.has(GunKind::Pistol));
+        assert!(!loadout.wants_ammo(AmmoBox::Rocket));
+        assert_eq!(loadout.neediest(), Some(AmmoClass::Energy));
+        loadout.add_ammo(AmmoBox::Energy);
+        let charged = loadout
+            .current()
+            .map(|weapon| weapon.clip)
+            .expect("the tesla is in hand");
+        assert!(charged > 0);
+    }
+
+    #[test]
+    fn a_laser_gun_never_reloads_and_a_battery_cell_tops_up_its_charge() {
+        let mut blaster = Weapon::new(GunKind::Blaster);
+        assert_eq!(blaster.ammo, 0, "all the charge is in the battery");
+        blaster.clip = 10;
+        assert!(!blaster.start_reload());
+        blaster.add_percent(AmmoBox::Energy.percent());
+        assert_eq!(blaster.clip, 10 + blaster.clip_size() / 4);
+        blaster.add_percent(1.0);
+        assert_eq!(blaster.clip, blaster.clip_size());
+        assert!(blaster.has_full_ammo());
     }
 }

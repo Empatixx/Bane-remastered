@@ -444,8 +444,10 @@ pub(crate) fn drop_rock(
     world.spawn((
         RockFall {
             remaining: enemies::GOLEM_RAIN_DELAY,
+            duration: enemies::GOLEM_RAIN_DELAY,
             rock,
             room,
+            icicle: false,
         },
         Position(ground),
         Size(SHADOW_SIZE),
@@ -467,7 +469,7 @@ pub(crate) fn tick_rock_falls(
     for (entity, fall, position) in world.query_mut::<(Entity, &mut RockFall, &Position)>() {
         fall.remaining -= dt;
         if fall.remaining <= 0.0 {
-            landed.push((entity, fall.rock, position.0, fall.room));
+            landed.push((entity, fall.rock, position.0, fall.room, fall.icicle));
         }
     }
     let falling: Vec<(Entity, Entity)> = world
@@ -477,7 +479,7 @@ pub(crate) fn tick_rock_falls(
         .collect();
     for (shadow, rock) in falling {
         let progress = world.get::<&RockFall>(shadow).map_or(0.0, |fall| {
-            (fall.remaining / enemies::GOLEM_RAIN_DELAY).clamp(0.0, 1.0)
+            (fall.remaining / fall.duration).clamp(0.0, 1.0)
         });
         let ground = world.get::<&Position>(shadow).map(|p| p.0).ok();
         if let (Some(ground), Ok(mut position)) = (ground, world.get::<&mut Position>(rock)) {
@@ -486,9 +488,13 @@ pub(crate) fn tick_rock_falls(
         }
     }
     let player = player_body(world);
-    for (shadow, rock, ground, room) in landed {
+    for (shadow, rock, ground, room, icicle) in landed {
         let _ = world.despawn(shadow);
         let _ = world.despawn(rock);
+        if icicle {
+            icicle_lands(world, textures, ground, player, sounds);
+            continue;
+        }
         sounds.push(AudioCommand::At(SoundEffect::WallHit, ground));
         let burst = Clip {
             row: 1,
@@ -528,6 +534,28 @@ pub(crate) fn tick_rock_falls(
         {
             prefabs::hatchling(world, physics, EnemyKind::MiniGolem, ground, room, textures);
         }
+    }
+}
+
+/// An icicle shatters where its shadow was; standing there hurts and chills.
+fn icicle_lands(
+    world: &mut World,
+    textures: &Textures,
+    ground: Vec2,
+    player: Option<(Entity, Vec2, Vec2)>,
+    sounds: &mut Vec<AudioCommand>,
+) {
+    sounds.push(AudioCommand::At(SoundEffect::WallHit, ground));
+    prefabs::ice_shatter(world, ground, textures);
+    let Some((player, at, size)) = player else {
+        return;
+    };
+    let reach = Vec2::splat(enemies::ICICLE_RADIUS * 2.0);
+    if world.get::<&Dodge>(player).is_err()
+        && geometry::overlaps(ground, reach, at, size)
+        && hurt_player(world, player, enemies::ICICLE_DAMAGE, sounds)
+    {
+        super::frost::chill_player(world, player);
     }
 }
 

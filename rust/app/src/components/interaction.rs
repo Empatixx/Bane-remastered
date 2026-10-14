@@ -13,6 +13,7 @@ pub(crate) enum Interaction {
     Spin,
     Quests,
     Weapons,
+    RefillAmmo,
 }
 
 #[derive(Debug, Clone, Copy)]

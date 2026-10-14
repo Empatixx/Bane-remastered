@@ -21,7 +21,7 @@ pub(super) const PRICE_TAG_SIZE: f32 = 32.0;
 
 pub(super) const PRICE_COLOR: Vec4 = Vec4::new(212.0 / 255.0, 168.0 / 255.0, 8.0 / 255.0, 1.0);
 
-pub(super) fn label(world: &mut World, content: &str, position: Vec2, centered: bool) {
+pub(crate) fn label(world: &mut World, content: &str, position: Vec2, centered: bool) {
     let align = if centered { Align::Center } else { Align::Left };
     world.spawn((
         Position(position),

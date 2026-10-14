@@ -87,6 +87,26 @@ pub(crate) struct BossHud;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct GunIcon;
 
+/// The battery the laser guns show instead of rounds: its frame, and the
+/// charge drawn behind the frame's window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BatteryPart {
+    Frame,
+    Charge,
+    /// The dark inside of the window the charge drains out of.
+    Hollow,
+}
+
+/// Right of the weapon slot (x 685..910, y 450..525), level with its middle.
+pub(crate) const BATTERY_CENTER: Vec2 = Vec2::new(935.0, 487.5);
+pub(crate) const BATTERY_SIZE: Vec2 = Vec2::new(42.0, 90.0);
+/// The window the charge shows through, from the frame's top left corner.
+pub(crate) const BATTERY_WINDOW: (Vec2, Vec2) = (Vec2::new(6.0, 15.0), Vec2::new(30.0, 69.0));
+
+/// The frame behind the gun icon and the ammo.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct WeaponSlot;
+
 pub(crate) const AMMO_TEXT_COLOR: Vec4 =
     Vec4::new(226.0 / 255.0, 153.0 / 255.0, 117.0 / 255.0, 1.0);
 

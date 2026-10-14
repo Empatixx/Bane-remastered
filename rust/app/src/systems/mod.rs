@@ -12,6 +12,8 @@ mod crowd;
 mod damage;
 pub(crate) mod death_screen;
 mod dodge;
+mod dummy;
+mod frost;
 mod draw;
 mod dust;
 mod effects;
@@ -75,6 +77,8 @@ pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
 pub(crate) use casings::tick_casings;
 pub(crate) use crowd::separate_chasers;
+pub(crate) use dummy::tick_dummies;
+pub(crate) use frost::tick_icicle_bats;
 pub(crate) use damage::{
     contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,
     trap_hits_enemies,
@@ -118,7 +122,7 @@ pub(crate) use perks::{
 };
 pub(crate) use pet::{pet_bites, pick_pet_targets, plan_pet_paths, steer_pets};
 pub(crate) use player_animation::animate_player;
-pub(crate) use portal::tint_portal;
+pub(crate) use portal::{sign_portal, tint_portal};
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
 pub(crate) use rules::toughen_enemies;
 pub(crate) use scientist::{PURCHASE, Repertoire, Standing, chat, fit_speech};
