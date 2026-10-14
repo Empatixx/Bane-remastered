@@ -32,7 +32,6 @@ pub(crate) enum Prop {
     LayingBook,
     Ladder,
     Flamethrower,
-    FireGeyser,
     IcePatch,
     WebPatch,
     ArrowTrap,
@@ -287,17 +286,6 @@ impl Prop {
                 animation: Some(Animated {
                     frames: 4,
                     frame_time: 0.175,
-                }),
-            },
-            Self::FireGeyser => PropSpec {
-                texture: tex::FIRE_GEYSER,
-                columns: 8,
-                rows: 1,
-                frame: Vec2::new(32.0, 64.0),
-                scale: 2.0,
-                animation: Some(Animated {
-                    frames: 8,
-                    frame_time: 0.2,
                 }),
             },
             Self::SurfaceShade => still(tex::SURFACE_SHADE, Vec2::new(16.0, 16.0), 4.0),

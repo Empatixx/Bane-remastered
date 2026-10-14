@@ -12,10 +12,9 @@ objevit.
 
 ### Které téma dostane které patro
 
-- **Patro 1 je vždy Spider.** Podle příběhu jsou pavouci „stehy“, které drží ránu u povrchu
-  zavřenou.
-- Patra 2–5 dostanou náhodně čtyři ze zbylých šesti témat. Během jednoho runu se žádné
-  téma **neopakuje** a pro stejný seed jsou témata vždy stejná.
+- Témata se na začátku runu **zamíchají** a patra 1–5 dostanou pět ze sedmi témat. Žádné
+  téma není vázané na konkrétní patro – i Spider může přijít klidně až na pátém patře.
+- Během jednoho runu se žádné téma **neopakuje** a pro stejný seed jsou témata vždy stejná.
 
 ### Jak patra vypadají
 
@@ -36,13 +35,13 @@ objevit.
 
 | Téma | Kde | Barva tmy | Kapalina | Typické pasti |
 |---|---|---|---|---|
-| Spider | vždy patro 1 | téměř černá s fialovým nádechem | – | pavučinové plochy |
-| Stone | patra 2–5 | tmavě vínová | – | bodce, plamenomet, výbušné sudy |
-| Sewer | patra 2–5 | tmavě zelenomodrá | voda | jedové sudy |
-| Moss | patra 2–5 | tmavě olivová | bažina | bodce |
-| Ice | patra 2–5 | tmavě modrá | led | mrazivé sudy |
-| Lava | patra 2–5 | tmavě rudá | láva | 3 plamenomety, výbušné sudy |
-| Temple | patra 2–5 | tmavě hnědá | – | nejvíc bodců, šípové pasti, plamenomety |
+| Spider | kterékoli patro | téměř černá s fialovým nádechem | – | pavučinové plochy |
+| Stone | kterékoli patro | tmavě vínová | – | bodce, plamenomet, výbušné sudy |
+| Sewer | kterékoli patro | tmavě zelenomodrá | voda | jedové sudy |
+| Moss | kterékoli patro | tmavě olivová | bažina | bodce |
+| Ice | kterékoli patro | tmavě modrá | led | mrazivé sudy |
+| Lava | kterékoli patro | tmavě rudá | láva | 3 plamenomety, výbušné sudy |
+| Temple | kterékoli patro | tmavě hnědá | – | nejvíc bodců, šípové pasti, plamenomety |
 
 Každé téma má i vlastní podobu žebříku, který se objeví po porážce bosse.
 
@@ -72,18 +71,21 @@ Navíc v každé bojové místnosti: 2–5 pochodní, 2 prapory a 2 hromádky ko
 
 ### Bossové podle tématu
 
-| Boss | Patra | Témata |
-|---|---|---|
-| Spider king | jen 1 | Spider |
-| King slime | 2–5 | všechna |
-| Stone golem | 2–5 | Stone, Temple, Lava |
-| Argus | 2–5 | Temple, Ice, Moss, Sewer |
-| Mimic | 2–5 | Stone, Temple |
-| Hellhound | 2–5 | Lava |
-| Sewer ogre | 2–5 | Sewer, Moss |
+Každé téma má **právě jednoho vlastního bosse**. Boss putuje se svým tématem, takže na kterém
+patře téma padne, tam čeká i jeho boss.
+
+| Téma | Boss |
+|---|---|
+| Spider | Spider king |
+| Stone | Stone golem |
+| Sewer | Sewer ogre |
+| Moss | King slime |
+| Ice | Argus |
+| Lava | Hellhound |
+| Temple | Mimic |
 
 Pavoučí nepřátelé (Red, Green a Purple spiderling, Bloated spider, Stilt spider) se objevují
-jen v tématu Spider. Podrobně v [Nepřátelích](/docs/enemies).
+jen v tématu Spider – na kterémkoli patře. Podrobně v [Nepřátelích](/docs/enemies).
 
 ### Charakter témat
 
@@ -111,8 +113,8 @@ jen v tématu Spider. Podrobně v [Nepřátelích](/docs/enemies).
 - Ve Spider patře se nikdy neobjeví výbušný, obyčejný ani mrazivý sud, ani květináč;
   v Sewer, Moss a Ice chybí výbušné sudy a v Ice, Lava a Temple obyčejné sudy. Vypadá to
   spíš jako nechtěný důsledek nastavení než záměr.
-- Ohnivé gejzíry a ledové plochy jsou ve hře připravené, ale neobjeví se v žádném tématu.
-  Přirozeně by patřily do Lava a Ice.
+- Ledové plochy jsou ve hře připravené, ale neobjeví se v žádném tématu. Přirozeně by
+  patřily do Ice.
 - Podle příběhu má být patro 5 vždy Temple s finálním bossem The Heart – ve hře je téma
   pátého patra náhodné.
 
@@ -120,6 +122,6 @@ jen v tématu Spider. Podrobně v [Nepřátelích](/docs/enemies).
 
 - Téma by mohlo měnit hudbu, celkový jas (tmavší Spider a Lava, světlejší namodralý Ice)
   a přidat částice – jiskry v Lava, sněžení v Ice, kapky v Sewer.
-- Ice nemá vlastního bosse (jen Argus a King slime) a Temple nemá unikátní nepřátele.
+- Temple nemá unikátní nepřátele.
 - Tematické dekorace by mohly ožít: kokony líhnou pavoučky, rampouchy padají.
 - Nové téma, např. Crypt, s vlastní kapalinou a bossem.

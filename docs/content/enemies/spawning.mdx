@@ -26,8 +26,9 @@ až když v místnosti nezbude žádný nepřítel – včetně pomocníků boss
 ### Výběr nepřátel
 
 Každý nepřítel ve vlně se losuje se stejnou pravděpodobností ze všech druhů, které patří na dané
-patro a téma. Téma patra 1 je vždy **Spider**; patra 2–5 dostanou náhodné pořadí témat Stone, Sewer,
-Moss, Ice, Lava a Temple, takže každé téma se v jednom runu objeví nejvýš jednou.
+patro a téma. Na začátku runu se všech sedm témat (Spider, Stone, Sewer, Moss, Ice, Lava, Temple)
+náhodně zamíchá a patra 1–5 dostanou prvních pět – každé téma se v jednom runu objeví nejvýš jednou
+a žádné není vázané na konkrétní patro.
 
 ## Obsah
 
@@ -35,26 +36,30 @@ Moss, Ice, Lava a Temple, takže každé téma se v jednom runu objeví nejvýš
 
 | Patro | Téma | Kdo se může objevit | Druhů |
 |---|---|---|--:|
-| 1 | Spider | Rat, Snake, Bat, Ghost, Slime, Red slime, Red / Green / Purple spiderling, Bloated spider, Stilt spider | 11 |
-| 2 | jakékoli kromě Spider | Rat, Snake, Bat, Ghost, Slime, Red slime | 6 |
-| 3–5 | jakékoli kromě Spider | to samé + Demon eye, Eye watcher | 8 |
+| 1–2 | jakékoli kromě Spider | Rat, Snake, Bat, Ghost, Slime, Red slime | 6 |
+| 1–2 | Spider | to samé + Red / Green / Purple spiderling, Bloated spider, Stilt spider | 11 |
+| 3–5 | jakékoli kromě Spider | Rat, Snake, Bat, Ghost, Slime, Red slime, Demon eye, Eye watcher | 8 |
+| 3–5 | Spider | to samé + všech pět pavouků | 13 |
 
 ### Bossové podle tématu
 
-| Téma | Možní bossové |
+Každé téma má jednoho vlastního bosse, který s ním putuje na kterékoli patro:
+
+| Téma | Boss |
 |---|---|
-| Spider (patro 1) | Spider king (vždy) |
-| Stone | King slime, Stone golem, Mimic |
-| Temple | King slime, Stone golem, Argus, Mimic |
-| Lava | King slime, Stone golem, Hellhound |
-| Ice | King slime, Argus |
-| Sewer | King slime, Argus, Sewer ogre |
-| Moss | King slime, Argus, Sewer ogre |
+| Spider | Spider king |
+| Stone | Stone golem |
+| Sewer | Sewer ogre |
+| Moss | King slime |
+| Ice | Argus |
+| Lava | Hellhound |
+| Temple | Mimic |
 
 ### Síla podle patra
 
-Jen **běžní** nepřátelé sílí s patrem: **+12 % HP a +8 % poškození za patro** (zaokrouhleno). Bossové,
-jejich pomocníci a nepřátelské střely (vždy 1 poškození) zůstávají stejní. Rychlost se nemění.
+Běžní nepřátelé **i bossové** sílí s patrem: **+12 % HP a +8 % poškození dotykem za patro**
+(zaokrouhleno). Pomocníci bossů, útoky bossů a nepřátelské střely (vždy 1 poškození) zůstávají stejní.
+Rychlost se nemění. Hodnoty bossů po patrech jsou v přehledu [Bossů](/docs/enemies/bosses).
 
 | Nepřítel | HP na patře 1 / 2 / 3 / 4 / 5 | Poškození na patře 1 / 2 / 3 / 4 / 5 |
 |---|---|---|
@@ -65,9 +70,9 @@ jejich pomocníci a nepřátelské střely (vždy 1 poškození) zůstávají st
 | Slime, Red slime | 10 / 11 / 12 / 13 / 14 | 1 |
 | Demon eye | – / – / 15 / 16 / 18 | – / – / 4 / 4 / 4 |
 | Eye watcher | – / – / 5 / 6 / 6 | 1 |
-| Red / Purple spiderling | 3 (jen patro 1) | 2 / 1 |
-| Green spiderling, Bloated spider | 6 (jen patro 1) | 2 / 1 |
-| Stilt spider | 8 (jen patro 1) | 1 |
+| Red / Purple spiderling | 3 / 4 / 4 / 4 / 5 | Red 2 / 2 / 2 / 3 / 3, Purple 1 |
+| Green spiderling, Bloated spider | 6 / 6 / 7 / 7 / 8 | Green 2 / 2 / 2 / 3 / 3, Bloated 1 |
+| Stilt spider | 8 / 9 / 10 / 10 / 11 | 1 |
 
 ### Výzvy
 
@@ -98,8 +103,8 @@ počítají do misí v [Progresi](/docs/progression).
 ## Tipy a souvislosti
 
 - Přepadení je náročné, ale odměnou je zbraňová truhla – viz [Artefakty a předměty](/docs/artefacts-items).
-- Na patře 1 je skoro polovina poolu pavouků; od patra 2 už je pool ve všech tématech stejný.
-- Výzvy Horde a Bane dělají z bossů opravdové houby na kulky (Argus má 192 HP).
+- Ve Spider patře je skoro polovina poolu pavouků; ostatní témata mají pool stejný.
+- Výzvy Horde a Bane dělají z bossů opravdové houby na kulky (Argus má na patře 5 192 HP, s Horde přes 300).
 - Typy místností, témata a mříže popisuje [Dungeon](/docs/dungeon).
 
 ## Známé nesrovnalosti
@@ -116,5 +121,5 @@ počítají do misí v [Progresi](/docs/progression).
 
 - Víc nepřátel na vyšších patrech (např. maximum 12 + číslo patra).
 - Vzácní nepřátelé – různé šance na výběr místo rovnoměrného losování.
-- Vlastní nepřátelé pro každé téma, aby se patra 2–5 lišila i běžnými nepřáteli.
+- Vlastní nepřátelé pro každé téma, aby se patra lišila i běžnými nepřáteli.
 - Bezpečná vzdálenost od hráče pro místa objevení.

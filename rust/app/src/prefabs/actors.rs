@@ -151,14 +151,8 @@ pub(crate) fn enemy(
     let size = spec.size();
     let idle = spec.idle_clip();
     let boss = matches!(spec.role, Role::Boss(_));
-    let (health, damage) = if boss {
-        (spec.health, spec.damage)
-    } else {
-        (
-            enemies::scale_stat(spec.health, enemies::health_multiplier(floor)),
-            enemies::scale_stat(spec.damage, enemies::damage_multiplier(floor)),
-        )
-    };
+    let health = enemies::scale_stat(spec.health, enemies::health_multiplier(floor));
+    let damage = enemies::scale_stat(spec.damage, enemies::damage_multiplier(floor));
     let spawn_seconds = if boss {
         enemies::BOSS_SPAWN_SECONDS
     } else {

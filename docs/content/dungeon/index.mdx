@@ -6,7 +6,7 @@ description: Jak vypadá a jak je postavené patro Banu – místnosti, chodby, 
 Každý run v Banu vede přes **5 pater** dungeonu. Každé patro je pokaždé nově vygenerované:
 síť místností propojených krátkými rovnými chodbami. Patro má své **téma** (biom) – určuje
 vzhled zdí a podlahy, barvu tmy kolem mapy, kapalinu na podlaze, druhy pastí, dekorace
-i to, kteří nepřátelé a bossové se tu mohou objevit. Na konci každého patra čeká boss;
+i to, kteří nepřátelé a který boss se tu objeví. Na konci každého patra čeká boss;
 po jeho porážce hráč sestoupí po žebříku o patro níž. Po bossovi na patře 5 run končí
 vítězstvím.
 
@@ -14,14 +14,15 @@ vítězstvím.
 
 ### Stavba patra
 
-Každé patro má **10–12 místností**:
+Skladba patra se **losuje znovu pro každé patro**, takže žádné dvě patra nejsou stejně velká
+ani stejně bohatá. Patro má **8–15 místností** (při challenge *Merchant's Strike* o jednu méně):
 
 | Místnost | Počet | Kde |
 |---|---|---|
 | Start | 1 | odsud hráč vychází |
-| Normal | 5 | tvoří páteř patra, rozvětvují se |
+| Normal | 4–7 | tvoří páteř patra, rozvětvují se |
 | Shop | 1 | slepá odbočka (žádný při challenge *Merchant's Strike*) |
-| Treasure | 1 | slepá odbočka |
+| Treasure | 0–2 | slepá odbočka – patro nemusí mít žádnou pokladnici, nebo může mít dvě |
 | Sacrifice | 0–1 (50 %) | slepá odbočka |
 | Ambush | 1–2 | slepá odbočka |
 | Boss | 1 | vždy co nejdál od startu |
@@ -63,7 +64,7 @@ jen polohou – stejné místo vypadá vždy stejně.
 | Parametr | Hodnota |
 |---|---|
 | Pater v runu | 5 |
-| Místností na patře | 10–12 |
+| Místností na patře | 8–15 (náhodně pro každé patro) |
 | Variant místností | 23 (15 Normal, 3 Ambush, po jedné Start, Shop, Treasure, Sacrifice, Boss) |
 | Témat | 7 (Stone, Sewer, Moss, Spider, Ice, Lava, Temple) |
 | Chodba | 4 dlaždice dlouhá, 2 široká |
@@ -104,7 +105,7 @@ jen polohou – stejné místo vypadá vždy stejně.
 
 ## Nápady na rozšíření
 
-- Patro by mohlo růst s hloubkou – dnes má každé patro vždy 5 Normal místností.
+- Patro by mohlo růst s hloubkou – dnes je jeho velikost čistě náhodná bez ohledu na číslo patra.
 - Smyčky a zkratky v rozvržení, zahnuté chodby nebo chodby s vlastním obsahem.
 - Odměna po vyčištění místnosti (výběr ze tří „boonů“), tajné místnosti, místnosti s kletbou
   nebo elitními nepřáteli.

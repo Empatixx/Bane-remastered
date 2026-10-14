@@ -419,7 +419,6 @@ pub(crate) struct EnemySpec {
     pub(crate) damage: i32,
     pub(crate) force: f32,
     pub(crate) min_floor: u32,
-    pub(crate) max_floor: u32,
     pub(crate) role: Role,
     pub(crate) behavior: Behavior,
     pub(crate) kin: bool,
@@ -488,7 +487,6 @@ const fn spec(
         damage: stats.1,
         force: stats.2,
         min_floor: 0,
-        max_floor: u32::MAX,
         role: Role::Common,
         behavior: Behavior::Plain,
         kin: false,
@@ -653,9 +651,8 @@ impl EnemyKind {
                 )
             },
             Self::Spider => EnemySpec {
-                min_floor: 1,
-                max_floor: 1,
                 death_row: 2,
+                themes: &[Theme::Spider],
                 role: Role::Boss("Spider king"),
                 behavior: Behavior::SpiderBoss,
                 ..spec(
@@ -669,7 +666,7 @@ impl EnemyKind {
                 )
             },
             Self::KingSlime => EnemySpec {
-                min_floor: 2,
+                themes: &[Theme::Moss],
                 role: Role::Boss("King slime"),
                 behavior: Behavior::KingSlimeBoss,
                 ..spec(
@@ -683,9 +680,8 @@ impl EnemyKind {
                 )
             },
             Self::Golem => EnemySpec {
-                min_floor: 2,
                 death_row: 7,
-                themes: &[Theme::Stone, Theme::Temple, Theme::Lava],
+                themes: &[Theme::Stone],
                 role: Role::Boss("Stone golem"),
                 behavior: Behavior::GolemBoss,
                 ..spec(
@@ -699,9 +695,8 @@ impl EnemyKind {
                 )
             },
             Self::Argus => EnemySpec {
-                min_floor: 2,
                 death_row: 3,
-                themes: &[Theme::Temple, Theme::Ice, Theme::Moss, Theme::Sewer],
+                themes: &[Theme::Ice],
                 role: Role::Boss("Argus"),
                 behavior: Behavior::ArgusBoss,
                 ..spec(
@@ -730,9 +725,8 @@ impl EnemyKind {
                 )
             },
             Self::Mimic => EnemySpec {
-                min_floor: 2,
                 death_row: 5,
-                themes: &[Theme::Stone, Theme::Temple],
+                themes: &[Theme::Temple],
                 role: Role::Boss("Mimic"),
                 behavior: Behavior::MimicBoss,
                 ..spec(
@@ -746,7 +740,6 @@ impl EnemyKind {
                 )
             },
             Self::Hellhound => EnemySpec {
-                min_floor: 2,
                 death_row: 4,
                 themes: &[Theme::Lava],
                 role: Role::Boss("Hellhound"),
@@ -762,9 +755,8 @@ impl EnemyKind {
                 )
             },
             Self::Ogre => EnemySpec {
-                min_floor: 2,
                 death_row: 5,
-                themes: &[Theme::Sewer, Theme::Moss],
+                themes: &[Theme::Sewer],
                 role: Role::Boss("Sewer ogre"),
                 behavior: Behavior::OgreBoss,
                 ..spec(
@@ -820,8 +812,7 @@ impl EnemyKind {
     }
 
     pub(crate) fn available_on(self, floor: u32) -> bool {
-        let spec = self.spec();
-        floor >= spec.min_floor && floor <= spec.max_floor
+        floor >= self.spec().min_floor
     }
 
     pub(crate) fn available_in(self, floor: u32, theme: Theme) -> bool {
@@ -1029,71 +1020,60 @@ mod tests {
         }
     }
 
-    #[test]
-    fn the_first_floor_has_the_spider_and_later_floors_the_king_slime_or_the_golem() {
-        let mut rng = Rng::new(3);
-        for _ in 0..20 {
-            assert_eq!(pick_boss(1, Theme::Spider, &mut rng), EnemyKind::Spider);
+    const THEMES: [Theme; 7] = [
+        Theme::Stone,
+        Theme::Sewer,
+        Theme::Moss,
+        Theme::Spider,
+        Theme::Ice,
+        Theme::Lava,
+        Theme::Temple,
+    ];
+
+    fn own_boss(theme: Theme) -> EnemyKind {
+        match theme {
+            Theme::Spider => EnemyKind::Spider,
+            Theme::Stone => EnemyKind::Golem,
+            Theme::Sewer => EnemyKind::Ogre,
+            Theme::Lava => EnemyKind::Hellhound,
+            Theme::Moss => EnemyKind::KingSlime,
+            Theme::Ice => EnemyKind::Argus,
+            Theme::Temple => EnemyKind::Mimic,
         }
     }
 
     #[test]
-    fn stone_temple_and_lava_floors_can_have_the_golem_and_others_never() {
-        let mut rng = Rng::new(5);
-        let seen = |theme, rng: &mut Rng| -> std::collections::HashSet<EnemyKind> {
-            (0..300).map(|_| pick_boss(3, theme, rng)).collect()
-        };
-        for theme in [Theme::Stone, Theme::Lava] {
-            let bosses = seen(theme, &mut rng);
-            assert!(bosses.contains(&EnemyKind::Golem), "{theme:?}");
-            assert!(bosses.contains(&EnemyKind::KingSlime), "{theme:?}");
-            assert!(!bosses.contains(&EnemyKind::Argus), "{theme:?}");
+    fn every_theme_always_brings_its_own_boss_on_any_floor() {
+        let mut rng = Rng::new(3);
+        for theme in THEMES {
+            for floor in 1..=9 {
+                for _ in 0..10 {
+                    assert_eq!(pick_boss(floor, theme, &mut rng), own_boss(theme), "{theme:?}");
+                }
+            }
         }
-        for theme in [Theme::Ice, Theme::Sewer, Theme::Moss] {
-            let bosses = seen(theme, &mut rng);
-            assert!(bosses.contains(&EnemyKind::Argus), "{theme:?}");
-            assert!(bosses.contains(&EnemyKind::KingSlime), "{theme:?}");
-            assert!(!bosses.contains(&EnemyKind::Golem), "{theme:?}");
+    }
+
+    #[test]
+    fn no_boss_is_shared_between_themes() {
+        let bosses: std::collections::HashSet<EnemyKind> =
+            THEMES.into_iter().map(own_boss).collect();
+        assert_eq!(bosses.len(), THEMES.len());
+        for kind in EnemyKind::ALL.into_iter().filter(|kind| kind.is_boss()) {
+            assert_eq!(kind.spec().themes.len(), 1, "{kind:?}");
         }
-        for theme in [Theme::Sewer, Theme::Moss] {
+    }
+
+    #[test]
+    fn every_theme_has_common_enemies_already_on_the_first_floor() {
+        for theme in THEMES {
             assert!(
-                seen(theme, &mut rng).contains(&EnemyKind::Ogre),
+                EnemyKind::ALL.into_iter().any(|kind| !kind.is_boss()
+                    && kind.spec().role != Role::Summoned
+                    && kind.available_in(1, theme)),
                 "{theme:?}"
             );
         }
-        for theme in [Theme::Stone, Theme::Lava, Theme::Ice, Theme::Temple] {
-            assert!(
-                !seen(theme, &mut rng).contains(&EnemyKind::Ogre),
-                "{theme:?}"
-            );
-        }
-        for theme in [Theme::Stone, Theme::Temple] {
-            assert!(
-                seen(theme, &mut rng).contains(&EnemyKind::Mimic),
-                "{theme:?}"
-            );
-        }
-        for theme in [Theme::Lava, Theme::Ice, Theme::Sewer, Theme::Moss] {
-            assert!(
-                !seen(theme, &mut rng).contains(&EnemyKind::Mimic),
-                "{theme:?}"
-            );
-        }
-        assert!(seen(Theme::Lava, &mut rng).contains(&EnemyKind::Hellhound));
-        for theme in [
-            Theme::Stone,
-            Theme::Ice,
-            Theme::Temple,
-            Theme::Sewer,
-            Theme::Moss,
-        ] {
-            assert!(
-                !seen(theme, &mut rng).contains(&EnemyKind::Hellhound),
-                "{theme:?}"
-            );
-        }
-        let temple = seen(Theme::Temple, &mut rng);
-        assert!(temple.contains(&EnemyKind::Golem) && temple.contains(&EnemyKind::Argus));
     }
 
     #[test]

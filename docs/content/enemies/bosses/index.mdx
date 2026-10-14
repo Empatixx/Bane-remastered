@@ -4,17 +4,18 @@ description: Sedm bossů Bane – kde se objevují, jak souboj probíhá, co je 
 ---
 
 Každé patro končí boss místností. Když do ní vstoupíš, zavřou se dveře, uprostřed se zhmotní boss,
-nahoře se ukáže jeho jméno s ukazatelem HP a začne hrát boss hudba. Bane má **sedm bossů**; který
-přijde, záleží na tématu patra.
+nahoře se ukáže jeho jméno s ukazatelem HP a začne hrát boss hudba. Bane má **sedm bossů** – každé
+ze sedmi témat má právě jednoho vlastního. Témata se v každém runu náhodně zamíchají, takže kterýkoli
+boss může čekat na kterémkoli patře.
 
 ## Jak to funguje
 
 ### Společná pravidla
 
-- **Nesílí s patrem** – boss má na patře 2 i 5 stejné HP a poškození. Zesílí ho jen výzvy Horde a Bane
-  (HP × 1,6, poškození × 1,3).
+- **Sílí s patrem** stejně jako běžní nepřátelé: **+12 % HP a +8 % kontaktního poškození za patro**.
+  Jeho útoky a pomocníci se nemění. Navíc ho zesílí výzvy Horde a Bane (HP × 1,6, poškození × 1,3).
 - **Zhmotnění** trvá 1,5 s, během něj boss nezraňuje a nedá se trefit.
-- **Kontaktní poškození** je u všech bossů 2.
+- **Kontaktní poškození** je u všech bossů 2 na patrech 1–3 a 3 na patrech 4–5.
 - Bossové se nenechají odstrčit davem a nedrží si odstup.
 - **Pomocníci** vyvolaní bossem jsou aktivní okamžitě, mají základní hodnoty, nic nedropnou a nepočítají
   se do statistik zabití – ale místnost se neotevře, dokud žijí.
@@ -36,29 +37,29 @@ přijde, záleží na tématu patra.
 
 ## Obsah
 
-| Boss | HP | Rychlost | Kde | Zuřivost | Pomocníci | Stránka |
+| Boss | Základní HP | Rychlost | Téma | Zuřivost | Pomocníci | Stránka |
 |---|--:|---|---|---|---|---|
-| Spider king | 75 | 69 % | jen patro 1 | ne | spiderlingové | [Spider king](/docs/enemies/bosses/spider-king) |
-| King slime | 90 | 10 % | všechna témata | ne | – | [King slime](/docs/enemies/bosses/king-slime) |
-| Stone golem | 110 | 9 % | Stone, Temple, Lava | ano | Mini golem | [Stone golem](/docs/enemies/bosses/golem) |
-| Argus | 120 | téměř stojí | Temple, Ice, Moss, Sewer | ano | Argus eye | [Argus](/docs/enemies/bosses/argus) |
-| Sewer ogre | 130 | 9 % | Sewer, Moss | ano | Rat | [Sewer ogre](/docs/enemies/bosses/ogre) |
+| Spider king | 75 | 69 % | Spider | ne | spiderlingové | [Spider king](/docs/enemies/bosses/spider-king) |
+| King slime | 90 | 10 % | Moss | ne | – | [King slime](/docs/enemies/bosses/king-slime) |
+| Stone golem | 110 | 9 % | Stone | ano | Mini golem | [Stone golem](/docs/enemies/bosses/golem) |
+| Argus | 120 | téměř stojí | Ice | ano | Argus eye | [Argus](/docs/enemies/bosses/argus) |
+| Sewer ogre | 130 | 9 % | Sewer | ano | Rat | [Sewer ogre](/docs/enemies/bosses/ogre) |
 | Hellhound | 110 | 59 % | Lava | ano | – (magma) | [Hellhound](/docs/enemies/bosses/hellhound) |
-| Mimic | 115 | 32 % | Stone, Temple | ano | Saliva slime | [Mimic](/docs/enemies/bosses/mimic) |
+| Mimic | 115 | 32 % | Temple | ano | Saliva slime | [Mimic](/docs/enemies/bosses/mimic) |
 
-### Kdo může přijít na jakém tématu
+Téma určuje bosse jednoznačně – když víš, jaké téma patro má, víš i, kdo na konci čeká.
 
-| Téma | Možní bossové |
-|---|---|
-| Spider (patro 1) | Spider king |
-| Stone | King slime, Stone golem, Mimic |
-| Temple | King slime, Stone golem, Argus, Mimic |
-| Lava | King slime, Stone golem, Hellhound |
-| Ice | King slime, Argus |
-| Sewer | King slime, Argus, Sewer ogre |
-| Moss | King slime, Argus, Sewer ogre |
+### HP podle patra
 
-Každý kandidát má stejnou šanci, takže King slime přichází nejčastěji (na Ice v polovině případů).
+| Boss | Patro 1 | Patro 2 | Patro 3 | Patro 4 | Patro 5 |
+|---|--:|--:|--:|--:|--:|
+| Spider king | 84 | 93 | 102 | 111 | 120 |
+| King slime | 101 | 112 | 122 | 133 | 144 |
+| Stone golem | 123 | 136 | 150 | 163 | 176 |
+| Argus | 134 | 149 | 163 | 178 | 192 |
+| Sewer ogre | 146 | 161 | 177 | 192 | 208 |
+| Hellhound | 123 | 136 | 150 | 163 | 176 |
+| Mimic | 129 | 143 | 156 | 170 | 184 |
 
 ### Příběh
 
@@ -93,16 +94,12 @@ Každý kandidát má stejnou šanci, takže King slime přichází nejčastěji
 ## Známé nesrovnalosti
 
 - **Finální boss chybí** – vítězství přijde po porážce jakéhokoli bosse na patře 5.
-- Příběh přiřazuje bossy k patrům (2: King slime / Ogre, 3: Golem / Argus, 4: Hellhound), ve hře ale
-  závisí jen na tématu a všichni kromě Spider kinga se mohou objevit na patrech 2–5.
-- Bossové nesílí s patrem: Golem na patře 2 a na patře 5 je stejný, zatímco běžní nepřátelé kolem něj
-  zesílí téměř o polovinu.
+- Příběh přiřazuje bossy k patrům (1: Spider king, 2: King slime / Ogre, 3: Golem / Argus,
+  4: Hellhound), ve hře ale boss závisí jen na tématu a témata jsou na patrech náhodně.
 - King slime jako jediný boss nic nedropne a nepočítá se do pojistky dropů, ostatní ano.
-- Téma Ice nemá vlastního bosse.
 
 ## Nápady na rozšíření
 
 - Finální boss „The Heart“ na patře 5 v tématu Temple.
-- Vlastní boss pro Ice; omezit King slime na méně témat.
 - Fáze, nápřahy a zuřivost i pro Spider kinga a King slime.
 - Příběh pro Mimica.

@@ -38,7 +38,6 @@ pub(crate) enum DecorKind {
     PoisonBarrel,
     FrostBarrel,
     Flamethrower,
-    FireGeyser,
     IcePatch,
     WebPatch,
     ArrowTrap,
@@ -307,7 +306,6 @@ pub(crate) fn plan(
             .copied()
             .collect();
         for (kind, amount) in [
-            (DecorKind::FireGeyser, mix.geysers),
             (DecorKind::IcePatch, mix.ice_patches),
             (DecorKind::WebPatch, mix.web_patches),
         ] {
@@ -498,7 +496,6 @@ mod tests {
         assert!(
             count_in(Theme::Temple, DecorKind::Spike) > count_in(Theme::Stone, DecorKind::Spike)
         );
-        assert_eq!(count_in(Theme::Lava, DecorKind::FireGeyser), 0);
         assert!(count_in(Theme::Spider, DecorKind::WebPatch) > 0);
         assert!(
             count_in(Theme::Moss, DecorKind::Mushrooms { variant: 0 })
@@ -510,7 +507,6 @@ mod tests {
             0
         );
         assert!(count_in(Theme::Temple, DecorKind::ArrowTrap) > 0);
-        assert_eq!(count_in(Theme::Stone, DecorKind::FireGeyser), 0);
         assert_eq!(count_in(Theme::Sewer, DecorKind::ArrowTrap), 0);
     }
 
@@ -568,7 +564,7 @@ mod tests {
                                 assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
                             }
                         }
-                        DecorKind::FireGeyser | DecorKind::IcePatch | DecorKind::WebPatch => {
+                        DecorKind::IcePatch | DecorKind::WebPatch => {
                             for (dx, dy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
                                 assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
                             }

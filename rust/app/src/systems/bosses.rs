@@ -421,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    fn bosses_ignore_the_floor_scaling_and_spawn_faster() {
+    fn bosses_grow_with_the_floor_like_common_enemies_and_spawn_faster() {
         let mut world = World::new();
         let spider = prefabs::enemy(
             &mut world,
@@ -435,7 +435,12 @@ mod tests {
             .get::<&Spawning>(spider)
             .map(|s| s.total)
             .unwrap_or(0.0);
-        assert_eq!(health, 75);
+        let contact = world
+            .get::<&crate::components::ContactDamage>(spider)
+            .map(|c| c.0)
+            .unwrap_or(0);
+        assert_eq!(health, 111);
+        assert_eq!(contact, 3);
         assert_eq!(spawning, 1.5);
         let chase = world.get::<&Chase>(spider).map(|c| c.speed).unwrap_or(0.0);
         assert!((chase - 282.0).abs() < 1.0);

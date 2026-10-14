@@ -8,9 +8,6 @@ from PIL import Image
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "assets/textures/ingame"
 
 CLEAR = (0, 0, 0, 0)
-ROCK_DARK = (37, 19, 26, 255)
-ROCK = (74, 42, 40, 255)
-ROCK_LIGHT = (112, 70, 58, 255)
 LAVA_DEEP = (176, 48, 22, 255)
 LAVA = (222, 92, 28, 255)
 LAVA_HOT = (255, 160, 48, 255)
@@ -33,92 +30,6 @@ def blob(size, seed, margin, wobble):
             inside[(x, y)] = edge - distance
             mask[y][x] = distance < edge
     return mask, inside
-
-
-FLAME_RAMP = [
-    (110, 28, 18, 255),
-    (176, 48, 22, 255),
-    (222, 92, 28, 255),
-    (255, 140, 40, 255),
-    (255, 190, 70, 255),
-    (255, 232, 140, 255),
-    (255, 250, 214, 255),
-]
-SMOKE = (70, 44, 44, 160)
-
-
-def geyser_frames():
-    width, height, count = 32, 64, 8
-    sheet = Image.new("RGBA", (width * count, height), CLEAR)
-    base_y = 56
-    centre = (width - 1) / 2
-
-    def rim(image, glow, hot):
-        for y in range(base_y - 6, base_y + 7):
-            for x in range(width):
-                dx, dy = (x - centre) / 15.0, (y - base_y) / 6.0
-                d = dx * dx + dy * dy
-                if d < 1.0:
-                    if d > 0.82:
-                        colour = ROCK_DARK
-                    elif d > 0.55:
-                        colour = ROCK_LIGHT if (x * 3 + y * 5) % 7 < 2 else ROCK
-                    else:
-                        colour = ROCK
-                    image.putpixel((x, y), colour)
-        for y in range(base_y - 4, base_y + 5):
-            for x in range(width):
-                dx, dy = (x - centre) / 9.5, (y - base_y) / 3.6
-                d = dx * dx + dy * dy
-                if d < 1.0:
-                    level = min(len(FLAME_RAMP) - 1, int((1.0 - d) * (2 + hot) + glow))
-                    image.putpixel((x, y), FLAME_RAMP[max(0, level)])
-
-    def flame(image, reach, half_width, phase, rng):
-        for step in range(reach):
-            y = base_y - 3 - step
-            if y < 0:
-                break
-            ratio = step / reach
-            sway = math.sin(step * 0.22 + phase) * (1.5 + 5.0 * ratio) + math.sin(step * 0.47 + phase * 2) * 1.2
-            body = half_width * (1.0 - ratio ** 1.6 * 0.92)
-            for x in range(width):
-                distance = abs(x - centre - sway)
-                if distance > body:
-                    continue
-                edge = distance / max(body, 0.5)
-                heat = (1.0 - edge) * (1.0 - ratio * 0.55)
-                heat += rng.uniform(-0.06, 0.06)
-                if ratio > 0.82 and rng.random() < (ratio - 0.8) * 3.0:
-                    continue
-                level = max(0, min(len(FLAME_RAMP) - 1, int(heat * len(FLAME_RAMP) + 0.3)))
-                image.putpixel((x, y), FLAME_RAMP[level])
-
-    plan = [
-        (0, 0, 0, 0.0),
-        (0, 0, 0, 0.0),
-        (1, 0, 0, 0.0),
-        (2, 12, 6, 0.0),
-        (3, 30, 10, 0.6),
-        (3, 52, 12, 1.4),
-        (3, 56, 11, 2.3),
-        (2, 26, 7, 3.1),
-    ]
-    for frame, (glow, reach, half_width, phase) in enumerate(plan):
-        rng = random.Random(40 + frame)
-        image = Image.new("RGBA", (width, height), CLEAR)
-        rim(image, glow, 1 if frame >= 3 else 0)
-        if reach:
-            flame(image, reach, half_width, phase, rng)
-            for _ in range(4 + reach // 6):
-                x = rng.randrange(6, 26)
-                y = rng.randrange(max(0, base_y - reach - 6), base_y - 6)
-                image.putpixel((x, y), FLAME_RAMP[rng.randint(3, 5)])
-        if frame in (0, 1, 2):
-            for _ in range(2):
-                image.putpixel((rng.randrange(10, 22), base_y - 4 - rng.randrange(0, 6) - frame * 3), SMOKE)
-        sheet.paste(image, (frame * width, 0))
-    return sheet
 
 
 def ice_patch():
@@ -274,7 +185,6 @@ def trap_arrow():
 
 
 def main():
-    geyser_frames().save(OUT / "fire_geyser.tga")
     ice_patch().save(OUT / "ice_patch.tga")
     web_patch().save(OUT / "web_patch.tga")
     arrow_trap().save(OUT / "arrow_trap.tga")

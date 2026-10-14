@@ -18,8 +18,11 @@ Vstupem do portálu začíná nový run na patře 1:
 
 ### Každé patro
 
-- **Biom**: patro 1 je vždy **Spider** (pavoučí). Další patra dostanou náhodně biomy ze sady
-  Stone, Sewer, Moss, Ice, Lava, Temple — v jednom runu se žádný neopakuje.
+- **Biom**: na začátku runu se všech sedm biomů (Spider, Stone, Sewer, Moss, Ice, Lava, Temple)
+  náhodně zamíchá a patra dostanou pět z nich — v jednom runu se žádný neopakuje a žádný není
+  vázaný na konkrétní patro. Každý biom má svého bosse, takže i boss patra je náhodný.
+- **Velikost patra** se losuje znovu pro každé patro: 4–7 bojových místností, 0–2 pokladnice,
+  0–1 oltář a 1–2 přepadení.
 - Místnosti s nepřáteli, obchod (pokud ho challenge nezakazuje), další speciální místnosti a boss. Podrobně: [Dungeon](/docs/dungeon).
 - Talent **Discount** dává slevu v obchodě, **Trap Master** vyřadí část pastí, **Pet** přivede mazlíčka.
 - Talent **Gamble machine**: v obchodě stojí slot machine – bez talentu tam není.
@@ -52,11 +55,12 @@ Obojí vede na stejnou obrazovku — viz [Konec runu](/docs/progression/run-end)
 
 | Patro | Biom | Konec patra |
 |---|---|---|
-| 1 | Spider (vždy) | Boss → žebřík |
-| 2–4 | Náhodný ze Stone, Sewer, Moss, Ice, Lava, Temple | Boss → žebřík |
-| 5 | Náhodný (zbývající) | Boss → **Victory!** |
+| 1–4 | Náhodný ze všech sedmi, bez opakování | Boss biomu → žebřík |
+| 5 | Náhodný (ze zbývajících) | Boss biomu → **Victory!** |
 
 ### Obtížnost podle patra
+
+Platí pro běžné nepřátele i pro bosse.
 
 | Patro | HP nepřátel | Poškození nepřátel |
 |---|---|---|

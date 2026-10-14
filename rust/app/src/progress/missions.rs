@@ -299,6 +299,19 @@ mod tests {
     }
 
     #[test]
+    fn every_boss_a_mission_can_ask_for_waits_on_some_floor_of_some_run() {
+        for kind in EnemyKind::ALL.into_iter().filter(|kind| kind.is_boss()) {
+            let met = (0..100).any(|seed| {
+                (1..=crate::enemies::FINAL_FLOOR).any(|floor| {
+                    let theme = Theme::for_floor(seed, floor);
+                    kind.available_in(floor, theme)
+                })
+            });
+            assert!(met, "{kind:?}");
+        }
+    }
+
+    #[test]
     fn missions_survive_a_round_trip_through_json() {
         let mission = ActiveMission {
             goal: Goal::Boss {

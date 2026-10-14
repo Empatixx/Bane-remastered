@@ -55,9 +55,9 @@ pub(crate) struct LayoutSpec {
 impl LayoutSpec {
     pub(crate) fn standard(rng: &mut Rng) -> Self {
         Self {
-            normals: 5,
+            normals: 4 + rng.below(4),
             shops: 1,
-            treasures: 1,
+            treasures: rng.below(3),
             sacrifices: rng.below(2),
             ambushes: 1 + rng.below(2),
         }
@@ -192,13 +192,25 @@ mod tests {
 
     use super::*;
 
+    const LARGEST: LayoutSpec = LayoutSpec {
+        normals: 7,
+        shops: 1,
+        treasures: 2,
+        sacrifices: 1,
+        ambushes: 2,
+    };
+
     fn layouts() -> Vec<Layout> {
+        specs()
+            .into_iter()
+            .filter_map(|(seed, spec)| Layout::generate(&spec, &mut Rng::new(seed ^ 0xA5A5)))
+            .chain((0..200).filter_map(|seed| Layout::generate(&LARGEST, &mut Rng::new(seed))))
+            .collect()
+    }
+
+    fn specs() -> Vec<(u64, LayoutSpec)> {
         (0..200)
-            .filter_map(|seed| {
-                let mut rng = Rng::new(seed);
-                let spec = LayoutSpec::standard(&mut rng);
-                Layout::generate(&spec, &mut rng)
-            })
+            .map(|seed| (seed, LayoutSpec::standard(&mut Rng::new(seed))))
             .collect()
     }
 
@@ -208,15 +220,35 @@ mod tests {
 
     #[test]
     fn every_seed_produces_a_layout_with_the_requested_rooms() {
-        let layouts = layouts();
-        assert_eq!(layouts.len(), 200);
-        for layout in &layouts {
-            assert_eq!(count(layout, RoomKind::Start), 1);
-            assert_eq!(count(layout, RoomKind::Normal), 5);
-            assert_eq!(count(layout, RoomKind::Boss), 1);
-            assert_eq!(count(layout, RoomKind::Shop), 1);
-            assert_eq!(count(layout, RoomKind::Treasure), 1);
+        let mut requests = specs();
+        requests.extend((0..1000).map(|seed| (seed, LARGEST)));
+        for (seed, spec) in requests {
+            let layout = Layout::generate(&spec, &mut Rng::new(seed ^ 0xA5A5))
+                .unwrap_or_else(|| panic!("seed {seed}: {spec:?}"));
+            assert_eq!(count(&layout, RoomKind::Start), 1);
+            assert_eq!(count(&layout, RoomKind::Normal), spec.normals);
+            assert_eq!(count(&layout, RoomKind::Boss), 1);
+            assert_eq!(count(&layout, RoomKind::Shop), spec.shops);
+            assert_eq!(count(&layout, RoomKind::Treasure), spec.treasures);
+            assert_eq!(count(&layout, RoomKind::Sacrifice), spec.sacrifices);
+            assert_eq!(count(&layout, RoomKind::Ambush), spec.ambushes);
         }
+    }
+
+    #[test]
+    fn floors_vary_their_room_mix_within_the_allowed_ranges() {
+        let specs: Vec<LayoutSpec> = specs().into_iter().map(|(_, spec)| spec).collect();
+        for spec in &specs {
+            assert!((4..=7).contains(&spec.normals), "{spec:?}");
+            assert_eq!(spec.shops, 1);
+            assert!(spec.treasures <= 2, "{spec:?}");
+            assert!(spec.sacrifices <= 1, "{spec:?}");
+            assert!((1..=2).contains(&spec.ambushes), "{spec:?}");
+        }
+        let normals: HashSet<usize> = specs.iter().map(|spec| spec.normals).collect();
+        let treasures: HashSet<usize> = specs.iter().map(|spec| spec.treasures).collect();
+        assert_eq!(normals.len(), 4);
+        assert_eq!(treasures.len(), 3);
     }
 
     #[test]

@@ -185,7 +185,7 @@ fn blocked_tiles(room: &DungeonRoom) -> HashSet<(usize, usize)> {
     let mut blocked: HashSet<(usize, usize)> = room.spawns.iter().copied().collect();
     for decor in &room.decor {
         match decor.kind {
-            DecorKind::FireGeyser | DecorKind::IcePatch | DecorKind::WebPatch => {
+            DecorKind::IcePatch | DecorKind::WebPatch => {
                 blocked.extend(patch_tiles(decor.tile));
                 blocked.insert((decor.tile.0, decor.tile.1.saturating_sub(1)));
             }

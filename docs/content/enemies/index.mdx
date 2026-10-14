@@ -53,8 +53,8 @@ Rychlost nepřátel je v tabulkách uvedena v procentech tvé rychlosti (100 % =
 
 ## Obsah
 
-Hodnoty HP a poškození jsou základní. Běžní nepřátelé s každým patrem sílí (+12 % HP a +8 % poškození
-za patro), bossové a vyvolaní pomocníci ne.
+Hodnoty HP a poškození jsou základní. Běžní nepřátelé i bossové s každým patrem sílí (+12 % HP a +8 %
+poškození za patro), vyvolaní pomocníci ne.
 
 | Nepřítel | Druh | HP | Poškození | Rychlost | Patra | Téma | Stránka |
 |---|---|--:|--:|---|---|---|---|
@@ -66,27 +66,27 @@ za patro), bossové a vyvolaní pomocníci ne.
 | Red slime | běžný | 9 | 1 | 7 % | všechna | všechna | [Slizy](/docs/enemies/slimes) |
 | Demon eye | běžný | 11 | 3 | 64 % | 3+ | všechna | [Oči](/docs/enemies/eyes) |
 | Eye watcher | běžný | 4 | 1 | stojí | 3+ | všechna | [Oči](/docs/enemies/eyes) |
-| Red spiderling | běžný | 3 | 2 | 46 % | 1 | Spider | [Pavouci](/docs/enemies/spiders) |
-| Green spiderling | běžný | 5 | 2 | 46 % | 1 | Spider | [Pavouci](/docs/enemies/spiders) |
-| Purple spiderling | běžný | 3 | 1 | 55 % | 1 | Spider | [Pavouci](/docs/enemies/spiders) |
-| Bloated spider | běžný | 5 | 1 | 41 % | 1 | Spider | [Pavouci](/docs/enemies/spiders) |
-| Stilt spider | běžný | 7 | 1 | 15 % + skoky | 1 | Spider | [Pavouci](/docs/enemies/spiders) |
+| Red spiderling | běžný | 3 | 2 | 46 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
+| Green spiderling | běžný | 5 | 2 | 46 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
+| Purple spiderling | běžný | 3 | 1 | 55 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
+| Bloated spider | běžný | 5 | 1 | 41 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
+| Stilt spider | běžný | 7 | 1 | 15 % + skoky | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
 | Saliva slime | pomocník Mimica | 5 | 1 | 34 % (jen ve skoku) | – | – | [Slizy](/docs/enemies/slimes) |
 | Mini golem | pomocník Golema | 6 | 1 | 47 % | – | – | [Stone golem](/docs/enemies/bosses/golem) |
 | Argus eye | pomocník Arguse | 4 | 1 | obíhá bosse | – | – | [Argus](/docs/enemies/bosses/argus) |
-| Spider king | boss | 75 | 2 | 69 % | 1 | Spider | [Spider king](/docs/enemies/bosses/spider-king) |
-| King slime | boss | 90 | 2 | 10 % | 2+ | všechna | [King slime](/docs/enemies/bosses/king-slime) |
-| Stone golem | boss | 110 | 2 | 9 % | 2+ | Stone, Temple, Lava | [Stone golem](/docs/enemies/bosses/golem) |
-| Argus | boss | 120 | 2 | téměř stojí | 2+ | Temple, Ice, Moss, Sewer | [Argus](/docs/enemies/bosses/argus) |
-| Sewer ogre | boss | 130 | 2 | 9 % | 2+ | Sewer, Moss | [Sewer ogre](/docs/enemies/bosses/ogre) |
-| Hellhound | boss | 110 | 2 | 59 % | 2+ | Lava | [Hellhound](/docs/enemies/bosses/hellhound) |
-| Mimic | boss | 115 | 2 | 32 % | 2+ | Stone, Temple | [Mimic](/docs/enemies/bosses/mimic) |
+| Spider king | boss | 75 | 2 | 69 % | všechna | Spider | [Spider king](/docs/enemies/bosses/spider-king) |
+| King slime | boss | 90 | 2 | 10 % | všechna | Moss | [King slime](/docs/enemies/bosses/king-slime) |
+| Stone golem | boss | 110 | 2 | 9 % | všechna | Stone | [Stone golem](/docs/enemies/bosses/golem) |
+| Argus | boss | 120 | 2 | téměř stojí | všechna | Ice | [Argus](/docs/enemies/bosses/argus) |
+| Sewer ogre | boss | 130 | 2 | 9 % | všechna | Sewer | [Sewer ogre](/docs/enemies/bosses/ogre) |
+| Hellhound | boss | 110 | 2 | 59 % | všechna | Lava | [Hellhound](/docs/enemies/bosses/hellhound) |
+| Mimic | boss | 115 | 2 | 32 % | všechna | Temple | [Mimic](/docs/enemies/bosses/mimic) |
 
 Krysy (Rat) navíc jako pomocníky vyvolává Sewer ogre.
 
 <Callout type="info">
-Patro 1 má vždy téma Spider, takže pavouci se ve hře objevují jen na patře 1. Demon eye a Eye watcher
-přicházejí až od patra 3. Podrobný rozpis je v [Spawnování a síla nepřátel](/docs/enemies/spawning).
+Témata pater se v každém runu náhodně zamíchají, takže pavouci (téma Spider) se mohou objevit na
+kterémkoli patře. Každé téma má právě jednoho bosse. Demon eye a Eye watcher přicházejí až od patra 3. Podrobný rozpis je v [Spawnování a síla nepřátel](/docs/enemies/spawning).
 </Callout>
 
 <Cards>
@@ -116,8 +116,8 @@ přicházejí až od patra 3. Podrobný rozpis je v [Spawnování a síla nepř�
   ne – chování bossů je v tomhle nejednotné.
 - Red spiderling ani Purple spiderling nemají žádnou speciální schopnost; ve starší verzi hry se Red
   spiderling léčil za zásahy a Purple spiderling se teleportoval za hráče.
-- Starší popisy hry tvrdí, že nepřátelé s patrem nesílí – ve skutečnosti běžní nepřátelé sílí o 12 % HP
-  a 8 % poškození za patro.
+- Starší popisy hry tvrdí, že nepřátelé s patrem nesílí – ve skutečnosti běžní nepřátelé i bossové sílí
+  o 12 % HP a 8 % poškození za patro.
 
 ## Nápady na rozšíření
 

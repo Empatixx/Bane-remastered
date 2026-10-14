@@ -6,7 +6,7 @@ use super::surface::Surface;
 const THEME_SALT: u64 = 0x7E3A_11C5_9D42_B6F1;
 const THEME_VAR: &str = "BANE_THEME";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum Theme {
     Stone,
     Sewer,
@@ -27,7 +27,6 @@ pub(crate) struct TrapMix {
     pub(crate) poison_barrels: usize,
     pub(crate) frost_barrels: usize,
     pub(crate) cobwebs: usize,
-    pub(crate) geysers: usize,
     pub(crate) ice_patches: usize,
     pub(crate) web_patches: usize,
     pub(crate) arrow_traps: usize,
@@ -38,12 +37,11 @@ pub(crate) struct TrapMix {
     pub(crate) mushrooms: usize,
 }
 
-const FIRST_FLOOR: Theme = Theme::Spider;
-
-const LATER: [Theme; 6] = [
+const ALL: [Theme; 7] = [
     Theme::Stone,
     Theme::Sewer,
     Theme::Moss,
+    Theme::Spider,
     Theme::Ice,
     Theme::Lava,
     Theme::Temple,
@@ -99,15 +97,12 @@ impl Theme {
         {
             return theme;
         }
-        if floor <= 1 {
-            return FIRST_FLOOR;
-        }
         let mut rng = Rng::new(run_seed ^ THEME_SALT);
-        let mut order = LATER;
+        let mut order = ALL;
         for index in (1..order.len()).rev() {
             order.swap(index, rng.below(index + 1));
         }
-        order[(floor as usize - 2) % order.len()]
+        order[floor.saturating_sub(1) as usize % order.len()]
     }
 
     pub(crate) fn surface(self) -> Option<Surface> {
@@ -159,7 +154,6 @@ impl Theme {
             poison_barrels,
             frost_barrels,
             cobwebs: if self == Self::Spider { 5 } else { 2 },
-            geysers: 0,
             ice_patches: 0,
             web_patches: if self == Self::Spider { 3 } else { 0 },
             arrow_traps: if self == Self::Temple { 2 } else { 0 },
@@ -203,14 +197,20 @@ mod tests {
     }
 
     #[test]
-    fn the_first_floor_is_the_spider_nest_and_no_floor_repeats_a_theme() {
+    fn the_first_seven_floors_of_a_run_never_repeat_a_theme() {
         for seed in 0..50 {
-            let themes: Vec<Theme> = (1..=5).map(|floor| Theme::for_floor(seed, floor)).collect();
-            assert_eq!(themes[0], Theme::Spider);
+            let themes: Vec<Theme> = (1..=7).map(|floor| Theme::for_floor(seed, floor)).collect();
             for (index, theme) in themes.iter().enumerate() {
                 assert!(!themes[..index].contains(theme), "seed {seed}: {themes:?}");
             }
         }
+    }
+
+    #[test]
+    fn any_theme_can_open_a_run() {
+        let first: std::collections::HashSet<Theme> =
+            (0..200).map(|seed| Theme::for_floor(seed, 1)).collect();
+        assert_eq!(first.len(), ALL.len());
     }
 
     #[test]
@@ -251,7 +251,6 @@ mod tests {
         assert!(Theme::Sewer.mix().poison_barrels > Theme::Stone.mix().poison_barrels);
         assert!(Theme::Spider.mix().cobwebs > Theme::Stone.mix().cobwebs);
         assert!(Theme::Temple.mix().spikes > Theme::Stone.mix().spikes);
-        assert_eq!(Theme::Lava.mix().geysers, 0);
         assert!(Theme::Spider.mix().web_patches > 0);
         assert!(Theme::Temple.mix().arrow_traps > 0);
     }
@@ -269,13 +268,8 @@ mod tests {
         );
         assert_eq!(mix.cobwebs, 2);
         assert_eq!(
-            (
-                mix.geysers,
-                mix.ice_patches,
-                mix.web_patches,
-                mix.arrow_traps
-            ),
-            (0, 0, 0, 0)
+            (mix.ice_patches, mix.web_patches, mix.arrow_traps),
+            (0, 0, 0)
         );
     }
 }

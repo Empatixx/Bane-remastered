@@ -502,41 +502,6 @@ mod tests {
     }
 
     #[test]
-    fn a_fire_geyser_hurts_only_while_it_erupts() {
-        let mut world = World::new();
-        let mut physics = Physics::new();
-        let player = prefabs::player(
-            &mut world,
-            &mut physics,
-            Vec2::new(96.0, 96.0),
-            &Textures::default(),
-        );
-        if let Ok(mut armor) = world.get::<&mut Armor>(player) {
-            armor.current = 0;
-        }
-        let decor = crate::dungeon::Decor {
-            kind: crate::dungeon::DecorKind::FireGeyser,
-            tile: (1, 2),
-        };
-        let geyser = prefabs::decor(&mut world, &mut Physics::new(), decor, &Textures::default());
-
-        world
-            .get::<&mut Animation>(geyser)
-            .expect("the geyser animates")
-            .advance(0.8);
-        assert!(!contact_damage(&mut world, &mut Vec::new()));
-
-        world
-            .get::<&mut Animation>(geyser)
-            .expect("the geyser animates")
-            .advance(0.2);
-        let before = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
-        assert!(contact_damage(&mut world, &mut Vec::new()));
-        let after = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
-        assert_eq!(after, before - 1);
-    }
-
-    #[test]
     fn spikes_hurt_only_while_extended() {
         let mut world = World::new();
         let mut physics = Physics::new();
