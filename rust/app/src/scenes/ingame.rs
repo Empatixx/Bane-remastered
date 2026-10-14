@@ -451,6 +451,7 @@ impl Scene for InGameScene {
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
+            dt,
         );
         systems::tick_orbiters(&mut self.world, &mut self.physics, dt);
         systems::separate_chasers(&mut self.world);
