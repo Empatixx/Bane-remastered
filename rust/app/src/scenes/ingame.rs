@@ -280,6 +280,12 @@ impl Scene for InGameScene {
             dt,
             self.clock + phase,
         );
+        systems::shed_trails(
+            &mut self.world,
+            &systems::TrailTextures::load(&assets.textures),
+            dt,
+            self.clock,
+        );
         systems::tick_dust(&mut self.world, self.clock, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);

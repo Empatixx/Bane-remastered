@@ -484,6 +484,7 @@ fn chain_lightning(
             break;
         };
         prefabs::arc(world, from, to, textures);
+        super::trails::arc_motes(world, textures.get(crate::assets::tex::ROUND_MOTE_VOLT), from, to);
         super::damage::deal(
             world,
             Damage {

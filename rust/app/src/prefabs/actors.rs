@@ -12,7 +12,7 @@ use crate::components::{
     HoundAttack, HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade,
     Lit, Loadout, MagmaSpreader, MimicAttack, MimicBoss, MimicStage, Minion, NoDrop, OgreAttack,
     OgreBoss, OgreStage, Path, Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning,
-    Sprite, TrailLayer, Velocity, Wallet, WebSpitter,
+    Sprite, TrailLayer, Trailing, Velocity, Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -131,6 +131,9 @@ pub(crate) fn bullet(
     ));
     if bullet.round.turns() {
         let _ = world.insert_one(entity, Heading(velocity.to_angle()));
+    }
+    if spec.trail.is_some() {
+        let _ = world.insert_one(entity, Trailing::default());
     }
     let body = physics.add_bullet(entity, position, velocity, spec.hitbox);
     let _ = world.insert_one(entity, body);

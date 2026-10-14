@@ -24,6 +24,16 @@ impl Default for GazeWind {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Particle;
 
+/// A round that sheds motes as it flies, with the time left until the next one.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct Trailing {
+    pub(crate) cooldown: f32,
+}
+
+/// One mote shed by a round or a lightning arc.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Mote;
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct LightFade {
     pub(crate) base: f32,

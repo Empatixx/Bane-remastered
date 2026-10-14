@@ -37,8 +37,8 @@ pub(crate) use combat::{
 pub(crate) use death::DeathPart;
 pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};
 pub(crate) use effects::{
-    Casing, Floating, Gate, GazeWind, HOVER_CYCLE, Hover, LightFade, Opening, Particle, RoomId,
-    ThenPlay, TrapCooldown,
+    Casing, Floating, Gate, GazeWind, HOVER_CYCLE, Hover, LightFade, Mote, Opening, Particle,
+    RoomId, ThenPlay, Trailing, TrapCooldown,
 };
 pub(crate) use hud::{
     AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon, PIP_EMPTY,

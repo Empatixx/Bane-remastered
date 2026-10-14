@@ -98,6 +98,39 @@ pub(crate) struct RoundSpec {
     /// How many more enemies a hit jumps to as lightning.
     pub(crate) chains: u32,
     pub(crate) light: [f32; 3],
+    /// Motes the round sheds behind itself while it flies.
+    pub(crate) trail: Option<Trail>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Trail {
+    pub(crate) texture: Tex,
+    pub(crate) tint: [f32; 3],
+    pub(crate) size: f32,
+    pub(crate) life: f32,
+    /// How far sideways a mote is thrown, in pixels per second.
+    pub(crate) spread: f32,
+    /// Seconds between two motes.
+    pub(crate) every: f32,
+}
+
+impl Trail {
+    pub(crate) const VOLT: Self = Self {
+        texture: tex::ROUND_MOTE_VOLT,
+        tint: [0.65, 0.85, 1.0],
+        size: 14.0,
+        life: 0.35,
+        spread: 90.0,
+        every: 0.02,
+    };
+    pub(crate) const LASER: Self = Self {
+        texture: tex::ROUND_MOTE_LASER,
+        tint: [1.0, 0.5, 0.55],
+        size: 12.0,
+        life: 0.3,
+        spread: 20.0,
+        every: 0.015,
+    };
 }
 
 impl Round {
@@ -126,6 +159,7 @@ impl Round {
             splash: false,
             chains: 0,
             light: [255.0, 0.0, 0.0],
+            trail: None,
         };
         match self {
             Self::Bullet => round(tex::BULLET, (16.0, 16.0), 700.0),
@@ -161,6 +195,7 @@ impl Round {
             Self::Laser => RoundSpec {
                 hitbox: Vec2::splat(12.0),
                 light: [255.0, 30.0, 40.0],
+                trail: Some(Trail::LASER),
                 ..round(tex::ROUND_LASER, (32.0, 16.0), 1300.0)
             },
             Self::Plasma => RoundSpec {
@@ -171,6 +206,7 @@ impl Round {
             Self::Spark => RoundSpec {
                 chains: 2,
                 light: [80.0, 160.0, 255.0],
+                trail: Some(Trail::VOLT),
                 ..round(tex::ROUND_SPARK, (24.0, 24.0), 600.0)
             },
             Self::Rail => RoundSpec {

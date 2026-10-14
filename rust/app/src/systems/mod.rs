@@ -47,6 +47,7 @@ mod slot;
 mod stats;
 mod steering;
 mod surfaces;
+mod trails;
 mod ui;
 mod unstick;
 
@@ -74,6 +75,7 @@ pub(crate) use dodge::{
 };
 pub(crate) use draw::collect_draws;
 pub(crate) use dust::tick_dust;
+pub(crate) use trails::{TrailTextures, shed_trails};
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, resolve_deaths, tick_spawning, update_flow,
