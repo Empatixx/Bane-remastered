@@ -158,11 +158,11 @@ def demon_eye():
     socket = (52, 8, 16)
 
     def frame_eye(frame):
-        points = pixels_where(frame, is_light)
+        points = [(x, y) for x, y in pixels_where(frame, is_light) if y < 38]
         return centroid(points), points
 
     up_eye, _ = frame_eye(up)
-    f0 = bulge(shifted(up, 0, -2), [(x, y - 2) for x, y in pixels_where(up, is_light)], (255, 196, 196), (255, 255, 255))
+    f0 = bulge(shifted(up, 0, -2), [(x, y - 2) for x, y in pixels_where(up, is_light) if y < 38], (255, 196, 196), (255, 255, 255))
 
     mid_eye, mid_points = frame_eye(mid)
     f1 = clear(tear(mid, mid_eye, 24, 0), mid_points, socket)
@@ -171,11 +171,43 @@ def demon_eye():
     down_eye, down_points = frame_eye(down)
 
     flat_eye, flat_points = frame_eye(flat)
-    skeleton = clear(tear(flat, flat_eye, 12, 0), flat_points, socket)
-    falling = clear(tear(down, down_eye, 12, 0), down_points, socket).rotate(-14, resample=Image.NEAREST)
-    f2 = shifted(falling, 0, 14)
-    f3 = scaled(skeleton, 1.04, 0.6, 62)
-    f4 = scaled(darken(skeleton, (60, 12, 20), 0.12), 1.08, 0.44, 62)
+    brown = {(99, 44, 8), (198, 130, 57), (156, 85, 33)}
+
+    def split_lantern(frame, eye):
+        lantern = Image.new("RGBA", frame.size, (0, 0, 0, 0))
+        body = frame.copy()
+        for y in range(frame.height):
+            for x in range(frame.width):
+                p = frame.getpixel((x, y))
+                if p[3] and (p[:3] in brown or (is_light(p) and y >= 38)):
+                    lantern.putpixel((x, y), p)
+                    body.putpixel((x, y), (0, 0, 0, 0))
+        return body, lantern
+
+    def put(canvas, piece, x, bottom):
+        box = piece.getbbox()
+        if not box:
+            return
+        crop = piece.crop(box)
+        canvas.alpha_composite(crop, (max(0, x), max(0, bottom - crop.height)))
+
+    down_body, down_lantern = split_lantern(clear(tear(down, down_eye, 12, 0), down_points, socket), down_eye)
+    falling = down_body.rotate(-12, resample=Image.NEAREST)
+    f2 = Image.new("RGBA", down.size, (0, 0, 0, 0))
+    f2.alpha_composite(shifted(falling, 0, 10))
+    put(f2, down_lantern, 14, 62)
+
+    flat_body, flat_lantern = split_lantern(clear(tear(flat, flat_eye, 12, 0), flat_points, socket), flat_eye)
+    ground = scaled(flat_body, 1.04, 0.62, 62)
+    ground_box = ground.getbbox()
+    f3 = Image.new("RGBA", down.size, (0, 0, 0, 0))
+    f3.alpha_composite(ground)
+    put(f3, flat_lantern, ground_box[2] - 14, 62)
+    ground4 = scaled(darken(flat_body, (60, 12, 20), 0.12), 1.08, 0.46, 62)
+    box4 = ground4.getbbox()
+    f4 = Image.new("RGBA", down.size, (0, 0, 0, 0))
+    f4.alpha_composite(ground4)
+    put(f4, flat_lantern.rotate(90), box4[2] - 12, 62)
     frames = [f0, f1, f2, f3, f4]
     wide = Image.new("RGBA", (fw * 5, 128), (0, 0, 0, 0))
     wide.paste(sheet, (0, 0))
@@ -219,9 +251,11 @@ def eye_watcher():
     empty = clear(idle, eye_points, socket)
     f1 = blobs(shifted(empty, 0, 1), (eye[0], eye[1] + 1))
 
-    f2 = scaled(shifted(empty, 0, 0), 0.92, 0.9, 31)
-    f3 = scaled(empty, 0.78, 0.66, 31)
-    f4 = scaled(empty, 0.62, 0.46, 31)
+    tilted = empty.rotate(-34, resample=Image.NEAREST, center=(16, 30))
+    f2 = shifted(tilted, 3, 1)
+    lying = on_floor(empty.rotate(-90), 31, -1)
+    f3 = lying
+    f4 = scaled(lying, 1.06, 0.86, 31)
     frames = [cracked, f1, f2, f3, f4]
     out = Image.new("RGBA", (160, 96), (0, 0, 0, 0))
     out.paste(sheet, (0, 0))
