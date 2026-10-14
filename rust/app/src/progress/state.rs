@@ -85,15 +85,23 @@ where
 
 impl ProgressState {
     /// Gives a fresh profile its seed and keeps the board full; call after loading.
-    pub(crate) fn settle(&mut self, seed: u64) {
+    /// Says whether anything changed, so the caller can save it.
+    pub(crate) fn settle(&mut self, seed: u64) -> bool {
+        let mut changed = false;
         if self.seed == 0 {
             self.seed = seed.max(1);
+            changed = true;
         }
-        self.missions.truncate(MISSION_SLOTS);
+        if self.missions.len() > MISSION_SLOTS {
+            self.missions.truncate(MISSION_SLOTS);
+            changed = true;
+        }
         while self.missions.len() < MISSION_SLOTS {
             let mission = self.draw();
             self.missions.push(mission);
+            changed = true;
         }
+        changed
     }
 
     fn draw(&mut self) -> ActiveMission {
@@ -200,7 +208,7 @@ mod tests {
 
     fn settled() -> ProgressState {
         let mut state = ProgressState::default();
-        state.settle(42);
+        assert!(state.settle(42));
         state
     }
 

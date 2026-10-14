@@ -218,12 +218,12 @@ impl SharedProfile {
     pub(crate) fn load(path: &Path) -> Self {
         let (mut profile, writable) = Profile::load(path);
         let settled = profile.settle_weapon_trees();
-        profile.progress.settle(Rng::from_clock().next_u64());
+        let drawn = profile.progress.settle(Rng::from_clock().next_u64());
         let store = Store {
             profile,
             path: writable.then(|| path.to_path_buf()),
         };
-        if settled {
+        if settled || drawn {
             store.save();
         }
         Self(Rc::new(RefCell::new(store)))
@@ -686,6 +686,55 @@ mod tests {
     }
 
     #[test]
+    fn a_fresh_board_is_saved_at_once_so_a_restart_keeps_it() {
+        let path = temp_path("fresh-board");
+        let _ = fs::remove_file(&path);
+        let first = SharedProfile::load(&path).board();
+
+        let saved: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&path).expect("the saved profile"))
+                .expect("valid json");
+        assert_eq!(
+            saved["progress"]["missions"].as_array().map(Vec::len),
+            Some(3)
+        );
+        assert_eq!(SharedProfile::load(&path).board(), first);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn a_profile_from_a_newer_game_gets_a_board_in_memory_but_stays_untouched() {
+        let path = temp_path("newer-board");
+        let text = r#"{"version": 99, "balance": 5}"#;
+        fs::write(&path, text).expect("a temp file");
+
+        let shared = SharedProfile::load(&path);
+
+        assert_eq!(shared.board().missions.len(), 3);
+        assert_eq!(fs::read_to_string(&path).expect("the file"), text);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn an_unknown_mission_is_dropped_and_the_board_is_refilled() {
+        let path = temp_path("unknown-mission");
+        fs::write(
+            &path,
+            r#"{"version": 1, "progress": {"seed": 7, "missions": [{"goal": "removed_goal", "target": 5, "reward": 1}, {"goal": "kills", "target": 50, "reward": 2, "progress": 3}]}}"#,
+        )
+        .expect("a temp file");
+
+        let board = SharedProfile::load(&path).board();
+
+        assert_eq!(board.missions.len(), 3);
+        assert!(board
+            .missions
+            .iter()
+            .any(|note| note.progress == 3 && note.goal == 50));
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
     fn a_garbage_progress_keeps_the_rest_of_the_profile() {
         let path = temp_path("bad-progress");
         fs::write(&path, r#"{"version": 1, "balance": 30, "progress": 12}"#).expect("a temp file");
@@ -700,7 +749,6 @@ mod tests {
         let path = temp_path("challenge");
         let _ = fs::remove_file(&path);
         let shared = SharedProfile::load(&path);
-        let missions_before = shared.board().missions;
         shared.toggle_challenge(ChallengeId::Horde);
         let (stats, _) = run(1, 4);
         let outcome = shared.finish_run(&RunRecord {
@@ -711,6 +759,8 @@ mod tests {
         });
         assert_eq!(outcome.challenge, Some(("Horde", 4)));
         assert_eq!(shared.balance(), 4);
+        let missions = shared.board().missions;
+        assert_eq!(missions.len(), 3);
 
         let reloaded = SharedProfile::load(&path);
         assert_eq!(reloaded.challenge(), Some(ChallengeId::Horde));
@@ -720,7 +770,7 @@ mod tests {
             .challenges
             .iter()
             .any(|note| note.title == "Horde" && note.done));
-        assert_eq!(reloaded.board().missions.len(), missions_before.len());
+        assert_eq!(reloaded.board().missions, missions);
         let _ = fs::remove_file(&path);
     }
 
