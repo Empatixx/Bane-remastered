@@ -23,6 +23,8 @@ mod physics;
 mod postfx;
 mod prefabs;
 mod profile;
+#[allow(dead_code, unused_imports)]
+mod progress;
 mod props;
 mod render;
 mod rng;
