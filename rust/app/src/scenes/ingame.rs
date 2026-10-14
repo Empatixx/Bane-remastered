@@ -18,8 +18,10 @@ use crate::physics::Physics;
 use crate::postfx::SceneFx;
 use crate::prefabs;
 use crate::profile::SharedProfile;
+use crate::progress::{ChallengeId, RunOutcome, RunRecord};
 use crate::render::Occluders;
 use crate::rng::{Rng, Stream};
+use crate::rules::RunRules;
 use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::TILE_SIZE;
@@ -66,6 +68,8 @@ pub(crate) struct InGameScene {
     victory: bool,
     death: Option<systems::DeathScreen>,
     profile: Option<SharedProfile>,
+    rules: RunRules,
+    challenge: Option<ChallengeId>,
     kills_without_drop: u32,
     drag_from: Option<Vec2>,
 }
@@ -495,6 +499,7 @@ impl Scene for InGameScene {
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
         systems::tick_chilled(&mut self.world, dt);
+        systems::toughen_enemies(&mut self.world, self.rules.enemy_health);
         systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);
         if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds) {
             self.hit = true;
@@ -517,12 +522,22 @@ impl InGameScene {
         tracing::info!(seed, "a new run starts, set BANE_SEED to replay it");
         self.victory = false;
         self.death = None;
+        self.rules = self
+            .profile
+            .as_ref()
+            .map_or_else(RunRules::default, SharedProfile::rules);
+        self.challenge = self.profile.as_ref().and_then(SharedProfile::challenge);
         self.build(assets);
-        let perks = self
+        let perks = self.perks();
+        systems::apply_run_perks(&mut self.world, perks);
+    }
+
+    fn perks(&self) -> Perks {
+        let owned = self
             .profile
             .as_ref()
             .map_or_else(Perks::default, SharedProfile::perks);
-        systems::apply_run_perks(&mut self.world, perks);
+        self.rules.shape(owned)
     }
 
     /// Shakes the screen for the hard hits of this step, read from the sounds they made.
@@ -542,11 +557,19 @@ impl InGameScene {
         let stats = systems::current_stats(&self.world);
         let summary = systems::summarize(stats, self.floor);
         tracing::info!(victory = self.victory, ?summary, "the run is over");
+        let mut note = None;
         if let Some(profile) = &self.profile {
             profile.record_run(stats, &summary, self.victory);
+            let outcome = profile.finish_run(&RunRecord {
+                stats,
+                floor: self.floor,
+                victory: self.victory,
+                challenge: self.challenge,
+            });
+            note = progress_note(&outcome);
         }
         prefabs::death_ui(&mut self.world, self.victory, &assets.textures);
-        self.death = Some(systems::DeathScreen::new(summary));
+        self.death = Some(systems::DeathScreen::new(summary).with_note(note));
         self.set_big_map(false);
     }
 
@@ -556,7 +579,7 @@ impl InGameScene {
         self.combat_rng = Rng::stream(self.run_seed, self.floor, Stream::Combat);
         tracing::info!(floor = self.floor, "generating the dungeon");
         let theme = Theme::for_floor(self.run_seed, self.floor);
-        let dungeon = match Dungeon::generate_themed(&mut self.map_rng, theme) {
+        let dungeon = match Dungeon::generate_for_run(&mut self.map_rng, theme, self.rules.shops) {
             Ok(dungeon) => dungeon,
             Err(error) => {
                 tracing::error!(%error, "cannot generate the dungeon");
@@ -565,10 +588,7 @@ impl InGameScene {
         };
         let bounds = dungeon.grid.pixel_size();
         let textures = &assets.textures;
-        let perks = self
-            .profile
-            .as_ref()
-            .map_or_else(Perks::default, SharedProfile::perks);
+        let perks = self.perks();
         let [red, green, blue] = dungeon.theme.backdrop();
         prefabs::backdrop_colored(
             &mut self.world,
@@ -701,6 +721,7 @@ impl InGameScene {
     }
 
     fn next_floor(&mut self, assets: &Assets) {
+        systems::close_stats_floor(&mut self.world);
         let carried = systems::carried_stats(&self.world);
         self.world.clear();
         self.physics = Physics::new();
@@ -753,6 +774,7 @@ impl InGameScene {
                     );
                     if self.floor >= crate::enemies::FINAL_FLOOR {
                         tracing::info!("the last boss is defeated");
+                        systems::close_stats_floor(&mut self.world);
                         self.victory = true;
                     } else {
                         let ladder_top_left = center - Vec2::new(48.0, 0.0);
@@ -842,10 +864,24 @@ fn spawn_minimaps(world: &mut World, dungeon: &Dungeon, textures: &crate::assets
     }
 }
 
+fn progress_note(outcome: &RunOutcome) -> Option<String> {
+    let mut parts = Vec::new();
+    if let Some((title, talents)) = outcome.challenge {
+        parts.push(format!("{title} complete! +{talents} talents"));
+    }
+    match outcome.missions_done.len() {
+        0 => {}
+        1 => parts.push("1 mission ready on the board".to_owned()),
+        count => parts.push(format!("{count} missions ready on the board")),
+    }
+    (!parts.is_empty()).then(|| parts.join("   "))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::components::{
-        DeathBurst, Expiring, Health, Hits, Player, PoisonPool, Position, PriceTag, Shop, Trap,
+        Currency, DeathBurst, Expiring, Health, Hits, Player, PoisonPool, Position, PriceTag, Shop,
+        Trap,
     };
     use crate::enemies::EnemyKind;
 
@@ -908,6 +944,10 @@ mod tests {
     fn fingerprint(seed: u64, assets: &Assets) -> Vec<String> {
         let mut scene = InGameScene::default();
         scene.start_run(seed, assets);
+        fingerprint_of(&mut scene)
+    }
+
+    fn fingerprint_of(scene: &mut InGameScene) -> Vec<String> {
         let mut lines: Vec<String> = scene
             .world
             .query::<(&Position, Option<&Shop>, Option<&PriceTag>, Option<&Trap>)>()
@@ -937,6 +977,74 @@ mod tests {
         assert!(first.len() > 1);
         assert_eq!(first, fingerprint(42, &assets));
         assert_ne!(first, fingerprint(7, &assets));
+    }
+
+    fn player_max_health(scene: &InGameScene) -> Option<i32> {
+        scene
+            .world
+            .query::<&Health>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .map(|health| health.max)
+    }
+
+    fn scene_with_challenge(challenge: ChallengeId) -> InGameScene {
+        let profile = SharedProfile::in_memory();
+        profile.toggle_challenge(challenge);
+        let mut scene = InGameScene::default();
+        scene.attach_profile(profile);
+        scene
+    }
+
+    #[test]
+    fn a_challenge_run_starts_with_its_rules_and_neutral_runs_match_today() {
+        let assets = Assets::new().expect("the embedded tileset is valid");
+        let mut plain = InGameScene::default();
+        plain.attach_profile(SharedProfile::in_memory());
+        plain.start_run(7, &assets);
+        assert_eq!(fingerprint_of(&mut plain), fingerprint(7, &assets));
+
+        let mut scene = scene_with_challenge(ChallengeId::GlassCannon);
+        scene.start_run(7, &assets);
+        assert_eq!(player_max_health(&scene), Some(1));
+        assert_eq!(scene.challenge, Some(ChallengeId::GlassCannon));
+    }
+
+    #[test]
+    fn glass_cannon_stays_at_one_heart_on_the_next_floor() {
+        let assets = Assets::new().expect("the embedded tileset is valid");
+        let mut scene = scene_with_challenge(ChallengeId::GlassCannon);
+        scene.start_run(7, &assets);
+        scene.next_floor(&assets);
+        assert_eq!(player_max_health(&scene), Some(1));
+    }
+
+    #[test]
+    fn merchants_strike_floors_have_no_shop() {
+        let assets = Assets::new().expect("the embedded tileset is valid");
+        let mut scene = scene_with_challenge(ChallengeId::MerchantsStrike);
+        scene.start_run(7, &assets);
+        let coin_offers = scene
+            .world
+            .query::<&Shop>()
+            .iter()
+            .filter(|shop| shop.currency == Currency::Coins)
+            .count();
+        assert_eq!(coin_offers, 0);
+    }
+
+    #[test]
+    fn the_progress_note_names_the_challenge_and_the_missions() {
+        assert_eq!(progress_note(&RunOutcome::default()), None);
+        let outcome = RunOutcome {
+            missions_done: vec!["a".to_owned(), "b".to_owned()],
+            challenge: Some(("Glass Cannon", 50)),
+        };
+        assert_eq!(
+            progress_note(&outcome).as_deref(),
+            Some("Glass Cannon complete! +50 talents   2 missions ready on the board")
+        );
     }
 
     fn paused_game() -> (InGameScene, Assets) {

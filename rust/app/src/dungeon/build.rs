@@ -81,6 +81,7 @@ impl Dungeon {
         Self::generate_themed(rng, Theme::Stone)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn generate_themed(rng: &mut Rng, theme: Theme) -> Result<Self, Box<dyn Error>> {
         Self::generate_for_run(rng, theme, true)
     }

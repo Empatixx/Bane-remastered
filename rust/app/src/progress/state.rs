@@ -39,6 +39,7 @@ pub(crate) struct RunOutcome {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(dead_code)]
 pub(crate) struct NoteView {
     pub(crate) title: String,
     pub(crate) detail: String,
@@ -50,6 +51,7 @@ pub(crate) struct NoteView {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[allow(dead_code)]
 pub(crate) struct BoardView {
     pub(crate) missions: Vec<NoteView>,
     pub(crate) challenges: Vec<NoteView>,
@@ -116,10 +118,12 @@ impl ProgressState {
             .map_or_else(RunRules::default, |id| id.spec().rules)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn accent(&self) -> Option<[f32; 3]> {
         self.selected.map(|id| id.spec().accent)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn toggle(&mut self, id: ChallengeId) {
         self.selected = if self.selected == Some(id) {
             None
@@ -128,6 +132,7 @@ impl ProgressState {
         };
     }
 
+    #[allow(dead_code)]
     pub(crate) fn claim(&mut self, slot: usize) -> Option<u32> {
         let mission = *self.missions.get(slot)?;
         if !mission.done() {
@@ -158,6 +163,7 @@ impl ProgressState {
         outcome
     }
 
+    #[allow(dead_code)]
     pub(crate) fn board(&self) -> BoardView {
         BoardView {
             missions: self

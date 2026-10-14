@@ -42,6 +42,7 @@ const NEUTRAL: RunRules = RunRules {
 };
 
 impl ChallengeId {
+    #[allow(dead_code)]
     pub(crate) const ALL: [Self; 6] = [
         Self::GlassCannon,
         Self::PistolOnly,

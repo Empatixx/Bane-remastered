@@ -9,7 +9,7 @@ use crate::components::{
     ScreenSpace, Size, SpeechBubble, SpeechPart, SpeechText, Sprite, Text, TextButton, UiAction,
 };
 use crate::render::{Align, FontSize, Fonts, TextureId};
-use crate::systems::death_screen::{PROMPT_POSITION, SKULL_SIZE, TITLE_BASELINE};
+use crate::systems::death_screen::{NOTE_BASELINE, PROMPT_POSITION, SKULL_SIZE, TITLE_BASELINE};
 use crate::viewport::TARGET;
 
 const DEATH_ICON: f32 = 32.0;
@@ -164,6 +164,22 @@ pub(crate) fn death_ui(world: &mut World, victory: bool, textures: &Textures) {
             if victory { "Victory!" } else { "Game Over" }.to_owned(),
             Vec4::ONE,
             FontSize::Size32,
+        )
+        .aligned(Align::Center),
+        Layer(22),
+        Overlay,
+        ScreenSpace,
+        Hidden,
+    ));
+    world.spawn((
+        DeathPart::Note,
+        Position(Vec2::new(TARGET.x / 2.0, NOTE_BASELINE)),
+        Size(Vec2::ONE),
+        Color(Vec4::ONE),
+        Text::new(
+            String::new(),
+            Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
+            FontSize::Size22,
         )
         .aligned(Align::Center),
         Layer(22),

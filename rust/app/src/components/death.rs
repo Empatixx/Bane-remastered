@@ -7,4 +7,5 @@ pub(crate) enum DeathPart {
     Label(usize),
     Reward(usize),
     Prompt,
+    Note,
 }
