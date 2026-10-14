@@ -8,11 +8,11 @@ use crate::components::{
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
     BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
     DeathBurst, DeathCloud, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse,
-    GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Heading, Health, Hits, Homing,
+    GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Heading, Health, Hits, Homing, Hopper,
     HoundAttack, HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade,
     Lit, Loadout, MagmaSpreader, MimicAttack, MimicBoss, MimicStage, Minion, NoDrop, OgreAttack,
-    OgreBoss, OgreStage, Path, Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning,
-    Sprite, TrailLayer, Trailing, Velocity, Wallet, WebSpitter,
+    OgreBoss, OgreStage, Path, Pet, Player, Position, RoomId, Rooted, RunStats, Size, Smash,
+    Spawning, Sprite, TrailLayer, Trailing, Velocity, Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -260,6 +260,17 @@ pub(crate) fn enemy(
                         remaining: 0.0,
                     },
                 ),
+            );
+        }
+        Behavior::Hops => {
+            let _ = world.insert_one(entity, Rooted);
+            let _ = world.insert_one(
+                entity,
+                Hopper {
+                    timer: 0.2 + (position.x as u32 % 7) as f32 * 0.06,
+                    hopping: false,
+                    idle,
+                },
             );
         }
         Behavior::MimicBoss => {

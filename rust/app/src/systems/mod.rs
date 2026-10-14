@@ -18,6 +18,7 @@ mod enemies;
 mod glide;
 mod golem;
 mod hazards;
+mod hopper;
 mod hound;
 mod hud;
 mod interaction;
@@ -75,7 +76,6 @@ pub(crate) use dodge::{
 };
 pub(crate) use draw::collect_draws;
 pub(crate) use dust::tick_dust;
-pub(crate) use trails::{TrailTextures, shed_trails};
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, resolve_deaths, tick_spawning, update_flow,
@@ -83,6 +83,7 @@ pub(crate) use enemies::{
 pub(crate) use glide::glide;
 pub(crate) use golem::{clear_golem_effects, tick_golem, tick_laser, tick_rock_falls};
 pub(crate) use hazards::{slow_bullets_in_webs, tick_arrow_traps};
+pub(crate) use hopper::tick_hoppers;
 pub(crate) use hound::{tick_flames, tick_hound};
 pub(crate) use hud::{update_lobby_counters, update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
@@ -124,5 +125,6 @@ pub(crate) use stats::{
 };
 pub(crate) use steering::{steer_player, steer_player_on};
 pub(crate) use surfaces::{burn_on_lava, ripple_on_water, sync_liquids};
+pub(crate) use trails::{TrailTextures, shed_trails};
 pub(crate) use ui::{update_buttons, update_text_buttons};
 pub(crate) use unstick::watch_progress;

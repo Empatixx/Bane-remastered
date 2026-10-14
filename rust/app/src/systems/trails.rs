@@ -39,7 +39,11 @@ impl TrailTextures {
     }
 
     fn get(&self, trail: Trail) -> TextureId {
-        if trail == Trail::VOLT { self.volt } else { self.laser }
+        if trail == Trail::VOLT {
+            self.volt
+        } else {
+            self.laser
+        }
     }
 }
 
@@ -196,7 +200,12 @@ mod tests {
     #[test]
     fn an_arc_scatters_a_few_sparks_along_its_length() {
         let mut world = World::new();
-        arc_motes(&mut world, TextureId::WHITE, Vec2::ZERO, Vec2::new(200.0, 0.0));
+        arc_motes(
+            &mut world,
+            TextureId::WHITE,
+            Vec2::ZERO,
+            Vec2::new(200.0, 0.0),
+        );
 
         let xs: Vec<f32> = world
             .query::<&Position>()

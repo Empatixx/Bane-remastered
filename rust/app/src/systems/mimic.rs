@@ -13,16 +13,9 @@ use crate::prefabs;
 use crate::systems::golem::{play, player_at, spawn_rock, unit};
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
-const MOUTH: Vec2 = Vec2::new(40.0, 62.0);
-const FOOT: f32 = 60.0;
+const MOUTH: Vec2 = Vec2::new(43.0, 43.0);
+const FOOT: f32 = 100.0;
 const ATTACK_VAR: &str = "BANE_MIMIC_ATTACK";
-const MOBS: [EnemyKind; 5] = [
-    EnemyKind::Rat,
-    EnemyKind::Slime,
-    EnemyKind::RedSlime,
-    EnemyKind::Snake,
-    EnemyKind::Bat,
-];
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Cmd {
@@ -346,10 +339,8 @@ fn execute(
             }
         }
         Cmd::Spit => {
-            let mut seed = (at.x as u32).wrapping_mul(2_654_435_761) ^ (at.y as u32).rotate_left(7);
-            let kind = MOBS[(unit(&mut seed) * MOBS.len() as f32) as usize % MOBS.len()];
             let spot = at + Vec2::new(side * (MOUTH.x + 60.0), MOUTH.y);
-            prefabs::hatchling(world, physics, kind, spot, room, textures);
+            prefabs::hatchling(world, physics, EnemyKind::SalivaSlime, spot, room, textures);
             sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
         }
     }

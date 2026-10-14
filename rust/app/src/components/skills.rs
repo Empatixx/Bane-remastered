@@ -80,6 +80,13 @@ pub(crate) struct MagmaSpreader {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Hopper {
+    pub(crate) timer: f32,
+    pub(crate) hopping: bool,
+    pub(crate) idle: Clip,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Sealed;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

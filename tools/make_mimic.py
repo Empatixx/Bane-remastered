@@ -277,13 +277,13 @@ def mimic(open_amount=1.0, lick=None, hop=0, squash=0, eye=1.0, dx=0, clamp=Fals
             d.line(pts, fill=SALIVA_D, width=2)
             d.line([(x - 1, y) for x, y in pts[1:-1]], fill=SALIVA, width=1)
         for k in range(9):
-            fx = right - 6 + blob * 0.9 + rng_.uniform(-6, 18) * (0.4 + blob / 44)
+            fx = right - 4 + blob * 0.5 + rng_.uniform(-6, 12) * (0.4 + blob / 60)
             fy = top - 12 + rng_.uniform(-10, 10) + (blob / 44) ** 2 * 18
             r_ = rng_.choice((1.5, 2, 2.5))
             d.ellipse((fx - r_, fy - r_, fx + r_, fy + r_ + 1), fill=SALIVA_D)
             d.ellipse((fx - r_ + 0.5, fy - r_ + 0.5, fx + r_ - 0.5, fy + r_), fill=SALIVA)
         if blob >= 30:
-            sx = right + 30 + blob * 0.5
+            sx = right + 14 + blob * 0.3
             d.ellipse((sx - 10, top + 20, sx + 10, top + 26), fill=SALIVA_D)
             d.ellipse((sx - 8, top + 20, sx + 8, top + 24), fill=SALIVA)
     box(d, left, top - 1, right, top + 2, MAW_D)
@@ -518,10 +518,12 @@ def death():
 
 def main():
     rows = [idle(), hop(), bite(), spit(), rest(), death()]
-    sheet = Image.new("RGBA", (W * 8, H * len(rows)), CLEAR)
+    box_ = (8, 24, 112, 140)
+    cw, ch = box_[2] - box_[0], box_[3] - box_[1]
+    sheet = Image.new("RGBA", (cw * 8, ch * len(rows)), CLEAR)
     for row, frames in enumerate(rows):
         for column, frame in enumerate(frames):
-            sheet.paste(frame, (column * W, row * H))
+            sheet.paste(frame.crop(box_), (column * cw, row * ch))
     sheet.save(OUT / "mimic.tga")
 
 

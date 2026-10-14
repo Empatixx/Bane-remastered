@@ -410,6 +410,7 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
+        systems::tick_hoppers(&mut self.world, dt);
         systems::tick_mimic(
             &mut self.world,
             &mut self.physics,

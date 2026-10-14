@@ -55,6 +55,8 @@ pub(crate) const GOLEM_LASER_REACH: f32 = 1100.0;
 pub(crate) const GOLEM_LASER_WIDTH: f32 = 26.0;
 pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_NEAR: f32 = 340.0;
+pub(crate) const HOP_SECONDS: f32 = 0.42;
+pub(crate) const HOP_REST: f32 = 0.6;
 pub(crate) const MIMIC_FIRST_COOLDOWN: f32 = 2.2;
 pub(crate) const MIMIC_COOLDOWN: f32 = 2.6;
 pub(crate) const MIMIC_RAGE_COOLDOWN: f32 = 1.5;
@@ -336,6 +338,7 @@ pub(crate) enum EnemyKind {
     Ogre,
     Hellhound,
     Mimic,
+    SalivaSlime,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -363,6 +366,7 @@ pub(crate) enum Behavior {
     OgreBoss,
     HoundBoss,
     MimicBoss,
+    Hops,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -476,7 +480,7 @@ impl EnemyKind {
         Self::ALL.iter().position(|kind| *kind == self).unwrap_or(0)
     }
 
-    pub(crate) const ALL: [Self; 22] = [
+    pub(crate) const ALL: [Self; 23] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -497,6 +501,7 @@ impl EnemyKind {
         Self::Ogre,
         Self::Hellhound,
         Self::Mimic,
+        Self::SalivaSlime,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -670,6 +675,20 @@ impl EnemyKind {
                     (120, 2, 2_500_000.0),
                 )
             },
+            Self::SalivaSlime => EnemySpec {
+                death_row: 1,
+                role: Role::Summoned,
+                behavior: Behavior::Hops,
+                ..spec(
+                    tex::SALIVA_SLIME,
+                    (6, 3),
+                    (40.0, 32.0),
+                    2.4,
+                    (4, 0.16),
+                    Some((6, 0.07)),
+                    (5, 1, 5_500_000.0),
+                )
+            },
             Self::Mimic => EnemySpec {
                 min_floor: 2,
                 death_row: 5,
@@ -679,11 +698,11 @@ impl EnemyKind {
                 ..spec(
                     tex::MIMIC,
                     (8, 6),
-                    (156.0, 148.0),
+                    (104.0, 116.0),
                     2.4,
                     (8, 0.12),
                     Some((8, 0.12)),
-                    (115, 2, 45_000_000.0),
+                    (115, 2, 30_000_000.0),
                 )
             },
             Self::Hellhound => EnemySpec {
@@ -931,8 +950,8 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 9);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 9 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 10);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 10 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));
