@@ -81,9 +81,21 @@ impl Dungeon {
         Self::generate_themed(rng, Theme::Stone)
     }
 
+    #[cfg(test)]
     pub(crate) fn generate_themed(rng: &mut Rng, theme: Theme) -> Result<Self, Box<dyn Error>> {
+        Self::generate_for_run(rng, theme, true)
+    }
+
+    pub(crate) fn generate_for_run(
+        rng: &mut Rng,
+        theme: Theme,
+        shops: bool,
+    ) -> Result<Self, Box<dyn Error>> {
         let templates = Templates::built_in()?;
-        let spec = LayoutSpec::standard(rng);
+        let mut spec = LayoutSpec::standard(rng);
+        if !shops {
+            spec.shops = 0;
+        }
         let layout = Layout::generate(&spec, rng).ok_or("could not lay out the rooms")?;
         Self::build(&layout, &templates, theme, rng)
     }
@@ -370,6 +382,25 @@ mod tests {
     use std::collections::VecDeque;
 
     use super::*;
+
+    #[test]
+    fn a_run_without_shops_gets_no_shop_room_and_the_same_run_with_shops_matches_today() {
+        let without =
+            Dungeon::generate_for_run(&mut Rng::new(7), Theme::Stone, false).expect("a dungeon");
+        assert!(without.rooms.iter().all(|room| room.kind != RoomKind::Shop));
+
+        let with =
+            Dungeon::generate_for_run(&mut Rng::new(7), Theme::Stone, true).expect("a dungeon");
+        let today = Dungeon::generate_themed(&mut Rng::new(7), Theme::Stone).expect("a dungeon");
+        let kinds = |dungeon: &Dungeon| {
+            dungeon
+                .rooms
+                .iter()
+                .map(|room| room.kind)
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(kinds(&with), kinds(&today));
+    }
 
     fn dungeon(seed: u64) -> Dungeon {
         let mut rng = Rng::new(seed);

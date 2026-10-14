@@ -18,6 +18,7 @@ pub(crate) fn apply_floor_perks(world: &mut World, perks: Perks) {
     let _ = world.insert_one(player, PlayerPerks(perks));
     if let Ok(mut loadout) = world.get::<&mut Loadout>(player) {
         loadout.apply_perks(perks.extra_slots, perks.ammo_scale);
+        loadout.restrict(perks.only_gun);
     }
 }
 
@@ -113,6 +114,38 @@ mod tests {
             &Textures::default(),
         );
         world
+    }
+
+    #[test]
+    fn a_health_cap_keeps_the_player_at_one_heart() {
+        let mut world = player();
+        let capped = Perks {
+            max_health_cap: Some(1),
+            ..Perks::default()
+        };
+        apply_run_perks(&mut world, capped);
+        let (current, max, _, _) = vitals(&world);
+        assert_eq!((current, max), (1, 1));
+    }
+
+    #[test]
+    fn pistol_only_takes_the_starting_shotgun_away() {
+        let mut world = player();
+        let only = Perks {
+            only_gun: Some(crate::guns::GunKind::Pistol),
+            ..Perks::default()
+        };
+        apply_floor_perks(&mut world, only);
+        let loadout = world
+            .query::<&Loadout>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .cloned()
+            .expect("a loadout");
+        assert!(loadout.has(crate::guns::GunKind::Pistol));
+        assert!(!loadout.has(crate::guns::GunKind::Shotgun));
+        assert!(!loadout.allows(crate::guns::GunKind::Uzi));
     }
 
     fn vitals(world: &World) -> (i32, i32, i32, i32) {

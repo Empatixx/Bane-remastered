@@ -11,7 +11,7 @@ use crate::components::{
 };
 use crate::geometry;
 use crate::items::{
-    BLINK_PERIOD, BLINK_SECONDS, DROP_ROLL_RANGE, ItemKind, Vital, drop_threshold_reached,
+    AmmoBox, BLINK_PERIOD, BLINK_SECONDS, DROP_ROLL_RANGE, ItemKind, Vital, drop_threshold_reached,
 };
 use crate::prefabs;
 
@@ -51,6 +51,27 @@ pub(crate) fn outline_drops(world: &mut World) {
     }
 }
 
+pub(crate) fn common_drop(world: &World, kind: ItemKind) -> ItemKind {
+    let ItemKind::Ammo(ammo) = kind else {
+        return kind;
+    };
+    let accepts = |ammo| {
+        world
+            .query::<&Loadout>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .is_none_or(|loadout| loadout.accepts_ammo(ammo))
+    };
+    if accepts(ammo) {
+        kind
+    } else if accepts(AmmoBox::Pistol) {
+        ItemKind::Ammo(AmmoBox::Pistol)
+    } else {
+        ItemKind::Ammo(AmmoBox::Shotgun)
+    }
+}
+
 pub(crate) fn can_use(world: &World, item: ItemKind) -> bool {
     match item {
         ItemKind::Coin => true,
@@ -82,6 +103,7 @@ pub(crate) fn use_item(world: &mut World, item: ItemKind, sounds: &mut Vec<Audio
             for wallet in world.query_mut::<&mut Wallet>().with::<&Player>() {
                 wallet.coins += 1;
             }
+            super::stats::record(world, super::stats::Stat::Gold, 1);
             sounds.push(AudioCommand::Effect(SoundEffect::Coin));
         }
         ItemKind::Ammo(ammo) => {
@@ -171,19 +193,22 @@ pub(crate) fn enemy_drops(
         .filter(|(_, animation)| animation.finished())
         .map(|(position, _)| position.0)
         .collect();
-    let kills = world
-        .query::<&Animation>()
-        .with::<(&Enemy, &Expiring)>()
+    let killed: Vec<crate::enemies::EnemyKind> = world
+        .query::<(&Enemy, &Animation)>()
+        .with::<&Expiring>()
         .without::<&crate::components::Minion>()
         .iter()
-        .filter(|animation| animation.finished())
-        .count();
-    super::stats::record(world, super::stats::Stat::Kill, kills as u32);
+        .filter(|(_, animation)| animation.finished())
+        .map(|(enemy, _)| enemy.kind)
+        .collect();
+    for kind in killed {
+        super::stats::record(world, super::stats::Stat::Kill(kind), 1);
+    }
     for position in dead {
         *kills_without_drop += 1;
         if drop_threshold_reached(*kills_without_drop, roll(DROP_ROLL_RANGE)) {
             *kills_without_drop = 0;
-            let kind = ItemKind::COMMON[roll(ItemKind::COMMON.len())];
+            let kind = common_drop(world, ItemKind::COMMON[roll(ItemKind::COMMON.len())]);
             prefabs::item(world, kind, position, true, Vec2::ZERO, textures);
         }
     }
@@ -197,7 +222,7 @@ pub(crate) fn burst_items(
 ) {
     for index in 0..BURST_ITEMS {
         let angle = TAU * (index + 1) as f32 / BURST_ITEMS as f32;
-        let kind = ItemKind::COMMON[roll(ItemKind::COMMON.len())];
+        let kind = common_drop(world, ItemKind::COMMON[roll(ItemKind::COMMON.len())]);
         let velocity = Vec2::new(angle.cos(), angle.sin()) * BURST_SPEED;
         prefabs::item(world, kind, center, false, velocity, textures);
     }
@@ -371,6 +396,49 @@ mod tests {
     }
 
     #[test]
+    fn a_pistol_only_loadout_never_gets_a_shotgun_box_from_drops_or_chests() {
+        let (mut world, textures) = arena();
+        let shotgun_roll = |bound: usize| {
+            assert_eq!(bound, ItemKind::COMMON.len());
+            2
+        };
+        burst_items(&mut world, Vec2::new(500.0, 500.0), &textures, shotgun_roll);
+        let before = world.query::<&Pickup>().iter().count();
+        assert!(
+            world
+                .query::<&Pickup>()
+                .iter()
+                .any(|pickup| pickup.0 == ItemKind::Ammo(AmmoBox::Shotgun))
+        );
+
+        for loadout in world.query_mut::<&mut Loadout>() {
+            loadout.restrict(Some(crate::guns::GunKind::Pistol));
+        }
+        burst_items(&mut world, Vec2::new(500.0, 500.0), &textures, shotgun_roll);
+
+        let kinds: Vec<ItemKind> = world
+            .query::<&Pickup>()
+            .iter()
+            .map(|pickup| pickup.0)
+            .collect();
+        assert_eq!(kinds.len(), before + 5);
+        assert_eq!(
+            kinds
+                .iter()
+                .filter(|k| **k == ItemKind::Ammo(AmmoBox::Shotgun))
+                .count(),
+            before
+        );
+        assert_eq!(
+            kinds
+                .iter()
+                .filter(|k| **k == ItemKind::Ammo(AmmoBox::Pistol))
+                .count(),
+            5
+        );
+    }
+
+    #[test]
     fn items_from_chests_never_despawn() {
         let (mut world, textures) = arena();
         burst_items(&mut world, Vec2::new(500.0, 500.0), &textures, |bound| {
@@ -413,6 +481,36 @@ mod tests {
 
         assert_eq!(world.query::<&Pickup>().iter().count(), 1);
         assert_eq!(kills, 0);
+    }
+
+    #[test]
+    fn a_boss_that_finishes_dying_counts_as_a_kill_of_its_kind() {
+        let (mut world, textures) = arena();
+        let mut physics = Physics::new();
+        let golem = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Golem,
+            Vec2::new(400.0, 0.0),
+        );
+        let _ = world.insert_one(golem, Expiring);
+        if let Ok(mut animation) = world.get::<&mut Animation>(golem) {
+            animation.play(crate::enemies::EnemyKind::Golem.spec().death_clip());
+            animation.advance(5.0);
+        }
+
+        enemy_drops(&mut world, &mut 0, &textures, |_| 0);
+
+        let stats = super::super::stats::current(&world);
+        assert_eq!(stats.kills_of(crate::enemies::EnemyKind::Golem), 1);
+        assert_eq!(stats.kills, 1);
+    }
+
+    #[test]
+    fn picking_up_a_coin_adds_to_gold() {
+        let (mut world, _) = arena();
+        use_item(&mut world, ItemKind::Coin, &mut Vec::new());
+        assert_eq!(super::super::stats::current(&world).gold, 1);
     }
 
     #[test]

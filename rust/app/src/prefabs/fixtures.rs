@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec4};
+use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
@@ -25,6 +25,8 @@ use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
 
 use super::{PRICE_COLOR, PRICE_TAG_SIZE, PROMPT_COLOR, label};
+
+pub(crate) const PORTAL_LIGHT: Vec3 = Vec3::new(128.0, 0.0, 128.0);
 
 pub(crate) fn prop(
     world: &mut World,
@@ -319,7 +321,14 @@ pub(crate) fn portal(world: &mut World, top_left: Vec2, textures: &Textures) -> 
     let _ = world.insert(
         entity,
         (
-            Light::rgb(Vec2::ZERO, 128.0, 0.0, 128.0, 50.0, 2.5),
+            Light::rgb(
+                Vec2::ZERO,
+                PORTAL_LIGHT.x,
+                PORTAL_LIGHT.y,
+                PORTAL_LIGHT.z,
+                50.0,
+                2.5,
+            ),
             Interactable {
                 action: Interaction::EnterPortal,
             },

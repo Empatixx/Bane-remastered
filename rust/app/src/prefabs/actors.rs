@@ -159,6 +159,7 @@ pub(crate) fn enemy(
     let entity = world.spawn((
         Enemy {
             death: spec.death_clip(),
+            kind,
         },
         Health {
             current: health,

@@ -144,7 +144,7 @@ Pure Rust with no `hecs::World` and no rendering.
 - Note states: in progress, hovered, done/claimable (stamp), plus a "selected" marker for
   the active challenge and a permanent stamp for completed challenges.
 - The portal entity gets a `PortalAccent` component, refreshed whenever the selection
-  changes. It tints the portal sprite and its ambience particles. `None` means today's look.
+  changes. It tints the portal sprite and its light only. `None` means today's look.
 
 ### 6. Run start and end
 

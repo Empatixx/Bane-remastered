@@ -91,7 +91,11 @@ pub(crate) struct Wallet {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Enemy {
     pub(crate) death: Clip,
+    pub(crate) kind: crate::enemies::EnemyKind,
 }
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Toughened;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Spawning {
@@ -266,6 +270,7 @@ pub(crate) struct Loadout {
     current: usize,
     ammo_scale: f32,
     mods: WeaponMods,
+    only: Option<GunKind>,
 }
 
 impl Loadout {
@@ -278,7 +283,27 @@ impl Loadout {
             current: 0,
             ammo_scale: 1.0,
             mods: WeaponMods::default(),
+            only: None,
         }
+    }
+
+    pub(crate) fn restrict(&mut self, only: Option<GunKind>) {
+        self.only = only;
+        let Some(only) = only else {
+            return;
+        };
+        for slot in &mut self.slots {
+            if slot.as_ref().is_some_and(|weapon| weapon.kind != only) {
+                *slot = None;
+            }
+        }
+        if self.slots.get(self.current).is_none_or(Option::is_none) {
+            self.current = self.slots.iter().position(Option::is_some).unwrap_or(0);
+        }
+    }
+
+    pub(crate) fn allows(&self, kind: GunKind) -> bool {
+        self.only.is_none_or(|only| only == kind)
     }
 
     pub(crate) fn apply_weapon_mods(&mut self, mods: WeaponMods) {
@@ -322,6 +347,14 @@ impl Loadout {
             AmmoBox::Universal => true,
             AmmoBox::Shotgun => weapon.kind.ammo_class() == AmmoClass::Shotgun,
             AmmoBox::Pistol | AmmoBox::SubMachine => weapon.kind.ammo_class() == AmmoClass::Pistol,
+        }
+    }
+
+    pub(crate) fn accepts_ammo(&self, ammo: AmmoBox) -> bool {
+        match (self.only, ammo) {
+            (_, AmmoBox::Universal) | (None, _) => true,
+            (Some(only), AmmoBox::Shotgun) => only.ammo_class() == AmmoClass::Shotgun,
+            (Some(only), _) => only.ammo_class() == AmmoClass::Pistol,
         }
     }
 

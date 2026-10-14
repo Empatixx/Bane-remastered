@@ -32,7 +32,9 @@ mod ogre;
 mod perks;
 mod pet;
 mod player_animation;
+mod portal;
 mod rooms;
+mod rules;
 mod scientist;
 mod settings_ui;
 mod shadow;
@@ -93,6 +95,7 @@ pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_chilled, tick_frozen, tick_poison,
 };
 pub(crate) use ogre::tick_ogre;
+pub(crate) use rules::toughen_enemies;
 pub(crate) use perks::{
     apply_floor_perks, apply_run_perks, apply_weapon_mods, immobilize_traps, regenerate_armor,
 };
@@ -101,6 +104,7 @@ pub(crate) use pet::{
     steer_pets,
 };
 pub(crate) use player_animation::animate_player;
+pub(crate) use portal::tint_portal;
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
 pub(crate) use scientist::{PURCHASE, chat, fit_speech};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};
@@ -112,7 +116,9 @@ pub(crate) use skills::{
     burn_fuses, enemy_bullet_hits, steer_homing, tick_eye_shooters, tick_smashes,
 };
 pub(crate) use slot::{spin, tick_slot_machines, update_slot_prices};
-pub(crate) use stats::{Summary, current as current_stats, summarize};
+pub(crate) use stats::{
+    Summary, close_floor as close_stats_floor, current as current_stats, summarize,
+};
 pub(crate) use steering::{steer_player, steer_player_on};
 pub(crate) use surfaces::{burn_on_lava, ripple_on_water, sync_liquids};
 pub(crate) use ui::{update_buttons, update_text_buttons};

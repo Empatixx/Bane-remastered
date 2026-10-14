@@ -14,6 +14,7 @@ use crate::viewport::TARGET;
 const DEATH_ICON: f32 = 32.0;
 const SKULL_SIZE: Vec2 = Vec2::new(102.0, 96.0);
 const TITLE_BASELINE: f32 = 175.0;
+const NOTE_BASELINE: f32 = 450.0;
 const PROMPT_POSITION: Vec2 = Vec2::new(700.0, 500.0);
 
 const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
@@ -166,6 +167,22 @@ pub(crate) fn death_ui(world: &mut World, victory: bool, textures: &Textures) {
             if victory { "Victory!" } else { "Game Over" }.to_owned(),
             Vec4::ONE,
             FontSize::Size32,
+        )
+        .aligned(Align::Center),
+        Layer(22),
+        Overlay,
+        ScreenSpace,
+        Hidden,
+    ));
+    world.spawn((
+        DeathPart::Note,
+        Position(Vec2::new(TARGET.x / 2.0, NOTE_BASELINE)),
+        Size(Vec2::ONE),
+        Color(Vec4::ONE),
+        Text::new(
+            String::new(),
+            Vec4::new(1.0, 216.0 / 255.0, 0.0, 1.0),
+            FontSize::Size22,
         )
         .aligned(Align::Center),
         Layer(22),

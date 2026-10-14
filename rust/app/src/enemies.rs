@@ -287,7 +287,8 @@ const fn slime_bullet(texture: Tex, color: [f32; 3]) -> ProjectileSpec {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum EnemyKind {
     Rat,
     Snake,
@@ -445,6 +446,10 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
+    pub(crate) fn index(self) -> usize {
+        Self::ALL.iter().position(|kind| *kind == self).unwrap_or(0)
+    }
+
     pub(crate) const ALL: [Self; 21] = [
         Self::Rat,
         Self::Snake,
