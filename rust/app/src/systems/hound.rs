@@ -276,10 +276,11 @@ fn execute(
             sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
         }
         Cmd::AimBreath => {
-            let origin = at + head_offset(0, mirrored);
             if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
-                hound.aim_at = player.unwrap_or(origin + Vec2::X * 200.0);
-                hound.angle = aim(origin, hound.aim_at);
+                for head in 0..3 {
+                    let origin = at + head_offset(head, mirrored);
+                    hound.angles[head] = player.map_or(0.0, |player| aim(origin, player));
+                }
             }
         }
         Cmd::Ring => {
@@ -334,15 +335,6 @@ fn set_charge(world: &mut World, entity: Entity, on: bool, at: Vec2, player: Opt
     }
 }
 
-pub(crate) fn beam_angle(origin: Vec2, point: Vec2, wobble: f32, head: usize, heads: usize) -> f32 {
-    let t = if heads <= 1 {
-        0.0
-    } else {
-        head as f32 / (heads - 1) as f32 - 0.5
-    };
-    aim(origin, point) + wobble * enemies::HOUND_BREATH_WOBBLE + t * enemies::HOUND_BREATH_FAN * 2.0
-}
-
 fn warn(world: &mut World, navigation: &Navigation, ray: Ray) {
     let end = beam_end(navigation, ray.eye, ray.angle);
     let direction = Vec2::from_angle(ray.angle);
@@ -390,38 +382,27 @@ pub(crate) fn tick_flames(
         let mirrored = world
             .get::<&Animation>(entity)
             .is_ok_and(|animation| animation.flipped());
-        let main = at + head_offset(0, mirrored);
-        let angle = {
-            let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) else {
-                continue;
-            };
-            if let Some(target) = target {
-                hound.aim_at = target;
-            }
-            let rate = if enraged {
-                enemies::HOUND_BEAM_RAGE_TURN
-            } else {
-                enemies::HOUND_BEAM_TURN
-            };
-            let wanted = aim(main, hound.aim_at);
-            let smooth = 1.0 - (-rate * 2.2 * dt).exp();
-            let step = turn_towards(hound.angle, wanted, f32::MAX) - hound.angle;
-            hound.angle += (step * smooth).clamp(-rate * dt, rate * dt);
-            hound.angle
+        let rate = if enraged {
+            enemies::HOUND_BEAM_RAGE_TURN
+        } else {
+            enemies::HOUND_BEAM_TURN
         };
         let heads = if enraged { 3 } else { 2 };
-        let wobble = (timer * 4.0).sin();
-        let reach = main.distance(
-            world
-                .get::<&HoundBoss>(entity)
-                .map_or(main, |hound| hound.aim_at),
-        );
-        let point = main + Vec2::from_angle(angle) * reach;
         for head in 0..heads {
             let eye = at + head_offset(head, mirrored);
+            let angle = {
+                let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) else {
+                    break;
+                };
+                if let Some(target) = target {
+                    hound.angles[head] =
+                        turn_towards(hound.angles[head], aim(eye, target), rate * dt);
+                }
+                hound.angles[head]
+            };
             let ray = Ray {
                 eye,
-                angle: beam_angle(eye, point, wobble, head, heads),
+                angle,
                 phase: timer * 16.0 + head as f32,
             };
             if firing {
@@ -444,8 +425,7 @@ mod tests {
             last: None,
             timer: 0.0,
             cooldown: 0.0,
-            angle: 0.0,
-            aim_at: Vec2::ZERO,
+            angles: [0.0; 3],
             charging: false,
             enraged: false,
             seed: 99,
@@ -527,16 +507,5 @@ mod tests {
             .filter(|command| **command == Cmd::Ring)
             .count();
         assert_eq!(rings, 1);
-    }
-
-    #[test]
-    fn every_flame_beam_points_at_the_same_aim_point_with_only_a_small_spread() {
-        let point = Vec2::new(500.0, 0.0);
-        let centre = beam_angle(Vec2::ZERO, point, 0.0, 0, 1);
-        assert!(centre.abs() < 1e-4);
-        let upper = beam_angle(Vec2::new(0.0, -60.0), point, 0.0, 0, 2);
-        let lower = beam_angle(Vec2::new(0.0, 60.0), point, 0.0, 1, 2);
-        assert!(upper > 0.0 && lower < 0.0 || (upper - lower).abs() < 0.8);
-        assert!(upper.abs() < 0.4 && lower.abs() < 0.4);
     }
 }
