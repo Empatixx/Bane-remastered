@@ -20,6 +20,7 @@ const LABEL_LEFT: f32 = 300.0;
 const REWARD_LEFT: f32 = 650.0;
 pub(crate) const TITLE_BASELINE: f32 = 175.0;
 pub(crate) const PROMPT_POSITION: Vec2 = Vec2::new(700.0, 500.0);
+pub(crate) const NOTE_BASELINE: f32 = 450.0;
 const DIM_ALPHA: f32 = 0.7;
 const DIM_FADE_IN: f32 = 1.0;
 const FADE_OUT: f32 = 0.8;
@@ -30,6 +31,7 @@ pub(crate) struct DeathScreen {
     pub(crate) elapsed: f32,
     pub(crate) summary: Summary,
     pub(crate) continued: Option<f32>,
+    pub(crate) note: Option<String>,
 }
 
 impl DeathScreen {
@@ -38,7 +40,13 @@ impl DeathScreen {
             elapsed: 0.0,
             summary,
             continued: None,
+            note: None,
         }
+    }
+
+    pub(crate) fn with_note(mut self, note: Option<String>) -> Self {
+        self.note = note;
+        self
     }
 
     fn row_start(index: usize) -> f32 {
@@ -173,6 +181,15 @@ pub(crate) fn update_death_ui(world: &mut World, screen: &DeathScreen) {
                 _ => false,
             },
             DeathPart::Prompt => screen.prompt_visible(),
+            DeathPart::Note => match &screen.note {
+                Some(note) if screen.prompt_visible() => {
+                    if let Some(text) = text {
+                        text.content.clone_from(note);
+                    }
+                    true
+                }
+                _ => false,
+            },
         };
         if visible {
             show.push(entity);
@@ -203,6 +220,32 @@ mod tests {
             ..RunStats::default()
         };
         DeathScreen::new(summarize(stats, 3))
+    }
+
+    fn note_is_shown(screen: &DeathScreen) -> bool {
+        let mut world = World::new();
+        let entity = world.spawn((
+            DeathPart::Note,
+            Position(Vec2::ZERO),
+            Size(Vec2::ONE),
+            Color(Vec4::ONE),
+            Text::new(String::new(), Vec4::ONE, crate::render::FontSize::Size22),
+            Hidden,
+        ));
+        update_death_ui(&mut world, screen);
+        let hidden = world.get::<&Hidden>(entity).is_ok();
+        !hidden
+    }
+
+    #[test]
+    fn the_note_shows_with_the_prompt_and_only_when_there_is_one() {
+        let mut with = screen().with_note(Some("done".to_owned()));
+        let mut without = screen();
+        with.advance(7.25, false);
+        without.advance(7.25, false);
+        assert!(with.prompt_visible());
+        assert!(note_is_shown(&with));
+        assert!(!note_is_shown(&without));
     }
 
     #[test]

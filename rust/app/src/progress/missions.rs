@@ -125,6 +125,7 @@ impl ActiveMission {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn detail(&self) -> String {
         let target = self.target;
         match self.goal {
