@@ -394,15 +394,14 @@ pub(crate) fn tick_flames(
                 continue;
             };
             if let Some(target) = target {
-                let speed = if enraged {
-                    enemies::HOUND_BEAM_RAGE_LAG
-                } else {
-                    enemies::HOUND_BEAM_LAG
-                };
-                let gap = target - hound.aim_at;
-                hound.aim_at += gap.clamp_length_max(speed * dt);
+                hound.aim_at = target;
             }
-            hound.angle = aim(main, hound.aim_at);
+            let rate = if enraged {
+                enemies::HOUND_BEAM_RAGE_TURN
+            } else {
+                enemies::HOUND_BEAM_TURN
+            };
+            hound.angle = turn_towards(hound.angle, aim(main, hound.aim_at), rate * dt);
             hound.angle
         };
         let heads = if enraged { 3 } else { 2 };
