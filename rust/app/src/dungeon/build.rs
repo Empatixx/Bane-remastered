@@ -273,16 +273,15 @@ impl Dungeon {
             let (min, max) = self.rooms[index].bounds();
             return Some((min * TILE_SIZE, max * TILE_SIZE));
         }
-        let point = Vec2::new(column as f32 + 0.5, row as f32 + 0.5);
         for room in &self.rooms {
             for door in &room.doors {
                 let Some(other) = self.neighbour(room, door.direction) else {
                     continue;
                 };
-                let (a_min, a_max) = room.bounds();
-                let (b_min, b_max) = other.bounds();
-                let (min, max) = (a_min.min(b_min), a_max.max(b_max));
-                if point.cmpge(min).all() && point.cmplt(max).all() {
+                if corridor_contains(room, other, door.direction, (column, row)) {
+                    let (a_min, a_max) = room.bounds();
+                    let (b_min, b_max) = other.bounds();
+                    let (min, max) = (a_min.min(b_min), a_max.max(b_max));
                     return Some((min * TILE_SIZE, max * TILE_SIZE));
                 }
             }
@@ -332,17 +331,34 @@ fn door_tiles(
     }
 }
 
-fn carve_corridor(grid: &mut TileGrid, from: &DungeonRoom, to: &DungeonRoom, direction: Direction) {
+fn corridor_lanes(
+    from: &DungeonRoom,
+    to: &DungeonRoom,
+    direction: Direction,
+) -> [((usize, usize), (usize, usize)); 2] {
     let from_tiles = door_tiles(from.origin, from.columns, from.rows, direction);
     let to_tiles = door_tiles(to.origin, to.columns, to.rows, direction.opposite());
-    for lane in 0..2 {
-        let (start, end) = (from_tiles[lane], to_tiles[lane]);
-        let (columns, rows) = (
-            start.0.min(end.0)..=start.0.max(end.0),
-            start.1.min(end.1)..=start.1.max(end.1),
-        );
-        for column in columns {
-            for row in rows.clone() {
+    [(from_tiles[0], to_tiles[0]), (from_tiles[1], to_tiles[1])]
+}
+
+fn corridor_contains(
+    from: &DungeonRoom,
+    to: &DungeonRoom,
+    direction: Direction,
+    tile: (usize, usize),
+) -> bool {
+    corridor_lanes(from, to, direction)
+        .iter()
+        .any(|(start, end)| {
+            (start.0.min(end.0)..=start.0.max(end.0)).contains(&tile.0)
+                && (start.1.min(end.1)..=start.1.max(end.1)).contains(&tile.1)
+        })
+}
+
+fn carve_corridor(grid: &mut TileGrid, from: &DungeonRoom, to: &DungeonRoom, direction: Direction) {
+    for (start, end) in corridor_lanes(from, to, direction) {
+        for column in start.0.min(end.0)..=start.0.max(end.0) {
+            for row in start.1.min(end.1)..=start.1.max(end.1) {
                 grid.carve(column, row);
             }
         }
@@ -556,5 +572,53 @@ mod tests {
                 assert!(room.spawns.len() >= 16, "seed {seed}");
             }
         }
+    }
+
+    #[test]
+    fn a_corridor_tile_always_gets_the_camera_region_of_its_own_two_rooms() {
+        let mut checked = 0;
+        for seed in 0..80 {
+            let dungeon = dungeon(seed);
+            for (index, room) in dungeon.rooms.iter().enumerate() {
+                for door in &room.doors {
+                    let Some(other_index) = dungeon.rooms.iter().position(|other| {
+                        let (dx, dy) = door.direction.delta();
+                        other.cell == (room.cell.0 + dx, room.cell.1 + dy)
+                    }) else {
+                        continue;
+                    };
+                    if other_index < index {
+                        continue;
+                    }
+                    let other = &dungeon.rooms[other_index];
+                    let (a_min, a_max) = room.bounds();
+                    let (b_min, b_max) = other.bounds();
+                    let expected = (a_min.min(b_min) * TILE_SIZE, a_max.max(b_max) * TILE_SIZE);
+                    let from = door_tiles(room.origin, room.columns, room.rows, door.direction);
+                    let to = door_tiles(
+                        other.origin,
+                        other.columns,
+                        other.rows,
+                        door.direction.opposite(),
+                    );
+                    for lane in 0..2 {
+                        for column in from[lane].0.min(to[lane].0)..=from[lane].0.max(to[lane].0) {
+                            for row in from[lane].1.min(to[lane].1)..=from[lane].1.max(to[lane].1) {
+                                if dungeon.room_at(column, row).is_some() {
+                                    continue;
+                                }
+                                assert_eq!(
+                                    dungeon.camera_region(column, row),
+                                    Some(expected),
+                                    "seed {seed}: corridor tile {column},{row}"
+                                );
+                                checked += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        assert!(checked > 1000, "{checked}");
     }
 }
