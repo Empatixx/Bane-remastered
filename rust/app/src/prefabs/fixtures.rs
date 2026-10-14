@@ -19,7 +19,7 @@ use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{FontSize, TextureId};
-use crate::systems::{SLOT_COLUMNS, SLOT_IDLE, SLOT_ROWS, SPIN_COST};
+use crate::systems::{PORTAL_LIGHT, SLOT_COLUMNS, SLOT_IDLE, SLOT_ROWS, SPIN_COST};
 use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
 
@@ -318,7 +318,14 @@ pub(crate) fn portal(world: &mut World, top_left: Vec2, textures: &Textures) -> 
     let _ = world.insert(
         entity,
         (
-            Light::rgb(Vec2::ZERO, 128.0, 0.0, 128.0, 50.0, 2.5),
+            Light::rgb(
+                Vec2::ZERO,
+                PORTAL_LIGHT.x,
+                PORTAL_LIGHT.y,
+                PORTAL_LIGHT.z,
+                50.0,
+                2.5,
+            ),
             Interactable {
                 action: Interaction::EnterPortal,
             },
