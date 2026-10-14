@@ -3,7 +3,7 @@ use hecs::World;
 use crate::artefacts::{TIME_SLOW_SCALE, TIME_SLOW_SECONDS};
 use crate::components::{Player, TimeSlow};
 
-const EASE_SECONDS: f32 = 0.3;
+pub(super) const EASE_SECONDS: f32 = 0.3;
 
 /// How fast hostile things run: 1.0 normally, `TIME_SLOW_SCALE` while the player holds the
 /// hourglass, eased over `EASE_SECONDS` at both ends.

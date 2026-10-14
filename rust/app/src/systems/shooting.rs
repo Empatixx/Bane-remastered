@@ -7,7 +7,7 @@ use crate::components::BULLET_IMPACT;
 use crate::components::{
     Animation, Body, Boss, Breakable, Bullet, Burst, CHILL_SECONDS, CHILL_STACKS_TO_FREEZE,
     Chilled, Enemy, Expiring, Friendly, Frozen, Health, InfiniteAmmo, Loadout, Phantom, Player,
-    PlayerPerks, PoisonPool, Position, Size, Spawning, Velocity,
+    PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, Velocity,
 };
 use crate::controls::Action;
 use crate::geometry;
@@ -250,13 +250,18 @@ pub(crate) fn bullet_hits(
         if victim.is_none() && touched.iter().all(|owner| *owner != Owner::Wall) {
             continue;
         }
+        let source = if world.get::<&Summoned>(entity).is_ok() {
+            DamageSource::Summoned
+        } else {
+            DamageSource::Bullet
+        };
         let hit_enemy = victim.is_some_and(|target| {
             super::damage::deal(
                 world,
                 Damage {
                     target,
                     amount: bullet.damage,
-                    source: DamageSource::Bullet,
+                    source,
                 },
             )
         });

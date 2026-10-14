@@ -57,6 +57,7 @@ pub(crate) fn convert_bullets(world: &mut World, physics: &mut Physics, textures
     let bullets: Vec<(Entity, Vec2)> = world
         .query::<(Entity, &Position)>()
         .with::<&EnemyBullet>()
+        .without::<&Expiring>()
         .iter()
         .map(|(entity, position)| (entity, position.0))
         .collect();
@@ -202,5 +203,26 @@ mod tests {
         tick_artefact_effects(&mut world, 1.0);
         midas_kill_coins(&mut world, &textures);
         assert_eq!(coins(&world), 2);
+    }
+
+    #[test]
+    fn spent_enemy_shots_are_not_turned_into_coins() {
+        let (mut world, mut physics, player) = setup();
+        let textures = Textures::default();
+        let spent = prefabs::enemy_bullet(
+            &mut world,
+            &mut physics,
+            ProjectileKind::Red,
+            Vec2::new(900.0, 900.0),
+            Vec2::X,
+            &textures,
+        );
+        let _ = world.insert_one(spent, Expiring);
+        let _ = world.insert_one(player, ConvertBullets);
+
+        convert_bullets(&mut world, &mut physics, &textures);
+
+        assert_eq!(coins(&world), 0);
+        assert!(world.contains(spent));
     }
 }

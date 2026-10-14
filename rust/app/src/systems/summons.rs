@@ -4,7 +4,7 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::components::{
     Animation, Bullet, Color, Enemy, Expiring, Ghost, Health, Layer, Light, PlaceTurret, Player,
-    Position, Size, Spawning, Sprite, SummonGhosts, ThenPlay, Turret, TurretStage,
+    Position, Size, Spawning, Sprite, SummonGhosts, Summoned, ThenPlay, Turret, TurretStage,
 };
 use crate::geometry;
 use crate::physics::Physics;
@@ -133,15 +133,15 @@ fn nearest_enemy(world: &World, center: Vec2, range: Option<f32>) -> Option<(Ent
 
 fn overlapped_enemy(world: &World, center: Vec2, size: Vec2) -> Option<Entity> {
     world
-        .query::<(Entity, &Position, &Size)>()
-        .with::<(&Enemy, &Health)>()
+        .query::<(Entity, &Position, &Size, &Health)>()
+        .with::<&Enemy>()
         .without::<&Expiring>()
         .without::<&Spawning>()
         .iter()
-        .find(|(_, position, enemy_size)| {
-            geometry::overlaps(center, size, position.0, enemy_size.0)
+        .find(|(_, position, enemy_size, health)| {
+            health.current > 0 && geometry::overlaps(center, size, position.0, enemy_size.0)
         })
-        .map(|(entity, _, _)| entity)
+        .map(|(entity, _, _, _)| entity)
 }
 
 pub(crate) fn tick_ghosts(world: &mut World, dt: f32) {
@@ -331,7 +331,7 @@ fn fire(
     muzzle: Vec2,
     direction: Vec2,
 ) {
-    prefabs::bullet(
+    let shard = prefabs::bullet(
         world,
         physics,
         muzzle + direction * TURRET_MUZZLE_REACH,
@@ -339,6 +339,7 @@ fn fire(
         Bullet::plain(TURRET_DAMAGE),
         textures.get(tex::ARTEFACTS_BONE_SHARD),
     );
+    let _ = world.insert_one(shard, Summoned);
 }
 
 #[cfg(test)]
@@ -553,5 +554,40 @@ mod tests {
         assert_eq!(aim_row(Vec2::new(-1.0, 0.0)), 2);
         assert_eq!(aim_row(Vec2::new(0.0, -1.0)), 4);
         assert_eq!(aim_row(Vec2::new(1.0, 1.0).normalize()), 1);
+    }
+
+    #[test]
+    fn a_ghost_skips_a_dying_enemy_and_bites_the_live_one_it_overlaps() {
+        let (mut world, mut physics, textures) = arena();
+        let at = Vec2::new(1400.0, 1000.0);
+        let dying = prefabs::ready_enemy(&mut world, &mut physics, EnemyKind::Golem, at);
+        if let Ok(mut health) = world.get::<&mut Health>(dying) {
+            health.current = 0;
+        }
+        let alive = prefabs::ready_enemy(&mut world, &mut physics, EnemyKind::Golem, at);
+        let before = health(&world, alive);
+        spawn_ghost(&mut world, at, 0.0, &textures);
+
+        tick_ghosts(&mut world, 1.0 / 60.0);
+
+        assert_eq!(health(&world, alive), before - 2);
+        assert_eq!(health(&world, dying), 0);
+    }
+
+    #[test]
+    fn turret_shards_are_marked_summoned() {
+        let (mut world, mut physics, textures) = arena();
+        prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(1400.0, 1024.0),
+        );
+        place_turret(&mut world, &textures);
+        run_turret(&mut world, &mut physics, &textures, 0.6);
+        assert_eq!(
+            world.query::<&Summoned>().with::<&Bullet>().iter().count(),
+            1
+        );
     }
 }

@@ -144,6 +144,16 @@ pub(crate) fn tick_eye_shooters(
     textures: &Textures,
     dt: f32,
 ) {
+    let seen = world
+        .query::<()>()
+        .with::<&Player>()
+        .without::<&crate::components::Phantom>()
+        .iter()
+        .next()
+        .is_some();
+    if !seen {
+        return;
+    }
     let mut shots = Vec::new();
     for (position, shooter, animation, room) in world
         .query_mut::<(&Position, &mut EyeShooter, &mut Animation, Option<&RoomId>)>()
@@ -529,5 +539,38 @@ mod tests {
         assert!(world.get::<&Expiring>(bullet).is_ok());
         let tint = world.get::<&Color>(bullet).map(|c| c.0.w).unwrap_or(0.0);
         assert_eq!(tint, 1.0);
+    }
+
+    #[test]
+    fn eye_shooters_hold_their_fire_and_their_cooldown_while_the_player_is_cloaked() {
+        let (mut world, mut physics, textures) = arena();
+        let eye = ready(
+            &mut world,
+            &mut physics,
+            EnemyKind::EyeWatcher,
+            Vec2::new(500.0, 500.0),
+        );
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 60.0 });
+        let before = world.get::<&EyeShooter>(eye).map(|s| s.remaining).ok();
+
+        for _ in 0..10 {
+            tick_eye_shooters(&mut world, &mut physics, &textures, 1.0);
+            if let Ok(mut animation) = world.get::<&mut Animation>(eye) {
+                animation.advance(1.0);
+            }
+        }
+
+        assert_eq!(bullets(&world), 0);
+        let state = world
+            .get::<&EyeShooter>(eye)
+            .map(|s| (s.attacking, s.remaining))
+            .ok();
+        assert_eq!(state, before.map(|remaining| (false, remaining)));
     }
 }

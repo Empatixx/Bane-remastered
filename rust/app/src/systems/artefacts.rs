@@ -70,12 +70,12 @@ pub(crate) fn activate_artefact(
         }
         ArtefactKind::RevealMap => {}
         ArtefactKind::HourglassOfAsh => {
-            let _ = world.insert_one(
-                player,
-                TimeSlow {
-                    remaining: TIME_SLOW_SECONDS,
-                },
-            );
+            let remaining = if world.get::<&TimeSlow>(player).is_ok() {
+                TIME_SLOW_SECONDS - super::time_slow::EASE_SECONDS
+            } else {
+                TIME_SLOW_SECONDS
+            };
+            let _ = world.insert_one(player, TimeSlow { remaining });
         }
         ArtefactKind::BloodChalice => {
             let _ = world.insert(
@@ -165,6 +165,19 @@ pub(crate) fn tick_artefact_effects(world: &mut World, dt: f32) {
     tick_timer::<Phantom>(world, dt, |effect| &mut effect.remaining);
     tick_timer::<InfiniteAmmo>(world, dt, |effect| &mut effect.remaining);
     tick_timer::<MidasTouch>(world, dt, |effect| &mut effect.remaining);
+}
+
+/// Ends every timed artefact effect at once, for the death screen where the timers stop.
+pub(crate) fn clear_artefact_effects(world: &mut World) {
+    let players: Vec<Entity> = world.query::<Entity>().with::<&Player>().iter().collect();
+    for player in players {
+        let _ = world.remove_one::<TimeSlow>(player);
+        let _ = world.remove_one::<Bloodlust>(player);
+        let _ = world.remove_one::<Phantom>(player);
+        let _ = world.remove_one::<InfiniteAmmo>(player);
+        let _ = world.remove_one::<MidasTouch>(player);
+    }
+    super::blood::pulse_bloodlust(world);
 }
 
 pub(crate) fn update_shield_aura(world: &mut World, textures: &Textures) {
@@ -528,5 +541,59 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn the_hourglass_used_again_stays_fully_slowed() {
+        let (mut world, mut physics, _) = setup();
+        let player = player_of(&world);
+        activate(&mut world, &mut physics, ArtefactKind::HourglassOfAsh);
+        tick_artefact_effects(&mut world, 5.0);
+        let before = crate::systems::time_scale(&world);
+        activate(&mut world, &mut physics, ArtefactKind::HourglassOfAsh);
+        assert_eq!(crate::systems::time_scale(&world), before);
+        let remaining = world.get::<&TimeSlow>(player).map(|s| s.remaining).ok();
+        assert!(remaining.is_some_and(|r| r < TIME_SLOW_SECONDS));
+    }
+
+    #[test]
+    fn clearing_the_effects_ends_them_and_restores_the_player_colour() {
+        let (mut world, mut physics, _) = setup();
+        let player = player_of(&world);
+        let before = world
+            .get::<&crate::components::Color>(player)
+            .map(|c| c.0)
+            .ok();
+        for kind in [
+            ArtefactKind::HourglassOfAsh,
+            ArtefactKind::BloodChalice,
+            ArtefactKind::PhantomCloak,
+            ArtefactKind::InfinityQuiver,
+            ArtefactKind::MidasCoin,
+        ] {
+            activate(&mut world, &mut physics, kind);
+        }
+        for _ in 0..3 {
+            tick_artefact_effects(&mut world, 0.1);
+            crate::systems::pulse_bloodlust(&mut world);
+        }
+        let tinted = world
+            .get::<&crate::components::Color>(player)
+            .map(|c| c.0)
+            .ok();
+        assert_ne!(tinted, before);
+
+        clear_artefact_effects(&mut world);
+
+        assert!(world.get::<&TimeSlow>(player).is_err());
+        assert!(world.get::<&Bloodlust>(player).is_err());
+        assert!(world.get::<&Phantom>(player).is_err());
+        assert!(world.get::<&InfiniteAmmo>(player).is_err());
+        assert!(world.get::<&MidasTouch>(player).is_err());
+        let after = world
+            .get::<&crate::components::Color>(player)
+            .map(|c| c.0)
+            .ok();
+        assert_eq!(after, before);
     }
 }

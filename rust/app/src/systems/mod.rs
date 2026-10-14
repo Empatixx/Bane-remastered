@@ -59,7 +59,7 @@ pub(crate) use animation::{animate, chain_animations, open_gate, remove_expired,
 pub(crate) use argus::{tick_argus, tick_orbiters};
 pub(crate) use arrows::update_enemy_arrows;
 pub(crate) use artefacts::{
-    activate_artefact, pick_up_artefact, tick_artefact_effects, tick_berserk, unused_artefact, update_artefact_hud,
+    activate_artefact, clear_artefact_effects, pick_up_artefact, tick_artefact_effects, tick_berserk, unused_artefact, update_artefact_hud,
     update_shield_aura,
 };
 pub(crate) use blood::{

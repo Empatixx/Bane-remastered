@@ -635,6 +635,7 @@ impl InGameScene {
             });
             note = progress_note(&outcome);
         }
+        systems::clear_artefact_effects(&mut self.world);
         prefabs::death_ui(&mut self.world, self.victory, &assets.textures);
         self.death = Some(systems::DeathScreen::new(summary).with_note(note));
         self.set_big_map(false);
@@ -1211,5 +1212,28 @@ mod tests {
         assert!(matches!(transition, Transition::None));
         assert!(!scene.pause.is_active());
         assert!(scene.death.is_none());
+    }
+
+    #[test]
+    fn the_death_screen_ends_the_artefact_effects() {
+        let (mut scene, assets) = paused_game();
+        let player = scene
+            .world
+            .query::<hecs::Entity>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = scene
+            .world
+            .insert_one(player, crate::components::TimeSlow { remaining: 5.0 });
+
+        press_button(&mut scene, &assets, "Die");
+
+        assert!(scene.death.is_some());
+        assert!(scene
+            .world
+            .get::<&crate::components::TimeSlow>(player)
+            .is_err());
     }
 }

@@ -9,6 +9,10 @@ pub(crate) struct Ghost {
     pub(crate) velocity: Vec2,
 }
 
+/// Marks a bullet an artefact fired, so its hits stay out of the run stats.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Summoned;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum TurretStage {
     Rising,

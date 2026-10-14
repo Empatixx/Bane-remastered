@@ -31,7 +31,7 @@ pub(crate) use artefacts::{
     HealPercent, InfiniteAmmo, MidasTouch, Phantom, PlaceTurret, ShieldAura, Shielded,
     SummonGhosts, TimeSlow,
 };
-pub(crate) use summons::{Ghost, Turret, TurretStage};
+pub(crate) use summons::{Ghost, Summoned, Turret, TurretStage};
 pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{
     Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
