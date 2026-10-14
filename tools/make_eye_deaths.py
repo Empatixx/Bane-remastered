@@ -251,11 +251,9 @@ def eye_watcher():
     empty = clear(idle, eye_points, socket)
     f1 = blobs(shifted(empty, 0, 1), (eye[0], eye[1] + 1))
 
-    tilted = empty.rotate(-34, resample=Image.NEAREST, center=(16, 30))
-    f2 = shifted(tilted, 3, 1)
-    lying = on_floor(empty.rotate(-90), 31, -1)
-    f3 = lying
-    f4 = scaled(lying, 1.06, 0.86, 31)
+    f2 = scaled(empty, 0.92, 0.9, 31)
+    f3 = scaled(empty, 0.78, 0.66, 31)
+    f4 = scaled(empty, 0.62, 0.46, 31)
     frames = [cracked, f1, f2, f3, f4]
     out = Image.new("RGBA", (160, 96), (0, 0, 0, 0))
     out.paste(sheet, (0, 0))
