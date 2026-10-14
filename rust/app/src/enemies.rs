@@ -358,11 +358,11 @@ impl EnemyKind {
                 min_floor: 3,
                 ..spec(
                     tex::DEMONEYE,
-                    (4, 1),
+                    (5, 2),
                     (76.0, 64.0),
                     1.5,
                     (4, 0.1),
-                    None,
+                    Some((5, 0.1)),
                     (11, 3, 14_500_000.0),
                 )
             },
@@ -425,14 +425,15 @@ impl EnemyKind {
             },
             Self::EyeWatcher => EnemySpec {
                 min_floor: 3,
+                death_row: 2,
                 behavior: Behavior::Shoots(ProjectileKind::EyeWatcher),
                 ..spec(
                     tex::EYE_WATCHER,
-                    (5, 2),
+                    (5, 3),
                     (32.0, 32.0),
                     3.0,
                     (4, 0.1),
-                    None,
+                    Some((5, 0.085)),
                     (4, 1, 0.0),
                 )
             },
@@ -608,11 +609,18 @@ mod tests {
     }
 
     #[test]
-    fn enemies_without_a_death_animation_play_their_idle_once() {
-        let clip = EnemyKind::DemonEye.spec().death_clip();
-        assert!(!clip.looping);
-        assert_eq!(clip.row, 0);
-        assert_eq!(EnemyKind::Rat.spec().death_clip().row, 1);
+    fn every_enemy_has_a_death_animation_that_fits_inside_its_sheet() {
+        for kind in EnemyKind::ALL {
+            let spec = kind.spec();
+            let (frames, _) = spec
+                .death
+                .unwrap_or_else(|| panic!("{kind:?} has no death"));
+            assert!(spec.death_row < spec.rows, "{kind:?}");
+            assert!(frames <= spec.columns, "{kind:?}");
+            let clip = spec.death_clip();
+            assert!(!clip.looping, "{kind:?}");
+            assert_ne!(clip.row, 0, "{kind:?} would play its idle row");
+        }
     }
 
     #[test]
