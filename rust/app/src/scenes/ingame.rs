@@ -403,6 +403,7 @@ impl Scene for InGameScene {
         systems::tick_hound(
             &mut self.world,
             &mut self.physics,
+            &self.navigation,
             &assets.textures,
             &mut self.sounds,
             dt,

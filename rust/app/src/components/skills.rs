@@ -62,6 +62,11 @@ pub(crate) enum ArgusStage {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Charge {
+    pub(crate) direction: glam::Vec2,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Magma {
     pub(crate) age: f32,
     pub(crate) tile: (usize, usize),
