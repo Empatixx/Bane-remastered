@@ -33,6 +33,7 @@ mod perks;
 mod pet;
 mod player_animation;
 mod rooms;
+mod rules;
 mod scientist;
 mod settings_ui;
 mod shadow;
@@ -94,6 +95,7 @@ pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_chilled, tick_frozen, tick_poison,
 };
 pub(crate) use ogre::tick_ogre;
+pub(crate) use rules::toughen_enemies;
 pub(crate) use perks::{
     apply_floor_perks, apply_run_perks, apply_weapon_mods, immobilize_traps, regenerate_armor,
 };
