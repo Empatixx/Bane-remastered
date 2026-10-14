@@ -43,8 +43,8 @@ pub(crate) use effects::{
     ThenPlay, TrapCooldown,
 };
 pub(crate) use hud::{
-    AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon, PIP_EMPTY,
-    PIP_FULL, StatusBar, TalentCount,
+    AMMO_TEXT_COLOR, AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount,
+    GunIcon, InfinityMark, PIP_EMPTY, PIP_FULL, StatusBar, TalentCount,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use items::{

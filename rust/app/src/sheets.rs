@@ -52,6 +52,21 @@ pub(crate) mod pet {
     }
 }
 
+pub(crate) mod infinity {
+    use crate::clip::Clip;
+
+    pub(crate) const COLUMNS: usize = 4;
+    pub(crate) const ROWS: usize = 1;
+
+    pub(crate) const GLINT: Clip = Clip {
+        row: 0,
+        frames: 4,
+        frame_time: 0.18,
+        looping: true,
+        flipped: false,
+    };
+}
+
 pub(crate) mod slot {
     use crate::clip::Clip;
 

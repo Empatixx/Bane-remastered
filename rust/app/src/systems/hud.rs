@@ -4,14 +4,18 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::assets::tex;
 use crate::components::{
-    AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, GoldCount, GunIcon, Health,
-    Hidden, Loadout, PIP_EMPTY, PIP_FULL, Player, Position, Size, Sprite, StatusBar, TalentCount,
-    Text, Wallet, Weapon,
+    AMMO_TEXT_COLOR, AmmoPip, AmmoText, Animation, Armor, BarKind, Boss, CoinText, Color,
+    GoldCount, GunIcon, Health, Hidden, InfinityMark, Loadout, PIP_EMPTY, PIP_FULL, Player,
+    Position, Size, Sprite, StatusBar, TalentCount, Text, Wallet, Weapon,
 };
 use crate::guns::{ClipStyle, PIP_SIZE, pip_layout};
 use crate::render::{Draw, Quad, TextureId};
 
 const DELAY_TWEEN: f32 = 0.05;
+const GOLD: Vec4 = Vec4::new(1.0, 0.82, 0.25, 1.0);
+const SHIMMER_SPEED: f32 = 5.0;
+const SHIMMER_STEP: f32 = 0.55;
+const SHIMMER_DEPTH: f32 = 0.22;
 #[allow(clippy::approx_constant)]
 const STRIPES: [(f32, f32, Vec3); 3] = [
     (0.0, 0.5, Vec3::ZERO),
@@ -51,7 +55,18 @@ pub(crate) fn update_status_bars(world: &mut World, dt: f32) {
     }
 }
 
-pub(crate) fn update_weapon_hud(world: &mut World, textures: &Textures) {
+fn shimmer(clock: f32, index: i32) -> Vec4 {
+    let wave = (clock * SHIMMER_SPEED - index as f32 * SHIMMER_STEP).sin() * 0.5 + 0.5;
+    let boost = 1.0 + SHIMMER_DEPTH * wave;
+    Vec4::new(
+        (GOLD.x * boost).min(1.0),
+        (GOLD.y * boost).min(1.0),
+        (GOLD.z * boost).min(1.0),
+        1.0,
+    )
+}
+
+pub(crate) fn update_weapon_hud(world: &mut World, textures: &Textures, infinite: Option<f32>) {
     let weapon = world
         .query::<&Loadout>()
         .with::<&Player>()
@@ -64,7 +79,7 @@ pub(crate) fn update_weapon_hud(world: &mut World, textures: &Textures) {
         .iter()
         .next()
         .map(|wallet| wallet.coins);
-    show_weapon(world, weapon, textures);
+    show_weapon(world, weapon, textures, infinite);
     if let Some(coins) = coins {
         for text in world.query_mut::<&mut Text>().with::<&CoinText>() {
             text.content = coins.to_string();
@@ -81,10 +96,36 @@ pub(crate) fn update_lobby_counters(world: &mut World, talents: u64, gold: u64) 
     }
 }
 
-fn show_weapon(world: &mut World, weapon: Option<Weapon>, textures: &Textures) {
+fn show_weapon(
+    world: &mut World,
+    weapon: Option<Weapon>,
+    textures: &Textures,
+    infinite: Option<f32>,
+) {
+    let gold = infinite.filter(|_| weapon.is_some());
     let icons: Vec<Entity> = world.query::<Entity>().with::<&GunIcon>().iter().collect();
     for text in world.query_mut::<&mut Text>().with::<&AmmoText>() {
-        text.content = weapon.map_or_else(String::new, |w| format!("{}/{}", w.clip, w.ammo));
+        text.content = match (weapon, gold) {
+            (Some(w), None) => format!("{}/{}", w.clip, w.ammo),
+            _ => String::new(),
+        };
+        text.color = if gold.is_some() {
+            GOLD
+        } else {
+            AMMO_TEXT_COLOR
+        };
+    }
+    let marks: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<&InfinityMark>()
+        .iter()
+        .collect();
+    for mark in marks {
+        if gold.is_some() {
+            let _ = world.remove_one::<Hidden>(mark);
+        } else {
+            let _ = world.insert_one(mark, Hidden);
+        }
     }
     for icon in icons {
         match weapon {
@@ -110,9 +151,15 @@ fn show_weapon(world: &mut World, weapon: Option<Weapon>, textures: &Textures) {
     });
     let mut hide = Vec::new();
     let mut show = Vec::new();
-    for (entity, pip, position, sprite, animation) in
-        world.query_mut::<(Entity, &AmmoPip, &mut Position, &mut Sprite, &mut Animation)>()
-    {
+    for (entity, pip, position, sprite, animation, color) in world.query_mut::<(
+        Entity,
+        &AmmoPip,
+        &mut Position,
+        &mut Sprite,
+        &mut Animation,
+        &mut Color,
+    )>() {
+        color.0 = gold.map_or(Vec4::ONE, |clock| shimmer(clock, pip.index));
         let placed = weapon
             .zip(layout.as_ref())
             .and_then(|(w, (style, points))| {
@@ -127,7 +174,7 @@ fn show_weapon(world: &mut World, weapon: Option<Weapon>, textures: &Textures) {
                     ClipStyle::Shotgun => tex::SHOTGUN_AMMO_HUD,
                     _ => tex::AMMO_HUD,
                 });
-                animation.switch_to(if pip.index < w.clip {
+                animation.switch_to(if gold.is_some() || pip.index < w.clip {
                     PIP_FULL
                 } else {
                     PIP_EMPTY
@@ -231,5 +278,78 @@ mod tests {
             &bar(0.0, 0.0),
         );
         assert!(draws.is_empty());
+    }
+
+    fn hud_world() -> World {
+        let mut world = World::new();
+        let textures = Textures::default();
+        crate::prefabs::weapon_hud(&mut world, &textures);
+        crate::prefabs::player(
+            &mut world,
+            &mut crate::physics::Physics::new(),
+            Vec2::ZERO,
+            &textures,
+        );
+        world
+    }
+
+    fn pip_colors(world: &World) -> Vec<Vec4> {
+        world
+            .query::<(&Color, &AmmoPip)>()
+            .without::<&Hidden>()
+            .iter()
+            .map(|(color, _)| color.0)
+            .collect()
+    }
+
+    fn infinity_shown(world: &World) -> bool {
+        world
+            .query::<&InfinityMark>()
+            .without::<&Hidden>()
+            .iter()
+            .count()
+            == 1
+    }
+
+    fn ammo_color(world: &World) -> Vec4 {
+        world
+            .query::<&Text>()
+            .with::<&AmmoText>()
+            .iter()
+            .next()
+            .map(|text| text.color)
+            .expect("the ammo text exists")
+    }
+
+    #[test]
+    fn the_hud_is_gold_with_an_infinity_sprite_only_while_infinite_ammo_is_active() {
+        let mut world = hud_world();
+        let textures = Textures::default();
+
+        update_weapon_hud(&mut world, &textures, None);
+        assert!(!infinity_shown(&world));
+        assert_eq!(ammo_color(&world), AMMO_TEXT_COLOR);
+        assert!(!pip_colors(&world).is_empty());
+        assert!(pip_colors(&world).iter().all(|color| *color == Vec4::ONE));
+
+        update_weapon_hud(&mut world, &textures, Some(0.3));
+        assert!(infinity_shown(&world));
+        assert_eq!(ammo_color(&world), GOLD);
+        let mut texts = world.query::<&Text>().with::<&AmmoText>();
+        assert!(texts.iter().all(|text| text.content.is_empty()));
+        drop(texts);
+        let golds = pip_colors(&world);
+        assert!(golds.iter().all(|color| color.x > color.z * 2.0));
+
+        update_weapon_hud(&mut world, &textures, None);
+        assert!(!infinity_shown(&world));
+        assert_eq!(ammo_color(&world), AMMO_TEXT_COLOR);
+        assert!(pip_colors(&world).iter().all(|color| *color == Vec4::ONE));
+    }
+
+    #[test]
+    fn the_pip_shimmer_travels_along_the_pips_over_time() {
+        assert_ne!(shimmer(0.0, 0), shimmer(0.0, 3));
+        assert_ne!(shimmer(0.0, 2), shimmer(0.4, 2));
     }
 }

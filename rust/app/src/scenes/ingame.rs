@@ -8,7 +8,9 @@ use crate::assets::tex;
 use crate::assets::{Assets, BULLET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
-use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
+use crate::components::{
+    BigMap, Blend, Hidden, InfiniteAmmo, Interaction, Loadout, MapSize, Minimap, UiAction,
+};
 use crate::controls::Action;
 use crate::dungeon::{Dungeon, RoomKind, Surfaces, Theme};
 use crate::flow::FlowField;
@@ -283,7 +285,14 @@ impl Scene for InGameScene {
         systems::tick_dust(&mut self.world, self.clock, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
-        systems::update_weapon_hud(&mut self.world, &assets.textures);
+        let infinite = self
+            .world
+            .query::<&InfiniteAmmo>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .next()
+            .map(|_| self.clock);
+        systems::update_weapon_hud(&mut self.world, &assets.textures, infinite);
         systems::fade_lights(&mut self.world);
         systems::flash_hits(&mut self.world, dt);
         systems::fade_afterimages(&mut self.world, dt);
