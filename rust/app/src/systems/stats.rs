@@ -1,13 +1,16 @@
 use hecs::World;
 
 use crate::components::{Player, RunStats};
+use crate::enemies::EnemyKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Stat {
     Fired,
     Hit,
-    Kill,
+    Kill(EnemyKind),
     Item,
+    Gold,
+    Hurt,
 }
 
 pub(crate) fn record(world: &mut World, stat: Stat, amount: u32) {
@@ -18,9 +21,23 @@ pub(crate) fn record(world: &mut World, stat: Stat, amount: u32) {
         match stat {
             Stat::Fired => stats.fired += amount,
             Stat::Hit => stats.hits += amount,
-            Stat::Kill => stats.kills += amount,
+            Stat::Kill(kind) => {
+                stats.kills += amount;
+                stats.kills_of[kind.index()] += amount;
+            }
             Stat::Item => stats.items += amount,
+            Stat::Gold => stats.gold += amount,
+            Stat::Hurt => stats.hurt_this_floor += amount,
         }
+    }
+}
+
+pub(crate) fn close_floor(world: &mut World) {
+    for stats in world.query_mut::<&mut RunStats>().with::<&Player>() {
+        if stats.hurt_this_floor == 0 {
+            stats.untouched_floors += 1;
+        }
+        stats.hurt_this_floor = 0;
     }
 }
 
@@ -84,7 +101,7 @@ mod tests {
         prefabs::player(&mut world, &mut physics, Vec2::ZERO, &Textures::default());
         record(&mut world, Stat::Fired, 4);
         record(&mut world, Stat::Hit, 1);
-        record(&mut world, Stat::Kill, 2);
+        record(&mut world, Stat::Kill(EnemyKind::Rat), 2);
         record(&mut world, Stat::Item, 3);
         record(&mut world, Stat::Item, 0);
         assert_eq!(
@@ -93,9 +110,52 @@ mod tests {
                 fired: 4,
                 hits: 1,
                 kills: 2,
-                items: 3
+                items: 3,
+                kills_of: {
+                    let mut kills_of = [0; EnemyKind::ALL.len()];
+                    kills_of[EnemyKind::Rat.index()] = 2;
+                    kills_of
+                },
+                ..RunStats::default()
             }
         );
+    }
+
+    fn world_with_player() -> World {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        prefabs::player(&mut world, &mut physics, Vec2::ZERO, &Textures::default());
+        world
+    }
+
+    #[test]
+    fn kills_are_counted_per_kind_and_in_total() {
+        let mut world = world_with_player();
+        record(&mut world, Stat::Kill(EnemyKind::Rat), 2);
+        record(&mut world, Stat::Kill(EnemyKind::Golem), 1);
+        let stats = current(&world);
+        assert_eq!(stats.kills, 3);
+        assert_eq!(stats.kills_of(EnemyKind::Rat), 2);
+        assert_eq!(stats.kills_of(EnemyKind::Golem), 1);
+    }
+
+    #[test]
+    fn a_floor_without_hurt_counts_as_untouched_and_a_hurt_one_does_not() {
+        let mut world = world_with_player();
+        close_floor(&mut world);
+        record(&mut world, Stat::Hurt, 1);
+        close_floor(&mut world);
+        close_floor(&mut world);
+        let stats = current(&world);
+        assert_eq!(stats.untouched_floors, 2);
+        assert_eq!(stats.hurt_this_floor, 0);
+    }
+
+    #[test]
+    fn coins_are_counted_as_gold() {
+        let mut world = world_with_player();
+        record(&mut world, Stat::Gold, 5);
+        assert_eq!(current(&world).gold, 5);
     }
 
     #[test]
@@ -121,6 +181,7 @@ mod tests {
                 hits: 50,
                 kills: 10,
                 items: 5,
+                ..RunStats::default()
             },
             3,
         );
