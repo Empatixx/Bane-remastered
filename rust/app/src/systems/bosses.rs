@@ -181,7 +181,8 @@ mod tests {
     use crate::assets::tex;
     use crate::components::{Chase, EnemyBullet, Velocity};
     use crate::systems::enemies::reap_dead;
-    use crate::systems::{chase_player, finish_spawning, tick_spawning};
+    use crate::prefabs::finish_spawning;
+    use crate::systems::{chase_player, tick_spawning};
 
     use super::*;
 

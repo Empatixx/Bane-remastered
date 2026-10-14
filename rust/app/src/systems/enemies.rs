@@ -106,21 +106,7 @@ pub(crate) fn tick_spawning(world: &mut World, physics: &mut Physics, dt: f32) {
         }
     }
     for entity in finished {
-        finish_spawning(world, physics, entity);
-    }
-}
-
-pub(crate) fn finish_spawning(world: &mut World, physics: &mut Physics, entity: Entity) {
-    let placement = world
-        .query_one_mut::<(&Position, &Size)>(entity)
-        .map(|(position, size)| (position.0, size.0));
-    let _ = world.remove_one::<Spawning>(entity);
-    if let Ok(color) = world.query_one_mut::<&mut Color>(entity) {
-        color.0 = Vec4::ONE;
-    }
-    if let Ok((position, size)) = placement {
-        let body = physics.add_enemy(entity, position, size);
-        let _ = world.insert_one(entity, body);
+        crate::prefabs::finish_spawning(world, physics, entity);
     }
 }
 

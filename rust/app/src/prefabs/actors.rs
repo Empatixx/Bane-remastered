@@ -16,13 +16,12 @@ use crate::components::{
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
 use crate::render::TextureId;
-use crate::systems::{
-    IDLE, PET_COLUMNS, PET_GAZE_SPEED, PET_IDLE, PET_ROWS, PLAYER_COLUMNS, PLAYER_ROWS,
-};
+use crate::sheets::{pet, player};
 
 pub(crate) const PLAYER_SIZE: Vec2 = Vec2::new(32.0, 76.0);
 
 pub(crate) const PET_SIZE: Vec2 = Vec2::new(96.0, 96.0);
+const PET_GAZE_SPEED: f32 = 150.0;
 const PLAYER_HEALTH: i32 = 10;
 const PLAYER_ARMOR: i32 = 5;
 
@@ -55,11 +54,11 @@ pub(crate) fn player(
         Sprite::cell(
             textures.get(PLAYER),
             0,
-            IDLE.row,
-            PLAYER_COLUMNS,
-            PLAYER_ROWS,
+            player::IDLE.row,
+            player::COLUMNS,
+            player::ROWS,
         ),
-        Animation::new(PLAYER_COLUMNS, PLAYER_ROWS, IDLE),
+        Animation::new(player::COLUMNS, player::ROWS, player::IDLE),
         Layer(1),
     ));
     let _ = world.insert(
@@ -89,8 +88,8 @@ pub(crate) fn pet(
         Velocity::default(),
         Size(PET_SIZE),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(PET), 0, PET_IDLE.row, PET_COLUMNS, PET_ROWS),
-        Animation::new(PET_COLUMNS, PET_ROWS, PET_IDLE),
+        Sprite::cell(textures.get(PET), 0, pet::IDLE.row, pet::COLUMNS, pet::ROWS),
+        Animation::new(pet::COLUMNS, pet::ROWS, pet::IDLE),
         Layer(1),
         Lit,
         GazeWind::above(PET_GAZE_SPEED),
@@ -436,7 +435,7 @@ pub(crate) fn hatchling(
     textures: &Textures,
 ) -> Entity {
     let entity = enemy(world, kind, position, 0, textures);
-    crate::systems::finish_spawning(world, physics, entity);
+    finish_spawning(world, physics, entity);
     let _ = world.insert(entity, (Minion, NoDrop));
     if let Some(room) = room {
         let _ = world.insert_one(entity, room);
@@ -478,6 +477,20 @@ pub(crate) fn enemy_in_room(
     entity
 }
 
+pub(crate) fn finish_spawning(world: &mut World, physics: &mut Physics, entity: Entity) {
+    let placement = world
+        .query_one_mut::<(&Position, &Size)>(entity)
+        .map(|(position, size)| (position.0, size.0));
+    let _ = world.remove_one::<Spawning>(entity);
+    if let Ok(color) = world.query_one_mut::<&mut Color>(entity) {
+        color.0 = Vec4::ONE;
+    }
+    if let Ok((position, size)) = placement {
+        let body = physics.add_enemy(entity, position, size);
+        let _ = world.insert_one(entity, body);
+    }
+}
+
 #[cfg(test)]
 pub(crate) fn ready_enemy(
     world: &mut World,
@@ -486,6 +499,6 @@ pub(crate) fn ready_enemy(
     position: Vec2,
 ) -> Entity {
     let entity = enemy(world, kind, position, 0, &Textures::default());
-    crate::systems::finish_spawning(world, physics, entity);
+    finish_spawning(world, physics, entity);
     entity
 }

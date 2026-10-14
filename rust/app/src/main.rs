@@ -29,6 +29,7 @@ mod render;
 mod rng;
 mod scenes;
 mod settings;
+mod sheets;
 mod storage;
 mod systems;
 mod tilemap;

@@ -9,11 +9,8 @@ use crate::geometry;
 use crate::navigation::{CELL, Navigation, corridor};
 use crate::physics::Physics;
 use crate::prefabs::PET_SIZE;
+use crate::sheets::pet::{BOTTOM, IDLE as PET_IDLE, LEFT, RIGHT, TOP};
 use crate::systems::damage::{Damage, DamageSource};
-
-pub(crate) const PET_COLUMNS: usize = 4;
-pub(crate) const PET_ROWS: usize = 4;
-pub(crate) const PET_GAZE_SPEED: f32 = 150.0;
 
 const SPEED: f32 = 520.0;
 const AREA: f32 = 500.0;
@@ -25,24 +22,6 @@ const IDLE_SPEED: f32 = 40.0;
 const TURN_RATIO: f32 = 1.4;
 const BITE_DAMAGE: i32 = 1;
 const BITE_COOLDOWN: f32 = 0.2;
-const MOVE_FRAME_TIME: f32 = 0.1;
-const IDLE_FRAME_TIME: f32 = 0.25;
-
-const fn clip(row: usize, frames: usize, frame_time: f32, flipped: bool) -> Clip {
-    Clip {
-        row,
-        frames,
-        frame_time,
-        looping: true,
-        flipped,
-    }
-}
-
-pub(crate) const PET_IDLE: Clip = clip(3, 2, IDLE_FRAME_TIME, false);
-const BOTTOM: Clip = clip(0, 4, MOVE_FRAME_TIME, false);
-const TOP: Clip = clip(1, 4, MOVE_FRAME_TIME, false);
-const RIGHT: Clip = clip(2, 4, MOVE_FRAME_TIME, false);
-const LEFT: Clip = clip(2, 4, MOVE_FRAME_TIME, true);
 
 fn owner(world: &World) -> Option<Entity> {
     world.query::<Entity>().with::<&Player>().iter().next()

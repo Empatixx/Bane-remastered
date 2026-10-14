@@ -10,7 +10,7 @@ use std::path::Path;
 
 /// The cycles the code had when the guard came in. A new cycle fails the build; when one of
 /// these shrinks or breaks up, the guard asks to tighten the list so it cannot grow back.
-const KNOWN_CYCLES: &[&[&str]] = &[&["prefabs", "systems"]];
+const KNOWN_CYCLES: &[&[&str]] = &[];
 
 /// For every module, the modules it uses and the first place it does so.
 type Graph = BTreeMap<String, BTreeMap<String, String>>;
