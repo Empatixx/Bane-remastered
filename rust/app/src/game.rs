@@ -16,7 +16,7 @@ use crate::scenes::{Cursor, Scenes};
 use crate::settings::{Change, Settings};
 
 const CURSOR_SIZE: Vec2 = Vec2::new(32.0, 32.0);
-const ARROW_HOTSPOT: Vec2 = Vec2::new(6.0, 3.5);
+const ARROW_HOTSPOT: Vec2 = Vec2::new(3.0, 3.0);
 const AIM_HOTSPOT: Vec2 = Vec2::new(17.0, 17.0);
 const RELOAD_FRAMES: usize = 3;
 const RELOAD_FRAME_TIME: f32 = 0.1;
