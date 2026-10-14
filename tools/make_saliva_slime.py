@@ -17,11 +17,18 @@ STRAND = (226, 214, 236, 255)
 EYE = (60, 40, 70, 255)
 FANG = (255, 250, 236, 255)
 CW, CH = 40, 32
+PUDDLE = 9
 COLUMNS = 6
 
 
+WIDEST = 0.62
+FOOT = 0.8
+
+
 def half_width(rx, t, y, wobble):
-    return rx * (1 - (1 - min(1.0, t)) ** 2.3) ** 0.5 + math.sin(y * 0.7 + wobble) * 0.5
+    s_ = -1.0 + 1.78 * min(1.0, max(0.0, t))
+    p = 2.0 if s_ < 0 else 2.4
+    return rx * max(0.0, 1 - abs(s_) ** p) ** (1 / p) * 1.06 + math.sin(y * 0.6 + wobble) * 0.35
 
 
 def blob(d, cx, base, rx, ry, wobble=0.0):
@@ -82,12 +89,12 @@ def idle(frame):
 
 def hop(frame):
     poses = [
-        (14, 7, 27, 0),
-        (12, 12, 29, 0),
-        (9, 15, 26, 1),
-        (8, 16, 22, 1),
-        (13, 8, 27, 0),
+        (15, 7, 27, 0),
+        (11, 11, 28, 0),
+        (9, 12, 25, 1),
+        (9, 11, 23, 1),
         (14, 8, 27, 0),
+        (14, 9, 27, 0),
     ]
     rx, ry, base, jaw = poses[frame]
     image = Image.new("RGBA", (CW, CH), CLEAR)
@@ -117,7 +124,7 @@ def death(frame):
             x, y = 20 + rng.uniform(-16, 16), 20 - rng.uniform(0, 8)
             d.ellipse((x - 2, y - 2, x + 2, y + 2), fill=BODY_L, outline=OUTLINE)
     else:
-        spread = frame * 3 + 6
+        spread = min(frame * 2 + 4, PUDDLE)
         d.ellipse((20 - spread, 27 - 3, 20 + spread, 29), fill=OUTLINE)
         d.ellipse((20 - spread + 1, 27 - 2, 20 + spread - 1, 28), fill=BODY_D if frame < 5 else BODY)
         if frame < 5:
@@ -130,8 +137,44 @@ def death(frame):
     return image
 
 
+def puddle(d, spread, shine=True):
+    d.ellipse((20 - spread, 27 - 3, 20 + spread, 29), fill=OUTLINE)
+    d.ellipse((20 - spread + 1, 27 - 2, 20 + spread - 1, 28), fill=BODY)
+    if shine:
+        d.ellipse((20 - spread + 3, 26, 20 + spread - 4, 27), fill=BODY_L)
+
+
+def reform(frame):
+    """The puddle left by the first death pulls itself back together into a slime."""
+    image = Image.new("RGBA", (CW, CH), CLEAR)
+    d = ImageDraw.Draw(image)
+    rng = random.Random(frame + 40)
+    if frame == 0:
+        puddle(d, PUDDLE)
+        for _ in range(3):
+            x, y = 20 + rng.uniform(-6, 6), 24 - rng.uniform(0, 3)
+            d.point((x, y), fill=BODY_H)
+        return image
+    poses = [None, (11, 3, 28), (10, 6, 28), (9, 11, 27), (16, 7, 27), (14, 10, 27)]
+    rx, ry, base = poses[frame]
+    top = blob(d, 20, base, rx, ry, frame)
+    if frame >= 3:
+        face(d, 20, top, base)
+    if frame == 5:
+        bubbles(d, 20, top, base, 0)
+    for _ in range(max(0, 4 - frame)):
+        x, y = 20 + rng.uniform(-rx, rx), top - rng.uniform(1, 4)
+        d.ellipse((x - 1, y - 1, x + 1, y + 1), fill=BODY_L)
+    return image
+
+
 def main():
-    rows = [[idle(i) for i in range(4)], [death(i) for i in range(6)], [hop(i) for i in range(6)]]
+    rows = [
+        [idle(i) for i in range(4)],
+        [death(i) for i in range(6)],
+        [hop(i) for i in range(6)],
+        [reform(i) for i in range(6)],
+    ]
     sheet = Image.new("RGBA", (CW * COLUMNS, CH * len(rows)), CLEAR)
     for row, frames in enumerate(rows):
         for column, frame in enumerate(frames):

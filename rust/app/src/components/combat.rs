@@ -113,6 +113,14 @@ pub(crate) struct Enemy {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Toughened;
 
+/// The enemy survives its first death as a puddle that re-forms after a while.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Revives;
+
+/// A collapsed enemy waiting to re-form; it rides on `Spawning` so nothing can hit it.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Puddle;
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Spawning {
     pub(crate) remaining: f32,

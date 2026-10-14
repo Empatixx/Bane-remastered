@@ -4,7 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::components::{
     Animation, Boss, Charge, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health,
-    HitFlash, Layer, Outline, Player, Position, Rooted, Size, Smash, Spawning, Sprite, Velocity,
+    HitFlash, Layer, Outline, Player, Position, Puddle, Revives, Rooted, Size, Smash, Spawning,
+    Sprite, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
@@ -98,15 +99,110 @@ pub(crate) fn face_player(world: &mut World) {
 
 pub(crate) fn tick_spawning(world: &mut World, physics: &mut Physics, dt: f32) {
     let mut finished = Vec::new();
-    for (entity, spawning, color) in world.query_mut::<(Entity, &mut Spawning, &mut Color)>() {
+    for (entity, spawning, color, puddle, animation, enemy) in world.query_mut::<(
+        Entity,
+        &mut Spawning,
+        &mut Color,
+        Option<&Puddle>,
+        Option<&mut Animation>,
+        Option<&Enemy>,
+    )>() {
+        let before = spawning.remaining;
         spawning.remaining -= dt;
-        color.0.w = (1.0 - spawning.remaining / spawning.total).clamp(0.0, 1.0);
+        if puddle.is_some() {
+            let reform = enemy.and_then(|enemy| reform_clip(enemy.kind));
+            if let (Some(reform), Some(animation)) = (reform, animation) {
+                let lead = reform.frames as f32 * reform.frame_time;
+                if before > lead && spawning.remaining <= lead {
+                    let facing = animation.flipped();
+                    animation.play(Clip {
+                        flipped: facing,
+                        ..reform
+                    });
+                }
+            }
+        } else {
+            color.0.w = (1.0 - spawning.remaining / spawning.total).clamp(0.0, 1.0);
+        }
         if spawning.remaining <= 0.0 {
             finished.push(entity);
         }
     }
     for entity in finished {
         crate::prefabs::finish_spawning(world, physics, entity);
+        if world.remove_one::<Puddle>(entity).is_ok() {
+            stand_up(world, entity);
+        }
+    }
+}
+
+/// Seconds a puddle lies on the floor before it is a slime again.
+pub(crate) const REVIVE_SECONDS: f32 = 10.0;
+const REFORM_FRAME_TIME: f32 = 0.08;
+const REFORM_FRAMES: usize = 6;
+
+fn reform_clip(kind: crate::enemies::EnemyKind) -> Option<Clip> {
+    kind.spec().reform_row.map(|row| Clip {
+        row,
+        frames: REFORM_FRAMES,
+        frame_time: REFORM_FRAME_TIME,
+        looping: false,
+        flipped: false,
+    })
+}
+
+fn stand_up(world: &mut World, entity: Entity) {
+    let Ok(kind) = world.get::<&Enemy>(entity).map(|enemy| enemy.kind) else {
+        return;
+    };
+    if let Ok(mut health) = world.get::<&mut Health>(entity) {
+        health.current = health.max;
+    }
+    if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+        let facing = animation.flipped();
+        animation.play(Clip {
+            flipped: facing,
+            ..kind.spec().idle_clip()
+        });
+    }
+}
+
+/// The first death of an enemy that revives: it melts into a puddle that cannot be hit and
+/// lies still until it re-forms, the second death is for good.
+fn collapse_into_puddles(world: &mut World, physics: &mut Physics) {
+    let melting: Vec<(Entity, Enemy)> = world
+        .query::<(Entity, &Health, &Enemy)>()
+        .with::<&Revives>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+        .iter()
+        .filter(|(_, health, _)| health.current <= 0)
+        .map(|(entity, _, enemy)| (entity, *enemy))
+        .collect();
+    for (entity, enemy) in melting {
+        physics.detach(world, entity);
+        let _ = world.remove_one::<Revives>(entity);
+        let _ = world.remove_one::<Frozen>(entity);
+        let _ = world.insert(
+            entity,
+            (
+                Puddle,
+                Spawning {
+                    remaining: REVIVE_SECONDS,
+                    total: REVIVE_SECONDS,
+                },
+            ),
+        );
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
+            velocity.0 = Vec2::ZERO;
+        }
+        if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+            let facing = animation.flipped();
+            animation.play(Clip {
+                flipped: facing,
+                ..enemy.death
+            });
+        }
     }
 }
 
@@ -171,6 +267,7 @@ pub(crate) fn flash_hits(world: &mut World, dt: f32) {
 /// The one place where enemies die: every death effect sees each kill before it is reaped,
 /// whichever system dealt the killing blow.
 pub(crate) fn resolve_deaths(world: &mut World, physics: &mut Physics, textures: &Textures) {
+    collapse_into_puddles(world, physics);
     super::skills::death_bursts(world, physics, textures);
     super::skills::death_clouds(world, textures);
     super::skills::death_heals(world);
@@ -566,5 +663,95 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    fn kill(world: &mut World, physics: &mut Physics, entity: Entity) {
+        if let Ok(mut health) = world.get::<&mut Health>(entity) {
+            health.current = 0;
+        }
+        resolve_deaths(world, physics, &Textures::default());
+    }
+
+    fn wait(world: &mut World, physics: &mut Physics, seconds: f32) {
+        let steps = (seconds * 60.0).ceil() as usize;
+        for _ in 0..steps {
+            tick_spawning(world, physics, 1.0 / 60.0);
+        }
+    }
+
+    #[test]
+    fn a_saliva_slime_melts_into_a_puddle_and_re_forms_with_full_health() {
+        let (mut world, mut physics) = arena();
+        let slime = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::SalivaSlime,
+            Vec2::new(300.0, 0.0),
+        );
+
+        kill(&mut world, &mut physics, slime);
+
+        assert!(world.get::<&Puddle>(slime).is_ok());
+        assert!(world.get::<&Expiring>(slime).is_err());
+        assert!(world.get::<&Body>(slime).is_err());
+        wait(&mut world, &mut physics, REVIVE_SECONDS - 0.5);
+        assert!(world.get::<&Puddle>(slime).is_ok());
+        assert_eq!(
+            world.get::<&Animation>(slime).map(|a| a.row()).ok(),
+            Some(3),
+            "the puddle pulls itself together before it stands up"
+        );
+        wait(&mut world, &mut physics, 0.6);
+        assert!(world.get::<&Puddle>(slime).is_err());
+        assert!(world.get::<&Body>(slime).is_ok());
+        let health = world.get::<&Health>(slime).map(|h| (h.current, h.max)).ok();
+        assert!(health.is_some_and(|(current, max)| current == max && max > 0));
+    }
+
+    #[test]
+    fn the_second_death_of_a_saliva_slime_is_for_good() {
+        let (mut world, mut physics) = arena();
+        let slime = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::SalivaSlime,
+            Vec2::new(300.0, 0.0),
+        );
+        kill(&mut world, &mut physics, slime);
+        wait(&mut world, &mut physics, REVIVE_SECONDS + 0.1);
+
+        kill(&mut world, &mut physics, slime);
+
+        assert!(world.get::<&Expiring>(slime).is_ok());
+        assert!(world.get::<&Puddle>(slime).is_err());
+    }
+
+    #[test]
+    fn a_rat_does_not_revive() {
+        let (mut world, mut physics) = arena();
+        let rat = prefabs::ready_enemy(&mut world, &mut physics, EnemyKind::Rat, Vec2::new(300.0, 0.0));
+        kill(&mut world, &mut physics, rat);
+        assert!(world.get::<&Expiring>(rat).is_ok());
+        assert!(world.get::<&Puddle>(rat).is_err());
+    }
+
+    #[test]
+    fn a_fallen_boss_takes_the_puddles_of_its_slimes_with_it() {
+        let (mut world, mut physics) = arena();
+        let slime = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::SalivaSlime,
+            Vec2::new(300.0, 0.0),
+        );
+        let _ = world.insert_one(slime, crate::components::Minion);
+        kill(&mut world, &mut physics, slime);
+        assert!(world.get::<&Puddle>(slime).is_ok());
+        let boss = world.spawn((crate::components::Boss, Health { current: 0, max: 10 }));
+
+        resolve_deaths(&mut world, &mut physics, &Textures::default());
+
+        assert!(world.get::<&Expiring>(slime).is_ok());
+        let _ = world.despawn(boss);
     }
 }

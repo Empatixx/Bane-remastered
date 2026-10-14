@@ -196,6 +196,9 @@ pub(crate) fn enemy(
             total: spawn_seconds,
         },
     ));
+    if spec.reform_row.is_some() {
+        let _ = world.insert_one(entity, crate::components::Revives);
+    }
     match spec.behavior {
         Behavior::Plain => {}
         Behavior::PoisonTrail => {

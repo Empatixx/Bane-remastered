@@ -4,7 +4,7 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::components::{
     Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Expiring, Hatcher, Health, Minion, Player,
-    Position, RoomId, Rooted, Size, Spawning, WebSpitter,
+    Position, Puddle, Revives, RoomId, Rooted, Size, Spawning, WebSpitter,
 };
 use crate::enemies::{self, EnemyKind};
 use crate::physics::Physics;
@@ -144,6 +144,22 @@ pub(super) fn clean_up_after_boss(world: &mut World) {
         .any(|health| health.current <= 0);
     if !fallen {
         return;
+    }
+    let puddles: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<(&Minion, &Puddle)>()
+        .iter()
+        .collect();
+    for puddle in puddles {
+        let _ = world.remove::<(Puddle, Spawning)>(puddle);
+    }
+    let reviving: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<(&Minion, &Revives)>()
+        .iter()
+        .collect();
+    for minion in reviving {
+        let _ = world.remove_one::<Revives>(minion);
     }
     for health in world
         .query_mut::<&mut Health>()

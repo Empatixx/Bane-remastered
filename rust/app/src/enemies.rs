@@ -389,6 +389,9 @@ pub(crate) struct EnemySpec {
     pub(crate) behavior: Behavior,
     pub(crate) kin: bool,
     pub(crate) themes: &'static [Theme],
+    /// The sheet row of the puddle pulling itself back together; enemies with one survive
+    /// their first death as a puddle and re-form.
+    pub(crate) reform_row: Option<usize>,
 }
 
 impl EnemySpec {
@@ -455,6 +458,7 @@ const fn spec(
         behavior: Behavior::Plain,
         kin: false,
         themes: &[],
+        reform_row: None,
     }
 }
 
@@ -677,11 +681,12 @@ impl EnemyKind {
             },
             Self::SalivaSlime => EnemySpec {
                 death_row: 1,
+                reform_row: Some(3),
                 role: Role::Summoned,
                 behavior: Behavior::Hops,
                 ..spec(
                     tex::SALIVA_SLIME,
-                    (6, 3),
+                    (6, 4),
                     (40.0, 32.0),
                     2.4,
                     (4, 0.16),
