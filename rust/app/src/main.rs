@@ -1,5 +1,7 @@
 mod app;
 mod artefacts;
+#[cfg(test)]
+mod architecture;
 mod assets;
 mod audio;
 mod camera;
