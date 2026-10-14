@@ -68,7 +68,7 @@ def projectile_sheet(size, seed, big):
 def rock_shadow():
     im = Image.new("RGBA", (32, 16), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    d.ellipse((1, 1, 30, 14), fill=(24, 18, 24, 150), outline=(255, 170, 60, 200))
+    d.ellipse((1, 1, 30, 14), fill=(24, 18, 24, 150))
     return im
 
 

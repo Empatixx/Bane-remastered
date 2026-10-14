@@ -440,7 +440,7 @@ pub(crate) fn tick_rock_falls(
         });
         let ground = world.get::<&Position>(shadow).map(|p| p.0).ok();
         if let (Some(ground), Ok(mut position)) = (ground, world.get::<&mut Position>(rock)) {
-            position.0 = ground - Vec2::new(0.0, FALL_HEIGHT * progress * progress);
+            position.0 = ground - Vec2::new(0.0, FALL_HEIGHT * (2.0 * progress - progress * progress));
         }
     }
     let player = player_at(world);
