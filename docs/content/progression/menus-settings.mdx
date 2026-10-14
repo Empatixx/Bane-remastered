@@ -1,10 +1,10 @@
 ---
 title: Menu, pauza a nastavení
-description: Hlavní menu s živým pozadím, pauza v laboratoři a v dungeonu a nastavení obrazu, zvuku a ovládání.
+description: Hlavní menu s živým pozadím, pauza v laboratoři a v dungeonu a nastavení obrazu, zvuku a ovládání, dostupné z menu i z pauzy.
 ---
 
-Hlavní menu je první, co po načtení uvidíš. Odtud se jde do laboratoře a jen odtud se dá otevřít
-nastavení. Pauza (Esc) funguje v laboratoři i v dungeonu.
+Hlavní menu je první, co po načtení uvidíš. Odtud se jde do laboratoře. Pauza (Esc) funguje
+v laboratoři i v dungeonu a nastavení otevřeš z hlavního menu i z pauzy.
 
 ## Jak to funguje
 
@@ -29,11 +29,18 @@ nastavení. Pauza (Esc) funguje v laboratoři i v dungeonu.
 
 | Kde | Tlačítka |
 |---|---|
-| Laboratoř | Resume · Main Menu · Exit Game |
-| Dungeon | Resume · **Die** · Exit Game |
+| Laboratoř | Resume · Settings · Main Menu · Exit Game |
+| Dungeon | Resume · Settings · **Main Menu** · **Die** · Exit Game |
 
-V dungeonu Esc nejdřív zavře velkou mapu (Tab) a teprve pak otevře pauzu. **Die** okamžitě ukončí
-run, jako bys zemřel — se všemi odměnami. Viz [Konec runu](/docs/progression/run-end).
+V dungeonu Esc nejdřív zavře velkou mapu (Tab) a teprve pak otevře pauzu.
+
+- **Settings** otevře stejné nastavení jako v hlavním menu. Hra zůstává zapauzovaná; Esc nebo
+  tlačítko **Exit** tě vrátí zpátky do pauzy. Přemapovat klávesy jde i odtud.
+- **Die** okamžitě ukončí run, jako bys zemřel — se všemi odměnami — a pak se vrátíš do laboratoře.
+- **Main Menu** v dungeonu ukončí run úplně stejně jako **Die** (statistiky, gold, mise i challenge
+  se započítají a ukáže se obrazovka konce runu), jen potom místo do laboratoře skončíš v hlavním menu.
+
+Viz [Konec runu](/docs/progression/run-end).
 
 ### Nastavení
 
@@ -41,7 +48,8 @@ Panel má tři záložky (Video, Audio, Controls) a tři tlačítka:
 
 - **Apply** — změny se projeví a uloží.
 - **Revert** — vrátí neuložené změny zpět.
-- **Exit** — zavře panel; neuložené změny se zahodí.
+- **Exit** — zavře panel; neuložené změny se zahodí. Když jsi nastavení otevřel z pauzy, vrátíš se do ní
+  (stejně jako klávesou Esc; když zrovna čeká políčko na novou klávesu, Esc jen zruší čekání).
 
 ## Obsah
 
@@ -84,11 +92,8 @@ používá jiná akce, **prohodí se** — druhá akce dostane tvou původní kl
 
 ## Známé nesrovnalosti
 
-- Nastavení nejde otevřít z pauzy (ani v laboratoři, ani v dungeonu) — musíš až do hlavního menu.
-- Z pauzy v dungeonu nevede cesta do menu ani do laboratoře kromě „Die“.
 - Esc a tlačítka myši nejdou přemapovat.
 
 ## Nápady na rozšíření
 
-- Nastavení dostupné z pauzy.
 - Gamepad, velikost kurzoru, vypnutí otřesů obrazu, jazyk, přístupnost (barvoslepost, velikost textu), zobrazení FPS.

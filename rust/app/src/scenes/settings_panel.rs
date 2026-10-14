@@ -5,8 +5,8 @@ use hecs::{Entity, World};
 
 use crate::assets::Assets;
 use crate::components::{
-    Button, Checkbox, Color, Hidden, KeyBindSlot, LabelOf, Layer, NeedsChanges, OnClick, Position,
-    ResolutionText, ScreenSpace, SettingsTabKind, SettingsUi, Size, SliderHandle, SliderValue,
+    Button, Checkbox, Color, Hidden, KeyBindSlot, LabelOf, Layer, NeedsChanges, OnClick, Overlay,
+    Position, ResolutionText, ScreenSpace, SettingsTabKind, SettingsUi, Size, SliderHandle, SliderValue,
     Sprite, TabButton, TabOnly, Text, Toggle, UiAction, Volume,
 };
 use crate::controls::Action;
@@ -79,6 +79,14 @@ impl SettingsPanel {
         self.open
     }
 
+    pub(crate) fn is_listening(world: &World) -> bool {
+        world
+            .query::<&KeyBindSlot>()
+            .with::<&SettingsUi>()
+            .iter()
+            .any(|slot| slot.listening)
+    }
+
     pub(crate) fn open(&mut self, world: &mut World, assets: &Assets, hide: &[Entity]) {
         self.open = true;
         self.tab = SettingsTabKind::Video;
@@ -141,7 +149,7 @@ impl SettingsPanel {
 fn spawn_panel(world: &mut World, assets: &Assets) {
     let textures = &assets.textures;
     let ui = |world: &mut World, entity: Entity, layer: i32, tab: Option<SettingsTabKind>| {
-        let _ = world.insert(entity, (SettingsUi, ScreenSpace, Layer(layer)));
+        let _ = world.insert(entity, (SettingsUi, ScreenSpace, Overlay, Layer(layer)));
         if let Some(tab) = tab {
             let _ = world.insert_one(entity, TabOnly(tab));
         }
@@ -299,6 +307,7 @@ fn spawn_label(world: &mut World, label: &str, left_middle: Vec2, tab: Option<Se
         Text::new(label.to_owned(), LABEL_COLOR, FontSize::Size22).anchored(Anchor::Middle),
         SettingsUi,
         ScreenSpace,
+        Overlay,
         Layer(7),
     ));
     if let Some(tab) = tab {

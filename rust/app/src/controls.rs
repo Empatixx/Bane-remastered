@@ -133,6 +133,23 @@ pub(crate) fn key_label(code: KeyCode) -> &'static str {
         .map_or("?", |(_, _, label)| label)
 }
 
+/// The four movement keys as one short label: "WASD" for single letters, "Up/Left/Down/Right"
+/// when a key has a longer name.
+pub(crate) fn movement_label(bindings: &Bindings) -> String {
+    let keys = [
+        Action::MoveUp,
+        Action::MoveLeft,
+        Action::MoveDown,
+        Action::MoveRight,
+    ]
+    .map(|action| key_label(bindings.key(action)));
+    if keys.iter().all(|key| key.len() == 1) {
+        keys.concat()
+    } else {
+        keys.join("/")
+    }
+}
+
 fn key_name(code: KeyCode) -> Option<&'static str> {
     KEYS.iter()
         .find(|(_, key, _)| *key == code)
@@ -279,5 +296,15 @@ mod tests {
         assert_eq!(key_label(KeyCode::KeyW), "W");
         assert_eq!(key_label(KeyCode::ArrowLeft), "Left");
         assert_eq!(key_label(KeyCode::F1), "?");
+    }
+
+    #[test]
+    fn the_movement_label_follows_the_bound_movement_keys() {
+        let mut bindings = Bindings::default();
+        assert_eq!(movement_label(&bindings), "WASD");
+        bindings.rebind(Action::MoveUp, KeyCode::KeyZ);
+        assert_eq!(movement_label(&bindings), "ZASD");
+        bindings.rebind(Action::MoveLeft, KeyCode::ArrowLeft);
+        assert_eq!(movement_label(&bindings), "Z/Left/S/D");
     }
 }

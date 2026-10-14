@@ -277,15 +277,21 @@ pub(crate) fn collect_draws(
             position.0.x,
             position.0.y + size.0.y / 2.0 + prompt.gap + line.line_height() / 2.0,
         ) - camera;
-        let text = match prompt.text.strip_prefix("Press E ") {
-            Some(rest) => format!("Press {interact_key} {rest}"),
-            None => prompt.text.to_owned(),
-        };
+        let text = prompt_text(prompt.text, interact_key);
         for draw in line.draw_centered(&text, center, prompt.color) {
             sorted.scene.push((Layer(3), draw));
         }
     }
     sorted.finish()
+}
+
+/// Prompts are written for the default key ("Press E to ..."); the shown text names the key
+/// Interact is bound to right now.
+fn prompt_text(text: &str, interact_key: &str) -> String {
+    match text.strip_prefix("Press E ") {
+        Some(rest) => format!("Press {interact_key} {rest}"),
+        None => text.to_owned(),
+    }
 }
 
 fn off_screen(center: Vec2, size: Vec2) -> bool {
@@ -305,6 +311,16 @@ mod tests {
     use crate::components::Color;
 
     use super::*;
+
+    #[test]
+    fn interaction_prompts_name_the_key_interact_is_bound_to() {
+        assert_eq!(
+            prompt_text("Press E to enter the portal", "X"),
+            "Press X to enter the portal"
+        );
+        assert_eq!(prompt_text("Press E to buy", "Space"), "Press Space to buy");
+        assert_eq!(prompt_text("Sold out", "X"), "Sold out");
+    }
 
     fn square(world: &mut World, at: Vec2, screen: bool) {
         let entity = world.spawn((

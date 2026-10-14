@@ -255,7 +255,7 @@ impl Scene for LobbyScene {
         input: &Input,
         dt: f32,
         assets: &Assets,
-        _settings: &mut Settings,
+        settings: &mut Settings,
     ) -> Transition {
         self.refresh_counters();
         if self.quests.is_open() || self.weapons.is_open() {
@@ -319,13 +319,12 @@ impl Scene for LobbyScene {
         }
         if input.just_pressed(KeyCode::Escape) {
             self.pause
-                .toggle(&mut self.world, assets, &prefabs::PAUSE_LOBBY);
+                .escape(&mut self.world, assets, &prefabs::PAUSE_LOBBY);
         }
         if self.pause.is_active() {
-            let action = self.pause.update(&mut self.world, input);
-            if action.is_some() {
-                self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
-            }
+            let action =
+                self.pause
+                    .update(&mut self.world, input, assets, settings, &mut self.sounds);
             return match action {
                 Some(UiAction::Resume) => {
                     self.pause
@@ -534,7 +533,7 @@ mod tests {
     }
 
     #[test]
-    fn the_lobby_pause_menu_offers_resume_main_menu_and_exit_game_and_exit_game_quits() {
+    fn the_lobby_pause_menu_offers_resume_settings_main_menu_and_exit_game_and_exit_game_quits() {
         let (mut scene, assets) = lobby();
         let mut input = Input::default();
         input.press(KeyCode::Escape);
@@ -548,7 +547,7 @@ mod tests {
             .map(|text| text.content.clone())
             .collect();
         labels.sort();
-        assert_eq!(labels, vec!["Exit Game", "Main Menu", "Resume"]);
+        assert_eq!(labels, vec!["Exit Game", "Main Menu", "Resume", "Settings"]);
 
         let at = scene
             .world
