@@ -3,8 +3,8 @@ use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
-    Animation, Boss, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health, HitFlash,
-    Layer, Outline, Player, Position, Rooted, Size, Smash, Spawning, Sprite, Velocity,
+    Animation, Boss, Charge, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health,
+    HitFlash, Layer, Outline, Player, Position, Rooted, Size, Smash, Spawning, Sprite, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
@@ -40,7 +40,7 @@ pub(crate) fn update_flow(
 
 pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
     let target = player_placement(world).map(|(position, _)| position);
-    for (position, chase, velocity, rooted, shooter, detour, frozen) in world
+    for (position, chase, velocity, rooted, shooter, detour, frozen, charge) in world
         .query_mut::<(
             &Position,
             &Chase,
@@ -49,12 +49,17 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField) {
             Option<(&Smash, Option<&Boss>)>,
             Option<&Detour>,
             Option<&Frozen>,
+            Option<&Charge>,
         )>()
         .without::<&Expiring>()
         .without::<&Spawning>()
     {
         if rooted.is_some() || frozen.is_some() {
             velocity.0 = Vec2::ZERO;
+            continue;
+        }
+        if let Some(charge) = charge {
+            velocity.0 = charge.direction * chase.speed;
             continue;
         }
         let Some(target) = target else {
@@ -85,6 +90,7 @@ pub(crate) fn face_player(world: &mut World) {
         .query_mut::<(&Position, &mut Animation)>()
         .with::<&Enemy>()
         .without::<&Expiring>()
+        .without::<&Charge>()
     {
         animation.face(target.x < position.0.x);
     }

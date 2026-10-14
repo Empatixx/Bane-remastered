@@ -4,8 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Chase, Clip, Color, ContactDamage, Expiring, Frozen, Health, HoundAttack, HoundBoss,
-    HoundStage, Position, RoomId, Rooted, Spawning,
+    Animation, Charge, Chase, Clip, Color, ContactDamage, Expiring, Frozen, Health, HoundAttack,
+    HoundBoss, HoundStage, Position, RoomId, Rooted, Spawning,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
@@ -38,6 +38,7 @@ pub(crate) enum Cmd {
     Charge(bool),
     AimBreath,
     Ring,
+    Crash,
 }
 
 fn clip(row: usize, frame_time: f32) -> Clip {
@@ -92,7 +93,7 @@ pub(crate) fn choose_attack(hound: &mut HoundBoss, distance: f32) -> HoundAttack
     HoundAttack::Lunge
 }
 
-pub(crate) fn step(hound: &mut HoundBoss, distance: f32, dt: f32) -> Vec<Cmd> {
+pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32) -> Vec<Cmd> {
     let mut commands = Vec::new();
     match hound.stage {
         HoundStage::Prowl => {
@@ -141,6 +142,12 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, dt: f32) -> Vec<Cmd> {
         }
         HoundStage::Acting => {
             hound.timer -= dt;
+            if crashed && hound.attack == HoundAttack::Lunge {
+                commands.push(Cmd::Crash);
+                hound.stage = HoundStage::Recovering;
+                hound.timer = enemies::HOUND_CRASH_STUN;
+                return commands;
+            }
             if hound.timer <= 0.0 {
                 let recover = match hound.attack {
                     HoundAttack::Lunge => {
@@ -179,6 +186,7 @@ fn head_offset(index: usize, mirrored: bool) -> Vec2 {
 pub(crate) fn tick_hound(
     world: &mut World,
     physics: &mut Physics,
+    navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
     dt: f32,
@@ -208,11 +216,17 @@ pub(crate) fn tick_hound(
             }
         }
         let distance = target.map_or(f32::MAX, |player| player.distance(at));
+        let crashed = world.get::<&Charge>(entity).is_ok_and(|charge| {
+            navigation.is_blocked(
+                at + charge.direction * enemies::HOUND_CRASH_REACH,
+                Vec2::splat(48.0),
+            )
+        });
         let (commands, enraged) = {
             let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) else {
                 continue;
             };
-            (step(&mut hound, distance, dt), hound.enraged)
+            (step(&mut hound, distance, crashed, dt), hound.enraged)
         };
         for command in commands {
             execute(
@@ -247,19 +261,16 @@ fn execute(
             let _ = world.remove_one::<Rooted>(entity);
         }
         Cmd::Charge(on) => {
-            if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
-                hound.charging = on;
-            }
-            if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
-                if on {
-                    chase.speed *= enemies::HOUND_LUNGE_SPEED;
-                } else {
-                    chase.speed /= enemies::HOUND_LUNGE_SPEED;
-                }
-            }
+            set_charge(world, entity, on, at, player);
             if on {
                 sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
             }
+        }
+        Cmd::Crash => {
+            set_charge(world, entity, false, at, player);
+            let _ = world.insert_one(entity, Rooted);
+            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
         }
         Cmd::AimBreath => {
             let origin = at + head_offset(0, mirrored);
@@ -292,6 +303,31 @@ fn execute(
                 }
             }
         }
+    }
+}
+
+fn set_charge(world: &mut World, entity: Entity, on: bool, at: Vec2, player: Option<Vec2>) {
+    let charging = world
+        .get::<&HoundBoss>(entity)
+        .is_ok_and(|hound| hound.charging);
+    if on == charging {
+        return;
+    }
+    if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
+        hound.charging = on;
+    }
+    if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
+        if on {
+            chase.speed *= enemies::HOUND_LUNGE_SPEED;
+        } else {
+            chase.speed /= enemies::HOUND_LUNGE_SPEED;
+        }
+    }
+    if on {
+        let direction = player.map_or(Vec2::X, |player| (player - at).normalize_or_zero());
+        let _ = world.insert_one(entity, Charge { direction });
+    } else {
+        let _ = world.remove_one::<Charge>(entity);
     }
 }
 
@@ -361,7 +397,7 @@ mod tests {
         let mut all = Vec::new();
         let mut time = 0.0;
         while time < seconds {
-            all.extend(step(hound, 200.0, 0.02));
+            all.extend(step(hound, 200.0, false, 0.02));
             time += 0.02;
         }
         all
@@ -395,6 +431,19 @@ mod tests {
             .position(|command| *command == Cmd::Charge(false));
         assert!(on.is_some() && off.is_some() && on < off);
         assert_eq!(boss.stage, HoundStage::Prowl);
+    }
+
+    #[test]
+    fn crashing_into_a_wall_ends_the_lunge_and_stuns_the_hound_longer() {
+        let mut boss = hound();
+        boss.stage = HoundStage::Acting;
+        boss.attack = HoundAttack::Lunge;
+        boss.timer = 1.0;
+        boss.charging = true;
+        let commands = step(&mut boss, 200.0, true, 0.02);
+        assert!(commands.contains(&Cmd::Crash));
+        assert_eq!(boss.stage, HoundStage::Recovering);
+        assert!(boss.timer > enemies::HOUND_LUNGE_RECOVER);
     }
 
     #[test]

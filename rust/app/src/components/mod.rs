@@ -65,11 +65,11 @@ pub(crate) use settings_ui::{
 };
 pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
-    ArgusAttack, ArgusBoss, ArgusStage, Armageddon, BeamPart, Boss, Cobweb, DeathBurst, DeathCloud,
-    DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse, GolemAttack, GolemBoss,
-    GolemStage, Hatcher, Hits, Homing, HoundAttack, HoundBoss, HoundStage, Impact, Kin, LeapStage,
-    Leaper, Magma, MagmaSpreader, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter, RockFall,
-    Rooted, Smash, WebSpitter,
+    ArgusAttack, ArgusBoss, ArgusStage, Armageddon, BeamPart, Boss, Charge, Cobweb, DeathBurst,
+    DeathCloud, DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse, GolemAttack,
+    GolemBoss, GolemStage, Hatcher, Hits, Homing, HoundAttack, HoundBoss, HoundStage, Impact, Kin,
+    LeapStage, Leaper, Magma, MagmaSpreader, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter,
+    RockFall, Rooted, Smash, WebSpitter,
 };
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
