@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 use crate::assets::{Tex, tex};
-use crate::components::Clip;
+use crate::clip::Clip;
 use crate::dungeon::Theme;
 use crate::rng::Rng;
 

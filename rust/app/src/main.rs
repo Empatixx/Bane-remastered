@@ -5,6 +5,7 @@ mod architecture;
 mod assets;
 mod audio;
 mod camera;
+mod clip;
 mod components;
 mod controls;
 mod dungeon;
