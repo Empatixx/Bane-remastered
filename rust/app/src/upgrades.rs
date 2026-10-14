@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 pub(crate) const ROOT_CELL: (i32, i32) = (0, 0);
 pub(crate) const TALENT_PRICE: u64 = 1;
+const CRIT_CHANCE: f32 = 0.1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -341,15 +342,24 @@ impl Perks {
         (base as f32 * self.armor_scale) as i32
     }
 
-    pub(crate) fn bullet_damage(&self, base: i32, critical_roll: f32) -> i32 {
-        let mut damage = self
+    pub(crate) fn crit_chance(&self) -> f32 {
+        if self.critical {
+            CRIT_CHANCE
+        } else {
+            0.0
+        }
+    }
+
+    pub(crate) fn bullet_damage(&self, base: i32, critical: bool) -> i32 {
+        let damage = self
             .damage_scales
             .iter()
             .fold(base, |value, scale| (value as f32 * scale) as i32);
-        if self.critical && critical_roll < 0.1 {
-            damage *= 2;
+        if critical {
+            damage * 2
+        } else {
+            damage
         }
-        damage
     }
 
     pub(crate) fn damage_taken(&self, damage: i32) -> i32 {
@@ -446,7 +456,8 @@ mod tests {
         let none = Perks::default();
         assert_eq!(none.speed, 1.1);
         assert_eq!(none.max_health(10), 12);
-        assert_eq!(none.bullet_damage(3, 0.0), 3);
+        assert_eq!(none.bullet_damage(3, false), 3);
+        assert_eq!(none.crit_chance(), 0.0);
 
         let all = Perks::from_unlocked(&set(&Upgrade::ALL));
         assert_eq!(all.max_health(10), 15);
@@ -459,11 +470,12 @@ mod tests {
     #[test]
     fn damage_is_truncated_after_every_step_like_in_java() {
         let boosted = Perks::from_unlocked(&set(&[Upgrade::EnhancedDamage]));
-        assert_eq!(boosted.bullet_damage(1, 0.9), 1);
-        assert_eq!(boosted.bullet_damage(4, 0.9), 5);
+        assert_eq!(boosted.bullet_damage(1, false), 1);
+        assert_eq!(boosted.bullet_damage(4, false), 5);
         let critical = Perks::from_unlocked(&set(&[Upgrade::CriticalHit]));
-        assert_eq!(critical.bullet_damage(3, 0.05), 6);
-        assert_eq!(critical.bullet_damage(3, 0.5), 3);
+        assert_eq!(critical.bullet_damage(3, true), 6);
+        assert!((critical.crit_chance() - 0.1).abs() < 1e-6);
+        assert_eq!(critical.bullet_damage(3, false), 3);
     }
 
     #[test]

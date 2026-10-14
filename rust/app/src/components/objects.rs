@@ -99,3 +99,26 @@ impl Frozen {
         fade_in.min(fade_out)
     }
 }
+
+/// A pool or cloud left by the player's own rounds, it never hurts the player.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Friendly;
+
+pub(crate) const CHILL_SECONDS: f32 = 2.5;
+pub(crate) const CHILL_SLOWDOWN: f32 = 0.5;
+pub(crate) const CHILL_STACKS_TO_FREEZE: u32 = 4;
+const CHILL_LOOK: f32 = 0.45;
+const CHILL_FADE_OUT: f32 = 0.4;
+
+/// Slowed by frost rounds; enough hits in a row freeze the enemy solid.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Chilled {
+    pub(crate) remaining: f32,
+    pub(crate) stacks: u32,
+}
+
+impl Chilled {
+    pub(crate) fn strength(&self) -> f32 {
+        CHILL_LOOK * (self.remaining / CHILL_FADE_OUT).clamp(0.0, 1.0)
+    }
+}

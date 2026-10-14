@@ -288,6 +288,60 @@ impl Physics {
             .collect()
     }
 
+    /// The side of the wall a body moving with this velocity came through, as the normal
+    /// pointing out of the wall, and how far the body has to back out along it.
+    pub(crate) fn wall_push(&self, body: Body, velocity: Vec2) -> Option<(Vec2, f32)> {
+        let own = self.world.colliders.get(body.collider)?.compute_aabb();
+        let (own_min, own_max) = (from_rapier(own.mins), from_rapier(own.maxs));
+        let since = |depth: f32, speed: f32| {
+            if speed.abs() < f32::EPSILON {
+                f32::INFINITY
+            } else {
+                depth / speed.abs()
+            }
+        };
+        self.world
+            .narrow_phase
+            .intersection_pairs_with(body.collider)
+            .filter(|&(_, _, intersecting)| intersecting)
+            .filter_map(|(first, second, _)| {
+                let other = if first == body.collider {
+                    second
+                } else {
+                    first
+                };
+                (self.owner(other) == Some(Owner::Wall))
+                    .then(|| self.world.colliders.get(other))
+                    .flatten()
+            })
+            .map(|wall| {
+                let aabb = wall.compute_aabb();
+                let (min, max) = (from_rapier(aabb.mins), from_rapier(aabb.maxs));
+                let depth = Vec2::new(
+                    if velocity.x > 0.0 {
+                        own_max.x - min.x
+                    } else {
+                        max.x - own_min.x
+                    },
+                    if velocity.y > 0.0 {
+                        own_max.y - min.y
+                    } else {
+                        max.y - own_min.y
+                    },
+                )
+                .max(Vec2::ZERO);
+                let (time_x, time_y) = (since(depth.x, velocity.x), since(depth.y, velocity.y));
+                if time_x <= time_y {
+                    (Vec2::new(-velocity.x.signum(), 0.0), depth.x, time_x)
+                } else {
+                    (Vec2::new(0.0, -velocity.y.signum()), depth.y, time_y)
+                }
+            })
+            .filter(|(_, _, time)| time.is_finite())
+            .max_by(|a, b| a.2.total_cmp(&b.2))
+            .map(|(normal, depth, _)| (normal, depth))
+    }
+
     fn owner(&self, collider: ColliderHandle) -> Option<Owner> {
         let bits = self.world.colliders.get(collider)?.user_data;
         if bits == WALL_OWNER {

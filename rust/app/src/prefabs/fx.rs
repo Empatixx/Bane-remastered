@@ -4,7 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::assets::tex;
 use crate::components::{
-    Animation, Casing, Clip, Color, Expiring, Floating, Layer, Light, LightFade, Lit, PoisonPool,
+    Animation, Casing, Clip, Color, Expiring, Floating, Friendly, Layer, Light, LightFade, Lit,
+    PoisonPool,
     PoisonTrail, Position, ScreenSpace, ShieldAura, Size, Sprite, Text, ThenPlay,
 };
 use crate::objects::{POOL_SECONDS, POOL_SIZE, TRAIL_DOT, TRAIL_SECONDS, TRAIL_VARIANTS};
@@ -101,6 +102,19 @@ pub(crate) fn frost_burst(world: &mut World, center: Vec2, textures: &Textures) 
 }
 
 pub(crate) fn explosion(world: &mut World, center: Vec2, textures: &Textures) {
+    blast(world, center, Vec2::new(128.0, 128.0), textures);
+}
+
+/// A player round's pool of venom: short lived and harmless to the player.
+pub(crate) fn venom_pool(world: &mut World, center: Vec2, seconds: f32, textures: &Textures) {
+    let pool = poison_pool(world, center, textures);
+    if let Ok(mut state) = world.get::<&mut PoisonPool>(pool) {
+        state.remaining = seconds;
+    }
+    let _ = world.insert_one(pool, Friendly);
+}
+
+pub(crate) fn blast(world: &mut World, center: Vec2, size: Vec2, textures: &Textures) {
     let clip = Clip {
         row: 0,
         frames: 9,
@@ -108,7 +122,6 @@ pub(crate) fn explosion(world: &mut World, center: Vec2, textures: &Textures) {
         looping: false,
         flipped: false,
     };
-    let size = Vec2::new(128.0, 128.0);
     world.spawn((
         Expiring,
         Position(center),

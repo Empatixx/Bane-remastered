@@ -111,12 +111,12 @@ pub(crate) fn bullet(
     physics: &mut Physics,
     position: Vec2,
     velocity: Vec2,
-    damage: i32,
+    bullet: Bullet,
     texture: TextureId,
 ) -> Entity {
     let size = Vec2::splat(16.0);
     let entity = world.spawn((
-        Bullet { damage },
+        bullet,
         Position(position),
         Velocity(velocity),
         Size(size),

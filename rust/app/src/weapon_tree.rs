@@ -1,26 +1,26 @@
 use crate::guns::GunKind;
 use crate::rng::Rng;
 
-pub(super) const HALF_COLUMNS: i32 = 2;
-pub(super) const DEPTH: i32 = 4;
-pub(super) const STAT_KINDS: usize = 6;
-pub(super) const MUTATION_KINDS: usize = 6;
+pub(crate) const HALF_COLUMNS: i32 = 2;
+pub(crate) const DEPTH: i32 = 4;
+pub(crate) const STAT_KINDS: usize = 6;
+pub(crate) const MUTATION_KINDS: usize = 6;
 const SIDE_BRANCHES: usize = 2;
 const SIDE_DEPTH: usize = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) struct Node {
-    pub(super) column: i32,
-    pub(super) row: i32,
-    pub(super) parent: Option<usize>,
-    pub(super) branch: usize,
-    pub(super) stat: usize,
-    pub(super) mutation: Option<usize>,
+pub(crate) struct Node {
+    pub(crate) column: i32,
+    pub(crate) row: i32,
+    pub(crate) parent: Option<usize>,
+    pub(crate) branch: usize,
+    pub(crate) stat: usize,
+    pub(crate) mutation: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub(super) struct Tree {
-    pub(super) nodes: Vec<Node>,
+pub(crate) struct Tree {
+    pub(crate) nodes: Vec<Node>,
 }
 
 impl Tree {
@@ -109,7 +109,7 @@ impl Tree {
     }
 }
 
-pub(super) fn generate(kind: GunKind, rerolls: u32) -> Tree {
+pub(crate) fn generate(kind: GunKind, rerolls: u32) -> Tree {
     let gun = GunKind::ALL
         .iter()
         .position(|other| *other == kind)

@@ -2,9 +2,10 @@ use glam::Vec2;
 
 use crate::assets::{tex, Tex};
 use crate::audio::SoundEffect;
+use crate::weapon_upgrades::Mutation;
 
 pub(crate) const MAX_PELLETS: usize = 4;
-pub(crate) const MAX_CLIP: usize = 32;
+pub(crate) const MAX_CLIP: usize = 40;
 pub(crate) const PIP_SIZE: Vec2 = Vec2::new(24.0, 24.0);
 pub(crate) const BURST_DELAY: f32 = 0.05;
 
@@ -15,7 +16,10 @@ const PIPS_STEP: f32 = 15.0;
 const PIPS_STEP_SHOTGUN: f32 = 20.0;
 const PIPS_COLUMN_STEP: f32 = 25.0;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum GunKind {
     Pistol,
     Shotgun,
@@ -51,6 +55,9 @@ pub(crate) struct GunSpec {
     pub(crate) reload: SoundEffect,
     pub(crate) clip_style: ClipStyle,
     pub(crate) shake: f32,
+    pub(crate) damage_scale: f32,
+    pub(crate) crit_chance: f32,
+    pub(crate) mutation: Option<Mutation>,
 }
 
 const fn gun(
@@ -79,6 +86,9 @@ const fn gun(
         reload: sounds.1,
         clip_style,
         shake: 0.35,
+        damage_scale: 1.0,
+        crit_chance: 0.0,
+        mutation: None,
     }
 }
 
@@ -206,6 +216,14 @@ impl GunSpec {
         self.min_damage + (roll * (self.max_damage - self.min_damage) as f32) as i32
     }
 
+    /// The damage with the bonus of the weapon tree; the fraction the bonus adds becomes a
+    /// whole point as often as it is large, so small bonuses still count on weak guns.
+    pub(crate) fn scaled_damage(&self, roll: f32, fraction_roll: f32) -> i32 {
+        let damage = self.damage_for(roll) as f32 * self.damage_scale;
+        let whole = damage.floor();
+        whole as i32 + i32::from(damage - whole > fraction_roll)
+    }
+
     pub(crate) fn angle_offset(&self, pellet: usize, spread: f32) -> f32 {
         if self.pellets > 1 {
             let sign = if pellet.is_multiple_of(2) { 1.0 } else { -1.0 };
@@ -225,10 +243,11 @@ pub(crate) fn pip_layout(style: ClipStyle, clip_size: usize) -> Vec<Vec2> {
             .map(|index| Vec2::new(PIPS_RIGHT, PIPS_BOTTOM - index as f32 * PIPS_STEP_SHOTGUN))
             .collect(),
         ClipStyle::SubMachine => {
-            let half = clip_size / 2;
+            let half = clip_size.div_ceil(2);
             (0..2)
                 .flat_map(|column| {
-                    (0..half).map(move |index| {
+                    let rows = if column == 0 { half } else { clip_size - half };
+                    (0..rows).map(move |index| {
                         Vec2::new(
                             PIPS_RIGHT_SUBMACHINE - column as f32 * PIPS_COLUMN_STEP,
                             PIPS_BOTTOM - index as f32 * PIPS_STEP,
@@ -292,6 +311,24 @@ mod tests {
         assert!((pistol.angle_offset(0, 1.0) - 0.05).abs() < 1e-6);
         assert!((pistol.angle_offset(0, -1.0) + 0.05).abs() < 1e-6);
         assert_eq!(GunKind::M4.spec().angle_offset(0, 1.0), 0.0);
+    }
+
+    #[test]
+    fn an_odd_clip_still_shows_a_pip_for_every_round() {
+        for clip in [33, 35, 40] {
+            assert_eq!(pip_layout(ClipStyle::SubMachine, clip).len(), clip);
+        }
+    }
+
+    #[test]
+    fn the_tree_bonus_turns_its_fraction_into_whole_points_by_chance() {
+        let pistol = GunSpec {
+            damage_scale: 1.25,
+            ..GunKind::Pistol.spec()
+        };
+        assert_eq!(pistol.scaled_damage(0.0, 0.1), 2);
+        assert_eq!(pistol.scaled_damage(0.0, 0.9), 1);
+        assert_eq!(GunKind::Pistol.spec().scaled_damage(0.0, 0.0), 1);
     }
 
     #[test]

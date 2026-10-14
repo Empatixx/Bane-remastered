@@ -309,7 +309,7 @@ mod tests {
             let _ = world.insert_one(entity, EnemyBullet);
             physics.add_enemy_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0))
         } else {
-            let _ = world.insert_one(entity, Bullet { damage: 1 });
+            let _ = world.insert_one(entity, Bullet::plain(1));
             physics.add_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0))
         };
         let _ = world.insert_one(entity, body);

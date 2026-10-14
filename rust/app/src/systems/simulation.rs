@@ -1,6 +1,8 @@
 use hecs::{Entity, World};
 
-use crate::components::{Body, BodyOffset, Player, Position, Previous, Velocity};
+use crate::components::{
+    Body, BodyOffset, CHILL_SLOWDOWN, Chilled, Player, Position, Previous, Velocity,
+};
 use crate::physics::Physics;
 
 pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
@@ -11,8 +13,13 @@ pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
             "despawned without Physics::despawn, cleaned up the leftovers"
         );
     }
-    for (body, velocity) in world.query_mut::<(&Body, &Velocity)>() {
-        physics.set_velocity(*body, velocity.0);
+    for (body, velocity, chilled) in world.query_mut::<(&Body, &Velocity, Option<&Chilled>)>() {
+        let slowdown = if chilled.is_some() {
+            CHILL_SLOWDOWN
+        } else {
+            1.0
+        };
+        physics.set_velocity(*body, velocity.0 * slowdown);
     }
     physics.step(dt);
     let mut first_step = Vec::new();

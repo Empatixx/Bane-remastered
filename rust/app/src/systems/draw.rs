@@ -2,7 +2,7 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Casing, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Liquid, Lit,
+    Casing, Chilled, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Liquid, Lit,
     MapSize, Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky,
     Sprite, StatusBar, Text, blended,
 };
@@ -88,7 +88,7 @@ pub(crate) fn collect_draws(
             Option<&Lit>,
             Option<&Outline>,
             Option<&Hover>,
-            Option<&Frozen>,
+            (Option<&Frozen>, Option<&Chilled>),
             Option<&Shine>,
             Option<&Sky>,
             Option<&Liquid>,
@@ -109,7 +109,10 @@ pub(crate) fn collect_draws(
                 if let Some(liquid) = liquid {
                     quad = quad.liquid(liquid.kind, liquid.time);
                 }
-                let frost = frozen.map_or(0.0, Frozen::strength);
+                let frost = frozen
+                    .0
+                    .map_or(0.0, Frozen::strength)
+                    .max(frozen.1.map_or(0.0, Chilled::strength));
                 if frost > 0.0 {
                     quad = quad.frosted(frost).outlined(Vec4::new(
                         FROST_RIM.x,

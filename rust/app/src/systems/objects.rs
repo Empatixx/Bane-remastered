@@ -4,8 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Boss, BreakKind, Breakable, Broken, Clip, Color, Dodge, Enemy, Expiring, Flame,
-    Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool, PoisonTrail,
+    Animation, Boss, BreakKind, Breakable, Broken, Chilled, Clip, Color, Dodge, Enemy, Expiring, Flame,
+    Friendly, Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool, PoisonTrail,
     Poisoned, Position, Size, Solid, Spawning, TrailLayer,
 };
 use crate::geometry;
@@ -158,6 +158,19 @@ fn freeze_around(
     }
 }
 
+pub(crate) fn tick_chilled(world: &mut World, dt: f32) {
+    let mut warm = Vec::new();
+    for (entity, chilled) in world.query_mut::<(Entity, &mut Chilled)>() {
+        chilled.remaining -= dt;
+        if chilled.remaining <= 0.0 {
+            warm.push(entity);
+        }
+    }
+    for entity in warm {
+        let _ = world.remove_one::<Chilled>(entity);
+    }
+}
+
 pub(crate) fn tick_frozen(world: &mut World, dt: f32) {
     let mut thawed = Vec::new();
     for (entity, frozen) in world.query_mut::<(Entity, &mut Frozen)>() {
@@ -174,12 +187,13 @@ pub(crate) fn tick_frozen(world: &mut World, dt: f32) {
 pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioCommand>) {
     let mut pools = Vec::new();
     let mut gone = Vec::new();
-    for (entity, pool, position, color, trail) in world.query_mut::<(
+    for (entity, pool, position, color, trail, friendly) in world.query_mut::<(
         Entity,
         &mut PoisonPool,
         &Position,
         &mut Color,
         Option<&PoisonTrail>,
+        Option<&Friendly>,
     )>() {
         pool.remaining -= dt;
         pool.tick -= dt;
@@ -193,7 +207,7 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
         if due {
             pool.tick = POISON_TICK_SECONDS;
         }
-        pools.push((position.0, due, trail.is_some()));
+        pools.push((position.0, due, trail.is_some(), friendly.is_some()));
     }
     for entity in gone {
         let _ = world.despawn(entity);
@@ -208,8 +222,8 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
         .filter_map(|(entity, position, size, player)| {
             let mut inside = false;
             let mut hurt = false;
-            for (center, due, trail) in &pools {
-                if *trail && player.is_none() {
+            for (center, due, trail, friendly) in &pools {
+                if (*trail && player.is_none()) || (*friendly && player.is_some()) {
                     continue;
                 }
                 let hitbox = if *trail { TRAIL_HITBOX } else { POOL_HITBOX };
@@ -368,13 +382,13 @@ mod tests {
             &mut physics,
             Vec2::new(150.0, 100.0),
             Vec2::new(700.0, 0.0),
-            1,
+            crate::components::Bullet::plain(1),
             crate::render::TextureId::WHITE,
         );
         let mut sounds = Vec::new();
         for _ in 0..40 {
             crate::systems::simulate(&mut world, &mut physics, 1.0 / 60.0);
-            crate::systems::bullet_hits(&mut world, &mut physics, &mut sounds);
+            crate::systems::bullet_hits(&mut world, &mut physics, &textures, &mut sounds);
         }
         let health = world.get::<&Health>(barrel).map(|h| h.current).unwrap_or(0);
         assert_eq!(health, 3);

@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -8,7 +8,9 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::components::RunStats;
 use crate::storage::{self, Loaded};
 use crate::systems::Summary;
+use crate::guns::GunKind;
 use crate::upgrades::{self, Perks, Purchase, Upgrade};
+use crate::weapon_upgrades::{WeaponMods, WeaponProgress};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
@@ -26,6 +28,8 @@ pub(crate) struct Profile {
     pub(crate) best_floor: u32,
     #[serde(deserialize_with = "known_upgrades")]
     pub(crate) unlocked: BTreeSet<Upgrade>,
+    #[serde(deserialize_with = "known_weapons")]
+    pub(crate) weapons: BTreeMap<GunKind, WeaponProgress>,
 }
 
 const PROFILE_VERSION: u32 = 1;
@@ -56,6 +60,25 @@ fn known_upgrades<'de, D: Deserializer<'de>>(
             Err(error) => {
                 tracing::warn!(%error, %name, "skipping an unknown upgrade from the profile");
                 None
+            }
+        })
+        .collect())
+}
+
+fn known_weapons<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<BTreeMap<GunKind, WeaponProgress>, D::Error> {
+    let entries = BTreeMap::<String, serde_json::Value>::deserialize(deserializer)?;
+    Ok(entries
+        .into_iter()
+        .filter_map(|(name, progress)| {
+            let kind = GunKind::deserialize(serde_json::Value::String(name.clone()));
+            match (kind, WeaponProgress::deserialize(progress)) {
+                (Ok(kind), Ok(progress)) => Some((kind, progress)),
+                (Err(error), _) | (_, Err(error)) => {
+                    tracing::warn!(%error, %name, "skipping an unknown weapon from the profile");
+                    None
+                }
             }
         })
         .collect())
@@ -100,6 +123,24 @@ impl Profile {
         Perks::from_unlocked(&self.unlocked)
     }
 
+    pub(crate) fn weapon(&self, kind: GunKind) -> WeaponProgress {
+        self.weapons.get(&kind).cloned().unwrap_or_default()
+    }
+
+    pub(crate) fn buy_weapon_node(&mut self, kind: GunKind, index: usize) -> Purchase {
+        let progress = self.weapons.entry(kind).or_default();
+        progress.buy(kind, index, &mut self.gold)
+    }
+
+    pub(crate) fn reroll_weapon(&mut self, kind: GunKind) -> bool {
+        let progress = self.weapons.entry(kind).or_default();
+        progress.reroll(kind, &mut self.gold)
+    }
+
+    pub(crate) fn weapon_mods(&self) -> WeaponMods {
+        WeaponMods::from_progress(&self.weapons)
+    }
+
     fn load(path: &Path) -> (Self, bool) {
         match storage::load_json::<Stored>(path) {
             Loaded::Parsed(stored) if stored.version > PROFILE_VERSION => {
@@ -134,6 +175,14 @@ impl Profile {
 struct Store {
     profile: Profile,
     path: Option<PathBuf>,
+}
+
+impl Store {
+    fn save(&self) {
+        if let Some(path) = &self.path {
+            self.profile.save(path);
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -173,6 +222,32 @@ impl SharedProfile {
             }
         }
         result
+    }
+
+    pub(crate) fn weapon(&self, kind: GunKind) -> WeaponProgress {
+        self.0.borrow().profile.weapon(kind)
+    }
+
+    pub(crate) fn weapon_mods(&self) -> WeaponMods {
+        self.0.borrow().profile.weapon_mods()
+    }
+
+    pub(crate) fn buy_weapon_node(&self, kind: GunKind, index: usize) -> Purchase {
+        let mut store = self.0.borrow_mut();
+        let result = store.profile.buy_weapon_node(kind, index);
+        if result == Purchase::Bought {
+            store.save();
+        }
+        result
+    }
+
+    pub(crate) fn reroll_weapon(&self, kind: GunKind) -> bool {
+        let mut store = self.0.borrow_mut();
+        let rerolled = store.profile.reroll_weapon(kind);
+        if rerolled {
+            store.save();
+        }
+        rerolled
     }
 
     pub(crate) fn balance(&self) -> u64 {
@@ -364,6 +439,53 @@ mod tests {
         shared.record_run(stats, &summary, false);
 
         assert_eq!(remove_backups(&path), vec![r#"{"balance": 12"#.to_owned()]);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn weapon_trees_are_paid_with_gold_and_remembered_across_restarts() {
+        let path = temp_path("weapons");
+        let shared = SharedProfile::load(&path);
+        shared.top_up_gold(1000);
+        let kind = GunKind::Uzi;
+        let root = shared
+            .weapon(kind)
+            .tree(kind)
+            .nodes
+            .iter()
+            .position(|node| node.parent.is_none())
+            .expect("a root");
+
+        assert_eq!(shared.buy_weapon_node(kind, root), Purchase::Bought);
+        assert_eq!(shared.gold(), 900);
+        assert!(shared.reroll_weapon(GunKind::Pistol));
+        assert_eq!(shared.gold(), 800);
+
+        let reloaded = SharedProfile::load(&path);
+        assert!(reloaded.weapon(kind).owns(root));
+        assert_eq!(reloaded.weapon(GunKind::Pistol).rerolls, 1);
+        assert_eq!(reloaded.gold(), 800);
+        assert_ne!(
+            reloaded.weapon_mods().of(kind),
+            crate::weapon_upgrades::GunMods::default()
+        );
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn an_unknown_weapon_is_skipped_without_losing_the_rest_of_the_profile() {
+        let path = temp_path("unknown_weapon");
+        fs::write(
+            &path,
+            r#"{"version": 1, "gold": 30, "weapons": {"uzi": {"rerolls": 2, "owned": [0]}, "laser": {"rerolls": 1}}}"#,
+        )
+        .expect("write");
+
+        let profile = SharedProfile::load(&path).snapshot();
+
+        assert_eq!(profile.gold, 30);
+        assert_eq!(profile.weapons.len(), 1);
+        assert_eq!(profile.weapon(GunKind::Uzi).rerolls, 2);
         let _ = fs::remove_file(&path);
     }
 

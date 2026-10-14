@@ -3,6 +3,7 @@ use glam::Vec2;
 use super::animation::Clip;
 use crate::guns::{AmmoClass, GunKind, GunSpec};
 use crate::items::AmmoBox;
+use crate::weapon_upgrades::{GunMods, Mutation, WeaponMods};
 
 pub(crate) const BULLET_COLUMNS: usize = 4;
 pub(crate) const BULLET_ROWS: usize = 2;
@@ -26,6 +27,31 @@ pub(crate) const BULLET_IMPACT: Clip = Clip {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Bullet {
     pub(crate) damage: i32,
+    pub(crate) pierce: u32,
+    pub(crate) bounces: u32,
+    pub(crate) mutation: Option<Mutation>,
+    pub(crate) last_hit: Option<hecs::Entity>,
+}
+
+impl Bullet {
+    pub(crate) fn plain(damage: i32) -> Self {
+        Self {
+            damage,
+            pierce: 0,
+            bounces: 0,
+            mutation: None,
+            last_hit: None,
+        }
+    }
+
+    pub(crate) fn mutated(damage: i32, mutation: Option<Mutation>) -> Self {
+        Self {
+            pierce: u32::from(mutation == Some(Mutation::Piercing)),
+            bounces: u32::from(mutation == Some(Mutation::Ricochet)),
+            mutation,
+            ..Self::plain(damage)
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -126,6 +152,8 @@ pub(crate) struct Weapon {
     pub(crate) reloading: Option<f32>,
     pub(crate) burst: Option<Burst>,
     pub(crate) ammo_scale: f32,
+    pub(crate) mods: GunMods,
+    pub(crate) shots: u32,
 }
 
 impl Weapon {
@@ -139,7 +167,27 @@ impl Weapon {
             reloading: None,
             burst: None,
             ammo_scale: 1.0,
+            mods: GunMods::default(),
+            shots: 0,
         }
+    }
+
+    /// Puts on the bonuses of the weapon tree; a full clip stays full when it grows.
+    pub(crate) fn upgrade(&mut self, mods: GunMods) {
+        let was_full = self.clip >= self.clip_size();
+        self.mods = mods;
+        self.clip = if was_full {
+            self.clip_size()
+        } else {
+            self.clip.min(self.clip_size())
+        };
+    }
+
+    /// Counts a pulled trigger and says whether Deadeye makes it a critical hit.
+    pub(crate) fn count_shot(&mut self) -> bool {
+        self.shots = self.shots.wrapping_add(1);
+        self.spec().mutation == Some(Mutation::Deadeye)
+            && self.shots.is_multiple_of(crate::weapon_upgrades::DEADEYE_EVERY)
     }
 
     pub(crate) fn scaled(kind: GunKind, ammo_scale: f32) -> Self {
@@ -159,7 +207,7 @@ impl Weapon {
     }
 
     pub(crate) fn spec(&self) -> GunSpec {
-        self.kind.spec()
+        self.mods.apply(self.kind.spec())
     }
 
     pub(crate) fn clip_size(&self) -> i32 {
@@ -215,6 +263,7 @@ pub(crate) struct Loadout {
     slots: Vec<Option<Weapon>>,
     current: usize,
     ammo_scale: f32,
+    mods: WeaponMods,
 }
 
 impl Loadout {
@@ -226,6 +275,14 @@ impl Loadout {
             ],
             current: 0,
             ammo_scale: 1.0,
+            mods: WeaponMods::default(),
+        }
+    }
+
+    pub(crate) fn apply_weapon_mods(&mut self, mods: WeaponMods) {
+        self.mods = mods;
+        for weapon in self.slots.iter_mut().flatten() {
+            weapon.upgrade(mods.of(weapon.kind));
         }
     }
 
@@ -240,7 +297,9 @@ impl Loadout {
     }
 
     pub(crate) fn fresh(&self, kind: GunKind) -> Weapon {
-        Weapon::scaled(kind, self.ammo_scale)
+        let mut weapon = Weapon::scaled(kind, self.ammo_scale);
+        weapon.upgrade(self.mods.of(kind));
+        weapon
     }
 
     pub(crate) fn current(&self) -> Option<&Weapon> {
@@ -308,6 +367,7 @@ impl Loadout {
 
     pub(crate) fn add(&mut self, mut weapon: Weapon) -> Option<Weapon> {
         weapon.ammo_scale = self.ammo_scale;
+        weapon.upgrade(self.mods.of(weapon.kind));
         let displaced = if self.slots.iter().all(Option::is_some) {
             self.drop_current()
         } else {

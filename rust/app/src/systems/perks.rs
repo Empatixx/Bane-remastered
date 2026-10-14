@@ -4,6 +4,7 @@ use crate::components::{
     Animation, Armor, ContactDamage, Flame, Health, Loadout, Player, PlayerPerks, Trap,
 };
 use crate::upgrades::Perks;
+use crate::weapon_upgrades::WeaponMods;
 
 const TRAP_DISABLE_CHANCE: usize = 30;
 const SPIKE_RETRACTED_FRAME: usize = 2;
@@ -17,6 +18,12 @@ pub(crate) fn apply_floor_perks(world: &mut World, perks: Perks) {
     let _ = world.insert_one(player, PlayerPerks(perks));
     if let Ok(mut loadout) = world.get::<&mut Loadout>(player) {
         loadout.apply_perks(perks.extra_slots, perks.ammo_scale);
+    }
+}
+
+pub(crate) fn apply_weapon_mods(world: &mut World, mods: WeaponMods) {
+    for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
+        loadout.apply_weapon_mods(mods);
     }
 }
 

@@ -43,7 +43,7 @@ pub(crate) fn activate_artefact(
                     physics,
                     origin,
                     Vec2::from_angle(angle) * BULLET_SPEED,
-                    RING_DAMAGE,
+                    crate::components::Bullet::plain(RING_DAMAGE),
                     bullet_texture,
                 );
             }

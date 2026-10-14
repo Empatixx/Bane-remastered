@@ -12,7 +12,6 @@ mod quest_board;
 mod settings_panel;
 mod upgrade_menu;
 mod weapon_table;
-mod weapon_tree;
 
 use std::sync::Arc;
 

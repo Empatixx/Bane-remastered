@@ -24,6 +24,7 @@ use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::TILE_SIZE;
 use crate::upgrades::Perks;
+use crate::weapon_upgrades::WeaponMods;
 use crate::viewport::TARGET;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition};
@@ -439,7 +440,12 @@ impl Scene for InGameScene {
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::watch_progress(&mut self.world, dt);
-        systems::bullet_hits(&mut self.world, &mut self.physics, &mut self.sounds);
+        systems::bullet_hits(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+        );
         systems::pet_bites(&mut self.world, dt);
         systems::trap_hits_enemies(&mut self.world, dt);
         systems::tick_arrow_traps(
@@ -459,6 +465,7 @@ impl Scene for InGameScene {
         systems::leave_poison_trails(&mut self.world, &assets.textures);
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
+        systems::tick_chilled(&mut self.world, dt);
         systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);
         if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds) {
             self.hit = true;
@@ -599,6 +606,11 @@ impl InGameScene {
         }
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         systems::apply_floor_perks(&mut self.world, perks);
+        let weapon_mods = self
+            .profile
+            .as_ref()
+            .map_or_else(WeaponMods::default, SharedProfile::weapon_mods);
+        systems::apply_weapon_mods(&mut self.world, weapon_mods);
         if perks.pet {
             prefabs::pet(&mut self.world, &mut self.physics, start, &assets.textures);
         }

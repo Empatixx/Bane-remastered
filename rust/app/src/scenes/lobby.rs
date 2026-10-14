@@ -24,6 +24,7 @@ use crate::tilemap::{self, TILE_SIZE};
 use crate::upgrades::Perks;
 use crate::viewport::TARGET;
 
+use super::weapon_table::Outcome as WeaponOutcome;
 use super::{Cursor, Pause, QuestBoard, Scene, SceneId, Transition, UpgradeMenu, WeaponTable};
 
 const TALENTS_TO_TRY_OUT: u64 = 1000;
@@ -211,6 +212,9 @@ impl Scene for LobbyScene {
             .profile
             .as_ref()
             .map_or_else(Perks::default, SharedProfile::perks);
+        if let Some(profile) = &self.profile {
+            systems::apply_weapon_mods(&mut self.world, profile.weapon_mods());
+        }
         if perks.pet {
             let beside = player_top_left + PLAYER_SIZE / 2.0 + Vec2::new(-80.0, 0.0);
             prefabs::pet(&mut self.world, &mut self.physics, beside, textures);
@@ -251,7 +255,23 @@ impl Scene for LobbyScene {
                 return Transition::None;
             }
             self.quests.update(&mut self.world, input, assets);
-            self.weapons.update(&mut self.world, input, assets, dt);
+            if let Some(profile) = self.profile.clone() {
+                let outcome = self.weapons.update(
+                    &mut self.world,
+                    input,
+                    assets,
+                    &profile,
+                    &mut self.sounds,
+                    dt,
+                );
+                if outcome.is_some() {
+                    systems::apply_weapon_mods(&mut self.world, profile.weapon_mods());
+                    self.refresh_counters();
+                }
+                if outcome == Some(WeaponOutcome::Bought) {
+                    systems::say(&mut self.world, systems::PURCHASE);
+                }
+            }
             return Transition::None;
         }
         if self.upgrades.is_open() {
@@ -339,8 +359,9 @@ impl Scene for LobbyScene {
                 Transition::None
             }
             Some(Interaction::Weapons) => {
-                let gold = self.profile.as_ref().map_or(0, SharedProfile::gold);
-                self.weapons.toggle(&mut self.world, assets, gold);
+                if let Some(profile) = &self.profile {
+                    self.weapons.toggle(&mut self.world, assets, profile);
+                }
                 Transition::None
             }
             _ => Transition::None,

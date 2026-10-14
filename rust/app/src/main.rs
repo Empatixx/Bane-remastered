@@ -31,6 +31,8 @@ mod systems;
 mod tilemap;
 mod upgrades;
 mod viewport;
+mod weapon_tree;
+mod weapon_upgrades;
 
 use winit::event_loop::{ControlFlow, EventLoop};
 

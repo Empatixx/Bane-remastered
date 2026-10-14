@@ -6,7 +6,12 @@ use crate::assets::{Assets, Tex, tex};
 use crate::guns::GunKind;
 use crate::input::Input;
 use crate::render::{Align, FontSize};
-use crate::upgrades::Quality;
+use crate::audio::{AudioCommand, SoundEffect};
+use crate::profile::SharedProfile;
+use crate::upgrades::{Purchase, Quality};
+use crate::weapon_upgrades::{
+    REROLL_COST, WeaponProgress, cost, multiplier, quality_of, stat_of,
+};
 
 use super::upgrade_menu::{
     BLOCKED_COLOR, BOARD_LAYER, BuyState, COST_BASELINE, COST_COLOR, COUNTER_BASELINE,
@@ -16,7 +21,7 @@ use super::upgrade_menu::{
     PLATE_BASELINE, PLATE_CENTER, PLATE_HIT_HALF, PLATE_ROWS, PLATE_SIZE, TALENT, TITLE_BASELINE,
     clear, draw_path, frame_row, rect, spawn,
 };
-use super::weapon_tree::{self, Node, Tree};
+use crate::weapon_tree::{Node, Tree};
 
 const LIST_TOP_LEFT: Vec2 = Vec2::new(16.0, 14.0);
 const LIST_SIZE: Vec2 = Vec2::new(72.0 * 3.0, 171.0 * 3.0);
@@ -42,8 +47,6 @@ const FADE: f32 = 20.0;
 const DRAG_THRESHOLD: f32 = 5.0;
 const PAN_SPEED: f32 = 380.0;
 const PAN_MARGIN: f32 = 120.0;
-const RARE_FROM_ROW: i32 = 2;
-const EPIC_FROM_ROW: i32 = 3;
 const STEP: Vec2 = Vec2::new(80.0, 74.0);
 const ARROW_INSET: f32 = 10.0;
 const ARROW_LAYER: i32 = 36;
@@ -53,8 +56,6 @@ const REROLL_COST_BASELINE: f32 = 532.0;
 const HINT_BASELINE: f32 = 492.0;
 const HINT: &str = "Drag or WASD to move the tree";
 const GLYPH: f32 = 36.0;
-const MUTATION_COST: u32 = 800;
-const REROLL_COST: u32 = 100;
 const ROLL_TIME: f32 = 0.7;
 const ROLL_FRAMES: usize = 6;
 const ROLL_FPS: f32 = 14.0;
@@ -70,7 +71,6 @@ const BAR_LAYER: i32 = 32;
 
 struct Stat {
     name: &'static str,
-    amount: u32,
     unit: &'static str,
     noun: &'static str,
     second: &'static str,
@@ -79,42 +79,36 @@ struct Stat {
 const STATS: [Stat; 6] = [
     Stat {
         name: "Damage",
-        amount: 5,
         unit: "%",
         noun: "damage",
         second: "on every shot",
     },
     Stat {
         name: "Fire rate",
-        amount: 4,
         unit: "%",
         noun: "fire rate",
         second: "less time between shots",
     },
     Stat {
         name: "Magazine",
-        amount: 1,
         unit: "",
         noun: "magazine size",
         second: "more rounds before reload",
     },
     Stat {
         name: "Reload",
-        amount: 6,
         unit: "%",
         noun: "reload speed",
         second: "back in the fight sooner",
     },
     Stat {
         name: "Accuracy",
-        amount: 8,
         unit: "%",
         noun: "less spread",
         second: "bullets fly straighter",
     },
     Stat {
         name: "Crit",
-        amount: 4,
         unit: "%",
         noun: "crit chance",
         second: "crits deal double damage",
@@ -153,10 +147,6 @@ const MUTATIONS: [Mutation; 6] = [
     },
 ];
 
-fn tree(kind: GunKind, rerolls: u32) -> Tree {
-    weapon_tree::generate(kind, rerolls)
-}
-
 fn name(kind: GunKind) -> &'static str {
     match kind {
         GunKind::Pistol => "Pistol",
@@ -178,36 +168,10 @@ fn numeral(tree: &Tree, index: usize) -> &'static str {
     NUMERALS[before.min(NUMERALS.len() - 1)]
 }
 
-fn reach(kind: GunKind, rerolls: u32, branch: usize) -> i32 {
-    let gun = GunKind::ALL
-        .iter()
-        .position(|other| *other == kind)
-        .unwrap_or(0);
-    ((gun * 3 + branch * 5 + rerolls as usize * 2) % (weapon_tree::DEPTH as usize + 1)) as i32
-}
-
-fn cost(node: &Node) -> u32 {
-    if node.mutation.is_some() {
-        MUTATION_COST
-    } else {
-        100 + 100 * (node.row as u32 - 1)
-    }
-}
-
-fn node_state(kind: GunKind, rerolls: u32, gold: u64, grown: &Tree, index: usize) -> BuyState {
-    let node = &grown.nodes[index];
-    let affordable = u64::from(cost(node)) <= gold;
-    if node.mutation.is_some() {
-        return if reach(kind, rerolls, 0) >= node.row - 1 && affordable {
-            BuyState::Available
-        } else {
-            BuyState::Locked
-        };
-    }
-    let level = reach(kind, rerolls, node.branch);
-    if node.row <= level {
+fn node_state(progress: &WeaponProgress, gold: u64, grown: &Tree, index: usize) -> BuyState {
+    if progress.owns(index) {
         BuyState::Owned
-    } else if node.row == level + 1 && affordable {
+    } else if progress.can_unlock(grown, index) && cost(&grown.nodes[index]) <= gold {
         BuyState::Available
     } else {
         BuyState::Locked
@@ -393,6 +357,15 @@ fn on_buy_plate(point: Vec2) -> bool {
     (point - PLATE_CENTER).abs().cmple(PLATE_HIT_HALF).all()
 }
 
+fn damage_text(spec: &crate::guns::GunSpec) -> String {
+    let bonus = ((spec.damage_scale - 1.0) * 100.0).round() as i32;
+    if bonus > 0 {
+        format!("{}-{} +{bonus}%", spec.min_damage, spec.max_damage)
+    } else {
+        format!("{}-{}", spec.min_damage, spec.max_damage)
+    }
+}
+
 fn per_second(interval: f32) -> String {
     format!("{:.1}/s", 1.0 / interval)
 }
@@ -506,7 +479,7 @@ fn scrollbar(first: usize) -> Vec<Element> {
     ]
 }
 
-fn links(kind: GunKind, rerolls: u32, gold: u64, grown: &Tree, pan: Vec2) -> Vec<Element> {
+fn links(progress: &WeaponProgress, gold: u64, grown: &Tree, pan: Vec2) -> Vec<Element> {
     let mut elements = Vec::new();
     let near = FRAME_INSET;
     let far = TALENT - FRAME_INSET;
@@ -529,7 +502,7 @@ fn links(kind: GunKind, rerolls: u32, gold: u64, grown: &Tree, pan: Vec2) -> Vec
             points.push(Vec2::new(to_x, middle));
         }
         points.push(Vec2::new(to_x, top));
-        let lit = node_state(kind, rerolls, gold, grown, index) == BuyState::Owned;
+        let lit = node_state(progress, gold, grown, index) == BuyState::Owned;
         draw_path(
             &mut elements,
             &points,
@@ -551,9 +524,9 @@ fn dice_frame(hover: bool, roll: Option<f32>) -> (usize, f32) {
     }
 }
 
-fn reroll_plate(hover: Hover, roll: Option<f32>) -> Vec<Element> {
-    let (row, hop) = dice_frame(hover.reroll, roll);
-    let lit = hover.reroll && roll.is_none();
+fn reroll_plate(hover: Hover, roll: Option<f32>, affordable: bool) -> Vec<Element> {
+    let (row, hop) = dice_frame(hover.reroll && affordable, roll);
+    let lit = hover.reroll && affordable && roll.is_none();
     vec![
         Element::Image {
             texture: tex::REROLL_DICE,
@@ -566,7 +539,13 @@ fn reroll_plate(hover: Hover, roll: Option<f32>) -> Vec<Element> {
         Element::Label {
             content: format!("{REROLL_COST} gold"),
             position: Vec2::new(REROLL_CENTER.x, REROLL_COST_BASELINE),
-            color: if lit { HOVER_COLOR } else { COST_COLOR },
+            color: if lit {
+                HOVER_COLOR
+            } else if affordable {
+                COST_COLOR
+            } else {
+                BLOCKED_COLOR
+            },
             size: FontSize::Size16,
             align: Align::Center,
         },
@@ -587,24 +566,6 @@ fn icon_of(node: &Node) -> Icon {
     node.mutation.map_or(Icon::Stat(node.stat), Icon::Mutation)
 }
 
-fn quality_of(node: &Node) -> Quality {
-    if node.mutation.is_some() || node.row >= EPIC_FROM_ROW {
-        Quality::Epic
-    } else if node.row >= RARE_FROM_ROW {
-        Quality::Rare
-    } else {
-        Quality::Common
-    }
-}
-
-fn multiplier(node: &Node) -> u32 {
-    match quality_of(node) {
-        Quality::Common => 1,
-        Quality::Rare => 2,
-        Quality::Epic => 3,
-    }
-}
-
 fn describe(node: &Node) -> (String, [String; 2]) {
     match node.mutation {
         Some(id) => (
@@ -618,7 +579,7 @@ fn describe(node: &Node) -> (String, [String; 2]) {
                 [
                     format!(
                         "+{}{} {}",
-                        stat.amount * multiplier(node),
+                        stat_of(node).amount() * multiplier(node),
                         stat.unit,
                         stat.noun
                     ),
@@ -630,8 +591,7 @@ fn describe(node: &Node) -> (String, [String; 2]) {
 }
 
 fn detail(
-    kind: GunKind,
-    rerolls: u32,
+    progress: &WeaponProgress,
     gold: u64,
     grown: &Tree,
     index: usize,
@@ -639,7 +599,7 @@ fn detail(
 ) -> Vec<Element> {
     let centre_x = PANEL_TOP_LEFT.x + PANEL_SIZE.x / 2.0;
     let node = &grown.nodes[index];
-    let state = node_state(kind, rerolls, gold, grown, index);
+    let state = node_state(progress, gold, grown, index);
     let (name_of, lines) = describe(node);
     let title = if node.mutation.is_some() {
         name_of
@@ -724,12 +684,12 @@ fn detail(
     elements
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 pub(crate) struct Shown {
     pub(crate) first: usize,
     pub(crate) selected: usize,
     pub(crate) choice: Option<usize>,
-    pub(crate) rerolls: u32,
+    pub(crate) progress: WeaponProgress,
     pub(crate) pan: Vec2,
     pub(crate) hover: Hover,
     pub(crate) gold: u64,
@@ -741,15 +701,15 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
         first,
         selected,
         choice,
-        rerolls,
+        ref progress,
         pan,
         hover,
         gold,
         roll,
     } = *shown;
     let kind = GunKind::ALL[selected.min(GunKind::ALL.len() - 1)];
-    let spec = kind.spec();
-    let grown = tree(kind, rerolls);
+    let spec = progress.mods(kind).apply(kind.spec());
+    let grown = progress.tree(kind);
     let mut elements = vec![
         rect(Vec2::ZERO, crate::viewport::TARGET, DIM_COLOR, DIM_LAYER),
         board(tex::WEAPON_LIST, LIST_TOP_LEFT, LIST_SIZE),
@@ -791,9 +751,8 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
     });
     elements.push(Element::Label {
         content: format!(
-            "Damage {}-{}   Rate {}   Clip {}   Reload {:.1}s",
-            spec.min_damage,
-            spec.max_damage,
+            "Damage {}   Rate {}   Clip {}   Reload {:.1}s",
+            damage_text(&spec),
             per_second(spec.fire_interval),
             spec.clip_size,
             spec.reload_time
@@ -815,14 +774,14 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
             alpha: root_alpha,
         });
     }
-    elements.extend(links(kind, rerolls, gold, &grown, pan));
+    elements.extend(links(progress, gold, &grown, pan));
     for (index, node) in grown.nodes.iter().enumerate() {
         let top_left = cell_top_left(node.column, node.row, pan);
         elements.extend(node_elements(
             icon_of(node),
             quality_of(node),
             top_left,
-            node_state(kind, rerolls, gold, &grown, index),
+            node_state(progress, gold, &grown, index),
             choice == Some(index),
             visibility(top_left, Vec2::splat(TALENT)),
             FRAME_LAYER,
@@ -830,7 +789,11 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
     }
     elements.extend(arrows(&grown, pan));
     elements.push(hint());
-    elements.extend(reroll_plate(hover, roll));
+    elements.extend(reroll_plate(
+        hover,
+        roll,
+        progress.gold_after_reroll(kind, gold).is_some(),
+    ));
     elements.push(Element::Image {
         texture: tex::MENU_PLATE,
         top_left: COUNTER_CENTER - COUNTER_SIZE / 2.0,
@@ -847,7 +810,7 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
         align: Align::Center,
     });
     if let Some(index) = choice.filter(|index| *index < grown.nodes.len()) {
-        elements.extend(detail(kind, rerolls, gold, &grown, index, hover.buy));
+        elements.extend(detail(progress, gold, &grown, index, hover.buy));
     }
     elements
 }
@@ -859,13 +822,20 @@ struct Press {
     moved: bool,
 }
 
+/// What happened at the weapon table that the lobby should know about.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Outcome {
+    Bought,
+    Rerolled,
+}
+
 #[derive(Debug, Default)]
 pub(crate) struct WeaponTable {
     open: bool,
     first: usize,
     selected: usize,
     choice: Option<usize>,
-    rerolls: u32,
+    progress: WeaponProgress,
     pan: Vec2,
     press: Option<Press>,
     was_down: bool,
@@ -880,15 +850,15 @@ impl WeaponTable {
         self.open
     }
 
-    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets, gold: u64) {
+    pub(crate) fn toggle(&mut self, world: &mut World, assets: &Assets, profile: &SharedProfile) {
         if self.open {
             self.close(world);
         } else {
             *self = Self {
                 open: true,
-                gold,
                 ..Self::default()
             };
+            self.refresh(profile);
             self.rebuild(world, assets);
         }
     }
@@ -900,6 +870,20 @@ impl WeaponTable {
         clear(world);
     }
 
+    fn kind(&self) -> GunKind {
+        GunKind::ALL[self.selected.min(GunKind::ALL.len() - 1)]
+    }
+
+    fn grown(&self) -> Tree {
+        self.progress.tree(self.kind())
+    }
+
+    fn refresh(&mut self, profile: &SharedProfile) {
+        self.progress = profile.weapon(self.kind());
+        self.gold = profile.gold();
+        self.dirty = true;
+    }
+
     fn scroll(&mut self, rows: i32) {
         let moved = (self.first as i32 + rows).clamp(0, max_first() as i32) as usize;
         if moved != self.first {
@@ -908,18 +892,24 @@ impl WeaponTable {
         }
     }
 
-    fn tick_roll(&mut self, dt: f32) {
-        let Some(time) = self.roll else {
-            return;
-        };
+    fn can_reroll(&self) -> bool {
+        self.progress
+            .gold_after_reroll(self.kind(), self.gold)
+            .is_some()
+    }
+
+    fn tick_roll(&mut self, profile: &SharedProfile, dt: f32) -> Option<Outcome> {
+        let time = self.roll?;
         self.dirty = true;
-        if time + dt >= ROLL_TIME {
-            self.roll = None;
-            self.rerolls += 1;
-            self.regrow();
-        } else {
+        if time + dt < ROLL_TIME {
             self.roll = Some(time + dt);
+            return None;
         }
+        self.roll = None;
+        let rerolled = profile.reroll_weapon(self.kind());
+        self.refresh(profile);
+        self.regrow();
+        rerolled.then_some(Outcome::Rerolled)
     }
 
     fn regrow(&mut self) {
@@ -930,23 +920,26 @@ impl WeaponTable {
     }
 
     fn can_buy(&self, grown: &Tree) -> bool {
-        self.choice.is_some_and(|index| {
-            index < grown.nodes.len()
-                && node_state(
-                    GunKind::ALL[self.selected],
-                    self.rerolls,
-                    self.gold,
-                    grown,
-                    index,
-                ) == BuyState::Available
-        })
+        self.roll.is_none()
+            && self.choice.is_some_and(|index| {
+                index < grown.nodes.len()
+                    && node_state(&self.progress, self.gold, grown, index) == BuyState::Available
+            })
     }
 
-    pub(crate) fn update(&mut self, world: &mut World, input: &Input, assets: &Assets, dt: f32) {
+    pub(crate) fn update(
+        &mut self,
+        world: &mut World,
+        input: &Input,
+        assets: &Assets,
+        profile: &SharedProfile,
+        sounds: &mut Vec<AudioCommand>,
+        dt: f32,
+    ) -> Option<Outcome> {
         if !self.open {
-            return;
+            return None;
         }
-        self.tick_roll(dt);
+        let mut outcome = self.tick_roll(profile, dt);
         self.scroll(-input.scrolled());
         if input.just_pressed(KeyCode::ArrowDown) {
             self.scroll(1);
@@ -954,7 +947,7 @@ impl WeaponTable {
         if input.just_pressed(KeyCode::ArrowUp) {
             self.scroll(-1);
         }
-        let grown = tree(GunKind::ALL[self.selected], self.rerolls);
+        let grown = self.grown();
         let point = input.mouse();
         let direction = input.direction();
         if direction != Vec2::ZERO {
@@ -965,16 +958,25 @@ impl WeaponTable {
         let down = input.mouse_down();
         if input.clicked() {
             match target {
-                Some(Target::Weapon(index)) if index != self.selected => {
+                _ if self.can_buy(&grown) && on_buy_plate(point) => {
+                    if let Some(index) = self.choice {
+                        if profile.buy_weapon_node(self.kind(), index) == Purchase::Bought {
+                            sounds.push(AudioCommand::Effect(SoundEffect::TalentUnlock));
+                            outcome = Some(Outcome::Bought);
+                        }
+                        self.refresh(profile);
+                    }
+                }
+                Some(Target::Weapon(index)) if index != self.selected && self.roll.is_none() => {
                     self.selected = index;
-                    self.rerolls = 0;
-                    self.roll = None;
+                    self.refresh(profile);
                     self.regrow();
                 }
                 Some(Target::Reroll) => {
-                    if self.roll.is_none() {
+                    if self.roll.is_none() && self.can_reroll() {
                         self.roll = Some(0.0);
                         self.dirty = true;
+                        sounds.push(AudioCommand::Effect(SoundEffect::Click));
                     }
                 }
                 _ if in_view(point) => {
@@ -1008,7 +1010,7 @@ impl WeaponTable {
             }
         }
         self.was_down = down;
-        let grown = tree(GunKind::ALL[self.selected], self.rerolls);
+        let grown = self.grown();
         let hover = Hover {
             buy: self.can_buy(&grown) && on_buy_plate(point),
             reroll: target == Some(Target::Reroll),
@@ -1021,6 +1023,7 @@ impl WeaponTable {
             self.dirty = false;
             self.rebuild(world, assets);
         }
+        outcome
     }
 
     fn rebuild(&self, world: &mut World, assets: &Assets) {
@@ -1029,7 +1032,7 @@ impl WeaponTable {
             first: self.first,
             selected: self.selected,
             choice: self.choice,
-            rerolls: self.rerolls,
+            progress: self.progress.clone(),
             pan: self.pan,
             hover: self.hover,
             gold: self.gold,
@@ -1043,8 +1046,21 @@ impl WeaponTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::weapon_tree;
+    use crate::weapon_upgrades::MUTATION_COST;
 
     const TEST_GOLD: u64 = 1240;
+
+    fn tree(kind: GunKind, rerolls: u32) -> Tree {
+        weapon_tree::generate(kind, rerolls)
+    }
+
+    fn fresh(rerolls: u32) -> WeaponProgress {
+        WeaponProgress {
+            rerolls,
+            ..WeaponProgress::default()
+        }
+    }
 
     fn base() -> Shown {
         Shown {
@@ -1146,7 +1162,7 @@ mod tests {
                     .unwrap_or(0);
                 let elements = layout(&Shown {
                     selected,
-                    rerolls,
+                    progress: fresh(rerolls),
                     ..base()
                 });
                 let visible = grown
@@ -1232,9 +1248,9 @@ mod tests {
         for kind in GunKind::ALL {
             for rerolls in 0..20 {
                 for node in &tree(kind, rerolls).nodes {
-                    let expected = if node.mutation.is_some() || node.row >= EPIC_FROM_ROW {
+                    let expected = if node.mutation.is_some() || node.row >= 3 {
                         Quality::Epic
-                    } else if node.row >= RARE_FROM_ROW {
+                    } else if node.row >= 2 {
                         Quality::Rare
                     } else {
                         Quality::Common
@@ -1304,7 +1320,7 @@ mod tests {
     fn rerolling_changes_the_tree_that_is_drawn() {
         let before = plain(0, 0);
         let after = layout(&Shown {
-            rerolls: 1,
+            progress: fresh(1),
             ..base()
         });
 
@@ -1351,16 +1367,19 @@ mod tests {
             for rerolls in 0..20 {
                 let grown = tree(kind, rerolls);
                 for (index, node) in grown.nodes.iter().enumerate() {
-                    if node_state(kind, rerolls, TEST_GOLD, &grown, index) != BuyState::Available {
+                    let mut progress = fresh(rerolls);
+                    if let Some(parent) = node.parent {
+                        progress.owned.insert(parent);
+                    }
+                    let state = node_state(&progress, TEST_GOLD, &grown, index);
+                    if node.parent.is_none() || progress.owns(node.parent.unwrap_or(0)) {
+                        assert_ne!(state, BuyState::Locked, "{kind:?} {rerolls} {index}");
+                    }
+                    let alone = node_state(&fresh(rerolls), TEST_GOLD, &grown, index);
+                    if alone != BuyState::Available {
                         continue;
                     }
-                    if let Some(parent) = node.parent {
-                        assert_eq!(
-                            node_state(kind, rerolls, TEST_GOLD, &grown, parent),
-                            BuyState::Owned,
-                            "{kind:?} {rerolls} {index}"
-                        );
-                    }
+                    assert!(node.parent.is_none(), "{kind:?} {rerolls} {index}");
                 }
             }
         }
@@ -1454,21 +1473,73 @@ mod tests {
 
     #[test]
     fn a_reroll_spins_the_dice_first_and_regrows_the_tree_when_it_stops() {
+        let profile = SharedProfile::in_memory();
+        profile.top_up_gold(REROLL_COST);
         let mut table = WeaponTable {
             open: true,
             pan: Vec2::new(5.0, 5.0),
             ..WeaponTable::default()
         };
+        table.refresh(&profile);
         table.roll = Some(0.0);
 
-        table.tick_roll(ROLL_TIME / 2.0);
-        assert_eq!(table.rerolls, 0);
+        assert_eq!(table.tick_roll(&profile, ROLL_TIME / 2.0), None);
+        assert_eq!(table.progress.rerolls, 0);
         assert!(table.roll.is_some());
 
-        table.tick_roll(ROLL_TIME);
-        assert_eq!(table.rerolls, 1);
+        assert_eq!(table.tick_roll(&profile, ROLL_TIME), Some(Outcome::Rerolled));
+        assert_eq!(table.progress.rerolls, 1);
+        assert_eq!(profile.weapon(GunKind::ALL[0]).rerolls, 1);
+        assert_eq!(table.gold, 0);
         assert_eq!(table.roll, None);
         assert_eq!(table.pan, Vec2::ZERO);
+        assert!(!table.can_reroll());
+    }
+
+    #[test]
+    fn bought_nodes_are_drawn_owned_and_open_their_children() {
+        let grown = tree(GunKind::ALL[0], 0);
+        let root = grown
+            .nodes
+            .iter()
+            .position(|node| node.parent.is_none())
+            .unwrap_or(0);
+        let mut progress = fresh(0);
+        progress.owned.insert(root);
+
+        assert_eq!(node_state(&progress, 0, &grown, root), BuyState::Owned);
+        for (index, node) in grown.nodes.iter().enumerate() {
+            if node.parent == Some(root) {
+                assert_eq!(
+                    node_state(&progress, TEST_GOLD, &grown, index),
+                    BuyState::Available
+                );
+                assert_eq!(node_state(&progress, 0, &grown, index), BuyState::Locked);
+            }
+        }
+        let shown = labels(&layout(&Shown {
+            choice: Some(root),
+            progress,
+            ..base()
+        }));
+        assert!(shown.contains(&"Bought".to_string()));
+    }
+
+    #[test]
+    fn the_header_shows_the_bonus_of_the_bought_nodes() {
+        let kind = GunKind::ALL[0];
+        let grown = tree(kind, 0);
+        let mut progress = fresh(0);
+        progress.owned = (0..grown.nodes.len()).collect();
+        let spec = progress.mods(kind).apply(kind.spec());
+        let shown = labels(&layout(&Shown {
+            progress,
+            ..base()
+        }))
+        .join(" ");
+
+        assert!(shown.contains(&format!("Clip {}", spec.clip_size)));
+        assert!(shown.contains(&format!("Reload {:.1}s", spec.reload_time)));
     }
 
     #[test]
@@ -1496,7 +1567,7 @@ mod tests {
         assert!(labels(&rich).contains(&"Gold: 99999".to_string()));
         let grown = tree(GunKind::ALL[0], 0);
         assert!((0..grown.nodes.len()).all(|index| {
-            node_state(GunKind::ALL[0], 0, 0, &grown, index) != BuyState::Available
+            node_state(&fresh(0), 0, &grown, index) != BuyState::Available
         }));
     }
 }
