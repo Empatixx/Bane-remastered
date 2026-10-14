@@ -11,7 +11,9 @@ use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, unit};
+use crate::systems::golem::{
+    BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, turn_towards, unit,
+};
 
 const SPRITE_SCALE: f32 = 2.4;
 const CELL: Vec2 = Vec2::new(64.0, 42.0);
@@ -401,7 +403,10 @@ pub(crate) fn tick_flames(
             } else {
                 enemies::HOUND_BEAM_TURN
             };
-            hound.angle = turn_towards(hound.angle, aim(main, hound.aim_at), rate * dt);
+            let wanted = aim(main, hound.aim_at);
+            let smooth = 1.0 - (-rate * 2.2 * dt).exp();
+            let step = turn_towards(hound.angle, wanted, f32::MAX) - hound.angle;
+            hound.angle += (step * smooth).clamp(-rate * dt, rate * dt);
             hound.angle
         };
         let heads = if enraged { 3 } else { 2 };
