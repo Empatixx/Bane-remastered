@@ -297,6 +297,9 @@ pub(crate) struct Perks {
     pub(crate) gamble_machine: bool,
     pub(crate) pet: bool,
     pub(crate) damage_taken_scale: f32,
+    pub(crate) max_health_cap: Option<i32>,
+    pub(crate) dodge: bool,
+    pub(crate) only_gun: Option<crate::guns::GunKind>,
 }
 
 impl Default for Perks {
@@ -329,13 +332,18 @@ impl Perks {
             gamble_machine: has(Upgrade::GambleMachine),
             pet: has(Upgrade::Pet),
             damage_taken_scale: scale(Upgrade::ReducedDamageTaken, 0.9),
+            max_health_cap: None,
+            dodge: true,
+            only_gun: None,
         }
     }
 
     pub(crate) fn max_health(&self, base: i32) -> i32 {
-        self.health_scales
+        let scaled = self
+            .health_scales
             .iter()
-            .fold(base, |value, scale| (value as f32 * scale) as i32)
+            .fold(base, |value, scale| (value as f32 * scale) as i32);
+        self.max_health_cap.map_or(scaled, |cap| scaled.min(cap))
     }
 
     pub(crate) fn max_armor(&self, base: i32) -> i32 {

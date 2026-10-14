@@ -26,6 +26,7 @@ mod profile;
 mod props;
 mod render;
 mod rng;
+mod rules;
 mod scenes;
 mod settings;
 mod storage;
