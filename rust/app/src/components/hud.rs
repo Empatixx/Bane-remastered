@@ -53,7 +53,7 @@ impl BarKind {
                 hole: [19, 8, 56, 4],
                 scale: 4.0,
                 color: Vec3::new(0.529, 0.298, 0.262),
-                position: Vec2::new(320.0, 15.0),
+                position: Vec2::new(292.0, 15.0),
             },
             Self::Armor => BarSpec {
                 texture: tex::ARMOR_BAR,
@@ -99,4 +99,19 @@ pub(crate) struct GoldCount;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct EnemyArrow {
     pub(crate) angle: f32,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::viewport::TARGET;
+
+    use super::*;
+
+    #[test]
+    fn the_boss_health_bar_is_centered_on_the_screen() {
+        let spec = BarKind::Boss.spec();
+        let fill_center =
+            spec.position.x + (spec.hole[0] as f32 + spec.hole[2] as f32 / 2.0) * spec.scale;
+        assert!((fill_center - TARGET.x / 2.0).abs() < 0.5, "{fill_center}");
+    }
 }

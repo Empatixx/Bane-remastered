@@ -93,6 +93,12 @@ impl Text {
             .anchored(Anchor::Middle)
     }
 
+    pub(crate) fn inked(content: impl Into<String>, color: Vec4, size: FontSize) -> Self {
+        Self::new(content, color, size)
+            .aligned(Align::Center)
+            .anchored(Anchor::Ink)
+    }
+
     pub(crate) fn aligned(self, align: Align) -> Self {
         Self { align, ..self }
     }

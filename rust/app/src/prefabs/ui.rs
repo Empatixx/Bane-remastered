@@ -12,12 +12,6 @@ use crate::render::{Align, FontSize, Fonts, TextureId};
 use crate::systems::death_screen::{PROMPT_POSITION, SKULL_SIZE, TITLE_BASELINE};
 use crate::viewport::TARGET;
 
-const SAY_BOX_SIZE: Vec2 = Vec2::new(384.0, 192.0);
-const SAY_BOX_SHIFT: f32 = 80.0;
-const SAY_BOX_DROP: f32 = 20.0;
-const SAY_INSIDE_WIDTH: f32 = 240.0;
-const SAY_INSIDE_HEIGHT: f32 = 132.0;
-const SAY_COLOR: Vec4 = palette::RUST;
 const DEATH_ICON: f32 = 32.0;
 
 const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
@@ -48,30 +42,6 @@ pub(crate) fn button(
         Layer(1),
     ));
     (button, text)
-}
-
-pub(crate) fn shop_speech(world: &mut World, keeper_top_left: Vec2, textures: &Textures) {
-    let size = SAY_BOX_SIZE;
-    let top_left = keeper_top_left + Vec2::new(SAY_BOX_SHIFT - size.x, SAY_BOX_DROP);
-    world.spawn((
-        SpeechBubble {
-            remaining: 0.0,
-            message: "",
-        },
-        Position(top_left + size / 2.0),
-        Size(size),
-        Color(Vec4::ONE),
-        Sprite::whole(textures.get(tex::SHOPKEEPER_SAYBOX)),
-        Layer(6),
-        Hidden,
-    ));
-    world.spawn((
-        SpeechText,
-        Position(top_left + Vec2::new(SAY_INSIDE_WIDTH / 2.0, SAY_INSIDE_HEIGHT / 2.0 + 15.0)),
-        Text::centered(String::new(), SAY_COLOR, FontSize::Size22),
-        Layer(7),
-        Hidden,
-    ));
 }
 
 const MINIMAL_BACK: Vec4 = Vec4::new(0.07, 0.06, 0.09, 0.85);

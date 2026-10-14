@@ -29,6 +29,7 @@ pub(crate) enum Align {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Anchor {
     Middle,
+    Ink,
     Baseline,
 }
 
@@ -165,6 +166,24 @@ impl Font {
         self.ascent - self.descent
     }
 
+    pub(crate) fn ink_middle(&self, text: &str) -> f32 {
+        let mut top = f32::MAX;
+        let mut bottom = f32::MIN;
+        for glyph in text
+            .chars()
+            .filter_map(|character| self.glyphs.get(&character))
+        {
+            if glyph.size.x > 0.0 && glyph.size.y > 0.0 {
+                top = top.min(glyph.offset.y);
+                bottom = bottom.max(glyph.offset.y + glyph.size.y);
+            }
+        }
+        if top > bottom {
+            return -(self.ascent + self.descent) / 2.0;
+        }
+        (top + bottom) / 2.0
+    }
+
     pub(crate) fn width(&self, text: &str) -> f32 {
         text.chars()
             .filter_map(|character| self.glyphs.get(&character))
@@ -186,6 +205,7 @@ impl Font {
     ) -> Vec<Draw> {
         let baseline = match anchor {
             Anchor::Middle => point.y + (self.ascent + self.descent) / 2.0,
+            Anchor::Ink => point.y - self.ink_middle(text),
             Anchor::Baseline => point.y,
         };
         let width = self.width(text);

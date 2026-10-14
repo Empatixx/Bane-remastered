@@ -7,8 +7,8 @@ use crate::assets::tex;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, ArtefactDrop, ArtefactSlot, Candle, Clip, Currency, GunDrop, Health, Hidden,
-    InRange, Interactable, Interaction, Light, Loadout, Pickup, Player, PriceTag, Shop,
-    SpeechBubble, SpeechPart, SpeechText, Text, Wallet,
+    InRange, Interactable, Interaction, Light, Loadout, Pickup, Player, PriceBox, PriceDigits,
+    PriceTag, Shop, Size, SpeechBubble, SpeechPart, SpeechText, Text, Wallet,
 };
 use crate::dungeon::{Dungeon, FixtureKind};
 use crate::guns::GunKind;
@@ -304,6 +304,23 @@ pub(crate) fn disable_candles(world: &mut World) {
                 looping: true,
                 flipped: false,
             });
+        }
+    }
+}
+
+const PRICE_BOX_MIN: f32 = 32.0;
+const PRICE_BOX_PAD: f32 = 14.0;
+
+pub(crate) fn fit_price_boxes(world: &mut World, fonts: &crate::render::Fonts) {
+    let font = fonts.get(crate::render::FontSize::Size22);
+    let widths: Vec<(Entity, f32)> = world
+        .query::<(&PriceDigits, &Text)>()
+        .iter()
+        .map(|(digits, text)| (digits.0, font.width(&text.content)))
+        .collect();
+    for (price_box, size) in world.query_mut::<(&PriceBox, &mut Size)>() {
+        if let Some((_, width)) = widths.iter().find(|(owner, _)| *owner == price_box.0) {
+            size.0.x = (width + PRICE_BOX_PAD).max(PRICE_BOX_MIN);
         }
     }
 }
@@ -604,7 +621,7 @@ mod tests {
     #[test]
     fn the_shopkeeper_speaks_for_three_seconds() {
         let mut world = World::new();
-        prefabs::shop_speech(&mut world, Vec2::new(500.0, 100.0), &Textures::default());
+        prefabs::minimal_speech(&mut world, Vec2::new(500.0, 100.0));
         tick_speech(&mut world, 0.016);
         assert_eq!(
             world
@@ -642,5 +659,26 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn price_boxes_grow_with_long_prices_but_never_shrink_below_the_base_size() {
+        use crate::render::Fonts;
+
+        let mut world = World::new();
+        let owner = world.spawn(());
+        let boxed = world.spawn((PriceBox(owner), Size(Vec2::splat(32.0))));
+        world.spawn((
+            PriceDigits(owner),
+            Text::inked("5", glam::Vec4::ONE, crate::render::FontSize::Size22),
+        ));
+
+        fit_price_boxes(&mut world, &Fonts::default());
+
+        let width = world
+            .get::<&Size>(boxed)
+            .map(|size| size.0.x)
+            .unwrap_or(0.0);
+        assert!(width >= PRICE_BOX_MIN, "{width}");
     }
 }

@@ -36,6 +36,12 @@ pub(crate) struct Shop {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct PriceBox(pub(crate) hecs::Entity);
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PriceDigits(pub(crate) hecs::Entity);
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct PriceTag {
     pub(crate) owner: hecs::Entity,
 }

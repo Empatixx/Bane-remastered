@@ -95,7 +95,7 @@ pub(crate) use scientist::{PURCHASE, chat, fit_speech};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};
 pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{ShotContext, ShotRoll, bullet_hits, shoot};
-pub(crate) use shop::{buy, say, stock_rooms, tick_speech, update_price_tags};
+pub(crate) use shop::{buy, fit_price_boxes, say, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use simulation::simulate;
 pub(crate) use skills::{
     burn_fuses, enemy_bullet_hits, steer_homing, tick_eye_shooters, tick_smashes,

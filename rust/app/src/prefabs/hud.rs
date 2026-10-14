@@ -6,7 +6,8 @@ use crate::assets::Textures;
 use crate::components::{
     AmmoPip, AmmoText, Animation, ArtefactIcon, BarKind, BossHud, CoinText, Color, Despawn,
     GoldCount, GunIcon, Hidden, Interactable, Interaction, Layer, Lit, PIP_FULL, Position,
-    PriceTag, Prompt, ScreenSpace, Shop, Size, Sprite, StatusBar, TalentCount, Text,
+    PriceBox, PriceDigits, PriceTag, Prompt, ScreenSpace, Shop, Size, Sprite, StatusBar,
+    TalentCount, Text,
 };
 use crate::guns::{MAX_CLIP, PIP_SIZE};
 use crate::render::{Align, Anchor, FontSize, TextureId};
@@ -42,10 +43,10 @@ pub(crate) fn boss_hud(world: &mut World, name: &str, textures: &Textures) {
     world.spawn((
         BossHud,
         Position(Vec2::new(
-            spec.position.x + spec.hole[0] as f32 * spec.scale + 5.0,
-            spec.position.y + 15.0,
+            spec.position.x + (spec.hole[0] as f32 + spec.hole[2] as f32 / 2.0) * spec.scale,
+            spec.position.y + spec.hole[1] as f32 * spec.scale / 2.0,
         )),
-        Text::new(
+        Text::inked(
             name.to_owned(),
             Vec4::new(1.0, 0.0, 0.0, 1.0),
             FontSize::Size22,
@@ -87,6 +88,7 @@ pub(crate) fn price_tag(
     let center = Vec2::new(anchor_top.x, anchor_top.y - size.y / 2.0 - PRICE_TAG_LIFT);
     world.spawn((
         PriceTag { owner },
+        PriceBox(owner),
         Position(center),
         Size(size),
         Color(Vec4::ONE),
@@ -96,8 +98,9 @@ pub(crate) fn price_tag(
     ));
     world.spawn((
         PriceTag { owner },
-        Position(center + Vec2::new(0.0, 6.0)),
-        Text::centered(
+        PriceDigits(owner),
+        Position(center),
+        Text::inked(
             price.to_string(),
             if sale.is_some() {
                 SALE_COLOR
@@ -112,7 +115,7 @@ pub(crate) fn price_tag(
         world.spawn((
             PriceTag { owner },
             Position(center - Vec2::new(0.0, size.y / 2.0 + SALE_LIFT)),
-            Text::centered(format!("SALE {percent}%"), SALE_COLOR, FontSize::Size22),
+            Text::inked(format!("SALE {percent}%"), SALE_COLOR, FontSize::Size22),
             Layer(4),
         ));
     }

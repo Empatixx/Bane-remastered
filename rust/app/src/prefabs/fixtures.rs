@@ -8,7 +8,8 @@ use crate::components::{
     Animation, ArrowTrap, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty,
     Chest, ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, FloorPatch, Gate, GunDrop,
     Health, Interactable, Interaction, Layer, Light, Liquid, Lit, PatchKind, Pickup, Position,
-    Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay, Trap, Velocity, Weapon,
+    PriceBox, PriceDigits, Prompt, Size, SlotMachine, SlotPrice, Solid, Sprite, Text, ThenPlay,
+    Trap, Velocity, Weapon,
 };
 use crate::dungeon::{
     Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces,
@@ -680,6 +681,7 @@ pub(crate) fn slot_machine(world: &mut World, top_left: Vec2, textures: &Texture
     let center = Vec2::new(top_left.x + size.x / 2.0, top_left.y + tag.y / 2.0);
     world.spawn((
         SlotPrice { owner: entity },
+        PriceBox(entity),
         Position(center),
         Size(tag),
         Color(Vec4::ONE),
@@ -689,8 +691,9 @@ pub(crate) fn slot_machine(world: &mut World, top_left: Vec2, textures: &Texture
     ));
     world.spawn((
         SlotPrice { owner: entity },
-        Position(center + Vec2::new(0.0, 6.0)),
-        Text::centered(SPIN_COST.to_string(), PRICE_COLOR, FontSize::Size22),
+        PriceDigits(entity),
+        Position(center),
+        Text::inked(SPIN_COST.to_string(), PRICE_COLOR, FontSize::Size22),
         Layer(4),
     ));
     entity

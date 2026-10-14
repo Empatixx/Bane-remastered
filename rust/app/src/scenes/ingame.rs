@@ -325,6 +325,8 @@ impl Scene for InGameScene {
         );
         systems::flicker_flames(&mut self.world);
         systems::tick_speech(&mut self.world, dt);
+        systems::fit_speech(&mut self.world, &assets.fonts);
+        systems::fit_price_boxes(&mut self.world, &assets.fonts);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &self.rooms) {
             systems::update_minimaps(&mut self.world, rooms.entered(), rooms.current(), dt);
             if let Some(position) = player_tile(&self.world) {
@@ -574,7 +576,9 @@ impl InGameScene {
             .flat_map(|furnishing| furnishing.fixtures.iter())
             .find(|fixture| fixture.kind == crate::dungeon::FixtureKind::Shopkeeper)
         {
-            prefabs::shop_speech(&mut self.world, keeper.top_left, textures);
+            let head = keeper.top_left
+                + Vec2::new(crate::props::Prop::Shopkeeper.spec().size().x / 2.0, 0.0);
+            prefabs::minimal_speech(&mut self.world, head);
             if perks.gamble_machine {
                 for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
                     wallet.coins += SLOT_MACHINE_COINS;
