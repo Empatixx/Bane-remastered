@@ -287,7 +287,8 @@ const fn slime_bullet(texture: Tex, color: [f32; 3]) -> ProjectileSpec {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum EnemyKind {
     Rat,
     Snake,
