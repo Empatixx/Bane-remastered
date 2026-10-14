@@ -1,9 +1,9 @@
 use glam::Vec2;
 
 use super::animation::Clip;
-use crate::guns::{AmmoClass, GunKind, GunSpec};
+use crate::guns::{AmmoClass, GunKind, GunSpec, Mutation};
 use crate::items::AmmoBox;
-use crate::weapon_upgrades::{GunMods, Mutation, WeaponMods};
+use crate::weapon_upgrades::{GunMods, WeaponMods};
 
 pub(crate) const BULLET_COLUMNS: usize = 4;
 pub(crate) const BULLET_ROWS: usize = 2;

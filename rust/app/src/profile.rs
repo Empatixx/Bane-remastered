@@ -134,11 +134,24 @@ impl Profile {
 
     pub(crate) fn reroll_weapon(&mut self, kind: GunKind) -> bool {
         let progress = self.weapons.entry(kind).or_default();
-        progress.reroll(kind, &mut self.gold)
+        progress.reroll(&mut self.gold)
     }
 
     pub(crate) fn weapon_mods(&self) -> WeaponMods {
         WeaponMods::from_progress(&self.weapons)
+    }
+
+    /// Pays back and resets the weapon trees an older generator grew; says whether any was.
+    fn settle_weapon_trees(&mut self) -> bool {
+        let mut settled = false;
+        for (kind, progress) in &mut self.weapons {
+            if let Some(refund) = progress.settle(*kind) {
+                tracing::info!(?kind, refund, "the weapon tree changed, its gold was paid back");
+                self.gold += refund;
+                settled = true;
+            }
+        }
+        settled
     }
 
     fn load(path: &Path) -> (Self, bool) {
@@ -190,11 +203,16 @@ pub(crate) struct SharedProfile(Rc<RefCell<Store>>);
 
 impl SharedProfile {
     pub(crate) fn load(path: &Path) -> Self {
-        let (profile, writable) = Profile::load(path);
-        Self(Rc::new(RefCell::new(Store {
+        let (mut profile, writable) = Profile::load(path);
+        let settled = profile.settle_weapon_trees();
+        let store = Store {
             profile,
             path: writable.then(|| path.to_path_buf()),
-        })))
+        };
+        if settled {
+            store.save();
+        }
+        Self(Rc::new(RefCell::new(store)))
     }
 
     #[cfg(test)]
@@ -473,11 +491,34 @@ mod tests {
     }
 
     #[test]
+    fn a_weapon_tree_from_an_older_generator_is_paid_back_when_the_profile_loads() {
+        let path = temp_path("old_tree");
+        let old = crate::weapon_tree::generate_unversioned(GunKind::Shotgun, 0);
+        let root = old
+            .nodes
+            .iter()
+            .position(|node| node.parent.is_none())
+            .expect("a root");
+        fs::write(
+            &path,
+            format!(r#"{{"version": 1, "gold": 30, "weapons": {{"shotgun": {{"owned": [{root}]}}}}}}"#),
+        )
+        .expect("write");
+
+        let loaded = SharedProfile::load(&path);
+
+        assert_eq!(loaded.gold(), 130);
+        assert!(loaded.weapon(GunKind::Shotgun).owned.is_empty());
+        assert_eq!(SharedProfile::load(&path).gold(), 130, "saved after the refund");
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
     fn an_unknown_weapon_is_skipped_without_losing_the_rest_of_the_profile() {
         let path = temp_path("unknown_weapon");
         fs::write(
             &path,
-            r#"{"version": 1, "gold": 30, "weapons": {"uzi": {"rerolls": 2, "owned": [0]}, "laser": {"rerolls": 1}}}"#,
+            r#"{"version": 1, "gold": 30, "weapons": {"uzi": {"rerolls": 2, "owned": [0], "spent": 100, "generator": 1}, "laser": {"rerolls": 1}}}"#,
         )
         .expect("write");
 

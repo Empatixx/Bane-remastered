@@ -1,10 +1,13 @@
-use crate::guns::GunKind;
+use crate::guns::{GunKind, Mutation};
 use crate::rng::Rng;
 
 pub(crate) const HALF_COLUMNS: i32 = 2;
 pub(crate) const DEPTH: i32 = 4;
 pub(crate) const STAT_KINDS: usize = 6;
-pub(crate) const MUTATION_KINDS: usize = 6;
+pub(crate) const MUTATION_KINDS: usize = Mutation::ALL.len();
+/// Bump whenever `generate` grows different trees. Saves point at nodes by their index, so a
+/// tree saved by another generator is paid back and reset instead of shuffling the purchases.
+pub(crate) const GENERATOR: u32 = 1;
 const SIDE_BRANCHES: usize = 2;
 const SIDE_DEPTH: usize = 3;
 
@@ -109,12 +112,29 @@ impl Tree {
     }
 }
 
+/// Seeded by the name of the weapon, so adding or reordering guns never changes a tree.
 pub(crate) fn generate(kind: GunKind, rerolls: u32) -> Tree {
+    grow_tree(name_seed(kind.key()) ^ u64::from(rerolls).wrapping_mul(104_729))
+}
+
+/// The trees of the first versions, seeded by the place of the gun in the list; only kept to
+/// pay back what those saves spent.
+pub(crate) fn generate_unversioned(kind: GunKind, rerolls: u32) -> Tree {
     let gun = GunKind::ALL
         .iter()
         .position(|other| *other == kind)
         .unwrap_or(0) as u64;
-    let mut rng = Rng::new(gun * 7919 + u64::from(rerolls) * 104_729 + 13);
+    grow_tree(gun * 7919 + u64::from(rerolls) * 104_729 + 13)
+}
+
+fn name_seed(name: &str) -> u64 {
+    name.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+        (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+    })
+}
+
+fn grow_tree(seed: u64) -> Tree {
+    let mut rng = Rng::new(seed);
     let mut tree = Tree::default();
     let start = rng.below(3) as i32 - 1;
     let mut last = tree.add(&mut rng, None, start, 0, None);
@@ -176,6 +196,47 @@ pub(crate) fn generate(kind: GunKind, rerolls: u32) -> Tree {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// What `generate` grew for GENERATOR 1. Saves point at nodes by index, so when this
+    /// changes the trees changed: bump GENERATOR (old saves get their gold back), then update
+    /// the number here.
+    const FINGERPRINT: u64 = 16_991_477_304_436_102_234;
+
+    fn fingerprint() -> u64 {
+        GunKind::ALL
+            .into_iter()
+            .flat_map(|kind| (0..10).map(move |rerolls| generate(kind, rerolls)))
+            .flat_map(|tree| tree.nodes)
+            .flat_map(|node| {
+                [
+                    node.column as u64,
+                    node.row as u64,
+                    node.parent.map_or(u64::MAX, |parent| parent as u64),
+                    node.branch as u64,
+                    node.stat as u64,
+                    node.mutation.map_or(u64::MAX, |id| id as u64),
+                ]
+            })
+            .fold(0xcbf2_9ce4_8422_2325, |hash, value| {
+                (hash ^ value).wrapping_mul(0x0100_0000_01b3)
+            })
+    }
+
+    #[test]
+    fn the_trees_only_change_together_with_the_generator_version() {
+        assert_eq!(GENERATOR, 1);
+        assert_eq!(
+            fingerprint(),
+            FINGERPRINT,
+            "the weapon trees changed: bump GENERATOR and update FINGERPRINT"
+        );
+    }
+
+    #[test]
+    fn a_tree_does_not_depend_on_where_the_gun_sits_in_the_list() {
+        assert_ne!(name_seed("pistol"), name_seed("uzi"));
+        assert_eq!(generate(GunKind::Uzi, 0), grow_tree(name_seed("uzi")));
+    }
 
     fn all() -> impl Iterator<Item = Tree> {
         GunKind::ALL

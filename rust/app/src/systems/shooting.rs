@@ -19,7 +19,7 @@ use crate::render::TextureId;
 use crate::rng::Rng;
 use crate::systems::damage::{Damage, DamageSource};
 use crate::upgrades::Perks;
-use crate::weapon_upgrades::Mutation;
+use crate::guns::Mutation;
 
 const BULLET_SPEED: f32 = 700.0;
 const BOUNCE_CLEARANCE: f32 = 2.0;

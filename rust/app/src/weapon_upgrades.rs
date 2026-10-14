@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::guns::{GunKind, GunSpec, MAX_CLIP};
+use crate::guns::{GunKind, GunSpec, MAX_CLIP, Mutation};
 use crate::upgrades::{Purchase, Quality};
 use crate::weapon_tree::{self, Node, Tree};
 
@@ -46,27 +46,6 @@ impl Stat {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Mutation {
-    Piercing,
-    Explosive,
-    Venom,
-    Frost,
-    Ricochet,
-    Deadeye,
-}
-
-impl Mutation {
-    pub(crate) const ALL: [Self; weapon_tree::MUTATION_KINDS] = [
-        Self::Piercing,
-        Self::Explosive,
-        Self::Venom,
-        Self::Frost,
-        Self::Ricochet,
-        Self::Deadeye,
-    ];
-}
-
 pub(crate) fn stat_of(node: &Node) -> Stat {
     Stat::ALL[node.stat.min(Stat::ALL.len() - 1)]
 }
@@ -102,16 +81,51 @@ pub(crate) fn cost(node: &Node) -> u64 {
     }
 }
 
-/// What the player has done with the tree of one weapon: how many times it was regrown and
-/// which of its nodes were bought.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// What the player has done with the tree of one weapon: how many times it was regrown, which
+/// of its nodes were bought, what they cost and which generator grew the tree.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub(crate) struct WeaponProgress {
     pub(crate) rerolls: u32,
     pub(crate) owned: BTreeSet<usize>,
+    pub(crate) spent: u64,
+    /// Saves from before the generator was versioned have none and read as 0.
+    #[serde(default)]
+    pub(crate) generator: u32,
+}
+
+impl Default for WeaponProgress {
+    fn default() -> Self {
+        Self {
+            rerolls: 0,
+            owned: BTreeSet::new(),
+            spent: 0,
+            generator: weapon_tree::GENERATOR,
+        }
+    }
 }
 
 impl WeaponProgress {
+    /// A tree grown by another generator than today's: everything spent on it is paid back
+    /// and the weapon starts over, instead of the purchases landing on other nodes.
+    pub(crate) fn settle(&mut self, kind: GunKind) -> Option<u64> {
+        if self.generator == weapon_tree::GENERATOR {
+            return None;
+        }
+        let refund = if self.generator == 0 {
+            let old = weapon_tree::generate_unversioned(kind, self.rerolls);
+            self.owned
+                .iter()
+                .filter_map(|index| old.nodes.get(*index))
+                .map(cost)
+                .sum()
+        } else {
+            self.spent
+        };
+        *self = Self::default();
+        Some(refund)
+    }
+
     pub(crate) fn tree(&self, kind: GunKind) -> Tree {
         weapon_tree::generate(kind, self.rerolls)
     }
@@ -125,14 +139,6 @@ impl WeaponProgress {
         tree.nodes.get(index).is_some_and(|node| {
             !self.owns(index) && node.parent.is_none_or(|parent| self.owns(parent))
         })
-    }
-
-    pub(crate) fn spent(&self, tree: &Tree) -> u64 {
-        self.owned
-            .iter()
-            .filter_map(|index| tree.nodes.get(*index))
-            .map(cost)
-            .sum()
     }
 
     pub(crate) fn buy(&mut self, kind: GunKind, index: usize, gold: &mut u64) -> Purchase {
@@ -151,23 +157,25 @@ impl WeaponProgress {
             return Purchase::TooExpensive;
         }
         *gold -= price;
+        self.spent += price;
         self.owned.insert(index);
         Purchase::Bought
     }
 
     /// Gold the reroll leaves after it pays back the bought nodes and takes its fee.
-    pub(crate) fn gold_after_reroll(&self, kind: GunKind, gold: u64) -> Option<u64> {
-        (gold + self.spent(&self.tree(kind))).checked_sub(REROLL_COST)
+    pub(crate) fn gold_after_reroll(&self, gold: u64) -> Option<u64> {
+        (gold + self.spent).checked_sub(REROLL_COST)
     }
 
     /// Regrows the tree: every bought node is paid back and the reroll fee is taken.
-    pub(crate) fn reroll(&mut self, kind: GunKind, gold: &mut u64) -> bool {
-        let Some(left) = self.gold_after_reroll(kind, *gold) else {
+    pub(crate) fn reroll(&mut self, gold: &mut u64) -> bool {
+        let Some(left) = self.gold_after_reroll(*gold) else {
             return false;
         };
         *gold = left;
         self.rerolls += 1;
         self.owned.clear();
+        self.spent = 0;
         true
     }
 
@@ -304,6 +312,39 @@ mod tests {
     }
 
     #[test]
+    fn a_tree_from_another_generator_is_paid_back_and_reset() {
+        let mut current = WeaponProgress::default();
+        let mut gold = 1000;
+        let root = first_root(&current.tree(GunKind::M4));
+        assert_eq!(current.buy(GunKind::M4, root, &mut gold), Purchase::Bought);
+        assert_eq!(current.settle(GunKind::M4), None);
+        assert!(current.owns(root));
+
+        let mut older = WeaponProgress {
+            generator: weapon_tree::GENERATOR + 1,
+            ..current.clone()
+        };
+        assert_eq!(older.settle(GunKind::M4), Some(100));
+        assert_eq!(older, WeaponProgress::default());
+
+        let old_tree = weapon_tree::generate_unversioned(GunKind::M4, 2);
+        let old_root = first_root(&old_tree);
+        let mut unversioned: WeaponProgress =
+            serde_json::from_str(&format!(r#"{{"rerolls": 2, "owned": [{old_root}]}}"#))
+                .expect("an old save");
+        assert_eq!(unversioned.generator, 0);
+        assert_eq!(unversioned.settle(GunKind::M4), Some(cost(&old_tree.nodes[old_root])));
+        assert_eq!(unversioned.generator, weapon_tree::GENERATOR);
+    }
+
+    #[test]
+    fn a_new_save_remembers_its_generator() {
+        let text = serde_json::to_string(&WeaponProgress::default()).expect("json");
+        let back: WeaponProgress = serde_json::from_str(&text).expect("back");
+        assert_eq!(back.generator, weapon_tree::GENERATOR);
+    }
+
+    #[test]
     fn a_reroll_pays_back_the_tree_takes_its_fee_and_regrows_it() {
         let kind = GunKind::Uzi;
         let mut progress = WeaponProgress::default();
@@ -312,12 +353,12 @@ mod tests {
         assert_eq!(progress.buy(kind, root, &mut gold), Purchase::Bought);
         assert_eq!(gold, 0);
 
-        assert!(progress.reroll(kind, &mut gold));
+        assert!(progress.reroll(&mut gold));
 
         assert_eq!(gold, 0);
         assert_eq!(progress.rerolls, 1);
         assert!(progress.owned.is_empty());
-        assert!(!progress.reroll(kind, &mut gold));
+        assert!(!progress.reroll(&mut gold));
         assert_eq!(progress.rerolls, 1);
     }
 

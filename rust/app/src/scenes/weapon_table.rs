@@ -792,7 +792,7 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
     elements.extend(reroll_plate(
         hover,
         roll,
-        progress.gold_after_reroll(kind, gold).is_some(),
+        progress.gold_after_reroll(gold).is_some(),
     ));
     elements.push(Element::Image {
         texture: tex::MENU_PLATE,
@@ -893,9 +893,7 @@ impl WeaponTable {
     }
 
     fn can_reroll(&self) -> bool {
-        self.progress
-            .gold_after_reroll(self.kind(), self.gold)
-            .is_some()
+        self.progress.gold_after_reroll(self.gold).is_some()
     }
 
     fn tick_roll(&mut self, profile: &SharedProfile, dt: f32) -> Option<Outcome> {

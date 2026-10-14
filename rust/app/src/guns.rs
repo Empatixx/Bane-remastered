@@ -2,7 +2,6 @@ use glam::Vec2;
 
 use crate::assets::{tex, Tex};
 use crate::audio::SoundEffect;
-use crate::weapon_upgrades::Mutation;
 
 pub(crate) const MAX_PELLETS: usize = 4;
 pub(crate) const MAX_CLIP: usize = 40;
@@ -28,6 +27,28 @@ pub(crate) enum GunKind {
     M4,
     Uzi,
     Thompson,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// What a round does on top of its damage, unlocked at the end of a weapon tree.
+pub(crate) enum Mutation {
+    Piercing,
+    Explosive,
+    Venom,
+    Frost,
+    Ricochet,
+    Deadeye,
+}
+
+impl Mutation {
+    pub(crate) const ALL: [Self; 6] = [
+        Self::Piercing,
+        Self::Explosive,
+        Self::Venom,
+        Self::Frost,
+        Self::Ricochet,
+        Self::Deadeye,
+    ];
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -116,6 +137,19 @@ impl GunKind {
         Self::Uzi,
         Self::Thompson,
     ];
+
+    /// The stable name of the weapon, the same one the profile is saved under.
+    pub(crate) fn key(self) -> &'static str {
+        match self {
+            Self::Pistol => "pistol",
+            Self::Shotgun => "shotgun",
+            Self::Luger => "luger",
+            Self::Revolver => "revolver",
+            Self::M4 => "m4",
+            Self::Uzi => "uzi",
+            Self::Thompson => "thompson",
+        }
+    }
 
     pub(crate) fn spec(self) -> GunSpec {
         use ClipStyle::{Pistol, Shotgun, SubMachine};
