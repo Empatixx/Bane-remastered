@@ -9,9 +9,9 @@ use crate::components::{
     BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
     DeathBurst, DeathCloud, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse,
     GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Health, Hits, Homing, Impact, Kin,
-    Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout, Minion, NoDrop, Path, Pet, Player,
-    Position, RoomId, RunStats, Size, Smash, Spawning, Sprite, TrailLayer, Velocity, Wallet,
-    WebSpitter,
+    Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout, Minion, NoDrop, OgreAttack, OgreBoss,
+    OgreStage, Path, Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning, Sprite,
+    TrailLayer, Velocity, Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -252,6 +252,21 @@ pub(crate) fn enemy(
                         remaining: 0.0,
                     },
                 ),
+            );
+        }
+        Behavior::OgreBoss => {
+            let _ = world.insert_one(
+                entity,
+                OgreBoss {
+                    stage: OgreStage::Walk,
+                    attack: OgreAttack::Stomp,
+                    last: None,
+                    timer: 0.0,
+                    cooldown: enemies::OGRE_FIRST_COOLDOWN,
+                    enraged: false,
+                    seed: 0xC2B2_AE35 ^ (position.x as u32).wrapping_mul(13) ^ (position.y as u32),
+                    idle,
+                },
             );
         }
         Behavior::ArgusBoss => {

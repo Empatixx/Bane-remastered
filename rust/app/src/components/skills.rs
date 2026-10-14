@@ -61,6 +61,33 @@ pub(crate) enum ArgusStage {
     FadingIn,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum OgreAttack {
+    Stomp,
+    Throw,
+    Slam,
+    Roar,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum OgreStage {
+    Walk,
+    Winding,
+    Recovering,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct OgreBoss {
+    pub(crate) stage: OgreStage,
+    pub(crate) attack: OgreAttack,
+    pub(crate) last: Option<OgreAttack>,
+    pub(crate) timer: f32,
+    pub(crate) cooldown: f32,
+    pub(crate) enraged: bool,
+    pub(crate) seed: u32,
+    pub(crate) idle: Clip,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Orbiter {
     pub(crate) owner: hecs::Entity,

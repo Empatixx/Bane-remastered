@@ -399,6 +399,14 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
+        systems::tick_ogre(
+            &mut self.world,
+            &mut self.physics,
+            &self.navigation,
+            &assets.textures,
+            &mut self.sounds,
+            dt,
+        );
         systems::tick_argus(
             &mut self.world,
             &mut self.physics,

@@ -66,8 +66,8 @@ pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
     ArgusAttack, ArgusBoss, ArgusStage, Armageddon, BeamPart, Boss, Cobweb, DeathBurst, DeathCloud,
     DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse, GolemAttack, GolemBoss,
-    GolemStage, Hatcher, Hits, Homing, Impact, Kin, LeapStage, Leaper, Minion, Orbiter, RockFall,
-    Rooted, Smash, WebSpitter,
+    GolemStage, Hatcher, Hits, Homing, Impact, Kin, LeapStage, Leaper, Minion, OgreAttack,
+    OgreBoss, OgreStage, Orbiter, RockFall, Rooted, Smash, WebSpitter,
 };
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};

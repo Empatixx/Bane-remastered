@@ -26,6 +26,7 @@ mod lighting;
 mod loadout;
 mod minimap;
 mod objects;
+mod ogre;
 mod perks;
 mod pet;
 mod player_animation;
@@ -88,6 +89,7 @@ pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_mini
 pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_frozen, tick_poison,
 };
+pub(crate) use ogre::tick_ogre;
 pub(crate) use perks::{apply_floor_perks, apply_run_perks, immobilize_traps, regenerate_armor};
 pub(crate) use pet::{
     PET_COLUMNS, PET_GAZE_SPEED, PET_IDLE, PET_ROWS, pet_bites, pick_pet_targets, plan_pet_paths,

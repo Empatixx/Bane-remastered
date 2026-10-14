@@ -321,7 +321,7 @@ pub(crate) fn tick_golem(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn spawn_rock(
+pub(crate) fn spawn_rock(
     world: &mut World,
     physics: &mut Physics,
     kind: ProjectileKind,
