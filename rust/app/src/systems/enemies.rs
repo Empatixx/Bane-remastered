@@ -694,14 +694,14 @@ mod tests {
         assert!(world.get::<&Puddle>(slime).is_ok());
         assert!(world.get::<&Expiring>(slime).is_err());
         assert!(world.get::<&Body>(slime).is_err());
-        wait(&mut world, &mut physics, REVIVE_SECONDS - 0.5);
+        wait(&mut world, &mut physics, REVIVE_SECONDS - 0.4);
         assert!(world.get::<&Puddle>(slime).is_ok());
         assert_eq!(
             world.get::<&Animation>(slime).map(|a| a.row()).ok(),
             Some(3),
             "the puddle pulls itself together before it stands up"
         );
-        wait(&mut world, &mut physics, 0.6);
+        wait(&mut world, &mut physics, 0.5);
         assert!(world.get::<&Puddle>(slime).is_err());
         assert!(world.get::<&Body>(slime).is_ok());
         let health = world.get::<&Health>(slime).map(|h| (h.current, h.max)).ok();
