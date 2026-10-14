@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Casing, Chilled, Color, DropShadow, EnemyArrow, Frozen, Heading, Hidden, Hover, InRange, Layer,
-    Liquid, Lit, MapSize, Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace,
-    Shine, Size, Sky, Sprite, StatusBar, Text, blended,
+    Afterimage, Casing, Chilled, Color, DodgeVisual, DropShadow, EnemyArrow, Frozen, Heading, Hidden,
+    Hover, InRange, Layer, Liquid, Lit, MapSize, Minimap, Outline, Overlay, Phantom, Player,
+    Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text, blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -13,6 +13,7 @@ use crate::viewport::TARGET;
 const FROST_RIM: Vec4 = Vec4::new(0.7, 0.95, 1.0, 0.9);
 
 use super::hud::bar_draws;
+use super::lightning::Bolt;
 use super::minimap::minimap_draws;
 use super::shadow::shadow_draw;
 
@@ -59,6 +60,12 @@ pub(crate) fn collect_draws(
     blend: f32,
 ) -> Layers {
     let mut sorted = Sorted::default();
+    let cloak = world
+        .query::<&Phantom>()
+        .with::<&Player>()
+        .iter()
+        .next()
+        .map(|phantom| phantom.remaining);
     for (
         position,
         previous,
@@ -74,7 +81,7 @@ pub(crate) fn collect_draws(
         frozen,
         (shine, heading),
         sky,
-        liquid,
+        (liquid, cloakable),
     ) in world
         .query::<(
             &Position,
@@ -91,11 +98,15 @@ pub(crate) fn collect_draws(
             (Option<&Frozen>, Option<&Chilled>),
             (Option<&Shine>, Option<&Heading>),
             Option<&Sky>,
-            Option<&Liquid>,
+            (
+                Option<&Liquid>,
+                Option<hecs::Or<&Player, hecs::Or<&DodgeVisual, &Afterimage>>>,
+            ),
         )>()
         .without::<&Hidden>()
         .without::<&EnemyArrow>()
         .without::<&Casing>()
+        .without::<&Bolt>()
         .iter()
     {
         let bob = Vec2::new(0.0, hover.map_or(0.0, Hover::offset));
@@ -124,12 +135,16 @@ pub(crate) fn collect_draws(
                 if let Some(shine) = shine {
                     quad = quad.shined(shine.0);
                 }
+                quad = outline.map_or(quad, |outline| quad.outlined(outline.0));
+                if let (Some(time), Some(_)) = (cloak, cloakable) {
+                    quad = quad.shadowed(time);
+                }
                 if let Some(heading) = heading {
                     quad = quad.rotated(heading.0);
                 }
                 Draw {
                     texture: sprite.texture,
-                    quad: outline.map_or(quad, |outline| quad.outlined(outline.0)),
+                    quad,
                 }
             }
             None => {
@@ -188,6 +203,22 @@ pub(crate) fn collect_draws(
                 quad: Quad::with_uv(center, size.0, color.0, sprite.uv)
                     .lit(true)
                     .rotated(casing.angle),
+            },
+        ));
+    }
+    for (position, size, color, sprite, layer, bolt) in world
+        .query::<(&Position, &Size, &Color, &Sprite, &Layer, &Bolt)>()
+        .iter()
+    {
+        let center = position.0 - camera;
+        if off_screen(center, size.0) {
+            continue;
+        }
+        sorted.scene.push((
+            *layer,
+            Draw {
+                texture: sprite.texture,
+                quad: Quad::with_uv(center, size.0, color.0, sprite.uv).rotated(bolt.angle),
             },
         ));
     }
@@ -284,6 +315,40 @@ mod tests {
         if screen {
             let _ = world.insert_one(entity, ScreenSpace);
         }
+    }
+
+    fn sprite(world: &mut World, at: Vec2) -> hecs::Entity {
+        world.spawn((
+            Position(at),
+            Size(Vec2::splat(32.0)),
+            Color(glam::Vec4::ONE),
+            Sprite::whole(TextureId::WHITE),
+        ))
+    }
+
+    fn shadowed_count(world: &World) -> usize {
+        collect_draws(world, &Fonts::default(), Vec2::ZERO, "E", 1.0)
+            .scene
+            .iter()
+            .filter(|draw| draw.quad.is_shadowed())
+            .count()
+    }
+
+    #[test]
+    fn a_cloaked_player_and_its_dodge_pictures_are_drawn_as_shadows() {
+        let mut world = World::new();
+        let player = sprite(&mut world, Vec2::new(100.0, 100.0));
+        let _ = world.insert_one(player, Player);
+        let roll = sprite(&mut world, Vec2::new(140.0, 100.0));
+        let _ = world.insert_one(roll, DodgeVisual);
+        let echo = sprite(&mut world, Vec2::new(180.0, 100.0));
+        let _ = world.insert_one(echo, Afterimage { remaining: 0.2 });
+        sprite(&mut world, Vec2::new(220.0, 100.0));
+        assert_eq!(shadowed_count(&world), 0);
+
+        let _ = world.insert_one(player, Phantom { remaining: 3.0 });
+
+        assert_eq!(shadowed_count(&world), 3);
     }
 
     #[test]

@@ -22,6 +22,7 @@ fn player_center(world: &World) -> Option<Vec2> {
     world
         .query::<&Position>()
         .with::<&Player>()
+        .without::<&crate::components::Phantom>()
         .iter()
         .next()
         .map(|position| position.0)
@@ -209,6 +210,22 @@ mod tests {
         let textures = Textures::default();
         prefabs::player(&mut world, &mut physics, Vec2::new(0.0, 0.0), &textures);
         (world, physics, textures)
+    }
+
+    #[test]
+    fn bosses_cannot_find_a_cloaked_player() {
+        let (mut world, _, _) = arena();
+        assert!(player_center(&world).is_some());
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+
+        assert!(player_center(&world).is_none());
     }
 
     fn boss(world: &mut World, physics: &mut Physics, kind: EnemyKind) -> Entity {

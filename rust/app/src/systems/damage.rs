@@ -31,6 +31,7 @@ const LOW_HEALTH: f32 = 0.3;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DamageSource {
     Bullet,
+    Summoned,
     Trap,
     Bite,
     Explosion,
@@ -39,7 +40,7 @@ pub(crate) enum DamageSource {
 
 impl DamageSource {
     fn counts_as_hit(self) -> bool {
-        self == Self::Bullet
+        matches!(self, Self::Bullet | Self::Summoned)
     }
 
     fn flashes(self) -> bool {
@@ -72,7 +73,7 @@ pub(crate) fn deal(world: &mut World, damage: Damage) -> bool {
     }
     if source.counts_as_hit() {
         super::skills::count_hits(world, target);
-        if world.get::<&Enemy>(target).is_ok() {
+        if source == DamageSource::Bullet && world.get::<&Enemy>(target).is_ok() {
             stats::record(world, Stat::Hit, 1);
         }
     }
@@ -168,6 +169,7 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
     else {
         return false;
     };
+    let cloaked = world.get::<&crate::components::Phantom>(player).is_ok();
     let damage = world
         .query::<(
             &Position,
@@ -175,16 +177,20 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
             &ContactDamage,
             Option<&Trap>,
             Option<&Animation>,
+            Option<&Enemy>,
         )>()
         .without::<&Expiring>()
         .without::<&crate::components::Frozen>()
         .without::<&Spawning>()
         .iter()
-        .find(|(source_position, source_size, _, trap, animation)| {
-            trap_is_armed(*trap, *animation)
-                && geometry::overlaps(position, size, source_position.0, source_size.0)
-        })
-        .map(|(_, _, damage, _, _)| damage.0);
+        .find(
+            |(source_position, source_size, _, trap, animation, enemy)| {
+                !(cloaked && enemy.is_some())
+                    && trap_is_armed(*trap, *animation)
+                    && geometry::overlaps(position, size, source_position.0, source_size.0)
+            },
+        )
+        .map(|(_, _, damage, _, _, _)| damage.0);
     let Some(damage) = damage else {
         return false;
     };
@@ -430,6 +436,38 @@ mod tests {
     }
 
     #[test]
+    fn touching_an_enemy_does_not_hurt_a_cloaked_player_but_spikes_still_do() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(32.0, 32.0),
+            &Textures::default(),
+        );
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+        prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(32.0, 32.0),
+        );
+
+        assert!(!contact_damage(&mut world, &mut Vec::new()));
+
+        let decor = crate::dungeon::Decor {
+            kind: crate::dungeon::DecorKind::Spike,
+            tile: (0, 0),
+        };
+        let spike = prefabs::decor(&mut world, &mut Physics::new(), decor, &Textures::default());
+        world
+            .get::<&mut Animation>(spike)
+            .expect("the spike animates")
+            .advance(0.8);
+        assert!(contact_damage(&mut world, &mut Vec::new()));
+    }
+
+    #[test]
     fn touching_enemy_hurts_once_then_the_player_is_invulnerable() {
         let mut world = World::new();
         let mut physics = Physics::new();
@@ -563,5 +601,53 @@ mod tests {
         let player = prefabs::player(&mut world, &mut physics, Vec2::ZERO, &Textures::default());
         assert!(hurt_player(&mut world, player, 1, &mut Vec::new()));
         assert_eq!(stats::current(&world).hurt_this_floor, 1);
+    }
+
+    fn player_health(world: &World, player: Entity) -> i32 {
+        let armor = world.get::<&Armor>(player).map_or(0, |a| a.current);
+        world.get::<&Health>(player).map_or(-1, |h| h.current) + armor
+    }
+
+    #[test]
+    fn a_cloaked_player_is_hurt_by_enemy_bullets_but_not_by_touching_enemies() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        let at = Vec2::new(500.0, 500.0);
+        let player = prefabs::player(&mut world, &mut physics, at, &textures);
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+        let before = player_health(&world, player);
+
+        let rat = prefabs::ready_enemy(&mut world, &mut physics, EnemyKind::Rat, at);
+        assert!(!contact_damage(&mut world, &mut Vec::new()));
+        assert_eq!(player_health(&world, player), before);
+
+        let _ = world.despawn(rat);
+        prefabs::enemy_bullet(
+            &mut world,
+            &mut physics,
+            crate::enemies::ProjectileKind::Red,
+            at,
+            Vec2::X,
+            &textures,
+        );
+        assert!(contact_damage(&mut world, &mut Vec::new()));
+        assert!(player_health(&world, player) < before);
+    }
+
+    #[test]
+    fn summoned_rounds_count_as_hits_on_the_enemy_but_stay_out_of_the_stats() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        prefabs::player(&mut world, &mut physics, Vec2::ZERO, &textures);
+        let slime = enemy(&mut world, &mut physics, EnemyKind::RedSlime);
+
+        hit(&mut world, slime, 1, DamageSource::Summoned);
+        assert_eq!(stats::current(&world).hits, 0);
+        assert_eq!(world.get::<&Hits>(slime).map(|h| h.0).ok(), Some(1));
+
+        hit(&mut world, slime, 1, DamageSource::Bullet);
+        assert_eq!(stats::current(&world).hits, 1);
     }
 }

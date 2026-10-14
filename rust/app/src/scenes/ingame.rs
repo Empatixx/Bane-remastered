@@ -8,7 +8,9 @@ use crate::assets::tex;
 use crate::assets::{Assets, BULLET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
-use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
+use crate::components::{
+    BigMap, Blend, Hidden, InfiniteAmmo, Interaction, Loadout, MapSize, Minimap, UiAction,
+};
 use crate::controls::Action;
 use crate::dungeon::{Dungeon, RoomKind, Surfaces, Theme};
 use crate::flow::FlowField;
@@ -105,6 +107,7 @@ impl Scene for InGameScene {
         SceneFx {
             paused: self.pause.is_active(),
             low_health: systems::player_is_low_on_health(&self.world),
+            time_slow: self.time_slow(),
         }
     }
 
@@ -243,6 +246,10 @@ impl Scene for InGameScene {
                 rooms.reveal_all();
             }
         }
+        let seed = crate::rng::cosmetic() * 1000.0;
+        if systems::cast_lightning(&mut self.world, &assets.textures, seed) > 0 {
+            self.camera.add_trauma(systems::LIGHTNING_SHAKE);
+        }
         systems::drop_gun(
             &mut self.world,
             input,
@@ -287,9 +294,17 @@ impl Scene for InGameScene {
             self.clock,
         );
         systems::tick_dust(&mut self.world, self.clock, dt);
+        systems::tick_lightning(&mut self.world, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
-        systems::update_weapon_hud(&mut self.world, &assets.textures);
+        let infinite = self
+            .world
+            .query::<&InfiniteAmmo>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .next()
+            .map(|_| self.clock);
+        systems::update_weapon_hud(&mut self.world, &assets.textures, infinite);
         systems::fade_lights(&mut self.world);
         systems::flash_hits(&mut self.world, dt);
         systems::fade_afterimages(&mut self.world, dt);
@@ -297,6 +312,7 @@ impl Scene for InGameScene {
         systems::outline_drops(&mut self.world);
         systems::float_texts(&mut self.world, dt);
         let mut events = Vec::new();
+        let hostile_dt = dt * systems::time_scale(&self.world);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
             let context = systems::RoomContext {
                 dungeon,
@@ -309,11 +325,13 @@ impl Scene for InGameScene {
                 &mut self.world,
                 &mut self.physics,
                 &mut self.map_rng,
-                dt,
+                hostile_dt,
             );
         }
         self.handle_room_events(events, assets);
         systems::update_boss_hud(&mut self.world);
+        systems::bloodlust_heals_on_kill(&mut self.world);
+        systems::midas_kill_coins(&mut self.world, &assets.textures);
         systems::enemy_drops(
             &mut self.world,
             &mut self.kills_without_drop,
@@ -325,6 +343,13 @@ impl Scene for InGameScene {
         systems::age_items(&mut self.world, dt);
         systems::update_price_tags(&mut self.world);
         systems::tick_berserk(&mut self.world, dt);
+        systems::apply_heal_percent(&mut self.world, &assets.textures, &mut self.sounds);
+        systems::convert_bullets(&mut self.world, &mut self.physics, &assets.textures);
+        systems::tick_artefact_effects(&mut self.world, dt);
+        systems::spawn_bloodlust_drops(&mut self.world, &assets.textures, dt);
+        systems::tick_blood_drops(&mut self.world, dt);
+        systems::pulse_bloodlust(&mut self.world);
+        systems::spawn_summons(&mut self.world, &assets.textures);
         systems::update_shield_aura(&mut self.world, &assets.textures);
         systems::update_artefact_hud(&mut self.world, &assets.textures);
         systems::update_slot_prices(&mut self.world);
@@ -378,6 +403,7 @@ impl Scene for InGameScene {
         if self.pause.is_active() || self.death.is_some() {
             return Transition::None;
         }
+        let hostile_dt = dt * systems::time_scale(&self.world);
         systems::start_dodge(
             &mut self.world,
             input,
@@ -385,8 +411,8 @@ impl Scene for InGameScene {
         );
         systems::steer_player_on(&mut self.world, input, &self.surfaces, dt);
         systems::tick_dodges(&mut self.world, dt);
-        systems::tick_spawning(&mut self.world, &mut self.physics, dt);
-        systems::dash(&mut self.world, dt);
+        systems::tick_spawning(&mut self.world, &mut self.physics, hostile_dt);
+        systems::dash(&mut self.world, hostile_dt);
         systems::update_flow(
             &mut self.flow,
             &self.world,
@@ -400,7 +426,7 @@ impl Scene for InGameScene {
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
         systems::tick_rock_falls(
             &mut self.world,
@@ -408,17 +434,17 @@ impl Scene for InGameScene {
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
-        systems::tick_hoppers(&mut self.world, dt);
-        systems::tick_baits(&mut self.world, &assets.textures, &mut self.sounds, dt);
+        systems::tick_hoppers(&mut self.world, hostile_dt);
+        systems::tick_baits(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
         systems::tick_mimic(
             &mut self.world,
             &mut self.physics,
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
         systems::tick_hound(
             &mut self.world,
@@ -426,7 +452,7 @@ impl Scene for InGameScene {
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
         let boss_room = self.dungeon.as_ref().and_then(|dungeon| {
             dungeon
@@ -440,16 +466,16 @@ impl Scene for InGameScene {
             &self.navigation,
             boss_room,
             &assets.textures,
-            dt,
+            hostile_dt,
         );
-        systems::tick_magma(&mut self.world, &mut self.sounds, dt);
+        systems::tick_magma(&mut self.world, &mut self.sounds, hostile_dt);
         systems::tick_ogre(
             &mut self.world,
             &mut self.physics,
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
         systems::tick_argus(
             &mut self.world,
@@ -457,39 +483,59 @@ impl Scene for InGameScene {
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
         systems::tick_laser(
             &mut self.world,
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
         systems::tick_flames(
             &mut self.world,
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
-        systems::tick_orbiters(&mut self.world, &mut self.physics, dt);
+        systems::tick_orbiters(&mut self.world, &mut self.physics, hostile_dt);
         systems::separate_chasers(&mut self.world);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
         systems::steer_pets(&mut self.world);
         systems::face_player(&mut self.world);
-        systems::tick_smashes(&mut self.world, &mut self.physics, &assets.textures, dt);
-        systems::tick_eye_shooters(&mut self.world, &mut self.physics, &assets.textures, dt);
-        systems::steer_homing(&mut self.world, dt);
-        systems::burn_fuses(&mut self.world, &mut self.physics, dt);
-        systems::tick_hatchers(&mut self.world, &mut self.physics, &assets.textures, dt);
-        systems::tick_web_spitters(&mut self.world, &assets.textures, dt);
-        systems::tick_leapers(&mut self.world, &mut self.sounds, dt);
-        systems::tick_armageddon(&mut self.world, &mut self.physics, &assets.textures, dt);
+        systems::tick_smashes(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            hostile_dt,
+        );
+        systems::tick_eye_shooters(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            hostile_dt,
+        );
+        systems::steer_homing(&mut self.world, hostile_dt);
+        systems::burn_fuses(&mut self.world, &mut self.physics, hostile_dt);
+        systems::tick_hatchers(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            hostile_dt,
+        );
+        systems::tick_web_spitters(&mut self.world, &assets.textures, hostile_dt);
+        systems::tick_leapers(&mut self.world, &mut self.sounds, hostile_dt);
+        systems::tick_armageddon(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            hostile_dt,
+        );
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
-        systems::watch_progress(&mut self.world, dt);
+        systems::watch_progress(&mut self.world, hostile_dt);
         systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(
             &mut self.world,
@@ -498,13 +544,15 @@ impl Scene for InGameScene {
             &mut self.sounds,
         );
         systems::pet_bites(&mut self.world, dt);
+        systems::tick_ghosts(&mut self.world, dt);
+        systems::tick_turrets(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::trap_hits_enemies(&mut self.world, dt);
         systems::tick_arrow_traps(
             &mut self.world,
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
-            dt,
+            hostile_dt,
         );
         systems::break_objects(
             &mut self.world,
@@ -562,6 +610,17 @@ impl InGameScene {
         self.rules.shape(owned)
     }
 
+    fn time_slow(&self) -> f32 {
+        let slowed = self
+            .world
+            .query::<&crate::components::TimeSlow>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .next()
+            .is_some();
+        if slowed { 1.0 } else { 0.0 }
+    }
+
     /// Shakes the screen for the hard hits of this step, read from the sounds they made.
     fn feel_impacts(&mut self) {
         for command in &self.sounds {
@@ -593,6 +652,7 @@ impl InGameScene {
             });
             note = progress_note(&outcome);
         }
+        systems::clear_artefact_effects(&mut self.world);
         prefabs::death_ui(&mut self.world, self.victory, &assets.textures);
         self.death = Some(systems::DeathScreen::new(summary).with_note(note));
         self.set_big_map(false);
@@ -1169,5 +1229,28 @@ mod tests {
         assert!(matches!(transition, Transition::None));
         assert!(!scene.pause.is_active());
         assert!(scene.death.is_none());
+    }
+
+    #[test]
+    fn the_death_screen_ends_the_artefact_effects() {
+        let (mut scene, assets) = paused_game();
+        let player = scene
+            .world
+            .query::<hecs::Entity>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = scene
+            .world
+            .insert_one(player, crate::components::TimeSlow { remaining: 5.0 });
+
+        press_button(&mut scene, &assets, "Die");
+
+        assert!(scene.death.is_some());
+        assert!(scene
+            .world
+            .get::<&crate::components::TimeSlow>(player)
+            .is_err());
     }
 }

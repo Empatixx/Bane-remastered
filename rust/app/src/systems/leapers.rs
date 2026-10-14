@@ -26,6 +26,7 @@ fn player_at(world: &World) -> Option<(Entity, Vec2)> {
     world
         .query::<(Entity, &Position, &Health)>()
         .with::<&Player>()
+        .without::<&crate::components::Phantom>()
         .iter()
         .filter(|(_, _, health)| health.current > 0)
         .map(|(entity, position, _)| (entity, position.0))
@@ -190,6 +191,16 @@ mod tests {
     use super::*;
 
     const STEP: f32 = 1.0 / 60.0;
+
+    #[test]
+    fn a_leaper_cannot_pick_a_cloaked_player() {
+        let (mut world, player, _) = arena(200.0);
+        assert!(player_at(&world).is_some());
+
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+
+        assert!(player_at(&world).is_none());
+    }
 
     fn arena(distance: f32) -> (World, Entity, Entity) {
         let mut world = World::new();

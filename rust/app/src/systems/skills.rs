@@ -144,6 +144,16 @@ pub(crate) fn tick_eye_shooters(
     textures: &Textures,
     dt: f32,
 ) {
+    let seen = world
+        .query::<()>()
+        .with::<&Player>()
+        .without::<&crate::components::Phantom>()
+        .iter()
+        .next()
+        .is_some();
+    if !seen {
+        return;
+    }
     let mut shots = Vec::new();
     for (position, shooter, animation, room) in world
         .query_mut::<(&Position, &mut EyeShooter, &mut Animation, Option<&RoomId>)>()
@@ -182,6 +192,7 @@ pub(crate) fn steer_homing(world: &mut World, dt: f32) {
     let target = world
         .query::<&Position>()
         .with::<&Player>()
+        .without::<&crate::components::Phantom>()
         .iter()
         .next()
         .map(|position| position.0);
@@ -290,6 +301,31 @@ mod tests {
 
     fn ready(world: &mut World, physics: &mut Physics, kind: EnemyKind, at: Vec2) -> Entity {
         prefabs::ready_enemy(world, physics, kind, at)
+    }
+
+    #[test]
+    fn homing_shots_stop_steering_towards_a_cloaked_player() {
+        let (mut world, _, _) = arena();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+        let shot = world.spawn((
+            Position(Vec2::new(200.0, 0.0)),
+            Homing {
+                aim: Vec2::new(200.0, 100.0),
+                speed: 100.0,
+            },
+            Velocity(Vec2::new(0.0, 100.0)),
+        ));
+
+        steer_homing(&mut world, 1.0 / 60.0);
+
+        let velocity = world.get::<&Velocity>(shot).map(|v| v.0).ok();
+        assert_eq!(velocity, Some(Vec2::new(0.0, 100.0)));
     }
 
     #[test]
@@ -503,5 +539,38 @@ mod tests {
         assert!(world.get::<&Expiring>(bullet).is_ok());
         let tint = world.get::<&Color>(bullet).map(|c| c.0.w).unwrap_or(0.0);
         assert_eq!(tint, 1.0);
+    }
+
+    #[test]
+    fn eye_shooters_hold_their_fire_and_their_cooldown_while_the_player_is_cloaked() {
+        let (mut world, mut physics, textures) = arena();
+        let eye = ready(
+            &mut world,
+            &mut physics,
+            EnemyKind::EyeWatcher,
+            Vec2::new(500.0, 500.0),
+        );
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 60.0 });
+        let before = world.get::<&EyeShooter>(eye).map(|s| s.remaining).ok();
+
+        for _ in 0..10 {
+            tick_eye_shooters(&mut world, &mut physics, &textures, 1.0);
+            if let Ok(mut animation) = world.get::<&mut Animation>(eye) {
+                animation.advance(1.0);
+            }
+        }
+
+        assert_eq!(bullets(&world), 0);
+        let state = world
+            .get::<&EyeShooter>(eye)
+            .map(|s| (s.attacking, s.remaining))
+            .ok();
+        assert_eq!(state, before.map(|remaining| (false, remaining)));
     }
 }

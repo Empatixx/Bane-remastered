@@ -6,8 +6,8 @@ use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
 use crate::components::{
     Animation, Body, Boss, Breakable, Bullet, Burst, CHILL_SECONDS, CHILL_STACKS_TO_FREEZE,
-    Chilled, Enemy, Expiring, Friendly, Frozen, Heading, Health, Loadout, Player, PlayerPerks,
-    PoisonPool, Position, Size, Spawning, Velocity,
+    Chilled, Enemy, Expiring, Friendly, Frozen, Heading, Health, InfiniteAmmo, Loadout, Phantom,
+    Player, PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, Velocity,
 };
 use crate::controls::Action;
 use crate::geometry;
@@ -31,6 +31,7 @@ const CHAIN_REACH: f32 = 220.0;
 const VENOM_POOL_SECONDS: f32 = 3.0;
 const VENOM_SPACING: f32 = 64.0;
 const FROST_ROUND_FREEZE: f32 = 1.2;
+const AMBUSH_MULTIPLIER: i32 = 2;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ShotRoll {
@@ -89,6 +90,7 @@ struct Shot {
     pellets: usize,
     perks: Perks,
     deadeye: bool,
+    ambush: bool,
 }
 
 pub(crate) fn shoot(
@@ -107,8 +109,16 @@ pub(crate) fn shoot(
     } = context;
     let target = input.mouse() + camera;
     let mut shots = Vec::new();
-    for (position, loadout, perks) in world
-        .query_mut::<(&Position, &mut Loadout, Option<&PlayerPerks>)>()
+    let mut uncloaked = Vec::new();
+    for (entity, position, loadout, perks, infinite, phantom) in world
+        .query_mut::<(
+            Entity,
+            &Position,
+            &mut Loadout,
+            Option<&PlayerPerks>,
+            Option<&InfiniteAmmo>,
+            Option<&Phantom>,
+        )>()
         .with::<&Player>()
         .without::<&crate::components::Dodge>()
         .without::<&crate::components::Frozen>()
@@ -118,15 +128,21 @@ pub(crate) fn shoot(
             continue;
         };
         let spec = weapon.spec();
+        let infinite = infinite.is_some();
+        if infinite {
+            weapon.reloading = None;
+        }
         weapon.advance(dt);
-        if input.action_pressed(Action::Reload) && weapon.start_reload() {
+        if !infinite && input.action_pressed(Action::Reload) && weapon.start_reload() {
             sounds.push(AudioCommand::Effect(spec.reload));
         }
         if let Some(mut burst) = weapon.burst {
             burst.timer -= dt;
             if burst.timer <= 0.0 {
-                if weapon.clip > 0 {
-                    weapon.clip -= 1;
+                if infinite || weapon.clip > 0 {
+                    if !infinite {
+                        weapon.clip -= 1;
+                    }
                     weapon.cooldown = spec.fire_interval;
                     let deadeye = weapon.count_shot();
                     shots.push(Shot {
@@ -137,11 +153,12 @@ pub(crate) fn shoot(
                         pellets: 1,
                         perks,
                         deadeye,
+                        ambush: false,
                     });
                     burst.left -= 1;
                     burst.timer = BURST_DELAY;
                 }
-                weapon.burst = (burst.left > 0 && weapon.clip > 0).then_some(burst);
+                weapon.burst = (burst.left > 0 && (infinite || weapon.clip > 0)).then_some(burst);
             } else {
                 weapon.burst = Some(burst);
             }
@@ -155,7 +172,7 @@ pub(crate) fn shoot(
         if !pulled || weapon.reloading.is_some() || weapon.cooldown > 0.0 {
             continue;
         }
-        if weapon.clip == 0 {
+        if !infinite && weapon.clip == 0 {
             sounds.push(AudioCommand::Effect(SoundEffect::EmptyGunShoot));
             if spec.auto {
                 weapon.cooldown = spec.fire_interval;
@@ -167,10 +184,12 @@ pub(crate) fn shoot(
             continue;
         }
         weapon.cooldown = spec.fire_interval;
-        weapon.clip -= 1;
+        if !infinite {
+            weapon.clip -= 1;
+        }
         sounds.push(AudioCommand::Effect(spec.shoot));
         if let Some(count) = spec.burst {
-            weapon.burst = (count > 1 && weapon.clip > 0).then_some(Burst {
+            weapon.burst = (count > 1 && (infinite || weapon.clip > 0)).then_some(Burst {
                 left: count - 1,
                 timer: BURST_DELAY,
                 aim: to_target,
@@ -185,7 +204,14 @@ pub(crate) fn shoot(
             pellets: spec.pellets,
             perks,
             deadeye,
+            ambush: phantom.is_some(),
         });
+        if phantom.is_some() {
+            uncloaked.push(entity);
+        }
+    }
+    for entity in uncloaked {
+        let _ = world.remove_one::<Phantom>(entity);
     }
     let recoil: f32 = shots.iter().map(|shot| shot.spec.shake).sum();
     let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
@@ -211,7 +237,7 @@ pub(crate) fn shoot(
                 shot.spec
                     .scaled_damage(shot.roll.damages[pellet], shot.roll.fractions[pellet]),
                 critical,
-            );
+            ) * if shot.ambush { AMBUSH_MULTIPLIER } else { 1 };
             prefabs::bullet(
                 world,
                 physics,
@@ -255,13 +281,18 @@ pub(crate) fn bullet_hits(
             stop_round(world, physics, entity);
             continue;
         }
+        let source = if world.get::<&Summoned>(entity).is_ok() {
+            DamageSource::Summoned
+        } else {
+            DamageSource::Bullet
+        };
         let hit_enemy = victim.is_some_and(|target| {
             super::damage::deal(
                 world,
                 Damage {
                     target,
                     amount: bullet.damage,
-                    source: DamageSource::Bullet,
+                    source,
                 },
             )
         });
@@ -584,6 +615,36 @@ mod tests {
             .iter()
             .map(|velocity| velocity.0)
             .collect()
+    }
+
+    fn bullet_damages(world: &World) -> Vec<i32> {
+        world
+            .query::<&Bullet>()
+            .iter()
+            .map(|bullet| bullet.damage)
+            .collect()
+    }
+
+    #[test]
+    fn the_first_shot_from_the_cloak_ends_it_and_hits_twice_as_hard() {
+        let (mut world, mut physics) = setup();
+        let input = clicked_at(Vec2::new(300.0, 100.0));
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 0.0);
+        let plain = bullet_damages(&world);
+        assert_eq!(plain.len(), 1);
+
+        let (mut world, mut physics) = setup();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, Phantom { remaining: 5.0 });
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 0.0);
+
+        assert_eq!(bullet_damages(&world), vec![plain[0] * 2]);
+        assert!(world.get::<&Phantom>(player).is_err());
     }
 
     #[test]
@@ -1127,6 +1188,61 @@ mod tests {
         }
         assert_eq!(current(&world).mods, mods.of(kind));
         assert_eq!(current(&world).clip, 1);
+    }
+
+    #[test]
+    fn the_clip_does_not_drop_while_infinite_ammo_lasts_and_drops_after_it_expires() {
+        let (mut world, mut physics) = setup();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("the player exists");
+        let clip = current(&world).clip;
+        let input = clicked_at(Vec2::new(50.0, 0.0));
+        world
+            .insert_one(player, crate::components::InfiniteAmmo { remaining: 8.0 })
+            .expect("the player exists");
+
+        for _ in 0..(clip + 3) {
+            fire(&mut world, &mut physics, &input, Vec2::ZERO, 1.0);
+        }
+        assert_eq!(current(&world).clip, clip);
+        assert!(current(&world).reloading.is_none());
+
+        world
+            .remove_one::<crate::components::InfiniteAmmo>(player)
+            .expect("the effect was present");
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 1.0);
+        assert_eq!(current(&world).clip, clip - 1);
+    }
+
+    #[test]
+    fn infinite_ammo_cancels_a_reload_and_fires_from_an_empty_clip() {
+        let (mut world, mut physics) = setup();
+        for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
+            if let Some(weapon) = loadout.current_mut() {
+                weapon.clip = 0;
+                weapon.reloading = Some(1.0);
+            }
+        }
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("the player exists");
+        world
+            .insert_one(player, crate::components::InfiniteAmmo { remaining: 8.0 })
+            .expect("the player exists");
+        let input = clicked_at(Vec2::new(50.0, 0.0));
+
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 0.1);
+
+        assert!(current(&world).reloading.is_none());
+        assert_eq!(current(&world).clip, 0);
+        assert_eq!(bullet_velocities(&world).len(), 1);
     }
 
     fn run_rounds(world: &mut World, physics: &mut Physics, frames: usize) {

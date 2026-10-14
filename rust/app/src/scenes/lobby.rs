@@ -137,6 +137,7 @@ impl Scene for LobbyScene {
         SceneFx {
             paused: self.pause.is_active() || self.panel_is_open(),
             low_health: systems::player_is_low_on_health(&self.world),
+            time_slow: 0.0,
         }
     }
 
@@ -347,7 +348,7 @@ impl Scene for LobbyScene {
         );
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
-        systems::update_weapon_hud(&mut self.world, &assets.textures);
+        systems::update_weapon_hud(&mut self.world, &assets.textures, None);
         systems::tick_ambience(
             &mut self.world,
             assets.textures.get(tex::GAZEWIND_PARTICLE),

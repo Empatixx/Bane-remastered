@@ -52,6 +52,21 @@ pub(crate) mod pet {
     }
 }
 
+pub(crate) mod infinity {
+    use crate::clip::Clip;
+
+    pub(crate) const COLUMNS: usize = 4;
+    pub(crate) const ROWS: usize = 1;
+
+    pub(crate) const GLINT: Clip = Clip {
+        row: 0,
+        frames: 4,
+        frame_time: 0.18,
+        looping: true,
+        flipped: false,
+    };
+}
+
 pub(crate) mod slot {
     use crate::clip::Clip;
 
@@ -80,6 +95,74 @@ pub(crate) mod slot {
         flipped: false,
     };
     pub(crate) const IDLE: Clip = LOSE;
+}
+
+pub(crate) mod ghost {
+    use crate::clip::Clip;
+
+    pub(crate) const COLUMNS: usize = 4;
+    pub(crate) const ROWS: usize = 2;
+
+    pub(crate) const FLOAT: Clip = Clip {
+        row: 0,
+        frames: 4,
+        frame_time: 0.15,
+        looping: true,
+        flipped: false,
+    };
+    pub(crate) const HIT: Clip = Clip {
+        row: 1,
+        frames: 3,
+        frame_time: 0.07,
+        looping: false,
+        flipped: false,
+    };
+}
+
+pub(crate) mod turret {
+    use crate::clip::Clip;
+
+    pub(crate) const COLUMNS: usize = 5;
+    pub(crate) const ROWS: usize = 7;
+    pub(crate) const RISE_SECONDS: f32 = 0.5;
+    pub(crate) const CRUMBLE_SECONDS: f32 = 0.6;
+    pub(crate) const RECOIL_SECONDS: f32 = 0.15;
+    pub(crate) const AIM_ROWS: usize = 5;
+
+    pub(crate) const RISE: Clip = Clip {
+        row: 0,
+        frames: 5,
+        frame_time: RISE_SECONDS / 5.0,
+        looping: false,
+        flipped: false,
+    };
+    pub(crate) const CRUMBLE: Clip = Clip {
+        row: 1,
+        frames: 5,
+        frame_time: CRUMBLE_SECONDS / 5.0,
+        looping: false,
+        flipped: false,
+    };
+
+    pub(crate) const fn idle(aim: usize, flipped: bool) -> Clip {
+        Clip {
+            row: 2 + aim,
+            frames: 1,
+            frame_time: 1.0,
+            looping: true,
+            flipped,
+        }
+    }
+
+    pub(crate) const fn recoil(aim: usize, flipped: bool) -> Clip {
+        Clip {
+            row: 2 + aim,
+            frames: 3,
+            frame_time: RECOIL_SECONDS / 3.0,
+            looping: false,
+            flipped,
+        }
+    }
 }
 
 #[cfg(test)]

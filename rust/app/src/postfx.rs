@@ -8,11 +8,15 @@ const MAX_DARKNESS: f32 = 0.3;
 const DARKNESS_STEP: f32 = 0.5;
 const VIGNETTE_TWEEN: f32 = 2.0;
 const PULSE_PERIOD: f32 = 3.0;
+const SLOW_IN_SECONDS: f32 = 0.4;
+const SLOW_OUT_SECONDS: f32 = 0.6;
+const CLOCK_PERIOD: f32 = 600.0;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct SceneFx {
     pub(crate) paused: bool,
     pub(crate) low_health: bool,
+    pub(crate) time_slow: f32,
 }
 
 #[derive(Debug, Default)]
@@ -21,6 +25,7 @@ pub(crate) struct PostFx {
     darkness: f32,
     vignette: f32,
     time_based: bool,
+    time_slow: f32,
 }
 
 impl PostFx {
@@ -33,6 +38,11 @@ impl PostFx {
             self.darkness = 0.0;
         }
         self.time_based = fx.low_health;
+        self.time_slow = if fx.time_slow > self.time_slow {
+            (self.time_slow + dt / SLOW_IN_SECONDS).min(fx.time_slow)
+        } else {
+            (self.time_slow - dt / SLOW_OUT_SECONDS).max(fx.time_slow)
+        };
         if hit {
             self.vignette = 1.0;
         } else if !self.time_based {
@@ -50,6 +60,8 @@ impl PostFx {
             vignette: self.vignette,
             time: (time % PULSE_PERIOD) * TAU / PULSE_PERIOD,
             time_based: self.time_based,
+            time_slow: self.time_slow,
+            clock: time % CLOCK_PERIOD,
         }
     }
 }
@@ -61,6 +73,7 @@ mod tests {
     const PAUSED: SceneFx = SceneFx {
         paused: true,
         low_health: false,
+        time_slow: 0.0,
     };
 
     #[test]
@@ -93,10 +106,31 @@ mod tests {
         let low = SceneFx {
             paused: false,
             low_health: true,
+            time_slow: 0.0,
         };
         for _ in 0..300 {
             fx.update(0.016, low, false);
         }
         assert!(fx.params(0.0).vignette_active());
+    }
+
+    #[test]
+    fn the_time_slow_effect_ramps_in_quickly_and_out_more_slowly() {
+        let mut fx = PostFx::default();
+        let slowed = SceneFx {
+            time_slow: 1.0,
+            ..SceneFx::default()
+        };
+        fx.update(SLOW_IN_SECONDS / 2.0, slowed, false);
+        assert!((fx.params(0.0).time_slow - 0.5).abs() < 0.001);
+        fx.update(1.0, slowed, false);
+        assert_eq!(fx.params(0.0).time_slow, 1.0);
+        assert!(fx.params(0.0).time_slow_active());
+
+        fx.update(SLOW_OUT_SECONDS / 2.0, SceneFx::default(), false);
+        assert!((fx.params(0.0).time_slow - 0.5).abs() < 0.001);
+        fx.update(1.0, SceneFx::default(), false);
+        assert_eq!(fx.params(0.0).time_slow, 0.0);
+        assert!(!fx.params(0.0).time_slow_active());
     }
 }

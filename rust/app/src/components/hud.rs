@@ -1,5 +1,5 @@
 use crate::assets::{Tex, tex};
-use glam::{Vec2, Vec3};
+use glam::{Vec2, Vec3, Vec4};
 
 use super::animation::Clip;
 
@@ -87,8 +87,14 @@ pub(crate) struct BossHud;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct GunIcon;
 
+pub(crate) const AMMO_TEXT_COLOR: Vec4 =
+    Vec4::new(226.0 / 255.0, 153.0 / 255.0, 117.0 / 255.0, 1.0);
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct AmmoText;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct InfinityMark;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct AmmoPip {

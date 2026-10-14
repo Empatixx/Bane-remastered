@@ -4,12 +4,13 @@ use hecs::{Entity, World};
 
 use crate::assets::Textures;
 use crate::components::{
-    AmmoPip, AmmoText, Animation, ArtefactIcon, BarKind, BossHud, CoinText, Color, Despawn,
-    GoldCount, GunIcon, Hidden, Interactable, Interaction, Layer, Lit, PIP_FULL, Position,
-    PriceBox, PriceDigits, PriceTag, Prompt, ScreenSpace, Shop, Size, Sprite, StatusBar,
-    TalentCount, Text,
+    AMMO_TEXT_COLOR, AmmoPip, AmmoText, Animation, ArtefactIcon, BarKind, BossHud, CoinText,
+    Color, Despawn, GoldCount, GunIcon, Hidden, InfinityMark, Interactable, Interaction, Layer,
+    Lit, PIP_FULL, Position, PriceBox, PriceDigits, PriceTag, Prompt, ScreenSpace, Shop, Size,
+    Sprite, StatusBar, TalentCount, Text,
 };
 use crate::guns::{MAX_CLIP, PIP_SIZE};
+use crate::sheets::infinity;
 use crate::render::{Align, Anchor, FontSize, TextureId};
 
 use super::{PRICE_COLOR, PRICE_TAG_SIZE, PROMPT_COLOR};
@@ -184,7 +185,8 @@ const GUN_ICON_SIZE: Vec2 = Vec2::new(41.0, 34.0);
 
 const AMMO_TEXT_POSITION: Vec2 = Vec2::new(900.0, 515.0);
 
-const AMMO_TEXT_COLOR: Vec4 = Vec4::new(226.0 / 255.0, 153.0 / 255.0, 117.0 / 255.0, 1.0);
+const INFINITY_SIZE: Vec2 = Vec2::new(40.0, 20.0);
+const INFINITY_CENTER: Vec2 = Vec2::new(878.0, 503.0);
 const COIN_MARGIN: f32 = 10.0;
 
 const COIN_SIZE: Vec2 = Vec2::new(26.0, 26.0);
@@ -230,6 +232,23 @@ pub(crate) fn weapon_hud(world: &mut World, textures: &Textures) {
         Position(AMMO_TEXT_POSITION),
         Layer(6),
         ScreenSpace,
+    ));
+    world.spawn((
+        InfinityMark,
+        Position(INFINITY_CENTER),
+        Size(INFINITY_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(
+            textures.get(tex::ARTEFACTS_INFINITY_GLINT),
+            0,
+            0,
+            infinity::COLUMNS,
+            infinity::ROWS,
+        ),
+        Animation::new(infinity::COLUMNS, infinity::ROWS, infinity::GLINT),
+        Layer(6),
+        ScreenSpace,
+        Hidden,
     ));
     for index in 0..MAX_CLIP as i32 {
         world.spawn((
