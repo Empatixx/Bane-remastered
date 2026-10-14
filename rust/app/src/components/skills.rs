@@ -29,6 +29,50 @@ pub(crate) struct Minion;
 pub(crate) struct Rooted;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GolemAttack {
+    Slam,
+    Throw,
+    Rain,
+    Laser,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GolemStage {
+    Walk,
+    Winding,
+    Acting,
+    Recovering,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct GolemBoss {
+    pub(crate) stage: GolemStage,
+    pub(crate) attack: GolemAttack,
+    pub(crate) last: Option<GolemAttack>,
+    pub(crate) timer: f32,
+    pub(crate) cooldown: f32,
+    pub(crate) pulse: f32,
+    pub(crate) rain_dropped: u32,
+    pub(crate) second_ring: f32,
+    pub(crate) beam_angle: f32,
+    pub(crate) enraged: bool,
+    pub(crate) seed: u32,
+    pub(crate) idle: Clip,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct RockFall {
+    pub(crate) remaining: f32,
+    pub(crate) rock: hecs::Entity,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct FallingRock;
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct BeamPart;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum LeapStage {
     Stalk,
     Crouch,

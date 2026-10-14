@@ -156,6 +156,7 @@ pub(super) fn clean_up_after_boss(world: &mut World) {
     for web in webs {
         let _ = world.despawn(web);
     }
+    super::clear_golem_effects(world);
 }
 
 pub(crate) fn update_boss_hud(world: &mut World) {

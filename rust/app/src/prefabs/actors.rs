@@ -7,7 +7,8 @@ use crate::assets::{PET, PLAYER, Textures};
 use crate::components::{
     Animation, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_ROWS, Boss,
     Bullet, Chase, Cobweb, Color, ContactDamage, Dash, DeathBurst, DeathCloud, DeathHeal, Drag,
-    DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse, GazeWind, Hatcher, Health, Hits, Homing,
+    DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse, GazeWind, GolemAttack, GolemBoss, GolemStage,
+    Hatcher, Health, Hits, Homing,
     Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout, Minion, NoDrop, Path,
     Pet, Player, Position, RoomId, RunStats, Size, Smash, Spawning, Sprite, TrailLayer, Velocity,
     Wallet, WebSpitter,
@@ -251,6 +252,25 @@ pub(crate) fn enemy(
                         remaining: 0.0,
                     },
                 ),
+            );
+        }
+        Behavior::GolemBoss => {
+            let _ = world.insert_one(
+                entity,
+                GolemBoss {
+                    stage: GolemStage::Walk,
+                    attack: GolemAttack::Slam,
+                    last: None,
+                    timer: 0.0,
+                    cooldown: enemies::GOLEM_FIRST_COOLDOWN,
+                    pulse: 0.0,
+                    rain_dropped: 0,
+                    second_ring: 0.0,
+                    beam_angle: 0.0,
+                    enraged: false,
+                    seed: 0x9E37_79B9 ^ (position.x as u32).wrapping_mul(31) ^ (position.y as u32),
+                    idle,
+                },
             );
         }
         Behavior::Leaps => {

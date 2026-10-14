@@ -10,7 +10,7 @@ use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
 use crate::controls::Action;
-use crate::dungeon::{Dungeon, Surfaces, Theme};
+use crate::dungeon::{Dungeon, RoomKind, Surfaces, Theme};
 use crate::flow::FlowField;
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -383,6 +383,21 @@ impl Scene for InGameScene {
             dt,
         );
         systems::chase_player(&mut self.world, &self.flow);
+        systems::tick_golem(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+            dt,
+        );
+        systems::tick_rock_falls(&mut self.world, &assets.textures, &mut self.sounds, dt);
+        systems::tick_laser(
+            &mut self.world,
+            &self.navigation,
+            &assets.textures,
+            &mut self.sounds,
+            dt,
+        );
         systems::separate_chasers(&mut self.world);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
@@ -547,7 +562,16 @@ impl InGameScene {
             }
         }
         self.flow = FlowField::default();
-        let start = dungeon.start_position().unwrap_or(bounds / 2.0);
+        let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
+        if std::env::var("BANE_AT").as_deref() == Ok("boss") {
+            if let Some(room) = dungeon
+                .rooms
+                .iter()
+                .find(|room| room.kind == RoomKind::Boss)
+            {
+                start = room.pixel_center() + Vec2::new(0.0, 160.0);
+            }
+        }
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         systems::apply_floor_perks(&mut self.world, perks);
         if perks.pet {

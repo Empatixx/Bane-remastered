@@ -234,7 +234,7 @@ fn enter(
         return (data.kind == RoomKind::Shop).then_some(RoomEvent::ShopEntered);
     }
     if boss {
-        let kind = enemies::pick_boss(context.floor, rng);
+        let kind = enemies::pick_boss(context.floor, context.dungeon.theme, rng);
         let center = data.pixel_center();
         let spec = kind.spec();
         prefabs::enemy_in_room(world, kind, center, context.floor, context.textures, room);

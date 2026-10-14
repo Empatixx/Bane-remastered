@@ -30,31 +30,31 @@ pub(crate) use artefacts::{
 };
 pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{
-    Armor, Bullet, Burst, Chase, ContactDamage, Dash, Detour, Enemy, Expiring, GunDrop, Health,
-    HitFlash, Invulnerable, Loadout, Path, Progress, Spawning, Trap, Wallet, Weapon,
-    BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS,
+    Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
+    ContactDamage, Dash, Detour, Enemy, Expiring, GunDrop, Health, HitFlash, Invulnerable, Loadout,
+    Path, Progress, Spawning, Trap, Wallet, Weapon,
 };
 pub(crate) use death::DeathPart;
 pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};
 pub(crate) use effects::{
-    Floating, Casing, Gate, GazeWind, Hover, LightFade, Opening, Particle, RoomId, ThenPlay, TrapCooldown,
-    HOVER_CYCLE,
+    Casing, Floating, Gate, GazeWind, HOVER_CYCLE, Hover, LightFade, Opening, Particle, RoomId,
+    ThenPlay, TrapCooldown,
 };
 pub(crate) use hud::{
-    AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon, StatusBar,
-    TalentCount, PIP_EMPTY, PIP_FULL,
+    AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount, GunIcon, PIP_EMPTY,
+    PIP_FULL, StatusBar, TalentCount,
 };
 pub(crate) use interaction::{InRange, Interactable, Interaction, Prompt};
 pub(crate) use items::{
-    Candle, Chatty, Chest, ChestKind, Currency, Despawn, NoDrop, Pickup, PriceBox, PriceDigits, PriceTag, Shop,
-    SpeechBubble, SpeechPart, SpeechText,
+    Candle, Chatty, Chest, ChestKind, Currency, Despawn, NoDrop, Pickup, PriceBox, PriceDigits,
+    PriceTag, Shop, SpeechBubble, SpeechPart, SpeechText,
 };
 pub(crate) use lighting::{Light, Lit};
 pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
 pub(crate) use objects::{
-    ArrowTrap, BreakKind, Breakable, Broken, FloorPatch, Flame, Frozen, PatchKind, TrapArrow, RippleTimer, PoisonPool, PoisonTrail, Poisoned, SlotMachine, SlotPrice, TrailLayer,
-    Solid,
+    ArrowTrap, BreakKind, Breakable, Broken, Flame, FloorPatch, Frozen, PatchKind, PoisonPool,
+    PoisonTrail, Poisoned, RippleTimer, SlotMachine, SlotPrice, Solid, TrailLayer, TrapArrow,
 };
 pub(crate) use perks::PlayerPerks;
 pub(crate) use pet::Pet;
@@ -64,10 +64,11 @@ pub(crate) use settings_ui::{
 };
 pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
-    Armageddon, Boss, Cobweb, DeathBurst, DeathCloud, DeathHeal, Drag, EnemyBullet, EyeShooter, Fuse, Hatcher,
-    Hits, Homing, Impact, Kin, LeapStage, Leaper, Minion, Rooted, Smash, WebSpitter,
+    Armageddon, BeamPart, Boss, Cobweb, DeathBurst, DeathCloud, DeathHeal, Drag, EnemyBullet,
+    EyeShooter, FallingRock, Fuse, GolemAttack, GolemBoss, GolemStage, Hatcher, Hits, Homing,
+    Impact, Kin, LeapStage, Leaper, Minion, RockFall, Rooted, Smash, WebSpitter,
 };
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};
-pub(crate) use transform::{blended, Blend, Position, Previous, Size};
+pub(crate) use transform::{Blend, Position, Previous, Size, blended};
 pub(crate) use ui::{Button, Hitbox, OnClick, PauseUi, PulseUi, TextButton, UiAction, UpgradeUi};

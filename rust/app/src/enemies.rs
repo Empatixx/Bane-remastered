@@ -23,6 +23,36 @@ pub(crate) const KING_SMASH_BULLETS: usize = 25;
 pub(crate) const COMMON_SPAWN_SECONDS: f32 = 2.0;
 pub(crate) const BOSS_SPAWN_SECONDS: f32 = 1.5;
 pub(crate) const FINAL_FLOOR: u32 = 5;
+pub(crate) const GOLEM_ROCK_RING: usize = 16;
+pub(crate) const GOLEM_BOULDER_DAMAGE: i32 = 2;
+pub(crate) const GOLEM_ROCK_DAMAGE: i32 = 2;
+pub(crate) const GOLEM_FIRST_COOLDOWN: f32 = 2.0;
+pub(crate) const GOLEM_COOLDOWN: f32 = 2.2;
+pub(crate) const GOLEM_RAGE_COOLDOWN: f32 = 1.3;
+pub(crate) const GOLEM_RAGE_AT: f32 = 0.5;
+pub(crate) const GOLEM_RAGE_SPEED: f32 = 1.35;
+pub(crate) const GOLEM_SLAM_WINDUP: f32 = 0.52;
+pub(crate) const GOLEM_SLAM_RECOVER: f32 = 0.4;
+pub(crate) const GOLEM_SECOND_RING: f32 = 0.35;
+pub(crate) const GOLEM_THROW_WINDUP: f32 = 0.42;
+pub(crate) const GOLEM_THROW_RECOVER: f32 = 0.4;
+pub(crate) const GOLEM_RAIN_WINDUP: f32 = 0.4;
+pub(crate) const GOLEM_RAIN_RECOVER: f32 = 0.5;
+pub(crate) const GOLEM_LASER_RECOVER: f32 = 0.6;
+pub(crate) const GOLEM_RAIN_SECONDS: f32 = 2.4;
+pub(crate) const GOLEM_RAIN_EVERY: f32 = 0.24;
+pub(crate) const GOLEM_RAIN_DELAY: f32 = 0.7;
+pub(crate) const GOLEM_RAIN_DAMAGE: i32 = 2;
+pub(crate) const GOLEM_RAIN_RADIUS: f32 = 74.0;
+pub(crate) const GOLEM_RAIN_SPREAD: f32 = 300.0;
+pub(crate) const GOLEM_LASER_CHARGE: f32 = 1.0;
+pub(crate) const GOLEM_LASER_SECONDS: f32 = 1.9;
+pub(crate) const GOLEM_LASER_TURN: f32 = 0.7;
+pub(crate) const GOLEM_LASER_RAGE_TURN: f32 = 1.1;
+pub(crate) const GOLEM_LASER_REACH: f32 = 1100.0;
+pub(crate) const GOLEM_LASER_WIDTH: f32 = 26.0;
+pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
+pub(crate) const GOLEM_NEAR: f32 = 340.0;
 
 pub(crate) fn speed_from_force(force: f32, size: Vec2) -> f32 {
     force / (DAMPING * size.x * size.y)
@@ -34,6 +64,8 @@ pub(crate) enum ProjectileKind {
     Red,
     Purple,
     EyeWatcher,
+    GolemRock,
+    Boulder,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -101,6 +133,32 @@ impl ProjectileKind {
                 homing: true,
                 lifetime: Some(5.0),
             },
+            Self::GolemRock => ProjectileSpec {
+                texture: tex::GOLEM_ROCK,
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(12.0, 12.0),
+                scale: 3.0,
+                idle: (4, 0.08),
+                impact: (4, 0.07),
+                light: [255.0, 190.0, 80.0, 18.0, 0.4],
+                force: 14_000_000.0,
+                homing: false,
+                lifetime: Some(2.4),
+            },
+            Self::Boulder => ProjectileSpec {
+                texture: tex::GOLEM_BOULDER,
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(32.0, 32.0),
+                scale: 2.0,
+                idle: (4, 0.09),
+                impact: (4, 0.08),
+                light: [255.0, 190.0, 80.0, 28.0, 0.5],
+                force: 36_000_000.0,
+                homing: false,
+                lifetime: Some(3.2),
+            },
         }
     }
 }
@@ -138,6 +196,7 @@ pub(crate) enum EnemyKind {
     StiltSpider,
     Spider,
     KingSlime,
+    Golem,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -159,6 +218,7 @@ pub(crate) enum Behavior {
     Leaps,
     SpiderBoss,
     KingSlimeBoss,
+    GolemBoss,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -180,7 +240,7 @@ pub(crate) struct EnemySpec {
     pub(crate) role: Role,
     pub(crate) behavior: Behavior,
     pub(crate) kin: bool,
-    pub(crate) theme: Option<Theme>,
+    pub(crate) themes: &'static [Theme],
 }
 
 impl EnemySpec {
@@ -246,7 +306,7 @@ const fn spec(
         role: Role::Common,
         behavior: Behavior::Plain,
         kin: false,
-        theme: None,
+        themes: &[],
     }
 }
 
@@ -254,7 +314,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
     EnemySpec {
         min_floor: 1,
         kin: true,
-        theme: Some(Theme::Spider),
+        themes: &[Theme::Spider],
         ..spec(
             texture,
             (5, rows),
@@ -268,7 +328,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 15] = [
+    pub(crate) const ALL: [Self; 16] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -282,6 +342,7 @@ impl EnemyKind {
         Self::BloatedSpider,
         Self::StiltSpider,
         Self::EyeWatcher,
+        Self::Golem,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -382,7 +443,7 @@ impl EnemyKind {
                 death_row: 1,
                 kin: false,
                 min_floor: 1,
-                theme: Some(Theme::Spider),
+                themes: &[Theme::Spider],
                 ..spec(
                     tex::STILT_SPIDER,
                     (5, 5),
@@ -423,6 +484,22 @@ impl EnemyKind {
                     (90, 2, 10_000_000.0),
                 )
             },
+            Self::Golem => EnemySpec {
+                min_floor: 2,
+                death_row: 5,
+                themes: &[Theme::Stone, Theme::Temple, Theme::Lava],
+                role: Role::Boss("Stone golem"),
+                behavior: Behavior::GolemBoss,
+                ..spec(
+                    tex::GOLEM,
+                    (7, 6),
+                    (96.0, 96.0),
+                    2.5,
+                    (6, 0.14),
+                    Some((6, 0.16)),
+                    (110, 2, 17_000_000.0),
+                )
+            },
             Self::EyeWatcher => EnemySpec {
                 min_floor: 3,
                 death_row: 2,
@@ -446,7 +523,10 @@ impl EnemyKind {
     }
 
     pub(crate) fn available_in(self, floor: u32, theme: Theme) -> bool {
-        self.available_on(floor) && self.spec().theme.is_none_or(|own| own == theme)
+        self.available_on(floor) && {
+            let themes = self.spec().themes;
+            themes.is_empty() || themes.contains(&theme)
+        }
     }
 
     pub(crate) fn is_boss(self) -> bool {
@@ -517,8 +597,25 @@ pub(crate) fn pick(floor: u32, theme: Theme, rng: &mut Rng) -> EnemyKind {
     pick_where(floor, theme, rng, |kind| !kind.is_boss())
 }
 
-pub(crate) fn pick_boss(floor: u32, rng: &mut Rng) -> EnemyKind {
-    pick_where(floor, Theme::Stone, rng, EnemyKind::is_boss)
+const BOSS_VAR: &str = "BANE_BOSS";
+
+fn boss_named(name: &str) -> Option<EnemyKind> {
+    match name.trim().to_ascii_lowercase().as_str() {
+        "golem" => Some(EnemyKind::Golem),
+        "spider" => Some(EnemyKind::Spider),
+        "slime" | "kingslime" => Some(EnemyKind::KingSlime),
+        _ => None,
+    }
+}
+
+pub(crate) fn pick_boss(floor: u32, theme: Theme, rng: &mut Rng) -> EnemyKind {
+    if let Some(kind) = std::env::var(BOSS_VAR)
+        .ok()
+        .and_then(|name| boss_named(&name))
+    {
+        return kind;
+    }
+    pick_where(floor, theme, rng, EnemyKind::is_boss)
 }
 
 fn pick_where(
@@ -585,8 +682,8 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 2);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 2 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 3);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 3 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));
@@ -624,13 +721,34 @@ mod tests {
     }
 
     #[test]
-    fn the_first_floor_has_the_spider_and_later_floors_the_king_slime() {
+    fn the_first_floor_has_the_spider_and_later_floors_the_king_slime_or_the_golem() {
         let mut rng = Rng::new(3);
         for _ in 0..20 {
-            assert_eq!(pick_boss(1, &mut rng), EnemyKind::Spider);
-            assert_eq!(pick_boss(2, &mut rng), EnemyKind::KingSlime);
-            assert_eq!(pick_boss(5, &mut rng), EnemyKind::KingSlime);
+            assert_eq!(pick_boss(1, Theme::Spider, &mut rng), EnemyKind::Spider);
+            assert_eq!(pick_boss(2, Theme::Ice, &mut rng), EnemyKind::KingSlime);
+            assert_eq!(pick_boss(5, Theme::Sewer, &mut rng), EnemyKind::KingSlime);
         }
+    }
+
+    #[test]
+    fn stone_temple_and_lava_floors_can_have_the_golem_and_others_never() {
+        let mut rng = Rng::new(5);
+        for theme in [Theme::Stone, Theme::Temple, Theme::Lava] {
+            let seen: std::collections::HashSet<EnemyKind> =
+                (0..200).map(|_| pick_boss(3, theme, &mut rng)).collect();
+            assert!(seen.contains(&EnemyKind::Golem), "{theme:?}");
+            assert!(seen.contains(&EnemyKind::KingSlime), "{theme:?}");
+        }
+        for theme in [Theme::Ice, Theme::Sewer, Theme::Moss] {
+            assert!((0..100).all(|_| pick_boss(3, theme, &mut rng) == EnemyKind::KingSlime));
+        }
+    }
+
+    #[test]
+    fn boss_names_for_previews_are_parsed() {
+        assert_eq!(boss_named(" Golem "), Some(EnemyKind::Golem));
+        assert_eq!(boss_named("slime"), Some(EnemyKind::KingSlime));
+        assert_eq!(boss_named("nothing"), None);
     }
 
     #[test]
@@ -647,7 +765,7 @@ mod tests {
             EnemyKind::BloatedSpider.spec().behavior,
             Behavior::ToxicBurst
         );
-        assert_eq!(EnemyKind::BloatedSpider.spec().theme, Some(Theme::Spider));
+        assert_eq!(EnemyKind::BloatedSpider.spec().themes, &[Theme::Spider]);
     }
 
     #[test]
