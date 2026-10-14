@@ -25,6 +25,7 @@ mod interaction;
 mod items;
 mod leapers;
 mod lighting;
+mod lightning;
 mod loadout;
 mod magma;
 mod midas;
@@ -97,6 +98,7 @@ pub(crate) use items::{
 };
 pub(crate) use leapers::tick_leapers;
 pub(crate) use lighting::collect_lights;
+pub(crate) use lightning::{LIGHTNING_SHAKE, cast_lightning, tick_lightning};
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use magma::{clear_magma, tick_magma, tick_magma_spread};
 pub(crate) use midas::{convert_bullets, midas_kill_coins};

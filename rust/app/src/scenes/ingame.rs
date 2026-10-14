@@ -246,6 +246,10 @@ impl Scene for InGameScene {
                 rooms.reveal_all();
             }
         }
+        let seed = crate::rng::cosmetic() * 1000.0;
+        if systems::cast_lightning(&mut self.world, &assets.textures, seed) > 0 {
+            self.camera.add_trauma(systems::LIGHTNING_SHAKE);
+        }
         systems::drop_gun(
             &mut self.world,
             input,
@@ -284,6 +288,7 @@ impl Scene for InGameScene {
             self.clock + phase,
         );
         systems::tick_dust(&mut self.world, self.clock, dt);
+        systems::tick_lightning(&mut self.world, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         let infinite = self
