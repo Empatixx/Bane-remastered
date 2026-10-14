@@ -5,8 +5,6 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::audio::Audio;
-use crate::components::BarKind;
-use crate::dungeon::Theme;
 use crate::render::{FontSize, Fonts, Gpu, Pixels, TextureId};
 use crate::tilemap::Tileset;
 
@@ -251,18 +249,6 @@ pub(crate) use tex::{
     BULLET, LOADING_SPINNER, LOADING_TITLE, LOGO, MENU_PLATE, PET, PLAYER, PLAYER_DODGE, TILESET,
 };
 
-pub(crate) fn tileset_for(theme: Theme) -> Tex {
-    match theme {
-        Theme::Stone => tex::TILESET,
-        Theme::Sewer => tex::TILESET_SEWER,
-        Theme::Moss => tex::TILESET_MOSS,
-        Theme::Spider => tex::TILESET_SPIDER,
-        Theme::Ice => tex::TILESET_ICE,
-        Theme::Lava => tex::TILESET_LAVA,
-        Theme::Temple => tex::TILESET_TEMPLE,
-    }
-}
-
 const EARLY_TEXTURES: &[Tex] = &[tex::LOGO, tex::LOADING_TITLE, tex::LOADING_SPINNER];
 
 const GAME_TEXTURES: &[Tex] = &[
@@ -488,11 +474,11 @@ pub(crate) struct Assets {
 }
 
 impl Assets {
-    pub(crate) fn tileset_of(&self, theme: Theme) -> &Tileset {
-        if theme == Theme::Stone {
-            &self.tileset
-        } else {
+    pub(crate) fn tileset_of(&self, wide: bool) -> &Tileset {
+        if wide {
             &self.wide_tileset
+        } else {
+            &self.tileset
         }
     }
 
@@ -518,7 +504,7 @@ impl Assets {
 #[derive(Debug, Clone, Copy)]
 enum Step {
     Texture(Tex),
-    Bar(BarKind),
+    Holed(Tex, [u32; 4]),
     Atlas,
     Sound(&'static str),
     Font(FontSize),
@@ -531,13 +517,17 @@ pub(crate) struct Loader {
 }
 
 impl Loader {
-    pub(crate) fn start(gpu: &mut Gpu, assets: &mut Assets) -> Result<Self, Box<dyn Error>> {
+    pub(crate) fn start(
+        gpu: &mut Gpu,
+        assets: &mut Assets,
+        holed: &[(Tex, [u32; 4])],
+    ) -> Result<Self, Box<dyn Error>> {
         for key in EARLY_TEXTURES {
             load_texture(gpu, &mut assets.textures, *key)?;
         }
         let mut pending: VecDeque<Step> =
             GAME_TEXTURES.iter().copied().map(Step::Texture).collect();
-        pending.extend(BarKind::ALL.map(Step::Bar));
+        pending.extend(holed.iter().map(|(texture, hole)| Step::Holed(*texture, *hole)));
         pending.push_back(Step::Atlas);
         pending.extend(Audio::files().into_iter().map(Step::Sound));
         pending.extend(FontSize::ALL.map(Step::Font));
@@ -565,11 +555,9 @@ impl Loader {
                 let pixels = Pixels::load(&root().join("textures").join(key.path()))?;
                 self.decoded.push((key.path(), pixels));
             }
-            Step::Bar(kind) => {
-                let spec = kind.spec();
-                let path = spec.texture.path();
-                let pixels =
-                    Pixels::load_with_hole(&root().join("textures").join(path), spec.hole)?;
+            Step::Holed(texture, hole) => {
+                let path = texture.path();
+                let pixels = Pixels::load_with_hole(&root().join("textures").join(path), hole)?;
                 self.decoded.push((path, pixels));
             }
             Step::Atlas => {
@@ -600,6 +588,8 @@ fn root() -> &'static Path {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::components::BarKind;
+    use crate::dungeon::Theme;
 
     #[test]
     fn every_theme_backdrop_matches_the_darkest_colour_of_its_tileset() {
@@ -612,7 +602,7 @@ mod tests {
             Theme::Lava,
             Theme::Temple,
         ] {
-            let path = root().join("textures").join(tileset_for(theme).path());
+            let path = root().join("textures").join(theme.tileset_texture().path());
             let image = image::open(&path).expect("the tileset opens").to_rgba8();
             let [red, green, blue] = theme.backdrop();
             let found = image

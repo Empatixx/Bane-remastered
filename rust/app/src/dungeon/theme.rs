@@ -1,3 +1,4 @@
+use crate::assets::{Tex, tex};
 use crate::rng::Rng;
 
 use super::surface::Surface;
@@ -49,6 +50,23 @@ const LATER: [Theme; 6] = [
 ];
 
 impl Theme {
+    pub(crate) fn tileset_texture(self) -> Tex {
+        match self {
+            Self::Stone => tex::TILESET,
+            Self::Sewer => tex::TILESET_SEWER,
+            Self::Moss => tex::TILESET_MOSS,
+            Self::Spider => tex::TILESET_SPIDER,
+            Self::Ice => tex::TILESET_ICE,
+            Self::Lava => tex::TILESET_LAVA,
+            Self::Temple => tex::TILESET_TEMPLE,
+        }
+    }
+
+    /// Every theme but stone is drawn with the wide tileset layout.
+    pub(crate) fn wide_tiles(self) -> bool {
+        self != Self::Stone
+    }
+
     pub(crate) fn parse(name: &str) -> Option<Self> {
         match name.trim().to_ascii_lowercase().as_str() {
             "stone" => Some(Self::Stone),
@@ -145,6 +163,28 @@ impl Theme {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn every_theme_has_its_own_tileset_and_only_stone_uses_narrow_tiles() {
+        use crate::assets::tex;
+        let all = [
+            Theme::Stone,
+            Theme::Sewer,
+            Theme::Moss,
+            Theme::Spider,
+            Theme::Ice,
+            Theme::Lava,
+            Theme::Temple,
+        ];
+        let textures: std::collections::HashSet<_> =
+            all.iter().map(|theme| theme.tileset_texture()).collect();
+
+        assert_eq!(textures.len(), all.len());
+        assert_eq!(Theme::Stone.tileset_texture(), tex::TILESET);
+        assert_eq!(Theme::Lava.tileset_texture(), tex::TILESET_LAVA);
+        assert!(!Theme::Stone.wide_tiles());
+        assert!(all[1..].iter().all(|theme| theme.wide_tiles()));
+    }
 
     #[test]
     fn the_first_floor_is_the_spider_nest_and_no_floor_repeats_a_theme() {

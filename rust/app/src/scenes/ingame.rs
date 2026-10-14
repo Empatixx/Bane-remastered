@@ -5,7 +5,7 @@ use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::tex;
-use crate::assets::{Assets, BULLET, tileset_for};
+use crate::assets::{Assets, BULLET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
@@ -582,8 +582,8 @@ impl InGameScene {
         let solid_cells = prefabs::tilemap(
             &mut self.world,
             &dungeon.grid,
-            assets.tileset_of(dungeon.theme),
-            assets.textures.get(tileset_for(dungeon.theme)),
+            assets.tileset_of(dungeon.theme.wide_tiles()),
+            assets.textures.get(dungeon.theme.tileset_texture()),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
         let grid = &dungeon.grid;
