@@ -18,6 +18,7 @@ mod pet;
 mod settings_ui;
 mod shadow;
 mod skills;
+mod summons;
 mod stats;
 mod tags;
 mod transform;
@@ -30,6 +31,7 @@ pub(crate) use artefacts::{
     HealPercent, InfiniteAmmo, MidasTouch, Phantom, PlaceTurret, ShieldAura, Shielded,
     SummonGhosts, TimeSlow,
 };
+pub(crate) use summons::{Ghost, Turret, TurretStage};
 pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{
     Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,

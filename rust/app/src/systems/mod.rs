@@ -46,6 +46,7 @@ mod simulation;
 mod skills;
 mod slot;
 mod stats;
+mod summons;
 mod steering;
 mod surfaces;
 mod ui;
@@ -63,6 +64,7 @@ pub(crate) use blood::{
     apply_heal_percent, bloodlust_heals_on_kill, pulse_bloodlust, spawn_bloodlust_drops,
     tick_blood_drops,
 };
+pub(crate) use summons::{spawn_summons, tick_ghosts, tick_turrets};
 pub(crate) use bosses::{tick_armageddon, tick_hatchers, tick_web_spitters, update_boss_hud};
 pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
