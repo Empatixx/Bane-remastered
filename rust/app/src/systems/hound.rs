@@ -10,8 +10,8 @@ use crate::components::{
 use crate::enemies::{self, ProjectileKind};
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::damage::hurt_player;
-use crate::systems::golem::{play, player_at, unit};
+use crate::systems::damage::hurt_player_through_armor;
+use crate::systems::golem::{play, player_at, spark, unit};
 
 const SPRITE_SCALE: f32 = 2.4;
 const CELL: Vec2 = Vec2::new(64.0, 42.0);
@@ -21,8 +21,9 @@ const HEADS: [Vec2; 3] = [
     Vec2::new(94.0, 46.0),
 ];
 const FEET: Vec2 = Vec2::new(0.0, 66.0);
-const SCORCH_SIZE: Vec2 = Vec2::new(58.0, 68.0);
-const SCORCH_REACH: f32 = 44.0;
+const SCORCH_SIZE: Vec2 = Vec2::new(44.0, 44.0);
+const SCORCH_REACH: f32 = 20.0;
+const COOLING: f32 = 0.5;
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const ATTACK_VAR: &str = "BANE_HOUND_ATTACK";
 
@@ -251,31 +252,40 @@ fn leave_fire(world: &mut World, textures: &Textures, entity: Entity, at: Vec2, 
     let clip = Clip {
         row: 0,
         frames: 4,
-        frame_time: 0.09,
+        frame_time: 0.1,
         looping: true,
         flipped: unit(&mut seed) > 0.5,
     };
     world.spawn((
         Scorch {
             remaining: enemies::HOUND_TRAIL_SECONDS,
-            total: enemies::HOUND_TRAIL_SECONDS,
         },
-        Position(at + FEET * Vec2::Y + jitter - Vec2::new(0.0, SCORCH_SIZE.y * 0.2)),
+        Position(at + FEET * Vec2::Y + jitter),
         Size(SCORCH_SIZE),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::HOUND_FIRE), 0, 0, 4, 1),
+        Sprite::cell(textures.get(tex::HOUND_LAVA), 0, 0, 4, 1),
         Animation::new(4, 1, clip),
-        Light::rgb(Vec2::ZERO, 255.0, 120.0, 30.0, 70.0, 0.9),
-        Layer(1),
+        Light::rgb(Vec2::ZERO, 255.0, 110.0, 30.0, 50.0, 0.7),
+        Layer(-1),
     ));
+    let kick = Vec2::new(unit(&mut seed) - 0.5, -0.4 - unit(&mut seed) * 0.8);
+    for side in [-1.0, 1.0] {
+        let velocity = Vec2::new(side * (30.0 + unit(&mut seed) * 90.0), kick.y * 140.0);
+        spark(
+            world,
+            textures,
+            tex::HOUND_SPARK,
+            at + FEET * Vec2::Y + jitter,
+            velocity,
+        );
+    }
 }
 
 pub(crate) fn tick_scorches(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
     let mut gone = Vec::new();
-    for (entity, scorch, color) in world.query_mut::<(Entity, &mut Scorch, &mut Color)>() {
+    for (entity, scorch, size) in world.query_mut::<(Entity, &mut Scorch, &mut Size)>() {
         scorch.remaining -= dt;
-        let fade = (scorch.remaining / (scorch.total * 0.3)).clamp(0.0, 1.0);
-        color.0.w = fade;
+        size.0 = SCORCH_SIZE * (scorch.remaining / COOLING).clamp(0.0, 1.0);
         if scorch.remaining <= 0.0 {
             gone.push(entity);
         }
@@ -293,14 +303,14 @@ pub(crate) fn tick_scorches(world: &mut World, sounds: &mut Vec<AudioCommand>, d
         .query::<(&Scorch, &Position)>()
         .iter()
         .any(|(scorch, position)| {
-            scorch.remaining > 0.2
+            scorch.remaining > COOLING
                 && (position.0 - at)
                     .abs()
                     .cmple(Vec2::splat(SCORCH_REACH) + size * 0.5)
                     .all()
         });
     if burning {
-        hurt_player(world, player, enemies::HOUND_FIRE_DAMAGE, sounds);
+        hurt_player_through_armor(world, player, enemies::HOUND_LAVA_DAMAGE, sounds);
     }
 }
 
@@ -381,7 +391,7 @@ fn execute(
                 let bullet = prefabs::enemy_bullet(
                     world,
                     physics,
-                    ProjectileKind::ArgusShot,
+                    ProjectileKind::Ember,
                     origin,
                     Vec2::from_angle(angle),
                     textures,
@@ -484,13 +494,7 @@ mod tests {
     #[test]
     fn scorches_fade_and_vanish() {
         let mut world = World::new();
-        world.spawn((
-            Scorch {
-                remaining: 0.1,
-                total: 1.0,
-            },
-            Color(Vec4::ONE),
-        ));
+        world.spawn((Scorch { remaining: 0.1 }, Size(SCORCH_SIZE)));
         let mut sounds = Vec::new();
         tick_scorches(&mut world, &mut sounds, 0.2);
         assert_eq!(world.query::<&Scorch>().iter().count(), 0);

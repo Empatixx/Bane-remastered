@@ -64,7 +64,6 @@ pub(crate) enum ArgusStage {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Scorch {
     pub(crate) remaining: f32,
-    pub(crate) total: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

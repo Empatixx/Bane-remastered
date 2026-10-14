@@ -62,11 +62,12 @@ pub(crate) const HOUND_RAGE_AT: f32 = 0.5;
 pub(crate) const HOUND_RAGE_SPEED: f32 = 1.25;
 pub(crate) const HOUND_NEAR: f32 = 360.0;
 pub(crate) const HOUND_LUNGE_WINDUP: f32 = 0.32;
-pub(crate) const HOUND_LUNGE_SECONDS: f32 = 0.85;
-pub(crate) const HOUND_LUNGE_SPEED: f32 = 3.6;
+pub(crate) const HOUND_LUNGE_SECONDS: f32 = 0.8;
+pub(crate) const HOUND_LUNGE_SPEED: f32 = 6.5;
 pub(crate) const HOUND_LUNGE_RECOVER: f32 = 0.6;
-pub(crate) const HOUND_TRAIL_EVERY: f32 = 0.05;
-pub(crate) const HOUND_TRAIL_SECONDS: f32 = 1.6;
+pub(crate) const HOUND_TRAIL_EVERY: f32 = 0.04;
+pub(crate) const HOUND_TRAIL_SECONDS: f32 = 1.8;
+pub(crate) const HOUND_LAVA_DAMAGE: i32 = 2;
 pub(crate) const HOUND_BREATH_WINDUP: f32 = 0.25;
 pub(crate) const HOUND_BREATH_SECONDS: f32 = 0.55;
 pub(crate) const HOUND_BREATH_EVERY: f32 = 0.08;
@@ -140,6 +141,7 @@ pub(crate) enum ProjectileKind {
     Boulder,
     ArgusShot,
     Fireball,
+    Ember,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -208,17 +210,23 @@ impl ProjectileKind {
                 lifetime: Some(5.0),
             },
             Self::Fireball => ProjectileSpec {
-                texture: tex::ARGUS_SHOT,
-                columns: 3,
+                texture: tex::HOUND_FLAME,
+                columns: 4,
                 rows: 2,
-                frame: Vec2::new(12.0, 12.0),
-                scale: 3.4,
-                idle: (3, 0.06),
-                impact: (3, 0.06),
+                frame: Vec2::new(16.0, 16.0),
+                scale: 3.6,
+                idle: (4, 0.06),
+                impact: (4, 0.06),
                 light: [255.0, 120.0, 30.0, 26.0, 0.6],
-                force: 46_000_000.0,
+                force: 50_000_000.0,
                 homing: false,
-                lifetime: Some(0.9),
+                lifetime: Some(0.8),
+            },
+            Self::Ember => ProjectileSpec {
+                force: 30_000_000.0,
+                lifetime: Some(3.0),
+                scale: 3.2,
+                ..Self::Fireball.spec()
             },
             Self::ArgusShot => ProjectileSpec {
                 texture: tex::ARGUS_SHOT,
@@ -641,9 +649,9 @@ impl EnemyKind {
                     (8, 5),
                     (128.0, 84.0),
                     2.4,
-                    (8, 0.07),
+                    (8, 0.1),
                     Some((8, 0.1)),
-                    (110, 2, 22_000_000.0),
+                    (110, 2, 75_000_000.0),
                 )
             },
             Self::Ogre => EnemySpec {

@@ -80,7 +80,7 @@ def cracks(d, pts, fill=LAVA):
         d.line((a[0], a[1], b[0], b[1]), fill=fill)
 
 
-def hound(bob=0, legs=((0, 0), (0, 0), (0, 0), (0, 0)), jaws=(0, 0, 0), breath=0.0, tail=0, turn=(0.0, 0.0, 0.0), lean=0, drop=(0, 0, 0), fiery=False):
+def hound(bob=0, legs=((0, 0), (0, 0), (0, 0), (0, 0)), jaws=(0, 0, 0), breath=0.0, tail=0, turn=(0.0, 0.0, 0.0), lean=0, drop=(0, 0, 0), fiery=False, pitch=0):
     image = Image.new("RGBA", (W, H), CLEAR)
     d = ImageDraw.Draw(image)
     ground = 76
@@ -113,10 +113,10 @@ def hound(bob=0, legs=((0, 0), (0, 0), (0, 0), (0, 0)), jaws=(0, 0, 0), breath=0
 
     for (x, top, hind), (lift, step) in zip(((22, 48, True), (34, 50, True), (56, 50, False), (66, 50, False)), legs):
         leg(x, top + bob, hind, lift, step)
-    ellipse(d, 42 + lean, 40 + bob, 28, 14, ROCK)
-    ellipse(d, 38 + lean, 36 + bob, 20, 8, ROCK_L)
-    ellipse(d, 24, 42 + bob, 12, 13, ROCK)
-    ellipse(d, 58 + lean, 38 + bob, 14, 14, ROCK)
+    ellipse(d, 42 + lean, 40 + bob - pitch // 2, 28, 14, ROCK)
+    ellipse(d, 38 + lean, 36 + bob - pitch // 2, 20, 8, ROCK_L)
+    ellipse(d, 24, 42 + bob + pitch, 12, 13, ROCK)
+    ellipse(d, 58 + lean, 38 + bob - pitch, 14, 14, ROCK)
     cracks(d, [(16, 44 + bob), (22, 40 + bob), (26, 46 + bob), (32, 42 + bob), (38, 48 + bob)])
     cracks(d, [(44, 34 + bob), (50, 38 + bob), (54, 33 + bob), (60, 40 + bob), (66, 36 + bob)], LAVA_H)
     cracks(d, [(30, 52 + bob), (36, 50 + bob), (42, 54 + bob), (48, 51 + bob)], LAVA_D)
@@ -131,10 +131,10 @@ def hound(bob=0, legs=((0, 0), (0, 0), (0, 0), (0, 0)), jaws=(0, 0, 0), breath=0
     )
     for base, joint, width, colour, centre, angle, size, index in heads:
         dy = drop[index]
-        neck(d, (base[0] + lean, base[1] + bob), (joint[0] + lean, joint[1] + bob + dy), width, colour)
-        head(d, centre[0] + lean, centre[1] + bob + dy, angle + turn[index], size, jaws[index], False)
+        neck(d, (base[0] + lean, base[1] + bob - pitch), (joint[0] + lean, joint[1] + bob + dy - pitch), width, colour)
+        head(d, centre[0] + lean, centre[1] + bob + dy - pitch, angle + turn[index], size, jaws[index], False)
         if breath > 0:
-            fx, fy = rot([(17, 2 + jaws[index] * 0.5)], angle + turn[index], centre[0] + lean, centre[1] + bob + dy, size)[0]
+            fx, fy = rot([(17, 2 + jaws[index] * 0.5)], angle + turn[index], centre[0] + lean, centre[1] + bob + dy - pitch, size)[0]
             flame(d, fx, fy, angle + turn[index], breath)
     d.rectangle((60 + lean, 24 + bob, 66 + lean, 34 + bob), fill=BONE_D)
     for y in (26, 30):
@@ -155,17 +155,20 @@ def run():
     for index in range(8):
         phase = index / 8 * math.tau
         legs = []
-        for leg in range(4):
-            angle = phase + leg * math.pi / 2
-            legs.append((round(max(0.0, math.sin(angle)) * 9), round(math.cos(angle) * 5)))
+        for leg, offset in enumerate((0.0, math.pi, math.pi, 0.0)):
+            angle = phase + offset + (0.0 if leg < 2 else 0.4)
+            reach = 8 if leg < 2 else 7
+            legs.append((round(max(0.0, math.sin(angle)) * 8), round(math.cos(angle) * reach)))
         frames.append(
             hound(
-                bob=9 + round(math.sin(phase * 2) * 2),
+                bob=9 + round(abs(math.sin(phase)) * 3) - 1,
                 legs=tuple(legs),
-                jaws=(2 + (index % 2), 1, 2),
-                tail=round(math.sin(phase) * 2) + 1,
-                turn=(math.sin(phase) * 0.06, math.sin(phase + 1) * 0.08, math.sin(phase + 2) * 0.06),
-                lean=round(math.sin(phase) * 1),
+                jaws=(2 + (index % 4 == 1), 1, 2),
+                tail=round(math.sin(phase + 1) * 3),
+                turn=(math.sin(phase * 2) * 0.1, math.sin(phase * 2 + 1) * 0.12, math.sin(phase * 2 + 2) * 0.1),
+                lean=round(math.sin(phase) * 2),
+                pitch=round(math.sin(phase * 2 + 1) * 3),
+                drop=(round(math.sin(phase * 2)), round(math.sin(phase * 2 + 1)), round(math.sin(phase * 2 + 2))),
             )
         )
     return frames
@@ -280,18 +283,57 @@ def death():
     return frames
 
 
-def scorch_sheet():
-    width, height = 24, 28
-    sheet = Image.new("RGBA", (width * 4, height), CLEAR)
+CRUST = (52, 22, 22, 255)
+
+
+def lava_drop_sheet():
+    size = 16
+    sheet = Image.new("RGBA", (size * 4, size), CLEAR)
+    d = ImageDraw.Draw(sheet)
     for frame in range(4):
-        d = ImageDraw.Draw(sheet)
-        for tongue, (dx, reach) in enumerate(((-6, 16), (0, 24), (6, 14))):
-            sway = ((frame + tongue) % 4 - 1.5) * 1.2
-            for colour, shrink in ((LAVA_D, 0), (LAVA, 3), (LAVA_H, 6), (LAVA_C, 9)):
-                top = height - 4 - max(4, reach - shrink * 1.4)
-                cx = frame * width + 12 + dx + sway * (1 - shrink / 12)
-                half = max(1.2, 4.5 - shrink * 0.4)
-                d.polygon([(cx - half, height - 3), (cx + half, height - 3), (cx + sway * 0.6, top)], fill=colour)
+        cx, cy = frame * size + 8, 9
+        radius = 5 + (frame % 2)
+        d.ellipse((cx - radius - 1, cy - radius + 1, cx + radius + 1, cy + radius), fill=CRUST)
+        d.ellipse((cx - radius, cy - radius + 1, cx + radius, cy + radius - 1), fill=LAVA_D)
+        d.ellipse((cx - radius + 2, cy - radius + 2, cx + radius - 2, cy + radius - 2), fill=LAVA)
+        d.ellipse((cx - 2, cy - 2, cx + 2, cy + 1), fill=LAVA_H)
+        d.point((cx - 1 + frame % 3, cy - 1), fill=LAVA_C)
+    return sheet
+
+
+def spark_sheet():
+    sheet = Image.new("RGBA", (6 * 4, 6), CLEAR)
+    d = ImageDraw.Draw(sheet)
+    for frame, (size, colour) in enumerate(((5, LAVA_C), (4, LAVA_H), (3, LAVA), (2, LAVA_D))):
+        d.rectangle((frame * 6, 0, frame * 6 + size - 1, size - 1), fill=colour)
+    return sheet
+
+
+def flame_sheet():
+    size = 16
+    sheet = Image.new("RGBA", (size * 4, size * 2), CLEAR)
+    d = ImageDraw.Draw(sheet)
+    for frame in range(4):
+        cx, cy = frame * size + 8, 8
+        for tongue in range(6):
+            angle = tongue * math.tau / 6 + frame * 0.5
+            reach = 5.5 + ((tongue + frame) % 3) * 1.4
+            tip = (cx + math.cos(angle) * reach, cy + math.sin(angle) * reach)
+            side = (math.cos(angle + math.pi / 2) * 2.2, math.sin(angle + math.pi / 2) * 2.2)
+            d.polygon([(cx + side[0], cy + side[1]), (cx - side[0], cy - side[1]), tip], fill=LAVA)
+        d.ellipse((cx - 4, cy - 4, cx + 4, cy + 4), fill=LAVA_H)
+        d.ellipse((cx - 2.4, cy - 2.4, cx + 2.4, cy + 2.4), fill=LAVA_C)
+        d.point((cx - 1, cy - 1), fill=(255, 250, 220, 255))
+    for frame in range(4):
+        cx, cy = frame * size + 8, size + 8
+        reach = 2 + frame * 1.7
+        for index in range(7):
+            angle = index * math.tau / 7 + 0.3
+            x, y = cx + math.cos(angle) * reach, cy + math.sin(angle) * reach
+            colour = (LAVA_C, LAVA_H, LAVA, LAVA_D)[frame]
+            d.rectangle((x, y, x + (1 if frame > 1 else 2), y + (1 if frame > 1 else 2)), fill=colour)
+        if frame < 2:
+            d.ellipse((cx - 3 + frame, cy - 3 + frame, cx + 3 - frame, cy + 3 - frame), fill=LAVA_H)
     return sheet
 
 
@@ -302,7 +344,9 @@ def main():
         for column, frame in enumerate(frames):
             sheet.paste(frame, (column * W, row * H))
     sheet.save(OUT / "hellhound.tga")
-    scorch_sheet().save(OUT / "hound_fire.tga")
+    lava_drop_sheet().save(OUT / "hound_lava.tga")
+    spark_sheet().save(OUT / "hound_spark.tga")
+    flame_sheet().save(OUT / "hound_flame.tga")
 
 
 main()

@@ -548,7 +548,7 @@ pub(crate) fn clear_beam(world: &mut World) {
     }
 }
 
-fn spark(world: &mut World, textures: &Textures, sprite: Tex, at: Vec2, velocity: Vec2) {
+pub(crate) fn spark(world: &mut World, textures: &Textures, sprite: Tex, at: Vec2, velocity: Vec2) {
     let burn = Clip {
         row: 0,
         frames: SPARK_FRAMES,
