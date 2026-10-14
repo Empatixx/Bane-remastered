@@ -23,15 +23,55 @@ pub(crate) const KING_SMASH_BULLETS: usize = 25;
 pub(crate) const COMMON_SPAWN_SECONDS: f32 = 2.0;
 pub(crate) const BOSS_SPAWN_SECONDS: f32 = 1.5;
 pub(crate) const FINAL_FLOOR: u32 = 5;
-/// Every theme but ice, where the frost rat, icicle bat and snow slime take over.
-const NOT_ICE: &[Theme] = &[
+/// The themes that keep the plain rat, bat and slime: ice and lava have their own.
+const PLAIN_THEMES: &[Theme] = &[
     Theme::Stone,
     Theme::Sewer,
     Theme::Moss,
     Theme::Spider,
-    Theme::Lava,
     Theme::Temple,
 ];
+/// An ember rat hit once burns brighter and runs this many times faster, then
+/// bursts on the player or where it dies.
+pub(crate) const EMBER_RUSH: f32 = 2.4;
+pub(crate) const EMBER_BLAST_REACH: f32 = 90.0;
+pub(crate) const EMBER_BLAST_DAMAGE: i32 = 2;
+/// A flame bat circles for a while, flares up, then swoops through the player.
+pub(crate) const SWOOP_EVERY: f32 = 3.2;
+pub(crate) const SWOOP_WINDUP: f32 = 0.5;
+pub(crate) const SWOOP_DIVE: f32 = 0.55;
+pub(crate) const SWOOP_RUSH: f32 = 3.4;
+/// What a flame bat leaves: ash that rises again unless shot within the time.
+pub(crate) const ASH_REBIRTH: f32 = 2.0;
+pub(crate) const ASH_HEALTH: i32 = 3;
+/// A magma slime takes turns between molten and crusted.
+pub(crate) const MAGMA_TURN: f32 = 3.0;
+pub(crate) const CRUST_SLOWDOWN: f32 = 0.4;
+/// The magma slime's lobbed ball: how often, how far, how long in the air.
+pub(crate) const MORTAR_EVERY: f32 = 2.8;
+pub(crate) const MORTAR_RANGE: f32 = 520.0;
+pub(crate) const MORTAR_FLIGHT: f32 = 1.0;
+pub(crate) const MORTAR_DAMAGE: i32 = 1;
+pub(crate) const MORTAR_RADIUS: f32 = 40.0;
+/// The lava worm: it tunnels towards the player, warns, bursts up, bites for a
+/// while and goes back down. It can only be hurt while it is up.
+pub(crate) const WORM_SURFACE_RANGE: f32 = 70.0;
+pub(crate) const WORM_MAX_UNDER: f32 = 5.0;
+pub(crate) const WORM_WARNING: f32 = 0.7;
+pub(crate) const WORM_RISE: f32 = 0.32;
+pub(crate) const WORM_UP: f32 = 3.0;
+pub(crate) const WORM_BITE_EVERY: f32 = 0.9;
+pub(crate) const WORM_BITE_REACH: f32 = 80.0;
+pub(crate) const WORM_ERUPT_REACH: f32 = 70.0;
+/// The worm's first row: rising out of the floor.
+pub(crate) const WORM_RISE_CLIP: crate::clip::Clip = crate::clip::Clip {
+    row: 0,
+    frames: 4,
+    frame_time: 0.08,
+    looping: false,
+    flipped: false,
+};
+
 /// Seconds between two icicles from one icicle bat, and how close the player must be.
 pub(crate) const ICICLE_COOLDOWN: f32 = 3.5;
 pub(crate) const ICICLE_RANGE: f32 = 420.0;
@@ -404,6 +444,10 @@ pub(crate) enum EnemyKind {
     IcicleBat,
     SnowSlime,
     SnowSlimeling,
+    EmberRat,
+    FlameBat,
+    MagmaSlime,
+    LavaWorm,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -436,6 +480,14 @@ pub(crate) enum Behavior {
     Chills,
     /// Now and then it drops an icicle on the player, shadow first.
     DropsIcicles,
+    /// Hit once, it flares up and rushes the player, bursting on contact or death.
+    Kindles,
+    /// Circles, flares up and swoops through the player; leaves ash that rises again.
+    Swoops,
+    /// Takes turns between molten and an armoured crust, lobbing magma at the player.
+    Molten,
+    /// Tunnels under the floor, bursts up under the player and bites.
+    Burrows,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -551,7 +603,7 @@ impl EnemyKind {
         Self::ALL.iter().position(|kind| *kind == self).unwrap_or(0)
     }
 
-    pub(crate) const ALL: [Self; 27] = [
+    pub(crate) const ALL: [Self; 31] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -579,12 +631,16 @@ impl EnemyKind {
         Self::IcicleBat,
         Self::SnowSlime,
         Self::SnowSlimeling,
+        Self::EmberRat,
+        Self::FlameBat,
+        Self::MagmaSlime,
+        Self::LavaWorm,
     ];
 
     pub(crate) fn spec(self) -> EnemySpec {
         match self {
             Self::Rat => EnemySpec {
-                themes: NOT_ICE,
+                themes: PLAIN_THEMES,
                 ..spec(
                     tex::RAT,
                     (4, 2),
@@ -621,7 +677,7 @@ impl EnemyKind {
                 )
             },
             Self::Bat => EnemySpec {
-                themes: NOT_ICE,
+                themes: PLAIN_THEMES,
                 ..spec(
                     tex::BAT,
                     (4, 2),
@@ -659,7 +715,7 @@ impl EnemyKind {
             },
             Self::Slime => EnemySpec {
                 behavior: Behavior::Smash(ProjectileKind::Green),
-                themes: NOT_ICE,
+                themes: PLAIN_THEMES,
                 ..spec(
                     tex::SLIME,
                     (6, 2),
@@ -681,6 +737,60 @@ impl EnemyKind {
                     (4, 0.175),
                     Some((6, 0.065)),
                     (11, 1, 1_000_000.0),
+                )
+            },
+            Self::EmberRat => EnemySpec {
+                behavior: Behavior::Kindles,
+                themes: &[Theme::Lava],
+                ..spec(
+                    tex::EMBER_RAT,
+                    (4, 2),
+                    (85.0, 37.0),
+                    1.5,
+                    (4, 0.12),
+                    Some((3, 0.15)),
+                    (12, 2, 6_000_000.0),
+                )
+            },
+            Self::FlameBat => EnemySpec {
+                behavior: Behavior::Swoops,
+                themes: &[Theme::Lava],
+                ..spec(
+                    tex::FLAME_BAT,
+                    (4, 2),
+                    (64.0, 64.0),
+                    1.5,
+                    (4, 0.125),
+                    Some((4, 0.1)),
+                    (9, 2, 12_000_000.0),
+                )
+            },
+            Self::MagmaSlime => EnemySpec {
+                behavior: Behavior::Molten,
+                themes: &[Theme::Lava],
+                ..spec(
+                    tex::MAGMA_SLIME,
+                    (6, 2),
+                    (32.0, 24.0),
+                    3.0,
+                    (4, 0.175),
+                    Some((6, 0.065)),
+                    (12, 1, 1_000_000.0),
+                )
+            },
+            Self::LavaWorm => EnemySpec {
+                behavior: Behavior::Burrows,
+                themes: &[Theme::Lava],
+                min_floor: 1,
+                death_row: 2,
+                ..spec(
+                    tex::LAVA_WORM,
+                    (4, 3),
+                    (32.0, 52.0),
+                    2.0,
+                    (4, 0.1),
+                    Some((4, 0.14)),
+                    (20, 2, 7_000_000.0),
                 )
             },
             // What a snow slime breaks into: small, quick to die, and it chills on touch.
@@ -1060,7 +1170,8 @@ mod tests {
         assert!(EnemyKind::RedSpiderling.available_in(1, Theme::Spider));
         assert!(!EnemyKind::RedSpiderling.available_in(1, Theme::Stone));
         assert!(!EnemyKind::BloatedSpider.available_in(3, Theme::Lava));
-        assert!(EnemyKind::Rat.available_in(1, Theme::Lava));
+        assert!(EnemyKind::EmberRat.available_in(1, Theme::Lava));
+        assert!(EnemyKind::Rat.available_in(1, Theme::Stone));
         assert!(!EnemyKind::DemonEye.available_on(2));
         assert!(EnemyKind::DemonEye.available_on(3));
         assert!(!EnemyKind::EyeWatcher.available_on(2));
@@ -1080,10 +1191,11 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        // The frost rat, icicle bat, snow slime and slimeling live only on ice.
-        let ice_only = 4;
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 10 - ice_only);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 10 - 5 - ice_only);
+        // The ice (frost rat, icicle bat, snow slime, slimeling) and lava (ember
+        // rat, flame bat, magma slime, lava worm) enemies live only in their biome.
+        let biome_only = 8;
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 10 - biome_only);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 10 - 5 - biome_only);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));

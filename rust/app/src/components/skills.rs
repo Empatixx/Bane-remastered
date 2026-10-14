@@ -225,7 +225,77 @@ pub(crate) struct RockFall {
     pub(crate) duration: f32,
     pub(crate) rock: hecs::Entity,
     pub(crate) room: Option<crate::components::RoomId>,
-    pub(crate) icicle: bool,
+    pub(crate) kind: FallKind,
+    /// Where a lobbed shot starts its arc; a dropped one falls straight down.
+    pub(crate) from: Option<glam::Vec2>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum FallKind {
+    Boulder,
+    Icicle,
+    Magma,
+}
+
+/// An ember rat: once hit it is lit and rushes the player.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Kindling {
+    pub(crate) lit: bool,
+    pub(crate) base_speed: f32,
+}
+
+/// Bursts into flame where it dies, hurting the player and enemies nearby.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct DeathBlast;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum SwoopStage {
+    Circle,
+    Windup,
+    Dive,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Swooper {
+    pub(crate) stage: SwoopStage,
+    pub(crate) timer: f32,
+    pub(crate) base_speed: f32,
+}
+
+/// Leaves a heap of ash that rises again as a new flame bat.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct DeathAsh;
+
+/// The heap of ash a flame bat leaves; shoot it before it rises.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct AshPile {
+    pub(crate) remaining: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct MagmaShell {
+    pub(crate) crusted: bool,
+    pub(crate) timer: f32,
+    pub(crate) mortar: f32,
+    pub(crate) base_speed: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum WormStage {
+    Under,
+    Warning,
+    Rising,
+    Up,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Burrower {
+    pub(crate) stage: WormStage,
+    pub(crate) timer: f32,
+    pub(crate) bite: f32,
+    pub(crate) base_speed: f32,
+    pub(crate) damage: i32,
+    pub(crate) warning: Option<hecs::Entity>,
 }
 
 /// Damage from this (a bite, a snowball) also chills the player.

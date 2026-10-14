@@ -18,6 +18,8 @@ use crate::systems::damage::hurt_player;
 const ROCK_RING_ORIGIN_DROP: f32 = 60.0;
 const EYE_HEIGHT: f32 = 45.0;
 const FALL_HEIGHT: f32 = 380.0;
+/// How high a lobbed shot rises at the top of its arc.
+const LOB_HEIGHT: f32 = 140.0;
 const SHADOW_SIZE: Vec2 = Vec2::new(150.0, 75.0);
 const ROCK_SIZE: Vec2 = Vec2::new(72.0, 72.0);
 const IMPACT_SIZE: Vec2 = Vec2::new(150.0, 150.0);
@@ -447,7 +449,8 @@ pub(crate) fn drop_rock(
             duration: enemies::GOLEM_RAIN_DELAY,
             rock,
             room,
-            icicle: false,
+            kind: crate::components::FallKind::Boulder,
+            from: None,
         },
         Position(ground),
         Size(SHADOW_SIZE),
@@ -469,31 +472,44 @@ pub(crate) fn tick_rock_falls(
     for (entity, fall, position) in world.query_mut::<(Entity, &mut RockFall, &Position)>() {
         fall.remaining -= dt;
         if fall.remaining <= 0.0 {
-            landed.push((entity, fall.rock, position.0, fall.room, fall.icicle));
+            landed.push((entity, fall.rock, position.0, fall.room, fall.kind));
         }
     }
-    let falling: Vec<(Entity, Entity)> = world
+    let falling: Vec<(Entity, Entity, f32, Option<Vec2>)> = world
         .query::<(Entity, &RockFall)>()
         .iter()
-        .map(|(entity, fall)| (entity, fall.rock))
+        .map(|(entity, fall)| {
+            let progress = (fall.remaining / fall.duration).clamp(0.0, 1.0);
+            (entity, fall.rock, progress, fall.from)
+        })
         .collect();
-    for (shadow, rock) in falling {
-        let progress = world.get::<&RockFall>(shadow).map_or(0.0, |fall| {
-            (fall.remaining / fall.duration).clamp(0.0, 1.0)
-        });
+    for (shadow, rock, progress, from) in falling {
         let ground = world.get::<&Position>(shadow).map(|p| p.0).ok();
         if let (Some(ground), Ok(mut position)) = (ground, world.get::<&mut Position>(rock)) {
-            position.0 =
-                ground - Vec2::new(0.0, FALL_HEIGHT * (2.0 * progress - progress * progress));
+            position.0 = match from {
+                // A lobbed shot: along the line from where it was thrown, up in an arc.
+                Some(from) => {
+                    let flown = 1.0 - progress;
+                    from.lerp(ground, flown) - Vec2::new(0.0, LOB_HEIGHT * 4.0 * flown * (1.0 - flown))
+                }
+                None => ground - Vec2::new(0.0, FALL_HEIGHT * (2.0 * progress - progress * progress)),
+            };
         }
     }
     let player = player_body(world);
-    for (shadow, rock, ground, room, icicle) in landed {
+    for (shadow, rock, ground, room, kind) in landed {
         let _ = world.despawn(shadow);
         let _ = world.despawn(rock);
-        if icicle {
-            icicle_lands(world, textures, ground, player, sounds);
-            continue;
+        match kind {
+            crate::components::FallKind::Icicle => {
+                icicle_lands(world, textures, ground, player, sounds);
+                continue;
+            }
+            crate::components::FallKind::Magma => {
+                super::lava::magma_lands(world, textures, ground, player, sounds);
+                continue;
+            }
+            crate::components::FallKind::Boulder => {}
         }
         sounds.push(AudioCommand::At(SoundEffect::WallHit, ground));
         let burst = Clip {

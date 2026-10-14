@@ -7,7 +7,8 @@ use crate::assets::{PET, PLAYER, Textures};
 use crate::components::{
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
     BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
-    Chills, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, DropShadow, Enemy,
+    Burrower, Chills, DeathAsh, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, DropShadow,
+    Enemy, Kindling, MagmaShell, SwoopStage, Swooper, WormStage,
     EnemyBullet, EyeShooter, Fuse, IcicleDropper,
     GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Heading, Health, Hits, Homing, Hopper,
     HoundAttack, HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade,
@@ -271,6 +272,58 @@ pub(crate) fn enemy(
                 IcicleDropper {
                     remaining: enemies::ICICLE_COOLDOWN * (0.5 + stagger as f32 * 0.1),
                 },
+            );
+        }
+        Behavior::Kindles => {
+            let _ = world.insert_one(
+                entity,
+                Kindling {
+                    lit: false,
+                    base_speed: spec.speed(),
+                },
+            );
+        }
+        Behavior::Swoops => {
+            let stagger = (position.x as u32 ^ position.y as u32) % 10;
+            let _ = world.insert(
+                entity,
+                (
+                    Swooper {
+                        stage: SwoopStage::Circle,
+                        timer: enemies::SWOOP_EVERY * (0.5 + stagger as f32 * 0.1),
+                        base_speed: spec.speed(),
+                    },
+                    DeathAsh,
+                ),
+            );
+        }
+        Behavior::Molten => {
+            let stagger = (position.x as u32 ^ position.y as u32) % 10;
+            let _ = world.insert_one(
+                entity,
+                MagmaShell {
+                    crusted: false,
+                    timer: enemies::MAGMA_TURN,
+                    mortar: enemies::MORTAR_EVERY * (0.4 + stagger as f32 * 0.1),
+                    base_speed: spec.speed(),
+                },
+            );
+        }
+        Behavior::Burrows => {
+            let _ = world.insert_one(
+                entity,
+                Burrower {
+                    stage: WormStage::Rising,
+                    timer: 0.0,
+                    bite: 0.0,
+                    base_speed: spec.speed(),
+                    damage,
+                    warning: None,
+                },
+            );
+            let _ = world.insert_one(
+                entity,
+                Animation::new(spec.columns, spec.rows, enemies::WORM_RISE_CLIP),
             );
         }
         Behavior::Hops => {

@@ -462,6 +462,17 @@ impl Scene for InGameScene {
             hostile_dt,
         );
         systems::tick_icicle_bats(&mut self.world, &assets.textures, hostile_dt);
+        systems::tick_ember_rats(&mut self.world, &mut self.sounds, self.clock);
+        systems::tick_swoopers(&mut self.world, &mut self.sounds, hostile_dt);
+        systems::tick_magma_slimes(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
+        systems::tick_worms(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
+        systems::tick_ashes(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+            hostile_dt,
+        );
         systems::tick_hoppers(&mut self.world, hostile_dt);
         systems::tick_baits(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
         systems::tick_mimic(
@@ -704,7 +715,11 @@ impl InGameScene {
         self.loot_rng = Rng::stream(self.run_seed, self.floor, Stream::Loot);
         self.combat_rng = Rng::stream(self.run_seed, self.floor, Stream::Combat);
         tracing::info!(floor = self.floor, "generating the dungeon");
-        let theme = Theme::for_floor(self.run_seed, self.floor);
+        // `BANE_THEME=lava` (or any theme name) forces every floor's biome, for working on the game.
+        let theme = std::env::var("BANE_THEME")
+            .ok()
+            .and_then(|name| Theme::parse(&name))
+            .unwrap_or_else(|| Theme::for_floor(self.run_seed, self.floor));
         let dungeon = match Dungeon::generate_for_run(&mut self.map_rng, theme, self.rules.shops) {
             Ok(dungeon) => dungeon,
             Err(error) => {
