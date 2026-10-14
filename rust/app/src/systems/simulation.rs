@@ -1,7 +1,8 @@
 use hecs::{Entity, World};
 
 use crate::components::{
-    Body, BodyOffset, CHILL_SLOWDOWN, Chilled, Player, Position, Previous, Velocity,
+    Body, BodyOffset, CHILL_SLOWDOWN, Chilled, Enemy, EnemyBullet, Player, Position, Previous,
+    Velocity,
 };
 use crate::physics::Physics;
 
@@ -13,12 +14,22 @@ pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
             "despawned without Physics::despawn, cleaned up the leftovers"
         );
     }
-    for (body, velocity, chilled) in world.query_mut::<(&Body, &Velocity, Option<&Chilled>)>() {
-        let slowdown = if chilled.is_some() {
+    let time_scale = super::time_scale(world);
+    for (body, velocity, chilled, enemy, enemy_bullet) in world.query_mut::<(
+        &Body,
+        &Velocity,
+        Option<&Chilled>,
+        Option<&Enemy>,
+        Option<&EnemyBullet>,
+    )>() {
+        let mut slowdown = if chilled.is_some() {
             CHILL_SLOWDOWN
         } else {
             1.0
         };
+        if enemy.is_some() || enemy_bullet.is_some() {
+            slowdown *= time_scale;
+        }
         physics.set_velocity(*body, velocity.0 * slowdown);
     }
     physics.step(dt);
@@ -233,6 +244,65 @@ mod tests {
         let rat_x = player_position(&world, rat).x;
         assert!(player_x > 300.0, "player x = {player_x}");
         assert!((rat_x - 200.0).abs() < 0.5, "rat x = {rat_x}");
+    }
+
+    /// Moves a player, a rat and an enemy bullet for one second and returns how far each went.
+    fn travelled_in_a_second(time_slow: bool) -> (f32, f32, f32) {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 100.0),
+            &Textures::default(),
+        );
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(100.0, 400.0),
+        );
+        let shot = prefabs::enemy_bullet(
+            &mut world,
+            &mut physics,
+            crate::enemies::ProjectileKind::Green,
+            Vec2::new(100.0, 700.0),
+            Vec2::X,
+            &Textures::default(),
+        );
+        for entity in [player, rat] {
+            if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
+                velocity.0 = Vec2::new(60.0, 0.0);
+            }
+        }
+        if time_slow {
+            let remaining = crate::artefacts::TIME_SLOW_SECONDS / 2.0;
+            let _ = world.insert_one(player, crate::components::TimeSlow { remaining });
+        }
+        run(&mut world, &mut physics, 60);
+        (
+            player_position(&world, player).x - 100.0,
+            player_position(&world, rat).x - 100.0,
+            player_position(&world, shot).x - 100.0,
+        )
+    }
+
+    #[test]
+    fn the_hourglass_slows_enemies_and_their_bullets_but_not_the_player() {
+        let (player, rat, shot) = travelled_in_a_second(false);
+        let (slow_player, slow_rat, slow_shot) = travelled_in_a_second(true);
+        let scale = crate::artefacts::TIME_SLOW_SCALE;
+
+        assert!(
+            (slow_player - player).abs() < 0.5,
+            "{slow_player} vs {player}"
+        );
+        assert!((slow_rat - rat * scale).abs() < 1.0, "{slow_rat} vs {rat}");
+        assert!(shot > 100.0, "shot = {shot}");
+        assert!(
+            (slow_shot - shot * scale).abs() < 2.0,
+            "{slow_shot} vs {shot}"
+        );
     }
 
     fn barrel_scene(barrel_at: Vec2) -> (World, Physics, Entity, Entity) {

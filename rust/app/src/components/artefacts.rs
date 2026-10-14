@@ -24,7 +24,6 @@ pub(crate) struct Berserk {
     pub(crate) remaining: f32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct TimeSlow {
     pub(crate) remaining: f32,

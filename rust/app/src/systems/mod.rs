@@ -46,6 +46,7 @@ mod slot;
 mod stats;
 mod steering;
 mod surfaces;
+mod time_slow;
 mod ui;
 mod unstick;
 
@@ -121,5 +122,6 @@ pub(crate) use stats::{
 };
 pub(crate) use steering::{steer_player, steer_player_on};
 pub(crate) use surfaces::{burn_on_lava, ripple_on_water, sync_liquids};
+pub(crate) use time_slow::time_scale;
 pub(crate) use ui::{update_buttons, update_text_buttons};
 pub(crate) use unstick::watch_progress;

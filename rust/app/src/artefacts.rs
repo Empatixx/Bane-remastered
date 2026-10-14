@@ -9,7 +9,6 @@ pub(crate) const RING_DAMAGE: i32 = 2;
 pub(crate) const BERSERK_PHASE: f32 = 0.75;
 
 pub(crate) const TIME_SLOW_SECONDS: f32 = 6.0;
-#[allow(dead_code)]
 pub(crate) const TIME_SLOW_SCALE: f32 = 0.35;
 pub(crate) const BLOODLUST_SECONDS: f32 = 10.0;
 pub(crate) const CHALICE_HEAL: f32 = 0.5;

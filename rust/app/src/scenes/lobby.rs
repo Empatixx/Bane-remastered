@@ -137,6 +137,7 @@ impl Scene for LobbyScene {
         SceneFx {
             paused: self.pause.is_active() || self.panel_is_open(),
             low_health: systems::player_is_low_on_health(&self.world),
+            time_slow: 0.0,
         }
     }
 

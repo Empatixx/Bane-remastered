@@ -72,6 +72,7 @@ struct Post {
     sampler: wgpu::Sampler,
     blit: wgpu::RenderPipeline,
     vignette: wgpu::RenderPipeline,
+    slow: wgpu::RenderPipeline,
     blur_horizontal: wgpu::RenderPipeline,
     blur_vertical: wgpu::RenderPipeline,
 }
@@ -530,7 +531,9 @@ impl Gpu {
     }
 
     pub(crate) fn render(&mut self, clear: wgpu::Color, frame_data: &Frame) {
-        let direct = !frame_data.post.vignette_active() && !frame_data.post.blur_active();
+        let direct = !frame_data.post.vignette_active()
+            && !frame_data.post.blur_active()
+            && !frame_data.post.time_slow_active();
         if !direct {
             self.ensure_targets();
         }
@@ -654,6 +657,15 @@ impl Gpu {
             );
             current = 1 - current;
         }
+        if frame_data.post.time_slow_active() {
+            self.post_pass(
+                &mut encoder,
+                &self.post.slow,
+                &targets.groups[current],
+                &targets.views[1 - current],
+            );
+            current = 1 - current;
+        }
         self.quads_pass(
             &mut encoder,
             &targets.views[current],
@@ -763,6 +775,7 @@ impl Post {
         Self {
             blit: pipeline("fs_blit"),
             vignette: pipeline("fs_vignette"),
+            slow: pipeline("fs_slow"),
             blur_horizontal: pipeline("fs_blur_horizontal"),
             blur_vertical: pipeline("fs_blur_vertical"),
             params_buffer,
