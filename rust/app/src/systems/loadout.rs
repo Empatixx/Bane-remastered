@@ -104,7 +104,7 @@ pub(crate) fn fresh_weapon(world: &World, kind: GunKind) -> Weapon {
 pub(crate) fn unused_gun(loadout: &Loadout, roll: f32) -> Option<GunKind> {
     let free: Vec<GunKind> = GunKind::ALL
         .into_iter()
-        .filter(|kind| !loadout.has(*kind))
+        .filter(|kind| !loadout.has(*kind) && loadout.allows(*kind))
         .collect();
     if free.is_empty() {
         return None;
@@ -181,6 +181,15 @@ mod tests {
     use crate::physics::Physics;
 
     use super::*;
+
+    #[test]
+    fn a_restricted_loadout_is_never_offered_another_gun() {
+        let mut loadout = Loadout::starting();
+        loadout.restrict(Some(GunKind::Pistol));
+        for roll in [0.0, 0.3, 0.6, 0.99] {
+            assert_eq!(unused_gun(&loadout, roll), None);
+        }
+    }
 
     fn setup() -> (World, Textures) {
         let mut world = World::new();

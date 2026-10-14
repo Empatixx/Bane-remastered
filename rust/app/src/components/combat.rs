@@ -95,6 +95,9 @@ pub(crate) struct Enemy {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Toughened;
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Spawning {
     pub(crate) remaining: f32,
     pub(crate) total: f32,
@@ -267,6 +270,7 @@ pub(crate) struct Loadout {
     current: usize,
     ammo_scale: f32,
     mods: WeaponMods,
+    only: Option<GunKind>,
 }
 
 impl Loadout {
@@ -279,7 +283,27 @@ impl Loadout {
             current: 0,
             ammo_scale: 1.0,
             mods: WeaponMods::default(),
+            only: None,
         }
+    }
+
+    pub(crate) fn restrict(&mut self, only: Option<GunKind>) {
+        self.only = only;
+        let Some(only) = only else {
+            return;
+        };
+        for slot in &mut self.slots {
+            if slot.as_ref().is_some_and(|weapon| weapon.kind != only) {
+                *slot = None;
+            }
+        }
+        if self.slots.get(self.current).is_none_or(Option::is_none) {
+            self.current = self.slots.iter().position(Option::is_some).unwrap_or(0);
+        }
+    }
+
+    pub(crate) fn allows(&self, kind: GunKind) -> bool {
+        self.only.is_none_or(|only| only == kind)
     }
 
     pub(crate) fn apply_weapon_mods(&mut self, mods: WeaponMods) {

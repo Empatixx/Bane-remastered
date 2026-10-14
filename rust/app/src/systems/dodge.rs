@@ -4,7 +4,7 @@ use hecs::{Entity, World};
 use crate::assets::{PLAYER_DODGE, Textures};
 use crate::components::{
     Afterimage, Animation, Clip, Color, Dodge, DodgeBar, DodgeCooldown, DodgeVisual, Health,
-    Invulnerable, Layer, Lit, Player, Position, Previous, Size, Sprite,
+    Invulnerable, Layer, Lit, Player, PlayerPerks, Position, Previous, Size, Sprite,
 };
 use crate::controls::Action;
 use crate::input::Input;
@@ -28,14 +28,16 @@ pub(crate) fn start_dodge(world: &mut World, input: &Input, aim: Vec2) {
         return;
     }
     let ready: Vec<(Entity, Vec2)> = world
-        .query::<(Entity, &Position, &Health)>()
+        .query::<(Entity, &Position, &Health, Option<&PlayerPerks>)>()
         .with::<&Player>()
         .without::<&Dodge>()
         .without::<&DodgeCooldown>()
         .without::<&crate::components::Frozen>()
         .iter()
-        .filter(|(_, _, health)| health.current > 0)
-        .map(|(entity, position, _)| (entity, position.0))
+        .filter(|(_, _, health, perks)| {
+            health.current > 0 && perks.is_none_or(|perks| perks.0.dodge)
+        })
+        .map(|(entity, position, _, _)| (entity, position.0))
         .collect();
     for (entity, position) in ready {
         let direction = Some(input.direction())
@@ -267,6 +269,8 @@ pub(crate) fn fade_afterimages(world: &mut World, dt: f32) {
 mod tests {
     use crate::assets::Textures;
     use crate::components::Armor;
+    use crate::components::PlayerPerks;
+    use crate::upgrades::Perks;
 
     use super::*;
 
@@ -299,6 +303,36 @@ mod tests {
         let dodge = world.get::<&Dodge>(hero).map(|d| d.direction).ok();
         assert_eq!(dodge, Some(Vec2::Y));
         assert!(world.get::<&Invulnerable>(hero).is_ok());
+    }
+
+    #[test]
+    fn a_run_without_dodging_keeps_the_player_on_their_feet() {
+        let mut world = World::new();
+        let hero = player(&mut world);
+        let perks = Perks {
+            dodge: false,
+            ..Perks::default()
+        };
+        world.insert_one(hero, PlayerPerks(perks)).expect("perks");
+
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+
+        assert!(world.get::<&Dodge>(hero).is_err());
+    }
+
+    #[test]
+    fn a_run_with_dodging_lets_the_player_dodge() {
+        let mut world = World::new();
+        let hero = player(&mut world);
+        let perks = Perks {
+            dodge: true,
+            ..Perks::default()
+        };
+        world.insert_one(hero, PlayerPerks(perks)).expect("perks");
+
+        start_dodge(&mut world, &pressed(), Vec2::X * 500.0);
+
+        assert!(world.get::<&Dodge>(hero).is_ok());
     }
 
     #[test]
