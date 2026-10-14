@@ -12,7 +12,7 @@ use super::upgrade_menu::{Element, clear, rect, spawn};
 
 const COLUMNS: usize = 3;
 const NOTE_SIZE: Vec2 = Vec2::new(44.0 * SCALE, 50.0 * SCALE);
-const NOTE_ORIGIN: Vec2 = Vec2::new(218.0, 171.0);
+const NOTE_ORIGIN: Vec2 = Vec2::new(218.0, 100.0);
 const NOTE_STEP: Vec2 = Vec2::new(176.0, 198.0);
 const NOTE_JITTER: [f32; 6] = [0.0, 3.0, -2.0, 3.0, -2.0, 4.0];
 const NOTE_INSET: f32 = SCALE;
@@ -193,7 +193,7 @@ pub(crate) fn layout(tab: Tab, view: &BoardView, hover: Option<Target>) -> Vec<E
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum BoardAction {
-    Claimed(u32),
+    Claimed,
     Toggled,
 }
 
@@ -265,7 +265,7 @@ impl QuestBoard {
                     }
                 }
                 (Target::Note(index), Tab::Tasks) => {
-                    action = profile.claim_mission(index).map(BoardAction::Claimed);
+                    action = profile.claim_mission(index).map(|_| BoardAction::Claimed);
                 }
                 (Target::Note(index), Tab::Challenges) => {
                     if let Some(id) = ChallengeId::ALL.get(index) {
@@ -395,7 +395,7 @@ mod tests {
     #[test]
     fn every_paper_fits_on_the_board() {
         let board = panel::BOARD_TOP_LEFT + panel::BOARD_SIZE;
-        for index in 0..view().missions.len() {
+        for index in 0..6 {
             let far = note_top_left(index) + NOTE_SIZE;
 
             assert!(

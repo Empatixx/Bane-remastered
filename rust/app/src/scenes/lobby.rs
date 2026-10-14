@@ -261,7 +261,7 @@ impl Scene for LobbyScene {
             }
             if let Some(profile) = self.profile.clone() {
                 match self.quests.update(&mut self.world, input, assets, &profile) {
-                    Some(BoardAction::Claimed(_)) => {
+                    Some(BoardAction::Claimed) => {
                         self.refresh_wallet();
                         self.refresh_counters();
                         systems::say(&mut self.world, "Talents earned!");
@@ -409,7 +409,7 @@ impl Scene for LobbyScene {
 #[cfg(test)]
 mod tests {
     use crate::components::{CoinText, Text, Wallet};
-    use crate::progress::ChallengeId;
+    use crate::progress::{ChallengeId, RunRecord};
     use crate::scenes::quest_board;
 
     use super::*;
@@ -586,5 +586,44 @@ mod tests {
 
         scene.update(&click(note), 0.0, &assets, &mut Settings::in_memory());
         assert_eq!(profile.challenge(), None);
+    }
+
+    #[test]
+    fn clicking_a_finished_mission_pays_its_talents_once() {
+        let (mut scene, assets) = lobby();
+        let profile = scene.profile.clone().expect("profile");
+        let huge = crate::components::RunStats {
+            fired: 1_000_000,
+            hits: 1_000_000,
+            kills: 1_000_000,
+            items: 1_000_000,
+            kills_of: [1_000_000; crate::enemies::EnemyKind::ALL.len()],
+            gold: 1_000_000,
+            untouched_floors: 1_000_000,
+            ..Default::default()
+        };
+        profile.finish_run(&RunRecord {
+            stats: huge,
+            floor: 50,
+            victory: true,
+            challenge: None,
+        });
+        let finished = profile.board().missions[0].clone();
+        assert!(finished.done);
+        let before = profile.balance();
+        scene.quests.toggle(&mut scene.world, &assets, &profile);
+        let mut input = Input::default();
+        input.set_mouse(quest_board::note_top_left(0) + Vec2::splat(20.0));
+        input.handle_click(
+            winit::event::MouseButton::Left,
+            winit::event::ElementState::Pressed,
+        );
+
+        scene.update(&input, 0.0, &assets, &mut Settings::in_memory());
+        assert_eq!(profile.balance(), before + u64::from(finished.talents));
+        assert!(!profile.board().missions[0].done);
+
+        scene.update(&input, 0.0, &assets, &mut Settings::in_memory());
+        assert_eq!(profile.balance(), before + u64::from(finished.talents));
     }
 }
