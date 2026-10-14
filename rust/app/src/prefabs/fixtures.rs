@@ -342,6 +342,14 @@ pub(crate) fn decor(
             textures,
         ),
         DecorKind::Banner => prop(world, Prop::Banner, top_left, Look::DEFAULT, textures),
+        DecorKind::MossyBanner => prop(world, Prop::MossyBanner, top_left, Look::DEFAULT, textures),
+        DecorKind::MossDrape { variant } => prop(
+            world,
+            Prop::MossDrape,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
         DecorKind::Spike => {
             let entity = prop(world, Prop::Spike, top_left, Look::DEFAULT, textures);
             let _ = world.insert(

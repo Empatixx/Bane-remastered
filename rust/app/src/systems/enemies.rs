@@ -283,7 +283,6 @@ pub(crate) fn resolve_deaths(
     super::skills::death_clouds(world, textures, sounds);
     super::skills::death_heals(world, sounds);
     super::frost::death_splits(world, physics, textures);
-    super::lava::death_blasts(world, textures, sounds);
     super::lava::death_ashes(world, physics, textures);
     super::bosses::clean_up_after_boss(world);
     reap_dead(world, physics);

@@ -31,11 +31,8 @@ const PLAIN_THEMES: &[Theme] = &[
     Theme::Spider,
     Theme::Temple,
 ];
-/// An ember rat hit once burns brighter and runs this many times faster, then
-/// bursts on the player or where it dies.
+/// An ember rat hit once burns brighter and runs this many times faster.
 pub(crate) const EMBER_RUSH: f32 = 2.4;
-pub(crate) const EMBER_BLAST_REACH: f32 = 90.0;
-pub(crate) const EMBER_BLAST_DAMAGE: i32 = 2;
 /// A flame bat circles for a while, flares up, then swoops through the player.
 pub(crate) const SWOOP_EVERY: f32 = 3.2;
 pub(crate) const SWOOP_WINDUP: f32 = 0.5;
@@ -53,16 +50,18 @@ pub(crate) const MORTAR_RANGE: f32 = 520.0;
 pub(crate) const MORTAR_FLIGHT: f32 = 1.0;
 pub(crate) const MORTAR_DAMAGE: i32 = 1;
 pub(crate) const MORTAR_RADIUS: f32 = 40.0;
-/// The lava worm: it tunnels towards the player, warns, bursts up, bites for a
-/// while and goes back down. It can only be hurt while it is up.
-pub(crate) const WORM_SURFACE_RANGE: f32 = 70.0;
-pub(crate) const WORM_MAX_UNDER: f32 = 5.0;
-pub(crate) const WORM_WARNING: f32 = 0.7;
+/// The lava worm: it shows its hole, rises, spits a few magma shots at the
+/// player, sinks and comes up somewhere else near the player. It can only be
+/// hurt while it is up.
+pub(crate) const WORM_HIDDEN: f32 = 1.0;
+pub(crate) const WORM_SHOW: f32 = 0.7;
 pub(crate) const WORM_RISE: f32 = 0.32;
-pub(crate) const WORM_UP: f32 = 3.0;
-pub(crate) const WORM_BITE_EVERY: f32 = 0.9;
-pub(crate) const WORM_BITE_REACH: f32 = 80.0;
-pub(crate) const WORM_ERUPT_REACH: f32 = 70.0;
+pub(crate) const WORM_SINK: f32 = 0.32;
+pub(crate) const WORM_SHOTS: u32 = 3;
+pub(crate) const WORM_SHOT_EVERY: f32 = 0.7;
+/// How far from the player the worm comes up.
+pub(crate) const WORM_EMERGE_NEAR: f32 = 180.0;
+pub(crate) const WORM_EMERGE_FAR: f32 = 320.0;
 /// The worm's first row: rising out of the floor.
 pub(crate) const WORM_RISE_CLIP: crate::clip::Clip = crate::clip::Clip {
     row: 0,
@@ -246,6 +245,8 @@ pub(crate) enum ProjectileKind {
     MimicTooth,
     /// The snow slime's snowball: it chills, and enough of them freeze.
     Snow,
+    /// The lava worm's spit and the magma slime's lobbed ball.
+    Magma,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -299,6 +300,7 @@ impl ProjectileKind {
         match self {
             Self::Green => slime_bullet(tex::GREEN_SLIMEBULLET, [0.0, 200.0, 0.0]),
             Self::Snow => slime_bullet(tex::SNOWBALL, [150.0, 220.0, 255.0]),
+            Self::Magma => slime_bullet(tex::MAGMA_BALL, [255.0, 130.0, 30.0]),
             Self::Red => slime_bullet(tex::RED_SLIMEBULLET, [255.0, 215.0, 0.0]),
             Self::Purple => slime_bullet(tex::PURPLE_SLIMEBULLET, [255.0, 0.0, 255.0]),
             Self::EyeWatcher => ProjectileSpec {
@@ -480,13 +482,13 @@ pub(crate) enum Behavior {
     Chills,
     /// Now and then it drops an icicle on the player, shadow first.
     DropsIcicles,
-    /// Hit once, it flares up and rushes the player, bursting on contact or death.
+    /// Hit once, it flares up and rushes the player.
     Kindles,
     /// Circles, flares up and swoops through the player; leaves ash that rises again.
     Swoops,
     /// Takes turns between molten and an armoured crust, lobbing magma at the player.
     Molten,
-    /// Tunnels under the floor, bursts up under the player and bites.
+    /// Comes up out of the floor near the player, spits magma, sinks, and comes up elsewhere.
     Burrows,
 }
 
@@ -785,7 +787,7 @@ impl EnemyKind {
                 death_row: 2,
                 ..spec(
                     tex::LAVA_WORM,
-                    (4, 3),
+                    (4, 4),
                     (32.0, 52.0),
                     2.0,
                     (4, 0.1),

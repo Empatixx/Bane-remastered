@@ -244,10 +244,6 @@ pub(crate) struct Kindling {
     pub(crate) base_speed: f32,
 }
 
-/// Bursts into flame where it dies, hurting the player and enemies nearby.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct DeathBlast;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum SwoopStage {
     Circle,
@@ -282,20 +278,25 @@ pub(crate) struct MagmaShell {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum WormStage {
-    Under,
-    Warning,
+    /// Gone below; nothing to see or hit.
+    Hidden,
+    /// Its hole glows where it is about to come up.
+    Showing,
     Rising,
+    /// Up and spitting magma; the only time it can be hurt.
     Up,
+    Sinking,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Burrower {
     pub(crate) stage: WormStage,
     pub(crate) timer: f32,
-    pub(crate) bite: f32,
-    pub(crate) base_speed: f32,
+    pub(crate) shot: f32,
+    pub(crate) shots_left: u32,
     pub(crate) damage: i32,
-    pub(crate) warning: Option<hecs::Entity>,
+    /// How many times it came up, to vary where it comes up next.
+    pub(crate) emerged: u32,
 }
 
 /// Damage from this (a bite, a snowball) also chills the player.

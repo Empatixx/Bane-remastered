@@ -70,7 +70,7 @@ pub(crate) use settings_ui::{
 pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
     ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Bait, BeamPart, Boss, Charge, Cobweb,
-    AshPile, Burrower, Chills, DeathAsh, DeathBlast, DeathBurst, DeathCloud, DeathHeal, DeathSplit,
+    AshPile, Burrower, Chills, DeathAsh, DeathBurst, DeathCloud, DeathHeal, DeathSplit,
     Drag, EnemyBullet, FallKind, Kindling, MagmaShell, SwoopStage, Swooper, WormStage,
     EyeShooter, FallingRock, Fuse, IcicleDropper,
     GolemAttack, GolemBoss, GolemStage, Hatcher, Hits, Homing, Hopper, HoundAttack, HoundBoss,

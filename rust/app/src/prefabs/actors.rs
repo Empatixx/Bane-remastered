@@ -315,10 +315,10 @@ pub(crate) fn enemy(
                 Burrower {
                     stage: WormStage::Rising,
                     timer: 0.0,
-                    bite: 0.0,
-                    base_speed: spec.speed(),
+                    shot: 0.0,
+                    shots_left: 0,
                     damage,
-                    warning: None,
+                    emerged: 0,
                 },
             );
             let _ = world.insert_one(

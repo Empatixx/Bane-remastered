@@ -27,10 +27,24 @@ pub(crate) enum Mount {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum DecorKind {
-    Torch { mount: Mount, lit: bool },
-    Bones { variant: usize },
-    Cobweb { variant: usize, left: bool },
+    Torch {
+        mount: Mount,
+        lit: bool,
+    },
+    Bones {
+        variant: usize,
+    },
+    Cobweb {
+        variant: usize,
+        left: bool,
+    },
     Banner,
+    /// The moss biome's banner, faded and overgrown.
+    MossyBanner,
+    /// Moss growing over the top of a wall.
+    MossDrape {
+        variant: usize,
+    },
     Spike,
     Pot,
     Barrel,
@@ -41,11 +55,19 @@ pub(crate) enum DecorKind {
     IcePatch,
     WebPatch,
     ArrowTrap,
-    Icicles { variant: usize },
-    IceCrystals { variant: usize },
+    Icicles {
+        variant: usize,
+    },
+    IceCrystals {
+        variant: usize,
+    },
     FrozenSkull,
-    Mushrooms { variant: usize },
-    Cocoon { variant: usize },
+    Mushrooms {
+        variant: usize,
+    },
+    Cocoon {
+        variant: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -233,7 +255,11 @@ pub(crate) fn plan(
         if let Some(spot) = planner.pick(&top_faces, rng) {
             planner.take(spot.tile);
             decor.push(Decor {
-                kind: DecorKind::Banner,
+                kind: if mix.mossy {
+                    DecorKind::MossyBanner
+                } else {
+                    DecorKind::Banner
+                },
                 tile: spot.tile,
             });
         }
@@ -342,7 +368,10 @@ pub(crate) fn plan(
             })
             .copied()
             .collect();
-        let themed: [ThemedSlot; 5] = [
+        let themed: [ThemedSlot; 6] = [
+            (mix.moss_drapes, &top_faces, 3, |variant| {
+                DecorKind::MossDrape { variant }
+            }),
             (mix.mushrooms, &hugging, 2, |variant| DecorKind::Mushrooms {
                 variant,
             }),
@@ -478,6 +507,22 @@ mod tests {
     }
 
     #[test]
+    fn moss_floors_have_moss_on_the_walls_and_overgrown_banners_and_others_do_not() {
+        let drapes = |theme| {
+            (0..3)
+                .map(|variant| count_in(theme, DecorKind::MossDrape { variant }))
+                .sum::<usize>()
+        };
+        assert!(drapes(Theme::Moss) > 0);
+        assert!(count_in(Theme::Moss, DecorKind::MossyBanner) > 0);
+        assert_eq!(count_in(Theme::Moss, DecorKind::Banner), 0);
+        for theme in [Theme::Stone, Theme::Ice, Theme::Lava, Theme::Temple] {
+            assert_eq!(drapes(theme), 0, "{theme:?}");
+            assert_eq!(count_in(theme, DecorKind::MossyBanner), 0, "{theme:?}");
+        }
+    }
+
+    #[test]
     fn each_theme_leans_on_its_own_hazards() {
         assert_eq!(count_in(Theme::Sewer, DecorKind::Flamethrower), 0);
         assert!(
@@ -519,8 +564,13 @@ mod tests {
 
     #[test]
     fn decoration_sits_on_valid_tiles_and_never_overlaps() {
-        for seed in 0..40 {
-            let dungeon = dungeon(seed);
+        for seed in 0..60 {
+            // Every third dungeon is a moss one, for the moss on its walls.
+            let dungeon = if seed % 3 == 0 {
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Moss).expect("a dungeon")
+            } else {
+                dungeon(seed)
+            };
             for room in &dungeon.rooms {
                 let mut seen = HashSet::new();
                 for decor in &room.decor {
@@ -530,6 +580,8 @@ mod tests {
                     let (column, row) = (decor.tile.0 as isize, decor.tile.1 as isize);
                     match decor.kind {
                         DecorKind::Banner
+                        | DecorKind::MossyBanner
+                        | DecorKind::MossDrape { .. }
                         | DecorKind::Flamethrower
                         | DecorKind::ArrowTrap
                         | DecorKind::Icicles { .. }

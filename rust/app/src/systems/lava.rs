@@ -9,37 +9,53 @@ use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::clip::Clip;
 use crate::components::{
-    Animation, AshPile, Burrower, Chase, Color, ContactDamage, DeathAsh, DeathBlast, Dodge, Enemy,
-    Expiring, FallKind, FallingRock, Health, Invulnerable, Kindling, Layer, Light, Lit, MagmaShell,
-    Player, Position, RockFall, RoomId, Sealed, Size, Spawning, Sprite, SwoopStage, Swooper,
-    WormStage,
+    Animation, AshPile, Burrower, Chase, Color, ContactDamage, DeathAsh, Dodge, Expiring, FallKind,
+    FallingRock, Health, Hidden, Invulnerable, Kindling, Layer, Light, Lit, MagmaShell, Position,
+    RockFall, RoomId, Sealed, Size, Spawning, Sprite, SwoopStage, Swooper, WormStage,
 };
-use crate::enemies::{self, EnemyKind};
+use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::geometry;
+use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::damage::{Damage, DamageSource, deal, hurt_player};
+use crate::systems::damage::hurt_player;
 
 const EMBER_GLOW: [f32; 3] = [255.0, 120.0, 30.0];
 const SWOOP_RANGE: f32 = 460.0;
 const ASH_SIZE: Vec2 = Vec2::new(48.0, 18.0);
 const MAGMA_BALL_SIZE: Vec2 = Vec2::new(34.0, 34.0);
 const MAGMA_SHADOW: Vec2 = Vec2::new(64.0, 30.0);
-const MOUND_SIZE: Vec2 = Vec2::new(72.0, 21.0);
-const WARNING_SIZE: Vec2 = Vec2::new(120.0, 56.0);
-const WARNING_COLOR: Vec4 = Vec4::new(1.0, 0.45, 0.15, 0.9);
-const WORM_BITE_CLIP: Clip = Clip {
+const SPLASH_SIZE: Vec2 = Vec2::new(64.0, 64.0);
+/// Where the worm's mouth is, from its centre, and how much floor it needs.
+const WORM_MOUTH: Vec2 = Vec2::new(0.0, -34.0);
+const WORM_FOOTPRINT: Vec2 = Vec2::new(64.0, 40.0);
+const WORM_SPIT_CLIP: Clip = Clip {
     row: 1,
     frames: 4,
     frame_time: 0.1,
     looping: false,
     flipped: false,
 };
-const MOUND_CLIP: Clip = Clip {
+const WORM_SINK_CLIP: Clip = Clip {
+    row: 3,
+    frames: 4,
+    frame_time: 0.08,
+    looping: false,
+    flipped: false,
+};
+/// Only the glowing hole, before the worm comes up.
+const WORM_HOLE_CLIP: Clip = Clip {
     row: 0,
-    frames: 2,
-    frame_time: 0.25,
+    frames: 1,
+    frame_time: 1.0,
     looping: true,
+    flipped: false,
+};
+const SPLASH_CLIP: Clip = Clip {
+    row: 1,
+    frames: 4,
+    frame_time: 0.07,
+    looping: false,
     flipped: false,
 };
 const ASH_CLIP: Clip = Clip {
@@ -67,20 +83,17 @@ fn can_be_hit(world: &World, player: Entity) -> bool {
 
 // ---------- ember rat ----------
 
-/// A hit ember rat flares up, hisses and rushes the player; touching the player
-/// it bursts.
+/// A hit ember rat flares up, hisses and rushes the player.
 pub(crate) fn tick_ember_rats(world: &mut World, sounds: &mut Vec<AudioCommand>, clock: f32) {
-    let player = player_at(world);
     let mut lit_now = Vec::new();
-    for (entity, kindling, health, chase, color, position, size) in world
+    for (entity, kindling, health, chase, color, position) in world
         .query_mut::<(
             Entity,
             &mut Kindling,
-            &mut Health,
+            &Health,
             &mut Chase,
             &mut Color,
             &Position,
-            &Size,
         )>()
         .without::<&Spawning>()
         .without::<&Expiring>()
@@ -93,83 +106,12 @@ pub(crate) fn tick_ember_rats(world: &mut World, sounds: &mut Vec<AudioCommand>,
         if kindling.lit {
             let flicker = 0.08 * (clock * 18.0 + position.0.x * 0.01).sin();
             color.0 = Vec4::new(1.0, 0.78 + flicker, 0.55 + flicker, color.0.w);
-            if let Some((_, at, player_size)) = player {
-                if health.current > 0 && geometry::overlaps(position.0, size.0, at, player_size) {
-                    health.current = 0;
-                }
-            }
         }
     }
     for (entity, at) in lit_now {
         let [red, green, blue] = EMBER_GLOW;
-        let _ = world.insert(
-            entity,
-            (
-                DeathBlast,
-                Light::rgb(Vec2::ZERO, red, green, blue, 70.0, 1.0),
-            ),
-        );
+        let _ = world.insert_one(entity, Light::rgb(Vec2::ZERO, red, green, blue, 70.0, 1.0));
         sounds.push(AudioCommand::At(SoundEffect::HoundInhale, at));
-    }
-}
-
-/// Lit ember rats burst where they die.
-pub(crate) fn death_blasts(world: &mut World, textures: &Textures, sounds: &mut Vec<AudioCommand>) {
-    let dying: Vec<(Entity, Vec2)> = world
-        .query::<(Entity, &Position, &Health)>()
-        .with::<&DeathBlast>()
-        .without::<&Expiring>()
-        .iter()
-        .filter(|(_, _, health)| health.current <= 0)
-        .map(|(entity, position, _)| (entity, position.0))
-        .collect();
-    for (entity, at) in dying {
-        let _ = world.remove_one::<DeathBlast>(entity);
-        ember_blast(world, entity, at, textures, sounds);
-    }
-}
-
-fn ember_blast(
-    world: &mut World,
-    source: Entity,
-    center: Vec2,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-) {
-    sounds.push(AudioCommand::At(SoundEffect::Explosion, center));
-    prefabs::blast(
-        world,
-        center,
-        Vec2::splat(enemies::EMBER_BLAST_REACH * 2.2),
-        textures,
-    );
-    let reach = Vec2::splat(enemies::EMBER_BLAST_REACH * 2.0);
-    let victims: Vec<(Entity, bool)> = world
-        .query::<(Entity, &Position, &Size, Option<&Player>)>()
-        .with::<&Health>()
-        .without::<&Expiring>()
-        .without::<&Spawning>()
-        .iter()
-        .filter(|(entity, position, size, _)| {
-            *entity != source && geometry::overlaps(center, reach, position.0, size.0)
-        })
-        .map(|(entity, _, _, player)| (entity, player.is_some()))
-        .collect();
-    for (entity, is_player) in victims {
-        if is_player {
-            if can_be_hit(world, entity) {
-                hurt_player(world, entity, enemies::EMBER_BLAST_DAMAGE, sounds);
-            }
-        } else if world.get::<&Enemy>(entity).is_ok() {
-            deal(
-                world,
-                Damage {
-                    target: entity,
-                    amount: enemies::EMBER_BLAST_DAMAGE,
-                    source: DamageSource::Explosion,
-                },
-            );
-        }
     }
 }
 
@@ -286,7 +228,7 @@ pub(crate) fn tick_ashes(
     for (entity, at) in gone {
         physics.detach(world, entity);
         let _ = world.despawn(entity);
-        prefabs::blast(world, at, Vec2::splat(56.0), textures);
+        sounds.push(AudioCommand::At(SoundEffect::EnemyHit, at));
     }
     for (entity, at, room) in risen {
         physics.detach(world, entity);
@@ -403,7 +345,16 @@ pub(crate) fn magma_lands(
     sounds: &mut Vec<AudioCommand>,
 ) {
     sounds.push(AudioCommand::At(SoundEffect::SlimeBurst, ground));
-    prefabs::blast(world, ground, Vec2::splat(90.0), textures);
+    world.spawn((
+        Expiring,
+        Position(ground),
+        Size(SPLASH_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::MAGMA_BALL), 0, 1, 4, 2),
+        Animation::new(4, 2, SPLASH_CLIP),
+        Layer(3),
+        Light::rgb(Vec2::ZERO, 255.0, 130.0, 30.0, 50.0, 0.8),
+    ));
     let Some((player, at, size)) = player else {
         return;
     };
@@ -415,141 +366,134 @@ pub(crate) fn magma_lands(
 
 // ---------- lava worm ----------
 
-/// Lava worms tunnel towards the player as a glowing hump, warn, burst up,
-/// bite for a while and go back down.
+/// Lava worms come up out of the floor near the player, spit a few magma
+/// shots, sink, and come up somewhere else. Only while up can they be hit.
 pub(crate) fn tick_worms(
     world: &mut World,
+    physics: &mut Physics,
+    navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
     dt: f32,
 ) {
-    let player = player_at(world);
-    let mut changes: Vec<(Entity, WormStage, Vec2, Option<Entity>, i32)> = Vec::new();
-    let mut bites: Vec<(Entity, Vec2, i32)> = Vec::new();
+    let player = player_at(world).map(|(_, at, _)| at);
+    let mut changes: Vec<(Entity, WormStage, Vec2, Burrower)> = Vec::new();
+    let mut shots: Vec<(Entity, Vec2)> = Vec::new();
     for (entity, worm, chase, position) in world
         .query_mut::<(Entity, &mut Burrower, &mut Chase, &Position)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
     {
+        chase.speed = 0.0;
         worm.timer += dt;
-        let near =
-            player.is_some_and(|(_, at, _)| at.distance(position.0) <= enemies::WORM_SURFACE_RANGE);
         let next = match worm.stage {
-            WormStage::Under => {
-                chase.speed = worm.base_speed;
-                (near || worm.timer >= enemies::WORM_MAX_UNDER).then_some(WormStage::Warning)
-            }
-            WormStage::Warning => {
-                chase.speed = 0.0;
-                (worm.timer >= enemies::WORM_WARNING).then_some(WormStage::Rising)
-            }
-            WormStage::Rising => {
-                chase.speed = 0.0;
-                (worm.timer >= enemies::WORM_RISE).then_some(WormStage::Up)
-            }
+            WormStage::Hidden => (worm.timer >= enemies::WORM_HIDDEN).then_some(WormStage::Showing),
+            WormStage::Showing => (worm.timer >= enemies::WORM_SHOW).then_some(WormStage::Rising),
+            WormStage::Rising => (worm.timer >= enemies::WORM_RISE).then_some(WormStage::Up),
             WormStage::Up => {
-                chase.speed = 0.0;
-                worm.bite -= dt;
-                if worm.bite <= 0.0 {
-                    worm.bite = enemies::WORM_BITE_EVERY;
-                    bites.push((entity, position.0, worm.damage));
+                worm.shot -= dt;
+                if worm.shot <= 0.0 && worm.shots_left > 0 {
+                    worm.shots_left -= 1;
+                    worm.shot = enemies::WORM_SHOT_EVERY;
+                    shots.push((entity, position.0));
                 }
-                (worm.timer >= enemies::WORM_UP).then_some(WormStage::Under)
+                (worm.shots_left == 0 && worm.shot <= 0.0).then_some(WormStage::Sinking)
             }
+            WormStage::Sinking => (worm.timer >= enemies::WORM_SINK).then_some(WormStage::Hidden),
         };
         if let Some(stage) = next {
-            changes.push((entity, stage, position.0, worm.warning, worm.damage));
             worm.stage = stage;
             worm.timer = 0.0;
-            worm.bite = 0.3;
-        }
-    }
-    for (entity, at, damage) in bites {
-        if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
-            animation.play(WORM_BITE_CLIP);
-        }
-        sounds.push(AudioCommand::At(SoundEffect::MimicChomp, at));
-        if let Some((player, player_at, _)) = player {
-            if can_be_hit(world, player) && player_at.distance(at) <= enemies::WORM_BITE_REACH {
-                hurt_player(world, player, damage, sounds);
+            if stage == WormStage::Up {
+                worm.shots_left = enemies::WORM_SHOTS;
+                worm.shot = 0.25;
             }
+            if stage == WormStage::Showing {
+                worm.emerged = worm.emerged.wrapping_add(1);
+            }
+            changes.push((entity, stage, position.0, *worm));
         }
     }
-    for (entity, stage, at, warning, damage) in changes {
+    for (entity, from) in shots {
+        if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+            animation.play(WORM_SPIT_CLIP);
+        }
+        let Some(target) = player else {
+            continue;
+        };
+        let mouth = from + WORM_MOUTH;
+        sounds.push(AudioCommand::At(SoundEffect::SlimeSmash, mouth));
+        prefabs::enemy_bullet(
+            world,
+            physics,
+            ProjectileKind::Magma,
+            mouth,
+            target - mouth,
+            textures,
+        );
+    }
+    for (entity, stage, at, worm) in changes {
         match stage {
-            WormStage::Warning => {
-                let marker = world.spawn((
-                    Position(at),
-                    Size(WARNING_SIZE),
-                    Color(WARNING_COLOR),
-                    Sprite::whole(textures.get(tex::ROCK_SHADOW)),
-                    Layer(-1),
-                ));
-                if let Ok(mut worm) = world.get::<&mut Burrower>(entity) {
-                    worm.warning = Some(marker);
+            WormStage::Sinking => {
+                let _ = world.remove_one::<ContactDamage>(entity);
+                let _ = world.insert_one(entity, Sealed);
+                if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+                    animation.play(WORM_SINK_CLIP);
+                }
+                sounds.push(AudioCommand::At(SoundEffect::LeaperLand, at));
+            }
+            WormStage::Hidden => {
+                physics.detach(world, entity);
+                let _ = world.insert_one(entity, Hidden);
+            }
+            WormStage::Showing => {
+                let spot = player.map_or(at, |target| {
+                    emerge_spot(navigation, target, at, worm.emerged)
+                });
+                if let Ok(mut position) = world.get::<&mut Position>(entity) {
+                    position.0 = spot;
+                }
+                let _ = world.remove_one::<Hidden>(entity);
+                if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+                    animation.play(WORM_HOLE_CLIP);
                 }
             }
             WormStage::Rising => {
-                if let Some(marker) = warning {
-                    let _ = world.despawn(marker);
+                let size = world.get::<&Size>(entity).map_or(Vec2::ZERO, |size| size.0);
+                let body = physics.add_enemy(entity, at, size);
+                let _ = world.insert(entity, (body, ContactDamage(worm.damage)));
+                let _ = world.remove_one::<Sealed>(entity);
+                if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+                    animation.play(enemies::WORM_RISE_CLIP);
                 }
-                surface(world, entity, textures, damage);
-                sounds.push(AudioCommand::At(SoundEffect::GolemSlam, at));
-                prefabs::blast(
-                    world,
-                    at,
-                    Vec2::splat(enemies::WORM_ERUPT_REACH * 2.2),
-                    textures,
-                );
-                if let Some((player, player_at, _)) = player {
-                    if can_be_hit(world, player)
-                        && player_at.distance(at) <= enemies::WORM_ERUPT_REACH
-                    {
-                        hurt_player(world, player, damage, sounds);
-                    }
-                }
-            }
-            WormStage::Under => {
-                go_under(world, entity, textures);
-                sounds.push(AudioCommand::At(SoundEffect::LeaperLand, at));
+                sounds.push(AudioCommand::At(SoundEffect::LeaperCrouch, at));
             }
             WormStage::Up => {}
         }
     }
 }
 
-fn surface(world: &mut World, entity: Entity, textures: &Textures, damage: i32) {
-    let spec = EnemyKind::LavaWorm.spec();
-    let _ = world.remove_one::<Sealed>(entity);
-    let _ = world.insert(
-        entity,
-        (
-            ContactDamage(damage),
-            Size(spec.size()),
-            Sprite::cell(textures.get(tex::LAVA_WORM), 0, 0, spec.columns, spec.rows),
-            Animation::new(spec.columns, spec.rows, enemies::WORM_RISE_CLIP),
-        ),
-    );
-}
-
-fn go_under(world: &mut World, entity: Entity, textures: &Textures) {
-    let _ = world.remove_one::<ContactDamage>(entity);
-    let _ = world.insert(
-        entity,
-        (
-            Sealed,
-            Size(MOUND_SIZE),
-            Sprite::cell(textures.get(tex::WORM_MOUND), 0, 0, 2, 1),
-            Animation::new(2, 1, MOUND_CLIP),
-        ),
-    );
+/// Somewhere on open floor a fair way from the player, on a different side each time.
+fn emerge_spot(navigation: &Navigation, player: Vec2, fallback: Vec2, emerged: u32) -> Vec2 {
+    let turn = emerged.wrapping_mul(2_654_435_761) as f32 / u32::MAX as f32;
+    for attempt in 0..8 {
+        let angle = std::f32::consts::TAU * (turn + attempt as f32 * 0.37);
+        for distance in [enemies::WORM_EMERGE_FAR, enemies::WORM_EMERGE_NEAR] {
+            let spot = player + Vec2::from_angle(angle) * distance;
+            if !navigation.is_blocked(spot, WORM_FOOTPRINT) {
+                return spot;
+            }
+        }
+    }
+    fallback
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::components::{Armor, Kindling};
+    use crate::components::{Armor, Enemy, Kindling};
     use crate::dungeon::Theme;
     use crate::rng::Rng;
+    use crate::systems::damage::{Damage, DamageSource, deal};
 
     use super::*;
 
@@ -610,7 +554,7 @@ mod tests {
     }
 
     #[test]
-    fn a_hit_ember_rat_flares_up_rushes_and_bursts_on_the_player() {
+    fn a_hit_ember_rat_flares_up_and_rushes_without_blowing_up() {
         let (mut world, mut physics, player) = arena();
         let at = world.get::<&Position>(player).expect("player").0;
         let rat = spawn(
@@ -620,37 +564,20 @@ mod tests {
             at + Vec2::new(300.0, 0.0),
         );
         let calm = world.get::<&Chase>(rat).expect("chase").speed;
+        tick_ember_rats(&mut world, &mut Vec::new(), 0.0);
+        assert!(!world.get::<&Kindling>(rat).expect("kindling").lit);
         hit(&mut world, rat, 1);
         tick_ember_rats(&mut world, &mut Vec::new(), 0.0);
         assert!(world.get::<&Kindling>(rat).expect("kindling").lit);
         assert!(world.get::<&Chase>(rat).expect("chase").speed > calm * 2.0);
+        assert!(world.get::<&Light>(rat).is_ok());
 
         world.get::<&mut Position>(rat).expect("rat").0 = at;
-        let before = toughness(&world, player);
         tick_ember_rats(&mut world, &mut Vec::new(), 0.1);
-        assert_eq!(
-            world.get::<&Health>(rat).expect("rat").current,
-            0,
-            "it bursts on contact"
+        assert!(
+            world.get::<&Health>(rat).expect("rat").current > 0,
+            "it bites, it does not burst"
         );
-        death_blasts(&mut world, &Textures::default(), &mut Vec::new());
-        assert!(toughness(&world, player) < before);
-    }
-
-    #[test]
-    fn an_unlit_ember_rat_dies_without_a_blast() {
-        let (mut world, mut physics, player) = arena();
-        let at = world.get::<&Position>(player).expect("player").0;
-        let rat = spawn(
-            &mut world,
-            &mut physics,
-            EnemyKind::EmberRat,
-            at + Vec2::new(40.0, 0.0),
-        );
-        world.get::<&mut Health>(rat).expect("rat").current = 0;
-        let before = toughness(&world, player);
-        death_blasts(&mut world, &Textures::default(), &mut Vec::new());
-        assert_eq!(toughness(&world, player), before);
     }
 
     #[test]
@@ -807,54 +734,80 @@ mod tests {
         assert!(toughness(&world, player) < before);
     }
 
+    fn worm_stage(world: &World, worm: Entity) -> WormStage {
+        world.get::<&Burrower>(worm).expect("worm").stage
+    }
+
+    fn step(world: &mut World, physics: &mut Physics, seconds: f32) {
+        tick_worms(
+            world,
+            physics,
+            &Navigation::default(),
+            &Textures::default(),
+            &mut Vec::new(),
+            seconds,
+        );
+    }
+
+    fn magma_shots(world: &World) -> usize {
+        world
+            .query::<&crate::components::EnemyBullet>()
+            .iter()
+            .count()
+    }
+
     #[test]
-    fn a_lava_worm_tunnels_unhurt_then_bursts_up_bites_and_can_be_hurt() {
+    fn a_lava_worm_rises_spits_magma_at_the_player_and_comes_up_elsewhere() {
         let (mut world, mut physics, player) = arena();
         let at = world.get::<&Position>(player).expect("player").0;
-        let textures = Textures::default();
+        let start = at + Vec2::new(400.0, 0.0);
+        let worm = spawn(&mut world, &mut physics, EnemyKind::LavaWorm, start);
+        step(&mut world, &mut physics, enemies::WORM_RISE + 0.01);
+        assert_eq!(worm_stage(&world, worm), WormStage::Up);
+        for _ in 0..enemies::WORM_SHOTS {
+            step(&mut world, &mut physics, enemies::WORM_SHOT_EVERY);
+        }
+        assert_eq!(magma_shots(&world), enemies::WORM_SHOTS as usize);
+        step(&mut world, &mut physics, enemies::WORM_SHOT_EVERY);
+        assert_eq!(worm_stage(&world, worm), WormStage::Sinking);
+        step(&mut world, &mut physics, enemies::WORM_SINK + 0.01);
+        assert_eq!(worm_stage(&world, worm), WormStage::Hidden);
+        assert!(world.get::<&Hidden>(worm).is_ok());
+        assert!(
+            world.get::<&crate::components::Body>(worm).is_err(),
+            "nothing to shoot at below"
+        );
+
+        step(&mut world, &mut physics, enemies::WORM_HIDDEN + 0.01);
+        assert_eq!(worm_stage(&world, worm), WormStage::Showing);
+        let spot = world.get::<&Position>(worm).expect("worm").0;
+        assert_ne!(spot, start, "it comes up somewhere else");
+        let away = spot.distance(at);
+        assert!((enemies::WORM_EMERGE_NEAR - 1.0..=enemies::WORM_EMERGE_FAR + 1.0).contains(&away));
+        step(&mut world, &mut physics, enemies::WORM_SHOW + 0.01);
+        assert_eq!(worm_stage(&world, worm), WormStage::Rising);
+        assert!(world.get::<&crate::components::Body>(worm).is_ok());
+    }
+
+    #[test]
+    fn a_lava_worm_can_only_be_hurt_while_it_is_up() {
+        let (mut world, mut physics, _player) = arena();
         let worm = spawn(
             &mut world,
             &mut physics,
             EnemyKind::LavaWorm,
-            at + Vec2::new(400.0, 0.0),
+            Vec2::new(900.0, 500.0),
         );
-        let stage = |world: &World| world.get::<&Burrower>(worm).expect("worm").stage;
-        tick_worms(
-            &mut world,
-            &textures,
-            &mut Vec::new(),
-            enemies::WORM_RISE + 0.01,
-        );
-        assert_eq!(stage(&world), WormStage::Up);
-        tick_worms(
-            &mut world,
-            &textures,
-            &mut Vec::new(),
-            enemies::WORM_UP + 0.01,
-        );
-        assert_eq!(stage(&world), WormStage::Under);
+        step(&mut world, &mut physics, enemies::WORM_RISE + 0.01);
         let full = world.get::<&Health>(worm).expect("worm").current;
-        hit(&mut world, worm, 3);
-        assert_eq!(
-            world.get::<&Health>(worm).expect("worm").current,
-            full,
-            "untouchable below"
-        );
-        assert!(world.get::<&ContactDamage>(worm).is_err());
-
-        world.get::<&mut Position>(worm).expect("worm").0 = at + Vec2::new(30.0, 0.0);
-        tick_worms(&mut world, &textures, &mut Vec::new(), 0.01);
-        assert_eq!(stage(&world), WormStage::Warning);
-        let before = toughness(&world, player);
-        tick_worms(
-            &mut world,
-            &textures,
-            &mut Vec::new(),
-            enemies::WORM_WARNING + 0.01,
-        );
-        assert_eq!(stage(&world), WormStage::Rising);
-        assert!(toughness(&world, player) < before, "the eruption hurts");
-        hit(&mut world, worm, 3);
+        hit(&mut world, worm, 2);
         assert!(world.get::<&Health>(worm).expect("worm").current < full);
+        let wounded = world.get::<&Health>(worm).expect("worm").current;
+        for _ in 0..=enemies::WORM_SHOTS {
+            step(&mut world, &mut physics, enemies::WORM_SHOT_EVERY);
+        }
+        assert_eq!(worm_stage(&world, worm), WormStage::Sinking);
+        hit(&mut world, worm, 2);
+        assert_eq!(world.get::<&Health>(worm).expect("worm").current, wounded);
     }
 }

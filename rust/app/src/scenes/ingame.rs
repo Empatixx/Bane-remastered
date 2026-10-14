@@ -465,7 +465,14 @@ impl Scene for InGameScene {
         systems::tick_ember_rats(&mut self.world, &mut self.sounds, self.clock);
         systems::tick_swoopers(&mut self.world, &mut self.sounds, hostile_dt);
         systems::tick_magma_slimes(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
-        systems::tick_worms(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
+        systems::tick_worms(
+            &mut self.world,
+            &mut self.physics,
+            &self.navigation,
+            &assets.textures,
+            &mut self.sounds,
+            hostile_dt,
+        );
         systems::tick_ashes(
             &mut self.world,
             &mut self.physics,

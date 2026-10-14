@@ -50,6 +50,8 @@ pub(crate) enum Prop {
     FrozenSkull,
     Cocoon,
     TrainingDummy,
+    MossDrape,
+    MossyBanner,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -213,6 +215,17 @@ impl Prop {
                     frame_time: 0.15,
                 }),
             },
+            Self::MossyBanner => PropSpec {
+                texture: tex::BANNER_MOSSY,
+                columns: 4,
+                rows: 1,
+                frame: Vec2::new(32.0, 32.0),
+                scale: 2.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.15,
+                }),
+            },
             Self::Spike => PropSpec {
                 texture: tex::SPIKE,
                 columns: 4,
@@ -311,6 +324,14 @@ impl Prop {
             Self::FrozenSkull => still(tex::FROZEN_SKULL, Vec2::new(16.0, 16.0), 4.0),
             Self::Cocoon => variants(tex::COCOON, Vec2::new(16.0, 16.0), 4.0),
             Self::TrainingDummy => still(tex::TRAINING_DUMMY, Vec2::new(24.0, 32.0), 3.0),
+            Self::MossDrape => PropSpec {
+                texture: tex::MOSS_DRAPE,
+                columns: 1,
+                rows: 3,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: None,
+            },
             Self::IcePatch => still(tex::ICE_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::WebPatch => still(tex::WEB_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::ArrowTrap => still(tex::ARROW_TRAP, Vec2::new(16.0, 16.0), 4.0),
