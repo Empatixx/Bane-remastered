@@ -14,6 +14,10 @@ pub(crate) struct Shine(pub(crate) f32);
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Sky(pub(crate) f32);
 
+/// The angle a sprite is turned by, for things that point where they fly.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Heading(pub(crate) f32);
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Liquid {
     pub(crate) kind: f32,

@@ -202,9 +202,14 @@ mod tests {
     /// the number here.
     const FINGERPRINT: u64 = 16_991_477_304_436_102_234;
 
+    /// The guns the fingerprint was taken over; newer guns grow their own trees and leave
+    /// these alone.
+    const FINGERPRINTED: usize = 7;
+
     fn fingerprint() -> u64 {
-        GunKind::ALL
-            .into_iter()
+        GunKind::ALL[..FINGERPRINTED]
+            .iter()
+            .copied()
             .flat_map(|kind| (0..10).map(move |rerolls| generate(kind, rerolls)))
             .flat_map(|tree| tree.nodes)
             .flat_map(|node| {

@@ -19,6 +19,7 @@ mod enemies;
 mod glide;
 mod golem;
 mod hazards;
+mod hopper;
 mod hound;
 mod hud;
 mod interaction;
@@ -29,6 +30,7 @@ mod lightning;
 mod loadout;
 mod magma;
 mod midas;
+mod mimic;
 mod minimap;
 mod objects;
 mod ogre;
@@ -51,6 +53,7 @@ mod summons;
 mod steering;
 mod surfaces;
 mod time_slow;
+mod trails;
 mod ui;
 mod unstick;
 
@@ -90,6 +93,7 @@ pub(crate) use enemies::{
 pub(crate) use glide::glide;
 pub(crate) use golem::{clear_golem_effects, tick_golem, tick_laser, tick_rock_falls};
 pub(crate) use hazards::{slow_bullets_in_webs, tick_arrow_traps};
+pub(crate) use hopper::tick_hoppers;
 pub(crate) use hound::{tick_flames, tick_hound};
 pub(crate) use hud::{update_lobby_counters, update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
@@ -102,26 +106,26 @@ pub(crate) use lightning::{LIGHTNING_SHAKE, cast_lightning, tick_lightning};
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use magma::{clear_magma, tick_magma, tick_magma_spread};
 pub(crate) use midas::{convert_bullets, midas_kill_coins};
+pub(crate) use mimic::{clear_baits, tick_baits, tick_mimic};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_chilled, tick_frozen, tick_poison,
 };
 pub(crate) use ogre::tick_ogre;
-pub(crate) use rules::toughen_enemies;
 pub(crate) use perks::{
     apply_floor_perks, apply_run_perks, apply_weapon_mods, immobilize_traps, regenerate_armor,
 };
-pub(crate) use pet::{
-    pet_bites, pick_pet_targets, plan_pet_paths,
-    steer_pets,
-};
+pub(crate) use pet::{pet_bites, pick_pet_targets, plan_pet_paths, steer_pets};
 pub(crate) use player_animation::animate_player;
 pub(crate) use portal::tint_portal;
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
+pub(crate) use rules::toughen_enemies;
 pub(crate) use scientist::{PURCHASE, chat, fit_speech};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};
 pub(crate) use shadow::update_shadow;
-pub(crate) use shooting::{ShotContext, ShotRoll, bullet_hits, shoot};
+pub(crate) use shooting::{
+    RoundTextures, ShotContext, ShotRoll, bullet_hits, burn_out_rounds, shoot,
+};
 pub(crate) use shop::{buy, fit_price_boxes, say, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use simulation::simulate;
 pub(crate) use skills::{
@@ -134,5 +138,6 @@ pub(crate) use stats::{
 pub(crate) use steering::{steer_player, steer_player_on};
 pub(crate) use surfaces::{burn_on_lava, ripple_on_water, sync_liquids};
 pub(crate) use time_slow::time_scale;
+pub(crate) use trails::{TrailTextures, shed_trails};
 pub(crate) use ui::{update_buttons, update_text_buttons};
 pub(crate) use unstick::watch_progress;

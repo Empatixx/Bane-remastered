@@ -222,7 +222,7 @@ impl Scene for InGameScene {
                 input,
                 systems::ShotContext {
                     camera: self.camera.position(),
-                    bullet_texture: assets.textures.get(BULLET),
+                    rounds: systems::RoundTextures::load(&assets.textures),
                     casing_texture: assets.textures.get(tex::CASING),
                     dt,
                     roll: systems::ShotRoll::from(&mut self.combat_rng),
@@ -286,6 +286,12 @@ impl Scene for InGameScene {
             assets.textures.get(particle),
             dt,
             self.clock + phase,
+        );
+        systems::shed_trails(
+            &mut self.world,
+            &systems::TrailTextures::load(&assets.textures),
+            dt,
+            self.clock,
         );
         systems::tick_dust(&mut self.world, self.clock, dt);
         systems::tick_lightning(&mut self.world, dt);
@@ -430,6 +436,16 @@ impl Scene for InGameScene {
             &mut self.sounds,
             hostile_dt,
         );
+        systems::tick_hoppers(&mut self.world, hostile_dt);
+        systems::tick_baits(&mut self.world, &assets.textures, &mut self.sounds, hostile_dt);
+        systems::tick_mimic(
+            &mut self.world,
+            &mut self.physics,
+            &self.navigation,
+            &assets.textures,
+            &mut self.sounds,
+            hostile_dt,
+        );
         systems::tick_hound(
             &mut self.world,
             &mut self.physics,
@@ -520,6 +536,7 @@ impl Scene for InGameScene {
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::watch_progress(&mut self.world, hostile_dt);
+        systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
         systems::bullet_hits(
             &mut self.world,
             &mut self.physics,

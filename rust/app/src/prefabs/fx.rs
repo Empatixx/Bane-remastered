@@ -4,7 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::assets::tex;
 use crate::components::{
-    Animation, Casing, Clip, Color, Expiring, Floating, Friendly, Layer, Light, LightFade, Lit,
+    Animation, BULLET_COLUMNS, BULLET_IMPACT, BULLET_ROWS, Casing, Clip, Color, Expiring,
+    Floating, Friendly, Heading, Layer, Light, LightFade, Lit,
     PoisonPool,
     PoisonTrail, Position, ScreenSpace, ShieldAura, Size, Sprite, Text, ThenPlay,
 };
@@ -12,6 +13,7 @@ use crate::objects::{POOL_SECONDS, POOL_SIZE, TRAIL_DOT, TRAIL_SECONDS, TRAIL_VA
 use crate::render::{FontSize, TextureId};
 
 const EXPLOSION_LIGHT: f32 = 1.5;
+const ARC_THICKNESS: f32 = 16.0;
 const CASING_SIZE: Vec2 = Vec2::new(12.0, 6.0);
 const CASING_START: f32 = 14.0;
 const CASING_MUZZLE: f32 = 10.0;
@@ -135,6 +137,29 @@ pub(crate) fn blast(world: &mut World, center: Vec2, size: Vec2, textures: &Text
         LightFade {
             base: EXPLOSION_LIGHT,
         },
+    ));
+}
+
+/// A lightning bolt between two points that flickers once and goes away.
+pub(crate) fn arc(world: &mut World, from: Vec2, to: Vec2, textures: &Textures) {
+    let span = to - from;
+    world.spawn((
+        Expiring,
+        Position((from + to) / 2.0),
+        Size(Vec2::new(span.length().max(1.0), ARC_THICKNESS)),
+        Color(Vec4::ONE),
+        Heading(span.to_angle()),
+        Sprite::cell(
+            textures.get(tex::ROUND_ARC),
+            0,
+            BULLET_IMPACT.row,
+            BULLET_COLUMNS,
+            BULLET_ROWS,
+        ),
+        Animation::new(BULLET_COLUMNS, BULLET_ROWS, BULLET_IMPACT),
+        Layer(3),
+        Light::rgb(Vec2::ZERO, 80.0, 160.0, 255.0, 60.0, 1.0),
+        LightFade { base: 1.0 },
     ));
 }
 

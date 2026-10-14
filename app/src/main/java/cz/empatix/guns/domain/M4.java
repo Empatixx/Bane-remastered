@@ -53,7 +53,7 @@ public class M4 extends AbstractGun implements Gun{
 
         this.bullets = new ArrayList<>(clipSize);
         final TextureAtlas.Entry texture = AssetsService.getTexture(WEAPON_TXT_PATH);
-        this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() / 2f), 1);
+        this.gunHud = new CommonImage(texture, new Vector2f(GunService.HUD_SLOT_CENTER_X - texture.width() * GunService.GUN_TEXTURE_SCALE / 2f, GunService.HUD_SLOT_CENTER_Y - texture.height() * GunService.GUN_TEXTURE_SCALE / 2f), GunService.GUN_TEXTURE_SCALE);
         this.ammoHud = new CommonText("", "PixelFJVerdana12pt.ttf", new Vector2f(AMMO_COUNTER_POSITION), 10);
         this.ammoHud.setColorRGB(AMMO_COUNTER_COLOR);
         this.bulletFactory = bulletFactory;

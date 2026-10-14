@@ -25,7 +25,7 @@ mod transform;
 mod ui;
 
 pub(crate) use animation::{Animation, Clip};
-pub(crate) use appearance::{Color, Layer, Liquid, Outline, Shine, Sky, Sprite, Text};
+pub(crate) use appearance::{Color, Heading, Layer, Liquid, Outline, Shine, Sky, Sprite, Text};
 pub(crate) use artefacts::{
     ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, Bloodlust, CastLightning, ConvertBullets,
     HealPercent, InfiniteAmmo, MidasTouch, Phantom, PlaceTurret, ShieldAura, Shielded,
@@ -36,13 +36,13 @@ pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{
     Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
     ContactDamage, Dash, Detour, Enemy, Expiring, GunDrop, Health, HitFlash, Invulnerable, Loadout,
-    Path, Progress, Spawning, Toughened, Trap, Wallet, Weapon,
+    Path, Progress, Puddle, Revives, Spawning, Toughened, Trap, Wallet, Weapon,
 };
 pub(crate) use death::DeathPart;
 pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};
 pub(crate) use effects::{
-    Casing, Floating, Gate, GazeWind, HOVER_CYCLE, Hover, LightFade, Opening, Particle, RoomId,
-    ThenPlay, TrapCooldown,
+    Casing, Floating, Gate, GazeWind, HOVER_CYCLE, Hover, LightFade, Mote, Opening, Particle,
+    RoomId, ThenPlay, Trailing, TrapCooldown,
 };
 pub(crate) use hud::{
     AMMO_TEXT_COLOR, AmmoPip, AmmoText, BarKind, BossHud, CoinText, EnemyArrow, GoldCount,
@@ -69,11 +69,12 @@ pub(crate) use settings_ui::{
 };
 pub(crate) use shadow::DropShadow;
 pub(crate) use skills::{
-    ArgusAttack, ArgusBoss, ArgusStage, Armageddon, BeamPart, Boss, Charge, Cobweb, DeathBurst,
-    DeathCloud, DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse, GolemAttack,
-    GolemBoss, GolemStage, Hatcher, Hits, Homing, HoundAttack, HoundBoss, HoundStage, Impact, Kin,
-    LeapStage, Leaper, Magma, MagmaSpreader, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter,
-    RockFall, Rooted, Smash, WebSpitter,
+    ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Bait, BeamPart, Boss, Charge, Cobweb,
+    DeathBurst, DeathCloud, DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse,
+    GolemAttack, GolemBoss, GolemStage, Hatcher, Hits, Homing, Hopper, HoundAttack, HoundBoss,
+    HoundStage, Impact, Kin, LeapStage, Leaper, Magma, MagmaSpreader, MimicAttack, MimicBoss,
+    MimicStage, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter, RockFall, Rooted, Sealed, Smash,
+    WebSpitter,
 };
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};

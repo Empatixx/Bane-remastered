@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Afterimage, Casing, Chilled, Color, DodgeVisual, DropShadow, EnemyArrow, Frozen, Hidden, Hover,
-    InRange, Layer, Liquid, Lit, MapSize, Minimap, Outline, Overlay, Phantom, Player, Position,
-    Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text, blended,
+    Afterimage, Casing, Chilled, Color, DodgeVisual, DropShadow, EnemyArrow, Frozen, Heading, Hidden,
+    Hover, InRange, Layer, Liquid, Lit, MapSize, Minimap, Outline, Overlay, Phantom, Player,
+    Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text, blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -79,7 +79,7 @@ pub(crate) fn collect_draws(
         outline,
         hover,
         frozen,
-        shine,
+        (shine, heading),
         sky,
         (liquid, cloakable),
     ) in world
@@ -96,7 +96,7 @@ pub(crate) fn collect_draws(
             Option<&Outline>,
             Option<&Hover>,
             (Option<&Frozen>, Option<&Chilled>),
-            Option<&Shine>,
+            (Option<&Shine>, Option<&Heading>),
             Option<&Sky>,
             (
                 Option<&Liquid>,
@@ -138,6 +138,9 @@ pub(crate) fn collect_draws(
                 quad = outline.map_or(quad, |outline| quad.outlined(outline.0));
                 if let (Some(time), Some(_)) = (cloak, cloakable) {
                     quad = quad.shadowed(time);
+                }
+                if let Some(heading) = heading {
+                    quad = quad.rotated(heading.0);
                 }
                 Draw {
                     texture: sprite.texture,

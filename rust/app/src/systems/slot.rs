@@ -19,7 +19,6 @@ pub(crate) const SPIN_SECONDS: f32 = 2.0;
 const TOTAL_CHANCE: usize = 150;
 const SCATTER_SPEED: f32 = 417.0;
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Outcome {
     RareItem,

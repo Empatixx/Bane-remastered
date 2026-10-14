@@ -29,6 +29,8 @@ import java.util.stream.Stream;
 public class GunService {
     private final static Vector2f HUD_SLOT_POSITION = new Vector2f(685, 450);
     private final static float HUD_SLOT_SCALE = 1.5f;
+    /** Gun textures are stored at half size and drawn twice as large. */
+    public final static int GUN_TEXTURE_SCALE = 2;
     public final static int HUD_SLOT_CENTER_X;
     public final static int HUD_SLOT_CENTER_Y;
     private static final long ITEM_DROP_FORCE = 15_000;

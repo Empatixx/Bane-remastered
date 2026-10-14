@@ -4,7 +4,7 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::components::{
     Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Expiring, Hatcher, Health, Minion, Player,
-    Position, RoomId, Rooted, Size, Spawning, WebSpitter,
+    Position, Puddle, Revives, RoomId, Rooted, Size, Spawning, WebSpitter,
 };
 use crate::enemies::{self, EnemyKind};
 use crate::physics::Physics;
@@ -146,6 +146,22 @@ pub(super) fn clean_up_after_boss(world: &mut World) {
     if !fallen {
         return;
     }
+    let puddles: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<(&Minion, &Puddle)>()
+        .iter()
+        .collect();
+    for puddle in puddles {
+        let _ = world.remove::<(Puddle, Spawning)>(puddle);
+    }
+    let reviving: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<(&Minion, &Revives)>()
+        .iter()
+        .collect();
+    for minion in reviving {
+        let _ = world.remove_one::<Revives>(minion);
+    }
     for health in world
         .query_mut::<&mut Health>()
         .with::<&Minion>()
@@ -159,6 +175,7 @@ pub(super) fn clean_up_after_boss(world: &mut World) {
     }
     super::clear_golem_effects(world);
     super::clear_magma(world);
+    super::clear_baits(world);
 }
 
 pub(crate) fn update_boss_hud(world: &mut World) {
@@ -181,8 +198,8 @@ mod tests {
     use crate::assets::Textures;
     use crate::assets::tex;
     use crate::components::{Chase, EnemyBullet, Velocity};
-    use crate::systems::enemies::reap_dead;
     use crate::prefabs::finish_spawning;
+    use crate::systems::enemies::reap_dead;
     use crate::systems::{chase_player, tick_spawning};
 
     use super::*;

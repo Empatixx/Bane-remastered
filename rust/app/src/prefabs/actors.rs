@@ -8,10 +8,11 @@ use crate::components::{
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
     BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
     DeathBurst, DeathCloud, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse,
-    GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Health, Hits, Homing, HoundAttack,
-    HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout,
-    MagmaSpreader, Minion, NoDrop, OgreAttack, OgreBoss, OgreStage, Path, Pet, Player, Position,
-    RoomId, RunStats, Size, Smash, Spawning, Sprite, TrailLayer, Velocity, Wallet, WebSpitter,
+    GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Heading, Health, Hits, Homing, Hopper,
+    HoundAttack, HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade,
+    Lit, Loadout, MagmaSpreader, MimicAttack, MimicBoss, MimicStage, Minion, NoDrop, OgreAttack,
+    OgreBoss, OgreStage, Path, Pet, Player, Position, RoomId, Rooted, RunStats, Size, Smash,
+    Spawning, Sprite, TrailLayer, Trailing, Velocity, Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -113,21 +114,28 @@ pub(crate) fn bullet(
     bullet: Bullet,
     texture: TextureId,
 ) -> Entity {
-    let size = Vec2::splat(16.0);
+    let spec = bullet.round.spec();
+    let [red, green, blue] = spec.light;
     let entity = world.spawn((
         bullet,
         Position(position),
         Velocity(velocity),
-        Size(size),
+        Size(spec.size),
         Color(Vec4::ONE),
         Sprite::cell(texture, 0, BULLET_FLIGHT.row, BULLET_COLUMNS, BULLET_ROWS),
         Animation::new(BULLET_COLUMNS, BULLET_ROWS, BULLET_FLIGHT),
         Layer(2),
         Lit,
-        Light::rgb(Vec2::ZERO, 255.0, 0.0, 0.0, 25.0, 0.75),
+        Light::rgb(Vec2::ZERO, red, green, blue, 25.0, 0.75),
         LightFade { base: 0.75 },
     ));
-    let body = physics.add_bullet(entity, position, velocity, size);
+    if bullet.round.turns() {
+        let _ = world.insert_one(entity, Heading(velocity.to_angle()));
+    }
+    if spec.trail.is_some() {
+        let _ = world.insert_one(entity, Trailing::default());
+    }
+    let body = physics.add_bullet(entity, position, velocity, spec.hitbox);
     let _ = world.insert_one(entity, body);
     entity
 }
@@ -188,6 +196,9 @@ pub(crate) fn enemy(
             total: spawn_seconds,
         },
     ));
+    if spec.reform_row.is_some() {
+        let _ = world.insert_one(entity, crate::components::Revives);
+    }
     match spec.behavior {
         Behavior::Plain => {}
         Behavior::PoisonTrail => {
@@ -252,6 +263,33 @@ pub(crate) fn enemy(
                         remaining: 0.0,
                     },
                 ),
+            );
+        }
+        Behavior::Hops => {
+            let _ = world.insert_one(entity, Rooted);
+            let _ = world.insert_one(
+                entity,
+                Hopper {
+                    timer: 0.2 + (position.x as u32 % 7) as f32 * 0.06,
+                    hopping: false,
+                    idle,
+                },
+            );
+        }
+        Behavior::MimicBoss => {
+            let _ = world.insert_one(
+                entity,
+                MimicBoss {
+                    stage: MimicStage::Walk,
+                    attack: MimicAttack::Hop,
+                    last: None,
+                    timer: 0.0,
+                    cooldown: enemies::MIMIC_FIRST_COOLDOWN,
+                    charging: false,
+                    enraged: false,
+                    seed: 0x7A3C_91D5 ^ (position.x as u32).wrapping_mul(23) ^ (position.y as u32),
+                    idle,
+                },
             );
         }
         Behavior::HoundBoss => {

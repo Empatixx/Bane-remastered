@@ -55,6 +55,39 @@ pub(crate) const GOLEM_LASER_REACH: f32 = 1100.0;
 pub(crate) const GOLEM_LASER_WIDTH: f32 = 26.0;
 pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_NEAR: f32 = 340.0;
+pub(crate) const HOP_SECONDS: f32 = 0.42;
+pub(crate) const HOP_REST: f32 = 0.6;
+pub(crate) const MIMIC_LURE_WINDUP: f32 = 0.36;
+pub(crate) const MIMIC_LURE_RECOVER: f32 = 0.5;
+pub(crate) const MIMIC_BAITS: usize = 5;
+pub(crate) const MIMIC_BAIT_LIMIT: usize = 8;
+pub(crate) const MIMIC_BAIT_SECONDS: f32 = 9.0;
+pub(crate) const MIMIC_BAIT_REACH: f32 = 34.0;
+pub(crate) const MIMIC_BAIT_DAMAGE: i32 = 2;
+pub(crate) const MIMIC_FIRST_COOLDOWN: f32 = 2.2;
+pub(crate) const MIMIC_COOLDOWN: f32 = 2.6;
+pub(crate) const MIMIC_RAGE_COOLDOWN: f32 = 1.5;
+pub(crate) const MIMIC_RAGE_AT: f32 = 0.5;
+pub(crate) const MIMIC_RAGE_SPEED: f32 = 1.3;
+pub(crate) const MIMIC_NEAR: f32 = 330.0;
+pub(crate) const MIMIC_HOP_WINDUP: f32 = 0.2;
+pub(crate) const MIMIC_HOP_SECONDS: f32 = 0.45;
+pub(crate) const MIMIC_HOP_SPEED: f32 = 6.0;
+pub(crate) const MIMIC_HOP_RECOVER: f32 = 0.3;
+pub(crate) const MIMIC_HOP_RING: usize = 14;
+pub(crate) const MIMIC_BITE_WINDUP: f32 = 0.28;
+pub(crate) const MIMIC_BITE_SECONDS: f32 = 0.13;
+pub(crate) const MIMIC_BITE_SPEED: f32 = 4.0;
+pub(crate) const MIMIC_BITE_RECOVER: f32 = 0.4;
+pub(crate) const MIMIC_BITE_FAN: usize = 7;
+pub(crate) const MIMIC_BITE_SPREAD: f32 = 0.5;
+pub(crate) const MIMIC_SPIT_WINDUP: f32 = 0.32;
+pub(crate) const MIMIC_SPIT_RECOVER: f32 = 0.55;
+pub(crate) const MIMIC_MOB_LIMIT: usize = 4;
+pub(crate) const MIMIC_REST_WINDUP: f32 = 0.3;
+pub(crate) const MIMIC_REST_SECONDS: f32 = 2.2;
+pub(crate) const MIMIC_REST_RECOVER: f32 = 0.3;
+pub(crate) const MIMIC_SPLINTER_DAMAGE: i32 = 2;
 pub(crate) const HOUND_FIRST_COOLDOWN: f32 = 2.2;
 pub(crate) const HOUND_COOLDOWN: f32 = 2.4;
 pub(crate) const HOUND_RAGE_COOLDOWN: f32 = 1.3;
@@ -148,6 +181,8 @@ pub(crate) enum ProjectileKind {
     Boulder,
     ArgusShot,
     Ember,
+    MimicCoin,
+    MimicTooth,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -214,6 +249,32 @@ impl ProjectileKind {
                 force: 35_000_000.0,
                 homing: true,
                 lifetime: Some(5.0),
+            },
+            Self::MimicCoin => ProjectileSpec {
+                texture: tex::MIMIC_COIN,
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(12.0, 12.0),
+                scale: 3.2,
+                idle: (4, 0.07),
+                impact: (4, 0.07),
+                light: [255.0, 210.0, 90.0, 22.0, 0.5],
+                force: 30_000_000.0,
+                homing: false,
+                lifetime: Some(1.8),
+            },
+            Self::MimicTooth => ProjectileSpec {
+                texture: tex::MIMIC_TOOTH,
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(12.0, 12.0),
+                scale: 3.2,
+                idle: (4, 0.05),
+                impact: (4, 0.07),
+                light: [255.0, 240.0, 210.0, 16.0, 0.3],
+                force: 42_000_000.0,
+                homing: false,
+                lifetime: Some(1.5),
             },
             Self::Ember => ProjectileSpec {
                 texture: tex::HOUND_MAGMA,
@@ -311,6 +372,8 @@ pub(crate) enum EnemyKind {
     ArgusEye,
     Ogre,
     Hellhound,
+    Mimic,
+    SalivaSlime,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -337,6 +400,8 @@ pub(crate) enum Behavior {
     ArgusBoss,
     OgreBoss,
     HoundBoss,
+    MimicBoss,
+    Hops,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -359,6 +424,9 @@ pub(crate) struct EnemySpec {
     pub(crate) behavior: Behavior,
     pub(crate) kin: bool,
     pub(crate) themes: &'static [Theme],
+    /// The sheet row of the puddle pulling itself back together; enemies with one survive
+    /// their first death as a puddle and re-form.
+    pub(crate) reform_row: Option<usize>,
 }
 
 impl EnemySpec {
@@ -425,6 +493,7 @@ const fn spec(
         behavior: Behavior::Plain,
         kin: false,
         themes: &[],
+        reform_row: None,
     }
 }
 
@@ -450,7 +519,7 @@ impl EnemyKind {
         Self::ALL.iter().position(|kind| *kind == self).unwrap_or(0)
     }
 
-    pub(crate) const ALL: [Self; 21] = [
+    pub(crate) const ALL: [Self; 23] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -470,6 +539,8 @@ impl EnemyKind {
         Self::ArgusEye,
         Self::Ogre,
         Self::Hellhound,
+        Self::Mimic,
+        Self::SalivaSlime,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -643,6 +714,37 @@ impl EnemyKind {
                     (120, 2, 2_500_000.0),
                 )
             },
+            Self::SalivaSlime => EnemySpec {
+                death_row: 1,
+                reform_row: Some(3),
+                role: Role::Summoned,
+                behavior: Behavior::Hops,
+                ..spec(
+                    tex::SALIVA_SLIME,
+                    (6, 4),
+                    (32.0, 32.0),
+                    2.8,
+                    (4, 0.16),
+                    Some((6, 0.07)),
+                    (5, 1, 5_500_000.0),
+                )
+            },
+            Self::Mimic => EnemySpec {
+                min_floor: 2,
+                death_row: 5,
+                themes: &[Theme::Stone, Theme::Temple],
+                role: Role::Boss("Mimic"),
+                behavior: Behavior::MimicBoss,
+                ..spec(
+                    tex::MIMIC,
+                    (8, 6),
+                    (92.0, 102.0),
+                    2.2,
+                    (8, 0.12),
+                    Some((8, 0.12)),
+                    (115, 2, 30_000_000.0),
+                )
+            },
             Self::Hellhound => EnemySpec {
                 min_floor: 2,
                 death_row: 4,
@@ -807,6 +909,7 @@ fn boss_named(name: &str) -> Option<EnemyKind> {
         "argus" => Some(EnemyKind::Argus),
         "ogre" => Some(EnemyKind::Ogre),
         "hound" | "hellhound" => Some(EnemyKind::Hellhound),
+        "mimic" => Some(EnemyKind::Mimic),
         "spider" => Some(EnemyKind::Spider),
         "slime" | "kingslime" => Some(EnemyKind::KingSlime),
         _ => None,
@@ -887,8 +990,8 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 8);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 8 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 10);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 10 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));
@@ -964,6 +1067,18 @@ mod tests {
                 "{theme:?}"
             );
         }
+        for theme in [Theme::Stone, Theme::Temple] {
+            assert!(
+                seen(theme, &mut rng).contains(&EnemyKind::Mimic),
+                "{theme:?}"
+            );
+        }
+        for theme in [Theme::Lava, Theme::Ice, Theme::Sewer, Theme::Moss] {
+            assert!(
+                !seen(theme, &mut rng).contains(&EnemyKind::Mimic),
+                "{theme:?}"
+            );
+        }
         assert!(seen(Theme::Lava, &mut rng).contains(&EnemyKind::Hellhound));
         for theme in [
             Theme::Stone,
@@ -988,6 +1103,7 @@ mod tests {
         assert_eq!(boss_named("argus"), Some(EnemyKind::Argus));
         assert_eq!(boss_named("ogre"), Some(EnemyKind::Ogre));
         assert_eq!(boss_named("hound"), Some(EnemyKind::Hellhound));
+        assert_eq!(boss_named("mimic"), Some(EnemyKind::Mimic));
         assert_eq!(boss_named("nothing"), None);
     }
 

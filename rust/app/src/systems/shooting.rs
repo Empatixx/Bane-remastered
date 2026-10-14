@@ -6,12 +6,13 @@ use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
 use crate::components::{
     Animation, Body, Boss, Breakable, Bullet, Burst, CHILL_SECONDS, CHILL_STACKS_TO_FREEZE,
-    Chilled, Enemy, Expiring, Friendly, Frozen, Health, InfiniteAmmo, Loadout, Phantom, Player,
-    PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, Velocity,
+    Chilled, Enemy, Expiring, Friendly, Frozen, Heading, Health, InfiniteAmmo, Loadout, Phantom,
+    Player, PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, Velocity,
 };
 use crate::controls::Action;
 use crate::geometry;
-use crate::guns::{BURST_DELAY, ClipStyle, GunSpec, MAX_PELLETS};
+use crate::guns::Mutation;
+use crate::guns::{BURST_DELAY, ClipStyle, GunSpec, MAX_PELLETS, Round};
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
 use crate::prefabs;
@@ -19,12 +20,14 @@ use crate::render::TextureId;
 use crate::rng::Rng;
 use crate::systems::damage::{Damage, DamageSource};
 use crate::upgrades::Perks;
-use crate::guns::Mutation;
 
-const BULLET_SPEED: f32 = 700.0;
 const BOUNCE_CLEARANCE: f32 = 2.0;
 const BLAST_LOOK: Vec2 = Vec2::new(72.0, 72.0);
 const BLAST_REACH: Vec2 = Vec2::new(96.0, 96.0);
+const ROCKET_LOOK: Vec2 = Vec2::new(144.0, 144.0);
+const ROCKET_REACH: Vec2 = Vec2::new(176.0, 176.0);
+const SPLASH_REACH: Vec2 = Vec2::new(80.0, 80.0);
+const CHAIN_REACH: f32 = 220.0;
 const VENOM_POOL_SECONDS: f32 = 3.0;
 const VENOM_SPACING: f32 = 64.0;
 const FROST_ROUND_FREEZE: f32 = 1.2;
@@ -51,10 +54,29 @@ impl ShotRoll {
     }
 }
 
+/// The sheet of every kind of round, looked up once a frame instead of per shot.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct RoundTextures([TextureId; Round::ALL.len()]);
+
+impl RoundTextures {
+    pub(crate) fn load(textures: &Textures) -> Self {
+        Self(Round::ALL.map(|round| textures.get(round.spec().texture)))
+    }
+
+    #[cfg(test)]
+    pub(crate) fn white() -> Self {
+        Self([TextureId::WHITE; Round::ALL.len()])
+    }
+
+    fn get(&self, round: Round) -> TextureId {
+        self.0[round as usize]
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ShotContext {
     pub(crate) camera: Vec2,
-    pub(crate) bullet_texture: TextureId,
+    pub(crate) rounds: RoundTextures,
     pub(crate) casing_texture: TextureId,
     pub(crate) dt: f32,
     pub(crate) roll: ShotRoll,
@@ -80,7 +102,7 @@ pub(crate) fn shoot(
 ) -> f32 {
     let ShotContext {
         camera,
-        bullet_texture,
+        rounds,
         casing_texture,
         dt,
         roll,
@@ -195,14 +217,17 @@ pub(crate) fn shoot(
     let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
     super::stats::record(world, super::stats::Stat::Fired, fired);
     for shot in shots {
-        prefabs::casing(
-            world,
-            shot.origin,
-            shot.direction,
-            shot.spec.clip_style == ClipStyle::Shotgun,
-            shot.roll.eject,
-            casing_texture,
-        );
+        let round = shot.spec.round;
+        if matches!(round, Round::Bullet | Round::Tracer | Round::Slug) {
+            prefabs::casing(
+                world,
+                shot.origin,
+                shot.direction,
+                shot.spec.clip_style == ClipStyle::Shotgun,
+                shot.roll.eject,
+                casing_texture,
+            );
+        }
         let aim = shot.direction.to_angle();
         for pellet in 0..shot.pellets {
             let angle = aim + shot.spec.angle_offset(pellet, shot.roll.spread);
@@ -217,9 +242,9 @@ pub(crate) fn shoot(
                 world,
                 physics,
                 shot.origin,
-                Vec2::from_angle(angle) * BULLET_SPEED,
-                Bullet::mutated(damage, shot.spec.mutation),
-                bullet_texture,
+                Vec2::from_angle(angle) * round.spec().speed,
+                Bullet::mutated(damage, shot.spec.mutation).as_round(round),
+                rounds.get(round),
             );
         }
     }
@@ -250,6 +275,12 @@ pub(crate) fn bullet_hits(
         if victim.is_none() && touched.iter().all(|owner| *owner != Owner::Wall) {
             continue;
         }
+        if bullet.round.spec().blast {
+            rocket_blast(world, bullet.damage, at, textures);
+            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            stop_round(world, physics, entity);
+            continue;
+        }
         let source = if world.get::<&Summoned>(entity).is_ok() {
             DamageSource::Summoned
         } else {
@@ -270,6 +301,14 @@ pub(crate) fn bullet_hits(
         } else {
             SoundEffect::WallHit
         }));
+        let round = bullet.round.spec();
+        let struck = victim.filter(|_| hit_enemy);
+        if round.splash {
+            splash(world, struck, bullet.damage, at);
+        }
+        if let Some(target) = struck.filter(|_| round.chains > 0) {
+            chain_lightning(world, target, bullet.damage, round.chains, textures, sounds);
+        }
         if let Some(target) = victim.filter(|_| hit_enemy) {
             mutate_hit(world, target, bullet, at, textures);
             if bullet.pierce > 0 {
@@ -292,8 +331,12 @@ pub(crate) fn bullet_hits(
                 if let Ok(mut position) = world.get::<&mut Position>(entity) {
                     position.0 = pushed;
                 }
+                let bounced = reflect(velocity, normal);
                 if let Ok(mut moving) = world.get::<&mut Velocity>(entity) {
-                    moving.0 = reflect(velocity, normal);
+                    moving.0 = bounced;
+                }
+                if let Ok(mut heading) = world.get::<&mut Heading>(entity) {
+                    heading.0 = bounced.to_angle();
                 }
                 continue;
             }
@@ -301,14 +344,52 @@ pub(crate) fn bullet_hits(
         if bullet.mutation == Some(Mutation::Explosive) && victim.is_none() {
             explode_round(world, None, bullet.damage, at, textures);
         }
-        physics.detach(world, entity);
-        let _ = world.insert_one(entity, Expiring);
-        if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
-            velocity.0 = Vec2::ZERO;
+        stop_round(world, physics, entity);
+    }
+}
+
+/// Short-lived rounds such as flames fizzle out in the air once their time is up.
+pub(crate) fn burn_out_rounds(world: &mut World, physics: &mut Physics, dt: f32) {
+    let mut spent = Vec::new();
+    for (entity, bullet) in world
+        .query_mut::<(Entity, &mut Bullet)>()
+        .without::<&Expiring>()
+    {
+        if let Some(left) = &mut bullet.lifetime {
+            *left -= dt;
+            if *left <= 0.0 {
+                spent.push(entity);
+            }
         }
-        if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
-            animation.play(BULLET_IMPACT);
-        }
+    }
+    for entity in spent {
+        stop_round(world, physics, entity);
+    }
+}
+
+fn stop_round(world: &mut World, physics: &mut Physics, entity: Entity) {
+    physics.detach(world, entity);
+    let _ = world.insert_one(entity, Expiring);
+    if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
+        velocity.0 = Vec2::ZERO;
+    }
+    if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+        animation.play(BULLET_IMPACT);
+    }
+}
+
+/// A rocket bursts on whatever it touches and hits everything around with its full damage.
+fn rocket_blast(world: &mut World, damage: i32, at: Vec2, textures: &Textures) {
+    prefabs::blast(world, at, ROCKET_LOOK, textures);
+    for target in blast_victims(world, None, at, ROCKET_REACH) {
+        super::damage::deal(
+            world,
+            Damage {
+                target,
+                amount: damage,
+                source: DamageSource::Explosion,
+            },
+        );
     }
 }
 
@@ -377,22 +458,7 @@ fn explode_round(
 ) {
     prefabs::blast(world, at, BLAST_LOOK, textures);
     let amount = (damage / 2).max(1);
-    let victims: Vec<Entity> = world
-        .query::<(Entity, &Position, &Size)>()
-        .with::<&Health>()
-        .without::<&Player>()
-        .without::<&Expiring>()
-        .without::<&Spawning>()
-        .iter()
-        .filter(|(entity, position, size)| {
-            Some(*entity) != struck && geometry::overlaps(at, BLAST_REACH, position.0, size.0)
-        })
-        .filter(|(entity, ..)| {
-            world.get::<&Enemy>(*entity).is_ok() || world.get::<&Breakable>(*entity).is_ok()
-        })
-        .map(|(entity, ..)| entity)
-        .collect();
-    for target in victims {
+    for target in blast_victims(world, struck, at, BLAST_REACH) {
         super::damage::deal(
             world,
             Damage {
@@ -402,6 +468,92 @@ fn explode_round(
             },
         );
     }
+}
+
+/// Plasma spatters what stands around the hit with half the damage.
+fn splash(world: &mut World, struck: Option<Entity>, damage: i32, at: Vec2) {
+    let amount = (damage / 2).max(1);
+    for target in blast_victims(world, struck, at, SPLASH_REACH) {
+        super::damage::deal(
+            world,
+            Damage {
+                target,
+                amount,
+                source: DamageSource::Explosion,
+            },
+        );
+    }
+}
+
+/// The hit jumps as lightning to the nearest enemy it has not struck yet, then on from there.
+fn chain_lightning(
+    world: &mut World,
+    first: Entity,
+    damage: i32,
+    jumps: u32,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+) {
+    let Ok(start) = world.get::<&Position>(first).map(|position| position.0) else {
+        return;
+    };
+    let mut struck = vec![first];
+    let mut from = start;
+    for _ in 0..jumps {
+        let next = world
+            .query::<(Entity, &Position)>()
+            .with::<(&Enemy, &Health)>()
+            .without::<&Expiring>()
+            .without::<&Spawning>()
+            .iter()
+            .filter(|(entity, position)| {
+                !struck.contains(entity) && position.0.distance(from) <= CHAIN_REACH
+            })
+            .map(|(entity, position)| (entity, position.0))
+            .min_by(|a, b| a.1.distance(from).total_cmp(&b.1.distance(from)));
+        let Some((target, to)) = next else {
+            break;
+        };
+        prefabs::arc(world, from, to, textures);
+        super::trails::arc_motes(
+            world,
+            textures.get(crate::assets::tex::ROUND_MOTE_VOLT),
+            from,
+            to,
+        );
+        super::damage::deal(
+            world,
+            Damage {
+                target,
+                amount: damage,
+                source: DamageSource::Bullet,
+            },
+        );
+        struck.push(target);
+        from = to;
+    }
+    if struck.len() > 1 {
+        sounds.push(AudioCommand::Effect(SoundEffect::TeslaZap));
+    }
+}
+
+/// Enemies and breakables inside the blast; the player who fired never is.
+fn blast_victims(world: &World, struck: Option<Entity>, at: Vec2, reach: Vec2) -> Vec<Entity> {
+    world
+        .query::<(Entity, &Position, &Size)>()
+        .with::<&Health>()
+        .without::<&Player>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+        .iter()
+        .filter(|(entity, position, size)| {
+            Some(*entity) != struck && geometry::overlaps(at, reach, position.0, size.0)
+        })
+        .filter(|(entity, ..)| {
+            world.get::<&Enemy>(*entity).is_ok() || world.get::<&Breakable>(*entity).is_ok()
+        })
+        .map(|(entity, ..)| entity)
+        .collect()
 }
 
 #[cfg(test)]
@@ -441,7 +593,7 @@ mod tests {
             input,
             ShotContext {
                 camera,
-                bullet_texture: TextureId::WHITE,
+                rounds: RoundTextures::white(),
                 casing_texture: TextureId::WHITE,
                 dt,
                 roll: ShotRoll {
@@ -632,7 +784,7 @@ mod tests {
             input,
             ShotContext {
                 camera: Vec2::ZERO,
-                bullet_texture: TextureId::WHITE,
+                rounds: RoundTextures::white(),
                 casing_texture: TextureId::WHITE,
                 dt,
                 roll: ShotRoll {
@@ -1091,5 +1243,212 @@ mod tests {
         assert!(current(&world).reloading.is_none());
         assert_eq!(current(&world).clip, 0);
         assert_eq!(bullet_velocities(&world).len(), 1);
+    }
+
+    fn run_rounds(world: &mut World, physics: &mut Physics, frames: usize) {
+        for _ in 0..frames {
+            simulate(world, physics, 1.0 / 60.0);
+            burn_out_rounds(world, physics, 1.0 / 60.0);
+            bullet_hits(world, physics, &Textures::default(), &mut Vec::new());
+        }
+    }
+
+    #[test]
+    fn every_new_gun_fires_its_own_round_at_its_own_speed() {
+        use crate::guns::GunKind;
+        for (kind, round) in [
+            (GunKind::Sniper, Round::Slug),
+            (GunKind::Rpg, Round::Rocket),
+            (GunKind::Minigun, Round::Tracer),
+            (GunKind::Crossbow, Round::Bolt),
+            (GunKind::Flamethrower, Round::Flame),
+        ] {
+            let (mut world, mut physics) = setup();
+            give(&mut world, kind);
+            fire(
+                &mut world,
+                &mut physics,
+                &clicked_at(Vec2::new(500.0, 100.0)),
+                Vec2::ZERO,
+                0.0,
+            );
+            let fired: Vec<(Bullet, Vec2, bool)> = world
+                .query::<(&Bullet, &Velocity, Option<&Heading>)>()
+                .iter()
+                .map(|(bullet, velocity, heading)| (*bullet, velocity.0, heading.is_some()))
+                .collect();
+            assert_eq!(fired.len(), 1, "{kind:?}");
+            let (bullet, velocity, turned) = fired[0];
+            assert_eq!(bullet.round, round, "{kind:?}");
+            assert!(
+                (velocity.length() - round.spec().speed).abs() < 0.5,
+                "{kind:?}"
+            );
+            assert_eq!(turned, round.turns(), "{kind:?}");
+        }
+    }
+
+    #[test]
+    fn a_rocket_bursts_on_the_wall_and_hurts_every_enemy_around_with_full_damage() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        physics.add_walls(&[(5, 0), (5, 1), (5, 2)], 64.0);
+        let near = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(250.0, 40.0),
+        );
+        let before = health(&world, near);
+        prefabs::bullet(
+            &mut world,
+            &mut physics,
+            Vec2::new(150.0, 96.0),
+            Vec2::new(480.0, 0.0),
+            Bullet::plain(2).as_round(Round::Rocket),
+            TextureId::WHITE,
+        );
+
+        run_rounds(&mut world, &mut physics, 40);
+
+        assert!(before - health(&world, near) >= 2 || world.get::<&Expiring>(near).is_ok());
+        assert_eq!(
+            world
+                .query::<&Bullet>()
+                .without::<&Expiring>()
+                .iter()
+                .count(),
+            0
+        );
+    }
+
+    #[test]
+    fn a_flame_burns_out_in_the_air_after_its_short_life() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let flame = prefabs::bullet(
+            &mut world,
+            &mut physics,
+            Vec2::new(100.0, 100.0),
+            Vec2::new(380.0, 0.0),
+            Bullet::plain(1).as_round(Round::Flame),
+            TextureId::WHITE,
+        );
+
+        run_rounds(&mut world, &mut physics, 20);
+        assert!(world.get::<&Expiring>(flame).is_err());
+        run_rounds(&mut world, &mut physics, 10);
+        assert!(world.get::<&Expiring>(flame).is_ok());
+        assert!(world.get::<&Body>(flame).is_err());
+    }
+
+    #[test]
+    fn a_sniper_slug_passes_through_two_enemies_and_stops_in_the_third() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let rats: Vec<Entity> = [300.0, 400.0, 500.0, 600.0]
+            .into_iter()
+            .map(|x| {
+                prefabs::ready_enemy(
+                    &mut world,
+                    &mut physics,
+                    crate::enemies::EnemyKind::Rat,
+                    Vec2::new(x, 100.0),
+                )
+            })
+            .collect();
+        let before: Vec<i32> = rats.iter().map(|rat| health(&world, *rat)).collect();
+        prefabs::bullet(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            Vec2::new(1500.0, 0.0),
+            Bullet::plain(1).as_round(Round::Slug),
+            TextureId::WHITE,
+        );
+
+        run_rounds(&mut world, &mut physics, 30);
+
+        let hurt: Vec<bool> = rats
+            .iter()
+            .zip(before)
+            .map(|(rat, before)| health(&world, *rat) < before)
+            .collect();
+        assert_eq!(hurt, vec![true, true, true, false]);
+    }
+
+    #[test]
+    fn a_tesla_spark_jumps_to_the_two_nearest_enemies_but_not_to_a_far_one() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let rats: Vec<Entity> = [
+            Vec2::new(300.0, 100.0),
+            Vec2::new(300.0, 250.0),
+            Vec2::new(300.0, 400.0),
+            Vec2::new(300.0, 900.0),
+        ]
+        .into_iter()
+        .map(|at| {
+            prefabs::ready_enemy(&mut world, &mut physics, crate::enemies::EnemyKind::Rat, at)
+        })
+        .collect();
+        let before: Vec<i32> = rats.iter().map(|rat| health(&world, *rat)).collect();
+        prefabs::bullet(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            Vec2::new(600.0, 0.0),
+            Bullet::plain(1).as_round(Round::Spark),
+            TextureId::WHITE,
+        );
+
+        run_rounds(&mut world, &mut physics, 20);
+
+        let hurt: Vec<bool> = rats
+            .iter()
+            .zip(before)
+            .map(|(rat, before)| health(&world, *rat) < before)
+            .collect();
+        assert_eq!(hurt, vec![true, true, true, false]);
+    }
+
+    #[test]
+    fn plasma_spatters_the_enemy_next_to_the_one_it_hits() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let hit = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(300.0, 100.0),
+        );
+        let beside = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(300.0, 150.0),
+        );
+        let far = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            crate::enemies::EnemyKind::Rat,
+            Vec2::new(300.0, 400.0),
+        );
+        let before = [hit, beside, far].map(|rat| health(&world, rat));
+        prefabs::bullet(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            Vec2::new(650.0, 0.0),
+            Bullet::plain(2).as_round(Round::Plasma),
+            TextureId::WHITE,
+        );
+
+        run_rounds(&mut world, &mut physics, 20);
+
+        let after = [hit, beside, far].map(|rat| health(&world, rat));
+        assert_eq!(before[0] - after[0], 2);
+        assert_eq!(before[1] - after[1], 1);
+        assert_eq!(before[2], after[2]);
     }
 }

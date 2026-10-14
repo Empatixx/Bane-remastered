@@ -27,6 +27,15 @@ pub(crate) enum GunKind {
     M4,
     Uzi,
     Thompson,
+    Sniper,
+    Rpg,
+    Minigun,
+    Crossbow,
+    Flamethrower,
+    Blaster,
+    PlasmaRifle,
+    TeslaGun,
+    Railgun,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,6 +67,166 @@ pub(crate) enum ClipStyle {
     SubMachine,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// What leaves the barrel: how it looks, how fast it flies and what it does when it lands.
+pub(crate) enum Round {
+    Bullet,
+    Tracer,
+    Slug,
+    Rocket,
+    Bolt,
+    Flame,
+    Laser,
+    Plasma,
+    Spark,
+    Rail,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct RoundSpec {
+    pub(crate) texture: Tex,
+    pub(crate) size: Vec2,
+    pub(crate) hitbox: Vec2,
+    pub(crate) speed: f32,
+    /// How many enemies it passes through before it stops.
+    pub(crate) pierce: u32,
+    /// Seconds it flies before it burns out on its own.
+    pub(crate) lifetime: Option<f32>,
+    pub(crate) blast: bool,
+    /// Hurts what stands around the hit with half the damage, without a fiery blast.
+    pub(crate) splash: bool,
+    /// How many more enemies a hit jumps to as lightning.
+    pub(crate) chains: u32,
+    pub(crate) light: [f32; 3],
+    /// Motes the round sheds behind itself while it flies.
+    pub(crate) trail: Option<Trail>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Trail {
+    pub(crate) texture: Tex,
+    pub(crate) tint: [f32; 3],
+    pub(crate) size: f32,
+    pub(crate) life: f32,
+    /// How far sideways a mote is thrown, in pixels per second.
+    pub(crate) spread: f32,
+    /// Seconds between two motes.
+    pub(crate) every: f32,
+}
+
+impl Trail {
+    pub(crate) const VOLT: Self = Self {
+        texture: tex::ROUND_MOTE_VOLT,
+        tint: [0.65, 0.85, 1.0],
+        size: 14.0,
+        life: 0.35,
+        spread: 90.0,
+        every: 0.02,
+    };
+    pub(crate) const LASER: Self = Self {
+        texture: tex::ROUND_MOTE_LASER,
+        tint: [1.0, 0.5, 0.55],
+        size: 12.0,
+        life: 0.3,
+        spread: 20.0,
+        every: 0.015,
+    };
+}
+
+impl Round {
+    pub(crate) const ALL: [Self; 10] = [
+        Self::Bullet,
+        Self::Tracer,
+        Self::Slug,
+        Self::Rocket,
+        Self::Bolt,
+        Self::Flame,
+        Self::Laser,
+        Self::Plasma,
+        Self::Spark,
+        Self::Rail,
+    ];
+
+    pub(crate) fn spec(self) -> RoundSpec {
+        let round = |texture, size: (f32, f32), speed| RoundSpec {
+            texture,
+            size: Vec2::new(size.0, size.1),
+            hitbox: Vec2::splat(16.0),
+            speed,
+            pierce: 0,
+            lifetime: None,
+            blast: false,
+            splash: false,
+            chains: 0,
+            light: [255.0, 0.0, 0.0],
+            trail: None,
+        };
+        match self {
+            Self::Bullet => round(tex::BULLET, (16.0, 16.0), 700.0),
+            Self::Tracer => RoundSpec {
+                hitbox: Vec2::splat(12.0),
+                light: [255.0, 200.0, 0.0],
+                ..round(tex::ROUND_TRACER, (16.0, 16.0), 900.0)
+            },
+            Self::Slug => RoundSpec {
+                hitbox: Vec2::splat(12.0),
+                pierce: 2,
+                light: [80.0, 200.0, 255.0],
+                ..round(tex::ROUND_SLUG, (32.0, 16.0), 1500.0)
+            },
+            Self::Rocket => RoundSpec {
+                blast: true,
+                light: [255.0, 140.0, 0.0],
+                ..round(tex::ROUND_ROCKET, (24.0, 24.0), 480.0)
+            },
+            Self::Bolt => RoundSpec {
+                hitbox: Vec2::splat(12.0),
+                pierce: 1,
+                light: [255.0, 120.0, 60.0],
+                ..round(tex::ROUND_BOLT, (32.0, 16.0), 950.0)
+            },
+            Self::Flame => RoundSpec {
+                hitbox: Vec2::splat(20.0),
+                pierce: u32::MAX,
+                lifetime: Some(0.45),
+                light: [255.0, 110.0, 0.0],
+                ..round(tex::ROUND_FLAME, (24.0, 24.0), 380.0)
+            },
+            Self::Laser => RoundSpec {
+                hitbox: Vec2::splat(12.0),
+                light: [255.0, 30.0, 40.0],
+                trail: Some(Trail::LASER),
+                ..round(tex::ROUND_LASER, (32.0, 16.0), 1300.0)
+            },
+            Self::Plasma => RoundSpec {
+                splash: true,
+                light: [60.0, 255.0, 90.0],
+                ..round(tex::ROUND_PLASMA, (24.0, 24.0), 650.0)
+            },
+            Self::Spark => RoundSpec {
+                chains: 2,
+                light: [80.0, 160.0, 255.0],
+                trail: Some(Trail::VOLT),
+                ..round(tex::ROUND_SPARK, (24.0, 24.0), 600.0)
+            },
+            Self::Rail => RoundSpec {
+                hitbox: Vec2::splat(24.0),
+                pierce: u32::MAX,
+                light: [60.0, 220.0, 240.0],
+                ..round(tex::ROUND_RAIL, (48.0, 16.0), 1800.0)
+            },
+        }
+    }
+
+    /// Long rounds point where they fly; the round bullet looks the same from every side.
+    pub(crate) fn turns(self) -> bool {
+        !matches!(
+            self,
+            Self::Bullet | Self::Flame | Self::Plasma | Self::Spark
+        )
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct GunSpec {
     pub(crate) texture: Tex,
@@ -79,6 +248,7 @@ pub(crate) struct GunSpec {
     pub(crate) damage_scale: f32,
     pub(crate) crit_chance: f32,
     pub(crate) mutation: Option<Mutation>,
+    pub(crate) round: Round,
 }
 
 const fn gun(
@@ -110,6 +280,7 @@ const fn gun(
         damage_scale: 1.0,
         crit_chance: 0.0,
         mutation: None,
+        round: Round::Bullet,
     }
 }
 
@@ -128,7 +299,7 @@ impl GunKind {
         }
     }
 
-    pub(crate) const ALL: [Self; 7] = [
+    pub(crate) const ALL: [Self; 16] = [
         Self::Pistol,
         Self::Shotgun,
         Self::Luger,
@@ -136,6 +307,15 @@ impl GunKind {
         Self::M4,
         Self::Uzi,
         Self::Thompson,
+        Self::Sniper,
+        Self::Rpg,
+        Self::Minigun,
+        Self::Crossbow,
+        Self::Flamethrower,
+        Self::Blaster,
+        Self::PlasmaRifle,
+        Self::TeslaGun,
+        Self::Railgun,
     ];
 
     /// The stable name of the weapon, the same one the profile is saved under.
@@ -148,6 +328,15 @@ impl GunKind {
             Self::M4 => "m4",
             Self::Uzi => "uzi",
             Self::Thompson => "thompson",
+            Self::Sniper => "sniper",
+            Self::Rpg => "rpg",
+            Self::Minigun => "minigun",
+            Self::Crossbow => "crossbow",
+            Self::Flamethrower => "flamethrower",
+            Self::Blaster => "blaster",
+            Self::PlasmaRifle => "plasma_rifle",
+            Self::TeslaGun => "tesla_gun",
+            Self::Railgun => "railgun",
         }
     }
 
@@ -156,7 +345,7 @@ impl GunKind {
         use SoundEffect as S;
         match self {
             Self::Pistol => gun(
-                (tex::GUNS_PISTOL, (41.0, 34.0)),
+                (tex::GUNS_PISTOL, (40.0, 34.0)),
                 (1, 3),
                 0.1,
                 (0.25, 0.7),
@@ -168,7 +357,7 @@ impl GunKind {
                 pellets: MAX_PELLETS,
                 shake: 0.6,
                 ..gun(
-                    (tex::GUNS_SHOTGUN, (97.0, 36.0)),
+                    (tex::GUNS_SHOTGUN, (96.0, 36.0)),
                     (3, 5),
                     0.1,
                     (0.5, 0.7),
@@ -192,7 +381,7 @@ impl GunKind {
             Self::Revolver => GunSpec {
                 shake: 0.5,
                 ..gun(
-                    (tex::GUNS_REVOLVER, (71.0, 44.0)),
+                    (tex::GUNS_REVOLVER, (70.0, 44.0)),
                     (4, 6),
                     0.2,
                     (0.45, 0.7),
@@ -232,13 +421,134 @@ impl GunKind {
                 auto: true,
                 shake: 0.18,
                 ..gun(
-                    (tex::GUNS_THOMPSON, (97.0, 47.0)),
+                    (tex::GUNS_THOMPSON, (98.0, 46.0)),
                     (1, 3),
                     0.05,
                     (0.2, 0.85),
                     (30, 300),
                     (S::PistolShoot, S::PistolReload),
                     SubMachine,
+                )
+            },
+            Self::Sniper => GunSpec {
+                shake: 0.8,
+                crit_chance: 0.2,
+                round: Round::Slug,
+                ..gun(
+                    (tex::GUNS_SNIPER, (128.0, 34.0)),
+                    (9, 13),
+                    0.0,
+                    (1.1, 1.6),
+                    (5, 40),
+                    (S::SniperShoot, S::SniperReload),
+                    Shotgun,
+                )
+            },
+            Self::Rpg => GunSpec {
+                shake: 1.2,
+                round: Round::Rocket,
+                ..gun(
+                    (tex::GUNS_RPG, (122.0, 36.0)),
+                    (8, 11),
+                    0.05,
+                    (1.4, 1.8),
+                    (1, 12),
+                    (S::RpgShoot, S::RpgReload),
+                    Shotgun,
+                )
+            },
+            Self::Minigun => GunSpec {
+                auto: true,
+                shake: 0.06,
+                round: Round::Tracer,
+                ..gun(
+                    (tex::GUNS_MINIGUN, (104.0, 46.0)),
+                    (1, 2),
+                    0.3,
+                    (0.06, 2.2),
+                    (40, 400),
+                    (S::MinigunShoot, S::MinigunReload),
+                    SubMachine,
+                )
+            },
+            Self::Crossbow => GunSpec {
+                shake: 0.25,
+                round: Round::Bolt,
+                ..gun(
+                    (tex::GUNS_CROSSBOW, (88.0, 42.0)),
+                    (5, 8),
+                    0.0,
+                    (0.6, 1.0),
+                    (3, 45),
+                    (S::CrossbowShoot, S::CrossbowReload),
+                    Shotgun,
+                )
+            },
+            Self::Flamethrower => GunSpec {
+                auto: true,
+                shake: 0.03,
+                round: Round::Flame,
+                ..gun(
+                    (tex::GUNS_FLAMETHROWER, (98.0, 44.0)),
+                    (1, 2),
+                    0.5,
+                    (0.07, 1.5),
+                    (40, 400),
+                    (S::FlamethrowerShoot, S::FlamethrowerReload),
+                    SubMachine,
+                )
+            },
+            Self::Blaster => GunSpec {
+                shake: 0.2,
+                round: Round::Laser,
+                ..gun(
+                    (tex::GUNS_BLASTER, (56.0, 38.0)),
+                    (2, 4),
+                    0.05,
+                    (0.22, 1.0),
+                    (12, 144),
+                    (S::BlasterShoot, S::BlasterReload),
+                    Pistol,
+                )
+            },
+            Self::PlasmaRifle => GunSpec {
+                auto: true,
+                shake: 0.12,
+                round: Round::Plasma,
+                ..gun(
+                    (tex::GUNS_PLASMA_RIFLE, (104.0, 46.0)),
+                    (2, 3),
+                    0.12,
+                    (0.16, 1.4),
+                    (24, 240),
+                    (S::PlasmaShoot, S::PlasmaReload),
+                    SubMachine,
+                )
+            },
+            Self::TeslaGun => GunSpec {
+                shake: 0.3,
+                round: Round::Spark,
+                ..gun(
+                    (tex::GUNS_TESLA_GUN, (96.0, 50.0)),
+                    (3, 5),
+                    0.1,
+                    (0.55, 1.2),
+                    (8, 80),
+                    (S::TeslaShoot, S::TeslaReload),
+                    Shotgun,
+                )
+            },
+            Self::Railgun => GunSpec {
+                shake: 1.0,
+                round: Round::Rail,
+                ..gun(
+                    (tex::GUNS_RAILGUN, (132.0, 40.0)),
+                    (14, 20),
+                    0.0,
+                    (1.6, 2.0),
+                    (3, 24),
+                    (S::RailgunShoot, S::RailgunReload),
+                    Shotgun,
                 )
             },
         }
@@ -385,6 +695,16 @@ mod tests {
             .into_iter()
             .filter(|kind| kind.spec().auto)
             .collect();
-        assert_eq!(auto, vec![GunKind::M4, GunKind::Uzi, GunKind::Thompson]);
+        assert_eq!(
+            auto,
+            vec![
+                GunKind::M4,
+                GunKind::Uzi,
+                GunKind::Thompson,
+                GunKind::Minigun,
+                GunKind::Flamethrower,
+                GunKind::PlasmaRifle
+            ]
+        );
     }
 }
