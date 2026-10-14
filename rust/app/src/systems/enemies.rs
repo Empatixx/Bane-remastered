@@ -21,6 +21,7 @@ fn player_placement(world: &World) -> Option<(Vec2, Vec2)> {
     world
         .query::<(&Position, &Size)>()
         .with::<&Player>()
+        .without::<&crate::components::Phantom>()
         .iter()
         .next()
         .map(|(position, size)| (position.0, size.0))
@@ -226,6 +227,32 @@ mod tests {
             &Textures::default(),
         );
         (world, physics)
+    }
+
+    #[test]
+    fn enemies_lose_track_of_a_cloaked_player_and_stand_still() {
+        let (mut world, mut physics) = arena();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(300.0, 0.0),
+        );
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+
+        chase_player(&mut world, &FlowField::default());
+
+        assert!(player_placement(&world).is_none());
+        assert!(crate::systems::golem::player_at(&world).is_none());
+        assert!(crate::systems::golem::player_body(&world).is_some());
+        let velocity = world.get::<&Velocity>(rat).map(|v| v.0).ok();
+        assert_eq!(velocity, Some(Vec2::ZERO));
     }
 
     #[test]

@@ -326,13 +326,54 @@ fn liquid(in: VertexOut) -> vec4<f32> {
     return vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), 1.0);
 }
 
+const SHADOW_TINT: vec3<f32> = vec3<f32>(0.12, 0.10, 0.20);
+
+fn shadow_solid(uv: vec2<f32>, in: VertexOut) -> bool {
+    let within = all(uv >= in.bounds.xy) && all(uv <= in.bounds.zw);
+    return within && textureSampleLevel(image, image_sampler, uv, 0.0).a > 0.5;
+}
+
+fn shadow(in: VertexOut, uv_per_pixel: vec2<f32>) -> vec4<f32> {
+    let texel = textureSampleLevel(image, image_sampler, in.uv, 0.0);
+    if (texel.a < 0.5) {
+        return vec4<f32>(0.0);
+    }
+    let time = in.fx.x;
+    let step = 1.0 / vec2<f32>(textureDimensions(image));
+    let cell = floor(in.uv / step);
+    let smoke = value_noise(cell * 0.22 + vec2<f32>(time * 0.9, -time * 1.4));
+    let swirl = value_noise(cell * 0.5 - vec2<f32>(time * 1.7, time * 0.6) + vec2<f32>(13.0, 7.0));
+    var alpha = mix(0.3, 0.6, smoke * 0.7 + swirl * 0.3);
+    var edge = 0.0;
+    if (!shadow_solid(in.uv + vec2<f32>(step.x, 0.0), in)) { edge = edge + 1.0; }
+    if (!shadow_solid(in.uv - vec2<f32>(step.x, 0.0), in)) { edge = edge + 1.0; }
+    if (!shadow_solid(in.uv + vec2<f32>(0.0, step.y), in)) { edge = edge + 1.0; }
+    if (!shadow_solid(in.uv - vec2<f32>(0.0, step.y), in)) { edge = edge + 1.0; }
+    let flicker = noise(cell + vec2<f32>(floor(time * 10.0) * 3.1, 0.7));
+    if (edge > 0.5) {
+        if (flicker < 0.25 + edge * 0.12) {
+            return vec4<f32>(0.0);
+        }
+        alpha = alpha * 0.6;
+    } else if (flicker > 0.97) {
+        alpha = alpha * 0.5;
+    }
+    let depth = 0.75 + 0.5 * swirl;
+    let rgb = srgb_to_linear(SHADOW_TINT * depth);
+    let rimmed = outlined(vec4<f32>(rgb, alpha), in, uv_per_pixel);
+    return vec4<f32>(rimmed.rgb, rimmed.a * in.color.a);
+}
+
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
-    if (in.fx.w > 3.5) {
+    if (in.fx.w > 3.5 && in.fx.w < 4.5) {
         return liquid(in);
     }
     let uv_per_pixel = max(abs(dpdx(in.uv)), abs(dpdy(in.uv)));
     let albedo = textureSample(image, image_sampler, in.uv) * in.color;
+    if (in.fx.w > 4.5) {
+        return shadow(in, uv_per_pixel);
+    }
     if (in.fx.w > 2.5) {
         return underworld(in);
     }
