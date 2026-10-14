@@ -80,7 +80,7 @@ def cracks(d, pts, fill=LAVA):
         d.line((a[0], a[1], b[0], b[1]), fill=fill)
 
 
-def hound(bob=0, legs=((0, 0), (0, 0), (0, 0), (0, 0)), jaws=(0, 0, 0), breath=0.0, tail=0, turn=(0.0, 0.0, 0.0), lean=0, drop=(0, 0, 0), fiery=False, pitch=0):
+def hound(bob=0, legs=((0, 0), (0, 0), (0, 0), (0, 0)), jaws=(0, 0, 0), tail=0, turn=(0.0, 0.0, 0.0), lean=0, drop=(0, 0, 0), fiery=False, pitch=0):
     image = Image.new("RGBA", (W, H), CLEAR)
     d = ImageDraw.Draw(image)
     ground = 76
@@ -133,21 +133,10 @@ def hound(bob=0, legs=((0, 0), (0, 0), (0, 0), (0, 0)), jaws=(0, 0, 0), breath=0
         dy = drop[index]
         neck(d, (base[0] + lean, base[1] + bob - pitch), (joint[0] + lean, joint[1] + bob + dy - pitch), width, colour)
         head(d, centre[0] + lean, centre[1] + bob + dy - pitch, angle + turn[index], size, jaws[index], False)
-        if breath > 0:
-            fx, fy = rot([(17, 2 + jaws[index] * 0.5)], angle + turn[index], centre[0] + lean, centre[1] + bob + dy - pitch, size)[0]
-            flame(d, fx, fy, angle + turn[index], breath)
     d.rectangle((60 + lean, 24 + bob, 66 + lean, 34 + bob), fill=BONE_D)
     for y in (26, 30):
         d.point((63 + lean, y + bob), fill=BONE)
     return outline(image)
-
-
-def flame(d, x, y, angle, amount):
-    length = 8 + 24 * amount
-    for colour, scale in ((LAVA, 1.0), (LAVA_H, 0.7), (LAVA_C, 0.4)):
-        reach = length * scale
-        half = (2 + 5 * amount) * scale
-        d.polygon(rot([(0, -half * 0.5), (reach, -half), (reach + 3, 0), (reach, half), (0, half * 0.5)], angle, x, y), fill=colour)
 
 
 def run():
@@ -192,11 +181,11 @@ def breath():
     poses = [
         dict(bob=9, jaws=(1, 1, 1)),
         dict(bob=10, lean=-2, jaws=(4, 4, 4), turn=(-0.25, -0.25, -0.3), drop=(-2, -3, -2)),
-        dict(bob=10, lean=-1, jaws=(6, 5, 5), breath=0.4, turn=(0.0, -0.05, 0.1)),
-        dict(bob=10, jaws=(7, 6, 6), breath=0.8, turn=(0.0, -0.1, 0.15), drop=(1, 0, 1)),
-        dict(bob=10, jaws=(7, 6, 6), breath=1.0, turn=(0.0, -0.1, 0.15), drop=(-1, 1, -1)),
-        dict(bob=10, jaws=(7, 6, 6), breath=1.0, turn=(0.0, -0.1, 0.15), drop=(1, -1, 1)),
-        dict(bob=10, jaws=(6, 5, 5), breath=0.6, turn=(0.0, -0.05, 0.1)),
+        dict(bob=10, lean=-1, jaws=(6, 5, 5), turn=(0.0, -0.05, 0.1)),
+        dict(bob=10, jaws=(7, 6, 6), turn=(0.0, -0.1, 0.15), drop=(1, 0, 1)),
+        dict(bob=10, jaws=(7, 6, 6), turn=(0.0, -0.1, 0.15), drop=(-1, 1, -1)),
+        dict(bob=10, jaws=(7, 6, 6), turn=(0.0, -0.1, 0.15), drop=(1, -1, 1)),
+        dict(bob=10, jaws=(6, 5, 5), turn=(0.0, -0.05, 0.1)),
         dict(bob=9, jaws=(2, 2, 2)),
     ]
     return [hound(**pose) for pose in poses]

@@ -16,9 +16,9 @@ use crate::systems::golem::{BeamStyle, aim, draw_beam, play, player_at, unit};
 const SPRITE_SCALE: f32 = 2.4;
 const CELL: Vec2 = Vec2::new(64.0, 42.0);
 const HEADS: [Vec2; 3] = [
-    Vec2::new(98.0, 31.0),
-    Vec2::new(87.0, 11.0),
-    Vec2::new(94.0, 46.0),
+    Vec2::new(109.0, 33.0),
+    Vec2::new(93.0, 4.0),
+    Vec2::new(100.0, 55.0),
 ];
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const ATTACK_VAR: &str = "BANE_HOUND_ATTACK";
