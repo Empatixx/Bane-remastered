@@ -499,7 +499,11 @@ impl Scene for InGameScene {
         systems::tick_poison(&mut self.world, dt, &mut self.sounds);
         systems::tick_frozen(&mut self.world, dt);
         systems::tick_chilled(&mut self.world, dt);
-        systems::toughen_enemies(&mut self.world, self.rules.enemy_health);
+        systems::toughen_enemies(
+            &mut self.world,
+            self.rules.enemy_health,
+            self.rules.enemy_damage,
+        );
         systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);
         if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds) {
             self.hit = true;

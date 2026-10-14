@@ -31,7 +31,6 @@ impl Default for RunRules {
 impl RunRules {
     pub(crate) fn shape(&self, mut perks: Perks) -> Perks {
         perks.damage_scales[0] *= self.player_damage;
-        perks.damage_taken_scale *= self.enemy_damage;
         perks.max_health_cap = self.player_max_health;
         perks.only_gun = self.only_gun;
         perks.dodge &= self.dodge;
@@ -69,7 +68,6 @@ mod tests {
 
         assert_eq!(shaped.max_health(10), 1);
         assert_eq!(shaped.bullet_damage(10, false), 24);
-        assert_eq!(shaped.damage_taken(2), 3);
         assert!(!shaped.dodge);
         assert!(!shaped.armor_regeneration);
         assert_eq!(shaped.only_gun, Some(GunKind::Pistol));

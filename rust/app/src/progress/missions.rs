@@ -132,8 +132,8 @@ impl ActiveMission {
             Goal::KillsOf { enemy } => format!("Defeat {target} {}", hunted_name(enemy)),
             Goal::Boss { enemy } => format!("Defeat the {}", boss_name(enemy)),
             Goal::Floor => format!("Reach floor {target}"),
-            Goal::GoldInRun => format!("Collect {target} gold in a single run"),
-            Goal::Gold => format!("Collect {target} gold"),
+            Goal::GoldInRun => format!("Collect {target} coins in a single run"),
+            Goal::Gold => format!("Collect {target} coins"),
             Goal::Items => format!("Pick up {target} items"),
             Goal::Untouched => format!("Clear {target} floors without taking damage"),
         }

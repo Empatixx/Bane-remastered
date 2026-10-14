@@ -52,7 +52,7 @@ pub(crate) fn break_objects(
         if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
             animation.play(DEATH_CLIP);
         }
-        let item = ItemKind::COMMON[roll(ItemKind::COMMON.len())];
+        let item = super::items::common_drop(world, ItemKind::COMMON[roll(ItemKind::COMMON.len())]);
         prefabs::item(world, item, center, true, Vec2::ZERO, textures);
         match kind {
             BreakKind::Explosive => explode(world, entity, center, textures, sounds),

@@ -182,7 +182,7 @@ pub(crate) fn update_death_ui(world: &mut World, screen: &DeathScreen) {
             },
             DeathPart::Prompt => screen.prompt_visible(),
             DeathPart::Note => match &screen.note {
-                Some(note) if screen.prompt_visible() => {
+                Some(note) if screen.ready() && screen.continued.is_none() => {
                     if let Some(text) = text {
                         text.content.clone_from(note);
                     }
@@ -238,7 +238,7 @@ mod tests {
     }
 
     #[test]
-    fn the_note_shows_with_the_prompt_and_only_when_there_is_one() {
+    fn the_note_stays_steady_while_the_prompt_blinks_and_only_when_there_is_one() {
         let mut with = screen().with_note(Some("done".to_owned()));
         let mut without = screen();
         with.advance(7.25, false);
@@ -246,6 +246,10 @@ mod tests {
         assert!(with.prompt_visible());
         assert!(note_is_shown(&with));
         assert!(!note_is_shown(&without));
+
+        with.advance(BLINK, false);
+        assert!(!with.prompt_visible());
+        assert!(note_is_shown(&with));
     }
 
     #[test]

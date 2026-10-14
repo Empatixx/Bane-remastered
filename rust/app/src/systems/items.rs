@@ -11,7 +11,7 @@ use crate::components::{
 };
 use crate::geometry;
 use crate::items::{
-    BLINK_PERIOD, BLINK_SECONDS, DROP_ROLL_RANGE, ItemKind, Vital, drop_threshold_reached,
+    AmmoBox, BLINK_PERIOD, BLINK_SECONDS, DROP_ROLL_RANGE, ItemKind, Vital, drop_threshold_reached,
 };
 use crate::prefabs;
 
@@ -48,6 +48,27 @@ pub(crate) fn outline_drops(world: &mut World) {
         } else {
             let _ = world.remove_one::<Outline>(entity);
         }
+    }
+}
+
+pub(crate) fn common_drop(world: &World, kind: ItemKind) -> ItemKind {
+    let ItemKind::Ammo(ammo) = kind else {
+        return kind;
+    };
+    let accepts = |ammo| {
+        world
+            .query::<&Loadout>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .is_none_or(|loadout| loadout.accepts_ammo(ammo))
+    };
+    if accepts(ammo) {
+        kind
+    } else if accepts(AmmoBox::Pistol) {
+        ItemKind::Ammo(AmmoBox::Pistol)
+    } else {
+        ItemKind::Ammo(AmmoBox::Shotgun)
     }
 }
 
@@ -187,7 +208,7 @@ pub(crate) fn enemy_drops(
         *kills_without_drop += 1;
         if drop_threshold_reached(*kills_without_drop, roll(DROP_ROLL_RANGE)) {
             *kills_without_drop = 0;
-            let kind = ItemKind::COMMON[roll(ItemKind::COMMON.len())];
+            let kind = common_drop(world, ItemKind::COMMON[roll(ItemKind::COMMON.len())]);
             prefabs::item(world, kind, position, true, Vec2::ZERO, textures);
         }
     }
@@ -201,7 +222,7 @@ pub(crate) fn burst_items(
 ) {
     for index in 0..BURST_ITEMS {
         let angle = TAU * (index + 1) as f32 / BURST_ITEMS as f32;
-        let kind = ItemKind::COMMON[roll(ItemKind::COMMON.len())];
+        let kind = common_drop(world, ItemKind::COMMON[roll(ItemKind::COMMON.len())]);
         let velocity = Vec2::new(angle.cos(), angle.sin()) * BURST_SPEED;
         prefabs::item(world, kind, center, false, velocity, textures);
     }
@@ -372,6 +393,49 @@ mod tests {
 
         age_items(&mut world, 0.5);
         assert!(world.get::<&Pickup>(coin).is_err());
+    }
+
+    #[test]
+    fn a_pistol_only_loadout_never_gets_a_shotgun_box_from_drops_or_chests() {
+        let (mut world, textures) = arena();
+        let shotgun_roll = |bound: usize| {
+            assert_eq!(bound, ItemKind::COMMON.len());
+            2
+        };
+        burst_items(&mut world, Vec2::new(500.0, 500.0), &textures, shotgun_roll);
+        let before = world.query::<&Pickup>().iter().count();
+        assert!(
+            world
+                .query::<&Pickup>()
+                .iter()
+                .any(|pickup| pickup.0 == ItemKind::Ammo(AmmoBox::Shotgun))
+        );
+
+        for loadout in world.query_mut::<&mut Loadout>() {
+            loadout.restrict(Some(crate::guns::GunKind::Pistol));
+        }
+        burst_items(&mut world, Vec2::new(500.0, 500.0), &textures, shotgun_roll);
+
+        let kinds: Vec<ItemKind> = world
+            .query::<&Pickup>()
+            .iter()
+            .map(|pickup| pickup.0)
+            .collect();
+        assert_eq!(kinds.len(), before + 5);
+        assert_eq!(
+            kinds
+                .iter()
+                .filter(|k| **k == ItemKind::Ammo(AmmoBox::Shotgun))
+                .count(),
+            before
+        );
+        assert_eq!(
+            kinds
+                .iter()
+                .filter(|k| **k == ItemKind::Ammo(AmmoBox::Pistol))
+                .count(),
+            5
+        );
     }
 
     #[test]

@@ -172,6 +172,9 @@ pub(crate) fn layout(tab: Tab, view: &BoardView, hover: Option<Target>) -> Vec<E
             FontSize::Size16,
             Align::Center,
         ));
+        if tab == Tab::Challenges && done {
+            continue;
+        }
         let middle = origin.x + VISIBLE.x / 2.0;
         elements.push(panel::label(
             format!("+{}", note.talents),
@@ -376,7 +379,16 @@ mod tests {
         };
 
         assert_eq!(icons(Tab::Tasks), view().missions.len());
-        assert_eq!(icons(Tab::Challenges), view().challenges.len());
+        assert_eq!(icons(Tab::Challenges), 1);
+    }
+
+    #[test]
+    fn a_finished_challenge_shows_no_talent_reward() {
+        let rewards = labels(&layout(Tab::Challenges, &view(), None))
+            .iter()
+            .filter(|label| label.starts_with('+'))
+            .count();
+        assert_eq!(rewards, 1);
     }
 
     #[test]

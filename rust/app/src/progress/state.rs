@@ -80,7 +80,15 @@ where
     T: DeserializeOwned,
 {
     let value = Option::<serde_json::Value>::deserialize(deserializer)?;
-    Ok(value.and_then(|value| serde_json::from_value(value).ok()))
+    Ok(
+        value.and_then(|value| match serde_json::from_value(value.clone()) {
+            Ok(parsed) => Some(parsed),
+            Err(error) => {
+                tracing::warn!(%error, %value, "ignoring an unknown progress value");
+                None
+            }
+        }),
+    )
 }
 
 impl ProgressState {
@@ -111,7 +119,7 @@ impl ProgressState {
             .map(|mission| mission.goal.kind())
             .collect();
         let mut rng = Rng::new(self.seed ^ self.draws.wrapping_mul(0x9E37_79B9_7F4A_7C15));
-        self.draws += 1;
+        self.draws = self.draws.wrapping_add(1);
         missions::draw(&mut rng, &taken)
     }
 

@@ -350,6 +350,14 @@ impl Loadout {
         }
     }
 
+    pub(crate) fn accepts_ammo(&self, ammo: AmmoBox) -> bool {
+        match (self.only, ammo) {
+            (_, AmmoBox::Universal) | (None, _) => true,
+            (Some(only), AmmoBox::Shotgun) => only.ammo_class() == AmmoClass::Shotgun,
+            (Some(only), _) => only.ammo_class() == AmmoClass::Pistol,
+        }
+    }
+
     pub(crate) fn wants_ammo(&self, ammo: AmmoBox) -> bool {
         self.slots
             .iter()
