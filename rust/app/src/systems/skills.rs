@@ -182,6 +182,7 @@ pub(crate) fn steer_homing(world: &mut World, dt: f32) {
     let target = world
         .query::<&Position>()
         .with::<&Player>()
+        .without::<&crate::components::Phantom>()
         .iter()
         .next()
         .map(|position| position.0);
@@ -290,6 +291,31 @@ mod tests {
 
     fn ready(world: &mut World, physics: &mut Physics, kind: EnemyKind, at: Vec2) -> Entity {
         prefabs::ready_enemy(world, physics, kind, at)
+    }
+
+    #[test]
+    fn homing_shots_stop_steering_towards_a_cloaked_player() {
+        let (mut world, _, _) = arena();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+        let shot = world.spawn((
+            Position(Vec2::new(200.0, 0.0)),
+            Homing {
+                aim: Vec2::new(200.0, 100.0),
+                speed: 100.0,
+            },
+            Velocity(Vec2::new(0.0, 100.0)),
+        ));
+
+        steer_homing(&mut world, 1.0 / 60.0);
+
+        let velocity = world.get::<&Velocity>(shot).map(|v| v.0).ok();
+        assert_eq!(velocity, Some(Vec2::new(0.0, 100.0)));
     }
 
     #[test]

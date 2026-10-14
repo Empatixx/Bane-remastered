@@ -165,6 +165,7 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
     else {
         return false;
     };
+    let cloaked = world.get::<&crate::components::Phantom>(player).is_ok();
     let damage = world
         .query::<(
             &Position,
@@ -178,7 +179,8 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
         .without::<&Spawning>()
         .iter()
         .find(|(source_position, source_size, _, trap, animation)| {
-            trap_is_armed(*trap, *animation)
+            (trap.is_some() || !cloaked)
+                && trap_is_armed(*trap, *animation)
                 && geometry::overlaps(position, size, source_position.0, source_size.0)
         })
         .map(|(_, _, damage, _, _)| damage.0);
@@ -424,6 +426,38 @@ mod tests {
         let mut armor = Armor { current: 0, max: 5 };
         absorb(&mut health, &mut armor, 5);
         assert_eq!(health.current, 0);
+    }
+
+    #[test]
+    fn touching_an_enemy_does_not_hurt_a_cloaked_player_but_spikes_still_do() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(
+            &mut world,
+            &mut physics,
+            Vec2::new(32.0, 32.0),
+            &Textures::default(),
+        );
+        let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
+        prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(32.0, 32.0),
+        );
+
+        assert!(!contact_damage(&mut world, &mut Vec::new()));
+
+        let decor = crate::dungeon::Decor {
+            kind: crate::dungeon::DecorKind::Spike,
+            tile: (0, 0),
+        };
+        let spike = prefabs::decor(&mut world, &mut Physics::new(), decor, &Textures::default());
+        world
+            .get::<&mut Animation>(spike)
+            .expect("the spike animates")
+            .advance(0.8);
+        assert!(contact_damage(&mut world, &mut Vec::new()));
     }
 
     #[test]

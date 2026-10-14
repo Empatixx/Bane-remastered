@@ -6,8 +6,8 @@ use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
 use crate::components::{
     Animation, Body, Boss, Breakable, Bullet, Burst, CHILL_SECONDS, CHILL_STACKS_TO_FREEZE,
-    Chilled, Enemy, Expiring, Friendly, Frozen, Health, InfiniteAmmo, Loadout, Player, PlayerPerks, PoisonPool,
-    Position, Size, Spawning, Velocity,
+    Chilled, Enemy, Expiring, Friendly, Frozen, Health, InfiniteAmmo, Loadout, Phantom, Player,
+    PlayerPerks, PoisonPool, Position, Size, Spawning, Velocity,
 };
 use crate::controls::Action;
 use crate::geometry;
@@ -28,6 +28,7 @@ const BLAST_REACH: Vec2 = Vec2::new(96.0, 96.0);
 const VENOM_POOL_SECONDS: f32 = 3.0;
 const VENOM_SPACING: f32 = 64.0;
 const FROST_ROUND_FREEZE: f32 = 1.2;
+const AMBUSH_MULTIPLIER: i32 = 2;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ShotRoll {
@@ -67,6 +68,7 @@ struct Shot {
     pellets: usize,
     perks: Perks,
     deadeye: bool,
+    ambush: bool,
 }
 
 pub(crate) fn shoot(
@@ -85,12 +87,15 @@ pub(crate) fn shoot(
     } = context;
     let target = input.mouse() + camera;
     let mut shots = Vec::new();
-    for (position, loadout, perks, infinite) in world
+    let mut uncloaked = Vec::new();
+    for (entity, position, loadout, perks, infinite, phantom) in world
         .query_mut::<(
+            Entity,
             &Position,
             &mut Loadout,
             Option<&PlayerPerks>,
             Option<&InfiniteAmmo>,
+            Option<&Phantom>,
         )>()
         .with::<&Player>()
         .without::<&crate::components::Dodge>()
@@ -126,6 +131,7 @@ pub(crate) fn shoot(
                         pellets: 1,
                         perks,
                         deadeye,
+                        ambush: false,
                     });
                     burst.left -= 1;
                     burst.timer = BURST_DELAY;
@@ -176,7 +182,14 @@ pub(crate) fn shoot(
             pellets: spec.pellets,
             perks,
             deadeye,
+            ambush: phantom.is_some(),
         });
+        if phantom.is_some() {
+            uncloaked.push(entity);
+        }
+    }
+    for entity in uncloaked {
+        let _ = world.remove_one::<Phantom>(entity);
     }
     let recoil: f32 = shots.iter().map(|shot| shot.spec.shake).sum();
     let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
@@ -199,7 +212,7 @@ pub(crate) fn shoot(
                 shot.spec
                     .scaled_damage(shot.roll.damages[pellet], shot.roll.fractions[pellet]),
                 critical,
-            );
+            ) * if shot.ambush { AMBUSH_MULTIPLIER } else { 1 };
             prefabs::bullet(
                 world,
                 physics,
@@ -445,6 +458,36 @@ mod tests {
             .iter()
             .map(|velocity| velocity.0)
             .collect()
+    }
+
+    fn bullet_damages(world: &World) -> Vec<i32> {
+        world
+            .query::<&Bullet>()
+            .iter()
+            .map(|bullet| bullet.damage)
+            .collect()
+    }
+
+    #[test]
+    fn the_first_shot_from_the_cloak_ends_it_and_hits_twice_as_hard() {
+        let (mut world, mut physics) = setup();
+        let input = clicked_at(Vec2::new(300.0, 100.0));
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 0.0);
+        let plain = bullet_damages(&world);
+        assert_eq!(plain.len(), 1);
+
+        let (mut world, mut physics) = setup();
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let _ = world.insert_one(player, Phantom { remaining: 5.0 });
+        fire(&mut world, &mut physics, &input, Vec2::ZERO, 0.0);
+
+        assert_eq!(bullet_damages(&world), vec![plain[0] * 2]);
+        assert!(world.get::<&Phantom>(player).is_err());
     }
 
     #[test]

@@ -5,6 +5,9 @@ pub(crate) const MODE_MAP: f32 = 1.0;
 pub(crate) const MODE_FOG: f32 = 2.0;
 pub(crate) const MODE_SKY: f32 = 3.0;
 pub(crate) const MODE_LIQUID: f32 = 4.0;
+pub(crate) const MODE_SHADOW: f32 = 5.0;
+
+const SHADOW_RIM: [f32; 4] = [0.55, 0.62, 1.0, 0.35];
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MapRoomLook {
@@ -85,6 +88,12 @@ impl Quad {
         self
     }
 
+    pub(crate) fn shadowed(mut self, time: f32) -> Self {
+        self.fx = [time, 0.0, 0.0, MODE_SHADOW];
+        self.outline = SHADOW_RIM;
+        self
+    }
+
     pub(crate) fn shined(mut self, progress: f32) -> Self {
         self.fx[1] = progress;
         self
@@ -105,6 +114,11 @@ impl Quad {
         self
     }
 
+    #[cfg(test)]
+    pub(crate) fn is_shadowed(&self) -> bool {
+        self.fx[3] == MODE_SHADOW
+    }
+
     pub(crate) fn set_lit(&mut self, lit: bool) {
         self.lit = if lit { 1.0 } else { 0.0 };
     }
@@ -120,6 +134,14 @@ mod tests {
     fn liquid_quads_carry_their_kind_and_the_clock() {
         let quad = Quad::new(Vec2::ZERO, Vec2::ONE, Vec4::ONE).liquid(2.0, 7.5);
         assert_eq!(quad.fx, [7.5, 2.0, 0.0, MODE_LIQUID]);
+    }
+
+    #[test]
+    fn a_shadowed_quad_uses_the_shadow_mode_the_clock_and_a_cool_rim() {
+        let quad = Quad::new(Vec2::ZERO, Vec2::ONE, Vec4::ONE).shadowed(1.25);
+        assert_eq!(quad.fx, [1.25, 0.0, 0.0, MODE_SHADOW]);
+        assert!(quad.outline[3] > 0.0);
+        assert!(quad.outline[2] > quad.outline[0]);
     }
 
     #[test]

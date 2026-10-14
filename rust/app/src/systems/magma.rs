@@ -12,7 +12,7 @@ use crate::navigation::Navigation;
 use crate::prefabs;
 use crate::props::{Look, Prop};
 use crate::systems::damage::hurt_player_through_armor;
-use crate::systems::golem::{player_at, unit};
+use crate::systems::golem::{player_body, unit};
 use crate::tilemap::TILE_SIZE;
 
 const COLD: f32 = 0.32;
@@ -175,7 +175,7 @@ pub(crate) fn tick_magma(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: 
     for entity in gone {
         let _ = world.despawn(entity);
     }
-    let Some((player, at, size)) = player_at(world) else {
+    let Some((player, at, size)) = player_body(world) else {
         return;
     };
     if world.get::<&Dodge>(player).is_ok() {

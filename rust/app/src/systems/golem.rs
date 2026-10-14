@@ -231,6 +231,11 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
 }
 
 pub(crate) fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
+    player_body(world)
+        .filter(|(player, _, _)| world.get::<&crate::components::Phantom>(*player).is_err())
+}
+
+pub(crate) fn player_body(world: &World) -> Option<(Entity, Vec2, Vec2)> {
     world
         .query::<(Entity, &Position, &Size, &Health)>()
         .with::<&Player>()
@@ -472,7 +477,7 @@ pub(crate) fn tick_rock_falls(
                 ground - Vec2::new(0.0, FALL_HEIGHT * (2.0 * progress - progress * progress));
         }
     }
-    let player = player_at(world);
+    let player = player_body(world);
     for (shadow, rock, ground, room) in landed {
         let _ = world.despawn(shadow);
         let _ = world.despawn(rock);
@@ -604,7 +609,7 @@ pub(crate) fn draw_beam(
     style: BeamStyle,
 ) {
     let Ray { eye, angle, phase } = ray;
-    let player = player_at(world);
+    let player = player_body(world);
     let end = beam_end(navigation, eye, angle);
     let direction = Vec2::from_angle(angle);
     let length = eye.distance(end);

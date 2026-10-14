@@ -35,7 +35,6 @@ pub(crate) struct Bloodlust {
     pub(crate) remaining: f32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Phantom {
     pub(crate) remaining: f32,
