@@ -3,6 +3,8 @@ use hecs::World;
 use glam::Vec2;
 
 use crate::components::{Chatty, Player, Position, Size, SpeechBubble, SpeechPart, Wallet};
+use crate::enemies::EnemyKind;
+use crate::progress::{ChallengeId, Remark};
 use crate::render::{FontSize, Fonts};
 use crate::systems::shop::say;
 
@@ -12,6 +14,13 @@ pub(crate) const PAUSE_SECONDS: f32 = 7.0;
 pub(crate) const RICH_COINS: i32 = 100;
 
 const GREETINGS: [&str; 2] = ["Welcome back!", "Ah, my test subject!"];
+/// Before the first run.
+const INTRO: [&str; 2] = [
+    "A new subject! Welcome, welcome.",
+    "The portal is ready. Just step in.",
+];
+/// After the first win: no more tests, only "our work".
+const PARTNER: [&str; 2] = ["Ah, my finest work!", "Welcome back, partner!"];
 const HINTS: [&str; 6] = [
     "Upgrades, upgrades!",
     "Dodging is science!",
@@ -28,36 +37,163 @@ const BORDER: f32 = 2.0;
 const TAIL: f32 = 8.0;
 pub(crate) const PURCHASE: &str = "Excellent choice!";
 
-fn pick(chatty: &mut Chatty, coins: i32) -> &'static str {
+/// Lines that join the hints once the profile has earned them.
+const DIED: &str = "Death is only data, subject.";
+const DEEP: &str = "Go deeper. Bring back what you see.";
+const WATCHED: &str = "Argus watched you. So did I.";
+const WOLF: &str = "It followed you. I did not plan that.";
+const SHOWN: &str = "...What did it show you?";
+const REST: &str = "Rest. Tomorrow we go down together.";
+const BEGUN: &str = "Our work has only begun.";
+
+/// What the Scientist says once, on the lobby visit after it happened.
+pub(crate) fn remark_line(remark: Remark) -> &'static str {
+    match remark {
+        Remark::Win(1) => "You reached the bottom. Now we can begin.",
+        Remark::Win(2) => "It is open. It is finally open!",
+        Remark::Win(wins) if wins % 2 == 1 => "Again! Our work goes so well.",
+        Remark::Win(_) => "The bottom again. Splendid, partner.",
+        Remark::FirstBoss(boss) => boss_line(boss),
+        Remark::Depth(2) => "Floor two! Most of them never got past two.",
+        Remark::Depth(3) => "Floor three! Deeper than most. Tell me everything.",
+        Remark::Depth(4) => "Floor four. It gets quiet down there, yes?",
+        Remark::Depth(_) => "The last floor! The bottom is so close now.",
+        Remark::Challenge(ChallengeId::Bane) => "You went without my work. And came back.",
+        Remark::Challenge(_) => "A clean sample! I wrote it all down.",
+        Remark::Deaths(1) => "Back already! Good. Good. Nothing is lost.",
+        Remark::Deaths(5) => "Five times. You are holding together nicely.",
+        Remark::Deaths(10) => "Ten! Twelve took forty. You are my finest work.",
+        Remark::Deaths(20) => "Still you. Still whole. Remarkable.",
+        Remark::Deaths(50) => "Fifty. I stopped counting. I did not.",
+        Remark::Deaths(_) => "A hundred of you. And still the same one.",
+        Remark::Kills(100) => "A hundred specimens! I am out of jars.",
+        Remark::Kills(500) => "Five hundred. The wound grows them back, you know.",
+        Remark::Kills(1000) => "A thousand. Do you dream of them? I do.",
+        Remark::Kills(_) => "Five thousand. It must be getting hungry.",
+    }
+}
+
+fn boss_line(boss: EnemyKind) -> &'static str {
+    match boss {
+        EnemyKind::Spider => "You cut a stitch! The spiders hold the wound shut.",
+        EnemyKind::KingSlime => "The king slime... Do not ask what it was made of.",
+        EnemyKind::Ogre => "The ogre dug the drains. The wound took him first.",
+        EnemyKind::Golem => "Temple stone. It guarded out of habit, poor thing.",
+        EnemyKind::Argus => "You closed the Eye? It was... mine. Never mind.",
+        EnemyKind::Hellhound => "The hound. Do not listen to it. Dogs lie.",
+        EnemyKind::Mimic => "A chest with teeth! Bring me a tooth next time.",
+        _ => "A new guardian down! Write it in my notes.",
+    }
+}
+
+/// The parts of the profile the Scientist's lines depend on.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct Standing {
+    pub(crate) runs: u64,
+    pub(crate) wins: u64,
+    pub(crate) deaths: u64,
+    pub(crate) best_floor: u32,
+    pub(crate) bosses_slain: Vec<EnemyKind>,
+    pub(crate) has_pet: bool,
+    pub(crate) went_without: bool,
+    /// One-time remarks waiting to be said.
+    pub(crate) remarks: Vec<Remark>,
+}
+
+/// What the Scientist knows about the player, taken from the profile when the lobby opens.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Repertoire {
+    /// One-time remarks, said first, in order.
+    pub(crate) remarks: Vec<Remark>,
+    pub(crate) greetings: &'static [&'static str],
+    pub(crate) hints: Vec<&'static str>,
+}
+
+impl Default for Repertoire {
+    fn default() -> Self {
+        Self {
+            remarks: Vec::new(),
+            greetings: &GREETINGS,
+            hints: HINTS.to_vec(),
+        }
+    }
+}
+
+impl Repertoire {
+    pub(crate) fn of(profile: &Standing) -> Self {
+        let greetings: &'static [&'static str] = if profile.runs == 0 {
+            &INTRO
+        } else if profile.wins > 0 {
+            &PARTNER
+        } else {
+            &GREETINGS
+        };
+        let earned = [
+            (profile.deaths > 0, DIED),
+            (profile.best_floor >= 3, DEEP),
+            (profile.bosses_slain.contains(&EnemyKind::Argus), WATCHED),
+            (profile.has_pet, WOLF),
+            (profile.went_without, SHOWN),
+            (profile.wins > 0, REST),
+            (profile.wins > 0, BEGUN),
+        ];
+        let mut hints = HINTS.to_vec();
+        hints.extend(earned.iter().filter(|(has, _)| *has).map(|(_, line)| *line));
+        Self {
+            remarks: profile.remarks.clone(),
+            greetings,
+            hints,
+        }
+    }
+}
+
+/// The line to say next, and the one-time remark it was, if any.
+fn pick(
+    chatty: &mut Chatty,
+    repertoire: &mut Repertoire,
+    coins: i32,
+) -> (&'static str, Option<Remark>) {
+    if !repertoire.remarks.is_empty() {
+        let remark = repertoire.remarks.remove(0);
+        chatty.greeted = true;
+        return (remark_line(remark), Some(remark));
+    }
     let line = chatty.line;
     chatty.line += 1;
     if !chatty.greeted {
         chatty.greeted = true;
-        return GREETINGS[line % GREETINGS.len()];
+        let greetings = repertoire.greetings;
+        return (greetings[line % greetings.len().max(1)], None);
     }
-    match line % 3 {
+    let said = match line % 3 {
         1 if coins <= 0 => BROKE,
         2 if coins >= RICH_COINS => RICH,
-        _ => HINTS[line % HINTS.len()],
-    }
+        _ => repertoire
+            .hints
+            .get(line % repertoire.hints.len().max(1))
+            .copied()
+            .unwrap_or(HINTS[0]),
+    };
+    (said, None)
 }
 
-pub(crate) fn chat(world: &mut World, dt: f32) {
-    let Some((player, coins)) = world
+/// Lets the Scientist talk to a player nearby; returns the one-time remark he just made.
+pub(crate) fn chat(world: &mut World, dt: f32) -> Option<Remark> {
+    let (player, coins) = world
         .query::<(&Position, Option<&Wallet>)>()
         .with::<&Player>()
         .iter()
         .next()
-        .map(|(position, wallet)| (position.0, wallet.map_or(0, |wallet| wallet.coins)))
-    else {
-        return;
-    };
+        .map(|(position, wallet)| (position.0, wallet.map_or(0, |wallet| wallet.coins)))?;
     let talking = world
         .query::<&SpeechBubble>()
         .iter()
         .any(|bubble| bubble.remaining > 0.0);
     let mut line = None;
-    for (position, chatty) in world.query_mut::<(&Position, &mut Chatty)>() {
+    let mut remark = None;
+    for (position, chatty, repertoire) in
+        world.query_mut::<(&Position, &mut Chatty, Option<&mut Repertoire>)>()
+    {
         chatty.cooldown = (chatty.cooldown - dt).max(0.0);
         let distance = position.0.distance(player);
         if distance > LEAVING_RANGE {
@@ -65,12 +201,18 @@ pub(crate) fn chat(world: &mut World, dt: f32) {
         }
         if distance <= HEARING_RANGE && chatty.cooldown <= 0.0 && !talking {
             chatty.cooldown = PAUSE_SECONDS;
-            line = Some(pick(chatty, coins));
+            let (said, made) = match repertoire {
+                Some(repertoire) => pick(chatty, repertoire, coins),
+                None => pick(chatty, &mut Repertoire::default(), coins),
+            };
+            line = Some(said);
+            remark = made;
         }
     }
     if let Some(line) = line {
         say(world, line);
     }
+    remark
 }
 
 pub(crate) fn fit_speech(world: &mut World, fonts: &Fonts) {
@@ -220,6 +362,144 @@ mod tests {
         chat(&mut world, PAUSE_SECONDS);
 
         assert!(GREETINGS.contains(&spoken(&world).1));
+    }
+
+    fn hear_all(world: &mut World, times: usize) -> Vec<&'static str> {
+        let mut seen = Vec::new();
+        for _ in 0..times {
+            for bubble in world.query_mut::<&mut SpeechBubble>() {
+                bubble.remaining = 0.0;
+            }
+            chat(world, PAUSE_SECONDS);
+            seen.push(spoken(world).1);
+        }
+        seen
+    }
+
+    fn lobby_for(profile: &Standing) -> World {
+        let mut world = lobby(Vec2::new(200.0, 0.0), 50);
+        let scientist = world
+            .query::<hecs::Entity>()
+            .with::<&Chatty>()
+            .iter()
+            .next()
+            .expect("the scientist");
+        world
+            .insert_one(scientist, Repertoire::of(profile))
+            .expect("a repertoire");
+        world
+    }
+
+    #[test]
+    fn a_player_who_never_went_down_gets_the_introduction() {
+        let mut world = lobby_for(&Standing::default());
+
+        chat(&mut world, 0.016);
+
+        assert!(INTRO.contains(&spoken(&world).1), "{}", spoken(&world).1);
+    }
+
+    #[test]
+    fn a_winner_is_greeted_as_a_partner_and_hears_about_our_work() {
+        let profile = Standing {
+            runs: 3,
+            wins: 1,
+            deaths: 2,
+            ..Standing::default()
+        };
+        let mut world = lobby_for(&profile);
+
+        let seen = hear_all(&mut world, 24);
+
+        assert!(PARTNER.contains(&seen[0]), "{seen:?}");
+        assert!(seen.contains(&REST) && seen.contains(&BEGUN), "{seen:?}");
+        assert!(seen.contains(&DIED), "{seen:?}");
+    }
+
+    #[test]
+    fn earned_lines_stay_silent_until_the_profile_earns_them() {
+        let fresh = Repertoire::of(&Standing {
+            runs: 1,
+            deaths: 1,
+            best_floor: 1,
+            ..Standing::default()
+        });
+        for line in [DEEP, WATCHED, WOLF, SHOWN, REST, BEGUN] {
+            assert!(!fresh.hints.contains(&line), "{line}");
+        }
+        assert!(fresh.hints.contains(&DIED));
+
+        let mut veteran = Standing {
+            runs: 9,
+            deaths: 9,
+            best_floor: 4,
+            ..Standing::default()
+        };
+        veteran.bosses_slain.push(EnemyKind::Argus);
+        let veteran = Repertoire::of(&veteran);
+        assert!(veteran.hints.contains(&DEEP) && veteran.hints.contains(&WATCHED));
+        assert!(HINTS.iter().all(|hint| veteran.hints.contains(hint)));
+    }
+
+    #[test]
+    fn waiting_remarks_come_first_once_each_and_are_reported_as_heard() {
+        let profile = Standing {
+            runs: 2,
+            deaths: 1,
+            remarks: vec![
+                Remark::FirstBoss(EnemyKind::Spider),
+                Remark::Depth(2),
+            ],
+            ..Standing::default()
+        };
+        let mut world = lobby_for(&profile);
+
+        let first = chat(&mut world, 0.016);
+        assert_eq!(first, Some(Remark::FirstBoss(EnemyKind::Spider)));
+        assert_eq!(spoken(&world).1, boss_line(EnemyKind::Spider));
+        for bubble in world.query_mut::<&mut SpeechBubble>() {
+            bubble.remaining = 0.0;
+        }
+        assert_eq!(chat(&mut world, PAUSE_SECONDS), Some(Remark::Depth(2)));
+        assert_eq!(spoken(&world).1, remark_line(Remark::Depth(2)));
+
+        let rest = hear_all(&mut world, 12);
+        assert!(!rest.contains(&remark_line(Remark::Depth(2))), "{rest:?}");
+        assert!(!rest.contains(&boss_line(EnemyKind::Spider)), "{rest:?}");
+    }
+
+    #[test]
+    fn every_boss_has_its_own_first_kill_line() {
+        let bosses: Vec<EnemyKind> = EnemyKind::ALL
+            .into_iter()
+            .filter(|kind| kind.is_boss())
+            .collect();
+        let lines: std::collections::BTreeSet<&str> =
+            bosses.iter().map(|boss| boss_line(*boss)).collect();
+
+        assert_eq!(lines.len(), bosses.len());
+        assert!(!lines.contains(boss_line(EnemyKind::Rat)));
+    }
+
+    #[test]
+    fn each_milestone_has_a_line_of_its_own() {
+        use crate::progress::remarks::{DEATH_MILESTONES, DEPTH_MILESTONES, KILL_MILESTONES};
+        let mut lines: Vec<&str> = Vec::new();
+        lines.extend(DEATH_MILESTONES.map(|n| remark_line(Remark::Deaths(n))));
+        lines.extend(KILL_MILESTONES.map(|n| remark_line(Remark::Kills(n))));
+        lines.extend(DEPTH_MILESTONES.map(|n| remark_line(Remark::Depth(n))));
+        lines.extend((1..=4).map(|n| remark_line(Remark::Win(n))));
+        let unique: std::collections::BTreeSet<&str> = lines.iter().copied().collect();
+
+        assert_eq!(unique.len(), lines.len(), "{lines:?}");
+        assert_eq!(
+            remark_line(Remark::Win(1)),
+            "You reached the bottom. Now we can begin."
+        );
+        assert_ne!(
+            remark_line(Remark::Challenge(ChallengeId::Bane)),
+            remark_line(Remark::Challenge(ChallengeId::Horde))
+        );
     }
 
     #[test]
