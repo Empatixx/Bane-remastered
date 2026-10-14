@@ -113,7 +113,8 @@ pub(crate) use objects::{
 };
 pub(crate) use ogre::tick_ogre;
 pub(crate) use perks::{
-    apply_floor_perks, apply_run_perks, apply_weapon_mods, immobilize_traps, regenerate_armor,
+    apply_floor_perks, apply_run_perks, apply_weapon_mods, cast_hit_roll, immobilize_traps,
+    regenerate_armor,
 };
 pub(crate) use pet::{pet_bites, pick_pet_targets, plan_pet_paths, steer_pets};
 pub(crate) use player_animation::animate_player;

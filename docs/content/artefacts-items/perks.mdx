@@ -19,28 +19,28 @@ První talent každé větve je **zdarma a vždy odemčený**. Každý hráč ta
 | Talent | Strom | Efekt ve hře |
 |---|---|---|
 | Swiftwind Steps | Utility, zdarma | rychlost pohybu +10 % |
-| Discount | Utility | šance na slevu jednoho stolu v [obchodě](/docs/artefacts-items/shop) |
+| Discount | Utility | šance na slevu jednoho stolu v [obchodě](/docs/artefacts-items/shop) – nejčastěji −25 % |
 | Trap Master | Utility | každá past má zhruba 30% šanci být vypnutá – ostny zasunuté, plameny zhasnuté, nezraňuje |
 | Additional Gun | Utility | +1 slot na zbraň |
-| Gamble Machine | Utility | +100 mincí na patře s obchodem (viz nesrovnalosti) |
+| Gamble Machine | Utility | v obchodě stojí [hrací automat](/docs/artefacts-items/slot-machine) – bez talentu tam není |
 | Sharpened Bullets | Offensive, zdarma | damage +20 % |
 | Additional Ammo | Offensive | maximální rezerva munice +10 % |
-| Critical Hit | Offensive | 10% šance na dvojnásobný damage |
+| Critical Hit | Offensive | 10% šance na dvojnásobný damage (u brokovnice zvlášť pro každý brok) |
 | Dangerous Bullets | Offensive | damage +25 % (násobí se se Sharpened Bullets) |
 | Pet | Offensive | vlčí společník – viz [Pet](/docs/artefacts-items/pet) |
 | Hero's Heart | Defensive, zdarma | max zdraví +20 % (10 → 12) |
 | Improved Armor | Defensive | max armor +20 % (5 → 6) |
 | Armor Regeneration | Defensive | +1 armor po vyčištění místnosti |
 | Titan's Heart | Defensive | max zdraví +25 % (12 → 15) |
-| Kevlar | Defensive | přijatý damage −10 %, zaokrouhleno dolů, vždy alespoň 1 |
+| Kevlar | Defensive | přijatý damage −10 % v průměru; zbylý zlomek bodu rozhodne náhoda |
 
 ### Kevlar v praxi
 
-Damage se zaokrouhluje dolů na celá čísla: 1 → 1, 2 → 1, 3 → 2, 4 → 3, 5 → 4, 10 → 9. U zásahů za 2 je to tedy poloviční damage, u zásahů za 1 nic.
+Ze zásahu se ubere 10 % a desetinná část se zaokrouhlí náhodou – nahoru s takovou šancí, jak je velká. Zásah za 1 tak v 10 % případů neubere **nic**, zásah za 2 ubere v 80 % případů 2 a ve 20 % jen 1, zásah za 3 v 70 % případů 3 a ve 30 % jen 2. V průměru je každý zásah o desetinu slabší, ať je velký, nebo malý.
 
 ### Damage v praxi
 
-Damage zbraně se násobí postupně a po každém kroku zaokrouhlí dolů: nejdřív +20 % (Sharpened Bullets), pak +25 % (Dangerous Bullets), pak případně ×2 za kritický zásah a ×2 za první výstřel z [Phantom Cloak](/docs/artefacts-items/artefacts/phantom-cloak). Artefakty (Ring of Death, Bone Turret, Thunder Idol, duchové z Grave Lantern) ani vlk talenty **nevyužívají**.
+Bonusy z talentů se sečtou do jednoho násobku – se Sharpened Bullets ×1,2, s oběma talenty ×1,5 – a desetinná část výsledku se stejně jako u Kevlaru zaokrouhlí náhodou. Zbraň za 1 tak se Sharpened Bullets dá každou pátou ránu za 2, s oběma talenty každou druhou. Pak případně přijde ×2 za kritický zásah a ×2 za první výstřel z [Phantom Cloak](/docs/artefacts-items/artefacts/phantom-cloak). Artefakty (Ring of Death, Bone Turret, Thunder Idol, duchové z Grave Lantern) ani vlk talenty **nevyužívají**.
 
 ## Tipy a souvislosti
 
@@ -48,14 +48,10 @@ Damage zbraně se násobí postupně a po každém kroku zaokrouhlí dolů: nejd
 - [Hráč](/docs/player) – zdraví, armor, rychlost, úhyb.
 - [Zbraně](/docs/guns) – sloty, munice, damage, kritické zásahy.
 - [Dungeon](/docs/dungeon) – pasti a Trap Master.
-- Kevlar je nejsilnější proti nepřátelům, kteří dávají 2 damage – snižuje je na polovinu.
+- Kevlar pomáhá proti všem zásahům stejně – v průměru o desetinu, i proti drobným zásahům za 1.
 
 ## Známé nesrovnalosti
 
-- **Improved Armor** slibuje v popisu +33 %, ve hře dává +20 % (5 → 6).
-- **Armor Regeneration** slibuje „obnovu armoru“, ve hře dává jen +1 bod po vyčištění místnosti.
-- **Gamble Machine** automat neodemyká – je v obchodě vždy. Talent jen přidá 100 mincí, a to fakticky jen v 1. patře. Viz [Automat](/docs/artefacts-items/slot-machine).
-- **Talent Sharpened Bullets nemá u zbraní s damage 1 žádný efekt** – 1 × 1,2 se zaokrouhlí zpět na 1.
 - Protože první talenty jsou zdarma, „+20 % zdraví / damage“ jsou ve skutečnosti základní hodnoty každého hráče.
 - Všechny talenty zatím stojí stejně (1 bod), původní verze hry měla ceny podle kvality talentu.
 

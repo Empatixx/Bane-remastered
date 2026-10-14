@@ -8,6 +8,8 @@ mod theme;
 
 pub(crate) use build::Dungeon;
 pub(crate) use decor::{Decor, DecorKind, Mount};
+#[cfg(test)]
+pub(crate) use furnish::Fixture;
 pub(crate) use furnish::{FixtureKind, Furnishing};
 pub(crate) use layout::Direction;
 pub(crate) use surface::{Surface, Surfaces};

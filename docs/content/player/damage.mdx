@@ -11,7 +11,7 @@ z něj a teprve potom ze zdraví. Když zdraví klesne na nulu, běh končí.
 ### Když tě něco zasáhne
 
 1. Pokud jsi **nezranitelný** (po nedávném zásahu nebo během kotoulu), zásah se ignoruje.
-2. Talent **Kevlar** sníží poškození o 10 % (zaokrouhleno dolů), ale vždy zůstane aspoň 1.
+2. Talent **Kevlar** sníží poškození o 10 %; zlomek bodu rozhodne náhoda. Zásah za 1 tak v 10 % případů neubere nic, zásah za 3 ve 30 % případů ubere jen 2.
 3. Máš-li aktivní **štít** z artefaktu *Shield Horn*, zásah ho rozbije a nezpůsobí žádné poškození.
 4. Poškození se odečte z **brnění**; co se do brnění nevejde, ubere **zdraví**. Některé zdroje (láva, magma)
    brnění **ignorují** a jdou rovnou do zdraví.
@@ -46,14 +46,13 @@ lávu ani výbuchy. Podrobnosti o nepřátelích viz [Nepřátelé](/docs/enemie
 Poškození každého projektilu se počítá takto:
 
 1. **Základ** — náhodná hodnota z rozsahu zbraně (včetně vylepšení ze stromu zbraní).
-2. **Sharpened Bullets** +20 % (máš vždy; ve výzvě *Glass Cannon* dokonce 2,4×), zaokrouhleno dolů.
-3. **Dangerous Bullets** +25 %, zaokrouhleno dolů.
-4. **Kritický zásah** — dvojnásobek.
-5. **Útok ze zálohy** — první výstřel z neviditelnosti (*Phantom Cloak*) dává dvojnásobek a neviditelnost tím skončí.
+2. **Talenty** — *Sharpened Bullets* +20 % (máš vždy; ve výzvě *Glass Cannon* dokonce 2,4×) a *Dangerous Bullets* +25 % se vynásobí dohromady (×1,5). Zlomek bodu se mění na šanci na bod navíc — rána za 1 dá se *Sharpened Bullets* každou pátou ránu 2.
+3. **Kritický zásah** — dvojnásobek.
+4. **Útok ze zálohy** — první výstřel z neviditelnosti (*Phantom Cloak*) dává dvojnásobek a neviditelnost tím skončí.
 
 **Šance na kritický zásah** = 10 % z talentu *Critical Hit* + vlastní šance zbraně (Sniper 20 %) + bonus ze
-stromu zbraní. Vylepšení *Deadeye* udělá kritickým každý pátý výstřel. Kritický zásah se určuje pro celý
-výstřel — u brokovnice jsou tedy kritické buď všechny broky, nebo žádný.
+stromu zbraní. Vylepšení *Deadeye* udělá kritickým každý pátý výstřel. Kritický zásah se určuje pro každý
+projektil zvlášť — u brokovnice má každý brok vlastní šanci (jen *Deadeye* krituje všechny broky naráz).
 
 Zasažený nepřítel krátce zbělá a nad ním vyletí číslo poškození. Výbuchy, plazma a řetězový blesk dávají
 poloviční poškození (aspoň 1) — viz [Zbraně](/docs/guns).
@@ -99,9 +98,9 @@ ukončit volbou *Die*.
 
 - **Štít z Shield Horn** sice zásah pohltí, ale hra ho přesto bere jako zásah: přehraje zvuk zranění, dá ti
   nezranitelnost a pokazí ti „nedotčené“ patro pro misi *Untouched*.
+- Totéž platí, když **Kevlar** srazí zásah za 1 na nulu — neubere nic, ale počítá se jako zásah.
 - **Rudý záblesk obrazovky** při zásahu se objeví jen při doteku nepřítele, projektilu, hrotů, plamenné pasti, gejzíru nebo lávy — šípy z pastí, výbuchy,
   jed, útoky Golema, dopady Leaperů a Mimic tě zraní bez záblesku.
-- **Kevlar** nemá žádný účinek na zásahy za 1 (většina projektilů a pastí), protože zásah nikdy neklesne pod 1.
 
 ## Nápady na rozšíření
 

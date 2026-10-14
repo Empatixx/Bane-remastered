@@ -593,7 +593,7 @@ mod tests {
         let path = temp_path("unknown_weapon");
         fs::write(
             &path,
-            r#"{"version": 1, "gold": 30, "weapons": {"uzi": {"rerolls": 2, "owned": [0], "spent": 100, "generator": 1}, "laser": {"rerolls": 1}}}"#,
+            r#"{"version": 1, "gold": 30, "weapons": {"uzi": {"rerolls": 2, "owned": [0], "spent": 100, "generator": 2}, "laser": {"rerolls": 1}}}"#,
         )
         .expect("write");
 

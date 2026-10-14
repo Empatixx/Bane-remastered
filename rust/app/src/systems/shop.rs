@@ -120,11 +120,12 @@ fn place(
 const PROMPT_GAP: f32 = 20.0;
 const ITEM_LIFT: f32 = 15.0;
 
+/// The share of the price still paid on a sale, from a roll in `0..100`.
 pub(crate) fn sale_for(chance: usize) -> Option<f32> {
     match chance {
-        0..=4 => Some(0.75),
+        0..=4 => Some(0.25),
         5..=9 => Some(0.5),
-        10..=32 => Some(0.25),
+        10..=32 => Some(0.75),
         _ => None,
     }
 }
@@ -160,7 +161,7 @@ pub(crate) fn stock_rooms(
                 let mut sale_percent = None;
                 if let (Some(factor), true) = (sale, index == sale_slot) {
                     shop.price = ((shop.price as f32 * factor) as i32).max(1);
-                    sale_percent = Some((factor * 100.0) as u32);
+                    sale_percent = Some(((1.0 - factor) * 100.0).round() as u32);
                 }
                 let entity = place(world, goods, center, shop, top_left.y + size.y, textures);
                 prefabs::price_tag(

@@ -9,7 +9,7 @@ Na každém patře najdeš jeden obchod, kde za mince koupíš lektvar, munici n
 
 ### Obchodní místnost
 
-Uprostřed horní části stojí obchodník, v polovině místnosti **tři stoly se zbožím**, dole dva rozbitné květináče a vpravo nahoře [hrací automat](/docs/artefacts-items/slot-machine). Nabídka se vygeneruje jednou při vzniku patra a už se nemění.
+Uprostřed horní části stojí obchodník, v polovině místnosti **tři stoly se zbožím**, dole dva rozbitné květináče a – jen s talentem **Gamble Machine** – vpravo nahoře [hrací automat](/docs/artefacts-items/slot-machine). Nabídka se vygeneruje jednou při vzniku patra a už se nemění.
 
 | Stůl | Kategorie | Zboží | Cena |
 |---|---|---|---|
@@ -33,14 +33,14 @@ Základní cena je náhodně 1–4 mince krát číslo patra, vynásobená koefi
 
 S talentem **Discount** ([Perky](/docs/artefacts-items/perks)) má každý obchod šanci, že na **jednom náhodném stole** bude sleva:
 
-| Výsledek | Nová cena | Šance |
-|---|---|---|
-| malá sleva | 75 % původní | 5 % |
-| střední sleva | 50 % původní | 5 % |
-| velká sleva | 25 % původní | 23 % |
-| bez slevy | 100 % | 67 % |
+| Výsledek | Nápis | Nová cena | Šance |
+|---|---|---|---|
+| malá sleva | −25% | 75 % původní | 23 % |
+| střední sleva | −50% | 50 % původní | 5 % |
+| velká sleva | −75% | 25 % původní | 5 % |
+| bez slevy | – | 100 % | 67 % |
 
-Cena po slevě je vždy alespoň 1 mince. Zlevněné zboží má barevnou cenovku a nad ní nápis „SALE“ s procentem.
+Cena po slevě je vždy alespoň 1 mince. Zlevněné zboží má zelenou cenovku a nad ní nápis s tím, kolik se z ceny odečítá (např. „−75%“).
 
 ### Nákup
 
@@ -66,7 +66,7 @@ Cena po slevě je vždy alespoň 1 mince. Zlevněné zboží má barevnou cenovk
 | Stůl Munice | univerzální munice | mince | 1 |
 | Stůl Útok | zbraň nebo artefakt | mince | 1 |
 | Pentagram | cokoliv z výše uvedených | 1–3 zdraví | 0–1 |
-| Automat | hazard | 5 mincí | 1 |
+| Automat | hazard | 5 mincí | 1 (jen s talentem Gamble Machine) |
 
 ## Tipy a souvislosti
 
@@ -78,7 +78,6 @@ Cena po slevě je vždy alespoň 1 mince. Zlevněné zboží má barevnou cenovk
 
 ## Známé nesrovnalosti
 
-- **Nápis slevy je zavádějící** – „SALE 25%“ znamená, že platíš 25 % původní ceny (tedy sleva 75 %). A nejčastější sleva je zároveň ta největší.
 - **Nákup nepoužitelného zboží** (lektvar při plném zdraví) mince sebere bez varování.
 - **Obchodník umí jen dvě věty** – plánovaný cyklus replik podle počtu návštěv zatím ve hře není. Oltář v Sacrifice místnosti nemluví vůbec.
 - Původní verze hry měla v obchodě 3–5 předmětů a jiný výpočet cen; současná verze má vždy 3 stoly.

@@ -67,7 +67,7 @@ mod tests {
         let shaped = rules.shape(owned);
 
         assert_eq!(shaped.max_health(10), 1);
-        assert_eq!(shaped.bullet_damage(10, false), 24);
+        assert_eq!(shaped.bullet_damage(10, false, 0.0), 24);
         assert!(!shaped.dodge);
         assert!(!shaped.armor_regeneration);
         assert_eq!(shaped.only_gun, Some(GunKind::Pistol));

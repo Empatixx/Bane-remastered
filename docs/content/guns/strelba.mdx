@@ -32,15 +32,15 @@ Pro každou střelu se poškození počítá v tomto pořadí:
 
 1. **Základ** — náhodné číslo z rozsahu zbraně. Horní hranice rozsahu **nikdy nepadne** (stejně jako v původní Java verzi Bane): Pistol s rozsahem 1–3 dá vždy 1 nebo 2.
 2. **Strom zbraně** — uzly Damage přidají procenta. Zbytek po desetinné čárce se mění na bod navíc s odpovídající šancí (1 × 1,25 = 25% šance na 2), takže i malý bonus pomáhá slabým zbraním.
-3. **Upgrady hráče** — *Sharpened Bullets* (×1,2) a *Dangerous Bullets* (×1,25), po každém kroku zaokrouhleno dolů.
+3. **Upgrady hráče** — *Sharpened Bullets* (×1,2) a *Dangerous Bullets* (×1,25), dohromady ×1,5. Zbytek po desetinné čárce se opět mění na bod navíc s odpovídající šancí (1 × 1,2 = 20% šance na 2).
 4. **Kritický zásah** — ×2.
 5. **Útok ze zálohy** — první rána po artefaktu Phantom ×2.
 
 ### Kritické zásahy
 
 - Šance = upgrade *Critical Hit* (+10 %) + vlastní šance zbraně (jen Sniper, 20 %) + uzly Crit ze stromu (+4/8/12 %).
-- Hází se **jednou za výstřel** — všechny 4 broky Shotgunu jsou buď kritické, nebo ne.
-- Mutace **Deadeye** udělá kritickým každý pátý výstřel bez ohledu na šanci.
+- Hází se **pro každou střelu zvlášť** — každý ze 4 broků Shotgunu má vlastní hod.
+- Mutace **Deadeye** udělá kritickým každý pátý výstřel bez ohledu na šanci — u Shotgunu všechny 4 broky naráz.
 
 ### Otřes obrazovky
 
@@ -76,7 +76,7 @@ Jiné zdroje hráčových střel než zbraně:
 
 ## Tipy a souvislosti
 
-- Upgrady poškození od Scientista se zaokrouhlují dolů, strom zbraně ne — u slabých zbraní je lepší investovat do uzlů Damage ve [stromu zbraně](/docs/guns/strom-zbrane).
+- Upgrady poškození od Scientista i uzly Damage ve [stromu zbraně](/docs/guns/strom-zbrane) pomáhají i slabým zbraním — zlomek bodu se v průměru vždy projeví.
 - Deadeye a vysoká kritická šance se nejvíc vyplatí u zbraní s velkou ranou (Sniper, Railgun, Shotgun).
 - Phantom + RPG nebo Railgun = obrovská první rána ze zálohy.
 - Co dělá střela po zásahu: [Projektily](/docs/guns/projektily), [Mutace](/docs/guns/mutace).
@@ -84,7 +84,6 @@ Jiné zdroje hráčových střel než zbraně:
 
 ## Známé nesrovnalosti
 
-- Upgrade *Sharpened Bullets* nemá u zbraní s poškozením 1 (Luger, Uzi, Minigun, Flamethrower, polovina ran Pistole) žádný efekt — 1 × 1,2 se zaokrouhlí zpátky na 1.
 - Stůl se zbraněmi ukazuje rozsah poškození včetně horní hranice (např. 1–3), která ve hře nikdy nepadne.
 - Kritický zásah nemá žádnou zvláštní odezvu — žádnou barvu čísla, zvuk ani efekt, jen vyšší číslo.
 - U dávky M4 je slyšet jen první rána.

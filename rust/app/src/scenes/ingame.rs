@@ -33,7 +33,6 @@ use crate::weapon_upgrades::WeaponMods;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition};
 
-const SLOT_MACHINE_COINS: i32 = 100;
 const BOSS_DEFEATED_SHAKE: f32 = 1.0;
 
 fn impact_shake(effect: SoundEffect) -> f32 {
@@ -404,6 +403,7 @@ impl Scene for InGameScene {
             return Transition::None;
         }
         let hostile_dt = dt * systems::time_scale(&self.world);
+        systems::cast_hit_roll(&mut self.world, self.combat_rng.float());
         systems::start_dodge(
             &mut self.world,
             input,
@@ -750,7 +750,13 @@ impl InGameScene {
         }
         for room in &dungeon.rooms {
             if let Some(furnishing) = &room.furnishing {
-                prefabs::furnishing(&mut self.world, &mut self.physics, furnishing, textures);
+                prefabs::furnishing(
+                    &mut self.world,
+                    &mut self.physics,
+                    furnishing,
+                    perks.gamble_machine,
+                    textures,
+                );
             }
             for decor in &room.decor {
                 prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);
@@ -774,11 +780,6 @@ impl InGameScene {
             let head = keeper.top_left
                 + Vec2::new(crate::props::Prop::Shopkeeper.spec().size().x / 2.0, 0.0);
             prefabs::minimal_speech(&mut self.world, head);
-            if perks.gamble_machine {
-                for wallet in self.world.query_mut::<&mut crate::components::Wallet>() {
-                    wallet.coins += SLOT_MACHINE_COINS;
-                }
-            }
         }
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
         spawn_minimaps(&mut self.world, &dungeon, textures);

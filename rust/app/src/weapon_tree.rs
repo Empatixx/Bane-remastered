@@ -1,4 +1,4 @@
-use crate::guns::{GunKind, Mutation};
+use crate::guns::{GunKind, GunSpec, MAX_CLIP, Mutation};
 use crate::rng::Rng;
 
 pub(crate) const HALF_COLUMNS: i32 = 2;
@@ -7,9 +7,89 @@ pub(crate) const STAT_KINDS: usize = 6;
 pub(crate) const MUTATION_KINDS: usize = Mutation::ALL.len();
 /// Bump whenever `generate` grows different trees. Saves point at nodes by their index, so a
 /// tree saved by another generator is paid back and reset instead of shuffling the purchases.
-pub(crate) const GENERATOR: u32 = 1;
+pub(crate) const GENERATOR: u32 = 2;
 const SIDE_BRANCHES: usize = 2;
 const SIDE_DEPTH: usize = 3;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Stat {
+    Damage,
+    FireRate,
+    Magazine,
+    Reload,
+    Accuracy,
+    Crit,
+}
+
+impl Stat {
+    pub(crate) const ALL: [Self; STAT_KINDS] = [
+        Self::Damage,
+        Self::FireRate,
+        Self::Magazine,
+        Self::Reload,
+        Self::Accuracy,
+        Self::Crit,
+    ];
+
+    /// Whether the bonus changes anything for the gun: accuracy on a gun without spread or more
+    /// rounds in a magazine that is already as big as the clip HUD allows do nothing.
+    pub(crate) fn helps(self, spec: &GunSpec) -> bool {
+        match self {
+            Self::Accuracy => spec.inaccuracy > 0.0,
+            Self::Magazine => spec.clip_size < MAX_CLIP as i32,
+            Self::Damage | Self::FireRate | Self::Reload | Self::Crit => true,
+        }
+    }
+
+    /// The bonus of a common node, in percent or in rounds for the magazine.
+    pub(crate) fn amount(self) -> u32 {
+        match self {
+            Self::Damage => 5,
+            Self::FireRate => 4,
+            Self::Magazine => 1,
+            Self::Reload => 6,
+            Self::Accuracy => 8,
+            Self::Crit => 4,
+        }
+    }
+}
+
+/// The stats and mutations a tree may offer, as indices into `Stat::ALL` and `Mutation::ALL`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Choices {
+    stats: Vec<usize>,
+    mutations: Vec<usize>,
+}
+
+impl Choices {
+    fn all() -> Self {
+        Self {
+            stats: (0..STAT_KINDS).collect(),
+            mutations: (0..MUTATION_KINDS).collect(),
+        }
+    }
+
+    /// Only what changes something for this gun, e.g. no accuracy for a gun that never misses.
+    fn for_gun(kind: GunKind) -> Self {
+        let spec = kind.spec();
+        Self {
+            stats: (0..STAT_KINDS)
+                .filter(|id| Stat::ALL[*id].helps(&spec))
+                .collect(),
+            mutations: (0..MUTATION_KINDS)
+                .filter(|id| Mutation::ALL[*id].helps(&spec))
+                .collect(),
+        }
+    }
+
+    fn stat(&self, rng: &mut Rng) -> usize {
+        self.stats[rng.below(self.stats.len())]
+    }
+
+    fn mutation(&self, rng: &mut Rng) -> usize {
+        self.mutations[rng.below(self.mutations.len())]
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Node {
@@ -74,6 +154,7 @@ impl Tree {
     fn add(
         &mut self,
         rng: &mut Rng,
+        choices: &Choices,
         parent: Option<usize>,
         column: i32,
         branch: usize,
@@ -85,7 +166,7 @@ impl Tree {
             row,
             parent,
             branch,
-            stat: rng.below(STAT_KINDS),
+            stat: choices.stat(rng),
             mutation,
         });
         self.nodes.len() - 1
@@ -94,6 +175,7 @@ impl Tree {
     fn grow(
         &mut self,
         rng: &mut Rng,
+        choices: &Choices,
         parent: Option<usize>,
         branch: usize,
         straight: bool,
@@ -108,13 +190,16 @@ impl Tree {
             .iter()
             .map(|step| from + step)
             .find(|column| self.fits(parent, *column))?;
-        Some(self.add(rng, parent, column, branch, None))
+        Some(self.add(rng, choices, parent, column, branch, None))
     }
 }
 
 /// Seeded by the name of the weapon, so adding or reordering guns never changes a tree.
 pub(crate) fn generate(kind: GunKind, rerolls: u32) -> Tree {
-    grow_tree(name_seed(kind.key()) ^ u64::from(rerolls).wrapping_mul(104_729))
+    grow_tree(
+        name_seed(kind.key()) ^ u64::from(rerolls).wrapping_mul(104_729),
+        &Choices::for_gun(kind),
+    )
 }
 
 /// The trees of the first versions, seeded by the place of the gun in the list; only kept to
@@ -124,7 +209,10 @@ pub(crate) fn generate_unversioned(kind: GunKind, rerolls: u32) -> Tree {
         .iter()
         .position(|other| *other == kind)
         .unwrap_or(0) as u64;
-    grow_tree(gun * 7919 + u64::from(rerolls) * 104_729 + 13)
+    grow_tree(
+        gun * 7919 + u64::from(rerolls) * 104_729 + 13,
+        &Choices::all(),
+    )
 }
 
 fn name_seed(name: &str) -> u64 {
@@ -133,20 +221,20 @@ fn name_seed(name: &str) -> u64 {
     })
 }
 
-fn grow_tree(seed: u64) -> Tree {
+fn grow_tree(seed: u64, choices: &Choices) -> Tree {
     let mut rng = Rng::new(seed);
     let mut tree = Tree::default();
     let start = rng.below(3) as i32 - 1;
-    let mut last = tree.add(&mut rng, None, start, 0, None);
+    let mut last = tree.add(&mut rng, choices, None, start, 0, None);
     for _ in 2..DEPTH {
-        match tree.grow(&mut rng, Some(last), 0, false) {
+        match tree.grow(&mut rng, choices, Some(last), 0, false) {
             Some(next) => last = next,
             None => break,
         }
     }
     let end = tree.nodes[last].column;
-    let mutation = rng.below(MUTATION_KINDS);
-    tree.add(&mut rng, Some(last), end, 0, Some(mutation));
+    let mutation = choices.mutation(&mut rng);
+    tree.add(&mut rng, choices, Some(last), end, 0, Some(mutation));
     let sides = 1 + rng.below(SIDE_BRANCHES);
     for branch in 1..=sides {
         let open: Vec<i32> = (-HALF_COLUMNS..=HALF_COLUMNS)
@@ -164,11 +252,11 @@ fn grow_tree(seed: u64) -> Tree {
             break;
         }
         let column = free[rng.below(free.len())];
-        let first = tree.add(&mut rng, None, column, branch, None);
+        let first = tree.add(&mut rng, choices, None, column, branch, None);
         let depth = 1 + rng.below(SIDE_DEPTH);
         let mut tip = first;
         for _ in 1..depth {
-            match tree.grow(&mut rng, Some(tip), branch, false) {
+            match tree.grow(&mut rng, choices, Some(tip), branch, false) {
                 Some(next) => tip = next,
                 None => break,
             }
@@ -182,9 +270,9 @@ fn grow_tree(seed: u64) -> Tree {
                     })
                     .collect();
                 let from = members[rng.below(members.len())];
-                if let Some(fork) = tree.grow(&mut rng, Some(from), branch, false) {
+                if let Some(fork) = tree.grow(&mut rng, choices, Some(from), branch, false) {
                     if tree.nodes[fork].row < DEPTH - 1 && rng.below(2) == 0 {
-                        tree.grow(&mut rng, Some(fork), branch, true);
+                        tree.grow(&mut rng, choices, Some(fork), branch, true);
                     }
                 }
             }
@@ -197,10 +285,10 @@ fn grow_tree(seed: u64) -> Tree {
 mod tests {
     use super::*;
 
-    /// What `generate` grew for GENERATOR 1. Saves point at nodes by index, so when this
+    /// What `generate` grew for GENERATOR 2. Saves point at nodes by index, so when this
     /// changes the trees changed: bump GENERATOR (old saves get their gold back), then update
     /// the number here.
-    const FINGERPRINT: u64 = 16_991_477_304_436_102_234;
+    const FINGERPRINT: u64 = 15_746_248_693_106_410_667;
 
     /// The guns the fingerprint was taken over; newer guns grow their own trees and leave
     /// these alone.
@@ -229,7 +317,7 @@ mod tests {
 
     #[test]
     fn the_trees_only_change_together_with_the_generator_version() {
-        assert_eq!(GENERATOR, 1);
+        assert_eq!(GENERATOR, 2);
         assert_eq!(
             fingerprint(),
             FINGERPRINT,
@@ -240,13 +328,59 @@ mod tests {
     #[test]
     fn a_tree_does_not_depend_on_where_the_gun_sits_in_the_list() {
         assert_ne!(name_seed("pistol"), name_seed("uzi"));
-        assert_eq!(generate(GunKind::Uzi, 0), grow_tree(name_seed("uzi")));
+        assert_eq!(
+            generate(GunKind::Uzi, 0),
+            grow_tree(name_seed("uzi"), &Choices::for_gun(GunKind::Uzi))
+        );
     }
 
     fn all() -> impl Iterator<Item = Tree> {
         GunKind::ALL
             .into_iter()
             .flat_map(|kind| (0..40).map(move |rerolls| generate(kind, rerolls)))
+    }
+
+    #[test]
+    fn no_tree_offers_a_node_that_does_nothing_for_its_gun() {
+        for kind in GunKind::ALL {
+            let spec = kind.spec();
+            for rerolls in 0..40 {
+                for node in generate(kind, rerolls).nodes {
+                    match node.mutation {
+                        Some(id) => assert!(Mutation::ALL[id].helps(&spec), "{kind:?} {node:?}"),
+                        None => assert!(Stat::ALL[node.stat].helps(&spec), "{kind:?} {node:?}"),
+                    }
+                }
+            }
+        }
+        let stats = |kind: GunKind| -> Vec<Stat> {
+            (0..40)
+                .flat_map(|rerolls| generate(kind, rerolls).nodes)
+                .filter(|node| node.mutation.is_none())
+                .map(|node| Stat::ALL[node.stat])
+                .collect()
+        };
+        let mutations = |kind: GunKind| -> Vec<Mutation> {
+            (0..40)
+                .flat_map(|rerolls| generate(kind, rerolls).nodes)
+                .filter_map(|node| node.mutation)
+                .map(|id| Mutation::ALL[id])
+                .collect()
+        };
+        assert!(!stats(GunKind::M4).contains(&Stat::Accuracy));
+        assert!(!stats(GunKind::Minigun).contains(&Stat::Magazine));
+        assert!(!mutations(GunKind::Railgun).contains(&Mutation::Piercing));
+        assert_eq!(mutations(GunKind::Rpg), vec![Mutation::Deadeye; 40]);
+    }
+
+    #[test]
+    fn the_old_unversioned_trees_still_offer_everything() {
+        let offered: std::collections::BTreeSet<usize> = (0..40)
+            .flat_map(|rerolls| generate_unversioned(GunKind::M4, rerolls).nodes)
+            .filter(|node| node.mutation.is_none())
+            .map(|node| node.stat)
+            .collect();
+        assert_eq!(offered.len(), STAT_KINDS);
     }
 
     #[test]

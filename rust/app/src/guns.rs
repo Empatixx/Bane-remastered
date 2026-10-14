@@ -60,6 +60,19 @@ impl Mutation {
     ];
 }
 
+impl Mutation {
+    /// Whether the mutation changes anything for the gun. A rocket bursts before any hit
+    /// effect runs, so only Deadeye (decided when the shot leaves the barrel) works on it, and
+    /// a round that already passes through everything gains nothing from Piercing.
+    pub(crate) fn helps(self, spec: &GunSpec) -> bool {
+        let round = spec.round.spec();
+        if round.blast {
+            return self == Self::Deadeye;
+        }
+        !(self == Self::Piercing && round.pierce == u32::MAX)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ClipStyle {
     Pistol,
@@ -358,7 +371,7 @@ impl GunKind {
                 shake: 0.6,
                 ..gun(
                     (tex::GUNS_SHOTGUN, (96.0, 36.0)),
-                    (3, 5),
+                    (2, 4),
                     0.1,
                     (0.5, 0.7),
                     (6, 48),
@@ -563,9 +576,10 @@ impl GunSpec {
     /// The damage with the bonus of the weapon tree; the fraction the bonus adds becomes a
     /// whole point as often as it is large, so small bonuses still count on weak guns.
     pub(crate) fn scaled_damage(&self, roll: f32, fraction_roll: f32) -> i32 {
-        let damage = self.damage_for(roll) as f32 * self.damage_scale;
-        let whole = damage.floor();
-        whole as i32 + i32::from(damage - whole > fraction_roll)
+        crate::rng::round_by_chance(
+            self.damage_for(roll) as f32 * self.damage_scale,
+            fraction_roll,
+        )
     }
 
     pub(crate) fn angle_offset(&self, pellet: usize, spread: f32) -> f32 {
@@ -640,6 +654,16 @@ mod tests {
     }
 
     #[test]
+    fn the_starting_shotgun_hits_for_two_or_three_a_pellet_and_about_twenty_a_second() {
+        let shotgun = GunKind::Shotgun.spec();
+        assert_eq!(shotgun.damage_for(0.0), 2);
+        assert_eq!(shotgun.damage_for(0.99), 3);
+        let average = (shotgun.min_damage + shotgun.max_damage - 1) as f32 / 2.0;
+        let per_second = average * shotgun.pellets as f32 / shotgun.fire_interval;
+        assert!((per_second - 20.0).abs() < 1e-3, "{per_second}");
+    }
+
+    #[test]
     fn shotgun_pellets_fan_out_alternating_sides() {
         let shotgun = GunKind::Shotgun.spec();
         let offsets: Vec<f32> = (0..4).map(|i| shotgun.angle_offset(i, 0.9)).collect();
@@ -673,6 +697,22 @@ mod tests {
         assert_eq!(pistol.scaled_damage(0.0, 0.1), 2);
         assert_eq!(pistol.scaled_damage(0.0, 0.9), 1);
         assert_eq!(GunKind::Pistol.spec().scaled_damage(0.0, 0.0), 1);
+    }
+
+    #[test]
+    fn rockets_only_take_deadeye_and_endless_rounds_do_not_take_piercing() {
+        let rpg = GunKind::Rpg.spec();
+        let helping: Vec<Mutation> = Mutation::ALL
+            .into_iter()
+            .filter(|mutation| mutation.helps(&rpg))
+            .collect();
+        assert_eq!(helping, vec![Mutation::Deadeye]);
+        for kind in [GunKind::Railgun, GunKind::Flamethrower] {
+            assert!(!Mutation::Piercing.helps(&kind.spec()), "{kind:?}");
+            assert!(Mutation::Frost.helps(&kind.spec()), "{kind:?}");
+        }
+        let sniper = GunKind::Sniper.spec();
+        assert!(Mutation::ALL.iter().all(|mutation| mutation.helps(&sniper)));
     }
 
     #[test]

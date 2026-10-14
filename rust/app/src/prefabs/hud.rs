@@ -76,6 +76,11 @@ pub(crate) fn for_sale(world: &mut World, entity: Entity, shop: Shop, prompt_gap
     );
 }
 
+/// The tag above a price on sale shows how much is taken off.
+pub(crate) fn sale_label(discount: u32) -> String {
+    format!("-{discount}%")
+}
+
 pub(crate) fn price_tag(
     world: &mut World,
     owner: Entity,
@@ -116,7 +121,7 @@ pub(crate) fn price_tag(
         world.spawn((
             PriceTag { owner },
             Position(center - Vec2::new(0.0, size.y / 2.0 + SALE_LIFT)),
-            Text::inked(format!("SALE {percent}%"), SALE_COLOR, FontSize::Size22),
+            Text::inked(sale_label(percent), SALE_COLOR, FontSize::Size22),
             Layer(4),
         ));
     }
@@ -316,5 +321,16 @@ pub(crate) fn lobby_counters(
         } else {
             world.spawn((GoldCount, text, position, Layer(6), ScreenSpace));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_sale_tag_shows_the_discount_not_the_price_left() {
+        assert_eq!(sale_label(75), "-75%");
+        assert_eq!(sale_label(25), "-25%");
     }
 }

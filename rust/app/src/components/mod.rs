@@ -61,7 +61,7 @@ pub(crate) use objects::{
     Chilled, Flame, FloorPatch, Friendly, Frozen, PatchKind, PoisonPool, PoisonTrail, Poisoned,
     RippleTimer, SlotMachine, SlotPrice, Solid, TrailLayer, TrapArrow,
 };
-pub(crate) use perks::PlayerPerks;
+pub(crate) use perks::{HitRoll, PlayerPerks};
 pub(crate) use pet::Pet;
 pub(crate) use settings_ui::{
     Checkbox, Hidden, KeyBindSlot, LabelOf, NeedsChanges, ResolutionText, SettingsTabKind,

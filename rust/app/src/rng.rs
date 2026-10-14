@@ -78,6 +78,20 @@ impl Rng {
     }
 }
 
+/// Rounds a value with a fraction up as often as the fraction is large, so that e.g. +20%
+/// damage on a 1-damage gun still adds a point every fifth shot. `roll` lies in `0..1`.
+pub(crate) fn round_by_chance(value: f32, roll: f32) -> i32 {
+    let nearest = value.round();
+    if (value - nearest).abs() < SNAP {
+        return nearest as i32;
+    }
+    let whole = value.floor();
+    whole as i32 + i32::from(value - whole > roll)
+}
+
+/// Float noise of multiplying whole numbers by e.g. 1.2 must not count as a fraction.
+const SNAP: f32 = 1e-4;
+
 /// Randomness for looks and sounds only, it never changes how a run plays out.
 pub(crate) fn cosmetic() -> f32 {
     thread_local! {
@@ -112,6 +126,19 @@ mod tests {
         for _ in 0..1000 {
             assert!((-1.0..1.0).contains(&rng.signed()));
         }
+    }
+
+    #[test]
+    fn a_fraction_rounds_up_as_often_as_it_is_large() {
+        assert_eq!(round_by_chance(1.25, 0.1), 2);
+        assert_eq!(round_by_chance(1.25, 0.9), 1);
+        assert_eq!(round_by_chance(3.0, 0.0), 3);
+        assert_eq!(round_by_chance(5.0 * 1.2, 0.0), 6);
+        assert_eq!(round_by_chance(0.9, 0.95), 0);
+
+        let mut rng = Rng::new(11);
+        let total: i32 = (0..10_000).map(|_| round_by_chance(1.2, rng.float())).sum();
+        assert!((11_800..=12_200).contains(&total), "{total}");
     }
 
     #[test]

@@ -112,10 +112,12 @@ pub(crate) fn pot(
     entity
 }
 
+/// `gamble_machine` is the talent of that name: without it the shop has no slot machine.
 pub(crate) fn furnishing(
     world: &mut World,
     physics: &mut Physics,
     furnishing: &Furnishing,
+    gamble_machine: bool,
     textures: &Textures,
 ) {
     if let Some(carpet) = &furnishing.carpet {
@@ -147,7 +149,9 @@ pub(crate) fn furnishing(
             FixtureKind::Shopkeeper => place(Prop::Shopkeeper, Look::DEFAULT),
             FixtureKind::Table => place(Prop::ShopTable, Look::DEFAULT),
             FixtureKind::SlotMachine => {
-                slot_machine(world, top_left, textures);
+                if gamble_machine {
+                    slot_machine(world, top_left, textures);
+                }
             }
             FixtureKind::Torch { right } => {
                 let look = if right { Look::FLIPPED } else { Look::DEFAULT };
@@ -852,4 +856,37 @@ pub(crate) fn gate(
         Lit,
     ));
     (entity, physics.add_static_box(center, size))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dungeon::Fixture;
+
+    fn machines_in_a_shop(gamble_machine: bool) -> usize {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let shop = Furnishing {
+            carpet: None,
+            fixtures: vec![Fixture {
+                kind: FixtureKind::SlotMachine,
+                top_left: Vec2::ZERO,
+                size: Prop::SlotMachine.spec().size(),
+            }],
+        };
+        furnishing(
+            &mut world,
+            &mut physics,
+            &shop,
+            gamble_machine,
+            &Textures::default(),
+        );
+        world.query_mut::<&SlotMachine>().into_iter().count()
+    }
+
+    #[test]
+    fn the_slot_machine_stands_in_the_shop_only_with_the_gamble_machine_talent() {
+        assert_eq!(machines_in_a_shop(true), 1);
+        assert_eq!(machines_in_a_shop(false), 0);
+    }
 }

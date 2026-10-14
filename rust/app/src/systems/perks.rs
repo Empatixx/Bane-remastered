@@ -1,7 +1,7 @@
 use hecs::{Entity, World};
 
 use crate::components::{
-    Animation, Armor, ContactDamage, Flame, Health, Loadout, Player, PlayerPerks, Trap,
+    Animation, Armor, ContactDamage, Flame, Health, HitRoll, Loadout, Player, PlayerPerks, Trap,
 };
 use crate::upgrades::Perks;
 use crate::weapon_upgrades::WeaponMods;
@@ -19,6 +19,14 @@ pub(crate) fn apply_floor_perks(world: &mut World, perks: Perks) {
     if let Ok(mut loadout) = world.get::<&mut Loadout>(player) {
         loadout.apply_perks(perks.extra_slots, perks.ammo_scale);
         loadout.restrict(perks.only_gun);
+    }
+}
+
+/// Hands the player the die for the next hit it takes.
+pub(crate) fn cast_hit_roll(world: &mut World, roll: f32) {
+    let players: Vec<Entity> = world.query::<Entity>().with::<&Player>().iter().collect();
+    for player in players {
+        let _ = world.insert_one(player, HitRoll(roll));
     }
 }
 
@@ -299,11 +307,38 @@ mod tests {
     }
 
     #[test]
-    fn sales_follow_the_chances_of_bane() {
+    fn the_cast_hit_roll_decides_whether_kevlar_shrugs_off_a_one_point_hit() {
+        let hit_with = |roll: f32| {
+            let mut world = player();
+            apply_floor_perks(&mut world, perks(&[Upgrade::ReducedDamageTaken]));
+            cast_hit_roll(&mut world, roll);
+            let player = world
+                .query::<Entity>()
+                .with::<&Player>()
+                .iter()
+                .next()
+                .expect("player");
+            let before = vitals(&world);
+            crate::systems::damage::hurt_player(&mut world, player, 1, &mut Vec::new());
+            before != vitals(&world)
+        };
+
+        assert!(hit_with(0.05));
+        assert!(!hit_with(0.95));
+    }
+
+    #[test]
+    fn the_smallest_sale_is_the_most_common_one() {
         use crate::systems::shop::sale_for;
-        assert_eq!(sale_for(0), Some(0.75));
+        assert_eq!(sale_for(0), Some(0.25));
         assert_eq!(sale_for(7), Some(0.5));
-        assert_eq!(sale_for(20), Some(0.25));
+        assert_eq!(sale_for(20), Some(0.75));
         assert_eq!(sale_for(33), None);
+        let count = |price: f32| {
+            (0..100)
+                .filter(|chance| sale_for(*chance) == Some(price))
+                .count()
+        };
+        assert_eq!((count(0.75), count(0.5), count(0.25)), (23, 5, 5));
     }
 }

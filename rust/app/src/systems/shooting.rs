@@ -38,7 +38,10 @@ pub(crate) struct ShotRoll {
     pub(crate) spread: f32,
     pub(crate) damages: [f32; MAX_PELLETS],
     pub(crate) fractions: [f32; MAX_PELLETS],
-    pub(crate) critical: f32,
+    /// Whether the fraction the damage talents add becomes a point, per pellet.
+    pub(crate) perk_fractions: [f32; MAX_PELLETS],
+    /// Every pellet rolls its own critical hit.
+    pub(crate) criticals: [f32; MAX_PELLETS],
     pub(crate) eject: [f32; 4],
 }
 
@@ -48,7 +51,8 @@ impl ShotRoll {
             spread: rng.signed(),
             damages: std::array::from_fn(|_| rng.float()),
             fractions: std::array::from_fn(|_| rng.float()),
-            critical: rng.float(),
+            perk_fractions: std::array::from_fn(|_| rng.float()),
+            criticals: std::array::from_fn(|_| rng.float()),
             eject: std::array::from_fn(|_| rng.float()),
         }
     }
@@ -232,11 +236,12 @@ pub(crate) fn shoot(
         for pellet in 0..shot.pellets {
             let angle = aim + shot.spec.angle_offset(pellet, shot.roll.spread);
             let critical = shot.deadeye
-                || shot.roll.critical < shot.perks.crit_chance() + shot.spec.crit_chance;
+                || shot.roll.criticals[pellet] < shot.perks.crit_chance() + shot.spec.crit_chance;
             let damage = shot.perks.bullet_damage(
                 shot.spec
                     .scaled_damage(shot.roll.damages[pellet], shot.roll.fractions[pellet]),
                 critical,
+                shot.roll.perk_fractions[pellet],
             ) * if shot.ambush { AMBUSH_MULTIPLIER } else { 1 };
             prefabs::bullet(
                 world,
@@ -600,7 +605,8 @@ mod tests {
                     spread: 0.0,
                     damages: [0.0; MAX_PELLETS],
                     fractions: [1.0; MAX_PELLETS],
-                    critical: 1.0,
+                    perk_fractions: [1.0; MAX_PELLETS],
+                    criticals: [1.0; MAX_PELLETS],
                     eject: [0.5; 4],
                 },
             },
@@ -791,7 +797,8 @@ mod tests {
                     spread: 0.0,
                     damages: [0.0; MAX_PELLETS],
                     fractions: [1.0; MAX_PELLETS],
-                    critical: 1.0,
+                    perk_fractions: [1.0; MAX_PELLETS],
+                    criticals: [1.0; MAX_PELLETS],
                     eject: [0.5; 4],
                 },
             },
@@ -813,6 +820,46 @@ mod tests {
         assert!(angles.iter().any(|a| a.abs() < 1e-4));
         assert!(angles.iter().any(|a| *a > 0.05) && angles.iter().any(|a| *a < -0.04));
         assert_eq!(current(&world).clip, 5);
+    }
+
+    #[test]
+    fn every_shotgun_pellet_rolls_its_own_critical_hit() {
+        let (mut world, mut physics) = setup();
+        give(&mut world, crate::guns::GunKind::Shotgun);
+        let player = world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("player");
+        let unlocked = std::collections::BTreeSet::from([crate::upgrades::Upgrade::CriticalHit]);
+        let _ = world.insert_one(player, PlayerPerks(Perks::from_unlocked(&unlocked)));
+        let input = clicked_at(Vec2::new(500.0, 100.0));
+
+        shoot(
+            &mut world,
+            &mut physics,
+            &input,
+            ShotContext {
+                camera: Vec2::ZERO,
+                rounds: RoundTextures::white(),
+                casing_texture: TextureId::WHITE,
+                dt: 0.0,
+                roll: ShotRoll {
+                    spread: 0.0,
+                    damages: [0.0; MAX_PELLETS],
+                    fractions: [1.0; MAX_PELLETS],
+                    perk_fractions: [1.0; MAX_PELLETS],
+                    criticals: [1.0, 0.05, 1.0, 1.0],
+                    eject: [0.5; 4],
+                },
+            },
+            &mut Vec::new(),
+        );
+
+        let mut damages = bullet_damages(&world);
+        damages.sort_unstable();
+        assert_eq!(damages, vec![2, 2, 2, 4]);
     }
 
     #[test]

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::guns::{GunKind, GunSpec, MAX_CLIP, Mutation};
 use crate::upgrades::{Purchase, Quality};
+pub(crate) use crate::weapon_tree::Stat;
 use crate::weapon_tree::{self, Node, Tree};
 
 pub(crate) const MUTATION_COST: u64 = 800;
@@ -12,39 +13,6 @@ pub(crate) const DEADEYE_EVERY: u32 = 5;
 const RARE_FROM_ROW: i32 = 2;
 const EPIC_FROM_ROW: i32 = 3;
 const MIN_INTERVAL_SCALE: f32 = 0.2;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Stat {
-    Damage,
-    FireRate,
-    Magazine,
-    Reload,
-    Accuracy,
-    Crit,
-}
-
-impl Stat {
-    pub(crate) const ALL: [Self; weapon_tree::STAT_KINDS] = [
-        Self::Damage,
-        Self::FireRate,
-        Self::Magazine,
-        Self::Reload,
-        Self::Accuracy,
-        Self::Crit,
-    ];
-
-    /// The bonus of a common node, in percent or in rounds for the magazine.
-    pub(crate) fn amount(self) -> u32 {
-        match self {
-            Self::Damage => 5,
-            Self::FireRate => 4,
-            Self::Magazine => 1,
-            Self::Reload => 6,
-            Self::Accuracy => 8,
-            Self::Crit => 4,
-        }
-    }
-}
 
 pub(crate) fn stat_of(node: &Node) -> Stat {
     Stat::ALL[node.stat.min(Stat::ALL.len() - 1)]
@@ -414,6 +382,22 @@ mod tests {
             assert_eq!(better.clip_size, MAX_CLIP as i32);
             assert_eq!(better.mutation, Some(Mutation::Deadeye));
             assert_eq!(GunMods::default().apply(spec).clip_size, spec.clip_size);
+        }
+    }
+
+    #[test]
+    fn accuracy_needs_spread_and_a_magazine_needs_room_below_the_clip_cap() {
+        let helps = |stat: Stat, kind: GunKind| stat.helps(&kind.spec());
+        assert!(!helps(Stat::Accuracy, GunKind::M4));
+        assert!(!helps(Stat::Accuracy, GunKind::Railgun));
+        assert!(helps(Stat::Accuracy, GunKind::Shotgun));
+        assert!(!helps(Stat::Magazine, GunKind::Minigun));
+        assert!(!helps(Stat::Magazine, GunKind::Flamethrower));
+        assert!(helps(Stat::Magazine, GunKind::Rpg));
+        for kind in GunKind::ALL {
+            for stat in [Stat::Damage, Stat::FireRate, Stat::Reload, Stat::Crit] {
+                assert!(helps(stat, kind), "{kind:?} {stat:?}");
+            }
         }
     }
 

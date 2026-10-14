@@ -1,4 +1,5 @@
 use crate::assets::{Tex, tex};
+use crate::rng::round_by_chance;
 use std::collections::BTreeSet;
 
 use serde::{Deserialize, Serialize};
@@ -188,13 +189,13 @@ impl Upgrade {
             ),
             Self::ImprovedArmor => make(
                 "Improved Armor",
-                &["Increases initial armor", " by 33%"],
+                &["Increases initial armor", " by 20%"],
                 tex::TALENTS_ARMOR,
                 Common,
             ),
             Self::ArmorRegeneration => make(
                 "Armor Regeneration",
-                &["Restores armor after", " successfully", " clearing a room"],
+                &["+1 armor after", " clearing a room"],
                 tex::TALENTS_ARMORREGEN,
                 Rare,
             ),
@@ -360,11 +361,10 @@ impl Perks {
         }
     }
 
-    pub(crate) fn bullet_damage(&self, base: i32, critical: bool) -> i32 {
-        let damage = self
-            .damage_scales
-            .iter()
-            .fold(base, |value, scale| (value as f32 * scale) as i32);
+    /// `roll` in `0..1` decides whether the fraction the damage talents add becomes a point.
+    pub(crate) fn bullet_damage(&self, base: i32, critical: bool, roll: f32) -> i32 {
+        let scale: f32 = self.damage_scales.iter().product();
+        let damage = round_by_chance(base as f32 * scale, roll);
         if critical {
             damage * 2
         } else {
@@ -372,11 +372,13 @@ impl Perks {
         }
     }
 
-    pub(crate) fn damage_taken(&self, damage: i32) -> i32 {
+    /// `roll` in `0..1` decides whether the fraction Kevlar leaves of a hit still hurts, so
+    /// it now and then shrugs off even a single point.
+    pub(crate) fn damage_taken(&self, damage: i32, roll: f32) -> i32 {
         if damage <= 0 {
             return damage;
         }
-        ((damage as f32 * self.damage_taken_scale) as i32).max(1)
+        round_by_chance(damage as f32 * self.damage_taken_scale, roll)
     }
 }
 
@@ -466,7 +468,7 @@ mod tests {
         let none = Perks::default();
         assert_eq!(none.speed, 1.1);
         assert_eq!(none.max_health(10), 12);
-        assert_eq!(none.bullet_damage(3, false), 3);
+        assert_eq!(none.bullet_damage(3, false, 0.99), 3);
         assert_eq!(none.crit_chance(), 0.0);
 
         let all = Perks::from_unlocked(&set(&Upgrade::ALL));
@@ -477,23 +479,51 @@ mod tests {
         assert!(all.gamble_machine && all.pet && all.discount && all.trap_master);
     }
 
-    #[test]
-    fn damage_is_truncated_after_every_step_like_in_java() {
-        let boosted = Perks::from_unlocked(&set(&[Upgrade::EnhancedDamage]));
-        assert_eq!(boosted.bullet_damage(1, false), 1);
-        assert_eq!(boosted.bullet_damage(4, false), 5);
-        let critical = Perks::from_unlocked(&set(&[Upgrade::CriticalHit]));
-        assert_eq!(critical.bullet_damage(3, true), 6);
-        assert!((critical.crit_chance() - 0.1).abs() < 1e-6);
-        assert_eq!(critical.bullet_damage(3, false), 3);
+    fn average(mut deal: impl FnMut(f32) -> i32) -> f32 {
+        let mut rng = crate::rng::Rng::new(17);
+        let total: i32 = (0..20_000).map(|_| deal(rng.float())).sum();
+        total as f32 / 20_000.0
     }
 
     #[test]
-    fn kevlar_reduces_bigger_hits_but_never_cancels_a_hit_completely() {
+    fn damage_talents_scale_once_and_round_the_fraction_by_chance() {
+        let boosted = Perks::from_unlocked(&set(&[Upgrade::EnhancedDamage]));
+        assert_eq!(boosted.bullet_damage(1, false, 0.0), 2);
+        assert_eq!(boosted.bullet_damage(1, false, 0.99), 1);
+        assert_eq!(boosted.bullet_damage(2, false, 0.0), 3);
+        assert_eq!(boosted.bullet_damage(3, false, 0.0), 5);
+        assert_eq!(boosted.bullet_damage(3, false, 0.99), 4);
+        let critical = Perks::from_unlocked(&set(&[Upgrade::CriticalHit]));
+        assert_eq!(critical.bullet_damage(3, true, 0.99), 6);
+        assert!((critical.crit_chance() - 0.1).abs() < 1e-6);
+        assert_eq!(critical.bullet_damage(3, false, 0.99), 3);
+    }
+
+    #[test]
+    fn small_damage_bonuses_still_add_up_on_a_one_damage_gun() {
+        let sharpened = Perks::default();
+        let mean = average(|roll| sharpened.bullet_damage(1, false, roll));
+        assert!((mean - 1.2).abs() < 0.02, "{mean}");
+
+        let both = Perks::from_unlocked(&set(&[Upgrade::EnhancedDamage]));
+        let mean = average(|roll| both.bullet_damage(1, false, roll));
+        assert!((mean - 1.5).abs() < 0.02, "{mean}");
+    }
+
+    #[test]
+    fn kevlar_takes_a_tenth_of_every_hit_on_average() {
         let kevlar = Perks::from_unlocked(&set(&[Upgrade::ReducedDamageTaken]));
-        assert_eq!(kevlar.damage_taken(1), 1);
-        assert_eq!(kevlar.damage_taken(3), 2);
-        assert_eq!(kevlar.damage_taken(0), 0);
-        assert_eq!(Perks::default().damage_taken(3), 3);
+        assert_eq!(kevlar.damage_taken(1, 0.0), 1);
+        assert_eq!(kevlar.damage_taken(1, 0.95), 0);
+        assert_eq!(kevlar.damage_taken(3, 0.0), 3);
+        assert_eq!(kevlar.damage_taken(3, 0.99), 2);
+        assert_eq!(kevlar.damage_taken(0, 0.0), 0);
+        assert_eq!(Perks::default().damage_taken(3, 0.0), 3);
+        assert_eq!(Perks::default().damage_taken(1, 0.99), 1);
+
+        let mean = average(|roll| kevlar.damage_taken(1, roll));
+        assert!((mean - 0.9).abs() < 0.02, "{mean}");
+        let mean = average(|roll| kevlar.damage_taken(3, roll));
+        assert!((mean - 2.7).abs() < 0.03, "{mean}");
     }
 }

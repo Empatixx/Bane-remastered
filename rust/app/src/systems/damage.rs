@@ -12,6 +12,8 @@ use crate::systems::stats::{self, Stat};
 
 const INVULNERABLE_SECONDS: f32 = 1.0;
 const HURT_FLASH_SECONDS: f32 = 0.5;
+/// Without a cast die a fraction of a hit rounds to the nearest point.
+const UNROLLED_HIT: f32 = 0.5;
 
 pub(crate) fn absorb(health: &mut Health, armor: &mut Armor, damage: i32) {
     if armor.current > 0 {
@@ -225,9 +227,12 @@ fn hurt(
     if world.get::<&Invulnerable>(player).is_ok() {
         return false;
     }
+    let roll = world
+        .get::<&crate::components::HitRoll>(player)
+        .map_or(UNROLLED_HIT, |roll| roll.0);
     let damage = world
         .get::<&crate::components::PlayerPerks>(player)
-        .map_or(damage, |perks| perks.0.damage_taken(damage));
+        .map_or(damage, |perks| perks.0.damage_taken(damage, roll));
     let damage = if world.remove_one::<Shielded>(player).is_ok() {
         0
     } else {

@@ -27,19 +27,19 @@ Pořadí v tabulkách odpovídá pořadí ve stromu (1 = kořen).
 | # | Talent | Kvalita | Cena | Popis ve hře | Co doopravdy dělá |
 |---|--------|---------|------|--------------|-------------------|
 | 1 | Swiftwind Steps | Common | zdarma | Increases movement speed by 10% | rychlost chůze +10 % |
-| 2 | Discount | Common | 2 | The shop prices will have a chance to be reduced | v každém obchodě dostane jeden náhodný stůl šanci na slevu: 5 % na cenu 75 %, 5 % na cenu 50 %, 23 % na cenu 25 % |
+| 2 | Discount | Common | 2 | The shop prices will have a chance to be reduced | v každém obchodě dostane jeden náhodný stůl šanci na slevu: 23 % na −25 %, 5 % na −50 %, 5 % na −75 % (cenovka ukazuje odečtená procenta, např. „−75%“) |
 | 3 | Trap Master | Rare | 3 | All traps have a 30% chance to be immobilized | každá past s hroty nebo plameny má při vzniku patra 30% šanci, že bude trvale vypnutá a neškodná |
 | 4 | Additional Gun | Epic | 5 | Adds an additional slot for a weapon | 3 zbraňové sloty místo 2 |
-| 5 | Gamble machine | Common | 5 | Unlocks the gamble machine in the shop | v patře s obchodem dostaneš **+100 mincí** |
+| 5 | Gamble machine | Common | 5 | Unlocks the gamble machine in the shop | v obchodě stojí hrací automat; bez talentu tam není |
 
 ### Offensive (prostřední sloupec)
 
 | # | Talent | Kvalita | Cena | Popis ve hře | Co doopravdy dělá |
 |---|--------|---------|------|--------------|-------------------|
-| 1 | Sharpened Bullets | Common | zdarma | Increases all damage by 20% | poškození +20 % (zaokrouhleno dolů) |
+| 1 | Sharpened Bullets | Common | zdarma | Increases all damage by 20% | poškození +20 %; zlomek bodu rozhodne náhoda (zbraň za 1 dá každou pátou ránu 2) |
 | 2 | Additional Ammo | Common | 2 | Increases ammo capacity by 10% | maximální zásoba munice +10 % (např. Uzi 200 → 220) |
-| 3 | Critical Hit | Rare | 3 | 10% chance to deal double damage | +10 % šance na kritický zásah za dvojnásobek |
-| 4 | Dangerous Bullets | Epic | 5 | Increases all damage by 25% | poškození dalších +25 %, počítá se až po Sharpened Bullets |
+| 3 | Critical Hit | Rare | 3 | 10% chance to deal double damage | +10 % šance na kritický zásah za dvojnásobek (u brokovnice pro každý brok zvlášť) |
+| 4 | Dangerous Bullets | Epic | 5 | Increases all damage by 25% | poškození dalších +25 %, se Sharpened Bullets dohromady ×1,5 |
 | 5 | Pet | Common | 5 | Unlocks a pet that will help you in battle | mazlíček v lobby i v každém patře, viz níže |
 
 ### Defensive (pravý sloupec)
@@ -47,10 +47,10 @@ Pořadí v tabulkách odpovídá pořadí ve stromu (1 = kořen).
 | # | Talent | Kvalita | Cena | Popis ve hře | Co doopravdy dělá |
 |---|--------|---------|------|--------------|-------------------|
 | 1 | Hero's Heart | Common | zdarma | Increases initial health by 20% | max. zdraví 10 → 12 |
-| 2 | Improved Armor | Common | 2 | Increases initial armor by 33% | brnění 5 → 6 (tj. +20 %) |
-| 3 | Armor Regeneration | Rare | 3 | Restores armor after successfully clearing a room | +1 brnění po každé vyčištěné místnosti (ne doplnění na maximum) |
+| 2 | Improved Armor | Common | 2 | Increases initial armor by 20% | brnění 5 → 6 |
+| 3 | Armor Regeneration | Rare | 3 | +1 armor after clearing a room | +1 brnění po každé vyčištěné místnosti (až do maxima) |
 | 4 | Titan's Heart | Epic | 5 | Increases initial health by 25% | max. zdraví 12 → 15 |
-| 5 | Kevlar | Common | 5 | Reduces damage taken by 10% | přijaté poškození −10 % zaokrouhleno dolů, vždy aspoň 1 (2 → 1, 3 → 2) |
+| 5 | Kevlar | Common | 5 | Reduces damage taken by 10% | přijaté poškození −10 % v průměru; zlomek bodu rozhodne náhoda (zásah za 1 v 10 % případů neubere nic, zásah za 3 ve 30 % ubere jen 2) |
 
 **Plně vylepšená postava:** 15 zdraví, 6 brnění, 3 zbraňové sloty, poškození zhruba ×1,5, 10 % šance na kritický zásah.
 
@@ -93,12 +93,7 @@ Mazlíček nejdřív jde po **kořisti** (mince a další věci, které můžeš
 ## Známé nesrovnalosti
 
 - **Ceny:** starší verze hry měla ceny 20 / 60 / 140 / 300 / 500; teď platí 2 / 3 / 5 / 5 podle řady.
-- **Improved Armor** slibuje +33 % brnění, ve skutečnosti dává +20 % (5 → 6).
-- **Gamble machine** slibuje odemčení hracího automatu, ale automat je v obchodě vždy — talent ti jen dá 100 mincí.
-- **Discount** má obrácené šance: největší sleva (platíš jen 25 %) padá nejčastěji (23 %), nejmenší (platíš 75 %)
-  jen v 5 %. Cenovka „SALE 25%“ navíc znamená, že platíš 25 % ceny, ne že máš slevu 25 %. Celkem jde jen
-  o 33% šanci a jen na jeden stůl v obchodě.
-- **Kevlar** nemá vliv na zásahy za 1 poškození (většina projektilů a pastí).
+- **Discount** dává slevu celkem jen s 33% šancí a jen na jeden stůl v obchodě.
 
 ## Nápady na rozšíření
 
@@ -106,4 +101,3 @@ Mazlíček nejdřív jde po **kořisti** (mince a další věci, které můžeš
 - Nové talenty: kratší nabíjení úhybu, druhý slot na artefakt, start s náhodnou zbraní, léčení po patře,
   častější lektvary, silnější nebo druhý mazlíček.
 - Možnost talenty prodat nebo resetovat (respec).
-- Opravdu podmínit hrací automat talentem *Gamble machine*.
