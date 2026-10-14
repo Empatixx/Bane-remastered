@@ -187,7 +187,9 @@ impl Weapon {
     pub(crate) fn count_shot(&mut self) -> bool {
         self.shots = self.shots.wrapping_add(1);
         self.spec().mutation == Some(Mutation::Deadeye)
-            && self.shots.is_multiple_of(crate::weapon_upgrades::DEADEYE_EVERY)
+            && self
+                .shots
+                .is_multiple_of(crate::weapon_upgrades::DEADEYE_EVERY)
     }
 
     pub(crate) fn scaled(kind: GunKind, ammo_scale: f32) -> Self {

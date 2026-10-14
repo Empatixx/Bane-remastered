@@ -286,21 +286,6 @@ def death():
 CRUST = (52, 22, 22, 255)
 
 
-def lava_drop_sheet():
-    size = 16
-    sheet = Image.new("RGBA", (size * 4, size), CLEAR)
-    d = ImageDraw.Draw(sheet)
-    for frame in range(4):
-        cx, cy = frame * size + 8, 9
-        radius = 5 + (frame % 2)
-        d.ellipse((cx - radius - 1, cy - radius + 1, cx + radius + 1, cy + radius), fill=CRUST)
-        d.ellipse((cx - radius, cy - radius + 1, cx + radius, cy + radius - 1), fill=LAVA_D)
-        d.ellipse((cx - radius + 2, cy - radius + 2, cx + radius - 2, cy + radius - 2), fill=LAVA)
-        d.ellipse((cx - 2, cy - 2, cx + 2, cy + 1), fill=LAVA_H)
-        d.point((cx - 1 + frame % 3, cy - 1), fill=LAVA_C)
-    return sheet
-
-
 def spark_sheet():
     sheet = Image.new("RGBA", (6 * 4, 6), CLEAR)
     d = ImageDraw.Draw(sheet)
@@ -309,31 +294,36 @@ def spark_sheet():
     return sheet
 
 
-def flame_sheet():
+def magma_sheet():
     size = 16
     sheet = Image.new("RGBA", (size * 4, size * 2), CLEAR)
     d = ImageDraw.Draw(sheet)
     for frame in range(4):
         cx, cy = frame * size + 8, 8
-        for tongue in range(6):
-            angle = tongue * math.tau / 6 + frame * 0.5
-            reach = 5.5 + ((tongue + frame) % 3) * 1.4
-            tip = (cx + math.cos(angle) * reach, cy + math.sin(angle) * reach)
-            side = (math.cos(angle + math.pi / 2) * 2.2, math.sin(angle + math.pi / 2) * 2.2)
-            d.polygon([(cx + side[0], cy + side[1]), (cx - side[0], cy - side[1]), tip], fill=LAVA)
-        d.ellipse((cx - 4, cy - 4, cx + 4, cy + 4), fill=LAVA_H)
-        d.ellipse((cx - 2.4, cy - 2.4, cx + 2.4, cy + 2.4), fill=LAVA_C)
-        d.point((cx - 1, cy - 1), fill=(255, 250, 220, 255))
+        turn = frame * 0.9
+        points = []
+        for index in range(9):
+            angle = index * math.tau / 9 + turn * 0.3
+            radius = 6.4 + (1.4 if index % 3 == 0 else -0.6 if index % 3 == 1 else 0.4)
+            points.append((cx + math.cos(angle) * radius, cy + math.sin(angle) * radius))
+        d.polygon(points, fill=CRUST)
+        inner = [(cx + (x - cx) * 0.78, cy + (y - cy) * 0.78) for x, y in points]
+        d.polygon(inner, fill=ROCK_D)
+        for index in range(4):
+            angle = index * math.tau / 4 + turn
+            d.line((cx, cy, cx + math.cos(angle) * 5.2, cy + math.sin(angle) * 5.2), fill=LAVA)
+        d.ellipse((cx - 2, cy - 2, cx + 2, cy + 2), fill=LAVA_H)
+        d.point((cx - 1 + frame % 2, cy - 1), fill=LAVA_C)
     for frame in range(4):
         cx, cy = frame * size + 8, size + 8
-        reach = 2 + frame * 1.7
-        for index in range(7):
-            angle = index * math.tau / 7 + 0.3
+        reach = 2 + frame * 1.8
+        for index in range(8):
+            angle = index * math.tau / 8 + 0.3
             x, y = cx + math.cos(angle) * reach, cy + math.sin(angle) * reach
             colour = (LAVA_C, LAVA_H, LAVA, LAVA_D)[frame]
-            d.rectangle((x, y, x + (1 if frame > 1 else 2), y + (1 if frame > 1 else 2)), fill=colour)
-        if frame < 2:
-            d.ellipse((cx - 3 + frame, cy - 3 + frame, cx + 3 - frame, cy + 3 - frame), fill=LAVA_H)
+            d.rectangle((x, y, x + (2 if frame < 2 else 1), y + (2 if frame < 2 else 1)), fill=colour)
+        if frame < 3:
+            d.ellipse((cx - 4 + frame * 2, cy - 4 + frame * 2, cx + 4 - frame * 2, cy + 4 - frame * 2), fill=LAVA if frame else LAVA_H)
     return sheet
 
 
@@ -344,9 +334,8 @@ def main():
         for column, frame in enumerate(frames):
             sheet.paste(frame, (column * W, row * H))
     sheet.save(OUT / "hellhound.tga")
-    lava_drop_sheet().save(OUT / "hound_lava.tga")
     spark_sheet().save(OUT / "hound_spark.tga")
-    flame_sheet().save(OUT / "hound_flame.tga")
+    magma_sheet().save(OUT / "hound_magma.tga")
 
 
 main()

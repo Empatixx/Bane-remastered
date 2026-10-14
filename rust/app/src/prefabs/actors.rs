@@ -10,8 +10,8 @@ use crate::components::{
     DeathBurst, DeathCloud, DeathHeal, Drag, DropShadow, Enemy, EnemyBullet, EyeShooter, Fuse,
     GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Health, Hits, Homing, HoundAttack,
     HoundBoss, HoundStage, Impact, Kin, Layer, LeapStage, Leaper, Light, LightFade, Lit, Loadout,
-    Minion, NoDrop, OgreAttack, OgreBoss, OgreStage, Path, Pet, Player, Position, RoomId, RunStats,
-    Size, Smash, Spawning, Sprite, TrailLayer, Velocity, Wallet, WebSpitter,
+    MagmaSpreader, Minion, NoDrop, OgreAttack, OgreBoss, OgreStage, Path, Pet, Player, Position,
+    RoomId, RunStats, Size, Smash, Spawning, Sprite, TrailLayer, Velocity, Wallet, WebSpitter,
 };
 use crate::enemies::{self, Behavior, EnemyKind, ProjectileKind, Role};
 use crate::physics::Physics;
@@ -255,6 +255,7 @@ pub(crate) fn enemy(
             );
         }
         Behavior::HoundBoss => {
+            let _ = world.insert_one(entity, MagmaSpreader::default());
             let _ = world.insert_one(
                 entity,
                 HoundBoss {
@@ -263,7 +264,7 @@ pub(crate) fn enemy(
                     last: None,
                     timer: 0.0,
                     cooldown: enemies::HOUND_FIRST_COOLDOWN,
-                    pulse: 0.0,
+                    angle: 0.0,
                     charging: false,
                     enraged: false,
                     seed: 0x27D4_EB2F ^ (position.x as u32).wrapping_mul(19) ^ (position.y as u32),

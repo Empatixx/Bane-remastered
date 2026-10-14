@@ -25,6 +25,7 @@ mod items;
 mod leapers;
 mod lighting;
 mod loadout;
+mod magma;
 mod minimap;
 mod objects;
 mod ogre;
@@ -78,7 +79,7 @@ pub(crate) use enemies::{
 pub(crate) use glide::glide;
 pub(crate) use golem::{clear_golem_effects, tick_golem, tick_laser, tick_rock_falls};
 pub(crate) use hazards::{slow_bullets_in_webs, tick_arrow_traps};
-pub(crate) use hound::{tick_hound, tick_scorches};
+pub(crate) use hound::{tick_flames, tick_hound};
 pub(crate) use hud::{update_lobby_counters, update_status_bars, update_weapon_hud};
 pub(crate) use interaction::interact;
 pub(crate) use items::{
@@ -87,6 +88,7 @@ pub(crate) use items::{
 pub(crate) use leapers::tick_leapers;
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
+pub(crate) use magma::{clear_magma, tick_magma, tick_magma_spread};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_chilled, tick_frozen, tick_poison,

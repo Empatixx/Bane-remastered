@@ -4,9 +4,9 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Boss, BreakKind, Breakable, Broken, Chilled, Clip, Color, Dodge, Enemy, Expiring, Flame,
-    Friendly, Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool, PoisonTrail,
-    Poisoned, Position, Size, Solid, Spawning, TrailLayer,
+    Animation, Boss, BreakKind, Breakable, Broken, Chilled, Clip, Color, Dodge, Enemy, Expiring,
+    Flame, Friendly, Frozen, Health, HitFlash, Invulnerable, Light, Outline, Player, PoisonPool,
+    PoisonTrail, Poisoned, Position, Size, Solid, Spawning, TrailLayer,
 };
 use crate::geometry;
 use crate::items::ItemKind;

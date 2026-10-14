@@ -65,14 +65,19 @@ pub(crate) const HOUND_LUNGE_WINDUP: f32 = 0.32;
 pub(crate) const HOUND_LUNGE_SECONDS: f32 = 0.8;
 pub(crate) const HOUND_LUNGE_SPEED: f32 = 6.5;
 pub(crate) const HOUND_LUNGE_RECOVER: f32 = 0.6;
-pub(crate) const HOUND_TRAIL_EVERY: f32 = 0.04;
-pub(crate) const HOUND_TRAIL_SECONDS: f32 = 1.8;
-pub(crate) const HOUND_LAVA_DAMAGE: i32 = 2;
-pub(crate) const HOUND_BREATH_WINDUP: f32 = 0.25;
-pub(crate) const HOUND_BREATH_SECONDS: f32 = 0.55;
-pub(crate) const HOUND_BREATH_EVERY: f32 = 0.08;
-pub(crate) const HOUND_BREATH_SPREAD: f32 = 0.14;
-pub(crate) const HOUND_BREATH_RECOVER: f32 = 0.45;
+pub(crate) const HOUND_MAGMA_START: f32 = 3.0;
+pub(crate) const HOUND_MAGMA_EVERY: f32 = 0.45;
+pub(crate) const HOUND_MAGMA_RAGE_EVERY: f32 = 0.28;
+pub(crate) const HOUND_MAGMA_DEPTH: usize = 3;
+pub(crate) const HOUND_MAGMA_WARM: f32 = 1.0;
+pub(crate) const HOUND_MAGMA_LIFE: f32 = 16.0;
+pub(crate) const HOUND_MAGMA_DAMAGE: i32 = 2;
+pub(crate) const HOUND_BREATH_WINDUP: f32 = 0.45;
+pub(crate) const HOUND_BREATH_SECONDS: f32 = 1.8;
+pub(crate) const HOUND_BREATH_SWEEP: f32 = 1.2;
+pub(crate) const HOUND_BREATH_FAN: f32 = 0.42;
+pub(crate) const HOUND_BREATH_RECOVER: f32 = 0.6;
+pub(crate) const HOUND_BEAM_DAMAGE: i32 = 1;
 pub(crate) const HOUND_HOWL_WINDUP: f32 = 0.3;
 pub(crate) const HOUND_HOWL_RECOVER: f32 = 0.55;
 pub(crate) const HOUND_HOWL_RING: usize = 14;
@@ -140,7 +145,6 @@ pub(crate) enum ProjectileKind {
     GolemRock,
     Boulder,
     ArgusShot,
-    Fireball,
     Ember,
 }
 
@@ -209,24 +213,18 @@ impl ProjectileKind {
                 homing: true,
                 lifetime: Some(5.0),
             },
-            Self::Fireball => ProjectileSpec {
-                texture: tex::HOUND_FLAME,
+            Self::Ember => ProjectileSpec {
+                texture: tex::HOUND_MAGMA,
                 columns: 4,
                 rows: 2,
                 frame: Vec2::new(16.0, 16.0),
-                scale: 3.6,
-                idle: (4, 0.06),
-                impact: (4, 0.06),
-                light: [255.0, 120.0, 30.0, 26.0, 0.6],
-                force: 50_000_000.0,
+                scale: 3.4,
+                idle: (4, 0.09),
+                impact: (4, 0.07),
+                light: [255.0, 110.0, 30.0, 26.0, 0.6],
+                force: 34_000_000.0,
                 homing: false,
-                lifetime: Some(0.8),
-            },
-            Self::Ember => ProjectileSpec {
-                force: 30_000_000.0,
                 lifetime: Some(3.0),
-                scale: 3.2,
-                ..Self::Fireball.spec()
             },
             Self::ArgusShot => ProjectileSpec {
                 texture: tex::ARGUS_SHOT,

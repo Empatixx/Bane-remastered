@@ -160,6 +160,10 @@ impl Surfaces {
         None
     }
 
+    pub(crate) fn interior_row(tile: (usize, usize)) -> usize {
+        blob_rank(u8::MAX) * 3 + Self::variant(tile)
+    }
+
     pub(crate) fn variant(tile: (usize, usize)) -> usize {
         (tile.0.wrapping_mul(31) ^ tile.1.wrapping_mul(17)) % 3
     }

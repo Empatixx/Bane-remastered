@@ -54,8 +54,8 @@ pub(crate) use minimap::{BigKind, BigMap, MapSize, MiniRoom, Minimap};
 pub(crate) use motion::Velocity;
 pub(crate) use objects::{
     ArrowTrap, BreakKind, Breakable, Broken, CHILL_SECONDS, CHILL_SLOWDOWN, CHILL_STACKS_TO_FREEZE,
-    Chilled, Flame, FloorPatch, Friendly, Frozen, PatchKind, PoisonPool,
-    PoisonTrail, Poisoned, RippleTimer, SlotMachine, SlotPrice, Solid, TrailLayer, TrapArrow,
+    Chilled, Flame, FloorPatch, Friendly, Frozen, PatchKind, PoisonPool, PoisonTrail, Poisoned,
+    RippleTimer, SlotMachine, SlotPrice, Solid, TrailLayer, TrapArrow,
 };
 pub(crate) use perks::PlayerPerks;
 pub(crate) use pet::Pet;
@@ -68,8 +68,8 @@ pub(crate) use skills::{
     ArgusAttack, ArgusBoss, ArgusStage, Armageddon, BeamPart, Boss, Cobweb, DeathBurst, DeathCloud,
     DeathHeal, Drag, EnemyBullet, EyeShooter, FallingRock, Fuse, GolemAttack, GolemBoss,
     GolemStage, Hatcher, Hits, Homing, HoundAttack, HoundBoss, HoundStage, Impact, Kin, LeapStage,
-    Leaper, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter, RockFall, Rooted, Scorch, Smash,
-    WebSpitter,
+    Leaper, Magma, MagmaSpreader, Minion, OgreAttack, OgreBoss, OgreStage, Orbiter, RockFall,
+    Rooted, Smash, WebSpitter,
 };
 pub(crate) use stats::RunStats;
 pub(crate) use tags::{Backdrop, Overlay, Player, ScreenSpace};

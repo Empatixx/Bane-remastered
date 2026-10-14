@@ -1,16 +1,16 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
+use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::BULLET_IMPACT;
-use crate::assets::Textures;
 use crate::components::{
     Animation, Body, Boss, Breakable, Bullet, Burst, CHILL_SECONDS, CHILL_STACKS_TO_FREEZE,
     Chilled, Enemy, Expiring, Friendly, Frozen, Health, Loadout, Player, PlayerPerks, PoisonPool,
     Position, Size, Spawning, Velocity,
 };
-use crate::geometry;
 use crate::controls::Action;
+use crate::geometry;
 use crate::guns::{BURST_DELAY, ClipStyle, GunSpec, MAX_PELLETS};
 use crate::input::Input;
 use crate::physics::{Owner, Physics};
@@ -291,7 +291,9 @@ fn reflect(velocity: Vec2, normal: Vec2) -> Vec2 {
 fn mutate_hit(world: &mut World, target: Entity, bullet: Bullet, at: Vec2, textures: &Textures) {
     let is_enemy = world.get::<&Enemy>(target).is_ok();
     match bullet.mutation {
-        Some(Mutation::Explosive) => explode_round(world, Some(target), bullet.damage, at, textures),
+        Some(Mutation::Explosive) => {
+            explode_round(world, Some(target), bullet.damage, at, textures)
+        }
         Some(Mutation::Venom) if is_enemy => {
             let near_pool = world
                 .query::<&Position>()
@@ -479,7 +481,12 @@ mod tests {
 
         for _ in 0..30 {
             simulate(&mut world, &mut physics, 1.0 / 60.0);
-            bullet_hits(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+            bullet_hits(
+                &mut world,
+                &mut physics,
+                &Textures::default(),
+                &mut Vec::new(),
+            );
         }
 
         assert!(world.get::<&Expiring>(bullet).is_ok());
@@ -513,7 +520,12 @@ mod tests {
 
         for _ in 0..30 {
             simulate(&mut world, &mut physics, 1.0 / 60.0);
-            bullet_hits(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+            bullet_hits(
+                &mut world,
+                &mut physics,
+                &Textures::default(),
+                &mut Vec::new(),
+            );
         }
 
         let after = world.get::<&Health>(rat).map(|h| h.current).unwrap_or(0);
@@ -724,7 +736,9 @@ mod tests {
     }
 
     fn health(world: &World, entity: Entity) -> i32 {
-        world.get::<&Health>(entity).map_or(0, |health| health.current)
+        world
+            .get::<&Health>(entity)
+            .map_or(0, |health| health.current)
     }
 
     fn fly(world: &mut World, physics: &mut Physics, steps: usize) {
@@ -753,7 +767,12 @@ mod tests {
         let second = rat(&mut world, &mut physics, Vec2::new(450.0, 100.0));
         let third = rat(&mut world, &mut physics, Vec2::new(600.0, 100.0));
         let full = health(&world, first);
-        round(&mut world, &mut physics, Vec2::new(200.0, 100.0), Mutation::Piercing);
+        round(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            Mutation::Piercing,
+        );
 
         fly(&mut world, &mut physics, 40);
 
@@ -767,7 +786,12 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         physics.add_walls(&[(5, 0), (5, 1), (5, 2), (5, 3)], 64.0);
-        let bullet = round(&mut world, &mut physics, Vec2::new(200.0, 100.0), Mutation::Ricochet);
+        let bullet = round(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            Mutation::Ricochet,
+        );
 
         fly(&mut world, &mut physics, 20);
 
@@ -810,7 +834,12 @@ mod tests {
         let beside = rat(&mut world, &mut physics, Vec2::new(300.0, 220.0));
         let far = rat(&mut world, &mut physics, Vec2::new(300.0, 600.0));
         let full = health(&world, beside);
-        round(&mut world, &mut physics, Vec2::new(150.0, 160.0), Mutation::Explosive);
+        round(
+            &mut world,
+            &mut physics,
+            Vec2::new(150.0, 160.0),
+            Mutation::Explosive,
+        );
 
         fly(&mut world, &mut physics, 30);
 
@@ -825,7 +854,12 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         rat(&mut world, &mut physics, Vec2::new(300.0, 100.0));
-        round(&mut world, &mut physics, Vec2::new(200.0, 100.0), Mutation::Venom);
+        round(
+            &mut world,
+            &mut physics,
+            Vec2::new(200.0, 100.0),
+            Mutation::Venom,
+        );
 
         fly(&mut world, &mut physics, 30);
 
@@ -877,8 +911,17 @@ mod tests {
             simulate(&mut world, &mut physics, 1.0 / 60.0);
         }
 
-        let moved = |entity| world.get::<&Position>(entity).map_or(0.0, |p| p.0.x - 100.0);
-        assert!((moved(slow) * 2.0 - moved(quick)).abs() < 3.0, "{} {}", moved(slow), moved(quick));
+        let moved = |entity| {
+            world
+                .get::<&Position>(entity)
+                .map_or(0.0, |p| p.0.x - 100.0)
+        };
+        assert!(
+            (moved(slow) * 2.0 - moved(quick)).abs() < 3.0,
+            "{} {}",
+            moved(slow),
+            moved(quick)
+        );
     }
 
     #[test]
@@ -893,7 +936,9 @@ mod tests {
 
         assert_eq!(
             crits,
-            [false, false, false, false, true, false, false, false, false, true]
+            [
+                false, false, false, false, true, false, false, false, false, true
+            ]
         );
         let mut plain = Weapon::new(crate::guns::GunKind::Pistol);
         assert!((0..10).all(|_| !plain.count_shot()));

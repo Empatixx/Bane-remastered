@@ -62,8 +62,16 @@ pub(crate) enum ArgusStage {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct Scorch {
-    pub(crate) remaining: f32,
+pub(crate) struct Magma {
+    pub(crate) age: f32,
+    pub(crate) tile: (usize, usize),
+}
+
+#[derive(Debug, Clone, Default)]
+pub(crate) struct MagmaSpreader {
+    pub(crate) order: Vec<(usize, usize)>,
+    pub(crate) cursor: usize,
+    pub(crate) timer: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,7 +96,7 @@ pub(crate) struct HoundBoss {
     pub(crate) last: Option<HoundAttack>,
     pub(crate) timer: f32,
     pub(crate) cooldown: f32,
-    pub(crate) pulse: f32,
+    pub(crate) angle: f32,
     pub(crate) charging: bool,
     pub(crate) enraged: bool,
     pub(crate) seed: u32,

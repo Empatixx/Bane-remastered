@@ -24,8 +24,8 @@ use crate::settings::Settings;
 use crate::systems;
 use crate::tilemap::TILE_SIZE;
 use crate::upgrades::Perks;
-use crate::weapon_upgrades::WeaponMods;
 use crate::viewport::TARGET;
+use crate::weapon_upgrades::WeaponMods;
 
 use super::{Cursor, Pause, Scene, SceneId, Transition};
 
@@ -407,7 +407,21 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
-        systems::tick_scorches(&mut self.world, &mut self.sounds, dt);
+        let boss_room = self.dungeon.as_ref().and_then(|dungeon| {
+            dungeon
+                .rooms
+                .iter()
+                .find(|room| room.kind == RoomKind::Boss)
+                .map(|room| (room.origin.0, room.origin.1, room.columns, room.rows))
+        });
+        systems::tick_magma_spread(
+            &mut self.world,
+            &self.navigation,
+            boss_room,
+            &assets.textures,
+            dt,
+        );
+        systems::tick_magma(&mut self.world, &mut self.sounds, dt);
         systems::tick_ogre(
             &mut self.world,
             &mut self.physics,
@@ -430,6 +444,12 @@ impl Scene for InGameScene {
             &assets.textures,
             &mut self.sounds,
             dt,
+        );
+        systems::tick_flames(
+            &mut self.world,
+            &self.navigation,
+            &assets.textures,
+            &mut self.sounds,
         );
         systems::tick_orbiters(&mut self.world, &mut self.physics, dt);
         systems::separate_chasers(&mut self.world);

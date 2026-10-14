@@ -4,14 +4,14 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Chase, Clip, Color, Dodge, Expiring, Frozen, Health, HoundAttack, HoundBoss,
-    HoundStage, Layer, Light, Position, RoomId, Rooted, Scorch, Size, Spawning, Sprite,
+    Animation, Chase, Clip, Color, ContactDamage, Expiring, Frozen, Health, HoundAttack, HoundBoss,
+    HoundStage, Position, RoomId, Rooted, Spawning,
 };
 use crate::enemies::{self, ProjectileKind};
+use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::damage::hurt_player_through_armor;
-use crate::systems::golem::{play, player_at, spark, unit};
+use crate::systems::golem::{BeamStyle, aim, draw_beam, play, player_at, unit};
 
 const SPRITE_SCALE: f32 = 2.4;
 const CELL: Vec2 = Vec2::new(64.0, 42.0);
@@ -20,12 +20,15 @@ const HEADS: [Vec2; 3] = [
     Vec2::new(87.0, 11.0),
     Vec2::new(94.0, 46.0),
 ];
-const FEET: Vec2 = Vec2::new(0.0, 66.0);
-const SCORCH_SIZE: Vec2 = Vec2::new(44.0, 44.0);
-const SCORCH_REACH: f32 = 20.0;
-const COOLING: f32 = 0.5;
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const ATTACK_VAR: &str = "BANE_HOUND_ATTACK";
+const FLAME_BEAM: BeamStyle = BeamStyle {
+    glow: Vec4::new(1.0, 0.4, 0.1, 0.55),
+    core: Vec4::new(1.0, 0.92, 0.55, 1.0),
+    light: [255.0, 110.0, 30.0],
+    spark: tex::HOUND_SPARK,
+    damage: enemies::HOUND_BEAM_DAMAGE,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Cmd {
@@ -33,7 +36,7 @@ pub(crate) enum Cmd {
     Root,
     Free,
     Charge(bool),
-    Breathe,
+    AimBreath,
     Ring,
 }
 
@@ -68,7 +71,7 @@ pub(crate) fn choose_attack(hound: &mut HoundBoss, distance: f32) -> HoundAttack
     let close = distance < enemies::HOUND_NEAR;
     let weights = [
         (HoundAttack::Lunge, if close { 2.0 } else { 4.0 }),
-        (HoundAttack::Breath, if close { 4.0 } else { 1.5 }),
+        (HoundAttack::Breath, if close { 4.0 } else { 2.0 }),
         (HoundAttack::Howl, 1.5),
     ];
     let total: f32 = weights
@@ -109,13 +112,15 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, dt: f32) -> Vec<Cmd> {
             };
             hound.timer = windup;
             commands.push(Cmd::Play(clip(row, frame_time)));
+            if attack == HoundAttack::Breath {
+                commands.push(Cmd::AimBreath);
+            }
         }
         HoundStage::Winding => {
             hound.timer -= dt;
             if hound.timer > 0.0 {
                 return commands;
             }
-            hound.pulse = 0.0;
             match hound.attack {
                 HoundAttack::Lunge => {
                     hound.stage = HoundStage::Acting;
@@ -136,13 +141,6 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, dt: f32) -> Vec<Cmd> {
         }
         HoundStage::Acting => {
             hound.timer -= dt;
-            if hound.attack == HoundAttack::Breath {
-                hound.pulse -= dt;
-                while hound.pulse <= 0.0 && hound.timer > 0.0 {
-                    commands.push(Cmd::Breathe);
-                    hound.pulse += enemies::HOUND_BREATH_EVERY;
-                }
-            }
             if hound.timer <= 0.0 {
                 let recover = match hound.attack {
                     HoundAttack::Lunge => {
@@ -210,107 +208,17 @@ pub(crate) fn tick_hound(
             }
         }
         let distance = target.map_or(f32::MAX, |player| player.distance(at));
-        let (commands, charging, enraged) = {
+        let (commands, enraged) = {
             let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) else {
                 continue;
             };
-            let commands = step(&mut hound, distance, dt);
-            (commands, hound.charging, hound.enraged)
+            (step(&mut hound, distance, dt), hound.enraged)
         };
         for command in commands {
             execute(
                 world, physics, textures, sounds, entity, at, target, enraged, command,
             );
         }
-        if world
-            .get::<&HoundBoss>(entity)
-            .is_ok_and(|hound| hound.charging)
-            || charging
-        {
-            leave_fire(world, textures, entity, at, dt);
-        }
-    }
-}
-
-fn leave_fire(world: &mut World, textures: &Textures, entity: Entity, at: Vec2, dt: f32) {
-    let ready = {
-        let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) else {
-            return;
-        };
-        hound.pulse -= dt;
-        if hound.pulse > 0.0 {
-            return;
-        }
-        hound.pulse += enemies::HOUND_TRAIL_EVERY;
-        true
-    };
-    if !ready {
-        return;
-    }
-    let mut seed = (at.x as u32).wrapping_mul(2_654_435_761) ^ (at.y as u32).rotate_left(9);
-    let jitter = Vec2::new(unit(&mut seed) - 0.5, unit(&mut seed) - 0.5) * 24.0;
-    let clip = Clip {
-        row: 0,
-        frames: 4,
-        frame_time: 0.1,
-        looping: true,
-        flipped: unit(&mut seed) > 0.5,
-    };
-    world.spawn((
-        Scorch {
-            remaining: enemies::HOUND_TRAIL_SECONDS,
-        },
-        Position(at + FEET * Vec2::Y + jitter),
-        Size(SCORCH_SIZE),
-        Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::HOUND_LAVA), 0, 0, 4, 1),
-        Animation::new(4, 1, clip),
-        Light::rgb(Vec2::ZERO, 255.0, 110.0, 30.0, 50.0, 0.7),
-        Layer(-1),
-    ));
-    let kick = Vec2::new(unit(&mut seed) - 0.5, -0.4 - unit(&mut seed) * 0.8);
-    for side in [-1.0, 1.0] {
-        let velocity = Vec2::new(side * (30.0 + unit(&mut seed) * 90.0), kick.y * 140.0);
-        spark(
-            world,
-            textures,
-            tex::HOUND_SPARK,
-            at + FEET * Vec2::Y + jitter,
-            velocity,
-        );
-    }
-}
-
-pub(crate) fn tick_scorches(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
-    let mut gone = Vec::new();
-    for (entity, scorch, size) in world.query_mut::<(Entity, &mut Scorch, &mut Size)>() {
-        scorch.remaining -= dt;
-        size.0 = SCORCH_SIZE * (scorch.remaining / COOLING).clamp(0.0, 1.0);
-        if scorch.remaining <= 0.0 {
-            gone.push(entity);
-        }
-    }
-    for entity in gone {
-        let _ = world.despawn(entity);
-    }
-    let Some((player, at, size)) = player_at(world) else {
-        return;
-    };
-    if world.get::<&Dodge>(player).is_ok() {
-        return;
-    }
-    let burning = world
-        .query::<(&Scorch, &Position)>()
-        .iter()
-        .any(|(scorch, position)| {
-            scorch.remaining > COOLING
-                && (position.0 - at)
-                    .abs()
-                    .cmple(Vec2::splat(SCORCH_REACH) + size * 0.5)
-                    .all()
-        });
-    if burning {
-        hurt_player_through_armor(world, player, enemies::HOUND_LAVA_DAMAGE, sounds);
     }
 }
 
@@ -341,7 +249,6 @@ fn execute(
         Cmd::Charge(on) => {
             if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
                 hound.charging = on;
-                hound.pulse = 0.0;
             }
             if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
                 if on {
@@ -354,28 +261,11 @@ fn execute(
                 sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
             }
         }
-        Cmd::Breathe => {
-            let heads = if enraged { 3 } else { 2 };
-            let mut seed = (at.x as u32) ^ (at.y as u32).rotate_left(5) ^ 0xA5A5;
-            for index in 0..heads {
-                let origin = at + head_offset(index, mirrored);
-                let aim = player.map_or(Vec2::X, |player| player - origin).to_angle();
-                let jitter = (unit(&mut seed) - 0.5) * 2.0 * enemies::HOUND_BREATH_SPREAD;
-                let bullet = prefabs::enemy_bullet(
-                    world,
-                    physics,
-                    ProjectileKind::Fireball,
-                    origin,
-                    Vec2::from_angle(aim + jitter),
-                    textures,
-                );
-                let _ = world.insert_one(
-                    bullet,
-                    crate::components::ContactDamage(enemies::HOUND_FIRE_DAMAGE),
-                );
-                if let Some(room) = room {
-                    let _ = world.insert_one(bullet, room);
-                }
+        Cmd::AimBreath => {
+            let origin = at + head_offset(0, mirrored);
+            let angle = player.map_or(0.0, |player| aim(origin, player));
+            if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
+                hound.angle = angle;
             }
         }
         Cmd::Ring => {
@@ -396,14 +286,54 @@ fn execute(
                     Vec2::from_angle(angle),
                     textures,
                 );
-                let _ = world.insert_one(
-                    bullet,
-                    crate::components::ContactDamage(enemies::HOUND_FIRE_DAMAGE),
-                );
+                let _ = world.insert_one(bullet, ContactDamage(enemies::HOUND_FIRE_DAMAGE));
                 if let Some(room) = room {
                     let _ = world.insert_one(bullet, room);
                 }
             }
+        }
+    }
+}
+
+pub(crate) fn beam_angle(base: f32, left: f32, head: usize, heads: usize) -> f32 {
+    let t = if heads <= 1 {
+        0.0
+    } else {
+        head as f32 / (heads - 1) as f32 - 0.5
+    };
+    base + (left - 0.5) * enemies::HOUND_BREATH_SWEEP + t * enemies::HOUND_BREATH_FAN * 2.0
+}
+
+pub(crate) fn tick_flames(
+    world: &mut World,
+    navigation: &Navigation,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+) {
+    let firing: Vec<(Entity, Vec2, f32, f32, bool)> = world
+        .query::<(Entity, &Position, &HoundBoss)>()
+        .without::<&Spawning>()
+        .without::<&Expiring>()
+        .iter()
+        .filter(|(_, _, hound)| {
+            hound.attack == HoundAttack::Breath && hound.stage == HoundStage::Acting
+        })
+        .map(|(entity, position, hound)| {
+            let left = (hound.timer / enemies::HOUND_BREATH_SECONDS).clamp(0.0, 1.0);
+            (entity, position.0, hound.angle, 1.0 - left, hound.enraged)
+        })
+        .collect();
+    for (entity, at, base, progress, enraged) in firing {
+        let mirrored = world
+            .get::<&Animation>(entity)
+            .is_ok_and(|animation| animation.flipped());
+        let heads = if enraged { 3 } else { 2 };
+        for head in 0..heads {
+            let origin = at + head_offset(head, mirrored);
+            let angle = beam_angle(base, progress, head, heads);
+            draw_beam(
+                world, navigation, textures, sounds, origin, angle, FLAME_BEAM,
+            );
         }
     }
 }
@@ -419,7 +349,7 @@ mod tests {
             last: None,
             timer: 0.0,
             cooldown: 0.0,
-            pulse: 0.0,
+            angle: 0.0,
             charging: false,
             enraged: false,
             seed: 99,
@@ -468,17 +398,16 @@ mod tests {
     }
 
     #[test]
-    fn a_breath_fires_many_pulses_and_a_howl_one_ring() {
+    fn a_breath_holds_its_stage_for_the_whole_beam_and_a_howl_rings_once() {
         let mut boss = hound();
         boss.stage = HoundStage::Winding;
         boss.attack = HoundAttack::Breath;
         boss.last = Some(HoundAttack::Breath);
         boss.timer = 0.01;
-        let pulses = run(&mut boss, 2.0)
-            .iter()
-            .filter(|command| **command == Cmd::Breathe)
-            .count();
-        assert!(pulses >= 5, "{pulses}");
+        run(&mut boss, 1.0);
+        assert_eq!(boss.stage, HoundStage::Acting);
+        run(&mut boss, 3.0);
+        assert_eq!(boss.stage, HoundStage::Prowl);
         let mut boss = hound();
         boss.stage = HoundStage::Winding;
         boss.attack = HoundAttack::Howl;
@@ -492,11 +421,12 @@ mod tests {
     }
 
     #[test]
-    fn scorches_fade_and_vanish() {
-        let mut world = World::new();
-        world.spawn((Scorch { remaining: 0.1 }, Size(SCORCH_SIZE)));
-        let mut sounds = Vec::new();
-        tick_scorches(&mut world, &mut sounds, 0.2);
-        assert_eq!(world.query::<&Scorch>().iter().count(), 0);
+    fn the_flame_beams_sweep_across_the_room_and_fan_out() {
+        let start = beam_angle(0.0, 0.0, 1, 3);
+        let end = beam_angle(0.0, 1.0, 1, 3);
+        assert!(end - start > 1.0);
+        let left = beam_angle(0.0, 0.5, 0, 3);
+        let right = beam_angle(0.0, 0.5, 2, 3);
+        assert!(right - left > 0.5);
     }
 }

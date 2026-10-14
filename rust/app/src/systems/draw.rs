@@ -2,9 +2,9 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Casing, Chilled, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Liquid, Lit,
-    MapSize, Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky,
-    Sprite, StatusBar, Text, blended,
+    Casing, Chilled, Color, DropShadow, EnemyArrow, Frozen, Hidden, Hover, InRange, Layer, Liquid,
+    Lit, MapSize, Minimap, Outline, Overlay, Position, Previous, Prompt, ScreenSpace, Shine, Size,
+    Sky, Sprite, StatusBar, Text, blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
