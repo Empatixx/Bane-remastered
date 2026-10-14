@@ -277,13 +277,13 @@ def mimic(open_amount=1.0, lick=None, hop=0, squash=0, eye=1.0, dx=0, clamp=Fals
             d.line(pts, fill=SALIVA_D, width=2)
             d.line([(x - 1, y) for x, y in pts[1:-1]], fill=SALIVA, width=1)
         for k in range(9):
-            fx = right - 4 + blob * 0.5 + rng_.uniform(-6, 12) * (0.4 + blob / 60)
+            fx = min(98, right - 4 + blob * 0.4 + rng_.uniform(-6, 10) * (0.4 + blob / 60))
             fy = top - 12 + rng_.uniform(-10, 10) + (blob / 44) ** 2 * 18
             r_ = rng_.choice((1.5, 2, 2.5))
             d.ellipse((fx - r_, fy - r_, fx + r_, fy + r_ + 1), fill=SALIVA_D)
             d.ellipse((fx - r_ + 0.5, fy - r_ + 0.5, fx + r_ - 0.5, fy + r_), fill=SALIVA)
         if blob >= 30:
-            sx = right + 14 + blob * 0.3
+            sx = min(88, right + 10 + blob * 0.25)
             d.ellipse((sx - 10, top + 20, sx + 10, top + 26), fill=SALIVA_D)
             d.ellipse((sx - 8, top + 20, sx + 8, top + 24), fill=SALIVA)
     box(d, left, top - 1, right, top + 2, MAW_D)
@@ -304,10 +304,10 @@ def hop():
     poses = [
         dict(squash=4, open_amount=0.6, lick=0.3, eye=0.6),
         dict(squash=9, open_amount=0.35, lick=None, eye=0.3),
-        dict(hop=-16, open_amount=1.35, lick=2.4, squash=-2),
-        dict(hop=-34, open_amount=1.7, lick=2.9, squash=-3, eye=1.0),
-        dict(hop=-30, open_amount=1.55, lick=2.4, squash=-2),
-        dict(hop=-12, open_amount=1.0, lick=1.2),
+        dict(hop=-2, open_amount=1.35, lick=2.4, squash=-2),
+        dict(hop=-4, open_amount=1.7, lick=2.9, squash=-3, eye=1.0),
+        dict(hop=-4, open_amount=1.55, lick=2.4, squash=-2),
+        dict(hop=-1, open_amount=1.0, lick=1.2),
         dict(squash=10, open_amount=0.3, lick=None, eye=0.4),
         dict(squash=3, open_amount=0.8, lick=0.4),
     ]
@@ -333,9 +333,9 @@ def spit():
         dict(open_amount=1.0, lick=0.3),
         dict(open_amount=1.35, lick=None, dx=-4, squash=3),
         dict(open_amount=1.7, lick=None, dx=-7, squash=4, eye=0.9),
-        dict(open_amount=1.7, lick=None, dx=-6, squash=3, blob=0),
-        dict(open_amount=1.45, lick=None, dx=3, squash=0, blob=22),
-        dict(open_amount=1.2, lick=None, dx=5, squash=-1, blob=44),
+        dict(open_amount=1.7, lick=None, dx=-6, squash=3),
+        dict(open_amount=1.45, lick=None, dx=3, squash=0),
+        dict(open_amount=1.2, lick=None, dx=5, squash=-1),
         dict(open_amount=1.0, lick=0.8, dx=1),
         dict(open_amount=1.0, lick=0.3),
     ]
@@ -461,7 +461,7 @@ def planks(stage, seed, pile=False):
     image = Image.new("RGBA", (W, H), CLEAR)
     d = ImageDraw.Draw(image)
     cx, cy = 52, 120
-    spread = (14, 28, 40, 0)[stage]
+    spread = (12, 22, 30, 0)[stage]
     fall = (0, 6, 18, 0)[stage]
     big = 8
     for index in range(big):
@@ -516,15 +516,111 @@ def death():
     ]
 
 
+def coin_sheet(face):
+    size = 12
+    sheet = Image.new("RGBA", (size * 4, size * 2), CLEAR)
+    d = ImageDraw.Draw(sheet)
+    widths = (10, 6, 2, 6)
+    for frame, w in enumerate(widths):
+        cx, cy = frame * size + 6, 6
+        d.ellipse((cx - w / 2 - 1, cy - 5.5, cx + w / 2 + 1, cy + 5.5), fill=OUTLINE)
+        d.ellipse((cx - w / 2, cy - 4.5, cx + w / 2, cy + 4.5), fill=COIN_D)
+        if w > 3:
+            d.ellipse((cx - w / 2 + 1, cy - 3.5, cx + w / 2 - 1, cy + 3.5), fill=COIN)
+            d.point((cx - w / 2 + 2, cy - 2), fill=(255, 250, 214, 255))
+            if w > 8:
+                d.line((cx - 1, cy - 2, cx - 1, cy + 2), fill=COIN_D)
+                d.point((cx + 1, cy), fill=COIN_D)
+    for frame in range(4):
+        cx, cy = frame * size + 6, size + 6
+        reach = 1.5 + frame * 1.4
+        for k in range(6):
+            angle = k * math.tau / 6 + 0.4
+            x, y = cx + math.cos(angle) * reach, cy + math.sin(angle) * reach
+            d.rectangle((x, y, x + (1 if frame > 1 else 2), y + (1 if frame > 1 else 2)), fill=(COIN, COIN, COIN_D, WOOD_3)[frame])
+        if frame < 2:
+            d.ellipse((cx - 3 + frame, cy - 3 + frame, cx + 3 - frame, cy + 3 - frame), fill=COIN)
+    return sheet
+
+
+def tooth_sheet():
+    size = 12
+    sheet = Image.new("RGBA", (size * 4, size * 2), CLEAR)
+    d = ImageDraw.Draw(sheet)
+    for frame in range(4):
+        angle = frame * math.pi / 4
+        cx, cy = frame * size + 6, 6
+        c, s_ = math.cos(angle), math.sin(angle)
+        shape = [(-5, -2), (-2, -2.4), (4, -0.6), (5.5, 0), (4, 0.6), (-2, 2.4), (-5, 2)]
+        pts = [(cx + px * c - py * s_, cy + px * s_ + py * c) for px, py in shape]
+        d.polygon(pts, fill=TEETH, outline=OUTLINE)
+        a_ = (cx + (-4) * c - (-1) * s_, cy + (-4) * s_ + (-1) * c)
+        b_ = (cx + 3 * c - (-1) * s_, cy + 3 * s_ + (-1) * c)
+        d.line((a_[0], a_[1], b_[0], b_[1]), fill=TEETH_L)
+    for frame in range(4):
+        cx, cy = frame * size + 6, size + 6
+        reach = 1.5 + frame * 1.3
+        for k in range(5):
+            angle = k * math.tau / 5 + 0.2
+            x, y = cx + math.cos(angle) * reach, cy + math.sin(angle) * reach
+            d.polygon([(x, y), (x + 2, y + 1), (x + 1, y + 3)], fill=(TEETH_L, TEETH, TEETH_D, TEETH_D)[frame])
+    return sheet
+
+
+def bait_sheet():
+    size = 16
+    sheet = Image.new("RGBA", (size * 4, size * 2), CLEAR)
+    d = ImageDraw.Draw(sheet)
+    for frame in range(4):
+        cx, cy = frame * size + 8, 8
+        d.ellipse((cx - 6, cy - 6, cx + 6, cy + 6), fill=OUTLINE)
+        d.ellipse((cx - 5, cy - 5, cx + 5, cy + 5), fill=COIN_D)
+        d.ellipse((cx - 4, cy - 4, cx + 4, cy + 3), fill=COIN)
+        d.line((cx - 1, cy - 2, cx - 1, cy + 2), fill=COIN_D)
+        d.point((cx + 2, cy), fill=COIN_D)
+        gx = cx - 3 + frame * 2
+        d.point((gx, cy - 3), fill=(255, 250, 214, 255))
+        d.point((gx + 1, cy - 2), fill=(255, 250, 214, 255))
+    for frame in range(4):
+        cx, cy = frame * size + 8, size + 8
+        gap = (1, 4, 6, 3)[frame]
+        d.ellipse((cx - 6, cy - 6 - gap // 2, cx + 6, cy + 6 + gap // 2), fill=OUTLINE)
+        d.pieslice((cx - 5, cy - 5 - gap, cx + 5, cy + 3 - gap), 180, 360, fill=COIN)
+        d.pieslice((cx - 5, cy - 3 + gap, cx + 5, cy + 5 + gap), 0, 180, fill=COIN_D)
+        d.rectangle((cx - 4, cy - gap + 1, cx + 4, cy + gap - 1), fill=MAW_D)
+        for tx in (cx - 3, cx - 1, cx + 1):
+            d.polygon([(tx, cy - gap + 1), (tx + 2, cy - gap + 1), (tx + 1, cy - gap + 4)], fill=TEETH)
+            d.polygon([(tx, cy + gap - 1), (tx + 2, cy + gap - 1), (tx + 1, cy + gap - 4)], fill=TEETH_D)
+        if frame > 1:
+            d.point((cx, cy + gap + 1), fill=SALIVA)
+    return sheet
+
+
+def drool_sheet():
+    sheet = Image.new("RGBA", (6 * 4, 6), CLEAR)
+    d = ImageDraw.Draw(sheet)
+    for frame, (r, colour) in enumerate(((2.6, SALIVA), (2.2, SALIVA), (1.6, SALIVA_D), (1.0, SALIVA_D))):
+        cx, cy = frame * 6 + 3, 3
+        d.ellipse((cx - r - 0.5, cy - r - 0.5, cx + r + 0.5, cy + r + 0.5), fill=SALIVA_D)
+        d.ellipse((cx - r + 0.5, cy - r + 0.5, cx + r - 0.5, cy + r - 0.5), fill=colour)
+        if frame < 2:
+            d.point((cx - 1, cy - 1), fill=(255, 255, 255, 255))
+    return sheet
+
+
 def main():
     rows = [idle(), hop(), bite(), spit(), rest(), death()]
-    box_ = (8, 24, 112, 140)
+    box_ = (12, 36, 104, 138)
     cw, ch = box_[2] - box_[0], box_[3] - box_[1]
     sheet = Image.new("RGBA", (cw * 8, ch * len(rows)), CLEAR)
     for row, frames in enumerate(rows):
         for column, frame in enumerate(frames):
             sheet.paste(frame.crop(box_), (column * cw, row * ch))
     sheet.save(OUT / "mimic.tga")
+    coin_sheet(True).save(OUT / "mimic_coin.tga")
+    tooth_sheet().save(OUT / "mimic_tooth.tga")
+    bait_sheet().save(OUT / "mimic_bait.tga")
+    drool_sheet().save(OUT / "mimic_drool.tga")
 
 
 main()

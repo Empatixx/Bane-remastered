@@ -87,6 +87,11 @@ pub(crate) struct Hopper {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub(crate) struct Bait {
+    pub(crate) remaining: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct Sealed;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -94,6 +99,7 @@ pub(crate) enum MimicAttack {
     Hop,
     Bite,
     Spit,
+    Lure,
     Rest,
 }
 

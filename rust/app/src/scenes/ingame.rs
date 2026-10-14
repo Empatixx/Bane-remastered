@@ -411,9 +411,11 @@ impl Scene for InGameScene {
             dt,
         );
         systems::tick_hoppers(&mut self.world, dt);
+        systems::tick_baits(&mut self.world, &assets.textures, &mut self.sounds, dt);
         systems::tick_mimic(
             &mut self.world,
             &mut self.physics,
+            &self.navigation,
             &assets.textures,
             &mut self.sounds,
             dt,

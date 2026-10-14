@@ -174,6 +174,7 @@ pub(super) fn clean_up_after_boss(world: &mut World) {
     }
     super::clear_golem_effects(world);
     super::clear_magma(world);
+    super::clear_baits(world);
 }
 
 pub(crate) fn update_boss_hud(world: &mut World) {

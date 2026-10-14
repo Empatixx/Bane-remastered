@@ -57,6 +57,13 @@ pub(crate) const GOLEM_LASER_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_NEAR: f32 = 340.0;
 pub(crate) const HOP_SECONDS: f32 = 0.42;
 pub(crate) const HOP_REST: f32 = 0.6;
+pub(crate) const MIMIC_LURE_WINDUP: f32 = 0.36;
+pub(crate) const MIMIC_LURE_RECOVER: f32 = 0.5;
+pub(crate) const MIMIC_BAITS: usize = 5;
+pub(crate) const MIMIC_BAIT_LIMIT: usize = 8;
+pub(crate) const MIMIC_BAIT_SECONDS: f32 = 9.0;
+pub(crate) const MIMIC_BAIT_REACH: f32 = 34.0;
+pub(crate) const MIMIC_BAIT_DAMAGE: i32 = 2;
 pub(crate) const MIMIC_FIRST_COOLDOWN: f32 = 2.2;
 pub(crate) const MIMIC_COOLDOWN: f32 = 2.6;
 pub(crate) const MIMIC_RAGE_COOLDOWN: f32 = 1.5;
@@ -174,6 +181,8 @@ pub(crate) enum ProjectileKind {
     Boulder,
     ArgusShot,
     Ember,
+    MimicCoin,
+    MimicTooth,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -240,6 +249,32 @@ impl ProjectileKind {
                 force: 35_000_000.0,
                 homing: true,
                 lifetime: Some(5.0),
+            },
+            Self::MimicCoin => ProjectileSpec {
+                texture: tex::MIMIC_COIN,
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(12.0, 12.0),
+                scale: 3.2,
+                idle: (4, 0.07),
+                impact: (4, 0.07),
+                light: [255.0, 210.0, 90.0, 22.0, 0.5],
+                force: 30_000_000.0,
+                homing: false,
+                lifetime: Some(1.8),
+            },
+            Self::MimicTooth => ProjectileSpec {
+                texture: tex::MIMIC_TOOTH,
+                columns: 4,
+                rows: 2,
+                frame: Vec2::new(12.0, 12.0),
+                scale: 3.2,
+                idle: (4, 0.05),
+                impact: (4, 0.07),
+                light: [255.0, 240.0, 210.0, 16.0, 0.3],
+                force: 42_000_000.0,
+                homing: false,
+                lifetime: Some(1.5),
             },
             Self::Ember => ProjectileSpec {
                 texture: tex::HOUND_MAGMA,
@@ -703,8 +738,8 @@ impl EnemyKind {
                 ..spec(
                     tex::MIMIC,
                     (8, 6),
-                    (104.0, 116.0),
-                    2.4,
+                    (92.0, 102.0),
+                    2.2,
                     (8, 0.12),
                     Some((8, 0.12)),
                     (115, 2, 30_000_000.0),

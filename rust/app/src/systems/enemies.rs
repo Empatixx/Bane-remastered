@@ -729,7 +729,12 @@ mod tests {
     #[test]
     fn a_rat_does_not_revive() {
         let (mut world, mut physics) = arena();
-        let rat = prefabs::ready_enemy(&mut world, &mut physics, EnemyKind::Rat, Vec2::new(300.0, 0.0));
+        let rat = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Rat,
+            Vec2::new(300.0, 0.0),
+        );
         kill(&mut world, &mut physics, rat);
         assert!(world.get::<&Expiring>(rat).is_ok());
         assert!(world.get::<&Puddle>(rat).is_err());
@@ -747,7 +752,13 @@ mod tests {
         let _ = world.insert_one(slime, crate::components::Minion);
         kill(&mut world, &mut physics, slime);
         assert!(world.get::<&Puddle>(slime).is_ok());
-        let boss = world.spawn((crate::components::Boss, Health { current: 0, max: 10 }));
+        let boss = world.spawn((
+            crate::components::Boss,
+            Health {
+                current: 0,
+                max: 10,
+            },
+        ));
 
         resolve_deaths(&mut world, &mut physics, &Textures::default());
 

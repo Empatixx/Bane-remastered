@@ -94,7 +94,7 @@ pub(crate) use leapers::tick_leapers;
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use magma::{clear_magma, tick_magma, tick_magma_spread};
-pub(crate) use mimic::tick_mimic;
+pub(crate) use mimic::{clear_baits, tick_baits, tick_mimic};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_chilled, tick_frozen, tick_poison,
