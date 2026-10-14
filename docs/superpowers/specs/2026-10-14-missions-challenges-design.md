@@ -32,7 +32,6 @@ challenges. It only reports what happened (`RunRecord`) and reads how the run is
   - collect N gold (in total)
   - pick up N items
   - clear a floor without taking damage
-  - kill N enemies with a given gun
 - Progress counts **from the moment a mission appears**, across any number of runs,
   including runs that end in death and runs with a challenge active.
 - A finished mission shows the "done" stamp. **Clicking it claims** its talents
@@ -61,7 +60,7 @@ Initial list:
 | Id | Name | Modifiers | Target | Reward |
 |---|---|---|---|---|
 | `glass_cannon` | Glass Cannon | player max health 1, player damage ×2 | floor 3 | 4 |
-| `pistol_only` | Pistol Only | only the pistol; weapon chests give gold instead | floor 3 | 3 |
+| `pistol_only` | Pistol Only | only the pistol; chests and shops never offer another gun | floor 3 | 3 |
 | `horde` | Horde | enemy health ×1.6, enemy damage ×1.3 | floor 4 | 4 |
 | `merchants_strike` | Merchant's Strike | no shops | floor 4 | 3 |
 | `two_left_feet` | Two Left Feet | dodge disabled | floor 3 | 3 |
@@ -86,8 +85,9 @@ Numbers are starting values to be tuned in play.
 - New `Stat` variants as needed: `Kill(EnemyKind)`, `BossKilled(EnemyKind)`, `Gold(u32)`,
   `KillWith(GunKind)`, plus floor events recorded by `InGameScene` (`FloorReached(n)`,
   `FloorUntouched` when a floor ends with no damage taken).
+- Kills are not attributed to guns (bullets carry no gun), so there is no per-gun kill goal.
 - `RunRecord` is plain data: per-kind kill counts, bosses killed, gold collected, items,
-  deepest floor reached, untouched floors, kills per gun, and the challenge the run was
+  deepest floor reached, untouched floors, and the challenge the run was
   started with (`Option<ChallengeId>`).
 - It carries over between floors the same way `RunStats` does today (`carried_stats` /
   `restore_stats`).
