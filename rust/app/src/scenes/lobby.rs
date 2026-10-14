@@ -400,6 +400,7 @@ impl Scene for LobbyScene {
             &mut self.world,
             input,
             input.mouse() + self.camera.position(),
+            &mut self.sounds,
         );
         systems::steer_player(&mut self.world, input, dt);
         systems::tick_dodges(&mut self.world, dt);

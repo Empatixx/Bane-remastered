@@ -54,6 +54,7 @@ pub(crate) struct InGameScene {
     pause: Pause,
     clock: f32,
     sounds: Vec<AudioCommand>,
+    throttle: crate::audio::Throttle,
     hit: bool,
     dungeon: Option<Dungeon>,
     occluders: Option<Arc<Occluders>>,
@@ -100,7 +101,19 @@ impl Scene for InGameScene {
     }
 
     fn take_sounds(&mut self) -> Vec<AudioCommand> {
-        std::mem::take(&mut self.sounds)
+        let listener = self
+            .world
+            .query::<&crate::components::Position>()
+            .with::<&crate::components::Player>()
+            .iter()
+            .next()
+            .map(|position| position.0);
+        crate::audio::resolve(
+            std::mem::take(&mut self.sounds),
+            listener,
+            &mut self.throttle,
+            self.clock,
+        )
     }
 
     fn fx(&self) -> SceneFx {
@@ -408,11 +421,12 @@ impl Scene for InGameScene {
             &mut self.world,
             input,
             input.mouse() + self.camera.position(),
+            &mut self.sounds,
         );
         systems::steer_player_on(&mut self.world, input, &self.surfaces, dt);
         systems::tick_dodges(&mut self.world, dt);
         systems::tick_spawning(&mut self.world, &mut self.physics, hostile_dt);
-        systems::dash(&mut self.world, hostile_dt);
+        systems::dash(&mut self.world, &mut self.sounds, hostile_dt);
         systems::update_flow(
             &mut self.flow,
             &self.world,
@@ -509,12 +523,14 @@ impl Scene for InGameScene {
             &mut self.world,
             &mut self.physics,
             &assets.textures,
+            &mut self.sounds,
             hostile_dt,
         );
         systems::tick_eye_shooters(
             &mut self.world,
             &mut self.physics,
             &assets.textures,
+            &mut self.sounds,
             hostile_dt,
         );
         systems::steer_homing(&mut self.world, hostile_dt);
@@ -523,14 +539,21 @@ impl Scene for InGameScene {
             &mut self.world,
             &mut self.physics,
             &assets.textures,
+            &mut self.sounds,
             hostile_dt,
         );
-        systems::tick_web_spitters(&mut self.world, &assets.textures, hostile_dt);
+        systems::tick_web_spitters(
+            &mut self.world,
+            &assets.textures,
+            &mut self.sounds,
+            hostile_dt,
+        );
         systems::tick_leapers(&mut self.world, &mut self.sounds, hostile_dt);
         systems::tick_armageddon(
             &mut self.world,
             &mut self.physics,
             &assets.textures,
+            &mut self.sounds,
             hostile_dt,
         );
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
@@ -570,7 +593,12 @@ impl Scene for InGameScene {
             self.rules.enemy_health,
             self.rules.enemy_damage,
         );
-        systems::resolve_deaths(&mut self.world, &mut self.physics, &assets.textures);
+        systems::resolve_deaths(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+        );
         if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds) {
             self.hit = true;
         }

@@ -42,6 +42,7 @@ pub(crate) enum Cmd {
     AimBreath,
     Ring,
     Crash,
+    Sound(SoundEffect),
 }
 
 fn clip(row: usize, frame_time: f32) -> Clip {
@@ -109,13 +110,24 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32)
             hound.last = Some(attack);
             hound.stage = HoundStage::Winding;
             commands.push(Cmd::Root);
-            let (row, frame_time, windup) = match attack {
-                HoundAttack::Lunge => (1, 0.08, enemies::HOUND_LUNGE_WINDUP),
-                HoundAttack::Breath => (2, 0.1, enemies::HOUND_BREATH_WINDUP),
-                HoundAttack::Howl => (3, 0.1, enemies::HOUND_HOWL_WINDUP),
+            let (row, frame_time, windup, sound) = match attack {
+                HoundAttack::Lunge => (
+                    1,
+                    0.08,
+                    enemies::HOUND_LUNGE_WINDUP,
+                    SoundEffect::HoundGrowl,
+                ),
+                HoundAttack::Breath => (
+                    2,
+                    0.1,
+                    enemies::HOUND_BREATH_WINDUP,
+                    SoundEffect::HoundInhale,
+                ),
+                HoundAttack::Howl => (3, 0.1, enemies::HOUND_HOWL_WINDUP, SoundEffect::HoundHowl),
             };
             hound.timer = windup;
             commands.push(Cmd::Play(clip(row, frame_time)));
+            commands.push(Cmd::Sound(sound));
             if attack == HoundAttack::Breath {
                 commands.push(Cmd::AimBreath);
             }
@@ -135,6 +147,7 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32)
                 HoundAttack::Breath => {
                     hound.stage = HoundStage::Acting;
                     hound.timer = enemies::HOUND_BREATH_SECONDS;
+                    commands.push(Cmd::Sound(SoundEffect::HoundBreath));
                 }
                 HoundAttack::Howl => {
                     commands.push(Cmd::Ring);
@@ -211,6 +224,7 @@ pub(crate) fn tick_hound(
             if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
                 hound.enraged = true;
             }
+            sounds.push(AudioCommand::At(SoundEffect::HoundRage, at));
             if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
                 chase.speed *= enemies::HOUND_RAGE_SPEED;
             }
@@ -257,6 +271,7 @@ fn execute(
         .is_ok_and(|animation| animation.flipped());
     match command {
         Cmd::Play(clip) => play(world, entity, clip),
+        Cmd::Sound(effect) => sounds.push(AudioCommand::At(effect, at)),
         Cmd::Root => {
             let _ = world.insert_one(entity, Rooted);
         }
@@ -453,6 +468,27 @@ mod tests {
             assert_ne!(Some(attack), last);
             last = Some(attack);
         }
+    }
+
+    #[test]
+    fn every_wind_up_announces_its_attack_and_the_breath_roars_while_it_burns() {
+        for seed in 0..40 {
+            let mut boss = hound();
+            boss.seed = seed * 7919 + 1;
+            let commands = step(&mut boss, 200.0, false, 0.02);
+            let expected = match boss.attack {
+                HoundAttack::Lunge => SoundEffect::HoundGrowl,
+                HoundAttack::Breath => SoundEffect::HoundInhale,
+                HoundAttack::Howl => SoundEffect::HoundHowl,
+            };
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+        }
+        let mut boss = hound();
+        boss.stage = HoundStage::Winding;
+        boss.attack = HoundAttack::Breath;
+        boss.timer = 0.01;
+        let commands = step(&mut boss, 200.0, false, 0.02);
+        assert!(commands.contains(&Cmd::Sound(SoundEffect::HoundBreath)));
     }
 
     #[test]

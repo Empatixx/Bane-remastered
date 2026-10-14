@@ -28,6 +28,7 @@ pub(crate) enum Cmd {
     Ring,
     Fan,
     Rats(usize),
+    Sound(SoundEffect),
 }
 
 fn clip(row: usize) -> Clip {
@@ -106,14 +107,15 @@ pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> 
                 ogre.last = Some(attack);
                 ogre.stage = OgreStage::Winding;
                 commands.push(Cmd::Root);
-                let (row, windup) = match attack {
-                    OgreAttack::Jump => (6, enemies::OGRE_JUMP_WINDUP),
-                    OgreAttack::Throw => (2, enemies::OGRE_THROW_WINDUP),
-                    OgreAttack::Slam => (3, enemies::OGRE_SLAM_WINDUP),
-                    OgreAttack::Roar => (4, enemies::OGRE_ROAR_WINDUP),
+                let (row, windup, sound) = match attack {
+                    OgreAttack::Jump => (6, enemies::OGRE_JUMP_WINDUP, SoundEffect::OgreJump),
+                    OgreAttack::Throw => (2, enemies::OGRE_THROW_WINDUP, SoundEffect::OgreThrow),
+                    OgreAttack::Slam => (3, enemies::OGRE_SLAM_WINDUP, SoundEffect::OgreSwing),
+                    OgreAttack::Roar => (4, enemies::OGRE_ROAR_WINDUP, SoundEffect::OgreRoar),
                 };
                 ogre.timer = windup;
                 commands.push(Cmd::Play(clip(row)));
+                commands.push(Cmd::Sound(sound));
             }
         }
         OgreStage::Winding => {
@@ -179,6 +181,7 @@ pub(crate) fn tick_ogre(
             if let Ok(mut ogre) = world.get::<&mut OgreBoss>(entity) {
                 ogre.enraged = true;
             }
+            sounds.push(AudioCommand::At(SoundEffect::OgreRage, at));
             if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
                 chase.speed *= enemies::OGRE_RAGE_SPEED;
             }
@@ -216,6 +219,7 @@ fn execute(
     let room = world.get::<&RoomId>(entity).map(|room| *room).ok();
     match command {
         Cmd::Play(clip) => play(world, entity, clip),
+        Cmd::Sound(effect) => sounds.push(AudioCommand::At(effect, at)),
         Cmd::Root => {
             let _ = world.insert_one(entity, Rooted);
         }
@@ -357,6 +361,22 @@ mod tests {
             boss.last = Some(attack);
             boss.timer = 0.01;
             assert!(run(&mut boss, 0.5).contains(&Cmd::Rats(count)));
+        }
+    }
+
+    #[test]
+    fn every_wind_up_announces_its_attack_with_a_sound() {
+        for seed in 0..40 {
+            let mut boss = ogre();
+            boss.seed = seed * 7919 + 1;
+            let commands = step(&mut boss, 200.0, 0, 0.02);
+            let expected = match boss.attack {
+                OgreAttack::Jump => SoundEffect::OgreJump,
+                OgreAttack::Throw => SoundEffect::OgreThrow,
+                OgreAttack::Slam => SoundEffect::OgreSwing,
+                OgreAttack::Roar => SoundEffect::OgreRoar,
+            };
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
         }
     }
 

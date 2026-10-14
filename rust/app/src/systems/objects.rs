@@ -734,7 +734,7 @@ mod tests {
         let _ = world.insert_one(slime, Frozen::new(2.0));
 
         crate::systems::chase_player(&mut world, &crate::flow::FlowField::default());
-        crate::systems::tick_smashes(&mut world, &mut physics, &textures, 0.016);
+        crate::systems::tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 0.016);
 
         let velocity = world
             .get::<&crate::components::Velocity>(slime)
@@ -752,7 +752,7 @@ mod tests {
         assert!(!crate::systems::contact_damage(&mut world, &mut sounds));
 
         let _ = world.remove_one::<Frozen>(slime);
-        crate::systems::tick_smashes(&mut world, &mut physics, &textures, 0.016);
+        crate::systems::tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 0.016);
         assert!(
             world
                 .query::<&crate::components::EnemyBullet>()
@@ -807,7 +807,7 @@ mod tests {
         let mut dodge = crate::input::Input::default();
         let key = dodge.bindings().key(crate::controls::Action::Dodge);
         dodge.press(key);
-        crate::systems::start_dodge(&mut world, &dodge, Vec2::X * 500.0);
+        crate::systems::start_dodge(&mut world, &dodge, Vec2::X * 500.0, &mut Vec::new());
         assert!(world.get::<&Dodge>(player).is_err());
     }
 

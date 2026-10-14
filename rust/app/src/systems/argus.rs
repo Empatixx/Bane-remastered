@@ -2,7 +2,7 @@ use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
-use crate::audio::AudioCommand;
+use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     ArgusAttack, ArgusBoss, ArgusStage, Body, Chase, Clip, Color, ContactDamage, Expiring, Frozen,
     Health, Orbiter, Position, RoomId, Rooted, Spawning,
@@ -38,6 +38,7 @@ pub(crate) enum Cmd {
     Shot(u32),
     Shield,
     Teleport,
+    Sound(SoundEffect),
 }
 
 fn clip(row: usize, frame_time: f32, looping: bool) -> Clip {
@@ -111,6 +112,7 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
                 argus.attacks = 0;
                 argus.stage = ArgusStage::FadingOut;
                 argus.timer = enemies::ARGUS_FADE;
+                commands.push(Cmd::Sound(SoundEffect::ArgusTeleport));
                 return commands;
             }
             let attack = choose_attack(argus, orbiters);
@@ -121,14 +123,17 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
                 ArgusAttack::Volley => {
                     argus.timer = enemies::ARGUS_VOLLEY_WINDUP;
                     commands.push(Cmd::Play(volley_clip()));
+                    commands.push(Cmd::Sound(SoundEffect::ArgusCharge));
                 }
                 ArgusAttack::Barrage => {
                     argus.timer = enemies::ARGUS_BARRAGE_WINDUP;
                     commands.push(Cmd::Play(aim_clip()));
+                    commands.push(Cmd::Sound(SoundEffect::ArgusCharge));
                 }
                 ArgusAttack::Shield => {
                     argus.timer = enemies::ARGUS_SHIELD_WINDUP;
                     commands.push(Cmd::Play(volley_clip()));
+                    commands.push(Cmd::Sound(SoundEffect::ArgusSummon));
                 }
             }
         }
@@ -249,7 +254,7 @@ pub(crate) fn tick_argus(
     physics: &mut Physics,
     navigation: &Navigation,
     textures: &Textures,
-    _sounds: &mut Vec<AudioCommand>,
+    sounds: &mut Vec<AudioCommand>,
     dt: f32,
 ) {
     let target = player_at(world).map(|(_, position, _)| position);
@@ -269,6 +274,7 @@ pub(crate) fn tick_argus(
             if let Ok(mut argus) = world.get::<&mut ArgusBoss>(entity) {
                 argus.enraged = true;
             }
+            sounds.push(AudioCommand::At(SoundEffect::ArgusRage, at));
             if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
                 chase.speed *= enemies::ARGUS_RAGE_SPEED;
             }
@@ -287,7 +293,7 @@ pub(crate) fn tick_argus(
         }
         for command in commands {
             execute(
-                world, physics, navigation, textures, entity, at, target, command,
+                world, physics, navigation, textures, sounds, entity, at, target, command,
             );
         }
     }
@@ -321,6 +327,7 @@ fn execute(
     physics: &mut Physics,
     navigation: &Navigation,
     textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
     entity: Entity,
     at: Vec2,
     player: Option<Vec2>,
@@ -332,6 +339,7 @@ fn execute(
         .is_ok_and(|argus| argus.enraged);
     match command {
         Cmd::Play(clip) => play(world, entity, clip),
+        Cmd::Sound(effect) => sounds.push(AudioCommand::At(effect, at)),
         Cmd::Root => {
             let _ = world.insert_one(entity, Rooted);
         }
@@ -339,6 +347,7 @@ fn execute(
             let _ = world.remove_one::<Rooted>(entity);
         }
         Cmd::Ring(offset) => {
+            sounds.push(AudioCommand::At(SoundEffect::ArgusPulse, at));
             let count = if enraged {
                 enemies::ARGUS_VOLLEY_RAGE_RING
             } else {
@@ -353,6 +362,7 @@ fn execute(
             let Some(player) = player else {
                 return;
             };
+            sounds.push(AudioCommand::At(SoundEffect::ArgusShot, at));
             let shots = if enraged { 2 } else { 1 };
             let mut seed = index.wrapping_mul(0x9E37_79B1) ^ (at.x as u32);
             for shot in 0..shots {
@@ -497,6 +507,29 @@ mod tests {
                 ArgusAttack::Shield
             );
         }
+    }
+
+    #[test]
+    fn argus_charges_audibly_before_shooting_and_chimes_before_calling_its_eyes() {
+        for seed in 0..40 {
+            let mut boss = argus();
+            boss.seed = seed * 7919 + 1;
+            let commands = step(&mut boss, 0, 0.02);
+            let expected = match boss.attack {
+                ArgusAttack::Volley | ArgusAttack::Barrage => SoundEffect::ArgusCharge,
+                ArgusAttack::Shield => SoundEffect::ArgusSummon,
+            };
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+        }
+    }
+
+    #[test]
+    fn fading_out_to_teleport_makes_a_sound() {
+        let mut boss = argus();
+        boss.attacks = enemies::ARGUS_TELEPORT_EVERY;
+        let commands = step(&mut boss, 0, 0.02);
+        assert_eq!(boss.stage, ArgusStage::FadingOut);
+        assert!(commands.contains(&Cmd::Sound(SoundEffect::ArgusTeleport)));
     }
 
     #[test]

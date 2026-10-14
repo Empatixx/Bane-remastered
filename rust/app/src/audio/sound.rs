@@ -48,10 +48,53 @@ pub(crate) enum SoundEffect {
     SlotCashout,
     ShowMap,
     TalentUnlock,
+    Dodge,
+    GhostDash,
+    SlimeSmash,
+    SlimeBurst,
+    ToxicBurst,
+    KinHeal,
+    LeaperCrouch,
+    LeaperLand,
+    EyeCharge,
+    EyeShoot,
+    SpiderHatch,
+    WebCharge,
+    WebSpit,
+    KingSpiral,
+    KingSmash,
+    GolemSlam,
+    GolemThrow,
+    GolemRain,
+    LaserCharge,
+    LaserFire,
+    GolemRage,
+    ArgusCharge,
+    ArgusPulse,
+    ArgusShot,
+    ArgusSummon,
+    ArgusTeleport,
+    ArgusRage,
+    OgreJump,
+    OgreThrow,
+    OgreSwing,
+    OgreRoar,
+    OgreRage,
+    HoundGrowl,
+    HoundInhale,
+    HoundBreath,
+    HoundHowl,
+    HoundRage,
+    MimicCreak,
+    MimicChomp,
+    MimicGurgle,
+    MimicJingle,
+    MimicShut,
+    MimicRage,
 }
 
 impl SoundEffect {
-    pub(crate) const ALL: [Self; 48] = [
+    pub(crate) const ALL: [Self; 91] = [
         Self::Click,
         Self::PistolShoot,
         Self::EmptyGunShoot,
@@ -100,6 +143,49 @@ impl SoundEffect {
         Self::SlotCashout,
         Self::ShowMap,
         Self::TalentUnlock,
+        Self::Dodge,
+        Self::GhostDash,
+        Self::SlimeSmash,
+        Self::SlimeBurst,
+        Self::ToxicBurst,
+        Self::KinHeal,
+        Self::LeaperCrouch,
+        Self::LeaperLand,
+        Self::EyeCharge,
+        Self::EyeShoot,
+        Self::SpiderHatch,
+        Self::WebCharge,
+        Self::WebSpit,
+        Self::KingSpiral,
+        Self::KingSmash,
+        Self::GolemSlam,
+        Self::GolemThrow,
+        Self::GolemRain,
+        Self::LaserCharge,
+        Self::LaserFire,
+        Self::GolemRage,
+        Self::ArgusCharge,
+        Self::ArgusPulse,
+        Self::ArgusShot,
+        Self::ArgusSummon,
+        Self::ArgusTeleport,
+        Self::ArgusRage,
+        Self::OgreJump,
+        Self::OgreThrow,
+        Self::OgreSwing,
+        Self::OgreRoar,
+        Self::OgreRage,
+        Self::HoundGrowl,
+        Self::HoundInhale,
+        Self::HoundBreath,
+        Self::HoundHowl,
+        Self::HoundRage,
+        Self::MimicCreak,
+        Self::MimicChomp,
+        Self::MimicGurgle,
+        Self::MimicJingle,
+        Self::MimicShut,
+        Self::MimicRage,
     ];
 
     pub(crate) fn files(self) -> &'static [&'static str] {
@@ -164,6 +250,49 @@ impl SoundEffect {
             Self::SlotCashout => &["slotmachine_cashout.ogg"],
             Self::ShowMap => &["map_1.ogg", "map_2.ogg"],
             Self::TalentUnlock => &["talent_unlock.ogg"],
+            Self::Dodge => &["player_dash_1.ogg", "player_dash_2.ogg"],
+            Self::GhostDash => &["enemies/ghost_dash_1.ogg", "enemies/ghost_dash_2.ogg"],
+            Self::SlimeSmash => &["enemies/slime_smash_1.ogg", "enemies/slime_smash_2.ogg"],
+            Self::SlimeBurst => &["enemies/slime_burst.ogg"],
+            Self::ToxicBurst => &["enemies/toxic_burst.ogg"],
+            Self::KinHeal => &["enemies/kin_heal.ogg"],
+            Self::LeaperCrouch => &["enemies/leaper_crouch.ogg"],
+            Self::LeaperLand => &["enemies/leaper_land_1.ogg", "enemies/leaper_land_2.ogg"],
+            Self::EyeCharge => &["enemies/eye_charge.ogg"],
+            Self::EyeShoot => &["enemies/eye_shoot_1.ogg", "enemies/eye_shoot_2.ogg"],
+            Self::SpiderHatch => &["enemies/spider_hatch.ogg"],
+            Self::WebCharge => &["enemies/web_charge.ogg"],
+            Self::WebSpit => &["enemies/web_spit.ogg"],
+            Self::KingSpiral => &["enemies/king_spiral_1.ogg", "enemies/king_spiral_2.ogg"],
+            Self::KingSmash => &["enemies/king_smash.ogg"],
+            Self::GolemSlam => &["enemies/golem_slam.ogg"],
+            Self::GolemThrow => &["enemies/golem_throw.ogg"],
+            Self::GolemRain => &["enemies/golem_rain.ogg"],
+            Self::LaserCharge => &["enemies/laser_charge.ogg"],
+            Self::LaserFire => &["enemies/laser_fire.ogg"],
+            Self::GolemRage => &["enemies/golem_rage.ogg"],
+            Self::ArgusCharge => &["enemies/argus_charge.ogg"],
+            Self::ArgusPulse => &["enemies/argus_pulse.ogg"],
+            Self::ArgusShot => &["enemies/argus_shot_1.ogg", "enemies/argus_shot_2.ogg"],
+            Self::ArgusSummon => &["enemies/argus_summon.ogg"],
+            Self::ArgusTeleport => &["enemies/argus_teleport.ogg"],
+            Self::ArgusRage => &["enemies/argus_rage.ogg"],
+            Self::OgreJump => &["enemies/ogre_jump.ogg"],
+            Self::OgreThrow => &["enemies/ogre_throw.ogg"],
+            Self::OgreSwing => &["enemies/ogre_swing.ogg"],
+            Self::OgreRoar => &["enemies/ogre_roar.ogg"],
+            Self::OgreRage => &["enemies/ogre_rage.ogg"],
+            Self::HoundGrowl => &["enemies/hound_growl.ogg"],
+            Self::HoundInhale => &["enemies/hound_inhale.ogg"],
+            Self::HoundBreath => &["enemies/hound_breath.ogg"],
+            Self::HoundHowl => &["enemies/hound_howl.ogg"],
+            Self::HoundRage => &["enemies/hound_rage.ogg"],
+            Self::MimicCreak => &["enemies/mimic_creak.ogg"],
+            Self::MimicChomp => &["enemies/mimic_chomp.ogg"],
+            Self::MimicGurgle => &["enemies/mimic_gurgle.ogg"],
+            Self::MimicJingle => &["enemies/mimic_jingle.ogg"],
+            Self::MimicShut => &["enemies/mimic_shut.ogg"],
+            Self::MimicRage => &["enemies/mimic_rage.ogg"],
         }
     }
 }
@@ -190,8 +319,58 @@ impl Soundtrack {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// How far from the player an enemy or boss sound still carries.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Hearing {
+    /// Up to this many pixels the sound plays at full volume.
+    pub(crate) full: f32,
+    /// From this many pixels on the sound is silent.
+    pub(crate) silent: f32,
+}
+
+const TILE: f32 = crate::tilemap::TILE_SIZE;
+const CREATURE: Hearing = Hearing {
+    full: 3.0 * TILE,
+    silent: 14.0 * TILE,
+};
+const BOSS: Hearing = Hearing {
+    full: 6.0 * TILE,
+    silent: 24.0 * TILE,
+};
+
+impl SoundEffect {
+    /// The distance falloff of a sound made somewhere in the world rather than by the player.
+    pub(crate) fn hearing(self) -> Hearing {
+        match self {
+            Self::GhostDash
+            | Self::SlimeSmash
+            | Self::SlimeBurst
+            | Self::ToxicBurst
+            | Self::KinHeal
+            | Self::LeaperCrouch
+            | Self::LeaperLand
+            | Self::EyeCharge
+            | Self::EyeShoot
+            | Self::WallHit => CREATURE,
+            _ => BOSS,
+        }
+    }
+}
+
+/// Where a sound sits relative to the listener: its loudness from zero to one and its stereo
+/// position from minus one (left) to one (right).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Placement {
+    pub(crate) volume: f32,
+    pub(crate) pan: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum AudioCommand {
     Effect(SoundEffect),
     Music(Soundtrack),
+    /// A sound made at a spot in the world, heard by the player from where they stand.
+    At(SoundEffect, glam::Vec2),
+    /// A world sound already placed relative to the player, ready to play.
+    Placed(SoundEffect, Placement),
 }
