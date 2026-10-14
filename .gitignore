@@ -14,3 +14,4 @@ settings.json
 /rust/.idea/
 /rust/settings.json
 /rust/profile.json
+.superpowers/
