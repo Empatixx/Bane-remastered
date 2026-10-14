@@ -64,6 +64,7 @@ pub(crate) struct GolemBoss {
 pub(crate) struct RockFall {
     pub(crate) remaining: f32,
     pub(crate) rock: hecs::Entity,
+    pub(crate) room: Option<crate::components::RoomId>,
 }
 
 #[derive(Debug, Clone, Copy)]

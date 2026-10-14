@@ -39,8 +39,10 @@ pub(crate) const GOLEM_THROW_RECOVER: f32 = 0.25;
 pub(crate) const GOLEM_RAIN_WINDUP: f32 = 0.4;
 pub(crate) const GOLEM_RAIN_RECOVER: f32 = 0.5;
 pub(crate) const GOLEM_LASER_RECOVER: f32 = 0.6;
-pub(crate) const GOLEM_RAIN_SECONDS: f32 = 2.4;
-pub(crate) const GOLEM_RAIN_EVERY: f32 = 0.24;
+pub(crate) const GOLEM_RAIN_SECONDS: f32 = 2.8;
+pub(crate) const GOLEM_RAIN_EVERY: f32 = 0.12;
+pub(crate) const GOLEM_MINION_CHANCE: f32 = 0.16;
+pub(crate) const GOLEM_MINION_LIMIT: usize = 4;
 pub(crate) const GOLEM_RAIN_DELAY: f32 = 0.7;
 pub(crate) const GOLEM_RAIN_DAMAGE: i32 = 2;
 pub(crate) const GOLEM_RAIN_RADIUS: f32 = 74.0;
@@ -197,11 +199,13 @@ pub(crate) enum EnemyKind {
     Spider,
     KingSlime,
     Golem,
+    MiniGolem,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Role {
     Common,
+    Summoned,
     Boss(&'static str),
 }
 
@@ -328,7 +332,7 @@ const fn spiderling(texture: Tex, rows: usize, stats: (i32, i32, f32)) -> EnemyS
 }
 
 impl EnemyKind {
-    pub(crate) const ALL: [Self; 16] = [
+    pub(crate) const ALL: [Self; 17] = [
         Self::Rat,
         Self::Snake,
         Self::Bat,
@@ -343,6 +347,7 @@ impl EnemyKind {
         Self::StiltSpider,
         Self::EyeWatcher,
         Self::Golem,
+        Self::MiniGolem,
         Self::Spider,
         Self::KingSlime,
     ];
@@ -500,6 +505,19 @@ impl EnemyKind {
                     (110, 2, 17_000_000.0),
                 )
             },
+            Self::MiniGolem => EnemySpec {
+                death_row: 7,
+                role: Role::Summoned,
+                ..spec(
+                    tex::GOLEM,
+                    (14, 8),
+                    (100.0, 100.0),
+                    1.1,
+                    (4, 0.175),
+                    Some((14, 0.06)),
+                    (6, 1, 9_000_000.0),
+                )
+            },
             Self::EyeWatcher => EnemySpec {
                 min_floor: 3,
                 death_row: 2,
@@ -594,7 +612,9 @@ pub(crate) fn attack_clip() -> Clip {
 }
 
 pub(crate) fn pick(floor: u32, theme: Theme, rng: &mut Rng) -> EnemyKind {
-    pick_where(floor, theme, rng, |kind| !kind.is_boss())
+    pick_where(floor, theme, rng, |kind| {
+        !kind.is_boss() && kind.spec().role != Role::Summoned
+    })
 }
 
 const BOSS_VAR: &str = "BANE_BOSS";
@@ -682,11 +702,12 @@ mod tests {
             spider_floor.insert(pick(5, Theme::Spider, &mut rng));
             stone_floor.insert(pick(5, Theme::Stone, &mut rng));
         }
-        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 3);
-        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 3 - 5);
+        assert_eq!(spider_floor.len(), EnemyKind::ALL.len() - 4);
+        assert_eq!(stone_floor.len(), EnemyKind::ALL.len() - 4 - 5);
         assert!(!stone_floor.contains(&EnemyKind::BloatedSpider));
         assert!(!stone_floor.contains(&EnemyKind::StiltSpider));
         assert!(spider_floor.contains(&EnemyKind::StiltSpider));
+        assert!(!stone_floor.contains(&EnemyKind::MiniGolem));
     }
 
     #[test]

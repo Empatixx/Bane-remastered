@@ -158,6 +158,7 @@ impl Scene for InGameScene {
         if let Some(screen) = &mut self.death {
             screen.advance(dt, input.any_key());
             systems::update_death_ui(&mut self.world, screen);
+            systems::update_status_bars(&mut self.world, dt);
             if screen.finished() {
                 return Transition::Switch(SceneId::Lobby);
             }
@@ -390,7 +391,14 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
-        systems::tick_rock_falls(&mut self.world, &assets.textures, &mut self.sounds, dt);
+        systems::tick_rock_falls(
+            &mut self.world,
+            &mut self.physics,
+            &self.navigation,
+            &assets.textures,
+            &mut self.sounds,
+            dt,
+        );
         systems::tick_laser(
             &mut self.world,
             &self.navigation,

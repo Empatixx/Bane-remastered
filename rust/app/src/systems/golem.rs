@@ -5,10 +5,10 @@ use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, BeamPart, Chase, Clip, Color, ContactDamage, Despawn, Dodge, Drag, Expiring,
-    FallingRock, Frozen, GolemAttack, GolemBoss, GolemStage, Health, Layer, Light, Player,
+    FallingRock, Frozen, GolemAttack, GolemBoss, GolemStage, Health, Layer, Light, Minion, Player,
     Position, RockFall, RoomId, Rooted, Size, Spawning, Sprite, Velocity,
 };
-use crate::enemies::{self, ProjectileKind};
+use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::geometry;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
@@ -381,7 +381,7 @@ fn execute(
                 enemies::GOLEM_RAIN_SPREAD
             };
             let jitter = Vec2::new(unit(&mut seed) - 0.5, unit(&mut seed) - 0.5) * 2.0 * spread;
-            drop_rock(world, textures, player + jitter);
+            drop_rock(world, textures, player + jitter, room);
         }
         Cmd::AimBeam => {
             if let Some(player) = player {
@@ -394,7 +394,12 @@ fn execute(
     }
 }
 
-pub(crate) fn drop_rock(world: &mut World, textures: &Textures, ground: Vec2) {
+pub(crate) fn drop_rock(
+    world: &mut World,
+    textures: &Textures,
+    ground: Vec2,
+    room: Option<RoomId>,
+) {
     let rock = world.spawn((
         FallingRock,
         Position(ground - Vec2::new(0.0, FALL_HEIGHT)),
@@ -407,6 +412,7 @@ pub(crate) fn drop_rock(world: &mut World, textures: &Textures, ground: Vec2) {
         RockFall {
             remaining: enemies::GOLEM_RAIN_DELAY,
             rock,
+            room,
         },
         Position(ground),
         Size(SHADOW_SIZE),
@@ -418,6 +424,8 @@ pub(crate) fn drop_rock(world: &mut World, textures: &Textures, ground: Vec2) {
 
 pub(crate) fn tick_rock_falls(
     world: &mut World,
+    physics: &mut Physics,
+    navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
     dt: f32,
@@ -426,7 +434,7 @@ pub(crate) fn tick_rock_falls(
     for (entity, fall, position) in world.query_mut::<(Entity, &mut RockFall, &Position)>() {
         fall.remaining -= dt;
         if fall.remaining <= 0.0 {
-            landed.push((entity, fall.rock, position.0));
+            landed.push((entity, fall.rock, position.0, fall.room));
         }
     }
     let falling: Vec<(Entity, Entity)> = world
@@ -440,11 +448,12 @@ pub(crate) fn tick_rock_falls(
         });
         let ground = world.get::<&Position>(shadow).map(|p| p.0).ok();
         if let (Some(ground), Ok(mut position)) = (ground, world.get::<&mut Position>(rock)) {
-            position.0 = ground - Vec2::new(0.0, FALL_HEIGHT * (2.0 * progress - progress * progress));
+            position.0 =
+                ground - Vec2::new(0.0, FALL_HEIGHT * (2.0 * progress - progress * progress));
         }
     }
     let player = player_at(world);
-    for (shadow, rock, ground) in landed {
+    for (shadow, rock, ground, room) in landed {
         let _ = world.despawn(shadow);
         let _ = world.despawn(rock);
         sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
@@ -476,6 +485,15 @@ pub(crate) fn tick_rock_falls(
             {
                 hurt_player(world, player, enemies::GOLEM_RAIN_DAMAGE, sounds);
             }
+        }
+        let mut seed =
+            (ground.x as u32).wrapping_mul(2_654_435_761) ^ (ground.y as u32).rotate_left(11);
+        let minions = world.query::<&Minion>().iter().count();
+        if unit(&mut seed) < enemies::GOLEM_MINION_CHANCE
+            && minions < enemies::GOLEM_MINION_LIMIT
+            && !navigation.is_blocked(ground, Vec2::splat(60.0))
+        {
+            prefabs::hatchling(world, physics, EnemyKind::MiniGolem, ground, room, textures);
         }
     }
 }
