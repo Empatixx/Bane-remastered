@@ -8,6 +8,15 @@ pub(crate) const RING_TURN: f32 = 0.15;
 pub(crate) const RING_DAMAGE: i32 = 2;
 pub(crate) const BERSERK_PHASE: f32 = 0.75;
 
+pub(crate) const TIME_SLOW_SECONDS: f32 = 6.0;
+#[allow(dead_code)]
+pub(crate) const TIME_SLOW_SCALE: f32 = 0.35;
+pub(crate) const BLOODLUST_SECONDS: f32 = 10.0;
+pub(crate) const CHALICE_HEAL: f32 = 0.5;
+pub(crate) const PHANTOM_SECONDS: f32 = 5.0;
+pub(crate) const MIDAS_SECONDS: f32 = 6.0;
+pub(crate) const INFINITE_AMMO_SECONDS: f32 = 8.0;
+
 const ICON_SCALE: f32 = 2.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -17,15 +26,31 @@ pub(crate) enum ArtefactKind {
     ShieldHorn,
     BerserkPot,
     RevealMap,
+    HourglassOfAsh,
+    BloodChalice,
+    PhantomCloak,
+    GraveLantern,
+    MidasCoin,
+    ThunderIdol,
+    InfinityQuiver,
+    BoneTurret,
 }
 
 impl ArtefactKind {
-    pub(crate) const ALL: [Self; 5] = [
+    pub(crate) const ALL: [Self; 13] = [
         Self::RingOfDeath,
         Self::ArmorRefill,
         Self::ShieldHorn,
         Self::BerserkPot,
         Self::RevealMap,
+        Self::HourglassOfAsh,
+        Self::BloodChalice,
+        Self::PhantomCloak,
+        Self::GraveLantern,
+        Self::MidasCoin,
+        Self::ThunderIdol,
+        Self::InfinityQuiver,
+        Self::BoneTurret,
     ];
 
     pub(crate) fn texture(self) -> Tex {
@@ -35,6 +60,14 @@ impl ArtefactKind {
             Self::ShieldHorn => tex::ARTEFACTS_SHIELDHORN,
             Self::BerserkPot => tex::ARTEFACTS_BERSERKPOT,
             Self::RevealMap => tex::ARTEFACTS_REVEAL_MAP,
+            Self::HourglassOfAsh => tex::ARTEFACTS_HOURGLASS_OF_ASH,
+            Self::BloodChalice => tex::ARTEFACTS_BLOOD_CHALICE,
+            Self::PhantomCloak => tex::ARTEFACTS_PHANTOM_CLOAK,
+            Self::GraveLantern => tex::ARTEFACTS_GRAVE_LANTERN,
+            Self::MidasCoin => tex::ARTEFACTS_MIDAS_COIN,
+            Self::ThunderIdol => tex::ARTEFACTS_THUNDER_IDOL,
+            Self::InfinityQuiver => tex::ARTEFACTS_INFINITY_QUIVER,
+            Self::BoneTurret => tex::ARTEFACTS_BONE_TURRET,
         }
     }
 
@@ -60,11 +93,11 @@ mod tests {
     }
 
     #[test]
-    fn there_are_five_distinct_artefacts() {
+    fn there_are_thirteen_distinct_artefacts() {
         let textures: std::collections::HashSet<_> = ArtefactKind::ALL
             .iter()
             .map(|kind| kind.texture())
             .collect();
-        assert_eq!(textures.len(), 5);
+        assert_eq!(textures.len(), 13);
     }
 }

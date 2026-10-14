@@ -26,7 +26,9 @@ mod ui;
 pub(crate) use animation::{Animation, Clip};
 pub(crate) use appearance::{Color, Layer, Liquid, Outline, Shine, Sky, Sprite, Text};
 pub(crate) use artefacts::{
-    ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, ShieldAura, Shielded,
+    ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, Bloodlust, CastLightning, ConvertBullets,
+    HealPercent, InfiniteAmmo, MidasTouch, Phantom, PlaceTurret, ShieldAura, Shielded,
+    SummonGhosts, TimeSlow,
 };
 pub(crate) use body::{Body, BodyOffset};
 pub(crate) use combat::{

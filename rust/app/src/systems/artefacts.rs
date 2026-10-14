@@ -1,12 +1,16 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::artefacts::{ArtefactKind, BERSERK_SECONDS, RING_BULLETS, RING_DAMAGE, RING_TURN};
+use crate::artefacts::{
+    ArtefactKind, BERSERK_SECONDS, BLOODLUST_SECONDS, CHALICE_HEAL, INFINITE_AMMO_SECONDS,
+    MIDAS_SECONDS, PHANTOM_SECONDS, RING_BULLETS, RING_DAMAGE, RING_TURN, TIME_SLOW_SECONDS,
+};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Armor, ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, Hidden, InRange, Player, Position,
-    ShieldAura, Shielded, Size, Sprite,
+    Armor, ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, Bloodlust, CastLightning,
+    ConvertBullets, HealPercent, Hidden, InRange, InfiniteAmmo, MidasTouch, Phantom, PlaceTurret,
+    Player, Position, ShieldAura, Shielded, Size, Sprite, SummonGhosts, TimeSlow,
 };
 use crate::controls::Action;
 use crate::input::Input;
@@ -65,6 +69,61 @@ pub(crate) fn activate_artefact(
             );
         }
         ArtefactKind::RevealMap => {}
+        ArtefactKind::HourglassOfAsh => {
+            let _ = world.insert_one(
+                player,
+                TimeSlow {
+                    remaining: TIME_SLOW_SECONDS,
+                },
+            );
+        }
+        ArtefactKind::BloodChalice => {
+            let _ = world.insert(
+                player,
+                (
+                    HealPercent(CHALICE_HEAL),
+                    Bloodlust {
+                        remaining: BLOODLUST_SECONDS,
+                    },
+                ),
+            );
+        }
+        ArtefactKind::PhantomCloak => {
+            let _ = world.insert_one(
+                player,
+                Phantom {
+                    remaining: PHANTOM_SECONDS,
+                },
+            );
+        }
+        ArtefactKind::GraveLantern => {
+            let _ = world.insert_one(player, SummonGhosts);
+        }
+        ArtefactKind::MidasCoin => {
+            let _ = world.insert(
+                player,
+                (
+                    ConvertBullets,
+                    MidasTouch {
+                        remaining: MIDAS_SECONDS,
+                    },
+                ),
+            );
+        }
+        ArtefactKind::ThunderIdol => {
+            let _ = world.insert_one(player, CastLightning);
+        }
+        ArtefactKind::InfinityQuiver => {
+            let _ = world.insert_one(
+                player,
+                InfiniteAmmo {
+                    remaining: INFINITE_AMMO_SECONDS,
+                },
+            );
+        }
+        ArtefactKind::BoneTurret => {
+            let _ = world.insert_one(player, PlaceTurret);
+        }
     }
     Some(kind)
 }
@@ -80,6 +139,32 @@ pub(crate) fn tick_berserk(world: &mut World, dt: f32) {
     for entity in over {
         let _ = world.remove_one::<Berserk>(entity);
     }
+}
+
+fn tick_timer<T: hecs::Component>(
+    world: &mut World,
+    dt: f32,
+    remaining: impl Fn(&mut T) -> &mut f32,
+) {
+    let mut over = Vec::new();
+    for (entity, effect) in world.query_mut::<(Entity, &mut T)>() {
+        let left = remaining(effect);
+        *left -= dt;
+        if *left <= 0.0 {
+            over.push(entity);
+        }
+    }
+    for entity in over {
+        let _ = world.remove_one::<T>(entity);
+    }
+}
+
+pub(crate) fn tick_artefact_effects(world: &mut World, dt: f32) {
+    tick_timer::<TimeSlow>(world, dt, |effect| &mut effect.remaining);
+    tick_timer::<Bloodlust>(world, dt, |effect| &mut effect.remaining);
+    tick_timer::<Phantom>(world, dt, |effect| &mut effect.remaining);
+    tick_timer::<InfiniteAmmo>(world, dt, |effect| &mut effect.remaining);
+    tick_timer::<MidasTouch>(world, dt, |effect| &mut effect.remaining);
 }
 
 pub(crate) fn update_shield_aura(world: &mut World, textures: &Textures) {
@@ -322,6 +407,69 @@ mod tests {
         assert_eq!(world.query::<&Berserk>().iter().count(), 1);
         tick_berserk(&mut world, 0.2);
         assert_eq!(world.query::<&Berserk>().iter().count(), 0);
+    }
+
+    fn player_of(world: &World) -> Entity {
+        world
+            .query::<Entity>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .expect("a player")
+    }
+
+    fn activate(world: &mut World, physics: &mut Physics, kind: ArtefactKind) {
+        give(world, Some(kind));
+        activate_artefact(world, physics, &press_f(), TextureId::WHITE);
+        assert_eq!(held(world), None);
+    }
+
+    #[test]
+    fn every_new_artefact_inserts_its_components_and_consumes_the_slot() {
+        let (mut world, mut physics, _) = setup();
+        let player = player_of(&world);
+        let has = |world: &World, check: fn(&hecs::EntityRef) -> bool| {
+            world.entity(player).map(|e| check(&e)).unwrap_or(false)
+        };
+        activate(&mut world, &mut physics, ArtefactKind::HourglassOfAsh);
+        assert!(has(&world, |e| e.has::<TimeSlow>()));
+        activate(&mut world, &mut physics, ArtefactKind::BloodChalice);
+        assert!(has(&world, |e| e.has::<HealPercent>() && e.has::<Bloodlust>()));
+        activate(&mut world, &mut physics, ArtefactKind::PhantomCloak);
+        assert!(has(&world, |e| e.has::<Phantom>()));
+        activate(&mut world, &mut physics, ArtefactKind::GraveLantern);
+        assert!(has(&world, |e| e.has::<SummonGhosts>()));
+        activate(&mut world, &mut physics, ArtefactKind::MidasCoin);
+        assert!(has(&world, |e| e.has::<ConvertBullets>()
+            && e.has::<MidasTouch>()));
+        activate(&mut world, &mut physics, ArtefactKind::ThunderIdol);
+        assert!(has(&world, |e| e.has::<CastLightning>()));
+        activate(&mut world, &mut physics, ArtefactKind::InfinityQuiver);
+        assert!(has(&world, |e| e.has::<InfiniteAmmo>()));
+        activate(&mut world, &mut physics, ArtefactKind::BoneTurret);
+        assert!(has(&world, |e| e.has::<PlaceTurret>()));
+    }
+
+    #[test]
+    fn timed_effects_expire_after_their_duration() {
+        let (mut world, mut physics, _) = setup();
+        let player = player_of(&world);
+        activate(&mut world, &mut physics, ArtefactKind::HourglassOfAsh);
+        tick_artefact_effects(&mut world, TIME_SLOW_SECONDS - 0.1);
+        assert!(world.get::<&TimeSlow>(player).is_ok());
+        tick_artefact_effects(&mut world, 0.2);
+        assert!(world.get::<&TimeSlow>(player).is_err());
+    }
+
+    #[test]
+    fn using_a_timed_artefact_again_resets_its_timer() {
+        let (mut world, mut physics, _) = setup();
+        let player = player_of(&world);
+        activate(&mut world, &mut physics, ArtefactKind::PhantomCloak);
+        tick_artefact_effects(&mut world, 3.0);
+        activate(&mut world, &mut physics, ArtefactKind::PhantomCloak);
+        let remaining = world.get::<&Phantom>(player).map(|p| p.remaining);
+        assert_eq!(remaining.ok(), Some(PHANTOM_SECONDS));
     }
 
     #[test]

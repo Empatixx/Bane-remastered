@@ -319,6 +319,7 @@ impl Scene for InGameScene {
         systems::age_items(&mut self.world, dt);
         systems::update_price_tags(&mut self.world);
         systems::tick_berserk(&mut self.world, dt);
+        systems::tick_artefact_effects(&mut self.world, dt);
         systems::update_shield_aura(&mut self.world, &assets.textures);
         systems::update_artefact_hud(&mut self.world, &assets.textures);
         systems::update_slot_prices(&mut self.world);
