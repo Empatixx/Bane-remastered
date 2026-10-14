@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 use crate::assets::{tex, Tex};
-use crate::components::Clip;
+use crate::clip::Clip;
 
 pub(crate) const DESPAWN_SECONDS: f32 = 10.0;
 pub(crate) const BLINK_SECONDS: f32 = 2.0;

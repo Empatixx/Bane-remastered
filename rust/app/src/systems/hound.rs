@@ -4,14 +4,16 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Charge, Chase, Clip, Color, ContactDamage, Expiring, Frozen, Health, HoundAttack,
-    HoundBoss, HoundStage, Position, RoomId, Rooted, Spawning,
+    Animation, BeamPart, Charge, Chase, Clip, Color, ContactDamage, Expiring, Frozen, Health,
+    HoundAttack, HoundBoss, HoundStage, Layer, Position, RoomId, Rooted, Size, Spawning,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{BeamStyle, aim, draw_beam, play, player_at, unit};
+use crate::systems::golem::{
+    BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, turn_towards, unit,
+};
 
 const SPRITE_SCALE: f32 = 2.4;
 const CELL: Vec2 = Vec2::new(64.0, 42.0);
@@ -28,6 +30,7 @@ const FLAME_BEAM: BeamStyle = BeamStyle {
     light: [255.0, 110.0, 30.0],
     spark: tex::HOUND_SPARK,
     damage: enemies::HOUND_BEAM_DAMAGE,
+    wave: 9.0,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -273,10 +276,11 @@ fn execute(
             sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
         }
         Cmd::AimBreath => {
-            let origin = at + head_offset(0, mirrored);
-            let angle = player.map_or(0.0, |player| aim(origin, player));
             if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
-                hound.angle = angle;
+                for head in 0..3 {
+                    let origin = at + head_offset(head, mirrored);
+                    hound.angles[head] = player.map_or(0.0, |player| aim(origin, player));
+                }
             }
         }
         Cmd::Ring => {
@@ -331,13 +335,20 @@ fn set_charge(world: &mut World, entity: Entity, on: bool, at: Vec2, player: Opt
     }
 }
 
-pub(crate) fn beam_angle(base: f32, left: f32, head: usize, heads: usize) -> f32 {
-    let t = if heads <= 1 {
-        0.0
-    } else {
-        head as f32 / (heads - 1) as f32 - 0.5
-    };
-    base + (left - 0.5) * enemies::HOUND_BREATH_SWEEP + t * enemies::HOUND_BREATH_FAN * 2.0
+fn warn(world: &mut World, navigation: &Navigation, ray: Ray) {
+    let end = beam_end(navigation, ray.eye, ray.angle);
+    let direction = Vec2::from_angle(ray.angle);
+    let mut distance = 0.0;
+    while distance <= ray.eye.distance(end) {
+        world.spawn((
+            BeamPart,
+            Position(ray.eye + direction * distance),
+            Size(Vec2::splat(6.0)),
+            Color(Vec4::new(1.0, 0.5, 0.15, 0.7)),
+            Layer(4),
+        ));
+        distance += 22.0;
+    }
 }
 
 pub(crate) fn tick_flames(
@@ -345,31 +356,60 @@ pub(crate) fn tick_flames(
     navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    dt: f32,
 ) {
-    let firing: Vec<(Entity, Vec2, f32, f32, bool)> = world
+    let target = player_at(world).map(|(_, position, _)| position);
+    let active: Vec<(Entity, Vec2, bool, bool, f32)> = world
         .query::<(Entity, &Position, &HoundBoss)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .iter()
         .filter(|(_, _, hound)| {
-            hound.attack == HoundAttack::Breath && hound.stage == HoundStage::Acting
+            hound.attack == HoundAttack::Breath
+                && matches!(hound.stage, HoundStage::Winding | HoundStage::Acting)
         })
         .map(|(entity, position, hound)| {
-            let left = (hound.timer / enemies::HOUND_BREATH_SECONDS).clamp(0.0, 1.0);
-            (entity, position.0, hound.angle, 1.0 - left, hound.enraged)
+            (
+                entity,
+                position.0,
+                hound.stage == HoundStage::Acting,
+                hound.enraged,
+                hound.timer,
+            )
         })
         .collect();
-    for (entity, at, base, progress, enraged) in firing {
+    for (entity, at, firing, enraged, timer) in active {
         let mirrored = world
             .get::<&Animation>(entity)
             .is_ok_and(|animation| animation.flipped());
+        let rate = if enraged {
+            enemies::HOUND_BEAM_RAGE_TURN
+        } else {
+            enemies::HOUND_BEAM_TURN
+        };
         let heads = if enraged { 3 } else { 2 };
         for head in 0..heads {
-            let origin = at + head_offset(head, mirrored);
-            let angle = beam_angle(base, progress, head, heads);
-            draw_beam(
-                world, navigation, textures, sounds, origin, angle, FLAME_BEAM,
-            );
+            let eye = at + head_offset(head, mirrored);
+            let angle = {
+                let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) else {
+                    break;
+                };
+                if let Some(target) = target {
+                    hound.angles[head] =
+                        turn_towards(hound.angles[head], aim(eye, target), rate * dt);
+                }
+                hound.angles[head]
+            };
+            let ray = Ray {
+                eye,
+                angle,
+                phase: timer * 16.0 + head as f32,
+            };
+            if firing {
+                draw_beam(world, navigation, textures, sounds, ray, FLAME_BEAM);
+            } else {
+                warn(world, navigation, ray);
+            }
         }
     }
 }
@@ -385,7 +425,7 @@ mod tests {
             last: None,
             timer: 0.0,
             cooldown: 0.0,
-            angle: 0.0,
+            angles: [0.0; 3],
             charging: false,
             enraged: false,
             seed: 99,
@@ -467,15 +507,5 @@ mod tests {
             .filter(|command| **command == Cmd::Ring)
             .count();
         assert_eq!(rings, 1);
-    }
-
-    #[test]
-    fn the_flame_beams_sweep_across_the_room_and_fan_out() {
-        let start = beam_angle(0.0, 0.0, 1, 3);
-        let end = beam_angle(0.0, 1.0, 1, 3);
-        assert!(end - start > 1.0);
-        let left = beam_angle(0.0, 0.5, 0, 3);
-        let right = beam_angle(0.0, 0.5, 2, 3);
-        assert!(right - left > 0.5);
     }
 }

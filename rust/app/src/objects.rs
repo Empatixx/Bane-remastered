@@ -6,6 +6,7 @@ use crate::components::BreakKind;
 pub(crate) const OBJECT_SIZE: Vec2 = Vec2::new(192.0, 192.0);
 pub(crate) const OBJECT_HEALTH: i32 = 4;
 pub(crate) const EXPLOSION_DAMAGE: i32 = 3;
+pub(crate) const SPIN_COST: i32 = 5;
 pub(crate) const EXPLOSION_REACH: Vec2 = Vec2::new(128.0, 96.0);
 pub(crate) const POOL_SIZE: Vec2 = Vec2::new(128.0, 128.0);
 pub(crate) const POOL_HITBOX: Vec2 = Vec2::new(96.0, 76.0);

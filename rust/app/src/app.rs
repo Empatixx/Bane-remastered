@@ -61,7 +61,11 @@ impl ApplicationHandler for App {
         window.set_cursor_visible(false);
         let started = Gpu::new(Arc::clone(&window)).and_then(|mut gpu| {
             let mut assets = Assets::new()?;
-            let loader = Loader::start(&mut gpu, &mut assets)?;
+            let loader = Loader::start(
+                &mut gpu,
+                &mut assets,
+                &crate::components::BarKind::holed_textures(),
+            )?;
             Ok((gpu, assets, loader))
         });
         match started {

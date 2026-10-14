@@ -39,6 +39,14 @@ impl BarKind {
     pub(crate) const ALL: [Self; 3] = [Self::Health, Self::Armor, Self::Boss];
     pub(crate) const HUD: [Self; 2] = [Self::Health, Self::Armor];
 
+    /// The bar textures with the hole the loader cuts out of them.
+    pub(crate) fn holed_textures() -> [(Tex, [u32; 4]); 3] {
+        Self::ALL.map(|kind| {
+            let spec = kind.spec();
+            (spec.texture, spec.hole)
+        })
+    }
+
     pub(crate) fn spec(self) -> BarSpec {
         match self {
             Self::Health => BarSpec {
@@ -106,6 +114,16 @@ mod tests {
     use crate::viewport::TARGET;
 
     use super::*;
+
+    #[test]
+    fn the_loader_gets_every_bar_texture_with_its_hole() {
+        let holed = BarKind::holed_textures();
+
+        for (kind, (texture, hole)) in BarKind::ALL.iter().zip(holed) {
+            assert_eq!(texture, kind.spec().texture);
+            assert_eq!(hole, kind.spec().hole);
+        }
+    }
 
     #[test]
     fn the_boss_health_bar_is_centered_on_the_screen() {

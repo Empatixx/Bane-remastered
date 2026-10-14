@@ -2,8 +2,7 @@ use glam::{Vec3, Vec4};
 use hecs::World;
 
 use crate::components::{Color, Interactable, Interaction, Light};
-
-pub(crate) const PORTAL_LIGHT: Vec3 = Vec3::new(128.0, 0.0, 128.0);
+use crate::prefabs::PORTAL_LIGHT;
 
 pub(crate) fn tint_portal(world: &mut World, accent: Option<[f32; 3]>) {
     let light = accent.map_or(PORTAL_LIGHT, Vec3::from) / 255.0;

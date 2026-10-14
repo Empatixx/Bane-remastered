@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec4};
+use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
@@ -12,18 +12,21 @@ use crate::components::{
     Trap, Velocity, Weapon,
 };
 use crate::dungeon::{
-    Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces,
+    Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces, Theme,
 };
 use crate::items::{DESPAWN_SECONDS, ItemKind};
 use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
 use crate::physics::Physics;
 use crate::props::{Look, Prop};
 use crate::render::{FontSize, TextureId};
-use crate::systems::{PORTAL_LIGHT, SLOT_COLUMNS, SLOT_IDLE, SLOT_ROWS, SPIN_COST};
+use crate::objects::SPIN_COST;
+use crate::sheets::slot;
 use crate::tilemap::{self, TileGrid, Tileset};
 use rapier2d::prelude::ColliderHandle;
 
 use super::{PRICE_COLOR, PRICE_TAG_SIZE, PROMPT_COLOR, label};
+
+pub(crate) const PORTAL_LIGHT: Vec3 = Vec3::new(128.0, 0.0, 128.0);
 
 pub(crate) fn prop(
     world: &mut World,
@@ -440,8 +443,17 @@ pub(crate) fn tilemap(
     solid_cells
 }
 
-pub(crate) fn ladder(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+pub(crate) fn ladder(
+    world: &mut World,
+    top_left: Vec2,
+    theme: Theme,
+    textures: &Textures,
+) -> Entity {
     let entity = prop(world, Prop::Ladder, top_left, Look::DEFAULT, textures);
+    let _ = world.insert_one(
+        entity,
+        Sprite::cell(textures.get(theme.ladder_texture()), 0, 0, 1, 1),
+    );
     let _ = world.insert(
         entity,
         (
@@ -672,7 +684,7 @@ pub(crate) fn slot_machine(world: &mut World, top_left: Vec2, textures: &Texture
         entity,
         (
             SlotMachine { spinning: None },
-            Animation::new(SLOT_COLUMNS, SLOT_ROWS, SLOT_IDLE),
+            Animation::new(slot::COLUMNS, slot::ROWS, slot::IDLE),
             Interactable {
                 action: Interaction::Spin,
             },

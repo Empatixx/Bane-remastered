@@ -1,7 +1,7 @@
 use glam::Vec2;
 
 use crate::assets::{Tex, tex};
-use crate::components::Clip;
+use crate::clip::Clip;
 use crate::dungeon::Theme;
 use crate::rng::Rng;
 
@@ -76,8 +76,8 @@ pub(crate) const HOUND_MAGMA_LIFE: f32 = 16.0;
 pub(crate) const HOUND_MAGMA_DAMAGE: i32 = 2;
 pub(crate) const HOUND_BREATH_WINDUP: f32 = 0.45;
 pub(crate) const HOUND_BREATH_SECONDS: f32 = 1.8;
-pub(crate) const HOUND_BREATH_SWEEP: f32 = 1.2;
-pub(crate) const HOUND_BREATH_FAN: f32 = 0.42;
+pub(crate) const HOUND_BEAM_TURN: f32 = 0.45;
+pub(crate) const HOUND_BEAM_RAGE_TURN: f32 = 0.7;
 pub(crate) const HOUND_BREATH_RECOVER: f32 = 0.6;
 pub(crate) const HOUND_BEAM_DAMAGE: i32 = 1;
 pub(crate) const HOUND_HOWL_WINDUP: f32 = 0.3;

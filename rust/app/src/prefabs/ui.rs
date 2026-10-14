@@ -9,10 +9,13 @@ use crate::components::{
     ScreenSpace, Size, SpeechBubble, SpeechPart, SpeechText, Sprite, Text, TextButton, UiAction,
 };
 use crate::render::{Align, FontSize, Fonts, TextureId};
-use crate::systems::death_screen::{NOTE_BASELINE, PROMPT_POSITION, SKULL_SIZE, TITLE_BASELINE};
 use crate::viewport::TARGET;
 
 const DEATH_ICON: f32 = 32.0;
+const SKULL_SIZE: Vec2 = Vec2::new(102.0, 96.0);
+const TITLE_BASELINE: f32 = 175.0;
+const NOTE_BASELINE: f32 = 450.0;
+const PROMPT_POSITION: Vec2 = Vec2::new(700.0, 500.0);
 
 const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
 const BUTTON_TEXT_COLOR: Vec4 = palette::RUST;

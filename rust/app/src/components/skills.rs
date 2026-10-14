@@ -101,7 +101,7 @@ pub(crate) struct HoundBoss {
     pub(crate) last: Option<HoundAttack>,
     pub(crate) timer: f32,
     pub(crate) cooldown: f32,
-    pub(crate) angle: f32,
+    pub(crate) angles: [f32; 3],
     pub(crate) charging: bool,
     pub(crate) enraged: bool,
     pub(crate) seed: u32,

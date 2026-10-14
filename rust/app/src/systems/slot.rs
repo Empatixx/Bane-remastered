@@ -6,44 +6,19 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Clip, Hidden, InRange, Player, Position, Size, SlotMachine, SlotPrice, Wallet,
+    Animation, Hidden, InRange, Player, Position, Size, SlotMachine, SlotPrice, Wallet,
 };
 use crate::guns::GunKind;
 use crate::items::{AmmoBox, ItemKind, PotionSize, Vital};
+use crate::objects::SPIN_COST;
 use crate::prefabs;
+use crate::sheets::slot::{LOSE, SPIN, WIN};
 use crate::systems::loadout::unused_gun;
 
-pub(crate) const SPIN_COST: i32 = 5;
 pub(crate) const SPIN_SECONDS: f32 = 2.0;
 const TOTAL_CHANCE: usize = 150;
 const SCATTER_SPEED: f32 = 417.0;
 
-pub(crate) const SLOT_COLUMNS: usize = 6;
-pub(crate) const SLOT_ROWS: usize = 3;
-
-const SPIN: Clip = Clip {
-    row: 0,
-    frames: 4,
-    frame_time: 0.1,
-    looping: true,
-    flipped: false,
-};
-const WIN: Clip = Clip {
-    row: 1,
-    frames: 6,
-    frame_time: 0.1,
-    looping: true,
-    flipped: false,
-};
-const LOSE: Clip = Clip {
-    row: 2,
-    frames: 1,
-    frame_time: 1.0,
-    looping: true,
-    flipped: false,
-};
-
-pub(crate) const SLOT_IDLE: Clip = LOSE;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Outcome {
@@ -270,6 +245,8 @@ mod tests {
     use crate::physics::Physics;
 
     use super::*;
+    use crate::clip::Clip;
+    use crate::sheets::slot;
 
     fn setup(coins: i32) -> (World, Entity, Textures) {
         let mut world = World::new();
@@ -425,11 +402,11 @@ mod tests {
     fn the_machine_has_an_animation_that_matches_its_sheet() {
         let (world, machine, _textures) = setup(0);
 
-        assert_eq!(clip_of(&world, machine), Some(SLOT_IDLE));
+        assert_eq!(clip_of(&world, machine), Some(slot::IDLE));
         let spec = crate::props::Prop::SlotMachine.spec();
-        assert_eq!((spec.columns, spec.rows), (SLOT_COLUMNS, SLOT_ROWS));
-        const { assert!(SPIN.frames <= SLOT_COLUMNS && WIN.frames <= SLOT_COLUMNS) };
-        const { assert!(SPIN.row < SLOT_ROWS && WIN.row < SLOT_ROWS && LOSE.row < SLOT_ROWS) };
+        assert_eq!((spec.columns, spec.rows), (slot::COLUMNS, slot::ROWS));
+        const { assert!(SPIN.frames <= slot::COLUMNS && WIN.frames <= slot::COLUMNS) };
+        const { assert!(SPIN.row < slot::ROWS && WIN.row < slot::ROWS && LOSE.row < slot::ROWS) };
     }
 
     #[test]

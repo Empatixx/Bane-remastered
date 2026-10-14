@@ -5,7 +5,7 @@ use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::tex;
-use crate::assets::{Assets, BULLET, tileset_for};
+use crate::assets::{Assets, BULLET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction};
@@ -455,6 +455,7 @@ impl Scene for InGameScene {
             &self.navigation,
             &assets.textures,
             &mut self.sounds,
+            dt,
         );
         systems::tick_orbiters(&mut self.world, &mut self.physics, dt);
         systems::separate_chasers(&mut self.world);
@@ -609,8 +610,8 @@ impl InGameScene {
         let solid_cells = prefabs::tilemap(
             &mut self.world,
             &dungeon.grid,
-            assets.tileset_of(dungeon.theme),
-            assets.textures.get(tileset_for(dungeon.theme)),
+            assets.tileset_of(dungeon.theme.wide_tiles()),
+            assets.textures.get(dungeon.theme.tileset_texture()),
         );
         self.physics.add_walls(&solid_cells, TILE_SIZE);
         let grid = &dungeon.grid;
@@ -785,7 +786,11 @@ impl InGameScene {
                         self.victory = true;
                     } else {
                         let ladder_top_left = center - Vec2::new(48.0, 0.0);
-                        prefabs::ladder(&mut self.world, ladder_top_left, textures);
+                        let theme = self
+                            .dungeon
+                            .as_ref()
+                            .map_or(Theme::Stone, |dungeon| dungeon.theme);
+                        prefabs::ladder(&mut self.world, ladder_top_left, theme, textures);
                     }
                 }
             }
