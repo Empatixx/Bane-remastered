@@ -308,6 +308,8 @@ impl Scene for InGameScene {
         }
         self.handle_room_events(events, assets);
         systems::update_boss_hud(&mut self.world);
+        systems::bloodlust_heals_on_kill(&mut self.world);
+        systems::midas_kill_coins(&mut self.world, &assets.textures);
         systems::enemy_drops(
             &mut self.world,
             &mut self.kills_without_drop,
@@ -319,7 +321,12 @@ impl Scene for InGameScene {
         systems::age_items(&mut self.world, dt);
         systems::update_price_tags(&mut self.world);
         systems::tick_berserk(&mut self.world, dt);
+        systems::apply_heal_percent(&mut self.world, &assets.textures, &mut self.sounds);
+        systems::convert_bullets(&mut self.world, &mut self.physics, &assets.textures);
         systems::tick_artefact_effects(&mut self.world, dt);
+        systems::spawn_bloodlust_drops(&mut self.world, &assets.textures, dt);
+        systems::tick_blood_drops(&mut self.world, dt);
+        systems::pulse_bloodlust(&mut self.world);
         systems::update_shield_aura(&mut self.world, &assets.textures);
         systems::update_artefact_hud(&mut self.world, &assets.textures);
         systems::update_slot_prices(&mut self.world);

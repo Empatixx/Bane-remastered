@@ -3,6 +3,7 @@ mod animation;
 mod argus;
 mod arrows;
 mod artefacts;
+mod blood;
 mod bosses;
 mod camera;
 mod carry;
@@ -26,6 +27,7 @@ mod leapers;
 mod lighting;
 mod loadout;
 mod magma;
+mod midas;
 mod minimap;
 mod objects;
 mod ogre;
@@ -56,6 +58,10 @@ pub(crate) use arrows::update_enemy_arrows;
 pub(crate) use artefacts::{
     activate_artefact, pick_up_artefact, tick_artefact_effects, tick_berserk, unused_artefact, update_artefact_hud,
     update_shield_aura,
+};
+pub(crate) use blood::{
+    apply_heal_percent, bloodlust_heals_on_kill, pulse_bloodlust, spawn_bloodlust_drops,
+    tick_blood_drops,
 };
 pub(crate) use bosses::{tick_armageddon, tick_hatchers, tick_web_spitters, update_boss_hud};
 pub(crate) use camera::{camera_target, follow_backdrop};
@@ -90,6 +96,7 @@ pub(crate) use leapers::tick_leapers;
 pub(crate) use lighting::collect_lights;
 pub(crate) use loadout::{drop_gun, open_chests, pick_up_gun, switch_guns};
 pub(crate) use magma::{clear_magma, tick_magma, tick_magma_spread};
+pub(crate) use midas::{convert_bullets, midas_kill_coins};
 pub(crate) use minimap::{pan_big_maps, reset_big_map_pan, rooms_for, update_minimaps};
 pub(crate) use objects::{
     break_objects, flicker_flames, leave_poison_trails, tick_chilled, tick_frozen, tick_poison,

@@ -30,7 +30,6 @@ pub(crate) struct TimeSlow {
     pub(crate) remaining: f32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Bloodlust {
     pub(crate) remaining: f32,
@@ -48,7 +47,6 @@ pub(crate) struct InfiniteAmmo {
     pub(crate) remaining: f32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MidasTouch {
     pub(crate) remaining: f32,
@@ -66,10 +64,8 @@ pub(crate) struct CastLightning;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct PlaceTurret;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ConvertBullets;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct HealPercent(pub(crate) f32);
