@@ -11,9 +11,7 @@ use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{
-    BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, turn_towards, unit,
-};
+use crate::systems::golem::{BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, unit};
 
 const SPRITE_SCALE: f32 = 2.4;
 const CELL: Vec2 = Vec2::new(64.0, 42.0);
@@ -277,9 +275,9 @@ fn execute(
         }
         Cmd::AimBreath => {
             let origin = at + head_offset(0, mirrored);
-            let angle = player.map_or(0.0, |player| aim(origin, player));
             if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
-                hound.angle = angle;
+                hound.aim_at = player.unwrap_or(origin + Vec2::X * 200.0);
+                hound.angle = aim(origin, hound.aim_at);
             }
         }
         Cmd::Ring => {
@@ -396,13 +394,15 @@ pub(crate) fn tick_flames(
                 continue;
             };
             if let Some(target) = target {
-                let rate = if enraged {
-                    enemies::HOUND_BEAM_RAGE_TURN
+                let speed = if enraged {
+                    enemies::HOUND_BEAM_RAGE_LAG
                 } else {
-                    enemies::HOUND_BEAM_TURN
+                    enemies::HOUND_BEAM_LAG
                 };
-                hound.angle = turn_towards(hound.angle, aim(main, target), rate * dt);
+                let gap = target - hound.aim_at;
+                hound.aim_at += gap.clamp_length_max(speed * dt);
             }
+            hound.angle = aim(main, hound.aim_at);
             hound.angle
         };
         let heads = if enraged { 3 } else { 2 };
@@ -434,6 +434,7 @@ mod tests {
             timer: 0.0,
             cooldown: 0.0,
             angle: 0.0,
+            aim_at: Vec2::ZERO,
             charging: false,
             enraged: false,
             seed: 99,

@@ -102,6 +102,7 @@ pub(crate) struct HoundBoss {
     pub(crate) timer: f32,
     pub(crate) cooldown: f32,
     pub(crate) angle: f32,
+    pub(crate) aim_at: glam::Vec2,
     pub(crate) charging: bool,
     pub(crate) enraged: bool,
     pub(crate) seed: u32,

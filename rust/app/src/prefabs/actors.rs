@@ -264,6 +264,7 @@ pub(crate) fn enemy(
                     timer: 0.0,
                     cooldown: enemies::HOUND_FIRST_COOLDOWN,
                     angle: 0.0,
+                    aim_at: position,
                     charging: false,
                     enraged: false,
                     seed: 0x27D4_EB2F ^ (position.x as u32).wrapping_mul(19) ^ (position.y as u32),
