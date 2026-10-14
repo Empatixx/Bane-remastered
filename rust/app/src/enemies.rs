@@ -31,11 +31,11 @@ pub(crate) const GOLEM_COOLDOWN: f32 = 2.2;
 pub(crate) const GOLEM_RAGE_COOLDOWN: f32 = 1.3;
 pub(crate) const GOLEM_RAGE_AT: f32 = 0.5;
 pub(crate) const GOLEM_RAGE_SPEED: f32 = 1.35;
-pub(crate) const GOLEM_SLAM_WINDUP: f32 = 0.52;
-pub(crate) const GOLEM_SLAM_RECOVER: f32 = 0.4;
+pub(crate) const GOLEM_SLAM_WINDUP: f32 = 0.45;
+pub(crate) const GOLEM_SLAM_RECOVER: f32 = 0.45;
 pub(crate) const GOLEM_SECOND_RING: f32 = 0.35;
-pub(crate) const GOLEM_THROW_WINDUP: f32 = 0.42;
-pub(crate) const GOLEM_THROW_RECOVER: f32 = 0.4;
+pub(crate) const GOLEM_THROW_WINDUP: f32 = 0.45;
+pub(crate) const GOLEM_THROW_RECOVER: f32 = 0.25;
 pub(crate) const GOLEM_RAIN_WINDUP: f32 = 0.4;
 pub(crate) const GOLEM_RAIN_RECOVER: f32 = 0.5;
 pub(crate) const GOLEM_LASER_RECOVER: f32 = 0.6;
@@ -486,17 +486,17 @@ impl EnemyKind {
             },
             Self::Golem => EnemySpec {
                 min_floor: 2,
-                death_row: 5,
+                death_row: 7,
                 themes: &[Theme::Stone, Theme::Temple, Theme::Lava],
                 role: Role::Boss("Stone golem"),
                 behavior: Behavior::GolemBoss,
                 ..spec(
                     tex::GOLEM,
-                    (7, 6),
-                    (96.0, 96.0),
-                    2.5,
-                    (6, 0.14),
-                    Some((6, 0.16)),
+                    (14, 8),
+                    (100.0, 100.0),
+                    3.0,
+                    (4, 0.175),
+                    Some((14, 0.09)),
                     (110, 2, 17_000_000.0),
                 )
             },

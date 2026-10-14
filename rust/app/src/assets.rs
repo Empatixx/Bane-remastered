@@ -192,7 +192,7 @@ pub(crate) mod tex {
         ARROW_TRAP = "ingame/arrow_trap.tga",
         TRAP_ARROW = "ingame/trap_arrow.tga",
         BLOATED_SPIDER = "ingame/bloated_spider.tga",
-        GOLEM = "ingame/golem.tga",
+        GOLEM = "ingame/golem.png",
         GOLEM_ROCK = "ingame/golem_rock.tga",
         GOLEM_BOULDER = "ingame/golem_boulder.tga",
         ROCK_SHADOW = "ingame/rock_shadow.tga",

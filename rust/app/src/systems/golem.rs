@@ -16,7 +16,7 @@ use crate::prefabs;
 use crate::systems::damage::hurt_player;
 
 const ROCK_RING_ORIGIN_DROP: f32 = 60.0;
-const EYE_HEIGHT: f32 = 70.0;
+const EYE_HEIGHT: f32 = 45.0;
 const FALL_HEIGHT: f32 = 380.0;
 const SHADOW_SIZE: Vec2 = Vec2::new(150.0, 75.0);
 const ROCK_SIZE: Vec2 = Vec2::new(72.0, 72.0);
@@ -40,19 +40,19 @@ pub(crate) enum Cmd {
 }
 
 pub(crate) fn slam_clip() -> Clip {
-    clip(1, 7, 0.13, false)
+    clip(6, 10, 0.09, false)
 }
 
 pub(crate) fn throw_clip() -> Clip {
-    clip(2, 5, 0.14, false)
+    clip(4, 7, 0.09, false)
 }
 
 pub(crate) fn rain_clip() -> Clip {
-    clip(3, 4, 0.14, true)
+    clip(1, 8, 0.09, true)
 }
 
 pub(crate) fn laser_clip() -> Clip {
-    clip(4, 3, 0.33, false)
+    clip(5, 7, 0.14, false)
 }
 
 fn clip(row: usize, frames: usize, frame_time: f32, looping: bool) -> Clip {
