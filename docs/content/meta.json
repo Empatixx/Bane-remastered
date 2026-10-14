@@ -1,4 +1,15 @@
 {
   "title": "Bane",
-  "pages": ["index", "---Hra---", "guns", "enemies", "artefacts-items", "player", "dungeon", "progression", "---Vývoj---", "tech", "contributing"]
+  "pages": [
+    "index",
+    "---Hra---",
+    "guns",
+    "enemies",
+    "artefacts-items",
+    "player",
+    "dungeon",
+    "progression",
+    "---Wiki---",
+    "contributing"
+  ]
 }

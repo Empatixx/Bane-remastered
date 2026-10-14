@@ -1,138 +1,125 @@
 ---
 title: Patra a témata
-description: Sedm biomů (Theme), jak se přidělují patrům a co každé téma mění – tileset, kapalina, pasti, dekorace, bossové.
+description: Sedm biomů dungeonu – jak se přidělují patrům, jak vypadají a jaké pasti, kapaliny, dekorace a bossy přinášejí.
 ---
+
+Každé patro má jedno ze sedmi **témat** (biomů): Spider, Stone, Sewer, Moss, Ice, Lava
+a Temple. Téma mění vzhled zdí a podlahy, barvu tmy kolem mapy, podobu žebříku, kapalinu
+na podlaze, skladbu pastí, sudů a dekorací a také to, kteří nepřátelé a bossové se mohou
+objevit.
 
 ## Jak to funguje
 
-### Přidělení tématu patru
+### Které téma dostane které patro
 
-`Theme::for_floor(run_seed, floor)` (`dungeon/theme.rs`):
+- **Patro 1 je vždy Spider.** Podle příběhu jsou pavouci „stehy“, které drží ránu u povrchu
+  zavřenou.
+- Patra 2–5 dostanou náhodně čtyři ze zbylých šesti témat. Během jednoho runu se žádné
+  téma **neopakuje** a pro stejný seed jsou témata vždy stejná.
 
-1. Pokud je nastavená proměnná `BANE_THEME`, použije se pro **všechna** patra.
-2. Patro 1 je vždy `Spider` (lore: pavouci jsou „stehy“, které drží ránu u povrchu zavřenou).
-3. Patra 2+ : zbylých 6 témat (`Stone, Sewer, Moss, Ice, Lava, Temple`) se zamíchá
-   Fisher–Yatesem s RNG `run_seed ^ THEME_SALT` a patro N dostane `order[(N - 2) % 6]`.
-   V rámci jednoho runu se tedy témata **neopakují** (5 pater, 6 témat) a téma patra je pro
-   daný seed vždy stejné.
+### Jak patra vypadají
 
-### Co téma ovlivňuje
-
-- **Tileset** zdí a podlahy (`tileset_texture`) – Stone používá úzký tileset (21 sloupců),
-  ostatní široký tileset (69 sloupců, `wide_tiles`). Viz [Tilemapa](/docs/dungeon/tilemap).
-- **Žebřík** po bossovi (`ladder_texture`).
-- **Barva pozadí** za mapou (`backdrop`).
-- **Kapalina na podlaze** (`surface`) – Ice → led, Lava → láva, Sewer → voda, Moss → bažina.
-- **Mix pastí, sudů a dekorací** (`mix` → `TrapMix`).
-- **Nepřátelé a bossové** – `EnemySpec.themes` omezuje, kde se nepřítel smí objevit.
+- Zdi a podlahy jsou skládané z dlaždic, které se samy přizpůsobí okolí – rohy, hrany zdí,
+  podlaha těsně pod zdí i vedle ní mají vlastní kresbu.
+- **Stone** používá jednodušší sadu dlaždic s menším počtem variant – podlaha je
+  stejnoměrná, jen tu a tam zdobená dlaždice.
+- Ostatní témata mají bohatší sadu: zhruba třetina podlahy je „zdobená“ (praskliny, kamínky,
+  tematické detaily), zbytek tvoří čisté plochy, které se slévají do souvislých skvrn místo
+  šachovnicového vzoru. Okraje podél zdí mají víc variant.
+- Kolem mapy je tma v barvě tématu, která prosvítá všude, kde je jen hluboká zeď.
+- Vzhled každé dlaždice je dán jen její polohou – stejné místo vypadá při stejném seedu
+  vždy stejně.
 
 ## Obsah
 
 ### Přehled témat
 
-| Téma | Kde | Tileset | Žebřík | Pozadí (RGB) | Kapalina |
-|---|---|---|---|---|---|
-| `Spider` | vždy patro 1 | `TILESET_SPIDER` | `LADDER_SPIDER` | 14, 10, 16 | – |
-| `Stone` | patra 2–5 | `TILESET` (úzký) | `LADDER` | 37, 19, 26 | – |
-| `Sewer` | patra 2–5 | `TILESET_SEWER` | `LADDER_SEWER` | 16, 26, 22 | voda |
-| `Moss` | patra 2–5 | `TILESET_MOSS` | `LADDER_MOSS` | 22, 24, 16 | bažina |
-| `Ice` | patra 2–5 | `TILESET_ICE` | `LADDER_ICE` | 14, 24, 40 | led |
-| `Lava` | patra 2–5 | `TILESET_LAVA` | `LADDER_LAVA` | 20, 8, 8 | láva |
-| `Temple` | patra 2–5 | `TILESET_TEMPLE` | `LADDER_TEMPLE` | 36, 24, 18 | – |
+| Téma | Kde | Barva tmy | Kapalina | Typické pasti |
+|---|---|---|---|---|
+| Spider | vždy patro 1 | téměř černá s fialovým nádechem | – | pavučinové plochy |
+| Stone | patra 2–5 | tmavě vínová | – | bodce, plamenomet, výbušné sudy |
+| Sewer | patra 2–5 | tmavě zelenomodrá | voda | jedové sudy |
+| Moss | patra 2–5 | tmavě olivová | bažina | bodce |
+| Ice | patra 2–5 | tmavě modrá | led | mrazivé sudy |
+| Lava | patra 2–5 | tmavě rudá | láva | 3 plamenomety, výbušné sudy |
+| Temple | patra 2–5 | tmavě hnědá | – | nejvíc bodců, šípové pasti, plamenomety |
 
-### Mix pastí a objektů (`TrapMix`)
+Každé téma má i vlastní podobu žebříku, který se objeví po porážce bosse.
 
-Čísla jsou parametry na **jednu Normal/Ambush místnost**. Jak se z nich počítá skutečný počet,
-ukazuje sloupec „Vzorec“ (viz [Dekorace](/docs/dungeon/decor)).
+### Co najdeš v jedné bojové místnosti
 
-| Položka | Vzorec | Stone | Sewer | Moss | Spider | Ice | Lava | Temple |
-|---|---|---|---|---|---|---|---|---|
-| bodce (`spikes`) | 1 + below(n) | 2 | 1 | 3 | 1 | 2 | 2 | 4 |
-| plamenomety | přesně n | 1 | 0 | 0 | 1 | 0 | 3 | 2 |
-| výbušné sudy | below(n) | 3 | 1 | 1 | 1 | 1 | 5 | 2 |
-| sudy | below(n) | 2 | 2 | 2 | 1 | 1 | 1 | 1 |
-| květináče | below(n) | 2 | 2 | 3 | 1 | 1 | 1 | 3 |
-| jedové sudy | below(n) | 2 | 5 | 3 | 3 | 1 | 0 | 1 |
-| mrazivé sudy | below(n) | 2 | 1 | 1 | 1 | 5 | 0 | 1 |
-| pavučiny na zdi | přesně n | 2 | 2 | 2 | 5 | 2 | 2 | 2 |
-| pavučinové plochy (`web_patches`) | 1 + below(n) | 0 | 0 | 0 | 3 | 0 | 0 | 0 |
-| šípové pasti | 1 + below(n) | 0 | 0 | 0 | 0 | 0 | 0 | 2 |
-| rampouchy | 1 + below(n) | 0 | 0 | 0 | 0 | 5 | 0 | 0 |
-| ledové krystaly | 1 + below(n) | 0 | 0 | 0 | 0 | 3 | 0 | 0 |
-| zamrzlé lebky | 1 + below(n) | 0 | 0 | 0 | 0 | 2 | 0 | 0 |
-| kokony | 1 + below(n) | 0 | 0 | 0 | 3 | 0 | 0 | 0 |
-| houby | 1 + below(n) | 0 | 0 | 4 | 0 | 0 | 0 | 0 |
-| ohnivé gejzíry | 1 + below(n) | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| ledové plochy (`ice_patches`) | 1 + below(n) | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+Počty platí pro jednu Normal nebo Ambush místnost (bodce a pavučiny na zdech jen v Normal).
 
-Pozor: `below(n)` dává 0 až n-1, takže hodnota **1 znamená „nikdy“** (např. ve Spider patře
-se nikdy neobjeví výbušný, obyčejný ani mrazivý sud, ani květináč).
+| Položka | Stone | Sewer | Moss | Spider | Ice | Lava | Temple |
+|---|---|---|---|---|---|---|---|
+| bodce | 1–2 | 1 | 1–3 | 1 | 1–2 | 1–2 | 1–4 |
+| plamenomety | 1 | – | – | 1 | – | 3 | 2 |
+| výbušné sudy | 0–2 | – | – | – | – | 0–4 | 0–1 |
+| obyčejné sudy | 0–1 | 0–1 | 0–1 | – | – | – | – |
+| květináče | 0–1 | 0–1 | 0–2 | – | – | – | 0–2 |
+| jedové sudy | 0–1 | 0–4 | 0–2 | 0–2 | – | – | – |
+| mrazivé sudy | 0–1 | – | – | – | 0–4 | – | – |
+| pavučiny na zdech | 2 | 2 | 2 | 5 | 2 | 2 | 2 |
+| pavučinové plochy | – | – | – | 1–3 | – | – | – |
+| šípové pasti | – | – | – | – | – | – | 1–2 |
+| rampouchy | – | – | – | – | 1–5 | – | – |
+| ledové krystaly | – | – | – | – | 1–3 | – | – |
+| zamrzlé lebky | – | – | – | – | 1–2 | – | – |
+| kokony | – | – | – | 1–3 | – | – | – |
+| svítící houby | – | – | 1–4 | – | – | – | – |
+
+Navíc v každé bojové místnosti: 2–5 pochodní, 2 prapory a 2 hromádky kostí.
 
 ### Bossové podle tématu
 
 | Boss | Patra | Témata |
 |---|---|---|
-| Spider king (`Spider`) | jen 1 | všechna (patro 1 = Spider) |
-| King slime | 2+ | všechna |
-| Stone golem (`Golem`) | 2+ | Stone, Temple, Lava |
-| Argus | 2+ | Temple, Ice, Moss, Sewer |
-| Mimic | 2+ | Stone, Temple |
-| Hellhound | 2+ | Lava |
-| Sewer ogre (`Ogre`) | 2+ | Sewer, Moss |
+| Spider king | jen 1 | Spider |
+| King slime | 2–5 | všechna |
+| Stone golem | 2–5 | Stone, Temple, Lava |
+| Argus | 2–5 | Temple, Ice, Moss, Sewer |
+| Mimic | 2–5 | Stone, Temple |
+| Hellhound | 2–5 | Lava |
+| Sewer ogre | 2–5 | Sewer, Moss |
 
-Pavoučí nepřátelé (Red/Green/Purple spiderling, Bloated spider, Stilt spider) se objevují jen
-v tématu Spider. Podrobně v [Nepřátelích](/docs/enemies).
+Pavoučí nepřátelé (Red, Green a Purple spiderling, Bloated spider, Stilt spider) se objevují
+jen v tématu Spider. Podrobně v [Nepřátelích](/docs/enemies).
 
-### Charakter témat (shrnutí)
+### Charakter témat
 
-- **Spider** – pavučiny všude (5 na zdech, 1–3 lepkavé plochy na podlaze, 1–3 kokony),
-  jedové sudy, žádná kapalina. Nejtmavší pozadí.
-- **Stone** – „výchozí“ dungeon, vyvážený mix všeho, úzký tileset.
-- **Sewer** – voda zpomaluje hráče, hodně jedových sudů, bez plamenometů.
+- **Spider** – pavučiny všude (5 na zdech, 1–3 lepkavé plochy na podlaze, kokony), jedové
+  sudy, žádná kapalina. Nejtmavší patro.
+- **Stone** – klasický kobkový dungeon s vyváženým mixem všeho a jednodušší kresbou dlaždic.
+- **Sewer** – voda zpomaluje, hodně jedových sudů, žádné plamenomety.
 - **Moss** – bažina (nejsilnější zpomalení), svítící houby, hodně bodců a květináčů.
-- **Ice** – kluzký led, mrazivé sudy, rampouchy, krystaly, zamrzlé lebky.
-- **Lava** – láva pálí (2 dmg přes brnění), 3 plamenomety na místnost, až 4 výbušné sudy,
-  žádné jedové ani mrazivé sudy; boss Hellhound rozlévá magma.
+- **Ice** – kluzký led, mrazivé sudy, rampouchy, krystaly a zamrzlé lebky.
+- **Lava** – láva pálí (2 poškození rovnou do životů), 3 plamenomety na místnost, až 4 výbušné
+  sudy, žádné jedové ani mrazivé sudy; boss Hellhound zaplavuje arénu magmatem.
 - **Temple** – nejvíc bodců, šípové pasti ve zdech, plamenomety.
 
-## Interakce
+## Tipy a souvislosti
 
-- [Povrchy](/docs/dungeon/surfaces) – kapalina tématu.
-- [Pasti](/docs/dungeon/hazards) a [Dekorace](/docs/dungeon/decor) – `TrapMix`.
-- [Nepřátelé](/docs/enemies) – `EnemySpec.themes`, `available_in(floor, theme)`.
-- [Osvětlení](/docs/dungeon/lighting) – pozadí (`backdrop_colored`).
+- [Povrchy a kapaliny](/docs/dungeon/surfaces) – voda, bažina, led a láva podrobně.
+- [Pasti a nebezpečí](/docs/dungeon/hazards) a [Dekorace](/docs/dungeon/decor).
+- [Nepřátelé](/docs/enemies) – kdo se kde smí objevit.
+- [Osvětlení](/docs/dungeon/lighting) – svítící houby, láva a plamenomety mění atmosféru patra.
+- V Lava patře vyplatí rozstřílet výbušné sudy z dálky, dokud jsou kolem nich nepřátelé –
+  ve Spider, Sewer, Moss a Ice patrech žádné nenajdeš.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `dungeon/theme.rs` – `Theme`, `TrapMix`, `for_floor`, `mix`, `surface`, `backdrop`,
-  `tileset_texture`, `ladder_texture`, `wide_tiles`, `parse`
-- `assets.rs` – textury `TILESET_*`, `LADDER_*` (`ingame/tileset_<téma>.png`, `ingame/ladder_<téma>.tga`)
-- `enemies.rs` – `EnemySpec.themes`, `pick`, `pick_boss`
+- Ve Spider patře se nikdy neobjeví výbušný, obyčejný ani mrazivý sud, ani květináč;
+  v Sewer, Moss a Ice chybí výbušné sudy a v Ice, Lava a Temple obyčejné sudy. Vypadá to
+  spíš jako nechtěný důsledek nastavení než záměr.
+- Ohnivé gejzíry a ledové plochy jsou ve hře připravené, ale neobjeví se v žádném tématu.
+  Přirozeně by patřily do Lava a Ice.
+- Podle příběhu má být patro 5 vždy Temple s finálním bossem The Heart – ve hře je téma
+  pátého patra náhodné.
 
-## Jak přidat nový …
+## Nápady na rozšíření
 
-**Nové téma (např. `Crypt`)**
-
-1. Přidej variantu do `Theme` a do `LATER` (případně zvětši pole), do `parse`.
-2. Doplň všechny `match` v `theme.rs`: `tileset_texture`, `ladder_texture`, `surface`,
-   `backdrop`, `mix` (+ podmínky pro tematické položky jako `cobwebs`, `icicles`…).
-3. Přidej textury do `tex` makra a do seznamu přednačítání v `assets.rs`
-   (`ingame/tileset_crypt.png` ve **širokém** layoutu, `ingame/ladder_crypt.tga`).
-4. Pokud má mít vlastní kapalinu: nová varianta `Surface` (viz [Povrchy](/docs/dungeon/surfaces)).
-5. Přiřaď tématu nepřátele a bosse v `EnemySpec.themes` (`enemies.rs`) – jinak dostane jen
-   netematické nepřátele a King slime.
-6. Uprav testy v `theme.rs` (počet tilesetů, unikátní pozadí).
-
-## Nápady / chybí
-
-- **Ohnivé gejzíry a ledové plochy mají `TrapMix` 0 ve všech tématech** – kód pro ně
-  existuje (prefab, past, fyzika), ale ve hře se nikdy neobjeví. Přirozeně by patřily do Lava
-  a Ice.
-- Hodnoty 1 u `below(n)` jsou mrtvé (Spider nikdy nemá výbušné/obyčejné/mrazivé sudy ani
-  květináče; Ice/Lava/Temple nikdy obyčejné sudy). Pravděpodobně nezamýšlené – sjednotit
-  vzorec (např. `below(n + 1)`).
-- `story.md`: **patro 5 má být vždy Temple** s finálním bossem The Heart – neimplementováno.
-- Téma nemění hudbu, ambientní světlo ani částice (prach/světlušky jsou jen v lobby a menu).
-- Ice téma nemá vlastního bosse (jen Argus a King slime); Temple nemá unikátní nepřátele.
-- Tematické dekorace jsou čistě vizuální (kokony, rampouchy, krystaly) – kokon by mohl
-  líhnout pavoučky, rampouchy padat.
+- Téma by mohlo měnit hudbu, celkový jas (tmavší Spider a Lava, světlejší namodralý Ice)
+  a přidat částice – jiskry v Lava, sněžení v Ice, kapky v Sewer.
+- Ice nemá vlastního bosse (jen Argus a King slime) a Temple nemá unikátní nepřátele.
+- Tematické dekorace by mohly ožít: kokony líhnou pavoučky, rampouchy padají.
+- Nové téma, např. Crypt, s vlastní kapalinou a bossem.

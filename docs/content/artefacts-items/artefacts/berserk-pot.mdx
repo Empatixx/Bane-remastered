@@ -1,38 +1,36 @@
 ---
 title: Berserk Pot
-description: Na 15 sekund zrychlí pohyb hráče o 30 %.
+description: Na 15 sekund zrychlí pohyb o 30 %.
 ---
+
+Berserk Pot je lektvar zuřivosti, který tě na 15 sekund výrazně zrychlí. Poznáš ho podle změněných částic, které za tebou vlají.
 
 ## Jak to funguje
 
-- Vloží `Berserk { remaining: 15.0 }`. Tiká v `tick_berserk` (samostatně, ne v `tick_artefact_effects`).
-- V `systems/steering.rs` se rychlost hráče násobí `BERSERK_SPEED = 1.3` (násobí se i s perkem Swiftwind Steps ×1,1 a s povrchovými zpomaleními – voda, bažina, pavučina).
-- Damage, rychlost střelby ani dodge **neovlivňuje**.
+- Po použití se tvá rychlost pohybu zvýší o 30 % na 15 sekund.
+- Zrychlení se násobí s talentem Swiftwind Steps (+10 %) i se zpomalením na vodě, v bažině nebo v pavučině.
+- Na damage, rychlost střelby ani úhyb nemá vliv.
 
-### Vizuál
+## Statistiky
 
-- Částice „gaze wind“ za hráčem se vymění za `ARTEFACTS_BERSERKPOT_PARTICLE` a fáze animace se posune o `BERSERK_PHASE = 0.75` (`scenes/ingame.rs`).
-
-| Parametr | Hodnota |
+| Vlastnost | Hodnota |
 |---|---|
 | Trvání | 15 s |
-| Rychlost | ×1,3 |
-| Textura | `ingame/artefacts/berserkpot.tga`, částice `berserkpot-particle.tga` |
+| Rychlost pohybu | +30 % |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Hráč](/docs/player) – pohyb a povrchy (`systems/steering.rs`).
-- [Perky](/docs/artefacts-items/perks) – násobí se s Movement Speed.
+- [Hráč](/docs/player) – pohyb a povrchy.
+- [Perky](/docs/artefacts-items/perks) – s talentem Swiftwind Steps jsi celkem asi o 43 % rychlejší než základ.
+- Hodí se na útěk z obklíčení, proběhnutí místnosti s pastmi nebo uhýbání bullet-hell vzorům bossů.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `artefacts.rs` → `BERSERK_SECONDS`, `BERSERK_SPEED`, `BERSERK_PHASE`
-- `systems/artefacts.rs` → `tick_berserk`
-- `systems/steering.rs` → `steer_player_on`
-- `scenes/ingame.rs` → výběr částice pro `spawn_gaze_wind`
+- **Efekt pokračuje i po smrti** – jako jediný časovaný artefakt se při smrti nezruší.
+- Název slibuje zuřivost, ale přidává jen rychlost.
+- Chybí ukazatel zbývajícího času (platí pro všechny časované artefakty).
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- `clear_artefact_effects` (smrt) `Berserk` neruší.
-- Název „berserk“ slibuje víc než rychlost – zvážit +damage nebo rychlejší střelbu za cenu většího přijatého damage.
-- Chybí HUD ukazatel zbývajícího času (platí pro všechny časované artefakty).
+- Opravdový berserk: víc damage nebo rychlejší střelba, za cenu vyššího přijatého damage.
+- Ukazatel zbývajícího času v HUD.

@@ -1,34 +1,37 @@
 ---
 title: Midas Coin
-description: Promění všechny nepřátelské střely na mince a na 6 sekund přidá 2 mince za každé zabití.
+description: Promění všechny nepřátelské střely v mince a na 6 sekund přidá 2 mince za každé zabití.
 ---
+
+Midas Coin promění všechno, na co sáhne, ve zlato – včetně střel, které na tebe právě letí. Je zároveň obranným i ekonomickým artefaktem.
 
 ## Jak to funguje
 
-Aktivace vloží `ConvertBullets` (jednorázový požadavek) a `MidasTouch { remaining: 6.0 }`.
+1. **Zlatý dotek** – všechny nepřátelské střely, které jsou v tu chvíli ve vzduchu, zmizí a na jejich místě zůstane **mince** se zlatým zábleskem.
+2. **6 sekund bohatství** – každý nepřítel, kterého během té doby zabiješ, vyhodí **2 mince navíc**. Běžný drop (viz [Drops](/docs/artefacts-items/drops)) tím není dotčen.
 
-1. **Konverze střel** – `systems/midas.rs` → `convert_bullets`: všechny existující `EnemyBullet` (kromě umírajících) se odstraní z fyziky i světa a na jejich místě vznikne **mince** (pickup s 10s despawnem) a zlatá jiskra (`ARTEFACTS_MIDAS_SPARKLE`, 6 snímků × 0,07 s, 40 px).
-2. **Midas Touch 6 s** – `midas_kill_coins`: každý nepřítel, který dokončí animaci smrti a nemá `NoDrop`, vyhodí **2 mince** navíc (rozptyl 90 px/s, úhel deterministicky podle pozice). Normální drop (viz [Drops](/docs/artefacts-items/drops)) běží nezávisle.
+Všechny mince z tohoto artefaktu zmizí po 10 sekundách, pokud je nesebereš.
 
-| Parametr | Hodnota |
+## Statistiky
+
+| Vlastnost | Hodnota |
 |---|---|
-| Konverze | všechny nepřátelské střely v tu chvíli |
+| Přeměna | všechny nepřátelské střely ve chvíli použití |
 | Trvání bonusu | 6 s |
 | Bonus za zabití | +2 mince |
-| Textura | `midas_coin.tga`, jiskra `midas_sparkle.tga` |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Nepřátelé](/docs/enemies) – nejsilnější proti bossům s „bullet hell“ vzory; King Slime a minioni (`NoDrop`) bonus nedávají.
-- Mince → [Obchod](/docs/artefacts-items/shop), [Automat](/docs/artefacts-items/slot-machine).
+- [Nepřátelé](/docs/enemies) – nejsilnější proti bossům s hustými vzory střel: jedním stiskem si zachráníš život a ještě zbohatneš. King Slime a vyvolaní minioni bonusové mince nedávají.
+- Mince utratíš v [obchodě](/docs/artefacts-items/shop) nebo v [automatu](/docs/artefacts-items/slot-machine).
+- [Pet](/docs/artefacts-items/pet) ti pomůže mince sesbírat, než zmizí.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/midas.rs` → `convert_bullets`, `midas_kill_coins`, `spawn_sparkle`, `BONUS_COINS`, `SCATTER_SPEED`
-- `components/artefacts.rs` → `ConvertBullets`, `MidasTouch`
+- Přemění jen střely, které letí ve chvíli použití – nové střely už ne.
+- Při velkém množství střel vznikne tolik mincí, že je nestihneš sebrat dřív, než zmizí.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- `midas_kill_coins` testuje, zda `MidasTouch` existuje **kdekoliv** ve světě, ne jen na hráči – zatím jedno a totéž, ale křehké.
-- Konvertuje jen střely v daný okamžik – varianta „6 s každá nová střela → mince“ by byla zajímavější obranně.
-- Mince z konverze mizí po 10 s; při velkém množství se hráč nestihne sebrat.
+- Varianta, kde se po celých 6 sekund každá nová nepřátelská střela mění v minci.
+- Mince z přeměny, které nemizí.

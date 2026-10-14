@@ -1,80 +1,49 @@
 ---
 title: Minigun
-description: Kulomet s nejvyšší kadencí ve hře, stopovkami a velmi dlouhým přebíjením.
+description: Kulomet s nejvyšší kadencí ve hře, žlutými stopovkami a velmi dlouhým přebíjením.
 ---
 
-**Minigun** (`GunKind::Minigun`) — Automat na udržovanou palbu: 16,7 ran/s, zásobník 40 (maximum HUD), přebíjení 2,2 s.
+**Minigun** je zbraň na nepřetržitou palbu: téměř 17 ran za sekundu, největší zásobník ve hře (40) a nejdelší přebíjení (2,2 s).
 
 ## Jak to funguje
 
-### Statistiky
+Automatická zbraň — střílí, dokud hráč drží tlačítko. Střílí žluté stopovky, které letí rychleji než obyčejné kulky, s rozptylem kolem ±8,6°.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 1–2 |
-| Reálné poškození na projektil | 1 (průměr 1) |
-| Projektilů na výstřel | 1 |
-| Kadence | 16,67 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 16,67 |
-| Odchylka (`inaccuracy`) | 0,3 → ±0,15 rad (±8,6°) |
+| Poškození na ránu | 1 |
+| Kadence | 16,7 rány/s |
+| DPS | 16,7 |
 | Režim | automatická |
+| Rozptyl | ±8,6° |
 | Zásobník / rezerva | 40 / 400 |
-| Přebíjení | 2,2 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,06 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::SubMachine` — dva sloupce nábojů (krok 15 px, sloupce po 25 px) |
-| Nábojnice | ano (nábojnice) |
-| Zvuk výstřelu / přebití | `MinigunShoot` / `MinigunReload` |
-| Textura / velikost ikony | `tex::GUNS_MINIGUN` / 104 × 46 px |
-| Klíč v profilu | `"minigun"` |
+| Přebití | 2,2 s |
+| Kritická šance | 0 % |
+| Projektil | stopovka, rychlá, žluté světlo |
+| Průraz | 0 |
+| Otřes obrazovky | velmi slabý na ránu, při držení znatelný |
+| Nábojnice | ano |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Automatická, střely `Round::Tracer` (900 px/s, žluté světlo), odchylka ±0,15 rad (±8,6°).
+- Nejvyšší DPS po Shotgunu a navíc na libovolnou vzdálenost.
+- Zásobník vydrží jen 2,4 s palby a přebíjení trvá 2,2 s — uzly **Reload** jsou nejcennější vylepšení.
+- Ideální nosič mutace **Frost** — čtyři zásahy na zmrazení přijdou během čtvrt sekundy. Viz [Mutace](/docs/guns/mutace).
+- Upgrady poškození od Scientista na Minigun nefungují; posiluje ho jen strom zbraně.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Tracer` |
-| Rychlost | 900 px/s |
-| Velikost sprite / hitbox | 16 × 16 / 12 × 12 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | žluté (255, 200, 0) |
-| Natáčí se ve směru letu | ano |
-| Textura | `tex::ROUND_TRACER` |
+- Uzly **Magazine** jsou zbytečné — zásobník je už na maximu 40.
+- Stůl se zbraněmi ukazuje poškození 1–2, ale Minigun dává vždy 1.
+- S uzly **Fire rate** se obrazovka při držení spouště třese téměř nepřetržitě.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 2,2 s, pak se zásobník doplní z rezervy (max. 40 nábojů). Rezervu 400 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Zásobník 40 = `MAX_CLIP`, takže uzly Magazine ve stromu jsou zbytečné (oříznou se na 40).
-- Shake 0,06 × 16,7 = 1,0 traumatu/s; s uzly Fire rate se blíží limitu 1,5.
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Minigun`, větev v `GunKind::spec`, `Round::Tracer` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Minigun“)
-- `assets.rs` → `tex::GUNS_MINIGUN`
-
-## Nápady / chybí
-
-- Roztáčení hlavně (spin-up) — klasická mechanika kulometu, která tu chybí.
-- Generátor stromu by neměl nabízet Magazine u zbraní se zásobníkem na limitu.
+- Roztáčení hlavně — kadence roste, jak hráč drží spoušť.
+- Zpomalení hráče při střelbě jako protiváha síly.

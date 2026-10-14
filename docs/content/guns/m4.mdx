@@ -1,83 +1,48 @@
 ---
 title: M4
-description: Útočná puška střílející dávky po čtyřech ranách se zamčeným mířením.
+description: Útočná puška, která střílí dávky po čtyřech ranách do zamčeného směru.
 ---
 
-**M4** (`GunKind::M4`) — Jediná zbraň s dávkou (`burst: Some(4)`). Dokonale přesná (inaccuracy 0), konstantní poškození 2.
+**M4** je jediná zbraň ve hře, která střílí **dávky**. Je dokonale přesná a každá rána dává stálé 2 poškození.
 
 ## Jak to funguje
 
-### Statistiky
+Stačí držet tlačítko — M4 střílí dávku za dávkou. Každá dávka má **4 rány** s odstupem 0,05 s a míří tam, kam hráč mířil v okamžiku první rány; pohyb myší během dávky ji neotočí. Po dávce následuje pauza 0,75 s, celý cyklus trvá asi 0,9 s.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 2 |
-| Reálné poškození na projektil | 2 (průměr 2) |
-| Projektilů na výstřel | 1 |
-| Kadence | 4,44 ran/s (dávka 4 ran po 0,05 s + cooldown 0,75 s) |
-| Průměrné DPS (bez přebíjení) | 8,89 |
-| Odchylka (`inaccuracy`) | 0 (dokonale přesná) |
-| Režim | automatická, dávka 4 |
+| Poškození na ránu | 2 |
+| Kadence | 4,4 rány/s (dávky po 4) |
+| DPS | 8,9 |
+| Režim | automatická, dávky |
+| Rozptyl | žádný |
 | Zásobník / rezerva | 32 / 250 |
-| Přebíjení | 1,3 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,2 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::SubMachine` — dva sloupce nábojů (krok 15 px, sloupce po 25 px) |
-| Nábojnice | ano (nábojnice) |
-| Zvuk výstřelu / přebití | `M4Shoot` / `M4Reload` |
-| Textura / velikost ikony | `tex::GUNS_M4` / 98 × 52 px |
-| Klíč v profilu | `"m4"` |
+| Přebití | 1,3 s |
+| Kritická šance | 0 % |
+| Projektil | kulka, střední rychlost, červené světlo |
+| Průraz | 0 |
+| Otřes obrazovky | slabý |
+| Nábojnice | ano |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Automatická (`auto: true`) — držením tlačítka střílí dávku za dávkou. Stisk vystřelí první ránu a založí komponentu `Burst { left: 3, timer: BURST_DELAY, aim }`; další tři rány padnou po `BURST_DELAY` = 0,05 s **ve směru zamčeném při stisku** (pohyb myši během dávky se ignoruje). Po každé ráně dávky se nastaví cooldown 0,75 s, takže jeden cyklus trvá cca 0,9 s.
+- Během dávky nejde přebíjet — přebíjej mezi dávkami.
+- Mutace **Deadeye** počítá každou ránu dávky zvlášť, takže krituje každou pátou ránu, ne dávku.
+- Bonus útoku ze zálohy (artefakt Phantom) dostane jen první rána dávky.
+- Proti rychlým nepřátelům pozor: zamčený směr znamená, že pozdní rány dávky mohou minout.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Bullet` |
-| Rychlost | 700 px/s |
-| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | červené (255, 0, 0) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::BULLET` |
+- Z dávky je slyšet jen první rána.
+- Uzly **Accuracy** ve [stromu zbraně](/docs/guns/strom-zbrane) jsou u M4 zbytečné — rozptyl už je nulový.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1,3 s, pak se zásobník doplní z rezervy (max. 32 nábojů). Rezervu 250 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Během dávky nelze přebíjet (`start_reload` vyžaduje `burst.is_none()`).
-- Zvuk výstřelu se přehraje jen u první rány dávky; další tři rány jsou tiché (shooting.rs, větev `weapon.burst`).
-- Každá rána dávky se počítá do Deadeye (`count_shot`), takže Deadeye na M4 krituje každou pátou **ránu**, ne dávku.
-- Rány dávky nedostávají bonus ze zálohy (`ambush: false`) — Phantom dvojnásobí jen první ránu.
-- Uzel Accuracy ve stromu je pro M4 zbytečný (inaccuracy 0).
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::M4`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „M4“)
-- `assets.rs` → `tex::GUNS_M4`
-
-## Nápady / chybí
-
-- Doplnit zvuk pro každou ránu dávky (nebo jeden delší „burst“ sample).
-- Zvážit, aby Accuracy uzly na zbraních s nulovou odchylkou generátor stromu nenabízel.
+- Zvuk pro každou ránu dávky nebo jeden delší zvuk dávky.
+- Uzel stromu „+1 rána v dávce“.

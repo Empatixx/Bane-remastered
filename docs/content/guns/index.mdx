@@ -1,52 +1,40 @@
 ---
 title: Zbraně
-description: Přehled všech 16 zbraní, střelby, projektilů, stromů vylepšení a toho, jak hráč ke zbraním přijde.
+description: Všech 16 zbraní v Bane, jak se s nimi střílí, odkud se berou a jak se trvale vylepšují.
 ---
 
-Bane je top-down střílečka, takže zbraně jsou hlavní nástroj hráče. Rust port má **16 zbraní** (`GunKind`), **10 typů projektilů** (`Round`), **6 mutací** (`Mutation`) a pro každou zbraň vlastní procedurálně generovaný **strom vylepšení**, který se kupuje za zlato u stolu se zbraněmi v lobby.
+Bane je top-down střílečka, takže zbraň je to hlavní, co hráč v ruce drží. Ve hře je **16 zbraní** — od startovní pistole přes samopaly a brokovnici až po raketomet, plamenomet, teslovku a railgun. Každá zbraň střílí jeden z **10 druhů projektilů**, má vlastní trvalý **strom vylepšení** a na jeho konci jednu ze **6 mutací**.
 
 ## Jak to funguje
 
-Celý systém v jedné smyčce:
-
-1. **Lobby** — hráč u stolu se zbraněmi (`scenes/weapon_table.rs`) kupuje uzly stromu konkrétní zbraně za zlato z předchozích runů. Bonusy se uloží do profilu (`WeaponProgress`).
-2. **Start runu** — hráč dostane `Loadout::starting()` = Pistol (slot 1) + Shotgun (slot 2). Na loadout se aplikují bonusy všech stromů (`apply_weapon_mods`) a perky ze Scientistových upgradů (sloty navíc, kapacita munice, případně omezení výzvy `only_gun`).
-3. **Během runu** — hráč míří myší, střílí levým tlačítkem (`systems::shoot`), přebíjí R, přepíná 1–9 / kolečkem, zahazuje Q a sbírá E. Projektily létají fyzikou (rapier2d) a při kontaktu je zpracuje `bullet_hits` (poškození, průraz, výbuch, splash, řetězový blesk, mutace, odraz).
-4. **Nové zbraně** padají ze zbraňové truhly (treasure room, vyčištěná ambush místnost), prodávají se v obchodě a padají z hracího automatu — vždy zbraň, kterou hráč ještě nedrží, s plným zásobníkem a s bonusy jejího stromu.
-5. **Mezi patry** se celý loadout (včetně stavu zásobníků a rezerv) přenáší (`systems/carry.rs`). Po konci runu loadout zaniká; trvalé jsou jen stromy.
-
-Tok jednoho výstřelu:
-
-- vstup (klik / držení) → kontrola cooldownu, přebíjení, prázdného zásobníku
-- odečtení náboje, nastavení cooldownu, případně založení dávky (M4)
-- hod poškození pro každý projektil → bonus stromu → perky hráče → kritický zásah ×2 → útok ze zálohy (Phantom) ×2
-- spawn projektilu s rychlostí podle `Round`, vyhození nábojnice, otřes kamery
-- kontakt → `bullet_hits` → poškození přes `damage::deal`, efekty projektilu a mutace
+1. **V lobby** si hráč u [stolu se zbraněmi](/docs/guns/stul-se-zbranemi) kupuje za zlato z předchozích runů vylepšení konkrétních zbraní. Ta platí natrvalo.
+2. **Na začátku runu** dostane hráč vždy **Pistol** a **Shotgun**. Vylepšení ze stromů se projeví hned, stejně jako upgrady od Scientista (třetí slot na zbraň, větší zásoba munice, vyšší poškození a šance na kritický zásah).
+3. **Během runu** hráč míří myší, střílí levým tlačítkem, přebíjí klávesou R, přepíná zbraně klávesami 1–9 nebo kolečkem, zahazuje Q a sbírá E.
+4. **Nové zbraně** padají ze zbraňových truhel (treasure room a vyčištěná ambush místnost), dají se koupit v obchodě a vyhrát v hracím automatu. Vždy jde o zbraň, kterou hráč zrovna nemá, s plným zásobníkem a se všemi zakoupenými vylepšeními.
+5. **Mezi patry** si hráč nese celou výbavu včetně stavu zásobníků. Po skončení runu výbava zaniká; trvalé jsou jen stromy vylepšení.
 
 ## Obsah
 
-| Zbraň | Poškození (reálné) | Kadence | Režim | Zásobník / rezerva | Přebití | Projektil | DPS |
+| Zbraň | Poškození | Kadence | Režim | Zásobník / rezerva | Přebití | Projektil | DPS |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Pistol](/docs/guns/pistol) | 1–2 | 4/s | semi | 7 / 120 | 0,7 s | Bullet | 6 |
-| [Shotgun](/docs/guns/shotgun) | 3–4 × 4 broky | 2/s | semi | 6 / 48 | 0,7 s | Bullet ×4 | 28 |
-| [Luger](/docs/guns/luger) | 1 | 4/s | semi | 9 / 150 | 0,7 s | Bullet | 4 |
-| [Revolver](/docs/guns/revolver) | 4–5 | 2,2/s | semi | 6 / 60 | 0,7 s | Bullet | 10 |
-| [M4](/docs/guns/m4) | 2 | 4,4/s (dávky po 4) | auto + dávka | 32 / 250 | 1,3 s | Bullet | 8,9 |
-| [Uzi](/docs/guns/uzi) | 1 | 10/s | auto | 20 / 200 | 0,7 s | Bullet | 10 |
-| [Thompson](/docs/guns/thompson) | 1–2 | 5/s | auto | 30 / 300 | 0,85 s | Bullet | 7,5 |
-| [Sniper](/docs/guns/sniper) | 9–12, krit 20 % | 0,9/s | semi | 5 / 40 | 1,6 s | Slug (průraz 2) | 9,5 |
-| [RPG](/docs/guns/rpg) | 8–10 plošně | 0,7/s | semi | 1 / 12 | 1,8 s | Rocket (výbuch) | 6,4 |
-| [Minigun](/docs/guns/minigun) | 1 | 16,7/s | auto | 40 / 400 | 2,2 s | Tracer | 16,7 |
-| [Crossbow](/docs/guns/crossbow) | 5–7 | 1,7/s | semi | 3 / 45 | 1,0 s | Bolt (průraz 1) | 10 |
-| [Flamethrower](/docs/guns/flamethrower) | 1 | 14,3/s | auto | 40 / 400 | 1,5 s | Flame (průraz ∞, 0,45 s) | 14,3 |
-| [Blaster](/docs/guns/blaster) | 2–3 | 4,5/s | semi | 12 / 144 | 1,0 s | Laser | 11,4 |
-| [Plasma Rifle](/docs/guns/plasma-rifle) | 2 | 6,25/s | auto | 24 / 240 | 1,4 s | Plasma (splash) | 12,5 |
-| [Tesla Gun](/docs/guns/tesla-gun) | 3–4 | 1,8/s | semi | 8 / 80 | 1,2 s | Spark (2 skoky) | 6,4 |
-| [Railgun](/docs/guns/railgun) | 14–19 | 0,6/s | semi | 3 / 24 | 2,0 s | Rail (průraz ∞) | 10,3 |
+| [Pistol](/docs/guns/pistol) | 1–2 | 4/s | jednotlivě | 7 / 120 | 0,7 s | kulka | 6 |
+| [Shotgun](/docs/guns/shotgun) | 3–4 × 4 broky | 2/s | jednotlivě | 6 / 48 | 0,7 s | 4 broky | 28 |
+| [Luger](/docs/guns/luger) | 1 | 4/s | jednotlivě | 9 / 150 | 0,7 s | kulka | 4 |
+| [Revolver](/docs/guns/revolver) | 4–5 | 2,2/s | jednotlivě | 6 / 60 | 0,7 s | kulka | 10 |
+| [M4](/docs/guns/m4) | 2 | 4,4/s | dávky po 4 | 32 / 250 | 1,3 s | kulka | 8,9 |
+| [Uzi](/docs/guns/uzi) | 1 | 10/s | automat | 20 / 200 | 0,7 s | kulka | 10 |
+| [Thompson](/docs/guns/thompson) | 1–2 | 5/s | automat | 30 / 300 | 0,85 s | kulka | 7,5 |
+| [Sniper](/docs/guns/sniper) | 9–12, krit 20 % | 0,9/s | jednotlivě | 5 / 40 | 1,6 s | průbojná střela | 9,5 |
+| [RPG](/docs/guns/rpg) | 8–10 plošně | 0,7/s | jednotlivě | 1 / 12 | 1,8 s | raketa | 6,4 |
+| [Minigun](/docs/guns/minigun) | 1 | 16,7/s | automat | 40 / 400 | 2,2 s | stopovka | 16,7 |
+| [Crossbow](/docs/guns/crossbow) | 5–7 | 1,7/s | jednotlivě | 3 / 45 | 1,0 s | šipka (průraz 1) | 10 |
+| [Flamethrower](/docs/guns/flamethrower) | 1 | 14,3/s | automat | 40 / 400 | 1,5 s | plamen (prochází vším) | 14,3 |
+| [Blaster](/docs/guns/blaster) | 2–3 | 4,5/s | jednotlivě | 12 / 144 | 1,0 s | laser | 11,4 |
+| [Plasma Rifle](/docs/guns/plasma-rifle) | 2 | 6,25/s | automat | 24 / 240 | 1,4 s | plazma (cáká) | 12,5 |
+| [Tesla Gun](/docs/guns/tesla-gun) | 3–4 | 1,8/s | jednotlivě | 8 / 80 | 1,2 s | jiskra (2 skoky) | 6,4 |
+| [Railgun](/docs/guns/railgun) | 14–19 | 0,6/s | jednotlivě | 3 / 24 | 2,0 s | rail (prochází vším) | 10,3 |
 
-DPS = průměrné poškození jednoho cíle za sekundu bez přebíjení, bez perků, bez bonusových efektů (průraz, splash, řetěz, výbuch). „Reálné“ poškození: maximum v kódu se nikdy nepadne (viz [Střelba](/docs/guns/strelba)).
-
-Podstránky systému:
+**DPS** = průměrné poškození jednomu cíli za sekundu nepřetržité střelby, bez přebíjení, vylepšení a bonusových efektů (průraz, cákanec, blesk, výbuch). Poškození je uvedené tak, jak ve hře skutečně padá — horní hranice, kterou ukazuje stůl se zbraněmi, nikdy nepadne (viz [Střelba](/docs/guns/strelba)).
 
 <Cards>
   <Card title="Střelba" href="/docs/guns/strelba" />
@@ -54,49 +42,29 @@ Podstránky systému:
   <Card title="Mutace" href="/docs/guns/mutace" />
   <Card title="Strom zbraně" href="/docs/guns/strom-zbrane" />
   <Card title="Stůl se zbraněmi" href="/docs/guns/stul-se-zbranemi" />
-  <Card title="Loadout a munice" href="/docs/guns/loadout" />
+  <Card title="Sloty a munice" href="/docs/guns/loadout" />
   <Card title="Získávání zbraní" href="/docs/guns/ziskavani" />
 </Cards>
 
-## Interakce
+## Tipy a souvislosti
 
-- [Hráč](/docs/player) — loadout je komponenta hráče; během dodge (`Dodge`) a zamrznutí (`Frozen`) hráč nestřílí.
-- [Progrese](/docs/progression) — zlato z runů platí stromy zbraní; Scientistovy upgrady dávají perky *Sharpened/Dangerous Bullets* (poškození), *Critical Hit* (+10 % krit), *Additional Ammo* (×1,1 rezerva), *Additional Gun* (+1 slot); výzva *Pistol Only* omezuje loadout.
-- [Artefakty a předměty](/docs/artefacts-items) — krabice s municí, Infinity Quiver (nekonečná munice 8 s), Phantom (první rána ze zálohy ×2), Ring of Death (50 kulek po 2), Bone Turret (střepy po 2), Thunder Idol (řetězový blesk).
-- [Dungeon](/docs/dungeon) — zbraňové truhly v treasure room a po ambush místnostech, obchod, hrací automat.
-- [Nepřátelé](/docs/enemies) — nepřátelské střely jsou samostatný systém (`EnemyBullet`), hráčovy kulky je nezasahují.
+- [Hráč](/docs/player) — během úskoku (dodge) a když je hráč zmrzlý, střílet nejde.
+- [Progrese](/docs/progression) — zlato z runů platí stromy zbraní. Scientistovy upgrady dávají *Sharpened Bullets* a *Dangerous Bullets* (poškození), *Critical Hit* (+10 % krit), *Additional Ammo* (rezerva ×1,1) a *Additional Gun* (+1 slot). Výzva *Pistol Only* dovolí jen pistoli.
+- [Artefakty a předměty](/docs/artefacts-items) — krabice s municí, Infinity Quiver (8 s nekonečné munice), Phantom (první rána ze zálohy za dvojnásobek), Ring of Death (50 kulek po 2), Bone Turret (střepy po 2), Thunder Idol (řetězový blesk).
+- [Dungeon](/docs/dungeon) — zbraňové truhly, obchod a hrací automat.
+- [Nepřátelé](/docs/enemies) — hráčovy střely se s nepřátelskými nijak nesrážejí.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `guns.rs` → `GunKind`, `GunSpec`, `Round`, `RoundSpec`, `Trail`, `Mutation`, `ClipStyle`, `AmmoClass`, `pip_layout`
-- `components/combat.rs` → `Bullet`, `Weapon`, `Loadout`, `Burst`, `GunDrop`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`, `burn_out_rounds`, `rocket_blast`, `explode_round`, `splash`, `chain_lightning`, `chill`
-- `systems/loadout.rs` → přepínání, zahození, sebrání, truhly, `unused_gun`
-- `weapon_upgrades.rs`, `weapon_tree.rs` → stromy vylepšení
-- `scenes/weapon_table.rs` → UI stolu se zbraněmi v lobby
-- `systems/casings.rs`, `systems/trails.rs`, `systems/lightning.rs` → nábojnice, stopy projektilů, blesk artefaktu
-- `systems/hud.rs` → ikona zbraně a náboje v zásobníku
-- Pozor: `systems/arrows.rs` nejsou šípy kuše, ale ukazatele nepřátel mimo obrazovku (`EnemyArrow`).
+- Startovní **Shotgun** má DPS 28, většina ostatních zbraní jen 6–17. Pistol a Luger jsou vedle něj skoro nepoužitelné.
+- Neexistuje **rarita ani postup zbraní** — všech 14 nestartovních zbraní padá stejně často už od 1. patra, takže Railgun může padnout hned v první truhle.
+- Zásahy nepřátele **neodhazují** (žádný knockback).
+- Zbraň **není vidět v ruce hráče** — její obrázek je jen v HUD a na zemi, chybí i záblesk z hlavně.
+- Munice má jen dva druhy: brokové náboje pro Shotgun a „náboje“ pro všechno ostatní. Raketomet, plamenomet, laser i railgun se plní stejnou krabicí jako pistole.
+- Starší design dokument uvádí 7 zbraní a Shotgun s poškozením 222–333; ve hře je 16 zbraní a Shotgun má 3–4 na brok.
 
-## Jak přidat novou zbraň
+## Nápady na rozšíření
 
-1. `guns.rs`: přidat variantu do `GunKind`, do `GunKind::ALL` (zvýšit délku pole), do `GunKind::key` (stabilní snake_case klíč — **nikdy ho neměnit**, je seed stromu a klíč v profilu) a větev do `GunKind::spec` (pomocí `gun(...)` + override polí `auto`, `burst`, `pellets`, `round`, `shake`, `crit_chance`).
-2. Pokud potřebuje nový projektil, viz [Projektily → Jak přidat](/docs/guns/projektily).
-3. `assets.rs`: přidat `tex::GUNS_…` (cesta `ingame/guns/….tga`) a zařadit texturu do seznamu načítaných; velikost ikony zadat v `spec` (`icon`).
-4. `audio`: přidat `SoundEffect` pro výstřel a přebití (nebo použít existující).
-5. `scenes/weapon_table.rs` → `name`: zobrazované jméno.
-6. Pokud zbraň používá brokové náboje, upravit `GunKind::ammo_class` (dnes jen Shotgun).
-7. Ověřit testy v `guns.rs`: zásobník max. `MAX_CLIP` = 40, `shake / fire_interval` pod `TRAUMA_DECAY` 1,5; test `only_the_m4_bursts_and_only_automatics_hold_the_trigger` vyjmenovává automaty — doplnit.
-8. Strom se vygeneruje sám z klíče (`weapon_tree::generate`) — fingerprint test hlídá jen prvních 7 zbraní, nová zbraň ho nerozbije.
-9. Zbraň bude automaticky padat z truhel/obchodu/automatu (`unused_gun` bere `GunKind::ALL`).
-10. Přidat stránku do této wiki a do `meta.json`.
-
-## Nápady / chybí
-
-- **FEATURE.md je zastaralý**: uvádí 7 zbraní a Shotgun 222–333; Rust má 16 zbraní a Shotgun 3–5. TODO.md tvrdí, že „lightning je jen osvětlení scény“ — dnes existuje Tesla Gun i Thunder Idol.
-- **Žádné rarity ani gating zbraní**: všech 14 nestartovních zbraní padá se stejnou pravděpodobností od patra 1 (Railgun hned v první truhle). Chybí odemykání zbraní metaprogresí (TODO.md M4 „unlocking new weapons“).
-- **Žádný knockback** — v Rust portu neexistuje odhození nepřítele zásahem (TODO.md zmiňuje „knockback tuning“).
-- **Zbraň není vidět v ruce hráče** — textura zbraně se kreslí jen v HUD a na zemi (`GunDrop`); chybí sprite zbraně otočený za myší a záblesk z hlavně.
-- **Balanc**: Shotgun (startovní) má DPS 28, většina ostatních 6–17. Pistol a Luger jsou téměř nepoužitelné.
-- **Třídy munice**: jen Shotgun vs. „vše ostatní“; Rocket, Flame, Laser i Rail se plní krabicí do pistole, `AmmoBox::SubMachine` je funkčně totožná s `AmmoBox::Pistol`.
-- Nápady na obsah v duchu existujícího designu: nabíjená zbraň (charge), paprsková zbraň (beam), bumerang, granátomet s odrazem, zbraň vyvolávající (summon) — systémy `Summoned` a `chains` už existují.
+- Odemykání zbraní metaprogresí — např. zbraň se objeví na stole teprve poté, co ji hráč poprvé vynese z runu.
+- Tier zbraní podle patra, aby silné kusy (Railgun, Minigun) přicházely později.
+- Nové typy zbraní: nabíjená zbraň (podržením silnější rána), paprsek, bumerang, granátomet s odrazem, zbraň vyvolávající pomocníky.

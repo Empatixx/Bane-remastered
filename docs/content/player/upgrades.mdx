@@ -1,137 +1,111 @@
 ---
-title: Talenty (permanentní vylepšení)
-description: Všech 15 talentů ve třech stromech, jejich cena, skutečný efekt v kódu, pravidla nákupu a talentové menu u Vědce.
+title: Talenty
+description: Všech 15 trvalých talentů ve třech stromech — co stojí, co doopravdy dělají, mazlíček a jak funguje talentové menu u Vědce.
 ---
+
+Talenty jsou **trvalá vylepšení postavy**, která ti zůstanou napříč všemi běhy. Kupuješ je v lobby u Vědce
+(„Press E to upgrade“) za měnu **Talents**, kterou získáváš plněním misí a výzev.
 
 ## Jak to funguje
 
-Talenty jsou trvalá vylepšení postavy uložená v profilu (`Profile.unlocked`, JSON). Kupují se v lobby
-u Vědce (interakce `Upgrade`, „Press E to upgrade“) za měnu **Talents** (`Profile.balance`).
-
-- **3 stromy × 5 uzlů**, každý strom je lineární řetěz: uzel jde koupit, až když vlastníš předchozí (`parent`).
-- **První uzel každého stromu je zdarma** (`is_free`) — počítá se jako vlastněný, i když není v `unlocked`.
-- **Každý ostatní uzel stojí 1 talent** (`TALENT_PRICE = 1`).
-- Nákup (`purchase`) vrací `Bought`, `AlreadyOwned`, `Locked` (chybí rodič) nebo `TooExpensive`; po úspěchu
-  se profil hned uloží a přehraje zvuk `TalentUnlock`.
-- Efekty se počítají v `Perks::from_unlocked` při startu běhu, poté je tvarují pravidla výzvy (`RunRules::shape`).
+- Talenty jsou rozdělené do **3 stromů po 5 uzlech** — Utility, Offensive a Defensive. Každý strom je jednoduchý
+  řetěz: další talent koupíš, až když vlastníš ten předchozí.
+- **První talent každého stromu máš zdarma** od začátku.
+- **Každý další talent stojí 1 talent.**
+- Po koupi se ozve zvuk odemčení a talent platí od příštího běhu.
+- Některé výzvy talenty upravují nebo vypínají (viz níže).
+- Kvalita talentu (Common / Rare / Epic) je jen barva rámečku — cenu neovlivňuje.
 
 Talenty se získávají odměnami z misí a výzev (viz [Průběh hry a progrese](/docs/progression)).
 
-<Callout type="warn">
-Lobby při každém vstupu volá `profile.top_up(1000)` a `top_up_gold(5000)` (`TALENTS_TO_TRY_OUT`,
-`GOLD_TO_TRY_OUT`) — testovací dorovnání, takže dnes má hráč vždy aspoň 1000 talentů a celý strom je
-de facto zadarmo.
-</Callout>
-
 ## Obsah
 
-Pořadí v tabulce = pořadí uzlů ve stromu (uzel 1 je kořen větve).
+Pořadí v tabulkách odpovídá pořadí ve stromu (1 = kořen).
 
 ### Utility (levý sloupec)
 
-| # | Talent (`Upgrade`) | Kvalita | Cena | Popis ve hře | Skutečný efekt v kódu |
-|---|--------------------|---------|------|--------------|-----------------------|
-| 1 | Swiftwind Steps (`MovementSpeed`) | Common | zdarma | Increases movement speed by 10% | `Perks.speed = 1,1` — násobí cílovou rychlost chůze |
-| 2 | Discount (`Discount`) | Common | 1 | The shop prices will have a chance to be reduced | v každém obchodě jeden náhodný stůl: 5 % šance cena × 0,75, 5 % × 0,5, 23 % × 0,25 (štítek „SALE x%“) |
-| 3 | Trap Master (`TrapMaster`) | Rare | 1 | All traps have a 30% chance to be immobilized | při stavbě patra každá past (hroty, plamen) s ~30 % šancí ztratí `Trap` + `ContactDamage` a zamrzne ve vypnutém snímku |
-| 4 | Additional Gun (`AdditionalGun`) | Epic | 1 | Adds an additional slot for a weapon | `extra_slots = 1` → 3 zbraňové sloty |
-| 5 | Gamble machine (`GambleMachine`) | Common | 1 | Unlocks the gamble machine in the shop | v patře s obchodníkem dostane hráč **+100 mincí** (`SLOT_MACHINE_COINS`); automat samotný je v obchodě vždy |
+| # | Talent | Kvalita | Cena | Popis ve hře | Co doopravdy dělá |
+|---|--------|---------|------|--------------|-------------------|
+| 1 | Swiftwind Steps | Common | zdarma | Increases movement speed by 10% | rychlost chůze +10 % |
+| 2 | Discount | Common | 1 | The shop prices will have a chance to be reduced | v každém obchodě dostane jeden náhodný stůl šanci na slevu: 5 % na cenu 75 %, 5 % na cenu 50 %, 23 % na cenu 25 % |
+| 3 | Trap Master | Rare | 1 | All traps have a 30% chance to be immobilized | každá past s hroty nebo plameny má při vzniku patra 30% šanci, že bude trvale vypnutá a neškodná |
+| 4 | Additional Gun | Epic | 1 | Adds an additional slot for a weapon | 3 zbraňové sloty místo 2 |
+| 5 | Gamble machine | Common | 1 | Unlocks the gamble machine in the shop | v patře s obchodem dostaneš **+100 mincí** |
 
 ### Offensive (prostřední sloupec)
 
-| # | Talent | Kvalita | Cena | Popis ve hře | Skutečný efekt v kódu |
-|---|--------|---------|------|--------------|-----------------------|
-| 1 | Sharpened Bullets (`ImprovedDamage`) | Common | zdarma | Increases all damage by 20% | `damage_scales[0] = 1,2` (useknuto na celé číslo) |
-| 2 | Additional Ammo (`AdditionalAmmo`) | Common | 1 | Increases ammo capacity by 10% | `ammo_scale = 1,1` na max. zásobu munice (např. Uzi 200 → 220) |
-| 3 | Critical Hit (`CriticalHit`) | Rare | 1 | 10% chance to deal double damage | +0,1 k šanci na kritický zásah (× 2) |
-| 4 | Dangerous Bullets (`EnhancedDamage`) | Epic | 1 | Increases all damage by 25% | `damage_scales[1] = 1,25`, aplikováno po prvním násobku |
-| 5 | Pet (`Pet`) | Common | 1 | Unlocks a pet that will help you in battle | spawne mazlíčka v lobby i v každém patře, viz níže |
+| # | Talent | Kvalita | Cena | Popis ve hře | Co doopravdy dělá |
+|---|--------|---------|------|--------------|-------------------|
+| 1 | Sharpened Bullets | Common | zdarma | Increases all damage by 20% | poškození +20 % (zaokrouhleno dolů) |
+| 2 | Additional Ammo | Common | 1 | Increases ammo capacity by 10% | maximální zásoba munice +10 % (např. Uzi 200 → 220) |
+| 3 | Critical Hit | Rare | 1 | 10% chance to deal double damage | +10 % šance na kritický zásah za dvojnásobek |
+| 4 | Dangerous Bullets | Epic | 1 | Increases all damage by 25% | poškození dalších +25 %, počítá se až po Sharpened Bullets |
+| 5 | Pet | Common | 1 | Unlocks a pet that will help you in battle | mazlíček v lobby i v každém patře, viz níže |
 
 ### Defensive (pravý sloupec)
 
-| # | Talent | Kvalita | Cena | Popis ve hře | Skutečný efekt v kódu |
-|---|--------|---------|------|--------------|-----------------------|
-| 1 | Hero's Heart (`ImprovedHealth`) | Common | zdarma | Increases initial health by 20% | max HP × 1,2 → 10 na 12 |
-| 2 | Improved Armor (`ImprovedArmor`) | Common | 1 | Increases initial armor by **33%** | `armor_scale = 1,2` → 5 na 6 (popis nesedí) |
-| 3 | Armor Regeneration (`ArmorRegeneration`) | Rare | 1 | Restores armor after successfully clearing a room | +1 brnění (ne plné) po každém `RoomCleared` |
-| 4 | Titan's Heart (`EnhancedHealth`) | Epic | 1 | Increases initial health by 25% | další × 1,25 → 12 na 15 |
-| 5 | Kevlar (`ReducedDamageTaken`) | Common | 1 | Reduces damage taken by 10% | poškození × 0,9, useknuto, min. 1 (efektivní až od 2 dmg: 2→1, 3→2) |
+| # | Talent | Kvalita | Cena | Popis ve hře | Co doopravdy dělá |
+|---|--------|---------|------|--------------|-------------------|
+| 1 | Hero's Heart | Common | zdarma | Increases initial health by 20% | max. zdraví 10 → 12 |
+| 2 | Improved Armor | Common | 1 | Increases initial armor by 33% | brnění 5 → 6 (tj. +20 %) |
+| 3 | Armor Regeneration | Rare | 1 | Restores armor after successfully clearing a room | +1 brnění po každé vyčištěné místnosti (ne doplnění na maximum) |
+| 4 | Titan's Heart | Epic | 1 | Increases initial health by 25% | max. zdraví 12 → 15 |
+| 5 | Kevlar | Common | 1 | Reduces damage taken by 10% | přijaté poškození −10 % zaokrouhleno dolů, vždy aspoň 1 (2 → 1, 3 → 2) |
 
-Plně vylepšený hráč: 15 HP, 6 brnění, 3 sloty, poškození × 1,5 (1,2 × 1,25 s useknutím), 10 % crit.
+**Plně vylepšená postava:** 15 zdraví, 6 brnění, 3 zbraňové sloty, poškození zhruba ×1,5, 10 % šance na kritický zásah.
 
 ### Pet
 
-Mazlíček (`prefabs::pet`, `systems/pet.rs`) je entita 96 × 96 px se sprite sheetem `PET`.
+Mazlíček je malý společník, který tě všude doprovází.
 
-| Parametr | Hodnota |
-|----------|---------|
-| Kousnutí | 1 dmg (`DamageSource::Bite`), cooldown 0,2 s |
-| Oblast zájmu | 500 px kolem sebe |
-| Rychlost | 520 px/s ke kořisti/nepříteli; při následování hráče plynule 0 → 430 → 520 px/s podle vzdálenosti |
-| Zastaví se u hráče | 100 px |
-| Teleport k hráči | když je dál než 550 px (ne na nepřítele) |
+| Vlastnost | Hodnota |
+|-----------|---------|
+| Kousnutí | 1 poškození, až 5× za sekundu |
+| Dosah pozornosti | asi 8 dlaždic kolem sebe |
+| Rychlost | asi 8 dlaždic za sekundu za kořistí a nepřáteli (rychlejší než ty); když tě následuje, zrychluje podle vzdálenosti |
+| Zastaví se | asi 1,5 dlaždice od tebe |
+| Teleport k tobě | když se vzdálí na víc než ~8,5 dlaždice |
 
-Priorita cílů: **kořist** (mince apod., kterou hráč může použít, ne zboží v obchodě) → **nepřítel** → hráč.
-Nedosažitelné cíle si pamatuje a ignoruje.
+Mazlíček nejdřív jde po **kořisti** (mince a další věci, které můžeš sebrat — ne po zboží v obchodě), pak po
+**nepřátelích**, a když nic není, drží se u tebe. Cíle, ke kterým se nedostane, si zapamatuje a ignoruje.
 
-### Talentové menu (`scenes/upgrade_menu.rs`)
+### Talentové menu
 
-- Ztmavená obrazovka (alfa 0,55) a deska `TALENT_BOARD` s výřezem 600 × 501 px.
-- Uzly 64 × 64 px, ikona 32 × 32. Kořen (`TALENT_ROOT`) nahoře uprostřed, stromy pod ním ve sloupcích
-  −1 / 0 / +1 (Utility / Offensive / Defensive), krok 80 × 74 px.
-- Rámeček uzlu z `TALENT_FRAME` (9 řádků = 3 kvality × stavy *Owned / Locked / Available*). Dostupný,
-  ale nevybraný uzel se kreslí jako zamčený; zamčené ikony mají alfu 0,6.
-- Spojnice: vlastněné oranžové, ostatní šedé; po vlastněných hranách běží animované „pulzy“ (max 7 naráz).
-- Plátno se posouvá tažením myší (práh 5 px) nebo WASD (380 px/s), s omezením na rozsah stromu;
-  uzly u okraje se vytrácejí.
-- Klik na uzel → panel vpravo: ikona, název, popis, „Cost: 1 talent“, tlačítko *Buy* (zvýrazní se žlutě
-  při najetí) / *Bought* / *Can't buy*.
-- Nahoře vpravo počítadlo „Talents: N“.
-- Menu se zavře klávesou Esc nebo opětovnou interakcí (E). Během otevřeného panelu se hráč v lobby nehýbe.
+- Otevřeš ho u Vědce klávesou E; zavřeš klávesou Esc nebo znovu E. Dokud je otevřené, postava stojí.
+- Na desce je nahoře kořen a pod ním tři sloupce stromů: Utility, Offensive, Defensive.
+- Rámeček talentu ukazuje kvalitu a stav: vlastněný, dostupný nebo zamčený. Zamčené ikony jsou vybledlé.
+- Spojnice mezi vlastněnými talenty svítí oranžově a běží po nich světelné pulzy; ostatní jsou šedé.
+- Plátnem posouváš tažením myší nebo klávesami WASD.
+- Kliknutím na talent se vpravo otevře panel s ikonou, názvem, popisem, cenou („Cost: 1 talent“) a tlačítkem
+  *Buy* / *Bought* / *Can't buy*.
+- Vpravo nahoře je počítadlo „Talents: N“.
 
-## Interakce
+## Tipy a souvislosti
 
-- Perky se promítají do [pohybu](/docs/player/movement-dodge), [poškození](/docs/player/damage),
-  zbraní ([Zbraně](/docs/guns)) a obchodu / pastí ([Dungeon a svět](/docs/dungeon)).
-- Výzvy přepisují perky: *Glass Cannon* max HP = 1 a poškození × 2, *Pistol Only* jen pistole,
-  *Two Left Feet* bez úhybu, *Bane* bez *Armor Regeneration* — [Průběh hry a progrese](/docs/progression).
-- Odděleně existují **stromy vylepšení zbraní** za zlato (`weapon_tree.rs`, `weapon_upgrades.rs`,
-  stůl „Press E to upgrade weapons“) — to nejsou talenty, viz [Zbraně](/docs/guns).
+- Talenty ovlivňují [pohyb](/docs/player/movement-dodge), [poškození](/docs/player/damage),
+  [zbraně](/docs/guns) a obchod a pasti ([Dungeon a svět](/docs/dungeon)).
+- Výzvy talenty mění: *Glass Cannon* nastaví max. zdraví na 1, ale zdvojnásobí poškození; *Pistol Only* povolí
+  jen pistoli; *Two Left Feet* vypne úhyb; *Bane* vypne *Armor Regeneration* — viz [Průběh hry a progrese](/docs/progression).
+- Talenty nejsou totéž co **vylepšení zbraní** — ta se kupují za zlato u stolu se zbraněmi („Press E to upgrade
+  weapons“), viz [Zbraně](/docs/guns).
+- *Critical Hit* se sčítá s vlastní šancí zbraně — se Sniperem máš 30 %.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `upgrades.rs` → `Upgrade`, `Tree`, `Quality`, `UpgradeDef` (`def()`), `purchase`, `owns`, `can_buy`, `Perks`, `TALENT_PRICE`, `CRIT_CHANCE`
-- `profile.rs` → `Profile.unlocked`, `Profile.balance`, `SharedProfile::buy`, `perks`, `top_up`
-- `systems/perks.rs` → `apply_run_perks`, `apply_floor_perks`, `immobilize_traps` (`TRAP_DISABLE_CHANCE = 30`), `regenerate_armor`
-- `systems/shop.rs` → `sale_for`, `stock_rooms`
-- `systems/pet.rs`, `components/pet.rs`, `prefabs/actors.rs` → `pet`
-- `scenes/upgrade_menu.rs` → `UpgradeMenu`, `layout`, `talent_at`, `on_buy_plate`
-- `scenes/lobby.rs` → `TALENTS_TO_TRY_OUT`, otevření menu
-- `assets.rs` → textury `TALENTS_*`, `TALENT_FRAME`, `TALENT_BOARD`, `TALENT_ROOT`, `TALENT_SELECT`
+- **Zkušební talenty a zlato:** v současné verzi ti lobby při každém vstupu doplní talenty aspoň na 1000 a zlato
+  na 5000, takže všechno je fakticky zadarmo.
+- **Ceny:** starší verze hry měla ceny 20 / 60 / 140 / 300 / 500; teď stojí každý talent 1.
+- **Improved Armor** slibuje +33 % brnění, ve skutečnosti dává +20 % (5 → 6).
+- **Gamble machine** slibuje odemčení hracího automatu, ale automat je v obchodě vždy — talent ti jen dá 100 mincí.
+- **Discount** má obrácené šance: největší sleva (platíš jen 25 %) padá nejčastěji (23 %), nejmenší (platíš 75 %)
+  jen v 5 %. Cenovka „SALE 25%“ navíc znamená, že platíš 25 % ceny, ne že máš slevu 25 %. Celkem jde jen
+  o 33% šanci a jen na jeden stůl v obchodě.
+- **Kevlar** nemá vliv na zásahy za 1 poškození (většina projektilů a pastí).
 
-## Jak přidat nový talent
+## Nápady na rozšíření
 
-1. Přidej variantu do `enum Upgrade` (serde název `snake_case` = klíč v uloženém profilu; neměň existující).
-2. Zařaď ji do `Tree::upgrades()` — pozor, pole má pevnou délku 5; pro šestý uzel změň `[Upgrade; 5]`
-   a rozsahy, nebo přidej nový `Tree` (a sloupec v `Upgrade::cell`).
-3. Doplň `Upgrade::ALL` (velikost pole!).
-4. V `def()` zadej `title`, řádky `description`, ikonu `tex::TALENTS_…` (přidej do `assets.rs`) a `Quality`.
-5. Přidej pole do `Perks` a nastav ho v `Perks::from_unlocked`; aplikuj ho v příslušném systému
-   (`systems/perks.rs`, `steering.rs`, `shooting.rs`, …).
-6. Má-li jej výzva vypínat, rozšiř `RunRules` a `RunRules::shape`.
-7. Uprav testy v `upgrades.rs` (počty, buňky, ceny) a ověř, že se nový uzel vejde do plátna menu.
-
-## Nápady / chybí
-
-- **Ceny**: v Javě (FEATURE.md) stály uzly 20 / 60 / 140 / 300 / 500, v Rustu vše 1 talent a první zdarma.
-  Spolu s top-upem na 1000 talentů je meta-progrese talentů prakticky vypnutá.
-- **Improved Armor** — popis říká 33 %, kód dává 20 % (5 → 6).
-- **Gamble machine** — popis slibuje odemčení automatu, ale automat je v obchodě vždy; talent jen přidá
-  100 mincí. Buď automat podmínit talentem, nebo přejmenovat.
-- **Discount** — pravděpodobnosti působí obráceně: největší sleva (cena × 0,25) má 23 % šanci, nejmenší (× 0,75) jen 5 %. Navíc štítek ukazuje `SALE faktor × 100%`, tedy „SALE 25%“ znamená, že platíš 25 % ceny (sleva 75 %). Celkem jen 33% šance a jen na jeden stůl.
-- **Kevlar** na 1-dmg zásahy (většina projektilů) nefunguje kvůli `max(1)`.
-- Kvalita (*Common/Rare/Epic*) je jen vizuální — nemá vliv na cenu.
-- TODO.md: „15 single-level binary nodes“ — chybí víceúrovňové talenty, větvení a další stromy;
-  nápady: kratší cooldown úhybu, +1 artefaktový slot, start s náhodnou zbraní, regenerace HP po patře,
-  vyšší drop rate lektvarů, silnější mazlíček (více HP/dmg, druhý mazlíček).
-- Nelze talenty prodat / resetovat (respec).
+- Víceúrovňové talenty, větvení stromů a další stromy.
+- Nové talenty: kratší nabíjení úhybu, druhý slot na artefakt, start s náhodnou zbraní, léčení po patře,
+  častější lektvary, silnější nebo druhý mazlíček.
+- Možnost talenty prodat nebo resetovat (respec).
+- Opravdu podmínit hrací automat talentem *Gamble machine*.

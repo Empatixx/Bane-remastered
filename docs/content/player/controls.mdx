@@ -1,81 +1,67 @@
 ---
 title: Ovládání
-description: Výchozí klávesy, které akce lze přemapovat a jak se uložené klávesy načítají.
+description: Výchozí klávesy, které z nich si můžeš přemapovat a jak se změny ukládají.
 ---
+
+Bane se hraje na klávesnici a myši: klávesami se pohybuješ a provádíš akce, myší míříš a střílíš.
+Většinu kláves si můžeš v nastavení přemapovat.
 
 ## Jak to funguje
 
-Vstup sbírá `Input` (`input.rs`): drží množinu stisknutých kláves, klávesy stisknuté v tomto snímku,
-pozici myši, levé tlačítko (klik i držení) a kolečko. Herní akce se ptají přes
-`input.action_pressed(Action::…)`, takže respektují aktuální mapování. Pohyb (`input.direction()`)
-skládá dvě osy z kláves *Move* a vektor normalizuje — diagonála není rychlejší.
+### Přemapovatelné akce
 
-### Přemapovatelné akce (`controls::Action`)
+| Akce | Výchozí klávesa |
+|------|-----------------|
+| Pohyb nahoru (Move up) | W |
+| Pohyb dolů (Move down) | S |
+| Pohyb vlevo (Move left) | A |
+| Pohyb vpravo (Move right) | D |
+| Interakce (Interact) | E |
+| Přebíjení (Reload) | R |
+| Artefakt (Artefact) | F |
+| Zahodit zbraň (Drop gun) | Q |
+| Mapa (Map) | Tab |
+| Úhyb (Dodge) | Space |
 
-| Akce | Popisek v nastavení | Výchozí klávesa | ID v JSON |
-|------|---------------------|-----------------|-----------|
-| `MoveUp` | Move up | W | `moveUp` |
-| `MoveDown` | Move down | S | `moveDown` |
-| `MoveLeft` | Move left | A | `moveLeft` |
-| `MoveRight` | Move right | D | `moveRight` |
-| `Interact` | Interact | E | `interact` |
-| `Reload` | Reload | R | `reload` |
-| `UseArtefact` | Artefact | F | `useArtefact` |
-| `DropGun` | Drop gun | Q | `dropGun` |
-| `Map` | Map | Tab | `map` |
-| `Dodge` | Dodge | Space | `dodge` |
+Pohyb po diagonále není rychlejší než pohyb rovně.
 
-### Pevné (nepřemapovatelné) vstupy
+### Pevné ovládání
 
 | Vstup | Akce |
 |-------|------|
-| Myš | míření; kamera se posouvá k kurzoru (1/10 vzdálenosti od středu, `MOUSE_PULL`) |
-| Levé tlačítko | střelba (automatické zbraně při držení, ostatní na klik) |
-| Kolečko myši | další / předchozí zbraňový slot |
-| 1–9 | přímý výběr slotu (`SLOT_KEYS` v `systems/loadout.rs`) |
-| Esc | pauza; zavře velkou mapu |
-| Myš v talentovém menu | tažení plátna, klik na talent, klik na „Buy“ |
+| Myš | míření; kamera se mírně posouvá směrem ke kurzoru |
+| Levé tlačítko myši | střelba (automatické zbraně při držení, ostatní na každé kliknutí) |
+| Kolečko myši | další / předchozí zbraň |
+| 1–9 | přímý výběr zbraňového slotu |
+| Esc | pauza; zavře velkou mapu i talentové menu |
 
-V talentovém menu a velké mapě slouží klávesy pohybu k posouvání plátna.
+V talentovém menu a na velké mapě posouváš plátno klávesami pohybu nebo tažením myší.
 
-### Pravidla přemapování
+### Přemapování
 
-- Lze přiřadit jen 36 kláves z tabulky `KEYS`: A–Z, šipky, Space, Tab, Enter, levý Shift, Ctrl, Alt.
-  Esc, číslice (sloty zbraní) a F-klávesy přiřadit nejdou.
-- Přiřazení už obsazené klávesy **prohodí** obě akce (`Bindings::rebind`) — duplicity nevzniknou.
-- Mapování je součástí `GameSettings.controls` a ukládá se do JSON nastavení. Neznámá klávesa v souboru
-  spadne na výchozí; pokud by soubor obsahoval duplicitu, resetují se **všechny** klávesy na výchozí.
-- UI: panel nastavení (`scenes/settings_panel.rs`) má řádek pro každou `Action`; po kliknutí čeká na
-  první stisknutou klávesu (`systems/settings_ui.rs`). Změny se projeví po *Apply*.
+- V nastavení klikni na řádek akce a stiskni novou klávesu. Změny se projeví po stisku *Apply*.
+- Přiřadit lze písmena A–Z, šipky, Space, Tab, Enter, levý Shift, Ctrl a Alt. Esc, číslice (vyhrazené pro
+  sloty zbraní) a F-klávesy přiřadit nejdou.
+- Když zvolíš klávesu, kterou už používá jiná akce, obě akce si klávesy **prohodí** — dvě akce na jedné klávese
+  nikdy nevzniknou.
+- Nastavení kláves se ukládá spolu s ostatním nastavením hry. Pokud je uložený soubor poškozený, vrátí se
+  klávesy na výchozí.
 
-## Interakce
+## Tipy a souvislosti
 
-- Dodge: [Pohyb a úhyb](/docs/player/movement-dodge).
-- Interact (E) obsluhuje portál, talentový pult, nástěnku misí, stůl zbraní, schody do dalšího patra,
-  zbraně a artefakty na zemi, nákup v obchodě a automat — viz [Schopnosti hráče](/docs/player/abilities).
-- Střelba, přebíjení, zahození a sbírání zbraní: [Zbraně](/docs/guns).
+- Úhyb a jeho pravidla: [Pohyb a úhyb](/docs/player/movement-dodge).
+- Klávesou Interakce vstupuješ do portálu, kupuješ talenty, čteš nástěnku misí, sestupuješ po schodech,
+  bereš zbraně a artefakty ze země a nakupuješ v obchodě — viz [Co hráč umí](/docs/player/abilities).
+- Střelba, přebíjení a zahazování zbraní: [Zbraně](/docs/guns).
 - Artefakt (F): [Artefakty a předměty](/docs/artefacts-items).
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `controls.rs` → `Action`, `Bindings`, `KEYS`, `is_bindable`, `key_label`
-- `input.rs` → `Input` (`direction`, `action_pressed`, `mouse_down`, `clicked`, `scrolled`)
-- `settings.rs` → `GameSettings.controls`
-- `scenes/settings_panel.rs`, `systems/settings_ui.rs` → UI pro přemapování
-- `systems/loadout.rs` → `SLOT_KEYS`, `switch_guns`, `drop_gun`
+- Nápisy u objektů („Press E to …“) ukazují vždy klávesu E, i když si Interakci přemapuješ na jinou.
 
-## Jak přidat novou akci
+## Nápady na rozšíření
 
-1. Přidej variantu do `enum Action` a do pole `Action::ALL` (zvyš velikost pole i `Bindings.keys`).
-2. Doplň `label`, `id` (JSON klíč, nesmí se měnit — rozbil by uložená nastavení) a `default_key`.
-3. Ujisti se, že výchozí klávesa nekoliduje (test `the_defaults_are_the_keys_bane_uses` kontroluje duplicity).
-4. Volej `input.action_pressed(Action::Nova)` v příslušném systému.
-5. Panel nastavení si řádek přidá sám (iteruje `Action::ALL`), ale zkontroluj, že se vejde na obrazovku.
-
-## Nápady / chybí
-
-- **Výzvy v prostředí mají natvrdo „Press E …“** (`prefabs/fixtures.rs`, `prefabs/hud.rs`) — po
-  přemapování *Interact* zobrazují špatnou klávesu. Mělo by se použít `key_label(bindings.key(Action::Interact))`.
-- Střelba, kolečko a sloty 1–9 nejdou přemapovat; chybí podpora gamepadu.
-- Myš: jen levé tlačítko; pravé tlačítko je volné (kandidát na dodge nebo artefakt).
-- Neexistuje „toggle“ vs „hold“ volba, ani citlivost míření.
+- Podpora gamepadu.
+- Možnost přemapovat i střelbu, přepínání zbraní a sloty 1–9.
+- Využít pravé tlačítko myši (např. pro úhyb nebo artefakt).
+- Volba „držet / přepnout“ a nastavení citlivosti míření.

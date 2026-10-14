@@ -1,52 +1,45 @@
 ---
 title: Stůl se zbraněmi
-description: Obrazovka v lobby, kde hráč prochází všech 16 zbraní, kupuje uzly jejich stromů a přehazuje stromy.
+description: Místo v lobby, kde hráč prochází všechny zbraně, kupuje jejich vylepšení a přehazuje stromy.
 ---
 
-Stůl se zbraněmi (`WeaponTable`) stojí v lobby (laboratoři) na dlaždici 23,5 × 0,5 (`prefabs::weapon_table`). Lore (story.md): „Stůl se zbraněmi je sbírka toho, co předchozí subjekty vynesly nahoru.“
+Stůl se zbraněmi stojí v lobby (laboratoři). Podle příběhu je to „sbírka toho, co předchozí subjekty vynesly nahoru“. Hráč tu za zlato z runů kupuje trvalá vylepšení zbraní.
 
 ## Jak to funguje
 
-### Otevření a zavření
+### Otevření
 
-- Hráč přijde ke stolu a stiskne interakci (E) → `Interaction::Weapons` → `WeaponTable::toggle`. Při otevření se načte profil (`refresh`: progres vybrané zbraně a zlato).
-- Zavírá se Escape nebo znovu interakcí.
+Hráč přijde ke stolu a stiskne **E**. Zavře se klávesou **Escape** nebo znovu E.
 
-### Rozložení
+### Co je na obrazovce
 
-- **Levý panel** (`WEAPON_LIST`): seznam zbraní v pořadí `GunKind::ALL`, viditelných 6 řádků (`VISIBLE_ROWS`), každý s obrázkem zbraně (zmenšený do boxu 80 × 34) a jménem. Vybraná je zvýrazněná. Posun kolečkem nebo šipkami nahoru/dolů, vpravo posuvník.
-- **Pravý panel** (`WEAPON_TREE`): jméno zbraně, řádek faktů „Damage 1-3 +10%   Rate 4.0/s   Clip 7   Reload 0.7s“ (už se započtenými koupenými bonusy), a pod ním strom.
-- **Strom**: kořen (`TALENT_ROOT`) nahoře, uzly v mřížce po 80 × 74 px, spojnice podle stavu. Strom jde posouvat tažením myší (práh 5 px) nebo WASD (380 px/s); posun je omezený na rozsah stromu. Uzly mimo výřez mizí s 20px přechodem, šipky na okraji ukazují, že strom pokračuje. Nápověda: „Drag or WASD to move the tree“.
-- **Rámeček uzlu** podle kvality (Common/Rare/Epic) a stavu: koupený, dostupný, zamčený. Dostupné uzly se zobrazují jako zamčené, dokud nejsou vybrané. Ikona statu z `UPGRADE_ICONS`, mutace z `MUTATION_ICONS`; zamčené ikony jsou průhlednější.
-- **Detail uzlu**: kliknutí na uzel otevře panel s velkou ikonou, názvem („Damage II“ nebo název mutace), dvěma řádky popisu, tlačítkem Buy / Bought / Can't buy a cenou „Cost: N gold“.
-- **Kostka (reroll)**: pod stromem s cenou. Klik spustí animaci (0,7 s, 6 snímků při 14 fps s poskokem 22 px), po dopadu se strom přehodí (`profile.reroll_weapon`). Bez dostatku zlata je kostka zašedlá.
-- **Počítadlo** „Gold: N“.
+- **Seznam zbraní** vlevo — všech 16 zbraní s obrázkem a jménem, najednou je vidět 6. Posouvá se kolečkem nebo šipkami nahoru/dolů.
+- **Přehled zbraně** vpravo — jméno a řádek s údaji, např. „Damage 1-3 +10%   Rate 4.0/s   Clip 7   Reload 0.7s“, už včetně koupených vylepšení.
+- **Strom** pod přehledem — kořen nahoře, uzly pod ním. Strom se dá posouvat tažením myší nebo klávesami WASD; šipky na okraji ukazují, že strom pokračuje mimo výřez.
+- **Rámeček uzlu** ukazuje kvalitu (Common / Rare / Epic) a stav (koupený / dostupný / zamčený).
+- **Detail uzlu** — po kliknutí na uzel se ukáže velká ikona, název (např. „Damage II“ nebo jméno mutace), dvouřádkový popis, tlačítko Buy (případně Bought nebo Can't buy) a cena „Cost: N gold“.
+- **Kostka** pod stromem — přehození stromu za 100 zlata. Po kliknutí se kostka zakutálí a strom se přehodí. Bez dostatku zlata je zašedlá.
+- **Gold: N** — kolik zlata hráč má.
 
-### Výsledky
+Po nákupu zazní zvuk odemčení a Scientist k tomu něco poznamená.
 
-`update` vrací `Outcome::Bought` nebo `Outcome::Rerolled`. Lobby pak znovu aplikuje bonusy (`apply_weapon_mods`), obnoví počítadla a při nákupu Scientist řekne hlášku z `PURCHASE`. Nákup přehraje zvuk `TalentUnlock`, kostka `Click`.
+## Tipy a souvislosti
 
-## Interakce
+- Pravidla nákupu, ceny a přehození: [Strom zbraně](/docs/guns/strom-zbrane).
+- Co dělají mutace: [Mutace](/docs/guns/mutace).
+- Ostatní místa v lobby (Scientist s upgrady, nástěnka s úkoly, portál): [Progrese](/docs/progression).
+- Vzhledem připomíná menu Scientistových upgradů — rámečky, tlačítka i panel detailu jsou stejné.
 
-- [Strom zbraně](/docs/guns/strom-zbrane) — pravidla nákupu, ceny, reroll.
-- [Progrese](/docs/progression) — zlato a ostatní objekty lobby (Scientist s upgrady, nástěnka s úkoly, portál).
-- Sdílí vizuální prvky s menu Scientistových upgradů (`scenes/upgrade_menu.rs`: rámečky talentů, tlačítka, panel detailu).
+## Známé nesrovnalosti
 
-## Kde v kódu
+- Řádek s údaji ukazuje rozsah poškození včetně horní hranice (např. „1-3“), která ve hře nikdy nepadne.
+- Neukazuje kritickou šanci, průraz, typ projektilu ani už koupenou mutaci.
+- Stůl ukazuje všechny zbraně od začátku — nic není zamčené a nejsou tu ani statistiky, jak často hráč zbraň používal.
+- Seznam nejde řadit ani filtrovat.
+- Texty jsou jen anglicky.
 
-- `scenes/weapon_table.rs` → `WeaponTable` (`toggle`, `close`, `update`, `tick_roll`, `rebuild`), `layout`, `detail`, `node_elements`, `links`, `reroll_plate`, `STATS`, `MUTATIONS`, `name`
-- `scenes/lobby.rs` → pole `weapons`, `Interaction::Weapons`, zpracování `WeaponOutcome`
-- `prefabs/fixtures.rs` → `weapon_table` (objekt v lobby)
-- `scenes/upgrade_menu.rs` → sdílené konstanty a `Element`
+## Nápady na rozšíření
 
-## Jak přidat zbraň do stolu
-
-Nic zvláštního — seznam je `GunKind::ALL`. Stačí doplnit jméno v `name` a mít texturu a `icon` ve `GunSpec`. Posuvník a scrollování se přizpůsobí délce seznamu (`max_first`).
-
-## Nápady / chybí
-
-- Řádek faktů ukazuje rozsah poškození z kódu (např. „1-3“), i když maximum nikdy nepadne. Neukazuje kritickou šanci, průraz, typ projektilu ani mutaci, která už je koupená.
-- Žádná informace, které zbraně hráč v runech viděl/používal — stůl ukazuje vše od začátku (ani zamčené zbraně, ani statistiky použití).
-- Seznam není řazený ani filtrovaný (16 položek, 6 viditelných).
-- Texty jsou jen anglicky (zbytek UI taky), lokalizace chybí.
-- Nápad: náhled zbraně „na střelnici“ — malá aréna v lobby, kde jde zbraň vyzkoušet.
+- Malá střelnice v lobby, kde si hráč zbraň vyzkouší, než do ní investuje.
+- Odemykání zbraní na stole až po jejich prvním vynesení z runu (sedí to na příběh stolu).
+- Zobrazení celkové ceny stromu a ceny zbývající do mutace.

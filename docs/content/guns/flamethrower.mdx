@@ -1,82 +1,51 @@
 ---
 title: Flamethrower
-description: Plamenomet — krátký dosah, plameny procházejí všemi nepřáteli.
+description: Plamenomet s krátkým dosahem — plameny procházejí všemi nepřáteli, dokud nezhasnou.
 ---
 
-**Flamethrower** (`GunKind::Flamethrower`) — Automatická zbraň na blízko: 14 plamenů/s, každý projde neomezeně nepřáteli a po 0,45 s zhasne.
+**Flamethrower** je automatická zbraň na blízko. Chrlí přes 14 plamenů za sekundu, každý projde libovolným počtem nepřátel a po 0,45 s zhasne.
 
 ## Jak to funguje
 
-### Statistiky
+Automatická zbraň — střílí, dokud hráč drží tlačítko. Plameny letí pomalu a s největším rozptylem ve hře (±14,3°). Dolétnou jen asi **2,7 dlaždice**, pak zhasnou. Zastaví je jen zeď — nepřáteli procházejí.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 1–2 |
-| Reálné poškození na projektil | 1 (průměr 1) |
-| Projektilů na výstřel | 1 |
-| Kadence | 14,29 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 14,29 |
-| Odchylka (`inaccuracy`) | 0,5 → ±0,25 rad (±14,3°) |
+| Poškození na plamen | 1 |
+| Kadence | 14,3 plamenů/s |
+| DPS (jeden cíl) | 14,3 |
 | Režim | automatická |
+| Rozptyl | ±14,3° (největší ve hře) |
 | Zásobník / rezerva | 40 / 400 |
-| Přebíjení | 1,5 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,03 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::SubMachine` — dva sloupce nábojů (krok 15 px, sloupce po 25 px) |
+| Přebití | 1,5 s |
+| Kritická šance | 0 % |
+| Projektil | plamen, nejpomalejší, oranžové světlo |
+| Průraz | neomezený |
+| Dosah | cca 2,7 dlaždice (0,45 s) |
+| Otřes obrazovky | téměř žádný |
 | Nábojnice | ne |
-| Zvuk výstřelu / přebití | `FlamethrowerShoot` / `FlamethrowerReload` |
-| Textura / velikost ikony | `tex::GUNS_FLAMETHROWER` / 98 × 44 px |
-| Klíč v profilu | `"flamethrower"` |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Automatická, `Round::Flame` (380 px/s), největší rozptyl ve hře ±0,25 rad (±14,3°). Plamen má `lifetime: 0.45` → dolet cca 171 px; po vypršení ho `burn_out_rounds` zastaví a přehraje dopadovou animaci.
+- Proti hloučku nepřátel zblízka je poškození mnohem vyšší než uvedené DPS — každý plamen zasáhne všechny v cestě.
+- Skvěle se hodí k mutaci **Frost** (rychlé zmrazení) a **Venom** — viz [Mutace](/docs/guns/mutace).
+- Upgrady poškození od Scientista na plamenomet nefungují; posiluje ho jen strom zbraně.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Flame` |
-| Rychlost | 380 px/s |
-| Velikost sprite / hitbox | 24 × 24 / 20 × 20 |
-| Průraz (`pierce`) | neomezeně |
-| Životnost | 0,45 s (dolet cca 171 px) |
-| Zvláštní efekt | — |
-| Světlo | oranžové (255, 110, 0) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::ROUND_FLAME` |
+- Plamen **nezapaluje** — žádné hoření, je to jen krátká průbojná střela.
+- Mutace **Piercing** je zbytečná (plamen už prochází vším) a **Ricochet** skoro taky (plamen většinou zhasne dřív, než doletí ke zdi).
+- Uzly **Magazine** jsou zbytečné — zásobník je už na maximu 40.
+- Stůl se zbraněmi ukazuje poškození 1–2, ale plamen dává vždy 1.
+- Plamen, který se dotýká dvou nepřátel zároveň, je zřejmě může zasahovat střídavě opakovaně — poškození pak může být vyšší, než by se čekalo.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1,5 s, pak se zásobník doplní z rezervy (max. 40 nábojů). Rezervu 400 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- `pierce: u32::MAX` — plamen se zastaví jen o zeď.
-- Plamen nezapaluje (žádný efekt hoření) — je to jen průbojný krátký projektil.
-- Mutace Piercing (saturuje) a Ricochet (krátká životnost) jsou na plamenometu prakticky zbytečné.
-- Zásobník 40 = `MAX_CLIP` → uzly Magazine zbytečné.
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Flamethrower`, větev v `GunKind::spec`, `Round::Flame` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Flamethrower“)
-- `assets.rs` → `tex::GUNS_FLAMETHROWER`
-
-## Nápady / chybí
-
-- Přidat hoření (DoT) — v dungeonu už existují `Flame` objekty/pasti, vizuál by šel sdílet.
-- Průbojný projektil, který se překrývá se dvěma nepřáteli, může mezi nimi střídat zásahy každý snímek (`last_hit` si pamatuje jen posledního) — ověřit, zda plamen nedává víc poškození, než je zamýšleno.
+- Hoření — zasažený nepřítel ztrácí několik sekund HP. V dungeonu už existují ohnivé pasti, jejichž vzhled by šel použít.
+- Zapalování hořlavých objektů v místnosti.

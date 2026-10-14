@@ -1,30 +1,34 @@
 ---
 title: Armor Refill
-description: Okamžitě doplní armor hráče na maximum.
+description: Okamžitě doplní armor na maximum.
 ---
+
+Armor Refill je jednoduchý obranný artefakt – po použití máš armor znovu plný.
 
 ## Jak to funguje
 
-- `armor.current = armor.max` na hráči. Nic víc – žádný zvuk ani vizuální efekt navíc (kromě aktualizace stavových pruhů).
-- Maximum armoru je 5 (`PLAYER_ARMOR`), s perkem Improved Armor 6 (`max_armor` = 5 × 1,2 zaokrouhleno dolů).
-- Použití při plném armoru artefakt promrhá – žádná kontrola.
+- Stiskni **F** a armor se doplní na maximum.
+- Maximum armoru je 5, s talentem Improved Armor 6.
+- Použití při plném armoru artefakt promrhá – hra tě nezastaví.
 
-| Parametr | Hodnota |
+## Statistiky
+
+| Vlastnost | Hodnota |
 |---|---|
-| Efekt | armor → max |
+| Efekt | armor na maximum (až +5, resp. +6) |
 | Trvání | okamžitý |
-| Textura | `ingame/artefacts/armorrefill.tga` |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Hráč](/docs/player) – armor pohlcuje damage před zdravím (`systems/damage.rs` → `absorb`).
-- Duplikuje velký lektvar armoru (+4) z [obchodu](/docs/artefacts-items/shop); perk Armor Regeneration dává +1 armor po vyčištění místnosti ([Perky](/docs/artefacts-items/perks)).
+- [Hráč](/docs/player) – armor pohlcuje zásahy dřív než zdraví.
+- Funguje jako silnější verze velkého lektvaru armoru (+4) z [obchodu](/docs/artefacts-items/shop). Talent Armor Regeneration dává +1 armor po každé vyčištěné místnosti ([Perky](/docs/artefacts-items/perks)).
+- Nejvíc se vyplatí těsně před bossem nebo uprostřed náročného boje, když je armor na nule.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/artefacts.rs` → `activate_artefact` (arm `ArmorRefill`)
+- Použití nemá žádný zvuk ani vizuální efekt – změnu poznáš jen na ukazateli armoru.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Chybí zvuk a efekt (např. modrý záblesk / `SoundEffect::Heal`).
-- Mohl by dočasně zvýšit maximum (overcharge), aby nebyl jen „lepší lektvar“.
+- Zvuk a modrý záblesk při použití.
+- Dočasné „přebití“ armoru nad maximum, aby nebyl jen lepším lektvarem.

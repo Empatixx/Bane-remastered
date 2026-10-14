@@ -1,62 +1,48 @@
 ---
 title: Získávání zbraní
-description: Odkud zbraně v runu pocházejí — startovní výbava, zbraňové truhly, obchod a hrací automat — a jak se trvale vylepšují.
+description: Odkud se během runu berou nové zbraně — startovní výbava, truhly, obchod a hrací automat.
 ---
+
+V Bane nejsou žádné zamčené zbraně — všech 16 může hráč najít hned v prvním runu. Trvale se zbraně jen vylepšují přes [strom zbraně](/docs/guns/strom-zbrane).
 
 ## Jak to funguje
 
-V Rust portu **nejsou žádné zamčené zbraně**. Všech 16 zbraní je dostupných od prvního runu; trvalá progrese zbraní je jen přes [strom zbraně](/docs/guns/strom-zbrane).
-
-### Zdroje v runu
+### Kde zbraně najít
 
 | Zdroj | Kde | Co dá |
 | --- | --- | --- |
-| Startovní výbava | začátek runu | Pistol + Shotgun (`Loadout::starting`) |
-| Zbraňová truhla v treasure room | uprostřed treasure místnosti (`dungeon/furnish.rs`, `FixtureKind::Chest`), 1× za patro | 1 zbraň + 5 předmětů |
-| Zbraňová truhla po ambush | po vyčištění ambush místnosti (`RoomEvent::AmbushCleared`) na volném místě | 1 zbraň + 5 předmětů |
-| Obchod | stůl „Offensive“ (`Stock::Offensive`): 50% šance na zbraň, jinak artefakt | zbraň na prodej za mince |
-| Hrací automat | jedna z výher (`systems/slot.rs`) | zbraň vyhozená z automatu |
-| Zahozená zbraň | kdekoli | hráčova vlastní zbraň (Q / výměna při plných slotech) |
+| Startovní výbava | začátek runu | Pistol + Shotgun |
+| Zbraňová truhla | uprostřed treasure room, jednou za patro | 1 zbraň + 5 předmětů |
+| Zbraňová truhla po ambush | objeví se po vyčištění ambush místnosti | 1 zbraň + 5 předmětů |
+| Obchod | stůl „Offensive“ — 50% šance, že nabízí zbraň (jinak artefakt) | zbraň za mince |
+| Hrací automat | jedna z možných výher | zbraň vyhozená z automatu |
+| Vlastní zahozená zbraň | kdekoli | to, co hráč zahodil (Q) nebo vyměnil |
 
-Truhla se otevře dotykem (animace 4 snímky × 0,175 s, zvuk `OpenChest`); po dohrání animace zmizí, rozhodí předměty (`burst_items`) a pro `ChestKind::Weapon` vyhodí zbraň. `ChestKind::Artefact` (boss) dává místo zbraně artefakt.
+Truhla se otevře dotykem. Po krátké animaci zmizí, rozhází předměty a vyhodí zbraň. Truhla po bossovi místo zbraně dává artefakt.
 
-### Výběr zbraně
+### Jaká zbraň padne
 
-`unused_gun(loadout, roll)` vybere rovnoměrně náhodně ze zbraní v `GunKind::ALL`, které hráč **nedrží** a které povoluje omezení výzvy. Pokud žádná taková není (nebo je aktivní Pistol Only), nic nepadne. Žádné váhy, rarity ani závislost na patře.
+Vždy náhodná zbraň, kterou hráč zrovna **nedrží**, všechny se stejnou šancí. Nezáleží na patře ani na síle zbraně. Pokud hráč drží všechny povolené zbraně (nebo hraje výzvu Pistol Only), nepadne nic.
 
-Nová zbraň se vytvoří přes `fresh_weapon` → `Loadout::fresh`: plný zásobník, plná rezerva vynásobená `ammo_scale` a bonusy stromu té zbraně. Na zemi leží jako `GunDrop` s interakcí `PickUpGun` (E).
+Nová zbraň má plný zásobník, plnou rezervu (včetně upgradu *Additional Ammo*) a všechna vylepšení ze svého stromu. Leží na zemi a sebere se klávesou **E**.
 
-### Trvalé vylepšování
+## Tipy a souvislosti
 
-Za zlato získané z runů se u [stolu se zbraněmi](/docs/guns/stul-se-zbranemi) kupují uzly stromu konkrétní zbraně. Bonusy pak platí pro každou instanci té zbraně ve všech dalších runech.
-
-## Interakce
-
+- Za patro najde hráč jednu truhlu v treasure room a další za každou ambush místnost. Spolu s obchodem a automatem má obvykle rychle plné sloty, takže je potřeba vybírat, co si nechat.
+- Stejná zbraň nikdy nepadne dvakrát, dokud ji hráč nese — zahozená zbraň se ale do losování vrací.
 - [Dungeon](/docs/dungeon) — treasure room, ambush místnosti, obchod, hrací automat.
-- [Artefakty a předměty](/docs/artefacts-items) — truhly rozhazují předměty; boss truhla dává artefakt.
-- [Progrese](/docs/progression) — zlato, upgrady, výzvy (Pistol Only).
-- [Loadout a munice](/docs/guns/loadout) — co se stane po sebrání.
+- [Artefakty a předměty](/docs/artefacts-items) — co truhly rozhazují.
+- [Sloty a munice](/docs/guns/loadout) — co se stane po sebrání.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/loadout.rs` → `open_chests`, `unused_gun`, `fresh_weapon`, `pick_up_gun`, `CHEST_OPEN`
-- `prefabs/fixtures.rs` → `chest`, `gun_drop`
-- `scenes/ingame.rs` → `handle_room_events` (`AmbushCleared` → truhla)
-- `dungeon/furnish.rs` → treasure room s `FixtureKind::Chest`
-- `systems/shop.rs` → `goods_for`, `Goods::Gun`, `Stock::Offensive`
-- `systems/slot.rs` → výhra zbraně
+- Zbraně nemají raritu — Railgun může padnout v první místnosti stejně snadno jako Luger.
+- Nepřátelé ani bossové zbraně nepouštějí.
+- Starší plán hry počítal s odemykáním zbraní za metaměnu; ve hře zatím není.
 
-## Jak přidat nový zdroj zbraní
+## Nápady na rozšíření
 
-1. Zavolat `unused_gun(loadout, roll)` s rollem z deterministického RNG (projekt přechází na seedované `RngService`/`Rng`).
-2. Vytvořit zbraň přes `systems::loadout::fresh_weapon(world, kind)` — tím dostane bonusy stromu a škálování munice.
-3. Položit ji `prefabs::gun_drop(world, weapon, center, velocity, textures)`.
-4. Při omezení výzvou `unused_gun` vrátí `None` — počítat s tím.
-
-## Nápady / chybí
-
-- **Žádná rarita/tier zbraní** — Railgun může padnout v první místnosti stejně jako Luger. Návrh: tier podle patra nebo váhy podle DPS.
-- **Žádné odemykání** zbraní metaprogresí (TODO.md M4 „unlocking new weapons … via a meta-currency“); lore stolu („sbírka toho, co předchozí subjekty vynesly“) by sedělo na odemykání zbraní jejich prvním vynesením z runu.
-- Nepřátelé ani bossové zbraně nedropují.
-- Dvě truhly za patro (treasure + každá ambush) — v kombinaci s obchodem a automatem má hráč rychle plné sloty; chybí „recyklace“ nepotřebné zbraně (např. rozebrat na munici/mince).
-- Nápad: unikátní/legendární varianty zbraní s pevnou mutací, padající jen z bossů.
+- Tier zbraní podle patra nebo váhy podle síly.
+- Odemykání zbraní jejich prvním vynesením z runu — sedí na příběh stolu se zbraněmi.
+- Unikátní legendární varianty zbraní s pevnou mutací, padající jen z bossů.
+- Rozebrání nepotřebné zbraně na munici nebo mince.

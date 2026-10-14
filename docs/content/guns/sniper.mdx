@@ -1,81 +1,48 @@
 ---
 title: Sniper
-description: Odstřelovačka s průbojnou střelou, vestavěnou 20% kritickou šancí a nulovým rozptylem.
+description: Odstřelovačka s průbojnou střelou, vestavěnou 20% šancí na kritický zásah a nulovým rozptylem.
 ---
 
-**Sniper** (`GunKind::Sniper`) — Pomalá precizní zbraň: 9–12 poškození, kulka `Round::Slug` prostřelí dva nepřátele.
+**Sniper** je pomalá, ale precizní zbraň. Každá rána ubere 9–12, letí velmi rychle a prostřelí dva nepřátele. Jako jediná zbraň má vlastní šanci na kritický zásah.
 
 ## Jak to funguje
 
-### Statistiky
+Poloautomatická zbraň bez rozptylu. Střela letí velmi rychle a má **průraz 2** — projde dvěma nepřáteli a zastaví se ve třetím, zasáhne tedy až tři cíle.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 9–13 |
-| Reálné poškození na projektil | 9–12 (průměr 10,5) |
-| Projektilů na výstřel | 1 |
-| Kadence | 0,91 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 9,55 |
-| Odchylka (`inaccuracy`) | 0 (dokonale přesná) |
+| Poškození na ránu | 9–12 (průměr 10,5) |
+| Kadence | 0,9 rány/s |
+| DPS | 9,5 |
 | Režim | poloautomatická |
+| Rozptyl | žádný |
 | Zásobník / rezerva | 5 / 40 |
-| Přebíjení | 1,6 s |
-| Kritická šance (základ) | 20 % |
-| Otřes kamery (`shake`) | 0,8 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::Shotgun` — jeden sloupec brokových nábojů `SHOTGUN_AMMO_HUD` (krok 20 px) |
-| Nábojnice | ano (brokový řádek sheetu) |
-| Zvuk výstřelu / přebití | `SniperShoot` / `SniperReload` |
-| Textura / velikost ikony | `tex::GUNS_SNIPER` / 128 × 34 px |
-| Klíč v profilu | `"sniper"` |
+| Přebití | 1,6 s |
+| Kritická šance | 20 % |
+| Projektil | odstřelovací střela, velmi rychlá, světle modré světlo |
+| Průraz | 2 |
+| Otřes obrazovky | silný |
+| Nábojnice | ano (brokové náboje) |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Poloautomatická, jedna střela `Round::Slug` (1500 px/s), bez rozptylu. Střela má `pierce: 2` — projde dvěma nepřáteli a zastaví se ve třetím (zasáhne tedy až 3).
+- Vlastních 20 % kritu se sčítá s upgradem *Critical Hit* (+10 %) a uzly **Crit** ve stromu — se vším dohromady krituje skoro každou druhou ranou.
+- Mutace **Piercing** zvedne průraz na 3 (až 4 zasažení nepřátelé), **Deadeye** zaručí krit každou pátou ranou — viz [Mutace](/docs/guns/mutace).
+- Nejsilnější proti nepřátelům v řadě, v chodbách a ve dveřích.
+- Uzly **Accuracy** jsou zbytečné — rozptyl už je nulový.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Slug` |
-| Rychlost | 1500 px/s |
-| Velikost sprite / hitbox | 32 × 16 / 12 × 12 |
-| Průraz (`pierce`) | 2 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | modré (80, 200, 255) |
-| Natáčí se ve směru letu | ano |
-| Textura | `tex::ROUND_SLUG` |
+- Stůl se zbraněmi ukazuje poškození 9–13, ale 13 nikdy nepadne.
+- Vyhazuje brokové náboje místo dlouhých puškových nábojnic.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1,6 s, pak se zásobník doplní z rezervy (max. 5 nábojů). Rezervu 40 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Jediná zbraň se základní kritickou šancí (`crit_chance: 0.2`); sčítá se s perkem `CriticalHit` (+10 %) a uzly Crit ze stromu. Kritický zásah = ×2.
-- Vyhazuje nábojnici z **brokového** řádku sheetu, protože `clip_style` je `Shotgun` (styl HUD je použit i pro výběr nábojnice).
-- Mutace Piercing přičte +1 průraz (celkem 3).
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Sniper`, větev v `GunKind::spec`, `Round::Slug` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Sniper“)
-- `assets.rs` → `tex::GUNS_SNIPER`
-
-## Nápady / chybí
-
-- Oddělit „vzhled nábojnice“ od `ClipStyle` — odstřelovačka by měla vyhazovat dlouhou puškovou nábojnici.
-- Chybí jakýkoli zaměřovač / laserové ukazovátko, které by odlišilo hraní.
+- Laserové ukazovátko nebo zaměřovač, který by odlišil hraní od ostatních zbraní.
+- Puškové nábojnice.

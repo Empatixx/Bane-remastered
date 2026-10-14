@@ -1,81 +1,50 @@
 ---
 title: Railgun
-description: Railgun — nejsilnější rána ve hře, střela proletí všemi nepřáteli až ke zdi.
+description: Nejsilnější rána ve hře — střela proletí všemi nepřáteli až ke zdi.
 ---
 
-**Railgun** (`GunKind::Railgun`) — Těžká precizní zbraň: 14–19 poškození, neomezený průraz, 3 náboje v zásobníku.
+**Railgun** je těžká precizní zbraň: každá rána ubere 14–19, letí nejrychleji ze všech střel a prolétne všemi nepřáteli v cestě. Za to má jen 3 náboje v zásobníku a dlouhé přebíjení.
 
 ## Jak to funguje
 
-### Statistiky
+Poloautomatická zbraň bez rozptylu. Střela má větší zásahovou plochu než ostatní a **neomezený průraz** — zastaví ji až zeď.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 14–20 |
-| Reálné poškození na projektil | 14–19 (průměr 16,5) |
-| Projektilů na výstřel | 1 |
-| Kadence | 0,62 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 10,31 |
-| Odchylka (`inaccuracy`) | 0 (dokonale přesná) |
+| Poškození na ránu | 14–19 (průměr 16,5) |
+| Kadence | 0,6 rány/s |
+| DPS (jeden cíl) | 10,3 |
 | Režim | poloautomatická |
+| Rozptyl | žádný |
 | Zásobník / rezerva | 3 / 24 |
-| Přebíjení | 2 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 1 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::Shotgun` — jeden sloupec brokových nábojů `SHOTGUN_AMMO_HUD` (krok 20 px) |
+| Přebití | 2,0 s |
+| Kritická šance | 0 % |
+| Projektil | rail, nejrychlejší, tyrkysové světlo |
+| Průraz | neomezený |
+| Otřes obrazovky | silný (druhý nejsilnější po RPG) |
 | Nábojnice | ne |
-| Zvuk výstřelu / přebití | `RailgunShoot` / `RailgunReload` |
-| Textura / velikost ikony | `tex::GUNS_RAILGUN` / 132 × 40 px |
-| Klíč v profilu | `"railgun"` |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Poloautomatická, `Round::Rail` (1800 px/s, hitbox 24), bez rozptylu, `pierce: u32::MAX`.
+- Nejsilnější proti nepřátelům v řadě — v chodbě zasáhne všechny najednou.
+- S artefaktem Phantom (první rána ze zálohy ×2) a kritickým zásahem dá jedna rána přes 70.
+- Dobře se hodí k mutaci **Deadeye** a uzlům **Crit** — viz [Mutace](/docs/guns/mutace).
+- Malá rezerva (24) — šetři ji na silné nepřátele a bosse.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Rail` |
-| Rychlost | 1800 px/s |
-| Velikost sprite / hitbox | 48 × 16 / 24 × 24 |
-| Průraz (`pierce`) | neomezeně |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | tyrkysové (60, 220, 240) |
-| Natáčí se ve směru letu | ano |
-| Textura | `tex::ROUND_RAIL` |
+- Mutace **Piercing** nic nepřidá — střela už prochází vším.
+- Uzly **Accuracy** jsou zbytečné — rozptyl už je nulový.
+- Stůl se zbraněmi ukazuje poškození 14–20, ale 20 nikdy nepadne.
+- Railgun může padnout hned v první truhle 1. patra.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 2 s, pak se zásobník doplní z rezervy (max. 3 nábojů). Rezervu 24 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Mutace Piercing nic nepřidá (saturace).
-- Accuracy uzly zbytečné.
-- Shake 1,0 — druhý nejsilnější otřes po RPG.
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Railgun`, větev v `GunKind::spec`, `Round::Rail` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Railgun“)
-- `assets.rs` → `tex::GUNS_RAILGUN`
-
-## Nápady / chybí
-
-- Nabíjení (charge) před výstřelem by odlišilo Railgun od Sniperu.
-- Vizuální paprsek přes celou dráhu místo projektilu.
+- Nabíjení před výstřelem, které by odlišilo Railgun od Sniperu.
+- Vizuální paprsek přes celou dráhu místo letící střely.

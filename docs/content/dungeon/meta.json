@@ -3,15 +3,12 @@
   "icon": "Map",
   "pages": [
     "index",
-    "generation",
-    "room-templates",
     "rooms",
     "themes",
     "objects",
     "hazards",
     "surfaces",
     "decor",
-    "tilemap",
     "lighting",
     "minimap"
   ]

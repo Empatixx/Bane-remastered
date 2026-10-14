@@ -1,166 +1,106 @@
 ---
-title: AI a pohyb
-description: Jak nepřátelé hledají cestu k hráči, jak se vyhýbají sobě navzájem, jak se odseknou a jak funguje stavový automat bossů.
+title: Chování a pohyb
+description: Jak tě nepřátelé hledají, jak obcházejí překážky a jak se rozhodují bossové.
 ---
+
+Nepřátelé v Bane mají jediný cíl – tebe. Hned po zhmotnění vědí, kde jsi, a jdou za tebou nejkratší
+cestou kolem zdí a objektů. Bossové navíc střídají útoky podle pevného vzorce s telegrafem a fází zuřivosti.
 
 ## Jak to funguje
 
-Nepřátelé nemají žádný „mozek“ v jednom místě — chování skládá několik systémů za sebou v
-`InGame::fixed_update` (`scenes/ingame.rs`). Každý fixed-step (60 Hz) proběhne zhruba:
+### Koho nepřátelé sledují
 
-1. `tick_spawning` → `dash` → `update_flow` → **`chase_player`** (nastaví rychlost všem s `Chase`)
-2. systémy bossů (`tick_golem`, `tick_rock_falls`, `tick_hoppers`, `tick_baits`, `tick_mimic`,
-   `tick_hound`, `tick_magma_spread`, `tick_magma`, `tick_ogre`, `tick_argus`, `tick_laser`,
-   `tick_flames`, `tick_orbiters`) — mohou rychlost přepsat (`Rooted`, `Charge`)
-3. **`separate_chasers`** (rozestupy) → `face_player`
-4. útoky: `tick_smashes`, `tick_eye_shooters`, `steer_homing`, `burn_fuses`, `tick_hatchers`,
-   `tick_web_spitters`, `tick_leapers`, `tick_armageddon`
-5. `simulate` (rapier krok) → **`watch_progress`** (detekce zaseknutí)
-6. … `toughen_enemies` → `resolve_deaths` → `contact_damage`
+Vždy jen hráče – nikdy tvého mazlíčka. Pokud jsi neviditelný (artefakt **Phantom**):
 
-Všechny nepřátelské systémy dostávají `hostile_dt = dt × time_scale` — artefakt zpomalení času tak
-zpomalí nepřátele i jejich projektily, ale ne hráče.
+- běžní nepřátelé zůstanou stát,
+- Eye watcher přestane střílet a naváděné střely letí rovně,
+- bossové se chovají, jako bys byl daleko, a volí útoky na dálku.
 
-### Cíl (targeting)
+Plošné útoky (padající kameny, dopady skoků, paprsky) tě ale zasáhnou i neviditelného.
 
-Cíl je vždy jediný: hráč. `player_placement` / `player_at` vrací pozici hráče, **pokud nemá `Phantom`**
-(neviditelnost). Bez cíle běžní nepřátelé stojí (rychlost 0), Eye watcher nestřílí, navádění projektilů
-se zastaví a bossové počítají vzdálenost jako nekonečno (volí útoky „na dálku“). Dopady (kameny, skoky,
-paprsky) ale zasáhnou i neviditelného hráče (`player_body`). Žádný nepřítel necílí na peta.
+### Hledání cesty
 
-### Navigace: flow field
+Nepřátelé „cítí“ vzdálenost k tobě v okruhu zhruba 12 dlaždic. Když na tebe vidí přímo, jdou rovně;
+jinak obcházejí zdi a pevné objekty (sudy, truhly…) po nejkratší cestě. Mapa cest se přepočítá, kdykoli
+se pohneš, takže nepřítele nesetřeseš tím, že zalezeš za roh. Mimo dosah jdou nepřátelé prostě
+rovnou za tebou.
 
-`flow.rs` → `FlowField` je Dijkstrova mapa vzdáleností kolem hráče:
+### Rozestupy v davu
 
-- Mřížka 16 px (`navigation::CELL`), poloměr 48 buněk → čtverec 97 × 97 buněk (cca ±768 px).
-- Buňka je blokovaná, pokud by na ní objekt 56 × 56 px (`CLEARANCE`) zasahoval do zdi
-  (`Navigation::is_blocked`) nebo do pevného objektu z fyziky (`physics.solids_within`).
-- Přestavba: hned, když se hráč přesune do jiné buňky (ale nejvýš každých 0,1 s), jinak každých 0,5 s.
-- Diagonální krok nesmí „řezat roh“ kolem blokované buňky. Ceny: rovně 10, diagonálně 14.
-- `heading(from, target)`: pokud mezi nepřítelem a hráčem vede volná přímka (Bresenham přes buňky),
-  jde rovně; jinak sleduje gradient 2 buňky dopředu (`LOOKAHEAD`) a míří na střed té buňky. Mimo
-  mapu jde rovně.
+Nepřátelé se navzájem odstrkují, takže se nehromadí v jednom bodě, ale rozprostírají se kolem tebe.
+Bossové a zmražení nebo stojící nepřátelé se odstrčit nedají, ostatní se jim ale vyhnou.
 
-Jedna mapa slouží všem nepřátelům najednou — cena je stejná pro 1 i 50 nepřátel.
+### Zaseknutí
 
-`navigation.rs` obsahuje i A* (`astar`, `find_path_around`, limit 25 000 navštívených buněk), ale ten
-dnes používá jen pet. FEATURE.md popisuje A* pro nepřátele — to platilo pro Java verzi.
+Když nepřítel uvízne (např. o roh), na 0,6 s zkusí jít šikmo jiným směrem. Při dalším zaseknutí zkusí
+druhou stranu.
 
-### Pronásledování (`chase_player`)
+### Natočení
 
-Pro každou entitu s `Chase` (mimo `Expiring`/`Spawning`):
+Nepřátelé se otáčejí čelem k tobě. Výjimkou jsou ti, kdo právě dělají výpad – ti drží směr útoku.
 
-- `Rooted` nebo `Frozen` → stojí.
-- `Charge` → letí pevným směrem `charge.direction × chase.speed` (skoky Mimica, výpad Hellhounda,
-  hop Saliva slime).
-- **Střelec** (má `Smash` a není boss, tj. Slime): pokud je hráč blíž než 300 px (`SHOOTER_FAR`),
-  zastaví se; blíž než 200 px (`SHOOTER_NEAR`) couvá přímo od hráče.
-- Jinak `flow.heading × chase.speed`; při `Detour` se směr otočí o ±1,2 rad.
+### Zpomalení času
 
-### Dav (`separate_chasers`)
+Artefakt zpomalení času zpomalí všechny nepřátele, jejich útoky i jejich střely, ale ne tebe.
 
-Prostorový hash s buňkou 56 px (`PERSONAL_SPACE`). Každý nepřítel sečte odpuzování od sousedů blíž než
-56 px (síla lineárně klesá se vzdáleností) a přičte `push × speed × 1,2`; výsledná rychlost se ořízne na
-původní maximum. Bossové, `Rooted` a `Frozen` nepřátelé se neposouvají, ale ostatní od nich odpuzují.
-Nepřátelé navíc mezi sebou fyzikálně kolidují (rapier skupina `ENEMIES`).
+### Stavy, které mění chování
 
-### Odseknutí (`watch_progress`, `unstick.rs`)
-
-Každých 0,3 s se porovná očekávaná dráha (`|velocity| × čas`) se skutečnou. Pokud by měl urazit víc
-než 8 px a urazil méně než 25 %, dostane `Detour` na 0,6 s — směr pohybu se otočí o 1,2 rad.
-Strana otočení se při každém dalším zaseknutí střídá (start podle parity ID entity).
-
-### Natočení (`face_player`)
-
-Sprite se zrcadlí podle toho, na které straně je hráč (kromě entit v `Charge` — ty si drží směr výpadu).
-
-### Statusy, které ovlivňují AI
-
-| Komponenta | Zdroj | Efekt |
+| Stav | Kdy nastane | Co dělá |
 |---|---|---|
-| `Spawning` | spawn | neviditelný → viditelný, žádné tělo, žádná akce |
-| `Rooted` | windup útoků, Hopper, Spider při plivání | rychlost 0 (útoky běží dál) |
-| `Frozen` | 4 stacky chillu | stojí, žádné útoky, žádný kontaktní damage |
-| `Chilled` | ledová munice | fyzikální rychlost × 0,5 |
-| `Detour` | zaseknutí | otočený směr na 0,6 s |
-| `Charge` | výpady bossů, hop | pevný směr |
-| `Sealed` | Mimic Rest | imunní vůči damage |
-| `HitFlash` | zásah | červený obrys 0,3 s |
-| `Poisoned` | jedovatá louže | zelený obrys, 1 dmg/s |
+| Zhmotňování | při objevení | neviditelný → viditelný, nedá se trefit, nic nedělá |
+| Zakořeněný | nápřah útoku, plivání pavučiny | stojí na místě, ale útok běží |
+| Zmražený | 4 zásahy ledovou municí | stojí, neútočí, nezraňuje |
+| Zchlazený | zásah ledovou municí | poloviční rychlost |
+| Výpad | útoky bossů, skok slizu | letí pevným směrem |
+| Uzavřený | Mimic v útoku Rest | imunní vůči poškození |
+| Zásah | každý zásah | červený obrys 0,3 s |
+| Otrávený | jedovatá louže | zelený obrys, 1 poškození za sekundu |
 
-### Stavový automat bossů
+### Jak se rozhodují bossové
 
-Golem, Argus, Ogre, Hellhound a Mimic sdílí stejný vzor (čistá funkce `step(boss, …) → Vec<Cmd>` +
-`execute` s vedlejšími efekty, takže logika je testovatelná bez světa):
+Stone golem, Argus, Sewer ogre, Hellhound a Mimic mají stejný vzorec:
 
-1. **Walk / Prowl / Float** — boss pronásleduje hráče přes flow field, odpočítává `cooldown`.
-2. Po vypršení `choose_attack` — vážený náhodný výběr (xorshift `seed` odvozený z pozice spawnu),
-   **nikdy dvakrát stejný útok po sobě**; váhy závisí na vzdálenosti (`*_NEAR`) a počtu minions.
-3. **Winding** — `Rooted`, přehraje animaci windupu (telegraf).
-4. **Acting** (u trvalých útoků) — paprsek, déšť kamenů, výpad.
-5. **Recovering** — krátká pauza, pak zpět do Walk s `cooldown` (kratší v rage).
-6. **Rage** při HP ≤ 50 %: jednorázově `enraged = true`, rychlost × 1,25–1,35, červený nádech
-   (`RAGE_TINT`), kratší cooldown a silnější varianty útoků.
+1. **Pohyb** – boss jde za tebou (Argus se jen vznáší) a čeká na konec pauzy mezi útoky.
+2. **Výběr útoku** – náhodně, ale ovlivněno vzdáleností od tebe a počtem pomocníků. **Stejný útok nikdy
+   nepoužije dvakrát po sobě.**
+3. **Nápřah** – boss se zastaví a přehraje animaci, podle které poznáš, co přijde.
+4. **Útok** – výstřel, paprsek, déšť kamenů, výpad…
+5. **Zotavení** – krátká pauza, pak zpět k pohybu.
+6. **Zuřivost** – když boss klesne na polovinu HP, zčervená, zrychlí, zkrátí pauzy a některé útoky
+   zesílí.
 
-Spider king a King slime jsou starší, jednodušší bossové: jen paralelní časovače schopností, bez fází.
-
-Pro ladění lze vynutit útok env proměnnou: `BANE_GOLEM_ATTACK` (slam/throw/rain/laser),
-`BANE_OGRE_ATTACK` (jump/throw/slam/roar), `BANE_HOUND_ATTACK` (lunge/breath/howl),
-`BANE_MIMIC_ATTACK` (hop/bite/spit/lure/rest). Argus takovou proměnnou nemá.
+Spider king a King slime jsou jednodušší: jejich schopnosti běží pořád dokola na časovačích, bez
+nápřahů a bez zuřivosti.
 
 ## Obsah
 
-Typy pohybu v současné hře:
-
-| Typ | Nepřátelé |
+| Typ pohybu | Nepřátelé |
 |---|---|
-| Chaser (flow field) | Rat, Snake, Bat, Demon eye, spiderlingové, Bloated spider, Mini golem, Ogre/Golem/Argus/Mimic/Hellhound mezi útoky, Spider king, King slime |
-| Chaser s dashem | Ghost |
-| Udržuje odstup | Slime |
-| Stacionární | Eye watcher, Argus eye (obíhá Argus) |
-| Skokan (leap) | Stilt spider |
-| Hopper (krátké skoky) | Saliva slime |
-| Red slime | chaser (nemá `Smash`, takže nedrží odstup) |
+| Pronásledovatel | Rat, Snake, Bat, Demon eye, spiderlingové, Bloated spider, Mini golem, Red slime, Spider king, King slime, ostatní bossové mezi útoky |
+| Pronásledovatel s výpadem | Ghost |
+| Drží odstup | Slime (ve vzdálenosti pod ~4,5 dlaždice zastaví, pod 3 dlaždice couvá) |
+| Stojí na místě | Eye watcher, Argus eye (obíhá Arguse) |
+| Skokan | Stilt spider |
+| Poskakuje | Saliva slime |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Hráč](/docs/player) — `Phantom`, `Dodge` (uhnutí dopadům), time slow.
-- [Zbraně](/docs/guns) — chill/freeze munice, `Hits` pro Red slime.
-- [Dungeon](/docs/dungeon) — `Navigation` (pevné dlaždice) a pevné objekty z fyziky tvoří překážky flow fieldu.
-- [Technika](/docs/tech) — pořadí systémů, fixed timestep, rapier skupiny.
+- Slime je jediný běžný nepřítel, který od tebe utíká – musíš za ním.
+- Neviditelnost (Phantom) je nejlepší způsob, jak se zbavit tlaku davu, ale nechrání před plošnými útoky bossů.
+- Ledová munice a zmražení vyřadí nepřítele z boje úplně, včetně kontaktního poškození. Viz [Zbraně](/docs/guns).
+- Zdi a pevné objekty [dungeonu](/docs/dungeon) jsou pro nepřátele překážkou, kterou musí obejít.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `flow.rs` — `FlowField::update`, `build`, `flood`, `heading`, `line_is_clear`, `downhill`.
-- `navigation.rs` — `Navigation::is_blocked`, `CELL`, `astar` (jen pet).
-- `systems/enemies.rs` — `chase_player`, `face_player`, `update_flow`, `player_placement`.
-- `systems/crowd.rs` — `separate_chasers`, `SHOOTER_FAR`, `SHOOTER_NEAR`.
-- `systems/unstick.rs` — `watch_progress`, `DETOUR_SECONDS`, `DETOUR_ANGLE`.
-- `systems/golem.rs` — sdílené pomocníky bossů: `player_at`, `player_body`, `play`, `unit`, `aim`,
-  `turn_towards`, `spawn_rock`, `draw_beam`.
-- `systems/time_slow.rs` → `time_scale`; `systems/simulation.rs` → `simulate` (chill × time scale).
-- `scenes/ingame.rs` → `fixed_update` (pořadí).
+- Nepřátelé nemají žádný dosah vnímání – vidí tě hned po zhmotnění, i přes zdi.
+- Mimo okruh asi 12 dlaždic nepřátelé jdou rovně za tebou, i když jim stojí v cestě zeď; uvolní je až
+  manévr při zaseknutí.
+- Útoky bossů závisí na místě, kde se boss objevil, ne na seedu runu – při stejném seedu se tak
+  nemusí opakovat stejně.
 
-## Jak přidat nový typ chování
+## Nápady na rozšíření
 
-1. Přidej komponentu stavu do `components/` (např. `components/skills.rs`) a variantu `Behavior` v `enemies.rs`.
-2. V `prefabs::enemy` přidej arm, který komponentu vloží.
-3. Napiš systém `tick_xxx(world, …, dt)`: query vynech `Spawning`, `Expiring`, `Frozen`; pohyb ovládej
-   přes `Rooted` / `Charge` / `Chase.speed`, ne přímo přes `Velocity` (přepíše ji `chase_player`) —
-   výjimka jsou skokani, kteří běží po `chase_player` a rychlost přepisují.
-4. Zaregistruj ho v `fixed_update` mezi `chase_player` a `simulate`, s `hostile_dt`.
-5. Pro bosse kopíruj vzor `step` + `Cmd` + `execute` z `systems/ogre.rs` (nejkratší) a přidej úklid do
-   `clean_up_after_boss`.
-
-## Nápady / chybí
-
-- Nepřátelé nemají žádnou detekci hráče (zorné pole, aggro dosah) — aktivují se okamžitě po spawnu a
-  vidí hráče skrz zdi. Flow field má dosah jen ±768 px; mimo něj jdou nepřátelé rovně (do zdi, ze které
-  je vytáhne až `Detour`).
-- Žádné skupinové chování (obklíčení, flanking) — všichni jdou po stejném gradientu, rozestupy dělá jen
-  odpuzování.
-- Jediný „kiting“ nepřítel je Slime; Eye watcher a Demon eye by mohly mít vlastní vzorce (strafe, kruh).
-- Bossové používají vlastní xorshift `seed` místo `RngService`/`Rng` runu — útoky jsou deterministické
-  podle pozice spawnu, ne podle seedu runu.
-- Spider king a King slime nemají fáze ani telegrafy (TODO.md M1 „Enemy attack telegraphs“); převést je na
-  vzor `step`/`Cmd` by sjednotilo kód.
+- Dosah vnímání a „probuzení“ nepřátel, když tě uvidí.
+- Skupinové chování – obkličování, útok z boku – místo toho, aby všichni šli stejnou cestou.
+- Víc nepřátel, kteří drží odstup nebo krouží (Eye watcher, Demon eye).
+- Převést Spider kinga a King slime na stejný vzorec s nápřahy a zuřivostí jako ostatní bossy.

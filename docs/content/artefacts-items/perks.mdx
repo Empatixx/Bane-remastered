@@ -1,73 +1,66 @@
 ---
 title: Perky v runu
-description: Jak se odemčené talenty promítají do běžícího runu – zdraví, armor, damage, munice, obchod, pasti, automat a pet.
+description: Co dělají odemčené talenty během runu – zdraví, armor, damage, munice, obchod, pasti, automat a pet.
 ---
+
+Perky jsou trvalé talenty, které si kupuješ mimo run u Vědce v lobby (strom talentů a nákup viz [Progrese](/docs/progression)). Tato stránka popisuje, jak se projeví **během hry**.
 
 ## Jak to funguje
 
-Perky jsou trvalé talenty kupované mimo run (u Vědce v lobby – nákup, ceny a strom viz [Progrese](/docs/progression)). Tato stránka popisuje jen jejich **efekt během runu**.
-
-1. Profil → `Perks::from_unlocked` (`upgrades.rs`) vyrobí strukturu `Perks` s násobiči a přepínači.
-2. Challenge pravidla `RunRules::shape` (`rules.rs`) ji upraví (násobič damage, strop HP, jen pistole, vypnutý dodge / regenerace armoru).
-3. Aplikace (`systems/perks.rs`):
-   - `apply_run_perks` – jednou na začátku runu: zvedne max HP a armor (a o rozdíl i aktuální hodnoty), pak `apply_floor_perks`.
-   - `apply_floor_perks` – na každém patře: vloží `PlayerPerks` na hráče, přidá sloty zbraní, nastaví `ammo_scale`, případně omezí loadout na jednu zbraň.
-   - `immobilize_traps` – při stavbě patra (Trap Master).
-   - `regenerate_armor` – po `RoomEvent::RoomCleared`.
-4. Ostatní systémy čtou `PlayerPerks` přímo (pohyb, střelba, damage).
+- Talenty se uplatní na začátku runu (maximum zdraví a armoru – o přidaný rozdíl se zvednou i aktuální hodnoty) a pak na každém patře (sloty zbraní, munice, pasti).
+- Některé challenge talenty upravují nebo omezují – mění damage, strop zdraví, povolí jen pistoli nebo vypnou úhyb či regeneraci armoru.
 
 <Callout type="info">
-První talent každé větve (`index() == 0`) je **zdarma a vždy vlastněný** (`Upgrade::is_free`). Každý hráč má tedy vždy Swiftwind Steps (+10 % rychlost), Sharpened Bullets (+20 % damage) a Hero's Heart (+20 % HP).
+První talent každé větve je **zdarma a vždy odemčený**. Každý hráč tak má vždy Swiftwind Steps (+10 % rychlost), Sharpened Bullets (+20 % damage) a Hero's Heart (+20 % zdraví).
 </Callout>
 
 ## Obsah
 
-| Talent | Strom | Efekt v kódu | Kde se projeví |
-|---|---|---|---|
-| Swiftwind Steps (`MovementSpeed`) | Utility, zdarma | rychlost ×1,1 | `systems/steering.rs` |
-| Discount | Utility | šance na slevu jednoho stolu v obchodě | [Obchod](/docs/artefacts-items/shop) |
-| Trap Master | Utility | každá past má ≈ 30 % šanci být vypnutá (`roll(101)` ≤ 30 → 31/101) – ostny zasunuté, plameny zhasnuté, bez `ContactDamage` | `immobilize_traps` |
-| Additional Gun | Utility | +1 slot zbraně (`extra_slots`) | `Loadout::apply_perks` |
-| Gamble Machine | Utility | +100 mincí při stavbě patra s obchodem (viz upozornění) | `scenes/ingame.rs` |
-| Sharpened Bullets (`ImprovedDamage`) | Offensive, zdarma | damage ×1,2 | `Perks::bullet_damage` |
-| Additional Ammo | Offensive | max. rezerva munice ×1,1 | `Weapon::max_ammo` |
-| Critical Hit | Offensive | 10 % šance na ×2 damage | `crit_chance` |
-| Dangerous Bullets (`EnhancedDamage`) | Offensive | damage ×1,25 (násobí se s ×1,2) | `bullet_damage` |
-| Pet | Offensive | spawne [peta](/docs/artefacts-items/pet) | `scenes/ingame.rs`, `scenes/lobby.rs` |
-| Hero's Heart (`ImprovedHealth`) | Defensive, zdarma | max HP ×1,2 (10 → 12) | `max_health` |
-| Improved Armor | Defensive | max armor ×1,2 (5 → 6) | `max_armor` |
-| Armor Regeneration | Defensive | +1 armor po vyčištění místnosti | `regenerate_armor` |
-| Titan's Heart (`EnhancedHealth`) | Defensive | max HP ×1,25 (12 → 15) | `max_health` |
-| Kevlar (`ReducedDamageTaken`) | Defensive | přijatý damage ×0,9, oříznuto dolů, min. 1 | `damage_taken` |
+| Talent | Strom | Efekt ve hře |
+|---|---|---|
+| Swiftwind Steps | Utility, zdarma | rychlost pohybu +10 % |
+| Discount | Utility | šance na slevu jednoho stolu v [obchodě](/docs/artefacts-items/shop) |
+| Trap Master | Utility | každá past má zhruba 30% šanci být vypnutá – ostny zasunuté, plameny zhasnuté, nezraňuje |
+| Additional Gun | Utility | +1 slot na zbraň |
+| Gamble Machine | Utility | +100 mincí na patře s obchodem (viz nesrovnalosti) |
+| Sharpened Bullets | Offensive, zdarma | damage +20 % |
+| Additional Ammo | Offensive | maximální rezerva munice +10 % |
+| Critical Hit | Offensive | 10% šance na dvojnásobný damage |
+| Dangerous Bullets | Offensive | damage +25 % (násobí se se Sharpened Bullets) |
+| Pet | Offensive | vlčí společník – viz [Pet](/docs/artefacts-items/pet) |
+| Hero's Heart | Defensive, zdarma | max zdraví +20 % (10 → 12) |
+| Improved Armor | Defensive | max armor +20 % (5 → 6) |
+| Armor Regeneration | Defensive | +1 armor po vyčištění místnosti |
+| Titan's Heart | Defensive | max zdraví +25 % (12 → 15) |
+| Kevlar | Defensive | přijatý damage −10 %, zaokrouhleno dolů, vždy alespoň 1 |
 
 ### Kevlar v praxi
 
-Kvůli ořezu na celé číslo: 1 → 1, 2 → 1, 3 → 2, 4 → 3, 5 → 4, 10 → 9. U slabých zásahů (2 dmg) je to 50% redukce, u 1 dmg nic.
+Damage se zaokrouhluje dolů na celá čísla: 1 → 1, 2 → 1, 3 → 2, 4 → 3, 5 → 4, 10 → 9. U zásahů za 2 je to tedy poloviční damage, u zásahů za 1 nic.
 
 ### Damage v praxi
 
-Damage zbraně se násobí postupně s ořezem: `(base × 1,2) as int`, pak `× 1,25` as int, pak případně ×2 (krit), pak ×2 (Phantom Cloak ambush). Artefakty (Ring of Death, Bone Turret, Thunder Idol, duchové) ani pet perky **nepoužívají**.
+Damage zbraně se násobí postupně a po každém kroku zaokrouhlí dolů: nejdřív +20 % (Sharpened Bullets), pak +25 % (Dangerous Bullets), pak případně ×2 za kritický zásah a ×2 za první výstřel z [Phantom Cloak](/docs/artefacts-items/artefacts/phantom-cloak). Artefakty (Ring of Death, Bone Turret, Thunder Idol, duchové z Grave Lantern) ani vlk talenty **nevyužívají**.
 
-## Interakce
+## Tipy a souvislosti
 
-- [Progrese](/docs/progression) – strom talentů, nákup, challenge (`progress/challenges.rs`).
-- [Hráč](/docs/player) – HP, armor, rychlost, dodge (`perks.dodge`).
-- [Zbraně](/docs/guns) – sloty, munice, damage, krit.
-- [Dungeon](/docs/dungeon) – pasti.
+- [Progrese](/docs/progression) – strom talentů, ceny, challenge.
+- [Hráč](/docs/player) – zdraví, armor, rychlost, úhyb.
+- [Zbraně](/docs/guns) – sloty, munice, damage, kritické zásahy.
+- [Dungeon](/docs/dungeon) – pasti a Trap Master.
+- Kevlar je nejsilnější proti nepřátelům, kteří dávají 2 damage – snižuje je na polovinu.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `upgrades.rs` → `Upgrade`, `Tree`, `UpgradeDef` (texty, ikony, kvalita), `Perks`, `from_unlocked`, `max_health`, `max_armor`, `bullet_damage`, `damage_taken`, `crit_chance`
-- `rules.rs` → `RunRules::shape`
-- `systems/perks.rs` → `apply_run_perks`, `apply_floor_perks`, `apply_weapon_mods`, `immobilize_traps`, `regenerate_armor`, `TRAP_DISABLE_CHANCE`
-- `components/combat.rs` → `Loadout::apply_perks`, `restrict`, `allows`
-- `systems/damage.rs` → `hurt` (Kevlar), `systems/shooting.rs` (damage, krit)
+- **Improved Armor** slibuje v popisu +33 %, ve hře dává +20 % (5 → 6).
+- **Armor Regeneration** slibuje „obnovu armoru“, ve hře dává jen +1 bod po vyčištění místnosti.
+- **Gamble Machine** automat neodemyká – je v obchodě vždy. Talent jen přidá 100 mincí, a to fakticky jen v 1. patře. Viz [Automat](/docs/artefacts-items/slot-machine).
+- **Talent Sharpened Bullets nemá u zbraní s damage 1 žádný efekt** – 1 × 1,2 se zaokrouhlí zpět na 1.
+- Protože první talenty jsou zdarma, „+20 % zdraví / damage“ jsou ve skutečnosti základní hodnoty každého hráče.
+- Všechny talenty zatím stojí stejně (1 bod), původní verze hry měla ceny podle kvality talentu.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- **Improved Armor** má v popisu „by 33%“, kód násobí 1,2 (5 → 6 = +20 %).
-- **Armor Regeneration** má v popisu „Restores armor“, kód dává jen +1 bod.
-- **Gamble Machine** neodemyká automat (je tam vždy) – viz [Automat](/docs/artefacts-items/slot-machine).
-- Volné první talenty dělají z „+20 % HP / damage“ základní hodnoty – pokud to není záměr, upravit `is_free` nebo základní statistiky hráče.
-- `TALENT_PRICE = 1` pro všechny talenty, zatímco FEATURE.md (Java) uvádí ceny 60–500 a `UpgradeDef.price` se tedy zatím nerozlišuje podle kvality.
-- Žádné perky přímo pro artefakty (např. „artefakt se po 3 místnostech dobije“, „+1 artefaktový slot“) – přirozené rozšíření Utility stromu.
+- Talenty pro artefakty – „artefakt se po 3 místnostech dobije“, „+1 slot na artefakt“.
+- Talent zvyšující damage vlka nebo vyvolaných spojenců.
+- Talent zvyšující šanci na drop.

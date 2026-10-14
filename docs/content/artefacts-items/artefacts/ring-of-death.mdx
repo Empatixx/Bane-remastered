@@ -3,37 +3,38 @@ title: Ring of Death
 description: Okamžitě vystřelí 50 střel do kruhu kolem hráče.
 ---
 
+Ring of Death je nouzové tlačítko pro chvíle, kdy jsi obklíčen. Po použití z tebe naráz vyletí prstenec 50 střel do všech stran.
+
 ## Jak to funguje
 
-Po aktivaci se v jednom snímku vytvoří `RING_BULLETS = 50` hráčských střel (`prefabs::bullet`, `Bullet::plain(RING_DAMAGE)`):
+- Všech 50 střel vznikne najednou a letí od tebe do všech směrů rychlostí běžné hráčské střely.
+- Každá střela dává **2 damage**, bez ohledu na tvé talenty.
+- Prstenec se otáčí o něco víc než celý kruh, takže v jednom směru (zhruba šestina kruhu) letí střely dvojnásobně hustě.
 
-| Parametr | Hodnota |
+## Statistiky
+
+| Vlastnost | Hodnota |
 |---|---|
 | Počet střel | 50 |
-| Damage na střelu | 2 |
-| Rychlost | 700 px/s |
-| Úhlový krok | 0,15 rad (≈ 8,6°) |
-| Celkový úhel | 50 × 0,15 = 7,5 rad ≈ 430° |
-| Textura střely | hráčská `BULLET` |
+| Damage na střelu | 2 (celkem až 100) |
+| Rychlost střel | rychlá (jako střely zbraní) |
+| Trvání | okamžitý |
 
-- Úhel první střely: `atan2(-pozice.y, -pozice.x)` – tedy směr **od hráče k počátku světa (0,0)**, ne podle myši.
-- Protože 7,5 rad je víc než plný kruh, posledních ~70° se překrývá – v tom směru letí dvojnásobná hustota.
-- Všechny střely vznikají naráz, takže „spirála“ v názvu testu je jen v pořadí úhlů, vizuálně jde o prstenec.
-- Damage je pevná, **neprochází** perky (Sharpened Bullets, Critical Hit) ani násobičem Phantom Cloak.
+## Tipy a souvislosti
 
-## Interakce
+- Nejlepší v [Ambush místnostech](/docs/dungeon), kdy jsou nepřátelé ze všech stran.
+- Proti jednomu velkému cíli (boss) se vyplatí stát těsně u něj – zasáhne ho víc střel.
+- [Zbraně](/docs/guns) – střely vypadají a chovají se jako běžné hráčské střely.
 
-- [Zbraně](/docs/guns) – používá stejný prefab střely jako zbraně (`Round::Bullet`).
-- Funguje dobře proti obklíčení v Ambush místnostech ([Dungeon](/docs/dungeon)).
+## Známé nesrovnalosti
 
-## Kde v kódu
+- **Směr hustšího pásu nezávisí na myši** – určuje ho tvoje poloha v rámci patra, takže je pro hráče prakticky náhodný.
+- **Prstenec přetáčí přes celý kruh** (asi 430°) – část kruhu je pokrytá dvakrát.
+- Název evokuje spirálu, ale všechny střely vyletí naráz jako kruh.
+- **Talenty na damage (Sharpened Bullets, Critical Hit) ani Phantom Cloak na něj nepůsobí.**
 
-- `artefacts.rs` → `RING_BULLETS`, `RING_TURN`, `RING_DAMAGE`
-- `systems/artefacts.rs` → `activate_artefact` (arm `RingOfDeath`), `BULLET_SPEED = 700.0`
-- Textura ikony: `ingame/artefacts/ringofdeath.tga` (25×25 → ikona 50×50)
+## Nápady na rozšíření
 
-## Nápady / chybí
-
-- Výchozí úhel podle pozice ve světě vypadá jako artefakt portu (v Javě se zřejmě počítalo relativně) – lepší by byl směr k myši nebo 0.
-- Přetočení přes 360° (430°) je pravděpodobně nechtěné – buď `RING_TURN = TAU / 50`, nebo skutečná spirála se zpožděním mezi střelami (např. 0,02 s), což by odpovídalo názvu.
-- Pevných 2 dmg × 50 je na začátku silné, v 5. patře slabé – zvážit škálování perky.
+- Skutečná spirála – střely by vylétaly postupně s malým zpožděním.
+- Rovnoměrný kruh, nebo hustší pás ve směru míření.
+- Damage rostoucí s patrem nebo s talenty.

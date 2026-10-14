@@ -1,65 +1,52 @@
 ---
 title: Mutace
-description: Šest mutací na konci stromu zbraně — Piercing, Explosive, Venom, Frost, Ricochet a Deadeye.
+description: Šest zvláštních schopností nábojů na konci stromu zbraně — Piercing, Explosive, Venom, Frost, Ricochet a Deadeye.
 ---
 
-Mutace (`guns::Mutation`) je zvláštní schopnost nábojů, kterou dává **nejhlubší uzel stromu zbraně** (řádek 4). Každý strom má právě jednu mutaci a k ní vede řetěz tří stat uzlů. Stojí 800 zlata (`MUTATION_COST`) a je vždy Epic.
+Mutace je nejsilnější vylepšení zbraně. Leží na samém konci hlavní větve [stromu zbraně](/docs/guns/strom-zbrane), vede k ní řetěz tří vylepšení a stojí **800 zlata**. Každý strom má právě jednu mutaci — kterou, určí náhoda při vytvoření stromu.
 
 ## Jak to funguje
 
-- Mutace se ukládá do `GunMods::mutation` a přes `GunMods::apply` do `GunSpec::mutation`.
-- Při výstřelu vznikne `Bullet::mutated(damage, mutation)`: Piercing nastaví `pierce = 1`, Ricochet `bounces = 1`. Pak `as_round` přičte průraz projektilu.
-- Ostatní mutace se vyhodnotí v `mutate_hit` při zásahu nepřítele (nebo u Explosive i při nárazu do zdi).
-- Deadeye se vyhodnocuje už při výstřelu (`Weapon::count_shot`).
+Mutace mění chování každé střely zbraně. Piercing a Ricochet se projeví hned při výstřelu, Deadeye počítá výstřely a ostatní mutace se spustí ve chvíli, kdy střela zasáhne nepřítele (Explosive i zeď).
 
 ## Obsah
 
-| Mutace | Název v UI | Popis v UI | Skutečný efekt |
-| --- | --- | --- | --- |
-| `Piercing` | Piercing Rounds | Bullets pierce the first enemy | +1 průraz (projektil projde jedním nepřítelem navíc). |
-| `Explosive` | Explosive Rounds | Hits explode and hurt enemies nearby | Při zásahu nepřítele i zdi malý výbuch: vizuál 72 × 72, oblast 96 × 96, poloviční poškození (min. 1) všem nepřátelům a rozbitným objektům kromě přímo zasaženého. Hráče nezraní. Zdroj `Explosion`. |
-| `Venom` | Venom Rounds | Hits poison and leave a toxic pool | Při zásahu nepřítele vznikne přátelská jedová louže (`venom_pool`, `Friendly`) na 3 s — pokud v okruhu 64 px už jiná přátelská louže není. Louže 96 × 76 dává nepřátelům uvnitř 1 poškození za sekundu (zdroj `Poison`, bez záblesku). Hráče nezraňuje. |
-| `Frost` | Frost Rounds | Hits chill and slow enemies | Zásah přidá stack `Chilled` (2,5 s, nepřítel se pohybuje poloviční rychlostí). Při 4. stacku (`CHILL_STACKS_TO_FREEZE`) nepřítel zamrzne (`Frozen`) na 1,2 s a stacky se vynulují. Bossové nezamrzají, jen se zpomalí. |
-| `Ricochet` | Ricochet | Bullets bounce off walls once | Projektil se jednou odrazí od zdi (zrcadlení rychlosti podle normály, odsunutí 2 px od zdi). Odraz resetuje `last_hit`. |
-| `Deadeye` | Deadeye | Every fifth shot is a critical hit | Každý pátý výstřel zbraně (`DEADEYE_EVERY` = 5) je kritický (×2). Počítadlo `Weapon::shots` je na instanci zbraně. |
-
-### Kdy mutace nefunguje
-
-| Mutace | Zbraně, kde je zbytečná | Proč |
+| Mutace | Popis ve hře | Co přesně dělá |
 | --- | --- | --- |
-| Všechny kromě Deadeye | RPG | `Rocket` po výbuchu přeskočí `mutate_hit` i odraz. |
-| Piercing | Railgun, Flamethrower | už mají průraz `u32::MAX` (saturace). |
-| Ricochet | Flamethrower | plamen zhasne po 0,45 s, ke zdi doletí jen zblízka. |
-| Deadeye | — | funguje všude; na Shotgunu krituje všechny 4 broky, na M4 každou pátou ránu dávky. |
+| Piercing Rounds | Bullets pierce the first enemy | Střela projde o jednoho nepřítele navíc. |
+| Explosive Rounds | Hits explode and hurt enemies nearby | Každý zásah nepřítele i zdi způsobí malý výbuch (cca 1,5 × 1,5 dlaždice), který dá polovinu poškození (min. 1) okolním nepřátelům a rozbitným objektům. Přímo zasaženého ani hráče nezraní. |
+| Venom Rounds | Hits poison and leave a toxic pool | Zásah nepřítele zanechá na 3 s jedovou louži, která nepřátelům uvnitř bere 1 HP za sekundu. Hráče nezraňuje. Nová louže nevznikne, pokud je do 1 dlaždice už jiná. |
+| Frost Rounds | Hits chill and slow enemies | Každý zásah nepřítele zpomalí na polovinu na 2,5 s. Čtvrtý zásah po sobě ho na 1,2 s zmrazí. Bossové nezamrzají, jen zpomalí. |
+| Ricochet | Bullets bounce off walls once | Střela se jednou odrazí od zdi a po odrazu může znovu zasáhnout i stejného nepřítele. |
+| Deadeye | Every fifth shot is a critical hit | Každý pátý výstřel zbraně je kritický (×2). Počítá se zvlášť pro každou zbraň. |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Strom zbraně](/docs/guns/strom-zbrane) — kde a za kolik se mutace kupuje; přehození stromu (reroll) losuje mutaci znovu.
-- [Projektily](/docs/guns/projektily) — Piercing se sčítá s průrazem projektilu.
-- [Nepřátelé](/docs/enemies) — `Chilled`, `Frozen`, bossové imunní vůči zmrazení.
-- [Dungeon](/docs/dungeon) — jedové louže sdílí kód s nepřátelskými (`PoisonPool`), jen mají značku `Friendly`.
+- **Deadeye** funguje na každé zbrani. Na Shotgunu udělá kritickými všechny 4 broky naráz, na M4 krituje každou pátou ránu (ne dávku).
+- **Frost** se nejlépe hodí k rychlopalným zbraním (Uzi, Minigun, Flamethrower) — čtyři zásahy přijdou během okamžiku.
+- **Explosive** a **Venom** zlepšují zbraně bez plošného poškození proti skupinám.
+- **Piercing** se sčítá s vlastním průrazem střely — Sniper s ním prostřelí 3 nepřátele a zastaví se ve čtvrtém.
+- Pokud se mutace nehodí, lze strom za 100 zlata přehodit (všechno utracené zlato se vrátí) — viz [Strom zbraně](/docs/guns/strom-zbrane).
+- Zpomalení a zmrazení nepřátel: [Nepřátelé](/docs/enemies). Jedové louže nepřátel fungují stejně, jen zraňují hráče: [Dungeon](/docs/dungeon).
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `guns.rs` → `Mutation`, `Mutation::ALL`
-- `components/combat.rs` → `Bullet::mutated`, `Weapon::count_shot`
-- `systems/shooting.rs` → `mutate_hit`, `explode_round`, `chill`, odraz v `bullet_hits`; konstanty `BLAST_LOOK`, `BLAST_REACH`, `VENOM_POOL_SECONDS`, `VENOM_SPACING`, `FROST_ROUND_FREEZE`
-- `components/objects.rs` → `CHILL_SECONDS`, `CHILL_SLOWDOWN`, `CHILL_STACKS_TO_FREEZE`, `Chilled`, `Frozen`
-- `systems/objects.rs` → `tick_poison` (louže), zpomalení `Chilled`
-- `weapon_upgrades.rs` → `MUTATION_COST`, `DEADEYE_EVERY`, `mutation_of`
-- `scenes/weapon_table.rs` → `MUTATIONS` (názvy a popisy v UI — pořadí musí odpovídat `Mutation::ALL`)
+| Mutace | Kde je zbytečná | Proč |
+| --- | --- | --- |
+| Všechny kromě Deadeye | RPG | Raketa po výbuchu žádnou mutaci nespustí. |
+| Piercing | Railgun, Flamethrower | Jejich střely už procházejí vším. |
+| Ricochet | Flamethrower | Plamen zhasne dřív, než doletí ke zdi, pokud hráč nestojí přímo u ní. |
 
-## Jak přidat novou mutaci
+- Strom zbraně může nabídnout mutaci, která na dané zbrani nefunguje.
+- Popis Piercing „pierce the first enemy“ sedí jen u zbraní, které samy neprůbojné nejsou.
+- Hra nikde neukazuje čísla mutací (velikost výbuchu, délku jedu, kolik zásahů zmrazí).
 
-1. `guns.rs`: přidat variantu do `Mutation` a na **konec** `Mutation::ALL`. Pozor: strom ukládá mutaci jako index a `MUTATION_KINDS` = délka pole se používá v generátoru (`rng.below(MUTATION_KINDS)`) — změna délky změní všechny stromy, takže je nutné zvýšit `weapon_tree::GENERATOR` a aktualizovat `FINGERPRINT` (staré stromy se hráčům proplatí).
-2. `scenes/weapon_table.rs` → `MUTATIONS`: název a dvouřádkový popis; ikona je další řádek v textuře `tex::MUTATION_ICONS` (test `the_icon_tables_match_the_textures` hlídá počty).
-3. Efekt při výstřelu → `Bullet::mutated` nebo `count_shot`; efekt při zásahu → `mutate_hit`; efekt při nárazu do zdi → konec `bullet_hits`.
-4. Test v `systems/shooting.rs` po vzoru `a_venom_round_leaves_a_pool_that_spares_the_player`.
+## Nápady na rozšíření
 
-## Nápady / chybí
-
-- Generátor stromu nebere ohled na zbraň — RPG může dostat mutaci, která na něm nefunguje, Railgun Piercing. Buď filtrovat, nebo implementovat (např. Venom louže po výbuchu rakety).
-- Popis Piercing „pierce the first enemy“ sedí jen u zbraní bez vlastního průrazu.
-- UI nevysvětluje čísla (velikost výbuchu, délku jedu, počet stacků mrazu).
-- Mutace je jen jedna na zbraň a nelze ji vybrat, jen přehodit celý strom za 100 zlata + ztrátu stromu (nákupy se ale vrací).
-- Nápady: Chain (každý zásah přeskočí blesk — Tesla efekt pro všechny), Vampiric (léčení z poškození), Homing, Split (na zásah se rozdělí na 2 menší), Burn (DoT), Midas (zabití dává mince — artefakt Midas Coin už podobnou mechaniku má).
+- **Chain** — každý zásah přeskočí bleskem jako u Tesla Gun.
+- **Vampiric** — část poškození léčí hráče.
+- **Homing** — střely se stáčí k nepřátelům.
+- **Split** — při zásahu se střela rozdělí na dvě menší.
+- **Burn** — zásah zapálí nepřítele na několik sekund.
+- **Midas** — zabití dává mince navíc (v duchu artefaktu Midas Coin).
+- Možnost vybrat si ze dvou mutací místo jedné pevné.

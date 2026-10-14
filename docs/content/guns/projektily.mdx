@@ -1,88 +1,56 @@
 ---
 title: Projektily
-description: Všech 10 typů projektilů (Round) — rychlost, hitbox, průraz, výbuch, splash, řetězový blesk, světlo a stopy.
+description: Deset druhů střel, které zbraně v Bane vystřelují — jak rychle letí, čím projdou a co udělají po zásahu.
 ---
 
-Co vylétne z hlavně, určuje `Round` v `GunSpec::round` (výchozí `Round::Bullet`). Každý projektil je entita s komponentou `Bullet`, fyzikálním tělem (`physics.add_bullet`), animovaným spritem (4 × 2 sheet: řádek 0 let, řádek 1 dopad), barevným světlem o poloměru 25 a případně `Heading` (natočení) a `Trailing` (stopa).
+Každá zbraň střílí jeden druh projektilu. Většina zbraní používá obyčejnou kulku, ale speciální zbraně mají vlastní střely: raketu, plamen, laser, plazmu, jiskru nebo railovou střelu. Každý projektil má svou barvu světla, takže je ve tmě dungeonu dobře vidět.
 
 ## Jak to funguje
 
-`Round::spec()` vrací `RoundSpec`. Výchozí hodnoty (`round(...)`): hitbox 16 × 16, žádný průraz, žádná životnost (letí, dokud nenarazí), bez výbuchu, splashe, řetězu a stopy, červené světlo.
-
-- **pierce** — kolika nepřáteli projde, než se zastaví. Sčítá se s mutací Piercing (`saturating_add`).
-- **lifetime** — za kolik sekund sám zhasne (`burn_out_rounds`).
-- **blast** — při kontaktu s čímkoli vybuchne: `rocket_blast` dá **plné** poškození všem nepřátelům a rozbitným objektům v oblasti 176 × 176 (vizuál 144 × 144, textura `BARREL_EXPLOSION`, 9 snímků). Hráče nezraní.
-- **splash** — po zásahu (i o zeď) dostanou nepřátelé a rozbitné objekty v 80 × 80 kolem dopadu polovinu poškození (min. 1), přímo zasažený ne.
-- **chains** — po zásahu nepřítele přeskočí blesk `chains`krát na nejbližšího dalšího nepřítele do 220 px od posledního cíle, každý skok s plným poškozením; vykreslí `prefabs::arc` a 4 jiskry (`arc_motes`), zvuk `TeslaZap`.
-- **trail** — za letu odhazuje částice (`systems/trails.rs`, limit 120 částic ve scéně).
-- **turns** — dlouhé projektily se natáčí ve směru letu; kulaté (`Bullet`, `Flame`, `Plasma`, `Spark`) ne.
+- **Rychlost** — jak rychle střela letí. Pro srovnání: hráč běží asi 6,4 dlaždice za sekundu.
+- **Průraz** — kolika nepřáteli střela projde, než se zastaví. Mutace Piercing přidává +1.
+- **Životnost** — plamen sám zhasne po 0,45 s; ostatní střely letí, dokud do něčeho nenarazí.
+- **Výbuch** (raketa) — při kontaktu s čímkoli vybuchne a zraní **plným** poškozením všechny nepřátele a rozbitné objekty v oblasti zhruba 2,75 × 2,75 dlaždice. Hráče nezraní.
+- **Cákanec** (plazma) — po zásahu dostanou nepřátelé a rozbitné objekty v okolí cca 1,25 × 1,25 dlaždice polovinu poškození (min. 1). Přímo zasažený cákanec nedostane.
+- **Řetězový blesk** (jiskra) — po zásahu přeskočí blesk dvakrát na nejbližšího dalšího nepřítele do cca 3,4 dlaždice, každý skok s plným poškozením.
+- **Stopa** — laser a jiskra za sebou nechávají svítící částice.
+- Protáhlé střely (stopovka, šipka, raketa, laser, rail) se natáčí ve směru letu; kulaté ne.
 
 ## Obsah
 
-| Round | Zbraně | Rychlost (px/s) | Sprite | Hitbox | Průraz | Životnost | Efekt | Světlo (RGB) | Natáčí se | Nábojnice |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Bullet` | Pistol, Shotgun, Luger, Revolver, M4, Uzi, Thompson; artefakty | 700 | 16 × 16 | 16 | 0 | — | — | 255, 0, 0 | ne | ano |
-| `Tracer` | Minigun | 900 | 16 × 16 | 12 | 0 | — | — | 255, 200, 0 | ano | ano |
-| `Slug` | Sniper | 1500 | 32 × 16 | 12 | 2 | — | — | 80, 200, 255 | ano | ano |
-| `Rocket` | RPG | 480 | 24 × 24 | 16 | 0 | — | blast | 255, 140, 0 | ano | ne |
-| `Bolt` | Crossbow | 950 | 32 × 16 | 12 | 1 | — | — | 255, 120, 60 | ano | ne |
-| `Flame` | Flamethrower | 380 | 24 × 24 | 20 | ∞ | 0,45 s | — | 255, 110, 0 | ne | ne |
-| `Laser` | Blaster | 1300 | 32 × 16 | 12 | 0 | — | stopa LASER | 255, 30, 40 | ano | ne |
-| `Plasma` | Plasma Rifle | 650 | 24 × 24 | 16 | 0 | — | splash | 60, 255, 90 | ne | ne |
-| `Spark` | Tesla Gun | 600 | 24 × 24 | 16 | 0 | — | chains 2, stopa VOLT | 80, 160, 255 | ne | ne |
-| `Rail` | Railgun | 1800 | 48 × 16 | 24 | ∞ | — | — | 60, 220, 240 | ano | ne |
-
-### Stopy (`Trail`)
-
-| Stopa | Textura | Barva | Velikost | Životnost | Boční rozptyl | Interval |
+| Projektil | Zbraně | Rychlost | Průraz | Efekt | Barva světla | Nábojnice |
 | --- | --- | --- | --- | --- | --- | --- |
-| `Trail::VOLT` | `ROUND_MOTE_VOLT` | 0,65 / 0,85 / 1,0 | 14 | 0,35 s | 90 px/s | 0,02 s |
-| `Trail::LASER` | `ROUND_MOTE_LASER` | 1,0 / 0,5 / 0,55 | 12 | 0,3 s | 20 px/s | 0,015 s |
+| Kulka | Pistol, Shotgun, Luger, Revolver, M4, Uzi, Thompson; artefakty | střední (cca 11 dl/s) | 0 | — | červená | ano |
+| Stopovka | Minigun | rychlá (cca 14 dl/s) | 0 | — | žlutá | ano |
+| Odstřelovací střela | Sniper | velmi rychlá (cca 23 dl/s) | 2 | — | světle modrá | ano |
+| Raketa | RPG | pomalá (cca 7,5 dl/s) | 0 | výbuch plným poškozením | oranžová | ne |
+| Šipka | Crossbow | rychlá (cca 15 dl/s) | 1 | — | oranžovočervená | ne |
+| Plamen | Flamethrower | nejpomalejší (cca 6 dl/s) | neomezený | zhasne po 0,45 s (dolet cca 2,7 dl) | oranžová | ne |
+| Laser | Blaster | velmi rychlý (cca 20 dl/s) | 0 | červená světelná stopa | červená | ne |
+| Plazma | Plasma Rifle | střední (cca 10 dl/s) | 0 | cákanec polovičním poškozením | zelená | ne |
+| Jiskra | Tesla Gun | střední (cca 9,4 dl/s) | 0 | blesk na 2 další cíle, modrá stopa | modrá | ne |
+| Rail | Railgun | nejrychlejší (cca 28 dl/s) | neomezený | větší zásahová plocha | tyrkysová | ne |
 
-Částice letí do strany od směru letu a mírně dozadu (`DRAG_BEHIND` 0,06 rychlosti), velikost se náhodně mění 70–130 %, nejsou osvětlené (`Lit` se odstraní). Zastavený projektil už nic neodhazuje.
+Rychlost je v dlaždicích za sekundu (dl/s). Po dopadu přehraje každý projektil krátkou animaci zásahu.
 
-### Komponenta `Bullet`
+## Tipy a souvislosti
 
-| Pole | Význam |
-| --- | --- |
-| `damage` | výsledné poškození spočítané při výstřelu |
-| `pierce` | zbývající průrazy |
-| `bounces` | zbývající odrazy od zdi (Ricochet = 1) |
-| `mutation` | mutace z konce stromu zbraně |
-| `last_hit` | poslední zasažený nepřítel (aby ho průbojný projektil netrefil dvakrát po sobě) |
-| `round` | typ projektilu |
-| `lifetime` | zbývající čas života |
+- Průbojné střely (Sniper, Crossbow, Railgun, Flamethrower) jsou nejsilnější proti nepřátelům v řadě — v chodbách a dveřích.
+- Raketa a plazma rozbíjejí i sudy a hrnce v okolí — viz [Dungeon](/docs/dungeon).
+- [Mutace](/docs/guns/mutace) přidávají průraz, odraz, výbuch, jed nebo mráz.
+- Pořadí, v jakém se efekty při dopadu vyhodnocují: [Střelba](/docs/guns/strelba).
 
-## Interakce
+## Známé nesrovnalosti
 
-- [Mutace](/docs/guns/mutace) — přidávají průraz, odraz, výbuch, jed, mráz.
-- [Střelba](/docs/guns/strelba) — pořadí vyhodnocení dopadu.
-- [Dungeon](/docs/dungeon) — rozbitné objekty (sudy, hrnce) berou poškození z výbuchů i splashe.
+- Raketa po výbuchu ignoruje mutace — Explosive, Venom, Frost, Piercing ani Ricochet na RPG nic nedělají.
+- Plamen nezapaluje, je to jen krátká průbojná střela.
+- Výbuchy, cákance a mutace Explosive se nepočítají do přesnosti ani do schopností, které počítají zásahy.
+- Sniper vyhazuje brokové náboje místo puškových nábojnic.
 
-## Kde v kódu
+## Nápady na rozšíření
 
-- `guns.rs` → `Round`, `Round::ALL`, `Round::spec`, `Round::turns`, `RoundSpec`, `Trail`
-- `components/combat.rs` → `Bullet`, `Bullet::as_round`, `BULLET_FLIGHT`, `BULLET_IMPACT`
-- `prefabs/actors.rs` → `bullet`
-- `systems/shooting.rs` → `bullet_hits`, `burn_out_rounds`, `rocket_blast`, `splash`, `chain_lightning`, `RoundTextures`
-- `systems/trails.rs` → `shed_trails`, `arc_motes`, `TrailTextures`
-- `prefabs/fx.rs` → `blast`, `arc`
-
-## Jak přidat nový projektil
-
-1. `guns.rs`: přidat variantu do `Round` a do `Round::ALL` (zvýšit délku pole — `RoundTextures` indexuje podle `round as usize`, pořadí musí sedět).
-2. Přidat větev do `Round::spec` (textura, velikost, rychlost, případně `pierce`, `lifetime`, `blast`, `splash`, `chains`, `light`, `trail`).
-3. Rozhodnout `Round::turns` (kulatý vs. protáhlý sprite).
-4. `assets.rs`: `tex::ROUND_…` (`ingame/rounds/….tga`, sheet 4 sloupce × 2 řádky: let a dopad) a zařadit do načítaných textur.
-5. Nová stopa → nová konstanta `Trail` + textura v `TrailTextures`.
-6. Pokud má mít nábojnici, přidat do `matches!` v `shoot` (dnes Bullet/Tracer/Slug).
-7. Nový druh efektu → nové pole v `RoundSpec` a logika v `bullet_hits`.
-8. Test po vzoru `every_new_gun_fires_its_own_round_at_its_own_speed`.
-
-## Nápady / chybí
-
-- Rocket přeskakuje celé vyhodnocení mutací — Explosive/Venom/Frost/Piercing/Ricochet na RPG nedělají nic.
-- Flame nezapaluje; existující `Flame` objekty v dungeonu by šlo využít pro hoření.
-- Splash, výbuch i Explosive mutace používají zdroj `Explosion`, který se nepočítá do přesnosti ani do skillů.
-- Nábojnice podle `ClipStyle` místo podle projektilu (Sniper vyhazuje brokový náboj).
-- Nápady: projektil se zpomalením/přitažením (gravity well), bumerang (vrací se), štěpící se střela (split na zásah), projektil sledující cíl (homing), paprsek (beam bez projektilu).
+- Gravitační střela, která přitahuje nepřátele k místu dopadu.
+- Bumerang, který se vrací ke hráči.
+- Štěpící se střela, která se při zásahu rozdělí na dvě.
+- Samonaváděcí střela.
+- Paprsek bez projektilu, který zasahuje okamžitě.

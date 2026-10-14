@@ -1,93 +1,60 @@
 ---
-title: Scény a stavový automat
-description: Čtyři scény hry (Loading, Menu, Lobby, InGame), přechody mezi nimi, hudba a vývojářské zkratky.
+title: Herní obrazovky a přechody
+description: Jaké obrazovky ve hře jsou (načítání, menu, laboratoř, dungeon), jak se mezi nimi pohybuješ a jaká hudba kde hraje.
 ---
+
+Hra má čtyři hlavní obrazovky: **načítání → hlavní menu → laboratoř → dungeon**. Pauza, nastavení,
+obrazovka konce runu a panely stanic v laboratoři nejsou samostatná místa — otevírají se jako okno
+přes právě hranou obrazovku.
 
 ## Jak to funguje
 
-Hra má čtyři scény (`SceneId`): **Loading → Menu → Lobby → InGame**. Všechny žijí současně
-v `Scenes` (každá má vlastní `hecs::World`), aktivní je vždy jedna. Scéna vrací z `update` /
-`fixed_update` hodnotu `Transition`:
+### Kudy se kam dostaneš
 
-- `Transition::None` — nic,
-- `Transition::Switch(SceneId)` — aktuální scéna zavolá `leave()` (vyčistí svět), nová `enter()`, spustí se její hudba,
-- `Transition::Quit` — ukončení hry.
-
-Pauza, panel nastavení, death screen ani menu stanic v lobby **nejsou** samostatné scény —
-jsou to UI entity uvnitř aktuální scény.
-
-### Přechody
-
-| Z | Do | Spouštěč |
+| Odkud | Kam | Jak |
 |---|---|---|
-| Loading | Menu | Assety načtené + 0,5 s (`HOLD_SECONDS`) |
-| Loading | Lobby / InGame | Env `BANE_START=lobby` / `BANE_START=dungeon` (vývoj) |
-| Menu | Lobby | Tlačítko **Play** |
-| Menu | (konec) | Tlačítko **Exit** |
-| Lobby | InGame | Interakce **E** s portálem (`Interaction::EnterPortal`) |
-| Lobby | Menu | Pauza (Esc) → **Main Menu** |
-| Lobby / InGame | (konec) | Pauza → **Exit Game** |
-| InGame | InGame (další patro) | Žebřík (`Interaction::NextFloor`) — scéna se nemění, jen se přestaví svět |
-| InGame | Lobby | Po death/victory screenu libovolná klávesa + 0,8 s fade |
+| Načítání | Hlavní menu | Automaticky po načtení (krátká půlsekundová pauza) |
+| Hlavní menu | Laboratoř | Tlačítko **Play** |
+| Hlavní menu | Konec hry | Tlačítko **Exit** |
+| Laboratoř | Dungeon (nový run) | Klávesa **E** u portálu |
+| Laboratoř | Hlavní menu | Esc → **Main Menu** |
+| Laboratoř / dungeon | Konec hry | Esc → **Exit Game** |
+| Dungeon | Další patro | Klávesa **E** u žebříku po poražení bosse |
+| Dungeon | Laboratoř | Po obrazovce Game Over / Victory libovolná klávesa, obraz se zatemní (necelá sekunda) |
 
-### Hudba (`Soundtrack`)
+### Hudba
 
-| Scéna | Skladba |
+| Obrazovka | Hudba |
 |---|---|
-| Loading | žádná |
-| Menu | `MainMenu` |
-| Lobby | `ProgressRoom` |
-| InGame | `InGame`; při vstupu do boss místnosti `Boss`, po zabití bosse zpět `InGame` |
+| Načítání | ticho |
+| Hlavní menu | téma hlavního menu |
+| Laboratoř | klidná hudba laboratoře |
+| Dungeon | herní hudba; v místnosti s bossem se přepne na boss hudbu, po jeho smrti zpět |
 
-### Loading
+### Načítání
 
-Obloha s shaderem (`Sky`), animovaný titulek (`LogoAnim`, 285×135 px) a spinner (8 snímků po
-0,1 s). Jakmile `assets.is_loaded()`, čeká se ještě 0,5 s a přepne se do Menu.
+Noční obloha, animovaný titulek Bane a točící se ikonka. Jakmile je hra připravená, po půl sekundě
+přejde do hlavního menu (titulek plynule odletí na své místo v menu).
 
 ## Obsah
 
-| Scéna | Soubor | Kurzor | Fyzika | Popis |
-|---|---|---|---|---|
-| `Loading` | `scenes/loading.rs` | default | ne | Načítání assetů |
-| `Menu` | `scenes/menu.rs` + `menu_stage.rs`, `menu_logo.rs`, `menu_buttons.rs` | default | ne | Hlavní menu, viz [Menu a nastavení](/docs/progression/menus-settings) |
-| `Lobby` | `scenes/lobby.rs` | default | ano | Laboratoř, viz [Lobby](/docs/progression/lobby) |
-| `InGame` | `scenes/ingame.rs` | zaměřovač / reload | ano | Run, viz [Průběh runu](/docs/progression/run) |
+| Obrazovka | Co tu děláš | Ovládání | Podrobně |
+|---|---|---|---|
+| Načítání | Čekáš | — | výše |
+| Hlavní menu | Spustíš hru, nastavení, odejdeš | myš | [Menu, pauza, nastavení](/docs/progression/menus-settings) |
+| Laboratoř | Chodíš, utrácíš měny, volíš challenge, vstupuješ do portálu | pohyb + E, kurzor myši | [Laboratoř](/docs/progression/lobby) |
+| Dungeon | Hraješ run | pohyb, střelba, kurzor se mění na zaměřovač (a ukazuje přebíjení) | [Průběh runu](/docs/progression/run) |
 
-### Vývojářské env proměnné týkající se flow
+## Tipy a souvislosti
 
-| Proměnná | Efekt |
-|---|---|
-| `BANE_START=lobby` / `dungeon` | Přeskočí menu |
-| `BANE_SEED` | Přehraje run se stejným seedem (seed se loguje při startu runu) |
-| `BANE_AT=boss` | Hráč se objeví 160 px pod středem boss místnosti |
-| `BANE_THEME` | Vynutí biom pro všechna patra |
-| `BANE_DATA` | Složka pro `profile.json` a `settings.json` |
-| `BANE_ASSETS` | Složka s assety |
+- Nastavení se dá otevřít **jen z hlavního menu** — když chceš v laboratoři změnit hlasitost, musíš přes Esc → Main Menu.
+- Co se při přechodech ukládá: [Co si hra pamatuje](/docs/progression/saves).
 
-Další (`BANE_BOSS`, `BANE_ROWS`, `BANE_*_ATTACK`) se týkají nepřátel/dungeonu — viz [Technika](/docs/tech).
+## Známé nesrovnalosti
 
-## Interakce
+- Z dungeonu nevede cesta do menu ani do laboratoře jinak než smrtí, tlačítkem **Die** nebo vítězstvím (pauza nabízí jen Resume / Die / Exit Game).
 
-- Každá scéna dostane společný `SharedProfile` (Lobby a InGame) — viz [Ukládání](/docs/progression/saves).
-- `Settings` se předává do `update` všech scén, ale mění je jen Menu — viz [Menu a nastavení](/docs/progression/menus-settings).
+## Nápady na rozšíření
 
-## Kde v kódu
-
-- `scenes/mod.rs` → `SceneId`, `Transition`, `Cursor`, trait `Scene`
-- `scenes/machine.rs` → `Scenes::new`, `Scenes::switch`, `Scenes::apply`
-- `scenes/loading.rs` → `LoadingScene`, `first_scene()`
-- `scenes/pause.rs` → `Pause` (sdílené mezi Lobby a InGame)
-
-## Jak přidat novou scénu
-
-1. Přidat variantu do `SceneId` v `scenes/mod.rs`.
-2. Vytvořit `scenes/<nazev>.rs` se strukturou implementující `Scene` (`world`, `world_mut`, `enter`, případně `update`, `fixed_update`, `soundtrack`, `leave`).
-3. Přidat pole do `Scenes` a větve do `scene()` / `scene_mut()` v `scenes/machine.rs`.
-4. Vracet `Transition::Switch(SceneId::…)` z místa, odkud se má do scény přejít.
-5. Pokud potřebuje profil, přidat `attach_profile` a zavolat ho v `Scenes::new`.
-
-## Nápady / chybí
-
-- Z InGame se nedá odejít do menu ani do lobby bez smrti — pauza má jen Resume / Die / Exit Game.
-- Chybí scéna pro epilog / pravý konec (`scenes/epilogue.rs` navrhuje `story.md`).
-- Chybí obrazovka profilu / statistik a credits.
+- Epilog / pravý konec po splnění challenge Bane (viz [Příběh](/docs/progression/story)).
+- Obrazovka profilu se statistikami a credits.

@@ -1,83 +1,53 @@
 ---
 title: Shotgun
-description: Startovní brokovnice — čtyři broky na jeden náboj, nejvyšší DPS na krátkou vzdálenost.
+description: Startovní brokovnice — čtyři broky na jeden náboj a zdaleka nejvyšší poškození zblízka.
 ---
 
-**Shotgun** (`GunKind::Shotgun`) — Druhá startovní zbraň (slot 2). Jediná zbraň s vlastní třídou munice `AmmoClass::Shotgun`.
+**Shotgun** je druhá startovní zbraň (slot 2). Jedním nábojem vystřelí čtyři broky a zblízka nemá konkurenci. Jako jediná zbraň ve hře používá vlastní brokovou munici.
 
 ## Jak to funguje
 
-### Statistiky
+Poloautomatická zbraň. Jeden náboj vystřelí **4 broky** v pevném vějíři — rovně, −2,9°, +5,7° a −8,6°. Vějíř je vždy stejný, žádná náhoda. Každý brok má vlastní hod poškození, ale kritický zásah se hází pro celý výstřel najednou — buď jsou kritické všechny 4 broky, nebo žádný.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 3–5 |
-| Reálné poškození na projektil | 3–4 (průměr 3,5) |
-| Projektilů na výstřel | 4 |
-| Kadence | 2 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 28 |
-| Odchylka (`inaccuracy`) | 0,1 (vějíř broků, viz níže) |
+| Poškození na brok | 3–4 (průměr 3,5) |
+| Broků na výstřel | 4 |
+| Kadence | 2 rány/s |
+| DPS (všechny broky zasáhnou) | 28 |
 | Režim | poloautomatická |
+| Rozptyl | pevný vějíř do ±8,6° |
 | Zásobník / rezerva | 6 / 48 |
-| Přebíjení | 0,7 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,6 |
-| Třída munice | `AmmoClass::Shotgun` |
-| Styl zásobníku v HUD | `ClipStyle::Shotgun` — jeden sloupec brokových nábojů `SHOTGUN_AMMO_HUD` (krok 20 px) |
-| Nábojnice | ano (brokový řádek sheetu) |
-| Zvuk výstřelu / přebití | `ShotgunShoot` / `ShotgunReload` |
-| Textura / velikost ikony | `tex::GUNS_SHOTGUN` / 96 × 36 px |
-| Klíč v profilu | `"shotgun"` |
+| Přebití | 0,7 s |
+| Kritická šance | 0 % |
+| Projektil | kulka, střední rychlost, červené světlo |
+| Průraz | 0 |
+| Otřes obrazovky | střední |
+| Nábojnice | ano (brokové náboje) |
+| Munice | krabice s broky (+25 %), univerzální krabice (+50 %) |
+| Získání | startovní výbava (slot 2) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Poloautomatická. Jeden náboj ze zásobníku vystřelí `MAX_PELLETS` = 4 broky. Broky se nerozptylují náhodně, ale **deterministickým vějířem**: broky 0–3 mají odchylku 0, −0,05, +0,1 a −0,15 rad (0°, −2,9°, +5,7°, −8,6°) — vzorec `0.5 × inaccuracy × index × (±1)`. Každý brok má vlastní hod poškození, ale kritický zásah se hází jednou pro celý výstřel.
+- Nejsilnější je zblízka, kdy zasáhnou všechny čtyři broky. Na dálku se vějíř rozevře a část broků mine.
+- Uzly **Accuracy** ve [stromu zbraně](/docs/guns/strom-zbrane) zužují i vějíř broků.
+- Mutace **Deadeye** udělá kritickými všechny 4 broky naráz — každý pátý výstřel je ničivý. Viz [Mutace](/docs/guns/mutace).
+- Statistika vystřelených střel počítá broky, ne náboje — jeden výstřel = 4 střely.
+- Krabice s náboji Shotgun nedoplní; potřebuje krabici s broky nebo univerzální.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Bullet` |
-| Rychlost | 700 px/s |
-| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | červené (255, 0, 0) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::BULLET` |
+- Vějíř není souměrný — broky letí víc na jednu stranu než na druhou.
+- S DPS 28 je startovní Shotgun výrazně nejsilnější zbraní hry; balanc je stále otevřený.
+- Stůl se zbraněmi ukazuje poškození 3–5, ale 5 nikdy nepadne.
+- Starší design dokument uvádí poškození 222–333 (zbytek z ladění); ve hře je 3–4.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,7 s, pak se zásobník doplní z rezervy (max. 6 nábojů). Rezervu 48 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Shotgun` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Vyhazuje nábojnici z druhého řádku sheetu (brokový náboj), protože `clip_style == ClipStyle::Shotgun`.
-- Statistika `Stat::Fired` počítá broky, ne náboje — jeden výstřel = 4 vystřelené projektily.
-- Munici doplňují jen krabice `AmmoBox::Shotgun` (+25 %) a `AmmoBox::Universal` (+50 %).
-- Strom zbraně s uzlem Accuracy zužuje i vějíř (odchylka je násobek `inaccuracy`).
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Hráč ji dostává na začátku každého runu (`Loadout::starting`).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Shotgun`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Shotgun“)
-- `assets.rs` → `tex::GUNS_SHOTGUN`
-
-## Nápady / chybí
-
-- Vějíř je asymetrický (víc doleva/doprava podle znaménka) — 4 broky nejdou symetricky kolem osy. Pro sudý počet broků by dávalo smysl ±0,025/±0,075.
-- FEATURE.md stále uvádí poškození 222–333 (Java debug hodnota); Rust port má opraveno na 3–5. Dokumentaci FEATURE.md aktualizovat.
-- S DPS 28 (všechny broky zasáhnou) je výrazně nejsilnější zbraní hry, přitom startovní. Balanc pass (TODO.md P0) stále otevřený.
+- Souměrný vějíř broků.
+- Uzel stromu „+1 brok“ jako vylepšení specifické pro brokovnici.
+- Snížit základní poškození nebo zúžit efektivní dosah, aby nepřebíjela ostatní zbraně.

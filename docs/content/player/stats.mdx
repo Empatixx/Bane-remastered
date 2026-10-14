@@ -1,86 +1,77 @@
 ---
 title: Statistiky běhu
-description: Co se během běhu počítá (RunStats), jak se z toho na konci spočítá shrnutí a odměna ve zlatě a co si profil pamatuje napořád.
+description: Co hra během běhu počítá, jak se z toho na konci spočítá odměna ve zlatě a které statistiky si tvůj profil pamatuje napořád.
 ---
+
+Během každého běhu hra potichu sleduje, jak hraješ — kolik střílíš a trefuješ, kolik zabíjíš a co sbíráš.
+Na konci běhu z toho vypočítá odměnu ve **zlatě**, za které si v lobby vylepšuješ zbraně.
 
 ## Jak to funguje
 
-Hráč nese komponentu `RunStats`. Systémy do ní zapisují přes `stats::record(world, Stat, amount)`;
-statistiky se přenášejí mezi patry (`systems/carry.rs`) a na konci běhu se zpracují.
+### Co se počítá během běhu
 
-### Počítadla v běhu (`components/stats.rs` → `RunStats`)
+Statistiky se přenášejí mezi patry a sčítají se za celý běh.
 
-| Pole | `Stat` | Kdy se přičítá |
-|------|--------|----------------|
-| `fired` | `Fired` | každý výstřel × počet projektilů (brokovnice = počet broků) |
-| `hits` | `Hit` | zásah nepřítele **vlastní kulkou** (`DamageSource::Bullet`); ne výbuchy, vyvolané bytosti, mazlíček, jed |
-| `kills` + `kills_of[druh]` | `Kill(EnemyKind)` | dohrání death animace nepřítele (ne `Minion`) — počítají se i zabití pastí, mazlíčkem atd. |
-| `items` | `Item` | sebrání mince, munice, lektvaru, zbraně ze země i artefaktu |
-| `gold` | `Gold` | každá sebraná mince |
-| `hurt_this_floor` | `Hurt` | každé volání `hurt` po imunitě (i zásah pohlcený štítem) |
-| `untouched_floors` | — | `close_floor`: při odchodu z patra (nebo poražení posledního bosse) +1, pokud `hurt_this_floor == 0` |
+| Statistika | Kdy se přičítá |
+|------------|----------------|
+| Výstřely | každý vystřelený projektil — výstřel z brokovnice se počítá tolikrát, kolik má broků |
+| Zásahy | zásah nepřítele **tvou kulkou**; výbuchy, mazlíček, vyvolaní pomocníci ani jed se nepočítají |
+| Zabití | každý zabitý nepřítel (kromě drobných přisluhovačů bosse), i když ho zabila past nebo mazlíček; počítá se i podle druhu nepřítele |
+| Předměty | každá sebraná mince, munice, lektvar, zbraň i artefakt |
+| Mince | každá sebraná mince |
+| Zásahy v patře | kolikrát tě v aktuálním patře něco zasáhlo (i zásah pohlcený štítem) |
+| Nedotčená patra | +1 za každé patro, které opustíš (nebo dokončíš poražením posledního bosse), aniž by tě něco zasáhlo |
 
-### Shrnutí na konci (`summarize`)
+### Shrnutí na konci běhu
 
-Spouští se při smrti, výhře nebo volbě *Die* (`start_death_screen`, jen jednou).
+Závěrečná obrazovka se ukáže po smrti, po výhře nebo po volbě *Die* v pauze.
 
-- **Přesnost** = `min(hits, fired) / fired` (0 % pokud se nestřílelo).
-- **Odměny** (zlato) — 4 řádky, `growth(floor, faktor, x) = faktor · floor^1,02 · x^1,01` (useknuto):
+- **Přesnost** = zásahy ÷ výstřely (0 %, pokud jsi nestřílel).
+- **Odměna ve zlatě** má čtyři řádky. První tři rostou s dosaženým patrem a s hodnotou statistiky — zhruba
+  *násobitel × patro × hodnota*, s nepatrným zrychlením u vyšších čísel:
 
-| Řádek na death screenu | Odměna |
-|------------------------|--------|
-| Accuracy: N % | `growth(floor, 2, přesnost v %)` |
-| Kills: N | `growth(floor, 2, kills)` |
-| Loot: N | `growth(floor, 4, items)` |
-| Floor: N | `(floor − 1) · 5` |
+| Řádek | Odměna |
+|-------|--------|
+| Accuracy: N % | násobitel 2 × patro × přesnost v % |
+| Kills: N | násobitel 2 × patro × počet zabití |
+| Loot: N | násobitel 4 × patro × počet předmětů |
+| Floor: N | 5 zlata za každé patro po prvním |
 
-Příklad: patro 3, 60 % přesnost, 40 zabití, 20 předmětů → 383 + 254 + 252 + 10 = 899 zlata.
+**Příklad:** patro 3, přesnost 60 %, 40 zabití, 20 předmětů → 383 + 254 + 252 + 10 = **899 zlata**.
 
-Výsledek se zapíše do profilu (`Profile::record_run`) a vyhodnotí mise a výzva (`finish_run`) — dokončená
-výzva přičte talenty. Případná poznámka („mise splněna“ apod.) se ukáže na death screenu.
+Výsledek se zapíše do profilu a vyhodnotí se mise a zvolená výzva — splněná výzva přidá talenty. Pokud jsi
+něco splnil, ukáže se poznámka přímo na závěrečné obrazovce.
 
-### Doživotní statistiky profilu (`profile.rs` → `Profile`)
+### Závěrečná obrazovka
 
-| Pole | Význam |
-|------|--------|
-| `gold`, `total_earned` | aktuální a celkově vydělané zlato |
-| `balance` | talenty (měna pro [talenty](/docs/player/upgrades)) |
-| `runs`, `wins`, `deaths` | počty běhů |
-| `kills`, `items_collected` | součty |
-| `bullets_fired`, `bullets_hit` | součty (hit omezen na fired) |
-| `best_floor` | nejhlubší patro |
+Nejdřív vyjede lebka, pak nadpis a potom postupně čtyři řádky (ikona, popisek a načítající se „+N“ zlata).
+Až animace doběhne, blikající nápis tě vyzve k pokračování — jakákoli klávesa tě vrátí do lobby.
 
-### Death screen (`systems/death_screen.rs`)
+### Co si profil pamatuje napořád
 
-Lebka vyjíždí 2,5 s, pak titulek, pak 4 řádky po 0,5 s (ikona + popisek + „+N“ zlata, které se načítá),
-blikající výzva k pokračování; jakákoli klávesa po dokončení animace vrátí hráče do lobby.
+| Statistika | Význam |
+|------------|--------|
+| Zlato | aktuální zlato a celkem vydělané zlato |
+| Talenty | měna pro [talenty](/docs/player/upgrades) |
+| Běhy | počet běhů, výher a smrtí |
+| Zabití a předměty | součty za všechny běhy |
+| Výstřely a zásahy | součty za všechny běhy |
+| Nejhlubší patro | rekord |
 
-## Interakce
+## Tipy a souvislosti
 
-- Mise měří `kills`, `kills_of`, patro, `gold`, `items` a `untouched_floors` — viz [Průběh hry a progrese](/docs/progression).
-- Zlato se utrácí za stromy vylepšení zbraní — [Zbraně](/docs/guns).
+- Mise sledují zabití (i podle druhu nepřítele), dosažené patro, mince, předměty a nedotčená patra — viz [Průběh hry a progrese](/docs/progression).
+- Zlato utrácíš za stromy vylepšení zbraní — [Zbraně](/docs/guns).
+- Sbírání čehokoli se vyplácí: řádek Loot má dvojnásobný násobitel oproti zabitím.
+- Hloubka se násobí se vším — jedno patro navíc zvedne všechny tři hlavní odměny.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `components/stats.rs` → `RunStats`
-- `systems/stats.rs` → `Stat`, `record`, `close_floor`, `current`, `Summary`, `summarize`, `growth`
-- `systems/death_screen.rs` → `DeathScreen`, `update_death_ui`
-- `scenes/ingame.rs` → `start_death_screen`, `next_floor`
-- `profile.rs` → `Profile::record_run`, `SharedProfile::finish_run`
-- `progress/missions.rs` → `Goal::measure`
+- Zásah pohlcený štítem (*Shield Horn*) se počítá jako zásah a pokazí nedotčené patro (viz [Zdraví, brnění a poškození](/docs/player/damage)).
+- Patro, na kterém zemřeš, se do nedotčených pater nikdy nezapočítá.
+- Přesnost penalizuje brokovnice — každý brok je samostatný „výstřel“, a minout pár broků je běžné.
 
-## Jak přidat novou statistiku
+## Nápady na rozšíření
 
-1. Přidej pole do `RunStats` a variantu do `enum Stat`; doplň větev v `record`.
-2. Zavolej `stats::record(world, Stat::Nova, n)` v systému, kde událost nastává.
-3. Má-li být doživotní, přidej pole do `Profile` (je `serde(default)`, staré profily se načtou) a přičti v `record_run`.
-4. Má-li dávat odměnu, rozšiř `Summary.rewards` (dnes pevné pole 4) a `DeathScreen::label` / `ROWS`.
-5. Pro misi přidej `Goal` / `GoalKind` a větev v `measure` (`progress/missions.rs`).
-
-## Nápady / chybí
-
-- Neexistuje obrazovka se statistikami profilu — `Profile` je sbírá, ale hráč je nikde nevidí (kromě počítadel talentů a zlata v lobby).
-- `Hurt` se počítá i při zásahu pohlceném štítem (viz [Model poškození](/docs/player/damage)).
-- Patro, na kterém hráč zemře, se do `untouched_floors` nepočítá (`close_floor` se volá jen při sestupu a při poražení posledního bosse).
-- Chybí statistiky: čas běhu, počet úhybů, nejvyšší zásah, zabití bossů zvlášť (jen přes `kills_of`), utracené mince.
-- Přesnost penalizuje brokovnice (každý broček je „výstřel“).
+- Obrazovka se statistikami profilu — hra je sbírá, ale hráč je nikde neuvidí (kromě talentů a zlata v lobby).
+- Další statistiky: čas běhu, počet úhybů, nejsilnější zásah, zabití bossů, utracené mince.

@@ -1,97 +1,91 @@
 ---
 title: Kde a jak co padá
-description: Všechny zdroje lootu – nepřátelé, bedny, truhly, bossové, Ambush místnosti, obchod, automat a artefakty – s pravděpodobnostmi.
+description: Všechny zdroje lootu – nepřátelé, bedny, truhly, bossové, Ambush místnosti, obchod, automat a artefakty – i s pravděpodobnostmi.
 ---
+
+Tato stránka shrnuje, odkud v Bane loot přichází a s jakou šancí. Veškerý loot se řídí seedem runu – při stejném seedu najdeš stejné obchody a truhly a při stejné hře i stejné dropy.
 
 ## Jak to funguje
 
-Veškerý loot používá `loot_rng` – deterministický proud odvozený ze seedu runu a čísla patra (`Rng::stream(run_seed, floor, Stream::Loot)`). Stejný seed = stejné obchody, truhly i dropy (pokud hráč hraje stejně).
+### 1. Nepřátelé
 
-### 1. Nepřátelé (`enemy_drops`)
-
-- Spouští se, když nepřítel s `Expiring` dokončí animaci smrti. Nepřátelé s `NoDrop` (King Slime, všichni minioni) se přeskočí.
-- Systém drží počítadlo `kills_without_drop` (pole scény `InGame`).
-- Pro každé zabití: počítadlo `+1`, hod `roll` z 0–5 (`DROP_ROLL_RANGE = 6`), drop pokud `počítadlo + roll` je větší než 4 (`GUARANTEED_DROP`). Po dropu se počítadlo vynuluje.
+Drop se rozhoduje ve chvíli, kdy nepřítel dohraje animaci smrti. Hra si pamatuje, kolik nepřátel jsi zabil od posledního dropu, a s každým dalším zabitím šance roste:
 
 | Zabití od posledního dropu | Šance na drop |
 |---|---|
-| 1. | 2/6 ≈ 33 % |
-| 2. | 3/6 = 50 % |
-| 3. | 4/6 ≈ 67 % |
-| 4. | 5/6 ≈ 83 % |
+| 1. | 33 % |
+| 2. | 50 % |
+| 3. | 67 % |
+| 4. | 83 % |
 | 5. | 100 % (garantovaný) |
 
-- Co padne: rovnoměrně z `ItemKind::COMMON` → **25 % mince, 50 % pistolová munice (Pistol + SubMachine), 25 % brokovnicová munice**, přes `common_drop` (úprava pro challenge Pistol Only). Pickup mizí po 10 s.
-- Statistika zabití (`Stat::Kill`) se zapisuje tamtéž (minioni se nepočítají).
+- Po dropu se počítadlo vynuluje.
+- Co padne: **25 % mince, 50 % pistolová munice, 25 % brokovnicová munice**. Předmět zmizí po 10 s.
+- **King Slime a všichni vyvolaní minioni nic nedropují.** Minioni se ani nepočítají do statistiky zabití.
 
-### 2. Rozbitné objekty (`break_objects`)
+### 2. Rozbitné objekty
 
-- Květináč (`Pot`), sud (`Barrel`), výbušný, jedový a mrazivý sud – 4 HP (`OBJECT_HEALTH`).
-- Po rozbití **vždy 1 předmět** z `COMMON` (přes `common_drop`), s 10s despawnem. Speciální sudy navíc vybuchnou / zamrazí / vylijí jed.
-- Detail objektů: [Dungeon](/docs/dungeon).
+- Květináče a sudy (obyčejné, výbušné, jedové i mrazivé) mají 4 body výdrže.
+- Po rozbití padne **vždy 1 předmět** (mince nebo munice, stejné šance jako u nepřátel), který zmizí po 10 s. Speciální sudy navíc vybuchnou, zmrazí nebo vylijí jed.
+- Více o objektech: [Dungeon](/docs/dungeon).
 
-### 3. Truhly (`open_chests`)
+### 3. Truhly
 
-- Otevírají se **dotykem** hráče (ne klávesou), zvuk `OpenChest`, animace `CHEST_OPEN`.
-- Po dohrání animace truhla zmizí a `burst_items` vystřelí **5 předmětů z `COMMON`** do pravidelného kruhu (rychlost 333) – tyto **nemizí**.
-- Navíc podle `ChestKind`:
+- Otevírají se **dotykem**, ne klávesou.
+- Po animaci otevření truhla zmizí a do kruhu vystřelí **5 běžných předmětů** (mince / munice) – ty **nemizí**.
+- Navíc podle druhu truhly:
 
 | Truhla | Kde se objeví | Obsah navíc |
 |---|---|---|
-| `Weapon` | uprostřed Treasure místnosti (1 na patro); po vyčištění každé Ambush místnosti (`RoomEvent::AmbushCleared`, místo vybere `chest_spot`) | náhodná nevlastněná zbraň (`unused_gun`), pokud nějaká existuje |
-| `Artefact` | po poražení bosse (`RoomEvent::BossDefeated`), nad středem arény | náhodný artefakt kromě drženého (`unused_artefact`) |
+| Zbraňová | uprostřed Treasure místnosti (1 na patro) a po vyčištění každé Ambush místnosti | náhodná zbraň, kterou ještě nemáš (pokud nějaká zbývá) |
+| Artefaktová | po poražení bosse, nad středem arény | náhodný artefakt kromě toho, který právě držíš |
 
 ### 4. Obchod a Sacrifice
 
-Viz [Obchod](/docs/artefacts-items/shop) – 3 stoly (velký lektvar / univerzální munice / zbraň nebo artefakt) + pentagram za životy. V obchodě jsou i 2 květináče (zdroj podle bodu 2).
+Viz [Obchod](/docs/artefacts-items/shop) – tři stoly (velký lektvar / univerzální munice / zbraň nebo artefakt) a pentagram, kde platíš zdravím. V obchodě stojí i 2 květináče.
 
 ### 5. Hrací automat
 
-Viz [Automat](/docs/artefacts-items/slot-machine) – mince, 5 běžných předmětů, nebo vzácná cena (lektvar, univerzální munice, zbraň, artefakt).
+Viz [Automat](/docs/artefacts-items/slot-machine) – mince, sprška 5 předmětů nebo vzácná cena (lektvar, univerzální munice, zbraň, artefakt).
 
 ### 6. Artefakty
 
-- [Midas Coin](/docs/artefacts-items/artefacts/midas-coin) – každá nepřátelská střela → mince; 6 s +2 mince za zabití.
+- [Midas Coin](/docs/artefacts-items/artefacts/midas-coin) – promění nepřátelské střely v mince a 6 s dává +2 mince za zabití.
 - [Blood Chalice](/docs/artefacts-items/artefacts/blood-chalice) – léčení místo předmětů.
 
 ### 7. Výměna
 
-- Sebrání nového artefaktu vyhodí starý na zem. Sebrání zbraně při plném loadoutu vyhodí aktuální zbraň (viz [Zbraně](/docs/guns)).
+Když sebereš nový artefakt, starý ti vypadne na zem. Totéž platí pro zbraň při plném arzenálu (viz [Zbraně](/docs/guns)).
 
-## Obsah – souhrnná tabulka zdrojů
+## Obsah
 
 | Zdroj | Mince | Munice | Lektvary | Zbraň | Artefakt | Mizí? |
 |---|---|---|---|---|---|---|
 | Nepřítel | 25 % z dropu | 75 % z dropu | – | – | – | ano, 10 s |
 | Bedna / sud / květináč | 25 % | 75 % | – | – | – | ano, 10 s |
-| Treasure truhla | 5× COMMON | 5× COMMON | – | ano | – | ne |
-| Ambush truhla | 5× COMMON | 5× COMMON | – | ano | – | ne |
-| Boss truhla | 5× COMMON | 5× COMMON | – | – | ano | ne |
-| Obchod | – | Universal | velký | 50 % | 50 %+ | ne |
-| Pentagram | – | Universal | velký | ano | ano | ne |
-| Automat | 10 / 15 / 10 | v „item shower“ | malý / velký | vzácně | vzácně | ano (kromě zbraně a artefaktu) |
+| Treasure truhla | 5 běžných předmětů | 5 běžných předmětů | – | ano | – | ne |
+| Ambush truhla | 5 běžných předmětů | 5 běžných předmětů | – | ano | – | ne |
+| Truhla po bossovi | 5 běžných předmětů | 5 běžných předmětů | – | – | ano | ne |
+| Obchod | – | univerzální | velký | 50 % | 50 % a víc | ne |
+| Pentagram | – | univerzální | velký | ano | ano | ne |
+| Automat | 10 / 15 / 10 | ve spršce předmětů | malý / velký | vzácně | vzácně | ano (kromě zbraně a artefaktu) |
 | Midas Coin | ano | – | – | – | – | ano, 10 s |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Nepřátelé](/docs/enemies) – `NoDrop`, `Minion`, animace smrti spouští drop.
-- [Dungeon](/docs/dungeon) – Treasure (1×), Shop (1×, ne v challenge Merchant's Strike), Sacrifice (0–1×), Ambush (1–2×), Boss.
-- [Pet](/docs/artefacts-items/pet) – sbírá dropy.
+- [Nepřátelé](/docs/enemies) – kdo dropuje a kdo ne.
+- [Dungeon](/docs/dungeon) – na každém patře je 1 Treasure, 1 obchod (kromě challenge Merchant's Strike), 0–1 Sacrifice, 1–2 Ambush a boss.
+- [Pet](/docs/artefacts-items/pet) – sbírá dropy za tebe.
+- Garantovaný drop po pátém zabití znamená, že v průměru padne něco zhruba každé třetí zabití.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `items.rs` → `drop_threshold_reached`, `GUARANTEED_DROP`, `DROP_ROLL_RANGE`, `COMMON`
-- `systems/items.rs` → `enemy_drops`, `burst_items`, `common_drop`
-- `systems/objects.rs` → `break_objects`
-- `systems/loadout.rs` → `open_chests`, `unused_gun`
-- `systems/artefacts.rs` → `unused_artefact`
-- `scenes/ingame.rs` → `handle_room_events` (Ambush / Boss truhly), `kills_without_drop`
-- `dungeon/furnish.rs` → `treasure`, `shop`; `dungeon/layout.rs` → počty speciálních místností
+- **Počítadlo „zabití bez dropu“ se mezi patry nenuluje** – rozehranou sérii si neseš do dalšího patra.
+- **Mince jsou vzácné** – v průměru padne zhruba 1 mince na 12 zabití, zatímco ceny v obchodě s patrem rostou.
+- **Treasure místnost má vždy zbraňovou truhlu** – nikdy artefaktovou ani zamčenou.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- **`kills_without_drop` se mezi patry nenuluje** (žije ve scéně, ne ve světě) – drobnost, ale je to skrytý stav přenášený přes patra.
-- **Drop pool je extrémně úzký** – jen mince a munice. Chybí: malý lektvar (např. 5 %), vzácný artefakt z elitních nepřátel, drop bossů mimo truhlu.
-- **Mince jsou vzácné** – průměrně ≈ 1 drop na 3 zabití a z toho jen 1/4 mince, tedy cca 1 mince na 12 zabití; ceny v obchodě rostou s patrem (viz [Obchod](/docs/artefacts-items/shop)). Stojí za balanc-pass.
-- Chybí „luck“ stat nebo perk ovlivňující drop rate.
-- Truhly v Treasure místnosti jsou vždy zbraňové – žádná šance na artefaktovou nebo zamčenou truhlu.
+- Širší pool dropů: malý lektvar (např. 5 %), vzácný artefakt z elitních nepřátel, vlastní drop bossů mimo truhlu.
+- Statistika „štěstí“ nebo talent, který zvedá šanci na drop.
+- Balanc přísunu mincí vůči cenám v pozdějších patrech.

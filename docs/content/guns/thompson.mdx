@@ -1,78 +1,46 @@
 ---
 title: Thompson
-description: Přesný samopal s velkým zásobníkem a střední kadencí.
+description: Přesný samopal s velkým zásobníkem a klidnou, střední kadencí.
 ---
 
-**Thompson** (`GunKind::Thompson`) — Automatická zbraň „do pohody“: 5 ran/s, téměř bez rozptylu (±1,4°), zásobník 30.
+**Thompson** je automatická zbraň „do pohody“: 5 ran za sekundu, téměř žádný rozptyl a zásobník na 30 nábojů.
 
 ## Jak to funguje
 
-### Statistiky
+Automatická zbraň — střílí, dokud hráč drží tlačítko. Obyčejné kulky letí skoro přesně tam, kam hráč míří (±1,4°).
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 1–3 |
-| Reálné poškození na projektil | 1–2 (průměr 1,5) |
-| Projektilů na výstřel | 1 |
-| Kadence | 5 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 7,5 |
-| Odchylka (`inaccuracy`) | 0,05 → ±0,03 rad (±1,4°) |
+| Poškození na ránu | 1–2 (průměr 1,5) |
+| Kadence | 5 ran/s |
+| DPS | 7,5 |
 | Režim | automatická |
+| Rozptyl | ±1,4° |
 | Zásobník / rezerva | 30 / 300 |
-| Přebíjení | 0,85 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,18 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::SubMachine` — dva sloupce nábojů (krok 15 px, sloupce po 25 px) |
-| Nábojnice | ano (nábojnice) |
-| Zvuk výstřelu / přebití | `PistolShoot` / `PistolReload` |
-| Textura / velikost ikony | `tex::GUNS_THOMPSON` / 98 × 46 px |
-| Klíč v profilu | `"thompson"` |
+| Přebití | 0,85 s |
+| Kritická šance | 0 % |
+| Projektil | kulka, střední rychlost, červené světlo |
+| Průraz | 0 |
+| Otřes obrazovky | slabý |
+| Nábojnice | ano |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Automatická, jedna kulka `Round::Bullet`, odchylka ±0,025 rad.
+- Díky přesnosti je spolehlivý i na delší vzdálenost, kde Uzi a Minigun rozhazují.
+- Velká rezerva (300) znamená, že munice skoro nedochází.
+- Uzly **Accuracy** jsou u něj téměř zbytečné, lepší jsou **Damage** a **Fire rate** — viz [Strom zbraně](/docs/guns/strom-zbrane).
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Bullet` |
-| Rychlost | 700 px/s |
-| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | červené (255, 0, 0) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::BULLET` |
+- Stůl se zbraněmi ukazuje poškození 1–3, ale 3 nikdy nepadne.
+- Zní stejně jako Pistol — vlastní zvuk chybí.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,85 s, pak se zásobník doplní z rezervy (max. 30 nábojů). Rezervu 300 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Používá zvuky pistole (`PistolShoot`, `PistolReload`) — vlastní zvuk chybí.
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Thompson`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Thompson“)
-- `assets.rs` → `tex::GUNS_THOMPSON`
-
-## Nápady / chybí
-
-- Vlastní zvuk výstřelu a přebíjení (bubnový zásobník).
+- Vlastní zvuk výstřelu a přebíjení bubnového zásobníku.

@@ -3,39 +3,39 @@ title: Bone Turret
 description: Postaví kostěnou věž, která 12 sekund střílí na nejbližší nepřátele.
 ---
 
+Bone Turret vyvolá u tvých nohou kostěnou věž, která sama míří a střílí kostěné střepy na nejbližší nepřátele.
+
 ## Jak to funguje
 
-- Aktivace vloží `PlaceTurret`; `spawn_summons` vytvoří věž na pozici hráče + (0, 24) px (u nohou).
-- Životní cyklus (`TurretStage`):
-  1. **Rising** – 0,5 s animace vyrůstání (`turret::RISE`),
-  2. **Active** – 12 s; každý snímek hledá nejbližšího živého nepřítele do **600 px** od hlavně, natočí se (5 řad míření po 45° od „dolů“ po „nahoru“, zrcadlení pro levou stranu) a když je cooldown 0, vystřelí,
-  3. **Crumbling** – 0,6 s animace rozpadu, pak zmizí.
-- Střela: `Bullet::plain(2)`, rychlost 700, textura `ARTEFACTS_BONE_SHARD`, spawn 40 px před hlavní; označená `Summoned` → zásah se počítá jako `DamageSource::Summoned`.
-- Věž nemá tělo ani zdraví – nedá se zničit, nepřátelé ji ignorují.
+- Věž vyroste ze země (půl sekundy), pak **12 sekund** aktivně střílí a nakonec se rozpadne (asi půl sekundy).
+- Míří na **nejbližšího nepřítele** do vzdálenosti zhruba 9 dlaždic a otáčí se za ním.
+- Každý střep dává **2 damage**, bez ohledu na tvé talenty.
+- Věž nemá zdraví – nepřátelé ji ignorují a nedá se zničit.
 
-| Parametr | Hodnota |
+## Statistiky
+
+| Vlastnost | Hodnota |
 |---|---|
-| Život | 12 s aktivně (+ 0,5 s rise + 0,6 s crumble) |
-| Dosah | 600 px |
-| Cooldown | 0,35 s (≈ 5,7 DPS) |
-| Damage | 2 |
-| Rychlost střely | 700 px/s |
-| Velikost | 120×120 |
-| Recoil animace | 0,15 s |
+| Trvání | 12 s aktivně |
+| Dosah | asi 9 dlaždic |
+| Damage | 2 na střep |
+| Rychlost střelby | asi 3 výstřely za sekundu (≈ 5,7 damage/s, celkem ≈ 68) |
+| Rychlost střepů | rychlá (jako střely zbraní) |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Nepřátelé](/docs/enemies) – cílí jen na nepřátele, kteří nespawnují a nemají `Expiring`.
-- Střely nejsou ovlivněny perky hráče.
+- [Nepřátelé](/docs/enemies) – necílí na nepřátele, kteří se teprve objevují nebo umírají.
+- Postav ji uprostřed místnosti, kde dosáhne na co nejvíc nepřátel – věž stojí na místě.
+- S [Hourglass of Ash](/docs/artefacts-items/artefacts/hourglass-of-ash) střílí na zpomalené nepřátele plnou rychlostí.
+- [Pet](/docs/artefacts-items/pet) a [Grave Lantern](/docs/artefacts-items/artefacts/grave-lantern) – další spojenci.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/summons.rs` → `spawn_turret`, `tick_turrets`, `aim_row`, `fire`, konstanty `TURRET_*`
-- `components/summons.rs` → `Turret`, `TurretStage`, `Summoned`
-- `sheets.rs` → modul `turret` (`RISE_SECONDS`, `CRUMBLE_SECONDS`, `RECOIL_SECONDS`, `AIM_ROWS`)
+- Věž nekontroluje, jestli na cíl vidí – střílí i přes zdi (střepy se o zeď rozbijí).
+- Výstřely nemají zvuk.
+- Talenty na damage ji neovlivňují.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Věž nekontroluje přímou viditelnost – střílí přes zdi (střely se o zeď rozbijí).
-- Žádný zvuk výstřelu.
-- Nepřátelé by na ni mohli útočit (taunt) – dalo by to artefaktu taktickou hloubku.
+- Nepřátelé by na věž mohli útočit (odlákání pozornosti) – dalo by to artefaktu taktickou hloubku.
+- Zvuk výstřelu a míření jen na viditelné cíle.

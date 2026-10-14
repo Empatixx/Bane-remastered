@@ -1,166 +1,120 @@
 ---
 title: Objekty a interaktivní prvky
-description: Rozbitné sudy a květináče, truhly, mříže, žebřík, obchod, slot machine, oltář a portál v lobby.
+description: Sudy a květináče, truhly, mříže, žebřík, obchod, slot machine, oltář a vybavení lobby – co dělají a co z nich padá.
 ---
+
+Dungeon není jen kulisa – spoustu věcí jde rozbít, otevřít nebo použít. S většinou objektů
+se pracuje klávesou **E**: když hráč stojí u objektu, objeví se výzva („Press E to …“).
+Truhly se otevírají pouhým dotykem a sudy či květináče se rozbíjejí střelbou.
 
 ## Jak to funguje
 
-Interaktivní objekty jsou hecs entity spawnuté v `prefabs/fixtures.rs`. Interakce klávesou
-**E** (`Action::Interact`) funguje přes komponentu `Interactable { action }` + `Prompt` – když
-se hráč svým obdélníkem překrývá s objektem, zobrazí se výzva („Press E to …“) a stisk vrátí
-`Interaction` scéně. Truhly se naopak otevírají **dotykem**, rozbitné objekty **poškozením**.
-
-`Interaction` (`components/interaction.rs`): `EnterPortal`, `Upgrade`, `NextFloor`,
-`PickUpGun`, `PickUpArtefact`, `Buy`, `Spin`, `Quests`, `Weapons`.
+- **Rozbitné objekty** (sudy, květináče) mají 4 životy. Rozbijí je střely hráče a výbuchy;
+  pasti ani nepřátelé je nepoškodí. Dají se odstrkovat – hráč je může posouvat po místnosti.
+- Z každého rozbitého objektu vypadne **1 běžný předmět** (mince nebo munice, přednostně ta,
+  kterou hráč skutečně používá). Předmět zmizí po 10 s.
+- **Truhly** se otevřou, když do nich hráč vejde: vysypou do kruhu 5 běžných předmětů
+  a k tomu zbraň nebo artefakt. Předměty z truhel **nemizí**.
 
 ## Obsah
 
-### Rozbitné objekty (`Breakable`)
+### Rozbitné objekty
 
-Společné vlastnosti (`objects.rs`, `prefabs::breakable`):
+| Objekt | Kde | Efekt po rozbití |
+|---|---|---|
+| Květináč | bojové místnosti podle tématu, 2 v obchodě | – |
+| Sud | bojové místnosti podle tématu | – |
+| Výbušný sud | bojové místnosti podle tématu | výbuch za 3 poškození – zraní hráče, nepřátele i další sudy (**řetězové reakce**) |
+| Jedový sud | bojové místnosti podle tématu | jedová louže na 8 s |
+| Mrazivý sud | bojové místnosti podle tématu | zmrazí okolí (nepřátelé 4 s, boss 2 s, hráč 1,5 s) |
 
-| Vlastnost | Hodnota |
-|---|---|
-| Životy | 4 (`OBJECT_HEALTH`) |
-| Velikost sprite | 192 × 192 px (`OBJECT_SIZE`), atlas 4 × 2 (řádek 1 = rozbití, 4 snímky × 0,1 s) |
-| Fyzika | dynamické těleso bez rotace, tlumení 5 → **dají se odstrkovat** |
-| Collider | květináč 45 × 45 (offset 75, 78); sudy 57 × 63 (offset 66, 66) |
-| Drop | vždy 1 běžný předmět (`ItemKind::COMMON`: mince / pistolová / brokovnicová / SMG munice, upraveno na munici, kterou hráč použije), mizí po 10 s |
-| Poškození | střely hráče, výbuchy (3 dmg), pasti nikoli |
+Všechny mají 4 životy a dropnou 1 běžný předmět. Podrobná čísla efektů jsou v
+[Pastech a nebezpečích](/docs/dungeon/hazards), kolik sudů které téma má, v
+[Patrech a tématech](/docs/dungeon/themes).
 
-| Druh | `BreakKind` | Textura | Efekt po rozbití |
-|---|---|---|---|
-| Květináč | `Pot` | `POT` | – |
-| Sud | `Barrel` | `BARREL` | – |
-| Výbušný sud | `Explosive` | `EXPLOSIVE_BARREL` | výbuch 3 dmg (hráč, nepřátelé, další objekty → **řetězové reakce**) |
-| Jedový sud | `Poison` | `POISON_BARREL` | jedová louže na 8 s |
-| Mrazivý sud | `Frost` | `FROST_BARREL` | zmrazí okolí (nepřátelé 4 s, boss 2 s, hráč 1,5 s) |
+### Truhly
 
-Detailní čísla efektů viz [Pasti a nebezpečí](/docs/dungeon/hazards).
-Výskyt: náhodně v Normal/Ambush místnostech podle `TrapMix`, 2 květináče v obchodě.
+| Truhla | Kde | Obsah |
+|---|---|---|
+| Zbraňová | Treasure místnost (uprostřed), odměna za Ambush | 5 běžných předmětů + náhodná zbraň, kterou hráč nemá |
+| Artefaktová | po porážce bosse | 5 běžných předmětů + artefakt, který hráč nemá |
 
-### Truhly (`Chest`)
+Pokud už hráč vlastní všechny zbraně (nebo mu challenge omezuje výbavu), zbraňová truhla
+dá jen 5 předmětů.
 
-| Druh | `ChestKind` | Kde | Obsah |
-|---|---|---|---|
-| Zbraňová | `Weapon` | Treasure místnost (střed), odměna za Ambush | 5 běžných předmětů + náhodná zbraň, kterou hráč nemá |
-| Artefaktová | `Artefact` | po zabití bosse | 5 běžných předmětů + artefakt, který hráč nemá |
+### Mříže
 
-- Sprite `CHEST` 16 × 16 × 4 (64 px), idle animace 4 snímky.
-- Otevření: hráč do truhly vejde → animace `CHEST_OPEN` (4 × 0,175 s), zvuk `OpenChest` →
-  truhla zmizí a vystřelí 5 předmětů do kruhu rychlostí 333 (`burst_items`) + zbraň/artefakt.
-- Předměty z truhly **nemizí** (na rozdíl od dropů ze sudů).
-- Když hráč už má všechny zbraně (nebo je loadout omezený challengí), zbraňová truhla dá jen
-  5 předmětů.
+- Spustí se na všechny dveře bojové místnosti, jakmile do ní hráč vstoupí, a chovají se jako
+  zeď. Po vyčištění místnosti se s animací zvednou.
 
-### Mříže (`Gate`)
+### Žebřík
 
-- Spawn na každou dlaždici dveří bojové místnosti při vstupu (`prefabs::gate`).
-- Sprite `PATHGATE` 6 × 4: řádky 0/1 svislé dveře (zavření/idle), 2/3 vodorovné;
-  levé dveře zrcadlené. Snímek 0,075 s.
-- Statický collider 64 × 64 ve skupině `WALLS` – chová se jako zeď.
-- Otevření (`open_gate` + `tick_openings`): collider se odstraní a přehraje se animace otevření.
-
-### Žebřík (`Interaction::NextFloor`)
-
-- Objeví se po zabití bosse na patrech 1–4, 48 px vlevo od středu boss místnosti.
-- Sprite podle tématu (`Theme::ladder_texture`), 32 × 32 × 3.
-- „Press E to enter next floor“ → `next_floor()`.
+- Objeví se po porážce bosse na patrech 1–4, kousek vlevo od středu arény. Vzhled podle tématu.
+- „Press E to enter next floor“ – sestup do dalšího patra.
 
 ### Obchod
 
-- **Obchodník** (`Prop::Shopkeeper`, 80 × 90 × 4, 10 snímků ping-pong) + řečová bublina
-  (`minimal_speech`): „Welcome to my shop!“ při vstupu, „Enjoy your purchase!“ po nákupu.
-- **Stoly** (`ShopTable`) se zbožím; nad zbožím cenovka `SHOP_PRICE_HUD` (při slevě i procento).
-  Koupě E (`Interaction::Buy`): odečte mince; lektvar/munice se rovnou použije (pokud jde),
-  zbraň/artefakt se rovnou sebere. Tabulka zboží viz [Typy místností](/docs/dungeon/rooms).
-- **Slot machine** (`SlotMachine`): „Press E to spin“, cena **5 mincí** (`SPIN_COST`),
-  točí se 2 s, pak výsledek z `roll(150)`:
+- **Obchodník** se zdraví „Welcome to my shop!“ a po nákupu děkuje „Enjoy your purchase!“.
+- **3 stoly** se zbožím, nad každým cenovka (při slevě i s procentem). Nákup klávesou E
+  odečte mince; lektvar nebo munice se rovnou použije, zbraň či artefakt se rovnou sebere.
+  Zboží a ceny viz [Typy místností](/docs/dungeon/rooms).
+- **Slot machine**: „Press E to spin“, jedno zatočení stojí **5 mincí**, točí se 2 s.
 
 | Výsledek | Šance | Výhra |
 |---|---|---|
-| `RareItem` | 10/150 (6,7 %) | 50 %: malý lektvar zdraví/brnění; jinak 1 z 5: zbraň, artefakt, univerzální munice, velký lektvar zdraví, velký lektvar brnění |
-| `Cashout` | 6,7 % | 10 mincí |
-| `ItemShower` | 6,7 % | 5 běžných předmětů |
-| `Triple` | 6,7 % | 15 mincí |
-| `Double` | 13,3 % | 10 mincí |
-| `Lose` | 60 % | nic |
+| Rare item | 6,7 % | 50 %: malý lektvar zdraví nebo brnění; jinak jedno z: zbraň, artefakt, univerzální munice, velký lektvar zdraví, velký lektvar brnění |
+| Cashout | 6,7 % | 10 mincí |
+| Item shower | 6,7 % | 5 běžných předmětů |
+| Triple | 6,7 % | 15 mincí |
+| Double | 13,3 % | 10 mincí |
+| Lose | 60 % | nic |
 
-Předměty ze slot machine mizí po 10 s. Očekávaná hodnota v mincích je cca 3 mince za 5
-vložených (bez započtení předmětů).
+Předměty ze slot machine mizí po 10 s. V průměru vrátí v mincích zhruba 3 z 5 vložených
+(bez započtení předmětů) – čistě na mince se nevyplácí, hraje se kvůli šanci na vzácné věci.
 
 ### Oltář (Sacrifice)
 
-- `Pentagram` (150 × 80 × 1,5) uprostřed, na něm 1 předmět za **1–3 HP**
-  (`Currency::Health`, cenovka `SACRIFICE_PRICE_HUD`).
-- `AngelStatue` (64 × 64 × 4) nad pentagramem, 5× `Candlestick` (animované, červené světlo,
-  komponenta `Candle`), 3× `LayingBook`, 2× `Chains`.
-- Po obětování svíčky zhasnou (řádek 1 sprite, bez světla).
+- Pentagram s jedním předmětem, za který se platí **1–3 životy**. Oltář tě nezabije – koupit
+  jde jen s víc životy, než je cena.
+- Okolo socha anděla, 5 svícnů s rudým světlem, knihy a řetězy. Po obětování svíčky zhasnou.
 
 ### Portál (lobby)
 
-- `Prop::Portal`: 8 snímků × 0,125 s, 96 × 90 × 2, fialové světlo (128, 0, 128), poloměr 50,
-  intenzita 2,5.
-- „Press E to enter the portal“ → přepnutí na scénu `InGame` (nový run).
-- `tint_portal`: barva i světlo portálu se přebarví podle **akcentu** aktivní challenge
-  (`profile.accent()`); bez challenge zůstává fialový.
+- Fialově zářící portál v lobby: „Press E to enter the portal“ spustí nový run.
+- Při aktivní challenge se portál i jeho světlo zbarví do barvy dané challenge.
 - V dungeonu žádný portál není – z runu se do lobby vrací jen smrtí nebo vítězstvím.
 
-### Další interaktivní objekty v lobby
+### Další objekty v lobby
 
-| Objekt | Prefab | Interakce | Výzva |
-|---|---|---|---|
-| Vědec | `scientist` (`Prop::Scientist`) | `Upgrade` – menu talentů | „Press E to upgrade“ |
-| Nástěnka | `task_board` (`Prop::TaskBoard`) | `Quests` – mise a challenge | „Press E to read the board“ |
-| Stůl se zbraněmi | `weapon_table` (`Prop::CraftingTable`) | `Weapons` – úpravy zbraní | „Press E to upgrade weapons“ |
-| Květináče (3×) | `pot` | žádná (statický collider) | – |
+| Objekt | Co dělá | Výzva |
+|---|---|---|
+| Vědec | menu talentů | „Press E to upgrade“ |
+| Nástěnka | mise a challenge | „Press E to read the board“ |
+| Stůl se zbraněmi | úpravy zbraní | „Press E to upgrade weapons“ |
+| Květináče (3×) | jen dekorace, nedají se rozbít | – |
 
 Podrobnosti v [Progresi](/docs/progression).
 
-## Interakce
+## Tipy a souvislosti
 
 - [Artefakty a předměty](/docs/artefacts-items) – co přesně padá z truhel, sudů a slot machine.
-- [Zbraně](/docs/guns) – `unused_gun`, `fresh_weapon`.
-- [Progrese](/docs/progression) – *Gamble Machine* (+100 mincí), *Discount*, akcent challenge.
+- [Zbraně](/docs/guns) – zbraňové truhly nabízejí jen zbraně, které ještě nemáš.
+- [Progrese](/docs/progression) – talent *Gamble Machine* (+100 mincí na patře s obchodem),
+  *Discount*, barvy challenge.
+- Sudy jdou dotlačit k nepřátelům – výbušný sud u skupiny nepřátel je levný granát.
+- Sudy a květináče jsou spolehlivý zdroj munice, když dochází: vždy z nich něco vypadne.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `objects.rs` – konstanty objektů, `BreakKind::collider`, `BreakKind::texture`
-- `systems/objects.rs` – `break_objects`, `explode`, `freeze_around`, `tick_poison`
-- `prefabs/fixtures.rs` – `breakable`, `chest`, `gate`, `ladder`, `portal`, `slot_machine`,
-  `scientist`, `task_board`, `weapon_table`, `pot`, `furnishing`
-- `systems/loadout.rs` – `open_chests`, `CHEST_OPEN`, `unused_gun`
-- `systems/items.rs` – `burst_items`, `common_drop`
-- `systems/slot.rs` – `spin`, `tick_slot_machines`, `outcome_for`, `rare_prize`
-- `systems/shop.rs` – `stock_rooms`, `buy`, `disable_candles`
-- `systems/animation.rs` – `open_gate`, `tick_openings`
-- `systems/portal.rs` – `tint_portal`
-- `systems/interaction.rs` – `interact`
+- „Cashout“ dává stejně jako „Double“ (10 mincí), ačkoli by podle jména měl být jackpot.
+- Slot machine je v obchodě vždy; v původní verzi hry se teprve odemykala talentem
+  *Gamble Machine*, který teď dává jen +100 mincí.
+- Pasti nepoškozují sudy a nepřátelé je nerozbíjejí – rozbije je jen hráč nebo výbuch.
 
-## Jak přidat nový …
+## Nápady na rozšíření
 
-**Nový rozbitný objekt (např. „bedna s mincemi“)**
-
-1. Varianta do `BreakKind` (`components`), větve v `BreakKind::collider` a `texture` (`objects.rs`).
-2. Textura do `tex` v `assets.rs` – atlas 4 × 2 snímky po 64 px (řádek 0 idle, řádek 1 rozbití).
-3. Efekt po rozbití: větev v `match kind` v `break_objects` (`systems/objects.rs`).
-4. Výskyt: nová `DecorKind` varianta + pole v `TrapMix` + hodnoty v `Theme::mix` + položka
-   v `batches` v `decor::plan` + větev v `prefabs::decor`.
-
-**Nový interaktivní objekt**
-
-1. Varianta `Interaction`, prefab s `Interactable` + `Prompt` v `prefabs/fixtures.rs`.
-2. Obsluha v `match systems::interact(...)` ve `scenes/ingame.rs` (případně `lobby.rs`).
-3. Pokud má stát v místnosti natvrdo: `FixtureKind` + umístění ve `furnish.rs`.
-
-## Nápady / chybí
-
-- **Cashout = Double**: oba dávají 10 mincí; Cashout by měl být „jackpot“ nebo vracet celý
-  zůstatek. `FEATURE.md` (Java) uvádí, že slot machine se teprve *odemyká* perkem
-  *Gamble Machine* – v Rustu je v obchodě vždy a perk dává jen +100 mincí.
-- Truhla se otevře pouhým dotykem – žádné klíče, zamčené truhly ani mimik-truhly
-  (Mimic existuje jako boss, ne jako past v Treasure).
-- Pasti nepoškozují rozbitné objekty; výbuch ano. Nepřátelé sudy nerozbíjejí (jen výbuchy).
-- Lobby props `WeaponRack`, `Armorstand`, `Bookshelf`, `MapTable`, `Box`, `Rock` se v dungeonu
-  nikdy nepoužijí – levný zdroj dekorací pro Temple/Stone.
-- Žádné páky, tlačítka, tajné dveře, kašny/fontány na léčení, NPC v dungeonu (kromě obchodníka).
+- Klíče a zamčené truhly, truhla-mimik jako past v Treasure místnosti.
+- Páky, tlačítka, tajné dveře, léčivé fontány, další NPC v dungeonu kromě obchodníka.
+- Nový rozbitný objekt, např. bedna s mincemi.
+- Využít lobby vybavení (stojany na zbraně a brnění, knihovny, mapový stůl, bedny, kameny)
+  jako dekorace ve Stone a Temple patrech.

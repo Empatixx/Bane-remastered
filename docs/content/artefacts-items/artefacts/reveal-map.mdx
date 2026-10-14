@@ -1,34 +1,35 @@
 ---
 title: Reveal Map
-description: Startovní artefakt, který odhalí všechny místnosti patra na minimapě.
+description: Startovní artefakt, který na mapě odhalí všechny místnosti aktuálního patra.
 ---
+
+Reveal Map je artefakt, se kterým začínáš každý run. Po použití uvidíš na minimapě i velké mapě celé patro – včetně obchodu, Treasure místnosti, Sacrifice a arény bosse.
 
 ## Jak to funguje
 
-- Hráč ho drží na začátku každého runu (`ArtefactSlot { current: Some(RevealMap) }` v `prefabs/actors.rs`).
-- Po stisku **F** `activate_artefact` nic neprovede (prázdný match arm), ale vrátí `Some(RevealMap)`. Scéna `scenes/ingame.rs` na to zareaguje voláním `rooms.reveal_all()`, které nastaví všechny místnosti jako „navštívené“ (`RoomRuntime.entered = true`).
-- Výsledek: minimapa i velká mapa ukážou celé patro (včetně obchodu, Treasure, Sacrifice a bosse).
-- Efekt platí jen pro aktuální patro – další patro se generuje znovu.
+- Stiskni **F** a všechny místnosti patra se označí jako objevené.
+- Efekt platí jen pro **aktuální patro** – další patro je nové a znovu neprozkoumané.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 |---|---|
-| Trvání | okamžitý, trvalý pro dané patro |
-| Textura | `ingame/artefacts/reveal_map.tga` (32×32 → ikona 64×64) |
+| Efekt | odhalí všechny místnosti patra |
+| Trvání | okamžitý, platí do konce patra |
+| Zdroj | start každého runu; dá se najít i znovu |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Dungeon](/docs/dungeon) – `systems/rooms.rs` → `RoomRuntime::reveal_all`, minimapa (`systems/minimap.rs`).
-- Může padnout znovu z truhly/obchodu/automatu, protože `unused_artefact` vylučuje jen právě držený artefakt.
+- [Dungeon](/docs/dungeon) – minimapa a typy místností.
+- Použij ho hned na začátku patra, když chceš rovnou zamířit do obchodu nebo Treasure místnosti. Pokud plánuješ najít lepší artefakt, nech si ho do té doby – po sebrání nového ti stejně vypadne na zem.
+- Může padnout znovu z truhly, obchodu nebo automatu – vyřazený je jen artefakt, který právě držíš.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `artefacts.rs` → `ArtefactKind::RevealMap`
-- `systems/artefacts.rs` → `activate_artefact` (arm `RevealMap => {}`)
-- `scenes/ingame.rs` → `if let Some(RevealMap) = systems::activate_artefact(...) { rooms.reveal_all() }`
-- `systems/rooms.rs` → `reveal_all`
+- Ve srovnání s ostatními artefakty je slabý; jako startovní předmět to dává smysl, ale z truhly po bossovi je to zklamání.
+- Neodhalí truhly, pasti ani nic skrytého – jen místnosti.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Efekt žije mimo ECS (ve scéně) – jediný artefakt, který nejde otestovat jen přes `World`. Šlo by sjednotit přes komponentu `RevealRooms`.
-- Neodhaluje truhly, pasti ani tajné věci – mohl by zvýraznit i Treasure/Sacrifice ikonou.
-- Ve srovnání s ostatními je slabý; vzhledem k tomu, že je startovní, to dává smysl, ale z truhly bosse je to „prázdná“ odměna.
+- Zvýraznit na mapě speciální místnosti (Treasure, Sacrifice, Shop) zvláštní ikonou.
+- Odhalit i truhly a pasti.

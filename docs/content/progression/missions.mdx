@@ -1,66 +1,57 @@
 ---
 title: Mise (Tasks)
-description: Tři náhodně losované mise na Quest boardu, jejich cíle, obtížnostní stupně a odměny v talentech.
+description: Tři náhodné úkoly na Quest boardu, jejich cíle, stupně obtížnosti a odměny v talentech.
 ---
+
+Mise jsou hlavní zdroj **talentů**. Na Quest boardu v laboratoři (záložka **Tasks**) visí vždy tři,
+každá jiného druhu. Plní se postupně během runů a po splnění si odměnu vyzvedneš kliknutím na lístek.
 
 ## Jak to funguje
 
-- Na Quest boardu (záložka **Tasks**) visí vždy **3 mise** (`MISSION_SLOTS`), každá jiného druhu (`GoalKind`).
-- Mise se **neposouvají během runu**, ale až na jeho konci (`ProgressState::finish_run`) podle `RunStats` a dosaženého patra.
-- Dva typy počítání:
-  - **součtové** — progres se sčítá přes všechny runy (Kills, KillsOf, Boss, Gold, Items, Untouched),
-  - **nejlepší run** — progres = maximum z jednotlivých runů (`Floor`, `GoldInRun`).
-- Splněnou misi hráč **vyzvedne kliknutím** na lístek → talenty se připíšou do `balance`, a do **stejného slotu** se okamžitě vylosuje nová mise (jiného druhu než zbylé dvě).
-- Na death screenu se objeví „1 mission ready on the board“ / „N missions ready on the board“, když se v tom runu nějaká mise nově splnila.
-- Losování je deterministické z profilu: `Rng::new(seed ^ draws × 0x9E3779B97F4A7C15)`, `seed` se vygeneruje při prvním načtení profilu, `draws` se po každém losu zvýší.
-- Většina druhů má **3 stupně** (tier): náhodně se vybere index 0–2; cíl = `targets[index]`, odměna = `index + 1` talentů.
+- Na boardu jsou vždy **3 mise**, žádné dvě stejného druhu.
+- Postup se nepočítá během runu, ale až **na jeho konci** — podle statistik runu a dosaženého patra.
+- Mise se počítají dvěma způsoby:
+  - **součtově** — postup se sčítá přes všechny runy (zabití, bossové, coins celkem, předměty, patra bez zásahu),
+  - **nejlepší run** — počítá se jen nejlepší jednotlivý run (dosažené patro, coins v jednom runu).
+- Splněnou misi **vyzvedneš kliknutím** na lístek → talenty se připíšou a na její místo se hned vylosuje nová (jiného druhu než zbylé dvě).
+- Když v runu nějakou misi splníš, obrazovka konce runu ukáže „1 mission ready on the board“ / „N missions ready on the board“.
+- Většina druhů má **3 stupně** obtížnosti; těžší stupeň = vyšší cíl a víc talentů (1 / 2 / 3).
+- Pořadí losování je pevně dané pro tvůj profil — restart hry ti mise nepřelosuje.
 
 ## Obsah
 
-| `Goal` | Název ve hře | Popis ve hře | Cíle (tier 1 / 2 / 3) | Odměna (talenty) | Počítání |
-|---|---|---|---|---|---|
-| `Kills` | Crypt Cleaner | Defeat N enemies | 50 / 120 / 250 | 1 / 2 / 3 | součet |
-| `KillsOf { enemy }` | `<Enemy>` Hunter (např. „rats Hunter“) | Defeat N rats/bats/slimes/ghosts/snakes | 10 / 25 / 50 | 1 / 2 / 3 | součet zabití daného typu |
-| `Boss { enemy }` | `<Boss>` Slayer | Defeat the `<Boss>` | 1 | **2** | součet zabití daného bosse |
-| `Floor` | Deep Delver | Reach floor N | 2 / 3 / 4 | 1 / 2 / 3 | nejlepší run |
-| `GoldInRun` | Gold Digger | Collect N coins in a single run | 40 / 80 / 140 | 1 / 2 / 3 | nejlepší run |
-| `Gold` | Hoarder | Collect N coins | 150 / 300 / 600 | 1 / 2 / 3 | součet |
-| `Items` | Scavenger | Pick up N items | 15 / 30 / 60 | 1 / 2 / 3 | součet |
-| `Untouched` | Untouchable | Clear N floors without taking damage | 1 / 2 / 3 | 1 / 2 / 3 | součet pater bez zásahu |
+| Mise | Popis ve hře | Cíl (stupeň 1 / 2 / 3) | Odměna (talenty) | Počítání |
+|---|---|---|---|---|
+| Crypt Cleaner | Defeat N enemies | 50 / 120 / 250 | 1 / 2 / 3 | součet |
+| *nepřítel* Hunter (např. „rats Hunter“) | Defeat N rats / bats / slimes / ghosts / snakes | 10 / 25 / 50 | 1 / 2 / 3 | součet zabití daného druhu |
+| *boss* Slayer | Defeat the *boss* | 1 | **2** | součet zabití daného bosse |
+| Deep Delver | Reach floor N | 2 / 3 / 4 | 1 / 2 / 3 | nejlepší run |
+| Gold Digger | Collect N coins in a single run | 40 / 80 / 140 | 1 / 2 / 3 | nejlepší run |
+| Hoarder | Collect N coins | 150 / 300 / 600 | 1 / 2 / 3 | součet |
+| Scavenger | Pick up N items | 15 / 30 / 60 | 1 / 2 / 3 | součet |
+| Untouchable | Clear N floors without taking damage | 1 / 2 / 3 | 1 / 2 / 3 | součet pater bez zásahu |
 
-**Lovení nepřátelé** (`HUNTED`): `Rat` (rats), `Bat` (bats), `Slime` (slimes), `Ghost` (ghosts), `Snake` (snakes).
+**Lovení nepřátelé** pro misi Hunter: krysy (rats), netopýři (bats), slizy (slimes), duchové (ghosts), hadi (snakes).
 
-**Bossové pro Slayer** — libovolný `EnemyKind` s `Role::Boss`: Spider king, King slime, Stone golem, Argus, Mimic, Hellhound, Sewer ogre.
+**Bossové pro misi Slayer:** Spider king, King slime, Stone golem, Argus, Mimic, Hellhound, Sewer ogre.
 
-„Coins“ v misích Gold Digger / Hoarder = runové coins sebrané v dungeonu (`RunStats.gold`), ne meta gold.
+„Coins“ v misích Gold Digger a Hoarder jsou mince sebrané v dungeonu, ne gold.
 
-## Interakce
+## Tipy a souvislosti
 
-- Zobrazení a vyzvednutí: [Quest board](/docs/progression/quest-board).
-- Talenty se utrácí u Vědce: [Měny](/docs/progression/currencies).
+- Vyzvedávání: [Quest board](/docs/progression/quest-board). Utrácení talentů: [Měny](/docs/progression/currencies).
 - Nepřátelé a bossové: [Nepřátelé](/docs/enemies).
-- „Untouched“ patro se uzavírá při přechodu žebříkem a při vítězství — patro, na kterém hráč zemře, se nepočítá ([Průběh runu](/docs/progression/run)).
+- **Untouchable:** patro se započítá, až když z něj sejdeš žebříkem (nebo vyhraješ). Patro, na kterém zemřeš, se nepočítá — ani když tě na něm nic nezasáhlo.
+- Gold Digger a Hoarder počítají sebrané coins, ne zůstatek — utrácením v obchodě o postup nepřijdeš.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `progress/missions.rs` → `Goal`, `GoalKind`, `ActiveMission` (`advance`, `title`, `detail`, `done`), `draw`, `tier`, `HUNTED`
-- `progress/state.rs` → `ProgressState` (`settle`, `draw`, `claim`, `finish_run`, `board`), `MISSION_SLOTS`
-- `profile.rs` → `SharedProfile::claim_mission`, `finish_run`
-- `systems/stats.rs` → zdroj čísel (`RunStats`)
+- Název mise na lov nepřátel začíná malým písmenem a v množném čísle („rats Hunter“ místo „Rat Hunter“).
+- Mise na bosse závisí na náhodě: boss se vybírá podle biomu patra a biomy pater 2–5 jsou náhodné, takže na konkrétního bosse nejde cílit (Hellhound se objevuje jen v Lava, Spider king jen na patře 1).
 
-## Jak přidat nový druh mise
+## Nápady na rozšíření
 
-1. Přidat variantu do `Goal` (serde tag `goal`, `snake_case`) a odpovídající do `GoalKind` + `GoalKind::ALL` + `Goal::kind`.
-2. Doplnit `measure` (z `RunStats`/patra), případně `best_of_a_run`.
-3. Doplnit `title` a `detail`.
-4. Doplnit větev v `draw` s cíli a odměnou (typicky `tier(rng, [a, b, c])`).
-5. Pokud metrika neexistuje, přidat pole do `RunStats` a `Stat` (viz [Průběh runu](/docs/progression/run)).
-6. Pozor: `GoalKind::ALL` musí mít aspoň `MISSION_SLOTS` prvků. Staré profily s neznámou misí ji při načtení zahodí a slot se doplní.
-
-## Nápady / chybí
-
-- Název mise KillsOf se skládá z malého písmena („rats Hunter“) — chtělo by to „Rat Hunter“.
-- Boss mise závisí na náhodě: boss se vybírá podle biomu patra (`enemies.rs` → `pick_boss`) a biomy pater 2–5 jsou náhodné, takže hráč nemůže na konkrétního bosse cílit (např. Hellhound jen v Lava, Spider king jen na patře 1). Zvážit zobrazení „kde se boss vyskytuje“ v popisu mise.
-- Mise nelze přeskočit/přelosovat (reroll za talenty nebo gold by dával smysl).
-- `story.md` navrhuje Vědcovu poznámku pod každým druhem mise (např. Kills: „Fewer of them, more of you.“) — neimplementováno.
-- Nápady na další druhy: zabij N nepřátel jednou zbraní, vyčisti místnost bez střelby, použij artefakt N×, otevři N truhel, vyhraj u slot machine, poraz bosse bez zásahu, dojdi na patro X v biomu Y.
+- U mise na bosse ukázat, ve kterém biomu se vyskytuje.
+- Přelosování mise za talenty nebo gold.
+- Vědcova poznámka pod každou misí (např. u Crypt Cleaner: „Fewer of them, more of you.“).
+- Další druhy misí: zabij N nepřátel jednou zbraní, vyčisti místnost bez střelby, použij artefakt N×, otevři N truhel, vyhraj na slot machine, poraz bosse bez zásahu, dojdi na patro X v biomu Y.

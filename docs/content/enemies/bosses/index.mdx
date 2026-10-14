@@ -1,64 +1,63 @@
 ---
 title: Bossové
-description: Sedm bossů Bane — kde se objevují, společná pravidla souboje, rage fáze, odměny a minions.
+description: Sedm bossů Bane – kde se objevují, jak souboj probíhá, co je fáze zuřivosti a co dostaneš za vítězství.
 ---
+
+Každé patro končí boss místností. Když do ní vstoupíš, zavřou se dveře, uprostřed se zhmotní boss,
+nahoře se ukáže jeho jméno s ukazatelem HP a začne hrát boss hudba. Bane má **sedm bossů**; který
+přijde, záleží na tématu patra.
 
 ## Jak to funguje
 
-Každé patro končí boss místností (`RoomKind::Boss`). Při vstupu se dveře zavřou, uprostřed místnosti se
-spawnuje boss vybraný `enemies::pick_boss(patro, téma)` a nahoře se objeví boss HUD se jménem
-(`Role::Boss("…")`) a zazní boss hudba.
-
 ### Společná pravidla
 
-- **Bez škálování s patrem** — bossové mají vždy základní HP a damage (jen `RunRules` z challenge
-  Horde/Bane je násobí × 1,6 / × 1,3).
-- **Zhmotnění** 1,5 s (`BOSS_SPAWN_SECONDS`), během něj nejsou zranitelní ani nebezpeční.
-- **Kontaktní damage** 2 u všech bossů.
-- **Nepoužívají** pravidlo „střelec drží odstup“ ani odpuzování davu (jen jejich minions).
-- **Minions** (`Minion` + `NoDrop`, spawn přes `prefabs::hatchling` — bez zhmotnění, statistiky patra 0)
-  se počítají do vyčištění místnosti a nedávají drop ani kill do statistik.
-- **Rage** (Golem, Argus, Ogre, Hellhound, Mimic) při HP ≤ 50 %: rychlejší pohyb, kratší pauza mezi
-  útoky, silnější útoky a načervenalý nádech. Spider king a King slime fáze nemají.
-- Útoky se vybírají váženě náhodně, **nikdy stejný dvakrát po sobě** (viz
-  [AI — stavový automat bossů](/docs/enemies/ai#stavový-automat-bossů)).
+- **Nesílí s patrem** – boss má na patře 2 i 5 stejné HP a poškození. Zesílí ho jen výzvy Horde a Bane
+  (HP × 1,6, poškození × 1,3).
+- **Zhmotnění** trvá 1,5 s, během něj boss nezraňuje a nedá se trefit.
+- **Kontaktní poškození** je u všech bossů 2.
+- Bossové se nenechají odstrčit davem a nedrží si odstup.
+- **Pomocníci** vyvolaní bossem jsou aktivní okamžitě, mají základní hodnoty, nic nedropnou a nepočítají
+  se do statistik zabití – ale místnost se neotevře, dokud žijí.
+- **Zuřivost** (Stone golem, Argus, Sewer ogre, Hellhound, Mimic): od poloviny HP boss zčervená, zrychlí,
+  zkrátí pauzy mezi útoky a některé útoky zesílí. Spider king a King slime zuřivost nemají.
+- Útoky volí náhodně podle vzdálenosti, ale **stejný útok nikdy dvakrát po sobě**. Před každým útokem
+  je vidět nápřah. Viz [Chování a pohyb](/docs/enemies/ai#jak-se-rozhodují-bossové).
 
-### Po smrti bosse
+### Po porážce bosse
 
-1. `clean_up_after_boss`: zabije všechny `Minion` (i louže Saliva slime), smaže cobweby, paprsky,
-   padající kameny, magma a návnady.
-2. Boss HUD zmizí (`update_boss_hud`), hudba se vrátí na `InGame`, kamera se otřese.
+1. Všichni pomocníci zemřou a zmizí pavučiny, paprsky, padající kameny, magma i návnady.
+2. Ukazatel HP zmizí, vrátí se normální hudba a otřese se obrazovka.
 3. Uprostřed místnosti se objeví **truhla s artefaktem**.
-4. Patro 1–4: **žebřík** na další patro (v textuře tématu). Patro 5 (`FINAL_FLOOR`): **vítězství**.
-5. Kill se zapíše do `RunStats.kills_of` (mise „poraz bosse X“).
+4. Na patrech 1–4 se objeví **žebřík** o patro níž, na patře 5 přichází **vítězství**.
+5. Porážka se započítá do misí „poraz bosse X“.
 
 ## Obsah
 
-| Boss | `EnemyKind` | HP | Rychlost | Témata (patro 2+) | Rage | Minions | Stránka |
-|---|---|--:|--:|---|---|---|---|
-| Spider king | `Spider` | 75 | 282 | jen patro 1 | ne | spiderlingové | [→](/docs/enemies/bosses/spider-king) |
-| King slime | `KingSlime` | 90 | 41 | všechna | ne | — | [→](/docs/enemies/bosses/king-slime) |
-| Stone golem | `Golem` | 110 | 38 | Stone, Temple, Lava | ano | Mini golem | [→](/docs/enemies/bosses/golem) |
-| Argus | `Argus` | 120 | 8 | Temple, Ice, Moss, Sewer | ano | Argus eye | [→](/docs/enemies/bosses/argus) |
-| Sewer ogre | `Ogre` | 130 | 38 | Sewer, Moss | ano | Rat | [→](/docs/enemies/bosses/ogre) |
-| Hellhound | `Hellhound` | 110 | 243 | Lava | ano | — (magma) | [→](/docs/enemies/bosses/hellhound) |
-| Mimic | `Mimic` | 115 | 133 | Stone, Temple | ano | Saliva slime | [→](/docs/enemies/bosses/mimic) |
+| Boss | HP | Rychlost | Kde | Zuřivost | Pomocníci | Stránka |
+|---|--:|---|---|---|---|---|
+| Spider king | 75 | 69 % | jen patro 1 | ne | spiderlingové | [Spider king](/docs/enemies/bosses/spider-king) |
+| King slime | 90 | 10 % | všechna témata | ne | – | [King slime](/docs/enemies/bosses/king-slime) |
+| Stone golem | 110 | 9 % | Stone, Temple, Lava | ano | Mini golem | [Stone golem](/docs/enemies/bosses/golem) |
+| Argus | 120 | téměř stojí | Temple, Ice, Moss, Sewer | ano | Argus eye | [Argus](/docs/enemies/bosses/argus) |
+| Sewer ogre | 130 | 9 % | Sewer, Moss | ano | Rat | [Sewer ogre](/docs/enemies/bosses/ogre) |
+| Hellhound | 110 | 59 % | Lava | ano | – (magma) | [Hellhound](/docs/enemies/bosses/hellhound) |
+| Mimic | 115 | 32 % | Stone, Temple | ano | Saliva slime | [Mimic](/docs/enemies/bosses/mimic) |
 
 ### Kdo může přijít na jakém tématu
 
-| Téma | Pool |
+| Téma | Možní bossové |
 |---|---|
 | Spider (patro 1) | Spider king |
-| Stone | King slime, Golem, Mimic |
-| Temple | King slime, Golem, Argus, Mimic |
-| Lava | King slime, Golem, Hellhound |
+| Stone | King slime, Stone golem, Mimic |
+| Temple | King slime, Stone golem, Argus, Mimic |
+| Lava | King slime, Stone golem, Hellhound |
 | Ice | King slime, Argus |
-| Sewer | King slime, Argus, Ogre |
-| Moss | King slime, Argus, Ogre |
+| Sewer | King slime, Argus, Sewer ogre |
+| Moss | King slime, Argus, Sewer ogre |
 
-Výběr z poolu je rovnoměrný — King slime je tak na každém tématu jedním z 2–4 kandidátů (na Ice 50 %).
+Každý kandidát má stejnou šanci, takže King slime přichází nejčastěji (na Ice v polovině případů).
 
-### Lore (`story.md`)
+### Příběh
 
 | Boss | Kdo to je |
 |---|---|
@@ -68,7 +67,7 @@ Výběr z poolu je rovnoměrný — King slime je tak na každém tématu jední
 | Stone golem | Socha strážce z chrámu, hlídá ze zvyku. |
 | Argus | Vědcovo oko, postavené ke sledování subjektů. |
 | Hellhound | Strážce dna, hlídá hráče před tím, co je pod ránou. |
-| Mimic | v `story.md` chybí |
+| Mimic | zatím bez příběhu |
 
 <Cards>
   <Card title="Spider king" href="/docs/enemies/bosses/spider-king" />
@@ -80,46 +79,27 @@ Výběr z poolu je rovnoměrný — King slime je tak na každém tématu jední
   <Card title="Mimic" href="/docs/enemies/bosses/mimic" />
 </Cards>
 
-## Interakce
+## Tipy a souvislosti
 
-- [Dungeon](/docs/dungeon) — boss místnost, téma patra, žebřík.
-- [Artefakty a předměty](/docs/artefacts-items) — artefaktová truhla po bossovi.
-- [Progrese](/docs/progression) — mise „Boss“ (náhodný boss z `EnemyKind::ALL`), challenge Bane
-  („Beat the last boss“), vítězství na patře 5.
+- Zuřivost začíná na polovině HP – ušetři silné předměty na druhou půlku boje.
+- Pomocníky drž pod kontrolou; někteří bossové vyvolávají další, jen dokud jich není moc.
+- Boss místnost, témata a žebřík popisuje [Dungeon](/docs/dungeon), truhlu s artefaktem
+  [Artefakty a předměty](/docs/artefacts-items).
+- Mise „Boss“ a výzvu Bane („porazit posledního bosse“) najdeš v [Progresi](/docs/progression).
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `enemies.rs` — specy bossů, všechny `GOLEM_*`, `ARGUS_*`, `OGRE_*`, `HOUND_*`, `MIMIC_*` konstanty,
-  `pick_boss`, `BANE_BOSS`.
-- `systems/bosses.rs` — Spider king a King slime (`tick_hatchers`, `tick_web_spitters`,
-  `tick_armageddon`), `clean_up_after_boss`, `update_boss_hud`.
-- `systems/golem.rs`, `argus.rs`, `ogre.rs`, `hound.rs`, `magma.rs`, `mimic.rs`.
-- `components/skills.rs` — stavové komponenty (`GolemBoss`, `ArgusBoss`, …, `Minion`, `Sealed`).
-- `prefabs/hud.rs` → `boss_hud`; `systems/rooms.rs` → `enter`; `scenes/ingame.rs` → `RoomEvent::BossDefeated`.
+- **Finální boss chybí** – vítězství přijde po porážce jakéhokoli bosse na patře 5.
+- Příběh přiřazuje bossy k patrům (2: King slime / Ogre, 3: Golem / Argus, 4: Hellhound), ve hře ale
+  závisí jen na tématu a všichni kromě Spider kinga se mohou objevit na patrech 2–5.
+- Bossové nesílí s patrem: Golem na patře 2 a na patře 5 je stejný, zatímco běžní nepřátelé kolem něj
+  zesílí téměř o polovinu.
+- King slime jako jediný boss nic nedropne a nepočítá se do pojistky dropů, ostatní ano.
+- Téma Ice nemá vlastního bosse.
 
-## Jak přidat nového bosse
+## Nápady na rozšíření
 
-1. `EnemyKind` + `ALL` + spec s `role: Role::Boss("Jméno")`, `min_floor`, `themes`, `behavior`.
-2. Nový `Behavior::XxxBoss` a stavová komponenta `XxxBoss` (pole `stage`, `attack`, `last`, `timer`,
-   `cooldown`, `enraged`, `seed`, `idle`) v `components/skills.rs` (+ enumy `XxxStage`, `XxxAttack`).
-3. Arm v `prefabs::enemy`, který komponentu vloží (seed odvoď z pozice jako ostatní).
-4. `systems/xxx.rs` podle vzoru `ogre.rs`: `choose_attack`, `step` → `Vec<Cmd>`, `tick_xxx`, `execute`.
-   Testy pište nad čistou funkcí `step`.
-5. Registrace v `systems/mod.rs` a v `fixed_update` (`scenes/ingame.rs`) s `hostile_dt`.
-6. Úklid efektů do `clean_up_after_boss`.
-7. `boss_named` v `enemies.rs` pro `BANE_BOSS`; uprav testy výběru bossů podle témat.
-8. Sprite sheet: řádek 0 idle, řádky útoků, `death_row` pro smrt.
-
-## Nápady / chybí
-
-- **Finální boss chybí.** `story.md` plánuje „The Heart“ na patře 5 (Temple), v kódu je patro 5 obyčejné
-  náhodné patro; vítězství přijde po kterémkoli bossovi na patře 5.
-- `story.md` tabulka pater (2: King slime/Ogre, 3: Golem/Argus, 4: Hellhound) **neodpovídá kódu** —
-  kód nemá vazbu boss ↔ patro, jen boss ↔ téma, a všichni bossové kromě Spider kinga mají `min_floor = 2`.
-- Mimic nemá v `story.md` lore.
-- King slime je v každém poolu — na tématu Ice je 50% šance, téma tak nemá „svého“ bosse. Ice úplně chybí
-  vlastní boss.
-- Bossové se neškálují s patrem: Golem na patře 2 a na patře 5 je stejně silný, zatímco běžní nepřátelé
-  kolem sílí o 48 %.
-- Spider king a King slime jsou výrazně jednodušší než ostatní (bez fází, telegrafů a rage); kandidáti na
-  přepis do vzoru `step`/`Cmd`.
+- Finální boss „The Heart“ na patře 5 v tématu Temple.
+- Vlastní boss pro Ice; omezit King slime na méně témat.
+- Fáze, nápřahy a zuřivost i pro Spider kinga a King slime.
+- Příběh pro Mimica.

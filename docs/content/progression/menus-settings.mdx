@@ -1,103 +1,94 @@
 ---
 title: Menu, pauza a nastavení
-description: Hlavní menu s živým pozadím, pauzové menu v lobby a v runu a panel nastavení (video, audio, ovládání).
+description: Hlavní menu s živým pozadím, pauza v laboratoři a v dungeonu a nastavení obrazu, zvuku a ovládání.
 ---
+
+Hlavní menu je první, co po načtení uvidíš. Odtud se jde do laboratoře a jen odtud se dá otevřít
+nastavení. Pauza (Esc) funguje v laboratoři i v dungeonu.
 
 ## Jak to funguje
 
-### Hlavní menu (`MenuScene`)
+### Hlavní menu
 
-- **Pozadí** (`menu_stage.rs` → `Stage`): tilemapa krypty (`tilemap::crypt()`) s oltářem — andělská socha, pentagram, 5 svícnů, knihy, řetězy, pochodně, kosti, pavučiny, kameny, bedny (29 rekvizit) + ambientní částice a ztmavení (`DIM`, 50 % fialovočerné).
-- Kamera pomalu panoruje (perioda **150 s**) a pohupuje se (perioda **97 s**).
-- **Critters**: první za 2,5 s, pak každých 5–11 s přeběhne přes obrazovku krysa, krysa nebo netopýr (`CRITTER_KINDS`, poloviční rychlost).
-- **Logo** (`menu_logo.rs` → `LogoAnim`): plynule přejede z pozice titulku loadingu (285 × 135) do horní části (228 × 108), pak se pohupuje, září a periodicky se přes něj mihne lesk.
-- **Tlačítka** se odkryjí během 0,4 s po doletu loga.
-- Hudba `MainMenu`.
+- **Pozadí:** živá krypta s oltářem — andělská socha, pentagram, pět svícnů, knihy, řetězy, pochodně, kosti, pavučiny, kameny a bedny, poletující prach a ztemnělý fialový nádech.
+- Kamera se pomalu posouvá a pohupuje (jeden průjezd trvá asi 2,5 minuty).
+- **Zvířata:** poprvé po 2,5 s, pak každých 5–11 s přeběhne přes obrazovku krysa nebo netopýr.
+- **Logo** přiletí z načítací obrazovky nahoru, pak se pohupuje, září a občas po něm přejede lesk.
+- Jakmile logo dosedne, během necelé půlsekundy se objeví tlačítka.
+- Hraje hudba hlavního menu.
 
-| Tlačítko | y | Akce |
-|---|---|---|
-| Play | 240 | → Lobby |
-| Settings | 320 | Otevře panel nastavení (skryje logo a tlačítka) |
-| Exit | 400 | Ukončí hru |
-
-### Pauza (`Pause`)
-
-Esc přepne pauzu. Pozadí se rozostří (`SceneFx.paused`) a fixní update stojí.
-
-| Scéna | Tlačítka (`PAUSE_*`) |
+| Tlačítko | Co dělá |
 |---|---|
-| Lobby (`PAUSE_LOBBY`) | Resume · Main Menu · Exit Game |
-| Run (`PAUSE_GAME`) | Resume · **Die** · Exit Game |
+| **Play** | Přechod do laboratoře |
+| **Settings** | Otevře nastavení |
+| **Exit** | Ukončí hru |
 
-V runu Esc nejdřív zavře velkou mapu (Tab), teprve pak otevře pauzu. **Die** okamžitě ukončí run
-jako smrt (se všemi odměnami) — viz [Konec runu](/docs/progression/run-end).
+### Pauza
 
-### Nastavení (`SettingsPanel`)
+**Esc** hru zapauzuje: pozadí se rozmaže a všechno se zastaví.
 
-Panel 516 × 354 px se třemi záložkami a boční trojicí tlačítek:
+| Kde | Tlačítka |
+|---|---|
+| Laboratoř | Resume · Main Menu · Exit Game |
+| Dungeon | Resume · **Die** · Exit Game |
 
-- **Apply** — rozdíly mezi `pending` a `applied` se převedou na `Change` (fullscreen, rozlišení, vsync, hlasitosti, ovládání), aplikují se a uloží do `settings.json`.
-- **Revert** — `pending` se vrátí na `applied`.
-- **Exit** — zavře panel (neaplikované změny se zahodí).
+V dungeonu Esc nejdřív zavře velkou mapu (Tab) a teprve pak otevře pauzu. **Die** okamžitě ukončí
+run, jako bys zemřel — se všemi odměnami. Viz [Konec runu](/docs/progression/run-end).
 
-Nastavení je dostupné **jen z hlavního menu**.
+### Nastavení
+
+Panel má tři záložky (Video, Audio, Controls) a tři tlačítka:
+
+- **Apply** — změny se projeví a uloží.
+- **Revert** — vrátí neuložené změny zpět.
+- **Exit** — zavře panel; neuložené změny se zahodí.
 
 ## Obsah
 
-### Položky nastavení (`GameSettings`)
+### Položky nastavení
 
 | Záložka | Položka | Ovládání | Výchozí |
 |---|---|---|---|
-| Video | Resolution | šipky vlevo/vpravo, cyklí seznamem | 1920 × 1080 (2× `TARGET` 960 × 540) |
-| Video | V-sync | checkbox | zapnuto |
-| Video | Fullscreen | checkbox | vypnuto |
-| Audio | Overall | slider 0–1 | 1,0 |
-| Audio | Music | slider 0–1 | 0,5 |
-| Audio | Effects | slider 0–1 | 0,5 |
-| Controls | 10 akcí | klik na slot, pak stisk klávesy | viz níže |
+| Video | Resolution | šipky vlevo / vpravo | 1920 × 1080 |
+| Video | V-sync | zaškrtávátko | zapnuto |
+| Video | Fullscreen | zaškrtávátko | vypnuto |
+| Audio | Overall | posuvník 0–100 % | 100 % |
+| Audio | Music | posuvník 0–100 % | 50 % |
+| Audio | Effects | posuvník 0–100 % | 50 % |
+| Controls | 10 akcí | klikni na políčko, pak stiskni klávesu | viz níže |
 
-Seznam rozlišení přichází z monitoru (`set_resolutions`, seřazený, bez duplicit, vždy obsahuje aktuální); fallback
-960 × 540, 1280 × 720, 1600 × 900, 1920 × 1080. Hlasitosti se při načtení ořežou na 0–1, nulové rozlišení se nahradí výchozím.
+Nabídka rozlišení se bere z tvého monitoru; když ji hra nezjistí, nabídne 960 × 540, 1280 × 720,
+1600 × 900 a 1920 × 1080.
 
-### Ovládání (`controls.rs` → `Action`)
+### Ovládání
 
 | Akce | Výchozí klávesa |
 |---|---|
-| MoveUp / MoveDown / MoveLeft / MoveRight | W / S / A / D |
-| Interact | E |
-| Reload | R |
-| UseArtefact | F |
-| DropGun | Q |
-| Map | Tab |
-| Dodge | Space |
+| Pohyb nahoru / dolů / doleva / doprava | W / S / A / D |
+| Interakce | E |
+| Přebití | R |
+| Použít artefakt | F |
+| Zahodit zbraň | Q |
+| Mapa | Tab |
+| Úskok | Space |
+| Střelba | myš (nelze změnit) |
+| Pauza | Esc (nelze změnit) |
 
-Lze přiřadit jen klávesy ze seznamu `KEYS` (36 kláves). Když je nová klávesa už obsazená jinou akcí,
-**prohodí se** (druhá akce dostane původní klávesu). Střelba (myš) a Esc přemapovat nejdou.
+Přiřadit lze písmena A–Z, šipky, Space, Tab, Enter, levý Shift, Ctrl a Alt (celkem 36 kláves). Když zvolíš klávesu, kterou už
+používá jiná akce, **prohodí se** — druhá akce dostane tvou původní klávesu.
 
-## Interakce
+## Tipy a souvislosti
 
-- Soubor `settings.json` a jeho odolnost proti poškození: [Ukládání](/docs/progression/saves).
-- Postfx pauzy (blur): [Technika](/docs/tech).
+- Nastavení si hra pamatuje i po restartu — [Co si hra pamatuje](/docs/progression/saves).
+- Přehled obrazovek a přechodů: [Herní obrazovky](/docs/progression/scenes).
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `scenes/menu.rs` → `MenuScene`, `BUTTON_ROWS`; `scenes/menu_stage.rs` → `Stage`; `scenes/menu_logo.rs` → `LogoAnim`; `scenes/menu_buttons.rs` → `MenuButtons`
-- `scenes/pause.rs` → `Pause`; `prefabs/ui.rs` → `PAUSE_GAME`, `PAUSE_LOBBY`, `pause_ui`
-- `scenes/settings_panel.rs` → `SettingsPanel`, `TABS`, `SIDE_BUTTONS`, `CHECKBOXES`, `SLIDERS`
-- `systems/settings_ui.rs` → `update_settings_ui` (checkboxy, slidery, rebind)
-- `settings.rs` → `GameSettings`, `Settings` (`load`, `apply`, `revert`, `take_changes`, `startup_changes`), `Change`
-- `controls.rs` → `Action`, `Bindings::rebind`, `KEYS`
+- Nastavení nejde otevřít z pauzy (ani v laboratoři, ani v dungeonu) — musíš až do hlavního menu.
+- Z pauzy v dungeonu nevede cesta do menu ani do laboratoře kromě „Die“.
+- Esc a tlačítka myši nejdou přemapovat.
 
-## Jak přidat novou položku nastavení
+## Nápady na rozšíření
 
-1. Přidat pole do `GameSettings` s `#[serde(default)]` (jinak staré `settings.json` neprojdou) a výchozí hodnotu do `Default`.
-2. Případně ošetřit v `sanitized`.
-3. Přidat variantu `Change`, generovat ji v `apply` a `startup_changes`, a zpracovat ji v `app.rs`.
-4. Přidat UI prvek do `spawn_panel` (`settings_panel.rs`) a jeho obsluhu do `systems/settings_ui.rs`.
-
-## Nápady / chybí
-
-- Nastavení nejde otevřít z pauzy (v lobby ani v runu).
-- Z pauzy v runu nevede cesta do menu/lobby kromě „Die“.
-- Chybí: gamepad, citlivost/velikost kurzoru, screen shake toggle, jazyk, accessibility (barvoslepost, velikost textu), zobrazení FPS.
-- Klávesa Esc a pauza nejsou přemapovatelné; tlačítka myši se nedají přiřadit akcím.
+- Nastavení dostupné z pauzy.
+- Gamepad, velikost kurzoru, vypnutí otřesů obrazu, jazyk, přístupnost (barvoslepost, velikost textu), zobrazení FPS.

@@ -3,36 +3,34 @@ title: Blood Chalice
 description: Okamžitě vyléčí polovinu maximálního zdraví a na 10 sekund léčí za každé zabití.
 ---
 
+Blood Chalice je krvavý kalich, který tě okamžitě vyléčí a na chvíli probudí krvežíznivost – každé zabití tě pak léčí.
+
 ## Jak to funguje
 
-Aktivace vloží dvě komponenty: `HealPercent(0.5)` a `Bloodlust { remaining: 10.0 }`.
+1. **Okamžité léčení** – vyléčí polovinu maximálního zdraví (zaokrouhleno nahoru; při 10 max zdraví +5). Kolem tebe vystříkne krev.
+2. **Krvežíznivost na 10 sekund** – za každého zabitého nepřítele dostaneš +1 zdraví. Po celou dobu z tebe stoupají kapky krve a pulzuješ do červena.
 
-1. **Okamžité léčení** – `systems/blood.rs` → `apply_heal_percent`: `ceil(max_hp × 0.5)` HP (při 10 max HP = +5), zvuk `Heal`, výbuch 14 kapek krve do kruhu (rychlost 150, život 0,55 s, odpor 4).
-2. **Bloodlust 10 s**:
-   - `bloodlust_heals_on_kill` – za každého nepřítele, který v daném snímku dokončil animaci smrti, +1 HP (`KILL_HEAL`). Minioni (`Minion`) se nepočítají.
-   - `spawn_bloodlust_drops` – z hráče stoupají kapky krve (14 za sekundu, poloměr 22 px, stoupání 34 px/s, život ≈ 0,9 s).
-   - `pulse_bloodlust` – hráč pulzuje do červena 2× za sekundu (`PULSE_PEAK = (1, 0.55, 0.55)`), po skončení se vrátí původní barva (`BloodTint`).
+## Statistiky
 
-| Parametr | Hodnota |
+| Vlastnost | Hodnota |
 |---|---|
-| Okamžité léčení | 50 % max HP (zaokrouhleno nahoru) |
-| Bloodlust | 10 s |
-| Léčení za zabití | +1 HP |
-| Textura | `blood_chalice.tga`, kapky `blood_drops.tga` (6 snímků) |
+| Okamžité léčení | 50 % max zdraví |
+| Krvežíznivost | 10 s |
+| Léčení za zabití | +1 zdraví |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Hráč](/docs/player) – jediný zdroj léčení mimo lektvary.
-- [Nepřátelé](/docs/enemies) – King Slime (`NoDrop`) se do léčení počítá, jeho minioni ne.
+- [Hráč](/docs/player) – kromě lektvarů jediný zdroj léčení ve hře.
+- [Nepřátelé](/docs/enemies) – vyvolaní minioni se do léčení nepočítají; King Slime ano.
+- Nejvíc vytěžíš, když ho použiješ v místnosti plné slabých nepřátel nebo na začátku vlny.
+- Se [Sacrifice](/docs/artefacts-items/shop) pentagramem se dobře doplňuje – obětuj zdraví a pak se vyleč kalichem.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `artefacts.rs` → `BLOODLUST_SECONDS`, `CHALICE_HEAL`
-- `systems/blood.rs` → `apply_heal_percent`, `bloodlust_heals_on_kill`, `spawn_bloodlust_drops`, `tick_blood_drops`, `pulse_bloodlust`
-- `components/artefacts.rs` → `HealPercent`, `Bloodlust`
+- Léčení se neukazuje jako plovoucí číslo – vidíš ho jen na ukazateli zdraví.
+- Druhé použití během krvežíznivosti jen restartuje odpočet.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- `HealPercent` je obecná komponenta – šla by použít i pro jiné zdroje (např. lektvar „heal 25 %“).
-- Léčení se nezobrazuje plovoucím číslem (`floating_number` existuje v `prefabs/fx.rs`).
-- Dvojí použití během Bloodlust jen resetuje časovač.
+- Lektvar „vyléčí 25 % zdraví“ využívající stejný efekt.
+- Plovoucí zelená čísla léčení.

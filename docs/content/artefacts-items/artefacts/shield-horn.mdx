@@ -1,38 +1,36 @@
 ---
 title: Shield Horn
-description: Magický štít, který pohltí celý příští zásah hráče.
+description: Magický štít, který pohltí celý příští zásah.
 ---
+
+Shield Horn kolem tebe vytvoří magickou auru, která zachytí celý příští zásah – ať je jakkoliv silný.
 
 ## Jak to funguje
 
-- Aktivace vloží hráči komponentu `Shielded` (bez časovače – vydrží, dokud hráče něco nezasáhne).
-- V `systems/damage.rs` → `hurt` se nejdřív aplikuje perk Kevlar, pak pokud jde `Shielded` odebrat, damage se nastaví na **0**.
-- Zásah se ale dál chová jako zásah: přehraje se `PlayerHurt`, hráč dostane 1 s `Invulnerable`, 0,5 s `HitFlash` a započítá se `Stat::Hurt`.
-- Pokud je hráč zrovna `Invulnerable`, zásah se ignoruje ještě před štítem – štít se nespotřebuje.
+- Po použití se kolem tebe objeví zářící štít. Vydrží, **dokud tě něco nezasáhne** – nemá časový limit.
+- Příští zásah má nulový damage. Pohltí i útoky, které jinak procházejí přes armor.
+- Zásah se ale pořád chová jako zásah: uslyšíš zvuk zranění, bliknutí a dostaneš krátkou nezranitelnost (1 s).
+- Pokud jsi zrovna nezranitelný (po předchozím zásahu), štít se nespotřebuje.
+- Po zásahu aura zmizí.
 
-### Vizuál
+## Statistiky
 
-- `update_shield_aura` spawne entitu `ShieldAura` (textura `ARTEFACTS_MAGICSHIELD`, 4 snímky × 0,1 s, smyčka, 96×144 px, vrstva 4) a každý snímek ji posouvá na pozici hráče. Po ztrátě štítu aura zmizí.
-
-| Parametr | Hodnota |
+| Vlastnost | Hodnota |
 |---|---|
-| Počet zásahů | 1 |
-| Trvání | do zásahu |
-| Ikona | 34×32 → 68×64 |
+| Počet zablokovaných zásahů | 1 |
+| Trvání | do prvního zásahu |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Hráč](/docs/player) – `hurt_player` i `hurt_player_through_armor` (štít blokuje i damage „skrz armor“).
-- Použití druhého Shield Hornu, když štít ještě drží, nic nepřidá (komponenta je bool).
+- [Hráč](/docs/player) – štít chrání zdraví i armor.
+- Nejcennější proti silným jednorázovým útokům bossů nebo výbuchům.
+- Druhý Shield Horn použitý, když štít ještě drží, nic nepřidá – štíty se nesčítají.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `components/artefacts.rs` → `Shielded`, `ShieldAura`
-- `systems/artefacts.rs` → `activate_artefact`, `update_shield_aura`
-- `systems/damage.rs` → `hurt`
-- `prefabs/fx.rs` → `shield_aura`, `SHIELD_SIZE`
+- Zablokovaný zásah přehraje zvuk zranění a bliknutí, jako bys byl opravdu zraněn – chybí jasná zpětná vazba „štít praskl“.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Zablokovaný zásah přehraje zvuk zranění a hit flash – chtělo by to vlastní zvuk „štít praskl“ a efekt rozbití aury.
-- Stackování (např. 2 nálože) by dávalo smysl, pokud by se štít našel podruhé.
+- Vlastní zvuk a efekt rozbití štítu.
+- Možnost nasbírat víc nábojů štítu.

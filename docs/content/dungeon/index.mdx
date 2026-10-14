@@ -1,128 +1,112 @@
 ---
 title: Dungeon a svět
-description: Jak vzniká patro Banu – od mřížky místností přes šablony, dekorace a pasti až po tilemapu, světla a minimapu.
+description: Jak vypadá a jak je postavené patro Banu – místnosti, chodby, témata, pasti a cesta až k bossovi.
 ---
 
-Run se skládá z **pater** (floor 1 až `FINAL_FLOOR = 5`). Každé patro je nově vygenerovaný
-dungeon: síť místností na čtvercové mřížce buněk, propojených rovnými chodbami. Každé patro má
-**téma** (biom), které určuje tileset, barvu pozadí, žebřík, kapalinu na podlaze a mix pastí
-a dekorací. Hráč prochází místnosti, v bojových se zavřou mříže, dokud nepadne poslední
-nepřítel, a po zabití bosse sestoupí po žebříku o patro níž. Po bossovi na patře 5 run končí
+Každý run v Banu vede přes **5 pater** dungeonu. Každé patro je pokaždé nově vygenerované:
+síť místností propojených krátkými rovnými chodbami. Patro má své **téma** (biom) – určuje
+vzhled zdí a podlahy, barvu tmy kolem mapy, kapalinu na podlaze, druhy pastí, dekorace
+i to, kteří nepřátelé a bossové se tu mohou objevit. Na konci každého patra čeká boss;
+po jeho porážce hráč sestoupí po žebříku o patro níž. Po bossovi na patře 5 run končí
 vítězstvím.
 
 ## Jak to funguje
 
-Generování jednoho patra (`InGameScene::build` v `scenes/ingame.rs`):
+### Stavba patra
 
-1. **RNG proudy** – z `run_seed` a čísla patra se odvodí tři nezávislé proudy `Map`, `Loot`,
-   `Combat` (`rng.rs`). Celý dungeon se staví z proudu `Map`. Viz [Generování](/docs/dungeon/generation).
-2. **Téma** – `Theme::for_floor(run_seed, floor)`: patro 1 je vždy `Spider`, další patra jsou
-   náhodná permutace zbylých šesti témat (bez opakování). Viz [Patra a témata](/docs/dungeon/themes).
-3. **Layout** – `Layout::generate` rozmístí na mřížku buněk Start, 5× Normal, Shop, Treasure,
-   0–1 Sacrifice, 1–2 Ambush a Boss (nejdál od startu). Celkem 10–12 místností.
-4. **Šablony** – každé místnosti se náhodně přiřadí JSON šablona daného typu
-   (23 šablon, viz [Šablony místností](/docs/dungeon/room-templates)).
-5. **Stavba mřížky** – šablony se vyřežou do jedné `TileGrid` (zeď/podlaha), mezi dveřmi se
-   vyřežou 2 dlaždice široké chodby dlouhé 4 dlaždice.
-6. **Zařízení** (`furnish::plan`) – pevně rozmístěné fixtury ve speciálních místnostech
-   (obchodník, stoly, truhla, socha anděla, pentagram, nápovědy kláves).
-7. **Dekorace a pasti** (`decor::plan`) – pochodně, prapory, kosti, pavučiny, bodce,
-   plamenomety, šípové pasti, sudy, květináče a tematické doplňky podle `TrapMix` tématu.
-8. **Povrchy** (`surface::plan`) – v tématech Ice/Lava/Sewer/Moss se do bojových místností
-   rozlijí skvrny ledu/lávy/vody/bažiny.
-9. **Spawn entit** – tilemapa (`prefabs::tilemap`), zdi do fyziky, okludery pro stíny,
-   povrchy + břehy, hráč, fixtury, dekorace, zboží v obchodě (`stock_rooms`), minimapy,
-   HUD. Nakonec perk *Trap Master* náhodně vypne část pastí.
+Každé patro má **10–12 místností**:
 
-Běh místností (`systems/rooms.rs`):
+| Místnost | Počet | Kde |
+|---|---|---|
+| Start | 1 | odsud hráč vychází |
+| Normal | 5 | tvoří páteř patra, rozvětvují se |
+| Shop | 1 | slepá odbočka (žádný při challenge *Merchant's Strike*) |
+| Treasure | 1 | slepá odbočka |
+| Sacrifice | 0–1 (50 %) | slepá odbočka |
+| Ambush | 1–2 | slepá odbočka |
+| Boss | 1 | vždy co nejdál od startu |
 
-- Místnost je `Unvisited` → po vstupu (hráč aspoň 2 dlaždice uvnitř) se buď rovnou označí
-  `Cleared` (Start, Shop, Treasure, Sacrifice), nebo začne `Fighting`: spawnou se nepřátelé,
-  na všechny dveře padnou mříže (`gate`).
-- Když v místnosti nežije žádný nepřítel s jejím `RoomId`, buď po 1,5 s přijde další vlna
-  (Ambush má 3 vlny), nebo se mříže otevřou a místnost je `Cleared`.
-- Události `RoomEvent` řeší scéna: zvuk bosse, banner vlny, truhla po ambushi, truhla +
-  žebřík po bossovi, regenerace brnění, hláška obchodníka.
+- Startovní a Normal místnosti tvoří rozvětvenou páteř – generátor dává přednost
+  „osamělejším“ místnostem, takže patro se větví do stran a neslije se do jednoho bloku.
+- Všechny speciální místnosti (Shop, Treasure, Sacrifice, Ambush, Boss) jsou **slepé konce**
+  napojené na některou Normal místnost – nikdy přes ně nevede cesta dál.
+- Boss je připojený k jedné z Normal místností, které jsou od startu nejdál.
+- Patro nemá smyčky: do každé místnosti vede právě jedna cesta. Kdo chce zpět, musí se
+  vracet stejnou chodbou.
+- Chodby jsou vždy rovné, 2 dlaždice široké a 4 dlaždice dlouhé. Dveře protilehlých místností
+  leží v jedné ose.
 
-Schéma patra (příklad):
+Příklad rozvržení patra: ze Startu vede chodba do Normal místnosti, odkud se cesta větví
+nahoru (Normal → Shop, odbočka do Treasure) a dolů (Normal → Sacrifice). Hlavní větev
+pokračuje přes dvě další Normal místnosti, z nichž jedna má odbočku do Ambush, až k Boss
+místnosti na samém konci.
 
-```
-            [Treasure]
-                |
- [Shop] - [Normal] - [Normal] - [Normal] - [Boss]
-                |                   |
- [Start] - [Normal]            [Ambush]
-                |
-            [Normal] - [Sacrifice]
-```
+### Průchod patrem
 
-Speciální místnosti (Shop, Treasure, Sacrifice, Ambush, Boss) jsou vždy **slepé konce**
-napojené na Normal místnost.
+- Když hráč vkročí dál do bojové místnosti (aspoň 2 dlaždice od okraje), na všechny dveře
+  spadnou **mříže** a objeví se nepřátelé. Mříže se zvednou, až padne poslední z nich.
+- Start, Shop, Treasure a Sacrifice jsou mírové – mříže se v nich nezavírají.
+- Ambush má 3 vlny, Normal jednu, Boss místnost jen bosse.
+- Kamera se uvnitř místnosti drží jejích hranic; v chodbě plynule přejede do další místnosti.
+- Po bossovi se objeví truhla s artefaktem a (na patrech 1–4) žebřík do dalšího patra.
+  Hráč si do nového patra odnáší zdraví, brnění, mince, zbraně a artefakt.
+
+### Náhoda a seed
+
+Každý run má svůj **seed**. Rozvržení patra, výběr místností, dekorace, pasti i kapaliny jsou
+pro stejný seed vždy stejné. Které typy nepřátel padnou do které místnosti, ale záleží i na
+pořadí, v jakém hráč místnosti otevírá. Vzhled jednotlivých dlaždic a odstínů podlahy je dán
+jen polohou – stejné místo vypadá vždy stejně.
+
+## Statistiky
+
+| Parametr | Hodnota |
+|---|---|
+| Pater v runu | 5 |
+| Místností na patře | 10–12 |
+| Variant místností | 23 (15 Normal, 3 Ambush, po jedné Start, Shop, Treasure, Sacrifice, Boss) |
+| Témat | 7 (Stone, Sewer, Moss, Spider, Ice, Lava, Temple) |
+| Chodba | 4 dlaždice dlouhá, 2 široká |
+| Nepřátel v místnosti | 5–9 na vlnu podle velikosti místnosti |
 
 ## Obsah
 
 <Cards>
-  <Card title="Procedurální generování" href="/docs/dungeon/generation" />
-  <Card title="Šablony místností" href="/docs/dungeon/room-templates" />
   <Card title="Typy místností" href="/docs/dungeon/rooms" />
   <Card title="Patra a témata" href="/docs/dungeon/themes" />
   <Card title="Objekty a interaktivní prvky" href="/docs/dungeon/objects" />
   <Card title="Pasti a nebezpečí" href="/docs/dungeon/hazards" />
   <Card title="Povrchy a kapaliny" href="/docs/dungeon/surfaces" />
-  <Card title="Dekorace a props" href="/docs/dungeon/decor" />
-  <Card title="Tilemapa a tilesety" href="/docs/dungeon/tilemap" />
+  <Card title="Dekorace" href="/docs/dungeon/decor" />
   <Card title="Osvětlení a atmosféra" href="/docs/dungeon/lighting" />
   <Card title="Minimapa" href="/docs/dungeon/minimap" />
 </Cards>
 
-Rychlá čísla:
+## Tipy a souvislosti
 
-| Parametr | Hodnota |
-|---|---|
-| Velikost dlaždice | 64 px (`TILE_SIZE`) |
-| Pater v runu | 5 (`FINAL_FLOOR`) |
-| Místností na patře | 10–12 |
-| Šablon místností | 23 (15 Normal, 3 Ambush, po 1 Start/Shop/Treasure/Sacrifice/Boss) |
-| Témat | 7 (Stone, Sewer, Moss, Spider, Ice, Lava, Temple) |
-| Délka chodby | 4 dlaždice, šířka 2 |
-| Nepřátel v místnosti | 5–12 podle plochy (1 na 100 dlaždic) |
+- [Nepřátelé](/docs/enemies) – kdo se objeví, závisí na čísle patra a jeho tématu;
+  Hellhound rozlévá po boss aréně magma.
+- [Artefakty a předměty](/docs/artefacts-items) – sudy, květináče a truhly sypou mince
+  a munici; artefakt *Reveal Map* odkryje celou mapu patra.
+- [Hráč](/docs/player) – kapaliny mění pohyb (led klouže, voda a bažina zpomalují, láva pálí).
+- [Progrese](/docs/progression) – talenty *Trap Master*, *Discount*, *Gamble Machine*,
+  *Armor Regeneration*; challenge *Merchant's Strike* zruší obchody.
+- Speciální místnosti jsou vždy slepé konce – když narazíš na odbočku z Normal místnosti,
+  skoro jistě vede k odměně, obchodu nebo ambushi.
 
-## Interakce
+## Známé nesrovnalosti
 
-- [Nepřátelé](/docs/enemies) – výběr nepřítele i bosse závisí na patře a tématu
-  (`enemies::pick`, `enemies::pick_boss`); Hellhound rozlévá magma po boss místnosti.
-- [Artefakty a předměty](/docs/artefacts-items) – rozbitné objekty a truhly sypou běžné
-  předměty; artefakt *Reveal Map* odkryje minimapu.
-- [Hráč](/docs/player) – povrchy mění pohyb (led klouže, voda a bažina zpomalují, láva pálí).
-- [Progrese](/docs/progression) – perky *Trap Master*, *Discount*, *Gamble Machine*,
-  *Armor Regeneration*; challenge *Merchant's Strike* vypne obchody (`RunRules.shops`).
-- [Technika](/docs/tech) – fyzika zdí, navigace, lightmapa, ECS.
+- Podle příběhu má být patro 5 vždy chrám (Temple) s finálním bossem The Heart. Ve hře je
+  téma pátého patra náhodné a boss na patře 5 je běžný boss.
+- Na patrech 2 a dál se obchod a oltář zaplní dřív, než hra „vrátí“ hráči jeho výbavu z
+  předchozího patra. Proto mohou nabízet zbraň, kterou už hráč má, a bonus +100 mincí
+  z talentu *Gamble Machine* se ztratí.
+- Z dungeonu se nedá vrátit do lobby jinak než smrtí nebo vítězstvím.
 
-## Kde v kódu
+## Nápady na rozšíření
 
-- `dungeon/` – čistá data a generování (`Dungeon`, `Layout`, `Templates`, `Theme`,
-  `Furnishing`, `Decor`, `Surfaces`)
-- `tilemap/` – `TileGrid`, `Tileset`, pevné layouty lobby a menu
-- `scenes/ingame.rs` – `build()`, `next_floor()`, `handle_room_events()`, `spawn_minimaps()`
-- `systems/rooms.rs` – `RoomRuntime`, `update_rooms`, `wave_plan`, `chest_spot`
-- `prefabs/fixtures.rs` – spawn všech props, fixtur, dekorací, povrchů, mříží, žebříku
-- `props.rs` – katalog sprite props (`Prop`, `PropSpec`)
-- `objects.rs` + `systems/objects.rs` – rozbitné sudy a jejich efekty
-- `systems/hazards.rs`, `systems/surfaces.rs`, `systems/magma.rs` – nebezpečí
-- `systems/lighting.rs`, `render/lightmap.wgsl`, `systems/ambience.rs` – světla a atmosféra
-- `systems/minimap.rs` – minimapa
-- `assets/rooms/*.json`, `assets/tilesets/*.json` – data
-
-## Nápady / chybí
-
-- Lore (`story.md`) chce **patro 5 = Temple + finální boss The Heart**; kód losuje téma
-  patra 5 náhodně a finální boss neexistuje (boss na patře 5 je běžný boss).
-- Mezi patry neexistuje návrat do lobby jinak než smrtí/vítězstvím; `FEATURE.md` (Java)
-  zmiňuje portál zpět do lobby – v Rustu je portál jen v lobby.
-- Žádné mid-run odměny po místnosti (boons z `TODO.md` M2), žádné challenge/curse
-  místnosti, žádné tajné místnosti.
-- Ohnivé gejzíry a ledové plochy jsou naprogramované, ale `TrapMix` je ve všech tématech
-  nastavuje na 0, takže se ve hře nikdy neobjeví.
-- Na patrech 2+ se obchod naskladní dřív, než se hráči vrátí jeho loadout – viz
-  [Generování](/docs/dungeon/generation).
-- Podrobnější mezery jsou na jednotlivých stránkách.
+- Patro by mohlo růst s hloubkou – dnes má každé patro vždy 5 Normal místností.
+- Smyčky a zkratky v rozvržení, zahnuté chodby nebo chodby s vlastním obsahem.
+- Odměna po vyčištění místnosti (výběr ze tří „boonů“), tajné místnosti, místnosti s kletbou
+  nebo elitními nepřáteli.
+- Pevné finále: patro 5 vždy Temple s bossem The Heart.

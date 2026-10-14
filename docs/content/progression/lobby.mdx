@@ -1,62 +1,57 @@
 ---
-title: Lobby (laboratoř) a jeho stanice
-description: Místnost mezi runy — Vědec, portál, Quest board, Weapon table, dekorace a co se v ní děje.
+title: Laboratoř a její stanice
+description: Místnost mezi runy — Vědec, portál, Quest board, Weapon table, dekorace a co v ní můžeš dělat.
 ---
+
+Laboratoř (lobby) je Vědcova pracovna nad ranou zvanou Bane. Sem se vracíš po každém runu. Chodíš
+tu stejně jako v dungeonu (pohyb, úskok, mazlíček), ale **nestřílíš** a nejsou tu žádní nepřátelé.
+Hraje klidná hudba laboratoře.
 
 ## Jak to funguje
 
-Lobby je hratelná místnost (`tilemap::lobby()`), ve které se hráč pohybuje stejně jako v
-dungeonu (pohyb, úskok, pet), ale **nestřílí** a nejsou tu nepřátelé. Hraje skladba
-`ProgressRoom`. Kamera sleduje hráče a myš.
+Po příchodu do laboratoře:
 
-Při vstupu (`LobbyScene::enter`):
+- Stojíš uprostřed místnosti. Nahoře uprostřed je **portál**, zbarvený podle vybrané challenge, s vířícími částicemi.
+- Kolem jsou stanice: **Vědec**, **Quest board**, **Weapon table**.
+- V HUD vidíš své zbraně včetně vylepšení z Weapon table; s talentem **Pet** stojí vedle tebe mazlíček.
+- Počítadla talentů (oranžově) a goldu (žlutě).
+- Hra ti doplní talenty na nejméně 1000 a gold na nejméně 5000 (testovací pomůcka, viz [Měny](/docs/progression/currencies)).
 
-1. Postaví se tilemapa, zdi, navigace a okludery světla.
-2. **Portál** nahoře uprostřed, obarvený podle vybrané challenge, s částicemi „gaze wind“.
-3. Dekorace (`PROPS`), Quest board, Weapon table, 3 rozbitelné **květináče** (`pot`), **Vědec** + bublina.
-4. Hráč uprostřed místnosti; aplikují se módy zbraní z Weapon table (aby byly vidět v HUD); s talentem **Pet** se vedle hráče objeví pet.
-5. Stavové lišty a počítadla talentů (oranžová) a goldu (žlutá).
-6. Testovací dorovnání: talenty min. 1000, gold min. 5000 (viz [Měny](/docs/progression/currencies)).
+### Ovládání
 
-### Ovládání v lobby
-
-| Vstup | Efekt |
+| Klávesa | Co dělá |
 |---|---|
 | WASD, Space | Pohyb, úskok |
-| **E** u stanice | Otevře/zavře panel stanice; u portálu start runu |
+| **E** u stanice | Otevře / zavře panel stanice; u portálu spustí run |
 | Esc | Zavře otevřený panel; jinak pauza (Resume / Main Menu / Exit Game) |
 
-Když je otevřený panel nebo pauza, fixní update (pohyb, fyzika) stojí.
+Když je otevřený panel nebo pauza, laboratoř stojí.
 
 ## Obsah
 
 ### Stanice
 
-| Stanice | Prefab / pozice (dlaždice) | Nápověda | Interakce | Panel |
-|---|---|---|---|---|
-| **Portál** | `portal`, nahoře uprostřed | „Press E to enter the portal“ | `EnterPortal` | → scéna InGame (nový run) |
-| **Vědec** (Scientist) | `scientist`, 25 × 6,5 | „Press E to upgrade“ | `Upgrade` | Talentový strom (`UpgradeMenu`) — viz [Hráč](/docs/player) |
-| **Quest board** | `task_board`, 18,5 × 0 | „Press E to read the board“ | `Quests` | [Quest board](/docs/progression/quest-board) |
-| **Weapon table** | `weapon_table`, 23,5 × 0,5 | „Press E to upgrade weapons“ | `Weapons` | Stromy zbraní za gold (`WeaponTable`) — viz [Zbraně](/docs/guns) |
+| Stanice | Kde | Nápověda | Co dělá |
+|---|---|---|---|
+| **Portál** | nahoře uprostřed | „Press E to enter the portal“ | Spustí nový run — [Průběh runu](/docs/progression/run) |
+| **Vědec** (Scientist) | vpravo | „Press E to upgrade“ | Talentový strom za talenty — [Hráč](/docs/player) |
+| **Quest board** | u horní stěny | „Press E to read the board“ | Mise a challenge — [Quest board](/docs/progression/quest-board) |
+| **Weapon table** | u horní stěny vpravo | „Press E to upgrade weapons“ | Vylepšení zbraní za gold — [Zbraně](/docs/guns) |
 
-Po nákupu talentu nebo uzlu zbraně Vědec řekne „Excellent choice!“ (`PURCHASE`); po vyzvednutí mise „Talents earned!“.
+Po nákupu talentu nebo vylepšení zbraně Vědec řekne „Excellent choice!“; po vyzvednutí mise „Talents earned!“.
 
-### Vědec — řeč (`systems/scientist.rs`)
+### Co říká Vědec
 
-Vědec mluví sám, když je hráč blízko:
+Vědec mluví sám, když jsi poblíž (asi do 5–6 dlaždic). Mezi větami dělá pauzu nejméně **7 sekund**
+a nemluví, když zrovna zní jiná bublina. Když odejdeš daleko (asi 12 dlaždic) a vrátíš se, pozdraví tě znovu.
 
-- slyší na **360 px** (`HEARING_RANGE`), další věta nejdřív za **7 s** (`PAUSE_SECONDS`), jen když zrovna nemluví jiná bublina,
-- když hráč odejde dál než **800 px** (`LEAVING_RANGE`), Vědec ho při návratu znovu pozdraví.
+1. **Pozdrav** při každém příchodu, střídavě: „Welcome back!“ / „Ah, my test subject!“
+2. Pak střídá:
+   - když nemáš žádné talenty → „No talents? Go loot!“
+   - když máš aspoň 100 talentů → „Talents to spend!“
+   - jinak některou z nápověd:
 
-Výběr věty (`pick`, `line` = pořadí věty):
-
-1. Pozdrav (jednou za příchod): „Welcome back!“ / „Ah, my test subject!“ (střídavě).
-2. Pak podle `line % 3`:
-   - `1` a hráč má 0 talentů → „No talents? Go loot!“
-   - `2` a hráč má aspoň 100 talentů (`RICH_COINS`) → „Talents to spend!“
-   - jinak nápověda `HINTS[line % 6]`.
-
-| Nápovědy (`HINTS`) |
+| Nápovědy Vědce |
 |---|
 | Upgrades, upgrades! |
 | Dodging is science! |
@@ -65,41 +60,26 @@ Výběr věty (`pick`, `line` = pořadí věty):
 | Go on, test my work! |
 | Every run teaches us. |
 
-„Talenty“ = `Profile.balance`, který lobby kopíruje do `Wallet.coins` hráče (`refresh_wallet`).
+### Dekorace
 
-### Dekorace (`PROPS`)
+2× stojan na zbraně, 4× pochodeň, 2× kosti, 2× pavučina, 2× stojan se zbrojí, bedna, 2× řetězy,
+4× kámen, 2× knihovna, stůl s mapou a **3 rozbitné květináče**.
 
-2× WeaponRack, 4× Torch, 2× Bones, 2× Cobweb, 2× Armorstand, 1× Box, 2× Chains, 4× Rock,
-2× Bookshelf, 1× MapTable, plus 3 květináče (`POTS`, rozbitelné, fyzikální).
+## Tipy a souvislosti
 
-## Interakce
+- Barva portálu ukazuje vybranou challenge — [Challenge](/docs/progression/challenges).
+- Vědec i obchodník v dungeonu mluví stejnými bublinami — [Artefakty a předměty](/docs/artefacts-items).
+- Z laboratoře se do hlavního menu dostaneš přes Esc → Main Menu (tam je i nastavení).
 
-- Portál → [Průběh runu](/docs/progression/run). Barva portálu → [Challenge](/docs/progression/challenges).
-- Talentový strom (`scenes/upgrade_menu.rs`) a pet → [Hráč](/docs/player).
-- Weapon table (`scenes/weapon_table.rs`) → [Zbraně](/docs/guns).
-- Bubliny řeči sdílí systém s obchodníkem (`systems::shop::say`) → [Artefakty a předměty](/docs/artefacts-items).
+## Známé nesrovnalosti
 
-## Kde v kódu
+- Vědec má jen 2 pozdravy a 6 nápověd a nereaguje na tvůj postup (nejhlubší patro, počet smrtí), přestože si je hra pamatuje.
+- „Excellent choice!“ je jediná reakce na jakýkoli nákup.
+- Mazlíček sedí vedle tebe; podle příběhu by to měl být vlk čekající u portálu.
 
-- `scenes/lobby.rs` → `LobbyScene` (`enter`, `update`, `fixed_update`, `refresh_counters`, `refresh_wallet`), `PROPS`, `POTS`
-- `systems/scientist.rs` → `chat`, `pick`, `fit_speech`, `GREETINGS`, `HINTS`, `PURCHASE`
-- `prefabs/fixtures.rs` → `portal`, `scientist`, `task_board`, `weapon_table` (texty nápověd, `Interaction`)
-- `systems/portal.rs` → `tint_portal`
-- `tilemap` → `lobby()`
+## Nápady na rozšíření
 
-## Jak přidat novou stanici do lobby
-
-1. Přidat variantu do `Interaction` (`components`).
-2. Vytvořit prefab ve `prefabs/fixtures.rs` (sprite/prop + `Interactable` s textem „Press E to …“ a akcí).
-3. Spawnout ho v `LobbyScene::enter` na pozici v dlaždicích (`Vec2::new(x, y) * TILE_SIZE`).
-4. Pokud má panel: vytvořit `scenes/<nazev>.rs` po vzoru `QuestBoard` (`is_open`, `toggle`, `close`, `update`), přidat pole do `LobbyScene`, do `panel_is_open`, do `leave` (reset) a větev do `update` (zavírání Esc/E + volání `update`).
-5. Přidat větev do `match systems::interact(...)` na konci `LobbyScene::update`.
-
-## Nápady / chybí
-
-- Vědec má jen 2 pozdravy a 6 nápověd, nereaguje na profil. `story.md` navrhuje repliky podle nejhlubšího patra (`best_floor`) a počtu smrtí (`deaths`) — data už v profilu jsou.
-- „Excellent choice!“ je jediná reakce na nákup (`story.md` navrhuje rotaci).
-- Lobby se nemění s postupem (po vítězství, po pravém konci) — ideální místo pro vizuální odměny (trofeje bossů, nové dekorace).
-- Pet z talentu sedí v lobby vedle hráče; `story.md` ho popisuje jako vlka u portálu.
-- Žádná cvičná střelnice / figurína na vyzkoušení zbraní a jejich vylepšení — Weapon table ukazuje jen čísla.
-- Chybí stanice pro statistiky profilu / historii runů (např. MapTable by mohl ukazovat nejhlubší patro).
+- Repliky Vědce podle nejhlubšího patra a počtu smrtí, víc reakcí na nákup.
+- Laboratoř, která se mění s postupem — trofeje poražených bossů, nové dekorace po vítězství.
+- Cvičná střelnice s figurínou pro vyzkoušení zbraní a jejich vylepšení.
+- Stůl s mapou by mohl ukazovat statistiky profilu nebo historii runů.

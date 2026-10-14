@@ -1,59 +1,49 @@
 ---
-title: Spawnování a škálování
-description: Kolik nepřátel se kde objeví, jak se vybírají podle patra a tématu, jak sílí a co z nich padá.
+title: Spawnování a síla nepřátel
+description: Kolik nepřátel se kde objeví, kteří přicházejí na kterém patře, jak sílí a co z nich padá.
 ---
+
+Nepřátelé se neobjevují předem rozmístění – zhmotní se, až když vstoupíš do bojové místnosti. Které
+druhy přijdou, záleží na patře a tématu dungeonu; jak silní budou, záleží na patře a zvolené výzvě.
 
 ## Jak to funguje
 
 ### Místnosti a vlny
 
-Spawn řídí `systems/rooms.rs`. Místnost se „aktivuje“, když hráč vstoupí dovnitř (alespoň 2 dlaždice od
-okraje, `ENTER_MARGIN`). Bojová místnost (`RoomKind::Normal` nebo `Ambush` s neprázdným seznamem
-`spawns`, nebo `Boss`) zavře dveře mřížemi (`prefabs::gate`) a přejde do stavu `Fighting`.
+Boj začne, když vejdeš do místnosti (aspoň 2 dlaždice od okraje). Dveře se zavřou mřížemi a otevřou se,
+až když v místnosti nezbude žádný nepřítel – včetně pomocníků bosse a nepřátelských střel, které ještě letí.
 
-- **Limit nepřátel na vlnu**: `enemy_limit = clamp(sloupce × řádky / 100, 5, 12)` — jeden nepřítel na
-  100 dlaždic plochy, minimálně 5, maximálně 12. Skutečný počet je navíc omezen počtem spawn bodů
-  místnosti (`data.spawns`, náhodně zamíchané přes `rng`).
-- **Normal**: 1 vlna o `limit` nepřátelích.
-- **Ambush**: 3 vlny (`AMBUSH_WAVES`), každá `max(ceil(limit × 0,7), 4)` nepřátel (ale nejvýš `limit`).
-  Další vlna přijde 1,5 s (`WAVE_DELAY`) po vyčištění předchozí; zobrazí se banner „vlna N/3“.
-  Po poslední vlně se objeví **truhla se zbraní** (`ChestKind::Weapon`).
-- **Boss**: jeden boss uprostřed místnosti (`pick_boss`), HUD s jménem bosse (`prefabs::boss_hud`),
-  hudba `Soundtrack::Boss`. Po smrti: otřes kamery, truhla s artefaktem (`ChestKind::Artefact`) a žebřík
-  dolů — na patře 5 (`FINAL_FLOOR`) místo žebříku **vítězství**.
-- Místnost je vyčištěná, když v ní nezbyde žádná entita s `RoomId(room)` bez `Expiring` — to zahrnuje
-  i vyvolané minions a nepřátelské projektily s `RoomId`.
+- **Počet nepřátel** – jeden na každých 100 dlaždic plochy místnosti, nejméně 5, nejvýš 12. Omezuje to
+  i počet míst, kde se nepřátelé mohou objevit.
+- **Běžná místnost** – jedna vlna.
+- **Přepadení (Ambush)** – 3 vlny, každá asi o 70 % velikosti běžné vlny (nejméně 4 nepřátelé). Další
+  vlna přijde 1,5 s po vyčištění předchozí a na obrazovce se ukáže „vlna N/3“. Po poslední vlně se
+  objeví **truhla se zbraní**.
+- **Boss** – boss se objeví uprostřed místnosti, nahoře se ukáže jeho jméno a ukazatel HP a začne
+  hrát boss hudba. Po jeho smrti se otřese obrazovka, objeví se **truhla s artefaktem** a žebřík
+  o patro níž. Na patře 5 místo žebříku přichází **vítězství**.
 
-### Výběr druhu
+### Výběr nepřátel
 
-`enemies::pick(floor, theme, rng)` vybírá **rovnoměrně** z poolu všech `EnemyKind`, které:
-
-- nejsou boss ani `Role::Summoned`,
-- mají `min_floor ≤ patro ≤ max_floor`,
-- mají prázdné `themes` nebo obsahují aktuální téma.
-
-`pick_boss` totéž jen pro bosse; env proměnná `BANE_BOSS` (`golem`, `argus`, `ogre`, `hound`, `mimic`,
-`spider`, `slime`) ho vynutí. Téma patra vybírá `Theme::for_floor`: patro 1 je vždy **Spider**, patra
-2–5 dostanou podle seedu runu náhodnou permutaci z (Stone, Sewer, Moss, Ice, Lava, Temple) — každé téma
-tedy v jednom runu nejvýš jednou. `BANE_THEME` vynutí téma.
+Každý nepřítel ve vlně se losuje se stejnou pravděpodobností ze všech druhů, které patří na dané
+patro a téma. Téma patra 1 je vždy **Spider**; patra 2–5 dostanou náhodné pořadí témat Stone, Sewer,
+Moss, Ice, Lava a Temple, takže každé téma se v jednom runu objeví nejvýš jednou.
 
 ## Obsah
 
-### Pool běžných nepřátel podle patra
+### Běžní nepřátelé podle patra
 
-Hra začíná na patře 1.
-
-| Patro | Téma | Pool (rovnoměrně) | Počet druhů |
+| Patro | Téma | Kdo se může objevit | Druhů |
 |---|---|---|--:|
-| 1 | Spider | Rat, Snake, Bat, Ghost, Slime, Red slime, Red/Green/Purple spiderling, Bloated spider, Stilt spider | 11 |
-| 2 | náhodné ne-Spider | Rat, Snake, Bat, Ghost, Slime, Red slime | 6 |
-| 3–5 | náhodné ne-Spider | + Demon eye, Eye watcher | 8 |
+| 1 | Spider | Rat, Snake, Bat, Ghost, Slime, Red slime, Red / Green / Purple spiderling, Bloated spider, Stilt spider | 11 |
+| 2 | jakékoli kromě Spider | Rat, Snake, Bat, Ghost, Slime, Red slime | 6 |
+| 3–5 | jakékoli kromě Spider | to samé + Demon eye, Eye watcher | 8 |
 
-### Pool bossů podle tématu
+### Bossové podle tématu
 
-| Téma | Možní bossové (patro 2+) |
+| Téma | Možní bossové |
 |---|---|
-| Spider (patro 1) | Spider king (jediný) |
+| Spider (patro 1) | Spider king (vždy) |
 | Stone | King slime, Stone golem, Mimic |
 | Temple | King slime, Stone golem, Argus, Mimic |
 | Lava | King slime, Stone golem, Hellhound |
@@ -61,92 +51,70 @@ Hra začíná na patře 1.
 | Sewer | King slime, Argus, Sewer ogre |
 | Moss | King slime, Argus, Sewer ogre |
 
-### Škálování s patrem
+### Síla podle patra
 
-Jen pro **běžné** nepřátele (ne bosse, ne hatchlingy — ti se spawnují s `floor = 0`):
+Jen **běžní** nepřátelé sílí s patrem: **+12 % HP a +8 % poškození za patro** (zaokrouhleno). Bossové,
+jejich pomocníci a nepřátelské střely (vždy 1 poškození) zůstávají stejní. Rychlost se nemění.
 
-- HP × `1 + 0,12 × patro`, damage × `1 + 0,08 × patro`, zaokrouhleno, minimum 1 (`scale_stat`).
-- Rychlost ani damage projektilů (vždy 1) se neškálují.
-
-| Nepřítel | HP p1–p5 | Dmg p1–p5 |
+| Nepřítel | HP na patře 1 / 2 / 3 / 4 / 5 | Poškození na patře 1 / 2 / 3 / 4 / 5 |
 |---|---|---|
 | Rat | 13 / 15 / 16 / 18 / 19 | 2 / 2 / 2 / 3 / 3 |
 | Snake | 9 / 10 / 11 / 12 / 13 | 3 / 3 / 4 / 4 / 4 |
 | Bat | 10 / 11 / 12 / 13 / 14 | 2 / 2 / 2 / 3 / 3 |
 | Ghost | 8 / 9 / 10 / 10 / 11 | 2 / 2 / 2 / 3 / 3 |
 | Slime, Red slime | 10 / 11 / 12 / 13 / 14 | 1 |
-| Demon eye | (p3+) 15 / 16 / 18 | (p3+) 4 / 4 / 4 |
-| Eye watcher | (p3+) 5 / 6 / 6 | 1 |
-| Red / Purple spiderling | 3 (p1) | 2 / 1 |
-| Green spiderling, Bloated spider | 6 (p1) | 2 / 1 |
-| Stilt spider | 8 (p1) | 1 |
+| Demon eye | – / – / 15 / 16 / 18 | – / – / 4 / 4 / 4 |
+| Eye watcher | – / – / 5 / 6 / 6 | 1 |
+| Red / Purple spiderling | 3 (jen patro 1) | 2 / 1 |
+| Green spiderling, Bloated spider | 6 (jen patro 1) | 2 / 1 |
+| Stilt spider | 8 (jen patro 1) | 1 |
 
-### Modifikátory runu (challenge)
+### Výzvy
 
-`RunRules.enemy_health` a `enemy_damage` aplikuje `toughen_enemies` jednou na každou novou entitu
-`Enemy` (včetně bossů a minions) a každý `EnemyBullet` (značka `Toughened`). Škáluje HP, `ContactDamage`
-a `Leaper.damage`.
+Některé výzvy zesilují úplně všechny nepřátele – i bosse, jejich pomocníky a nepřátelské střely.
 
-| Challenge | HP | Damage |
+| Výzva | HP nepřátel | Poškození nepřátel |
 |---|--:|--:|
 | Horde | × 1,6 | × 1,3 |
-| Bane | × 1,6 | × 1,3 (+ bez regenerace armoru) |
-| ostatní | × 1,0 | × 1,0 |
+| Bane | × 1,6 | × 1,3 (a armor se neobnovuje) |
+| ostatní | beze změny | beze změny |
 
-### Elity / affixy
+### Elitní nepřátelé
 
-Neexistují. Žádný nepřítel nemá náhodné modifikátory; jediné „varianty“ jsou rage fáze bossů
-(viz [Bossové](/docs/enemies/bosses)).
+Ve hře nejsou. Jediná „silnější verze“ je fáze zuřivosti bossů (viz [Bossové](/docs/enemies/bosses)).
 
 ### Dropy
 
-`systems/items.rs` → `enemy_drops` běží, když dohraje animace smrti nepřítele bez `NoDrop`:
+Z nepřátel padá náhodně **mince** nebo **krabička munice** (pro tvé zbraně). Hra má pojistku proti
+smůle – čím déle nic nepadlo, tím vyšší šance:
 
-1. `kills_without_drop += 1`.
-2. Hod `roll(6)` (0–5); drop, pokud `kills_without_drop + hod > 4` (`GUARANTEED_DROP`).
-3. Drop = náhodně Coin nebo ammo box (Pistol / Shotgun / SubMachine); `common_drop` upraví typ munice
-   podle hráčova loadoutu. Počítadlo se vynuluje.
+| Zabití od posledního dropu | 1. | 2. | 3. | 4. | 5. |
+|---|--:|--:|--:|--:|--:|
+| Šance na drop | 33 % | 50 % | 67 % | 83 % | 100 % |
 
-Šance tedy roste: 1. kill 33 %, 2. 50 %, 3. 67 %, 4. 83 %, 5. kill bez dropu = jistota.
-`NoDrop` mají: všichni vyvolaní (hatchlingové bossů) a King slime. Stejný filtr používá i Midas
-(`midas_kill_coins` — bonusové mince z killů). Ostatní bossové se do pity počítají jako běžný kill. Zabití (kromě `Minion`) se zapisují do
-`RunStats.kills_of` pro mise.
+Pomocníci bossů a King slime nic nedropnou (a nedávají ani bonusové mince z Midase). Zabití se
+počítají do misí v [Progresi](/docs/progression).
 
-## Interakce
+## Tipy a souvislosti
 
-- [Dungeon](/docs/dungeon) — `RoomKind`, `spawns` místnosti, témata, gates.
-- [Artefakty a předměty](/docs/artefacts-items) — truhly po Ambush/boss místnosti, ammo a mince z dropů.
-- [Progrese](/docs/progression) — challenges (Horde, Bane), mise na kills a bosse.
+- Přepadení je náročné, ale odměnou je zbraňová truhla – viz [Artefakty a předměty](/docs/artefacts-items).
+- Na patře 1 je skoro polovina poolu pavouků; od patra 2 už je pool ve všech tématech stejný.
+- Výzvy Horde a Bane dělají z bossů opravdové houby na kulky (Argus má 192 HP).
+- Typy místností, témata a mříže popisuje [Dungeon](/docs/dungeon).
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/rooms.rs` — `enemy_limit`, `wave_plan`, `update_rooms`, `enter`, `spawn_wave`, `RoomEvent`.
-- `enemies.rs` — `pick`, `pick_boss`, `pick_where`, `available_in`, `health_multiplier`,
-  `damage_multiplier`, `scale_stat`, `COMMON_SPAWN_SECONDS`, `BOSS_SPAWN_SECONDS`, `FINAL_FLOOR`.
-- `dungeon/theme.rs` — `Theme::for_floor`, `FIRST_FLOOR`, `LATER`.
-- `scenes/ingame.rs` — reakce na `RoomEvent` (truhly, žebřík, vítězství).
-- `systems/rules.rs` — `toughen_enemies`; `rules.rs` — `RunRules`; `progress/challenges.rs`.
-- `systems/items.rs` → `enemy_drops`; `items.rs` → `drop_threshold_reached`, `DROP_ROLL_RANGE`.
+- Počet nepřátel neroste s patrem – závisí jen na velikosti místnosti.
+- Místnost se neotevře, dokud ve vzduchu letí nepřátelské střely. U King slime to po jeho smrti může
+  chvíli trvat.
+- Nepřítel se může zhmotnit hned vedle tebe – místo objevení nebere ohled na tvou pozici (chrání tě jen
+  to, že zhmotňující se nepřítel 2 s nezraňuje).
+- Všichni bossové kromě King slime se počítají do pojistky dropů jako běžné zabití.
+- Podle příběhu má být patro 5 vždy Temple s finálním bossem, ve hře je téma patra 5 náhodné.
 
-## Jak přidat nový spawn pravidlo / pool
+## Nápady na rozšíření
 
-1. Pro nového nepřítele jen nastav `min_floor` / `max_floor` / `themes` v `EnemyKind::spec()` — pool se
-   sestaví sám.
-2. Pro váhy (dnes rovnoměrné) by bylo potřeba přidat pole `weight` do `EnemySpec` a upravit `pick_where`
-   (vážený výběr místo `rng.below(pool.len())`).
-3. Pro jiný počet nepřátel uprav `MIN_ENEMIES`, `MAX_ENEMIES`, `AREA_PER_ENEMY` nebo `AMBUSH_*` v
-   `systems/rooms.rs`; test `wave_plan` v tomtéž souboru.
-
-## Nápady / chybí
-
-- **Hustota spawnu neroste s patrem** — limit závisí jen na ploše místnosti. TODO.md chce „rising spawn
-  density“; jednoduchá úprava je `MAX_ENEMIES + patro`.
-- Výběr je rovnoměrný, takže na patře 1 je 5/11 šance na pavoučího nepřítele a Rat je stejně častý jako
-  Eye watcher. Váhy by umožnily „vzácné“ nepřátele.
-- Témata ovlivňují pool jen na patře 1 (Spider). Na patrech 2–5 je pool běžných nepřátel ve všech
-  tématech identický — téma mění jen bosse.
-- `story.md` plánuje „patro 5 = Temple + finální boss“; kód téma na patře 5 losuje.
-- Vyčištění místnosti čeká i na dolet nepřátelských projektilů s `RoomId` (počítají se do
-  `living_enemies`); u King slime to může zdržet otevření dveří.
-- Spawn body se vybírají bez ohledu na pozici hráče — nepřítel se může zhmotnit hned vedle něj
-  (zmírňuje to jen 2 s neškodného `Spawning`).
+- Víc nepřátel na vyšších patrech (např. maximum 12 + číslo patra).
+- Vzácní nepřátelé – různé šance na výběr místo rovnoměrného losování.
+- Vlastní nepřátelé pro každé téma, aby se patra 2–5 lišila i běžnými nepřáteli.
+- Bezpečná vzdálenost od hráče pro místa objevení.

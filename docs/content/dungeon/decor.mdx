@@ -1,171 +1,85 @@
 ---
-title: Dekorace a props
-description: Jak se rozmisťují pochodně, prapory, kosti, pavučiny a tematické doplňky, a katalog všech sprite props.
+title: Dekorace
+description: Pochodně, prapory, kosti, pavučiny a tematické doplňky – kde se v místnostech objevují a co dělají.
 ---
+
+Dekorace dávají každému patru atmosféru: pochodně na zdech, prapory, hromádky kostí,
+pavučiny a tematické doplňky jako rampouchy, svítící houby nebo pavoučí kokony. Většina
+je čistě vizuální, ale některé svítí a mění tak osvětlení místnosti. Rozmisťují se náhodně
+spolu s pastmi a sudy.
 
 ## Jak to funguje
 
-Dekorace (`DecorKind`) plánuje `decor::plan` pro každou místnost zvlášť, deterministicky
-z proudu `Map`. Výstupem je seznam `Decor { kind, tile }`, který `prefabs::decor` převede na
-entity. Do stejného seznamu patří i pasti a sudy – rozdíl mezi „dekorací“ a „pastí“ je jen
-v tom, jaké komponenty prefab přidá.
+- Dekorace se nikdy nepřekrývají, neleží na místech, kde se rodí nepřátelé, a drží se aspoň
+  3 dlaždice ode dveří.
+- Každý druh má svá typická místa: pochodně, prapory a rampouchy visí na čele zdi, pavučiny
+  v rozích u bočních zdí, kosti a zamrzlé lebky leží volně na podlaze, houby, krystaly
+  a kokony se tisknou ke zdem.
+- Pochodeň je s 10% šancí **zhaslá** a nesvítí. Na čelní zdi je natočená dopředu, na boční
+  z profilu.
+- Kosti, houby, krystaly, kokony a pavučiny mají po 2 podobách, rampouchy 3.
 
-### Kandidátní místa
+### Kolik dekorací kde
 
-| Množina | Definice | Kdo ji používá |
-|---|---|---|
-| `top_faces` | zeď, pod kterou je podlaha (čelo zdi) | pochodně, prapory, rampouchy, šípové pasti, plamenomety |
-| `side_faces` | podlaha vedle boční zdi (vlevo/vpravo) | pochodně (boční), pavučiny |
-| `open_floor` | podlaha aspoň 1 dlaždici od okraje místnosti | kosti, zamrzlé lebky |
-| `spike_floor` | `open_floor` s okolím 5 × 5 bez zdí | bodce |
-| `patch_floor` | `open_floor` s okolím 4 × 4 bez zdí | gejzír, ledová a pavučinová plocha (2 × 2) |
-| `hugging` | `open_floor` přiléhající hranou ke zdi | houby, ledové krystaly, kokony |
-| `roomy` | `open_floor` bez zdi v kříži kolem | sudy, květináče |
-
-Každá vybraná dlaždice se zabere (`taken`) – nic se nepřekrývá, nic neleží na spawn bodu
-a vše je aspoň 3 dlaždice (Manhattan) od dlaždic dveří.
-
-### Pořadí a počty
-
-| Krok | Normal | Ambush | Treasure | Ostatní |
+| Dekorace | Normal | Ambush | Treasure | Start, Shop, Sacrifice, Boss |
 |---|---|---|---|---|
-| Pochodně | `min(2 + plocha/180, 5)` | jako Normal | 0 (má 4 fixní) | 0 |
-| Prapory | 2 | 2 | 0 | 0 |
-| Pavučiny (zeď) | `mix.cobwebs` (2, Spider 5) | 0 | 3 | 0 |
-| Kosti | 2 | 2 | 3 | 0 |
-| Bodce | `1 + below(mix.spikes)` | – | – | – |
-| Plochy 2 × 2 | podle mixu | podle mixu | – | – |
-| Tematické doplňky | podle mixu | podle mixu | – | – |
-| Šípové pasti, plamenomety | podle mixu | podle mixu | – | – |
-| Sudy a květináče | podle mixu | podle mixu | – | – |
+| Pochodně | 2–5 (víc ve větších místnostech) | 2–5 | 4 pevně rozmístěné | – |
+| Prapory | 2 | 2 | – | – |
+| Pavučiny na zdech | 2 (Spider 5) | – | 3 | – |
+| Kosti | 2 | 2 | 3 | – |
+| Tematické doplňky | podle tématu | podle tématu | – | – |
 
-„Ostatní“ = Start, Shop, Sacrifice, Boss – mají jen fixní zařízení z `furnish.rs`.
-Konkrétní hodnoty mixu pro každé téma jsou na stránce [Patra a témata](/docs/dungeon/themes).
-
-- Pochodeň je s 10% šancí **zhaslá** (`TorchOff`, bez světla). Na čele zdi je natočená
-  dopředu, na boční zdi z profilu (zrcadleně podle strany).
-- Pavučina na zdi má 2 varianty a zrcadlí se podle strany zdi.
-- Kosti 2 varianty, houby/krystaly/kokony 2 varianty, rampouchy 3 varianty.
-
-### Fixní zařízení (`furnish.rs`)
-
-Ve speciálních místnostech nejsou fixtury náhodné, ale umístěné v pixelech vůči rámu místnosti
-(`Frame::place`). Přehled podle místnosti je v [Typech místností](/docs/dungeon/rooms).
-Koberec (`Carpet`) je skládaný z 13 dlaždic textury `CARPET_TILEMAP` (4 × 4): rohy,
-hrany ve 2 střídajících se variantách a střed.
+Start, Shop, Sacrifice a Boss mají jen své pevné vybavení (obchodník a stoly, oltář, nápovědy
+kláves…). Přehled v [Typech místností](/docs/dungeon/rooms). Počty tematických doplňků
+v [Patrech a tématech](/docs/dungeon/themes).
 
 ## Obsah
 
-### Druhy dekorací (`DecorKind`)
-
-| `DecorKind` | Prop | Funkce | Světlo |
+| Dekorace | Kde | Funkce | Světlo |
 |---|---|---|---|
-| `Torch { mount, lit }` | `Torch` / `TorchOff` | dekorace | teplé (230, 201, 114), r = 75, i = 1,25 (jen rozsvícená) |
-| `Banner` | `Banner` (4 snímky × 0,15 s) | dekorace | – |
-| `Bones { variant }` | `Bones` | dekorace | – |
-| `Cobweb { variant, left }` | `Cobweb` | dekorace (nezpomaluje) | – |
-| `Spike` | `Spike` | past | – |
-| `Pot`, `Barrel`, `ExplosiveBarrel`, `PoisonBarrel`, `FrostBarrel` | rozbitné objekty | viz [Objekty](/docs/dungeon/objects) | – |
-| `Flamethrower` | `Flamethrower` | past | červené, bliká |
-| `FireGeyser` | `FireGeyser` | past (nespawnuje se) | oranžové r = 90 |
-| `IcePatch` | `IcePatch` | kluzká plocha (nespawnuje se) | – |
-| `WebPatch` | `WebPatch` | zpomaluje hráče i střely | – |
-| `ArrowTrap` | `ArrowTrap` | past | – |
-| `Icicles { variant }` | `Icicles` | dekorace (Ice) | – |
-| `IceCrystals { variant }` | `IceCrystals` | dekorace (Ice) | – |
-| `FrozenSkull` | `FrozenSkull` | dekorace (Ice) | – |
-| `Mushrooms { variant }` | `Mushrooms` | dekorace (Moss) | zelené (120, 230, 150), r = 55, i = 0,8 |
-| `Cocoon { variant }` | `Cocoon` | dekorace (Spider) | – |
+| Pochodeň | všechna témata | dekorace | teplé žluté (jen rozsvícená) |
+| Prapor | všechna témata | dekorace, vlaje | – |
+| Kosti | všechna témata | dekorace | – |
+| Pavučina na zdi | všechna témata, nejvíc Spider | dekorace (nezpomaluje) | – |
+| Pavučinová plocha | Spider | zpomaluje hráče a chytá střely | – |
+| Kokon | Spider | dekorace | – |
+| Rampouchy | Ice | dekorace | – |
+| Ledové krystaly | Ice | dekorace | – |
+| Zamrzlá lebka | Ice | dekorace | – |
+| Svítící houby | Moss | dekorace | zelené |
+| Koberec | Treasure, Shop | dekorace | – |
+| Cihly | Treasure | dekorace | – |
+| Svícny, knihy, řetězy, socha anděla | Sacrifice | dekorace oltáře | svícny rudé |
 
-### Katalog props (`props.rs` → `Prop`)
-
-Velikost na obrazovce = snímek × měřítko. Všechny props jsou na vrstvě `Layer(-1)` (pokud
-prefab neurčí jinak) a reagují na světlo (`Lit`).
-
-| Prop | Textura | Snímek × měřítko | Animace | Použití |
-|---|---|---|---|---|
-| `Portal` | `PORTAL` | 96 × 90 × 2 | 8 × 0,125 s | lobby |
-| `WeaponRack` | `SWORDS` | 26 × 35 × 3 | – | lobby |
-| `Torch` | `TORCH` (4 × 4) | 32 × 32 × 2 | 4 × 0,15 s | dungeon, lobby, Treasure |
-| `TorchOff` | `TORCH` | 32 × 32 × 2 | – | dungeon |
-| `Bones` | `BONES` (2 řádky) | 16 × 16 × 4 | – | dungeon, lobby |
-| `Cobweb` | `COBWEB` (2 řádky) | 16 × 16 × 4 | – | dungeon, lobby |
-| `Armorstand` | `ARMORSTAND` | 17 × 32 × 4 | – | lobby |
-| `TaskBoard` | `TASKBOARD` | 90 × 60 × 3 | – | lobby (nástěnka) |
-| `Pot` | `POT` (4 × 2) | 64 × 64 × 3 | – | lobby (statický) |
-| `CraftingTable` | `CRAFTINGTABLE` | 96 × 48 × 3 | – | lobby (stůl se zbraněmi) |
-| `Box` | `BOXES` | 30 × 30 × 3 | – | lobby |
-| `Chains` | `CHAINS` | 16 × 32 × 4 | – | lobby, Sacrifice |
-| `Rock` | `ROCK` (2 řádky) | 16 × 16 × 4 | – | lobby |
-| `Bookshelf` | `BOOKSHELF` | 64 × 57 × 3 | – | lobby |
-| `MapTable` | `MAPTABLE` | 59 × 38 × 3 | – | lobby |
-| `Scientist` | `SCIENTIST` | 16 × 40 × 2,5 | 6 × 0,1 s | lobby |
-| `Banner` | `BANNER` | 32 × 32 × 2 | 4 × 0,15 s | dungeon |
-| `Spike` | `SPIKE` | 16 × 16 × 4 | 4 × 0,175 s | dungeon |
-| `Shopkeeper` | `SHOPKEEPER` | 80 × 90 × 4 | 10 × 0,17 s ping-pong | Shop |
-| `ShopTable` | `SHOPTABLE` | 96 × 64 × 1,5 | – | Shop |
-| `SlotMachine` | `SLOTMACHINE` (6 × 3) | 64 × 64 × 3 | vlastní klipy | Shop |
-| `Chest` | `CHEST` (4 × 2) | 16 × 16 × 4 | 4 × 0,175 s | truhly |
-| `Bricks` | `BRICKS` (2 řádky) | 16 × 16 × 4 | – | Treasure |
-| `AngelStatue` | `ANGEL_STATUE` | 64 × 64 × 4 | – | Sacrifice |
-| `Candlestick` | `CANDLESTICK` (4 × 2) | 16 × 16 × 3 | 4 × 0,1 s | Sacrifice |
-| `Pentagram` | `PENTAGRAM` | 150 × 80 × 1,5 | – | Sacrifice |
-| `LayingBook` | `LAYING_BOOK` | 16 × 16 × 4 | – | Sacrifice |
-| `Ladder` | `LADDER` (+ tematické) | 32 × 32 × 3 | – | po bossovi |
-| `Flamethrower` | `FLAMETHROWER` | 16 × 32 × 4 | 4 × 0,175 s | past |
-| `FireGeyser` | `FIRE_GEYSER` | 32 × 64 × 2 | 8 × 0,2 s | past (nepoužito) |
-| `IcePatch` | `ICE_PATCH` | 32 × 32 × 4 | – | nepoužito |
-| `WebPatch` | `WEB_PATCH` | 32 × 32 × 4 | – | Spider |
-| `ArrowTrap` | `ARROW_TRAP` | 16 × 16 × 4 | – | Temple |
-| `Icicles` | `ICICLES` (3 řádky) | 16 × 16 × 4 | – | Ice |
-| `IceCrystals` | `ICE_CRYSTALS` (2 řádky) | 16 × 16 × 4 | – | Ice |
-| `FrozenSkull` | `FROZEN_SKULL` | 16 × 16 × 4 | – | Ice |
-| `Mushrooms` | `MUSHROOMS` (2 řádky) | 16 × 16 × 4 | – | Moss |
-| `Cocoon` | `COCOON` (2 řádky) | 16 × 16 × 4 | – | Spider |
-| `SurfaceShade` | `SURFACE_SHADE` | 16 × 16 × 4 | – | stín kapaliny pod zdí |
-| `IceSurface`, `LavaSurface`, `WaterSurface`, `BogSurface` | `SURFACE_*` (141 řádků) | 16 × 16 × 4 | 1/4/8/1 × 0,25 s | povrchy |
-| `IceShore`, `LavaShore`, `WaterShore`, `BogShore` | `SHORE_*` (40 řádků) | 16 × 16 × 4 | – | břehy |
+Pasti (bodce, plamenomety, šípové pasti) a sudy se rozmisťují spolu s dekoracemi – viz
+[Pasti a nebezpečí](/docs/dungeon/hazards) a [Objekty](/docs/dungeon/objects).
 
 ### Lobby
 
-Lobby (`scenes/lobby.rs`, mřížka `tilemap::lobby()` 29 × 10) má 22 pevně rozmístěných props
-(`PROPS`): 2 stojany na zbraně, 4 pochodně, 2 kosti, 2 pavučiny, 2 stojany na brnění, bedna,
-2 řetězy, 4 kameny, 2 knihovny, mapový stůl. K tomu portál, nástěnka, stůl se zbraněmi,
-3 květináče a Vědec.
+Lobby je pevně zařízená místnost: 2 stojany na zbraně, 4 pochodně, kosti, pavučiny,
+2 stojany na brnění, bedna, řetězy, 4 kameny, 2 knihovny a mapový stůl. K tomu portál,
+nástěnka, stůl se zbraněmi, 3 květináče a Vědec. Lobby i hlavní menu používají vzhled
+Stone tématu.
 
-## Interakce
+## Tipy a souvislosti
 
-- [Osvětlení](/docs/dungeon/lighting) – pochodně, svícny, houby a pasti jsou zdroje světla.
-- [Povrchy](/docs/dungeon/surfaces) – kapaliny se nerozlévají pod dekorace.
-- [Pasti](/docs/dungeon/hazards) – pasti se plánují ve stejném průchodu.
+- [Osvětlení](/docs/dungeon/lighting) – pochodně, houby a svícny jsou zdroje světla.
+- [Povrchy a kapaliny](/docs/dungeon/surfaces) – louže se dekoracím vyhýbají.
+- [Pasti a nebezpečí](/docs/dungeon/hazards) – pasti se rozmisťují ve stejném kroku.
+- Zhaslé pochodně dělají v místnosti tmavší kouty – v Spider patře bývá viditelnost horší.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `dungeon/decor.rs` – `DecorKind`, `Mount`, `Decor`, `Counts::for_room`, `Planner`, `plan`, `patch_tiles`
-- `dungeon/furnish.rs` – `FixtureKind`, `Fixture`, `Carpet`, `Furnishing`, `plan`
-- `props.rs` – `Prop`, `PropSpec`, `Look`, `Animated`
-- `prefabs/fixtures.rs` – `prop`, `decor`, `furnishing`, `key_hint`
-- `scenes/lobby.rs` – `PROPS`, `POTS`
+- Start, Shop, Sacrifice a Boss místnosti nemají žádné náhodné dekorace – boss aréna
+  působí holá.
+- Pavučina na zdi je čistě vizuální, nezpomaluje ani nechytá střely.
+- Kokony, rampouchy a krystaly nemají žádnou mechaniku.
+- Prapor vypadá ve všech tématech stejně.
 
-## Jak přidat nový …
+## Nápady na rozšíření
 
-**Nová dekorace (např. „lebky na kůlu“ pro Temple)**
-
-1. Textura do `tex` makra a seznamu přednačítání v `assets.rs`.
-2. `Prop::SkullPike` + `PropSpec` v `props.rs` (`still`, `variants` nebo vlastní s `Animated`).
-3. `DecorKind::SkullPike { variant }` v `dungeon/decor.rs`.
-4. Pole `skull_pikes` v `TrapMix` + hodnota v `Theme::mix` (např. jen pro Temple).
-5. Umístění v `decor::plan` – nejjednodušeji přidat řádek do pole `themed`
-   (`(mix.skull_pikes, &hugging, 2, |variant| DecorKind::SkullPike { variant })`).
-6. Spawn: větev v `prefabs::decor` (`prop(world, Prop::SkullPike, top_left, Look::row(variant, false), textures)`),
-   případně `Light::rgb(...)`.
-7. Doplň test v `decor.rs`/`theme.rs`, pokud má téma nový mix.
-
-## Nápady / chybí
-
-- Dekorace v **Start, Shop, Sacrifice a Boss** místnostech chybí úplně – boss aréna je holá.
-- Lobby props (`Bookshelf`, `Armorstand`, `WeaponRack`, `Rock`, `Box`, `MapTable`) by mohly
-  zdobit Stone/Temple dungeon.
-- Pavučina na zdi je čistě vizuální (nezpomaluje) – mohla by např. chytat střely jako `WebPatch`.
-- Kokony, rampouchy a krystaly nemají žádnou mechaniku (viz nápady v [Pastech](/docs/dungeon/hazards)).
-- Prapory nemají tematickou variantu (stejný prapor v každém biomu).
+- Vybavení z lobby (knihovny, stojany na brnění a zbraně, kameny, bedny, mapový stůl) by
+  mohlo zdobit Stone a Temple patra.
+- Lebky na kůlech pro Temple, tematické prapory.
+- Dekorace v boss arénách.
+- Lobby by mohlo měnit vzhled podle postupu hráče.

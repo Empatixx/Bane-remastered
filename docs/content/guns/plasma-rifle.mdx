@@ -3,76 +3,45 @@ title: Plasma Rifle
 description: Automatická plazmová puška, jejíž střely potřísní okolí polovičním poškozením.
 ---
 
-**Plasma Rifle** (`GunKind::PlasmaRifle`) — Automat s plošným efektem: 6,25 ran/s, zásah zraní i nepřátele kolem.
+**Plasma Rifle** je automat s plošným efektem: přes 6 ran za sekundu a každý zásah zraní i nepřátele okolo.
 
 ## Jak to funguje
 
-### Statistiky
+Automatická zbraň — střílí, dokud hráč drží tlačítko. Zelené plazmové koule při dopadu (i o zeď) **cáknou**: všichni nepřátelé a rozbitné objekty v okolí cca 1,25 × 1,25 dlaždice dostanou polovinu poškození (nejméně 1). Přímo zasažený nepřítel dostane jen plnou ránu, cákanec ne.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 2–3 |
-| Reálné poškození na projektil | 2 (průměr 2) |
-| Projektilů na výstřel | 1 |
-| Kadence | 6,25 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 12,5 |
-| Odchylka (`inaccuracy`) | 0,12 → ±0,06 rad (±3,4°) |
+| Poškození na ránu | 2 |
+| Cákanec | 1 okolním cílům |
+| Kadence | 6,25 rány/s |
+| DPS (jeden cíl) | 12,5 |
 | Režim | automatická |
+| Rozptyl | ±3,4° |
 | Zásobník / rezerva | 24 / 240 |
-| Přebíjení | 1,4 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,12 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::SubMachine` — dva sloupce nábojů (krok 15 px, sloupce po 25 px) |
+| Přebití | 1,4 s |
+| Kritická šance | 0 % |
+| Projektil | plazma, střední rychlost, zelené světlo |
+| Průraz | 0 |
+| Otřes obrazovky | velmi slabý |
 | Nábojnice | ne |
-| Zvuk výstřelu / přebití | `PlasmaShoot` / `PlasmaReload` |
-| Textura / velikost ikony | `tex::GUNS_PLASMA_RIFLE` / 104 × 46 px |
-| Klíč v profilu | `"plasma_rifle"` |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Automatická, `Round::Plasma` (650 px/s, zelené světlo), odchylka ±0,06 rad (±3,4°).
+- Silná proti hloučkům nepřátel — i střela, která mine, může cáknout na nepřátele u zdi.
+- Cákanec rozbíjí sudy a hrnce v okolí.
+- Uzly **Damage** zvyšují i cákanec — od poškození 4 dává okolí 2.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Plasma` |
-| Rychlost | 650 px/s |
-| Velikost sprite / hitbox | 24 × 24 / 16 × 16 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | splash (poloviční poškození v 80 × 80) |
-| Světlo | zelené (60, 255, 90) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::ROUND_PLASMA` |
+- Stůl se zbraněmi ukazuje poškození 2–3, ale 3 nikdy nepadne.
+- Cákance se nepočítají jako zásahy do přesnosti ani do schopností, které počítají zásahy.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1,4 s, pak se zásobník doplní z rezervy (max. 24 nábojů). Rezervu 240 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- `splash: true` — při zásahu (i o zeď) dostanou všichni nepřátelé a rozbitné objekty v oblasti 80 × 80 kolem místa dopadu poloviční poškození (min. 1), přímo zasažený nepřítel ne. Typ poškození `Explosion`.
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::PlasmaRifle`, větev v `GunKind::spec`, `Round::Plasma` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Plasma Rifle“)
-- `assets.rs` → `tex::GUNS_PLASMA_RIFLE`
-
-## Nápady / chybí
-
-- Nabíjený výstřel (podržení = větší koule s větším splashem).
+- Nabíjený výstřel — podržením větší koule s větším cákancem.

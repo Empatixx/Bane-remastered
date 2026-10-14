@@ -1,92 +1,74 @@
 ---
 title: Pohyb a úhyb
-description: Zrychlení a dojezd hráče, vliv povrchů a efektů na rychlost a úhybový kotoul (dodge) s imunitou.
+description: Jak rychle se postava pohybuje, co ji zpomalí a jak funguje úhybový kotoul, během kterého jsi nezranitelný.
 ---
+
+Postava se nepohybuje „skokově“ — chvíli trvá, než se rozběhne, a po puštění kláves ještě kousek dojede.
+Hlavní obranou je **úhybový kotoul**: krátký rychlý přesun, během kterého tě nic nezraní.
 
 ## Jak to funguje
 
-### Chůze (`systems/steering.rs` → `steer_player_on`)
+### Chůze
 
-Pohyb běží ve fixním kroku (60 Hz). Rychlost se nenastavuje natvrdo, ale **zrychluje s útlumem**:
+- Plné rychlosti dosáhneš zhruba za půl až jednu sekundu; po puštění kláves se zastavíš za necelé 2 sekundy.
+  Otočení do opačného směru trvá déle než samotné zastavení.
+- Základní rychlost je asi 6,4 dlaždice za sekundu, s talentem *Swiftwind Steps* (který máš vždy) asi 7 dlaždic za sekundu.
+- Animace postavy se řídí směrem, kterým jdeš (ne směrem míření).
+- Ve vodě za sebou necháváš vlnky.
 
-- každý krok se rychlost vynásobí `keep = 1 − damping · dt` a přičte se zrychlení směrem vstupu,
-  nastavené tak, aby ustálená rychlost byla přesně cílová,
-- `PLAYER_DAMPING = 5` → plné rychlosti dosáhne zhruba za 0,5–1 s, po puštění kláves dojede do
-  zastavení za necelé 2 s; obrat trvá déle než zastavení,
-- na ledu `ICE_DAMPING = 1,1` → hráč klouže přes 3× déle.
+### Co mění rychlost
 
-Cílová rychlost = `PLAYER_SPEED` (411 px/s) × povrch × efekty:
+| Vliv | Rychlost | Poznámka |
+|------|----------|----------|
+| Voda | 55 % | |
+| Bažina | 45 % | |
+| Pavučina | 50 % | pavučiny na zemi i ty, které plivou pavoučí nepřátelé |
+| Led | 100 % | rychlost se nemění, ale postava klouže — rozjezd i zastavení trvají přes 3× déle |
+| Berserk (artefakt *Berserk Pot*) | 130 % | 15 s |
+| Talent *Swiftwind Steps* | 110 % | vždy aktivní |
+| Zmrazení (mrazivý sud) | — | 1,5 s nemůžeš ovládat pohyb, jen dojedeš setrvačností |
 
-| Modifikátor | Násobek | Zdroj |
-|-------------|---------|-------|
-| Voda | 0,55 | `Surface::Water` |
-| Bažina | 0,45 | `Surface::Bog` |
-| Pavučina | 0,5 | entita `Cobweb` nebo `FloorPatch(Web)` |
-| Led | rychlost beze změny, jen útlum 1,1 | `Surface::Ice` nebo `FloorPatch(Ice)` |
-| Berserk (artefakt *Berserk Pot*) | 1,3 | komponenta `Berserk`, 15 s |
-| Talent *Swiftwind Steps* | 1,1 | `Perks.speed` (vždy, je zdarma) |
+Zpomalení z povrchů se nesčítají — platí jen jedno (voda má přednost před bažinou a ta před pavučinou).
+Berserk a talent se k nim násobí.
 
-Povrchové násobky se nesčítají — platí první shoda v pořadí voda → bažina → pavučina. Berserk a talent
-se násobí s nimi. Ve stavu `Frozen` (mrazivý sud) je vstup ignorován a hráč jen dojíždí. Mrtvý hráč má
-rychlost 0.
+### Úhyb (kotoul)
 
-Animace (`systems/player_animation.rs`) volí klip jen podle stisknutého směru: vlevo/vpravo má přednost
-před nahoru/dolů, bez vstupu `IDLE`. Na vodě se za hráčem dělají vlnky (`ripple_on_water`).
+| Vlastnost | Hodnota |
+|-----------|---------|
+| Klávesa | Space |
+| Délka kotoulu | 0,36 s |
+| Rychlost | asi 12 dlaždic za sekundu (skoro 2× rychlejší než chůze) |
+| Uražená vzdálenost | asi 4 dlaždice |
+| Nabíjení | 1,26 s od začátku kotoulu |
+| Nezranitelnost | po celou dobu kotoulu |
 
-### Úhyb (`systems/dodge.rs`)
+Pravidla úhybu:
 
-| Parametr | Hodnota |
-|----------|---------|
-| Klávesa | Space (`Action::Dodge`) |
-| Trvání kotoulu | 0,36 s (`DODGE_SECONDS`) |
-| Rychlost | 760 px/s (`DODGE_SPEED`) → dráha ≈ 274 px |
-| Cooldown | 1,26 s od začátku kotoulu (0,36 + 0,9) |
-| Imunita | po celý kotoul (`Invulnerable` = max(zbývající, 0,36 s)) |
-
-Pravidla:
-
-- Směr = aktuální směr pohybu; bez vstupu směrem ke kurzoru (fallback osa X).
-- Nelze uhnout: během kotoulu, během cooldownu, ve stavu `Frozen`, mrtvý, nebo když
-  `Perks.dodge == false` (výzva *Two Left Feet* vypíná úhyb přes `RunRules.dodge`).
-- Během kotoulu se **nestřílí** (`shoot` vynechává entity s `Dodge`), rychlost se ignoruje povrchy i
-  perky a hráč je imunní vůči všemu, co jde přes `hurt_player`.
-- Navíc kotoul explicitně „přeletí“: lávu (`burn_on_lava` vynechává `Dodge`), laser Golema a mrazivý
-  výbuch sudu (`freeze_around` vynechává `Dodge`).
-- Vizuál: hráčův sprite se zprůhlední a místo něj se přehraje `PLAYER_DODGE` (64 × 76, 6 snímků,
-  otočený podle směru). Každých 0,04 s vznikne modravý „afterimage“, který zmizí za 0,25 s.
-- Cooldown ukazuje bílý proužek (36 × 5 px, alfa 0,45) 10 px pod hráčem, který se zmenšuje ke středu
-  a zmizí, když je úhyb znovu připraven.
+- Kotoul míří směrem, kterým se pohybuješ. Když stojíš, kotoulíš se směrem ke kurzoru.
+- Uhnout nejde během jiného kotoulu, během nabíjení, když jsi zmrazený, ani ve výzvě *Two Left Feet*, která úhyb vypíná.
+- Během kotoulu **nestřílíš**, povrchy tě nezpomalují a jsi imunní vůči veškerému poškození.
+- Kotoulem můžeš bezpečně přeletět **lávu**, **laser Golema** a **mrazivý výbuch sudu**.
+- Při kotoulu se přehraje speciální animace a za postavou zůstávají modravé „stíny“.
+- Pod postavou se po kotoulu ukáže bílý proužek, který se zkracuje — až zmizí, můžeš uhnout znovu.
 
 Úhyb funguje i v lobby.
 
-## Interakce
+## Tipy a souvislosti
 
-- Imunita z úhybu sdílí komponentu `Invulnerable` s imunitou po zásahu — viz [Model poškození](/docs/player/damage).
+- Nezranitelnost z kotoulu i po zásahu je tentýž efekt — viz [Zdraví, brnění a poškození](/docs/player/damage).
 - Povrchy a pasti: [Dungeon a svět](/docs/dungeon).
-- Pavučiny plive pavoučí boss / *WebSpitter*: [Nepřátelé](/docs/enemies).
+- Pavučiny plive pavoučí boss a *WebSpitter*: [Nepřátelé](/docs/enemies).
 - *Berserk Pot*: [Artefakty a předměty](/docs/artefacts-items).
 - Výzva *Two Left Feet* (bez úhybu): [Průběh hry a progrese](/docs/progression).
+- Na ledu začni brzdit dřív — dojezd je výrazně delší než na běžné podlaze.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/steering.rs` → `steer_player_on`, `accelerate_with`, `PLAYER_SPEED`, `*_SLOWDOWN`, `*_DAMPING`
-- `systems/dodge.rs` → `start_dodge`, `tick_dodges`, `show_dodge_visual`, `show_dodge_cooldown`, `fade_afterimages`
-- `components/dodge.rs` → `Dodge`, `DodgeCooldown`, `DodgeVisual`, `DodgeBar`, `Afterimage`
-- `systems/player_animation.rs` → `animate_player`
-- `systems/surfaces.rs` → `burn_on_lava`, `ripple_on_water`
+- Kotoul nemá žádný zvuk, přestože hra zvuk pro „dash“ obsahuje.
+- Během kotoulu se pozastaví i **přebíjení** — když uhneš uprostřed přebíjení, dokončí se až po kotoulu.
+- Délku ani rychlost kotoulu neovlivňuje Berserk ani *Swiftwind Steps*.
 
-## Jak přidat nový modifikátor pohybu
+## Nápady na rozšíření
 
-1. Přidej komponentu (např. `Slowed`) do `components/` a systém, který ji vkládá/odebírá.
-2. V `steer_player_on` přidej `Option<&Slowed>` do dotazu a zapoj násobek do `speed` nebo `boost`.
-3. Pokud má platit i pro úhyb, uprav větev `dodge.direction * DODGE_SPEED` (dnes je konstantní).
-4. Přidej test vedle `a_web_patch_halves_the_top_speed`.
-
-## Nápady / chybí
-
-- Úhyb nemá zvuk — TODO.md zmiňuje existující asset `player_dash`, který Rust nepoužívá.
-- Úhyb je nezávislý na *Swiftwind Steps* i Berserku; zvážit škálování dráhy.
-- Během úhybu nelze střílet, ale lze přebíjet? (`shoot` přeskočí celou entitu, takže **ani přebíjení
-  neběží** — `weapon.advance(dt)` se neposouvá). Pravděpodobně nezáměrné: během kotoulu se zastaví reload.
-- Nápady na talenty: kratší cooldown úhybu, dvojitý úhyb, „perfektní úhyb“ (zpomalení času při těsném vyhnutí).
-- Animace chůze nezohledňuje míření (Gungeon-style otáčení podle kurzoru chybí).
+- Talenty pro úhyb: kratší nabíjení, dvojitý kotoul, „perfektní úhyb“ se zpomalením času při těsném vyhnutí.
+- Otáčení postavy podle míření (jako v Enter the Gungeon).

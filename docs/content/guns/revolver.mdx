@@ -1,78 +1,45 @@
 ---
 title: Revolver
-description: Pomalý těžký revolver se šesti náboji a solidním poškozením na ránu.
+description: Těžký revolver se šesti náboji — pomalejší, ale každá rána pořádně kousne.
 ---
 
-**Revolver** (`GunKind::Revolver`) — Silnější poloautomatická „pistole“: 4–5 poškození na ránu, pomalejší kadence.
+**Revolver** je silnější verze pistole: každá rána ubere 4–5, za cenu pomalejší kadence a menší rezervy.
 
 ## Jak to funguje
 
-### Statistiky
+Poloautomatická zbraň: jedna obyčejná kulka na kliknutí, rozptyl kolem ±5,7°. Má vlastní zvuk výstřelu, přebíjí se zvukem pistole.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 4–6 |
-| Reálné poškození na projektil | 4–5 (průměr 4,5) |
-| Projektilů na výstřel | 1 |
-| Kadence | 2,22 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 10 |
-| Odchylka (`inaccuracy`) | 0,2 → ±0,1 rad (±5,7°) |
+| Poškození na ránu | 4–5 (průměr 4,5) |
+| Kadence | 2,2 rány/s |
+| DPS | 10 |
 | Režim | poloautomatická |
+| Rozptyl | ±5,7° |
 | Zásobník / rezerva | 6 / 60 |
-| Přebíjení | 0,7 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,5 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::Pistol` — jeden sloupec nábojů (krok 15 px) |
-| Nábojnice | ano (nábojnice) |
-| Zvuk výstřelu / přebití | `RevolverShoot` / `PistolReload` |
-| Textura / velikost ikony | `tex::GUNS_REVOLVER` / 70 × 44 px |
-| Klíč v profilu | `"revolver"` |
+| Přebití | 0,7 s |
+| Kritická šance | 0 % |
+| Projektil | kulka, střední rychlost, červené světlo |
+| Průraz | 0 |
+| Otřes obrazovky | střední |
+| Nábojnice | ano |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Poloautomatická, jedna kulka `Round::Bullet`, odchylka ±0,1 rad (±5,7°).
+- Díky vyššímu poškození na ránu z něj procentní upgrady poškození (*Sharpened Bullets*, *Dangerous Bullets*) vytěží víc než slabé zbraně.
+- Dobře se hodí k mutacím **Deadeye** a **Explosive** — viz [Mutace](/docs/guns/mutace).
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Bullet` |
-| Rychlost | 700 px/s |
-| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | červené (255, 0, 0) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::BULLET` |
+- Stůl se zbraněmi ukazuje poškození 4–6, ale 6 nikdy nepadne.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,7 s, pak se zásobník doplní z rezervy (max. 6 nábojů). Rezervu 60 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Vlastní zvuk výstřelu `RevolverShoot`, ale přebíjí zvukem pistole.
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Revolver`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Revolver“)
-- `assets.rs` → `tex::GUNS_REVOLVER`
-
-## Nápady / chybí
-
-- Klasický nápad: přebíjení po jednom náboji (přerušitelné) nebo „fan the hammer“ — rychlé vyprázdnění bubínku při držení.
+- Přebíjení po jednom náboji, které jde přerušit.
+- „Fan the hammer“ — podržením tlačítka rychle vyprázdní bubínek s větším rozptylem.

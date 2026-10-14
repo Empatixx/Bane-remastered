@@ -3,77 +3,48 @@ title: Tesla Gun
 description: Teslova zbraň — jiskra po zásahu přeskočí bleskem na další dva nepřátele.
 ---
 
-**Tesla Gun** (`GunKind::TeslaGun`) — Řetězové poškození proti skupinám.
+**Tesla Gun** je zbraň na řetězové poškození. Modrá jiskra po zásahu přeskočí bleskem na další dva nepřátele a každý dostane plnou ránu.
 
 ## Jak to funguje
 
-### Statistiky
+Poloautomatická zbraň s malým rozptylem (±2,9°). Jiskra letí střední rychlostí a nechává za sebou modré jiskřičky. Po zásahu nepřítele **přeskočí blesk dvakrát** — pokaždé na nejbližšího dosud nezasaženého nepřítele do cca 3,4 dlaždice od posledního cíle. Každý skok dává **plné** poškození a zapraská.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 3–5 |
-| Reálné poškození na projektil | 3–4 (průměr 3,5) |
-| Projektilů na výstřel | 1 |
-| Kadence | 1,82 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 6,36 |
-| Odchylka (`inaccuracy`) | 0,1 → ±0,05 rad (±2,9°) |
+| Poškození na cíl | 3–4 (průměr 3,5) |
+| Zasažených cílů | až 3 (zásah + 2 skoky) |
+| Kadence | 1,8 rány/s |
+| DPS (jeden cíl) | 6,4 |
+| DPS (tři cíle) | až 19 |
 | Režim | poloautomatická |
+| Rozptyl | ±2,9° |
 | Zásobník / rezerva | 8 / 80 |
-| Přebíjení | 1,2 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,3 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::Shotgun` — jeden sloupec brokových nábojů `SHOTGUN_AMMO_HUD` (krok 20 px) |
+| Přebití | 1,2 s |
+| Kritická šance | 0 % |
+| Projektil | jiskra, střední rychlost, modré světlo a stopa |
+| Dosah skoku | cca 3,4 dlaždice |
+| Otřes obrazovky | slabý |
 | Nábojnice | ne |
-| Zvuk výstřelu / přebití | `TeslaShoot` / `TeslaReload` |
-| Textura / velikost ikony | `tex::GUNS_TESLA_GUN` / 96 × 50 px |
-| Klíč v profilu | `"tesla_gun"` |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Poloautomatická, `Round::Spark` (600 px/s), odchylka ±0,05 rad. Za letu odhazuje modré jiskry `Trail::VOLT`.
+- Na jednoho nepřítele je slabá, proti skupině patří k nejsilnějším zbraním.
+- Skoky blesku se počítají jako zásahy, takže nabíjí schopnosti, které počítají zásahy.
+- Blesk nepřeskakuje na sudy a hrnce ani na nepřátele, kteří se teprve objevují.
+- Artefakt **Thunder Idol** má vlastní, silnější řetězový blesk — viz [Artefakty a předměty](/docs/artefacts-items).
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Spark` |
-| Rychlost | 600 px/s |
-| Velikost sprite / hitbox | 24 × 24 / 16 × 16 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | chains 2 (řetězový blesk, dosah 220 px) + stopa `Trail::VOLT` |
-| Světlo | modré (80, 160, 255) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::ROUND_SPARK` |
+- Stůl se zbraněmi ukazuje poškození 3–5, ale 5 nikdy nepadne.
+- Blesk Tesly a blesk Thunder Idolu fungují každý jinak (jiný dosah, počet cílů i vzhled).
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1,2 s, pak se zásobník doplní z rezervy (max. 8 nábojů). Rezervu 80 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- `chains: 2` — po zásahu nepřítele `chain_lightning` dvakrát přeskočí na nejbližšího dosud nezasaženého nepřítele do 220 px (`CHAIN_REACH`) od posledního cíle. Každý skok dává **plné** poškození střely (`DamageSource::Bullet`), vykreslí oblouk `ROUND_ARC` + 4 jiskry a přehraje `TeslaZap`.
-- Skok nevolí rozbitné objekty ani spawnující se nepřátele.
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::TeslaGun`, větev v `GunKind::spec`, `Round::Spark` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Tesla Gun“)
-- `assets.rs` → `tex::GUNS_TESLA_GUN`
-
-## Nápady / chybí
-
-- Existují dvě nezávislé implementace řetězového blesku (Tesla v `shooting.rs` a artefakt Thunder Idol v `lightning.rs`) s jinými dosahy a vizuály — sjednotit.
+- Uzel stromu „+1 skok blesku“.
+- Sjednotit vzhled s bleskem Thunder Idolu.

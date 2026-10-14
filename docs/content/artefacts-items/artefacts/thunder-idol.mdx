@@ -1,43 +1,41 @@
 ---
 title: Thunder Idol
-description: Řetězový blesk, který zasáhne až 6 nepřátel po 6 damage.
+description: Řetězový blesk, který zasáhne až 6 nepřátel, každého za 6 damage.
 ---
+
+Thunder Idol sešle blesk, který přeskakuje z nepřítele na nepřítele. Je to nejsilnější okamžitý útočný artefakt ve hře.
 
 ## Jak to funguje
 
-- Aktivace vloží `CastLightning`; `systems/lightning.rs` → `cast_lightning` ji ve stejném snímku zpracuje.
-- `chain_targets`:
-  1. první cíl = nejbližší živý nepřítel do **450 px** od hráče (`STRIKE_RANGE`),
-  2. každý další = nejbližší dosud nezasažený nepřítel do **300 px** od předchozího cíle (`JUMP_RANGE`),
-  3. maximálně **6** cílů (`MAX_TARGETS`).
-- Každý cíl dostane **6 damage** (`DamageSource::Explosion`).
-- Pokud nikdo není v dosahu, artefakt se spotřebuje naprázdno.
-- Když něco zasáhne, kamera dostane otřes 0,45 (`LIGHTNING_SHAKE`).
+- Blesk udeří do **nejbližšího nepřítele** do vzdálenosti zhruba 7 dlaždic.
+- Odtud přeskočí na nejbližšího dosud nezasaženého nepřítele do zhruba 5 dlaždic – a tak dál, až na **6 cílů**.
+- Každý zasažený dostane **6 damage**.
+- Obraz se při zásahu otřese a v místech zásahu vyšlehne jasný záblesk s jiskrami.
+- Pokud v dosahu nikdo není, artefakt se spotřebuje naprázdno.
 
-### Vizuál
+## Statistiky
 
-- Blesk mezi body je složen z rotovaných kusů (`ARTEFACTS_LIGHTNING_BOLT`, 4 snímky, kus 96×48 px), bliká každých 0,05 s a mizí za 0,35 s.
-- V místě zásahu výbuch (`ARTEFACTS_LIGHTNING_BURST`, 6 snímků × 0,06 s, 96 px) se světlem (255, 244, 190), poloměr 220, intenzita 1,6, a 6–10 jisker (`ARTEFACTS_LIGHTNING_SPARK`).
-
-| Parametr | Hodnota |
+| Vlastnost | Hodnota |
 |---|---|
-| Damage | 6 na cíl (max 36 celkem) |
-| Dosah prvního zásahu | 450 px |
-| Skok | 300 px |
-| Max cílů | 6 |
+| Damage | 6 na cíl (celkem až 36) |
+| Dosah prvního úderu | asi 7 dlaždic |
+| Dosah přeskoku | asi 5 dlaždic |
+| Max. počet cílů | 6 |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Nepřátelé](/docs/enemies) – ignoruje `Spawning` a umírající nepřátele.
-- Damage typu `Explosion` – stejný zdroj jako výbušné sudy.
+- [Nepřátelé](/docs/enemies) – nezasáhne nepřátele, kteří se teprve objevují nebo už umírají.
+- Damage blesku je stejného druhu jako výbuch sudu.
+- Nejlepší proti skupině nepřátel stojících blízko sebe. S [Hourglass of Ash](/docs/artefacts-items/artefacts/hourglass-of-ash) je snazší nepřátele dostat do dosahu.
+- Před použitím se ujisti, že je nějaký nepřítel blízko.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/lightning.rs` → `chain_targets`, `cast_lightning`, `spawn_bolt`, `spawn_impact`, `tick_lightning`
-- `scenes/ingame.rs` → volání `cast_lightning` + `camera.add_trauma`
+- **Použití bez nepřítele v dosahu artefakt promrhá.**
+- Chybí zvuk hromu.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Žádný zvuk hromu (`SoundEffect` nemá blesk).
-- Spotřeba naprázdno, když nikdo není v dosahu, je pro hráče frustrující – zvážit vrácení do slotu.
-- Damage nepadá se skoky – možná by bylo zajímavější 6 → 5 → 4….
+- Vrátit artefakt do slotu, když není na koho udeřit.
+- Klesající damage s každým přeskokem (6 → 5 → 4 …) za cenu většího počtu cílů.
+- Krátké omráčení zasažených nepřátel.

@@ -3,101 +3,85 @@ title: Stone golem
 description: Kamenný strážce chrámu s rázovou vlnou, házením balvanů, deštěm kamenů a otočným laserem.
 ---
 
-## Jak to funguje
+Obrovský kamenný golem, který se pohybuje pomalu, ale ovládá celou místnost: rázovou vlnou kamenů,
+balvany, deštěm kamenů z nebe a laserem, který tě sleduje. Z padajících kamenů se navíc rodí Mini golemové.
 
-`EnemyKind::Golem`, `Role::Boss("Stone golem")`, `Behavior::GolemBoss`. `min_floor = 2`, témata
-**Stone, Temple, Lava**.
+> „Socha strážce z chrámu. Oživená, bez rozkazu, hlídá ze zvyku.“
 
-| Parametr | Hodnota |
+## Statistiky
+
+| | |
 |---|---|
 | HP | 110 |
-| Kontaktní damage | 2 |
-| Force / rychlost | 17 000 000 / 38 px/s (rage × 1,35 → 51 px/s) |
-| Velikost | 300 × 300 px (frame 100 × 100, scale 3) |
-| Sheet | `ingame/golem.png`, 14 × 8, smrt řádek 7 (14 snímků) |
-| První útok | po 2,0 s |
-| Pauza mezi útoky | 2,2 s (rage 1,3 s) |
-| Rage | HP ≤ 50 % |
-| Minion | Mini golem (max. 4) |
+| Kontaktní poškození | 2 |
+| Rychlost | 9 % hráče (v zuřivosti 12 %) |
+| Velikost | obří |
+| Kde | patra 2–5, témata Stone, Temple, Lava |
+| První útok | po 2 s |
+| Pauza mezi útoky | 2,2 s (v zuřivosti 1,3 s) |
+| Pomocníci | Mini golem (nejvýš 4) |
 
-Stavový automat `GolemStage`: Walk → Winding → (Acting) → Recovering → Walk. Během Winding/Acting/Recovering
-je `Rooted`.
+## Jak to funguje
 
-### Výběr útoku
+Golem jde pomalu za tebou, po pauze se zastaví, napřáhne se a zaútočí. Když jsi blízko (do asi 5
+dlaždic), volí častěji Slam; na dálku spíš Throw a Laser.
 
-„Blízko“ = hráč do 340 px (`GOLEM_NEAR`). Útok se nikdy neopakuje dvakrát po sobě.
-
-| Útok | Váha blízko | Váha daleko |
-|---|--:|--:|
-| Slam | 4 | 1 |
-| Throw | 1 | 3 |
-| Rain | 2 | 2 |
-| Laser | 1,5 | 3 |
+| Útok | Šance blízko | Šance daleko |
+|---|---|---|
+| Slam | vysoká | nízká |
+| Throw | nízká | vysoká |
+| Rain | střední | střední |
+| Laser | nízká | vysoká |
 
 ## Obsah
 
-### Slam — rázová vlna
+### Slam – rázová vlna
 
-- Windup 0,45 s (řádek 6, 10 snímků), pak výbuch: **16 kamenů** (`GolemRock`, 309 px/s, 2 dmg, 2,4 s)
-  do kruhu z bodu 60 px pod středem. Zvuk exploze.
-- **Rage**: po 0,35 s druhý prstenec pootočený o půl kroku (vyplní mezery prvního).
-- Recover 0,45 s.
+- Nápřah 0,45 s, pak výbuch: **16 kamenů** do kruhu kolem golema (75 % tvé rychlosti, 2 poškození).
+- **V zuřivosti** po 0,35 s druhý prstenec, který vyplní mezery prvního.
 
-### Throw — balvan
+### Throw – balvan
 
-- Windup 0,45 s (řádek 4, 7 snímků), pak jeden **balvan** (`Boulder`, 64 px, 252 px/s, 2 dmg, 3,2 s)
-  mířený na hráče.
-- Recover 0,25 s.
+- Nápřah 0,45 s, pak hodí **velký balvan** přímo po tobě (61 % tvé rychlosti, 2 poškození).
 
-### Rain — déšť kamenů
+### Rain – déšť kamenů
 
-- Windup 0,4 s (řádek 1, smyčka), pak 2,8 s (`GOLEM_RAIN_SECONDS`) každých 0,12 s jeden kámen →
-  cca 23 kamenů.
-- Každý kámen: na zemi se objeví stín (`ROCK_SHADOW`, 150 × 75), kámen padá z výšky 380 px a po 0,7 s
-  dopadne. Zasáhne hráče, jehož obdélník se překrývá se čtvercem 148 × 148 px kolem dopadu — 2 dmg
-  (dodge chrání).
-- První 3 kameny míří do ±40 px od hráče (nutí ho pohnout se), další do ±300 px.
-- Při každém dopadu 16% šance (`GOLEM_MINION_CHANCE`) na **Mini golema** na místě dopadu, pokud je ve
-  hře méně než 4 minions a místo je volné.
-- Recover 0,5 s.
+- Nápřah 0,4 s, pak 2,8 s padá z nebe asi **23 kamenů** (jeden každých 0,12 s).
+- Před každým kamenem se na zemi 0,7 s ukazuje **stín**. Kámen zasáhne plochu asi 2 × 2 dlaždice –
+  2 poškození. Úhyb chrání.
+- První 3 kameny míří přímo na tebe, aby ses musel pohnout, další padají kdekoli v okolí ~5 dlaždic.
+- Z každého dopadu se s **16% šancí** zrodí Mini golem (pokud jich ještě není moc a místo je volné).
 
-### Laser — otočný paprsek
+### Laser – otočný paprsek
 
-- Nabíjení 1,0 s (řádek 5, 7 × 0,14 s) — golem zamíří z oka (45 px nad středem) na hráče.
-- 1,9 s (`GOLEM_LASER_SECONDS`) paprsek: modrý (`BLUE_BEAM`), šířka 26 px, dosah 1100 px nebo do zdi,
-  každý krok se otáčí k hráči rychlostí 0,7 rad/s (rage 1,1 rad/s). Zásah = 2 dmg (s i-frames cca
-  2 dmg/s). Jiskry podél paprsku a v místě dopadu.
-- Recover 0,6 s.
+- 1 s nabíjení – golem zamíří okem na tebe.
+- 1,9 s svítí modrý paprsek přes celou místnost (zastaví ho jen zeď). Pomalu se otáčí za tebou,
+  v zuřivosti rychleji. Zásah = 2 poškození (díky nezranitelnosti po zásahu nejvýš jednou za sekundu).
 
 ### Mini golem
 
-`EnemyKind::MiniGolem`, `Role::Summoned`: 6 HP, 1 dmg, 195 px/s, 96 × 96 px, `ingame/mini_golem.tga`.
-Obyčejný chaser, `Minion` + `NoDrop`, zemře se svým bossem.
+Malý kamenný pronásledovatel: 6 HP, 1 poškození, 47 % tvé rychlosti. Nic nedropne a zemře spolu s golemem.
 
-### Rage (HP ≤ 50 %)
+### Zuřivost (od poloviny HP)
 
-- rychlost × 1,35, pauza 1,3 s místo 2,2 s, tint `(1, 0,62, 0,55)`,
-- Slam má druhý prstenec, laser se otáčí rychleji.
+Golem zčervená, zrychlí o 35 %, pauza mezi útoky klesne na 1,3 s, Slam má dva prstence a laser se
+otáčí rychleji.
 
-## Interakce
+## Tipy a souvislosti
 
-- Paprsek a dopady kamenů respektují `Dodge` hráče ([Hráč](/docs/player)).
-- Sdílené funkce z `golem.rs` (`spawn_rock`, `draw_beam`, `turn_towards`, `player_at`, `unit`) používají
-  i Argus, Ogre, Hellhound a Mimic.
-- Lore: „Socha strážce z chrámu. Oživená, bez rozkazu, hlídá ze zvyku.“
+- Na blízku čekej Slam – po nápřahu odskoč nebo se postav do mezery mezi kameny.
+- Laser se otáčí pomalu – obíhej golema stálým směrem a paprsek tě nedožene.
+- Při Rain sleduj stíny, ne golema.
+- Úhyb chrání před dopady kamenů i laserem ([Hráč](/docs/player)).
+- Stejné kameny používá i [Sewer ogre](/docs/enemies/bosses/ogre).
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `enemies.rs` → arm `Golem`, `MiniGolem`; všechny `GOLEM_*`.
-- `systems/golem.rs` → `choose_attack`, `step`, `tick_golem`, `execute`, `drop_rock`, `tick_rock_falls`,
-  `beam_end`, `draw_beam`, `tick_laser`, `clear_golem_effects`.
-- `components/skills.rs` → `GolemBoss`, `GolemStage`, `GolemAttack`, `RockFall`, `FallingRock`, `BeamPart`.
-- Ladění: `BANE_BOSS=golem`, `BANE_GOLEM_ATTACK=slam|throw|rain|laser`.
+- Laser nemá během nabíjení žádnou výstražnou čáru (Hellhound ji před svými paprsky má) – jen animaci.
+- Limit 4 Mini golemů se počítá dohromady se všemi pomocníky v místnosti.
+- Starší popis hry uváděl úplně jiného golema (léčení, armor, výpad) – dnešní golem je nový boss.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Laser nemá vizuální telegraf čáry během nabíjení (Hellhound má tečkovanou čáru `warn`) — jen animaci.
-- FEATURE.md popisuje Java Golema (léčení, armor stacky, dash, melee vypnuté) — v Rustu je to úplně
-  nový boss; FEATURE.md je zastaralý.
-- Mini golem je čistý chaser; mohl by explodovat do kamenů nebo se spojit zpět s bossem (léčení).
-- Limit 4 minions se počítá globálně přes všechny `Minion` entity.
+- Výstražná čára před laserem.
+- Mini golem, který při smrti exploduje do kamenů nebo se vrátí ke golemovi a vyléčí ho.

@@ -1,87 +1,68 @@
 ---
 title: Slizy
-description: Slime, Red slime a Saliva slime — pomalí střelci, výbušná odveta a sliz, který vstane z louže.
+description: Slime, Red slime a Saliva slime – pomalí střelci, výbušná odveta a sliz, který vstane z louže.
 ---
 
-## Jak to funguje
+Slizy se plazí velmi pomalu, ale střílejí. Slime a Red slime jsou běžní nepřátelé na všech patrech
+a ve všech tématech; Saliva slime je pomocník bosse [Mimic](/docs/enemies/bosses/mimic). Jejich velkým
+bratrem je boss [King slime](/docs/enemies/bosses/king-slime).
 
-Slizy jsou pomalé (force jen 1 000 000 → 29 px/s), ale nebezpečné projektily. Slime a Red slime
-jsou běžní nepřátelé na všech patrech a tématech; Saliva slime je vyvolaný minion
-[Mimica](/docs/enemies/bosses/mimic). Jejich velký bratr je boss [King slime](/docs/enemies/bosses/king-slime).
-
-## Obsah
+## Statistiky
 
 | | Slime | Red slime | Saliva slime |
 |---|--:|--:|--:|
-| `EnemyKind` | `Slime` | `RedSlime` | `SalivaSlime` |
-| Role | běžný | běžný | `Summoned` (Mimic) |
+| Druh | běžný | běžný | pomocník Mimica |
 | HP | 9 | 9 | 5 (+ jedno oživení) |
-| Kontaktní damage | 1 | 1 | 1 |
-| Rychlost (px/s) | 29 | 29 | 139 jen při skoku |
-| Velikost | 96 × 72 | 96 × 72 | 89 × 89 |
-| `Behavior` | `Smash(Green)` | `Burst(Red)` | `Hops` |
-| Patra | 0+ | 0+ | — |
-| Textura | `ingame/slime.tga` | `ingame/redslime.tga` | `ingame/saliva_slime.tga` (6×4) |
+| Kontaktní poškození | 1 | 1 | 1 |
+| Rychlost | 7 % | 7 % | 34 %, jen při skoku |
+| Patra | všechna | všechna | jen v boji s Mimicem |
+| Schopnost | salva 5 střel, drží odstup | střely při smrti | skoky, vstane z louže |
 
-### Slime — spirála střel a odstup
+HP běžných slizů roste s patrem (viz [Spawnování](/docs/enemies/spawning#síla-podle-patra)).
 
-- `Smash { kind: Green, count: 5 }`: každé 2,0 s (`SMASH_COOLDOWN`) vystřelí 5 zelených střel
-  rovnoměrně do kruhu (`radial`, úhel `2π·(i+1)/5`). První salva padne **ihned** po zhmotnění.
-- Zelená střela: 16 × 16 px, 325 px/s, 1 damage, letí do zdi (bez časového limitu).
-- Jediný běžný nepřítel, který drží odstup: hráč blíž než 300 px → stojí, blíž než 200 px → couvá
-  (viz [AI](/docs/enemies/ai#pronásledování-chase_player)).
+## Jak to funguje
 
-### Red slime — odveta za zásahy
+### Slime – salva a odstup
 
-- `DeathBurst { kind: Red }` + `Hits`: každý zásah zdrojem `Bullet` nebo `Summoned` zvýší počítadlo.
-- Při smrti (`death_bursts`) vystřelí `2 × hits` červených střel: `hits` ve spirále (úhel = index v
-  radiánech) + `hits` v pravidelném kruhu. Zabití jednou silnou ranou = 2 střely; „ukousání“ brokovnicí
-  nebo SMG = desítky střel.
-- Jinak obyčejný pomalý chaser (nemá `Smash`, takže odstup nedrží).
-- Červená střela: stejné parametry jako zelená (325 px/s, 1 dmg).
+- Každé **2 sekundy** vystřelí 5 zelených střel rovnoměrně do kruhu. První salvu vypálí hned po zhmotnění.
+- Zelená střela: malá, 79 % tvé rychlosti, 1 poškození, letí až do zdi.
+- Jediný běžný nepřítel, který **drží odstup**: když jsi blíž než asi 4,5 dlaždice, zastaví se, a když
+  jsi blíž než 3 dlaždice, couvá (viz [Chování a pohyb](/docs/enemies/ai)).
 
-### Saliva slime — puddle a oživení
+### Red slime – odveta za zásahy
 
-- Vyplivne ho Mimic útokem Spit (max. když je ve hře méně než 4 minions). Spawnuje se jako hatchling:
-  bez `Spawning`, s `Minion` + `NoDrop`, základní statistiky.
-- `Hopper`: stojí (`Rooted`), pak skočí přímo k hráči — `Charge` na 0,42 s (`HOP_SECONDS`) rychlostí
-  139 px/s, pak odpočívá 0,6 s × (0,8–1,3) (`HOP_REST`). První skok po 0,2–0,56 s podle pozice.
-- `reform_row = Some(3)` → komponenta `Revives`. **První smrt**: místo umírání se roztaví v louži
-  (`Puddle` + `Spawning` na 10 s, `REVIVE_SECONDS`) — bez těla, nedá se trefit, neútočí. 0,48 s před
-  koncem přehraje animaci „slévání“ (řádek 3, 6 snímků × 0,08 s) a vstane s plným HP. **Druhá smrt** je
-  definitivní.
-- Když umře boss, `clean_up_after_boss` zabije všechny minions včetně louží (odebere `Puddle` a `Revives`).
+- Počítá, kolikrát jsi ho trefil střelou nebo pomocníkem.
+- Při smrti vystřelí **dvakrát tolik červených střel, kolik zásahů dostal** – polovinu ve spirále,
+  polovinu v pravidelném kruhu. Zabití jednou silnou ranou = 2 střely, „ukousání“ brokovnicí nebo
+  samopalem = desítky střel.
+- Jinak se jen pomalu plazí za tebou (odstup nedrží).
+- Červená střela má stejné vlastnosti jako zelená.
 
-## Interakce
+### Saliva slime – louže a oživení
 
-- Střely slizů zpomalují pavučinové plochy (`slow_bullets_in_webs`) — viz [Dungeon](/docs/dungeon).
-- Red slime trestá rychlopalné zbraně ([Zbraně](/docs/guns)) — počet střel závisí na počtu zásahů,
-  ne na damage.
-- Mise „zabij N slizů“ počítá jen `Slime`.
+- Vyplivne ho Mimic útokem Spit (jen když je v místnosti méně než 4 pomocníci). Je aktivní hned, bez
+  zhmotnění, a nic nedropne.
+- Pohybuje se skoky: chvíli stojí, pak skočí přímo k tobě (asi 0,4 s), pak odpočívá zhruba 0,5–0,8 s.
+- **První smrt**: místo umření se rozteče v louži. 10 s je louží – nedá se trefit a neútočí. Na konci
+  se znovu slije a vstane s plnými HP.
+- **Druhá smrt** je definitivní.
+- Když zemře Mimic, zemřou i všechny Saliva slimy včetně louží.
 
-## Kde v kódu
+## Tipy a souvislosti
 
-- `enemies.rs` → arms `Slime`, `RedSlime`, `SalivaSlime`; `ProjectileKind::Green/Red`, `slime_bullet`;
-  `SMASH_COOLDOWN`, `SMASH_BULLETS`, `HOP_SECONDS`, `HOP_REST`.
-- `systems/skills.rs` → `tick_smashes`, `death_bursts`, `burst_directions`, `count_hits`.
-- `systems/hopper.rs` → `tick_hoppers`.
-- `systems/enemies.rs` → `collapse_into_puddles`, `tick_spawning` (reform klip), `stand_up`, `REVIVE_SECONDS`.
-- `systems/bosses.rs` → `clean_up_after_boss`.
+- Na Red slime použij nejsilnější jednotlivou ránu, ne rychlopalnou zbraň ([Zbraně](/docs/guns)).
+- Na Slime se musí jít – sám k tobě nepřijde.
+- Střely slizů zpomalují v pavučinách ([Dungeon](/docs/dungeon)).
+- Mise „zabij N slizů“ počítá jen obyčejný Slime ([Progrese](/docs/progression)).
 
-## Jak přidat nový sliz
+## Známé nesrovnalosti
 
-1. Nový `EnemyKind` se `spec(..)` jako `Slime` (6 sloupců × 2 řádky, 32 × 24 frame).
-2. Pro střelce použij `Behavior::Smash(ProjectileKind::…)` — počet střel je dnes pevně `SMASH_BULLETS = 5`
-   pro všechny běžné (King slime má 25 natvrdo v prefabu).
-3. Pro nový typ střely přidej `ProjectileKind` + arm v `ProjectileKind::spec()` (např. přes `slime_bullet`
-   s jinou texturou a barvou světla).
-4. Pro oživení stačí `reform_row: Some(řádek)` — sheet musí mít řádek se 6 snímky slévání.
+- Red slime nijak neukazuje, kolik zásahů už nasbíral – nevíš, kolik střel z něj vyletí.
+- Salva Slimu je vždy stejně natočená.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Saliva slime je jediný nepřítel s `reform_row`; mechanika „vstane z louže“ by se hodila i pro běžný
-  sliz na tématu Sewer/Moss (dnes se Saliva slime mimo boss fight nespawnuje).
-- Fialové střely (`ProjectileKind::Purple`) má jen King slime — chybí běžný „fialový sliz“.
-- `Smash` nemá variabilní počet ani rotaci salvy u běžných slizů; spirála je vždy stejně natočená
-  (TODO.md zmiňuje sdílený „shot-pattern system“).
-- Red slime nemá vizuální indikaci, kolik zásahů už „nasbíral“.
+- Běžný sliz, který vstává z louže, pro témata Sewer a Moss (dnes to umí jen Saliva slime v boji s Mimicem).
+- Běžný „fialový sliz“ – fialové střely má dnes jen King slime.
+- Slizy s jiným počtem nebo rotací střel v salvě.
+- Vizuální ukazatel nasbíraných zásahů u Red slime (např. bobtnání).

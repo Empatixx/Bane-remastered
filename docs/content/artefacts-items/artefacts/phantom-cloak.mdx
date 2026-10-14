@@ -1,40 +1,37 @@
 ---
 title: Phantom Cloak
-description: Na 5 sekund udělá hráče pro nepřátele neviditelným; první výstřel z úkrytu dává dvojnásobný damage.
+description: Na 5 sekund tě udělá pro nepřátele neviditelným; první výstřel z úkrytu dává dvojnásobný damage.
 ---
+
+Phantom Cloak tě zahalí do stínu. Nepřátelé tě přestanou vidět a ty máš chvíli na to, abys se přemístil nebo připravil zničující první ránu.
 
 ## Jak to funguje
 
-- Vloží `Phantom { remaining: 5.0 }`.
-- **Neviditelnost** – nepřátelská AI hledá hráče dotazem `without::<Phantom>`:
-  - `systems/enemies.rs` → `player_placement` (pronásledování, natáčení – nepřátelé zůstanou stát),
-  - `systems/bosses.rs`, `systems/skills.rs` (míření schopností), `systems/golem.rs`.
-- **Ambush** – první výstřel během efektu má `ambush = true` a všechny jeho projektily (i broky brokovnice) mají damage ×2 (`AMBUSH_MULTIPLIER`). Tím výstřelem se plášť **okamžitě ruší**. Dávky (burst) po prvním výstřelu už bonus nemají.
-- Pokud hráč nevystřelí, efekt po 5 s vyprší.
+- Po použití se změníš ve stín a na **5 sekund** tě nepřátelé nevidí – přestanou tě pronásledovat, mířit na tebe i používat cílené schopnosti. Totéž platí pro bossy.
+- **Útok ze zálohy** – první výstřel během pláště má **dvojnásobný damage**, a to u všech jeho projektilů (i u všech broků Shotgunu). Tímto výstřelem plášť **okamžitě zmizí**. Další střely z dávky už bonus nemají.
+- Když nevystřelíš, plášť po 5 sekundách sám vyprší.
+- Neviditelnost tě nechrání před střelami, které už letí, ani před kontaktem s nepřítelem.
 
-### Vizuál
+## Statistiky
 
-- `systems/draw.rs` – hráč a jeho dodge obrázky se kreslí jako „stín“ (`Quad::shadowed`, shader mód `MODE_SHADOW` s okrajem `SHADOW_RIM`), čas efektu se posílá do shaderu.
-
-| Parametr | Hodnota |
+| Vlastnost | Hodnota |
 |---|---|
 | Trvání | 5 s nebo do prvního výstřelu |
-| Násobič damage | ×2 (jen první výstřel) |
-| Textura | `phantom_cloak.tga` |
+| Damage prvního výstřelu | ×2 |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Nepřátelé](/docs/enemies) – ztratí cíl. Kontaktní damage a už vystřelené projektily ale hráče dál zraní (efekt jen schová pozici pro AI).
-- [Zbraně](/docs/guns) – násobič se aplikuje po perkech a kritu, takže s Railgunem / Sniperem je to silný „otvírák“.
+- [Nepřátelé](/docs/enemies) – ztratí cíl a zůstanou stát.
+- [Zbraně](/docs/guns) – bonus se násobí s talenty i kritickým zásahem, takže se Railgunem nebo Sniperem je to obrovská úvodní rána. Krit + plášť = čtyřnásobný damage.
+- Pasti a nebezpečné prostředí tě vidí dál.
+- Hodí se i bez střelby – na útěk nebo přeběhnutí místnosti.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/shooting.rs` → `AMBUSH_MULTIPLIER`, `Shot.ambush`, odebrání `Phantom` po výstřelu
-- `systems/enemies.rs` → `player_placement`
-- `systems/draw.rs` → `collect_draws` (cloak); `render/quad.rs` → `shadowed`
+- Chybí zvuk zahalení a rozbití pláště i zvláštní indikace zesíleného zásahu.
+- Úhyb plášť neruší – dají se kombinovat (není jisté, zda je to záměr).
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Chybí zvuk aktivace / rozbití pláště a indikace ambush zásahu (např. fialový crit text).
-- Pasti a hazardy hráče dál vidí – to je asi v pořádku, ale stojí za zmínku v popisu.
-- Dodge během pláště ho neruší – lze kombinovat; je to záměr?
+- Zvuk a efekt při útoku ze zálohy (např. fialové číslo damage).
+- Varianta, kde i zabití neruší plášť, ale prodlužuje ho.

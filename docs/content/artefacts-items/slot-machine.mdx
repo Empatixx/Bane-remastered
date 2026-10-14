@@ -3,66 +3,61 @@ title: Hrací automat
 description: Automat v obchodě – 5 mincí za zatočení, tabulka výher a vzácné ceny.
 ---
 
+V každém obchodě stojí vpravo nahoře hrací automat. Za 5 mincí zkusíš štěstí – můžeš vyhrát mince, spršku předmětů nebo vzácnou cenu jako artefakt či zbraň.
+
 ## Jak to funguje
 
-- Automat je fixture `SlotMachine` v každé obchodní místnosti (`dungeon/furnish.rs` → `shop`, vpravo nahoře). Prefab `slot_machine` přidá `SlotMachine { spinning: None }`, prompt „Press E to spin“ a cenovku s číslem `SPIN_COST`.
-- **E** (`spin`): pokud automat netočí a hráč má aspoň 5 mincí, odečte se `SPIN_COST = 5`, automat točí **2 s** (`SPIN_SECONDS`), animace `SPIN`, zvuk `SlotSpin`. Cenovka je během točení skrytá (`update_slot_prices`).
-- Po doběhnutí (`tick_slot_machines`) se hodí `roll(150)` → `outcome_for`. Výhra vyletí z bodu o 1/8 výšky automatu pod středem.
+- Postav se k automatu a stiskni **E** („Press E to spin“). Potřebuješ aspoň **5 mincí**.
+- Automat se točí **2 sekundy**, během té doby nejde zatočit znovu a cenovka je skrytá.
+- Pak se ukáže výsledek a výhra vyletí z automatu.
 
-### Tabulka výsledků
+### Výsledky
 
-| Hod (0–149) | `Outcome` | Šance | Výhra | Zvuk / animace |
-|---|---|---|---|---|
-| 0–9 | `RareItem` | 6,7 % | vzácná cena (viz níže) | `SlotWin` / `WIN` |
-| 10–19 | `Cashout` | 6,7 % | 10 mincí | `SlotCashout` / `WIN` |
-| 20–29 | `ItemShower` | 6,7 % | 5 předmětů z `COMMON` | `SlotWin` / `WIN` |
-| 30–39 | `Triple` | 6,7 % | 15 mincí (`SPIN_COST × 3`) | `SlotWin` / `WIN` |
-| 40–59 | `Double` | 13,3 % | 10 mincí (`SPIN_COST × 2`) | `SlotWin` / `WIN` |
-| 60–149 | `Lose` | 60 % | nic | `SlotLose` / `LOSE` |
-
-Mince a předměty se rozletí do kruhu rychlostí 417 px/s (`scatter`) a **mizí po 10 s**.
-
-### Vzácná cena (`rare_prize`)
-
-Vyletí jedna věc směrem dolů (rychlost 417):
-
-| Větev | Šance v rámci RareItem | Výhra |
+| Výsledek | Šance | Výhra |
 |---|---|---|
-| „uncommon“ (`roll(2) == 0`) | 50 % | malý lektvar – 50 % zdraví / 50 % armor |
-| „rare“ → `roll(5) = 0` | 10 % | nevlastněná zbraň (pokud žádná není, nic) |
-| `roll(5) = 1` | 10 % | artefakt kromě drženého |
-| `roll(5) = 2` | 10 % | `Ammo(Universal)` |
-| `roll(5) = 3` | 10 % | velký lektvar zdraví |
-| `roll(5) = 4` | 10 % | velký lektvar armoru |
+| Vzácná cena | 6,7 % | jeden vzácný předmět (viz níže) |
+| Cashout | 6,7 % | 10 mincí |
+| Sprška předmětů | 6,7 % | 5 běžných předmětů (mince / munice) |
+| Trojice | 6,7 % | 15 mincí |
+| Dvojice | 13,3 % | 10 mincí |
+| Prohra | 60 % | nic |
 
-### Očekávaná hodnota
+Mince a předměty se rozletí do kruhu kolem automatu a **zmizí po 10 sekundách** – neváhej je sebrat.
 
-Na jedno zatočení (5 mincí) vrací automat v průměru **3 mince** (10×10/150 + 15×10/150 + 10×20/150) + 1/3 předmětu z item shower + vzácnou cenu v 6,7 % případů. Na mince je to ztrátové, smysl má jako zdroj lektvarů a artefaktů.
+### Vzácná cena
 
-## Interakce
+| Výhra | Šance v rámci vzácné ceny |
+|---|---|
+| malý lektvar (napůl zdraví, napůl armor) | 50 % |
+| zbraň, kterou ještě nemáš (pokud žádná nezbývá, nic) | 10 % |
+| artefakt jiný než držený | 10 % |
+| univerzální munice | 10 % |
+| velký lektvar zdraví | 10 % |
+| velký lektvar armoru | 10 % |
 
-- [Obchod](/docs/artefacts-items/shop) – stojí ve stejné místnosti, mince jsou sdílené.
-- [Perky](/docs/artefacts-items/perks) – perk **Gamble Machine** (viz níže).
+### Vyplatí se to?
+
+Za 5 mincí ti automat vrátí v průměru **3 mince**, k tomu zhruba třetinu předmětu ze spršky a v 6,7 % případů vzácnou cenu. Na mincích je tedy ztrátový – smysl má hlavně jako zdroj lektvarů a šance na artefakt (zhruba 1 ku 150 na zatočení).
+
+## Tipy a souvislosti
+
+- [Obchod](/docs/artefacts-items/shop) – automat stojí ve stejné místnosti a sdílí s ním tvé mince. Nejdřív si nakup to, co potřebuješ, zbytek můžeš protočit.
+- [Perky](/docs/artefacts-items/perks) – talent **Gamble Machine** (viz níže).
 - [Zbraně](/docs/guns), [Artefakty](/docs/artefacts-items/artefacts) – vzácné ceny.
 
-## Kde v kódu
-
-- `systems/slot.rs` → `Outcome`, `outcome_for`, `spin`, `tick_slot_machines`, `rare_prize`, `scatter`, `update_slot_prices`, `SPIN_SECONDS`, `TOTAL_CHANCE`, `SCATTER_SPEED`
-- `objects.rs` → `SPIN_COST = 5`
-- `components/objects.rs` → `SlotMachine`, `SlotPrice`
-- `prefabs/fixtures.rs` → `slot_machine`
-- `sheets.rs` → modul `slot` (`IDLE`, `SPIN`, `WIN`, `LOSE`)
-- `props.rs` → `Prop::SlotMachine`
-- `scenes/ingame.rs` → `SLOT_MACHINE_COINS = 100`, `Interaction::Spin`
-
-## Nápady / chybí
+## Známé nesrovnalosti
 
 <Callout type="warn">
-Perk **Gamble Machine** má popis „Unlocks the gamble machine in the shop“, ale automat je v obchodě **vždy**. Perk ve skutečnosti jen přidá hráči 100 mincí (`SLOT_MACHINE_COINS`) při stavbě patra, které má obchod. Na 2.+ patře se peněženka hned poté přepíše hodnotou přenesenou z předchozího patra (`restore_stats`), takže bonus fakticky platí jen v 1. patře.
+Talent **Gamble Machine** slibuje „Unlocks the gamble machine in the shop“, ale automat je v obchodě **vždy**. Talent ve skutečnosti jen přidá 100 mincí na patře s obchodem – a protože se na dalších patrech mince přepíšou těmi, které sis přinesl, bonus fakticky dostaneš jen v 1. patře.
 </Callout>
 
-- Rozhodnout, jestli má být automat skutečně zamčený bez perku (pak v `stock_rooms` / `prefabs::furnishing` podmínit `perks.gamble_machine`) a 100 mincí odstranit, nebo popis perku přepsat.
-- `Cashout` (10 mincí) dává stejně jako `Double` – název slibuje víc (jackpot). Návrh: Cashout = 25 mincí.
-- `ItemShower` nepoužívá `common_drop`, takže v challenge Pistol Only může padnout nepoužitelná brokovnicová munice.
-- Vzácná zbraň z automatu nemá `Despawn`, ale lektvary z `rare_prize` ano (10 s) – nekonzistentní.
-- Rychlé opakované točení nemá omezení – po skončení točení lze hned znovu.
+- **Cashout dává stejně jako Dvojice** (10 mincí), přestože název slibuje jackpot.
+- **Sprška předmětů nerespektuje challenge Pistol Only** – může padnout brokovnicová munice, kterou nevyužiješ.
+- **Vzácná zbraň z automatu nemizí, ale vzácné lektvary ano** (po 10 s).
+- Točit se dá hned znovu bez jakéhokoliv omezení.
+
+## Nápady na rozšíření
+
+- Rozhodnout, jestli má být automat bez talentu Gamble Machine opravdu zamčený, nebo popis talentu přepsat.
+- Cashout jako skutečný jackpot, např. 25 mincí.
+- Zvláštní automaty (dražší zatočení, lepší ceny) v pozdějších patrech.

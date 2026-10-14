@@ -3,40 +3,41 @@ title: Grave Lantern
 description: Vyvolá tři duchy, kteří 12 sekund pronásledují a koušou nepřátele.
 ---
 
+Grave Lantern přivolá tři zeleně zářící duchy, kteří se na 12 sekund stanou tvými spojenci a vrhají se na nejbližší nepřátele.
+
 ## Jak to funguje
 
-- Aktivace vloží `SummonGhosts`; `systems/summons.rs` → `spawn_summons` ji v tomtéž snímku odebere a vytvoří **3 duchy** rovnoměrně v kruhu o poloměru 60 px kolem hráče.
-- Každý duch (`Ghost`) v `tick_ghosts`:
-  - cíl = **nejbližší živý nepřítel kdekoliv** (bez omezení dosahu, ignoruje `Spawning` a umírající), jinak krouží kolem hráče (poloměr 110 px, 1,6 rad/s),
-  - plynule zatáčí (`GHOST_STEERING = 5`) rychlostí až 300 px/s, u cíle zpomaluje,
-  - mírně se vznáší (bob 5 px),
-  - když se překrývá s nepřítelem a nemá cooldown, dá **2 damage** (`DamageSource::Bite`) a čeká 0,5 s; přehraje animaci `ghost::HIT`, pak zpět `FLOAT`,
-  - posledních 1 s života mizí (alpha i světlo).
-- Duchové procházejí zdmi (nemají fyzikální tělo).
+- Kolem tebe se objeví **3 duchové**.
+- Každý duch letí za **nejbližším nepřítelem** (bez omezení dosahu). Když žádný není, krouží kolem tebe.
+- Při dotyku nepřítele ho kousne za **2 damage**, pak půl sekundy čeká.
+- Duchové procházejí zdmi a nepřátelé je nemohou zranit.
+- Poslední sekundu postupně mizí.
 
-| Parametr | Hodnota |
+## Statistiky
+
+| Vlastnost | Hodnota |
 |---|---|
-| Počet | 3 |
-| Život | 12 s (fade 1 s) |
-| Damage | 2 / zásah, cooldown 0,5 s (≈ 4 DPS na ducha) |
-| Rychlost | 300 px/s |
-| Velikost | 72×72 |
-| Světlo | zelené (90, 220, 110), poloměr 130, intenzita 0,6 |
-| Textury | ikona `grave_lantern.tga`, duch `ghost.tga` (sheet `sheets::ghost`) |
+| Počet duchů | 3 |
+| Trvání | 12 s |
+| Damage | 2 za kousnutí, 2 kousnutí za sekundu (4 damage/s na ducha, 12 damage/s všichni tři) |
+| Rychlost | o něco pomalejší než hráč |
+| Světlo | zelená záře |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Nepřátelé](/docs/enemies) – damage typu `Bite` (stejný jako pet).
-- Běží v reálném čase, ne v `hostile_dt` – s [Hourglass of Ash](/docs/artefacts-items/artefacts/hourglass-of-ash) jsou relativně rychlejší.
+- [Nepřátelé](/docs/enemies) – kousnutí duchů funguje stejně jako kousnutí vlka.
+- S [Hourglass of Ash](/docs/artefacts-items/artefacts/hourglass-of-ash) duchové běží plnou rychlostí, zatímco nepřátelé jsou zpomalení.
+- Duchové osvětlují okolí – v tmavých místnostech pomohou i vidět.
+- [Pet](/docs/artefacts-items/pet) – podobný spojenec, ale trvalý.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `systems/summons.rs` → `spawn_summons`, `spawn_ghost`, `tick_ghosts`, `nearest_enemy`, `overlapped_enemy`, konstanty `GHOST_*`
-- `components/summons.rs` → `Ghost`
-- `sheets.rs` → modul `ghost`
+- Všichni tři duchové často letí na stejného nepřítele, místo aby si cíle rozdělili.
+- Duchové mohou odletět přes zeď za nepřítelem v jiné místnosti, mimo obrazovku.
+- Nemají žádný zvuk.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Duchové cílí „nejbližšího k sobě“, takže se všichni tři často slepí na jednoho nepřítele – lze rozdělit cíle.
-- Nemají zvuk.
-- Cílí i na nepřátele v jiných místnostech (bez dosahu) – mohou odletět přes zeď mimo obrazovku.
+- Rozdělení cílů mezi duchy.
+- Omezení dosahu na aktuální místnost.
+- Strašidelné zvuky při vyvolání a kousnutí.

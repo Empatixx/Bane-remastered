@@ -3,78 +3,44 @@ title: Crossbow
 description: Kuše s přesnými průbojnými šipkami a malým zásobníkem.
 ---
 
-**Crossbow** (`GunKind::Crossbow`) — Přesná zbraň na střední vzdálenost: 5–7 poškození, šipka projde jedním nepřítelem.
+**Crossbow** je přesná zbraň na střední vzdálenost. Šipka ubere 5–7 a projde jedním nepřítelem.
 
 ## Jak to funguje
 
-### Statistiky
+Poloautomatická zbraň bez rozptylu. Šipka letí rychle a má **průraz 1** — projde prvním nepřítelem a zastaví se ve druhém.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 5–8 |
-| Reálné poškození na projektil | 5–7 (průměr 6) |
-| Projektilů na výstřel | 1 |
-| Kadence | 1,67 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 10 |
-| Odchylka (`inaccuracy`) | 0 (dokonale přesná) |
+| Poškození na ránu | 5–7 (průměr 6) |
+| Kadence | 1,7 rány/s |
+| DPS | 10 |
 | Režim | poloautomatická |
+| Rozptyl | žádný |
 | Zásobník / rezerva | 3 / 45 |
-| Přebíjení | 1 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,25 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::Shotgun` — jeden sloupec brokových nábojů `SHOTGUN_AMMO_HUD` (krok 20 px) |
+| Přebití | 1,0 s |
+| Kritická šance | 0 % |
+| Projektil | šipka, rychlá, oranžovočervené světlo |
+| Průraz | 1 |
+| Otřes obrazovky | slabý |
 | Nábojnice | ne |
-| Zvuk výstřelu / přebití | `CrossbowShoot` / `CrossbowReload` |
-| Textura / velikost ikony | `tex::GUNS_CROSSBOW` / 88 × 42 px |
-| Klíč v profilu | `"crossbow"` |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Poloautomatická, `Round::Bolt` (950 px/s), bez rozptylu, `pierce: 1` (zasáhne až 2 nepřátele).
+- Malý zásobník (3) — uzly **Magazine** jsou tu relativně nejsilnější (+3 zásobník zdvojnásobí).
+- Mutace **Piercing** zvedne průraz na 2. Viz [Mutace](/docs/guns/mutace).
+- Uzly **Accuracy** jsou zbytečné — rozptyl už je nulový.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Bolt` |
-| Rychlost | 950 px/s |
-| Velikost sprite / hitbox | 32 × 16 / 12 × 12 |
-| Průraz (`pierce`) | 1 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | oranžovočervené (255, 120, 60) |
-| Natáčí se ve směru letu | ano |
-| Textura | `tex::ROUND_BOLT` |
+- Stůl se zbraněmi ukazuje poškození 5–8, ale 8 nikdy nepadne.
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1 s, pak se zásobník doplní z rezervy (max. 3 nábojů). Rezervu 45 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Nevyhazuje nábojnice (jen Bullet/Tracer/Slug je mají).
-- Accuracy uzly zbytečné (inaccuracy 0).
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Crossbow`, větev v `GunKind::spec`, `Round::Bolt` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Crossbow“)
-- `assets.rs` → `tex::GUNS_CROSSBOW`
-
-## Nápady / chybí
-
-- Šipky by mohly zůstávat zabodnuté ve zdi a jít sebrat zpět (vrací munici).
-- Pozor: `systems/arrows.rs` nemá s kuší nic společného — jsou to šipky ukazující na nepřátele mimo obrazovku.
+- Šipky zabodnuté ve zdi, které jde sebrat zpátky (vrací munici).
+- Šipky s jedem nebo ohněm jako vlastní varianty.

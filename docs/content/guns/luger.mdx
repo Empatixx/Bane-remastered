@@ -3,78 +3,46 @@ title: Luger
 description: Nepřesná pistole s větším zásobníkem a nejnižším poškozením ve hře.
 ---
 
-**Luger** (`GunKind::Luger`) — Alternativa k pistoli z truhly/obchodu. Větší zásobník (9) a rezerva (150), ale poškození reálně vždy 1.
+**Luger** je alternativní pistole, kterou lze najít v truhle, obchodě nebo automatu. Má větší zásobník a rezervu než startovní Pistol, ale každá rána dává vždy jen 1 poškození a hodně rozptyluje.
 
 ## Jak to funguje
 
-### Statistiky
+Poloautomatická zbraň: jedna obyčejná kulka na kliknutí, s výrazným rozptylem kolem ±10°.
+
+## Statistiky
 
 | Vlastnost | Hodnota |
 | --- | --- |
-| Poškození v kódu | 1–2 |
-| Reálné poškození na projektil | 1 (průměr 1) |
-| Projektilů na výstřel | 1 |
-| Kadence | 4 výstřelů/s |
-| Průměrné DPS (bez přebíjení) | 4 |
-| Odchylka (`inaccuracy`) | 0,35 → ±0,17 rad (±10,0°) |
+| Poškození na ránu | 1 |
+| Kadence | 4 rány/s |
+| DPS | 4 |
 | Režim | poloautomatická |
+| Rozptyl | ±10° |
 | Zásobník / rezerva | 9 / 150 |
-| Přebíjení | 0,7 s |
-| Kritická šance (základ) | 0 % |
-| Otřes kamery (`shake`) | 0,3 |
-| Třída munice | `AmmoClass::Pistol` |
-| Styl zásobníku v HUD | `ClipStyle::Pistol` — jeden sloupec nábojů (krok 15 px) |
-| Nábojnice | ano (nábojnice) |
-| Zvuk výstřelu / přebití | `PistolShoot` / `PistolReload` |
-| Textura / velikost ikony | `tex::GUNS_LUGER` / 50 × 38 px |
-| Klíč v profilu | `"luger"` |
+| Přebití | 0,7 s |
+| Kritická šance | 0 % |
+| Projektil | kulka, střední rychlost, červené světlo |
+| Průraz | 0 |
+| Otřes obrazovky | slabý |
+| Nábojnice | ano |
+| Munice | krabice s náboji, univerzální krabice |
+| Získání | truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani) |
 
-Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+Hodnoty jsou bez vylepšení ze stromu a bez upgradů.
 
-### Střelba
+## Tipy a souvislosti
 
-Poloautomatická, jedna kulka `Round::Bullet`, odchylka ±0,175 rad (±10°).
+- Jediná cesta, jak Luger zesílit, jsou uzly **Damage** a **Crit** ve [stromu zbraně](/docs/guns/strom-zbrane) — upgrady poškození od Scientista u něj nefungují.
+- Uzly **Accuracy** mu pomůžou víc než většině zbraní.
+- Zní stejně jako Pistol.
 
-### Projektil
+## Známé nesrovnalosti
 
-| Vlastnost | Hodnota |
-| --- | --- |
-| Typ | `Round::Bullet` |
-| Rychlost | 700 px/s |
-| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
-| Průraz (`pierce`) | 0 |
-| Životnost | — |
-| Zvláštní efekt | — |
-| Světlo | červené (255, 0, 0) |
-| Natáčí se ve směru letu | ne |
-| Textura | `tex::BULLET` |
+- Stůl se zbraněmi ukazuje poškození 1–2, ale 2 nikdy nepadne — Luger dává vždy 1.
+- Upgrade *Sharpened Bullets* na něj nemá žádný vliv.
+- Je to ve všem horší Pistol (DPS 4 proti 6).
 
-Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+## Nápady na rozšíření
 
-### Přebíjení a munice
-
-Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,7 s, pak se zásobník doplní z rezervy (max. 9 nábojů). Rezervu 150 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
-
-### Zvláštnosti
-
-- Rozsah `1–2` znamená kvůli `damage_for` vždy přesně 1 poškození (maximum se nikdy nepadne).
-- Sdílí zvuky s pistolí (`PistolShoot`, `PistolReload`).
-
-## Interakce
-
-- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
-- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
-- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
-- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
-
-## Kde v kódu
-
-- `guns.rs` → `GunKind::Luger`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
-- `systems/shooting.rs` → `shoot`, `bullet_hits`
-- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Luger“)
-- `assets.rs` → `tex::GUNS_LUGER`
-
-## Nápady / chybí
-
-- Je to striktně horší pistole (DPS 4 vs. 6). Dát jí identitu — např. vyšší kritickou šanci nebo rychlejší kadenci.
-- Vlastní zvuk výstřelu chybí.
+- Dát Lugeru vlastní identitu — vyšší kritickou šanci, rychlejší kadenci nebo vyšší přesnost.
+- Vlastní zvuk výstřelu.

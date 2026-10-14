@@ -3,41 +3,39 @@ title: Hourglass of Ash
 description: Na 6 sekund zpomalí všechny nepřátele a jejich střely na 35 % rychlosti.
 ---
 
+Hourglass of Ash zpomalí čas pro všechno nepřátelské. Ty, tvé střely a tví spojenci se dál pohybujete normální rychlostí.
+
 ## Jak to funguje
 
-- Vloží `TimeSlow { remaining: 6.0 }` na hráče. Tiká v `tick_artefact_effects`.
-- `systems/time_slow.rs` → `time_scale(world)` vrací koeficient „nepřátelského času“:
-  - bez efektu `1.0`,
-  - s efektem `1 - (1 - 0.35) × strength`, kde `strength` plynule roste první 0,3 s (`EASE_SECONDS`) a klesá posledních 0,3 s.
-- Koeficient se používá jako `hostile_dt = dt × time_scale` (`scenes/ingame.rs`) pro:
-  - fyziku nepřátel a nepřátelských střel (`systems/simulation.rs` násobí rychlost),
-  - animace nepřátel a jejich střel (`systems/animation.rs`),
-  - AI a útoky nepřátel, bossů, spawn (`tick_spawning`), dash, pasti, magma, homing, pojistky atd.,
-  - `update_rooms` (vlny, časování místností).
-- **Hráč, jeho střely, pet, duchové a věž běží normální rychlostí.**
-- Opětovné použití během aktivního efektu: `remaining = 6.0 - 0.3`, aby se znovu nespouštěl „ease-in“ a zpomalení zůstalo plné.
+- Po použití se během zlomku sekundy (0,3 s) zpomalí nepřátelský čas na **35 %** a na konci se stejně plynule vrátí.
+- Zpomalí se:
+  - pohyb nepřátel a jejich střel,
+  - animace, útoky a schopnosti nepřátel i bossů,
+  - objevování nových nepřátel a vlny v místnostech,
+  - pasti a nebezpečné prostředí.
+- **Normální rychlostí běží:** ty, tvé střely, vlk, duchové z Grave Lantern a věž z Bone Turret.
+- Použití dalších přesýpacích hodin během efektu prodlouží zpomalení na plnou délku bez nového náběhu.
 
-| Parametr | Hodnota |
+## Statistiky
+
+| Vlastnost | Hodnota |
 |---|---|
 | Trvání | 6 s |
 | Rychlost nepřátel | 35 % |
 | Náběh / doběh | 0,3 s |
-| Textura | `ingame/artefacts/hourglass_of_ash.tga` |
 
-## Interakce
+## Tipy a souvislosti
 
-- [Nepřátelé](/docs/enemies) – všechny jejich systémy dostávají `hostile_dt`.
+- [Nepřátelé](/docs/enemies) – zpomaleno je opravdu všechno, co dělají.
 - [Dungeon](/docs/dungeon) – zpomalí i odpočty vln v místnostech.
-- [Thunder Idol](/docs/artefacts-items/artefacts/thunder-idol), [Bone Turret](/docs/artefacts-items/artefacts/bone-turret) – dobře se kombinují.
+- Výborně se kombinuje s [Thunder Idol](/docs/artefacts-items/artefacts/thunder-idol), [Bone Turret](/docs/artefacts-items/artefacts/bone-turret) a [Grave Lantern](/docs/artefacts-items/artefacts/grave-lantern) – spojenci jsou vůči zpomaleným nepřátelům téměř třikrát rychlejší.
+- Nejlepší proti bossům s hustými vzory střel – mezerami mezi střelami pak projdeš snadno.
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `artefacts.rs` → `TIME_SLOW_SECONDS`, `TIME_SLOW_SCALE`
-- `systems/time_slow.rs` → `time_scale`, `EASE_SECONDS`
-- `systems/artefacts.rs` → arm `HourglassOfAsh`
-- `systems/simulation.rs`, `systems/animation.rs`, `scenes/ingame.rs` (`hostile_dt`)
+- Chybí vizuální indikace zpomalení (žádné zbarvení obrazovky ani zpomalený zvuk) – poznáš ho jen podle pohybu nepřátel.
 
-## Nápady / chybí
+## Nápady na rozšíření
 
-- Chybí vizuální indikace (desaturace / sépiový post-process, zpomalený zvuk). `postfx.rs` už existuje, efekt by šel přidat podle `time_scale`.
-- Pasti, které nejsou `Enemy`, a prostředí (`hazards`) – ověřit, zda všechny opravdu berou `hostile_dt`; projde-li nová mechanika bez něj, efekt ji mine.
+- Sépiový nebo odbarvený filtr obrazovky a zpomalené zvuky po dobu efektu.
+- Varianta, která čas úplně zastaví na kratší dobu.

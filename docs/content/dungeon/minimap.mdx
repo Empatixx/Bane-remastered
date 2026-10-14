@@ -1,110 +1,72 @@
 ---
 title: Minimapa
-description: Malá HUD minimapa a velká mapa na Tab – co ukazují, jak se odkrývají místnosti a jak se kreslí ikony s mlhou.
+description: Malá mapa v rohu obrazovky a velká mapa na Tab – co ukazují a jak se patro postupně odkrývá.
 ---
+
+Bane má dvě mapy patra: malou **minimapu** vpravo nahoře, která je vidět pořád, a velkou
+**mapu** přes celou obrazovku na klávesu **Tab**. Obě ukazují místnosti jako ikony podle
+typu, propojené chodbami, a odkrývají se, jak hráč patro prozkoumává.
 
 ## Jak to funguje
 
-Minimapa nekreslí dlaždice, ale **buňky layoutu** – každá místnost je jedna ikona 16 × 16 px
-podle typu, s vyznačenými průchody. Při stavbě patra (`spawn_minimaps` ve
-`scenes/ingame.rs`) vzniknou dvě entity `Minimap`:
+- Každá místnost je na mapě jedna ikona podle typu. Na jejích hranách jsou vyznačené
+  průchody tam, kam vede chodba.
+- Místnost je **navštívená**, jakmile do ní hráč vkročí. Aktuální místnost je ta, ve které
+  naposledy stál – v chodbě se nemění.
+- Pohled plynule klouže na aktuální místnost.
+- Nenavštívené místnosti jsou zahalené pohyblivou **mlhou**.
+- Artefakt **Reveal Map** označí všechny místnosti patra jako navštívené.
 
-| | Malá (`MapSize::Small`) | Velká (`MapSize::Big`) |
+### Malá minimapa
+
+- Pořád viditelná v pravém horním rohu.
+- Ukazuje aktuální místnost naplno, sousední místnosti trochu zeslabené a navštívené
+  místnosti o krok dál už jen slabě. Nenavštívené místnosti dál než u sousedů skoro nejsou
+  vidět.
+
+| Vzdálenost od aktuální místnosti | Navštívená | Nenavštívená |
 |---|---|---|
-| Kde | HUD vpravo nahoře, střed (865, 94) | střed obrazovky (480, 270) |
-| Rámeček | `MINIMAP_LAYOUT` 125 × 125, vrstva 4 | `MINIMAP_LAYOUT` 400 × 400, vrstva 6 |
-| Měřítko ikon | 1 (16 px) | 4 (64 px) |
-| Viditelnost | vždy | **Tab** (`Action::Map`) otevře/zavře, Esc zavře |
-| Ořez | ne | okno 300–660 × 90–450 px |
-| Posun | ne | tažení myší (`pan_big_maps`), reset při otevření a změně místnosti |
+| aktuální | 100 % | – |
+| soused | 75 % | 75 % |
+| o 2 místnosti dál | 41 % | 6 % |
+| o 3 místnosti dál | skoro neviditelná | – |
 
-Při otevřené velké mapě hráč nestřílí, kurzor je běžná šipka a zazní `SoundEffect::ShowMap`.
+### Velká mapa
 
-### Odkrývání
+- **Tab** ji otevře i zavře, **Esc** zavře. Klávesu lze přemapovat.
+- Ukazuje celou prozkoumanou část patra a k tomu sousední místnosti, do kterých hráč ještě
+  nevkročil („hranice“ průzkumu).
+- Mapou jde posouvat tažením myši; při otevření a změně místnosti se vycentruje.
+- Dokud je velká mapa otevřená, hráč nestřílí.
 
-- `RoomRuntime.entered` – místnost je „navštívená“, jakmile hráč stoupne na kteroukoli
-  její dlaždici. `current` je místnost, ve které hráč naposledy stál (v chodbě se nemění).
-- Pohled plynule klouže na aktuální buňku (`shown += (cíl − shown) × max(0,2, 12·dt)`).
-- Artefakt **Reveal Map** (`RoomRuntime::reveal_all`) označí všechny místnosti jako navštívené.
-
-**Malá mapa** – průhlednost podle BFS vzdálenosti `d` od aktuální místnosti:
-
-```
-alpha = 1 − 0,25 × d^1,25 − (0,35 pokud d větší než 1 a místnost nenavštívená)
-```
-
-| d | navštívená | nenavštívená |
-|---|---|---|
-| 0 | 1,00 | – |
-| 1 | 0,75 | 0,75 |
-| 2 | 0,41 | 0,06 |
-| 3 | 0,01 | – |
-
-Prakticky tedy ukazuje aktuální místnost, sousedy a ještě slabě navštívené místnosti o krok dál.
-
-**Velká mapa** – BFS od aktuální místnosti přes `BigKind`:
-
-| `BigKind` | Kdy | Alpha |
-|---|---|---|
-| `Current` | aktuální místnost | 1,0 |
-| `Visited` | navštívená a dosažitelná přes navštívené | 0,75 |
-| `Unvisited` | nenavštívená, ale sousedí s aktuální/navštívenou | 0,5 |
-| `Unseen` | vše dál | 0 (skrytá) |
-
-Velká mapa tedy ukazuje celou prozkoumanou síť plus „frontier“ – sousední neprozkoumané
-místnosti.
-
-### Vykreslení ikony (`render/quad.wgsl`, `map_room`)
-
-- Sprite z `MINIMAP_ICONS` (7 sloupců) podle typu místnosti.
-- `links` bity (vlevo 1, vpravo 2, nahoře 4, dole 8) → na hranách ikony se dokreslí barevné
-  „dveře“ (`MAP_GATE`) tam, kde vede chodba.
-- Nenavštívená místnost (`fogged`) je překrytá animovanou **mlhou** (fBm šum, posouvá se
-  v čase, každá buňka má vlastní `seed` z hashe souřadnic).
+| Místnost | Viditelnost |
+|---|---|
+| aktuální | 100 % |
+| navštívená | 75 % |
+| nenavštívená, ale sousedí s prozkoumanou | 50 % (v mlze) |
+| ostatní | skrytá |
 
 ## Obsah
 
-Ikony (`frame()` v `systems/minimap.rs`, sloupec v `MINIMAP_ICONS`):
+Ikony místností: **Start**, **Normal**, **Treasure**, **Shop**, **Boss**, **Sacrifice**,
+**Ambush** – každý typ má vlastní ikonu. Popis místností v [Typech místností](/docs/dungeon/rooms).
 
-| Sloupec | Typ |
-|---|---|
-| 0 | Start |
-| 1 | Normal |
-| 2 | Treasure |
-| 3 | Shop |
-| 4 | Boss |
-| 5 | Sacrifice |
-| 6 | Ambush |
+## Tipy a souvislosti
 
-## Interakce
+- [Typy místností](/docs/dungeon/rooms) – co se skrývá za kterou ikonou.
+- [Artefakty a předměty](/docs/artefacts-items) – *Reveal Map*.
+- [Hráč](/docs/player) – ovládání a přemapování kláves.
+- Stačí stoupnout do Normal místnosti vedle odbočky a velká mapa prozradí, jestli je za ní
+  obchod, pokladnice, ambush nebo boss.
 
-- [Typy místností](/docs/dungeon/rooms) – typ místnosti = ikona; `RoomRuntime` dodává
-  `entered` a `current`.
-- [Artefakty](/docs/artefacts-items) – *Reveal Map*.
-- [Hráč](/docs/player) – klávesa mapy je přemapovatelná (`controls.rs`, výchozí Tab).
+## Známé nesrovnalosti
 
-## Kde v kódu
+- Velká mapa ukazuje typ i u nenavštívených sousedních místností – hráč tak vidí, kde je Boss
+  nebo Shop, jakmile stojí vedle. Pokud to není záměr, mohly by mít neutrální ikonu.
+- Malou minimapu nejde zvětšit, zmenšit ani vypnout v nastavení.
 
-- `systems/minimap.rs` – `rooms_for`, `update_minimaps`, `refresh`, `alpha`, `minimap_draws`,
-  `pan_big_maps`, `reset_big_map_pan`, `frame`, `link_bit`, `seed_for`
-- `components/minimap.rs` – `Minimap`, `MiniRoom`, `MapSize`, `BigKind`, `BigMap`
-- `scenes/ingame.rs` – `spawn_minimaps`, `set_big_map`
-- `render/quad.wgsl` – `map_room`, `map_fbm`
-- `systems/rooms.rs` – `RoomRuntime::entered`, `current`, `reveal_all`
+## Nápady na rozšíření
 
-## Jak přidat nový …
-
-**Ikona pro nový typ místnosti**: rozšiř `minimap_icons.tga` o sloupec, přidej větev do
-`frame()` a uprav počet sloupců v `Sprite::cell_uv(frame(room.kind), 0, 7, 1)` (konstanta 7).
-
-**Nový marker na mapě** (např. „truhla neotevřena“, „boss poražen“): rozšiř `MiniRoom`
-o příznak, plň ho v `refresh` z dat scény a v `minimap_draws` přidej další `Draw` přes ikonu.
-
-## Nápady / chybí
-
-- Na mapě nejsou žádné značky obsahu – nevyzvednutá truhla, žebřík, obchod s nekoupeným
-  zbožím, vyčištěná vs. nevyčištěná místnost.
-- Velká mapa ukazuje typ (ikonu) i u nenavštívených frontier místností – hráč tak vidí, kde je
-  Boss/Shop, jakmile stojí vedle. Pokud to není záměr, nenavštívené by mohly mít neutrální ikonu.
-- Počet sloupců atlasu (7) je natvrdo v `minimap_draws`.
-- Malá mapa nejde zvětšit/zmenšit ani vypnout v nastavení.
+- Značky obsahu na mapě: neotevřená truhla, žebřík, obchod s nekoupeným zbožím, vyčištěná
+  vs. nevyčištěná místnost.
+- Nastavení velikosti a průhlednosti minimapy.

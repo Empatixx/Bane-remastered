@@ -1,55 +1,47 @@
 ---
 title: Challenge
-description: Šest volitelných modifikátorů runu, které se vybírají na Quest boardu a jednorázově platí talenty.
+description: Šest volitelných ztížení runu, která se vybírají na Quest boardu a jednorázově odmění talenty.
 ---
+
+Challenge je dobrovolné ztížení runu. Vybereš si ji na Quest boardu (záložka **Challenges**), změní
+[pravidla](/docs/progression/rules) runu a za první úspěšné splnění dostaneš talenty.
 
 ## Jak to funguje
 
-- Challenge se vybírá na Quest boardu (záložka **Challenges**) kliknutím na lístek. Klik na už vybranou ji zruší, klik na jinou ji přepne (`ProgressState::toggle`). Aktivní může být **jen jedna**; lístek má zelený nápis „Active“.
-- Výběr se ukládá do profilu (`selected`) a **platí pro všechny další runy**, dokud ho hráč nezruší.
-- Vybraná challenge **obarví portál** v lobby svou barvou (`accent`) — tint sprite i světla (`systems::tint_portal`).
-- Na začátku runu se z ní vezmou `RunRules` — viz [Pravidla runu](/docs/progression/rules).
-- Na konci runu (`finish_run`): pokud challenge ještě nebyla splněna a hráč dosáhl cíle, přidá se do `completed` a hráč dostane talenty **jednou za celý profil**. Death screen ukáže „`<Title>` complete! +N talents“.
-- Cíl (`reached`): pokud `target_floor ≥ FINAL_FLOOR` (5), je potřeba **vítězství**; jinak stačí dosáhnout patra `target_floor` (i když hráč na něm zemře).
-- Splněnou challenge lze vybrat a hrát znovu, jen už nic neplatí (na lístku zmizí odměna).
+- Kliknutím na lístek challenge vybereš; klikem na vybranou ji zrušíš, klikem na jinou ji přepneš. Aktivní je vždy **nejvýš jedna** — poznáš ji podle zeleného nápisu „Active“.
+- Výběr **platí pro všechny další runy**, dokud ho nezrušíš.
+- Vybraná challenge **obarví portál** v laboratoři svou barvou, takže už u vstupu vidíš, co tě čeká.
+- Na konci runu: pokud jsi challenge ještě nikdy nesplnil a dosáhl jsi cíle, dostaneš talenty — **jen jednou za celou hru**. Obrazovka konce runu ukáže „*Název* complete! +N talents“.
+- **Cíl:** u většiny challenge stačí **dosáhnout** cílového patra (i když na něm zemřeš). Challenge s cílem „Beat the last boss“ vyžaduje vítězství.
+- Splněnou challenge můžeš hrát znovu, odměna už ale nebude (na lístku zmizí).
 
 ## Obsah
 
-| Id (`ChallengeId`) | Název | Popis ve hře | Pravidla | Cíl | Odměna | Barva portálu (RGB) |
-|---|---|---|---|---|---|---|
-| `glass_cannon` | Glass Cannon | One heart, double damage. Reach floor 3 | max HP = 1, damage hráče ×2 | patro 3 | **4** | 255, 70, 70 |
-| `pistol_only` | Pistol Only | No gun but the pistol. Reach floor 3 | jen `GunKind::Pistol` | patro 3 | **3** | 230, 200, 90 |
-| `horde` | Horde | Tougher, harder hitting enemies. Reach floor 4 | HP nepřátel ×1,6, damage nepřátel ×1,3 | patro 4 | **4** | 90, 200, 90 |
-| `merchants_strike` | Merchant's Strike | No shops. Reach floor 4 | žádný obchod | patro 4 | **3** | 90, 160, 255 |
-| `two_left_feet` | Two Left Feet | No dodging. Reach floor 3 | úskok vypnut | patro 3 | **3** | 255, 150, 40 |
-| `bane` | Bane | Horde without armor regen. Beat the last boss | Horde + bez regenerace armoru | **vítězství** (patro 5) | **6** | 200, 30, 30 |
+| Challenge | Popis ve hře | Co mění | Cíl | Odměna | Barva portálu |
+|---|---|---|---|---|---|
+| Glass Cannon | One heart, double damage. Reach floor 3 | max. 1 HP, tvoje poškození ×2 | patro 3 | **4** talenty | červená |
+| Pistol Only | No gun but the pistol. Reach floor 3 | jen pistole | patro 3 | **3** | zlatožlutá |
+| Horde | Tougher, harder hitting enemies. Reach floor 4 | HP nepřátel ×1,6, poškození nepřátel ×1,3 | patro 4 | **4** | zelená |
+| Merchant's Strike | No shops. Reach floor 4 | žádné obchody | patro 4 | **3** | modrá |
+| Two Left Feet | No dodging. Reach floor 3 | nelze uskakovat | patro 3 | **3** | oranžová |
+| Bane | Horde without armor regen. Beat the last boss | jako Horde + nefunguje regenerace armoru | **vítězství** (patro 5) | **6** | tmavě rudá |
 
 Celkem lze z challenge získat **23 talentů**.
 
-## Interakce
+## Tipy a souvislosti
 
-- UI: [Quest board](/docs/progression/quest-board).
-- Efekty pravidel: [Pravidla runu](/docs/progression/rules), úskok a HP: [Hráč](/docs/player), pistole: [Zbraně](/docs/guns/pistol).
-- Příběhově je challenge **Bane** klíčová — podle `story.md` je jejím splněním podmíněn pravý konec ([Příběh](/docs/progression/story)).
+- Úskok a HP: [Hráč](/docs/player); pistole: [Zbraně](/docs/guns/pistol).
+- **Glass Cannon:** s 1 HP rozhoduje armor — talent Improved Armor a Armor Regeneration se tu vyplatí.
+- **Merchant's Strike:** coins nemáš za co utratit, takže je to ideální run pro misi Gold Digger.
+- **Bane** je podle příběhu klíčová — jejím splněním má být podmíněn pravý konec ([Příběh](/docs/progression/story)).
 
-## Kde v kódu
+## Známé nesrovnalosti
 
-- `progress/challenges.rs` → `ChallengeId`, `Challenge`, `spec()`, `reached()`, konstanty `HORDE`, `NEUTRAL`
-- `progress/state.rs` → `ProgressState::toggle`, `rules`, `accent`, `finish_run`, `completed`
-- `profile.rs` → `SharedProfile::toggle_challenge`, `rules`, `challenge`, `accent`
-- `systems/portal.rs` → `tint_portal`
-- `scenes/ingame.rs` → `start_run` (čte `rules` a `challenge`), `progress_note`
+- Splnění challenge **Bane** zatím nemá žádný příběhový dopad (pravý konec neexistuje).
+- Zesílení nepřátel v Horde a Bane neplatí pro některé speciální útoky — viz [Pravidla runu](/docs/progression/rules).
 
-## Jak přidat novou challenge
+## Nápady na rozšíření
 
-1. Přidat variantu do `ChallengeId` (serde `snake_case`) a do `ChallengeId::ALL` — pořadí v `ALL` = pořadí lístků na boardu (index kliknutí se mapuje přes `ALL`).
-2. Doplnit větev v `spec()`: titul, popis, `target_floor` (2..=`FINAL_FLOOR`), odměna (větší než 0), barva, `RunRules` (musí se lišit od výchozích — hlídá test).
-3. Pokud potřebuje nové pravidlo, nejdřív ho přidat do `RunRules` ([postup](/docs/progression/rules)).
-4. Board má 3 sloupce, lístky se skládají do řádků po 3 (`COLUMNS`) — 7. a další challenge přidá třetí řádek; ověřit, že se vejde do panelu.
-
-## Nápady / chybí
-
-- Lze mít aktivní jen jednu challenge — kombinace (Heat systém à la Hades, kde se modifikátory sčítají a násobí odměnu) by dala mnohem víc replay hodnoty.
-- Popisy challenge jsou mechanické; `story.md` navrhuje přepsat je jako Vědcovy poznámky (např. Horde: „I fed it a little. Let us see what grew.“).
-- Splnění challenge **Bane** nemá žádný příběhový dopad (pravý konec neexistuje).
-- Nápady na další challenge: „No Artefacts“, „Speedrun“ (časový limit na patro), „Bullet Sponge“ (nepřátelé ×3 HP, hráč ×2 damage), „Poverty“ (žádné coins z nepřátel), „One Gun“ (zbraň nejde měnit — zvednutá první zůstane).
+- Kombinování více challenge najednou s rostoucí odměnou (systém à la Heat z Hades).
+- Popisy jako Vědcovy poznámky (např. Horde: „I fed it a little. Let us see what grew.“).
+- Nové challenge: „No Artefacts“, „Speedrun“ (časový limit na patro), „Bullet Sponge“ (nepřátelé ×3 HP, hráč ×2 poškození), „Poverty“ (nepřátelé nepouštějí coins), „One Gun“ (první sebraná zbraň zůstane napořád).
