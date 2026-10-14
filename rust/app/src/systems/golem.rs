@@ -78,7 +78,22 @@ fn unit(seed: &mut u32) -> f32 {
     (next(seed) >> 8) as f32 / (1u32 << 24) as f32
 }
 
+const ATTACK_VAR: &str = "BANE_GOLEM_ATTACK";
+
+fn forced_attack() -> Option<GolemAttack> {
+    match std::env::var(ATTACK_VAR).ok()?.trim().to_ascii_lowercase().as_str() {
+        "slam" => Some(GolemAttack::Slam),
+        "throw" => Some(GolemAttack::Throw),
+        "rain" => Some(GolemAttack::Rain),
+        "laser" => Some(GolemAttack::Laser),
+        _ => None,
+    }
+}
+
 pub(crate) fn choose_attack(golem: &mut GolemBoss, distance: f32) -> GolemAttack {
+    if let Some(attack) = forced_attack() {
+        return attack;
+    }
     let close = distance < enemies::GOLEM_NEAR;
     let weights = [
         (GolemAttack::Slam, if close { 4.0 } else { 1.0 }),
