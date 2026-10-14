@@ -254,22 +254,18 @@ impl SharedProfile {
         self.0.borrow().profile.progress.selected()
     }
 
-    #[allow(dead_code)]
     pub(crate) fn accent(&self) -> Option<[f32; 3]> {
         self.0.borrow().profile.progress.accent()
     }
 
-    #[allow(dead_code)]
     pub(crate) fn board(&self) -> BoardView {
         self.0.borrow().profile.progress.board()
     }
 
-    #[allow(dead_code)]
     pub(crate) fn toggle_challenge(&self, id: ChallengeId) {
         self.change(|profile| profile.progress.toggle(id));
     }
 
-    #[allow(dead_code)]
     pub(crate) fn claim_mission(&self, slot: usize) -> Option<u32> {
         self.change(|profile| {
             let paid = profile.progress.claim(slot)?;
