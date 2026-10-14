@@ -3,6 +3,7 @@ use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::{Assets, Tex, tex};
+use crate::controls;
 use crate::guns::GunKind;
 use crate::input::Input;
 use crate::render::{Align, FontSize};
@@ -54,7 +55,6 @@ const DICE_SIZE: Vec2 = Vec2::new(54.0, 54.0);
 const REROLL_CENTER: Vec2 = Vec2::new(PLATE_CENTER.x, 488.0);
 const REROLL_COST_BASELINE: f32 = 532.0;
 const HINT_BASELINE: f32 = 492.0;
-const HINT: &str = "Drag or WASD to move the tree";
 const GLYPH: f32 = 36.0;
 const ROLL_TIME: f32 = 0.7;
 const ROLL_FRAMES: usize = 6;
@@ -561,9 +561,14 @@ fn reroll_plate(hover: Hover, roll: Option<f32>, affordable: bool) -> Vec<Elemen
     ]
 }
 
-fn hint() -> Element {
+fn hint(move_keys: &str) -> Element {
+    let keys = if move_keys.is_empty() {
+        controls::movement_label(&controls::Bindings::default())
+    } else {
+        move_keys.to_owned()
+    };
     Element::Label {
-        content: HINT.to_owned(),
+        content: format!("Drag or {keys} to move the tree"),
         position: Vec2::new(CENTER_X, HINT_BASELINE),
         color: LINE_OFF,
         size: FontSize::Size16,
@@ -703,6 +708,7 @@ pub(crate) struct Shown {
     pub(crate) hover: Hover,
     pub(crate) gold: u64,
     pub(crate) roll: Option<f32>,
+    pub(crate) move_keys: String,
 }
 
 pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
@@ -715,6 +721,7 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
         hover,
         gold,
         roll,
+        ref move_keys,
     } = *shown;
     let kind = GunKind::ALL[selected.min(GunKind::ALL.len() - 1)];
     let spec = progress.mods(kind).apply(kind.spec());
@@ -797,7 +804,7 @@ pub(crate) fn layout(shown: &Shown) -> Vec<Element> {
         ));
     }
     elements.extend(arrows(&grown, pan));
-    elements.push(hint());
+    elements.push(hint(move_keys));
     elements.extend(reroll_plate(
         hover,
         roll,
@@ -851,6 +858,7 @@ pub(crate) struct WeaponTable {
     hover: Hover,
     gold: u64,
     roll: Option<f32>,
+    move_keys: String,
     dirty: bool,
 }
 
@@ -956,6 +964,11 @@ impl WeaponTable {
         }
         let grown = self.grown();
         let point = input.mouse();
+        let move_keys = controls::movement_label(input.bindings());
+        if move_keys != self.move_keys {
+            self.move_keys = move_keys;
+            self.dirty = true;
+        }
         let direction = input.direction();
         if direction != Vec2::ZERO {
             self.pan = clamp_pan(&grown, self.pan - direction * PAN_SPEED * dt);
@@ -1044,6 +1057,7 @@ impl WeaponTable {
             hover: self.hover,
             gold: self.gold,
             roll: self.roll,
+            move_keys: self.move_keys.clone(),
         }) {
             spawn(world, element, assets);
         }
@@ -1324,6 +1338,16 @@ mod tests {
     }
 
     #[test]
+    fn the_pan_hint_names_the_bound_movement_keys() {
+        let rebound = layout(&Shown {
+            move_keys: "ZQSD".to_owned(),
+            ..base()
+        });
+
+        assert!(labels(&rebound).contains(&"Drag or ZQSD to move the tree".to_owned()));
+    }
+
+    #[test]
     fn rerolling_changes_the_tree_that_is_drawn() {
         let before = plain(0, 0);
         let after = layout(&Shown {
@@ -1334,7 +1358,7 @@ mod tests {
         assert_ne!(before, after);
         assert_eq!(images(&after, tex::REROLL_DICE), 1);
         assert!(labels(&after).contains(&format!("{REROLL_COST} gold")));
-        assert!(labels(&after).contains(&HINT.to_string()));
+        assert!(labels(&after).contains(&"Drag or WASD to move the tree".to_owned()));
     }
 
     #[test]

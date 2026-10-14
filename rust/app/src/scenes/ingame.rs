@@ -68,6 +68,7 @@ pub(crate) struct InGameScene {
     surfaces: Surfaces,
     flow: FlowField,
     victory: bool,
+    leave_to_menu: bool,
     death: Option<systems::DeathScreen>,
     profile: Option<SharedProfile>,
     rules: RunRules,
@@ -169,7 +170,7 @@ impl Scene for InGameScene {
         input: &Input,
         dt: f32,
         assets: &Assets,
-        _settings: &mut Settings,
+        settings: &mut Settings,
     ) -> Transition {
         self.camera.update_shake(dt);
         if self.death.is_none() && (self.victory || systems::player_is_dead(&self.world)) {
@@ -180,7 +181,11 @@ impl Scene for InGameScene {
             systems::update_death_ui(&mut self.world, screen);
             systems::update_status_bars(&mut self.world, dt);
             if screen.finished() {
-                return Transition::Switch(SceneId::Lobby);
+                return Transition::Switch(if self.leave_to_menu {
+                    SceneId::Menu
+                } else {
+                    SceneId::Lobby
+                });
             }
             systems::follow_backdrop(&mut self.world, self.camera.view());
             return Transition::None;
@@ -193,14 +198,13 @@ impl Scene for InGameScene {
                 self.set_big_map(false);
             } else {
                 self.pause
-                    .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
+                    .escape(&mut self.world, assets, &prefabs::PAUSE_GAME);
             }
         }
         if self.pause.is_active() {
-            let action = self.pause.update(&mut self.world, input);
-            if action.is_some() {
-                self.sounds.push(AudioCommand::Effect(SoundEffect::Click));
-            }
+            let action =
+                self.pause
+                    .update(&mut self.world, input, assets, settings, &mut self.sounds);
             return match action {
                 Some(UiAction::Resume) => {
                     self.pause
@@ -210,6 +214,13 @@ impl Scene for InGameScene {
                 Some(UiAction::Die) => {
                     self.pause
                         .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
+                    self.start_death_screen(assets);
+                    Transition::None
+                }
+                Some(UiAction::LeaveToMenu) => {
+                    self.pause
+                        .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
+                    self.leave_to_menu = true;
                     self.start_death_screen(assets);
                     Transition::None
                 }
@@ -619,6 +630,7 @@ impl InGameScene {
         self.run_seed = seed;
         tracing::info!(seed, "a new run starts, set BANE_SEED to replay it");
         self.victory = false;
+        self.leave_to_menu = false;
         self.death = None;
         self.rules = self
             .profile
@@ -1213,7 +1225,7 @@ mod tests {
     }
 
     #[test]
-    fn the_pause_menu_offers_resume_die_and_exit_game() {
+    fn the_pause_menu_offers_resume_settings_main_menu_die_and_exit_game() {
         let (scene, _assets) = paused_game();
 
         let mut labels: Vec<String> = scene
@@ -1225,7 +1237,51 @@ mod tests {
             .collect();
         labels.sort();
 
-        assert_eq!(labels, vec!["Die", "Exit Game", "Resume"]);
+        assert_eq!(
+            labels,
+            vec!["Die", "Exit Game", "Main Menu", "Resume", "Settings"]
+        );
+    }
+
+    #[test]
+    fn main_menu_ends_the_run_like_a_death_and_then_goes_to_the_main_menu() {
+        let (mut scene, assets) = paused_game();
+        let profile = SharedProfile::in_memory();
+        scene.profile = Some(profile.clone());
+        let runs = profile.snapshot().runs;
+
+        let transition = press_button(&mut scene, &assets, "Main Menu");
+
+        assert!(matches!(transition, Transition::None));
+        assert!(scene.death.is_some(), "the run summary is shown first");
+        assert!(!scene.pause.is_active());
+        assert_eq!(profile.snapshot().runs, runs + 1, "the run is recorded");
+        let mut until_done = Transition::None;
+        for _ in 0..600 {
+            let mut input = Input::default();
+            input.press(KeyCode::Space);
+            until_done = scene.update(&input, 0.1, &assets, &mut Settings::in_memory());
+            if until_done != Transition::None {
+                break;
+            }
+        }
+        assert_eq!(until_done, Transition::Switch(SceneId::Menu));
+    }
+
+    #[test]
+    fn dying_from_the_pause_menu_still_returns_to_the_lobby() {
+        let (mut scene, assets) = paused_game();
+        press_button(&mut scene, &assets, "Die");
+        let mut until_done = Transition::None;
+        for _ in 0..600 {
+            let mut input = Input::default();
+            input.press(KeyCode::Space);
+            until_done = scene.update(&input, 0.1, &assets, &mut Settings::in_memory());
+            if until_done != Transition::None {
+                break;
+            }
+        }
+        assert_eq!(until_done, Transition::Switch(SceneId::Lobby));
     }
 
     #[test]

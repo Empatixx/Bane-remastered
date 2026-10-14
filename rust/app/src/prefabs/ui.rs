@@ -212,14 +212,17 @@ const PAUSE_TEXT_COLOR: Vec4 = palette::ORANGE;
 
 const PAUSE_HOVER_COLOR: Vec4 = Vec4::new(1.0, 1.0, 0.0, 1.0);
 
-pub(crate) const PAUSE_GAME: [(&str, UiAction); 3] = [
+pub(crate) const PAUSE_GAME: [(&str, UiAction); 5] = [
     ("Resume", UiAction::Resume),
+    ("Settings", UiAction::Settings),
+    ("Main Menu", UiAction::LeaveToMenu),
     ("Die", UiAction::Die),
     ("Exit Game", UiAction::ExitGame),
 ];
 
-pub(crate) const PAUSE_LOBBY: [(&str, UiAction); 3] = [
+pub(crate) const PAUSE_LOBBY: [(&str, UiAction); 4] = [
     ("Resume", UiAction::Resume),
+    ("Settings", UiAction::Settings),
     ("Main Menu", UiAction::LeaveToMenu),
     ("Exit Game", UiAction::ExitGame),
 ];
