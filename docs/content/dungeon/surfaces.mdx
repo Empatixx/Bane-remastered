@@ -1,0 +1,102 @@
+---
+title: Povrchy a kapaliny
+description: Led, láva, voda a bažina – jak se rozlévají po místnostech, jak působí na hráče a jak se kreslí blob dlaždice a břehy.
+---
+
+## Jak to funguje
+
+Témata Ice, Lava, Sewer a Moss mají vlastní **kapalinu** (`Theme::surface`). Při stavbě
+patra se do každé **Normal a Ambush** místnosti rozlije několik skvrn (`surface::plan`)
+a výsledek se uloží do `Surfaces` – mapy dlaždice → `Surface`.
+
+### Generování skvrn (`dungeon/surface.rs`)
+
+1. Povolené dlaždice: uvnitř místnosti (1 od okraje), průchozí, ne spawn bod, ne dekorace
+   (u 2 × 2 ploch celá plocha + dlaždice nad ní), aspoň 3 dlaždice (Manhattan) od dveří.
+2. Cílová plocha = `plocha místnosti × (low + below(high − low + 1)) / 100`.
+3. Počet skvrn `1 + below(blob_limit)`; každá roste od náhodného semínka náhodným přidáváním
+   sousedních dlaždic do velikosti `4 + below(max(target / 2, 4))` (max `size × 12` pokusů).
+4. **Láva** navíc nesmí rozdělit místnost: skvrna, po které by volná podlaha přestala být
+   souvislá (BFS `stays_connected`), se zahodí.
+
+| Povrch | Téma | Podíl plochy | Max skvrn | Efekt na hráče |
+|---|---|---|---|---|
+| `Ice` | Ice | 22–40 % | 5 | tlumení 1,1 místo 5 → klouže, pomalu brzdí i zrychluje |
+| `Lava` | Lava | 8–14 % | 3 | 2 dmg přes brnění (max ~2/s díky 1 s nezranitelnosti); ne během dodge |
+| `Water` | Sewer | 16–30 % | 4 | rychlost × 0,55; vlnky (`RIPPLE`) každých 0,2 s při pohybu nad 40 px/s |
+| `Bog` | Moss | 14–26 % | 4 | rychlost × 0,45 |
+
+Rychlost hráče je 411 px/s, ve vodě tedy ~226, v bažině ~185. Zpomalení se kombinuje
+s perky/berserkem násobením. Voda/bažina mají přednost před pavučinou (neplatí obojí naráz).
+Povrch se zjišťuje podle **středu** hráče (`at_point`), vlnky podle nohou.
+
+### Vykreslení
+
+- **Blob dlaždice** (`Surfaces::liquid_row`): pro každou dlaždici kapaliny se spočte 8bitová
+  maska sousedů „stejný povrch nebo zeď“ (4 hrany + 4 rohy, roh se počítá jen pokud jsou
+  obě přilehlé hrany). Redukovaných masek je 47 → řádek textury = `rank × 3 + varianta`,
+  tedy **141 řádků** (`SURFACE_ROWS`) na texturu.
+- Varianta (0–2) je hash pozice `(x·31 xor y·17) % 3` – deterministická.
+- **Animace**: láva 4 snímky, voda 8 snímků, led a bažina 1 snímek; 0,25 s na snímek.
+  Shader `quad.wgsl` (`liquid_color`) navíc kreslí pixel-art pohyb podle `Liquid { kind, time }`
+  (kind 1 voda, 2 led, 3 láva, 4 bažina), čas synchronizuje `sync_liquids`.
+- **Stín pod zdí**: dlaždice kapaliny, nad kterou je zeď, dostane překryv `SURFACE_SHADE`.
+- **Světlo lávy**: každá dlaždice, kde `(x + 3y) % 4 == 0`, svítí oranžově (255, 110, 20),
+  poloměr 80, intenzita 0,9.
+- **Břehy** (`shore_at`): každá suchá dlaždice sousedící s kapalinou dostane přechodový
+  sprite – 16 masek podle hran + 4 diagonální rohy, po 2 variantách = **40 řádků** (`SHORE_ROWS`).
+- Vrstvy: kapalina, břeh i stín jsou na `Layer(-2)` (nad tilemapou `-3`, pod props `-1`).
+
+## Obsah
+
+| Prop | Textura | Snímky |
+|---|---|---|
+| `IceSurface` | `SURFACE_ICE` | 1 |
+| `LavaSurface` | `SURFACE_LAVA` | 4 |
+| `WaterSurface` | `SURFACE_WATER` | 8 |
+| `BogSurface` | `SURFACE_BOG` | 1 |
+| `IceShore` / `LavaShore` / `WaterShore` / `BogShore` | `SHORE_*` | 1 (40 řádků) |
+| `SurfaceShade` | `SURFACE_SHADE` | 1 |
+| ripple | `RIPPLE` | 6 × 0,1 s, 96 × 96 |
+
+Magma Hellhounda používá stejný sprite `LavaSurface` (vždy „vnitřní“ blob řádek), ale je to
+samostatný mechanismus – viz [Pasti](/docs/dungeon/hazards).
+
+## Interakce
+
+- [Hráč](/docs/player) – `steer_player_on` (rychlost, tlumení).
+- [Patra a témata](/docs/dungeon/themes) – který povrch patro má.
+- [Dekorace](/docs/dungeon/decor) – povrchy se generují až po dekoracích a vyhýbají se jim.
+- [Osvětlení](/docs/dungeon/lighting) – lávové dlaždice jsou zdroje světla.
+
+## Kde v kódu
+
+- `dungeon/surface.rs` – `Surface`, `Surfaces`, `plan`, `liquid_row`, `shore_at`,
+  `interior_row`, `variant`, `stays_connected`
+- `prefabs/fixtures.rs` – `surface_tile`, `shore_tile`
+- `systems/surfaces.rs` – `burn_on_lava`, `ripple_on_water`, `sync_liquids`
+- `systems/steering.rs` – `WATER_SLOWDOWN`, `BOG_SLOWDOWN`, `ICE_DAMPING`
+- `scenes/ingame.rs` – spawn povrchů a břehů v `build()`
+- `props.rs` – `surface()`, `shore()`, `SURFACE_ROWS`
+
+## Jak přidat nový …
+
+**Nový povrch (např. „jed“ / „pavučinová kaše“)**
+
+1. Varianta do `Surface` + `share()` a `blob_limit()` v `dungeon/surface.rs`.
+2. Přiřaď tématu v `Theme::surface`.
+3. Props `XxxSurface` (141 řádků × N snímků po 16 px) a `XxxShore` (40 řádků) v `props.rs`,
+   textury v `assets.rs`; mapování v `surface_tile` a `shore_tile` (`prefabs/fixtures.rs`).
+4. `Liquid.kind` pro shader (nová hodnota + větev v `liquid_color` v `render/quad.wgsl`).
+5. Efekt: větev v `steer_player_on` (rychlost/tlumení) nebo nový systém jako `burn_on_lava`.
+6. Pokud nesmí blokovat průchod, přidej do podmínky `stays_connected` jako u lávy.
+
+## Nápady / chybí
+
+- Povrchy působí **jen na hráče** – nepřátelé ignorují vodu, bažinu, led i lávu
+  (navigace je nepovažuje za překážku ani nevyhýbá).
+- Žádné interakce mezi prvky: mrazivý sud nezamrazí vodu, výbuch nevysuší bažinu, láva
+  nezapaluje.
+- Voda a bažina se liší jen o 10 % zpomalení – bažina by mohla např. „lepit“ nebo dávat jed.
+- Stone, Spider a Temple nemají žádný povrch.
+- Kapaliny jsou jen v Normal/Ambush, nikdy v boss aréně (kromě magmatu Hellhounda).

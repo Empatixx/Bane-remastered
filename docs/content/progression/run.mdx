@@ -1,0 +1,103 @@
+---
+title: Průběh runu a patra
+description: Co se stane od vstupu do portálu přes jednotlivá patra až po posledního bosse.
+---
+
+## Jak to funguje
+
+### Start runu (`InGameScene::start_run`)
+
+Vstup do portálu v lobby přepne na scénu `InGame`, která při `enter` založí nový run:
+
+1. `floor = 1`, nový **seed runu** (`Rng::run_seed()`, přepsatelný `BANE_SEED`; seed se loguje).
+2. Z profilu se načtou **pravidla** (`RunRules` vybrané challenge, jinak výchozí) a ID vybrané challenge — viz [Pravidla runu](/docs/progression/rules).
+3. Postaví se patro (`build`) a aplikují se run perky z talentů (max HP, armor) upravené pravidly.
+
+### Stavba patra (`InGameScene::build`)
+
+Pro každé patro:
+
+- Tři nezávislé RNG streamy odvozené z `(seed, floor)`: `Map`, `Loot`, `Combat`.
+- **Biom** (`Theme::for_floor`): patro 1 je vždy **Spider**, další patra jsou náhodná permutace
+  `Stone, Sewer, Moss, Ice, Lava, Temple` (v rámci jednoho runu se biom neopakuje).
+- Dungeon (`Dungeon::generate_for_run`) — pravidlo `shops = false` vyřadí obchod.
+- Hráč na startu, perky z talentů, módy zbraní z Weapon table, pet (talent Pet).
+- Vybavení místností, obchod (sleva s talentem Discount), Trap Master znehybní pasti.
+- Talent **Gamble machine**: pokud je na patře obchodník, hráč dostane **+100 coins** (`SLOT_MACHINE_COINS`).
+- Minimapa (malá + velká), HUD (zdraví/armor, coins, zbraně, artefakt).
+
+Podrobnosti o místnostech a generování: [Dungeon](/docs/dungeon).
+
+### Během patra — události místností (`RoomEvent`)
+
+| Událost | Reakce |
+|---|---|
+| `RoomCleared` | Talent Armor Regeneration: +1 armor (max. do maxima). Pravidlo `armor_regen = false` ho vypne. |
+| `WaveStarted` | Banner „vlna X / Y“ (jen když je víc vln) |
+| `AmbushCleared` | Truhla se zbraní (`ChestKind::Weapon`) |
+| `ShopEntered` | Obchodník řekne „Welcome to my shop!“ |
+| `BossEntered` | Hudba `Boss` |
+| `BossDefeated` | Otřes kamery, hudba zpět, **artefaktová truhla**; na patře méně než 5 se objeví **žebřík**, na patře 5 **vítězství** |
+
+### Další patro (`next_floor`)
+
+Interakce **E** se žebříkem:
+
+1. Uzavřou se statistiky patra (`close_floor` — pokud hráč na patře nedostal zásah, `untouched_floors += 1`).
+2. Přenese se: zdraví, armor, peněženka (coins), loadout zbraní, artefakt, statistiky runu (`carried_stats`).
+3. Svět se vyčistí, `floor += 1`, postaví se nové patro, stav se obnoví.
+
+### Konec
+
+- **Vítězství**: boss na patře `FINAL_FLOOR = 5` poražen.
+- **Smrt**: zdraví hráče na 0, nebo tlačítko **Die** v pauze.
+
+Obojí vede na stejnou obrazovku — viz [Konec runu](/docs/progression/run-end).
+
+## Obsah
+
+| Patro | Biom | Konec patra |
+|---|---|---|
+| 1 | Spider (pevně) | Boss → žebřík |
+| 2–4 | Náhodný z `Stone, Sewer, Moss, Ice, Lava, Temple` | Boss → žebřík |
+| 5 | Náhodný (zbylý) | Boss → **Victory** |
+
+Statistiky runu (`RunStats`), které se během runu počítají a přenášejí přes patra:
+
+| Pole | Co počítá | Použití |
+|---|---|---|
+| `fired`, `hits` | Výstřely / zásahy | Přesnost na death screenu |
+| `kills`, `kills_of[kind]` | Zabití celkem / podle typu | Death screen, mise |
+| `items` | Sebrané předměty | Death screen („Loot“), mise |
+| `gold` | Sebrané coins | Mise Gold / Gold Digger |
+| `hurt_this_floor`, `untouched_floors` | Zásahy na patře / patra bez zásahu | Mise Untouchable |
+
+## Interakce
+
+- Biomy a bossové podle biomu: [Dungeon](/docs/dungeon), [Nepřátelé](/docs/enemies).
+- Coins, obchod, truhly, artefakty: [Artefakty a předměty](/docs/artefacts-items).
+- Perky z talentů a loadout: [Hráč](/docs/player), [Zbraně](/docs/guns).
+
+## Kde v kódu
+
+- `scenes/ingame.rs` → `InGameScene::start_run`, `build`, `next_floor`, `handle_room_events`
+- `dungeon/theme.rs` → `Theme::for_floor` (`FIRST_FLOOR`, `LATER`)
+- `enemies.rs` → `FINAL_FLOOR`
+- `systems/stats.rs` → `record`, `close_floor`; `components/stats.rs` → `RunStats`
+- `systems/carry.rs` → `carried_stats`, `restore_stats`
+- `systems/perks.rs` → `apply_run_perks`, `apply_floor_perks`, `regenerate_armor`
+
+## Jak přidat …
+
+**Změnit délku runu:** upravit `FINAL_FLOOR` v `enemies.rs`. Pozor na `Theme::for_floor` (6 biomů v `LATER` → víc než 7 pater začne biomy opakovat), na rozsahy `min_floor`/`max_floor` nepřátel a na challenge s `target_floor` (test vyžaduje rozsah 2..=FINAL_FLOOR).
+
+**Pevný biom posledního patra** (požadavek ze `story.md`: patro 5 = Temple): v `Theme::for_floor` vrátit `Theme::Temple` pro `floor == FINAL_FLOOR` a Temple vyřadit z permutace `LATER`.
+
+**Nová statistika runu:** přidat pole do `RunStats`, variantu do `Stat`, větev do `record`, a volat `systems::record(world, Stat::…, n)` tam, kde k události dochází.
+
+## Nápady / chybí
+
+- `story.md` počítá s pevným biomem Temple a finálním bossem **The Heart** na patře 5 — v kódu je biom náhodný a finální boss je obyčejný boss biomu.
+- Po vítězství se spawne artefaktová truhla, ale death screen naskočí hned v dalším snímku — truhla je k ničemu.
+- Obtížnost roste jen lineárně: HP nepřátel `1 + 0,12 × patro`, damage `1 + 0,08 × patro` (`enemies.rs` → `health_multiplier`, `damage_multiplier`); challenge Horde/Bane násobí navíc. Žádná jiná volitelná obtížnost (Heat apod.) neexistuje.
+- Chybí mezipatrový „oddech“ (volba odměny, shop mezi patry).

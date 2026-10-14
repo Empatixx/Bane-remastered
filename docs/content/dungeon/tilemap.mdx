@@ -1,0 +1,121 @@
+---
+title: Tilemapa a tilesety
+description: Mřížka zdí a podlahy, autotiling podle okolí 3×3, úzký a široký tileset, varianty dlaždic a pevné mapy lobby a menu.
+---
+
+## Jak to funguje
+
+### `TileGrid`
+
+Svět je mřížka booleanů zeď/podlaha (`tilemap/grid.rs`), dlaždice má **64 px** (`TILE_SIZE`).
+
+- `filled(c, r)` – vše zeď (dungeon začíná plný a vyřezává se `carve`).
+- `bordered(c, r)` – podlaha se zdí po obvodu (lobby, menu).
+- Mimo mřížku se vše počítá jako zeď.
+- `is_interior` – zeď obklopená zdmi ze všech 8 stran. Takové dlaždice se **nevykreslují**
+  vůbec – prosvítá přes ně barevné pozadí tématu (`backdrop`).
+
+### Autotiling (`tilemap/tileset.rs`)
+
+Tileset je JSON se seznamem **pravidel**. Pro každou vykreslovanou dlaždici se vezme okolí
+3 × 3 (zeď/podlaha) a použije se **první** pravidlo, jehož vzor sedí:
+
+```json
+{ "name": "wall_top_edge",
+  "pattern": ["?#?", "###", "?.?"],
+  "tiles": [22, 23, 24, 25, 22, 23, 24, 25, 22, 23] }
+```
+
+- `#` zeď, `.` podlaha, `?` cokoli; prostřední znak je dlaždice sama.
+- `tiles` – čísla dlaždic v atlasu (řádek × `columns` + sloupec). Opakování v seznamu = váha.
+- Při načtení se ověří, že pravidla pokrývají **všech 512** možných okolí a že čísla dlaždic
+  jsou v atlasu – jinak hra nenastartuje.
+- `solid_from_row`: dlaždice z řádku 1 a níž jsou „solid“ → collider zdi (`physics.add_walls`)
+  a navigace. Testy hlídají, že každá zeď dostane solid dlaždici.
+
+22 pravidel (shodných pro oba tilesety): `wall`, 4× `wall_*_edge`, 4× `wall_inner_corner_*`,
+4× `wall_outer_corner_*`, 4× `floor_corner_*`, `floor_below_wall`, `floor_above_wall`,
+`floor_right_of_wall`, `floor_left_of_wall`, `floor`.
+
+### Výběr varianty
+
+- **Rozptyl** (`scatter_index`): hash `(x · 73 856 093) xor (y · 19 349 663)` → index do `tiles`.
+- **Široký tileset** (`clustered: true`) a pravidlo s `plain`: 34 % dlaždic je
+  „zdobených“ (rozptýlené z `tiles`), zbylých 66 % je „čistých“ z `plain`, vybraných přes
+  hladký value-noise na mřížce 3 × 3 dlaždic (`patch_index`) → čistá podlaha tvoří souvislé
+  skvrny, ne šachovnici.
+- Vše je funkcí pozice, takže vzhled mapy je deterministický a nezávisí na RNG.
+
+### Dva tilesety
+
+| Soubor | Použití | Atlas | Clustered | Variant podlahy |
+|---|---|---|---|---|
+| `assets/tilesets/dungeon.json` | téma Stone, lobby, menu | 21 × 2 | ne | 14 záznamů (dlaždice 5 a 6, 1 : 13) |
+| `assets/tilesets/dungeon_wide.json` | všechna ostatní témata | 69 × 2 | ano | 16 zdobených + 10 čistých; víc variant u podlahy podél zdí |
+
+Řádek 0 atlasu jsou podlahy (včetně přechodů u zdí), řádek 1 zdi. Textura se volí podle
+tématu (`Theme::tileset_texture`), layout podle `Theme::wide_tiles` (`Assets::tileset_of`).
+
+### Spawn
+
+`prefabs::tilemap` vytvoří jednu entitu na každou ne-vnitřní dlaždici (`Layer(-3)`, `Lit`)
+a vrátí seznam solid buněk. Ze stejné mřížky se staví:
+
+- fyzikální zdi (`Physics::add_walls`),
+- navigace pro AI (`Navigation::new`),
+- **okludery** pro stíny světel (`Occluders`, 1 bajt na dlaždici),
+- oblasti kamery (`Dungeon::camera_region`).
+
+## Obsah
+
+### Pevné mapy
+
+| Funkce | Rozměr | Popis |
+|---|---|---|
+| `tilemap::lobby()` | 29 × 10 | ohraničená místnost; dva „sloupy“ 2 × 2 nahoře a dole kolem portálu (sloupce 11–12 a 16–17) a zeď v řádku 8 mezi sloupci 11–17 |
+| `tilemap::crypt()` | 30 × 12 | prázdná ohraničená místnost – kulisa hlavního menu (`scenes/menu_stage.rs`) |
+
+### Textury tilesetů
+
+`TILESET` (Stone), `TILESET_SEWER`, `TILESET_MOSS`, `TILESET_SPIDER`, `TILESET_ICE`,
+`TILESET_LAVA`, `TILESET_TEMPLE` – soubory `ingame/tileset*.png`.
+
+## Interakce
+
+- [Generování](/docs/dungeon/generation) – vyřezávání místností a chodeb do `TileGrid`.
+- [Patra a témata](/docs/dungeon/themes) – volba textury a layoutu.
+- [Osvětlení](/docs/dungeon/lighting) – okludery z mřížky.
+- [Technika](/docs/tech) – fyzika, navigace, renderer.
+
+## Kde v kódu
+
+- `tilemap/mod.rs` – `TILE_SIZE`
+- `tilemap/grid.rs` – `TileGrid` (`filled`, `bordered`, `carve`, `fill`, `is_wall`, `is_interior`)
+- `tilemap/tileset.rs` – `Tileset`, `Rule`, `tile_number`, `pick`, `scatter_index`, `patch_index`,
+  `check_covers_every_neighborhood`
+- `tilemap/layouts.rs` – `lobby`, `crypt`
+- `prefabs/fixtures.rs` – `tilemap`
+- `assets.rs` – `tileset`, `wide_tileset`, `tileset_of`
+
+## Jak přidat nový …
+
+**Nový tileset pro téma**
+
+1. Nakresli atlas ve **širokém** layoutu (69 × 2 dlaždic, stejné rozmístění jako ostatní
+   široké tilesety) – pak stačí jen nová textura, JSON pravidla se sdílí.
+2. Zaregistruj texturu v `assets.rs` a vrať ji z `Theme::tileset_texture`.
+
+**Jiný layout atlasu**
+
+1. Nový JSON v `assets/tilesets/` (pravidla musí pokrýt všech 512 okolí).
+2. Načíst v `Assets` (jako `wide_tileset`) a rozšířit `tileset_of` (dnes jen bool `wide`).
+3. Spusť testy `tilemap/tileset.rs` a `dungeon/template.rs` (každá zeď musí být solid).
+
+## Nápady / chybí
+
+- `tileset_of` rozlišuje jen dva layouty (bool) – třetí layout by vyžadoval enum.
+- Atlas má jen 2 řádky – žádné dekorativní překryvy (praskliny, mech na zdech), vše se
+  řeší props.
+- Pravidla `wall_outer_corner_bottom_*` sdílí dlaždice s `wall_top_edge` – vnější spodní rohy
+  nemají vlastní grafiku.
+- Lobby a menu používají vždy Stone tileset; lobby by mohlo měnit vzhled podle postupu hráče.

@@ -1,0 +1,84 @@
+---
+title: Schopnosti hráče
+description: Co všechno hráč umí aktivně dělat — úhyb, střelba, artefakt, interakce, mazlíček — a proč „skills“ v kódu patří nepřátelům.
+---
+
+<Callout type="warn">
+Hráč v Rust portu **nemá žádný systém skillů** (žádné aktivní schopnosti s cooldownem kromě úhybu, žádný
+skill tree v běhu). Soubory `systems/skills.rs` a `components/skills.rs` obsahují **schopnosti nepřátel**
+(Smash, DeathBurst, DeathCloud, DeathHeal, EyeShooter, Homing, Fuse, stavy bossů) — ty jsou popsané v
+[Nepřátelé](/docs/enemies).
+</Callout>
+
+## Jak to funguje
+
+Kompletní sada věcí, které hráč může udělat:
+
+| Schopnost | Vstup | Omezení | Stránka |
+|-----------|-------|---------|---------|
+| Chůze | WASD | zpomalení povrchy, `Frozen` | [Pohyb a úhyb](/docs/player/movement-dodge) |
+| Úhyb (kotoul) s imunitou | Space | cooldown 1,26 s, vypnuto výzvou *Two Left Feet* | [Pohyb a úhyb](/docs/player/movement-dodge) |
+| Střelba | levé tlačítko | ne během úhybu ani `Frozen` | [Zbraně](/docs/guns) |
+| Přebíjení | R | nelze při `InfiniteAmmo` | [Zbraně](/docs/guns) |
+| Přepnutí zbraně | 1–9, kolečko | počet slotů 2 (3 s *Additional Gun*) | [Zbraně](/docs/guns) |
+| Zahození zbraně | Q | hodí ji směrem ke kurzoru | [Zbraně](/docs/guns) |
+| Použití artefaktu | F | jeden slot, jednorázový | [Artefakty a předměty](/docs/artefacts-items) |
+| Interakce | E | musí se překrývat s objektem | níže |
+| Velká mapa | Tab | | [HUD](/docs/player/hud) |
+
+### Interakce (`systems/interaction.rs`)
+
+Každý snímek se pro každou entitu s `Interactable` spočítá, zda se její obdélník překrývá s hráčem; pokud
+ano, dostane `InRange` (zobrazí se výzva „Press E to …“). Po stisku *Interact* se provede **první**
+nalezená akce (pořadí dotazu hecs, ne nejbližší objekt).
+
+| `Interaction` | Kde | Výzva | Co udělá |
+|---------------|-----|-------|----------|
+| `EnterPortal` | lobby | Press E to enter the portal | spustí běh |
+| `Upgrade` | lobby (Vědec) | Press E to upgrade | otevře/zavře talentové menu |
+| `Quests` | lobby | Press E to read the board | nástěnka misí a výzev |
+| `Weapons` | lobby | Press E to upgrade weapons | stromy vylepšení zbraní (za zlato) |
+| `NextFloor` | dungeon | Press E to enter next floor | sestup do dalšího patra |
+| `PickUpGun` | zbraň na zemi | | vezme zbraň, při plných slotech vyhodí aktuální |
+| `PickUpArtefact` | artefakt na zemi | | vymění artefakt ve slotu |
+| `Buy` | zboží v obchodě | Press E to buy | koupí za mince |
+| `Spin` | automat v obchodě | Press E to spin | zatočí (cena `SPIN_COST` = 5 mincí) |
+
+Mince, munici a lektvary hráč sbírá automaticky dotykem (`collect_items`), truhly se zbraněmi se otevírají dotykem.
+
+### Pasivní „schopnosti“
+
+- **Talenty** (permanentní, z lobby) — [Talenty](/docs/player/upgrades).
+- **Mazlíček** (talent *Pet*) — samostatná entita, viz [Talenty → Pet](/docs/player/upgrades#pet).
+- **Vylepšení zbraní** (Deadeye apod.) — [Zbraně](/docs/guns).
+
+## Interakce
+
+- Lobby objekty (Vědec, nástěnka, stůl zbraní, portál): [Průběh hry a progrese](/docs/progression).
+- Obchod a automat: [Dungeon a svět](/docs/dungeon).
+
+## Kde v kódu
+
+- `systems/interaction.rs` → `interact`
+- `components/interaction.rs` → `Interaction`, `Interactable`, `Prompt`, `InRange`
+- `prefabs/fixtures.rs` → objekty s výzvami
+- `scenes/ingame.rs` / `scenes/lobby.rs` → `match systems::interact(...)`
+- `systems/skills.rs` → **schopnosti nepřátel**, ne hráče
+
+## Jak přidat novou aktivní schopnost hráče
+
+Dnes neexistuje obecný rámec. Doporučený postup, analogický úhybu:
+
+1. Přidej `Action` (viz [Ovládání](/docs/player/controls)).
+2. Vytvoř komponenty stavu (`MyAbility { remaining }`) a cooldownu (`MyAbilityCooldown`) v `components/`.
+3. Systém `start_my_ability` (podmínky jako v `start_dodge`: živý, ne `Frozen`, bez cooldownu, povoleno v `Perks`).
+4. `tick_my_ability` odpočítává a maže komponenty; zaregistruj oba v `fixed_update` `InGameScene` (a případně v lobby).
+5. Ukazatel cooldownu nakresli podobně jako `show_dodge_cooldown`, nebo přidej ikonu do HUD.
+6. Má-li jít vypnout výzvou, přidej pole do `RunRules` a `Perks` a propoj v `RunRules::shape`.
+
+## Nápady / chybí
+
+- TODO.md plánuje *boons* (volby vylepšení po místnostech) — přirozené místo pro aktivní skills.
+- Aktivní schopnost je dnes jen artefakt (jednorázový); chybí opakovaně nabíjená „ultimátka“.
+- Interakce bere první překrývající se objekt, ne nejbližší — při dvou zbraních na zemi vedle sebe je výběr náhodný.
+- Kandidáti: dash útok, granát (pravé tlačítko), parry / odražení projektilů, krátkodobý štít na cooldownu.

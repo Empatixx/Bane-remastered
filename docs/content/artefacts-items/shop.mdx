@@ -1,0 +1,102 @@
+---
+title: Obchod a Sacrifice
+description: Obchodní místnost se třemi stoly, cenotvorba podle patra, slevy z perku Discount a pentagram, kde se platí životy.
+---
+
+## Jak to funguje
+
+Obchod se zásobí jednou při stavbě patra (`systems/shop.rs` → `stock_rooms`, voláno z `scenes/ingame.rs` → `build`). Prochází všechny místnosti s vybavením (`Furnishing`) a hledá fixtures `Table` a `Pentagram`.
+
+### Obchodní místnost (`RoomKind::Shop`)
+
+Rozložení (`dungeon/furnish.rs` → `shop`): obchodník nahoře uprostřed, **3 stoly** v polovině výšky (x = 1/4, 2/4, 3/4 šířky), 2 rozbitné květináče dole, [hrací automat](/docs/artefacts-items/slot-machine) vpravo nahoře, koberec.
+
+Stoly se seřadí zleva doprava a dostanou kategorii `TABLE_STOCK`:
+
+| Stůl | `Stock` | Zboží (`goods_for`) | Násobič ceny |
+|---|---|---|---|
+| levý | `Defensive` | velký lektvar – 50 % zdraví, 50 % armor (+4) | ×1,5 |
+| prostřední | `Ammunition` | `Ammo(Universal)` (+50 % rezervy všech zbraní) | ×1,0 |
+| pravý | `Offensive` | 50 %: nevlastněná zbraň (pokud existuje), jinak artefakt kromě drženého | ×2,0 |
+
+### Cena
+
+`price_for(stock, floor, roll) = (1 + roll % 4) × floor × násobič`, oříznuto na celé číslo (patro začíná na 1, finální je 5).
+
+| Patro | Ammunition | Defensive | Offensive |
+|---|---|---|---|
+| 1 | 1–4 | 1, 3, 4, 6 | 2–8 (po 2) |
+| 2 | 2–8 | 3–12 | 4–16 |
+| 3 | 3–12 | 4, 9, 13, 18 | 6–24 |
+| 4 | 4–16 | 6–24 | 8–32 |
+| 5 | 5–20 | 7, 15, 22, 30 | 10–40 |
+
+### Sleva (perk Discount)
+
+- Jen s perkem **Discount** ([Perky](/docs/artefacts-items/perks)). Jednou za místnost se hodí `roll(100)` → `sale_for`:
+
+| Hod | Faktor ceny | Pravděpodobnost |
+|---|---|---|
+| 0–4 | ×0,75 | 5 % |
+| 5–9 | ×0,5 | 5 % |
+| 10–32 | ×0,25 | 23 % |
+| 33–99 | bez slevy | 67 % |
+
+- Sleva platí jen pro **jeden náhodný stůl** (`sale_slot`). Cena min. 1. Cenovka je zbarvená `SALE_COLOR` a nad ní je text `SALE <faktor×100>%`.
+
+### Nákup (`buy`)
+
+- Zboží má `Shop { price, currency }`, `Interactable { Buy }` a prompt „Press E to buy“. Nemizí (`Despawn` se odebere v `for_sale`).
+- **E** u zboží: když má hráč dost mincí (`coins >= price`), odečtou se, zazní `Buy` a obchodník řekne „Enjoy your purchase!“ (bublina 3 s).
+- Lektvar/munice se použije hned, pokud jde (`can_use`); jinak zůstane ležet jako normální pickup a sebere se později dotykem.
+- Zbraň / artefakt se rovnou vezme do loadoutu / slotu (vyhozená stará věc leží na zemi).
+- Při vstupu do obchodu řekne obchodník „Welcome to my shop!“ (`RoomEvent::ShopEntered`).
+
+### Sacrifice místnost (pentagram)
+
+- `RoomKind::Sacrifice` – 0 nebo 1 na patro (`rng.below(2)`). Andělská socha, 5 svícnů (`Candle`), knihy, řetězy, **pentagram** uprostřed.
+- Na pentagramu leží 1 zboží náhodné kategorie (Offensive / Ammunition / Defensive, každá 1/3) se stejnými pravidly jako stoly.
+- Cena: **1–3 životy** (`1 + roll(3)`, `Currency::Health`), cenovka `SACRIFICE_PRICE_HUD`.
+- Koupit lze jen když `health.current` je **větší** než cena – obětí nelze zemřít. Platí se ze zdraví, ne z armoru.
+- Po oběti: zvuky `Sacrifice` + `PlayerHurt` a **všechny svíce zhasnou** (`disable_candles` – odebere `Light`, přepne animaci na řádek 1).
+
+## Obsah
+
+| Místo | Zboží | Měna | Počet |
+|---|---|---|---|
+| Stůl Defensive | velký lektvar zdraví / armoru | mince | 1 |
+| Stůl Ammunition | univerzální munice | mince | 1 |
+| Stůl Offensive | zbraň nebo artefakt | mince | 1 |
+| Pentagram | cokoliv z výše uvedených | 1–3 HP | 0–1 |
+| Automat | hazard | 5 mincí | 1 |
+
+## Interakce
+
+- [Dungeon](/docs/dungeon) – Shop je 1× na patro; v challenge **Merchant's Strike** (`RunRules.shops = false`) se obchod negeneruje vůbec. Sacrifice se generuje nezávisle.
+- [Zbraně](/docs/guns) – nabízená zbraň je `fresh_weapon` (aplikované weapon mody); challenge Pistol Only (`only_gun`) zbraně z nabídky vyřadí → stůl Offensive pak nabídne vždy artefakt.
+- [Artefakty](/docs/artefacts-items/artefacts) – stůl Offensive je hlavní spolehlivý zdroj artefaktů.
+- [Progrese](/docs/progression) – perk Discount.
+
+## Kde v kódu
+
+- `systems/shop.rs` → `Stock`, `TABLE_STOCK`, `price_for`, `goods_for`, `place`, `sale_for`, `stock_rooms`, `buy`, `disable_candles`, `say`, `tick_speech`, `update_price_tags`, `fit_price_boxes`
+- `components/items.rs` → `Shop`, `Currency`, `PriceTag`, `PriceBox`, `PriceDigits`, `Candle`
+- `prefabs/hud.rs` → `for_sale`, `price_tag`
+- `dungeon/furnish.rs` → `shop`, `sacrifice`, `TABLES = 3`
+- `scenes/ingame.rs` → volání `stock_rooms`, `RoomEvent::ShopEntered`, `minimal_speech`
+
+## Jak přidat nové zboží
+
+1. Nová kategorie: přidat variantu do `Stock` + `multiplier()`, rozšířit `TABLE_STOCK` (a počet stolů `TABLES` v `dungeon/furnish.rs`, včetně rozmístění v `shop`).
+2. Nový druh zboží: rozšířit enum `Goods` a `place` (jak se spawne a jak vysoká je ikona), plus větev v `buy` (co se stane po zaplacení).
+3. Upravit `goods_for`, aby kategorii vrátil.
+4. Pro novou měnu: varianta v `Currency`, větev v `buy` (`paid`) a textura cenovky.
+
+## Nápady / chybí
+
+- **Text slevy je zavádějící** – `SALE 25%` znamená, že cena je 25 % původní (tj. 75% sleva), a nejčastější výsledek (23 %) je nejvyšší sleva. Buď otočit text na `-75%`, nebo prohodit pravděpodobnosti.
+- **Dialogy obchodníka podle story.md** (cyklus 8 replik podle `shop_visits` v profilu) nejsou implementované – existuje jen „Welcome to my shop!“ a „Enjoy your purchase!“.
+- Oltář (Sacrifice) má mít v story.md vlastní hlas („mluví velkými písmeny“) – v kódu žádné texty.
+- FEATURE.md (Java) uvádí „3–5 items“ a cenu `rand(1..5) × (floor+1)` – Rust má vždy 3 stoly a `(1..4) × floor`.
+- Zboží se negeneruje znovu – žádný re-roll za mince (TODO.md „Choice economy“).
+- Nákup nefunkčního zboží (lektvar při plném HP) mince sebere a lektvar jen položí – chtělo by to varování nebo blokaci.

@@ -1,0 +1,104 @@
+---
+title: Artefakty
+description: Systém jednorázových aktivních artefaktů – slot, sbírání, aktivace, časované efekty a přehled všech 13 artefaktů.
+---
+
+## Jak to funguje
+
+- Hráč má komponentu `ArtefactSlot { current: Option<ArtefactKind> }` – **jediný slot**.
+- Na startu runu drží **Reveal Map** (`prefabs/actors.rs` → `player`).
+- Artefakt leží ve světě jako entita `ArtefactDrop` s `Interactable { action: PickUpArtefact }`. Když na něm hráč stojí, má žlutý obrys (`outline_drops`) a vznáší se (`hover_drops`). Na zemi **nemizí** (nemá `Despawn`).
+- **Sebrání (E)** – `pick_up_artefact`: drop zmizí, artefakt jde do slotu, zazní `SwitchGun`, započítá se `Stat::Item`. Pokud byl slot plný, **starý artefakt se vyhodí** na pozici hráče.
+- **Aktivace (F)** – `activate_artefact`: vezme artefakt ze slotu (slot je pak prázdný) a provede efekt. Žádné nabíjení, žádný cooldown – artefakt je **spotřební**.
+- Efekty jsou buď okamžité, nebo ECS komponenta na hráči s časovačem `remaining`. Časovače tikají v `tick_artefact_effects` (a `tick_berserk`) a po vypršení se komponenta odebere. Opětovné použití stejného časovaného artefaktu **resetuje časovač** (komponenta se přepíše).
+- Některé artefakty jen vloží „požadavek“ (`SummonGhosts`, `PlaceTurret`, `CastLightning`, `ConvertBullets`, `HealPercent`), který v tomtéž snímku zpracuje specializovaný systém.
+- Při smrti (`clear_artefact_effects`) se zruší TimeSlow, Bloodlust, Phantom, InfiniteAmmo a MidasTouch a vrátí se barva hráče.
+- HUD: ikona aktuálního artefaktu (`update_artefact_hud`), při prázdném slotu skrytá. Velikost ikony = zdrojová velikost × 2 (`ICON_SCALE`).
+
+### Výběr náhodného artefaktu
+
+`unused_artefact(slot, roll)` vybere z `ArtefactKind::ALL` všechny kromě právě drženého a vezme `free[roll % len]`. Rovnoměrné rozdělení, žádné váhy ani rarity.
+
+## Obsah
+
+| Artefakt | Typ efektu | Trvání | Klíčová čísla | Stránka |
+|---|---|---|---|---|
+| Reveal Map | okamžitý | – | odhalí všechny místnosti na minimapě | [→](/docs/artefacts-items/artefacts/reveal-map) |
+| Ring of Death | okamžitý | – | 50 střel, 2 dmg, rychlost 700 | [→](/docs/artefacts-items/artefacts/ring-of-death) |
+| Armor Refill | okamžitý | – | armor na maximum | [→](/docs/artefacts-items/artefacts/armor-refill) |
+| Shield Horn | do zásahu | neomezeně | blokuje 1 zásah | [→](/docs/artefacts-items/artefacts/shield-horn) |
+| Berserk Pot | časovaný | 15 s | rychlost pohybu ×1,3 | [→](/docs/artefacts-items/artefacts/berserk-pot) |
+| Hourglass of Ash | časovaný | 6 s | nepřátelé na 35 % rychlosti | [→](/docs/artefacts-items/artefacts/hourglass-of-ash) |
+| Blood Chalice | okamžitý + časovaný | 10 s | +50 % max HP, pak +1 HP za zabití | [→](/docs/artefacts-items/artefacts/blood-chalice) |
+| Phantom Cloak | časovaný | 5 s | neviditelnost, 1. výstřel ×2 dmg | [→](/docs/artefacts-items/artefacts/phantom-cloak) |
+| Grave Lantern | vyvolání | 12 s | 3 duchové, 2 dmg / 0,5 s | [→](/docs/artefacts-items/artefacts/grave-lantern) |
+| Midas Coin | okamžitý + časovaný | 6 s | nepřátelské střely → mince, +2 mince za zabití | [→](/docs/artefacts-items/artefacts/midas-coin) |
+| Thunder Idol | okamžitý | – | řetězový blesk, až 6 cílů × 6 dmg | [→](/docs/artefacts-items/artefacts/thunder-idol) |
+| Infinity Quiver | časovaný | 8 s | nekonečná munice, žádné přebíjení | [→](/docs/artefacts-items/artefacts/infinity-quiver) |
+| Bone Turret | vyvolání | 12 s | věž, 2 dmg / 0,35 s, dosah 600 | [→](/docs/artefacts-items/artefacts/bone-turret) |
+
+### Konstanty (`artefacts.rs`)
+
+| Konstanta | Hodnota |
+|---|---|
+| `BERSERK_SECONDS` | 15,0 |
+| `BERSERK_SPEED` | 1,3 |
+| `BERSERK_PHASE` | 0,75 |
+| `RING_BULLETS` | 50 |
+| `RING_TURN` | 0,15 rad |
+| `RING_DAMAGE` | 2 |
+| `TIME_SLOW_SECONDS` | 6,0 |
+| `TIME_SLOW_SCALE` | 0,35 |
+| `BLOODLUST_SECONDS` | 10,0 |
+| `CHALICE_HEAL` | 0,5 |
+| `PHANTOM_SECONDS` | 5,0 |
+| `MIDAS_SECONDS` | 6,0 |
+| `INFINITE_AMMO_SECONDS` | 8,0 |
+
+### Kde artefakty padají
+
+| Zdroj | Podmínka | Pravděpodobnost |
+|---|---|---|
+| Start runu | vždy | Reveal Map |
+| Artefaktová truhla | po zabití bosse (každé patro) | 100 % |
+| Obchod – stůl „Offensive“ | 50 % zbraň (pokud existuje nevlastněná), jinak artefakt | ≥ 50 % |
+| Pentagram (Sacrifice) | 1/3 šance, že je zboží „Offensive“ | ≈ 1/6 a víc |
+| Hrací automat | výsledek RareItem (10/150) → 50 % „vzácná“ větev → 1/5 artefakt | 1/150 na zatočení |
+| Výměna | sebrání nového artefaktu vyhodí starý | – |
+
+Detaily: [Drops](/docs/artefacts-items/drops), [Obchod](/docs/artefacts-items/shop), [Automat](/docs/artefacts-items/slot-machine).
+
+## Interakce
+
+- [Nepřátelé](/docs/enemies) – Phantom Cloak skrývá hráče před AI; Hourglass zpomaluje jejich fyziku, animace i spawn.
+- [Zbraně](/docs/guns) – Infinity Quiver obchází spotřebu munice; Phantom Cloak násobí damage výstřelu.
+- [Hráč](/docs/player) – Shield Horn a Blood Chalice zasahují do `hurt_player` / `Health`; Berserk Pot do pohybu.
+- [Dungeon](/docs/dungeon) – Reveal Map volá `RoomRuntime::reveal_all`.
+
+## Kde v kódu
+
+- `artefacts.rs` – `ArtefactKind`, `ALL`, `texture()`, `icon()`, konstanty.
+- `components/artefacts.rs` – `ArtefactSlot`, `ArtefactDrop`, `ArtefactIcon`, efektové komponenty (`Shielded`, `Berserk`, `TimeSlow`, `Bloodlust`, `Phantom`, `InfiniteAmmo`, `MidasTouch`, `SummonGhosts`, `CastLightning`, `PlaceTurret`, `ConvertBullets`, `HealPercent`).
+- `systems/artefacts.rs` – `activate_artefact`, `tick_berserk`, `tick_artefact_effects`, `clear_artefact_effects`, `update_shield_aura`, `unused_artefact`, `pick_up_artefact`, `update_artefact_hud`.
+- `prefabs/fixtures.rs` → `artefact_drop`; `prefabs/hud.rs` → `artefact_hud`.
+- `scenes/ingame.rs` – volání systémů; zvláštní zpracování `RevealMap` přímo ve scéně.
+- Textury: `assets.rs` → `ARTEFACTS_*` (`ingame/artefacts/*.tga`).
+
+## Jak přidat nový artefakt
+
+1. `artefacts.rs`: přidat variantu do `ArtefactKind`, zvětšit pole `ALL` (délka je v typu `[Self; N]`) a upravit test `there_are_thirteen_distinct_artefacts`.
+2. `assets.rs`: přidat `ARTEFACTS_<NAME> = "ingame/artefacts/<name>.tga"` do seznamu textur i do seznamu k načtení; doplnit arm v `ArtefactKind::texture()`. Pokud ikona není 32×32, doplnit `icon()`.
+3. Pokud je efekt časovaný: v `components/artefacts.rs` přidat komponentu s `remaining: f32`, exportovat v `components/mod.rs`, přidat `tick_timer::<T>` do `tick_artefact_effects` a `remove_one::<T>` do `clear_artefact_effects`.
+4. `systems/artefacts.rs` → `activate_artefact`: přidat match arm (vložit komponentu nebo přímo provést efekt). Složitý efekt dejte do vlastního systému, který zpracuje „požadavkovou“ komponentu (vzor `CastLightning` → `systems/lightning.rs`).
+5. Zaregistrovat nový systém v `systems/mod.rs` a zavolat ho ve `scenes/ingame.rs` (update nebo fixed_update podle toho, zda jde o fyziku).
+6. Přidat test do `systems/artefacts.rs` (vzor `every_new_artefact_inserts_its_components_and_consumes_the_slot`).
+7. Nic dalšího není potřeba – truhly, obchod i automat berou artefakty z `ArtefactKind::ALL`.
+
+## Nápady / chybí
+
+- **Žádná rarita ani váhy** – Reveal Map má stejnou šanci jako Thunder Idol. Návrh: `ArtefactKind::weight()` a vážený výběr v `unused_artefact`.
+- **Berserk se neruší při smrti** – `clear_artefact_effects` neodebírá `Berserk` (tiká zvlášť v `tick_berserk`).
+- **Žádný popis v UI** – artefakt nemá jméno ani text; hráč vidí jen ikonu. Chybí tooltip / prompt „Press E to pick up“ s názvem.
+- **Damage artefaktů se neškáluje perky ani patrem** – Ring of Death, Bone Turret a Thunder Idol mají pevná čísla; v 5. patře slábnou.
+- FEATURE.md zná jen 5 artefaktů (Java verze) – Rust jich má 13.
+- Nápady konzistentní s designem: „Cursed Mirror“ (odrazí další střelu), „Frost Bell“ (zmrazí nepřátele v okolí – mechanika `Frozen` už existuje u sudů), „Poison Censer“ (jedová stopa – `PoisonTrail` existuje), „Magnet Charm“ (přitáhne všechny pickupy v místnosti).

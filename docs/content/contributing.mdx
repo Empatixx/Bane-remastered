@@ -1,0 +1,43 @@
+---
+title: Jak psát wiki
+description: Kde wiki leží, jak ji spustit a jak přidat novou stránku.
+---
+
+## Spuštění
+
+```bash
+cd docs
+pnpm install
+pnpm dev        # http://localhost:3000/docs
+pnpm build      # ověří, že všechny MDX stránky jdou zkompilovat
+```
+
+## Struktura
+
+- `docs/content/<téma>/` — jedna složka na téma (`guns`, `enemies`, …).
+- `index.mdx` — přehled tématu, ostatní `.mdx` jsou podstránky.
+- `meta.json` — název složky v menu, ikona ([lucide](https://lucide.dev/icons)) a pořadí stránek.
+- Ostatní soubory v `docs/` (`app/`, `lib/`, `components/`) jsou Fumadocs aplikace — na obsah je není třeba měnit.
+
+## Šablona stránky
+
+```mdx
+---
+title: Název
+description: Jedna věta.
+---
+
+## Jak to funguje
+## Obsah
+## Interakce
+## Kde v kódu
+## Jak přidat nový …
+## Nápady / chybí
+```
+
+## Pravidla MDX
+
+- Holé `<` a `{` v textu rozbijí build — kód a generika dávej do backticků (`Vec<Entity>`).
+- Komponenty: `<Callout type="info|warn|error">`, `<Cards>` + `<Card title href />`.
+- Odkazy mezi stránkami: `/docs/<téma>/<stránka>`.
+- Když měníš hodnoty ve hře (damage, HP, ceny), uprav i příslušnou tabulku tady.

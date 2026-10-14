@@ -1,0 +1,88 @@
+---
+title: Základní nepřátelé
+description: Rat, Snake, Bat a Ghost — nejčastější chaseři, kteří se objevují na všech patrech a ve všech tématech.
+---
+
+## Jak to funguje
+
+Čtyři „zvířátka“ bez omezení patra ani tématu (`min_floor = 0`, `themes = []`). Všichni pronásledují
+hráče přes flow field (viz [AI a pohyb](/docs/enemies/ai)) a zraňují kontaktem. Liší se rychlostí,
+odolností a jednou drobnou schopností.
+
+## Obsah
+
+| | Rat | Snake | Bat | Ghost |
+|---|--:|--:|--:|--:|
+| `EnemyKind` | `Rat` | `Snake` | `Bat` | `Ghost` |
+| HP (základ) | 12 | 8 | 9 | 7 |
+| Kontaktní damage | 2 | 3 | 2 | 2 |
+| Force | 6 500 000 | 8 000 000 | 14 500 000 | 6 500 000 |
+| Velikost (px) | 127 × 55 | 96 × 96 | 96 × 96 | 88 × 112 |
+| Rychlost (px/s) | 186 | 174 | 315 | 132 (dash 629) |
+| `Behavior` | `Plain` | `PoisonTrail` | `Plain` | `Dash` |
+| Textura | `ingame/rat.tga` (4×2) | `ingame/snake.tga` (9×2) | `ingame/bat.tga` (4×2) | `ingame/ghost.tga` (5×2) |
+
+HP a damage rostou s patrem (viz [Spawnování a škálování](/docs/enemies/spawning#škálování-s-patrem)).
+
+### Rat
+
+Nejodolnější základní nepřítel, střední rychlost, bez schopnosti. Krysy také vyvolává
+[Sewer ogre](/docs/enemies/bosses/ogre) (útoky Throw a Roar) — ty mají základní statistiky (12 HP,
+2 dmg), jsou `Minion` a nic nedropnou. V menu běhají krysy a netopýři jako dekorace
+(`scenes/menu_stage.rs`, `CRITTER_KINDS`).
+
+### Snake — jedovatá stopa
+
+`Behavior::PoisonTrail` → komponenta `TrailLayer`. `leave_poison_trails` za hadem každých 7 px
+(`TRAIL_SPACING`) položí jedovatou tečku (`prefabs::poison_dot`, textura `SNAKE_TRAIL`, 6 variant,
+boční rozptyl ±2 px):
+
+- hitbox 14 × 14 px, trvá 5 s (`TRAIL_SECONDS`), poslední 1 s mizí,
+- zraňuje **jen hráče** — 1 damage (`POISON_DAMAGE`) při každém dotyku, prakticky 1× za sekundu díky
+  i-frames hráče; hráč dostane `Poisoned` (zelený obrys),
+- ostatní nepřátele stopa neovlivní.
+
+Had je tak nejnebezpečnější při kitování v kruhu — stopa uzavírá prostor.
+
+### Bat
+
+Nejrychlejší běžný nepřítel (315 px/s ≈ 77 % rychlosti hráče 411 px/s). Žádná schopnost — tlak čistou
+rychlostí.
+
+### Ghost — dash
+
+`Behavior::Dash` → komponenta `Dash`. Cyklus 3 s (`DASH_PERIOD`): první 1 s (`DASH_DURATION`) má
+rychlost `základ + bonus`, kde bonus = `speed_from_force(DASH_FORCE = 24 500 000, velikost)` ≈ 497 px/s,
+celkem cca 629 px/s (rychlejší než hráč). Při dashi každých 0,04 s zanechá afterimage (`spawn_afterimage`,
+stejný efekt jako hráčův dodge). Cyklus začíná na 0, takže duch dashuje **hned po zhmotnění**.
+
+## Interakce
+
+- Jedovatá stopa hada sdílí systém `tick_poison` s jedovatými barely a mrakem Bloated spidera
+  ([Pavouci](/docs/enemies/spiders)).
+- Mise „zabij N krys / netopýrů / duchů / hadů“ (`HUNTED` v `progress/missions.rs`), viz
+  [Progrese](/docs/progression).
+- Rychlost Bat/Ghost dashe je srovnatelná s hráčem — dodge ([Hráč](/docs/player)) je hlavní obrana.
+
+## Kde v kódu
+
+- `enemies.rs` → `EnemyKind::spec()` arms `Rat`, `Snake`, `Bat`, `Ghost`; `DASH_FORCE`.
+- `systems/enemies.rs` → `dash`, `DASH_PERIOD`, `DASH_DURATION`, `DASH_TRAIL_INTERVAL`.
+- `systems/objects.rs` → `leave_poison_trails`, `tick_poison`; `objects.rs` → `TRAIL_*`, `POISON_*`.
+- `prefabs/fx.rs` → `poison_dot`.
+- `prefabs/actors.rs` → `enemy` (arms `Behavior::PoisonTrail`, `Behavior::Dash`).
+
+## Jak přidat nového základního nepřítele
+
+1. Postup z [přehledu](/docs/enemies#jak-přidat-nového-nepřítele) — `EnemyKind`, `ALL`, textura, `spec()`.
+2. Pro chasera stačí `Behavior::Plain`; rychlost lad přes `force` (pamatuj, že dělí plochou sprite).
+3. Kombinace existujících schopností (např. dash + jedovatá stopa) dnes nejde — `Behavior` je jedna
+   hodnota. Buď přidej novou variantu, která vloží obě komponenty, nebo předělej `behavior` na slice.
+
+## Nápady / chybí
+
+- Všichni čtyři jsou k dispozici na všech patrech až do konce — na patře 5 je Rat jen „HP houba“.
+  Varianta `max_floor` by umožnila postupně je nahrazovat silnějšími verzemi.
+- Ghost nemá žádné „duchovské“ chování (průchod zdmi, zprůhlednění), jen dash; chybí i telegraf dashe.
+- Snake by mohl mít variantu na tématu Moss/Sewer (jedovaté bahno), Bat lávovou variantu se stopou ohně.
+- Žádný z nich nestřílí — na patrech 2 a výš střílí jen Slime a Eye watcher.

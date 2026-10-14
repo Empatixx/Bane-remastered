@@ -1,0 +1,63 @@
+---
+title: Pravidla runu (RunRules)
+description: Sada modifikátorů, kterou challenge mění pravidla celého runu — HP, damage, povolené zbraně, obchody, úskok, regenerace armoru.
+---
+
+## Jak to funguje
+
+`RunRules` je struktura, kterou si `InGameScene` načte na začátku runu z profilu
+(`SharedProfile::rules` → pravidla vybrané challenge, jinak `RunRules::default()`). Pravidla
+platí po celý run a působí dvěma cestami:
+
+1. **Na hráče** — `RunRules::shape(perks)` upraví perky z talentů:
+   - `damage_scales[0] *= player_damage`,
+   - `max_health_cap = player_max_health`,
+   - `only_gun = only_gun` (loadout se omezí, `Loadout::restrict`),
+   - `dodge &= dodge`, `armor_regeneration &= armor_regen` (pravidlo může jen vypínat, nikdy zapnout talent, který hráč nemá).
+2. **Na nepřátele** — `systems::toughen_enemies(world, enemy_health, enemy_damage)` běží v každém fixním kroku. Každý nový `Enemy` bez značky `Toughened` dostane vynásobené `Health` (max i current), `ContactDamage` a `Leaper.damage`; každá nová `EnemyBullet` vynásobený `ContactDamage`. Pak dostane `Toughened`, aby se to neaplikovalo dvakrát. Při neutrálních faktorech (1,0) se nedělá nic.
+3. **Na dungeon** — `shops = false` nastaví v `LayoutSpec` počet obchodů na 0.
+
+Zaokrouhlení: `scale_stat(base, k) = max(1, round(base × k))` — např. damage 2 × 1,3 = 2,6 → **3**.
+
+## Obsah
+
+| Pole | Typ | Výchozí | Efekt |
+|---|---|---|---|
+| `player_max_health` | `Option<i32>` | `None` | Strop max HP hráče |
+| `player_damage` | `f32` | 1.0 | Násobič veškerého damage hráče |
+| `enemy_health` | `f32` | 1.0 | Násobič HP nepřátel (vč. bossů) |
+| `enemy_damage` | `f32` | 1.0 | Násobič kontaktního a projektilového damage nepřátel |
+| `only_gun` | `Option<GunKind>` | `None` | Jediná povolená zbraň |
+| `shops` | `bool` | true | Generovat obchod |
+| `dodge` | `bool` | true | Úskok povolen |
+| `armor_regen` | `bool` | true | Regenerace armoru po vyčištění místnosti (jen s talentem) |
+
+Použití v challenge — viz tabulka v [Challenge](/docs/progression/challenges).
+
+## Interakce
+
+- Perky hráče a úskok: [Hráč](/docs/player).
+- `only_gun` a loadout: [Zbraně](/docs/guns).
+- Statistiky nepřátel a jejich škálování podle patra: [Nepřátelé](/docs/enemies).
+- Generování obchodu: [Dungeon](/docs/dungeon).
+
+## Kde v kódu
+
+- `rules.rs` → `RunRules`, `RunRules::shape`
+- `systems/rules.rs` → `toughen_enemies`, `scale_damage`
+- `components` → `Toughened` (značka)
+- `scenes/ingame.rs` → `start_run` (načtení), `perks()` (shape), volání `toughen_enemies` ve `fixed_update`
+- `dungeon/build.rs` → `Dungeon::generate_for_run(rng, theme, shops)`
+
+## Jak přidat nové pravidlo
+
+1. Přidat pole do `RunRules` + výchozí hodnotu v `Default`.
+2. Doplnit ho do konstant `HORDE` / `NEUTRAL` v `progress/challenges.rs` (jsou to plné literály).
+3. Aplikovat ho: buď v `shape` (týká-li se hráče přes `Perks`), nebo v `toughen_enemies` (nepřátelé), nebo v `InGameScene::build` (dungeon, ekonomika).
+4. Přidat test do `rules.rs` (`rules_scale_damage_cap_health_and_switch_things_off`).
+
+## Nápady / chybí
+
+- `toughen_enemies` neškáluje jiné zdroje damage nepřátel než `ContactDamage` a `Leaper` (např. lasery, plameny, pády kamenů, magma) — ověřit, které útoky bossů pravidlo Horde obchází.
+- Chybí pravidla typu „rychlejší nepřátelé“, „víc nepřátel na vlnu“, „žádné léčení“, „dražší obchod“, „bez artefaktů“ — vhodné pro další challenge nebo Heat-like systém.
+- Pravidla nejdou kombinovat — vybraná může být jen jedna challenge.

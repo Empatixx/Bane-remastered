@@ -1,0 +1,74 @@
+---
+title: Fyzika
+description: Obal nad rapier2d — typy těl, kolizní skupiny a kdo s kým koliduje.
+---
+
+## Jak to funguje
+
+- `Physics` (`physics/mod.rs`) obaluje rapier2d svět bez gravitace (top-down), `length_unit` = 32 px. Krok volá jen `systems::simulate` v pevném kroku 1/60 s (viz [Architektura](/docs/tech/architektura)).
+- ECS entita drží komponentu `Body` (rigid body + collider). Collider nese v `user_data` bity entity, takže `Physics::touching(body)` vrací `Owner::Entity(e)` nebo `Owner::Wall`.
+- **Pohyb**: systémy nastavují jen `Velocity`; `simulate` ji předá tělu (`set_velocity`), po kroku přečte pozici zpět do `Position`. Hráč dostane zpět i skutečnou rychlost (po nárazu do zdi).
+- **Zdi**: `add_walls` sloučí plné dlaždice do co nejmenšího počtu obdélníků (`walls::merge_cells`) a vloží statické kvádry. `add_static_box` přidává jednotlivé překážky (např. propy), které se evidují i v seznamu `solids` pro navigaci (`solids_within`).
+- **Střely jsou senzory** — fyzika je nezastaví, zásah se zjišťuje průnikem (`touching`) v `bullet_hits` / `enemy_bullet_hits`. `wall_push` spočítá, z které strany střela vjela do zdi (pro odraz/efekt).
+- **Úklid**: entitu s tělem je nutné rušit přes `Physics` (`remove`, `detach`). Když se despawne jen v ECS, `remove_orphans` na začátku `simulate` tělo dodatečně smaže a zaloguje varování.
+
+### Typy těl
+
+| Prefab volá | Tvar | Vlastnosti |
+|---|---|---|
+| `add_player` | zaoblený kvádr, poloměr rohu 2 px | dynamické, bez rotace |
+| `add_enemy` | zaoblený kvádr, poloměr = min(25 % kratší strany, 14 px) | dynamické, bez rotace |
+| `add_pet` | kvádr | dynamické, bez rotace |
+| `add_bullet` / `add_enemy_bullet` | kvádr, **senzor** | dynamické, počáteční rychlost |
+| `add_object_body` | kvádr | dynamické, tlumení 5, tření 0, odraz 0 (tlačitelné sudy) |
+| `add_walls` / `add_static_box` | kvádr | statický collider |
+
+### Kolizní skupiny
+
+Skupiny (`physics/groups.rs`): `WALL` (1), `PLAYER` (2), `BULLET` (3), `ENEMY` (4), `ENEMY_BULLET` (5), `OBJECT` (6), `PET` (7). Režim `InteractionTestMode::And` — dvojice koliduje, jen když **obě strany** mají tu druhou ve filtru.
+
+Výsledná matice (✔ = interagují):
+
+| | Zeď | Hráč | Střela | Nepřítel | Nepř. střela | Objekt | Pet |
+|---|---|---|---|---|---|---|---|
+| **Zeď** | – | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| **Hráč** | ✔ | – | – | – | ✔ | ✔ | – |
+| **Střela** | ✔ | – | – | ✔ | – | ✔ | – |
+| **Nepřítel** | ✔ | – | ✔ | ✔ | – | ✔ | – |
+| **Nepř. střela** | ✔ | ✔ | – | – | – | ✔ | – |
+| **Objekt** | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| **Pet** | ✔ | – | – | – | – | ✔ | – |
+
+Důsledky: hráč a nepřátelé **procházejí skrz sebe** (test `player_and_enemy_pass_through_each_other`), dotykové poškození řeší systém `contact_damage` mimo fyziku. Nepřátelé se navzájem odstrkují (navíc `separate_chasers`). Pet nepřekáží nikomu kromě zdí a objektů.
+
+## Obsah
+
+Testy chování v `systems/simulation.rs`: hráč se pohybuje rychlostí, zeď ho zastaví, klouže podél zdi, Hourglass zpomalí nepřátele i jejich střely, ale ne hráče, sud stojí, dokud ho někdo netlačí, po puštění se zastaví, zastaví se o zeď, dva sudy se neprolínají, seznam překážek sleduje posunutý sud.
+
+## Interakce
+
+- Pohyb hráče a úhyb: [Hráč](/docs/player). Rychlosti nepřátel a jejich AI: [Nepřátelé](/docs/enemies).
+- Mráz (`Chilled` → `CHILL_SLOWDOWN`) a zpomalení času násobí rychlost těsně před krokem fyziky.
+- Navigace (`navigation.rs`, `flow.rs`) čte zdi z mapy a dynamické překážky přes `solids_within`.
+
+## Kde v kódu
+
+- `physics/mod.rs` → `Physics`, `Owner`, `add_*`, `touching`, `wall_push`, `remove_orphans`, `detach`, `teleport`
+- `physics/groups.rs` → konstanty `WALLS`, `PLAYERS`, `BULLETS`, `ENEMIES`, `ENEMY_BULLETS`, `OBJECTS`, `PETS`
+- `physics/walls.rs` → `merge_cells`
+- `components/body.rs` → `Body`, `BodyOffset` (posun spritu vůči collideru)
+- `systems/simulation.rs` → `simulate`
+
+## Jak přidat nový typ těla / kolizní skupinu
+
+1. V `physics/groups.rs` přidej `const NOVA: Group = Group::GROUP_8;` a `InteractionGroups` s filtrem.
+2. **Doplň `NOVA` i do filtrů všech skupin, se kterými má kolidovat** (režim `And` vyžaduje obě strany).
+3. V `physics/mod.rs` přidej `add_nova(entity, position, size) -> Body` podle vzoru `add_pet`.
+4. Zavolej z prefabu a ulož `Body` jako komponentu.
+5. Přidej test do `systems/simulation.rs` (vzor `wall_stops_the_player`).
+
+## Nápady / chybí
+
+- Kolize nepřítel ↔ pet chybí, takže pet nemůže „blokovat“ nepřátele — mohl by to být upgrade.
+- Hráčovy střely neinteragují s nepřátelskými (žádné sestřelování projektilů); jediná výjimka je jednorázový efekt `convert_bullets` (artefakt Midas Coin), který všechny nepřátelské střely naráz promění v mince.
+- Rychlé střely jsou senzory bez CCD — u velmi rychlých nábojů (railgun, sniper) hrozí „protunelování“ tenkou zdí; v kódu CCD zapnuté není (neověřeno v praxi).

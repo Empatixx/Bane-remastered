@@ -1,0 +1,84 @@
+---
+title: RPG
+description: Raketomet s jednou raketou v zásobníku — výbuch zasáhne všechno v okolí plným poškozením.
+---
+
+**RPG** (`GunKind::Rpg`) — Plošné poškození: raketa vybuchne na čemkoli, čeho se dotkne (nepřítel, zeď, rozbitný objekt).
+
+## Jak to funguje
+
+### Statistiky
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Poškození v kódu | 8–11 |
+| Reálné poškození na projektil | 8–10 (průměr 9) |
+| Projektilů na výstřel | 1 |
+| Kadence | 0,71 výstřelů/s |
+| Průměrné DPS (bez přebíjení) | 6,43 |
+| Odchylka (`inaccuracy`) | 0,05 → ±0,03 rad (±1,4°) |
+| Režim | poloautomatická |
+| Zásobník / rezerva | 1 / 12 |
+| Přebíjení | 1,8 s |
+| Kritická šance (základ) | 0 % |
+| Otřes kamery (`shake`) | 1,2 |
+| Třída munice | `AmmoClass::Pistol` |
+| Styl zásobníku v HUD | `ClipStyle::Shotgun` — jeden sloupec brokových nábojů `SHOTGUN_AMMO_HUD` (krok 20 px) |
+| Nábojnice | ne |
+| Zvuk výstřelu / přebití | `RpgShoot` / `RpgReload` |
+| Textura / velikost ikony | `tex::GUNS_RPG` / 122 × 36 px |
+| Klíč v profilu | `"rpg"` |
+
+Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+
+### Střelba
+
+Poloautomatická, jedna `Round::Rocket` (480 px/s). Zásobník má 1 náboj, takže po každé ráně je nutné přebít (R) — automatické přebíjení neexistuje.
+
+### Projektil
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Typ | `Round::Rocket` |
+| Rychlost | 480 px/s |
+| Velikost sprite / hitbox | 24 × 24 / 16 × 16 |
+| Průraz (`pierce`) | 0 |
+| Životnost | — |
+| Zvláštní efekt | blast (výbuch 176 × 176 plným poškozením) |
+| Světlo | oranžové (255, 140, 0) |
+| Natáčí se ve směru letu | ano |
+| Textura | `tex::ROUND_ROCKET` |
+
+Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+
+### Přebíjení a munice
+
+Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1,8 s, pak se zásobník doplní z rezervy (max. 1 nábojů). Rezervu 12 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
+
+### Zvláštnosti
+
+- Při dopadu `rocket_blast`: vizuál 144 × 144 (`ROCKET_LOOK`), zásahová oblast 176 × 176 (`ROCKET_REACH`), **plné** poškození všem nepřátelům a rozbitným objektům v oblasti (`DamageSource::Explosion`). Hráče nikdy nezraní.
+- Přímo zasažený nepřítel nedostává zvláštní ránu — jen tu z výbuchu.
+- Raketa se zpracuje dřív než mutace (`continue` před `mutate_hit`), takže mutace Piercing/Explosive/Venom/Frost/Ricochet na RPG **nic nedělají**; funguje jen Deadeye (krit se počítá při výstřelu).
+- Poškození typu Explosion se nepočítá jako zásah (`counts_as_hit`), takže RPG snižuje statistiku přesnosti a nenabíjí skilly počítající zásahy.
+- Uzel Magazine +1 zdvojnásobí zásobník (1 → 2) — nejsilnější použití Magazine ve hře.
+
+## Interakce
+
+- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
+- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
+- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
+- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
+
+## Kde v kódu
+
+- `guns.rs` → `GunKind::Rpg`, větev v `GunKind::spec`, `Round::Rocket` v `Round::spec`
+- `systems/shooting.rs` → `shoot`, `bullet_hits`
+- `scenes/weapon_table.rs` → `name` (zobrazované jméno „RPG“)
+- `assets.rs` → `tex::GUNS_RPG`
+
+## Nápady / chybí
+
+- Strom RPG by měl nabízet jen mutace, které na raketě fungují (nebo implementovat např. Venom pool po výbuchu).
+- Výbuch by mohl zraňovat i hráče (risk/reward) nebo mít knockback.
+- Zvážit, aby výbuch počítal zásahy do statistik.

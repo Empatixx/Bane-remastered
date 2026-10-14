@@ -1,0 +1,94 @@
+---
+title: Hráč
+description: Přehled hráčské postavy — základní staty, životní cyklus v běhu a jak do sebe zapadají pohyb, úhyb, poškození, talenty a HUD.
+---
+
+Hráč je jediná ovládaná postava (singleplayer). V Rust portu je to obyčejná hecs entita s markerem
+`Player`, kterou vytváří `prefabs::player` při každém sestavení patra i lobby. Neexistuje žádná třída
+„Player“ — chování je rozložené do systémů (`steering`, `dodge`, `damage`, `shooting`, `interaction`, …).
+
+## Jak to funguje
+
+### Základní staty
+
+| Stat | Základ v kódu | Efektivně na začátku běhu | Poznámka |
+|------|---------------|---------------------------|----------|
+| Zdraví (`Health`) | 10 | **12** | talent *Hero's Heart* (×1,2) je zdarma, viz [Talenty](/docs/player/upgrades) |
+| Brnění (`Armor`) | 5 | **5** | *Improved Armor* ×1,2 → 6 |
+| Rychlost chůze | 411 px/s | **452 px/s** | *Swiftwind Steps* (×1,1) je zdarma |
+| Rychlost úhybu | 760 px/s | 760 px/s | perky ani povrch ji nemění |
+| Imunita po zásahu | 1,0 s | 1,0 s | `INVULNERABLE_SECONDS` |
+| Hranice „málo zdraví“ | 30 % max HP | — | spouští zvuk `LowHealth` a pulzující vinětu |
+| Velikost / hitbox | 32 × 76 px | — | `PLAYER_SIZE` |
+| Zbraňové sloty | 2 (Pistol + Shotgun) | 2 | *Additional Gun* → 3 |
+| Artefakt | `RevealMap` | `RevealMap` | jeden slot, aktivace klávesou F |
+| Mince (`Wallet`) | 0 | 0 | *Gamble machine* přidá 100 mincí v patře s obchodem |
+| Poškození zbraní | ×1,0 | **×1,2** | *Sharpened Bullets* je zdarma |
+
+Hráč má navíc `Light` (teplé světlo, poloměr 150), `DropShadow`, `GazeWind` (částice větru při
+rychlosti nad 350 px/s) a fyzikální tělo z `physics.add_player`.
+
+### Životní cyklus v běhu
+
+1. **Start běhu** (`InGameScene::start_run`) — načtou se `RunRules` z vybrané výzvy, postaví se patro,
+   spawne se hráč a `apply_run_perks` přepočítá max HP / brnění podle talentů (rozdíl se doplní).
+2. **Každé patro** — `apply_floor_perks` vloží komponentu `PlayerPerks` (kopie `Perks`) a upraví
+   `Loadout` (sloty navíc, kapacita munice, omezení na jednu zbraň). Pokud je odemčen *Pet*, spawne se mazlíček.
+3. **Hra** — pohyb a úhyb běží ve `fixed_update` (60 Hz), střelba, interakce a HUD v `update`.
+4. **Přechod do dalšího patra** — `carried_stats` uloží HP, brnění, mince, `Loadout`, artefakt a
+   `RunStats`; svět se smaže a `restore_stats` je vrátí novému hráči. **HP se mezi patry neobnovuje.**
+5. **Konec** — při HP 0 (nebo výhře, nebo volbě *Die* v pauze) se spustí death screen se shrnutím a
+   odměnou ve zlatě, poté návrat do lobby.
+
+<Callout type="info">
+Hráč nemá žádnou pasivní regeneraci HP, žádné úrovně ani XP. Jediná průběžná obnova je
+*Armor Regeneration* (+1 brnění po vyčištění místnosti), lektvary a artefakty.
+</Callout>
+
+## Obsah
+
+<Cards>
+  <Card title="Ovládání" href="/docs/player/controls" />
+  <Card title="Pohyb a úhyb" href="/docs/player/movement-dodge" />
+  <Card title="Model poškození" href="/docs/player/damage" />
+  <Card title="Schopnosti hráče" href="/docs/player/abilities" />
+  <Card title="Talenty (permanentní vylepšení)" href="/docs/player/upgrades" />
+  <Card title="Statistiky běhu" href="/docs/player/stats" />
+  <Card title="HUD" href="/docs/player/hud" />
+</Cards>
+
+## Interakce
+
+- **Zbraně** — hráč nosí `Loadout` se sloty; střelba, přebíjení a kritické zásahy viz [Zbraně](/docs/guns).
+- **Artefakty a předměty** — slot artefaktu, lektvary HP/brnění, mince, munice viz [Artefakty a předměty](/docs/artefacts-items).
+- **Nepřátelé** — kontaktní poškození, projektily, bossové viz [Nepřátelé](/docs/enemies).
+- **Dungeon** — povrchy (voda, bažina, led, láva), pasti, obchod viz [Dungeon a svět](/docs/dungeon).
+- **Progrese** — talenty se platí měnou *Talents* z misí a výzev, zlato z běhů jde do stromů zbraní viz [Průběh hry a progrese](/docs/progression).
+
+## Kde v kódu
+
+- `prefabs/actors.rs` → `player`, `pet`, konstanty `PLAYER_HEALTH`, `PLAYER_ARMOR`, `PLAYER_SIZE`
+- `components/combat.rs` → `Health`, `Armor`, `Invulnerable`, `Wallet`, `Loadout`
+- `components/perks.rs` → `PlayerPerks`
+- `systems/perks.rs` → `apply_run_perks`, `apply_floor_perks`, `regenerate_armor`, `immobilize_traps`
+- `systems/carry.rs` → `carried_stats`, `restore_stats` (přenos mezi patry)
+- `scenes/ingame.rs` → `start_run`, `build`, `next_floor`, `handle_room_events`
+- `rules.rs` → `RunRules::shape` (výzvy upravují perky)
+- `sheets.rs` → `player` (sprite sheet 6 × 4: idle, right/left, bottom, top; 0,1 s/frame)
+
+## Jak přidat nový stat hráče
+
+1. Přidej komponentu do `components/` (nebo pole do existující) a exportuj ji v `components/mod.rs`.
+2. Vlož ji v `prefabs::player`.
+3. Má-li se přenášet mezi patry, přidej ji do `Carried` v `systems/carry.rs` (jinak se každé patro resetuje!).
+4. Má-li ji ovlivňovat talent, přidej pole do `Perks` (`upgrades.rs`) a aplikuj v `systems/perks.rs`.
+5. Zobrazení v HUD viz [HUD](/docs/player/hud).
+
+## Nápady / chybí
+
+- **Tři talenty jsou fakticky základní staty.** První uzel každého stromu je zdarma (`is_free`), takže
+  +10 % rychlosti, +20 % HP a +20 % poškození má hráč vždy. Základní konstanty (10 HP, 411 px/s) tedy
+  nikdy nejsou vidět — buď je přepočítat, nebo udělat první uzly placené.
+- FEATURE.md (Java) tvrdí, že hráč nemá dodge — v Rustu už dodge existuje (viz [Pohyb a úhyb](/docs/player/movement-dodge)).
+- Není žádný výběr postavy / třídy; TODO.md zmiňuje odemykání postav v meta-progresi.
+- Hráč nemá žádný „level-up“ v rámci běhu (TODO.md plánuje *boons* po místnostech à la Hades).

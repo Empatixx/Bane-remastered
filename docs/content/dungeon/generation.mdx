@@ -1,0 +1,141 @@
+---
+title: Procedurální generování
+description: Algoritmus rozložení místností, stavba mřížky, chodby, kamera a deterministické RNG proudy.
+---
+
+## Jak to funguje
+
+### 1. Seed a RNG proudy
+
+- `Rng` je jednoduchý SplitMix64 (`rng.rs`). `below(n)` vrací 0..n-1 (pro `n = 0` vrací 0),
+  `pick` vybere prvek slice, `float` dává 0..1.
+- **Seed runu**: `Rng::run_seed()` – proměnná prostředí `BANE_SEED` přehraje konkrétní run,
+  jinak se seed vezme z hodin. Seed se loguje (`"a new run starts, set BANE_SEED to replay it"`).
+- **Proudy**: `Rng::stream(run_seed, floor, Stream)` míchá `run_seed ^ (floor << 8) ^ stream`.
+  Každé patro má tři nezávislé proudy:
+
+| Proud | Na co se používá |
+|---|---|
+| `Map` | layout, výběr šablon, dekorace, povrchy; **po stavbě i výběr nepřátel ve vlnách** (`update_rooms`) |
+| `Loot` | truhly, drop z rozbitných objektů, zboží v obchodě a cena, slot machine, *Trap Master* |
+| `Combat` | rozptyl střelby apod. (viz [Zbraně](/docs/guns)) |
+
+- Čistě vizuální náhoda jde přes `rng::cosmetic()` (thread-local z hodin) – nikdy nemění průběh.
+- Varianty dlaždic tilesetu, povrchů a břehů se neberou z RNG, ale z **hashe pozice**
+  (`scatter_index`, `patch_index`, `Surfaces::variant`) – stejné místo má vždy stejný vzhled.
+
+<Callout type="info">
+Protože proud `Map` po stavbě dál losuje typy nepřátel, závisí obsah vln na **pořadí**,
+v jakém hráč místnosti otevírá. Layout a dekorace patra jsou ale pro daný seed vždy stejné.
+</Callout>
+
+### 2. Layout (`dungeon/layout.rs`)
+
+`LayoutSpec::standard`:
+
+| Typ | Počet |
+|---|---|
+| Start | 1 (buňka 0,0) |
+| Normal | 5 |
+| Shop | 1 (0, pokud `RunRules.shops == false`) |
+| Treasure | 1 |
+| Sacrifice | `rng.below(2)` → 0–1 |
+| Ambush | `1 + rng.below(2)` → 1–2 |
+| Boss | 1 |
+
+Algoritmus (`Layout::attempt`, až 100 pokusů):
+
+1. Start do buňky (0, 0).
+2. 5× Normal: rodič se vybere z místností Start/Normal, které mají volného souseda.
+   Skóre = `rng.float() + 0.15 × počet obsazených sousedů`, vyhrává **nejnižší** – tedy
+   preferují se méně obklopené místnosti, layout se větví a nerozplácne se do bloku.
+   Směr připojení je náhodný z volných.
+3. Speciální místnosti v pořadí Shop → Treasure → Sacrifice → Ambush: rodič je náhodná
+   Normal místnost s volným sousedem. Na speciální místnosti se už nic nepřipojuje, takže
+   jsou to **slepé konce**.
+4. Boss: BFS vzdálenosti od startu, rodič je náhodná z **nejvzdálenějších** Normal místností
+   s volným sousedem.
+
+Výsledek je strom (žádné smyčky) – každá místnost má právě jednu cestu ke startu.
+
+### 3. Stavba mřížky (`dungeon/build.rs`)
+
+- Pro každou místnost se losuje šablona jejího typu (`Templates::pick`).
+- Šířka sloupce buněk = nejširší šablona v tom sloupci, výška řádku = nejvyšší šablona
+  v řádku. Mezi buňkami je `CORRIDOR_LENGTH = 4` dlaždic, kolem okraj `MARGIN = 1`.
+- Šablona se vycentruje v buňce. Protože všechny rozměry jsou sudé, dveře protilehlých
+  místností leží přesně v ose a chodba je rovná.
+- Vyřezávání: `.` a `E` → podlaha (`E` se uloží jako spawn bod), `D` → podlaha jen pokud
+  na té straně existuje spoj, jinak zůstane zeď.
+- Chodba = 2 rovnoběžné pruhy (pro každou dlaždici dveří jeden) mezi dveřmi obou místností.
+- Pak pro každou místnost `furnish::plan` → `decor::plan` a pokud má téma kapalinu,
+  `surface::plan`.
+
+### 4. Startovní pozice a kamera
+
+- `start_position`: spirála od středu Start místnosti, hledá dlaždici aspoň 2 od okraje
+  s volným okolím 3×3. Debug `BANE_AT=boss` postaví hráče 160 px pod střed boss místnosti.
+- `camera_region`: uvnitř místnosti je kamera omezená na místnost; v chodbě na sjednocení
+  obou spojených místností – plynulý přechod (`camera.glide_bounds`).
+
+### 5. Další patro
+
+Interakce se žebříkem (`Interaction::NextFloor`) → `next_floor()`: uloží statistiky, smaže
+svět i fyziku, `floor += 1`, `build()` znovu (nové proudy pro nové patro), obnoví statistiky.
+Hráč se spawne znovu a `restore_stats` (`systems/carry.rs`) mu vrátí zdraví, brnění,
+peněženku, loadout, artefakt a statistiky runu.
+
+<Callout type="warn">
+`build()` naskladní obchod (`stock_rooms`) a připíše bonus perku *Gamble Machine* **dřív**, než
+`restore_stats` vrátí přenesený stav. Na patrech 2+ se proto „nevlastněná“ zbraň/artefakt
+v obchodě a na pentagramu počítá vůči čerstvému startovnímu loadoutu (může nabídnout
+zbraň, kterou už hráč má) a +100 mincí z *Gamble Machine* se přepíše přenesenou peněženkou.
+</Callout>
+
+## Obsah
+
+Proměnné prostředí pro ladění generování:
+
+| Proměnná | Efekt |
+|---|---|
+| `BANE_SEED` | pevný seed runu |
+| `BANE_THEME` | vynutí téma všech pater (`stone`, `sewer`, `moss`, `spider`, `ice`, `lava`, `temple`) |
+| `BANE_BOSS` | vynutí bosse (`golem`, `argus`, `ogre`, `hound`, `mimic`, `spider`, `slime`) |
+| `BANE_AT=boss` | start u boss místnosti |
+
+## Interakce
+
+- [Typy místností](/docs/dungeon/rooms) – co se s rozloženými místnostmi děje za běhu.
+- [Patra a témata](/docs/dungeon/themes) – téma se volí před layoutem.
+- [Progrese](/docs/progression) – challenge *Merchant's Strike* nastaví `RunRules.shops = false`.
+
+## Kde v kódu
+
+- `rng.rs` – `Rng`, `Stream`, `run_seed`, `cosmetic`
+- `dungeon/layout.rs` – `LayoutSpec`, `Layout::generate`, `pick_parent`, `farthest_attachable`
+- `dungeon/build.rs` – `Dungeon::generate_for_run`, `Dungeon::build`, `carve_corridor`,
+  `start_position`, `camera_region`, `room_at`
+- `scenes/ingame.rs` – `start_run`, `build`, `next_floor`
+
+## Jak přidat nový …
+
+**Nový typ místnosti do layoutu**
+
+1. Přidej variantu do `RoomKind` (`dungeon/template.rs`) a do seznamů v `Templates::parse_all`.
+2. Přidej počet do `LayoutSpec` a do řetězce `specials` v `Layout::attempt`.
+3. Vytvoř aspoň jednu šablonu `assets/rooms/*.json` a zařaď ji do `BUILT_IN`.
+4. Doplň chování: `furnish::plan`, `Counts::for_room` v `decor.rs`, `enter()` v `systems/rooms.rs`.
+5. Ikonu minimapy: `frame()` v `systems/minimap.rs` + nový sloupec v `minimap_icons.tga`.
+
+**Změna velikosti patra** – uprav `LayoutSpec::standard` (např. škálovat `normals` podle patra;
+dnes je konstantní).
+
+## Nápady / chybí
+
+- Velikost patra **neroste s hloubkou** – vždy 5 Normal místností; `TODO.md` chce rostoucí
+  hustotu spawnu.
+- Layout je strom bez smyček – žádné alternativní cesty ani zkratky.
+- Chodby jsou vždy rovné a stejně dlouhé; žádné zahnuté chodby ani chodby s obsahem.
+- Výběr nepřátel z proudu `Map` po stavbě dělá vlny závislé na pořadí průchodu – pro
+  „daily run“ by bylo čistší mít samostatný proud `Spawn` nebo seed per místnost.
+- Debug `BANE_THEME` nastaví téma i patru 1 (přepíše Spider).

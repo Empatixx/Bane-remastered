@@ -1,0 +1,61 @@
+---
+title: Quest board
+description: Nástěnka v lobby se záložkami Tasks (mise) a Challenges — jak vypadá a jak se ovládá.
+---
+
+## Jak to funguje
+
+Quest board je stanice v lobby (prefab `task_board` na dlaždici 18,5 × 0, nápověda „Press E to read
+the board“). Interakce **E** otevře panel (`QuestBoard::toggle`); zavírá se **Esc** nebo znovu **E**.
+Když je panel otevřený, hra v lobby stojí (pauza fyziky, postfx `paused`).
+
+Panel má dvě záložky (klik na nadpis):
+
+| Záložka | Obsah | Klik na lístek |
+|---|---|---|
+| **Tasks** | 3 aktivní mise | Pokud je mise splněná → vyzvedne talenty, do slotu se vylosuje nová (`BoardAction::Claimed`; Vědec řekne „Talents earned!“, zvuk Coin) |
+| **Challenges** | Všech 6 challenge | Vybere / přepne / zruší challenge (`BoardAction::Toggled`; portál se přebarví, zvuk Click) |
+
+### Lístek (note)
+
+Každý lístek (`NoteView`) ukazuje:
+
+- titulek (velikost 22), u aktivní challenge zelené „Active“,
+- popis zalomený na 17 znaků na řádek,
+- progress bar 128 × 8 px — **červený**, dokud není splněno, pak **zelený**,
+- text `progress/goal` (u challenge 0/1 nebo 1/1),
+- odměnu `+N` s ikonou talentu (u splněné challenge se skrývá).
+
+Lístky jsou v mřížce 3 sloupce, krok 176 × 198 px, s drobným svislým „rozházením“ (`NOTE_JITTER`).
+Sprite papíru (`tex::NOTE_PAPER`) má 4 řádky: normální, hover, splněný, splněný+hover.
+
+## Obsah
+
+- Záložky: `Tab::Tasks`, `Tab::Challenges`.
+- Akce: `BoardAction::Claimed`, `BoardAction::Toggled`.
+- Seznam misí: [Mise](/docs/progression/missions). Seznam challenge: [Challenge](/docs/progression/challenges).
+
+## Interakce
+
+- Lobby reaguje na akce (wallet, počítadla, řeč Vědce, tint portálu) — [Lobby](/docs/progression/lobby).
+- Data bere ze `SharedProfile::board()` a každou změnu ihned ukládá — [Ukládání](/docs/progression/saves).
+
+## Kde v kódu
+
+- `scenes/quest_board.rs` → `QuestBoard` (`toggle`, `close`, `update`, `rebuild`), `layout`, `target_at`, `note_top_left`, `tab_top_left`
+- `scenes/panel.rs` → sdílené UI prvky (`frame`, `label`, `note`, `bar`, `wrap`, barvy `INK`, `GREEN`, `RED`)
+- `progress/state.rs` → `BoardView`, `NoteView`, `ProgressState::board`
+- `prefabs/fixtures.rs` → `task_board`
+
+## Jak přidat novou záložku
+
+1. Přidat variantu do `Tab` a do `Tab::ALL`, doplnit `name()`.
+2. Rozšířit `BoardView` o nový seznam `NoteView` a vrátit ho z `notes()`.
+3. Doplnit větev pro klik v `QuestBoard::update` a případně novou `BoardAction`.
+4. Šířka záložek se počítá automaticky (`tab_top_left`), ale u víc než 3 záložek ověřit, že se vejdou do panelu.
+
+## Nápady / chybí
+
+- Žádný hover tooltip s podrobnostmi (např. přesná pravidla challenge, které talenty vypne).
+- Splněná mise se nevyzvedne automaticky; pokud hráč na board zapomene, talenty leží. Zvážit indikátor nad boardem v lobby (vykřičník) při `done`.
+- Chybí třetí záložka pro **lore / Vědcovy poznámky** nebo historii runů — board je příběhově „pracovní poznámky Vědce“.

@@ -1,0 +1,93 @@
+---
+title: Scény a stavový automat
+description: Čtyři scény hry (Loading, Menu, Lobby, InGame), přechody mezi nimi, hudba a vývojářské zkratky.
+---
+
+## Jak to funguje
+
+Hra má čtyři scény (`SceneId`): **Loading → Menu → Lobby → InGame**. Všechny žijí současně
+v `Scenes` (každá má vlastní `hecs::World`), aktivní je vždy jedna. Scéna vrací z `update` /
+`fixed_update` hodnotu `Transition`:
+
+- `Transition::None` — nic,
+- `Transition::Switch(SceneId)` — aktuální scéna zavolá `leave()` (vyčistí svět), nová `enter()`, spustí se její hudba,
+- `Transition::Quit` — ukončení hry.
+
+Pauza, panel nastavení, death screen ani menu stanic v lobby **nejsou** samostatné scény —
+jsou to UI entity uvnitř aktuální scény.
+
+### Přechody
+
+| Z | Do | Spouštěč |
+|---|---|---|
+| Loading | Menu | Assety načtené + 0,5 s (`HOLD_SECONDS`) |
+| Loading | Lobby / InGame | Env `BANE_START=lobby` / `BANE_START=dungeon` (vývoj) |
+| Menu | Lobby | Tlačítko **Play** |
+| Menu | (konec) | Tlačítko **Exit** |
+| Lobby | InGame | Interakce **E** s portálem (`Interaction::EnterPortal`) |
+| Lobby | Menu | Pauza (Esc) → **Main Menu** |
+| Lobby / InGame | (konec) | Pauza → **Exit Game** |
+| InGame | InGame (další patro) | Žebřík (`Interaction::NextFloor`) — scéna se nemění, jen se přestaví svět |
+| InGame | Lobby | Po death/victory screenu libovolná klávesa + 0,8 s fade |
+
+### Hudba (`Soundtrack`)
+
+| Scéna | Skladba |
+|---|---|
+| Loading | žádná |
+| Menu | `MainMenu` |
+| Lobby | `ProgressRoom` |
+| InGame | `InGame`; při vstupu do boss místnosti `Boss`, po zabití bosse zpět `InGame` |
+
+### Loading
+
+Obloha s shaderem (`Sky`), animovaný titulek (`LogoAnim`, 285×135 px) a spinner (8 snímků po
+0,1 s). Jakmile `assets.is_loaded()`, čeká se ještě 0,5 s a přepne se do Menu.
+
+## Obsah
+
+| Scéna | Soubor | Kurzor | Fyzika | Popis |
+|---|---|---|---|---|
+| `Loading` | `scenes/loading.rs` | default | ne | Načítání assetů |
+| `Menu` | `scenes/menu.rs` + `menu_stage.rs`, `menu_logo.rs`, `menu_buttons.rs` | default | ne | Hlavní menu, viz [Menu a nastavení](/docs/progression/menus-settings) |
+| `Lobby` | `scenes/lobby.rs` | default | ano | Laboratoř, viz [Lobby](/docs/progression/lobby) |
+| `InGame` | `scenes/ingame.rs` | zaměřovač / reload | ano | Run, viz [Průběh runu](/docs/progression/run) |
+
+### Vývojářské env proměnné týkající se flow
+
+| Proměnná | Efekt |
+|---|---|
+| `BANE_START=lobby` / `dungeon` | Přeskočí menu |
+| `BANE_SEED` | Přehraje run se stejným seedem (seed se loguje při startu runu) |
+| `BANE_AT=boss` | Hráč se objeví 160 px pod středem boss místnosti |
+| `BANE_THEME` | Vynutí biom pro všechna patra |
+| `BANE_DATA` | Složka pro `profile.json` a `settings.json` |
+| `BANE_ASSETS` | Složka s assety |
+
+Další (`BANE_BOSS`, `BANE_ROWS`, `BANE_*_ATTACK`) se týkají nepřátel/dungeonu — viz [Technika](/docs/tech).
+
+## Interakce
+
+- Každá scéna dostane společný `SharedProfile` (Lobby a InGame) — viz [Ukládání](/docs/progression/saves).
+- `Settings` se předává do `update` všech scén, ale mění je jen Menu — viz [Menu a nastavení](/docs/progression/menus-settings).
+
+## Kde v kódu
+
+- `scenes/mod.rs` → `SceneId`, `Transition`, `Cursor`, trait `Scene`
+- `scenes/machine.rs` → `Scenes::new`, `Scenes::switch`, `Scenes::apply`
+- `scenes/loading.rs` → `LoadingScene`, `first_scene()`
+- `scenes/pause.rs` → `Pause` (sdílené mezi Lobby a InGame)
+
+## Jak přidat novou scénu
+
+1. Přidat variantu do `SceneId` v `scenes/mod.rs`.
+2. Vytvořit `scenes/<nazev>.rs` se strukturou implementující `Scene` (`world`, `world_mut`, `enter`, případně `update`, `fixed_update`, `soundtrack`, `leave`).
+3. Přidat pole do `Scenes` a větve do `scene()` / `scene_mut()` v `scenes/machine.rs`.
+4. Vracet `Transition::Switch(SceneId::…)` z místa, odkud se má do scény přejít.
+5. Pokud potřebuje profil, přidat `attach_profile` a zavolat ho v `Scenes::new`.
+
+## Nápady / chybí
+
+- Z InGame se nedá odejít do menu ani do lobby bez smrti — pauza má jen Resume / Die / Exit Game.
+- Chybí scéna pro epilog / pravý konec (`scenes/epilogue.rs` navrhuje `story.md`).
+- Chybí obrazovka profilu / statistik a credits.

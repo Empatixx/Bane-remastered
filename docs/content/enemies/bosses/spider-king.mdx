@@ -1,0 +1,81 @@
+---
+title: Spider king
+description: Boss prvního patra — rychlý pavouk, který líhne spiderlingy a plive zpomalující pavučiny.
+---
+
+## Jak to funguje
+
+`EnemyKind::Spider`, `Role::Boss("Spider king")`, `Behavior::SpiderBoss`. Jediný boss s
+`max_floor = 1` — je to **vždy** boss patra 1 a nikde jinde se neobjeví.
+
+| Parametr | Hodnota |
+|---|---|
+| HP | 75 |
+| Kontaktní damage | 2 |
+| Force / rychlost | 32 500 000 / 282 px/s |
+| Velikost | 192 × 120 px (frame 64 × 40, scale 3) |
+| Sheet | `ingame/spider.tga`, 5 × 3, smrt na řádku 2 |
+| Fáze | žádné |
+
+Mezi útoky normálně pronásleduje hráče (je rychlý — 282 px/s, cca 69 % rychlosti hráče), takže hlavní
+hrozba je kontakt. Dvě schopnosti běží paralelně na vlastních časovačích:
+
+### Hatcher — líhnutí spiderlingů
+
+- Každých 2,5 s (`HATCH_COOLDOWN`) na své pozici vylíhne jednoho spiderlinga v pevném pořadí
+  Red → Green → Purple → Red … (`HATCH_ORDER`).
+- Spiderlingové jsou hatchlingové: hned aktivní (bez zhmotnění), `Minion`, `NoDrop`, základní statistiky
+  (Red 3 HP, Green 5 HP + léčení příbuzných při smrti, Purple 3 HP / 1 dmg) — viz
+  [Pavouci](/docs/enemies/spiders).
+- **Žádný limit** počtu — když hráč spiderlingy nezabíjí, hromadí se (24 za minutu).
+- Líhnutí se pozastaví, když je boss `Rooted` (během plivání pavučiny) nebo `Frozen`.
+
+### Web spitter — pavučina
+
+- Každých 5 s (`WEB_COOLDOWN`) se zastaví (`Rooted`) a přehraje kouzlící animaci (řádek 1, 3 × 0,15 s).
+- Na konci vyplivne cobweb (`prefabs::cobweb`, 64 × 64 px) z boku u spodní hrany těla směrem k hráči.
+  Pavučina letí cca 610 px/s s útlumem (`Drag 1,5`), zpomalí se a **zůstane ležet**.
+- Hráč stojící v pavučině má rychlost × 0,5 (`COBWEB_SLOWDOWN` v `systems/steering.rs`). Pavučina
+  nezraňuje.
+- Všechny pavučiny zmizí až se smrtí bosse.
+
+## Obsah
+
+Útoky a minions:
+
+| Schopnost | Perioda | Efekt |
+|---|---|---|
+| Kontakt | — | 2 dmg |
+| Líhnutí | 2,5 s | 1 spiderling (R → G → P) |
+| Pavučina | 5 s (+0,45 s cast) | trvalá plocha, zpomalení hráče na 50 % |
+
+## Interakce
+
+- Spiderlingové od bosse se počítají do vyčištění místnosti; po jeho smrti je `clean_up_after_boss` zabije.
+- Green spiderling vylíhnutý bossem léčí ostatní spiderlingy, ne bosse (boss není `Kin`).
+- Lore: „Steh. Drží ránu u povrchu zavřenou. Zabít ho = otevřít cestu dolů.“ (`story.md`)
+
+## Kde v kódu
+
+- `enemies.rs` → arm `Spider`; `HATCH_COOLDOWN`, `WEB_COOLDOWN`, `spell_clip`.
+- `systems/bosses.rs` → `tick_hatchers`, `HATCH_ORDER`, `tick_web_spitters`, `WEB_SIDE_OFFSET`,
+  `WEB_BOTTOM_INSET`.
+- `prefabs/actors.rs` → arm `Behavior::SpiderBoss` (vkládá `Hatcher` + `WebSpitter`), `hatchling`, `cobweb`,
+  `COBWEB_*`.
+- `systems/steering.rs` → zpomalení v pavučině.
+
+## Jak upravit
+
+- Rychlost líhnutí / pavučin: `HATCH_COOLDOWN`, `WEB_COOLDOWN` v `enemies.rs`.
+- Pořadí líhnutí: `HATCH_ORDER` v `systems/bosses.rs`.
+- Síla zpomalení: `COBWEB_SLOWDOWN` v `systems/steering.rs`.
+
+## Nápady / chybí
+
+- Žádná rage fáze ani výběr útoků — je to „starý“ boss (port z Javy). Přepis do vzoru `step`/`Cmd`
+  (viz [Ogre](/docs/enemies/bosses/ogre)) by umožnil např. skok na hráče (mechanika `Leaper` už existuje
+  u Stilt spidera) nebo zabarikádování místnosti pavučinami v rage.
+- Chybí limit spiderlingů (Golem/Ogre/Mimic limity mají) — při pasivní hře se boj může zvrhnout.
+- Pavučiny nemají životnost a hromadí se (12 za minutu boje).
+- Java verze zpomalovala přes lineární damping (+5, max 15); Rust používá pevné × 0,5 — FEATURE.md je
+  zastaralý.

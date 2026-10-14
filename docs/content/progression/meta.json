@@ -1,0 +1,19 @@
+{
+  "title": "Průběh hry a progrese",
+  "icon": "Route",
+  "pages": [
+    "index",
+    "scenes",
+    "run",
+    "run-end",
+    "rules",
+    "currencies",
+    "missions",
+    "challenges",
+    "quest-board",
+    "lobby",
+    "menus-settings",
+    "saves",
+    "story"
+  ]
+}

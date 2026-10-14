@@ -1,0 +1,117 @@
+---
+title: Příběh a lore
+description: Shrnutí příběhové bible story.md (směr „Pokusný subjekt“) a porovnání s tím, co je skutečně ve hře.
+---
+
+Zdroj: `story.md` v kořeni repozitáře (schválený směr **„Pokusný subjekt“**). Herní texty jsou
+anglicky, poznámky česky. Tato stránka shrnuje lore a u každého prvku uvádí, jestli je v Rust kódu.
+
+## Jak to funguje (lore)
+
+### Premisa
+
+Hráč je **pokusný subjekt** (navržené číslo **41**). **Vědec** ho posílá portálem do **Bane** —
+**rány** ve světě pod zničeným chrámem — a platí mu **talenty** za každý kus pravdy, který vynese.
+Hráč není první a není tak docela člověk.
+
+### Svět
+
+- **Bane (rána)**: co do ní spadne, to se překroutí (krysy, hadi, netopýři, pavouci). Po každém sestupu se „zahojí“ a přeskládá = procedurální generování. Žebříky dolů vytesali lidé z chrámu, kteří se ji snažili zavřít.
+- **Patro 1 je vždy pavoučí** — pavouci jsou „stehy“, které drží ránu u povrchu.
+- **Laboratoř (lobby)** stojí nad ranou z trosek chrámu. Portál = Vědcův vynález, nástěnka = jeho pracovní poznámky, stůl se zbraněmi = co vynesly předchozí subjekty.
+- **Kletba**: chce jen růst. Obětní oltář si bere zdraví. Talenty jsou ve skutečnosti „vyčištěné“ kousky kletby.
+
+### Postavy
+
+| Postava | Role v lore |
+|---|---|
+| **Subjekt (hráč)** | Bez paměti, probudil se u portálu. Pravda: Vědec subjekty **vytahuje z rány** — jsou to, co kletba vyplivne. 41 je nejstabilnější („my finest work“). |
+| **Vědec** | Upgrade NPC. Nadšený, laskavý, nikdy nelže, jen zamlčuje. Ránu nechce zavřít, chce ji **ovládnout**. |
+| **Obchodník** | Subjekt **č. 12**, rozhodl se nevrátit nahoru. Suchý humor, pravdu řekne po několika návštěvách. |
+| **Oltář** | Hlas kletby, VELKÁ PÍSMENA bez interpunkce. Říká pravdu od začátku. |
+| **Vlk (pet)** | Jediné, co Vědec nestvořil; vylezl z rány sám. |
+
+### Bossové jako strážci
+
+| Boss | Lore |
+|---|---|
+| Spider king | Steh, drží ránu u povrchu zavřenou |
+| King slime | Zbytky rozpuštěných subjektů |
+| Sewer ogre | Chrámový dělník, první, koho rána vzala |
+| Stone golem | Oživená socha strážce chrámu |
+| Argus | Vědcovo oko, které se mu vymklo |
+| Hellhound | Strážce dna — nehlídá ránu před tebou, ale tebe před tím, co je pod ní |
+| **The Heart** | Navržený finální boss na patře 5: jádro arény, přivolává pavoučata a slizy, ve fázi 3 siluety předchozích subjektů s pistolí |
+
+### Kapitoly po patrech
+
+| Patro | Boss | Co hráč pochopí |
+|---|---|---|
+| 1 | Spider king | Rána se hojí, pavouci jsou stehy |
+| 2 | King slime / Sewer ogre | Tady skončila většina subjektů |
+| 3 | Stone golem / Argus | Vědec tě sleduje, Argus je jeho |
+| 4 | Hellhound | Hellhound tě nechce zabít, chce tě zastavit |
+| 5 | The Heart (Temple) | Dno rány; Vědec ji chce použít, ne zavřít |
+
+### Konce
+
+- **Základní vítězství**: poražení The Heart. Vědec jásá („Now we can begin.“), hra pokračuje, Vědec mluví o „our work“.
+- **Pravý konec**: splnit challenge **Bane** a v ní zabít The Heart → místo truhly portál dolů → krátká textová sekvence („You were never brought here. You were brought UP.“) → volba **Close the wound** (profil dostane příznak `closed`, lobby vyhasne, new game+) nebo **Leave it open** (pokračování).
+
+## Obsah — mapování na implementaci
+
+| Příběhový prvek | Stav v kódu | Poznámka |
+|---|---|---|
+| Lobby s Vědcem, portálem, nástěnkou, stolem se zbraněmi | **Hotovo** | `scenes/lobby.rs` |
+| Talenty jako měna od Vědce | **Hotovo** | Zdroj ale nejsou runy, nýbrž mise/challenge |
+| Patro 1 vždy pavoučí, Spider king | **Hotovo** | `Theme::for_floor` → `FIRST_FLOOR = Spider` |
+| Patra 1–5, výhra po bossovi patra 5 | **Hotovo** | `FINAL_FLOOR = 5` |
+| Bossové Spider king, King slime, Sewer ogre, Stone golem, Argus, Hellhound | **Hotovo** | Navíc **Mimic** (boss, v `story.md` chybí) |
+| Patro 5 = Temple | **Chybí** | Biom patra 5 je náhodný |
+| The Heart (finální boss) | **Chybí** | Na patře 5 je obyčejný boss biomu |
+| Vědcovy repliky podle `best_floor` / `deaths` | **Chybí** | Data v profilu existují; dnes jen `GREETINGS` + `HINTS` |
+| Rotace replik po nákupu | **Chybí** | Jen „Excellent choice!“ |
+| Repliky po výhře / po challenge Bane | **Chybí** | |
+| Obchodník — cyklus replik podle návštěv (`shop_visits`) | **Chybí** | Dnes „Welcome to my shop!“ + „Enjoy your purchase!“ |
+| Oltář — věta při vstupu do sacrifice room | **Chybí** | |
+| Vědcova poznámka pod každým druhem mise | **Chybí** | |
+| Popisy challenge jako Vědcovy poznámky | **Chybí** | Dnes mechanické popisy |
+| Řádek „Subject 41. Attempt N. Recorded.“ na death/victory screenu | **Chybí** | |
+| Pravý konec (portál dolů, epilog, volba, `closed`, NG+) | **Chybí** | |
+| Lobby po zavření rány | **Chybí** | |
+| Vlk u portálu | **Částečně** | Pet existuje (talent), chová se jako společník, ne jako postava u portálu |
+
+Doporučené pořadí ze `story.md`: nejdřív levné texty (repliky, popisy, death screen řádek), pak
+patro 5 = Temple + The Heart, nakonec pravý konec.
+
+## Interakce
+
+- Vědec a lobby: [Lobby](/docs/progression/lobby).
+- Challenge Bane: [Challenge](/docs/progression/challenges).
+- Bossové: [Nepřátelé](/docs/enemies). Obchod a oltář: [Dungeon](/docs/dungeon), [Artefakty a předměty](/docs/artefacts-items).
+
+## Kde v kódu
+
+Kam podle `story.md` jednotlivé texty patří:
+
+- `systems/scientist.rs` — repliky Vědce (`GREETINGS`, `HINTS`, `PURCHASE`, `pick`)
+- `systems/shop.rs` — repliky obchodníka (`say`)
+- `systems/rooms.rs` — událost vstupu do místnosti (oltář)
+- `progress/missions.rs`, `progress/challenges.rs` — texty misí a challenge
+- `prefabs/ui.rs` → `death_ui` — řádek pod Game Over / Victory
+- `dungeon/theme.rs` → `for_floor` — patro 5 = Temple
+- `enemies.rs`, `systems/bosses.rs`, nový `systems/heart.rs` — The Heart
+- `scenes/ingame.rs`, nový `scenes/epilogue.rs`, `profile.rs` (`closed`) — pravý konec
+
+## Jak přidat repliky Vědce podle profilu
+
+1. Do `systems::chat` dostat `best_floor` a `deaths` (např. přidat komponentu s profilem do lobby světa při `enter`, podobně jako `Wallet`).
+2. V `pick` po pozdravu jednou za příchod vybrat větu podle nejhlubšího patra (pole 6 vět, index `best_floor` oříznutý na 5) a podle prahů smrtí (1 / 5 / 10 / 20).
+3. Texty vzít ze `story.md` sekce 5.1.
+
+## Nápady / chybí
+
+- `story.md` sekce 8 tvrdí, že patro má „5 bojových místností, shop, treasure, boss, volitelně sacrifice“ a mluví o větvi `missions-challenges` — ověřit proti [Dungeon](/docs/dungeon), dokument může být zastaralý.
+- Mimic jako boss v lore chybí — doplnit (např. „co se v ráně naučilo vypadat jako poklad“).
+- Hráč se o příběhu dnes nedozví prakticky nic: jediné lore texty jsou „Ah, my test subject!“ a „Go on, test my work!“. Nejlevnější velký zisk = implementovat sekci 5 `story.md`.
+- `FEATURE.md` popisuje Java verzi (šifrovaný `upgrades.bin`, coins jako meta měna, prázdný Controls tab) a je vůči Rust portu zastaralý.

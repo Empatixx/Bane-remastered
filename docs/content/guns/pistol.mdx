@@ -1,0 +1,80 @@
+---
+title: Pistol
+description: Startovní poloautomatická pistole, se kterou hráč začíná každý run.
+---
+
+**Pistol** (`GunKind::Pistol`) — Startovní zbraň ve slotu 1. Spolehlivá, přesná, ale s velmi nízkým poškozením — reálně padá jen 1 nebo 2.
+
+## Jak to funguje
+
+### Statistiky
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Poškození v kódu | 1–3 |
+| Reálné poškození na projektil | 1–2 (průměr 1,5) |
+| Projektilů na výstřel | 1 |
+| Kadence | 4 výstřelů/s |
+| Průměrné DPS (bez přebíjení) | 6 |
+| Odchylka (`inaccuracy`) | 0,1 → ±0,05 rad (±2,9°) |
+| Režim | poloautomatická |
+| Zásobník / rezerva | 7 / 120 |
+| Přebíjení | 0,7 s |
+| Kritická šance (základ) | 0 % |
+| Otřes kamery (`shake`) | 0,35 |
+| Třída munice | `AmmoClass::Pistol` |
+| Styl zásobníku v HUD | `ClipStyle::Pistol` — jeden sloupec nábojů (krok 15 px) |
+| Nábojnice | ano (nábojnice) |
+| Zvuk výstřelu / přebití | `PistolShoot` / `PistolReload` |
+| Textura / velikost ikony | `tex::GUNS_PISTOL` / 40 × 34 px |
+| Klíč v profilu | `"pistol"` |
+
+Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+
+### Střelba
+
+Poloautomatická: jeden výstřel na kliknutí (`Input::clicked`), držení tlačítka nestřílí. Jedna kulka `Round::Bullet` s náhodnou odchylkou ±0,05 rad (±2,9°).
+
+### Projektil
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Typ | `Round::Bullet` |
+| Rychlost | 700 px/s |
+| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
+| Průraz (`pierce`) | 0 |
+| Životnost | — |
+| Zvláštní efekt | — |
+| Světlo | červené (255, 0, 0) |
+| Natáčí se ve směru letu | ne |
+| Textura | `tex::BULLET` |
+
+Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+
+### Přebíjení a munice
+
+Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,7 s, pak se zásobník doplní z rezervy (max. 7 nábojů). Rezervu 120 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
+
+### Zvláštnosti
+
+- Jediná zbraň povolená ve výzvě **Pistol Only** (`progress/challenges.rs`, `RunRules::only_gun = Some(GunKind::Pistol)`) — viz [Loadout](/docs/guns/loadout).
+- Při ruční základní hodnotě 1 se procentní perky poškození (`ImprovedDamage` ×1,2) ztratí v zaokrouhlení dolů — viz [Střelba](/docs/guns/strelba).
+
+## Interakce
+
+- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
+- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
+- Hráč ji dostává na začátku každého runu (`Loadout::starting`).
+- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
+
+## Kde v kódu
+
+- `guns.rs` → `GunKind::Pistol`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
+- `systems/shooting.rs` → `shoot`, `bullet_hits`
+- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Pistol“)
+- `assets.rs` → `tex::GUNS_PISTOL`
+
+## Nápady / chybí
+
+- Startovní zbraň má DPS 6, zatímco startovní Shotgun 28 — pistole je v praxi jen záložní. Zvážit zvýšení na 2–3 nebo kritický bonus.
+- Lore (story.md): boss-zrcadlo hráče střílí pistolí — dobrá příležitost pro unikátní variantu („Scientist's Pistol“).

@@ -1,0 +1,103 @@
+---
+title: Menu, pauza a nastavení
+description: Hlavní menu s živým pozadím, pauzové menu v lobby a v runu a panel nastavení (video, audio, ovládání).
+---
+
+## Jak to funguje
+
+### Hlavní menu (`MenuScene`)
+
+- **Pozadí** (`menu_stage.rs` → `Stage`): tilemapa krypty (`tilemap::crypt()`) s oltářem — andělská socha, pentagram, 5 svícnů, knihy, řetězy, pochodně, kosti, pavučiny, kameny, bedny (29 rekvizit) + ambientní částice a ztmavení (`DIM`, 50 % fialovočerné).
+- Kamera pomalu panoruje (perioda **150 s**) a pohupuje se (perioda **97 s**).
+- **Critters**: první za 2,5 s, pak každých 5–11 s přeběhne přes obrazovku krysa, krysa nebo netopýr (`CRITTER_KINDS`, poloviční rychlost).
+- **Logo** (`menu_logo.rs` → `LogoAnim`): plynule přejede z pozice titulku loadingu (285 × 135) do horní části (228 × 108), pak se pohupuje, září a periodicky se přes něj mihne lesk.
+- **Tlačítka** se odkryjí během 0,4 s po doletu loga.
+- Hudba `MainMenu`.
+
+| Tlačítko | y | Akce |
+|---|---|---|
+| Play | 240 | → Lobby |
+| Settings | 320 | Otevře panel nastavení (skryje logo a tlačítka) |
+| Exit | 400 | Ukončí hru |
+
+### Pauza (`Pause`)
+
+Esc přepne pauzu. Pozadí se rozostří (`SceneFx.paused`) a fixní update stojí.
+
+| Scéna | Tlačítka (`PAUSE_*`) |
+|---|---|
+| Lobby (`PAUSE_LOBBY`) | Resume · Main Menu · Exit Game |
+| Run (`PAUSE_GAME`) | Resume · **Die** · Exit Game |
+
+V runu Esc nejdřív zavře velkou mapu (Tab), teprve pak otevře pauzu. **Die** okamžitě ukončí run
+jako smrt (se všemi odměnami) — viz [Konec runu](/docs/progression/run-end).
+
+### Nastavení (`SettingsPanel`)
+
+Panel 516 × 354 px se třemi záložkami a boční trojicí tlačítek:
+
+- **Apply** — rozdíly mezi `pending` a `applied` se převedou na `Change` (fullscreen, rozlišení, vsync, hlasitosti, ovládání), aplikují se a uloží do `settings.json`.
+- **Revert** — `pending` se vrátí na `applied`.
+- **Exit** — zavře panel (neaplikované změny se zahodí).
+
+Nastavení je dostupné **jen z hlavního menu**.
+
+## Obsah
+
+### Položky nastavení (`GameSettings`)
+
+| Záložka | Položka | Ovládání | Výchozí |
+|---|---|---|---|
+| Video | Resolution | šipky vlevo/vpravo, cyklí seznamem | 1920 × 1080 (2× `TARGET` 960 × 540) |
+| Video | V-sync | checkbox | zapnuto |
+| Video | Fullscreen | checkbox | vypnuto |
+| Audio | Overall | slider 0–1 | 1,0 |
+| Audio | Music | slider 0–1 | 0,5 |
+| Audio | Effects | slider 0–1 | 0,5 |
+| Controls | 10 akcí | klik na slot, pak stisk klávesy | viz níže |
+
+Seznam rozlišení přichází z monitoru (`set_resolutions`, seřazený, bez duplicit, vždy obsahuje aktuální); fallback
+960 × 540, 1280 × 720, 1600 × 900, 1920 × 1080. Hlasitosti se při načtení ořežou na 0–1, nulové rozlišení se nahradí výchozím.
+
+### Ovládání (`controls.rs` → `Action`)
+
+| Akce | Výchozí klávesa |
+|---|---|
+| MoveUp / MoveDown / MoveLeft / MoveRight | W / S / A / D |
+| Interact | E |
+| Reload | R |
+| UseArtefact | F |
+| DropGun | Q |
+| Map | Tab |
+| Dodge | Space |
+
+Lze přiřadit jen klávesy ze seznamu `KEYS` (36 kláves). Když je nová klávesa už obsazená jinou akcí,
+**prohodí se** (druhá akce dostane původní klávesu). Střelba (myš) a Esc přemapovat nejdou.
+
+## Interakce
+
+- Soubor `settings.json` a jeho odolnost proti poškození: [Ukládání](/docs/progression/saves).
+- Postfx pauzy (blur): [Technika](/docs/tech).
+
+## Kde v kódu
+
+- `scenes/menu.rs` → `MenuScene`, `BUTTON_ROWS`; `scenes/menu_stage.rs` → `Stage`; `scenes/menu_logo.rs` → `LogoAnim`; `scenes/menu_buttons.rs` → `MenuButtons`
+- `scenes/pause.rs` → `Pause`; `prefabs/ui.rs` → `PAUSE_GAME`, `PAUSE_LOBBY`, `pause_ui`
+- `scenes/settings_panel.rs` → `SettingsPanel`, `TABS`, `SIDE_BUTTONS`, `CHECKBOXES`, `SLIDERS`
+- `systems/settings_ui.rs` → `update_settings_ui` (checkboxy, slidery, rebind)
+- `settings.rs` → `GameSettings`, `Settings` (`load`, `apply`, `revert`, `take_changes`, `startup_changes`), `Change`
+- `controls.rs` → `Action`, `Bindings::rebind`, `KEYS`
+
+## Jak přidat novou položku nastavení
+
+1. Přidat pole do `GameSettings` s `#[serde(default)]` (jinak staré `settings.json` neprojdou) a výchozí hodnotu do `Default`.
+2. Případně ošetřit v `sanitized`.
+3. Přidat variantu `Change`, generovat ji v `apply` a `startup_changes`, a zpracovat ji v `app.rs`.
+4. Přidat UI prvek do `spawn_panel` (`settings_panel.rs`) a jeho obsluhu do `systems/settings_ui.rs`.
+
+## Nápady / chybí
+
+- Nastavení nejde otevřít z pauzy (v lobby ani v runu).
+- Z pauzy v runu nevede cesta do menu/lobby kromě „Die“.
+- Chybí: gamepad, citlivost/velikost kurzoru, screen shake toggle, jazyk, accessibility (barvoslepost, velikost textu), zobrazení FPS.
+- Klávesa Esc a pauza nejsou přemapovatelné; tlačítka myši se nedají přiřadit akcím.

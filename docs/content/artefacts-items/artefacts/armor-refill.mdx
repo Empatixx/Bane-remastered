@@ -1,0 +1,30 @@
+---
+title: Armor Refill
+description: Okamžitě doplní armor hráče na maximum.
+---
+
+## Jak to funguje
+
+- `armor.current = armor.max` na hráči. Nic víc – žádný zvuk ani vizuální efekt navíc (kromě aktualizace stavových pruhů).
+- Maximum armoru je 5 (`PLAYER_ARMOR`), s perkem Improved Armor 6 (`max_armor` = 5 × 1,2 zaokrouhleno dolů).
+- Použití při plném armoru artefakt promrhá – žádná kontrola.
+
+| Parametr | Hodnota |
+|---|---|
+| Efekt | armor → max |
+| Trvání | okamžitý |
+| Textura | `ingame/artefacts/armorrefill.tga` |
+
+## Interakce
+
+- [Hráč](/docs/player) – armor pohlcuje damage před zdravím (`systems/damage.rs` → `absorb`).
+- Duplikuje velký lektvar armoru (+4) z [obchodu](/docs/artefacts-items/shop); perk Armor Regeneration dává +1 armor po vyčištění místnosti ([Perky](/docs/artefacts-items/perks)).
+
+## Kde v kódu
+
+- `systems/artefacts.rs` → `activate_artefact` (arm `ArmorRefill`)
+
+## Nápady / chybí
+
+- Chybí zvuk a efekt (např. modrý záblesk / `SoundEffect::Heal`).
+- Mohl by dočasně zvýšit maximum (overcharge), aby nebyl jen „lepší lektvar“.

@@ -1,0 +1,38 @@
+---
+title: Infinity Quiver
+description: Na 8 sekund nekonečná munice bez přebíjení pro všechny zbraně.
+---
+
+## Jak to funguje
+
+- Vloží `InfiniteAmmo { remaining: 8.0 }`.
+- V `systems/shooting.rs` → `shoot` pro aktuální zbraň:
+  - probíhající přebíjení se zruší (`weapon.reloading = None`),
+  - klávesa přebití se ignoruje,
+  - výstřely ani dávky (burst) neubírají `clip`,
+  - prázdný zásobník nevadí – střílí se dál.
+- Platí pro jakoukoliv zbraň, i po přepnutí.
+
+### Vizuál
+
+- HUD zbraně se zbarví do zlata a ukáže symbol nekonečna s třpytem (`ARTEFACTS_INFINITY_GLINT`) – `systems/hud.rs` → `update_weapon_hud(…, infinite)`.
+
+| Parametr | Hodnota |
+|---|---|
+| Trvání | 8 s |
+| Textura | `infinity_quiver.tga`, `infinity_glint.tga` |
+
+## Interakce
+
+- [Zbraně](/docs/guns) – nejsilnější s automatickými zbraněmi s malým zásobníkem nebo dlouhým přebíjením (Minigun, RPG, Railgun).
+
+## Kde v kódu
+
+- `systems/shooting.rs` → `shoot` (větve `infinite`)
+- `systems/hud.rs` → `update_weapon_hud`, `show_weapon`
+- `scenes/ingame.rs` → předání `self.clock` do HUD
+
+## Nápady / chybí
+
+- Rychlost střelby zůstává – varianta „+50 % fire rate“ by efekt zvýraznila.
+- Po skončení zůstane zásobník v tom stavu, v jakém byl před aktivací (nic se nedoplní) – je to záměr?

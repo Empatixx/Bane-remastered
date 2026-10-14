@@ -1,0 +1,129 @@
+---
+title: Střelba
+description: Jak funguje výstřel — vstup, cooldown, dávky, rozptyl, výpočet poškození, kritické zásahy, zpětný ráz, nábojnice a dopad.
+---
+
+## Jak to funguje
+
+Střelbu řeší `systems::shoot` jednou za snímek (volá se z `scenes/ingame.rs`, jen když není otevřená velká mapa). Funkce vrací součet `shake` všech výstřelů v tomto snímku, který se přičte jako trauma kamery (`camera.add_trauma`).
+
+### Kdo může střílet
+
+Jen entita s `Player` a `Loadout`, **bez** `Dodge` (během úskoku se nestřílí) a bez `Frozen`. Pokud je aktuální slot prázdný (zbraň zahozená), nic se neděje — ani zvuk.
+
+### Pořadí v jednom snímku
+
+1. Pokud má hráč `InfiniteAmmo`, zruší se probíhající přebíjení.
+2. `Weapon::advance(dt)` — odečte cooldown a dokončí přebíjení (zásobník se doplní z rezervy). Tiká jen **aktuální** zbraň; přebíjení a cooldown ostatních slotů stojí.
+3. Klávesa R (`Action::Reload`) spustí přebíjení, pokud neběží dávka, nepřebíjí se, rezerva je větší než 0 a zásobník není plný. Přehraje se zvuk `spec.reload`.
+4. Probíhající dávka (`Burst`) má přednost: po `BURST_DELAY` = 0,05 s vystřelí další ránu do zamčeného směru; během dávky se nic jiného nevyhodnocuje.
+5. Spoušť: automatické zbraně (`auto`) reagují na držení tlačítka (`mouse_down`), ostatní jen na kliknutí (`clicked`). Při přebíjení nebo cooldownu se nestřílí.
+6. Prázdný zásobník → zvuk `EmptyGunShoot`; u automatů se nastaví cooldown, aby cvakání nespamovalo. **Automatické přebití neexistuje.**
+7. Výstřel: cooldown = `fire_interval`, zásobník −1 (ne při nekonečné munici), zvuk `spec.shoot`, případně založení dávky, `count_shot` (Deadeye).
+8. Pokud měl hráč `Phantom` (neviditelnost z artefaktu), komponenta se odstraní a výstřel je **útok ze zálohy** (×2).
+
+### Rozptyl
+
+`GunSpec::angle_offset`:
+
+- Jeden projektil: odchylka = `0.5 × inaccuracy × spread`, kde `spread` je náhodné číslo v rozsahu −1 až 1. Maximální odchylka je tedy polovina `inaccuracy` v radiánech.
+- Více broků (Shotgun): žádná náhoda — brok `i` má odchylku `0.5 × inaccuracy × i`, se střídavým znaménkem (sudé +, liché −). Pro Shotgun: 0, −0,05, +0,1, −0,15 rad.
+
+Náhodná čísla pro celý snímek vytvoří jednou `ShotRoll::from(&mut combat_rng)` — jeden `spread`, jeden `critical`, po jednom hodu poškození a zlomku pro každý ze 4 možných broků a 4 čísla pro nábojnici.
+
+### Výpočet poškození
+
+Pro každý projektil:
+
+1. **Základ**: `damage_for(roll) = min + floor(roll × (max − min))`. Protože `roll` je menší než 1, **maximum se nikdy nepadne** (test `damage_never_reaches_the_maximum_like_in_bane` — úmyslně stejně jako v původním Java Bane). Pistol 1–3 dává 1 nebo 2.
+2. **Bonus stromu**: `scaled_damage` vynásobí `damage_scale` (1 + součet uzlů Damage). Desetinná část se převede na celý bod s pravděpodobností rovnou její velikosti (např. 1 × 1,25 = 1,25 → 25 % šance na 2). Malé bonusy tak mají smysl i u slabých zbraní.
+3. **Perky hráče** `Perks::bullet_damage`: postupně ×`damage_scales[0]` (Sharpened Bullets 1,2; výzvy násobí `player_damage`) a ×`damage_scales[1]` (Dangerous Bullets 1,25), **po každém kroku oříznuto dolů na celé číslo**.
+4. **Kritický zásah**: ×2.
+5. **Útok ze zálohy** (Phantom): ×2.
+
+### Kritické zásahy
+
+- Šance = perk *Critical Hit* (`CRIT_CHANCE` = 0,1) + `crit_chance` zbraně (jen Sniper 0,2) + uzly Crit ze stromu (+4/8/12 % podle rarity).
+- Hází se **jednou za výstřel** — všechny broky brokovnice jsou buď kritické, nebo ne.
+- Mutace Deadeye udělá kritickým každý pátý výstřel zbraně bez ohledu na šanci.
+- Kritický zásah nemá žádnou vizuální ani zvukovou odezvu — jen vyšší číslo poškození.
+
+### Zpětný ráz a otřes kamery
+
+Každá zbraň má `shake` (0,03 Flamethrower až 1,2 RPG). Součet za snímek jde do traumatu kamery, které klesá rychlostí `TRAUMA_DECAY` = 1,5/s. Test `holding_the_trigger_never_pins_the_screen_shake` hlídá, aby `shake / fire_interval` byl pod 1,5 (nejblíže je Uzi s 1,2). Fyzický zpětný ráz hráče neexistuje.
+
+### Nábojnice
+
+Jen projektily `Bullet`, `Tracer` a `Slug` vyhazují nábojnici (`prefabs::casing`): letí do strany od hlavně (70–120 px/s), mírně dozadu, vyskočí do výšky (rychlost 120–210), rotují. `systems/casings.rs` → `tick_casings`:
+
+| Konstanta | Hodnota |
+| --- | --- |
+| Gravitace | 900 |
+| Odraz (`BOUNCE`) | 0,3 (pod rychlostí 90 se usadí) |
+| Leží na zemi | 25 s, pak 2 s mizí |
+| Limit nábojnic | 140 (nejstarší mizí první) |
+
+Sprite má 2 řádky: nábojnice a brokový náboj; brokový se použije pro `ClipStyle::Shotgun` (Shotgun, ale i Sniper).
+
+### Dopad projektilu
+
+`bullet_hits` projde všechny letící `Bullet` (bez `Expiring`), které se něčeho dotýkají:
+
+1. Oběť = první dotčená entita kromě `last_hit`. Pokud žádná a nedotýká se zdi, pokračuje dál.
+2. **Rocket** (`blast`) → `rocket_blast`, zvuk `Explosion`, konec (mutace se nevyhodnotí).
+3. Poškození přes `damage::deal` se zdrojem `Bullet` (nebo `Summoned` pro střely Bone Turret). Zvuk `EnemyHit` nebo `WallHit`.
+4. **Splash** (Plasma) → poloviční poškození v okolí 80 × 80.
+5. **Chains** (Spark) → řetězový blesk, viz [Projektily](/docs/guns/projektily).
+6. **Mutace** na zasaženém nepříteli; pak **průraz**: je-li `pierce` větší než 0, sníží se, uloží `last_hit` a projektil letí dál.
+7. Náraz do zdi s `bounces` (Ricochet) → odraz podle normály zdi.
+8. Explosive bez oběti (zeď) → malý výbuch.
+9. Jinak `stop_round`: odpojí fyziku, přidá `Expiring`, zastaví a přehraje animaci dopadu (`BULLET_IMPACT`, 4 snímky po 0,07 s).
+
+Poškození přes `damage::deal` přidá `HitFlash`, plovoucí číslo (ne u rozbitných objektů), a u zdroje Bullet započítá zásah do statistik (přesnost) a do skillů počítajících zásahy. Zdroj `Explosion` (výbuch rakety, Explosive, Plasma splash) se jako zásah **nepočítá**.
+
+### Ostatní zdroje hráčových střel
+
+| Zdroj | Projektil | Poškození | Poznámka |
+| --- | --- | --- | --- |
+| Ring of Death (artefakt) | 50 × `Bullet::plain`, 700 px/s | 2 | do kruhu |
+| Bone Turret (artefakt) | střep `ARTEFACTS_BONE_SHARD`, 700 px/s | 2 | zdroj `Summoned` |
+| Thunder Idol (artefakt) | blesk, ne projektil | 6 na cíl | `systems/lightning.rs` |
+
+**Thunder Idol** (`cast_lightning`): zasáhne nejbližšího nepřítele do 450 px (`STRIKE_RANGE`) od hráče, pak skáče na nejbližšího nezasaženého do 300 px (`JUMP_RANGE`), max. 6 cílů (`MAX_TARGETS`), 6 poškození každému, otřes 0,45. Vizuál: kostičkované segmenty blesku (0,35 s, problikávají po 0,05 s), záblesk světla (poloměr 220) a 6–10 jisker.
+
+## Interakce
+
+- [Projektily](/docs/guns/projektily), [Mutace](/docs/guns/mutace) — co dělá projektil po zásahu.
+- [Strom zbraně](/docs/guns/strom-zbrane) — mění `damage_scale`, `fire_interval`, `inaccuracy`, `crit_chance`.
+- [Progrese](/docs/progression) — perky poškození a kritu.
+- [Artefakty a předměty](/docs/artefacts-items) — Phantom, Infinity Quiver, Ring of Death, Bone Turret, Thunder Idol.
+- [Hráč](/docs/player) — dodge blokuje střelbu.
+
+## Kde v kódu
+
+- `systems/shooting.rs` → `shoot`, `ShotRoll`, `ShotContext`, `RoundTextures`, `bullet_hits`, `stop_round`, `blast_victims`
+- `guns.rs` → `GunSpec::damage_for`, `scaled_damage`, `angle_offset`, `BURST_DELAY`
+- `upgrades.rs` → `Perks::bullet_damage`, `Perks::crit_chance`, `CRIT_CHANCE`
+- `systems/damage.rs` → `deal`, `DamageSource`
+- `components/combat.rs` → `Weapon::advance`, `start_reload`, `count_shot`
+- `systems/casings.rs`, `prefabs/fx.rs` → `casing`
+- `systems/lightning.rs` → `cast_lightning`, `chain_targets`
+- `camera.rs` → `TRAUMA_DECAY`
+
+## Jak přidat nový efekt výstřelu
+
+1. Data: přidat pole do `RoundSpec` (efekt projektilu) nebo `GunSpec` (efekt zbraně) a nastavit výchozí hodnotu v konstruktoru `round(...)` / `gun(...)`.
+2. Pokud je efekt stavem letícího projektilu, přidat pole do `Bullet` a naplnit ho v `Bullet::as_round` / `Bullet::mutated`.
+3. Logiku dopadu přidat do `bullet_hits` ve správném pořadí (před průrazem, aby proběhla při každém zásahu).
+4. Napsat test v `systems/shooting.rs` po vzoru `plasma_spatters_the_enemy_next_to_the_one_it_hits` (spawn krys `prefabs::ready_enemy`, `run_rounds`).
+
+## Nápady / chybí
+
+- **Oříznutí perků na celá čísla**: `bullet_damage` ořezává po každém násobení, takže 1 × 1,2 = 1 — perk *Sharpened Bullets* nedá zbraním s poškozením 1 (Luger, Uzi, Minigun, Flamethrower, polovina ran Pistole) nic. Strom to řeší pravděpodobnostním zaokrouhlením, perky ne. Sjednotit.
+- **Žádné automatické přebití** při prázdném zásobníku; přebíjení a cooldown neaktivních slotů stojí (nelze „přebít výměnou“).
+- **Kritický zásah bez odezvy** — chybí jiná barva čísla, zvuk nebo částice.
+- **Žádný knockback** ani muzzle flash (TODO.md „Weapon game-feel“).
+- U dávky M4 zní jen první rána.
+- Průbojný projektil, který se dotýká dvou nepřátel zároveň, může mezi nimi střídat zásahy každý snímek (`last_hit` si pamatuje jen jednoho) — potenciální násobení poškození u Flame/Rail; ověřit.
+- Header stolu se zbraněmi ukazuje rozsah poškození z kódu (např. 1–3), ale maximum se nikdy nepadne — hráče to mate.
+- Dvě různé implementace řetězového blesku (Tesla 220 px / 2 skoky / poškození střely vs. Thunder Idol 450+300 px / 6 cílů / 6 poškození).

@@ -1,0 +1,86 @@
+---
+title: Ukládání — profil a nastavení
+description: Kam a jak hra ukládá profil hráče a nastavení, co profil obsahuje a jak přežije poškozený nebo starý soubor.
+---
+
+## Jak to funguje
+
+Hra ukládá dva JSON soubory do **datové složky**:
+
+| Soubor | Obsah | Načtení | Ukládá se |
+|---|---|---|---|
+| `profile.json` | Měny, statistiky, talenty, stromy zbraní, mise, challenge | `SharedProfile::load` při startu (`app.rs`) | Po každé změně (nákup, konec runu, vyzvednutí mise, přepnutí challenge, dorovnání) |
+| `settings.json` | Video, audio, ovládání | `Settings::load` při startu | Při **Apply** v nastavení |
+
+### Datová složka (`storage::data_dir`)
+
+1. `BANE_DATA`, pokud je nastavená.
+2. Jinak systémová složka z `directories::ProjectDirs::from("cz", "empatix", "Bane")` (např. na macOS `~/Library/Application Support/cz.empatix.Bane`).
+3. Fallback `.` (aktuální adresář).
+
+Pokud v datové složce soubor není, ale existuje ve **aktuálním adresáři** (stará verze), zkopíruje se (`adopt_legacy_file`).
+
+### Odolnost (`storage.rs`)
+
+- **Atomický zápis**: zapíše se `<soubor>.tmp`, `sync_all`, pak `rename` přes originál.
+- **Chybí** → výchozí hodnoty, soubor se vytvoří.
+- **Poškozený JSON** → soubor se přejmenuje na `<soubor>.corrupt-<unix čas>`, začne se nanovo (zálohu nic nepřepíše).
+- **Nečitelný** (práva apod.) → výchozí hodnoty, ale soubor se **nikdy nepřepíše** (cesta se zahodí).
+- **Profil z novější verze** (`version` větší než `PROFILE_VERSION` = 1) → načte se, ale **nepřepisuje** se.
+- Neznámé položky se přeskočí s varováním a zbytek profilu zůstane: talenty (`known_upgrades`), zbraně (`known_weapons`), mise a challenge (`known`, `known_option`). Celý nečitelný blok `progress` se nahradí čerstvým.
+- Po načtení: `settle_weapon_trees` (refund stromů zbraní ze starého generátoru) a `progress.settle` (doplnění misí na 3, vygenerování seedu). Pokud se něco změnilo, hned se uloží.
+
+## Obsah
+
+### `profile.json` (`Profile`, camelCase)
+
+| Klíč | Typ | Význam |
+|---|---|---|
+| `version` | u32 | Verze formátu (1) |
+| `balance` | u64 | **Talenty** k utracení |
+| `gold` | u64 | **Gold** k utracení |
+| `totalEarned` | u64 | Celkový vydělaný gold |
+| `runs`, `wins`, `deaths` | u64 | Počet runů, vítězství, smrtí |
+| `kills` | u64 | Celkem zabití |
+| `itemsCollected` | u64 | Celkem sebraných předmětů |
+| `bulletsFired`, `bulletsHit` | u64 | Celkem výstřelů / zásahů |
+| `bestFloor` | u32 | Nejhlubší dosažené patro |
+| `unlocked` | pole | Koupené talenty (`snake_case` názvy `Upgrade`) |
+| `weapons` | mapa | `GunKind` → `WeaponProgress` (`owned`, `rerolls`, `spent`, `generator`) |
+| `progress.missions` | pole | Aktivní mise (`goal`, `target`, `reward`, `progress`, případně `enemy`) |
+| `progress.selected` | string/null | Vybraná challenge |
+| `progress.completed` | pole | Splněné challenge |
+| `progress.seed`, `progress.draws` | u64 | Stav losování misí |
+
+### `settings.json` (`GameSettings`, camelCase)
+
+`resolutionWidth`, `resolutionHeight`, `fullscreen`, `vsync`, `overallVolume`, `musicVolume`,
+`effectsVolume`, `controls` — viz [Menu a nastavení](/docs/progression/menus-settings).
+
+## Interakce
+
+- Co se do profilu zapisuje na konci runu: [Konec runu](/docs/progression/run-end).
+- Měny: [Měny a meta-progrese](/docs/progression/currencies).
+- Java verze ukládala šifrovaný `upgrades.bin` — Rust port ho **nečte** (žádná migrace).
+
+## Kde v kódu
+
+- `storage.rs` → `data_file`, `data_dir`, `adopt_legacy_file`, `load_json`, `Loaded`, `set_aside`, `write_atomic`, `assets_root`
+- `profile.rs` → `Profile`, `PROFILE_VERSION`, `Versioned`, `Stored`, `Profile::load` / `save`, `SharedProfile` (sdílený `Rc<RefCell<Store>>`, `change` = upravit + uložit)
+- `progress/state.rs` → `ProgressState` (serde, `settle`)
+- `settings.rs` → `Settings::load`, `save`
+- `app.rs` → `SETTINGS_FILE`, `PROFILE_FILE`
+
+## Jak přidat nové pole do profilu
+
+1. Přidat pole do `Profile` (struktura má `#[serde(default)]`, takže staré soubory projdou).
+2. Pokud jde o enum/kolekci enumů, napsat lenient deserializer po vzoru `known_upgrades`, aby přejmenovaná varianta nesmazala celý profil.
+3. Měnit ho přes metodu `SharedProfile`, která ho po změně uloží (`change`).
+4. Při nekompatibilní změně formátu zvýšit `PROFILE_VERSION` a doplnit migraci v `Profile::load`.
+
+## Nápady / chybí
+
+- Jediný slot profilu — žádné více profilů, reset profilu z UI ani „new game+“ (který `story.md` předpokládá).
+- Žádná Steam Cloud integrace.
+- Neukládá se rozehraný run (zavření hry = run ztracen) ani historie runů (seed, výsledek, zbraně).
+- `story.md` počítá s novými poli (`closed`, `shop_visits`) — zatím neexistují.

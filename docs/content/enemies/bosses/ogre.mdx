@@ -1,0 +1,88 @@
+---
+title: Sewer ogre
+description: Obr z kanálů s dupnutím do tří prstenců, úderem kyjem do vějíře a házením krys.
+---
+
+## Jak to funguje
+
+`EnemyKind::Ogre`, `Role::Boss("Sewer ogre")`, `Behavior::OgreBoss`. `min_floor = 2`, témata
+**Sewer, Moss**.
+
+| Parametr | Hodnota |
+|---|---|
+| HP | 130 (nejvíc ze všech bossů) |
+| Kontaktní damage | 2 |
+| Force / rychlost | 15 000 000 / 38 px/s (rage × 1,35 → 52 px/s) |
+| Velikost | 280 × 280 px (frame 80 × 80, scale 3,5) |
+| Sheet | `ingame/ogre.tga`, 8 × 7, smrt řádek 5 |
+| První útok | po 2,4 s |
+| Pauza mezi útoky | 3,0 s (rage 1,8 s) |
+| Rage | HP ≤ 50 % |
+| Minion | Rat (max. 6 minions) |
+
+Stavy `OgreStage`: Walk → Winding → Recovering → Walk (všechny útoky jsou okamžité, nemá fázi Acting).
+Každý útok má vlastní řádek animace (8 snímků × 0,1 s).
+
+### Výběr útoku
+
+„Blízko“ = do 380 px (`OGRE_NEAR`). „Přeplněno“ = ve hře je 6+ minions (`OGRE_RAT_LIMIT`).
+
+| Útok | Blízko | Daleko | Přeplněno |
+|---|--:|--:|--:|
+| Jump | 4 | 1 | beze změny |
+| Slam | 3 | 1 | beze změny |
+| Throw | 1,5 | 3 | 0 |
+| Roar | 2 | 2 | 0 |
+
+## Obsah
+
+### Jump — dupnutí (řádek 6)
+
+- Windup 0,5 s, pak výbuch: **3 soustředné prstence po 16 kamenech** (`GolemRock`, 2 dmg) z bodu 110 px
+  pod středem. Prstence startují ve vzdálenosti 0, 55 a 110 px a každý je pootočený o půl kroku → hustá
+  stěna 48 kamenů.
+- Recover 0,6 s.
+
+### Slam — úder kyjem (řádek 3)
+
+- Windup 0,45 s, pak z místa kyje (91 px do strany podle natočení, 133 px dolů) vějíř mířený na hráče:
+  **2 vrstvy po 11 kamenech**, rozptyl ±0,9 rad, druhá vrstva posunutá o půl kroku a o 45 px dál.
+- Recover 0,45 s.
+
+### Throw — hod krys (řádek 2)
+
+- Windup 0,38 s, pak 2 krysy (`OGRE_THROW_RATS`) vedle ruky směrem k hráči.
+- Recover 0,45 s.
+
+### Roar — řev (řádek 4)
+
+- Windup 0,32 s, pak 3 krysy (`OGRE_ROAR_RATS`), rozprostřené po 0,7 rad.
+- Recover 0,55 s.
+
+Krysy jsou hatchlingové `EnemyKind::Rat` (12 HP, 2 dmg, 186 px/s, `Minion`, `NoDrop`). Spawn se přeskočí,
+pokud by krysa skončila ve zdi.
+
+### Rage (HP ≤ 50 %)
+
+Rychlost × 1,35, pauza 1,8 s, tint `(1, 0,7, 0,62)`. Útoky samotné se nemění.
+
+## Interakce
+
+- Kameny jsou stejné jako u [Golema](/docs/enemies/bosses/golem) (`spawn_rock`, `GolemRock`).
+- Lore: „Chrámový dělník, který kopal odvodnění. Prvni, koho rána vzala.“
+
+## Kde v kódu
+
+- `enemies.rs` → arm `Ogre`; všechny `OGRE_*`.
+- `systems/ogre.rs` → `choose_attack`, `step`, `tick_ogre`, `execute`; konstanty `RING_DROP`, `CLUB_REACH`,
+  `HAND`, `RAT_RADIUS`.
+- `components/skills.rs` → `OgreBoss`, `OgreStage`, `OgreAttack`.
+- Ladění: `BANE_BOSS=ogre`, `BANE_OGRE_ATTACK=jump|throw|slam|roar`.
+
+## Nápady / chybí
+
+- Rage nemění útoky (ostatní bossové v rage přidávají střely) — např. 4. prstenec u Jump nebo víc krys.
+- Throw i Roar dělají prakticky totéž (2 vs. 3 krysy). Throw by mohl skutečně krysy hodit obloukem
+  (dopad jako Stilt spider) nebo hodit kanálovou bahenní louži (téma Sewer).
+- Jump nemá skok (ogre se nepřemístí) — jen dupnutí na místě; skok na hráče by odpovídal názvu.
+- Ogre je kód nejkratšího moderního bosse — nejlepší šablona pro nové bosse.

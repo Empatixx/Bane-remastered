@@ -1,0 +1,93 @@
+---
+title: HUD
+description: Všechny prvky rozhraní, které hráč vidí ve hře a v lobby — ukazatele HP a brnění, zbraň a munice, artefakt, mince, minimapa, šipky, výzvy a efekty obrazovky.
+---
+
+## Jak to funguje
+
+HUD je složený z běžných entit s komponentou `ScreenSpace` (souřadnice ve virtuálním rozlišení
+960 × 540, `viewport::TARGET`). Spawnují se v `InGameScene::build` / lobby a každý snímek je aktualizují
+systémy v `systems/hud.rs` a dalších.
+
+## Obsah
+
+### Prvky ve hře
+
+| Prvek | Umístění | Chování | Kód |
+|-------|----------|---------|-----|
+| Ukazatel zdraví | vlevo nahoře (25, 25), textura `HEALTH_BAR` × 3 | výplň = HP / max; při poklesu zůstává světlejší „stopa“, která dojíždí (tween 0,05^dt); při růstu zelenavá stopa | `BarKind::Health`, `update_status_bars`, `bar_draws` |
+| Ukazatel brnění | pod ním (75, 62,5), `ARMOR_BAR` × 2 | stejné chování, šedomodrá barva | `BarKind::Armor` |
+| Ukazatel bosse | nahoře uprostřed (292, 15), `BOSSHEALTHBAR` × 4 + červené jméno bosse | zmizí, když je boss mrtvý | `prefabs::boss_hud`, `update_boss_hud` |
+| Zbraňový slot | vpravo dole (685, 450), 225 × 75 `WEAPONSLOT` | ikona aktuální zbraně | `prefabs::weapon_hud`, `GunIcon` |
+| Munice text | (900, 515), zarovnáno vpravo | „zásobník/zásoba“ (např. `12/120`) | `AmmoText` |
+| Náboje (pipy) | ve slotu | jeden pip na náboj v zásobníku (`AMMO_HUD`, u brokovnic `SHOTGUN_AMMO_HUD`), vystřelený přehraje „prázdnou“ animaci | `AmmoPip`, `pip_layout` |
+| Nekonečná munice | (878, 503) | při *Infinity Quiver* animované ∞, text zmizí a pipy se zlatě třpytí | `InfinityMark`, `shimmer` |
+| Slot artefaktu | (585, 450), 75 × 75 `ARTEFACTHUD` | ikona aktuálního artefaktu, skrytá když je slot prázdný | `prefabs::artefact_hud`, `update_artefact_hud` |
+| Mince | vlevo dole | ikona `BANECOIN` + počet mincí v peněžence | `prefabs::coin_hud`, `CoinText` |
+| Minimapa | vpravo nahoře, střed (865, 94) | místnosti v okolí, aktuální zvýrazněná, nenavštívené slabší | `systems/minimap.rs`, `Minimap` |
+| Velká mapa | Tab, střed obrazovky, měřítko 4 | lze táhnout myší; Esc nebo Tab zavře; artefakt *Reveal Map* odkryje vše | `BigMap`, `pan_big_maps` |
+| Šipky k nepřátelům | okraj obrazovky (20 px) | pro každého živého nepřítele mimo obrazovku poloprůhledná šipka 18 × 18 (alfa 0,3); blízké šipky (pod 44 px) se slučují | `systems/arrows.rs` |
+| Úhyb – cooldown | 10 px pod hráčem, ve světě | bílý proužek 36 × 5 px, zmenšuje se | `show_dodge_cooldown` |
+| Vlna | uprostřed | „Wave N/M“, jen pokud má místnost víc než 1 vlnu | `prefabs::wave_banner` |
+| Výzvy k interakci | nad objektem | „Press E to …“ když je hráč v dosahu | `Prompt`, `InRange` |
+| Cenovky | nad zbožím | cena, zeleně + „SALE x%“ při slevě | `prefabs::price_tag` |
+| Čísla poškození | nad nepřítelem | létající −N / +N (léčení) | `effects::show_change`, `Floating` |
+| Kurzor | myš | zaměřovač; při přebíjení kurzor „Reload“; v pauze / mapě / death screenu systémový | `InGameScene::cursor` |
+
+### Efekty obrazovky (`postfx.rs`)
+
+| Efekt | Spouštěč | Chování |
+|-------|----------|---------|
+| Rudá viněta při zásahu | `hit` (kontaktní poškození, láva) | skočí na 1 a vytrácí se (× 2/s) |
+| Pulzující viněta | HP pod 30 % max | trvale zapnutá, pulz s periodou 3 s |
+| Rozmazání + ztmavení | pauza | blur do 5, tma do 0,3 |
+| Zpomalení času | *Hourglass of Ash* (`TimeSlow`) | náběh 0,4 s, doběh 0,6 s |
+| Otřes kamery | výstřely (`shake` zbraně), výbuchy, blesky | `camera.add_trauma` |
+
+### Prvky v lobby
+
+| Prvek | Chování |
+|-------|---------|
+| Ukazatele HP a brnění | stejné jako ve hře |
+| Počítadla vlevo dole | ikona talentu + počet talentů, ikona `BANECOIN` + zlato profilu (`lobby_counters`) |
+| Talentové menu | viz [Talenty](/docs/player/upgrades) |
+
+### Death screen
+
+Lebka, titulek, 4 řádky (Accuracy, Kills, Loot, Floor) s odměnami ve zlatě — viz [Statistiky běhu](/docs/player/stats).
+
+## Interakce
+
+- Hodnoty pro ukazatele: [Model poškození](/docs/player/damage); munice a zbraně: [Zbraně](/docs/guns).
+- Minimapa a místnosti: [Dungeon a svět](/docs/dungeon); artefakty: [Artefakty a předměty](/docs/artefacts-items).
+- Render vrstvy, fonty a postprocess: [Technika](/docs/tech).
+
+## Kde v kódu
+
+- `components/hud.rs` → `BarKind`, `BarSpec`, `StatusBar`, `BossHud`, `GunIcon`, `AmmoText`, `AmmoPip`, `InfinityMark`, `CoinText`, `TalentCount`, `GoldCount`, `EnemyArrow`, `PIP_FULL`, `PIP_EMPTY`
+- `prefabs/hud.rs` → `status_bars`, `boss_hud`, `weapon_hud`, `artefact_hud`, `coin_hud`, `lobby_counters`, `price_tag`, `for_sale`
+- `systems/hud.rs` → `update_status_bars`, `update_weapon_hud`, `update_lobby_counters`, `bar_draws`
+- `systems/arrows.rs`, `systems/minimap.rs`, `components/minimap.rs`
+- `systems/dodge.rs` → `show_dodge_cooldown`
+- `postfx.rs` → `PostFx`, `SceneFx`
+- `scenes/ingame.rs` → `cursor`, `fx`, `set_big_map`
+
+## Jak přidat nový prvek HUD
+
+1. Marker komponentu (např. `KillCounter`) přidej do `components/hud.rs` a exportuj.
+2. Spawn funkci napiš v `prefabs/hud.rs` — entita s `Position`, `Text` nebo `Sprite`+`Size`, `Layer` (HUD
+   používá 4–6) a **`ScreenSpace`**. Pozice v pixelech 960 × 540.
+3. Zavolej ji v `InGameScene::build` (spawn se opakuje každé patro, svět se maže).
+4. Aktualizační systém dej do `systems/hud.rs` a zavolej v `InGameScene::update`.
+5. Pro skrývání používej komponentu `Hidden` místo despawnu.
+
+## Nápady / chybí
+
+- **Žádná indikace cooldownu artefaktu** ani zbývající doby efektů (Berserk 15 s, Phantom 5 s …) — hráč
+  neví, kdy efekt skončí.
+- Číselné HP / brnění se nikde nezobrazuje, jen výplň ukazatele.
+- Neukazuje se aktuální patro ani seznam zbraní ve všech slotech (jen aktuální).
+- Rudá viněta při zásahu chybí u výbuchů, jedu a bossích útoků (viz [Model poškození](/docs/player/damage)).
+- Výzvy mají natvrdo klávesu E (viz [Ovládání](/docs/player/controls)).
+- Žádný indikátor aktivní výzvy (challenge) během běhu, jen barevný akcent v lobby.
+- Lobby volá `update_weapon_hud`, ale zbraňový slot tam nespawnuje — volání je zbytečné (nebo chybí `prefabs::weapon_hud` v lobby).

@@ -1,0 +1,104 @@
+---
+title: Osvětlení a atmosféra
+description: Lightmapa s měkkými stíny od zdí, zdroje světla v dungeonu, barevné pozadí témat, prach a světlušky v lobby.
+---
+
+## Jak to funguje
+
+### Lightmapa
+
+Svět se kreslí do lightmapy (`render/lightmap.wgsl`) a sprity s komponentou `Lit` se jí
+násobí. Postup na každý pixel:
+
+1. Začne se **ambientním světlem 0,6** (konstanta `AMBIENT_LIGHT`, stejná pro všechna témata).
+2. Pro každé světlo: `útlum = 1 / (1 + (vzdálenost / radius)²)`, příspěvek
+   `útlum × intensity × barva`. Příspěvky pod 0,01 se přeskočí. Světla se **sčítají**.
+3. **Stíny**: paprsek od pixelu ke světlu prochází mřížkou okluderů (max 48 kroků). Světlo je
+   zablokované jen tehdy, když paprsek vyjde z podlahy, projde zdí a znovu vyjde na podlahu –
+   takže zeď osvítí svou vlastní stěnu a pochodeň zapuštěná ve zdi svítí ven.
+   Měkké okraje: průměr 3 paprsků posunutých o ±8 px kolmo.
+4. Na scénu se posílá nejvýš **64 světel** (`MAX_LIGHTS`); když je jich víc, `collect_lights`
+   nechá ta nejbližší ke středu obrazovky. Pozice se interpolují (`blended`) kvůli plynulému pohybu.
+
+Komponenta `Light { offset, color, radius, intensity }`; `Light::rgb(offset, r, g, b, radius, intensity)`
+bere barvu v 0–255.
+
+### Pozadí
+
+Za mapou je obdélník `Backdrop` (1000 × 580, `Layer(-10)`), který jede s kamerou. V dungeonu
+má barvu tématu (`Theme::backdrop`), v lobby výchozí `(37, 19, 26)`. Prosvítá všude, kde se
+nekreslí vnitřní zdi (`is_interior`).
+
+### Ambience (jen lobby a menu)
+
+`systems/ambience.rs`, spouští `spawn_ambience` v `scenes/lobby.rs` a `scenes/menu_stage.rs`:
+
+- **Prach**: drží ~14 částic v záběru (max 3 nové za tick), každá se vznáší vzhůru 3–12 px/s,
+  velikost 12–22 px, maximální průhlednost 0,12–0,3, život 6–12 s; mimo záběr + 160 px se maže.
+- **Světlušky**: 4 kusy – sudé krouží kolem portálu (lobby) / oltáře (menu) ve vzdálenosti
+  120–280 px, liché kolem středu mapy (80–260 px). Bloudí po Lissajousových křivkách
+  (dosah 70–140 × 50–100 px), **utíkají před hráčem** do 150 px, blikají; světlo
+  (200, 255, 90), r = 90, intenzita až 1,2.
+- Seed je pevný (lobby `0x1d57`), vzhled je tedy pokaždé stejný.
+
+### Hudba
+
+Scéna `InGame` hraje `Soundtrack::InGame`; při vstupu do boss místnosti se přepne na
+`Soundtrack::Boss` a po jeho smrti zpět. Téma patra hudbu nemění.
+
+## Obsah
+
+Zdroje světla v dungeonu a lobby (barvy RGB 0–255):
+
+| Zdroj | Barva | Radius | Intenzita | Poznámka |
+|---|---|---|---|---|
+| Hráč | 216, 156, 36 | 150 | 0,5 | vlastní teplé světlo kolem hráče (`prefabs::player`) |
+| Pochodeň (`Torch`) | 230, 201, 114 | 75 | 1,25 | 10 % pochodní je zhaslých |
+| Svícen (`Candlestick`, Sacrifice) | 212, 0, 0 | 30 | 2,0 | zhasne po obětování |
+| Houby (Moss) | 120, 230, 150 | 55 | 0,8 | |
+| Plamenomet | 255, 0, 0 | 50 | 0–0,75 | podle snímku animace (`flicker_flames`) |
+| Ohnivý gejzír | 255, 110, 20 | 90 | 1,2 | dnes se nespawnuje |
+| Lávová dlaždice | 255, 110, 20 | 80 | 0,9 | jen každá 4. dlaždice (`(x + 3y) % 4 == 0`) |
+| Magma (Hellhound) | 255, 110, 20 | 70 | 0–0,9 | roste při zahřívání, klesá při chladnutí |
+| Portál (lobby) | 128, 0, 128 / akcent challenge | 50 | 2,5 | `tint_portal` |
+| Světluška (lobby, menu) | 200, 255, 90 | 90 | 0–1,2 | bliká |
+
+Další světla (výbuchy, blesky, střely, golem, summony) patří k jiným systémům – viz
+[Zbraně](/docs/guns), [Nepřátelé](/docs/enemies), [Technika](/docs/tech).
+
+## Interakce
+
+- [Tilemapa](/docs/dungeon/tilemap) – okludery vznikají z `TileGrid`.
+- [Dekorace](/docs/dungeon/decor) – většina statických světel jsou dekorace.
+- [Technika](/docs/tech) – render pipeline, postprocess (rozmazání a ztmavení při pauze,
+  vinětace při zásahu a nízkém zdraví).
+
+## Kde v kódu
+
+- `render/lightmap.wgsl` – `AMBIENT_LIGHT`, `visibility`, `soft_visibility`, `fs_light`
+- `render/light.rs` – `MAX_LIGHTS`, `LightSource`, `Occluders`
+- `systems/lighting.rs` – `collect_lights`
+- `components/lighting.rs` – `Light`, `Light::rgb`
+- `systems/objects.rs` – `flicker_flames`
+- `systems/ambience.rs` – `spawn_ambience`, `tick_ambience`, `Firefly`
+- `prefabs/fixtures.rs` – `backdrop`, `backdrop_colored`, světla props
+- `systems/portal.rs` – `tint_portal`
+
+## Jak přidat nový …
+
+**Nový zdroj světla**: v prefabu přidej `world.insert_one(entity, Light::rgb(offset, r, g, b, radius, intensity))`.
+Pro blikání buď komponentu `Flame` (intenzita podle snímku animace), nebo vlastní systém,
+který mění `light.intensity`. Pamatuj na limit 64 světel – hustě rozmístěná světla (např. každá
+lávová dlaždice) se vybírají jen ta u středu obrazovky, proto láva svítí jen z každé 4. dlaždice.
+
+**Tematické ambientní světlo**: dnes konstanta ve shaderu – bylo by potřeba přidat pole do
+uniformu `Globals` a nastavovat ho z `Theme`.
+
+## Nápady / chybí
+
+- **Ambientní světlo je pro všechna témata stejné (0,6)** – Spider/Lava by mohly být
+  tmavší, Ice světlejší a namodralé.
+- Prach a světlušky jsou jen v lobby a menu; dungeon nemá žádné ambientní částice
+  (např. jiskry v Lava, sněžení v Ice, kapky v Sewer).
+- Světlo hráče je konstantní – perk/artefakt „lucerna“ by mohl zvětšit radius v tmavých tématech.
+- Žádná zvuková ambience podle tématu (kapání vody, praskání lávy).

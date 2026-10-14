@@ -1,0 +1,43 @@
+---
+title: Hourglass of Ash
+description: Na 6 sekund zpomalí všechny nepřátele a jejich střely na 35 % rychlosti.
+---
+
+## Jak to funguje
+
+- Vloží `TimeSlow { remaining: 6.0 }` na hráče. Tiká v `tick_artefact_effects`.
+- `systems/time_slow.rs` → `time_scale(world)` vrací koeficient „nepřátelského času“:
+  - bez efektu `1.0`,
+  - s efektem `1 - (1 - 0.35) × strength`, kde `strength` plynule roste první 0,3 s (`EASE_SECONDS`) a klesá posledních 0,3 s.
+- Koeficient se používá jako `hostile_dt = dt × time_scale` (`scenes/ingame.rs`) pro:
+  - fyziku nepřátel a nepřátelských střel (`systems/simulation.rs` násobí rychlost),
+  - animace nepřátel a jejich střel (`systems/animation.rs`),
+  - AI a útoky nepřátel, bossů, spawn (`tick_spawning`), dash, pasti, magma, homing, pojistky atd.,
+  - `update_rooms` (vlny, časování místností).
+- **Hráč, jeho střely, pet, duchové a věž běží normální rychlostí.**
+- Opětovné použití během aktivního efektu: `remaining = 6.0 - 0.3`, aby se znovu nespouštěl „ease-in“ a zpomalení zůstalo plné.
+
+| Parametr | Hodnota |
+|---|---|
+| Trvání | 6 s |
+| Rychlost nepřátel | 35 % |
+| Náběh / doběh | 0,3 s |
+| Textura | `ingame/artefacts/hourglass_of_ash.tga` |
+
+## Interakce
+
+- [Nepřátelé](/docs/enemies) – všechny jejich systémy dostávají `hostile_dt`.
+- [Dungeon](/docs/dungeon) – zpomalí i odpočty vln v místnostech.
+- [Thunder Idol](/docs/artefacts-items/artefacts/thunder-idol), [Bone Turret](/docs/artefacts-items/artefacts/bone-turret) – dobře se kombinují.
+
+## Kde v kódu
+
+- `artefacts.rs` → `TIME_SLOW_SECONDS`, `TIME_SLOW_SCALE`
+- `systems/time_slow.rs` → `time_scale`, `EASE_SECONDS`
+- `systems/artefacts.rs` → arm `HourglassOfAsh`
+- `systems/simulation.rs`, `systems/animation.rs`, `scenes/ingame.rs` (`hostile_dt`)
+
+## Nápady / chybí
+
+- Chybí vizuální indikace (desaturace / sépiový post-process, zpomalený zvuk). `postfx.rs` už existuje, efekt by šel přidat podle `time_scale`.
+- Pasti, které nejsou `Enemy`, a prostředí (`hazards`) – ověřit, zda všechny opravdu berou `hostile_dt`; projde-li nová mechanika bez něj, efekt ji mine.

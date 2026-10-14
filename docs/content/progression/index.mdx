@@ -1,0 +1,83 @@
+---
+title: Průběh hry a progrese
+description: Celá herní smyčka od menu přes lobby a run až po konec runu, plus všechno, co se přenáší mezi runy.
+---
+
+Tato sekce popisuje „kostru“ hry: jak se hráč dostane z hlavního menu do runu a zpět, co se
+během runu počítá, jak run skončí a co si hráč odnese do další hry (gold, talenty, mise,
+challenge). Patří sem i lobby a jeho stanice, menu, nastavení, ukládání a příběh.
+
+## Jak to funguje
+
+### Hlavní smyčka (slovní diagram)
+
+1. **Loading** — načtou se assety, animovaný titulek + spinner. Po načtení ještě 0,5 s pauza.
+2. **Menu** — Play / Settings / Exit. Pozadí je živá krypta s pobíhajícími krysami a netopýry.
+3. **Lobby** (laboratoř) — hráč chodí po místnosti a u stanic utrácí meta-měny:
+   - **Vědec** (Scientist) → talentový strom za **talenty**,
+   - **Weapon table** → stromy vylepšení zbraní za **gold**,
+   - **Quest board** → mise (vyzvednutí talentů) a výběr **challenge**,
+   - **Portál** → start runu.
+4. **Run** (InGame) — patro 1 až 5. Na každém patře: místnosti, obchod, boss. Po bossovi se objeví
+   **žebřík** (Ladder) na další patro. Na patře 5 poražený boss = **vítězství**.
+5. **Konec runu** — smrt, „Die“ z pauzy nebo vítězství → obrazovka se statistikami (Game Over /
+   Victory!), připíše se gold, posunou se mise, případně se splní challenge.
+6. Libovolná klávesa → zpět do **Lobby**. Z lobby se do menu dá vrátit přes pauzu (Main Menu).
+
+### Co se přenáší mezi runy
+
+| Co | Měna / stav | Jak se získá | Za co se utrácí |
+|---|---|---|---|
+| **Gold** (meta) | `Profile.gold` | Odměna z obrazovky konce runu (přesnost, kills, loot, patro) | Stromy vylepšení zbraní u Weapon table |
+| **Talenty** | `Profile.balance` | Splněné mise na Quest boardu, první splnění challenge | Talentový strom u Vědce |
+| **Coins** (v runu) | `Wallet.coins` | Sbírání mincí v dungeonu | Obchod, slot machine — **nepřenáší se** |
+| Statistiky | `Profile.runs/wins/deaths/...` | Automaticky na konci runu | Zatím nic (jen záznam) |
+
+<Callout type="warn">
+Lobby při každém vstupu **dorovná** talenty na minimálně 1000 a gold na minimálně 5000
+(`TALENTS_TO_TRY_OUT`, `GOLD_TO_TRY_OUT` v `scenes/lobby.rs`). Je to testovací pomůcka — dokud
+tam je, meta-progrese reálně nic nestojí. Viz [Měny a meta-progrese](/docs/progression/currencies).
+</Callout>
+
+## Obsah
+
+<Cards>
+  <Card title="Scény a stavový automat" href="/docs/progression/scenes" />
+  <Card title="Průběh runu a patra" href="/docs/progression/run" />
+  <Card title="Konec runu, death screen, vítězství" href="/docs/progression/run-end" />
+  <Card title="Pravidla runu (RunRules)" href="/docs/progression/rules" />
+  <Card title="Měny a meta-progrese" href="/docs/progression/currencies" />
+  <Card title="Mise" href="/docs/progression/missions" />
+  <Card title="Challenge" href="/docs/progression/challenges" />
+  <Card title="Quest board" href="/docs/progression/quest-board" />
+  <Card title="Lobby a jeho stanice" href="/docs/progression/lobby" />
+  <Card title="Menu, pauza, nastavení" href="/docs/progression/menus-settings" />
+  <Card title="Ukládání (profil, settings)" href="/docs/progression/saves" />
+  <Card title="Příběh a lore" href="/docs/progression/story" />
+</Cards>
+
+## Interakce
+
+- Patra, místnosti, biomy a bossové: [Dungeon](/docs/dungeon), [Nepřátelé](/docs/enemies).
+- Talentový strom a jeho efekty na hráče: [Hráč](/docs/player).
+- Weapon table a stromy zbraní: [Zbraně](/docs/guns).
+- Coins v runu, obchod, truhly, artefakty: [Artefakty a předměty](/docs/artefacts-items).
+- Seed runu, RNG streamy, assety: [Technika](/docs/tech).
+
+## Kde v kódu
+
+- `scenes/machine.rs` → `Scenes` (přepínání scén), `scenes/mod.rs` → `SceneId`, `Transition`, trait `Scene`
+- `scenes/loading.rs`, `scenes/menu*.rs`, `scenes/lobby.rs`, `scenes/ingame.rs`, `scenes/pause.rs`
+- `profile.rs` → `Profile`, `SharedProfile`; `storage.rs` (soubory)
+- `progress/` → `ProgressState`, mise (`missions.rs`), challenge (`challenges.rs`)
+- `rules.rs` → `RunRules`; `systems/rules.rs` → `toughen_enemies`
+- `systems/death_screen.rs`, `systems/stats.rs` → `summarize`
+- `app.rs` → načtení `settings.json` a `profile.json` při startu
+
+## Nápady / chybí
+
+- Testovací dorovnání talentů/goldu v lobby úplně vypíná ekonomiku — před releasem odstranit nebo dát za env proměnnou.
+- Statistiky profilu (`runs`, `wins`, `kills`, `best_floor` …) se nikde nezobrazují — chybí obrazovka profilu / historie runů.
+- Z runu nevede cesta do menu (pauza má jen Resume / Die / Exit Game).
+- Příběh (`story.md`) je z velké části neimplementovaný — viz [Příběh](/docs/progression/story).
+- `flow.rs` v kořeni crate **není** herní flow, ale flow-field pathfinding pro nepřátele (patří do [Nepřátel](/docs/enemies)/[Techniky](/docs/tech)).

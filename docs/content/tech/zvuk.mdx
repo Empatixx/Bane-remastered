@@ -1,0 +1,87 @@
+---
+title: Zvuk
+description: Audio přes kira — dvě stopy (hudba, efekty), seznam všech zvukových efektů a hudebních skladeb.
+---
+
+## Jak to funguje
+
+- `Audio` (`audio/mod.rs`) spouští `kira::AudioManager` se dvěma podstopami: **music** a **effects**. Když audio zařízení není k dispozici, `Audio` tiše ignoruje všechny příkazy (hra běží dál).
+- Systémy a scény neposílají zvuk přímo — tlačí `AudioCommand::Effect(SoundEffect)` nebo `AudioCommand::Music(Soundtrack)` do fronty scény; `Game` je po každém `fixed_update` i `update` přehraje.
+- **Efekt s více soubory** vybírá variantu náhodně přes `rng::cosmetic()` (neovlivňuje determinismus běhu).
+- **Hudba** se opakuje ve smyčce; přepnutí na jinou skladbu dělá **crossfade 2 s**; stejná skladba se znovu nespouští. První skladba začne bez fade-in.
+- **Hlasitost**: `overall × music` a `overall × effects`, převod na decibely `20·log10(a)`, změna s tweenem 50 ms. Výchozí: overall 1.0, music 0.5, effects 0.5.
+- Soubory se přednačítají v `Loader` (po atlasu), cesty jsou relativní k `assets/audio/`.
+- Scéna `InGame` navíc z vybraných zvuků odvozuje třes kamery (`impact_shake`): `Explosion` 0.8, `Death` 0.7, `PlayerHurt` 0.5.
+
+## Obsah
+
+### Hudba (`Soundtrack`)
+
+| Varianta | Soubor | Kdy hraje |
+|---|---|---|
+| `MainMenu` | `intro.ogg` | menu |
+| `ProgressRoom` | `ambient.ogg` | lobby |
+| `InGame` | `audio.ogg` | běh v dungeonu, po poražení bosse |
+| `Boss` | `boss.ogg` | vstup do boss místnosti |
+
+### Zvukové efekty (`SoundEffect`, 48 variant)
+
+| Skupina | Varianty → soubory |
+|---|---|
+| UI | `Click` → `menuclick.ogg`; `TalentUnlock` → `talent_unlock.ogg`; `ShowMap` → `map_1/2.ogg` |
+| Hráč | `PlayerHurt` → `playerhurt_1/2.ogg`; `Death` → `playerdeath.ogg`; `LowHealth` → `lowhealth.ogg`; `Heal` → `heal.ogg` |
+| Zásahy | `WallHit` → `guns/wall_hit.ogg`; `EnemyHit` → `guns/enemy_hit.ogg`; `Explosion` → `explosion.ogg` |
+| Zbraně obecně | `EmptyGunShoot` → `guns/empty_gun_shoot.ogg`; `SwitchGun` → `guns/switchgun.ogg` |
+| Pistol, Luger, Thompson | `PistolShoot` (2 varianty), `PistolReload` — Luger a Thompson nemají vlastní zvuk |
+| Shotgun | `ShotgunShoot`, `ShotgunReload` |
+| Revolver | `RevolverShoot` (reload sdílí `PistolReload`) |
+| M4 | `M4Shoot`, `M4Reload` |
+| Uzi | `UziShoot` (reload sdílí `PistolReload`) |
+| Sniper | `SniperShoot`, `SniperReload` |
+| RPG | `RpgShoot`, `RpgReload` (soubory `grenadelauncher*.ogg`) |
+| Minigun | `MinigunShoot` (3 varianty), `MinigunReload` |
+| Crossbow | `CrossbowShoot`, `CrossbowReload` |
+| Flamethrower | `FlamethrowerShoot` (3 varianty), `FlamethrowerReload` |
+| Blaster | `BlasterShoot` (3 varianty), `BlasterReload` |
+| Plasma | `PlasmaShoot` (2 varianty), `PlasmaReload` |
+| Tesla | `TeslaShoot`, `TeslaReload`, `TeslaZap` (2 varianty) |
+| Railgun | `RailgunShoot`, `RailgunReload` |
+| Ekonomika | `Coin` → `coin.ogg`; `Pickup` → `pickup.ogg`; `Buy` → `buy.ogg`; `Sacrifice` → `sacrifice.ogg`; `OpenChest` → `open_chest_1/2/3.ogg` |
+| Automat | `SlotSpin`, `SlotWin`, `SlotLose`, `SlotCashout` → `slotmachine_*.ogg` |
+
+Přiřazení výstřel/přebití ke zbraním je v `guns.rs` (dvojice `(S::…Shoot, S::…Reload)` ve spec každé zbraně) — viz [Zbraně](/docs/guns).
+
+**Soubory na disku, které kód nepoužívá:** `drop_coin.wav`, `player_dash_1.ogg`, `player_dash_2.ogg`, `switchgun.ogg` (v kořeni, používá se `guns/switchgun.ogg`), `guns/explosion.ogg` (používá se `explosion.ogg`).
+
+## Interakce
+
+- Zbraně: [Zbraně](/docs/guns). Obchod, automat, truhly: [Artefakty a předměty](/docs/artefacts-items). Boss hudba: [Dungeon](/docs/dungeon).
+- Hlasitost se nastavuje v menu nastavení ([Menu a nastavení](/docs/progression/menus-settings)); změna jde přes `Settings::take_changes` → `Change::Volume` → `Audio::set_volume`.
+
+## Kde v kódu
+
+- `audio/mod.rs` → `Audio` (`play`, `preload`, `set_volume`, `files`), `decibels`, `CROSSFADE`
+- `audio/sound.rs` → `SoundEffect` (`ALL`, `files`), `Soundtrack` (`ALL`, `file`), `AudioCommand`
+- `scenes/*` → `Scene::soundtrack`, `take_sounds`
+- `scenes/ingame.rs` → `impact_shake`, přepínání hudby u bosse
+
+## Jak přidat nový zvuk
+
+1. Ulož `.ogg` do `assets/audio/` (nebo `assets/audio/guns/`). Generované zvuky zbraní vznikají skriptem `tools/make_gun_sounds.py`.
+2. Přidej variantu do `enum SoundEffect` v `audio/sound.rs`.
+3. Přidej ji do pole `SoundEffect::ALL` a **zvyš délku pole** (`[Self; 48]`).
+4. Přidej větev do `files()` — jeden nebo více souborů (více = náhodná varianta).
+5. V systému: `sounds.push(AudioCommand::Effect(SoundEffect::Nova))`.
+6. `cargo test` — test `every_sound_file_listed_in_the_code_exists_on_disk` ověří soubory.
+
+**Nová hudba:** varianta v `Soundtrack` + `ALL` + `file()`, pak `Scene::soundtrack` nebo `AudioCommand::Music` v místě přepnutí.
+
+## Nápady / chybí
+
+- **Úhyb nemá zvuk**, přestože `player_dash_1/2.ogg` na disku leží — stačí přidat `SoundEffect::Dash`.
+- **Nepřátelé jsou němí**: žádné zvuky útoků, smrti nepřátel, řevu bossů, kroků, pastí, lávy, rozbití sudu (kromě výbuchu). Velký prostor pro obsah.
+- Luger a Thompson sdílejí zvuk s Pistolí, Revolver a Uzi pistolové přebití — kandidáti na vlastní zvuky (`tools/make_gun_sounds.py`).
+- Nepoužitý `drop_coin.wav` by se hodil pro dropy mincí (teď `Coin` jen při sběru).
+- Neexistuje prostorový zvuk (hlasitost/panorama podle vzdálenosti) ani omezení počtu souběžných instancí — minigun/flamethrower mohou spouštět desítky překrývajících se zvuků.
+- V `app.rs` → `apply_changes` je větev `Change::Volume` s logem „audio is not implemented yet“; je to mrtvý kód, protože `Game::take_setting_changes` změny hlasitosti zpracuje dřív.
+- Jen 4 hudební skladby; žádná hudba podle tématu podlaží (stoka, led, láva, chrám).

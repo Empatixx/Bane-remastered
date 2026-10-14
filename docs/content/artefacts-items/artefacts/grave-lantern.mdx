@@ -1,0 +1,42 @@
+---
+title: Grave Lantern
+description: Vyvolá tři duchy, kteří 12 sekund pronásledují a koušou nepřátele.
+---
+
+## Jak to funguje
+
+- Aktivace vloží `SummonGhosts`; `systems/summons.rs` → `spawn_summons` ji v tomtéž snímku odebere a vytvoří **3 duchy** rovnoměrně v kruhu o poloměru 60 px kolem hráče.
+- Každý duch (`Ghost`) v `tick_ghosts`:
+  - cíl = **nejbližší živý nepřítel kdekoliv** (bez omezení dosahu, ignoruje `Spawning` a umírající), jinak krouží kolem hráče (poloměr 110 px, 1,6 rad/s),
+  - plynule zatáčí (`GHOST_STEERING = 5`) rychlostí až 300 px/s, u cíle zpomaluje,
+  - mírně se vznáší (bob 5 px),
+  - když se překrývá s nepřítelem a nemá cooldown, dá **2 damage** (`DamageSource::Bite`) a čeká 0,5 s; přehraje animaci `ghost::HIT`, pak zpět `FLOAT`,
+  - posledních 1 s života mizí (alpha i světlo).
+- Duchové procházejí zdmi (nemají fyzikální tělo).
+
+| Parametr | Hodnota |
+|---|---|
+| Počet | 3 |
+| Život | 12 s (fade 1 s) |
+| Damage | 2 / zásah, cooldown 0,5 s (≈ 4 DPS na ducha) |
+| Rychlost | 300 px/s |
+| Velikost | 72×72 |
+| Světlo | zelené (90, 220, 110), poloměr 130, intenzita 0,6 |
+| Textury | ikona `grave_lantern.tga`, duch `ghost.tga` (sheet `sheets::ghost`) |
+
+## Interakce
+
+- [Nepřátelé](/docs/enemies) – damage typu `Bite` (stejný jako pet).
+- Běží v reálném čase, ne v `hostile_dt` – s [Hourglass of Ash](/docs/artefacts-items/artefacts/hourglass-of-ash) jsou relativně rychlejší.
+
+## Kde v kódu
+
+- `systems/summons.rs` → `spawn_summons`, `spawn_ghost`, `tick_ghosts`, `nearest_enemy`, `overlapped_enemy`, konstanty `GHOST_*`
+- `components/summons.rs` → `Ghost`
+- `sheets.rs` → modul `ghost`
+
+## Nápady / chybí
+
+- Duchové cílí „nejbližšího k sobě“, takže se všichni tři často slepí na jednoho nepřítele – lze rozdělit cíle.
+- Nemají zvuk.
+- Cílí i na nepřátele v jiných místnostech (bez dosahu) – mohou odletět přes zeď mimo obrazovku.

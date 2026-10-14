@@ -1,0 +1,92 @@
+---
+title: Konec runu, death screen a vítězství
+description: Jak run končí, co se na obrazovce Game Over / Victory zobrazí a jak se počítá odměna v goldu.
+---
+
+## Jak to funguje
+
+### Spouštěč
+
+`InGameScene::update` na začátku každého snímku zkontroluje: pokud ještě neběží death screen a
+platí `victory` **nebo** `player_is_dead`, zavolá `start_death_screen`. Stejnou funkci volá i
+tlačítko **Die** v pauze.
+
+`start_death_screen` (proběhne jen jednou):
+
+1. Vezme aktuální `RunStats` a spočítá `Summary` (`systems::summarize(stats, floor)`).
+2. `profile.record_run` — připíše **gold** a doživotní statistiky, uloží profil.
+3. `profile.finish_run` — posune **mise**, vyhodnotí **challenge**, případně připíše talenty, uloží.
+4. Sestaví poznámku (`progress_note`), např. `Horde complete! +4 talents   2 missions ready on the board`.
+5. Zruší aktivní efekty artefaktů, zavře velkou mapu, spawne UI (`prefabs::death_ui`).
+
+Fixní update (fyzika, AI) se při death screenu zastaví.
+
+### Obrazovka (časování)
+
+| Čas | Co se děje |
+|---|---|
+| 0–1 s | Ztmavení na 70 % černé (`DIM_ALPHA`) |
+| 0–2,5 s | Lebka sjíždí z y=200 na y=50 |
+| od 2,5 s | Titulek **„Game Over“** nebo **„Victory!“** |
+| 2,5–4,5 s | Čtyři řádky statistik vyjíždějí po 0,5 s |
+| 4,5–6,5 s | Odměny `+N` se načítají (count-up) po 0,5 s |
+| od 6,5 s | Blikající „Press any key to continue...“ (perioda 0,2 s) a poznámka o misích/challenge |
+| klávesa | Fade do černé 0,8 s → **Lobby** |
+
+### Řádky a odměny (gold)
+
+`growth(floor, k, x) = k × floor^1.02 × x^1.01` (zaokrouhleno dolů)
+
+| # | Řádek | Hodnota | Odměna v goldu |
+|---|---|---|---|
+| 0 | `Accuracy: N%` | `hits / fired` (hits oříznuté na fired) | `growth(floor, 2.0, přesnost v %)` |
+| 1 | `Kills: N` | `kills` | `growth(floor, 2.0, kills)` |
+| 2 | `Loot: N` | `items` | `growth(floor, 4.0, items)` |
+| 3 | `Floor: N` | dosažené patro | `(floor − 1) × 5` |
+
+Součet všech čtyř = gold připsaný do `Profile.gold` a `total_earned`.
+
+Příklad: patro 3, přesnost 50 %, 30 kills, 5 předmětů → cca 319 + 190 + 62 + 10 ≈ **581 gold**.
+
+### Smrt vs. vítězství
+
+| | Smrt | Vítězství |
+|---|---|---|
+| Titulek | Game Over | Victory! |
+| `Profile.deaths` / `wins` | +1 deaths | +1 wins |
+| Challenge s cílem patro 5 | nesplněna | splněna |
+| Ostatní challenge | splněna, pokud `floor ≥ target_floor` | splněna |
+
+## Obsah
+
+Prvky UI (`DeathPart`): `Dim`, `Skull`, `Title`, `Icon(0..4)` (ikony accuracy / kills / loot / floor),
+`Label(0..4)`, `Reward(0..4)`, `Prompt`, `Note`.
+
+## Interakce
+
+- Gold se utrácí u [Weapon table](/docs/guns); talenty u Vědce — viz [Měny](/docs/progression/currencies).
+- Postup misí a challenge: [Mise](/docs/progression/missions), [Challenge](/docs/progression/challenges).
+- Uložení: [Ukládání](/docs/progression/saves).
+
+## Kde v kódu
+
+- `scenes/ingame.rs` → `start_death_screen`, `progress_note`, větev `BossDefeated` v `handle_room_events`
+- `systems/death_screen.rs` → `DeathScreen` (časování), `update_death_ui`
+- `systems/stats.rs` → `Summary`, `summarize`, `growth`
+- `prefabs/ui.rs` → `death_ui` (texty „Game Over“ / „Victory!“ / „Press any key to continue...“)
+- `profile.rs` → `Profile::record_run`, `SharedProfile::finish_run`
+
+## Jak přidat nový řádek statistiky
+
+1. Zvětšit `ROWS` v `systems/death_screen.rs` a pole `rewards` v `Summary`.
+2. Doplnit výpočet v `summarize` a text v `DeathScreen::label`.
+3. Přidat ikonu (`tex::…`) do seznamu v `prefabs::death_ui`.
+4. Zkontrolovat, že se řádky vejdou (krok 50 px od y=225).
+
+## Nápady / chybí
+
+- **Exploit:** odměna za přesnost nezávisí na počtu výstřelů — jeden zásah z jednoho výstřelu a hned „Die“ z pauzy dá na patře 1 cca 209 gold. Vážit přesnost počtem zásahů nebo ji násobit kills.
+- Victory screen je identický s Game Over (jen titulek). `story.md` chce řádek „Subject 41. Attempt N. Recorded.“ / „The wound is open.“ a jiný tón pro vítězství.
+- Coins nasbírané v runu (peněženka) propadnou — nic se z nich nepřevádí do goldu ani se nezobrazí.
+- Po vítězství spawnutá artefaktová truhla nejde otevřít (screen naskočí okamžitě). Chtělo by to krátkou prodlevu nebo portál zpět místo okamžitého konce.
+- Chybí přehled celého runu (zbraně, artefakty, čas, seed) — užitečné i pro sdílení seedu.

@@ -1,0 +1,34 @@
+---
+title: Midas Coin
+description: Promění všechny nepřátelské střely na mince a na 6 sekund přidá 2 mince za každé zabití.
+---
+
+## Jak to funguje
+
+Aktivace vloží `ConvertBullets` (jednorázový požadavek) a `MidasTouch { remaining: 6.0 }`.
+
+1. **Konverze střel** – `systems/midas.rs` → `convert_bullets`: všechny existující `EnemyBullet` (kromě umírajících) se odstraní z fyziky i světa a na jejich místě vznikne **mince** (pickup s 10s despawnem) a zlatá jiskra (`ARTEFACTS_MIDAS_SPARKLE`, 6 snímků × 0,07 s, 40 px).
+2. **Midas Touch 6 s** – `midas_kill_coins`: každý nepřítel, který dokončí animaci smrti a nemá `NoDrop`, vyhodí **2 mince** navíc (rozptyl 90 px/s, úhel deterministicky podle pozice). Normální drop (viz [Drops](/docs/artefacts-items/drops)) běží nezávisle.
+
+| Parametr | Hodnota |
+|---|---|
+| Konverze | všechny nepřátelské střely v tu chvíli |
+| Trvání bonusu | 6 s |
+| Bonus za zabití | +2 mince |
+| Textura | `midas_coin.tga`, jiskra `midas_sparkle.tga` |
+
+## Interakce
+
+- [Nepřátelé](/docs/enemies) – nejsilnější proti bossům s „bullet hell“ vzory; King Slime a minioni (`NoDrop`) bonus nedávají.
+- Mince → [Obchod](/docs/artefacts-items/shop), [Automat](/docs/artefacts-items/slot-machine).
+
+## Kde v kódu
+
+- `systems/midas.rs` → `convert_bullets`, `midas_kill_coins`, `spawn_sparkle`, `BONUS_COINS`, `SCATTER_SPEED`
+- `components/artefacts.rs` → `ConvertBullets`, `MidasTouch`
+
+## Nápady / chybí
+
+- `midas_kill_coins` testuje, zda `MidasTouch` existuje **kdekoliv** ve světě, ne jen na hráči – zatím jedno a totéž, ale křehké.
+- Konvertuje jen střely v daný okamžik – varianta „6 s každá nová střela → mince“ by byla zajímavější obranně.
+- Mince z konverze mizí po 10 s; při velkém množství se hráč nestihne sebrat.

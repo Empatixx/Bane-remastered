@@ -1,0 +1,152 @@
+---
+title: Nepřátelé
+description: Přehled všech nepřátel a bossů v Bane, jak vznikají, jak se chovají a jak umírají.
+---
+
+## Jak to funguje
+
+Každý nepřítel je jeden řádek enumu `EnemyKind` (`enemies.rs`). Jeho vlastnosti popisuje `EnemySpec`:
+sprite sheet, HP, kontaktní damage, „síla“ pohybu (`force`), rozsah pater (`min_floor`/`max_floor`),
+povolená témata dungeonu (`themes`), role (`Role::Common` / `Role::Summoned` / `Role::Boss(jméno)`)
+a chování (`Behavior`). Prefab `prefabs::enemy` z toho poskládá ECS entitu a podle `Behavior` přidá
+komponenty schopností (`Smash`, `Dash`, `Leaper`, `GolemBoss`, …).
+
+### Životní cyklus nepřítele
+
+1. **Spawn** — místnost při vstupu hráče zavolá `enemies::pick` (běžní) nebo `enemies::pick_boss` (boss)
+   a `prefabs::enemy_in_room`. Viz [Spawnování a škálování](/docs/enemies/spawning).
+2. **Zhmotnění** — entita má `Spawning`: 2,0 s (boss 1,5 s) se postupně zviditelňuje (alfa 0 → 1),
+   nemá fyzikální tělo, nehýbe se, nedává damage a nedá se trefit. Po skončení `finish_spawning`
+   přidá rapier tělo.
+3. **Boj** — každý fixed-step: pronásledování přes flow field (`chase_player`), rozestupy v davu
+   (`separate_chasers`), detekce zaseknutí (`watch_progress`), otáčení sprite k hráči (`face_player`)
+   a systémy schopností. Viz [AI a pohyb](/docs/enemies/ai).
+4. **Zásah** — `systems::damage::deal` ubere HP a dá `HitFlash` → červený obrys na 0,3 s.
+   Entita se `Sealed` (Mimic v odpočinku) damage ignoruje.
+5. **Smrt** — jediné místo je `resolve_deaths`: nejdřív „puddle“ smrt (Saliva slime), pak efekty
+   při smrti (výbuch střel, jedovatý mrak, léčení příbuzných), úklid po bossovi, a nakonec `reap_dead`
+   (odebere tělo, přidá `Expiring`, přehraje animaci smrti).
+6. **Drop** — po doběhnutí animace smrti `enemy_drops` (pity systém, viz [Spawnování](/docs/enemies/spawning#dropy)).
+
+### Kontaktní damage
+
+Hráč nemá s nepřáteli fyzikální kolizi (skupina `ENEMIES` koliduje se zdmi, objekty, střelami a ostatními
+nepřáteli, ne s hráčem). Damage řeší `contact_damage`: pokud se obdélník hráče překrývá s entitou s
+`ContactDamage`, hráč dostane damage (nejdřív armor, pak HP) a 1,0 s nezranitelnosti. Nepřítel ve stavu
+`Spawning`, `Expiring` nebo `Frozen` nezraňuje; neviditelného hráče (`Phantom`) nepřátelé nezraňují vůbec.
+
+### Rychlost
+
+Rychlost se nepíše přímo, ale počítá: `speed = force / (5 × šířka × výška)` (v px/s, rozměr = frame ×
+scale). Větší sprite = pomalejší nepřítel při stejné síle. Stejný vzorec (bez tlumení, `/ 60`) platí pro
+projektily.
+
+## Obsah
+
+Hodnoty HP a damage jsou základní (patro 0). Běžní nepřátelé se škálují s patrem
+(+12 % HP a +8 % damage za patro), bossové a vyvolaní ne. Rychlost je v px/s.
+
+| Nepřítel | `EnemyKind` | Role | HP | Dmg | Rychlost | Patra | Téma | Stránka |
+|---|---|---|--:|--:|--:|---|---|---|
+| Rat | `Rat` | běžný | 12 | 2 | 186 | 0+ | všechna | [Základní](/docs/enemies/critters) |
+| Snake | `Snake` | běžný | 8 | 3 | 174 | 0+ | všechna | [Základní](/docs/enemies/critters) |
+| Bat | `Bat` | běžný | 9 | 2 | 315 | 0+ | všechna | [Základní](/docs/enemies/critters) |
+| Ghost | `Ghost` | běžný | 7 | 2 | 132 (dash 629) | 0+ | všechna | [Základní](/docs/enemies/critters) |
+| Slime | `Slime` | běžný | 9 | 1 | 29 | 0+ | všechna | [Slizy](/docs/enemies/slimes) |
+| Red slime | `RedSlime` | běžný | 9 | 1 | 29 | 0+ | všechna | [Slizy](/docs/enemies/slimes) |
+| Demon eye | `DemonEye` | běžný | 11 | 3 | 265 | 3+ | všechna | [Oči](/docs/enemies/eyes) |
+| Eye watcher | `EyeWatcher` | běžný | 4 | 1 | 0 | 3+ | všechna | [Oči](/docs/enemies/eyes) |
+| Red spiderling | `RedSpiderling` | běžný | 3 | 2 | 191 | 1+ | Spider | [Pavouci](/docs/enemies/spiders) |
+| Green spiderling | `GreenSpiderling` | běžný | 5 | 2 | 191 | 1+ | Spider | [Pavouci](/docs/enemies/spiders) |
+| Purple spiderling | `PurpleSpiderling` | běžný | 3 | 1 | 226 | 1+ | Spider | [Pavouci](/docs/enemies/spiders) |
+| Bloated spider | `BloatedSpider` | běžný | 5 | 1 | 167 | 1+ | Spider | [Pavouci](/docs/enemies/spiders) |
+| Stilt spider | `StiltSpider` | běžný | 7 | 1 | 63 | 1+ | Spider | [Pavouci](/docs/enemies/spiders) |
+| Saliva slime | `SalivaSlime` | vyvolaný (Mimic) | 5 | 1 | 139 (skoky) | — | — | [Slizy](/docs/enemies/slimes) |
+| Mini golem | `MiniGolem` | vyvolaný (Golem) | 6 | 1 | 195 | — | — | [Golem](/docs/enemies/bosses/golem) |
+| Argus eye | `ArgusEye` | vyvolaný (Argus) | 4 | 1 | 0 (obíhá) | — | — | [Argus](/docs/enemies/bosses/argus) |
+| Spider king | `Spider` | boss | 75 | 2 | 282 | jen 1 | všechna | [Spider king](/docs/enemies/bosses/spider-king) |
+| King slime | `KingSlime` | boss | 90 | 2 | 41 | 2+ | všechna | [King slime](/docs/enemies/bosses/king-slime) |
+| Stone golem | `Golem` | boss | 110 | 2 | 38 | 2+ | Stone, Temple, Lava | [Golem](/docs/enemies/bosses/golem) |
+| Argus | `Argus` | boss | 120 | 2 | 8 | 2+ | Temple, Ice, Moss, Sewer | [Argus](/docs/enemies/bosses/argus) |
+| Sewer ogre | `Ogre` | boss | 130 | 2 | 38 | 2+ | Sewer, Moss | [Ogre](/docs/enemies/bosses/ogre) |
+| Hellhound | `Hellhound` | boss | 110 | 2 | 243 | 2+ | Lava | [Hellhound](/docs/enemies/bosses/hellhound) |
+| Mimic | `Mimic` | boss | 115 | 2 | 133 | 2+ | Stone, Temple | [Mimic](/docs/enemies/bosses/mimic) |
+
+Celkem 23 druhů: 13 běžných, 3 vyvolaní, 7 bossů. Krysy (`Rat`) navíc vyvolává Ogre.
+
+<Callout type="info">
+Patro 1 je vždy téma Spider, takže pavoučí nepřátelé se ve hře reálně objevují jen na patře 1
+a Demon eye / Eye watcher jen na patrech 3–5. Rozpis po patrech a tématech je v
+[Spawnování a škálování](/docs/enemies/spawning).
+</Callout>
+
+<Cards>
+  <Card title="Spawnování a škálování" href="/docs/enemies/spawning" />
+  <Card title="AI a pohyb" href="/docs/enemies/ai" />
+  <Card title="Nepřátelské projektily" href="/docs/enemies/projectiles" />
+  <Card title="Bossové" href="/docs/enemies/bosses" />
+</Cards>
+
+## Interakce
+
+- **Hráč** — kontaktní damage a projektily jdou přes `hurt_player` (armor → HP, 1 s i-frames),
+  magma Hellhounda přes `hurt_player_through_armor`. Dodge (`Dodge`) uhýbá dopadům, paprskům a magmatu.
+  Viz [Hráč](/docs/player).
+- **Zbraně** — jen zásahy zdrojem `Bullet`/`Summoned` se počítají do `Hits` (Red slime podle nich
+  vystřelí víc projektilů). Chill (`Chilled`) zpomalí nepřítele na 50 %, 4 stacky = `Frozen`
+  (stojí, neútočí, nezraňuje). Viz [Zbraně](/docs/guns).
+- **Artefakty** — `Phantom` (neviditelnost) způsobí, že nepřátelé stojí a nestřílí; time slow násobí
+  `hostile_dt` všech nepřátelských systémů; Midas dává bonusové mince z killů bez `NoDrop`. Viz [Artefakty a předměty](/docs/artefacts-items).
+- **Dungeon** — témata určují pool nepřátel i bossů, místnosti určují počet a vlny. Pasti
+  (`trap_hits_enemies`) a jedovaté louže zraňují i nepřátele. Viz [Dungeon](/docs/dungeon).
+- **Progrese** — mise „zabij N krys/netopýrů/slizů/duchů/hadů“ a „poraz bosse X“, challenge Horde a Bane
+  (silnější nepřátelé). Viz [Progrese](/docs/progression).
+
+## Kde v kódu
+
+- `enemies.rs` — `EnemyKind`, `EnemySpec`, `Behavior`, `Role`, `ProjectileKind`, všechny konstanty bossů,
+  `pick`, `pick_boss`, škálování (`health_multiplier`, `damage_multiplier`, `scale_stat`).
+- `prefabs/actors.rs` — `enemy`, `enemy_in_room`, `enemy_bullet`, `hatchling`, `cobweb`, `finish_spawning`.
+- `systems/enemies.rs` — `chase_player`, `face_player`, `tick_spawning`, `dash`, `flash_hits`,
+  `resolve_deaths`, `reap_dead`, puddle/revive logika.
+- `systems/skills.rs` — `tick_smashes`, `tick_eye_shooters`, `steer_homing`, `burn_fuses`,
+  `death_bursts`, `death_clouds`, `death_heals`, `enemy_bullet_hits`.
+- `systems/bosses.rs`, `golem.rs`, `argus.rs`, `ogre.rs`, `hound.rs`, `mimic.rs`, `magma.rs` — bossové.
+- `systems/leapers.rs`, `systems/hopper.rs` — skákající nepřátelé.
+- `systems/crowd.rs`, `systems/unstick.rs`, `flow.rs`, `navigation.rs` — pohyb.
+- `systems/rooms.rs` — spawn ve vlnách; `systems/items.rs` → `enemy_drops`.
+- `systems/rules.rs` → `toughen_enemies` (modifikátory challenge).
+- `scenes/ingame.rs` → `fixed_update` — pořadí všech systémů.
+
+## Jak přidat nového nepřítele
+
+1. Přidej variantu do `EnemyKind` a **zvyš velikost a obsah** `EnemyKind::ALL` (pole má pevnou délku 23).
+2. Přidej texturu do `assets.rs` (`tex::…` + seznam k načtení) a soubor do `assets/textures/ingame/`.
+   Sheet: řádek 0 = idle, řádek `death_row` (výchozí 1) = smrt; test
+   `every_enemy_has_a_death_animation_that_fits_inside_its_sheet` hlídá rozměry.
+3. Přidej arm do `EnemyKind::spec()` — pomocí `spec(texture, (sloupce, řádky), (frame_w, frame_h), scale,
+   (idle_frames, idle_time), Some((death_frames, death_time)), (hp, damage, force))` a případně
+   `min_floor`, `max_floor`, `themes`, `role`, `behavior`, `kin`, `reform_row`.
+4. Pokud stačí existující `Behavior` (Plain, Dash, PoisonTrail, Smash, Burst, Shoots, HealsKin,
+   ToxicBurst, Leaps, Hops), jsi hotov. Nové chování = nová varianta `Behavior`, arm v
+   `prefabs::enemy` (přidá komponentu) a systém v `systems/`, zaregistrovaný v `scenes/ingame.rs`
+   `fixed_update` (použij `hostile_dt`, respektuj `Spawning`/`Expiring`/`Frozen`).
+5. Uprav testy v `enemies.rs` (`picking_respects_the_floor` počítá velikost poolu).
+6. Pokud má mít misi „zabij N“, přidej ho do `HUNTED` v `progress/missions.rs`.
+
+## Nápady / chybí
+
+- **Žádní elitní / affixovaní nepřátelé.** TODO.md (M3) je plánuje (`FORTIFIED`, `RAGING`,
+  `REGENERATION` z Java `AffixType`), v Rust portu neexistuje nic podobného. Přirozené místo:
+  komponenta `Affix` přidaná v `enemy_in_room` s malou šancí rostoucí s patrem, aplikovaná podobně jako
+  `toughen_enemies`.
+- **Finální boss „The Heart“** ze `story.md` (patro 5, Temple) není implementován; patro 5 má náhodné
+  téma a obyčejného bosse z poolu.
+- FEATURE.md a TODO.md popisují Java verzi: tvrdí „enemy stats do not scale“, ale Rust škáluje (+12 % HP,
+  +8 % dmg za patro). Java mechaniky Red spiderling „heals self per hit“ a Purple spiderling teleport
+  v Rustu nejsou — oba jsou obyčejní chaseři.
+- Ze 13 běžných nepřátel je 5 vázáno na téma Spider (= jen patro 1) a ostatní témata nemají vlastní
+  nepřátele. Každé téma (Ice, Lava, Sewer, Moss, Temple, Stone) by si zasloužilo 1–2 tematické
+  nepřátele (např. ledový slime zanechávající `ice_patches`, lávový netopýr s ohnivou stopou).
+- Bossové s `Role::Boss` (kromě King slime) nemají `NoDrop`, takže se počítají do pity dropu jako běžná
+  kila — nejspíš nechtěné.

@@ -1,0 +1,90 @@
+---
+title: Argus
+description: Levitující oko se salvami kruhových výstřelů, rychlou palbou z očí, obíhajícími štíty a teleportem.
+---
+
+## Jak to funguje
+
+`EnemyKind::Argus`, `Role::Boss("Argus")`, `Behavior::ArgusBoss`. `min_floor = 2`, témata
+**Temple, Ice, Moss, Sewer**.
+
+| Parametr | Hodnota |
+|---|---|
+| HP | 120 |
+| Kontaktní damage | 2 |
+| Force / rychlost | 2 500 000 / 8 px/s (prakticky stojí; rage × 1,3) |
+| Velikost | 256 × 256 px (frame 64 × 64, scale 4) |
+| Sheet | `ingame/argus.tga`, 8 × 4, smrt řádek 3 |
+| První útok | po 2,0 s |
+| Pauza mezi útoky | 1,7 s (rage 0,9 s) |
+| Rage | HP ≤ 50 % |
+| Minion | Argus eye (4, rage 6) |
+
+Stavy `ArgusStage`: Float → Winding → Acting → Recovering → Float, plus FadingOut → FadingIn pro
+teleport. Argus se téměř nehýbe — pohyb nahrazuje **teleport** po každých 3 útocích.
+
+### Výběr útoku
+
+| Útok | Váha |
+|---|--:|
+| Volley | 3 |
+| Barrage | 3 |
+| Shield | 6, pokud nemá žádné oko; 2, pokud jich má méně než má mít; 0, pokud má všechna |
+
+Nikdy dvakrát stejný útok za sebou. Žádná závislost na vzdálenosti.
+
+## Obsah
+
+### Volley — pulzující prstence
+
+- Windup 0,5 s (řádek 2, smyčka), pak 5 pulzů (rage 7) po 0,4 s.
+- Každý pulz: prstenec 10 střel (rage 14) `ArgusShot` (334 px/s, 1 dmg, 4 s), každý pulz pootočený o
+  dalších 0,37 rad — prstence tvoří spirálu.
+
+### Barrage — palba z očí
+
+- Windup 0,6 s (řádek 1 — zamíření), pak 14 výstřelů (rage 22) po 0,13 s.
+- Každá střela vychází z jednoho ze 7 očí na spritu (`EYES`, cyklicky) a míří na hráče s rozptylem
+  ±0,16 rad. V rage letí z každého pulzu 2 střely (ze dvou sousedních očí).
+
+### Shield — obíhající oči
+
+- Windup 0,6 s, pak doplní chybějící **Argus eyes** do počtu 4 (rage 6), rovnoměrně rozmístěné.
+- Oči obíhají Argus po elipse (poloměr 185 px, vertikálně zmáčknuto na 80 %) rychlostí 1,4 rad/s,
+  pozici nastavuje `tick_orbiters` (teleport těla).
+- Argus eye: `EnemyKind::ArgusEye`, `Role::Summoned`, 4 HP, 1 kontaktní dmg, 72 × 72 px,
+  `ingame/argus_orbit.tga`. Blokují hráčovy střely (mají tělo) a zraňují dotykem.
+- Když Argus zemře, oči okamžitě zemřou.
+
+### Teleport
+
+- Po každých 3 dokončených útocích (`ARGUS_TELEPORT_EVERY`): fade out 0,35 s (alfa → 0), přesun na
+  náhodné místo 260–480 px od současné pozice (ne blíž než 140 px k hráči, místo musí být volné;
+  16 pokusů), fade in 0,35 s, pak jen 0,8 s do dalšího útoku.
+- Během fade je stále zranitelný (mění se jen alfa).
+
+### Rage (HP ≤ 50 %)
+
+Rychlost × 1,3, pauza 0,9 s, tint `(1, 0,72, 0,66)`, víc pulzů a střel ve Volley, víc výstřelů a dvojité
+střely v Barrage, 6 očí místo 4.
+
+## Interakce
+
+- Oči jsou `Minion` + `NoDrop` a počítají se do vyčištění místnosti.
+- Lore: „Vědcovo oko. Postavil ho, aby sledoval subjekty. Vymklo se.“ — `story.md` plánuje repliku
+  Vědce po smrti Arguse (není v kódu).
+
+## Kde v kódu
+
+- `enemies.rs` → arm `Argus`, `ArgusEye`; všechny `ARGUS_*`.
+- `systems/argus.rs` → `choose_attack`, `orbit_count`, `step`, `fade`, `eye_offset`, `tick_argus`, `execute`,
+  `shoot`, `tick_orbiters`; konstanty `EYES`, `HOP_NEAR`, `HOP_FAR`, `HOP_ROOM`, `ORBIT_SQUASH`.
+- `components/skills.rs` → `ArgusBoss`, `ArgusStage`, `ArgusAttack`, `Orbiter`.
+- Ladění: `BANE_BOSS=argus` (vynucení útoku neexistuje).
+
+## Nápady / chybí
+
+- Chybí `BANE_ARGUS_ATTACK` (ostatní moderní bossové ho mají).
+- Oči se při Shield jen doplní; nemají vlastní útok — mohly by občas vystřelit (oko jako mini Eye watcher).
+- Teleport neprovádí žádný útok při příchodu — příležitost pro „flash“ prstenec.
+- Argus nemá žádný speciální útok na blízko (jen kontakt); výběr útoku nezávisí na vzdálenosti hráče.

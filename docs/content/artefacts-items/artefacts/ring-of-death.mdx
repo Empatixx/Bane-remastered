@@ -1,0 +1,39 @@
+---
+title: Ring of Death
+description: Okamžitě vystřelí 50 střel do kruhu kolem hráče.
+---
+
+## Jak to funguje
+
+Po aktivaci se v jednom snímku vytvoří `RING_BULLETS = 50` hráčských střel (`prefabs::bullet`, `Bullet::plain(RING_DAMAGE)`):
+
+| Parametr | Hodnota |
+|---|---|
+| Počet střel | 50 |
+| Damage na střelu | 2 |
+| Rychlost | 700 px/s |
+| Úhlový krok | 0,15 rad (≈ 8,6°) |
+| Celkový úhel | 50 × 0,15 = 7,5 rad ≈ 430° |
+| Textura střely | hráčská `BULLET` |
+
+- Úhel první střely: `atan2(-pozice.y, -pozice.x)` – tedy směr **od hráče k počátku světa (0,0)**, ne podle myši.
+- Protože 7,5 rad je víc než plný kruh, posledních ~70° se překrývá – v tom směru letí dvojnásobná hustota.
+- Všechny střely vznikají naráz, takže „spirála“ v názvu testu je jen v pořadí úhlů, vizuálně jde o prstenec.
+- Damage je pevná, **neprochází** perky (Sharpened Bullets, Critical Hit) ani násobičem Phantom Cloak.
+
+## Interakce
+
+- [Zbraně](/docs/guns) – používá stejný prefab střely jako zbraně (`Round::Bullet`).
+- Funguje dobře proti obklíčení v Ambush místnostech ([Dungeon](/docs/dungeon)).
+
+## Kde v kódu
+
+- `artefacts.rs` → `RING_BULLETS`, `RING_TURN`, `RING_DAMAGE`
+- `systems/artefacts.rs` → `activate_artefact` (arm `RingOfDeath`), `BULLET_SPEED = 700.0`
+- Textura ikony: `ingame/artefacts/ringofdeath.tga` (25×25 → ikona 50×50)
+
+## Nápady / chybí
+
+- Výchozí úhel podle pozice ve světě vypadá jako artefakt portu (v Javě se zřejmě počítalo relativně) – lepší by byl směr k myši nebo 0.
+- Přetočení přes 360° (430°) je pravděpodobně nechtěné – buď `RING_TURN = TAU / 50`, nebo skutečná spirála se zpožděním mezi střelami (např. 0,02 s), což by odpovídalo názvu.
+- Pevných 2 dmg × 50 je na začátku silné, v 5. patře slabé – zvážit škálování perky.

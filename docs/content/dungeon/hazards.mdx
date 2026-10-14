@@ -1,0 +1,121 @@
+---
+title: Pasti a nebezpečí
+description: Bodce, plamenomety, šípové pasti, gejzíry, pavučinové a ledové plochy, efekty sudů, láva a magma Hellhounda.
+---
+
+## Jak to funguje
+
+Pasti jsou entity s komponentami `ContactDamage(n)` a `Trap { from_frame, until_frame }`.
+Past je **aktivní** jen tehdy, když její animace stojí na snímku v rozsahu
+`from_frame..until_frame` (`trap_is_armed` v `systems/damage.rs`).
+
+- **Hráč**: `contact_damage` – první aktivní past/nepřítel, se kterým se hráč překrývá, mu dá
+  zranění přes `hurt_player` (nejdřív se ubírá brnění), pak má hráč **1 s nezranitelnosti**.
+- **Nepřátelé**: `trap_hits_enemies` – aktivní past dá nepříteli zranění
+  (`DamageSource::Trap`) a nepřítel dostane `TrapCooldown` 1 s.
+- Rozmístění pastí řeší `decor::plan` podle `TrapMix` tématu (viz [Patra a témata](/docs/dungeon/themes))
+  – vše aspoň 3 dlaždice (Manhattan) od dveří a mimo spawn body.
+- Perk **Trap Master** (`immobilize_traps`): každá entita s `Trap` má při stavbě patra šanci
+  31/101 (≈ 30 %), že se vypne – odebere se `Trap` i `ContactDamage` a animace zamrzne
+  (bodce zatažené na snímku 2, plamen na snímku 0). Šípové pasti `Trap` nemají, perk na ně nepůsobí.
+
+## Obsah
+
+### Pasti
+
+| Past | Kde | Sprite | Cyklus | Aktivní | Dmg | Poznámka |
+|---|---|---|---|---|---|---|
+| **Bodce** (`Spike`) | podlaha Normal místností, 5 × 5 okolí bez zdí | 16 × 16 × 4, 4 snímky | 0,7 s (4 × 0,175) | snímky 0–1 (0,35 s) | 1 | počet `1 + below(spikes)` |
+| **Plamenomet** (`Flamethrower`) | čelo zdi (zeď s podlahou pod sebou) | 16 × 32 × 4 (64 × 128 px), 4 snímky | 0,7 s | jen snímek 3 (0,175 s) | 1 | červené světlo r = 50, bliká s animací (`flicker_flames`) |
+| **Šípová past** (`ArrowTrap`) | čelo zdi, jen Temple | 16 × 16 × 4 | 2,4 s | – | 1 | střílí šíp dolů, jen když je hráč do 640 px |
+| **Ohnivý gejzír** (`FireGeyser`) | plocha 2 × 2 dlaždice | 32 × 64 × 2, 8 snímků | 1,6 s (8 × 0,2) | snímky 5–6 (0,4 s) | 1 | oranžové světlo r = 90; **dnes se nespawnuje** (`geysers = 0`) |
+
+**Šípová past** podrobně (`systems/hazards.rs`):
+
+- První výstřel po `0,8 + (sloupec % 5) × 0,35 s` (pasti v řadě nestřílí naráz), pak každých 2,4 s.
+- Když je hráč dál než 640 px, past čeká a kontroluje každých 0,25 s.
+- Šíp letí rovně dolů rychlostí 520 px/s, sprite 20 × 56 se „vysouvá“ ze štěrbiny, hitbox 12 × 40.
+- Zasáhne **jen hráče** (1 dmg přes brnění), na zdi se rozbije s animací `ARROW_HIT`.
+
+### Zpomalující plochy
+
+| Plocha | Kde | Velikost | Efekt |
+|---|---|---|---|
+| **Pavučinová plocha** (`WebPatch`) | Spider, 1–3 na místnost, volná podlaha 4 × 4 | 128 × 128 px sprite, hitbox 96 × 96 | hráč rychlost × 0,5; **střely** (hráče i nepřátel) brzdí `× e^(−30·dt)`, pod 150 px/s se zachytí a zmizí |
+| **Ledová plocha** (`IcePatch`) | nikde (`ice_patches = 0`) | 128 × 128, hitbox 96 × 96 | tlumení pohybu hráče 1,1 místo 5 → klouže |
+
+Pavučina bosse Spider king (`Cobweb` komponenta) zpomaluje hráče stejně (× 0,5) a zmizí po
+smrti bosse.
+
+### Efekty rozbitných sudů
+
+| Sud | Efekt | Dosah (obdélník kolem sudu) | Čísla |
+|---|---|---|---|
+| **Výbušný** | výbuch + zvuk `Explosion` (otřes kamery 0,8) | 313 × 255 px | 3 dmg hráči (pokud není nezranitelný, brnění absorbuje), nepřátelům a dalším rozbitným objektům → řetězové výbuchy |
+| **Mrazivý** | `frost_burst`, `Frozen` | 505 × 415 px | nepřátelé 4 s, boss 2 s, hráč 1,5 s (ne během dodge); zmrazený nemůže chodit a nedává kontaktní dmg |
+| **Jedový** | jedová louže 20 px pod sudem | louže 128 × 128, hitbox 96 × 76 | trvá 8 s (poslední 1 s mizí); hráč 1 dmg (omezeno 1 s nezranitelnosti), nepřátelé 1 dmg každou 1 s; zelený obrys `Poisoned` |
+
+Jedovou stopu za sebou nechává i nepřítel Snake (`PoisonTrail`, kapky po 7 px, 5 s, zraňuje
+jen hráče); „přátelské“ louže (`Friendly`) zraňují jen nepřátele.
+
+### Kapaliny a magma
+
+| Nebezpečí | Zdroj | Dmg | Pravidla |
+|---|---|---|---|
+| **Láva** (povrch) | téma Lava | 2, **přes brnění** | střed hráče na lávové dlaždici, ne během dodge; pak 1 s nezranitelnost → max 2 dmg/s |
+| **Magma** | boss Hellhound | 2, **přes brnění** | viz níže |
+
+**Magma Hellhounda** (`systems/magma.rs`, konstanty `HOUND_MAGMA_*` v `enemies.rs`):
+
+- 3 s po začátku boje začne pes rozlévat magma po boss místnosti.
+- Pořadí dlaždic: všechny průchozí dlaždice do vzdálenosti 3 od zdi, seřazené podle
+  vzdálenosti od zdi (+ deterministický šum) → láva se plíží **od stěn ke středu**.
+- Nová dlaždice každých 0,45 s, rozzuřený pes každých 0,28 s.
+- Dlaždice se 1 s zahřívá (bez dmg, šedá → oranžová), žije 16 s, posledních 1,2 s chladne.
+- Pálí, jen když stojí hráčovy **nohy** (30 % výšky pod středem) na rozžhavené dlaždici.
+- Po smrti bosse se veškeré magma smaže (`clear_magma`).
+
+## Interakce
+
+- [Hráč](/docs/player) – dodge chrání před lávou, magmatem a zmrazením; *Phantom* nechrání před pastmi.
+- [Nepřátelé](/docs/enemies) – pasti zraňují i nepřátele (lze je do pastí lákat).
+- [Progrese](/docs/progression) – perk *Trap Master*.
+- [Povrchy](/docs/dungeon/surfaces) – láva, led.
+
+## Kde v kódu
+
+- `prefabs/fixtures.rs` – `decor` (spawn pastí), `flamethrower`, `fire_geyser`, `floor_patch`,
+  konstanty `SPIKE_*`, `FLAME_*`, `GEYSER_*`, `ARROW_TRAP_START`, `PATCH_HITBOX`
+- `systems/damage.rs` – `trap_is_armed`, `trap_hits_enemies`, `contact_damage`, `hurt_player_through_armor`
+- `systems/hazards.rs` – `tick_arrow_traps`, `slow_bullets_in_webs`
+- `systems/objects.rs` – `explode`, `freeze_around`, `tick_poison`, `leave_poison_trails`, `flicker_flames`
+- `systems/steering.rs` – zpomalení pavučinou, klouzání po ledu
+- `systems/surfaces.rs` – `burn_on_lava`
+- `systems/magma.rs` – `plan`, `tick_magma_spread`, `tick_magma`, `clear_magma`
+- `systems/perks.rs` – `immobilize_traps`
+- `objects.rs` – konstanty výbuchu, mrazu a jedu
+
+## Jak přidat nový …
+
+**Nová past (např. „padající kámen“)**
+
+1. Varianta `DecorKind` v `dungeon/decor.rs` + nové pole v `TrapMix` + hodnoty v `Theme::mix`.
+2. Umístění v `decor::plan`: vyber kandidáty (`top_faces`, `side_faces`, `open_floor`,
+   `hugging`, `roomy`, `patch_floor`), použij `planner.pick` a `planner.take`.
+3. Prop do `Prop` + `PropSpec` v `props.rs` (textura, snímky, `frame_time`) a textura do `assets.rs`.
+4. Spawn ve `prefabs::decor`: `prop(...)` + `ContactDamage(dmg)` + `Trap { from_frame, until_frame }`.
+   Jednoduchá periodická past tím je hotová – `contact_damage` a `trap_hits_enemies` ji obslouží.
+5. Speciální chování (projektil, timer) – vlastní komponenta a systém, zaregistrovat
+   v `fixed_update` ve `scenes/ingame.rs` s `hostile_dt`.
+6. Má-li reagovat na *Trap Master*, potřebuje komponentu `Trap` (a případně snímek „vypnuto“ v `immobilize_traps`).
+
+## Nápady / chybí
+
+- **Ohnivé gejzíry a ledové plochy jsou hotové, ale nikde se nespawnují** (`TrapMix` 0 všude).
+- *Trap Master* by u gejzíru podržel snímek 2 (konstanta pro bodce), ne „vypnutý“ snímek.
+- Šípové pasti nezraňují nepřátele a nereagují na *Trap Master*.
+- Láva a voda/bažina působí **jen na hráče** – nepřátelé lávou chodí bez újmy a ve vodě se
+  nezpomalují.
+- Láva bere životy přes brnění bez varování – chybí vizuální „žhnutí“ hráče nebo telegraf.
+- Žádné tlakové desky, propadla, otáčející se plameny, pasti spouštěné hráčem.
+- Rampouchy (Ice) jsou jen dekorace – mohly by padat jako past.

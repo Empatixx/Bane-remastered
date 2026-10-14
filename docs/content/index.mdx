@@ -1,0 +1,29 @@
+---
+title: Bane Wiki
+description: Designová a obsahová dokumentace hry Bane — co ve hře je, jak to funguje a co přidat.
+---
+
+Bane je 2D top-down roguelike střílečka. Hráč je pokusný subjekt, kterého Vědec posílá portálem
+do **Bane** — rány ve světě, jejíž patra se po každém sestupu přeskládají.
+
+Tahle wiki popisuje **Rust port** (`rust/app`, hecs ECS + rapier2d + wgpu) na větvi `master`.
+Java kód (`app/`, `game-engine-*`) je legacy a zdrojem pravdy není.
+
+<Callout type="info">
+Každá stránka má stejnou strukturu: **Jak to funguje** → **Obsah** (seznam všeho, co ve hře existuje)
+→ **Interakce** → **Kde v kódu** → **Jak přidat nový …** → **Nápady / chybí**.
+Sekce „Nápady / chybí“ je místo, kde hledat, co dodělat.
+</Callout>
+
+## Témata
+
+<Cards>
+  <Card title="Zbraně" href="/docs/guns" />
+  <Card title="Nepřátelé" href="/docs/enemies" />
+  <Card title="Artefakty a předměty" href="/docs/artefacts-items" />
+  <Card title="Hráč" href="/docs/player" />
+  <Card title="Dungeon a svět" href="/docs/dungeon" />
+  <Card title="Průběh hry a progrese" href="/docs/progression" />
+  <Card title="Technika" href="/docs/tech" />
+  <Card title="Jak psát wiki" href="/docs/contributing" />
+</Cards>

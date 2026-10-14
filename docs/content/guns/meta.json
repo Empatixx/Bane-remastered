@@ -1,0 +1,30 @@
+{
+  "title": "Zbraně",
+  "icon": "Crosshair",
+  "pages": [
+    "index",
+    "strelba",
+    "projektily",
+    "mutace",
+    "strom-zbrane",
+    "stul-se-zbranemi",
+    "loadout",
+    "ziskavani",
+    "pistol",
+    "shotgun",
+    "luger",
+    "revolver",
+    "m4",
+    "uzi",
+    "thompson",
+    "sniper",
+    "rpg",
+    "minigun",
+    "crossbow",
+    "flamethrower",
+    "blaster",
+    "plasma-rifle",
+    "tesla-gun",
+    "railgun"
+  ]
+}

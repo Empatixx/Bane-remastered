@@ -1,0 +1,78 @@
+---
+title: Thompson
+description: Přesný samopal s velkým zásobníkem a střední kadencí.
+---
+
+**Thompson** (`GunKind::Thompson`) — Automatická zbraň „do pohody“: 5 ran/s, téměř bez rozptylu (±1,4°), zásobník 30.
+
+## Jak to funguje
+
+### Statistiky
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Poškození v kódu | 1–3 |
+| Reálné poškození na projektil | 1–2 (průměr 1,5) |
+| Projektilů na výstřel | 1 |
+| Kadence | 5 výstřelů/s |
+| Průměrné DPS (bez přebíjení) | 7,5 |
+| Odchylka (`inaccuracy`) | 0,05 → ±0,03 rad (±1,4°) |
+| Režim | automatická |
+| Zásobník / rezerva | 30 / 300 |
+| Přebíjení | 0,85 s |
+| Kritická šance (základ) | 0 % |
+| Otřes kamery (`shake`) | 0,18 |
+| Třída munice | `AmmoClass::Pistol` |
+| Styl zásobníku v HUD | `ClipStyle::SubMachine` — dva sloupce nábojů (krok 15 px, sloupce po 25 px) |
+| Nábojnice | ano (nábojnice) |
+| Zvuk výstřelu / přebití | `PistolShoot` / `PistolReload` |
+| Textura / velikost ikony | `tex::GUNS_THOMPSON` / 98 × 46 px |
+| Klíč v profilu | `"thompson"` |
+
+Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+
+### Střelba
+
+Automatická, jedna kulka `Round::Bullet`, odchylka ±0,025 rad.
+
+### Projektil
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Typ | `Round::Bullet` |
+| Rychlost | 700 px/s |
+| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
+| Průraz (`pierce`) | 0 |
+| Životnost | — |
+| Zvláštní efekt | — |
+| Světlo | červené (255, 0, 0) |
+| Natáčí se ve směru letu | ne |
+| Textura | `tex::BULLET` |
+
+Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+
+### Přebíjení a munice
+
+Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,85 s, pak se zásobník doplní z rezervy (max. 30 nábojů). Rezervu 300 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
+
+### Zvláštnosti
+
+- Používá zvuky pistole (`PistolShoot`, `PistolReload`) — vlastní zvuk chybí.
+
+## Interakce
+
+- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
+- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
+- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
+- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
+
+## Kde v kódu
+
+- `guns.rs` → `GunKind::Thompson`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
+- `systems/shooting.rs` → `shoot`, `bullet_hits`
+- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Thompson“)
+- `assets.rs` → `tex::GUNS_THOMPSON`
+
+## Nápady / chybí
+
+- Vlastní zvuk výstřelu a přebíjení (bubnový zásobník).

@@ -1,0 +1,97 @@
+---
+title: Mimic
+description: Oživlá truhla, která skáče, kouše, plive sliz, pokládá falešné mince a zavírá se do neprůstřelné schránky.
+---
+
+## Jak to funguje
+
+`EnemyKind::Mimic`, `Role::Boss("Mimic")`, `Behavior::MimicBoss`. `min_floor = 2`, témata **Stone, Temple**.
+
+| Parametr | Hodnota |
+|---|---|
+| HP | 115 |
+| Kontaktní damage | 2 |
+| Force / rychlost | 30 000 000 / 133 px/s (rage × 1,3 → 172 px/s) |
+| Velikost | 202 × 224 px (frame 92 × 102, scale 2,2) |
+| Sheet | `ingame/mimic.tga`, 8 × 6, smrt řádek 5 |
+| První útok | po 2,2 s |
+| Pauza mezi útoky | 2,6 s (rage 1,5 s) |
+| Rage | HP ≤ 50 % |
+| Minion | Saliva slime (max. 4 minions) |
+
+Stavy `MimicStage`: Walk → Winding → Acting → Recovering → Walk.
+
+### Výběr útoku
+
+„Blízko“ = do 330 px (`MIMIC_NEAR`). „Přeplněno“ = 4+ minions. Návnad nejvýš 8 (`MIMIC_BAIT_LIMIT`).
+
+| Útok | Blízko | Daleko | Podmínka |
+|---|--:|--:|---|
+| Hop | 2 | 4 | — |
+| Bite | 4 | 0,5 | — |
+| Spit | 3 | 3 | 0, když přeplněno |
+| Lure | 2,5 | 2,5 | 0, když je 8+ návnad |
+| Rest | 1,5 | 1,5 | — |
+
+## Obsah
+
+### Hop — skok (řádek 1)
+
+- Windup 0,2 s, pak `Charge` na hráče rychlostí × 6 (cca 800 px/s) na 0,45 s.
+- Při dopadu prstenec **14 mincí** (`MimicCoin`, 346 px/s, 2 dmg, 1,8 s) od nohou (85 px pod středem).
+- Recover 0,3 s.
+
+### Bite — kousnutí (řádek 2)
+
+- Windup 0,28 s, pak krátký výpad × 4 (cca 530 px/s) na 0,13 s.
+- Na konci z tlamy vějíř **7 zubů** (`MimicTooth`, 485 px/s — nejrychlejší nepřátelská střela, 2 dmg,
+  1,5 s), rozptyl ±0,5 rad na hráče.
+- Recover 0,4 s.
+
+### Spit — plivnutí slizu (řádek 3)
+
+- Windup 0,32 s, pak vedle tlamy vyplivne **Saliva slime** + 16 kapek slin (kosmetické jiskry).
+- Saliva slime: 5 HP, skáče k hráči, po první smrti se 10 s skládá z louže a vstane s plným HP
+  (viz [Slizy](/docs/enemies/slimes#saliva-slime--puddle-a-oživení)).
+- Recover 0,55 s.
+
+### Lure — návnady (řádek 3)
+
+- Windup 0,36 s, pak kolem hráče (120–240 px od něj) rozmístí **5 návnad** (`MIMIC_BAIT`, zlatá mince
+  na zemi, 46 × 46 px) — jen na volných místech.
+- Návnada vydrží 9 s. Když hráč přijde blíž než 34 px, sklapne a dá **2 dmg** (i hráči v dodge).
+- Recover 0,5 s.
+
+### Rest — schránka (řádek 4)
+
+- Windup 0,3 s, pak se na 2,2 s zavře: `Sealed` (**imunní vůči damage**) + `Rooted`.
+- Recover 0,3 s (řádek 0).
+- Je to jediný „obranný“ útok v bossech — hráč by měl v té době uhýbat zbylým střelám / slimům.
+
+### Rage (HP ≤ 50 %)
+
+Rychlost × 1,3 (a tím i skoků), pauza 1,5 s, tint `(1, 0,72, 0,66)`. Útoky samotné se nemění.
+
+## Interakce
+
+- Návnady napodobují mince z [Artefaktů a předmětů](/docs/artefacts-items) — trestají hráče, který sbírá
+  loot během boje.
+- `Sealed` je kontrolováno v `systems::damage::deal` — blokuje veškerý damage (střely, výbuchy, jed).
+- Po smrti bosse zmizí všechny návnady (`clear_baits`) a Saliva slimy včetně louží.
+
+## Kde v kódu
+
+- `enemies.rs` → arm `Mimic`, `SalivaSlime`; všechny `MIMIC_*`.
+- `systems/mimic.rs` → `choose_attack`, `step`, `tick_mimic`, `set_charge`, `execute`, `spawn_bait`,
+  `tick_baits`, `clear_baits`; `MOUTH`, `FOOT`.
+- `components/skills.rs` → `MimicBoss`, `MimicStage`, `MimicAttack`, `Bait`, `Sealed`.
+- Ladění: `BANE_BOSS=mimic`, `BANE_MIMIC_ATTACK=hop|bite|spit|lure|rest`.
+
+## Nápady / chybí
+
+- Mimic se nespawnuje „jako truhla“ — rovnou je boss v boss místnosti. Přirozené rozšíření: mimic
+  převlečený za truhlu v Treasure místnosti, který se probudí při interakci.
+- Nemá lore ve `story.md` (jako jediný boss).
+- Rage nemění útoky; nabízí se např. dvojitý Hop nebo víc návnad.
+- Rest během rage by mohl léčit — dnes je to jen pauza s imunitou.
+- Spit a Lure sdílejí řádek animace 3.

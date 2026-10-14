@@ -1,0 +1,69 @@
+---
+title: Pet (vlk)
+description: Vlčí společník z perku Pet – sbírá předměty, kouše nepřátele a následuje hráče.
+---
+
+## Jak to funguje
+
+- Odemyká ho perk **Pet** (Offensive strom, poslední uzel). Pokud `perks.pet`, spawne se `prefabs::pet` na startovní pozici každého patra (`scenes/ingame.rs` → `build`) a také v lobby vedle hráče (`scenes/lobby.rs`).
+- Entita: `Pet`, `Path`, fyzikální tělo (`physics.add_pet`), 96×96 px, textura `ingame/wolf_pet.tga`, `GazeWind::above(150)`.
+- Pet **nemá zdraví** – nedá se zranit ani zabít.
+
+### Rozhodování (každý snímek)
+
+`pick_pet_targets` → `plan_pet_paths` → `steer_pets` → `pet_bites`:
+
+1. **Cíl** = `loot` (pickup) → jinak `enemy` → jinak **majitel**. Priorita je tedy **sbírání > útok > následování**.
+2. Nový loot / nepřítel se hledá v **čtverci 500×500 px** kolem peta (`in_area`, polovina `AREA`). Loot musí být použitelný (`can_use`), nesmí být zboží v obchodě ani umírající. Již zvolený loot se drží, dokud je do 500 px.
+3. Cesta se plánuje přes navigační mřížku (`find_path_around`), přeplánuje se, když se cíl pohne o víc než jednu buňku.
+4. Když cesta k lootu / nepříteli neexistuje, cíl se zapíše do `unreachable` a pet ho dál ignoruje.
+5. Při následování majitele: pokud je dál než **550 px** nebo nemá cestu, **teleportuje se** k majiteli (pokud tam nestojí nepřítel – pak jen varování v logu).
+
+### Pohyb
+
+| Situace | Rychlost |
+|---|---|
+| k lootu / nepříteli | 520 px/s |
+| k majiteli, do 100 px | 0 (stojí) |
+| k majiteli, 100–220 px | lineárně 0 → 430 px/s |
+| k majiteli, 220–550 px | 430 → 520 px/s (dohánění) |
+
+- Pod 40 px/s hraje animaci `IDLE`, jinak směrové animace `LEFT / RIGHT / TOP / BOTTOM` s hysterezí 1,4 (aby neblikal mezi směry).
+
+### Útok a sběr
+
+- `pet_bites`: když se pet překrývá s nepřítelem (ne `Spawning`, ne umírajícím), dá **1 damage** (`DamageSource::Bite`), cooldown **0,2 s** → 5 DPS.
+- `collect_items` počítá peta jako sběrače – co pet přejde, sebere hráč (mince do peněženky, munice do zbraní, lektvary hráči).
+- V lobby pet jen následuje (kousání ani sběr se tam nevolají).
+
+| Parametr | Hodnota |
+|---|---|
+| Velikost | 96×96 |
+| Damage | 1 / 0,2 s |
+| Rychlost | 520 (cíl), 430 (následování) |
+| Oblast vyhledávání | 500×500 px |
+| Teleport | nad 550 px od hráče |
+| Zastavení u hráče | 100 px |
+
+## Interakce
+
+- [Předměty](/docs/artefacts-items/items) – pet je druhý sběrač pickupů.
+- [Nepřátelé](/docs/enemies) – kousání, ignoruje spawnující.
+- [Progrese](/docs/progression) – perk Pet.
+- [Technika – navigace](/docs/tech) – `navigation.rs` (`find_path_around`, `corridor`, `CELL`).
+
+## Kde v kódu
+
+- `systems/pet.rs` → `pick_pet_targets`, `plan_pet_paths`, `steer_pets`, `pet_bites`, `follow_speed`, `teleport_to_owner`, konstanty `SPEED`, `AREA`, `TELEPORT_DISTANCE`, `STOP_DISTANCE`, `FOLLOW_SPEED`, `FOLLOW_RAMP`, `BITE_DAMAGE`, `BITE_COOLDOWN`
+- `components/pet.rs` → `Pet`
+- `prefabs/actors.rs` → `pet`, `PET_SIZE`
+- `sheets.rs` → modul `pet`
+- `systems/items.rs` → `collect_items` (sběrač `Pet`)
+
+## Nápady / chybí
+
+- **Priorita se liší od Java verze** (FEATURE.md: útok > sběr > následování). V Rustu pet nejdřív sbírá – v boji tak běhá pro mince místo útoku. Rozhodnout, co je chtěné.
+- `unreachable` se jen plní a nikdy nečistí (v rámci patra) – nepřítel, který byl chvíli za zdí, je pro peta navždy ignorován.
+- Damage 1 se neškáluje s patrem ani perky – v pozdních patrech je pet spíš sběrač.
+- story.md: vlk „sedí u portálu“ a Vědec o něm mluví nerad – v lobby žádné repliky ani speciální pozice (spawne se vedle hráče).
+- Nápady: upgrady peta (rychlost, damage), druhý pet typ (sběrač vs. bojovník), povel „zůstaň“.

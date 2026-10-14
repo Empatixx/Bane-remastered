@@ -1,0 +1,82 @@
+---
+title: Nepřátelské projektily
+description: Všechny druhy nepřátelských střel, jejich rychlost, damage, životnost a kdo je používá.
+---
+
+## Jak to funguje
+
+Nepřátelské střely jsou entity s `EnemyBullet`, vytvořené `prefabs::enemy_bullet` podle
+`ProjectileKind::spec()`:
+
+- **Rychlost** = `force / (šířka × výška) / 60` px/s (jednorázový impuls, bez tlumení).
+- **Damage** = `ContactDamage(1)` (`BULLET_DAMAGE`); bossové ho přepisují vlastní hodnotou přes
+  `spawn_rock`. Damage se neškáluje s patrem, jen s `RunRules.enemy_damage` (`toughen_enemies`).
+- **Životnost** = `Fuse` (pokud `lifetime` je `Some`); po vypršení se přehraje animace dopadu.
+- **Homing** = `Homing` komponenta (jen Eye watcher).
+- **Zánik**: `enemy_bullet_hits` — při dotyku zdi, hráče nebo pevného objektu (`Solid`) se střela zastaví
+  a přehraje dopad (řádek 1 sheetu). Damage hráči dává `contact_damage` (překryv), jako u nepřátel.
+- Střely projdou skrz ostatní nepřátele. V pavučinové ploše (`FloorPatch::Web`) zpomalují.
+- Každá střela svítí (`Light`) barvou ze specu.
+
+## Obsah
+
+| `ProjectileKind` | Velikost | Rychlost (px/s) | Damage | Životnost | Kdo |
+|---|--:|--:|--:|--:|---|
+| `Green` | 16 | 325 | 1 | do zdi | Slime (salva 5) |
+| `Red` | 16 | 325 | 1 | do zdi | Red slime (výbuch při smrti) |
+| `Purple` | 16 | 325 | 1 | do zdi | King slime (salva 25 + spirála) |
+| `EyeWatcher` | 48 | 253, naváděná | 1 | 5 s | Eye watcher |
+| `GolemRock` | 36 | 309 | 2 | 2,4 s | Golem (Slam), Ogre (Jump, Slam) |
+| `Boulder` | 64 | 252 | 2 | 3,2 s | Golem (Throw) |
+| `ArgusShot` | 36 | 334 | 1 | 4 s | Argus (Volley, Barrage) |
+| `Ember` | 54 | 194 | 1 | 3 s | Hellhound (Howl) |
+| `MimicCoin` | 38 | 346 | 2 | 1,8 s | Mimic (Hop) |
+| `MimicTooth` | 38 | 485 | 2 | 1,5 s | Mimic (Bite) |
+
+### Ostatní nepřátelské útoky (nejsou `ProjectileKind`)
+
+| Útok | Damage | Mechanika | Kdo |
+|---|--:|---|---|
+| Cobweb | 0 | letí 610 px/s s útlumem 1,5, zůstane ležet, zpomalí hráče na 50 % | Spider king |
+| Padající kámen | 2 | stín 0,7 s, dopad do čtverce 148 × 148 px | Golem (Rain) |
+| Laserový paprsek | 2 | paprsek 26 px, dosah 1100 px (do zdi) | Golem (Laser) |
+| Plamenný paprsek | 1 | 2–3 paprsky, dosah 1100 px | Hellhound (Breath) |
+| Magma | 2 přes armor | dlaždice u zdí, 16 s | Hellhound |
+| Bait (návnada) | 2 | past na zemi 9 s, sklapne do 34 px | Mimic (Lure) |
+| Toxický mrak | 1 | 1,4 s, zraňuje i nepřátele | Bloated spider |
+| Jedovatá stopa | 1 | 5 s, jen hráč | Snake |
+| Dopad skoku | dmg pavouka | dopad do 112 px | Stilt spider |
+
+Všechno kromě magmatu jde přes armor a dává hráči 1 s i-frames — paprsky a stopy proto reálně dávají
+damage nejvýš 1× za sekundu.
+
+## Interakce
+
+- [Zbraně](/docs/guns) — Midas mění nepřátelské střely na mince (`systems/midas.rs`).
+- [Hráč](/docs/player) — dodge chrání před dopady, paprsky a magmatem; i-frames.
+- [Dungeon](/docs/dungeon) — pavučinové plochy zpomalují i nepřátelské střely.
+
+## Kde v kódu
+
+- `enemies.rs` → `ProjectileKind`, `ProjectileSpec`, `slime_bullet`.
+- `prefabs/actors.rs` → `enemy_bullet`, `cobweb`, `BULLET_DAMAGE`.
+- `systems/skills.rs` → `enemy_bullet_hits`, `burn_fuses`, `steer_homing`, `impact`.
+- `systems/golem.rs` → `spawn_rock`, `drop_rock`, `draw_beam`.
+- `physics/groups.rs` → `ENEMY_BULLETS` (koliduje se zdmi, hráčem, objekty).
+
+## Jak přidat novou střelu
+
+1. Varianta v `ProjectileKind` + arm v `spec()`: textura (2 řádky — let a dopad), `frame`, `scale`,
+   `idle`/`impact` (snímky, čas), `light` [r, g, b, poloměr, intenzita], `force`, `homing`, `lifetime`.
+2. Textura do `assets.rs` a `assets/textures/ingame/`.
+3. Vystřel přes `prefabs::enemy_bullet` (damage 1) nebo `golem::spawn_rock` (vlastní damage);
+   nastav `RoomId`, aby se počítala k místnosti.
+
+## Nápady / chybí
+
+- Cobweby Spider kinga nemají životnost — leží až do smrti bosse a během dlouhého boje se hromadí.
+- Projektily nemají vlastní pole damage ve specu; rozdíl 1 vs. 2 je roztroušený po systémech bossů
+  (`GOLEM_ROCK_DAMAGE`, `MIMIC_SPLINTER_DAMAGE`, …). Sjednotit do `ProjectileSpec.damage`.
+- Zelená/červená/fialová střela jsou malé (16 px) a stejně rychlé — pro čitelnost by pomohlo odlišit je
+  velikostí nebo rychlostí podle nebezpečnosti.
+- Jediná naváděná střela je Eye watcherova; chybí další vzory (vlnovka, bumerang, štěpící se střela).

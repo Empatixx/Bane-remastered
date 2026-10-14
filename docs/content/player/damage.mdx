@@ -1,0 +1,144 @@
+---
+title: Model poškození
+description: Jak hráč dostává a rozdává poškození — brnění, imunita, Kevlar, štít, kritické zásahy, násobiče a stavové efekty.
+---
+
+## Jak to funguje
+
+Poškození je rozdělené na dvě cesty:
+
+- **hráč dostává** přes `hurt_player` / `hurt_player_through_armor` (`systems/damage.rs`),
+- **nepřátelé a rozbitné objekty dostávají** přes `deal(world, Damage)` — tu nikdy nevolej na hráče
+  (hlídá to `debug_assert`).
+
+### Hráč dostává poškození (`hurt`)
+
+Pořadí kroků:
+
+1. Má-li hráč `Invulnerable` → **nic se nestane** (vrací `false`).
+2. **Kevlar**: `Perks::damage_taken` — poškození × 0,9 (s talentem), useknuto na celé číslo, ale
+   **minimálně 1** (1 → 1, 3 → 2). Bez talentu × 1,0.
+3. **Štít** (`Shielded` z artefaktu *Shield Horn*): je-li přítomen, odebere se a poškození je 0.
+4. Je-li hráč už mrtvý (HP ≤ 0), konec.
+5. **Absorpce brněním** (`absorb`): brnění se sníží o celé poškození; co přeteče pod nulu, jde do HP.
+   Bez brnění jde vše do HP. HP se ořízne na 0.
+   - Varianta `through_armor` (láva, magma Hound bosse) jde **přímo do HP** a brnění ignoruje.
+6. Zvuk `Death` (HP 0) nebo `PlayerHurt`; při prvním poklesu pod 30 % max HP navíc `LowHealth`.
+7. Hráč dostane `Invulnerable` na **1,0 s** a `HitFlash` na 0,5 s.
+8. Statistika `Stat::Hurt` +1 (pro misi „Untouched“).
+
+<Callout type="warn">
+Imunita po zásahu přepíše i delší imunitu z úhybu (vloží se natvrdo 1,0 s) — v praxi to nevadí, protože
+během úhybu se k vložení vůbec nedojde.
+</Callout>
+
+### Zdroje poškození hráče
+
+| Zdroj | Poškození | Cesta | Poznámka |
+|-------|-----------|-------|----------|
+| Dotek nepřítele | `ContactDamage` dle druhu nepřítele | `contact_damage` | ignoruje nepřátele `Frozen` a `Spawning`; s `Phantom` se nepřátelé nepočítají |
+| Nepřátelský projektil | 1 (`BULLET_DAMAGE`) | `contact_damage` | projektil má `ContactDamage`; × `enemy_damage` výzvy |
+| Hroty (spike trap) | 1 | `contact_damage` | jen v „aktivních“ snímcích animace (`trap_is_armed`) |
+| Plamen (flame trap) | 1 | `contact_damage` | dtto |
+| Gejzír | 1 | `contact_damage` | |
+| Šíp z pasti | 1 | `tick_arrow_traps` | |
+| Výbuch sudu | 3 | `explode` | dosah = collider sudu + 128 × 96 |
+| Jedová louže | 1 | `tick_poison` | zraňuje každý snímek, efektivně 1 za sekundu díky imunitě |
+| Láva | 2, přes brnění | `burn_on_lava` | úhyb lávu přeletí |
+| Magma (Hound boss) | 2, přes brnění | `systems/magma.rs` | |
+| Golem — déšť kamenů | 2 | `systems/golem.rs` | |
+| Golem — laser | 2 | `systems/golem.rs` | úhyb laser přeletí |
+| Leaper — dopad skoku | `Leaper.damage` | `systems/leapers.rs` | × `enemy_damage` |
+| Mimic — návnada | 2 | `systems/mimic.rs` | |
+
+Detaily nepřátel viz [Nepřátelé](/docs/enemies), pasti a povrchy viz [Dungeon a svět](/docs/dungeon).
+
+Výzvy (`RunRules.enemy_damage`, např. *Horde* × 1,3) škálují `ContactDamage` nepřátel, jejich projektilů
+a skoků přes `toughen_enemies` — ne pasti, lávu ani výbuchy.
+
+### Hráč rozdává poškození
+
+Výpočet jednoho projektilu (`systems/shooting.rs` → `shoot`):
+
+1. Základ = `GunSpec::scaled_damage` (náhodně v rozsahu zbraně, včetně vylepšení ze stromu zbraní).
+2. × `Perks.damage_scales[0]` (*Sharpened Bullets* 1,2, vždy; výzva *Glass Cannon* to násobí 2 → 2,4),
+   **useknout** na celé číslo,
+3. × `damage_scales[1]` (*Dangerous Bullets* 1,25), useknout,
+4. **kritický zásah** × 2,
+5. **přepad ze zálohy** × 2 — výstřel z neviditelnosti (*Phantom Cloak*); výstřel neviditelnost zruší.
+
+**Šance na kritický zásah** = 10 % z talentu *Critical Hit* + `crit_chance` zbraně (Sniper 20 %) +
+bonus ze stromu zbraní. Vylepšení zbraně *Deadeye* dělá kritickým každý pátý výstřel. Hod na kritický
+zásah (`ShotRoll.critical`) je **jeden na výstřel**, takže u brokovnice jsou kritické buď všechny broky,
+nebo žádný.
+
+Zásah nepřítele (`deal`): odečte HP (min. 0), u zdroje `Bullet` přičte `Stat::Hit`, zobrazí létající
+číslo (ne u rozbitných objektů) a bílý záblesk (ne u jedu). Cíle se `Sealed` jsou imunní. Výbuchy,
+plazma a řetězový blesk dávají poloviční poškození (min. 1) — viz [Zbraně](/docs/guns).
+
+### Stavové efekty na hráči
+
+| Komponenta | Původ | Účinek | Trvání |
+|------------|-------|--------|--------|
+| `Invulnerable` | zásah, úhyb | ignoruje všechna poškození | 1,0 s / 0,36 s |
+| `HitFlash` | zásah | záblesk spritu | 0,5 s |
+| `Frozen` | mrazivý sud v dosahu | nelze chodit, střílet ani uhnout (hráč jen dojíždí) | 1,5 s (`FROST_PLAYER_SECONDS`) |
+| `Poisoned` | stojí v jedové louži | zelený obrys; zranění řeší louže | dokud stojí v louži |
+| `Shielded` | *Shield Horn* | další zásah = 0 | do prvního zásahu |
+| `Berserk` | *Berserk Pot* | rychlost × 1,3 | 15 s |
+| `Phantom` | *Phantom Cloak* | nepřátelé ho nevidí (nedotýkají se, homing nemíří), 1. výstřel × 2 | 5 s nebo do výstřelu |
+| `TimeSlow` | *Hourglass of Ash* | „nepřátelský“ čas × 0,35 | 6 s |
+| `Bloodlust` | *Blood Chalice* | léčení za zabití (chalice zároveň hned vyléčí 50 % přes `HealPercent`) | 10 s |
+| `InfiniteAmmo` | *Infinity Quiver* | nekonečná munice, žádné přebíjení | 8 s |
+| `MidasTouch` | *Midas Coin* | mince za zabití | 6 s |
+
+Artefakty podrobně: [Artefakty a předměty](/docs/artefacts-items).
+
+### Léčení a obnova
+
+- Lektvar HP / brnění: malý +1, velký +4 (do maxima; nelze sebrat při plném stavu).
+- *Armor Regeneration*: +1 brnění po vyčištění místnosti (`RoomEvent::RoomCleared`); výzva *Bane* ji vypíná.
+- *Armor Refill*, *Blood Chalice* (`CHALICE_HEAL` = 0,5) a další artefakty.
+- Mezi patry se nic neobnovuje.
+
+### Smrt
+
+`player_is_dead` (HP ≤ 0) v `InGameScene::update` spustí death screen. Mrtvý hráč se nehýbe, nestřílí a
+nemůže uhnout. Pauza nabízí volbu *Die* (okamžitý konec běhu).
+
+## Interakce
+
+- Talenty *Kevlar*, *Critical Hit*, *Sharpened/Dangerous Bullets*, *Hero's/Titan's Heart*, *Improved Armor*:
+  [Talenty](/docs/player/upgrades).
+- Viněta a záblesk na obrazovce: [HUD](/docs/player/hud).
+
+## Kde v kódu
+
+- `systems/damage.rs` → `hurt`, `hurt_player`, `hurt_player_through_armor`, `absorb`, `deal`, `Damage`,
+  `DamageSource`, `contact_damage`, `tick_invulnerability`, `player_is_low_on_health`, `player_is_dead`
+- `upgrades.rs` → `Perks::damage_taken`, `bullet_damage`, `crit_chance`, `CRIT_CHANCE`
+- `systems/shooting.rs` → `shoot`, `ShotRoll`, `AMBUSH_MULTIPLIER`
+- `systems/objects.rs` → `explode`, `freeze_around`, `tick_poison`, `tick_frozen`
+- `systems/rules.rs` → `toughen_enemies`
+- `objects.rs` → `EXPLOSION_DAMAGE`, `POISON_DAMAGE`, `FROST_PLAYER_SECONDS`
+
+## Jak přidat nový zdroj poškození hráče
+
+1. Najdi hráče (`query::<Entity>().with::<&Player>()`) a zavolej `hurt_player(world, player, dmg, sounds)`
+   (nebo `hurt_player_through_armor` pro „pravé“ poškození). **Nikdy** neměň `Health` hráče přímo —
+   obešel bys imunitu, Kevlar, štít, zvuky i statistiku.
+2. Pokud má zdroj škálovat s výzvami, dej mu `ContactDamage` a nech ho projít `toughen_enemies`, nebo
+   vynásob `rules.enemy_damage` sám.
+3. Má-li ho úhyb přeletět, i když nejde přes imunitu (např. plošný efekt), vynech entity s `Dodge`.
+4. Chceš-li vinětu „hit“, vrať z funkce `bool` a nastav `self.hit = true` v `InGameScene` (jako `contact_damage`).
+
+## Nápady / chybí
+
+- **Štít a statistika:** zásah zablokovaný štítem (`Shielded`) stále přehraje `PlayerHurt`, dá 1 s imunity
+  a započítá `Stat::Hurt` — hráč tak přijde o „Untouched“ patro, i když neztratil nic.
+- **Viněta zásahu** (`hit`) se spouští jen z `contact_damage` a lávy; výbuchy, jed, golem, leapeři a mimic
+  hráče zraní bez rudého záblesku obrazovky.
+- Hráč nemá žádné poškození jako číslo nad hlavou (nepřátelé ano).
+- Chybí stavové efekty *na hráči* typu hoření, krvácení, zpomalení střelby; jed je jen „stojíš v louži“.
+- Crit sdílený pro všechny broky — buď záměr (silné „jackpot“ výstřely), nebo přesunout hod do smyčky pelet.
+- `DamageSource` rozlišuje zdroje jen pro nepřátele (`Bite` = mazlíček a vyvolané bytosti); `hurt_player` zdroj nezná, takže nejde dělat odolnosti typu „imunní vůči jedu“.

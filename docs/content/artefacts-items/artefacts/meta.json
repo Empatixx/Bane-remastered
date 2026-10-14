@@ -1,0 +1,20 @@
+{
+  "title": "Artefakty",
+  "icon": "Sparkles",
+  "pages": [
+    "index",
+    "reveal-map",
+    "ring-of-death",
+    "armor-refill",
+    "shield-horn",
+    "berserk-pot",
+    "hourglass-of-ash",
+    "blood-chalice",
+    "phantom-cloak",
+    "grave-lantern",
+    "midas-coin",
+    "thunder-idol",
+    "infinity-quiver",
+    "bone-turret"
+  ]
+}

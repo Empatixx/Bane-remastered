@@ -1,0 +1,101 @@
+---
+title: Loadout a munice
+description: Sloty na zbraně, přepínání, zahazování a sbírání, zásobník a rezerva, přebíjení, krabice s municí a omezení výzev.
+---
+
+## Jak to funguje
+
+### Sloty
+
+`Loadout` je komponenta hráče: seznam slotů `Vec<Option<Weapon>>`, index aktuálního slotu, `ammo_scale`, `WeaponMods` a volitelné omezení `only`.
+
+- Start runu: `Loadout::starting()` = 2 sloty (`STARTING_SLOTS`), Pistol a Shotgun, aktivní Pistol.
+- Upgrade *Additional Gun* přidá 1 slot (`apply_perks(extra_slots, …)`) → 3 sloty.
+- Každý slot drží vlastní instanci `Weapon` s vlastním zásobníkem, rezervou, cooldownem, přebíjením, dávkou a počítadlem výstřelů.
+
+### Ovládání
+
+| Akce | Klávesa | Funkce |
+| --- | --- | --- |
+| Přepnout na slot | 1–9 | `switch_to` (jen existující a jiný slot; zvuk `SwitchGun`) |
+| Další / předchozí slot | kolečko myši | `next` / `previous` (dokola, včetně prázdných slotů) |
+| Přebít | R (`Action::Reload`, přenastavitelné) | `start_reload` |
+| Zahodit | Q (`Action::DropGun`) | `drop_gun` — zbraň letí směrem k myši 320 px/s a brzdí |
+| Sebrat | E (interakce `PickUpGun`) | `pick_up_gun` |
+
+### Sebrání zbraně
+
+`Loadout::add`:
+
+1. Zbrani se nastaví `ammo_scale` a bonusy stromu (`upgrade`).
+2. Jsou-li všechny sloty plné, aktuální zbraň se vyhodí (padne hráči pod nohy) a nová zaujme její místo.
+3. Je-li aktuální slot prázdný, nová jde do něj; jinak do prvního volného.
+
+Sebraná zbraň si nese svůj stav (zahozená Pistol s 1 nábojem bude mít po sebrání pořád 1 náboj). Sebrání se počítá do statistiky předmětů.
+
+### Zásobník, rezerva a přebíjení
+
+- `clip` — náboje v zásobníku, `ammo` — rezerva. Nová zbraň má obojí plné.
+- `max_ammo = spec.max_ammo × ammo_scale` (upgrade *Additional Ammo* = ×1,1).
+- `start_reload` jde jen když: neběží dávka, nepřebíjí se, rezerva je větší než 0, zásobník není plný. Po `reload_time` (`advance`) se doplní `min(chybějící, rezerva)`.
+- Přebíjení i cooldown tiká jen u **aktuální** zbraně. Automatické přebití neexistuje.
+- HUD (`systems/hud.rs`) ukazuje ikonu zbraně (`GunIcon`), text „zásobník/rezerva“ (`AmmoText`, např. „7/120“) a náboje zásobníku jako „pipy“ podle `ClipStyle` (`pip_layout`): Pistol = jeden sloupec, Shotgun = jeden sloupec brokových nábojů, SubMachine = dva sloupce. Maximálně 40 pipů (`MAX_CLIP`).
+
+### Krabice s municí
+
+| Krabice | Doplní | Zbraně |
+| --- | --- | --- |
+| `AmmoBox::Pistol` | 10 % max. rezervy | všechny kromě Shotgunu (`AmmoClass::Pistol`) |
+| `AmmoBox::SubMachine` | 10 % | totéž co Pistol |
+| `AmmoBox::Shotgun` | 25 % | jen Shotgun |
+| `AmmoBox::Universal` | 50 % | všechny |
+
+Krabice doplní **každou** odpovídající zbraň v loadoutu (`add_ammo`), rezerva nepřeteče maximum. Krabici nejde sebrat, pokud žádná odpovídající zbraň nemá rezervu neplnou (`wants_ammo`). Universal se prodává v obchodě a padá z hracího automatu.
+
+### Nekonečná munice
+
+Artefakt Infinity Quiver přidá `InfiniteAmmo` na 8 s: zásobník neubývá, střílí se i z prázdného, přebíjení se zruší a R nic nedělá. Pipy v HUD se třpytí zlatě, text munice zmizí a místo něj se ukáže značka nekonečna (`InfinityMark`).
+
+### Omezení zbraní (výzvy)
+
+`RunRules::only_gun` → `Perks::only_gun` → `Loadout::restrict`. Výzva **Pistol Only** („No gun but the pistol. Reach floor 3“):
+
+- ze startovního loadoutu zmizí vše kromě Pistole,
+- `unused_gun` nevrátí žádnou zbraň → truhly, obchod ani automat zbraně nenabídnou,
+- `accepts_ammo` / `common_drop` převádí padající krabice na typ, který povolená zbraň bere.
+
+### Přenos mezi patry
+
+`systems/carry.rs` uloží při přechodu patra celý `Loadout` (klon) spolu se zdravím, brněním, peněženkou, artefaktem a statistikami a v novém patře ho obnoví.
+
+## Interakce
+
+- [Hráč](/docs/player) — `Loadout` je součástí prefabu hráče.
+- [Progrese](/docs/progression) — upgrady *Additional Gun*, *Additional Ammo*; výzvy a `RunRules`.
+- [Artefakty a předměty](/docs/artefacts-items) — krabice s municí, Infinity Quiver.
+- [Získávání zbraní](/docs/guns/ziskavani).
+
+## Kde v kódu
+
+- `components/combat.rs` → `Loadout` (`starting`, `restrict`, `allows`, `apply_perks`, `apply_weapon_mods`, `fresh`, `add`, `drop_current`, `switch_to`, `next`, `previous`, `add_ammo`, `wants_ammo`, `accepts_ammo`), `Weapon` (`new`, `scaled`, `max_ammo`, `start_reload`, `advance`, `add_percent`, `upgrade`), `GunDrop`
+- `systems/loadout.rs` → `switch_guns`, `drop_gun`, `pick_up_gun`, `fresh_weapon`, `SLOT_KEYS`, `DROP_SPEED`
+- `systems/perks.rs` → `apply_floor_perks`, `apply_weapon_mods`
+- `items.rs` → `AmmoBox`, `AmmoBox::percent`
+- `systems/items.rs` → `common_drop`, `can_use`
+- `systems/hud.rs`, `guns.rs` → `pip_layout`, `PIP_SIZE`, `MAX_CLIP`
+- `systems/carry.rs` → `carried_stats`, `restore_stats`
+- `rules.rs`, `progress/challenges.rs` → `only_gun`
+
+## Jak přidat novou třídu munice
+
+1. `guns.rs`: varianta v `AmmoClass` a pravidlo v `GunKind::ammo_class`.
+2. `items.rs`: varianta v `AmmoBox`, procento v `percent`, vzhled v `ItemKind::spec`, zařazení do `ItemKind::COMMON` (padání).
+3. `components/combat.rs`: větev v `Loadout::takes` a `accepts_ammo`.
+4. `systems/items.rs` → `common_drop`: náhradní krabice při omezení výzvou.
+
+## Nápady / chybí
+
+- Klávesy 1–9 jsou připravené, ale slotů jsou max. 3.
+- `AmmoBox::SubMachine` je duplicita `AmmoBox::Pistol`; energetické zbraně a raketomet nemají vlastní munici.
+- Žádné auto-reload ani „přebíjení na pozadí“ neaktivních zbraní; hráč snadno zapomene přebít.
+- Kolečko projíždí i prázdné sloty.

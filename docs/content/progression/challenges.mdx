@@ -1,0 +1,55 @@
+---
+title: Challenge
+description: Šest volitelných modifikátorů runu, které se vybírají na Quest boardu a jednorázově platí talenty.
+---
+
+## Jak to funguje
+
+- Challenge se vybírá na Quest boardu (záložka **Challenges**) kliknutím na lístek. Klik na už vybranou ji zruší, klik na jinou ji přepne (`ProgressState::toggle`). Aktivní může být **jen jedna**; lístek má zelený nápis „Active“.
+- Výběr se ukládá do profilu (`selected`) a **platí pro všechny další runy**, dokud ho hráč nezruší.
+- Vybraná challenge **obarví portál** v lobby svou barvou (`accent`) — tint sprite i světla (`systems::tint_portal`).
+- Na začátku runu se z ní vezmou `RunRules` — viz [Pravidla runu](/docs/progression/rules).
+- Na konci runu (`finish_run`): pokud challenge ještě nebyla splněna a hráč dosáhl cíle, přidá se do `completed` a hráč dostane talenty **jednou za celý profil**. Death screen ukáže „`<Title>` complete! +N talents“.
+- Cíl (`reached`): pokud `target_floor ≥ FINAL_FLOOR` (5), je potřeba **vítězství**; jinak stačí dosáhnout patra `target_floor` (i když hráč na něm zemře).
+- Splněnou challenge lze vybrat a hrát znovu, jen už nic neplatí (na lístku zmizí odměna).
+
+## Obsah
+
+| Id (`ChallengeId`) | Název | Popis ve hře | Pravidla | Cíl | Odměna | Barva portálu (RGB) |
+|---|---|---|---|---|---|---|
+| `glass_cannon` | Glass Cannon | One heart, double damage. Reach floor 3 | max HP = 1, damage hráče ×2 | patro 3 | **4** | 255, 70, 70 |
+| `pistol_only` | Pistol Only | No gun but the pistol. Reach floor 3 | jen `GunKind::Pistol` | patro 3 | **3** | 230, 200, 90 |
+| `horde` | Horde | Tougher, harder hitting enemies. Reach floor 4 | HP nepřátel ×1,6, damage nepřátel ×1,3 | patro 4 | **4** | 90, 200, 90 |
+| `merchants_strike` | Merchant's Strike | No shops. Reach floor 4 | žádný obchod | patro 4 | **3** | 90, 160, 255 |
+| `two_left_feet` | Two Left Feet | No dodging. Reach floor 3 | úskok vypnut | patro 3 | **3** | 255, 150, 40 |
+| `bane` | Bane | Horde without armor regen. Beat the last boss | Horde + bez regenerace armoru | **vítězství** (patro 5) | **6** | 200, 30, 30 |
+
+Celkem lze z challenge získat **23 talentů**.
+
+## Interakce
+
+- UI: [Quest board](/docs/progression/quest-board).
+- Efekty pravidel: [Pravidla runu](/docs/progression/rules), úskok a HP: [Hráč](/docs/player), pistole: [Zbraně](/docs/guns/pistol).
+- Příběhově je challenge **Bane** klíčová — podle `story.md` je jejím splněním podmíněn pravý konec ([Příběh](/docs/progression/story)).
+
+## Kde v kódu
+
+- `progress/challenges.rs` → `ChallengeId`, `Challenge`, `spec()`, `reached()`, konstanty `HORDE`, `NEUTRAL`
+- `progress/state.rs` → `ProgressState::toggle`, `rules`, `accent`, `finish_run`, `completed`
+- `profile.rs` → `SharedProfile::toggle_challenge`, `rules`, `challenge`, `accent`
+- `systems/portal.rs` → `tint_portal`
+- `scenes/ingame.rs` → `start_run` (čte `rules` a `challenge`), `progress_note`
+
+## Jak přidat novou challenge
+
+1. Přidat variantu do `ChallengeId` (serde `snake_case`) a do `ChallengeId::ALL` — pořadí v `ALL` = pořadí lístků na boardu (index kliknutí se mapuje přes `ALL`).
+2. Doplnit větev v `spec()`: titul, popis, `target_floor` (2..=`FINAL_FLOOR`), odměna (větší než 0), barva, `RunRules` (musí se lišit od výchozích — hlídá test).
+3. Pokud potřebuje nové pravidlo, nejdřív ho přidat do `RunRules` ([postup](/docs/progression/rules)).
+4. Board má 3 sloupce, lístky se skládají do řádků po 3 (`COLUMNS`) — 7. a další challenge přidá třetí řádek; ověřit, že se vejde do panelu.
+
+## Nápady / chybí
+
+- Lze mít aktivní jen jednu challenge — kombinace (Heat systém à la Hades, kde se modifikátory sčítají a násobí odměnu) by dala mnohem víc replay hodnoty.
+- Popisy challenge jsou mechanické; `story.md` navrhuje přepsat je jako Vědcovy poznámky (např. Horde: „I fed it a little. Let us see what grew.“).
+- Splnění challenge **Bane** nemá žádný příběhový dopad (pravý konec neexistuje).
+- Nápady na další challenge: „No Artefacts“, „Speedrun“ (časový limit na patro), „Bullet Sponge“ (nepřátelé ×3 HP, hráč ×2 damage), „Poverty“ (žádné coins z nepřátel), „One Gun“ (zbraň nejde měnit — zvednutá první zůstane).

@@ -1,0 +1,136 @@
+---
+title: Šablony místností
+description: Formát JSON šablon, validační pravidla a seznam všech 23 vestavěných šablon.
+---
+
+## Jak to funguje
+
+Každá místnost patra je vyřezaná podle ručně kreslené **šablony** – ASCII mřížky v JSON
+souboru v `rust/assets/rooms/`. Šablony se kompilují do binárky (`include_str!` v poli
+`BUILT_IN` v `dungeon/template.rs`) a při generování se pro každou místnost losuje jedna
+šablona jejího typu (`Templates::pick`, proud `Map`).
+
+Formát:
+
+```json
+{
+  "name": "normal_05",
+  "kind": "Normal",
+  "rows": [
+    "##########DD##########",
+    "#....##........##....#",
+    "#..E.##........##....#",
+    "D........E....E......D",
+    "..."
+  ]
+}
+```
+
+| Symbol | Význam |
+|---|---|
+| `#` | zeď |
+| `.` | podlaha |
+| `E` | podlaha + **spawn bod nepřítele** |
+| `D` | slot dveří (otevře se jen, když na té straně vede chodba) |
+
+Validace (`RoomTemplate::parse` + `check_borders`), jinak hra odmítne start:
+
+- Počet řádků **sudý** a 10–30, počet sloupců **sudý** a 16–44; všechny řádky stejně dlouhé.
+- Celý okraj je zeď, kromě **přesně dvou** prostředních dlaždic na každé straně, které musí
+  být `D` (`door_columns` = `columns/2 - 1`, `columns/2`; obdobně `door_rows`). Jinde `D` být nesmí.
+- Každý `RoomKind` musí mít aspoň jednu šablonu.
+
+Pravidla hlídaná testy (`dungeon/template.rs`, `mod tests`):
+
+- Každá Normal šablona má **aspoň 6 spawnů** a plochu aspoň 300 dlaždic.
+- Aspoň jedna Normal šablona je velká alespoň 36×22.
+- Spawn nesmí být blíž než 3 dlaždice ode dveří.
+- Žádný průchod široký jen 1 dlaždici (podlaha nesmí mít zeď z obou protilehlých stran).
+- Ambush šablony (aspoň 3) mají plochu aspoň 32×22 a aspoň 16 spawnů.
+- Šablony musí dohromady pokrýt aspoň 12 různých rozměrů.
+- Každá zeď každé šablony musí dostat v tilesetu pevnou (solid) dlaždici.
+
+Spawn body se nepoužijí všechny: při vstupu se zamíchají a vezme se jich tolik, kolik dovolí
+limit nepřátel (viz [Typy místností](/docs/dungeon/rooms)). Na spawn bodech se zároveň
+nesmí objevit dekorace ani kapalina.
+
+## Obsah
+
+Všech 23 vestavěných šablon. *Vnitřní zdi* = počet `#` uvnitř obvodu (překážky/sloupy).
+*Nepřátel* = kolik jich reálně spawne v jedné vlně (limit `plocha / 100`, sevřený do 5–12,
+u Ambush 70 % limitu, min 4).
+
+| Šablona | Typ | Rozměr (sl × ř) | Podlaha | Spawnů | Vnitřní zdi | Nepřátel / vlna | Vln |
+|---|---|---|---|---|---|---|---|
+| `start` | Start | 20 × 16 | 252 | 0 | 0 | – | – |
+| `normal_05` | Normal | 22 × 14 | 208 | 6 | 32 | 5 | 1 |
+| `normal_06` | Normal | 24 × 16 | 284 | 8 | 24 | 5 | 1 |
+| `normal_07` | Normal | 24 × 14 | 208 | 7 | 56 | 5 | 1 |
+| `normal_08` | Normal | 26 × 16 | 300 | 8 | 36 | 5 | 1 |
+| `normal_09` | Normal | 28 × 20 | 444 | 10 | 24 | 5 | 1 |
+| `normal_10` | Normal | 28 × 16 | 332 | 8 | 32 | 5 | 1 |
+| `normal_11` | Normal | 22 × 18 | 284 | 8 | 36 | 5 | 1 |
+| `normal_13` | Normal | 26 × 20 | 360 | 9 | 72 | 5 | 1 |
+| `normal_16` | Normal | 24 × 18 | 240 | 8 | 112 | 5 | 1 |
+| `normal_17` | Normal | 30 × 20 | 456 | 20 | 48 | 6 | 1 |
+| `normal_18` | Normal | 34 × 22 | 584 | 20 | 56 | 7 | 1 |
+| `normal_19` | Normal | 38 × 24 | 720 | 24 | 72 | 9 | 1 |
+| `normal_20` | Normal | 28 × 18 | 372 | 20 | 44 | 5 | 1 |
+| `normal_21` | Normal | 32 × 20 | 492 | 20 | 48 | 6 | 1 |
+| `normal_22` | Normal | 36 × 22 | 624 | 24 | 56 | 7 | 1 |
+| `ambush_01` | Ambush | 34 × 22 | 592 | 24 | 48 | 5 | 3 |
+| `ambush_02` | Ambush | 38 × 24 | 728 | 28 | 64 | 7 | 3 |
+| `ambush_03` | Ambush | 32 × 22 | 548 | 24 | 52 | 5 | 3 |
+| `treasure` | Treasure | 20 × 16 | 236 | 0 | 16 (4 sloupy 2×2) | – | – |
+| `shop` | Shop | 20 × 16 | 252 | 0 | 0 | – | – |
+| `sacrifice` | Sacrifice | 20 × 16 | 236 | 0 | 16 (4 sloupy 2×2) | – | – |
+| `boss` | Boss | 20 × 16 | 252 | 0 | 0 | boss | 1 |
+
+Všechny speciální místnosti (Start, Shop, Treasure, Sacrifice, Boss) mají jednotný rozměr
+20 × 16 – jejich fixtury jsou rozmístěné v pixelech vůči tomuto rámu
+(`furnish.rs`; konstanta `BANE_ROWS = 15` odpovídá výšce Java místností a posouvá fixtury Sacrifice o půl dlaždice).
+
+## Interakce
+
+- [Generování](/docs/dungeon/generation) – šířka sloupce/řádku buněk se řídí největší šablonou.
+- [Dekorace](/docs/dungeon/decor) – dekorace hledají místa podle zdí šablony (čela zdí, volná podlaha).
+- [Nepřátelé](/docs/enemies) – spawn body `E` určují, kde se objeví nepřátelé.
+
+## Kde v kódu
+
+- `dungeon/template.rs` – `RoomKind`, `Cell`, `RoomTemplate::parse`, `check_borders`,
+  `door_columns`, `door_rows`, `BUILT_IN`, `Templates`
+- `rust/assets/rooms/*.json` – data šablon
+- `systems/rooms.rs` – `enemy_limit`, `wave_plan`, `spawn_wave`
+
+## Jak přidat nový …
+
+**Nová šablona místnosti**
+
+1. Zkopíruj podobnou šablonu v `rust/assets/rooms/`, pojmenuj ji (`normal_23.json`), nastav
+   `name` a `kind` (`Start`, `Normal`, `Treasure`, `Shop`, `Boss`, `Sacrifice`, `Ambush`).
+2. Dodrž sudé rozměry v mezích, zeď po obvodu a dvojici `D` uprostřed každé strany.
+3. Rozmísti `E` (Normal aspoň 6, Ambush aspoň 16), ne blíž než 3 dlaždice ke dveřím.
+   Nedělej chodbičky široké 1 dlaždici.
+4. Přidej `include_str!("../../../assets/rooms/normal_23.json")` do `BUILT_IN` a zvyš délku
+   pole (`[&str; 24]`).
+5. Spusť `cargo test` – testy šablon odhalí porušená pravidla. Pro rychlou kontrolu
+   v hře nastav `BANE_SEED` a projdi patro.
+
+<Callout type="warn">
+Speciální místnosti (Shop, Treasure, Sacrifice, Start) mají fixtury rozmístěné natvrdo
+v pixelech pro rám 20 × 16. Jiný rozměr šablony těchto typů rozbije rozmístění nábytku.
+</Callout>
+
+## Nápady / chybí
+
+- Číslování Normal šablon má díry (chybí `normal_01`–`04`, `12`, `14`, `15`) – buď smazané,
+  nebo neportované z Javy.
+- Jediná Boss šablona – prázdná 20 × 16 aréna bez krytů. Bossové s různými mechanikami
+  (Golem, Ogre, Hellhound) by si zasloužili vlastní arény, případně větší.
+- Jen 1 šablona pro Start/Shop/Treasure/Sacrifice → tyto místnosti vypadají každé patro stejně.
+- Šablony nerozlišují téma – žádné tematické varianty (např. vodní kanály pro Sewer).
+- Spawn body nemají typ (např. „jen létající“, „boss“, „elite“); ani formát neumí umístit
+  pevné objekty/pasti – vše ostatní je náhodné.
+- Normal místnosti s 20+ spawny (`normal_17`–`22`) využijí jen 5–9 z nich; limit 12 se
+  s dnešními šablonami nikdy nedosáhne (maximum je 9).

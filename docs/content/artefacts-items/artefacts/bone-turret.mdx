@@ -1,0 +1,41 @@
+---
+title: Bone Turret
+description: Postaví kostěnou věž, která 12 sekund střílí na nejbližší nepřátele.
+---
+
+## Jak to funguje
+
+- Aktivace vloží `PlaceTurret`; `spawn_summons` vytvoří věž na pozici hráče + (0, 24) px (u nohou).
+- Životní cyklus (`TurretStage`):
+  1. **Rising** – 0,5 s animace vyrůstání (`turret::RISE`),
+  2. **Active** – 12 s; každý snímek hledá nejbližšího živého nepřítele do **600 px** od hlavně, natočí se (5 řad míření po 45° od „dolů“ po „nahoru“, zrcadlení pro levou stranu) a když je cooldown 0, vystřelí,
+  3. **Crumbling** – 0,6 s animace rozpadu, pak zmizí.
+- Střela: `Bullet::plain(2)`, rychlost 700, textura `ARTEFACTS_BONE_SHARD`, spawn 40 px před hlavní; označená `Summoned` → zásah se počítá jako `DamageSource::Summoned`.
+- Věž nemá tělo ani zdraví – nedá se zničit, nepřátelé ji ignorují.
+
+| Parametr | Hodnota |
+|---|---|
+| Život | 12 s aktivně (+ 0,5 s rise + 0,6 s crumble) |
+| Dosah | 600 px |
+| Cooldown | 0,35 s (≈ 5,7 DPS) |
+| Damage | 2 |
+| Rychlost střely | 700 px/s |
+| Velikost | 120×120 |
+| Recoil animace | 0,15 s |
+
+## Interakce
+
+- [Nepřátelé](/docs/enemies) – cílí jen na nepřátele, kteří nespawnují a nemají `Expiring`.
+- Střely nejsou ovlivněny perky hráče.
+
+## Kde v kódu
+
+- `systems/summons.rs` → `spawn_turret`, `tick_turrets`, `aim_row`, `fire`, konstanty `TURRET_*`
+- `components/summons.rs` → `Turret`, `TurretStage`, `Summoned`
+- `sheets.rs` → modul `turret` (`RISE_SECONDS`, `CRUMBLE_SECONDS`, `RECOIL_SECONDS`, `AIM_ROWS`)
+
+## Nápady / chybí
+
+- Věž nekontroluje přímou viditelnost – střílí přes zdi (střely se o zeď rozbijí).
+- Žádný zvuk výstřelu.
+- Nepřátelé by na ni mohli útočit (taunt) – dalo by to artefaktu taktickou hloubku.

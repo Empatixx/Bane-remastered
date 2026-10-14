@@ -1,0 +1,160 @@
+---
+title: Typy místností
+description: Sedm typů místností, jejich účel, zařízení, boj za zavřenými mřížemi, vlny a odměny.
+---
+
+## Jak to funguje
+
+### Stavový automat místnosti
+
+`RoomRuntime` (`systems/rooms.rs`) drží pro každou místnost stav:
+
+| Stav | Význam |
+|---|---|
+| `Unvisited` | hráč ještě nebyl dost hluboko uvnitř |
+| `Fighting(Fight)` | mříže zavřené, běží vlny |
+| `Cleared` | hotovo, dveře volné |
+
+- **Vstup**: místnost se aktivuje, až když je hráč aspoň `ENTER_MARGIN = 2` dlaždice od
+  okraje (aby mříže nespadly hráči na hlavu ve dveřích). Pro minimapu se místnost označí
+  jako navštívená už při vstupu na kteroukoli její dlaždici.
+- **Boj** nastane u Boss a u Normal/Ambush s aspoň jedním spawn bodem. Ostatní typy
+  přejdou rovnou do `Cleared`.
+- Při boji se na **každou dlaždici dveří** (2 na dveře) spawne mříž (`prefabs::gate`) se
+  statickým colliderem a animací zavření.
+- Každý snímek se počítají žijící nepřátelé s `RoomId` této místnosti (bez `Expiring`).
+  Když je 0: pokud zbývá vlna, za `WAVE_DELAY = 1.5 s` přijde další; jinak se odstraní
+  collidery mříží, přehraje animace otevření a místnost je `Cleared`.
+- Čas vln běží v „hostile“ čase (`time_scale`), takže zpomalení času zpomalí i pauzu mezi vlnami.
+
+### Počet nepřátel
+
+```
+enemy_limit = clamp(columns × rows / 100, 5, 12)
+Normal: 1 vlna × enemy_limit
+Ambush: 3 vlny × max(ceil(enemy_limit × 0.7), 4), nejvýše enemy_limit
+Boss:   1 boss uprostřed místnosti
+```
+
+Spawn body se zamíchají (Fisher–Yates z proudu `Map`) a vezme se prvních N. Každý spawn
+losuje typ nepřítele `enemies::pick(floor, theme, rng)` – mimo bosse a summonů, podle patra
+a tématu. Viz [Nepřátelé](/docs/enemies).
+
+### Události (`RoomEvent`)
+
+| Událost | Kdy | Reakce (`InGameScene::handle_room_events`) |
+|---|---|---|
+| `BossEntered` | vstup do Boss | hudba `Soundtrack::Boss` |
+| `WaveStarted` | start vlny (jen pokud vln je víc než 1) | plovoucí banner vlny |
+| `RoomCleared` | jakákoli bojová místnost vyčištěna | perk *Armor Regeneration*: +1 brnění |
+| `AmbushCleared` | Ambush vyčištěn | **zbraňová truhla** blízko středu (`chest_spot`) |
+| `ShopEntered` | vstup do Shop | obchodník řekne „Welcome to my shop!“ |
+| `BossDefeated` | boss mrtvý | otřes kamery, hudba zpět, **artefaktová truhla**, **žebřík** (nebo vítězství na patře 5) |
+
+## Obsah
+
+### Start
+- Šablona `start`, 20 × 16, bez nepřátel a bez dekorací.
+- Na podlaze jsou animované **nápovědy kláves** (`FixtureKind::Key` + `Label`):
+  Q „Drop gun“, E „Interact“, F „Use artefact“, 1 „Switch slot 1“, 2 „Switch slot 2“,
+  WASD „Movement“, mezerník „Dodge“.
+- Hráč se objeví na volné dlaždici co nejblíž středu.
+
+### Normal
+- 5 na patře, 15 šablon. Účel: boj a zdroj mincí/munice.
+- 1 vlna, 5–9 nepřátel podle velikosti šablony.
+- Dekorace: 2–5 pochodní (2 + 1 za každých 180 dlaždic plochy), 2 prapory, pavučiny podle
+  tématu, 2 hromádky kostí, bodce, pasti a sudy podle `TrapMix`; v tematických patrech
+  i kapaliny na podlaze.
+
+### Ambush
+- 1–2 na patře, slepý konec, 3 velké šablony (32–38 × 22–24).
+- **3 vlny** po 5–7 nepřátelích s banerem „vlna X/3“.
+- Odměna: zbraňová truhla (`ChestKind::Weapon`) na nejbližším místě ke středu, které má
+  3 dlaždice volného prostoru (hledá do vzdálenosti 8 dlaždic).
+- Dekorace jako Normal, ale **bez bodců a pavučin**.
+
+### Treasure
+- 1 na patře, slepý konec, šablona `treasure` se 4 sloupy.
+- Zařízení: **zbraňová truhla** uprostřed, koberec 6 × 6, 4 pochodně, 2 cihly; dekorace
+  3 pavučiny a 3 kosti, žádné pasti.
+- Truhla se otevře dotykem a vysype 5 běžných předmětů + zbraň, kterou hráč nemá.
+
+### Shop
+- 1 na patře (0 při challenge *Merchant's Strike*), slepý konec, šablona `shop`.
+- Zařízení: animovaný **obchodník** (ping-pong animace) s řečovou bublinou, **3 stoly**
+  se zbožím, 2 rozbitné květináče, **slot machine**, koberec 16 × 8.
+- Zboží (`systems/shop.rs`, zleva doprava):
+
+| Stůl | Stock | Zboží | Násobek ceny |
+|---|---|---|---|
+| levý | `Defensive` | velký lektvar zdraví nebo brnění (50/50) | 1,5 |
+| prostřední | `Ammunition` | univerzální munice | 1,0 |
+| pravý | `Offensive` | 50 %: zbraň, kterou hráč nemá; jinak (nebo když žádná není) artefakt | 2,0 |
+
+- Cena = `(1 + roll % 4) × patro × násobek` mincí (zaokrouhleno dolů). Patro 1: munice 1–4,
+  obrana 1–6, útok 2–8.
+- Perk *Discount*: jeden náhodný stůl může být ve slevě – 5 % šance cena × 0,75,
+  5 % × 0,5, 23 % × 0,25, jinak bez slevy.
+- Perk *Gamble Machine*: při existenci obchodu +100 mincí na začátku patra.
+- Podrobnosti o předmětech: [Artefakty a předměty](/docs/artefacts-items).
+
+### Sacrifice (oltář)
+- 0–1 na patře (50 %), slepý konec, šablona `sacrifice`.
+- Zařízení: **socha anděla**, **pentagram** uprostřed, 5 **svícnů** (červené světlo),
+  3 knihy, 2 řetězy. Žádné dekorace ani pasti.
+- Na pentagramu leží 1 předmět s náhodným stockem (Offensive/Ammunition/Defensive), cena
+  **1–3 HP** (`Currency::Health`). Koupit jde jen, pokud má hráč víc HP, než je cena
+  (oltář nezabije).
+- Po koupi zazní `Sacrifice` + `PlayerHurt` a všechny svíčky zhasnou (`disable_candles`).
+
+### Boss
+- 1 na patře, slepý konec připojený k nejvzdálenější Normal místnosti.
+- Šablona `boss`: prázdná aréna 20 × 16.
+- Boss (`enemies::pick_boss`) se spawne ve středu, objeví se boss HUD se jménem.
+- Po smrti: artefaktová truhla 3 dlaždice nad středem; na patrech 1–4 **žebřík** do dalšího
+  patra (textura podle tématu), na patře 5 `victory = true` → obrazovka vítězství.
+- Hellhound v této místnosti postupně rozlévá **magma** (viz [Pasti](/docs/dungeon/hazards)).
+
+## Interakce
+
+- [Nepřátelé](/docs/enemies) – výběr typů, boss HUD, škálování podle patra.
+- [Objekty](/docs/dungeon/objects) – truhly, mříže, žebřík, slot machine.
+- [Progrese](/docs/progression) – perky *Discount*, *Gamble Machine*, *Armor Regeneration*;
+  challenge *Merchant's Strike*.
+- [Minimapa](/docs/dungeon/minimap) – ikona každého typu místnosti.
+
+## Kde v kódu
+
+- `systems/rooms.rs` – `RoomRuntime`, `RoomState`, `Fight`, `update_rooms`, `enter`,
+  `spawn_wave`, `wave_plan`, `enemy_limit`, `chest_spot`, `RoomEvent`
+- `dungeon/furnish.rs` – `plan`, `shop`, `treasure`, `sacrifice`, `start`, `Carpet`
+- `systems/shop.rs` – `stock_rooms`, `price_for`, `sale_for`, `buy`, `disable_candles`, `say`
+- `scenes/ingame.rs` – `handle_room_events`
+- `prefabs/fixtures.rs` – `furnishing`, `gate`, `chest`, `ladder`
+
+## Jak přidat nový …
+
+**Nový speciální typ místnosti (např. „Challenge room“)**
+
+1. `RoomKind` + šablona (viz [Generování](/docs/dungeon/generation)).
+2. Zařízení: nová funkce ve `furnish.rs` a větev v `furnish::plan`; nové `FixtureKind`
+   a jeho spawn v `prefabs::furnishing`.
+3. Chování při vstupu: větev v `enter()` (`systems/rooms.rs`) – zda bojuje, kolik vln
+   (`wave_plan`), jaký `RoomEvent` pošle.
+4. Odměna: nová varianta `RoomEvent` a její obsluha v `handle_room_events`.
+5. Dekorace: větev v `Counts::for_room` (`decor.rs`); kapaliny povol v `surface::plan`.
+6. Ikona na minimapě (`frame()` + sprite).
+
+## Nápady / chybí
+
+- **Oltář nemluví** – `story.md` plánuje hlášky kletby při vstupu do Sacrifice místnosti
+  („YOU ARE MINE ALREADY“…); `RoomEvent` pro vstup do Sacrifice neexistuje.
+- Treasure místnost má jen jednu truhlu; `FEATURE.md` (Java) uváděl i rozbitné objekty.
+  Nabízí se varianty (zamčená truhla, mimic truhla, výběr 1 ze 3).
+- Cashout na slot machine dává 10 mincí – stejně jako „Double“; viz [Objekty](/docs/dungeon/objects).
+- Start místnost ukazuje klávesy natvrdo (Q/E/F/1/2/WASD/Space), přestože ovládání jde
+  přemapovat (`controls.rs`); chybí nápověda pro mapu (Tab).
+- Žádná odměna za vyčištění běžné Normal místnosti (kromě dropů z nepřátel) – prostor pro
+  boon výběr z `TODO.md` (M2).
+- Žádné místnosti typu „elite“, „curse“, „secret“, „healing fountain“.

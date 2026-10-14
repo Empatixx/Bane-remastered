@@ -1,0 +1,104 @@
+---
+title: Předměty a pickupy
+description: Mince, krabice s municí a lektvary – co dělají, kdy se dají sebrat, jak vypadají a jak dlouho leží na zemi.
+---
+
+## Jak to funguje
+
+Pickup je entita s komponentou `Pickup(ItemKind)`, vytvořená přes `prefabs::item(world, kind, center, despawns, velocity, textures)`.
+
+### Sbírání
+
+- `systems/items.rs` → `collect_items`: každý snímek se testuje překryv AABB pickupu se **sběrači** – hráčem a petem (`Pet`).
+- Ignorují se pickupy s `Expiring` a zboží v obchodě (`Shop`).
+- Pickup se sebere jen pokud `can_use` vrátí true:
+
+| Předmět | Kdy jde sebrat |
+|---|---|
+| Coin | vždy |
+| Ammo | hráč má zbraň, která tento typ munice bere a **nemá plnou rezervu** (`Loadout::wants_ammo`) |
+| Lektvar zdraví | `health.current` je menší než `health.max` |
+| Lektvar armoru | `armor.current` je menší než `armor.max` |
+
+- Nepoužitelný pickup zůstane ležet (a případně dál stárne).
+- Každé sebrání = `Stat::Item +1`; mince navíc `Stat::Gold +1`.
+
+### Efekty (`use_item`)
+
+| Předmět | Efekt | Zvuk |
+|---|---|---|
+| Coin | `Wallet.coins += 1` | `Coin` |
+| Ammo | každé zbrani, která typ bere: rezerva `+= max_ammo × procento` (strop max) | `Pickup` |
+| Lektvar (malý / velký) | +1 / +4 zdraví nebo armoru, strop max | `Heal` + `Pickup` |
+
+### Munice – třídy
+
+Zbraně mají `AmmoClass`: **Shotgun** má jen Shotgun, **všechny ostatní zbraně** jsou `Pistol`. `Loadout::takes`:
+
+| `AmmoBox` | Bere ho | Procento max. rezervy |
+|---|---|---|
+| `Pistol` | všechny zbraně kromě Shotgunu | 10 % |
+| `SubMachine` | všechny zbraně kromě Shotgunu | 10 % |
+| `Shotgun` | jen Shotgun | 25 % |
+| `Universal` | všechny zbraně | 50 % |
+
+Procento se počítá z `max_ammo` dané zbraně (po perku Additional Ammo ×1,1) a dostanou ho **všechny** odpovídající zbraně v loadoutu najednou.
+
+`common_drop` (náhodné dropy): pokud loadout nepřijme vylosovaný typ (challenge „Pistol Only“ – `Loadout.only`), zamění se za `Pistol`, případně `Shotgun`.
+
+### Despawn a vizuál
+
+- Dropy z nepřátel, beden, automatu a Midas Coin mají `Despawn { remaining: 10 s }` (`DESPAWN_SECONDS`). Posledních 2 s (`BLINK_SECONDS`) blikají – alpha střídá 1,0 / 0,25 po 0,2 s (`BLINK_PERIOD`). Pak zmizí.
+- Předměty z truhel (`burst_items`) a zboží v obchodě **nemizí**.
+- Všechny pickupy, zbraně a artefakty na zemi se jemně vznáší (`Hover`, cyklus 0,5 s, náhodná fáze).
+- Pickup vystřelený s rychlostí (truhla, automat, Midas) dostane `Drag { rate: 6 }` a dojede.
+
+## Obsah
+
+| `ItemKind` | Textura | Snímky | Velikost | Hodnota |
+|---|---|---|---|---|
+| `Coin` | `ingame/banecoin_anim.tga` | 4 × 0,1 s | 24×24 | +1 mince |
+| `Ammo(Pistol)` | `ingame/ammobox_pistol.tga` | 8 × 0,1 s | 36×36 | 10 % |
+| `Ammo(SubMachine)` | `ingame/ammobox_pistol.tga` | 8 × 0,1 s | 36×36 | 10 % |
+| `Ammo(Shotgun)` | `ingame/ammobox_shotgun.tga` | 8 × 0,1 s | 36×36 | 25 % |
+| `Ammo(Universal)` | `ingame/ammobox_universal.tga` | statická | 48×48 | 50 % |
+| `Potion(Health, Small)` | `ingame/healing_pot.tga` řádek 0 | 4 × 0,125 s | 60×60 | +1 HP |
+| `Potion(Armor, Small)` | `ingame/healing_pot.tga` řádek 1 | 4 × 0,125 s | 60×60 | +1 armor |
+| `Potion(Health, Large)` | `ingame/large_healing_pot.tga` řádek 0 | statická | 64×64 | +4 HP |
+| `Potion(Armor, Large)` | `ingame/large_healing_pot.tga` řádek 1 | statická | 64×64 | +4 armor |
+
+`ItemKind::COMMON` = `[Coin, Ammo(Pistol), Ammo(Shotgun), Ammo(SubMachine)]` – pool pro náhodné dropy.
+
+Kde co padá: [Drops](/docs/artefacts-items/drops).
+
+## Interakce
+
+- [Hráč](/docs/player) – start 10 HP / 5 armor / 0 mincí; perky Hero's Heart, Titan's Heart, Improved Armor zvedají maxima.
+- [Zbraně](/docs/guns) – `max_ammo`, `AmmoClass`, `Loadout`.
+- [Pet](/docs/artefacts-items/pet) – sbírá pickupy za hráče a aktivně k nim běží.
+- [Statistiky / progrese](/docs/progression) – `Stat::Item`, `Stat::Gold` jdou do souhrnu runu.
+
+## Kde v kódu
+
+- `items.rs` → `ItemKind`, `AmmoBox::percent`, `Vital`, `PotionSize`, `ItemSpec`, `recover_amount`, `COMMON`, `DESPAWN_SECONDS`, `BLINK_*`
+- `systems/items.rs` → `collect_items`, `can_use`, `use_item`, `common_drop`, `age_items`, `hover_drops`, `outline_drops`
+- `components/items.rs` → `Pickup`, `Despawn`, `Chest`, `Shop`, `Currency`, `NoDrop`
+- `components/combat.rs` → `Loadout::takes`, `accepts_ammo`, `wants_ammo`, `add_ammo`; `Weapon::add_percent`
+- `prefabs/fixtures.rs` → `item`, `DROP_DRAG`
+
+## Jak přidat nový pickup
+
+1. `items.rs`: přidat variantu do `ItemKind` (nebo nový `AmmoBox` / `Vital`).
+2. Doplnit arm v `ItemKind::spec()` (textura, sloupce, řádky, velikost, `clip`) a případně `recover_amount()`.
+3. Texturu přidat do `assets.rs` (konstanta + seznam k načtení).
+4. `systems/items.rs`: doplnit arm do `can_use` a `use_item` (efekt + zvuk).
+5. Má-li padat náhodně, přidat do `ItemKind::COMMON` (pozor: pole má pevnou délku `[Self; 4]`) – nebo ho přidat do konkrétního zdroje (`goods_for` v obchodě, `rare_prize` v automatu).
+6. Testy v `items.rs` / `systems/items.rs`.
+
+## Nápady / chybí
+
+- **`AmmoBox::SubMachine` je funkčně totožný s `Pistol`** (stejná třída, 10 %, stejná textura). V `COMMON` tím efektivně zdvojnásobuje šanci na pistolovou munici – buď dát vlastní třídu munice pro samopaly, nebo variantu odstranit.
+- Třída `Pistol` pokrývá i RPG, Railgun, Flamethrower atd. – „pistolová“ krabice tak doplní raketomet. Jemnější třídy munice (bullets / shells / energy / explosive) by daly dropům význam.
+- Lektvary nejsou v `COMMON` – z nepřátel a beden nikdy nepadají.
+- Mince má hodnotu vždy 1 – chybí větší mince / váček (`GREEN_BANECOIN` textura existuje v `assets.rs`, ale v pickupech se nepoužívá).
+- Žádný magnet / přitahování pickupů – hráč musí na každý minci došlápnout.

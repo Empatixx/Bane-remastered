@@ -1,0 +1,86 @@
+---
+title: Artefakty a předměty
+description: Přehled všeho, co hráč během runu sbírá, kupuje a aktivuje – artefakty, pickupy, obchod, automat, pet a perky.
+---
+
+## Jak to funguje
+
+Loot v Bane má tři vrstvy:
+
+1. **Pickupy (předměty)** – mince, krabice s municí a lektvary (zdraví / armor). Sbírají se automaticky dotykem (hráč nebo pet), ale jen když je hráč umí využít. Viz [Předměty](/docs/artefacts-items/items).
+2. **Artefakty** – jednorázové aktivní schopnosti. Hráč má **jeden slot**, artefakt sebere klávesou **E** a aktivuje klávesou **F**. Po použití slot zůstane prázdný. Viz [Artefakty](/docs/artefacts-items/artefacts).
+3. **Zbraně** – leží na zemi jako `GunDrop`, sbírají se klávesou **E**. Patří do tématu [Zbraně](/docs/guns), tady jsou zmíněny jen jako součást lootu.
+
+Ekonomika runu se točí kolem **mincí** (`Wallet.coins`): padají z nepřátel, beden, truhel a automatu, utrácí se v [obchodě](/docs/artefacts-items/shop) a v [automatu](/docs/artefacts-items/slot-machine). Mince, zdraví, armor, výzbroj i artefakt se přenášejí mezi patry (`systems/carry.rs`).
+
+### Tok lootu (slovy)
+
+- Zabití nepřítele → zvýší se počítadlo „zabití bez dropu“ → náhodný hod rozhodne o dropu → padne 1 běžný předmět (mince nebo munice). Detaily v [Drops](/docs/artefacts-items/drops).
+- Rozbití bedny / květináče / sudu → vždy 1 běžný předmět.
+- Dotyk truhly → truhla se otevře → po animaci vystřelí 5 běžných předmětů do kruhu + zbraň (zbraňová truhla) nebo artefakt (artefaktová truhla).
+- Obchod → 3 stoly (obrana / munice / útok) za mince + případně pentagram v místnosti Sacrifice za životy.
+- Automat → 5 mincí za zatočení, 40 % šance na výhru.
+- Artefakty Midas Coin a Blood Chalice generují mince / léčení jako vedlejší efekt.
+
+### Ovládání
+
+| Akce | Klávesa | Co dělá |
+|---|---|---|
+| `Interact` | E | sebrat artefakt / zbraň, koupit, zatočit automatem |
+| `UseArtefact` | F | aktivovat artefakt ve slotu |
+| (dotyk) | – | sebrat pickup, otevřít truhlu |
+
+## Obsah
+
+<Cards>
+  <Card title="Artefakty (13)" href="/docs/artefacts-items/artefacts" />
+  <Card title="Předměty a pickupy" href="/docs/artefacts-items/items" />
+  <Card title="Kde a jak co padá" href="/docs/artefacts-items/drops" />
+  <Card title="Obchod a Sacrifice" href="/docs/artefacts-items/shop" />
+  <Card title="Hrací automat" href="/docs/artefacts-items/slot-machine" />
+  <Card title="Pet (vlk)" href="/docs/artefacts-items/pet" />
+  <Card title="Perky v runu" href="/docs/artefacts-items/perks" />
+</Cards>
+
+| Kategorie | Počet | Položky |
+|---|---|---|
+| Artefakty | 13 | Reveal Map, Ring of Death, Armor Refill, Shield Horn, Berserk Pot, Hourglass of Ash, Blood Chalice, Phantom Cloak, Grave Lantern, Midas Coin, Thunder Idol, Infinity Quiver, Bone Turret |
+| Pickupy | 9 variant | Coin, Ammo Pistol / Shotgun / SubMachine / Universal, malý a velký lektvar zdraví, malý a velký lektvar armoru |
+| Truhly | 2 | `ChestKind::Weapon`, `ChestKind::Artefact` |
+| Obchodní místa | 3 | stoly v obchodě, pentagram (Sacrifice), automat |
+| Spojenci | 3 | pet (perk), duchové (Grave Lantern), věž (Bone Turret) |
+
+## Interakce
+
+- [Hráč](/docs/player) – `Health`, `Armor`, `Wallet`, `ArtefactSlot`, `Loadout` jsou komponenty hráče; start: 10 HP, 5 armoru, 0 mincí, artefakt Reveal Map.
+- [Zbraně](/docs/guns) – munice z pickupů plní rezervu zbraní podle třídy munice; truhly, obchod a automat nabízejí nevlastněné zbraně.
+- [Nepřátelé](/docs/enemies) – drop po zabití, `NoDrop` (King Slime, minioni) nic nedropují.
+- [Dungeon](/docs/dungeon) – místnosti Shop, Treasure, Sacrifice, Ambush a Boss určují, kde se loot objevuje.
+- [Progrese](/docs/progression) – perky z talentového stromu (Discount, Gamble Machine, Pet, Additional Ammo…) mění loot a obchod.
+
+## Kde v kódu
+
+- `artefacts.rs` – `ArtefactKind`, konstanty trvání efektů.
+- `items.rs` – `ItemKind`, `AmmoBox`, `Vital`, `PotionSize`, drop pravidla.
+- `systems/artefacts.rs`, `systems/summons.rs`, `systems/lightning.rs`, `systems/midas.rs`, `systems/blood.rs`, `systems/time_slow.rs` – efekty artefaktů.
+- `systems/items.rs` – sbírání, dropy, stárnutí pickupů.
+- `systems/shop.rs`, `systems/slot.rs` – obchod a automat.
+- `systems/pet.rs` – AI peta.
+- `systems/perks.rs`, `upgrades.rs` – perky.
+- `systems/loadout.rs` → `open_chests` – truhly.
+- `prefabs/fixtures.rs` – `item`, `artefact_drop`, `chest`, `slot_machine`.
+- `scenes/ingame.rs` – pořadí volání systémů a reakce na `RoomEvent`.
+
+## Jak přidat nový obsah
+
+- Nový artefakt → [Artefakty → Jak přidat](/docs/artefacts-items/artefacts).
+- Nový pickup → [Předměty → Jak přidat](/docs/artefacts-items/items).
+- Nové zboží v obchodě → [Obchod](/docs/artefacts-items/shop).
+
+## Nápady / chybí
+
+- **Žádné klíče, bomby ani jiné spotřební předměty** – v Rust portu existují jen mince, munice a lektvary. Zamčené dveře/truhly na klíč by přirozeně navázaly na Treasure místnost.
+- **Lektvary nikdy nepadají z nepřátel** – jen z obchodu, pentagramu a automatu. Hráč se mimo to léčí jen přes Blood Chalice. Stojí za zvážení vzácný drop malého lektvaru.
+- **Perk Gamble Machine automat neodemyká** – automat je v obchodě vždy; perk jen přidá 100 mincí (a to fakticky jen v 1. patře). Viz [Hrací automat](/docs/artefacts-items/slot-machine).
+- **Jen jeden artefaktový slot** a artefakty jsou jednorázové – prostor pro „nabíjecí“ artefakty (cooldown místo spotřeby) nebo pasivní relikvie.
+- TODO.md plánuje „Vendors / gods“ a „Choice economy“ (re-roll za mince, banish) – zatím nic z toho v kódu.

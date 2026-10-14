@@ -1,0 +1,79 @@
+---
+title: Uzi
+description: Rychlopalný samopal s velkým rozptylem a poškozením 1 na ránu.
+---
+
+**Uzi** (`GunKind::Uzi`) — Automatická „stříkačka“: 10 ran/s, vysoký rozptyl.
+
+## Jak to funguje
+
+### Statistiky
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Poškození v kódu | 1–2 |
+| Reálné poškození na projektil | 1 (průměr 1) |
+| Projektilů na výstřel | 1 |
+| Kadence | 10 výstřelů/s |
+| Průměrné DPS (bez přebíjení) | 10 |
+| Odchylka (`inaccuracy`) | 0,4 → ±0,2 rad (±11,5°) |
+| Režim | automatická |
+| Zásobník / rezerva | 20 / 200 |
+| Přebíjení | 0,7 s |
+| Kritická šance (základ) | 0 % |
+| Otřes kamery (`shake`) | 0,12 |
+| Třída munice | `AmmoClass::Pistol` |
+| Styl zásobníku v HUD | `ClipStyle::SubMachine` — dva sloupce nábojů (krok 15 px, sloupce po 25 px) |
+| Nábojnice | ano (nábojnice) |
+| Zvuk výstřelu / přebití | `UziShoot` / `PistolReload` |
+| Textura / velikost ikony | `tex::GUNS_UZI` / 66 × 58 px |
+| Klíč v profilu | `"uzi"` |
+
+Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+
+### Střelba
+
+Automatická, drží se tlačítko. Jedna kulka `Round::Bullet`, odchylka ±0,2 rad (±11,5°).
+
+### Projektil
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Typ | `Round::Bullet` |
+| Rychlost | 700 px/s |
+| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
+| Průraz (`pierce`) | 0 |
+| Životnost | — |
+| Zvláštní efekt | — |
+| Světlo | červené (255, 0, 0) |
+| Natáčí se ve směru letu | ne |
+| Textura | `tex::BULLET` |
+
+Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+
+### Přebíjení a munice
+
+Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,7 s, pak se zásobník doplní z rezervy (max. 20 nábojů). Rezervu 200 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
+
+### Zvláštnosti
+
+- Poškození `1–2` = reálně vždy 1.
+- Shake 0,12 na ránu × 10 ran/s = 1,2 traumatu/s — blízko limitu `TRAUMA_DECAY` 1,5; s uzly Fire rate (+25 % a víc) může obrazovka trvale „pinovat“ (test v `guns.rs` kontroluje jen základní hodnoty).
+
+## Interakce
+
+- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
+- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
+- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
+- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
+
+## Kde v kódu
+
+- `guns.rs` → `GunKind::Uzi`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
+- `systems/shooting.rs` → `shoot`, `bullet_hits`
+- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Uzi“)
+- `assets.rs` → `tex::GUNS_UZI`
+
+## Nápady / chybí
+
+- Test `holding_the_trigger_never_pins_the_screen_shake` rozšířit o maximální bonus kadence ze stromu.

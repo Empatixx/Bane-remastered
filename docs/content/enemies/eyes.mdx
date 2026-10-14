@@ -1,0 +1,68 @@
+---
+title: Oči
+description: Demon eye a Eye watcher — nepřátelé, kteří se přidávají od patra 3.
+---
+
+## Jak to funguje
+
+Dva nepřátelé s `min_floor = 3` a bez omezení tématu. Na patrech 3–5 rozšiřují pool běžných nepřátel
+z 6 na 8 druhů. Tematicky souvisí s bossem [Argus](/docs/enemies/bosses/argus) (podle `story.md` je to
+„Vědcovo oko“).
+
+## Obsah
+
+| | Demon eye | Eye watcher |
+|---|--:|--:|
+| `EnemyKind` | `DemonEye` | `EyeWatcher` |
+| HP (základ / p3 / p4 / p5) | 11 / 15 / 16 / 18 | 4 / 5 / 6 / 6 |
+| Kontaktní damage (p3–p5) | 3 → 4 | 1 |
+| Force | 14 500 000 | 0 |
+| Velikost | 114 × 96 | 96 × 96 |
+| Rychlost (px/s) | 265 | 0 (stojí) |
+| `Behavior` | `Plain` | `Shoots(EyeWatcher)` |
+| Textura | `ingame/demoneye.tga` (5×2) | `ingame/eye_watcher.tga` (5×3, smrt na řádku 2) |
+
+### Demon eye
+
+Rychlý a tvrdě bijící chaser bez schopnosti — 265 px/s a 4 damage na pozdních patrech dělá z něj
+nejnebezpečnějšího kontaktního nepřítele hry.
+
+### Eye watcher — stacionární věž
+
+- Nehýbe se (force 0 → rychlost 0); je ale `Chase`, takže ho odpuzování davu může mírně posunout.
+- `EyeShooter`: každé 3,0 s (`SHOOT_COOLDOWN`) přehraje útočnou animaci (řádek 1, 5 × 0,075 s =
+  0,375 s — telegraf) a na jejím konci vystřelí jednu **naváděnou** střelu z horní hrany těla.
+- Střela `ProjectileKind::EyeWatcher`: 48 × 48 px, 253 px/s, 1 damage, žije 5 s (`Fuse`), žluté světlo.
+  Navádění (`steer_homing`): bod zaměření se každý krok posune o 1/16 vzdálenosti k hráči a střela
+  letí na tento bod — zatáčí plynule, ostrým úhybem nebo dodgem se dá setřást.
+- Nestřílí, když je hráč neviditelný (`Phantom`); navádění se pak zastaví a střela letí rovně.
+
+## Interakce
+
+- [Projektily](/docs/enemies/projectiles) — jediná naváděná nepřátelská střela.
+- [Hráč](/docs/player) — Phantom, dodge.
+- [Spawnování](/docs/enemies/spawning) — od patra 3 jsou tyto dva druhy 1/4 běžného poolu.
+
+## Kde v kódu
+
+- `enemies.rs` → arms `DemonEye`, `EyeWatcher`; `ProjectileKind::EyeWatcher`; `SHOOT_COOLDOWN`; `attack_clip`.
+- `systems/skills.rs` → `tick_eye_shooters`, `steer_homing`, `burn_fuses`, `HOMING_SMOOTHING`.
+- `prefabs/actors.rs` → `enemy_bullet` (přidá `Homing` a `Fuse`).
+
+## Jak přidat dalšího střelce
+
+1. `EnemyKind` s `behavior: Behavior::Shoots(ProjectileKind::…)`; sheet musí mít na řádku 1 útočnou
+   animaci s 5 snímky (`attack_clip`).
+2. Pro naváděnou střelu nastav v `ProjectileKind::spec()` `homing: true` a `lifetime: Some(sekundy)`.
+3. Cooldown je společný (`SHOOT_COOLDOWN`); pro jiný by `EyeShooter` potřeboval vlastní pole.
+
+## Nápady / chybí
+
+- Demon eye je jen rychlejší Rat — nabízí se schopnost (např. krátký „pohled“ paprsek jako Golem,
+  nebo vyhýbání se střelám).
+- Eye watcher se spawnuje na náhodném spawn bodu, i uprostřed místnosti; jako věž by dávalo smysl
+  spawnovat ho u zdí.
+- Eye watcher míří vždy jen jednou střelou; varianta s trojitou salvou nebo s rozptylem by byla levný
+  nový obsah (pool dnes nemá žádného „elitního“ střelce).
+- `story.md` navrhuje finálního bosse „The Heart“ jako „EyeWatcher v měřítku bosse“ — mechanika
+  `EyeShooter` je dobrý základ.

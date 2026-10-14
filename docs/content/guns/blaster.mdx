@@ -1,0 +1,79 @@
+---
+title: Blaster
+description: Laserová pistole s rychlými červenými paprsky a světelnou stopou.
+---
+
+**Blaster** (`GunKind::Blaster`) — Sci-fi poloautomat: rychlá kadence na poloautomat (4,5 ran/s), přesná, 2–3 poškození.
+
+## Jak to funguje
+
+### Statistiky
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Poškození v kódu | 2–4 |
+| Reálné poškození na projektil | 2–3 (průměr 2,5) |
+| Projektilů na výstřel | 1 |
+| Kadence | 4,55 výstřelů/s |
+| Průměrné DPS (bez přebíjení) | 11,36 |
+| Odchylka (`inaccuracy`) | 0,05 → ±0,03 rad (±1,4°) |
+| Režim | poloautomatická |
+| Zásobník / rezerva | 12 / 144 |
+| Přebíjení | 1 s |
+| Kritická šance (základ) | 0 % |
+| Otřes kamery (`shake`) | 0,2 |
+| Třída munice | `AmmoClass::Pistol` |
+| Styl zásobníku v HUD | `ClipStyle::Pistol` — jeden sloupec nábojů (krok 15 px) |
+| Nábojnice | ne |
+| Zvuk výstřelu / přebití | `BlasterShoot` / `BlasterReload` |
+| Textura / velikost ikony | `tex::GUNS_BLASTER` / 56 × 38 px |
+| Klíč v profilu | `"blaster"` |
+
+Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+
+### Střelba
+
+Poloautomatická, `Round::Laser` (1300 px/s), odchylka ±0,025 rad. Za letu odhazuje červené částice `Trail::LASER` (každých 0,015 s, životnost 0,3 s).
+
+### Projektil
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Typ | `Round::Laser` |
+| Rychlost | 1300 px/s |
+| Velikost sprite / hitbox | 32 × 16 / 12 × 12 |
+| Průraz (`pierce`) | 0 |
+| Životnost | — |
+| Zvláštní efekt | stopa `Trail::LASER` |
+| Světlo | červené (255, 30, 40) |
+| Natáčí se ve směru letu | ano |
+| Textura | `tex::ROUND_LASER` |
+
+Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+
+### Přebíjení a munice
+
+Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 1 s, pak se zásobník doplní z rezervy (max. 12 nábojů). Rezervu 144 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
+
+### Zvláštnosti
+
+- Nevyhazuje nábojnice.
+- Používá třídu munice Pistol — krabice s náboji do pistole „nabíjí“ laser.
+
+## Interakce
+
+- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
+- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
+- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
+- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
+
+## Kde v kódu
+
+- `guns.rs` → `GunKind::Blaster`, větev v `GunKind::spec`, `Round::Laser` v `Round::spec`
+- `systems/shooting.rs` → `shoot`, `bullet_hits`
+- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Blaster“)
+- `assets.rs` → `tex::GUNS_BLASTER`
+
+## Nápady / chybí
+
+- Energetické zbraně (Blaster, Plasma, Tesla, Railgun) by mohly mít vlastní třídu munice nebo přehřívání místo zásobníku.

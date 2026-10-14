@@ -1,0 +1,78 @@
+---
+title: Revolver
+description: Pomalý těžký revolver se šesti náboji a solidním poškozením na ránu.
+---
+
+**Revolver** (`GunKind::Revolver`) — Silnější poloautomatická „pistole“: 4–5 poškození na ránu, pomalejší kadence.
+
+## Jak to funguje
+
+### Statistiky
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Poškození v kódu | 4–6 |
+| Reálné poškození na projektil | 4–5 (průměr 4,5) |
+| Projektilů na výstřel | 1 |
+| Kadence | 2,22 výstřelů/s |
+| Průměrné DPS (bez přebíjení) | 10 |
+| Odchylka (`inaccuracy`) | 0,2 → ±0,1 rad (±5,7°) |
+| Režim | poloautomatická |
+| Zásobník / rezerva | 6 / 60 |
+| Přebíjení | 0,7 s |
+| Kritická šance (základ) | 0 % |
+| Otřes kamery (`shake`) | 0,5 |
+| Třída munice | `AmmoClass::Pistol` |
+| Styl zásobníku v HUD | `ClipStyle::Pistol` — jeden sloupec nábojů (krok 15 px) |
+| Nábojnice | ano (nábojnice) |
+| Zvuk výstřelu / přebití | `RevolverShoot` / `PistolReload` |
+| Textura / velikost ikony | `tex::GUNS_REVOLVER` / 70 × 44 px |
+| Klíč v profilu | `"revolver"` |
+
+Hodnoty jsou základní (bez stromu zbraně a perků). U zbraní s rozsahem poškození je reálné maximum o 1 nižší než maximum v kódu, protože `GunSpec::damage_for` počítá `min + floor(roll × (max − min))` a `roll` je menší než 1 — viz [Střelba](/docs/guns/strelba).
+
+### Střelba
+
+Poloautomatická, jedna kulka `Round::Bullet`, odchylka ±0,1 rad (±5,7°).
+
+### Projektil
+
+| Vlastnost | Hodnota |
+| --- | --- |
+| Typ | `Round::Bullet` |
+| Rychlost | 700 px/s |
+| Velikost sprite / hitbox | 16 × 16 / 16 × 16 |
+| Průraz (`pierce`) | 0 |
+| Životnost | — |
+| Zvláštní efekt | — |
+| Světlo | červené (255, 0, 0) |
+| Natáčí se ve směru letu | ne |
+| Textura | `tex::BULLET` |
+
+Podrobnosti o všech typech projektilů: [Projektily](/docs/guns/projektily).
+
+### Přebíjení a munice
+
+Přebíjí se ručně klávesou R (`Action::Reload`). Přebití trvá 0,7 s, pak se zásobník doplní z rezervy (max. 6 nábojů). Rezervu 60 nábojů lze zvýšit perkem *Additional Ammo* (×1,1). Doplňují ji krabice `AmmoBox::Pistol`, `AmmoBox::SubMachine` a `AmmoBox::Universal`. Viz [Loadout a munice](/docs/guns/loadout).
+
+### Zvláštnosti
+
+- Vlastní zvuk výstřelu `RevolverShoot`, ale přebíjí zvukem pistole.
+
+## Interakce
+
+- Vylepšení stromem zbraně ve stole v lobby: [Strom zbraně](/docs/guns/strom-zbrane).
+- Mutace na konci stromu: [Mutace](/docs/guns/mutace).
+- Získání: zbraňová truhla, obchod, hrací automat — [Získávání zbraní](/docs/guns/ziskavani).
+- Perky poškození a kritického zásahu z [progrese](/docs/progression) se násobí s hodnotami zbraně.
+
+## Kde v kódu
+
+- `guns.rs` → `GunKind::Revolver`, větev v `GunKind::spec`, `Round::Bullet` v `Round::spec`
+- `systems/shooting.rs` → `shoot`, `bullet_hits`
+- `scenes/weapon_table.rs` → `name` (zobrazované jméno „Revolver“)
+- `assets.rs` → `tex::GUNS_REVOLVER`
+
+## Nápady / chybí
+
+- Klasický nápad: přebíjení po jednom náboji (přerušitelné) nebo „fan the hammer“ — rychlé vyprázdnění bubínku při držení.

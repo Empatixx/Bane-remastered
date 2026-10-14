@@ -1,0 +1,96 @@
+---
+title: Pavouci
+description: Spiderlingové, Bloated spider a Stilt spider — nepřátelé tématu Spider na prvním patře.
+---
+
+## Jak to funguje
+
+Všech pět pavoučích nepřátel má `themes = [Theme::Spider]` a `min_floor = 1`. Protože téma Spider dostává
+vždy a jen patro 1 (`Theme::for_floor`), objevují se ve hře **pouze na patře 1** (pokud téma nevynutíš
+přes `BANE_THEME`). Jejich bossem je [Spider king](/docs/enemies/bosses/spider-king), který spiderlingy
+také líhne.
+
+Spiderlingové sdílí prefab `spiderling()`: sheet 5 sloupců, frame 32 × 20, scale 3 (96 × 60 px), idle
+5 × 0,12 s, smrt 3 × 0,15 s, `kin = true`.
+
+## Obsah
+
+| | Red spiderling | Green spiderling | Purple spiderling | Bloated spider | Stilt spider |
+|---|--:|--:|--:|--:|--:|
+| `EnemyKind` | `RedSpiderling` | `GreenSpiderling` | `PurpleSpiderling` | `BloatedSpider` | `StiltSpider` |
+| HP (základ / patro 1) | 3 / 3 | 5 / 6 | 3 / 3 | 5 / 6 | 7 / 8 |
+| Damage | 2 | 2 | 1 | 1 | 1 (kontakt i dopad) |
+| Rychlost (px/s) | 191 | 191 | 226 | 167 | 63 (+ skoky) |
+| `Kin` | ano | ano | ano | ne | ne |
+| `Behavior` | `Plain` | `HealsKin` | `Plain` | `ToxicBurst` | `Leaps` |
+| Textura | `spiderling.tga` | `green_spiderling.tga` | `purple_spiderling.tga` (5×3) | `bloated_spider.tga` | `stilt_spider.tga` (5×5) |
+
+### Red spiderling
+
+Malý rychlý chaser, 3 HP. Žádná schopnost. Spider king ho líhne jako první v pořadí.
+
+### Green spiderling — léčí příbuzné
+
+`DeathHeal { radius: 200, amount: 1 }`: když umře, všem živým `Kin` (= spiderlingům) v oblasti
+200 × 200 px kolem sebe přidá +1 HP (do maxima) a ukáže zelené číslo. Bloated a Stilt spider nejsou
+`Kin`, takže je neléčí.
+
+### Purple spiderling
+
+Nejrychlejší pavouk (226 px/s), ale jen 1 damage. Žádná schopnost.
+
+### Bloated spider — jedovatý mrak
+
+`DeathCloud`: při smrti (`death_clouds`) vytvoří toxický mrak (`prefabs::toxic_cloud`, textura
+`toxic_cloud.tga`, 144 × 144 px) na 1,4 s. Mrak je `PoisonPool` s hitboxem 96 × 76 px:
+
+- hráč uvnitř dostává 1 damage (omezeno i-frames),
+- **nepřátelé uvnitř** dostávají 1 damage za sekundu — mrak tedy zraňuje i okolní pavouky.
+
+### Stilt spider — skokan
+
+Pomalý (63 px/s), ale útočí skokem (`Leaper`, `systems/leapers.rs`):
+
+1. **Stalk** — chodí za hráčem; po 1,4 s (první skok, `LEAP_FIRST_COOLDOWN`), resp. 2,4 s
+   (`LEAP_COOLDOWN`) zkontroluje vzdálenost. Skáče jen, když je hráč 150–420 px daleko.
+2. **Crouch** — 0,5 s přikrčení (`Rooted`, řádek 2) — telegraf.
+3. **Airborne** — 0,5 s letu na pozici, kde byl hráč na konci přikrčení. Během letu nemá
+   `ContactDamage` a kreslí se nad ostatními (vrstva 3).
+4. **Land** — dopad: pokud je hráč (a nedodguje) blíž než 112 px (`LEAP_LANDING_RADIUS`) od místa
+   dopadu, dostane damage pavouka (škálované s patrem a `RunRules`). Kontaktní damage se vrátí.
+5. **Rest** — 0,8 s stojí (řádek 4), pak zpět na Stalk.
+
+## Interakce
+
+- Mrak Bloated spidera a jedovatá stopa [Snake](/docs/enemies/critters#snake--jedovatá-stopa) běží
+  přes stejný systém `tick_poison` jako jedovaté barely z [Dungeonu](/docs/dungeon).
+- Spider king líhne Red → Green → Purple spiderlingy dokola (viz [Spider king](/docs/enemies/bosses/spider-king)).
+- Dopad Stilt spidera respektuje `Dodge` hráče ([Hráč](/docs/player)).
+
+## Kde v kódu
+
+- `enemies.rs` → `spiderling()`, arms `RedSpiderling` … `StiltSpider`; `HEAL_RADIUS`; `LEAP_*`;
+  `crouch_clip`, `air_clip`, `landing_clip`.
+- `systems/skills.rs` → `death_heals`, `death_clouds`.
+- `systems/leapers.rs` → `tick_leapers`, `apply`.
+- `prefabs/fx.rs` → `toxic_cloud`, `TOXIC_CLOUD_*`.
+- `systems/objects.rs` → `tick_poison`.
+
+## Jak přidat nového pavouka
+
+1. `EnemyKind` + arm přes `spiderling(texture, rows, (hp, dmg, force))` — automaticky dostane téma Spider,
+   `min_floor = 1` a `kin = true` (přepiš `kin: false`, pokud ho Green spiderling nemá léčit).
+2. Uprav test `only_spiderlings_count_as_kin` a `picking_respects_the_floor` v `enemies.rs`.
+3. Pokud ho má líhnout Spider king, přidej ho do `HATCH_ORDER` v `systems/bosses.rs`.
+
+## Nápady / chybí
+
+- Pavouci existují jen na patře 1 — pět nepřátel (víc než polovina unikátního obsahu běžných nepřátel)
+  hráč uvidí jen na začátku runu. Zvážit spawn i na dalších patrech (např. Moss) nebo pavoučí „hnízdo“
+  jako speciální místnost.
+- Java verze měla Purple spiderling s teleportem za hráče a Red spiderling s léčením za zásah — Rust
+  port je má jako obyčejné chasery (FEATURE.md tedy nesedí). Teleport by dal Purple spiderlingovi identitu.
+- Stilt spider nemá žádný vizuální indikátor místa dopadu (stín / kruh), přestože Golem pro padající
+  kameny stín má (`ROCK_SHADOW`).
+- Green spiderling léčí jen +1 HP — při 3 HP spiderlingů je to znatelné, ale bez vizuálu na zemi
+  (dosah 200 px) to hráč těžko čte.

@@ -1,0 +1,5 @@
+{
+  "title": "Artefakty a předměty",
+  "icon": "Gem",
+  "pages": ["index", "artefacts", "items", "drops", "shop", "slot-machine", "pet", "perks"]
+}

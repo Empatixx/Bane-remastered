@@ -1,0 +1,91 @@
+---
+title: Měny a meta-progrese
+description: Tři měny hry (coins v runu, gold, talenty), odkud se berou, kam se utrácejí a co trvale posiluje hráče.
+---
+
+## Jak to funguje
+
+Hra má **tři oddělené měny**. Jen dvě z nich přežijí konec runu.
+
+| Měna | Kde žije | Zdroj | Utrácí se za | Přežije run? |
+|---|---|---|---|---|
+| **Coins** (banecoin) | `Wallet.coins` na hráči | Mince z nepřátel, beden, truhel, Midas apod. | Obchod, slot machine (v runu) | **Ne** — propadnou |
+| **Gold** | `Profile.gold` | Odměny z death/victory screenu | Uzly stromů zbraní u Weapon table | Ano |
+| **Talenty** | `Profile.balance` | Vyzvednuté mise, první splnění challenge | Talentový strom u Vědce | Ano |
+
+Coins jsou čistě runová ekonomika — popsané v [Artefaktech a předmětech](/docs/artefacts-items).
+Počet sebraných coins se ale zapisuje do `RunStats.gold` a počítá se do misí *Gold Digger* a *Hoarder*.
+
+### Gold
+
+- Získání: součet čtyř odměn z obrazovky konce runu — vzorec v [Konec runu](/docs/progression/run-end).
+- Utrácení: u **Weapon table** — každá zbraň má vlastní generovaný strom. Cena uzlu `100 + 100 × (řádek − 1)`, mutační uzel **800**. **Reroll** stromu vrátí všechen utracený gold a vezme poplatek **100**. Podrobně: [Zbraně](/docs/guns).
+- Když se změní generátor stromů, při načtení profilu se staré stromy vyresetují a gold se vrátí (`settle_weapon_trees`).
+
+### Talenty
+
+- Získání: mise (1–3 talenty podle obtížnosti, mise na bosse 2) a challenge (3–6, jen poprvé). Viz [Mise](/docs/progression/missions), [Challenge](/docs/progression/challenges).
+- Utrácení: u **Vědce** (Scientist) v lobby — talentový strom. Každý talent stojí **1** (`TALENT_PRICE`).
+- Strom: 3 větve po 5 uzlech, uzly v řetězu (každý vyžaduje předchozí). **První uzel každé větve je zdarma** (vlastněný automaticky, `is_free`).
+
+## Obsah
+
+### Talentový strom (`Upgrade`)
+
+| Větev | # | Talent (`Upgrade`) | Název ve hře | Efekt | Kvalita |
+|---|---|---|---|---|---|
+| Utility | 1 | `MovementSpeed` | Swiftwind Steps | +10 % rychlost pohybu | Common (zdarma) |
+| Utility | 2 | `Discount` | Discount | Šance na slevu v obchodě | Common |
+| Utility | 3 | `TrapMaster` | Trap Master | 30 % pastí znehybněno | Rare |
+| Utility | 4 | `AdditionalGun` | Additional Gun | +1 slot na zbraň | Epic |
+| Utility | 5 | `GambleMachine` | Gamble machine | Slot machine v obchodě (+100 coins na patře s obchodníkem) | Common |
+| Offensive | 1 | `ImprovedDamage` | Sharpened Bullets | +20 % damage | Common (zdarma) |
+| Offensive | 2 | `AdditionalAmmo` | Additional Ammo | +10 % kapacita munice | Common |
+| Offensive | 3 | `CriticalHit` | Critical Hit | 10 % šance na dvojitý damage | Rare |
+| Offensive | 4 | `EnhancedDamage` | Dangerous Bullets | +25 % damage | Epic |
+| Offensive | 5 | `Pet` | Pet | Mazlíček, který pomáhá v boji | Common |
+| Defensive | 1 | `ImprovedHealth` | Hero's Heart | +20 % počáteční HP | Common (zdarma) |
+| Defensive | 2 | `ImprovedArmor` | Improved Armor | +33 % počáteční armor | Common |
+| Defensive | 3 | `ArmorRegeneration` | Armor Regeneration | +1 armor po vyčištění místnosti | Rare |
+| Defensive | 4 | `EnhancedHealth` | Titan's Heart | +25 % počáteční HP | Epic |
+| Defensive | 5 | `ReducedDamageTaken` | Kevlar | −10 % přijatý damage | Common |
+
+Přesné aplikování efektů (`Perks`) a UI stromu: [Hráč](/docs/player).
+
+### Testovací dorovnání v lobby
+
+Při **každém vstupu do lobby** se zavolá:
+
+- `profile.top_up(1000)` — talenty dorovnány na alespoň 1000,
+- `profile.top_up_gold(5000)` — gold dorovnán na alespoň 5000.
+
+Konstanty `TALENTS_TO_TRY_OUT` a `GOLD_TO_TRY_OUT` v `scenes/lobby.rs`. Hodnoty se ukládají do profilu.
+
+## Interakce
+
+- Lobby počítadla: talenty oranžově (`TALENT_COUNTER_COLOR`), gold žlutě (`GOLD_COUNTER_COLOR`).
+- Vědec mluví podle zůstatku talentů (do `Wallet` hráče v lobby se kopíruje `balance`) — viz [Lobby](/docs/progression/lobby).
+- Pravidla challenge mohou talenty potlačit (`dodge`, `armor_regen`, damage, HP) — viz [Pravidla](/docs/progression/rules).
+
+## Kde v kódu
+
+- `profile.rs` → `Profile` (`balance`, `gold`, `total_earned`), `SharedProfile::buy`, `buy_weapon_node`, `reroll_weapon`, `claim_mission`, `top_up`, `top_up_gold`
+- `upgrades.rs` → `Upgrade`, `Tree`, `Quality`, `TALENT_PRICE`, `purchase`, `can_buy`, `Perks`
+- `weapon_upgrades.rs` → `cost`, `MUTATION_COST`, `REROLL_COST`, `WeaponProgress`
+- `scenes/lobby.rs` → `TALENTS_TO_TRY_OUT`, `GOLD_TO_TRY_OUT`, `refresh_counters`, `refresh_wallet`
+
+## Jak přidat nový talent
+
+1. Přidat variantu do `Upgrade` (serde `snake_case` = klíč v profilu) a do `Upgrade::ALL`.
+2. Zařadit ji do pole `Tree::upgrades()` — **pozor**, pole má pevnou délku 5; přidání znamená změnu typu na delší pole a úpravu layoutu v `scenes/upgrade_menu.rs`.
+3. Doplnit `def()` (titul, popis, textura `tex::TALENTS_*`, kvalita).
+4. Přidat pole do `Perks` a nastavit ho v `Perks::from_unlocked`, pak ho použít v systému, kterého se týká.
+5. Starší profily: neznámé názvy se při načtení přeskočí (`known_upgrades`), takže přejmenování talentu ho hráčům tiše smaže.
+
+## Nápady / chybí
+
+- **Testovací dorovnání** 1000 talentů / 5000 gold zcela obchází ekonomiku — první věc k odstranění před playtestem progrese.
+- Všechny talenty stojí 1 a strom má jen 15 binárních uzlů (12 placených) — při normální ekonomice je strom vykoupený po ~4 misích. Ceny podle kvality (Common 1 / Rare 2 / Epic 3) nebo víceúrovňové uzly.
+- Coins z runu propadají úplně; zvážit převod zbytku na gold (např. 10 %), aby se nevyplatilo všechno utratit naslepo.
+- Talenty se nedají vrátit (respec).
+- `Quality` u talentů nemá herní dopad, jen vizuální.
