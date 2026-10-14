@@ -320,6 +320,7 @@ impl Scene for InGameScene {
         systems::update_price_tags(&mut self.world);
         systems::tick_berserk(&mut self.world, dt);
         systems::tick_artefact_effects(&mut self.world, dt);
+        systems::spawn_summons(&mut self.world, &assets.textures);
         systems::update_shield_aura(&mut self.world, &assets.textures);
         systems::update_artefact_hud(&mut self.world, &assets.textures);
         systems::update_slot_prices(&mut self.world);
@@ -482,6 +483,8 @@ impl Scene for InGameScene {
             &mut self.sounds,
         );
         systems::pet_bites(&mut self.world, dt);
+        systems::tick_ghosts(&mut self.world, dt);
+        systems::tick_turrets(&mut self.world, &mut self.physics, &assets.textures, dt);
         systems::trap_hits_enemies(&mut self.world, dt);
         systems::tick_arrow_traps(
             &mut self.world,

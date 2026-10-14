@@ -54,7 +54,6 @@ pub(crate) struct MidasTouch {
     pub(crate) remaining: f32,
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct SummonGhosts;
 
@@ -62,7 +61,6 @@ pub(crate) struct SummonGhosts;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct CastLightning;
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct PlaceTurret;
 
