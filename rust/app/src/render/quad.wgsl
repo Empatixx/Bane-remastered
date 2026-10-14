@@ -243,7 +243,7 @@ fn flow_fbm(p: vec2<f32>) -> f32 {
 
 const LIQUID_PIXEL: f32 = 4.0;
 
-const WATER_SPEED: f32 = 0.4;
+const WATER_SPEED: f32 = 0.8;
 
 fn water_color(px: vec2<f32>, clock: f32) -> vec3<f32> {
     let t = clock * WATER_SPEED;
@@ -285,8 +285,8 @@ fn lava_color(px: vec2<f32>, t: f32) -> vec3<f32> {
 }
 
 fn bog_color(px: vec2<f32>, t: f32) -> vec3<f32> {
-    let a = flow_fbm(px * 0.05 + vec2<f32>(t * 0.004, t * 0.002) + vec2<f32>(21.0, 6.0));
-    let b = flow_fbm(px * 0.11 + vec2<f32>(3.0, 18.0));
+    let a = flow_fbm(px * 0.05 + vec2<f32>(t * 0.016, t * 0.008) + vec2<f32>(21.0, 6.0));
+    let b = flow_fbm(px * 0.11 + vec2<f32>(-t * 0.008, t * 0.012) + vec2<f32>(3.0, 18.0));
     let f = a * 0.65 + b * 0.35;
     var rgb = vec3<f32>(52.0, 42.0, 28.0) / 255.0;
     if (f > 0.40) { rgb = vec3<f32>(66.0, 54.0, 34.0) / 255.0; }
