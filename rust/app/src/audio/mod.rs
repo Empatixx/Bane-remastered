@@ -51,7 +51,6 @@ impl Audio {
         }
     }
 
-    #[cfg(test)]
     pub(crate) fn silent() -> Self {
         Self {
             backend: None,

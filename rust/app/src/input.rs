@@ -89,10 +89,13 @@ impl Input {
         self.scrolled = 0;
     }
 
-    #[cfg(test)]
     pub(crate) fn press(&mut self, code: KeyCode) {
         self.held.insert(code);
         self.pressed.insert(code);
+    }
+
+    pub(crate) fn release(&mut self, code: KeyCode) {
+        self.held.remove(&code);
     }
 
     pub(crate) fn just_pressed(&self, code: KeyCode) -> bool {

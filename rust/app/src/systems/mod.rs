@@ -3,6 +3,7 @@ mod animation;
 mod argus;
 mod arrows;
 mod artefacts;
+mod atmosphere;
 mod blood;
 mod bosses;
 mod camera;
@@ -68,6 +69,7 @@ pub(crate) use artefacts::{
     activate_artefact, clear_artefact_effects, pick_up_artefact, tick_artefact_effects, tick_berserk, unused_artefact, update_artefact_hud,
     update_shield_aura,
 };
+pub(crate) use atmosphere::{AtmosphereTextures, spawn_atmosphere, tick_atmosphere};
 pub(crate) use blood::{
     apply_heal_percent, bloodlust_heals_on_kill, pulse_bloodlust, spawn_bloodlust_drops,
     tick_blood_drops,

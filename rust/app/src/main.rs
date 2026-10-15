@@ -14,6 +14,7 @@ mod flow;
 mod game;
 mod geometry;
 mod guns;
+mod headless;
 mod input;
 mod items;
 mod navigation;
@@ -42,11 +43,18 @@ mod weapon_upgrades;
 
 use winit::event_loop::{ControlFlow, EventLoop};
 
-fn main() -> Result<(), winit::error::EventLoopError> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    if let Some(options) = headless::Options::parse(&args) {
+        let (writer, _log_guard) = tracing_appender::non_blocking(std::io::stderr());
+        tracing_subscriber::fmt().with_writer(writer).init();
+        return headless::run(&options?);
+    }
     let (writer, _log_guard) = tracing_appender::non_blocking(std::io::stdout());
     tracing_subscriber::fmt().with_writer(writer).init();
 
     let event_loop = EventLoop::new()?;
     event_loop.set_control_flow(ControlFlow::Poll);
-    event_loop.run_app(&mut app::App::new())
+    event_loop.run_app(&mut app::App::new())?;
+    Ok(())
 }

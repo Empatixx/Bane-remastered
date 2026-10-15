@@ -317,6 +317,12 @@ impl Scene for InGameScene {
             self.clock,
         );
         systems::tick_dust(&mut self.world, self.clock, dt);
+        systems::tick_atmosphere(
+            &mut self.world,
+            systems::AtmosphereTextures::load(&assets.textures),
+            self.camera.position(),
+            dt,
+        );
         systems::tick_lightning(&mut self.world, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
@@ -792,14 +798,29 @@ impl InGameScene {
         }
         self.flow = FlowField::default();
         let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
-        if std::env::var("BANE_AT").as_deref() == Ok("boss") {
-            if let Some(room) = dungeon
-                .rooms
-                .iter()
-                .find(|room| room.kind == RoomKind::Boss)
-            {
-                start = room.pixel_center() + Vec2::new(0.0, 160.0);
+        // `BANE_AT=boss` or `BANE_AT=normal` starts the floor in that room, for working on the game.
+        match std::env::var("BANE_AT").as_deref() {
+            Ok("boss") => {
+                if let Some(room) = dungeon
+                    .rooms
+                    .iter()
+                    .find(|room| room.kind == RoomKind::Boss)
+                {
+                    start = room.pixel_center() + Vec2::new(0.0, 160.0);
+                }
             }
+            Ok("normal") => {
+                if let Some(spot) = dungeon
+                    .rooms
+                    .iter()
+                    .filter(|room| room.kind == RoomKind::Normal)
+                    .max_by_key(|room| room.columns * room.rows)
+                    .and_then(|room| open_spot_near_center(&dungeon, room))
+                {
+                    start = spot;
+                }
+            }
+            _ => {}
         }
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         systems::apply_floor_perks(&mut self.world, perks);
@@ -825,6 +846,11 @@ impl InGameScene {
                 prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);
             }
         }
+        systems::spawn_atmosphere(
+            &mut self.world,
+            &dungeon,
+            self.run_seed ^ u64::from(self.floor).rotate_left(32),
+        );
         systems::stock_rooms(
             &mut self.world,
             &dungeon,
@@ -959,6 +985,26 @@ impl InGameScene {
             }
         }
     }
+}
+
+/// The open floor tile closest to the middle of a room, with no wall around it.
+fn open_spot_near_center(dungeon: &Dungeon, room: &crate::dungeon::DungeonRoom) -> Option<Vec2> {
+    let center = room.pixel_center();
+    (room.origin.1..room.origin.1 + room.rows)
+        .flat_map(|row| {
+            (room.origin.0..room.origin.0 + room.columns).map(move |column| (column, row))
+        })
+        .filter(|&(column, row)| {
+            (-1isize..=1).all(|dy| {
+                (-1isize..=1).all(|dx| {
+                    !dungeon
+                        .grid
+                        .is_wall(column as isize + dx, row as isize + dy)
+                })
+            })
+        })
+        .map(|(column, row)| (Vec2::new(column as f32, row as f32) + 0.5) * TILE_SIZE)
+        .min_by(|a, b| a.distance(center).total_cmp(&b.distance(center)))
 }
 
 fn player_tile(world: &World) -> Option<(usize, usize)> {

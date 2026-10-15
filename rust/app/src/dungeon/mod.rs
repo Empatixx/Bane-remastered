@@ -6,7 +6,7 @@ mod surface;
 mod template;
 mod theme;
 
-pub(crate) use build::Dungeon;
+pub(crate) use build::{Dungeon, DungeonRoom};
 pub(crate) use decor::{Decor, DecorKind, Mount};
 #[cfg(test)]
 pub(crate) use furnish::Fixture;

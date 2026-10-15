@@ -17,11 +17,15 @@ const INITIAL_QUADS: usize = 10_000;
 const MAX_QUADS: usize = 1 << 20;
 const LIGHTMAP_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const LIGHTMAP_SCALE: f32 = 0.5;
+/// Headless frames are plain RGBA, so they can be saved as they are.
+const OFFSCREEN_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
 const OCCLUDED_WAIT: std::time::Duration = std::time::Duration::from_millis(16);
 
 #[derive(Debug)]
 pub(crate) struct Gpu {
-    surface: wgpu::Surface<'static>,
+    /// The window's surface; `None` when rendering headless into [`Gpu::offscreen`].
+    surface: Option<wgpu::Surface<'static>>,
+    offscreen: Option<wgpu::Texture>,
     device: wgpu::Device,
     queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
@@ -110,7 +114,53 @@ impl Gpu {
             .get_default_config(&adapter, size.width.max(1), size.height.max(1))
             .ok_or("the surface is not supported by this adapter")?;
         surface.configure(&device, &config);
+        Ok(Self::build(Some(surface), None, device, queue, config))
+    }
 
+    /// Renders into an offscreen texture of the given size instead of a window, for screenshots
+    /// without opening anything. Read a frame back with [`Gpu::capture`].
+    pub(crate) fn headless(width: u32, height: u32) -> Result<Self, Box<dyn Error>> {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+        let adapter =
+            pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default()))?;
+        let (device, queue) =
+            pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default()))?;
+        let format = OFFSCREEN_FORMAT;
+        let config = wgpu::SurfaceConfiguration {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            format,
+            width: width.max(1),
+            height: height.max(1),
+            present_mode: wgpu::PresentMode::Fifo,
+            desired_maximum_frame_latency: 2,
+            alpha_mode: wgpu::CompositeAlphaMode::Opaque,
+            view_formats: Vec::new(),
+            color_space: wgpu::SurfaceColorSpace::default(),
+        };
+        let offscreen = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("offscreen"),
+            size: wgpu::Extent3d {
+                width: config.width,
+                height: config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        Ok(Self::build(None, Some(offscreen), device, queue, config))
+    }
+
+    fn build(
+        surface: Option<wgpu::Surface<'static>>,
+        offscreen: Option<wgpu::Texture>,
+        device: wgpu::Device,
+        queue: wgpu::Queue,
+        config: wgpu::SurfaceConfiguration,
+    ) -> Self {
         let globals_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("globals"),
             contents: bytemuck::bytes_of(&Globals::new(glam::Vec2::ZERO, &[], None)),
@@ -248,6 +298,7 @@ impl Gpu {
         let post = Post::new(&device, config.format, &texture_layout);
         let mut gpu = Self {
             surface,
+            offscreen,
             device,
             queue,
             config,
@@ -268,7 +319,7 @@ impl Gpu {
             light,
         };
         gpu.upload(&Pixels::white());
-        Ok(gpu)
+        gpu
     }
 
     pub(crate) fn load_texture(&mut self, path: &Path) -> Result<TextureId, Box<dyn Error>> {
@@ -387,7 +438,9 @@ impl Gpu {
         } else {
             wgpu::PresentMode::AutoNoVsync
         };
-        self.surface.configure(&self.device, &self.config);
+        if let Some(surface) = &self.surface {
+            surface.configure(&self.device, &self.config);
+        }
         tracing::info!(present_mode = ?self.config.present_mode, "present mode set");
     }
 
@@ -395,9 +448,12 @@ impl Gpu {
         if size.width == 0 || size.height == 0 {
             return;
         }
+        let Some(surface) = &self.surface else {
+            return;
+        };
         self.config.width = size.width;
         self.config.height = size.height;
-        self.surface.configure(&self.device, &self.config);
+        surface.configure(&self.device, &self.config);
     }
 
     fn ensure_targets(&mut self) {
@@ -575,36 +631,27 @@ impl Gpu {
                 self.config.height,
             )),
         );
-        let frame = match self.surface.get_current_texture() {
-            wgpu::CurrentSurfaceTexture::Success(frame)
-            | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
-            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
-                self.surface.configure(&self.device, &self.config);
-                return;
+        let (surface_view, frame) = match (&self.surface, &self.offscreen) {
+            (Some(_), _) => {
+                let Some(frame) = self.next_surface_texture() else {
+                    return;
+                };
+                let view = frame
+                    .texture
+                    .create_view(&wgpu::TextureViewDescriptor::default());
+                (view, Some(frame))
             }
-            wgpu::CurrentSurfaceTexture::Occluded => {
-                std::thread::sleep(OCCLUDED_WAIT);
-                return;
-            }
-            other => {
-                self.skipped_frames += 1;
-                if self.skipped_frames % 600 == 1 {
-                    tracing::warn!(
-                        skipped = self.skipped_frames,
-                        "the surface gave no texture: {}",
-                        match other {
-                            wgpu::CurrentSurfaceTexture::Timeout => "timeout",
-                            wgpu::CurrentSurfaceTexture::Validation => "validation",
-                            _ => "other",
-                        }
-                    );
-                }
-                return;
+            (None, Some(offscreen)) => (
+                offscreen.create_view(&wgpu::TextureViewDescriptor::default()),
+                None,
+            ),
+            (None, None) => return,
+        };
+        let present = |queue: &wgpu::Queue, frame: Option<wgpu::SurfaceTexture>| {
+            if let Some(frame) = frame {
+                queue.present(frame);
             }
         };
-        let surface_view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
@@ -633,7 +680,7 @@ impl Gpu {
                 (scene.len() + hud.len()) as u32,
             );
             self.queue.submit([encoder.finish()]);
-            self.queue.present(frame);
+            present(&self.queue, frame);
             return;
         }
         let Some(targets) = &self.targets else {
@@ -698,7 +745,87 @@ impl Gpu {
             (scene.len() + hud.len()) as u32,
         );
         self.queue.submit([encoder.finish()]);
-        self.queue.present(frame);
+        present(&self.queue, frame);
+    }
+
+    fn next_surface_texture(&mut self) -> Option<wgpu::SurfaceTexture> {
+        let surface = self.surface.as_ref()?;
+        match surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(frame)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => Some(frame),
+            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
+                surface.configure(&self.device, &self.config);
+                None
+            }
+            wgpu::CurrentSurfaceTexture::Occluded => {
+                std::thread::sleep(OCCLUDED_WAIT);
+                None
+            }
+            other => {
+                self.skipped_frames += 1;
+                if self.skipped_frames % 600 == 1 {
+                    tracing::warn!(
+                        skipped = self.skipped_frames,
+                        "the surface gave no texture: {}",
+                        match other {
+                            wgpu::CurrentSurfaceTexture::Timeout => "timeout",
+                            wgpu::CurrentSurfaceTexture::Validation => "validation",
+                            _ => "other",
+                        }
+                    );
+                }
+                None
+            }
+        }
+    }
+
+    /// Reads the last headless frame back as RGBA pixels: `(width, height, rgba)`.
+    pub(crate) fn capture(&self) -> Result<(u32, u32, Vec<u8>), Box<dyn Error>> {
+        let texture = self
+            .offscreen
+            .as_ref()
+            .ok_or("only a headless renderer can capture")?;
+        let (width, height) = (self.config.width, self.config.height);
+        let row = 4 * width;
+        let padded =
+            row.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("capture"),
+            size: u64::from(padded) * u64::from(height),
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        encoder.copy_texture_to_buffer(
+            texture.as_image_copy(),
+            wgpu::TexelCopyBufferInfo {
+                buffer: &buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(padded),
+                    rows_per_image: Some(height),
+                },
+            },
+            texture.size(),
+        );
+        self.queue.submit([encoder.finish()]);
+        let slice = buffer.slice(..);
+        let (sender, receiver) = std::sync::mpsc::channel();
+        slice.map_async(wgpu::MapMode::Read, move |result| {
+            let _ = sender.send(result);
+        });
+        self.device.poll(wgpu::PollType::wait_indefinitely())?;
+        receiver.recv()??;
+        let mapped = slice.get_mapped_range()?;
+        let mut rgba = Vec::with_capacity((row * height) as usize);
+        for line in mapped.chunks(padded as usize) {
+            rgba.extend_from_slice(&line[..row as usize]);
+        }
+        drop(mapped);
+        buffer.unmap();
+        Ok((width, height, rgba))
     }
 }
 

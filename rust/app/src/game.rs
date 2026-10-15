@@ -34,12 +34,26 @@ pub(crate) struct Game {
 
 impl Game {
     pub(crate) fn new(assets: Assets, settings: Settings, profile: SharedProfile) -> Self {
+        Self::with_audio(assets, settings, profile, Audio::new())
+    }
+
+    /// A game that makes no sound, for headless runs.
+    pub(crate) fn silent(assets: Assets, settings: Settings, profile: SharedProfile) -> Self {
+        Self::with_audio(assets, settings, profile, Audio::silent())
+    }
+
+    fn with_audio(
+        assets: Assets,
+        settings: Settings,
+        profile: SharedProfile,
+        audio: Audio,
+    ) -> Self {
         Self {
             input: Input::default(),
             scenes: Scenes::new(&assets, profile),
             assets,
             settings,
-            audio: Audio::new(),
+            audio,
             postfx: PostFx::default(),
             time: 0.0,
         }
@@ -73,6 +87,10 @@ impl Game {
         for command in self.scenes.take_sounds() {
             self.audio.play(command);
         }
+    }
+
+    pub(crate) fn input_mut(&mut self) -> &mut Input {
+        &mut self.input
     }
 
     pub(crate) fn handle_key(&mut self, event: &KeyEvent) {
