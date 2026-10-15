@@ -1,9 +1,9 @@
 """Things that hang from the ceiling on a chain or a thread: a candle chandelier, a cage with a
 skeleton, a spider's cocoon, a lantern and a vine.
 
-hanging.tga has one row per kind in that order and three 16x24 cells per row: the thing, the
-thing with its flames or glow flickering, and a piece of its chain (or thread, or vine) that repeats
-upwards. Hand-drawn at the tiles' pixel scale.
+hanging.tga has one row per kind in that order and four 16x24 cells per row: the thing, the
+thing with its flames or glow flickering, a piece of its chain (or thread, or vine) that repeats
+upwards, and the topmost piece fading out into the dark. Hand-drawn at the tiles' pixel scale.
 """
 
 import sys
@@ -237,11 +237,26 @@ KINDS = [
 ]
 
 
+def fading(image):
+    """The topmost piece of a chain: fully there at the bottom, gone at the top, with a smooth
+    ramp in between so the chain disappears into the dark instead of ending on an edge."""
+    faded = image.copy()
+    pixels = faded.load()
+    for y in range(H):
+        ramp = ((y + 0.5) / H) ** 1.4
+        for x in range(W):
+            r, g, b, a = pixels[x, y]
+            pixels[x, y] = (r, g, b, int(a * ramp))
+    return faded
+
+
 def main():
-    sheet = Image.new("RGBA", (3 * W, len(KINDS) * H), CLEAR)
+    sheet = Image.new("RGBA", (4 * W, len(KINDS) * H), CLEAR)
     for row, (frames, chain, palette) in enumerate(KINDS):
-        for column, rows in enumerate([frames[0], frames[1], chain]):
-            sheet.paste(cell(rows, palette), (column * W, row * H))
+        pieces = [cell(frames[0], palette), cell(frames[1], palette), cell(chain, palette)]
+        pieces.append(fading(pieces[2]))
+        for column, image in enumerate(pieces):
+            sheet.paste(image, (column * W, row * H))
     sheet.save(OUT / "hanging.tga")
 
 

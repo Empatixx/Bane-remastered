@@ -1,15 +1,15 @@
 //! The air of a dungeon floor: fog banks drifting over the floor and wisps passing above the
 //! camera on the damp floors, and the motes of each biome
-//! (dust, embers, snow, spores, water drips).
+//! (dust, snow, spores), and in the lava biome now and then an ember rising out of a lava pool.
 
 use std::f32::consts::{PI, TAU};
 
-use glam::{Vec2, Vec3, Vec4};
+use glam::{Vec2, Vec3};
 use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{Color, Layer, Lit, Position, Size, Sprite};
-use crate::dungeon::{Dungeon, Theme};
+use crate::dungeon::{Dungeon, Surface, Theme};
 use crate::render::TextureId;
 use crate::rng::Rng;
 use crate::tilemap::TILE_SIZE;
@@ -30,9 +30,11 @@ const WISP_PARALLAX: f32 = 0.35;
 const MOTE_FRAMES: usize = 8;
 const MOTE_SIZE: f32 = 8.0 * PIXEL;
 const MOTE_LAYER: i32 = 3;
-const DRIP_FALL: f32 = 0.45;
-const DRIP_HEIGHT: f32 = 70.0;
-const SPLASH_TIME: f32 = 0.22;
+/// Embers rising out of the lava pools in view, a few a second at most.
+const EMBERS_PER_SECOND: f32 = 2.0;
+const MAX_EMBERS: usize = 8;
+/// How far from the middle of a lava tile an ember may start.
+const EMBER_JITTER: f32 = 24.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MoteKind {
@@ -58,8 +60,6 @@ impl MoteKind {
     }
 }
 
-const DRIP_FRAME: usize = 6;
-const SPLASH_FRAME: usize = 7;
 
 #[derive(Debug, Clone, Copy)]
 struct FogSpec {
@@ -89,8 +89,6 @@ struct Mood {
     floor_fog: Option<FogSpec>,
     wisps: Option<FogSpec>,
     motes: Option<MoteSpec>,
-    /// Drips per second falling from the ceiling.
-    drips: f32,
 }
 
 const fn rgb(red: f32, green: f32, blue: f32) -> Vec3 {
@@ -109,12 +107,23 @@ const DUST: MoteSpec = MoteSpec {
     flicker: false,
 };
 
+const EMBER: MoteSpec = MoteSpec {
+    kind: MoteKind::Ember,
+    count: MAX_EMBERS,
+    tint: rgb(255.0, 255.0, 255.0),
+    velocity_low: Vec2::new(-7.0, -42.0),
+    velocity_high: Vec2::new(7.0, -16.0),
+    peak: (0.4, 0.7),
+    life: (1.2, 2.6),
+    sway: 6.0,
+    flicker: true,
+};
+
 fn mood(theme: Theme) -> Mood {
     let none = Mood {
         floor_fog: None,
         wisps: None,
         motes: None,
-        drips: 0.0,
     };
     match theme {
         Theme::Stone => Mood {
@@ -156,7 +165,6 @@ fn mood(theme: Theme) -> Mood {
                 sway: 9.0,
                 flicker: true,
             }),
-            ..none
         },
         Theme::Sewer => Mood {
             floor_fog: Some(FogSpec {
@@ -166,7 +174,6 @@ fn mood(theme: Theme) -> Mood {
                 drift: Vec2::new(-6.0, 0.0),
                 scale: (1.6, 2.4),
             }),
-            drips: 2.2,
             ..none
         },
         Theme::Spider => Mood {
@@ -187,20 +194,7 @@ fn mood(theme: Theme) -> Mood {
             }),
             ..none
         },
-        Theme::Lava => Mood {
-            motes: Some(MoteSpec {
-                kind: MoteKind::Ember,
-                count: 14,
-                tint: rgb(255.0, 255.0, 255.0),
-                velocity_low: Vec2::new(-7.0, -42.0),
-                velocity_high: Vec2::new(7.0, -16.0),
-                peak: (0.35, 0.6),
-                life: (2.5, 5.0),
-                sway: 8.0,
-                flicker: true,
-            }),
-            ..none
-        },
+        Theme::Lava => none,
     }
 }
 
@@ -223,7 +217,9 @@ struct Atmosphere {
     mood: Mood,
     rng: Rng,
     clock: f32,
-    drip_debt: f32,
+    /// The middles of the lava tiles, where embers come from.
+    lava: Vec<Vec2>,
+    ember_debt: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -254,12 +250,6 @@ struct Mote {
     flicker: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
-struct Drip {
-    landing: Vec2,
-    age: f32,
-}
-
 fn between(rng: &mut Rng, low: f32, high: f32) -> f32 {
     low + (high - low) * rng.float()
 }
@@ -268,11 +258,18 @@ fn between(rng: &mut Rng, low: f32, high: f32) -> f32 {
 pub(crate) fn spawn_atmosphere(world: &mut World, dungeon: &Dungeon, seed: u64) {
     let mood = mood(dungeon.theme);
     let rng = Rng::new(seed);
+    let lava = dungeon
+        .surfaces
+        .iter()
+        .filter(|(_, surface)| *surface == Surface::Lava)
+        .map(|(tile, _)| (Vec2::new(tile.0 as f32, tile.1 as f32) + 0.5) * TILE_SIZE)
+        .collect();
     world.spawn((Atmosphere {
         mood,
         rng,
         clock: 0.0,
-        drip_debt: 0.0,
+        lava,
+        ember_debt: 0.0,
     },));
 }
 
@@ -313,14 +310,9 @@ pub(crate) fn tick_atmosphere(
     if let Some(spec) = air.mood.motes {
         top_up_motes(world, &mut air.rng, textures.motes, spec, camera);
     }
-    air.drip_debt += air.mood.drips * dt;
-    while air.drip_debt >= 1.0 {
-        air.drip_debt -= 1.0;
-        spawn_drip(world, &mut air.rng, textures.motes, camera);
-    }
+    rise_embers(world, &mut air, textures.motes, camera, dt);
     drift_haze(world, camera, dt);
     drift_motes(world, air.clock, dt);
-    fall_drips(world, dt);
     let _ = world.insert_one(controller, air);
 }
 
@@ -391,6 +383,13 @@ fn top_up_motes(
 ) {
     let present = world.query::<&Mote>().iter().count();
     for _ in 0..spec.count.saturating_sub(present).min(PER_TICK) {
+        let at = in_view(rng, camera, 0.0);
+        spawn_mote(world, rng, texture, spec, at);
+    }
+}
+
+fn spawn_mote(world: &mut World, rng: &mut Rng, texture: TextureId, spec: MoteSpec, at: Vec2) {
+    {
         let frames = spec.kind.frames();
         let frame = frames[rng.below(frames.len())];
         let entity = world.spawn((
@@ -406,7 +405,7 @@ fn top_up_motes(
                 sway: spec.sway,
                 flicker: spec.flicker,
             },
-            Position(in_view(rng, camera, 0.0)),
+            Position(at),
             Size(Vec2::splat(MOTE_SIZE)),
             Color(spec.tint.extend(0.0)),
             Sprite::cell(texture, frame, 0, MOTE_FRAMES, 1),
@@ -418,17 +417,38 @@ fn top_up_motes(
     }
 }
 
-fn spawn_drip(world: &mut World, rng: &mut Rng, texture: TextureId, camera: Vec2) {
-    let landing = in_view(rng, camera, 0.0);
-    world.spawn((
-        Drip { landing, age: 0.0 },
-        Position(landing - Vec2::new(0.0, DRIP_HEIGHT)),
-        Size(Vec2::splat(MOTE_SIZE)),
-        Color(Vec4::new(1.0, 1.0, 1.0, 0.85)),
-        Sprite::cell(texture, DRIP_FRAME, 0, MOTE_FRAMES, 1),
-        Layer(MOTE_LAYER),
-        Lit,
-    ));
+/// Now and then an ember rises out of one of the lava pools in view.
+fn rise_embers(
+    world: &mut World,
+    air: &mut Atmosphere,
+    texture: TextureId,
+    camera: Vec2,
+    dt: f32,
+) {
+    let visible: Vec<Vec2> = air
+        .lava
+        .iter()
+        .copied()
+        .filter(|at| at.cmpge(camera).all() && at.cmple(camera + TARGET).all())
+        .collect();
+    if visible.is_empty() {
+        air.ember_debt = 0.0;
+        return;
+    }
+    air.ember_debt += EMBERS_PER_SECOND * dt;
+    while air.ember_debt >= 1.0 {
+        air.ember_debt -= 1.0;
+        if world.query::<&Mote>().iter().count() >= MAX_EMBERS {
+            continue;
+        }
+        let rng = &mut air.rng;
+        let tile = visible[rng.below(visible.len())];
+        let jitter = Vec2::new(
+            between(rng, -EMBER_JITTER, EMBER_JITTER),
+            between(rng, -EMBER_JITTER, EMBER_JITTER),
+        );
+        spawn_mote(world, rng, texture, EMBER, tile + jitter);
+    }
 }
 
 /// Fades in, holds, fades out over a life.
@@ -473,28 +493,6 @@ fn drift_motes(world: &mut World, clock: f32, dt: f32) {
         color.0.w = alpha;
         if mote.age >= mote.life {
             gone.push(entity);
-        }
-    }
-    for entity in gone {
-        let _ = world.despawn(entity);
-    }
-}
-
-fn fall_drips(world: &mut World, dt: f32) {
-    let mut gone = Vec::new();
-    for (entity, drip, position, sprite) in
-        world.query_mut::<(Entity, &mut Drip, &mut Position, &mut Sprite)>()
-    {
-        drip.age += dt;
-        if drip.age < DRIP_FALL {
-            let fallen = (drip.age / DRIP_FALL).powi(2);
-            position.0 = drip.landing - Vec2::new(0.0, DRIP_HEIGHT * (1.0 - fallen));
-        } else {
-            position.0 = drip.landing;
-            sprite.uv = Sprite::cell_uv(SPLASH_FRAME, 0, MOTE_FRAMES, 1);
-            if drip.age >= DRIP_FALL + SPLASH_TIME {
-                gone.push(entity);
-            }
         }
     }
     for entity in gone {
@@ -572,7 +570,9 @@ mod tests {
             let air = mood(theme);
             let fog = count::<Haze>(&world);
             let motes = count::<Mote>(&world);
-            assert!(fog + motes + count::<Drip>(&world) > 0, "{theme:?}");
+            if theme != Theme::Lava {
+                assert!(fog + motes > 0, "{theme:?}");
+            }
             let fog_cap = air.floor_fog.map_or(0, |f| f.count) + air.wisps.map_or(0, |f| f.count);
             assert!(fog <= fog_cap, "{theme:?}");
             assert!(motes <= air.motes.map_or(0, |m| m.count), "{theme:?}");
@@ -580,32 +580,53 @@ mod tests {
     }
 
     #[test]
-    fn embers_rise_and_snow_falls() {
-        for (theme, rising) in [(Theme::Lava, true), (Theme::Ice, false)] {
-            let (mut world, _) = floor(theme, 9);
-            run(&mut world, Vec2::ZERO, 0.1);
-            let before: Vec<(Entity, f32)> = world
-                .query::<(Entity, &Position)>()
-                .with::<&Mote>()
-                .iter()
-                .map(|(entity, position)| (entity, position.0.y))
-                .collect();
-            run(&mut world, Vec2::ZERO, 1.0);
-            for (entity, y) in before {
-                let Ok(now) = world.get::<&Position>(entity) else {
-                    continue;
-                };
-                assert_eq!(now.0.y < y, rising, "{theme:?}");
+    fn snow_falls() {
+        let (mut world, _) = floor(Theme::Ice, 9);
+        run(&mut world, Vec2::ZERO, 0.1);
+        let before: Vec<(Entity, f32)> = world
+            .query::<(Entity, &Position)>()
+            .with::<&Mote>()
+            .iter()
+            .map(|(entity, position)| (entity, position.0.y))
+            .collect();
+        assert!(!before.is_empty());
+        run(&mut world, Vec2::ZERO, 1.0);
+        for (entity, y) in before {
+            if let Ok(now) = world.get::<&Position>(entity) {
+                assert!(now.0.y > y);
             }
         }
     }
 
     #[test]
-    fn sewer_drips_fall_splash_and_go() {
-        let (mut world, _) = floor(Theme::Sewer, 3);
-        run(&mut world, Vec2::ZERO, 3.0);
-        assert!(count::<Drip>(&world) > 0);
-        assert!(count::<Drip>(&world) < 10);
+    fn embers_only_rise_out_of_lava_in_view() {
+        let (mut world, dungeon) = floor(Theme::Lava, 9);
+        let lava: Vec<Vec2> = dungeon
+            .surfaces
+            .iter()
+            .filter(|(_, surface)| *surface == Surface::Lava)
+            .map(|(tile, _)| (Vec2::new(tile.0 as f32, tile.1 as f32) + 0.5) * TILE_SIZE)
+            .collect();
+        let pool = *lava.first().expect("a lava floor has lava");
+        // Far from any lava: nothing in the air.
+        run(&mut world, Vec2::new(-50_000.0, -50_000.0), 3.0);
+        assert_eq!(count::<Mote>(&world), 0);
+        // Over a pool: a few embers, each starting on a lava tile and rising.
+        let camera = pool - TARGET / 2.0;
+        // Half a second over the pool brings the first ember, which has barely moved yet.
+        for _ in 0..31 {
+            tick_atmosphere(&mut world, textures(), camera, 1.0 / 60.0);
+        }
+        let embers: Vec<Vec2> = world
+            .query::<&Position>()
+            .with::<&Mote>()
+            .iter()
+            .map(|position| position.0)
+            .collect();
+        assert!(!embers.is_empty() && embers.len() <= MAX_EMBERS);
+        for ember in &embers {
+            assert!(lava.iter().any(|tile| (*tile - *ember).abs().max_element() <= EMBER_JITTER + 2.0));
+        }
     }
 
     #[test]

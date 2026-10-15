@@ -735,13 +735,32 @@ impl InGameScene {
             .ok()
             .and_then(|name| Theme::parse(&name))
             .unwrap_or_else(|| Theme::for_floor(self.run_seed, self.floor));
-        let dungeon = match Dungeon::generate_for_run(&mut self.map_rng, theme, self.rules.shops) {
+        let mut dungeon = match Dungeon::generate_for_run(&mut self.map_rng, theme, self.rules.shops)
+        {
             Ok(dungeon) => dungeon,
             Err(error) => {
                 tracing::error!(%error, "cannot generate the dungeon");
                 return;
             }
         };
+        // `BANE_SHOWCASE=1` hangs one of every kind across the biggest normal room and starts the
+        // player under them, for looking at them all at once.
+        let mut showcase_start = None;
+        if std::env::var_os("BANE_SHOWCASE").is_some() {
+            let grid = dungeon.grid.clone();
+            if let Some(room) = dungeon
+                .rooms
+                .iter_mut()
+                .filter(|room| room.kind == RoomKind::Normal)
+                .max_by_key(|room| room.columns * room.rows)
+            {
+                room.hanging = crate::dungeon::showcase(&grid, room);
+                if let Some(first) = room.hanging.first() {
+                    let tile = Vec2::new(first.tile.0 as f32, first.tile.1 as f32);
+                    showcase_start = Some((tile + Vec2::new(0.5, 1.0)) * TILE_SIZE);
+                }
+            }
+        }
         let bounds = dungeon.grid.pixel_size();
         let textures = &assets.textures;
         let perks = self.perks();
@@ -842,6 +861,9 @@ impl InGameScene {
                 }
             }
             _ => {}
+        }
+        if let Some(spot) = showcase_start {
+            start = spot;
         }
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         systems::apply_floor_perks(&mut self.world, perks);

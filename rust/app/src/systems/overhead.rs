@@ -107,12 +107,14 @@ pub(crate) fn tick_overheads(world: &mut World, dt: f32) {
     }
 }
 
-const HANGING_COLUMNS: usize = 3;
+const HANGING_COLUMNS: usize = 4;
 const HANGING_ROWS: usize = 5;
 const CHAIN_CELL: usize = 2;
+/// The topmost chain piece, fading out upwards in the texture itself.
+const CHAIN_TOP_CELL: usize = 3;
 /// How high above its floor tile a hanging thing hangs; its shadow lies on the tile.
 const HANG: f32 = 120.0;
-/// Chain pieces above the thing, fading into the dark of the ceiling.
+/// Chain pieces above the thing; the last one fades into the dark of the ceiling.
 const CHAIN_PIECES: usize = 3;
 const SWAY: f32 = 4.0;
 const SWAY_RATE: f32 = 1.1;
@@ -160,13 +162,18 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
             };
             for piece in 1..=CHAIN_PIECES {
                 let base = at - Vec2::new(0.0, PIECE.y * piece as f32);
-                let fade = 1.0 - piece as f32 / (CHAIN_PIECES + 1) as f32;
+                let reach = 1.0 - piece as f32 / (CHAIN_PIECES + 1) as f32;
+                let cell = if piece == CHAIN_PIECES {
+                    CHAIN_TOP_CELL
+                } else {
+                    CHAIN_CELL
+                };
                 world.spawn((
-                    part(base, fade, None, fade),
+                    part(base, reach, None, 1.0),
                     Position(base),
                     Size(PIECE),
-                    Color(Vec4::new(1.0, 1.0, 1.0, fade)),
-                    Sprite::cell(texture, CHAIN_CELL, row, HANGING_COLUMNS, HANGING_ROWS),
+                    Color(Vec4::ONE),
+                    Sprite::cell(texture, cell, row, HANGING_COLUMNS, HANGING_ROWS),
                     Layer(LAYER),
                     Lit,
                 ));

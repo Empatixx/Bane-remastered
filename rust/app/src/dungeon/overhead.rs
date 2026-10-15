@@ -135,7 +135,12 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, theme: Theme, rng: &mut 
 
 const HANGING_CLEARANCE: isize = 2;
 const HANGING_SPACING: usize = 4;
-const MAX_HANGING: usize = 3;
+const MAX_HANGING: usize = 2;
+/// Only some combat rooms have anything hanging, so it stays a detail rather than a pattern.
+const HANGING_ROOM_PERCENT: usize = 35;
+/// Rooms at least this big (in tiles) may get a second one.
+const ROOMY_FOR_TWO: usize = 500;
+const SECOND_HANGING_PERCENT: usize = 40;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum HangingKind {
@@ -186,8 +191,8 @@ pub(crate) struct Hanging {
     pub(crate) tile: (usize, usize),
 }
 
-/// One to three things hanging over the open floor of a combat room, clear of the walls, of
-/// each other and of the spans already lying across the room.
+/// Now and then something hanging over the open floor of a combat room (a second one only in a
+/// big room), clear of the walls, of each other and of the spans already lying across the room.
 pub(crate) fn plan_hanging(
     grid: &TileGrid,
     room: &DungeonRoom,
@@ -195,9 +200,18 @@ pub(crate) fn plan_hanging(
     spans: &[Overhead],
     rng: &mut Rng,
 ) -> Vec<Hanging> {
-    if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
+    if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush)
+        || rng.below(100) >= HANGING_ROOM_PERCENT
+    {
         return Vec::new();
     }
+    let wanted = if room.columns * room.rows >= ROOMY_FOR_TWO
+        && rng.below(100) < SECOND_HANGING_PERCENT
+    {
+        MAX_HANGING
+    } else {
+        1
+    };
     let clear = |column: usize, row: usize| {
         (-HANGING_CLEARANCE..=HANGING_CLEARANCE).all(|dy| {
             (-HANGING_CLEARANCE..=HANGING_CLEARANCE)
@@ -215,7 +229,7 @@ pub(crate) fn plan_hanging(
         .collect();
     let kinds = theme.hanging_kinds();
     let mut planned = Vec::new();
-    for _ in 0..1 + rng.below(MAX_HANGING) {
+    for _ in 0..wanted {
         if open.is_empty() {
             break;
         }
@@ -229,6 +243,44 @@ pub(crate) fn plan_hanging(
         });
     }
     planned
+}
+
+/// One of every hanging kind in a row across the middle of a room, whatever its biome, for
+/// looking at them all at once (`BANE_SHOWCASE`).
+pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom) -> Vec<Hanging> {
+    use HangingKind::*;
+    let kinds = [Chandelier, Cage, Cocoon, Lantern, Vine];
+    let clear = |column: usize, row: usize| {
+        (-1isize..=1).all(|dy| (-1isize..=1).all(|dx| !grid.is_wall(column as isize + dx, row as isize + dy)))
+    };
+    // Low enough in the room that what hangs above the row is still inside it.
+    let middle = room.origin.1 + room.rows / 2 + 2;
+    let rows = (0..room.rows / 2)
+        .flat_map(|step| [middle + step, middle.saturating_sub(step)])
+        .filter(|&row| row >= room.origin.1 + 4 && row + 2 < room.origin.1 + room.rows);
+    for row in rows {
+        let columns: Vec<usize> = (room.origin.0..room.origin.0 + room.columns)
+            .filter(|&column| clear(column, row))
+            .collect();
+        let mut picked: Vec<usize> = Vec::new();
+        for column in columns {
+            if picked.last().is_none_or(|last| column >= last + 3) {
+                picked.push(column);
+            }
+        }
+        if picked.len() >= kinds.len() {
+            let start = (picked.len() - kinds.len()) / 2;
+            return kinds
+                .iter()
+                .zip(&picked[start..])
+                .map(|(&kind, &column)| Hanging {
+                    kind,
+                    tile: (column, row),
+                })
+                .collect();
+        }
+    }
+    Vec::new()
 }
 
 #[cfg(test)]
@@ -302,7 +354,24 @@ mod tests {
                 }
             }
         }
-        assert!(total > 40, "{total}");
+        assert!(total > 10, "{total}");
+    }
+
+    #[test]
+    fn only_some_rooms_have_anything_hanging() {
+        let (mut rooms, mut hung) = (0, 0);
+        for seed in 0..30 {
+            let dungeon =
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Moss).expect("a dungeon");
+            for room in &dungeon.rooms {
+                if matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
+                    rooms += 1;
+                    hung += usize::from(!room.hanging.is_empty());
+                }
+            }
+        }
+        let share = hung as f32 / rooms as f32;
+        assert!((0.15..0.55).contains(&share), "{share}");
     }
 
     #[test]
