@@ -595,6 +595,7 @@ impl Scene for InGameScene {
             hostile_dt,
         );
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
+        systems::tick_carts(&mut self.world, &mut self.physics, dt);
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::watch_progress(&mut self.world, hostile_dt);
         systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
@@ -854,6 +855,12 @@ impl InGameScene {
                     start = (tile + Vec2::new(0.5, 1.2)) * TILE_SIZE;
                 }
             }
+            Ok("track") => {
+                if let Some(track) = dungeon.rooms.iter().find_map(|room| room.track) {
+                    let column = track.cart as f32 - 2.0;
+                    start = Vec2::new(column + 0.5, track.row as f32 + 0.5) * TILE_SIZE;
+                }
+            }
             Ok("overhead") => {
                 if let Some(span) = dungeon.rooms.iter().flat_map(|room| &room.overheads).next() {
                     let column = (span.left + span.right + 1) as f32 / 2.0;
@@ -891,6 +898,7 @@ impl InGameScene {
         }
         systems::spawn_overheads(&mut self.world, &dungeon, textures);
         systems::spawn_hanging(&mut self.world, &dungeon, textures);
+        systems::spawn_tracks(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_atmosphere(
             &mut self.world,
             &dungeon,

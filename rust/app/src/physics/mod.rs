@@ -203,6 +203,25 @@ impl Physics {
         body
     }
 
+    /// A body moved only by the game (like a mine cart on its rail): it shoves the player and
+    /// enemies out of its way and stops bullets, but nothing pushes it back.
+    pub(crate) fn add_moving_object(&mut self, entity: Entity, center: Vec2, size: Vec2) -> Body {
+        let body = RigidBodyBuilder::kinematic_position_based()
+            .translation(to_rapier(center))
+            .lock_rotations();
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .collision_groups(groups::OBJECTS)
+            .user_data(owner_bits(entity));
+        self.insert(body, collider)
+    }
+
+    /// Where a body moved by the game is next; it gets there over the coming step.
+    pub(crate) fn move_to(&mut self, body: Body, position: Vec2) {
+        if let Some(rigid_body) = self.world.bodies.get_mut(body.body) {
+            rigid_body.set_next_kinematic_translation(to_rapier(position));
+        }
+    }
+
     pub(crate) fn remove(&mut self, body: Body) {
         self.world.remove_body(body.body);
     }

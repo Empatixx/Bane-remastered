@@ -11,6 +11,7 @@ use super::overhead::{self, Hanging, Overhead};
 use super::surface::{self, Surfaces};
 use super::template::{Cell, RoomKind, RoomTemplate, Templates, door_columns, door_rows};
 use super::theme::Theme;
+use super::track::{self, Track};
 use crate::rng::Rng;
 
 pub(crate) const CORRIDOR_LENGTH: usize = 4;
@@ -35,6 +36,7 @@ pub(crate) struct DungeonRoom {
     pub(crate) furnishing: Option<Furnishing>,
     pub(crate) overheads: Vec<Overhead>,
     pub(crate) hanging: Vec<Hanging>,
+    pub(crate) track: Option<Track>,
 }
 
 impl DungeonRoom {
@@ -221,6 +223,7 @@ impl Dungeon {
                 furnishing: None,
                 overheads: Vec::new(),
                 hanging: Vec::new(),
+                track: None,
             });
         }
 
@@ -250,6 +253,10 @@ impl Dungeon {
             room.overheads = overhead::plan(&grid, room, theme, &mut overhead_rng);
             room.hanging =
                 overhead::plan_hanging(&grid, room, theme, &room.overheads, &mut overhead_rng);
+        }
+        let mut track_rng = Rng::new(rng.next_u64());
+        for room in &mut rooms {
+            room.track = track::plan(&grid, room, &surfaces, &mut track_rng);
         }
         Ok(Self {
             grid,

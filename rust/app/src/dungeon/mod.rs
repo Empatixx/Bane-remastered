@@ -6,6 +6,7 @@ mod overhead;
 mod surface;
 mod template;
 mod theme;
+mod track;
 
 pub(crate) use build::{Dungeon, DungeonRoom};
 pub(crate) use decor::{Decor, DecorKind, Mount};
