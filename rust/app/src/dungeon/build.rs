@@ -7,7 +7,7 @@ use crate::tilemap::{TILE_SIZE, TileGrid};
 use super::decor::{self, Decor};
 use super::furnish::{self, Furnishing};
 use super::layout::{Direction, Layout, LayoutSpec};
-use super::overhead::{self, Overhead};
+use super::overhead::{self, Hanging, Overhead};
 use super::surface::{self, Surfaces};
 use super::template::{Cell, RoomKind, RoomTemplate, Templates, door_columns, door_rows};
 use super::theme::Theme;
@@ -34,6 +34,7 @@ pub(crate) struct DungeonRoom {
     pub(crate) decor: Vec<Decor>,
     pub(crate) furnishing: Option<Furnishing>,
     pub(crate) overheads: Vec<Overhead>,
+    pub(crate) hanging: Vec<Hanging>,
 }
 
 impl DungeonRoom {
@@ -219,6 +220,7 @@ impl Dungeon {
                 decor: Vec::new(),
                 furnishing: None,
                 overheads: Vec::new(),
+                hanging: Vec::new(),
             });
         }
 
@@ -246,6 +248,8 @@ impl Dungeon {
         let mut overhead_rng = Rng::new(rng.next_u64());
         for room in &mut rooms {
             room.overheads = overhead::plan(&grid, room, theme, &mut overhead_rng);
+            room.hanging =
+                overhead::plan_hanging(&grid, room, theme, &room.overheads, &mut overhead_rng);
         }
         Ok(Self {
             grid,

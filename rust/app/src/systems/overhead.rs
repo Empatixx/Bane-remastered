@@ -1,13 +1,14 @@
 //! Draws what lies across the rooms from wall top to wall top (see [`crate::dungeon::Overhead`]):
 //! the pieces sit above everything that moves, throw a shadow on the floor one wall's height
-//! below, and turn see-through while the player is under them.
+//! below, and turn see-through while the player is under them. Hanging things swing a little
+//! on their chains, candles and lanterns flicker and light the room.
 
-use glam::{Vec2, Vec4};
+use glam::{Vec2, Vec3, Vec4};
 use hecs::World;
 
 use crate::assets::{Textures, tex};
-use crate::components::{Color, Layer, Lit, Player, Position, Size, Sprite};
-use crate::dungeon::{Dungeon, OverheadKind};
+use crate::components::{Color, Layer, Light, Lit, Player, Position, Size, Sprite};
+use crate::dungeon::{Dungeon, HangingKind, OverheadKind};
 use crate::tilemap::TILE_SIZE;
 
 const COLUMNS: usize = 4;
@@ -106,6 +107,128 @@ pub(crate) fn tick_overheads(world: &mut World, dt: f32) {
     }
 }
 
+const HANGING_COLUMNS: usize = 3;
+const HANGING_ROWS: usize = 5;
+const CHAIN_CELL: usize = 2;
+/// How high above its floor tile a hanging thing hangs; its shadow lies on the tile.
+const HANG: f32 = 120.0;
+/// Chain pieces above the thing, fading into the dark of the ceiling.
+const CHAIN_PIECES: usize = 3;
+const SWAY: f32 = 4.0;
+const SWAY_RATE: f32 = 1.1;
+const FLICKER_RATE: f32 = 7.0;
+const HANGING_SHADOW_ALPHA: f32 = 0.28;
+const GLOW: Vec3 = Vec3::new(255.0, 196.0, 110.0);
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct HangingPart {
+    base: Vec2,
+    /// How much of the swing this part follows: the thing all of it, the chain less towards
+    /// the ceiling.
+    reach: f32,
+    phase: f32,
+    /// The thing itself (not a chain piece) and whether it flickers.
+    thing: Option<bool>,
+    row: usize,
+    /// The most opaque this part gets.
+    opacity: f32,
+    min: Vec2,
+    max: Vec2,
+    alpha: f32,
+}
+
+pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Textures) {
+    let texture = textures.get(tex::HANGING);
+    for room in &dungeon.rooms {
+        for hanging in &room.hanging {
+            let floor = (Vec2::new(hanging.tile.0 as f32, hanging.tile.1 as f32) + 0.5) * TILE_SIZE;
+            let at = floor - Vec2::new(0.0, HANG);
+            let min = at - PIECE / 2.0;
+            let max = at + PIECE / 2.0;
+            let phase = (hanging.tile.0 * 7 + hanging.tile.1 * 13) as f32 * 0.37;
+            let row = hanging.kind.row();
+            let part = |base: Vec2, reach: f32, thing: Option<bool>, opacity: f32| HangingPart {
+                base,
+                reach,
+                phase,
+                thing,
+                row,
+                opacity,
+                min,
+                max,
+                alpha: opacity,
+            };
+            for piece in 1..=CHAIN_PIECES {
+                let base = at - Vec2::new(0.0, PIECE.y * piece as f32);
+                let fade = 1.0 - piece as f32 / (CHAIN_PIECES + 1) as f32;
+                world.spawn((
+                    part(base, fade, None, fade),
+                    Position(base),
+                    Size(PIECE),
+                    Color(Vec4::new(1.0, 1.0, 1.0, fade)),
+                    Sprite::cell(texture, CHAIN_CELL, row, HANGING_COLUMNS, HANGING_ROWS),
+                    Layer(LAYER),
+                    Lit,
+                ));
+            }
+            let sprite = Sprite::cell(texture, 0, row, HANGING_COLUMNS, HANGING_ROWS);
+            let thing = world.spawn((
+                part(at, 1.0, Some(hanging.kind.glows()), 1.0),
+                Position(at),
+                Size(PIECE),
+                Color(Vec4::ONE),
+                sprite,
+                Layer(LAYER),
+                Lit,
+            ));
+            if hanging.kind.glows() {
+                let _ = world.insert_one(
+                    thing,
+                    Light::rgb(Vec2::new(0.0, -8.0), GLOW.x, GLOW.y, GLOW.z, 90.0, 1.0),
+                );
+            }
+            world.spawn((
+                Position(floor + Vec2::new(SHADOW_OFFSET.x, 0.0)),
+                Size(PIECE),
+                Color(Vec4::new(0.0, 0.0, 0.0, HANGING_SHADOW_ALPHA)),
+                sprite,
+                Layer(SHADOW_LAYER),
+            ));
+        }
+    }
+}
+
+pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
+    let player = world
+        .query::<(&Position, &Size)>()
+        .with::<&Player>()
+        .iter()
+        .next()
+        .map(|(position, size)| (position.0 - size.0 / 2.0, position.0 + size.0 / 2.0));
+    let fade = (FADE_RATE * dt).min(1.0);
+    for (part, position, color, sprite) in
+        world.query_mut::<(&mut HangingPart, &mut Position, &mut Color, &mut Sprite)>()
+    {
+        let swing = (clock * SWAY_RATE + part.phase).sin() * SWAY * part.reach;
+        position.0 = part.base + Vec2::new(swing, 0.0);
+        if part.thing == Some(true) || (part.thing.is_some() && part.row == HangingKind::Vine.row()) {
+            let rate = if part.thing == Some(true) { FLICKER_RATE } else { SWAY_RATE };
+            let frame = ((clock * rate + part.phase) as usize) % 2;
+            sprite.uv = Sprite::cell_uv(frame, part.row, HANGING_COLUMNS, HANGING_ROWS);
+        }
+        let under = player.is_some_and(|(low, high)| {
+            low.x < part.max.x && high.x > part.min.x && low.y < part.max.y && high.y > part.min.y
+        });
+        let target = if under {
+            part.opacity * SEE_THROUGH
+        } else {
+            part.opacity
+        };
+        part.alpha += (target - part.alpha) * fade;
+        color.0.w = part.alpha;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use hecs::Entity;
@@ -145,6 +268,36 @@ mod tests {
             .filter(|layer| layer.0 == SHADOW_LAYER)
             .count();
         assert_eq!(shadows, pieces);
+    }
+
+    #[test]
+    fn hanging_things_get_a_chain_a_shadow_and_swing() {
+        let textures = Textures::default();
+        let dungeon = (0..20)
+            .map(|seed| Dungeon::generate_themed(&mut Rng::new(seed), Theme::Stone).expect("a dungeon"))
+            .find(|dungeon| dungeon.rooms.iter().any(|room| !room.hanging.is_empty()))
+            .expect("a floor with something hanging");
+        let mut world = World::new();
+        spawn_hanging(&mut world, &dungeon, &textures);
+        let count: usize = dungeon.rooms.iter().map(|room| room.hanging.len()).sum();
+        assert_eq!(
+            world.query::<&HangingPart>().iter().count(),
+            count * (CHAIN_PIECES + 1)
+        );
+        let positions = |world: &World| -> Vec<Vec2> {
+            world
+                .query::<(&HangingPart, &Position)>()
+                .iter()
+                .filter(|(part, _)| part.thing.is_some())
+                .map(|(_, position)| position.0)
+                .collect()
+        };
+        tick_hanging(&mut world, 0.0, 0.0);
+        let before = positions(&world);
+        tick_hanging(&mut world, 0.7, 0.0);
+        let after = positions(&world);
+        assert!(before.iter().zip(&after).any(|(a, b)| (a.x - b.x).abs() > 0.5));
+        assert!(before.iter().zip(&after).all(|(a, b)| (a.x - b.x).abs() <= 2.0 * SWAY && a.y == b.y));
     }
 
     fn piece_alpha(world: &World) -> Vec<f32> {

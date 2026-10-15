@@ -1,6 +1,7 @@
 //! Things that hang high above a combat room, stretched between two walls: grates, wooden
 //! beams, chains, pipes, stone arches, thick webs and metal walkways. They span a gap between
-//! two wall blocks in one row, so the player walks underneath them.
+//! two wall blocks in one row, so the player walks underneath them. Others hang from the
+//! ceiling on a chain or a thread over open floor: chandeliers, cages, cocoons, lanterns, vines.
 
 use crate::rng::Rng;
 use crate::tilemap::TileGrid;
@@ -132,6 +133,104 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, theme: Theme, rng: &mut 
     planned
 }
 
+const HANGING_CLEARANCE: isize = 2;
+const HANGING_SPACING: usize = 4;
+const MAX_HANGING: usize = 3;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum HangingKind {
+    Chandelier,
+    Cage,
+    Cocoon,
+    Lantern,
+    Vine,
+}
+
+impl HangingKind {
+    /// The kind's row in the hanging sheet.
+    pub(crate) fn row(self) -> usize {
+        match self {
+            Self::Chandelier => 0,
+            Self::Cage => 1,
+            Self::Cocoon => 2,
+            Self::Lantern => 3,
+            Self::Vine => 4,
+        }
+    }
+
+    /// Candles and lanterns flicker between their two pictures and light the room.
+    pub(crate) fn glows(self) -> bool {
+        matches!(self, Self::Chandelier | Self::Lantern)
+    }
+}
+
+impl Theme {
+    pub(crate) fn hanging_kinds(self) -> &'static [HangingKind] {
+        use HangingKind::*;
+        match self {
+            Self::Stone => &[Chandelier, Cage],
+            Self::Temple => &[Chandelier, Chandelier, Cage],
+            Self::Moss => &[Vine, Vine, Lantern],
+            Self::Sewer => &[Lantern, Cage],
+            Self::Spider => &[Cocoon, Cocoon, Cage],
+            Self::Ice => &[Lantern, Chandelier],
+            Self::Lava => &[Cage, Lantern],
+        }
+    }
+}
+
+/// Something hanging from the ceiling above the floor tile `tile`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Hanging {
+    pub(crate) kind: HangingKind,
+    pub(crate) tile: (usize, usize),
+}
+
+/// One to three things hanging over the open floor of a combat room, clear of the walls, of
+/// each other and of the spans already lying across the room.
+pub(crate) fn plan_hanging(
+    grid: &TileGrid,
+    room: &DungeonRoom,
+    theme: Theme,
+    spans: &[Overhead],
+    rng: &mut Rng,
+) -> Vec<Hanging> {
+    if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
+        return Vec::new();
+    }
+    let clear = |column: usize, row: usize| {
+        (-HANGING_CLEARANCE..=HANGING_CLEARANCE).all(|dy| {
+            (-HANGING_CLEARANCE..=HANGING_CLEARANCE)
+                .all(|dx| !grid.is_wall(column as isize + dx, row as isize + dy))
+        })
+    };
+    let under_span = |column: usize, row: usize| {
+        spans.iter().any(|span| {
+            row.abs_diff(span.row) <= 2 && column + 1 >= span.left && column <= span.right + 1
+        })
+    };
+    let mut open: Vec<(usize, usize)> = (room.origin.1..room.origin.1 + room.rows)
+        .flat_map(|row| (room.origin.0..room.origin.0 + room.columns).map(move |column| (column, row)))
+        .filter(|&(column, row)| clear(column, row) && !under_span(column, row))
+        .collect();
+    let kinds = theme.hanging_kinds();
+    let mut planned = Vec::new();
+    for _ in 0..1 + rng.below(MAX_HANGING) {
+        if open.is_empty() {
+            break;
+        }
+        let tile = open.swap_remove(rng.below(open.len()));
+        open.retain(|other| {
+            other.0.abs_diff(tile.0) >= HANGING_SPACING || other.1.abs_diff(tile.1) >= HANGING_SPACING
+        });
+        planned.push(Hanging {
+            kind: kinds[rng.below(kinds.len())],
+            tile,
+        });
+    }
+    planned
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -174,6 +273,36 @@ mod tests {
             }
         }
         assert!(total > 20, "{total}");
+    }
+
+    #[test]
+    fn hanging_things_float_over_open_floor_apart_from_each_other() {
+        let mut total = 0;
+        for theme in ALL {
+            for seed in 0..4 {
+                let dungeon =
+                    Dungeon::generate_themed(&mut Rng::new(seed), theme).expect("a dungeon");
+                for room in &dungeon.rooms {
+                    if !room.hanging.is_empty() {
+                        assert!(matches!(room.kind, RoomKind::Normal | RoomKind::Ambush));
+                    }
+                    assert!(room.hanging.len() <= MAX_HANGING);
+                    for (index, hanging) in room.hanging.iter().enumerate() {
+                        total += 1;
+                        let (c, r) = (hanging.tile.0 as isize, hanging.tile.1 as isize);
+                        assert!((-2..=2).all(|dy| (-2..=2).all(|dx| !dungeon.grid.is_wall(c + dx, r + dy))));
+                        assert!(theme.hanging_kinds().contains(&hanging.kind));
+                        for other in &room.hanging[index + 1..] {
+                            assert!(
+                                other.tile.0.abs_diff(hanging.tile.0) >= HANGING_SPACING
+                                    || other.tile.1.abs_diff(hanging.tile.1) >= HANGING_SPACING
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        assert!(total > 40, "{total}");
     }
 
     #[test]

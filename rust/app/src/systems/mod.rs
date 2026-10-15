@@ -71,7 +71,7 @@ pub(crate) use artefacts::{
     update_shield_aura,
 };
 pub(crate) use atmosphere::{AtmosphereTextures, spawn_atmosphere, tick_atmosphere};
-pub(crate) use overhead::{spawn_overheads, tick_overheads};
+pub(crate) use overhead::{spawn_hanging, spawn_overheads, tick_hanging, tick_overheads};
 pub(crate) use blood::{
     apply_heal_percent, bloodlust_heals_on_kill, pulse_bloodlust, spawn_bloodlust_drops,
     tick_blood_drops,

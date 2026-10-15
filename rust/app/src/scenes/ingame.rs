@@ -324,6 +324,7 @@ impl Scene for InGameScene {
             dt,
         );
         systems::tick_overheads(&mut self.world, dt);
+        systems::tick_hanging(&mut self.world, self.clock, dt);
         systems::tick_lightning(&mut self.world, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
@@ -828,6 +829,12 @@ impl InGameScene {
                     start = spot;
                 }
             }
+            Ok("hanging") => {
+                if let Some(hanging) = dungeon.rooms.iter().flat_map(|room| &room.hanging).next() {
+                    let tile = Vec2::new(hanging.tile.0 as f32, hanging.tile.1 as f32);
+                    start = (tile + Vec2::new(0.5, 1.2)) * TILE_SIZE;
+                }
+            }
             Ok("overhead") => {
                 if let Some(span) = dungeon.rooms.iter().flat_map(|room| &room.overheads).next() {
                     let column = (span.left + span.right + 1) as f32 / 2.0;
@@ -861,6 +868,7 @@ impl InGameScene {
             }
         }
         systems::spawn_overheads(&mut self.world, &dungeon, textures);
+        systems::spawn_hanging(&mut self.world, &dungeon, textures);
         systems::spawn_atmosphere(
             &mut self.world,
             &dungeon,

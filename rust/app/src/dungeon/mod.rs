@@ -15,7 +15,7 @@ pub(crate) use furnish::{FixtureKind, Furnishing};
 pub(crate) use layout::Direction;
 #[cfg(test)]
 pub(crate) use overhead::Overhead;
-pub(crate) use overhead::OverheadKind;
+pub(crate) use overhead::{HangingKind, OverheadKind};
 pub(crate) use surface::{Surface, Surfaces};
 pub(crate) use template::RoomKind;
 pub(crate) use theme::Theme;
