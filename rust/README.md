@@ -27,4 +27,4 @@ BANE_START=dungeon cargo run -- --shot moss.png --seconds 6 --shots 20 --interva
 Flags: `--seconds`, `--shots`/`--interval`, `--size WxH` (default 1920x1080), `--mouse X,Y`
 (in 960×540 game pixels), `--hold KEY:FROM-TO` (letters, digits, Space, Esc, Tab, Enter, Shift)
 and `--fire FROM-TO`. The usual `BANE_SEED`, `BANE_THEME`, `BANE_START`, `BANE_AT`
-(`boss`, `normal`) and `BANE_DATA` still apply.
+(`boss`, `normal`, `treasure`, `shop`, `sacrifice`) and `BANE_DATA` still apply.

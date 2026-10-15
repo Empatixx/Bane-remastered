@@ -71,6 +71,27 @@ impl Sprite {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Layer(pub(crate) i32);
 
+impl Layer {
+    /// Where everything with [`YSort`] is drawn: above the floor and its decoration, below
+    /// bullets and effects.
+    pub(crate) const ACTORS: Self = Self(1);
+}
+
+/// Something that stands on the floor: it is drawn in [`Layer::ACTORS`] in the order of its
+/// feet, so whatever stands lower on the screen covers what stands behind it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct YSort {
+    /// How far below the position the feet are.
+    pub(crate) foot: f32,
+}
+
+impl YSort {
+    /// Feet at the bottom edge of a sprite of this size, centred on the position.
+    pub(crate) fn bottom(size: glam::Vec2) -> Self {
+        Self { foot: size.y / 2.0 }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Text {
     pub(crate) content: String,

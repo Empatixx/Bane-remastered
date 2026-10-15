@@ -5,6 +5,7 @@ use crate::artefacts::ArtefactKind;
 use crate::assets::Textures;
 use crate::assets::{Tex, tex};
 use crate::components::{
+    YSort,
     Animation, ArrowTrap, ArtefactDrop, Backdrop, BodyOffset, BreakKind, Breakable, Candle, Chatty,
     Chest, ChestKind, Clip, Color, ContactDamage, Despawn, Drag, Flame, FloorPatch, Gate, GunDrop,
     Health, Interactable, Interaction, Layer, Light, Liquid, Lit, PatchKind, Pickup, Position,
@@ -50,6 +51,9 @@ pub(crate) fn prop(
         Layer(-1),
         Lit,
     ));
+    if prop.stands() {
+        let _ = world.insert_one(entity, YSort::bottom(size));
+    }
     if prop == Prop::Torch {
         let offset = if look.flipped {
             Vec2::new(0.0, -16.0)
@@ -611,6 +615,7 @@ pub(crate) fn breakable(
         Animation::new(4, 2, clip),
         Layer(-1),
         Lit,
+        YSort::bottom(OBJECT_SIZE),
     ));
     let collider = kind.collider();
     let collider_center = top_left + collider.offset + collider.size / 2.0;

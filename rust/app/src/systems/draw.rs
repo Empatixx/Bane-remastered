@@ -4,7 +4,8 @@ use hecs::World;
 use crate::components::{
     Afterimage, Casing, Chilled, Color, DodgeVisual, DropShadow, EnemyArrow, Frozen, Heading, Hidden,
     Hover, InRange, Layer, Liquid, Lit, MapSize, Minimap, Outline, Overlay, Phantom, Player,
-    Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text, blended,
+    Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text, YSort,
+    blended,
 };
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
@@ -20,6 +21,8 @@ use super::shadow::shadow_draw;
 #[derive(Default)]
 struct Sorted {
     scene: Vec<(Layer, Draw)>,
+    /// What stands in [`Layer::ACTORS`], with the height of its feet.
+    actors: Vec<(f32, Draw)>,
     hud: Vec<(Layer, Draw)>,
     overlay: Vec<(Layer, Draw)>,
 }
@@ -42,10 +45,23 @@ impl Sorted {
     fn finish(self) -> Layers {
         let strip = |mut list: Vec<(Layer, Draw)>| {
             list.sort_by_key(|(layer, _)| *layer);
-            list.into_iter().map(|(_, draw)| draw).collect()
+            list.into_iter().map(|(_, draw)| draw).collect::<Vec<_>>()
         };
+        let mut scene = self.scene;
+        scene.sort_by_key(|(layer, _)| *layer);
+        // The standing things go after everything else in their layer, back to front. A few
+        // hundred entries sort in microseconds, and since the sprites share one atlas the
+        // order costs no extra draw calls.
+        let mut actors = self.actors;
+        actors.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let at = scene.partition_point(|(layer, _)| *layer <= Layer::ACTORS);
+        let mut draws: Vec<Draw> = Vec::with_capacity(scene.len() + actors.len());
+        let mut rest = scene.into_iter().map(|(_, draw)| draw);
+        draws.extend(rest.by_ref().take(at));
+        draws.extend(actors.into_iter().map(|(_, draw)| draw));
+        draws.extend(rest);
         Layers {
-            scene: strip(self.scene),
+            scene: draws,
             hud: strip(self.hud),
             overlay: strip(self.overlay),
         }
@@ -80,7 +96,7 @@ pub(crate) fn collect_draws(
         hover,
         frozen,
         (shine, heading),
-        sky,
+        (sky, standing),
         (liquid, cloakable),
     ) in world
         .query::<(
@@ -97,7 +113,7 @@ pub(crate) fn collect_draws(
             Option<&Hover>,
             (Option<&Frozen>, Option<&Chilled>),
             (Option<&Shine>, Option<&Heading>),
-            Option<&Sky>,
+            (Option<&Sky>, Option<&YSort>),
             (
                 Option<&Liquid>,
                 Option<hecs::Or<&Player, hecs::Or<&DodgeVisual, &Afterimage>>>,
@@ -155,9 +171,14 @@ pub(crate) fn collect_draws(
                 }
             }
         };
-        sorted
-            .bucket(screen, overlay)
-            .push((layer.copied().unwrap_or(Layer(0)), draw));
+        match standing {
+            Some(standing) if screen.is_none() && overlay.is_none() => {
+                sorted.actors.push((center.y - bob.y + standing.foot, draw));
+            }
+            _ => sorted
+                .bucket(screen, overlay)
+                .push((layer.copied().unwrap_or(Layer(0)), draw)),
+        }
     }
     for (position, text, layer, screen, overlay) in world
         .query::<(
@@ -235,14 +256,14 @@ pub(crate) fn collect_draws(
             },
         ));
     }
-    for (position, previous, size, sprite, shadow, layer) in world
+    for (position, previous, size, sprite, shadow, (layer, standing)) in world
         .query::<(
             &Position,
             Option<&Previous>,
             &Size,
             &Sprite,
             &DropShadow,
-            Option<&Layer>,
+            (Option<&Layer>, Option<&YSort>),
         )>()
         .without::<&Hidden>()
         .iter()
@@ -254,7 +275,12 @@ pub(crate) fn collect_draws(
             shadow,
         ) {
             draw.quad.set_lit(false);
-            let under = layer.map_or(0, |layer| layer.0) - 1;
+            let own = if standing.is_some() {
+                Layer::ACTORS.0
+            } else {
+                layer.map_or(0, |layer| layer.0)
+            };
+            let under = own - 1;
             sorted.scene.push((Layer(under), draw));
         }
     }
@@ -365,6 +391,53 @@ mod tests {
         let _ = world.insert_one(player, Phantom { remaining: 3.0 });
 
         assert_eq!(shadowed_count(&world), 3);
+    }
+
+    /// Spawns a sprite tagged by its red channel, so the draw order can be read back.
+    fn tagged(world: &mut World, tag: f32, at: Vec2, layer: i32) -> hecs::Entity {
+        world.spawn((
+            Position(at),
+            Size(Vec2::splat(32.0)),
+            Color(glam::Vec4::new(tag, 1.0, 1.0, 1.0)),
+            Sprite::whole(TextureId::WHITE),
+            Layer(layer),
+        ))
+    }
+
+    fn order(world: &World) -> Vec<f32> {
+        collect_draws(world, &Fonts::default(), Vec2::ZERO, "E", 1.0)
+            .scene
+            .iter()
+            .map(|draw| draw.quad.red())
+            .collect()
+    }
+
+    #[test]
+    fn standing_things_are_drawn_back_to_front_by_their_feet() {
+        let mut world = World::new();
+        let front = tagged(&mut world, 0.1, Vec2::new(100.0, 300.0), 1);
+        let back = tagged(&mut world, 0.2, Vec2::new(100.0, 200.0), 1);
+        // A short barrel whose feet are lower than the tall statue's, though its centre is higher.
+        let barrel = tagged(&mut world, 0.3, Vec2::new(200.0, 250.0), -1);
+        let statue = tagged(&mut world, 0.4, Vec2::new(200.0, 260.0), -1);
+        let _ = world.insert_one(front, YSort { foot: 16.0 });
+        let _ = world.insert_one(back, YSort { foot: 16.0 });
+        let _ = world.insert_one(barrel, YSort { foot: 30.0 });
+        let _ = world.insert_one(statue, YSort { foot: 10.0 });
+
+        assert_eq!(order(&world), vec![0.2, 0.4, 0.3, 0.1]);
+    }
+
+    #[test]
+    fn standing_things_share_the_actor_layer_between_the_floor_and_the_bullets() {
+        let mut world = World::new();
+        tagged(&mut world, 0.5, Vec2::new(100.0, 100.0), 2);
+        let barrel = tagged(&mut world, 0.6, Vec2::new(100.0, 100.0), -1);
+        let _ = world.insert_one(barrel, YSort { foot: 16.0 });
+        tagged(&mut world, 0.7, Vec2::new(100.0, 100.0), -1);
+        tagged(&mut world, 0.8, Vec2::new(100.0, 100.0), 1);
+
+        assert_eq!(order(&world), vec![0.7, 0.8, 0.6, 0.5]);
     }
 
     #[test]

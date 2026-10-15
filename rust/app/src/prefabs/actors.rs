@@ -5,6 +5,7 @@ use crate::artefacts::ArtefactKind;
 use crate::assets::tex;
 use crate::assets::{PET, PLAYER, Textures};
 use crate::components::{
+    YSort,
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
     BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
     Burrower, Chills, DeathAsh, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, DropShadow,
@@ -71,6 +72,7 @@ pub(crate) fn player(
             Light::rgb(Vec2::ZERO, 216.0, 156.0, 36.0, 150.0, 0.5),
             DropShadow::default(),
             GazeWind::default(),
+            YSort::bottom(PLAYER_SIZE),
         ),
     );
     let body = physics.add_player(entity, position, PLAYER_SIZE);
@@ -96,6 +98,7 @@ pub(crate) fn pet(
         Layer(1),
         Lit,
         GazeWind::above(PET_GAZE_SPEED),
+        YSort::bottom(PET_SIZE),
     ));
     let body = physics.add_pet(entity, position, PET_SIZE);
     let _ = world.insert_one(entity, body);
@@ -191,6 +194,7 @@ pub(crate) fn enemy(
             remaining: spawn_seconds,
             total: spawn_seconds,
         },
+        YSort::bottom(size),
     ));
     if spec.reform_row.is_some() {
         let _ = world.insert_one(entity, crate::components::Revives);

@@ -110,6 +110,7 @@ fn spawn_turret(world: &mut World, position: Vec2, textures: &Textures) -> Entit
         ),
         Animation::new(turret::COLUMNS, turret::ROWS, turret::RISE),
         Layer(1),
+        crate::components::YSort::bottom(TURRET_SIZE),
     ))
 }
 

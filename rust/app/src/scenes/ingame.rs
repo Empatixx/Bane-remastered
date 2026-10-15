@@ -798,7 +798,8 @@ impl InGameScene {
         }
         self.flow = FlowField::default();
         let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
-        // `BANE_AT=boss` or `BANE_AT=normal` starts the floor in that room, for working on the game.
+        // `BANE_AT=boss`, `normal`, `treasure`, `shop` or `sacrifice` starts the floor in that room,
+        // for working on the game.
         match std::env::var("BANE_AT").as_deref() {
             Ok("boss") => {
                 if let Some(room) = dungeon
@@ -809,11 +810,17 @@ impl InGameScene {
                     start = room.pixel_center() + Vec2::new(0.0, 160.0);
                 }
             }
-            Ok("normal") => {
+            Ok(name @ ("normal" | "treasure" | "shop" | "sacrifice")) => {
+                let kind = match name {
+                    "treasure" => RoomKind::Treasure,
+                    "shop" => RoomKind::Shop,
+                    "sacrifice" => RoomKind::Sacrifice,
+                    _ => RoomKind::Normal,
+                };
                 if let Some(spot) = dungeon
                     .rooms
                     .iter()
-                    .filter(|room| room.kind == RoomKind::Normal)
+                    .filter(|room| room.kind == kind)
                     .max_by_key(|room| room.columns * room.rows)
                     .and_then(|room| open_spot_near_center(&dungeon, room))
                 {

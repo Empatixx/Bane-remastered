@@ -54,6 +54,38 @@ pub(crate) enum Prop {
     MossyBanner,
 }
 
+impl Prop {
+    /// Props that stand up from the floor, so someone can walk in front of or behind them.
+    /// The rest lie flat on the floor or hang on a wall.
+    pub(crate) fn stands(self) -> bool {
+        matches!(
+            self,
+            Self::WeaponRack
+                | Self::Armorstand
+                | Self::TaskBoard
+                | Self::Pot
+                | Self::CraftingTable
+                | Self::Box
+                | Self::Rock
+                | Self::Bookshelf
+                | Self::MapTable
+                | Self::Scientist
+                | Self::Shopkeeper
+                | Self::ShopTable
+                | Self::SlotMachine
+                | Self::Chest
+                | Self::Bricks
+                | Self::AngelStatue
+                | Self::Candlestick
+                | Self::Portal
+                | Self::TrainingDummy
+                | Self::Mushrooms
+                | Self::IceCrystals
+                | Self::Cocoon
+        )
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Animated {
     pub(crate) frames: usize,

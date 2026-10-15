@@ -114,10 +114,18 @@ fn place(
     };
     let gap = table_bottom - (center.y + height / 2.0) + PROMPT_GAP;
     prefabs::for_sale(world, entity, shop, gap);
+    // On display, the goods stand just in front of their table.
+    let _ = world.insert_one(
+        entity,
+        crate::components::YSort {
+            foot: table_bottom - center.y + DISPLAY_NUDGE,
+        },
+    );
     entity
 }
 
 const PROMPT_GAP: f32 = 20.0;
+const DISPLAY_NUDGE: f32 = 0.5;
 const ITEM_LIFT: f32 = 15.0;
 
 /// The share of the price still paid on a sale, from a roll in `0..100`.

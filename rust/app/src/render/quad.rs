@@ -116,6 +116,11 @@ impl Quad {
     }
 
     #[cfg(test)]
+    pub(crate) fn red(&self) -> f32 {
+        self.color[0]
+    }
+
+    #[cfg(test)]
     pub(crate) fn is_shadowed(&self) -> bool {
         self.fx[3] == MODE_SHADOW
     }
