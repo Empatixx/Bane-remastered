@@ -20,3 +20,4 @@ pub(crate) use overhead::{HangingKind, OverheadKind, showcase};
 pub(crate) use surface::{Surface, Surfaces};
 pub(crate) use template::RoomKind;
 pub(crate) use theme::Theme;
+pub(crate) use track::Track;

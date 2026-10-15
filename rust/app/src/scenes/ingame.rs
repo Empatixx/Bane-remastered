@@ -856,9 +856,10 @@ impl InGameScene {
                 }
             }
             Ok("track") => {
-                if let Some(track) = dungeon.rooms.iter().find_map(|room| room.track) {
-                    let column = track.cart as f32 - 2.0;
-                    start = Vec2::new(column + 0.5, track.row as f32 + 0.5) * TILE_SIZE;
+                if let Some(track) = dungeon.rooms.iter().find_map(|room| room.track.as_ref()) {
+                    let (column, row) = track.path[track.cart];
+                    // Beside the cart, off the rail: the rail has open floor all round it.
+                    start = Vec2::new(column as f32 + 0.5, row as f32 + 1.5) * TILE_SIZE;
                 }
             }
             Ok("overhead") => {
