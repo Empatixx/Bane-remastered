@@ -203,6 +203,17 @@ impl Physics {
         body
     }
 
+    /// A table, standing or flipped: it never moves; a flipped one (`cover`) also stops enemy
+    /// bullets, while the player's bullets always fly over it.
+    pub(crate) fn add_table(&mut self, entity: Entity, center: Vec2, size: Vec2, cover: bool) -> Body {
+        let body = RigidBodyBuilder::fixed().translation(to_rapier(center));
+        let groups = if cover { groups::COVER } else { groups::TABLES };
+        let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .collision_groups(groups)
+            .user_data(owner_bits(entity));
+        self.insert(body, collider)
+    }
+
     /// A body moved only by the game (like a mine cart on its rail): it shoves the player and
     /// enemies out of its way and stops bullets, but nothing pushes it back.
     pub(crate) fn add_moving_object(&mut self, entity: Entity, center: Vec2, size: Vec2) -> Body {

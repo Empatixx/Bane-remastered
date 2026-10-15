@@ -5,7 +5,8 @@ use glam::Vec2;
 use crate::tilemap::{TILE_SIZE, TileGrid};
 
 use super::decor::{self, Decor};
-use super::furnish::{self, Furnishing};
+use super::furnish::{self, Carpet, Furnishing};
+use super::furniture::{self, TableSpot};
 use super::layout::{Direction, Layout, LayoutSpec};
 use super::overhead::{self, Hanging, Overhead};
 use super::surface::{self, Surfaces};
@@ -37,6 +38,10 @@ pub(crate) struct DungeonRoom {
     pub(crate) overheads: Vec<Overhead>,
     pub(crate) hanging: Vec<Hanging>,
     pub(crate) track: Option<Track>,
+    /// A rug in some combat rooms.
+    pub(crate) rug: Option<Carpet>,
+    /// Tables the player can flip for cover.
+    pub(crate) tables: Vec<TableSpot>,
 }
 
 impl DungeonRoom {
@@ -224,6 +229,8 @@ impl Dungeon {
                 overheads: Vec::new(),
                 hanging: Vec::new(),
                 track: None,
+                rug: None,
+                tables: Vec::new(),
             });
         }
 
@@ -253,6 +260,11 @@ impl Dungeon {
             room.overheads = overhead::plan(&grid, room, theme, &mut overhead_rng);
             room.hanging =
                 overhead::plan_hanging(&grid, room, theme, &room.overheads, &mut overhead_rng);
+        }
+        let mut furniture_rng = Rng::new(rng.next_u64());
+        for room in &mut rooms {
+            room.rug = furniture::plan_rug(&grid, room, &surfaces, &mut furniture_rng);
+            room.tables = furniture::plan_tables(&grid, room, &surfaces, &mut furniture_rng);
         }
         let mut track_rng = Rng::new(rng.next_u64());
         for room in &mut rooms {

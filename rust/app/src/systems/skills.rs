@@ -252,26 +252,36 @@ pub(crate) fn burn_fuses(world: &mut World, physics: &mut Physics, dt: f32) {
 }
 
 pub(crate) fn enemy_bullet_hits(world: &mut World, physics: &mut Physics) {
-    let hit: Vec<Entity> = world
+    let hit: Vec<(Entity, Vec<Owner>)> = world
         .query::<(Entity, &Body)>()
         .with::<&EnemyBullet>()
         .without::<&Expiring>()
         .iter()
-        .filter(|(_, body)| {
-            physics.touching(**body).iter().any(|owner| {
+        .map(|(entity, body)| (entity, physics.touching(*body)))
+        .filter(|(_, touched)| {
+            touched.iter().any(|owner| {
                 matches!(owner, Owner::Wall) || is_player(world, owner) || is_solid(world, owner)
             })
         })
-        .map(|(entity, _)| entity)
         .collect();
-    for entity in hit {
+    for (entity, touched) in hit {
+        // A flipped table that stops the bullet takes the hit.
+        if let Some(Owner::Entity(table)) = touched
+            .iter()
+            .find(|owner| matches!(owner, Owner::Entity(other) if world.get::<&super::table::Table>(*other).is_ok()))
+        {
+            super::table::chip_table(world, *table);
+        }
         impact(world, physics, entity);
     }
 }
 
 fn is_solid(world: &World, owner: &Owner) -> bool {
     match owner {
-        Owner::Entity(entity) => world.get::<&crate::components::Solid>(*entity).is_ok(),
+        Owner::Entity(entity) => {
+            world.get::<&crate::components::Solid>(*entity).is_ok()
+                || world.get::<&super::table::Table>(*entity).is_ok()
+        }
         Owner::Wall => false,
     }
 }

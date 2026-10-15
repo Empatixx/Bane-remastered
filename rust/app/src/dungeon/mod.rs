@@ -1,6 +1,7 @@
 mod build;
 mod decor;
 mod furnish;
+mod furniture;
 mod layout;
 mod overhead;
 mod surface;
@@ -12,7 +13,7 @@ pub(crate) use build::{Dungeon, DungeonRoom};
 pub(crate) use decor::{Decor, DecorKind, Mount};
 #[cfg(test)]
 pub(crate) use furnish::Fixture;
-pub(crate) use furnish::{FixtureKind, Furnishing};
+pub(crate) use furnish::{Carpet, FixtureKind, Furnishing};
 pub(crate) use layout::Direction;
 #[cfg(test)]
 pub(crate) use overhead::Overhead;

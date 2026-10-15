@@ -40,7 +40,21 @@ pub(crate) fn plan(
     {
         return None;
     }
-    let taken: HashSet<(usize, usize)> = room.decor.iter().map(|decor| decor.tile).collect();
+    // Off the decoration, the tables and the rug.
+    let taken: HashSet<(usize, usize)> = room
+        .decor
+        .iter()
+        .map(|decor| decor.tile)
+        .chain(room.tables.iter().flat_map(|table| {
+            // The table and the floor round it, where it stands taller than a tile and falls.
+            table.tiles().into_iter().flat_map(|(column, row)| {
+                (row.saturating_sub(1)..=row + 1).flat_map(move |r| {
+                    (column.saturating_sub(1)..=column + 1).map(move |c| (c, r))
+                })
+            })
+        }))
+        .chain(room.rug.iter().flat_map(|rug| rug.tiles().into_iter().map(|(tile, _)| tile)))
+        .collect();
     let near_door = |column: usize, row: usize| {
         room.doors.iter().any(|door| {
             door.tiles

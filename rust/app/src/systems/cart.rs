@@ -11,7 +11,7 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    Body, Bullet, Color, Enemy, Heading, Layer, Lit, Player, Position, Size, Spawning, Sprite,
+    Body, Bullet, Color, DropShadow, Enemy, Heading, Layer, Lit, Player, Position, Size, Spawning, Sprite,
     Velocity, YSort,
 };
 use crate::dungeon::{Dungeon, Track};
@@ -277,6 +277,7 @@ pub(crate) fn spawn_tracks(
             YSort {
                 foot: CART_SIZE.y / 2.0 - CART_LIFT,
             },
+            DropShadow::default(),
         ));
         let body = physics.add_moving_object(cart, start, CART_BODY);
         let _ = world.insert_one(cart, body);

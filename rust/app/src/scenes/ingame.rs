@@ -596,6 +596,13 @@ impl Scene for InGameScene {
         );
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
         systems::tick_carts(&mut self.world, &mut self.physics, dt);
+        systems::shove_tables(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+            input.direction(),
+        );
         systems::simulate(&mut self.world, &mut self.physics, dt);
         systems::watch_progress(&mut self.world, hostile_dt);
         systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
@@ -647,6 +654,12 @@ impl Scene for InGameScene {
             self.hit = true;
         }
         systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
+        systems::break_tables(
+            &mut self.world,
+            &mut self.physics,
+            &assets.textures,
+            &mut self.sounds,
+        );
         self.feel_impacts();
         Transition::None
     }
@@ -820,8 +833,9 @@ impl InGameScene {
         }
         self.flow = FlowField::default();
         let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
-        // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice` or `overhead` (under the first
-        // thing hanging over a room) starts the floor there, for working on the game.
+        // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
+        // `table` or `rug` starts the floor there (by the first one of those), for working on the
+        // game.
         match std::env::var("BANE_AT").as_deref() {
             Ok("boss") => {
                 if let Some(room) = dungeon
@@ -853,6 +867,27 @@ impl InGameScene {
                 if let Some(hanging) = dungeon.rooms.iter().flat_map(|room| &room.hanging).next() {
                     let tile = Vec2::new(hanging.tile.0 as f32, hanging.tile.1 as f32);
                     start = (tile + Vec2::new(0.5, 1.2)) * TILE_SIZE;
+                }
+            }
+            Ok("rug") => {
+                if let Some(rug) = dungeon.rooms.iter().find_map(|room| room.rug.as_ref()) {
+                    let middle = Vec2::new(
+                        rug.origin.0 as f32 + rug.columns as f32 / 2.0,
+                        rug.origin.1 as f32 + rug.rows as f32 / 2.0,
+                    );
+                    start = middle * TILE_SIZE;
+                }
+            }
+            Ok("table") => {
+                if let Some(spot) = dungeon.rooms.iter().flat_map(|room| &room.tables).next() {
+                    // Beside its long side, on the open floor it would fall onto.
+                    let (column, row) = (spot.tile.0 as f32, spot.tile.1 as f32);
+                    let beside = if spot.upright {
+                        Vec2::new(column + 1.9, row + 1.0)
+                    } else {
+                        Vec2::new(column + 1.0, row + 1.8)
+                    };
+                    start = beside * TILE_SIZE;
                 }
             }
             Ok("track") => {
@@ -899,6 +934,7 @@ impl InGameScene {
         }
         systems::spawn_overheads(&mut self.world, &dungeon, textures);
         systems::spawn_hanging(&mut self.world, &dungeon, textures);
+        systems::spawn_furniture(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_tracks(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_atmosphere(
             &mut self.world,

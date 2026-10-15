@@ -13,7 +13,7 @@ use crate::components::{
     TrainingDummy, Trap, Velocity, Weapon,
 };
 use crate::dungeon::{
-    Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces, Theme,
+    Carpet, Decor, DecorKind, Direction, FixtureKind, Furnishing, Mount, Surface, Surfaces, Theme,
 };
 use crate::items::{DESPAWN_SECONDS, ItemKind};
 use crate::objects::{OBJECT_HEALTH, OBJECT_SIZE};
@@ -157,6 +157,28 @@ pub(crate) fn training_dummy(
 }
 
 /// `gamble_machine` is the talent of that name: without it the shop has no slot machine.
+/// A carpet laid over the floor tiles it covers, with its border and corners.
+pub(crate) fn carpet(world: &mut World, carpet: &Carpet, textures: &Textures) {
+    let texture = textures.get(tex::CARPET_TILEMAP);
+    for ((column, row), number) in carpet.tiles() {
+        let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
+        world.spawn((
+            Position(center),
+            Size(Vec2::splat(tilemap::TILE_SIZE)),
+            Color(Vec4::ONE),
+            Sprite::cell(
+                texture,
+                number % CARPET_COLUMNS,
+                number / CARPET_COLUMNS,
+                CARPET_COLUMNS,
+                CARPET_ROWS,
+            ),
+            Layer(CARPET_LAYER),
+            Lit,
+        ));
+    }
+}
+
 pub(crate) fn furnishing(
     world: &mut World,
     physics: &mut Physics,
@@ -165,24 +187,7 @@ pub(crate) fn furnishing(
     textures: &Textures,
 ) {
     if let Some(carpet) = &furnishing.carpet {
-        let texture = textures.get(tex::CARPET_TILEMAP);
-        for ((column, row), number) in carpet.tiles() {
-            let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
-            world.spawn((
-                Position(center),
-                Size(Vec2::splat(tilemap::TILE_SIZE)),
-                Color(Vec4::ONE),
-                Sprite::cell(
-                    texture,
-                    number % CARPET_COLUMNS,
-                    number / CARPET_COLUMNS,
-                    CARPET_COLUMNS,
-                    CARPET_ROWS,
-                ),
-                Layer(CARPET_LAYER),
-                Lit,
-            ));
-        }
+        self::carpet(world, carpet, textures);
     }
     for fixture in &furnishing.fixtures {
         let top_left = fixture.top_left;
