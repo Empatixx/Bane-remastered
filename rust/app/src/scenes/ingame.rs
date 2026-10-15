@@ -323,6 +323,7 @@ impl Scene for InGameScene {
             self.camera.position(),
             dt,
         );
+        systems::tick_overheads(&mut self.world, dt);
         systems::tick_lightning(&mut self.world, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
@@ -798,8 +799,8 @@ impl InGameScene {
         }
         self.flow = FlowField::default();
         let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
-        // `BANE_AT=boss`, `normal`, `treasure`, `shop` or `sacrifice` starts the floor in that room,
-        // for working on the game.
+        // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice` or `overhead` (under the first
+        // thing hanging over a room) starts the floor there, for working on the game.
         match std::env::var("BANE_AT").as_deref() {
             Ok("boss") => {
                 if let Some(room) = dungeon
@@ -825,6 +826,12 @@ impl InGameScene {
                     .and_then(|room| open_spot_near_center(&dungeon, room))
                 {
                     start = spot;
+                }
+            }
+            Ok("overhead") => {
+                if let Some(span) = dungeon.rooms.iter().flat_map(|room| &room.overheads).next() {
+                    let column = (span.left + span.right + 1) as f32 / 2.0;
+                    start = Vec2::new(column, span.row as f32 + 2.5) * TILE_SIZE;
                 }
             }
             _ => {}
@@ -853,6 +860,7 @@ impl InGameScene {
                 prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);
             }
         }
+        systems::spawn_overheads(&mut self.world, &dungeon, textures);
         systems::spawn_atmosphere(
             &mut self.world,
             &dungeon,
