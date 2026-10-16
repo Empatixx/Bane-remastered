@@ -1,5 +1,6 @@
-//! What the sewer's pools get besides their water: outflow pipes in the walls pouring into
-//! them, rubbish and barrels drifting on them, and plank footbridges across them.
+//! What the pools of the sewer and the lava floor get besides their liquid: outflow pipes (or
+//! glowing cracks) in the walls pouring into them, rubbish and barrels (or cooled crusts)
+//! drifting on them, and plank footbridges (or basalt bridges) across them.
 
 use std::collections::HashSet;
 
@@ -18,6 +19,7 @@ const DEBRIS_PERCENT: usize = 75;
 const SECOND_DEBRIS_PERCENT: usize = 40;
 const RAT_PERCENT: usize = 20;
 const BARREL_PERCENT: usize = 35;
+const CRUSTS: usize = 3;
 /// A pool needs this many tiles before anything floats on it.
 const POOL_FOR_FLOATERS: usize = 6;
 
@@ -28,6 +30,8 @@ pub(crate) enum Debris {
     Bottle,
     Boot,
     RatRaft,
+    /// A crust of cooled rock afloat on lava, one of three shapes.
+    Crust(usize),
 }
 
 impl Debris {
@@ -39,6 +43,7 @@ impl Debris {
             Self::Bottle => 2,
             Self::Boot => 3,
             Self::RatRaft => 4,
+            Self::Crust(variant) => variant,
         }
     }
 }
@@ -85,8 +90,8 @@ pub(crate) struct Waterworks {
     pub(crate) bridges: Vec<Bridge>,
 }
 
-fn water(surfaces: &Surfaces, (column, row): (usize, usize)) -> bool {
-    surfaces.at((column, row)) == Some(Surface::Water)
+fn liquid(surfaces: &Surfaces, kind: Surface, (column, row): (usize, usize)) -> bool {
+    surfaces.at((column, row)) == Some(kind)
 }
 
 fn dry_floor(grid: &TileGrid, surfaces: &Surfaces, (column, row): (usize, usize)) -> bool {
@@ -95,7 +100,7 @@ fn dry_floor(grid: &TileGrid, surfaces: &Surfaces, (column, row): (usize, usize)
 
 /// Straight runs of water with dry floor at both ends, across the room's rows and down its
 /// columns.
-fn crossings(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces) -> Vec<Bridge> {
+fn crossings(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces, kind: Surface) -> Vec<Bridge> {
     let mut found = Vec::new();
     for upright in [false, true] {
         let (lines, along) = if upright {
@@ -107,12 +112,12 @@ fn crossings(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces) -> Vec<Br
         for line in lines {
             let mut at = along.start + 1;
             while at < along.end - 1 {
-                if !water(surfaces, tile(line, at)) || !dry_floor(grid, surfaces, tile(line, at - 1)) {
+                if !liquid(surfaces, kind, tile(line, at)) || !dry_floor(grid, surfaces, tile(line, at - 1)) {
                     at += 1;
                     continue;
                 }
                 let start = at;
-                while at < along.end - 1 && water(surfaces, tile(line, at)) {
+                while at < along.end - 1 && liquid(surfaces, kind, tile(line, at)) {
                     at += 1;
                 }
                 let end = at - 1;
@@ -133,12 +138,12 @@ fn crossings(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces) -> Vec<Br
 }
 
 /// The pools of the room: its water tiles in connected groups.
-fn pools(room: &DungeonRoom, surfaces: &Surfaces) -> Vec<Vec<(usize, usize)>> {
+fn pools(room: &DungeonRoom, surfaces: &Surfaces, kind: Surface) -> Vec<Vec<(usize, usize)>> {
     let mut seen = HashSet::new();
     let mut found = Vec::new();
     for row in room.origin.1..room.origin.1 + room.rows {
         for column in room.origin.0..room.origin.0 + room.columns {
-            if !water(surfaces, (column, row)) || !seen.insert((column, row)) {
+            if !liquid(surfaces, kind, (column, row)) || !seen.insert((column, row)) {
                 continue;
             }
             let mut pool = vec![(column, row)];
@@ -147,7 +152,7 @@ fn pools(room: &DungeonRoom, surfaces: &Surfaces) -> Vec<Vec<(usize, usize)>> {
                 let (c, r) = pool[index];
                 index += 1;
                 for next in [(c + 1, r), (c.wrapping_sub(1), r), (c, r + 1), (c, r.wrapping_sub(1))] {
-                    if room.contains_tile(next.0, next.1) && water(surfaces, next) && seen.insert(next) {
+                    if room.contains_tile(next.0, next.1) && liquid(surfaces, kind, next) && seen.insert(next) {
                         pool.push(next);
                     }
                 }
@@ -158,9 +163,16 @@ fn pools(room: &DungeonRoom, surfaces: &Surfaces) -> Vec<Vec<(usize, usize)>> {
     found
 }
 
-pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces, rng: &mut Rng) -> Waterworks {
+pub(crate) fn plan(
+    grid: &TileGrid,
+    room: &DungeonRoom,
+    surfaces: &Surfaces,
+    kind: Surface,
+    rng: &mut Rng,
+) -> Waterworks {
+    let water = |surfaces: &Surfaces, tile: (usize, usize)| liquid(surfaces, kind, tile);
     let mut works = Waterworks::default();
-    let pools = pools(room, surfaces);
+    let pools = pools(room, surfaces, kind);
     if pools.is_empty() {
         return works;
     }
@@ -178,7 +190,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces, rng
         works.pipes.push(spot);
     }
     // A footbridge over one of the pools, clear of the pipes' splashes.
-    let crossings: Vec<Bridge> = crossings(grid, room, surfaces)
+    let crossings: Vec<Bridge> = crossings(grid, room, surfaces, kind)
         .into_iter()
         .filter(|bridge| {
             bridge
@@ -192,7 +204,8 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces, rng
     let bridged: HashSet<(usize, usize)> =
         works.bridges.iter().flat_map(|bridge| bridge.tiles().collect::<Vec<_>>()).collect();
     // Something afloat on the bigger pools, off the bridge and away from the splashes.
-    let mut barrel_left = rng.below(100) < BARREL_PERCENT;
+    let lava = kind == Surface::Lava;
+    let mut barrel_left = !lava && rng.below(100) < BARREL_PERCENT;
     for pool in pools.iter().filter(|pool| pool.len() >= POOL_FOR_FLOATERS) {
         let mut open: Vec<(usize, usize)> = pool
             .iter()
@@ -202,9 +215,9 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces, rng
             .collect();
         let mut floaters = Vec::new();
         if rng.below(100) < DEBRIS_PERCENT {
-            floaters.push(Floater::Debris(pick_debris(rng)));
+            floaters.push(Floater::Debris(pick_debris(lava, rng)));
             if rng.below(100) < SECOND_DEBRIS_PERCENT {
-                floaters.push(Floater::Debris(pick_debris(rng)));
+                floaters.push(Floater::Debris(pick_debris(lava, rng)));
             }
         }
         if barrel_left {
@@ -227,7 +240,10 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, surfaces: &Surfaces, rng
     works
 }
 
-fn pick_debris(rng: &mut Rng) -> Debris {
+fn pick_debris(lava: bool, rng: &mut Rng) -> Debris {
+    if lava {
+        return Debris::Crust(rng.below(CRUSTS));
+    }
     if rng.below(100) < RAT_PERCENT {
         return Debris::RatRaft;
     }
@@ -268,6 +284,29 @@ mod tests {
             }
         }
         assert!(pipes > 5 && bridges > 5 && floaters > 10, "{pipes} {bridges} {floaters}");
+    }
+
+    #[test]
+    fn lava_gets_cracks_bridges_and_crusts_but_no_barrels() {
+        let (mut cracks, mut bridges, mut crusts) = (0, 0, 0);
+        for seed in 0..30 {
+            let dungeon =
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Lava).expect("a dungeon");
+            let lava = |tile: (usize, usize)| dungeon.surfaces.at(tile) == Some(Surface::Lava);
+            for room in &dungeon.rooms {
+                let works = &room.waterworks;
+                cracks += works.pipes.len();
+                assert!(works.pipes.iter().all(|&(c, r)| lava((c, r + 1))));
+                bridges += works.bridges.len();
+                assert!(works.bridges.iter().all(|bridge| bridge.tiles().all(lava)));
+                for &(floater, tile) in &works.floaters {
+                    crusts += 1;
+                    assert!(matches!(floater, Floater::Debris(Debris::Crust(_))));
+                    assert!(lava(tile));
+                }
+            }
+        }
+        assert!(cracks > 3 && bridges > 3 && crusts > 3, "{cracks} {bridges} {crusts}");
     }
 
     #[test]

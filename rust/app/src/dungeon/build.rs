@@ -278,7 +278,7 @@ impl Dungeon {
         for room in &mut rooms {
             room.overheads = overhead::plan(&grid, room, theme, &mut overhead_rng);
             room.hanging =
-                overhead::plan_hanging(&grid, room, theme, &room.overheads, &mut overhead_rng);
+                overhead::plan_hanging(&grid, room, theme, &room.overheads, &surfaces, &mut overhead_rng);
         }
         let mut furniture_rng = Rng::new(rng.next_u64());
         for room in &mut rooms {
@@ -289,10 +289,10 @@ impl Dungeon {
         for room in &mut rooms {
             room.track = track::plan(&grid, room, &surfaces, &mut track_rng);
         }
-        if theme.surface() == Some(surface::Surface::Water) {
+        if let Some(kind @ (surface::Surface::Water | surface::Surface::Lava)) = theme.surface() {
             let mut water_rng = Rng::new(rng.next_u64());
             for room in &mut rooms {
-                room.waterworks = waterworks::plan(&grid, room, &surfaces, &mut water_rng);
+                room.waterworks = waterworks::plan(&grid, room, &surfaces, kind, &mut water_rng);
                 for bridge in &room.waterworks.bridges {
                     for tile in bridge.tiles() {
                         surfaces.bridge(tile);

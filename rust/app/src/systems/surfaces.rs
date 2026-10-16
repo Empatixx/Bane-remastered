@@ -170,7 +170,15 @@ mod tests {
         for seed in 0..10 {
             let dungeon =
                 Dungeon::generate_themed(&mut Rng::new(seed), Theme::Lava).expect("a dungeon");
-            let Some((tile, _)) = dungeon.surfaces.iter().next() else {
+            // A tile of open lava, not one under a bridge.
+            let center = |(c, r): (usize, usize)| {
+                (Vec2::new(c as f32, r as f32) + 0.5) * crate::tilemap::TILE_SIZE
+            };
+            let Some((tile, _)) = dungeon
+                .surfaces
+                .iter()
+                .find(|&(tile, _)| dungeon.surfaces.at_point(center(tile)).is_some())
+            else {
                 continue;
             };
             let (mut world, player) = standing_at(tile);
@@ -182,6 +190,16 @@ mod tests {
             found += 1;
         }
         assert!(found > 0);
+    }
+
+    #[test]
+    fn a_bridge_over_lava_keeps_the_player_from_burning() {
+        let mut surfaces = Surfaces::default();
+        surfaces.insert((4, 4), Surface::Lava);
+        surfaces.bridge((4, 4));
+        let (mut world, player) = standing_at((4, 4));
+        assert!(!burn_on_lava(&mut world, &surfaces, &mut Vec::new()));
+        assert_eq!(health(&world, player), 10);
     }
 
     #[test]

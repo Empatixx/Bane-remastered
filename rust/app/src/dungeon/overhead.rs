@@ -8,6 +8,7 @@ use crate::rng::Rng;
 use crate::tilemap::TileGrid;
 
 use super::build::DungeonRoom;
+use super::surface::{Surface, Surfaces};
 use super::template::RoomKind;
 use super::theme::Theme;
 
@@ -226,6 +227,8 @@ const HANGING_ROOM_PERCENT: usize = 35;
 /// Rooms at least this big (in tiles) may get a second one.
 const ROOMY_FOR_TWO: usize = 500;
 const SECOND_HANGING_PERCENT: usize = 40;
+/// How often, on the lava floor, the thing hangs over a pool of lava as a crucible.
+const CRUCIBLE_PERCENT: usize = 55;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum HangingKind {
@@ -234,6 +237,14 @@ pub(crate) enum HangingKind {
     Cocoon,
     Lantern,
     Vine,
+    /// A brazier of glowing coals.
+    Brazier,
+    /// A crucible of molten metal; it hangs only over lava.
+    Crucible,
+    /// A charred skeleton hung on hooks.
+    Hooks,
+    /// An obsidian stalactite with glowing veins.
+    Stalactite,
 }
 
 impl HangingKind {
@@ -245,12 +256,11 @@ impl HangingKind {
             Self::Cocoon => 2,
             Self::Lantern => 3,
             Self::Vine => 4,
+            Self::Brazier => 5,
+            Self::Crucible => 6,
+            Self::Hooks => 7,
+            Self::Stalactite => 8,
         }
-    }
-
-    /// Candles and lanterns flicker between their two pictures and light the room.
-    pub(crate) fn glows(self) -> bool {
-        matches!(self, Self::Chandelier | Self::Lantern)
     }
 }
 
@@ -264,7 +274,7 @@ impl Theme {
             Self::Sewer => &[Lantern, Cage],
             Self::Spider => &[Cocoon, Cocoon, Cage],
             Self::Ice => &[Lantern, Chandelier],
-            Self::Lava => &[Cage, Lantern],
+            Self::Lava => &[Brazier, Brazier, Hooks, Stalactite, Cage],
         }
     }
 }
@@ -283,6 +293,7 @@ pub(crate) fn plan_hanging(
     room: &DungeonRoom,
     theme: Theme,
     spans: &[Overhead],
+    surfaces: &Surfaces,
     rng: &mut Rng,
 ) -> Vec<Hanging> {
     if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush)
@@ -319,23 +330,39 @@ pub(crate) fn plan_hanging(
         if open.is_empty() {
             break;
         }
-        let tile = open.swap_remove(rng.below(open.len()));
+        // On the lava floor, now and then a crucible over a pool of lava.
+        let over_lava: Vec<usize> = (0..open.len())
+            .filter(|&index| theme == Theme::Lava && surfaces.at(open[index]) == Some(Surface::Lava))
+            .collect();
+        let crucible = !over_lava.is_empty() && rng.below(100) < CRUCIBLE_PERCENT;
+        let index = if crucible {
+            over_lava[rng.below(over_lava.len())]
+        } else {
+            rng.below(open.len())
+        };
+        let tile = open.swap_remove(index);
         open.retain(|other| {
             other.0.abs_diff(tile.0) >= HANGING_SPACING || other.1.abs_diff(tile.1) >= HANGING_SPACING
         });
-        planned.push(Hanging {
-            kind: kinds[rng.below(kinds.len())],
-            tile,
-        });
+        let kind = if crucible {
+            HangingKind::Crucible
+        } else {
+            kinds[rng.below(kinds.len())]
+        };
+        planned.push(Hanging { kind, tile });
     }
     planned
 }
 
-/// One of every hanging kind in a row across the middle of a room, whatever its biome, for
-/// looking at them all at once (`BANE_SHOWCASE`).
-pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom) -> Vec<Hanging> {
+/// One of every hanging kind in a row across the middle of a room, for looking at them all at
+/// once (`BANE_SHOWCASE`): the lava floor's own, or the rest on any other floor.
+pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom, theme: Theme) -> Vec<Hanging> {
     use HangingKind::*;
-    let kinds = [Chandelier, Cage, Cocoon, Lantern, Vine];
+    let kinds = if theme == Theme::Lava {
+        [Brazier, Crucible, Hooks, Stalactite, Cage]
+    } else {
+        [Chandelier, Cage, Cocoon, Lantern, Vine]
+    };
     let clear = |column: usize, row: usize| {
         (-1isize..=1).all(|dy| (-1isize..=1).all(|dx| !grid.is_wall(column as isize + dx, row as isize + dy)))
     };
@@ -435,7 +462,12 @@ mod tests {
                         total += 1;
                         let (c, r) = (hanging.tile.0 as isize, hanging.tile.1 as isize);
                         assert!((-2..=2).all(|dy| (-2..=2).all(|dx| !dungeon.grid.is_wall(c + dx, r + dy))));
-                        assert!(theme.hanging_kinds().contains(&hanging.kind));
+                        if hanging.kind == HangingKind::Crucible {
+                            assert_eq!(theme, Theme::Lava);
+                            assert_eq!(dungeon.surfaces.at(hanging.tile), Some(Surface::Lava));
+                        } else {
+                            assert!(theme.hanging_kinds().contains(&hanging.kind));
+                        }
                         for other in &room.hanging[index + 1..] {
                             assert!(
                                 other.tile.0.abs_diff(hanging.tile.0) >= HANGING_SPACING

@@ -4,7 +4,7 @@
 //! on their chains, candles and lanterns flicker and light the room.
 
 use glam::{Vec2, Vec3, Vec4};
-use hecs::World;
+use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{Color, Layer, Light, Lit, Player, Position, Size, Sprite};
@@ -149,7 +149,7 @@ pub(crate) fn tick_overheads(world: &mut World, dt: f32) {
 }
 
 const HANGING_COLUMNS: usize = 4;
-const HANGING_ROWS: usize = 5;
+const HANGING_ROWS: usize = 9;
 const CHAIN_CELL: usize = 2;
 /// The topmost chain piece, fading out upwards in the texture itself.
 const CHAIN_TOP_CELL: usize = 3;
@@ -168,6 +168,53 @@ const SWAY_RATE: f32 = 1.1;
 const FLICKER_RATE: f32 = 7.0;
 const HANGING_SHADOW_ALPHA: f32 = 0.28;
 const GLOW: Vec3 = Vec3::new(255.0, 196.0, 110.0);
+/// The lava floor's things glow redder, the brazier the brightest.
+const EMBER_GLOW: Vec3 = Vec3::new(255.0, 120.0, 40.0);
+const PULSE_RATE: f32 = 1.6;
+const DRIP_EVERY: f32 = 2.3;
+const DRIP_FALL: f32 = 0.45;
+const DRIP_SIZE: Vec2 = Vec2::new(8.0, 16.0);
+const DRIP_RIPPLE: Vec4 = Vec4::new(1.0, 0.6, 0.25, 0.8);
+
+/// How fast a hanging thing's two pictures alternate, if they do: flames flicker, the
+/// stalactite's veins pulse, the vine and the skeleton on its hooks stir as they sway.
+fn frame_rate(kind: HangingKind) -> Option<f32> {
+    match kind {
+        HangingKind::Chandelier
+        | HangingKind::Lantern
+        | HangingKind::Brazier
+        | HangingKind::Crucible => Some(FLICKER_RATE),
+        HangingKind::Stalactite => Some(PULSE_RATE),
+        HangingKind::Vine | HangingKind::Hooks => Some(SWAY_RATE),
+        HangingKind::Cage | HangingKind::Cocoon => None,
+    }
+}
+
+/// The light a glowing thing casts: colour, reach.
+fn glow(kind: HangingKind) -> Option<(Vec3, f32)> {
+    match kind {
+        HangingKind::Chandelier | HangingKind::Lantern => Some((GLOW, 90.0)),
+        HangingKind::Brazier => Some((EMBER_GLOW, 120.0)),
+        HangingKind::Crucible => Some((EMBER_GLOW, 80.0)),
+        HangingKind::Stalactite => Some((EMBER_GLOW, 55.0)),
+        _ => None,
+    }
+}
+
+/// A crucible now and then lets a glowing drop fall into the lava below it.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Dripping {
+    from: Vec2,
+    to: Vec2,
+    timer: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Drop {
+    from: Vec2,
+    to: Vec2,
+    time: f32,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct HangingPart {
@@ -176,8 +223,8 @@ pub(crate) struct HangingPart {
     /// the ceiling.
     reach: f32,
     phase: f32,
-    /// The thing itself (not a chain piece) and whether it flickers.
-    thing: Option<bool>,
+    /// The thing itself (not a chain piece), and how fast its pictures alternate if they do.
+    thing: Option<Option<f32>>,
     row: usize,
     /// The most opaque this part gets.
     opacity: f32,
@@ -197,7 +244,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
             let max = at + thing_size / 2.0;
             let phase = (hanging.tile.0 * 7 + hanging.tile.1 * 13) as f32 * 0.37;
             let row = hanging.kind.row();
-            let part = |base: Vec2, reach: f32, thing: Option<bool>, opacity: f32| HangingPart {
+            let part = |base: Vec2, reach: f32, thing: Option<Option<f32>>, opacity: f32| HangingPart {
                 base,
                 reach,
                 phase,
@@ -231,7 +278,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
             }
             let sprite = Sprite::cell(texture, 0, row, HANGING_COLUMNS, HANGING_ROWS);
             let thing = world.spawn((
-                part(at, 1.0, Some(hanging.kind.glows()), 1.0),
+                part(at, 1.0, Some(frame_rate(hanging.kind)), 1.0),
                 Position(at),
                 Size(thing_size),
                 Color(Vec4::ONE),
@@ -239,10 +286,20 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                 Layer(LAYER),
                 Lit,
             ));
-            if hanging.kind.glows() {
+            if let Some((colour, reach)) = glow(hanging.kind) {
                 let _ = world.insert_one(
                     thing,
-                    Light::rgb(Vec2::new(0.0, -8.0), GLOW.x, GLOW.y, GLOW.z, 90.0, 1.0),
+                    Light::rgb(Vec2::new(0.0, -8.0), colour.x, colour.y, colour.z, reach, 1.0),
+                );
+            }
+            if hanging.kind == HangingKind::Crucible {
+                let _ = world.insert_one(
+                    thing,
+                    Dripping {
+                        from: at + Vec2::new(0.0, thing_size.y * 0.4),
+                        to: floor,
+                        timer: phase % DRIP_EVERY,
+                    },
                 );
             }
             world.spawn((
@@ -269,8 +326,7 @@ pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
     {
         let swing = (clock * SWAY_RATE + part.phase).sin() * SWAY * part.reach;
         position.0 = part.base + Vec2::new(swing, 0.0);
-        if part.thing == Some(true) || (part.thing.is_some() && part.row == HangingKind::Vine.row()) {
-            let rate = if part.thing == Some(true) { FLICKER_RATE } else { SWAY_RATE };
+        if let Some(Some(rate)) = part.thing {
             let frame = ((clock * rate + part.phase) as usize) % 2;
             sprite.uv = Sprite::cell_uv(frame, part.row, HANGING_COLUMNS, HANGING_ROWS);
         }
@@ -287,9 +343,62 @@ pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
     }
 }
 
+/// Crucibles let a drop fall now and then; it lands in the lava with a ring.
+pub(crate) fn tick_drips(world: &mut World, textures: &Textures, dt: f32) {
+    let mut falling = Vec::new();
+    for dripping in world.query_mut::<&mut Dripping>() {
+        dripping.timer -= dt;
+        if dripping.timer <= 0.0 {
+            dripping.timer = DRIP_EVERY;
+            falling.push((dripping.from, dripping.to));
+        }
+    }
+    for (from, to) in falling {
+        world.spawn((
+            Drop { from, to, time: 0.0 },
+            Position(from),
+            Size(DRIP_SIZE),
+            Color(Vec4::ONE),
+            Sprite::cell(textures.get(tex::LAVA_FALL), 0, 0, 4, 2),
+            Layer(LAYER),
+        ));
+    }
+    let mut landed = Vec::new();
+    for (entity, drop, position) in world.query_mut::<(Entity, &mut Drop, &mut Position)>() {
+        drop.time += dt;
+        let t = (drop.time / DRIP_FALL).min(1.0);
+        position.0 = drop.from.lerp(drop.to, t * t);
+        if t >= 1.0 {
+            landed.push((entity, drop.to));
+        }
+    }
+    for (entity, at) in landed {
+        let _ = world.despawn(entity);
+        world.spawn((
+            crate::components::Expiring,
+            Position(at),
+            Size(Vec2::splat(96.0)),
+            Color(DRIP_RIPPLE),
+            Sprite::cell(textures.get(tex::RIPPLE), 0, 0, 6, 1),
+            crate::components::Animation::new(
+                6,
+                1,
+                crate::components::Clip {
+                    row: 0,
+                    frames: 6,
+                    frame_time: 0.12,
+                    looping: false,
+                    flipped: false,
+                },
+            ),
+            Layer(-1),
+        ));
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use hecs::Entity;
+
 
     use super::*;
     use crate::dungeon::Theme;

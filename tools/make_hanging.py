@@ -1,5 +1,7 @@
 """Things that hang from the ceiling on a chain or a thread: a candle chandelier, a cage with a
-skeleton, a spider's cocoon, a lantern and a vine.
+skeleton, a spider's cocoon, a lantern and a vine; and for the lava floor a brazier of glowing
+coals, a crucible of molten metal, a charred skeleton hung on hooks and an obsidian stalactite
+with glowing veins.
 
 hanging.tga has one row per kind in that order and four 16x24 cells per row: the thing, the
 thing with its flames or glow flickering, a piece of its chain (or thread, or vine) that repeats
@@ -228,12 +230,205 @@ VINE_STRAND = [
     ".......eV.......",
 ] * 4
 
+EMBER = {"y": (255, 236, 150), "o": (255, 160, 50), "r": (214, 72, 26), "e": (120, 36, 20), "c": (40, 30, 30)}
+
+BRAZIER = [
+    [
+        "................",
+        "................",
+        "......y.........",
+        ".....yo..y......",
+        "....yooy.oy.....",
+        "...yoorooroy....",
+        "..dmrooyyoormd..",
+        "..dhhhhhhhhhhd..",
+        "..dmeccrccecmd..",
+        "...dmcecrcemd...",
+        "...dm.d..d.md...",
+        "....dm.dd.md....",
+        ".....dmmmmd.....",
+        "......dmmd......",
+        ".......dd.......",
+        ".......m........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    [
+        "................",
+        ".......y........",
+        "....y..oy.......",
+        "....oy.yo.y.....",
+        "...yooyooyo.....",
+        "...yorooyoroy...",
+        "..dmrooyyorrmd..",
+        "..dhhhhhhhhhhd..",
+        "..dmcecrccecmd..",
+        "...dmcrcecemd...",
+        "...dm.d..d.md...",
+        "....dm.dd.md....",
+        ".....dmmmmd.....",
+        "......dmmd......",
+        ".......dd.......",
+        ".......m........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+
+CRUCIBLE = [
+    [
+        ".......dd.......",
+        "......dmmd......",
+        "....dd.dd.dd....",
+        "...d.......d....",
+        "..d.........d...",
+        ".dhhhhhhhhhhhd..",
+        "dmmyyyyooyyymmd.",
+        "dmmoyoooooyommd.",
+        ".dmmmmmmmmmmmd..",
+        ".dhmmmmmmmmmld..",
+        "..dmmmmmmmmmd...",
+        "..dmmmmmmmmmd...",
+        "...dmmmmmmmd....",
+        "....ddmmmdd.....",
+        "......dod.......",
+        ".......y........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+CRUCIBLE.append([row.replace("yyyy", "yoyy").replace("oooo", "yooo") for row in CRUCIBLE[0][:14]] + [
+    "......ddd.......",
+    "................",
+] + CRUCIBLE[0][16:])
+
+HOOKS = [
+    [
+        "...md......md...",
+        "...md......md...",
+        "...md......md...",
+        "...hd......hd...",
+        "...d.h....h.d...",
+        "....bbbbbbbb....",
+        "....bkbbbbkb....",
+        ".....bkbbkb.....",
+        "......bbbb......",
+        "....bb.BB.bb....",
+        "...b..bBBb..b...",
+        "..e...bBBb...e..",
+        "......bBBb......",
+        ".......BB.......",
+        "......B..B......",
+        ".....B....B.....",
+        ".....r....b.....",
+        ".....b....o.....",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    [
+        "...md......md...",
+        "...md......md...",
+        "...md......md...",
+        "...hd......hd...",
+        "...d.h....h.d...",
+        "....bbbbbbbb....",
+        "....bkbbbbkb....",
+        ".....bkbbkb.....",
+        "......bbbb......",
+        "....bb.BB.bb....",
+        "...b..bBBb..b...",
+        "..o...bBBb...e..",
+        "......bBBb......",
+        ".......BB.......",
+        "......B..B......",
+        ".....B....B.....",
+        ".....o....b.....",
+        ".....b....r.....",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+HOOK_CHAINS = [
+    "...lh......lh...",
+    "..l..m....l..m..",
+    "..m..d....m..d..",
+    "...md......md...",
+] * 6
+CHARRED = {"b": (150, 136, 120), "B": (92, 80, 72), "k": (24, 16, 16)}
+
+ROCK = {"d": (14, 10, 12), "m": (34, 26, 28), "h": (70, 58, 60), "v": (214, 72, 26), "V": (255, 150, 50)}
+STALACTITE = [
+    [
+        "....dmmmmmmd....",
+        "....dmhmmvmd....",
+        "....dmmmvmmd....",
+        ".....dmmvmmd....",
+        ".....dmhmvd.....",
+        ".....dmmmvd.....",
+        "......dmvmd.....",
+        "......dmvd......",
+        "......dhvd......",
+        "......dmvd......",
+        ".......dvd......",
+        ".......dd.......",
+        ".......d........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+STALACTITE.append([row.replace("v", "V") for row in STALACTITE[0]])
+ROCK_ROOT = [
+    "....dmmhmmmd....",
+    "....dmmmmvmd....",
+    "....dmhmmmmd....",
+    "....dmmvmmhd....",
+] * 6
+
 KINDS = [
     (CHANDELIER, CHAIN, {**IRON, **FLAME}),
     (CAGE, CHAIN, {**IRON, **BONE}),
     (COCOON, THREAD, {**SILK, "T": (150, 146, 126)}),
     (LANTERN, CHAIN, {**IRON, **GLASS, **FLAME}),
     (VINE, VINE_STRAND, LEAF),
+    (BRAZIER, CHAIN, {**IRON, **EMBER}),
+    (CRUCIBLE, CHAIN, {**IRON, **EMBER}),
+    (HOOKS, HOOK_CHAINS, {**IRON, **CHARRED, "e": (120, 36, 20), "o": (255, 160, 50), "r": (214, 72, 26)}),
+    (STALACTITE, ROCK_ROOT, ROCK),
 ]
 
 

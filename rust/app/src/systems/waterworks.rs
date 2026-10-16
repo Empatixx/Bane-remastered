@@ -1,14 +1,16 @@
-//! Brings the sewer's waterworks to life (see [`crate::dungeon::Floater`]): water pours out of
-//! the pipes and splashes into the pools, rubbish drifts and bobs on them, barrels float about
-//! and get shoved along by shots, and footbridges cross them.
+//! Brings the waterworks to life (see [`crate::dungeon::Floater`]): water pours out of the
+//! sewer's pipes and splashes into its pools, rubbish drifts and bobs on them, barrels float
+//! about and get shoved along by shots, and footbridges cross them. The lava floor gets the
+//! same in its own colours: lava running out of glowing cracks, cooled crusts afloat and basalt
+//! bridges.
 
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Textures, tex};
+use crate::assets::{Tex, Textures, tex};
 use crate::components::{
     Animation, Body, BodyOffset, BreakKind, Bullet, Clip, Color, Expiring, Health,
-    Layer, Lit, Position, Size, Sprite,
+    Layer, Light, Lit, Position, Size, Sprite,
 };
 use crate::dungeon::{Bridge, Debris, Dungeon, Floater, FloatingBarrel, Surface, Surfaces};
 use crate::physics::Physics;
@@ -50,9 +52,52 @@ const BOB_RATE: f32 = 1.7;
 const RING_DROP: f32 = -6.0;
 const BARREL_RING_DROP: f32 = 14.0;
 
+/// The pictures for one liquid's waterworks, all laid out alike.
+#[derive(Debug, Clone, Copy)]
+struct Kit {
+    liquid: Surface,
+    pipe: Tex,
+    stream: Tex,
+    debris: Tex,
+    bridge: Tex,
+    /// What the splash's rings look like on the pool.
+    ripple: Vec4,
+}
+
+impl Kit {
+    fn of(liquid: Surface) -> Option<Self> {
+        match liquid {
+            Surface::Water => Some(Self {
+                liquid,
+                pipe: tex::SEWER_PIPE,
+                stream: tex::SEWER_STREAM,
+                debris: tex::SEWER_DEBRIS,
+                bridge: tex::SEWER_BRIDGE,
+                ripple: Vec4::new(1.0, 1.0, 1.0, 0.8),
+            }),
+            Surface::Lava => Some(Self {
+                liquid,
+                pipe: tex::LAVA_CRACK,
+                stream: tex::LAVA_FALL,
+                debris: tex::LAVA_DEBRIS,
+                bridge: tex::LAVA_BRIDGE,
+                ripple: Vec4::new(1.0, 0.7, 0.3, 0.7),
+            }),
+            Surface::Ice | Surface::Bog => None,
+        }
+    }
+
+    fn glows(&self) -> bool {
+        self.liquid == Surface::Lava
+    }
+}
+
+const LAVA_GLOW: (f32, f32, f32) = (255.0, 120.0, 30.0);
+
 /// Something adrift. Rubbish moves itself; a barrel's body is moved by the physics.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Adrift {
+    liquid: Surface,
     at: Vec2,
     velocity: Vec2,
     phase: f32,
@@ -73,6 +118,7 @@ pub(crate) struct Ring {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Splash {
     at: Vec2,
+    ripple: Vec4,
     timer: f32,
 }
 
@@ -80,9 +126,9 @@ fn tile_center(tile: (usize, usize)) -> Vec2 {
     (Vec2::new(tile.0 as f32, tile.1 as f32) + 0.5) * TILE_SIZE
 }
 
-/// Water something can float on: not under a footbridge.
-fn open_water(surfaces: &Surfaces, point: Vec2) -> bool {
-    surfaces.at_point(point) == Some(Surface::Water)
+/// Liquid something can float on: not under a bridge.
+fn afloat(surfaces: &Surfaces, liquid: Surface, point: Vec2) -> bool {
+    surfaces.at_point(point) == Some(liquid)
 }
 
 pub(crate) fn spawn_waterworks(
@@ -91,40 +137,48 @@ pub(crate) fn spawn_waterworks(
     dungeon: &Dungeon,
     textures: &Textures,
 ) {
+    let Some(kit) = dungeon.theme.surface().and_then(Kit::of) else {
+        return;
+    };
     for room in &dungeon.rooms {
         let works = &room.waterworks;
         for &(column, row) in &works.pipes {
-            spawn_pipe(world, (column, row), textures);
+            spawn_pipe(world, &kit, (column, row), textures);
         }
         for bridge in &works.bridges {
-            spawn_bridge(world, bridge, textures);
+            spawn_bridge(world, &kit, bridge, textures);
         }
         for (index, &(floater, tile)) in works.floaters.iter().enumerate() {
             let phase = (tile.0 * 7 + tile.1 * 13 + index * 5) as f32 * 0.61;
             let heading = Vec2::from_angle(phase);
             match floater {
                 Floater::Debris(debris) => {
-                    spawn_debris(world, debris, tile_center(tile), heading, phase, textures);
+                    spawn_debris(world, &kit, debris, tile_center(tile), heading, phase, textures);
                 }
                 Floater::Barrel(kind) => {
-                    spawn_barrel(world, physics, kind, tile_center(tile), heading, phase, textures);
+                    let at = tile_center(tile);
+                    spawn_barrel(world, physics, &kit, kind, at, heading, phase, textures);
                 }
             }
         }
     }
 }
 
-fn spawn_pipe(world: &mut World, (column, row): (usize, usize), textures: &Textures) {
+fn spawn_pipe(world: &mut World, kit: &Kit, (column, row): (usize, usize), textures: &Textures) {
     let x = (column as f32 + 0.5) * TILE_SIZE;
     let wall = row as f32 * TILE_SIZE;
-    world.spawn((
+    let pipe = world.spawn((
         Position(Vec2::new(x, wall + PIPE_AT * TILE_SIZE)),
         Size(Vec2::splat(TILE_SIZE)),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::SEWER_PIPE), (column + row) % PIPE_COLUMNS, 0, PIPE_COLUMNS, 1),
+        Sprite::cell(textures.get(kit.pipe), (column + row) % PIPE_COLUMNS, 0, PIPE_COLUMNS, 1),
         Layer(FLOOR_LAYER),
         Lit,
     ));
+    if kit.glows() {
+        let (r, g, b) = LAVA_GLOW;
+        let _ = world.insert_one(pipe, Light::rgb(Vec2::ZERO, r, g, b, 70.0, 1.0));
+    }
     let stream = |row: usize, frame_time: f32| {
         Animation::new(
             STREAM_COLUMNS,
@@ -143,29 +197,34 @@ fn spawn_pipe(world: &mut World, (column, row): (usize, usize), textures: &Textu
         Position(Vec2::new(x, (from + to) / 2.0)),
         Size(Vec2::new(STREAM_WIDTH, to - from)),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::SEWER_STREAM), 0, 0, STREAM_COLUMNS, STREAM_ROWS),
+        Sprite::cell(textures.get(kit.stream), 0, 0, STREAM_COLUMNS, STREAM_ROWS),
         stream(0, 0.07),
         Layer(FLOOR_LAYER),
         Lit,
     ));
     let splash = Vec2::new(x, to);
-    world.spawn((
+    let pool = world.spawn((
         Position(splash),
         Size(Vec2::splat(TILE_SIZE)),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::SEWER_STREAM), 0, 1, STREAM_COLUMNS, STREAM_ROWS),
+        Sprite::cell(textures.get(kit.stream), 0, 1, STREAM_COLUMNS, STREAM_ROWS),
         stream(1, 0.11),
         Splash {
             at: splash,
+            ripple: kit.ripple,
             timer: 0.0,
         },
         Layer(FLOOR_LAYER),
         Lit,
     ));
+    if kit.glows() {
+        let (r, g, b) = LAVA_GLOW;
+        let _ = world.insert_one(pool, Light::rgb(Vec2::ZERO, r, g, b, 110.0, 1.2));
+    }
 }
 
-fn spawn_bridge(world: &mut World, bridge: &Bridge, textures: &Textures) {
-    let texture = textures.get(tex::SEWER_BRIDGE);
+fn spawn_bridge(world: &mut World, kit: &Kit, bridge: &Bridge, textures: &Textures) {
+    let texture = textures.get(kit.bridge);
     let row = usize::from(bridge.upright);
     let step = if bridge.upright { (0, 1) } else { (1, 0) };
     let before = (bridge.first.0 - step.0, bridge.first.1 - step.1);
@@ -196,13 +255,13 @@ fn spawn_bridge(world: &mut World, bridge: &Bridge, textures: &Textures) {
     }
 }
 
-fn spawn_ring(world: &mut World, owner: Entity, at: Vec2, textures: &Textures) -> Entity {
+fn spawn_ring(world: &mut World, kit: &Kit, owner: Entity, at: Vec2, textures: &Textures) -> Entity {
     world.spawn((
         Ring { owner },
         Position(at + Vec2::new(0.0, RING_DROP)),
         Size(Vec2::splat(TILE_SIZE)),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::SEWER_DEBRIS), RING_CELL, 0, DEBRIS_COLUMNS, 1),
+        Sprite::cell(textures.get(kit.debris), RING_CELL, 0, DEBRIS_COLUMNS, 1),
         Layer(UNDER_LAYER),
         Lit,
     ))
@@ -210,6 +269,7 @@ fn spawn_ring(world: &mut World, owner: Entity, at: Vec2, textures: &Textures) -
 
 fn spawn_debris(
     world: &mut World,
+    kit: &Kit,
     debris: Debris,
     at: Vec2,
     heading: Vec2,
@@ -220,14 +280,15 @@ fn spawn_debris(
         Position(at),
         Size(Vec2::splat(TILE_SIZE)),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(tex::SEWER_DEBRIS), debris.cell(), 0, DEBRIS_COLUMNS, 1),
+        Sprite::cell(textures.get(kit.debris), debris.cell(), 0, DEBRIS_COLUMNS, 1),
         Layer(FLOOR_LAYER),
         Lit,
     ));
-    let ring = spawn_ring(world, entity, at, textures);
+    let ring = spawn_ring(world, kit, entity, at, textures);
     let _ = world.insert_one(
         entity,
         Adrift {
+            liquid: kit.liquid,
             at,
             velocity: heading * DRIFT_SPEED,
             phase,
@@ -239,9 +300,11 @@ fn spawn_debris(
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn spawn_barrel(
     world: &mut World,
     physics: &mut Physics,
+    kit: &Kit,
     kind: FloatingBarrel,
     at: Vec2,
     heading: Vec2,
@@ -256,10 +319,11 @@ fn spawn_barrel(
     let size = crate::objects::OBJECT_SIZE;
     let barrel = prefabs::breakable(world, physics, kind, at - size / 2.0, textures);
     let offset = world.get::<&BodyOffset>(barrel).map_or(Vec2::ZERO, |offset| offset.0);
-    let ring = spawn_ring(world, barrel, at, textures);
+    let ring = spawn_ring(world, kit, barrel, at, textures);
     let _ = world.insert_one(
         barrel,
         Adrift {
+            liquid: kit.liquid,
             at,
             velocity: heading * BARREL_DRIFT,
             phase,
@@ -284,11 +348,11 @@ pub(crate) fn tick_waterworks(
         splash.timer -= dt;
         if splash.timer <= 0.0 {
             splash.timer = SPLASH_RIPPLE_EVERY;
-            ripples.push(splash.at);
+            ripples.push((splash.at, splash.ripple));
         }
     }
-    for at in ripples {
-        spawn_ripple(world, at, textures);
+    for (at, tint) in ripples {
+        spawn_ripple(world, at, tint, textures);
     }
     let shots: Vec<(Vec2, Vec2, Vec2)> = world
         .query::<(&Position, &Size, &crate::components::Velocity)>()
@@ -309,7 +373,7 @@ pub(crate) fn tick_waterworks(
             // A barrel: the physics moves it, the water only steers it.
             let at = physics.position(body).unwrap_or(adrift.at);
             adrift.at = at;
-            if alive && open_water(surfaces, at) {
+            if alive && afloat(surfaces, adrift.liquid, at) {
                 let shove = shots.iter().find_map(|(position, size, velocity)| {
                     let reach = (*size + crate::objects::OBJECT_SIZE) / 2.0;
                     ((*position - at).abs().cmple(reach).all()).then(|| velocity.normalize_or_zero())
@@ -321,7 +385,7 @@ pub(crate) fn tick_waterworks(
                     let drift = velocity.normalize_or(adrift.velocity.normalize_or_zero()) * BARREL_DRIFT;
                     velocity += (drift - velocity) * (SETTLE_RATE * dt).min(1.0);
                 }
-                if !open_water(surfaces, at + velocity.normalize_or_zero() * LOOK_AHEAD) {
+                if !afloat(surfaces, adrift.liquid, at + velocity.normalize_or_zero() * LOOK_AHEAD) {
                     velocity = -velocity;
                 }
                 adrift.velocity = velocity;
@@ -332,7 +396,7 @@ pub(crate) fn tick_waterworks(
             }
         } else {
             let next = adrift.at + adrift.velocity * dt;
-            if open_water(surfaces, next + adrift.velocity.normalize_or_zero() * LOOK_AHEAD) {
+            if afloat(surfaces, adrift.liquid, next + adrift.velocity.normalize_or_zero() * LOOK_AHEAD) {
                 adrift.at = next;
             } else {
                 // Turn back from the bank, a little differently each time.
@@ -354,7 +418,7 @@ pub(crate) fn tick_waterworks(
         if let Ok(mut ring) = world.get::<&mut Position>(adrift.ring) {
             ring.0 = adrift.at + Vec2::new(0.0, drop);
         }
-        let afloat = alive && open_water(surfaces, adrift.at);
+        let afloat = alive && afloat(surfaces, adrift.liquid, adrift.at);
         if let Ok(mut color) = world.get::<&mut Color>(adrift.ring) {
             color.0.w = if afloat { 1.0 } else { 0.0 };
         }
@@ -374,7 +438,7 @@ pub(crate) fn tick_waterworks(
     }
 }
 
-fn spawn_ripple(world: &mut World, at: Vec2, textures: &Textures) {
+fn spawn_ripple(world: &mut World, at: Vec2, tint: Vec4, textures: &Textures) {
     let clip = Clip {
         row: 0,
         frames: RIPPLE_FRAMES,
@@ -386,7 +450,7 @@ fn spawn_ripple(world: &mut World, at: Vec2, textures: &Textures) {
         Expiring,
         Position(at),
         Size(RIPPLE_SIZE),
-        Color(Vec4::new(1.0, 1.0, 1.0, 0.8)),
+        Color(tint),
         Sprite::cell(textures.get(tex::RIPPLE), 0, 0, RIPPLE_FRAMES, 1),
         Animation::new(RIPPLE_FRAMES, 1, clip),
         Layer(FLOOR_LAYER),

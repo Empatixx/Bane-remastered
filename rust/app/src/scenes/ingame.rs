@@ -325,6 +325,7 @@ impl Scene for InGameScene {
         );
         systems::tick_overheads(&mut self.world, dt);
         systems::tick_hanging(&mut self.world, self.clock, dt);
+        systems::tick_drips(&mut self.world, &assets.textures, dt);
         systems::tick_lightning(&mut self.world, dt);
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
@@ -770,13 +771,14 @@ impl InGameScene {
         let mut showcase_start = None;
         if std::env::var_os("BANE_SHOWCASE").is_some() {
             let grid = dungeon.grid.clone();
+            let theme = dungeon.theme;
             if let Some(room) = dungeon
                 .rooms
                 .iter_mut()
                 .filter(|room| room.kind == RoomKind::Normal)
                 .max_by_key(|room| room.columns * room.rows)
             {
-                room.hanging = crate::dungeon::showcase(&grid, room);
+                room.hanging = crate::dungeon::showcase(&grid, room, theme);
                 // By the middle one, as high up the floor as it goes towards where they hang
                 // (at most five tiles), so the row and its chains are in view.
                 // `BANE_SHOWCASE=<n>` stands by the n-th one instead.
