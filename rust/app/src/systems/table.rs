@@ -18,12 +18,15 @@ use crate::tilemap::TILE_SIZE;
 
 const COLUMNS: usize = 6;
 const STANDING: usize = 0;
-const FELL_AWAY: usize = 1;
-const FELL_TOWARDS: usize = 2;
+/// Fallen with its top facing up the screen: we see the plate, the legs stick up behind it.
+const TOP_UP: usize = 1;
+/// Fallen with its top facing down the screen: we see the underside and the legs pointing at us.
+const UNDERSIDE: usize = 2;
 const BROKEN: usize = 3;
 const UPRIGHT: usize = 4;
-/// A turned table fallen to the right; mirrored for a fall to the left.
-const FELL_RIGHT: usize = 5;
+/// A turned table fallen with its top facing left, the legs out to the right; mirrored for the
+/// other way.
+const FELL_SIDEWAYS: usize = 5;
 /// The 32x32 picture at the tiles' scale.
 const SIZE: Vec2 = Vec2::splat(TILE_SIZE * 2.0);
 /// The standing table's footprint: its top and legs.
@@ -31,12 +34,17 @@ const STANDING_BODY: Vec2 = Vec2::new(116.0, 48.0);
 const STANDING_OFFSET: Vec2 = Vec2::new(0.0, 4.0);
 /// A flipped table is a thin wall of boards.
 const COVER_BODY: Vec2 = Vec2::new(122.0, 26.0);
-const COVER_OFFSET: Vec2 = Vec2::new(0.0, 12.0);
+/// How far up the screen the underside of a table fallen away lies.
+const AWAY_COVER: f32 = 25.0;
+/// A table fallen towards us slides down the screen, its plate this far below the middle.
+const TOWARDS_MOVE: f32 = 16.0;
+const TOWARDS_COVER: f32 = 5.0;
 const UPRIGHT_BODY: Vec2 = Vec2::new(56.0, 108.0);
 const UPRIGHT_LIFT: f32 = 8.0;
 const SIDE_COVER_BODY: Vec2 = Vec2::new(30.0, 118.0);
-/// How far left of the middle the board of a turned table fallen to the right lies.
-const SIDE_COVER_OFFSET: f32 = 12.0;
+/// A turned table fallen sideways slides that way, its board this far from the middle.
+const SIDE_MOVE: f32 = 8.0;
+const SIDE_COVER: f32 = 13.0;
 /// Enemy bullets a flipped table takes before it breaks.
 pub(crate) const TABLE_HITS: u32 = 6;
 /// How fast the player has to walk into a table to knock it over.
@@ -197,12 +205,18 @@ fn flip(
     if let Ok(body) = world.remove_one::<Body>(entity) {
         physics.remove(body);
     }
-    let (cell, mirrored, shift, size) = match fall {
-        Fall::Away => (FELL_AWAY, false, Vec2::new(0.0, -COVER_OFFSET.y), COVER_BODY),
-        Fall::Towards => (FELL_TOWARDS, false, COVER_OFFSET, COVER_BODY),
-        Fall::Right => (FELL_RIGHT, false, Vec2::new(-SIDE_COVER_OFFSET, 0.0), SIDE_COVER_BODY),
-        Fall::Left => (FELL_RIGHT, true, Vec2::new(SIDE_COVER_OFFSET, 0.0), SIDE_COVER_BODY),
+    // It tips over its far edge: the top ends up facing away from whoever pushed it, the legs
+    // pointing back at them. `moved` slides the picture onto the far side, `shift` is where
+    // its board lies from the table's middle.
+    let (cell, mirrored, moved, shift, size) = match fall {
+        Fall::Away => (UNDERSIDE, false, Vec2::ZERO, Vec2::new(0.0, -AWAY_COVER), COVER_BODY),
+        Fall::Towards => (TOP_UP, false, Vec2::new(0.0, TOWARDS_MOVE), Vec2::new(0.0, TOWARDS_COVER), COVER_BODY),
+        Fall::Right => (FELL_SIDEWAYS, true, Vec2::new(SIDE_MOVE, 0.0), Vec2::new(SIDE_COVER, 0.0), SIDE_COVER_BODY),
+        Fall::Left => (FELL_SIDEWAYS, false, Vec2::new(-SIDE_MOVE, 0.0), Vec2::new(-SIDE_COVER, 0.0), SIDE_COVER_BODY),
     };
+    if let Ok(mut position) = world.get::<&mut Position>(entity) {
+        position.0 += moved;
+    }
     let body = physics.add_table(entity, center + shift, size, true);
     let mut sprite = Sprite::cell(textures.get(tex::TABLE), cell, 0, COLUMNS, 1);
     if mirrored {
@@ -309,22 +323,23 @@ mod tests {
     fn walking_into_a_table_from_below_knocks_it_over_away_and_from_above_towards() {
         let (world, _, table) = bump(false, Vec2::new(0.0, 60.0), Vec2::new(0.0, -200.0));
         assert_eq!(state(&world, table), Some(TableState::Flipped));
-        assert_eq!(picture(&world, table), Sprite::cell_uv(FELL_AWAY, 0, COLUMNS, 1));
+        assert_eq!(picture(&world, table), Sprite::cell_uv(UNDERSIDE, 0, COLUMNS, 1));
 
         let (world, _, table) = bump(false, Vec2::new(0.0, -50.0), Vec2::new(0.0, 200.0));
-        assert_eq!(picture(&world, table), Sprite::cell_uv(FELL_TOWARDS, 0, COLUMNS, 1));
+        assert_eq!(picture(&world, table), Sprite::cell_uv(TOP_UP, 0, COLUMNS, 1));
     }
 
     #[test]
     fn a_turned_table_falls_to_the_far_side_from_the_push() {
         let (world, _, table) = bump(true, Vec2::new(-50.0, 0.0), Vec2::new(200.0, 0.0));
-        assert_eq!(picture(&world, table), Sprite::cell_uv(FELL_RIGHT, 0, COLUMNS, 1));
-
-        let (world, _, table) = bump(true, Vec2::new(50.0, 0.0), Vec2::new(-200.0, 0.0));
+        // Pushed right, its top faces right and its legs back left at the player.
         assert_eq!(
             picture(&world, table),
-            Sprite::flipped(Sprite::cell_uv(FELL_RIGHT, 0, COLUMNS, 1))
+            Sprite::flipped(Sprite::cell_uv(FELL_SIDEWAYS, 0, COLUMNS, 1))
         );
+
+        let (world, _, table) = bump(true, Vec2::new(50.0, 0.0), Vec2::new(-200.0, 0.0));
+        assert_eq!(picture(&world, table), Sprite::cell_uv(FELL_SIDEWAYS, 0, COLUMNS, 1));
     }
 
     #[test]

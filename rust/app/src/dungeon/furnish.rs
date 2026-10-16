@@ -11,6 +11,14 @@ const SHOPKEEPER_SIZE: Vec2 = Vec2::new(320.0, 360.0);
 const TABLE_SIZE: Vec2 = Vec2::new(144.0, 96.0);
 const POT_SIZE: Vec2 = Vec2::new(192.0, 192.0);
 const SLOT_MACHINE_SIZE: Vec2 = Vec2::new(192.0, 192.0);
+const COUNTER_SIZE: Vec2 = Vec2::new(320.0, 112.0);
+const SHELF_SIZE: Vec2 = Vec2::new(128.0, 192.0);
+const GOODS_SIZE: Vec2 = Vec2::new(128.0, 128.0);
+const LAMP_SIZE: Vec2 = Vec2::new(64.0, 128.0);
+/// The counter stands in front of the keeper, hiding the hem of the robe.
+const COUNTER_TOP: f32 = 330.0;
+/// The tables stand a little below the middle of the shop, clear of the counter.
+const TABLES_BELOW_MIDDLE: f32 = 32.0;
 const TORCH_SIZE: Vec2 = Vec2::new(64.0, 64.0);
 const BRICKS_SIZE: Vec2 = Vec2::new(64.0, 64.0);
 const CHEST_SIZE: Vec2 = Vec2::new(64.0, 64.0);
@@ -83,6 +91,10 @@ pub(crate) enum FixtureKind {
     Table,
     Pot,
     SlotMachine,
+    Counter,
+    Shelf { right: bool },
+    Goods { barrel: bool },
+    Lamp,
     Torch { right: bool },
     Bricks,
     Chest,
@@ -211,27 +223,72 @@ pub(crate) fn plan(
     }
 }
 
+/// The keeper behind a counter between two shelves of wares, the goods on three draped tables
+/// with a lamp between each two, a pile of stock in two corners, two pots and the slot machine.
 fn shop(frame: &Frame) -> Furnishing {
     let (width, height) = (frame.width(), frame.height());
-    let mut fixtures = vec![frame.place(
-        FixtureKind::Shopkeeper,
-        Vec2::new(
-            width / 2.0 - SHOPKEEPER_SIZE.x / 2.0,
-            height / 4.0 - SHOPKEEPER_SIZE.y / 2.0,
+    let center = width / 2.0;
+    let mut fixtures = vec![
+        frame.place(
+            FixtureKind::Shopkeeper,
+            Vec2::new(
+                center - SHOPKEEPER_SIZE.x / 2.0,
+                height / 4.0 - SHOPKEEPER_SIZE.y / 2.0,
+            ),
+            SHOPKEEPER_SIZE,
         ),
-        SHOPKEEPER_SIZE,
-    )];
+        frame.place(
+            FixtureKind::Counter,
+            Vec2::new(center - COUNTER_SIZE.x / 2.0, COUNTER_TOP),
+            COUNTER_SIZE,
+        ),
+    ];
+    for right in [false, true] {
+        let gap = COUNTER_SIZE.x / 2.0 + TILE_SIZE;
+        let x = if right {
+            center + gap
+        } else {
+            center - gap - SHELF_SIZE.x
+        };
+        fixtures.push(frame.place(
+            FixtureKind::Shelf { right },
+            Vec2::new(x, TILE_SIZE),
+            SHELF_SIZE,
+        ));
+    }
+    let tables_y = height / 2.0 + TABLES_BELOW_MIDDLE;
     for index in 0..TABLES {
         let center_x = width / 4.0 * (index + 1) as f32;
         fixtures.push(frame.place(
             FixtureKind::Table,
-            Vec2::new(
-                center_x - TABLE_SIZE.x / 2.0,
-                height / 2.0 - TABLE_SIZE.y / 2.0,
-            ),
+            Vec2::new(center_x - TABLE_SIZE.x / 2.0, tables_y - TABLE_SIZE.y / 2.0),
             TABLE_SIZE,
         ));
     }
+    for index in 1..TABLES {
+        let between = width / 4.0 * (index as f32 + 0.5);
+        fixtures.push(frame.place(
+            FixtureKind::Lamp,
+            Vec2::new(
+                between - LAMP_SIZE.x / 2.0,
+                tables_y + TABLE_SIZE.y / 2.0 - LAMP_SIZE.y,
+            ),
+            LAMP_SIZE,
+        ));
+    }
+    fixtures.push(frame.place(
+        FixtureKind::Goods { barrel: false },
+        Vec2::splat(TILE_SIZE * 1.5),
+        GOODS_SIZE,
+    ));
+    fixtures.push(frame.place(
+        FixtureKind::Goods { barrel: true },
+        Vec2::new(
+            width - TILE_SIZE - GOODS_SIZE.x,
+            height - TILE_SIZE * 1.25 - GOODS_SIZE.y,
+        ),
+        GOODS_SIZE,
+    ));
     let pot_y = height * 4.0 / 5.0 - POT_SIZE.y / 2.0;
     fixtures.push(frame.place(
         FixtureKind::Pot,
@@ -240,12 +297,12 @@ fn shop(frame: &Frame) -> Furnishing {
     ));
     fixtures.push(frame.place(
         FixtureKind::Pot,
-        Vec2::new(width - TILE_SIZE * 5.0, pot_y),
+        Vec2::new(width - TILE_SIZE * 6.0, pot_y),
         POT_SIZE,
     ));
     fixtures.push(frame.place(
         FixtureKind::SlotMachine,
-        Vec2::new(width - SLOT_MACHINE_SIZE.x - 128.0, 64.0),
+        Vec2::new(width - SLOT_MACHINE_SIZE.x - TILE_SIZE * 1.25, TILE_SIZE),
         SLOT_MACHINE_SIZE,
     ));
     Furnishing {
@@ -406,12 +463,29 @@ mod tests {
     }
 
     #[test]
-    fn a_shop_has_one_keeper_three_tables_two_pots_and_a_slot_machine() {
+    fn a_shop_has_a_keeper_at_a_counter_three_tables_two_pots_and_a_slot_machine() {
         let shop = furnish(RoomKind::Shop, 20, 16);
         assert_eq!(count(&shop, |k| *k == FixtureKind::Shopkeeper), 1);
+        assert_eq!(count(&shop, |k| *k == FixtureKind::Counter), 1);
+        assert_eq!(count(&shop, |k| matches!(k, FixtureKind::Shelf { .. })), 2);
         assert_eq!(count(&shop, |k| *k == FixtureKind::Table), 3);
+        assert_eq!(count(&shop, |k| *k == FixtureKind::Lamp), 2);
+        assert_eq!(count(&shop, |k| matches!(k, FixtureKind::Goods { .. })), 2);
         assert_eq!(count(&shop, |k| *k == FixtureKind::Pot), 2);
         assert_eq!(count(&shop, |k| *k == FixtureKind::SlotMachine), 1);
+    }
+
+    #[test]
+    fn the_counter_stands_in_front_of_the_keeper() {
+        let shop = furnish(RoomKind::Shop, 20, 16);
+        let bottom = |wanted: FixtureKind| {
+            shop.fixtures
+                .iter()
+                .find(|f| f.kind == wanted)
+                .map(|f| f.top_left.y + f.size.y)
+                .expect("furnished")
+        };
+        assert!(bottom(FixtureKind::Counter) > bottom(FixtureKind::Shopkeeper));
     }
 
     #[test]

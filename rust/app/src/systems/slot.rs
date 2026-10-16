@@ -6,13 +6,13 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Hidden, InRange, Player, Position, Size, SlotMachine, SlotPrice, Wallet,
+    Animation, Hidden, InRange, Player, Position, Size, SlotMachine, SlotPrice, ThenPlay, Wallet,
 };
 use crate::guns::GunKind;
 use crate::items::{AmmoBox, ItemKind, PotionSize, Vital};
 use crate::objects::SPIN_COST;
 use crate::prefabs;
-use crate::sheets::slot::{LOSE, SPIN, WIN};
+use crate::sheets::slot::{IDLE, LOSE, SPIN, WIN};
 use crate::systems::loadout::unused_gun;
 
 pub(crate) const SPIN_SECONDS: f32 = 2.0;
@@ -71,6 +71,7 @@ pub(crate) fn spin(world: &mut World, sounds: &mut Vec<AudioCommand>) {
     if let Ok(mut animation) = world.get::<&mut Animation>(machine) {
         animation.play(SPIN);
     }
+    let _ = world.remove_one::<ThenPlay>(machine);
     sounds.push(AudioCommand::Effect(SoundEffect::SlotSpin));
 }
 
@@ -217,6 +218,7 @@ pub(crate) fn tick_slot_machines(
         if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
             animation.play(clip);
         }
+        let _ = world.insert_one(entity, ThenPlay(IDLE));
     }
 }
 

@@ -127,6 +127,8 @@ fn place(
 const PROMPT_GAP: f32 = 20.0;
 const DISPLAY_NUDGE: f32 = 0.5;
 const ITEM_LIFT: f32 = 15.0;
+/// Goods on a shop table sit up on its cushion rather than in the middle of the table.
+const TABLE_ITEM_LIFT: f32 = 26.0;
 
 /// The share of the price still paid on a sale, from a roll in `0..100`.
 pub(crate) fn sale_for(chance: usize) -> Option<f32> {
@@ -160,7 +162,7 @@ pub(crate) fn stock_rooms(
         let sale = if discount { sale_for(roll(100)) } else { None };
         let sale_slot = roll(TABLE_STOCK.len());
         for (index, ((top_left, size), stock)) in tables.into_iter().zip(TABLE_STOCK).enumerate() {
-            let center = top_left + size / 2.0 - Vec2::new(0.0, ITEM_LIFT);
+            let center = top_left + size / 2.0 - Vec2::new(0.0, TABLE_ITEM_LIFT);
             if let Some(goods) = goods_for(world, stock, &mut roll) {
                 let mut shop = Shop {
                     price: price_for(stock, floor, roll(MAX_MULTIPLIER_ROLL)),

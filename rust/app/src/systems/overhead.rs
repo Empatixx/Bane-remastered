@@ -1,4 +1,4 @@
-//! Draws what lies across the rooms from wall top to wall top (see [`crate::dungeon::Overhead`]):
+//! Draws what lies across the rooms from wall to wall (see [`crate::dungeon::Overhead`]):
 //! the pieces sit above everything that moves, throw a shadow on the floor one wall's height
 //! below, and turn see-through while the player is under them. Hanging things swing a little
 //! on their chains, candles and lanterns flicker and light the room.
@@ -8,7 +8,7 @@ use hecs::World;
 
 use crate::assets::{Textures, tex};
 use crate::components::{Color, Layer, Light, Lit, Player, Position, Size, Sprite};
-use crate::dungeon::{Dungeon, HangingKind, OverheadKind};
+use crate::dungeon::{Dungeon, HangingKind, Overhead, OverheadKind};
 use crate::tilemap::TILE_SIZE;
 
 const COLUMNS: usize = 4;
@@ -39,53 +39,94 @@ pub(crate) struct OverheadPiece {
 }
 
 pub(crate) fn spawn_overheads(world: &mut World, dungeon: &Dungeon, textures: &Textures) {
-    let texture = textures.get(tex::OVERHEADS);
     for room in &dungeon.rooms {
         for span in &room.overheads {
-            let first = span.left - 1;
-            let last = span.right + 1;
-            let count = last + 1 - first;
-            let row_y = (span.row as f32 + 0.5) * TILE_SIZE;
-            let min = Vec2::new(first as f32 * TILE_SIZE, row_y - LIFT - PIECE.y / 2.0);
-            let max = Vec2::new((last + 1) as f32 * TILE_SIZE, row_y - LIFT + PIECE.y / 2.0);
-            let middle_column = (span.left + span.right) / 2;
-            for (index, column) in (first..=last).enumerate() {
-                let cell = if column == first {
-                    LEFT_END
-                } else if column == last {
-                    RIGHT_END
-                } else if span.kind == OverheadKind::Arch && column == middle_column {
-                    CENTRE
-                } else {
-                    MIDDLE
-                };
-                let t = (index as f32 + 0.5) / count as f32;
-                let sag = span.kind.sag() * (1.0 - (2.0 * t - 1.0).powi(2));
-                let anchor = Vec2::new((column as f32 + 0.5) * TILE_SIZE, row_y - LIFT + sag);
-                let sprite = Sprite::cell(texture, cell, span.kind.row(), COLUMNS, ROWS);
-                world.spawn((
-                    OverheadPiece {
-                        min,
-                        max,
-                        alpha: 1.0,
-                    },
-                    Position(anchor),
-                    Size(PIECE),
-                    Color(Vec4::ONE),
-                    sprite,
-                    Layer(LAYER),
-                    Lit,
-                ));
-                world.spawn((
-                    Position(anchor + SHADOW_OFFSET + Vec2::new(0.0, LIFT)),
-                    Size(PIECE),
-                    Color(Vec4::new(0.0, 0.0, 0.0, SHADOW_ALPHA)),
-                    sprite,
-                    Layer(SHADOW_LAYER),
-                ));
+            if span.upright {
+                spawn_upright(world, span, textures);
+            } else {
+                spawn_across(world, span, textures);
             }
         }
     }
+}
+
+/// The span covers just the open tiles, its ends meeting the walls' sides.
+fn spawn_across(world: &mut World, span: &Overhead, textures: &Textures) {
+    let texture = textures.get(tex::OVERHEADS);
+    let (left, right, row) = (span.first.0, span.last.0, span.first.1);
+    let count = span.length();
+    let row_y = (row as f32 + 0.5) * TILE_SIZE;
+    let min = Vec2::new(left as f32 * TILE_SIZE, row_y - LIFT - PIECE.y / 2.0);
+    let max = Vec2::new((right + 1) as f32 * TILE_SIZE, row_y - LIFT + PIECE.y / 2.0);
+    let middle_column = (left + right) / 2;
+    for (index, column) in (left..=right).enumerate() {
+        let cell = if column == left {
+            LEFT_END
+        } else if column == right {
+            RIGHT_END
+        } else if span.kind == OverheadKind::Arch && column == middle_column {
+            CENTRE
+        } else {
+            MIDDLE
+        };
+        // The ends are fixed to the walls; the middle sags (or the arch rises) between them.
+        let t = index as f32 / (count - 1) as f32;
+        let sag = span.kind.sag() * (1.0 - (2.0 * t - 1.0).powi(2));
+        let anchor = Vec2::new((column as f32 + 0.5) * TILE_SIZE, row_y - LIFT + sag);
+        let sprite = Sprite::cell(texture, cell, span.kind.row(), COLUMNS, ROWS);
+        spawn_piece(world, anchor, PIECE, sprite, min, max);
+    }
+}
+
+/// An upright span covers just the open tiles too, from the foot of the block above to the top
+/// of the block below.
+fn spawn_upright(world: &mut World, span: &Overhead, textures: &Textures) {
+    let texture = textures.get(tex::OVERHEADS_UPRIGHT);
+    let x = (span.first.0 as f32 + 0.5) * TILE_SIZE;
+    let top = span.first.1 as f32 * TILE_SIZE;
+    let bottom = (span.last.1 + 1) as f32 * TILE_SIZE;
+    let count = span.length();
+    let size = Vec2::splat(TILE_SIZE);
+    let min = Vec2::new(x - TILE_SIZE / 2.0, top);
+    let max = Vec2::new(x + TILE_SIZE / 2.0, bottom);
+    for index in 0..count {
+        let cell = if index == 0 {
+            LEFT_END
+        } else if index + 1 == count {
+            RIGHT_END
+        } else if span.kind == OverheadKind::Arch && index == count / 2 {
+            CENTRE
+        } else {
+            MIDDLE
+        };
+        let anchor = Vec2::new(x, top + size.y * (index as f32 + 0.5));
+        let sprite = Sprite::cell(texture, cell, span.kind.row(), COLUMNS, ROWS);
+        spawn_piece(world, anchor, size, sprite, min, max);
+    }
+}
+
+/// One piece of a span and its shadow on the floor.
+fn spawn_piece(world: &mut World, anchor: Vec2, size: Vec2, sprite: Sprite, min: Vec2, max: Vec2) {
+    world.spawn((
+        OverheadPiece {
+            min,
+            max,
+            alpha: 1.0,
+        },
+        Position(anchor),
+        Size(size),
+        Color(Vec4::ONE),
+        sprite,
+        Layer(LAYER),
+        Lit,
+    ));
+    world.spawn((
+        Position(anchor + SHADOW_OFFSET + Vec2::new(0.0, LIFT)),
+        Size(size),
+        Color(Vec4::new(0.0, 0.0, 0.0, SHADOW_ALPHA)),
+        sprite,
+        Layer(SHADOW_LAYER),
+    ));
 }
 
 pub(crate) fn tick_overheads(world: &mut World, dt: f32) {
@@ -115,7 +156,13 @@ const CHAIN_TOP_CELL: usize = 3;
 /// How high above its floor tile a hanging thing hangs; its shadow lies on the tile.
 const HANG: f32 = 120.0;
 /// Chain pieces above the thing; the last one fades into the dark of the ceiling.
-const CHAIN_PIECES: usize = 3;
+const CHAIN_PIECES: usize = 2;
+/// Hanging things are high up, closer to the camera than the floor, so they show bigger, and
+/// the chain widens towards the ceiling (keeping its length).
+const THING_SCALE: f32 = 1.35;
+const CHAIN_GROWTH: f32 = 0.7;
+/// The chain fades out a little more with each piece towards the ceiling.
+const CHAIN_FADE: f32 = 0.15;
 const SWAY: f32 = 4.0;
 const SWAY_RATE: f32 = 1.1;
 const FLICKER_RATE: f32 = 7.0;
@@ -145,8 +192,9 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
         for hanging in &room.hanging {
             let floor = (Vec2::new(hanging.tile.0 as f32, hanging.tile.1 as f32) + 0.5) * TILE_SIZE;
             let at = floor - Vec2::new(0.0, HANG);
-            let min = at - PIECE / 2.0;
-            let max = at + PIECE / 2.0;
+            let thing_size = PIECE * THING_SCALE;
+            let min = at - thing_size / 2.0;
+            let max = at + thing_size / 2.0;
             let phase = (hanging.tile.0 * 7 + hanging.tile.1 * 13) as f32 * 0.37;
             let row = hanging.kind.row();
             let part = |base: Vec2, reach: f32, thing: Option<bool>, opacity: f32| HangingPart {
@@ -160,8 +208,11 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                 max,
                 alpha: opacity,
             };
+            // Each piece sits on top of the one below it, wider the higher it hangs.
+            let mut base = at - Vec2::new(0.0, (thing_size.y - PIECE.y) / 2.0);
             for piece in 1..=CHAIN_PIECES {
-                let base = at - Vec2::new(0.0, PIECE.y * piece as f32);
+                let size = Vec2::new(PIECE.x * (THING_SCALE + CHAIN_GROWTH * piece as f32), PIECE.y);
+                base -= Vec2::new(0.0, PIECE.y);
                 let reach = 1.0 - piece as f32 / (CHAIN_PIECES + 1) as f32;
                 let cell = if piece == CHAIN_PIECES {
                     CHAIN_TOP_CELL
@@ -169,9 +220,9 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                     CHAIN_CELL
                 };
                 world.spawn((
-                    part(base, reach, None, 1.0),
+                    part(base, reach, None, 1.0 - CHAIN_FADE * (piece - 1) as f32),
                     Position(base),
-                    Size(PIECE),
+                    Size(size),
                     Color(Vec4::ONE),
                     Sprite::cell(texture, cell, row, HANGING_COLUMNS, HANGING_ROWS),
                     Layer(LAYER),
@@ -182,7 +233,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
             let thing = world.spawn((
                 part(at, 1.0, Some(hanging.kind.glows()), 1.0),
                 Position(at),
-                Size(PIECE),
+                Size(thing_size),
                 Color(Vec4::ONE),
                 sprite,
                 Layer(LAYER),
@@ -241,7 +292,7 @@ mod tests {
     use hecs::Entity;
 
     use super::*;
-    use crate::dungeon::{Overhead, Theme};
+    use crate::dungeon::Theme;
     use crate::rng::Rng;
 
     fn floor_with_overheads() -> (World, Dungeon, Overhead) {
@@ -262,13 +313,14 @@ mod tests {
     #[test]
     fn every_span_gets_its_ends_middle_and_a_shadow_for_each_piece() {
         let (world, dungeon, _) = floor_with_overheads();
-        let pieces: usize = dungeon
+        let least: usize = dungeon
             .rooms
             .iter()
             .flat_map(|room| &room.overheads)
-            .map(|span| span.right + 1 - span.left + 2)
+            .map(Overhead::length)
             .sum();
-        assert_eq!(world.query::<&OverheadPiece>().iter().count(), pieces);
+        let pieces = world.query::<&OverheadPiece>().iter().count();
+        assert!(pieces >= least, "{pieces} < {least}");
         let shadows = world
             .query::<&Layer>()
             .iter()
@@ -319,9 +371,9 @@ mod tests {
     fn a_span_turns_see_through_while_the_player_is_under_it() {
         let (mut world, _, span) = floor_with_overheads();
         let under = Vec2::new(
-            (span.left + span.right + 1) as f32 / 2.0 * TILE_SIZE,
-            (span.row as f32 + 0.5) * TILE_SIZE - LIFT,
-        );
+            (span.first.0 + span.last.0 + 1) as f32 / 2.0,
+            (span.first.1 + span.last.1 + 1) as f32 / 2.0,
+        ) * TILE_SIZE;
         world.spawn((Player, Position(under), Size(Vec2::splat(64.0))));
         for _ in 0..60 {
             tick_overheads(&mut world, 1.0 / 60.0);

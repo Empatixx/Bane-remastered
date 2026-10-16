@@ -179,6 +179,28 @@ pub(crate) fn carpet(world: &mut World, carpet: &Carpet, textures: &Textures) {
     }
 }
 
+/// The flame of a shop lamp, from the middle of its sprite.
+const LAMP_LIGHT_OFFSET: Vec2 = Vec2::new(0.0, -52.0);
+/// The shop's furniture blocks the floor under its lower part, which is what stands on it.
+const SHOP_FOOTPRINT: f32 = 0.4;
+
+/// A piece of the shop's furniture, solid where it stands on the floor.
+fn shop_piece(
+    world: &mut World,
+    physics: &mut Physics,
+    kind: Prop,
+    top_left: Vec2,
+    look: Look,
+    textures: &Textures,
+) -> Entity {
+    let entity = prop(world, kind, top_left, look, textures);
+    let size = kind.spec().size();
+    let footprint = Vec2::new(size.x * 0.85, size.y * SHOP_FOOTPRINT);
+    let center = top_left + Vec2::new(size.x / 2.0, size.y - footprint.y / 2.0);
+    physics.add_static_box(center, footprint);
+    entity
+}
+
 pub(crate) fn furnishing(
     world: &mut World,
     physics: &mut Physics,
@@ -197,6 +219,21 @@ pub(crate) fn furnishing(
         match fixture.kind {
             FixtureKind::Shopkeeper => place(Prop::Shopkeeper, Look::DEFAULT),
             FixtureKind::Table => place(Prop::ShopTable, Look::DEFAULT),
+            FixtureKind::Counter => {
+                shop_piece(world, physics, Prop::ShopCounter, top_left, Look::DEFAULT, textures);
+            }
+            FixtureKind::Shelf { right } => {
+                let look = Look::row(usize::from(right), false);
+                shop_piece(world, physics, Prop::ShopShelf, top_left, look, textures);
+            }
+            FixtureKind::Goods { barrel } => {
+                let look = Look::row(usize::from(barrel), false);
+                shop_piece(world, physics, Prop::ShopGoods, top_left, look, textures);
+            }
+            FixtureKind::Lamp => {
+                let lamp = shop_piece(world, physics, Prop::ShopLamp, top_left, Look::DEFAULT, textures);
+                let _ = world.insert_one(lamp, Light::rgb(LAMP_LIGHT_OFFSET, 255.0, 196.0, 110.0, 110.0, 1.2));
+            }
             FixtureKind::SlotMachine => {
                 if gamble_machine {
                     slot_machine(world, top_left, textures);
@@ -741,7 +778,13 @@ pub(crate) fn flamethrower(world: &mut World, top_left: Vec2, textures: &Texture
 }
 
 pub(crate) fn slot_machine(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
-    let entity = prop(world, Prop::SlotMachine, top_left, Look::LOSE_ROW, textures);
+    let entity = prop(
+        world,
+        Prop::SlotMachine,
+        top_left,
+        Look::row(slot::IDLE.row, false),
+        textures,
+    );
     let size = Prop::SlotMachine.spec().size();
     let _ = world.insert(
         entity,

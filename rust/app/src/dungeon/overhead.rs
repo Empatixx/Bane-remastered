@@ -1,7 +1,8 @@
 //! Things that hang high above a combat room, stretched between two walls: grates, wooden
 //! beams, chains, pipes, stone arches, thick webs and metal walkways. They span a gap between
-//! two wall blocks in one row, so the player walks underneath them. Others hang from the
-//! ceiling on a chain or a thread over open floor: chandeliers, cages, cocoons, lanterns, vines.
+//! two wall blocks in one row, or down the screen from one block to the block below it, so the
+//! player walks underneath them. Others hang from the ceiling on a chain or a thread over open
+//! floor: chandeliers, cages, cocoons, lanterns, vines.
 
 use crate::rng::Rng;
 use crate::tilemap::TileGrid;
@@ -68,18 +69,53 @@ impl Theme {
     }
 }
 
-/// One thing hanging over the floor tiles `left..=right` of `row`, with a wall at each end.
+/// One thing hanging over the open floor tiles `first..=last` (a row of them, or a column of
+/// them when `upright`), with a wall block at each end.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Overhead {
     pub(crate) kind: OverheadKind,
-    pub(crate) row: usize,
-    pub(crate) left: usize,
-    pub(crate) right: usize,
+    /// Running down the screen, from the block above to the block below, rather than across.
+    pub(crate) upright: bool,
+    pub(crate) first: (usize, usize),
+    pub(crate) last: (usize, usize),
 }
+
+impl Overhead {
+    /// How many floor tiles it lies over.
+    pub(crate) fn length(&self) -> usize {
+        if self.upright {
+            self.last.1 + 1 - self.first.1
+        } else {
+            self.last.0 + 1 - self.first.0
+        }
+    }
+
+    /// Whether the tile is within `margin` tiles of the span or the blocks at its ends.
+    pub(crate) fn near(&self, (column, row): (usize, usize), margin: usize) -> bool {
+        let (x, y) = if self.upright {
+            (margin, margin + 1)
+        } else {
+            (margin + 1, margin)
+        };
+        column + x >= self.first.0
+            && column <= self.last.0 + x
+            && row + y >= self.first.1
+            && row <= self.last.1 + y
+    }
+
+    pub(crate) fn tiles(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        let step = usize::from(self.upright);
+        (0..self.length()).map(move |i| (self.first.0 + i * (1 - step), self.first.1 + i * step))
+    }
+}
+
+/// A gap something could lie across: whether it runs down the screen, and its first and last
+/// open tiles.
+type Gap = (bool, (usize, usize), (usize, usize));
 
 /// The gaps between two walls in a row of the room that something could hang across. Of the
 /// rows a wall block spans, only its top one is kept, so a span sits on top of the blocks.
-fn spans(grid: &TileGrid, room: &DungeonRoom) -> Vec<(usize, usize, usize)> {
+fn spans(grid: &TileGrid, room: &DungeonRoom) -> Vec<Gap> {
     let wall = |column: usize, row: usize| grid.is_wall(column as isize, row as isize);
     let mut found = Vec::new();
     for row in room.origin.1 + 1..room.origin.1 + room.rows - 1 {
@@ -97,12 +133,59 @@ fn spans(grid: &TileGrid, room: &DungeonRoom) -> Vec<(usize, usize, usize)> {
             let length = right + 1 - left;
             let closed = wall(right + 1, row);
             let on_top = !(wall(left - 1, row - 1) && wall(right + 1, row - 1));
-            if closed && on_top && (MIN_SPAN..=MAX_SPAN).contains(&length) {
-                found.push((row, left, right));
+            // Both ends rest on a block standing in the room: the room's own walls show no
+            // top to lie on, only their thin edge running down the screen.
+            let on_blocks = room.contains_inner_tile(left - 1, row, 1)
+                && room.contains_inner_tile(right + 1, row, 1);
+            if closed && on_top && on_blocks && (MIN_SPAN..=MAX_SPAN).contains(&length) {
+                found.push((false, (left, row), (right, row)));
+            }
+        }
+    }
+    found.extend(upright_spans(grid, room));
+    found
+}
+
+/// The gaps between a block and the block below it in a column of the room, for something to
+/// run down the screen from the top of one to the top of the other.
+fn upright_spans(grid: &TileGrid, room: &DungeonRoom) -> Vec<Gap> {
+    let wall = |column: usize, row: usize| grid.is_wall(column as isize, row as isize);
+    let mut found = Vec::new();
+    for column in room.origin.0 + 1..room.origin.0 + room.columns - 1 {
+        let mut row = room.origin.1 + 2;
+        while row < room.origin.1 + room.rows - 1 {
+            if wall(column, row) || !wall(column, row - 1) {
+                row += 1;
+                continue;
+            }
+            let top = row;
+            while row < room.origin.1 + room.rows - 1 && !wall(column, row) {
+                row += 1;
+            }
+            let bottom = row - 1;
+            let length = bottom + 1 - top;
+            let closed = wall(column, bottom + 1);
+            // The block above shows its top above its front face, so it is more than a row deep.
+            let deep = wall(column, top - 2);
+            let on_blocks = room.contains_inner_tile(column, top - 1, 1)
+                && room.contains_inner_tile(column, bottom + 1, 1);
+            if closed && deep && on_blocks && (MIN_SPAN..=MAX_SPAN).contains(&length) {
+                found.push((true, (column, top), (column, bottom)));
             }
         }
     }
     found
+}
+
+/// Two spans the same way keep a few rows (or columns) apart; one across and one upright don't
+/// cross or touch.
+fn too_close(a: &Overhead, b: &Overhead) -> bool {
+    if a.upright == b.upright {
+        let line = |span: &Overhead| if span.upright { span.first.0 } else { span.first.1 };
+        line(a).abs_diff(line(b)) < ROW_GAP
+    } else {
+        a.tiles().any(|tile| b.near(tile, 2))
+    }
 }
 
 pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, theme: Theme, rng: &mut Rng) -> Vec<Overhead> {
@@ -115,25 +198,27 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, theme: Theme, rng: &mut 
     let kinds = theme.overhead_kinds();
     let mut planned: Vec<Overhead> = Vec::new();
     while planned.len() < MAX_PER_ROOM && !open.is_empty() {
-        let (row, left, right) = open.swap_remove(rng.below(open.len()));
-        if planned
-            .iter()
-            .any(|other| other.row.abs_diff(row) < ROW_GAP)
-        {
+        let (upright, first, last) = open.swap_remove(rng.below(open.len()));
+        let candidate = Overhead {
+            kind: kinds[0],
+            upright,
+            first,
+            last,
+        };
+        if planned.iter().any(|other| too_close(other, &candidate)) {
             continue;
         }
-        let kind = kinds[rng.below(kinds.len())];
         planned.push(Overhead {
-            kind,
-            row,
-            left,
-            right,
+            kind: kinds[rng.below(kinds.len())],
+            ..candidate
         });
     }
     planned
 }
 
 const HANGING_CLEARANCE: isize = 2;
+/// How many rows above its floor tile a hanging thing shows.
+const HANGING_LIFT_ROWS: usize = 4;
 const HANGING_SPACING: usize = 4;
 const MAX_HANGING: usize = 2;
 /// Only some combat rooms have anything hanging, so it stays a detail rather than a pattern.
@@ -218,9 +303,10 @@ pub(crate) fn plan_hanging(
                 .all(|dx| !grid.is_wall(column as isize + dx, row as isize + dy))
         })
     };
+    // The thing shows a few rows above the tile it hangs over, so neither may be near a span.
     let under_span = |column: usize, row: usize| {
         spans.iter().any(|span| {
-            row.abs_diff(span.row) <= 2 && column + 1 >= span.left && column <= span.right + 1
+            span.near((column, row), 2) || span.near((column, row.saturating_sub(HANGING_LIFT_ROWS)), 2)
         })
     };
     let mut open: Vec<(usize, usize)> = (room.origin.1..room.origin.1 + room.rows)
@@ -300,7 +386,7 @@ mod tests {
 
     #[test]
     fn spans_hang_between_two_walls_over_open_floor_in_combat_rooms_only() {
-        let mut total = 0;
+        let (mut total, mut upright) = (0, 0);
         for theme in ALL {
             for seed in 0..6 {
                 let dungeon =
@@ -313,18 +399,24 @@ mod tests {
                     assert!(room.overheads.len() <= MAX_PER_ROOM);
                     for span in &room.overheads {
                         total += 1;
-                        let row = span.row as isize;
-                        assert!(grid.is_wall(span.left as isize - 1, row));
-                        assert!(grid.is_wall(span.right as isize + 1, row));
-                        assert!((span.left..=span.right).all(|c| !grid.is_wall(c as isize, row)));
-                        assert!((MIN_SPAN..=MAX_SPAN).contains(&(span.right + 1 - span.left)));
+                        upright += usize::from(span.upright);
+                        let step = if span.upright { (0, 1) } else { (1, 0) };
+                        let before = (span.first.0 - step.0, span.first.1 - step.1);
+                        let after = (span.last.0 + step.0, span.last.1 + step.1);
+                        let wall = |(c, r): (usize, usize)| grid.is_wall(c as isize, r as isize);
+                        assert!(wall(before) && wall(after));
+                        assert!(span.tiles().all(|tile| !wall(tile)));
+                        assert!((MIN_SPAN..=MAX_SPAN).contains(&span.length()));
                         assert!(theme.overhead_kinds().contains(&span.kind));
-                        assert!(room.contains_tile(span.left, span.row));
+                        assert!(room.contains_tile(span.first.0, span.first.1));
+                        assert!(room.contains_inner_tile(before.0, before.1, 1));
+                        assert!(room.contains_inner_tile(after.0, after.1, 1));
                     }
                 }
             }
         }
         assert!(total > 20, "{total}");
+        assert!(upright > 5 && upright < total, "{upright} of {total}");
     }
 
     #[test]
@@ -381,7 +473,7 @@ mod tests {
                 Dungeon::generate_themed(&mut Rng::new(seed), Theme::Stone).expect("a dungeon");
             for room in &dungeon.rooms {
                 if let [a, b] = room.overheads.as_slice() {
-                    assert!(a.row.abs_diff(b.row) >= ROW_GAP);
+                    assert!(!too_close(a, b));
                 }
             }
         }

@@ -11,7 +11,7 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    Body, Bullet, Color, DropShadow, Enemy, Heading, Layer, Lit, Player, Position, Size, Spawning, Sprite,
+    Body, BodyOffset, Bullet, Color, DropShadow, Enemy, Heading, Layer, Lit, Player, Position, Size, Spawning, Sprite,
     Velocity, YSort,
 };
 use crate::dungeon::{Dungeon, Track};
@@ -278,6 +278,7 @@ pub(crate) fn spawn_tracks(
                 foot: CART_SIZE.y / 2.0 - CART_LIFT,
             },
             DropShadow::default(),
+            BodyOffset(Vec2::new(0.0, -CART_LIFT)),
         ));
         let body = physics.add_moving_object(cart, start, CART_BODY);
         let _ = world.insert_one(cart, body);
@@ -343,10 +344,8 @@ pub(crate) fn tick_carts(world: &mut World, physics: &mut Physics, dt: f32) {
         }
         cart.rolled += (cart.distance - before).abs();
         let (to, along) = cart.rail.at(cart.distance);
+        // The picture follows the body through the simulation, lifted by its BodyOffset.
         physics.move_to(body, to);
-        if let Ok(mut position) = world.get::<&mut Position>(entity) {
-            position.0 = to - Vec2::new(0.0, CART_LIFT);
-        }
         if let Ok(mut heading) = world.get::<&mut Heading>(entity) {
             heading.0 = lying(along);
         }

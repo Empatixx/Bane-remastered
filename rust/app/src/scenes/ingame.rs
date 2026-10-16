@@ -769,9 +769,21 @@ impl InGameScene {
                 .max_by_key(|room| room.columns * room.rows)
             {
                 room.hanging = crate::dungeon::showcase(&grid, room);
-                if let Some(first) = room.hanging.first() {
-                    let tile = Vec2::new(first.tile.0 as f32, first.tile.1 as f32);
-                    showcase_start = Some((tile + Vec2::new(0.5, 1.0)) * TILE_SIZE);
+                // By the middle one, as high up the floor as it goes towards where they hang
+                // (at most five tiles), so the row and its chains are in view.
+                // `BANE_SHOWCASE=<n>` stands by the n-th one instead.
+                let pick = std::env::var("BANE_SHOWCASE")
+                    .ok()
+                    .and_then(|value| value.parse::<usize>().ok())
+                    .unwrap_or(room.hanging.len() / 2);
+                if let Some(middle) = room.hanging.get(pick) {
+                    let (column, row) = middle.tile;
+                    let up = (1..=5)
+                        .take_while(|&up| row >= up && !grid.is_wall(column as isize, (row - up) as isize))
+                        .last()
+                        .unwrap_or(0);
+                    let tile = Vec2::new(column as f32, (row - up) as f32);
+                    showcase_start = Some((tile + Vec2::new(0.5, 0.5)) * TILE_SIZE);
                 }
             }
         }
@@ -878,6 +890,23 @@ impl InGameScene {
                     start = middle * TILE_SIZE;
                 }
             }
+            Ok("bog") => {
+                // Deep in a pool: a tile with the surface all round it, the lowest first.
+                let deep = dungeon
+                    .surfaces
+                    .iter()
+                    .filter(|&((column, row), _)| {
+                        (column.saturating_sub(2)..=column + 2).all(|c| {
+                            (row.saturating_sub(1)..=row + 1)
+                                .all(|r| dungeon.surfaces.at((c, r)).is_some())
+                        })
+                    })
+                    .map(|(tile, _)| tile)
+                    .min();
+                if let Some((column, row)) = deep {
+                    start = Vec2::new(column as f32 + 0.5, row as f32) * TILE_SIZE;
+                }
+            }
             Ok("table") => {
                 if let Some(spot) = dungeon.rooms.iter().flat_map(|room| &room.tables).next() {
                     // Beside its long side, on the open floor it would fall onto.
@@ -897,10 +926,21 @@ impl InGameScene {
                     start = Vec2::new(column as f32 + 0.5, row as f32 + 1.5) * TILE_SIZE;
                 }
             }
-            Ok("overhead") => {
-                if let Some(span) = dungeon.rooms.iter().flat_map(|room| &room.overheads).next() {
-                    let column = (span.left + span.right + 1) as f32 / 2.0;
-                    start = Vec2::new(column, span.row as f32 + 2.5) * TILE_SIZE;
+            Ok(at @ ("overhead" | "upright")) => {
+                let upright = at == "upright";
+                if let Some(span) = dungeon
+                    .rooms
+                    .iter()
+                    .flat_map(|room| &room.overheads)
+                    .find(|span| span.upright == upright)
+                {
+                    // Beside the middle of it, on the open floor.
+                    let middle = Vec2::new(
+                        (span.first.0 + span.last.0 + 1) as f32 / 2.0,
+                        (span.first.1 + span.last.1 + 1) as f32 / 2.0,
+                    );
+                    let beside = if upright { Vec2::new(1.5, 0.0) } else { Vec2::new(0.0, 2.0) };
+                    start = (middle + beside) * TILE_SIZE;
                 }
             }
             _ => {}
@@ -908,7 +948,21 @@ impl InGameScene {
         if let Some(spot) = showcase_start {
             start = spot;
         }
+        // `BANE_OFFSET=dx,dy` moves that start by whole tiles, for looking round a room.
+        if let Some((dx, dy)) = std::env::var("BANE_OFFSET").ok().and_then(|offset| {
+            let (dx, dy) = offset.split_once(',')?;
+            Some((dx.trim().parse::<f32>().ok()?, dy.trim().parse::<f32>().ok()?))
+        }) {
+            start += Vec2::new(dx, dy) * TILE_SIZE;
+        }
         prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        // `BANE_COINS=n` starts the floor with that many coins, for trying out the shop.
+        if let Some(coins) = std::env::var("BANE_COINS").ok().and_then(|n| n.trim().parse().ok()) {
+            let wallets = self.world.query_mut::<&mut crate::components::Wallet>();
+            for wallet in wallets.with::<&crate::components::Player>() {
+                wallet.coins = coins;
+            }
+        }
         systems::apply_floor_perks(&mut self.world, perks);
         let weapon_mods = self
             .profile

@@ -70,31 +70,41 @@ pub(crate) mod infinity {
 pub(crate) mod slot {
     use crate::clip::Clip;
 
-    pub(crate) const COLUMNS: usize = 6;
-    pub(crate) const ROWS: usize = 3;
+    pub(crate) const COLUMNS: usize = 8;
+    pub(crate) const ROWS: usize = 4;
 
+    /// The lever pulled, the reels blurring and the lights chasing round the marquee.
     pub(crate) const SPIN: Clip = Clip {
         row: 0,
-        frames: 4,
-        frame_time: 0.1,
+        frames: 8,
+        frame_time: 0.06,
         looping: true,
         flipped: false,
     };
+    /// Three of a kind: the lights flash and coins spill into the tray, then the machine idles.
     pub(crate) const WIN: Clip = Clip {
         row: 1,
-        frames: 6,
-        frame_time: 0.1,
-        looping: true,
+        frames: 8,
+        frame_time: 0.16,
+        looping: false,
         flipped: false,
     };
+    /// Mismatched reels under dimmed lights for a moment, then the machine idles.
     pub(crate) const LOSE: Clip = Clip {
         row: 2,
-        frames: 1,
-        frame_time: 1.0,
+        frames: 8,
+        frame_time: 0.16,
+        looping: false,
+        flipped: false,
+    };
+    /// The lights running slowly round the marquee.
+    pub(crate) const IDLE: Clip = Clip {
+        row: 3,
+        frames: 8,
+        frame_time: 0.2,
         looping: true,
         flipped: false,
     };
-    pub(crate) const IDLE: Clip = LOSE;
 }
 
 pub(crate) mod ghost {
@@ -201,11 +211,11 @@ mod tests {
     }
 
     #[test]
-    fn the_slot_machine_sheet_keeps_its_rows_and_rests_on_a_loss() {
-        assert_eq!((slot::COLUMNS, slot::ROWS), (6, 3));
-        assert_eq!(slot::SPIN, looping(0, 4, 0.1, false));
-        assert_eq!(slot::WIN, looping(1, 6, 0.1, false));
-        assert_eq!(slot::LOSE, looping(2, 1, 1.0, false));
-        assert_eq!(slot::IDLE, slot::LOSE);
+    fn the_slot_machine_spins_in_a_loop_and_settles_into_its_idle_lights() {
+        assert_eq!((slot::COLUMNS, slot::ROWS), (8, 4));
+        assert_eq!(slot::SPIN, looping(0, 8, 0.06, false));
+        assert!(!slot::WIN.looping && !slot::LOSE.looping);
+        assert_eq!((slot::WIN.row, slot::LOSE.row), (1, 2));
+        assert_eq!(slot::IDLE, looping(3, 8, 0.2, false));
     }
 }

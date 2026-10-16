@@ -24,6 +24,10 @@ pub(crate) enum Prop {
     Shopkeeper,
     ShopTable,
     SlotMachine,
+    ShopCounter,
+    ShopShelf,
+    ShopGoods,
+    ShopLamp,
     Chest,
     Bricks,
     AngelStatue,
@@ -73,6 +77,10 @@ impl Prop {
                 | Self::Shopkeeper
                 | Self::ShopTable
                 | Self::SlotMachine
+                | Self::ShopCounter
+                | Self::ShopShelf
+                | Self::ShopGoods
+                | Self::ShopLamp
                 | Self::Chest
                 | Self::Bricks
                 | Self::AngelStatue
@@ -126,11 +134,6 @@ impl Look {
     pub(crate) const FLIPPED: Self = Self {
         row: 0,
         flipped: true,
-    };
-
-    pub(crate) const LOSE_ROW: Self = Self {
-        row: 2,
-        flipped: false,
     };
 
     pub(crate) const fn row(row: usize, flipped: bool) -> Self {
@@ -234,7 +237,7 @@ impl Prop {
             Self::Box => still(tex::BOXES, Vec2::new(30.0, 30.0), 3.0),
             Self::Chains => still(tex::CHAINS, Vec2::new(16.0, 32.0), 4.0),
             Self::Rock => variants(tex::ROCK, Vec2::new(16.0, 16.0), 4.0),
-            Self::Bookshelf => still(tex::BOOKSHELF, Vec2::new(64.0, 57.0), 3.0),
+            Self::Bookshelf => still(tex::BOOKSHELF, Vec2::new(48.0, 43.0), 4.0),
             Self::MapTable => still(tex::MAPTABLE, Vec2::new(59.0, 38.0), 3.0),
             Self::Banner => PropSpec {
                 texture: tex::BANNER,
@@ -288,14 +291,28 @@ impl Prop {
                     frame_time: 0.17,
                 }),
             },
-            Self::ShopTable => still(tex::SHOPTABLE, Vec2::new(96.0, 64.0), 1.5),
+            Self::ShopTable => still(tex::SHOPTABLE, Vec2::new(24.0, 16.0), 6.0),
             Self::SlotMachine => PropSpec {
                 texture: tex::SLOTMACHINE,
-                columns: 6,
-                rows: 3,
-                frame: Vec2::new(64.0, 64.0),
-                scale: 3.0,
+                columns: crate::sheets::slot::COLUMNS,
+                rows: crate::sheets::slot::ROWS,
+                frame: Vec2::new(48.0, 48.0),
+                scale: 4.0,
                 animation: None,
+            },
+            Self::ShopCounter => still(tex::SHOP_COUNTER, Vec2::new(80.0, 28.0), 4.0),
+            Self::ShopShelf => variants(tex::SHOP_SHELF, Vec2::new(32.0, 48.0), 4.0),
+            Self::ShopGoods => variants(tex::SHOP_GOODS, Vec2::new(32.0, 32.0), 4.0),
+            Self::ShopLamp => PropSpec {
+                texture: tex::SHOP_LAMP,
+                columns: 4,
+                rows: 1,
+                frame: Vec2::new(16.0, 32.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.14,
+                }),
             },
             Self::Chest => PropSpec {
                 texture: tex::CHEST,

@@ -15,6 +15,9 @@ const RIPPLE_EVERY: f32 = 0.2;
 const RIPPLE_MIN_SPEED: f32 = 40.0;
 const RIPPLE_SIZE: Vec2 = Vec2::new(96.0, 96.0);
 const RIPPLE_FRAMES: usize = 6;
+/// Rings in a bog spread slower and come less often than on water, in the colour of the mud.
+const BOG_RIPPLE_EVERY: f32 = 0.32;
+const BOG_RIPPLE: Vec4 = Vec4::new(0.55, 0.45, 0.3, 0.75);
 
 pub(crate) fn burn_on_lava(
     world: &mut World,
@@ -73,11 +76,16 @@ pub(crate) fn ripple_on_water(
             timer.0 -= dt;
             timer.0 <= 0.0
         });
-    if !ready || !moving || surfaces.at_point(feet) != Some(Surface::Water) {
+    let (every, tint) = match surfaces.at_point(feet) {
+        Some(Surface::Water) => (RIPPLE_EVERY, Vec4::ONE),
+        Some(Surface::Bog) => (BOG_RIPPLE_EVERY, BOG_RIPPLE),
+        _ => return,
+    };
+    if !ready || !moving {
         return;
     }
     if let Ok(mut timer) = world.get::<&mut RippleTimer>(player) {
-        timer.0 = RIPPLE_EVERY;
+        timer.0 = every;
     }
     let clip = Clip {
         row: 0,
@@ -90,7 +98,7 @@ pub(crate) fn ripple_on_water(
         Expiring,
         Position(feet),
         Size(RIPPLE_SIZE),
-        Color(Vec4::ONE),
+        Color(tint),
         Sprite::cell(textures.get(tex::RIPPLE), 0, 0, RIPPLE_FRAMES, 1),
         Animation::new(RIPPLE_FRAMES, 1, clip),
         Layer(-1),
