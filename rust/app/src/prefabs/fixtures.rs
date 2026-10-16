@@ -351,6 +351,20 @@ pub(crate) fn decor(
             Look::row(variant, false),
             textures,
         ),
+        DecorKind::Eggs { variant } => prop(
+            world,
+            Prop::SpiderEggs,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
+        DecorKind::Wrapped { variant } => prop(
+            world,
+            Prop::SpiderWrapped,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
         DecorKind::IcePatch => {
             floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
         }

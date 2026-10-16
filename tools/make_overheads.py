@@ -1,5 +1,5 @@
 """Things that lie across a room from one wall to another at the height of their tops: an iron
-grate, wooden beams, a chain, pipes, a stone arch, a thick web and a metal walkway.
+grate, wooden beams, a chain, pipes, a stone arch, a thick web, a metal walkway, a liana and a few strands of silk.
 
 overheads.tga has one row per kind in that order and four 16x24 cells per row: the left end
 (meeting the side of the wall), a middle piece that repeats seamlessly, the right end, and a centre piece
@@ -287,6 +287,59 @@ def resting_end(middle, name, beam_ends=False):
     return end
 
 
+LEAVES = {"v": (70, 112, 44), "V": (112, 158, 64), "L": (150, 196, 84), "e": (40, 66, 30), "r": (98, 74, 46), "R": (66, 48, 30)}
+
+VINES_MID = pad([
+    "..L.........L...",
+    ".LVL.......LVL..",
+    "..ve........ve..",
+    "vvVVvvvvvVVVvvvv",
+    "eVVeeVVVVeeVVVVe",
+    "..eV....e...Ve..",
+    "...LL.......LL..",
+    "....L........L..",
+])
+
+
+def vines_end():
+    """The liana wound round a root sticking out of the wall's side, a few leaves on it."""
+    rows = [list(row) for row in VINES_MID]
+    top = next(index for index, row in enumerate(rows) if "".join(row).strip("."))
+    for y in range(H):
+        for x in range(0, 3):
+            rows[y][x] = "."
+    for y in range(top + 1, top + 7):
+        rows[y][0] = "R"
+        rows[y][1] = "r"
+    rows[top + 2][2] = "v"
+    rows[top + 3][2] = "V"
+    rows[top + 4][2] = "e"
+    rows[top][1] = "L"
+    rows[top + 7][2] = "L"
+    return ["".join(row) for row in rows]
+
+
+SILK_STRANDS = {"s": (222, 220, 196, 220), "f": (176, 172, 150, 160), "w": (255, 255, 255, 255)}
+STRANDS_MID = pad([
+    "ssffssssffssssff",
+    "................",
+    "....w.......w...",
+    "................",
+    "ffssssffssssffss",
+    "..........w.....",
+])
+
+
+def strands_end():
+    """The threads stuck to the wall's side in a little tuft of silk."""
+    rows = [list(row) for row in STRANDS_MID]
+    top = next(index for index, row in enumerate(rows) if "".join(row).strip("."))
+    for y in range(top - 1, top + 6):
+        for x in range(0, 3):
+            rows[y][x] = "s" if (x + y) % 2 else "f"
+    return ["".join(row) for row in rows]
+
+
 KINDS = [
     ("grate", GRATE_MID, GRATE_MID, IRON),
     ("beams", BEAMS_MID, BEAMS_MID, WOOD),
@@ -295,6 +348,8 @@ KINDS = [
     ("arch", ARCH_MID, ARCH_KEY, STONE),
     ("web", WEB_MID, WEB_MID, SILK),
     ("walk", WALK_MID, WALK_MID, IRON),
+    ("vines", VINES_MID, VINES_MID, LEAVES),
+    ("strands", STRANDS_MID, STRANDS_MID, SILK_STRANDS),
 ]
 
 
@@ -342,7 +397,7 @@ def beams_end():
     return ["".join(row) for row in rows]
 
 
-MOUNTED = {"chain": chain_end, "beams": beams_end}
+MOUNTED = {"chain": chain_end, "beams": beams_end, "vines": vines_end, "strands": strands_end}
 
 
 def transpose(rows):

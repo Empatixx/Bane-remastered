@@ -937,11 +937,15 @@ impl InGameScene {
                 }
             }
             Ok("water") => {
-                // Beside the first footbridge, on the bank at its start.
-                if let Some(bridge) = dungeon.rooms.iter().flat_map(|room| &room.waterworks.bridges).next() {
+                // Beside the first footbridge, on the bank at its start; on a floor without
+                // bridges, a little below the first pipe.
+                let works = || dungeon.rooms.iter().map(|room| &room.waterworks);
+                if let Some(bridge) = works().flat_map(|works| &works.bridges).next() {
                     let (column, row) = bridge.first;
                     let bank = if bridge.upright { (column, row - 1) } else { (column - 1, row) };
                     start = Vec2::new(bank.0 as f32 + 0.5, bank.1 as f32 + 0.5) * TILE_SIZE;
+                } else if let Some(&(column, row)) = works().flat_map(|works| &works.pipes).next() {
+                    start = Vec2::new(column as f32 + 1.5, row as f32 + 3.0) * TILE_SIZE;
                 }
             }
             Ok("vestibule") => {

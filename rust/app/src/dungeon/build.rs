@@ -273,6 +273,12 @@ impl Dungeon {
                 }
             }
         }
+        // A skull frozen in a block of ice belongs on the ice: the ice spreads round the decor,
+        // so each one moves onto a free ice tile of its room afterwards, or goes.
+        let mut frost_rng = Rng::new(rng.next_u64());
+        for room in &mut rooms {
+            freeze_skulls(room, &surfaces, &mut frost_rng);
+        }
         // A stream of its own, so what hangs overhead never changes the rest of the floor.
         let mut overhead_rng = Rng::new(rng.next_u64());
         for room in &mut rooms {
@@ -289,7 +295,7 @@ impl Dungeon {
         for room in &mut rooms {
             room.track = track::plan(&grid, room, &surfaces, &mut track_rng);
         }
-        if let Some(kind @ (surface::Surface::Water | surface::Surface::Lava)) = theme.surface() {
+        if let Some(kind) = theme.surface() {
             let mut water_rng = Rng::new(rng.next_u64());
             for room in &mut rooms {
                 room.waterworks = waterworks::plan(&grid, room, &surfaces, kind, &mut water_rng);
@@ -381,6 +387,24 @@ impl Dungeon {
     }
 }
 
+fn freeze_skulls(room: &mut DungeonRoom, surfaces: &Surfaces, rng: &mut Rng) {
+    let taken: Vec<(usize, usize)> = room.decor.iter().map(|decor| decor.tile).collect();
+    let mut ice: Vec<(usize, usize)> = (room.origin.1..room.origin.1 + room.rows)
+        .flat_map(|row| (room.origin.0..room.origin.0 + room.columns).map(move |column| (column, row)))
+        .filter(|tile| surfaces.at(*tile) == Some(surface::Surface::Ice) && !taken.contains(tile))
+        .collect();
+    room.decor.retain_mut(|decor| {
+        if decor.kind != decor::DecorKind::FrozenSkull {
+            return true;
+        }
+        if ice.is_empty() {
+            return false;
+        }
+        decor.tile = ice.swap_remove(rng.below(ice.len()));
+        true
+    });
+}
+
 fn door_direction(columns: usize, rows: usize, column: usize, row: usize) -> Direction {
     if row == 0 {
         Direction::Up
@@ -449,6 +473,22 @@ mod tests {
     use std::collections::VecDeque;
 
     use super::*;
+
+    #[test]
+    fn frozen_skulls_lie_on_the_ice() {
+        let mut skulls = 0;
+        for seed in 0..20 {
+            let dungeon =
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Ice).expect("a dungeon");
+            for room in &dungeon.rooms {
+                for decor in room.decor.iter().filter(|decor| decor.kind == decor::DecorKind::FrozenSkull) {
+                    skulls += 1;
+                    assert_eq!(dungeon.surfaces.at(decor.tile), Some(surface::Surface::Ice));
+                }
+            }
+        }
+        assert!(skulls > 0);
+    }
 
     #[test]
     fn a_run_without_shops_gets_no_shop_room_and_the_same_run_with_shops_matches_today() {

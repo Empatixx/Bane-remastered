@@ -1,6 +1,7 @@
-//! What the pools of the sewer and the lava floor get besides their liquid: outflow pipes (or
-//! glowing cracks) in the walls pouring into them, rubbish and barrels (or cooled crusts)
-//! drifting on them, and plank footbridges (or basalt bridges) across them.
+//! What the pools of the sewer, the lava floor and the moss floor's bog get besides their liquid:
+//! outflow pipes (glowing cracks, seeps between roots) in the walls pouring into them, rubbish
+//! and barrels (cooled crusts, lily pads and frogs) drifting on them, and plank footbridges
+//! (stepping stones, fallen logs) across them.
 
 use std::collections::HashSet;
 
@@ -20,6 +21,12 @@ const SECOND_DEBRIS_PERCENT: usize = 40;
 const RAT_PERCENT: usize = 20;
 const BARREL_PERCENT: usize = 35;
 const CRUSTS: usize = 3;
+const FROZEN: usize = 4;
+const CRACKS: usize = 2;
+const MAX_DRIFTS: usize = 3;
+const FROG_PERCENT: usize = 25;
+/// Below this roll and above the frog's, a leaf; the rest are lily pads.
+const LEAF_UNDER: usize = 45;
 /// A pool needs this many tiles before anything floats on it.
 const POOL_FOR_FLOATERS: usize = 6;
 
@@ -32,6 +39,14 @@ pub(crate) enum Debris {
     RatRaft,
     /// A crust of cooled rock afloat on lava, one of three shapes.
     Crust(usize),
+    /// A lily pad on the bog, plain or in flower.
+    Lily(usize),
+    /// A fallen leaf on the bog.
+    Leaf,
+    /// A frog on a lily pad, which leaps now and then.
+    Frog,
+    /// Something frozen under the ice: a fish, a skeleton's hand, a sword or a few coins.
+    Frozen(usize),
 }
 
 impl Debris {
@@ -43,7 +58,9 @@ impl Debris {
             Self::Bottle => 2,
             Self::Boot => 3,
             Self::RatRaft => 4,
-            Self::Crust(variant) => variant,
+            Self::Crust(variant) | Self::Lily(variant) | Self::Frozen(variant) => variant,
+            Self::Leaf => 2,
+            Self::Frog => 3,
         }
     }
 }
@@ -82,12 +99,20 @@ impl Bridge {
     }
 }
 
+/// Marks on the ice floor: a crack in the ice, or snow drifted against a wall.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Mark {
+    Crack(usize),
+    Drift,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct Waterworks {
     /// Wall tiles with a pipe in their face, the water right below them.
     pub(crate) pipes: Vec<(usize, usize)>,
     pub(crate) floaters: Vec<(Floater, (usize, usize))>,
     pub(crate) bridges: Vec<Bridge>,
+    pub(crate) marks: Vec<(Mark, (usize, usize))>,
 }
 
 fn liquid(surfaces: &Surfaces, kind: Surface, (column, row): (usize, usize)) -> bool {
@@ -198,14 +223,14 @@ pub(crate) fn plan(
                 .all(|tile| !works.pipes.iter().any(|pipe| (pipe.0, pipe.1 + 1) == tile))
         })
         .collect();
-    if !crossings.is_empty() && rng.below(100) < BRIDGE_PERCENT {
+    // Ice is walked on as it is: no bridges over it.
+    if kind != Surface::Ice && !crossings.is_empty() && rng.below(100) < BRIDGE_PERCENT {
         works.bridges.push(crossings[rng.below(crossings.len())]);
     }
     let bridged: HashSet<(usize, usize)> =
         works.bridges.iter().flat_map(|bridge| bridge.tiles().collect::<Vec<_>>()).collect();
     // Something afloat on the bigger pools, off the bridge and away from the splashes.
-    let lava = kind == Surface::Lava;
-    let mut barrel_left = !lava && rng.below(100) < BARREL_PERCENT;
+    let mut barrel_left = kind == Surface::Water && rng.below(100) < BARREL_PERCENT;
     for pool in pools.iter().filter(|pool| pool.len() >= POOL_FOR_FLOATERS) {
         let mut open: Vec<(usize, usize)> = pool
             .iter()
@@ -215,9 +240,9 @@ pub(crate) fn plan(
             .collect();
         let mut floaters = Vec::new();
         if rng.below(100) < DEBRIS_PERCENT {
-            floaters.push(Floater::Debris(pick_debris(lava, rng)));
+            floaters.push(Floater::Debris(pick_debris(kind, rng)));
             if rng.below(100) < SECOND_DEBRIS_PERCENT {
-                floaters.push(Floater::Debris(pick_debris(lava, rng)));
+                floaters.push(Floater::Debris(pick_debris(kind, rng)));
             }
         }
         if barrel_left {
@@ -237,12 +262,68 @@ pub(crate) fn plan(
             works.floaters.push((floater, tile));
         }
     }
+    if kind == Surface::Ice {
+        mark_the_ice(grid, room, surfaces, &mut works, rng);
+    }
     works
 }
 
-fn pick_debris(lava: bool, rng: &mut Rng) -> Debris {
-    if lava {
-        return Debris::Crust(rng.below(CRUSTS));
+/// A crack or two in the ice, away from what lies frozen under it, and snow drifted against a
+/// few of the walls.
+fn mark_the_ice(
+    grid: &TileGrid,
+    room: &DungeonRoom,
+    surfaces: &Surfaces,
+    works: &mut Waterworks,
+    rng: &mut Rng,
+) {
+    let tiles: Vec<(usize, usize)> = (room.origin.1 + 1..room.origin.1 + room.rows)
+        .flat_map(|row| (room.origin.0..room.origin.0 + room.columns).map(move |column| (column, row)))
+        .collect();
+    let mut ice: Vec<(usize, usize)> = tiles
+        .iter()
+        .copied()
+        .filter(|&tile| liquid(surfaces, Surface::Ice, tile))
+        .filter(|tile| !works.floaters.iter().any(|(_, other)| other == tile))
+        .collect();
+    for _ in 0..1 + rng.below(CRACKS) {
+        if ice.is_empty() {
+            break;
+        }
+        let tile = ice.swap_remove(rng.below(ice.len()));
+        works.marks.push((Mark::Crack(rng.below(CRACKS)), tile));
+    }
+    let mut against_walls: Vec<(usize, usize)> = tiles
+        .iter()
+        .copied()
+        .filter(|&(column, row)| {
+            !grid.is_wall(column as isize, row as isize)
+                && grid.is_wall(column as isize, row as isize - 1)
+                && !works.pipes.iter().any(|pipe| (pipe.0, pipe.1 + 1) == (column, row))
+        })
+        .collect();
+    for _ in 0..rng.below(MAX_DRIFTS + 1) {
+        if against_walls.is_empty() {
+            break;
+        }
+        let tile = against_walls.swap_remove(rng.below(against_walls.len()));
+        against_walls.retain(|other| other.0.abs_diff(tile.0) > 2 || other.1 != tile.1);
+        works.marks.push((Mark::Drift, tile));
+    }
+}
+
+fn pick_debris(kind: Surface, rng: &mut Rng) -> Debris {
+    match kind {
+        Surface::Ice => return Debris::Frozen(rng.below(FROZEN)),
+        Surface::Lava => return Debris::Crust(rng.below(CRUSTS)),
+        Surface::Bog => {
+            return match rng.below(100) {
+                0..FROG_PERCENT => Debris::Frog,
+                FROG_PERCENT..LEAF_UNDER => Debris::Leaf,
+                _ => Debris::Lily(rng.below(2)),
+            };
+        }
+        _ => {}
     }
     if rng.below(100) < RAT_PERCENT {
         return Debris::RatRaft;
@@ -310,8 +391,66 @@ mod tests {
     }
 
     #[test]
+    fn the_bog_gets_seeps_logs_and_lily_pads() {
+        let (mut seeps, mut logs, mut floating) = (0, 0, 0);
+        for seed in 0..30 {
+            let dungeon =
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Moss).expect("a dungeon");
+            let bog = |tile: (usize, usize)| dungeon.surfaces.at(tile) == Some(Surface::Bog);
+            for room in &dungeon.rooms {
+                let works = &room.waterworks;
+                seeps += works.pipes.len();
+                logs += works.bridges.len();
+                assert!(works.bridges.iter().all(|bridge| bridge.tiles().all(bog)));
+                for &(floater, tile) in &works.floaters {
+                    floating += 1;
+                    assert!(bog(tile));
+                    assert!(matches!(
+                        floater,
+                        Floater::Debris(Debris::Lily(_) | Debris::Leaf | Debris::Frog)
+                    ));
+                }
+            }
+        }
+        assert!(seeps > 3 && logs > 3 && floating > 5, "{seeps} {logs} {floating}");
+    }
+
+    #[test]
+    fn the_ice_gets_frozen_falls_things_under_it_cracks_and_drifts_but_no_bridges() {
+        let (mut falls, mut frozen, mut cracks, mut drifts) = (0, 0, 0, 0);
+        for seed in 0..20 {
+            let dungeon =
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Ice).expect("a dungeon");
+            let ice = |tile: (usize, usize)| dungeon.surfaces.at(tile) == Some(Surface::Ice);
+            for room in &dungeon.rooms {
+                let works = &room.waterworks;
+                assert!(works.bridges.is_empty());
+                falls += works.pipes.len();
+                for &(floater, tile) in &works.floaters {
+                    frozen += 1;
+                    assert!(matches!(floater, Floater::Debris(Debris::Frozen(_))));
+                    assert!(ice(tile));
+                }
+                for &(mark, (column, row)) in &works.marks {
+                    match mark {
+                        Mark::Crack(_) => {
+                            cracks += 1;
+                            assert!(ice((column, row)));
+                        }
+                        Mark::Drift => {
+                            drifts += 1;
+                            assert!(dungeon.grid.is_wall(column as isize, row as isize - 1));
+                        }
+                    }
+                }
+            }
+        }
+        assert!(falls > 3 && frozen > 5 && cracks > 5 && drifts > 5, "{falls} {frozen} {cracks} {drifts}");
+    }
+
+    #[test]
     fn other_floors_have_no_waterworks() {
-        for theme in [Theme::Stone, Theme::Moss, Theme::Ice] {
+        for theme in [Theme::Stone, Theme::Spider, Theme::Temple] {
             let dungeon = Dungeon::generate_themed(&mut Rng::new(3), theme).expect("a dungeon");
             assert!(dungeon.rooms.iter().all(|room| room.waterworks == Waterworks::default()));
         }

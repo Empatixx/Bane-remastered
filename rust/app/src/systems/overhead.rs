@@ -12,7 +12,7 @@ use crate::dungeon::{Dungeon, HangingKind, Overhead, OverheadKind};
 use crate::tilemap::TILE_SIZE;
 
 const COLUMNS: usize = 4;
-const ROWS: usize = 7;
+const ROWS: usize = 9;
 const LEFT_END: usize = 0;
 const MIDDLE: usize = 1;
 const RIGHT_END: usize = 2;
@@ -78,15 +78,20 @@ fn spawn_across(world: &mut World, span: &Overhead, textures: &Textures) {
     }
 }
 
-/// An upright span covers just the open tiles too, from the foot of the block above to the top
-/// of the block below.
+/// How far an upright span's upper end reaches up into the block above, in tiles.
+const UPPER_REACH: f32 = 0.5;
+
+/// An upright span runs from the middle of the block above's last row down to the top of the
+/// block below.
 fn spawn_upright(world: &mut World, span: &Overhead, textures: &Textures) {
     let texture = textures.get(tex::OVERHEADS_UPRIGHT);
     let x = (span.first.0 as f32 + 0.5) * TILE_SIZE;
-    let top = span.first.1 as f32 * TILE_SIZE;
+    // The upper end reaches into the middle of the block's last row; the lower one stops where
+    // the block below shows its top.
+    let top = (span.first.1 as f32 - UPPER_REACH) * TILE_SIZE;
     let bottom = (span.last.1 + 1) as f32 * TILE_SIZE;
-    let count = span.length();
-    let size = Vec2::splat(TILE_SIZE);
+    let count = span.length() + 1;
+    let size = Vec2::new(TILE_SIZE, (bottom - top) / count as f32);
     let min = Vec2::new(x - TILE_SIZE / 2.0, top);
     let max = Vec2::new(x + TILE_SIZE / 2.0, bottom);
     for index in 0..count {
@@ -149,7 +154,7 @@ pub(crate) fn tick_overheads(world: &mut World, dt: f32) {
 }
 
 const HANGING_COLUMNS: usize = 4;
-const HANGING_ROWS: usize = 9;
+const HANGING_ROWS: usize = 16;
 const CHAIN_CELL: usize = 2;
 /// The topmost chain piece, fading out upwards in the texture itself.
 const CHAIN_TOP_CELL: usize = 3;
@@ -171,6 +176,25 @@ const GLOW: Vec3 = Vec3::new(255.0, 196.0, 110.0);
 /// The lava floor's things glow redder, the brazier the brightest.
 const EMBER_GLOW: Vec3 = Vec3::new(255.0, 120.0, 40.0);
 const PULSE_RATE: f32 = 1.6;
+const BLINK_RATE: f32 = 3.0;
+const SPORE_GLOW: Vec3 = Vec3::new(120.0, 230.0, 150.0);
+const FIREFLY_GLOW: Vec3 = Vec3::new(200.0, 255.0, 140.0);
+const FROST_GLOW: Vec3 = Vec3::new(150.0, 205.0, 255.0);
+/// Fireflies wander about where they hover, this far each way.
+const HOVER: Vec2 = Vec2::new(12.0, 7.0);
+const WASPS: usize = 3;
+const WASP_SIZE: Vec2 = Vec2::splat(6.0);
+const WASP_ORBIT: Vec2 = Vec2::new(30.0, 14.0);
+const WASP_SPEED: f32 = 4.5;
+const WASP_COLOUR: Vec4 = Vec4::new(0.45, 0.36, 0.08, 1.0);
+
+/// A wasp circling its nest.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Wasp {
+    nest: Vec2,
+    phase: f32,
+    speed: f32,
+}
 const DRIP_EVERY: f32 = 2.3;
 const DRIP_FALL: f32 = 0.45;
 const DRIP_SIZE: Vec2 = Vec2::new(8.0, 16.0);
@@ -184,9 +208,17 @@ fn frame_rate(kind: HangingKind) -> Option<f32> {
         | HangingKind::Lantern
         | HangingKind::Brazier
         | HangingKind::Crucible => Some(FLICKER_RATE),
-        HangingKind::Stalactite => Some(PULSE_RATE),
+        HangingKind::Stalactite
+        | HangingKind::GlowRoots
+        | HangingKind::IceChandelier
+        | HangingKind::BigIcicle => Some(PULSE_RATE),
+        HangingKind::Fireflies => Some(BLINK_RATE),
         HangingKind::Vine | HangingKind::Hooks => Some(SWAY_RATE),
-        HangingKind::Cage | HangingKind::Cocoon => None,
+        HangingKind::Cage
+        | HangingKind::Cocoon
+        | HangingKind::Hive
+        | HangingKind::MossCage
+        | HangingKind::FrozenBlock => None,
     }
 }
 
@@ -197,6 +229,10 @@ fn glow(kind: HangingKind) -> Option<(Vec3, f32)> {
         HangingKind::Brazier => Some((EMBER_GLOW, 120.0)),
         HangingKind::Crucible => Some((EMBER_GLOW, 80.0)),
         HangingKind::Stalactite => Some((EMBER_GLOW, 55.0)),
+        HangingKind::GlowRoots => Some((SPORE_GLOW, 70.0)),
+        HangingKind::Fireflies => Some((FIREFLY_GLOW, 60.0)),
+        HangingKind::IceChandelier => Some((FROST_GLOW, 95.0)),
+        HangingKind::BigIcicle => Some((FROST_GLOW, 40.0)),
         _ => None,
     }
 }
@@ -228,6 +264,8 @@ pub(crate) struct HangingPart {
     row: usize,
     /// The most opaque this part gets.
     opacity: f32,
+    /// Hovers about rather than swinging on a chain (the fireflies).
+    hover: bool,
     min: Vec2,
     max: Vec2,
     alpha: f32,
@@ -244,6 +282,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
             let max = at + thing_size / 2.0;
             let phase = (hanging.tile.0 * 7 + hanging.tile.1 * 13) as f32 * 0.37;
             let row = hanging.kind.row();
+            let hover = hanging.kind == HangingKind::Fireflies;
             let part = |base: Vec2, reach: f32, thing: Option<Option<f32>>, opacity: f32| HangingPart {
                 base,
                 reach,
@@ -251,13 +290,15 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                 thing,
                 row,
                 opacity,
+                hover,
                 min,
                 max,
                 alpha: opacity,
             };
             // Each piece sits on top of the one below it, wider the higher it hangs.
             let mut base = at - Vec2::new(0.0, (thing_size.y - PIECE.y) / 2.0);
-            for piece in 1..=CHAIN_PIECES {
+            let chain = if hover { 0 } else { CHAIN_PIECES };
+            for piece in 1..=chain {
                 let size = Vec2::new(PIECE.x * (THING_SCALE + CHAIN_GROWTH * piece as f32), PIECE.y);
                 base -= Vec2::new(0.0, PIECE.y);
                 let reach = 1.0 - piece as f32 / (CHAIN_PIECES + 1) as f32;
@@ -302,18 +343,40 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                     },
                 );
             }
-            world.spawn((
-                Position(floor + Vec2::new(SHADOW_OFFSET.x, 0.0)),
-                Size(PIECE),
-                Color(Vec4::new(0.0, 0.0, 0.0, HANGING_SHADOW_ALPHA)),
-                sprite,
-                Layer(SHADOW_LAYER),
-            ));
+            if hanging.kind == HangingKind::Hive {
+                for index in 0..WASPS {
+                    world.spawn((
+                        Wasp {
+                            nest: at,
+                            phase: phase + index as f32 * 2.1,
+                            speed: WASP_SPEED * (1.0 + index as f32 * 0.25),
+                        },
+                        Position(at),
+                        Size(WASP_SIZE),
+                        Color(WASP_COLOUR),
+                        Sprite::whole(crate::render::TextureId::WHITE),
+                        Layer(LAYER),
+                    ));
+                }
+            }
+            if !hover {
+                world.spawn((
+                    Position(floor + Vec2::new(SHADOW_OFFSET.x, 0.0)),
+                    Size(PIECE),
+                    Color(Vec4::new(0.0, 0.0, 0.0, HANGING_SHADOW_ALPHA)),
+                    sprite,
+                    Layer(SHADOW_LAYER),
+                ));
+            }
         }
     }
 }
 
 pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
+    for (wasp, position) in world.query_mut::<(&Wasp, &mut Position)>() {
+        let t = clock * wasp.speed + wasp.phase;
+        position.0 = wasp.nest + Vec2::new(t.cos(), (t * 1.3).sin()) * WASP_ORBIT;
+    }
     let player = world
         .query::<(&Position, &Size)>()
         .with::<&Player>()
@@ -324,8 +387,13 @@ pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
     for (part, position, color, sprite) in
         world.query_mut::<(&mut HangingPart, &mut Position, &mut Color, &mut Sprite)>()
     {
-        let swing = (clock * SWAY_RATE + part.phase).sin() * SWAY * part.reach;
-        position.0 = part.base + Vec2::new(swing, 0.0);
+        position.0 = if part.hover {
+            let t = clock * 0.6 + part.phase;
+            part.base + Vec2::new(t.sin(), (t * 0.7).cos()) * HOVER
+        } else {
+            let swing = (clock * SWAY_RATE + part.phase).sin() * SWAY * part.reach;
+            part.base + Vec2::new(swing, 0.0)
+        };
         if let Some(Some(rate)) = part.thing {
             let frame = ((clock * rate + part.phase) as usize) % 2;
             sprite.uv = Sprite::cell_uv(frame, part.row, HANGING_COLUMNS, HANGING_ROWS);

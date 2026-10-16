@@ -53,6 +53,8 @@ pub(crate) enum Prop {
     IceCrystals,
     FrozenSkull,
     Cocoon,
+    SpiderEggs,
+    SpiderWrapped,
     TrainingDummy,
     MossDrape,
     MossyBanner,
@@ -90,6 +92,8 @@ impl Prop {
                 | Self::Mushrooms
                 | Self::IceCrystals
                 | Self::Cocoon
+                | Self::SpiderEggs
+                | Self::SpiderWrapped
         )
     }
 }
@@ -372,6 +376,18 @@ impl Prop {
             Self::IceCrystals => variants(tex::ICE_CRYSTALS, Vec2::new(16.0, 16.0), 4.0),
             Self::FrozenSkull => still(tex::FROZEN_SKULL, Vec2::new(16.0, 16.0), 4.0),
             Self::Cocoon => variants(tex::COCOON, Vec2::new(16.0, 16.0), 4.0),
+            Self::SpiderEggs => PropSpec {
+                texture: tex::SPIDER_EGGS,
+                columns: 2,
+                rows: 2,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 2,
+                    frame_time: 0.9,
+                }),
+            },
+            Self::SpiderWrapped => variants(tex::SPIDER_WRAPPED, Vec2::new(16.0, 16.0), 4.0),
             Self::TrainingDummy => still(tex::TRAINING_DUMMY, Vec2::new(24.0, 32.0), 3.0),
             Self::MossDrape => PropSpec {
                 texture: tex::MOSS_DRAPE,

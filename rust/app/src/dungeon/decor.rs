@@ -68,6 +68,14 @@ pub(crate) enum DecorKind {
     Cocoon {
         variant: usize,
     },
+    /// A clutch of spider eggs in silk against a wall.
+    Eggs {
+        variant: usize,
+    },
+    /// A victim wrapped in webs.
+    Wrapped {
+        variant: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -368,7 +376,7 @@ pub(crate) fn plan(
             })
             .copied()
             .collect();
-        let themed: [ThemedSlot; 6] = [
+        let themed: [ThemedSlot; 8] = [
             (mix.moss_drapes, &top_faces, 3, |variant| {
                 DecorKind::MossDrape { variant }
             }),
@@ -387,6 +395,8 @@ pub(crate) fn plan(
             (mix.cocoons, &hugging, 2, |variant| DecorKind::Cocoon {
                 variant,
             }),
+            (mix.eggs, &hugging, 2, |variant| DecorKind::Eggs { variant }),
+            (mix.wrapped, &open_floor, 2, |variant| DecorKind::Wrapped { variant }),
         ];
         for (amount, spots, variants, make) in themed {
             if amount == 0 {
@@ -626,7 +636,9 @@ mod tests {
                         | DecorKind::IceCrystals { .. }
                         | DecorKind::FrozenSkull
                         | DecorKind::Mushrooms { .. }
-                        | DecorKind::Cocoon { .. } => {
+                        | DecorKind::Cocoon { .. }
+                        | DecorKind::Eggs { .. }
+                        | DecorKind::Wrapped { .. } => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                         }
                     }

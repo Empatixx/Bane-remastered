@@ -19,7 +19,7 @@ pub(crate) use furnish::{Carpet, FixtureKind, Furnishing};
 pub(crate) use layout::Direction;
 pub(crate) use overhead::{HangingKind, Overhead, OverheadKind, showcase};
 pub(crate) use surface::{Surface, Surfaces};
-pub(crate) use waterworks::{Bridge, Debris, Floater, FloatingBarrel};
+pub(crate) use waterworks::{Bridge, Debris, Floater, FloatingBarrel, Mark};
 pub(crate) use template::RoomKind;
 pub(crate) use theme::Theme;
 pub(crate) use track::Track;

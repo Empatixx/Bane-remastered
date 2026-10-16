@@ -1,7 +1,9 @@
 """Things that hang from the ceiling on a chain or a thread: a candle chandelier, a cage with a
 skeleton, a spider's cocoon, a lantern and a vine; and for the lava floor a brazier of glowing
 coals, a crucible of molten metal, a charred skeleton hung on hooks and an obsidian stalactite
-with glowing veins.
+with glowing veins; and for the moss floor roots hung with glowing mushrooms, a wasps' nest on
+a branch, a cage overgrown with moss and flowers, and a swarm of fireflies (no chain at all); and for
+the ice floor a chandelier of icicles, a skeleton frozen in a block of ice and a great icicle.
 
 hanging.tga has one row per kind in that order and four 16x24 cells per row: the thing, the
 thing with its flames or glow flickering, a piece of its chain (or thread, or vine) that repeats
@@ -419,6 +421,267 @@ ROCK_ROOT = [
     "....dmmvmmhd....",
 ] * 6
 
+ROOTS = {"r": (66, 48, 30), "R": (98, 74, 46), "k": (34, 24, 16), "g": (120, 230, 150), "G": (200, 255, 210), "c": (70, 140, 96)}
+GLOW_ROOTS = [
+    [
+        "......rk........",
+        ".....rRk........",
+        "....rRk.rk......",
+        "...rRk..Rrk.....",
+        "...Rk...kRr.....",
+        "..gGg....kR.....",
+        "..cgc...gGg.....",
+        "...k....cgc.....",
+        "...r.....k......",
+        "..rk.....rk.....",
+        ".gGg......R.....",
+        ".cgc.....gGg....",
+        "..k......cgc....",
+        "..........k.....",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+GLOW_ROOTS.append([row.replace("G", "W").replace("g", "G").replace("W", "g") for row in GLOW_ROOTS[0]])
+ROOT_STRAND = [
+    ".......rk.......",
+    "......rRk.......",
+    ".......Rk.......",
+    ".......kR.......",
+] * 6
+
+NEST = {"b": (176, 150, 100), "B": (136, 112, 74), "d": (88, 70, 46), "h": (20, 16, 12), "r": (66, 48, 30), "R": (98, 74, 46)}
+HIVE = [
+    [
+        ".......rR.......",
+        "......dbbd......",
+        ".....dbBBbd.....",
+        "....dbbbbbbd....",
+        "....BBBBBBBB....",
+        "...dbbbbbbbbd...",
+        "...dbbbhbbbbd...",
+        "...BBBBhBBBBB...",
+        "...dbbbbbbbbd...",
+        "....dbbbbbbd....",
+        "....BBBBBBBB....",
+        ".....dbbbbd.....",
+        "......dBBd......",
+        ".......dd.......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+HIVE.append(HIVE[0])
+BRANCH = [
+    ".......rR.......",
+    ".......Rr.......",
+    "......rRr.......",
+    ".......rR.......",
+] * 6
+
+OVERGROWN = {**IRON, **BONE, "g": (84, 112, 52), "G": (120, 152, 70), "p": (232, 196, 214), "y": (240, 220, 110)}
+MOSS_CAGE = [
+    [
+        ".......dd.......",
+        "......dmmd......",
+        ".......dd.......",
+        ".....dGgGmd.....",
+        "...dGgGGgGgd....",
+        "..dhGmmgmmhhd...",
+        "..dm.d..d.gGd...",
+        "..dg.d..d..mg...",
+        "..dm.dbbbd.md...",
+        "..Gg.bkbkb.mG...",
+        "..dm.dbbbd.gd...",
+        "..dm.d.B.d.md...",
+        "..gG.dbBbd.md...",
+        "..dm.bdBdb.Gg...",
+        "..dm.d.B.d.md...",
+        "..gm.dB.Bd.mg...",
+        "..dGpyg.gpgGd...",
+        "..dhGhhhhhGhd...",
+        "..dmmGgmmgmmd...",
+        "...dddgddddd....",
+        "......g.........",
+        "................",
+        "................",
+        "................",
+    ],
+]
+MOSS_CAGE.append(MOSS_CAGE[0])
+
+FIREFLY = {"y": (230, 255, 140), "Y": (255, 255, 220), "o": (150, 200, 80, 150)}
+FIREFLIES = [
+    [
+        "................",
+        "................",
+        ".....o..........",
+        "....oYo.....o...",
+        ".....o.....oyo..",
+        "..o.........o...",
+        ".oyo...o........",
+        "..o...oYo.......",
+        ".......o....o...",
+        "...........oYo..",
+        "....o.......o...",
+        "...oyo..........",
+        "....o...........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    [
+        "................",
+        "................",
+        ".....o..........",
+        "....oyo.....o...",
+        ".....o.....oYo..",
+        "..o.........o...",
+        ".oYo...o........",
+        "..o...oyo.......",
+        ".......o....o...",
+        "...........oyo..",
+        "....o.......o...",
+        "...oYo..........",
+        "....o...........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+NOTHING = ["................"] * 24
+
+FROST = {"i": (118, 172, 214), "I": (190, 226, 246), "h": (226, 246, 255), "w": (255, 255, 255), "e": (90, 140, 190)}
+ICE_CHANDELIER = [
+    [
+        ".......dd.......",
+        ".......md.......",
+        ".......md.......",
+        ".......md.......",
+        ".......md.......",
+        "..h....md....h..",
+        ".hIh...md...hIh.",
+        ".IiI...md...IiI.",
+        "dddddddmmddddddd",
+        "mhhhhhhhhhhhhhhm",
+        "dmmmmmmmmmmmmmmd",
+        ".IIiIIiIIiIIiII.",
+        ".IiiIiiIiiIiiIi.",
+        "..i..i.Ii..i..i.",
+        "..i....i...i....",
+        ".......i........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+ICE_CHANDELIER.append([row.replace("hIh", "wIw") for row in ICE_CHANDELIER[0][:8]] + [
+    row.replace("IIi", "Iwi", 1) for row in ICE_CHANDELIER[0][8:]
+])
+
+FROZEN_BLOCK = [
+    [
+        ".......dd.......",
+        "......dmmd......",
+        "...eeeedde......",
+        "..eIIIIIIIIe....",
+        ".ehIIIIIIIIIe...",
+        ".eIIbbbIIIIIe...",
+        ".eIIbkbkbIIIe...",
+        ".eIIIbbbIIIIe...",
+        ".eIIIIBIIIIhe...",
+        ".eIIbbBbbIIIe...",
+        ".eIIIIBIIIIIe...",
+        ".eIIIbIbIIIIe...",
+        ".eIIbIIIbIIIe...",
+        ".ehIIIIIIIIIe...",
+        "..eiiiiiiiiie...",
+        "...eeeeeeeee....",
+        "....i.....i.....",
+        "....i...........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+FROZEN_BLOCK.append(FROZEN_BLOCK[0])
+
+BIG_ICICLE = [
+    [
+        "...eIIIIIIIe....",
+        "...eIhIIIIIe....",
+        "....eIhIIIe.....",
+        "....eIhIIie.....",
+        ".....eIhIe......",
+        ".....eIhIe......",
+        ".....eIhie......",
+        "......eIe.......",
+        "......eIe.......",
+        "......ehe.......",
+        ".......e........",
+        ".......i........",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+BIG_ICICLE.append([row.replace("eIhI", "eIwI") for row in BIG_ICICLE[0]])
+ICE_ROOT = [
+    "...eIIhIIIIe....",
+    "...eIIIIhIIe....",
+    "...eIhIIIIIe....",
+    "...eIIIIIhIe....",
+] * 6
+
 KINDS = [
     (CHANDELIER, CHAIN, {**IRON, **FLAME}),
     (CAGE, CHAIN, {**IRON, **BONE}),
@@ -429,6 +692,13 @@ KINDS = [
     (CRUCIBLE, CHAIN, {**IRON, **EMBER}),
     (HOOKS, HOOK_CHAINS, {**IRON, **CHARRED, "e": (120, 36, 20), "o": (255, 160, 50), "r": (214, 72, 26)}),
     (STALACTITE, ROCK_ROOT, ROCK),
+    (GLOW_ROOTS, ROOT_STRAND, ROOTS),
+    (HIVE, BRANCH, NEST),
+    (MOSS_CAGE, CHAIN, OVERGROWN),
+    (FIREFLIES, NOTHING, FIREFLY),
+    (ICE_CHANDELIER, CHAIN, {**IRON, **FROST}),
+    (FROZEN_BLOCK, CHAIN, {**IRON, **BONE, **FROST}),
+    (BIG_ICICLE, ICE_ROOT, FROST),
 ]
 
 

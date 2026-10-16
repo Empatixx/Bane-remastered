@@ -1,8 +1,9 @@
 //! Brings the waterworks to life (see [`crate::dungeon::Floater`]): water pours out of the
 //! sewer's pipes and splashes into its pools, rubbish drifts and bobs on them, barrels float
 //! about and get shoved along by shots, and footbridges cross them. The lava floor gets the
-//! same in its own colours: lava running out of glowing cracks, cooled crusts afloat and basalt
-//! bridges.
+//! same in its own colours (lava running out of glowing cracks, cooled crusts afloat, stepping
+//! stones), and so does the moss floor's bog (murky water seeping between roots, lily pads and a
+//! frog that leaps now and then, fallen logs).
 
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
@@ -12,7 +13,7 @@ use crate::components::{
     Animation, Body, BodyOffset, BreakKind, Bullet, Clip, Color, Expiring, Health,
     Layer, Light, Lit, Position, Size, Sprite,
 };
-use crate::dungeon::{Bridge, Debris, Dungeon, Floater, FloatingBarrel, Surface, Surfaces};
+use crate::dungeon::{Bridge, Debris, Dungeon, Floater, FloatingBarrel, Mark, Surface, Surfaces};
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::tilemap::TILE_SIZE;
@@ -21,8 +22,16 @@ const PIPE_COLUMNS: usize = 2;
 const STREAM_COLUMNS: usize = 4;
 const STREAM_ROWS: usize = 2;
 const DEBRIS_COLUMNS: usize = 7;
+/// The ring round anything afloat; on the ice sheet, the drift of snow.
 const RING_CELL: usize = 6;
+/// The ice sheet's two cracks.
+const CRACK_CELL: usize = 4;
+/// What lies under the ice shows pale through it.
+const UNDER_ICE: Vec4 = Vec4::new(0.8, 0.92, 1.0, 0.6);
 const RAT_FRAMES: usize = 2;
+/// A frog leaps about every three seconds, for a tenth of that.
+const FROG_RATE: f32 = 0.33;
+const FROG_LEAP: f32 = 0.1;
 const BRIDGE_COLUMNS: usize = 3;
 const BRIDGE_ROWS: usize = 2;
 
@@ -60,8 +69,8 @@ struct Kit {
     stream: Tex,
     debris: Tex,
     bridge: Tex,
-    /// What the splash's rings look like on the pool.
-    ripple: Vec4,
+    /// What the splash's rings look like on the pool; ice takes none.
+    ripple: Option<Vec4>,
 }
 
 impl Kit {
@@ -73,7 +82,7 @@ impl Kit {
                 stream: tex::SEWER_STREAM,
                 debris: tex::SEWER_DEBRIS,
                 bridge: tex::SEWER_BRIDGE,
-                ripple: Vec4::new(1.0, 1.0, 1.0, 0.8),
+                ripple: Some(Vec4::new(1.0, 1.0, 1.0, 0.8)),
             }),
             Surface::Lava => Some(Self {
                 liquid,
@@ -81,9 +90,25 @@ impl Kit {
                 stream: tex::LAVA_FALL,
                 debris: tex::LAVA_DEBRIS,
                 bridge: tex::LAVA_BRIDGE,
-                ripple: Vec4::new(1.0, 0.7, 0.3, 0.7),
+                ripple: Some(Vec4::new(1.0, 0.7, 0.3, 0.7)),
             }),
-            Surface::Ice | Surface::Bog => None,
+            Surface::Bog => Some(Self {
+                liquid,
+                pipe: tex::BOG_SEEP,
+                stream: tex::BOG_TRICKLE,
+                debris: tex::BOG_DEBRIS,
+                bridge: tex::BOG_LOG,
+                ripple: Some(Vec4::new(0.55, 0.45, 0.3, 0.75)),
+            }),
+            Surface::Ice => Some(Self {
+                liquid,
+                pipe: tex::ICE_SPOUT,
+                stream: tex::ICE_FALL,
+                debris: tex::ICE_DEBRIS,
+                // Never used: nothing bridges the ice.
+                bridge: tex::ICE_FALL,
+                ripple: None,
+            }),
         }
     }
 
@@ -102,9 +127,10 @@ pub(crate) struct Adrift {
     velocity: Vec2,
     phase: f32,
     ring: Entity,
-    /// The debris sheet's column, and whether it is the rat (which wags its tail).
-    cell: usize,
-    rat: bool,
+    /// What kind of rubbish (none for a barrel), and which of its two pictures shows: the rat
+    /// wags its tail, the frog now and then leaps.
+    debris: Option<Debris>,
+    shown: usize,
     /// A barrel: its body's usual offset, which the bobbing moves about.
     offset: Option<Vec2>,
 }
@@ -118,7 +144,7 @@ pub(crate) struct Ring {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Splash {
     at: Vec2,
-    ripple: Vec4,
+    ripple: Option<Vec4>,
     timer: f32,
 }
 
@@ -148,10 +174,16 @@ pub(crate) fn spawn_waterworks(
         for bridge in &works.bridges {
             spawn_bridge(world, &kit, bridge, textures);
         }
+        for &(mark, tile) in &works.marks {
+            spawn_mark(world, &kit, mark, tile, textures);
+        }
         for (index, &(floater, tile)) in works.floaters.iter().enumerate() {
             let phase = (tile.0 * 7 + tile.1 * 13 + index * 5) as f32 * 0.61;
             let heading = Vec2::from_angle(phase);
             match floater {
+                Floater::Debris(Debris::Frozen(variant)) => {
+                    spawn_frozen(world, &kit, variant, tile_center(tile), textures);
+                }
                 Floater::Debris(debris) => {
                     spawn_debris(world, &kit, debris, tile_center(tile), heading, phase, textures);
                 }
@@ -162,6 +194,33 @@ pub(crate) fn spawn_waterworks(
             }
         }
     }
+}
+
+/// Something frozen under the ice, seen through it.
+fn spawn_frozen(world: &mut World, kit: &Kit, variant: usize, at: Vec2, textures: &Textures) {
+    world.spawn((
+        Position(at),
+        Size(Vec2::splat(TILE_SIZE)),
+        Color(UNDER_ICE),
+        Sprite::cell(textures.get(kit.debris), variant, 0, DEBRIS_COLUMNS, 1),
+        Layer(UNDER_LAYER),
+        Lit,
+    ));
+}
+
+fn spawn_mark(world: &mut World, kit: &Kit, mark: Mark, tile: (usize, usize), textures: &Textures) {
+    let (cell, colour, layer) = match mark {
+        Mark::Crack(variant) => (CRACK_CELL + variant, Vec4::new(1.0, 1.0, 1.0, 0.8), UNDER_LAYER),
+        Mark::Drift => (RING_CELL, Vec4::ONE, FLOOR_LAYER),
+    };
+    world.spawn((
+        Position(tile_center(tile)),
+        Size(Vec2::splat(TILE_SIZE)),
+        Color(colour),
+        Sprite::cell(textures.get(kit.debris), cell, 0, DEBRIS_COLUMNS, 1),
+        Layer(layer),
+        Lit,
+    ));
 }
 
 fn spawn_pipe(world: &mut World, kit: &Kit, (column, row): (usize, usize), textures: &Textures) {
@@ -293,8 +352,8 @@ fn spawn_debris(
             velocity: heading * DRIFT_SPEED,
             phase,
             ring,
-            cell: debris.cell(),
-            rat: debris == Debris::RatRaft,
+            debris: Some(debris),
+            shown: 0,
             offset: None,
         },
     );
@@ -328,8 +387,8 @@ fn spawn_barrel(
             velocity: heading * BARREL_DRIFT,
             phase,
             ring,
-            cell: 0,
-            rat: false,
+            debris: None,
+            shown: 0,
             offset: Some(offset),
         },
     );
@@ -348,7 +407,9 @@ pub(crate) fn tick_waterworks(
         splash.timer -= dt;
         if splash.timer <= 0.0 {
             splash.timer = SPLASH_RIPPLE_EVERY;
-            ripples.push((splash.at, splash.ripple));
+            if let Some(tint) = splash.ripple {
+                ripples.push((splash.at, tint));
+            }
         }
     }
     for (at, tint) in ripples {
@@ -361,6 +422,7 @@ pub(crate) fn tick_waterworks(
         .map(|(position, size, velocity)| (position.0, size.0, velocity.0))
         .collect();
     let drifting: Vec<Entity> = world.query::<Entity>().with::<&Adrift>().iter().collect();
+    let mut splashes = Vec::new();
     for entity in drifting {
         let Ok(mut adrift) = world.get::<&Adrift>(entity).map(|adrift| *adrift) else {
             continue;
@@ -407,11 +469,21 @@ pub(crate) fn tick_waterworks(
             if let Ok(mut position) = world.get::<&mut Position>(entity) {
                 position.0 = adrift.at + bob;
             }
-            if adrift.rat {
-                let frame = ((clock * 3.0 + adrift.phase) as usize) % RAT_FRAMES;
-                if let Ok(mut sprite) = world.get::<&mut Sprite>(entity) {
-                    sprite.uv = Sprite::cell_uv(adrift.cell + frame, 0, DEBRIS_COLUMNS, 1);
+            let frame = match adrift.debris {
+                Some(Debris::RatRaft) => ((clock * 3.0 + adrift.phase) as usize) % RAT_FRAMES,
+                Some(Debris::Frog) => usize::from((clock * FROG_RATE + adrift.phase).fract() < FROG_LEAP),
+                _ => 0,
+            };
+            if let Some(debris) = adrift.debris.filter(|_| frame != adrift.shown) {
+                if debris == Debris::Frog && frame == 1 {
+                    if let Some(tint) = Kit::of(adrift.liquid).and_then(|kit| kit.ripple) {
+                        splashes.push((adrift.at, tint));
+                    }
                 }
+                if let Ok(mut sprite) = world.get::<&mut Sprite>(entity) {
+                    sprite.uv = Sprite::cell_uv(debris.cell() + frame, 0, DEBRIS_COLUMNS, 1);
+                }
+                adrift.shown = frame;
             }
         }
         let drop = if adrift.offset.is_some() { BARREL_RING_DROP } else { RING_DROP };
@@ -425,6 +497,9 @@ pub(crate) fn tick_waterworks(
         if let Ok(mut state) = world.get::<&mut Adrift>(entity) {
             *state = adrift;
         }
+    }
+    for (at, tint) in splashes {
+        spawn_ripple(world, at, tint, textures);
     }
     // Rings whose barrel has been blown up and gone.
     let orphans: Vec<Entity> = world

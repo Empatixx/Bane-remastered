@@ -35,6 +35,10 @@ pub(crate) struct TrapMix {
     pub(crate) frozen_skulls: usize,
     pub(crate) cocoons: usize,
     pub(crate) mushrooms: usize,
+    /// Clutches of spider eggs against the walls.
+    pub(crate) eggs: usize,
+    /// Victims wrapped in webs lying on the floor.
+    pub(crate) wrapped: usize,
     /// Moss grows over the walls and banners are overgrown.
     pub(crate) mossy: bool,
     pub(crate) moss_drapes: usize,
@@ -165,6 +169,8 @@ impl Theme {
             frozen_skulls: if self == Self::Ice { 2 } else { 0 },
             cocoons: if self == Self::Spider { 3 } else { 0 },
             mushrooms: if self == Self::Moss { 4 } else { 0 },
+            eggs: if self == Self::Spider { 2 } else { 0 },
+            wrapped: if self == Self::Spider { 2 } else { 0 },
             mossy: self == Self::Moss,
             moss_drapes: if self == Self::Moss { 7 } else { 0 },
         }

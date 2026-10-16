@@ -1,5 +1,5 @@
 //! Things that hang high above a combat room, stretched between two walls: grates, wooden
-//! beams, chains, pipes, stone arches, thick webs and metal walkways. They span a gap between
+//! beams, chains, pipes, stone arches, thick webs, metal walkways and lianas. They span a gap between
 //! two wall blocks in one row, or down the screen from one block to the block below it, so the
 //! player walks underneath them. Others hang from the ceiling on a chain or a thread over open
 //! floor: chandeliers, cages, cocoons, lanterns, vines.
@@ -28,6 +28,10 @@ pub(crate) enum OverheadKind {
     Arch,
     Web,
     Walkway,
+    /// A liana slung between two blocks, sagging in the middle.
+    Vines,
+    /// A few strands of silk strung between two blocks.
+    Strands,
 }
 
 impl OverheadKind {
@@ -41,6 +45,8 @@ impl OverheadKind {
             Self::Arch => 4,
             Self::Web => 5,
             Self::Walkway => 6,
+            Self::Vines => 7,
+            Self::Strands => 8,
         }
     }
 
@@ -48,6 +54,8 @@ impl OverheadKind {
     pub(crate) fn sag(self) -> f32 {
         match self {
             Self::Chain => 18.0,
+            Self::Vines => 22.0,
+            Self::Strands => 8.0,
             Self::Web => 12.0,
             Self::Arch => -20.0,
             _ => 0.0,
@@ -61,9 +69,9 @@ impl Theme {
         match self {
             Self::Stone => &[Grate, Beams, Chain],
             Self::Temple => &[Arch, Arch, Chain, Beams],
-            Self::Moss => &[Beams, Chain],
+            Self::Moss => &[Vines, Vines, Chain],
             Self::Sewer => &[Pipes, Pipes, Grate],
-            Self::Spider => &[Web, Web, Beams],
+            Self::Spider => &[Web, Strands, Strands, Beams],
             Self::Ice => &[Chain, Grate],
             Self::Lava => &[Walkway, Walkway, Chain],
         }
@@ -245,6 +253,20 @@ pub(crate) enum HangingKind {
     Hooks,
     /// An obsidian stalactite with glowing veins.
     Stalactite,
+    /// Roots hung with glowing mushrooms.
+    GlowRoots,
+    /// A wasps' nest on a branch, a few wasps about it.
+    Hive,
+    /// A cage with a skeleton, overgrown with moss and flowers.
+    MossCage,
+    /// A swarm of fireflies hovering in the air, on no chain at all.
+    Fireflies,
+    /// A chandelier of icicles.
+    IceChandelier,
+    /// A skeleton frozen in a block of ice.
+    FrozenBlock,
+    /// A great icicle.
+    BigIcicle,
 }
 
 impl HangingKind {
@@ -260,6 +282,13 @@ impl HangingKind {
             Self::Crucible => 6,
             Self::Hooks => 7,
             Self::Stalactite => 8,
+            Self::GlowRoots => 9,
+            Self::Hive => 10,
+            Self::MossCage => 11,
+            Self::Fireflies => 12,
+            Self::IceChandelier => 13,
+            Self::FrozenBlock => 14,
+            Self::BigIcicle => 15,
         }
     }
 }
@@ -270,10 +299,10 @@ impl Theme {
         match self {
             Self::Stone => &[Chandelier, Cage],
             Self::Temple => &[Chandelier, Chandelier, Cage],
-            Self::Moss => &[Vine, Vine, Lantern],
+            Self::Moss => &[Vine, GlowRoots, GlowRoots, Hive, MossCage, Fireflies],
             Self::Sewer => &[Lantern, Cage],
             Self::Spider => &[Cocoon, Cocoon, Cage],
-            Self::Ice => &[Lantern, Chandelier],
+            Self::Ice => &[IceChandelier, IceChandelier, FrozenBlock, BigIcicle, Lantern],
             Self::Lava => &[Brazier, Brazier, Hooks, Stalactite, Cage],
         }
     }
@@ -355,13 +384,14 @@ pub(crate) fn plan_hanging(
 }
 
 /// One of every hanging kind in a row across the middle of a room, for looking at them all at
-/// once (`BANE_SHOWCASE`): the lava floor's own, or the rest on any other floor.
+/// once (`BANE_SHOWCASE`): the lava, moss and ice floors' own, or the rest on any other floor.
 pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom, theme: Theme) -> Vec<Hanging> {
     use HangingKind::*;
-    let kinds = if theme == Theme::Lava {
-        [Brazier, Crucible, Hooks, Stalactite, Cage]
-    } else {
-        [Chandelier, Cage, Cocoon, Lantern, Vine]
+    let kinds = match theme {
+        Theme::Lava => [Brazier, Crucible, Hooks, Stalactite, Cage],
+        Theme::Moss => [GlowRoots, Hive, MossCage, Fireflies, Vine],
+        Theme::Ice => [IceChandelier, FrozenBlock, BigIcicle, Lantern, Cage],
+        _ => [Chandelier, Cage, Cocoon, Lantern, Vine],
     };
     let clear = |column: usize, row: usize| {
         (-1isize..=1).all(|dy| (-1isize..=1).all(|dx| !grid.is_wall(column as isize + dx, row as isize + dy)))
