@@ -101,6 +101,10 @@ const DROP_DRAG: f32 = 6.0;
 const CARPET_COLUMNS: usize = 4;
 const CARPET_ROWS: usize = 4;
 const CARPET_LAYER: i32 = -2;
+/// The floor's tiles, under everything.
+const FLOOR_TILE_LAYER: i32 = -4;
+/// Pools of liquid on the floor and their shores: above the tiles, under what floats on them.
+const LIQUID_LAYER: i32 = -3;
 const KEY_FRAMES: usize = 2;
 const KEY_FRAME_TIME: f32 = 0.2;
 
@@ -552,7 +556,7 @@ pub(crate) fn tilemap(
                     tileset.columns(),
                     tileset.rows(),
                 ),
-                Layer(-3),
+                Layer(FLOOR_TILE_LAYER),
                 Lit,
             ));
             if tileset.is_solid(number) {
@@ -717,7 +721,7 @@ pub(crate) fn surface_tile(
     let _ = world.insert(
         entity,
         (
-            Layer(-2),
+            Layer(LIQUID_LAYER),
             Liquid {
                 kind: match surface {
                     Surface::Water => 1.0,
@@ -730,7 +734,8 @@ pub(crate) fn surface_tile(
         ),
     );
     if tile.1 > 0 && grid.is_wall(tile.0 as isize, tile.1 as isize - 1) {
-        prop(world, Prop::SurfaceShade, top_left, Look::DEFAULT, textures);
+        let shade = prop(world, Prop::SurfaceShade, top_left, Look::DEFAULT, textures);
+        let _ = world.insert_one(shade, Layer(LIQUID_LAYER + 1));
     }
     if surface == Surface::Lava && (tile.0 + tile.1 * 3).is_multiple_of(4) {
         let _ = world.insert_one(
@@ -756,7 +761,7 @@ pub(crate) fn shore_tile(
     };
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
     let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);
-    let _ = world.insert_one(entity, Layer(-2));
+    let _ = world.insert_one(entity, Layer(LIQUID_LAYER));
     entity
 }
 

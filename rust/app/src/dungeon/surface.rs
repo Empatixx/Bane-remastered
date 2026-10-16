@@ -67,6 +67,8 @@ impl Surface {
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Surfaces {
     tiles: HashMap<(usize, usize), Surface>,
+    /// Tiles under a footbridge: still water to look at, dry to walk on.
+    bridged: HashSet<(usize, usize)>,
 }
 
 impl Surfaces {
@@ -74,14 +76,23 @@ impl Surfaces {
         self.tiles.get(&tile).copied()
     }
 
+    /// What is underfoot at `point`: nothing on a footbridge, though the water runs under it.
     pub(crate) fn at_point(&self, point: Vec2) -> Option<Surface> {
         if point.x < 0.0 || point.y < 0.0 {
             return None;
         }
-        self.at((
+        let tile = (
             (point.x / TILE_SIZE) as usize,
             (point.y / TILE_SIZE) as usize,
-        ))
+        );
+        if self.bridged.contains(&tile) {
+            return None;
+        }
+        self.at(tile)
+    }
+
+    pub(crate) fn bridge(&mut self, tile: (usize, usize)) {
+        self.bridged.insert(tile);
     }
 
     pub(crate) fn insert(&mut self, tile: (usize, usize), surface: Surface) {

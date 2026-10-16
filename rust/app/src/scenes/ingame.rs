@@ -596,6 +596,14 @@ impl Scene for InGameScene {
         );
         systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
         systems::tick_carts(&mut self.world, &mut self.physics, dt);
+        systems::tick_waterworks(
+            &mut self.world,
+            &mut self.physics,
+            &self.surfaces,
+            &assets.textures,
+            self.clock,
+            dt,
+        );
         systems::shove_tables(
             &mut self.world,
             &mut self.physics,
@@ -846,7 +854,7 @@ impl InGameScene {
         self.flow = FlowField::default();
         let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
         // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
-        // `table` or `rug` starts the floor there (by the first one of those), for working on the
+        // `table`, `rug`, `vestibule` or `water` starts the floor there (by the first one of those), for working on the
         // game.
         match std::env::var("BANE_AT").as_deref() {
             Ok("boss") => {
@@ -926,6 +934,20 @@ impl InGameScene {
                     start = Vec2::new(column as f32 + 0.5, row as f32 + 1.5) * TILE_SIZE;
                 }
             }
+            Ok("water") => {
+                // Beside the first footbridge, on the bank at its start.
+                if let Some(bridge) = dungeon.rooms.iter().flat_map(|room| &room.waterworks.bridges).next() {
+                    let (column, row) = bridge.first;
+                    let bank = if bridge.upright { (column, row - 1) } else { (column - 1, row) };
+                    start = Vec2::new(bank.0 as f32 + 0.5, bank.1 as f32 + 0.5) * TILE_SIZE;
+                }
+            }
+            Ok("vestibule") => {
+                if let Some(vestibule) = dungeon.vestibules.first() {
+                    let (column, row) = vestibule.center();
+                    start = Vec2::new(column, row) * TILE_SIZE;
+                }
+            }
             Ok(at @ ("overhead" | "upright")) => {
                 let upright = at == "upright";
                 if let Some(span) = dungeon
@@ -986,10 +1008,16 @@ impl InGameScene {
                 prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);
             }
         }
+        for vestibule in &dungeon.vestibules {
+            for decor in &vestibule.decor {
+                prefabs::decor(&mut self.world, &mut self.physics, *decor, textures);
+            }
+        }
         systems::spawn_overheads(&mut self.world, &dungeon, textures);
         systems::spawn_hanging(&mut self.world, &dungeon, textures);
         systems::spawn_furniture(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_tracks(&mut self.world, &mut self.physics, &dungeon, textures);
+        systems::spawn_waterworks(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_atmosphere(
             &mut self.world,
             &dungeon,

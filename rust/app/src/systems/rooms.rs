@@ -204,6 +204,10 @@ fn living_enemies(world: &World, room: usize) -> usize {
 }
 
 fn spawn_wave(context: &RoomContext, room: usize, world: &mut World, rng: &mut Rng) {
+    // `BANE_CALM=1` leaves the rooms empty, for looking round a floor.
+    if std::env::var_os("BANE_CALM").is_some() {
+        return;
+    }
     let data = &context.dungeon.rooms[room];
     let (_, per_wave) = wave_plan(data.kind, data.columns, data.rows);
     let mut spawns = data.spawns.clone();

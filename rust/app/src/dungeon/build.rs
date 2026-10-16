@@ -13,9 +13,12 @@ use super::surface::{self, Surfaces};
 use super::template::{Cell, RoomKind, RoomTemplate, Templates, door_columns, door_rows};
 use super::theme::Theme;
 use super::track::{self, Track};
+use super::vestibule::{self, Vestibule};
+use super::waterworks::{self, Waterworks};
 use crate::rng::Rng;
 
-pub(crate) const CORRIDOR_LENGTH: usize = 4;
+/// Long enough for some corridors to widen into a vestibule halfway along.
+pub(crate) const CORRIDOR_LENGTH: usize = 7;
 const MARGIN: usize = 1;
 
 #[derive(Debug, Clone)]
@@ -42,6 +45,8 @@ pub(crate) struct DungeonRoom {
     pub(crate) rug: Option<Carpet>,
     /// Tables the player can flip for cover.
     pub(crate) tables: Vec<TableSpot>,
+    /// The sewer's pipes, floating things and footbridges.
+    pub(crate) waterworks: Waterworks,
 }
 
 impl DungeonRoom {
@@ -83,6 +88,8 @@ pub(crate) struct Dungeon {
     pub(crate) rooms: Vec<DungeonRoom>,
     pub(crate) theme: Theme,
     pub(crate) surfaces: Surfaces,
+    /// Small rooms halfway along some corridors.
+    pub(crate) vestibules: Vec<Vestibule>,
 }
 
 impl Dungeon {
@@ -231,16 +238,28 @@ impl Dungeon {
                 track: None,
                 rug: None,
                 tables: Vec::new(),
+                waterworks: Waterworks::default(),
             });
         }
 
+        let mut corridors = Vec::new();
         for (index, placed) in layout.rooms.iter().enumerate() {
             for &(direction, other) in &placed.links {
                 if index < other {
                     carve_corridor(&mut grid, &rooms[index], &rooms[other], direction);
+                    corridors.push((index, other, direction));
                 }
             }
         }
+        // A stream of its own, so the vestibules never change the rest of the floor.
+        let mut vestibule_rng = Rng::new(rng.next_u64());
+        let vestibules = corridors
+            .into_iter()
+            .filter_map(|(index, other, direction)| {
+                let lanes = corridor_lanes(&rooms[index], &rooms[other], direction);
+                vestibule::plan(&mut grid, &rooms, (index, other), &lanes, theme, &mut vestibule_rng)
+            })
+            .collect();
         let mix = theme.mix();
         for room in &mut rooms {
             room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows);
@@ -270,11 +289,23 @@ impl Dungeon {
         for room in &mut rooms {
             room.track = track::plan(&grid, room, &surfaces, &mut track_rng);
         }
+        if theme.surface() == Some(surface::Surface::Water) {
+            let mut water_rng = Rng::new(rng.next_u64());
+            for room in &mut rooms {
+                room.waterworks = waterworks::plan(&grid, room, &surfaces, &mut water_rng);
+                for bridge in &room.waterworks.bridges {
+                    for tile in bridge.tiles() {
+                        surfaces.bridge(tile);
+                    }
+                }
+            }
+        }
         Ok(Self {
             grid,
             rooms,
             theme,
             surfaces,
+            vestibules,
         })
     }
 
@@ -315,6 +346,11 @@ impl Dungeon {
         if let Some(index) = self.room_at(column, row) {
             let (min, max) = self.rooms[index].bounds();
             return Some((min * TILE_SIZE, max * TILE_SIZE));
+        }
+        if let Some(vestibule) = self.vestibules.iter().find(|v| v.contains((column, row))) {
+            let (a_min, a_max) = self.rooms[vestibule.rooms.0].bounds();
+            let (b_min, b_max) = self.rooms[vestibule.rooms.1].bounds();
+            return Some((a_min.min(b_min) * TILE_SIZE, a_max.max(b_max) * TILE_SIZE));
         }
         for room in &self.rooms {
             for door in &room.doors {

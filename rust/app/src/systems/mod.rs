@@ -9,6 +9,7 @@ mod bosses;
 mod camera;
 mod carry;
 mod cart;
+mod waterworks;
 mod casings;
 mod crowd;
 mod damage;
@@ -83,6 +84,7 @@ pub(crate) use bosses::{tick_armageddon, tick_hatchers, tick_web_spitters, updat
 pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
 pub(crate) use cart::{spawn_tracks, tick_carts};
+pub(crate) use waterworks::{spawn_waterworks, tick_waterworks};
 pub(crate) use casings::tick_casings;
 pub(crate) use table::{break_tables, shove_tables, spawn_furniture};
 pub(crate) use crowd::separate_chasers;
