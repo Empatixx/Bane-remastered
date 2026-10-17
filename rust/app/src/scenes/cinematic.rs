@@ -23,6 +23,7 @@ use crate::dungeon::{
     Surfaces, Theme, Waterworks,
 };
 use crate::input::Input;
+use winit::keyboard::KeyCode;
 use crate::postfx::SceneFx;
 use crate::prefabs;
 use crate::props::{Look, Prop};
@@ -48,6 +49,8 @@ const SHOTS: [(f32, &str); 7] = [
     (9.5, "One acolyte escaped, and woke the temple's last guardian."),
     (5.5, "Rise. Close the wound."),
 ];
+/// What shows beyond the walls: the temple wall's own stone, not black.
+const WALL_FILL: Vec4 = Vec4::new(130.0 / 255.0, 106.0 / 255.0, 74.0 / 255.0, 1.0);
 /// The shots by what happens in them.
 const DAY: usize = 0;
 const SEAL: usize = 1;
@@ -344,11 +347,7 @@ impl CinematicScene {
             vestibules: Vec::new(),
         };
         let textures = &assets.textures;
-        let [red, green, blue] = theme.backdrop();
-        prefabs::backdrop_colored(
-            &mut self.world,
-            Vec4::new(f32::from(red) / 255.0, f32::from(green) / 255.0, f32::from(blue) / 255.0, 1.0),
-        );
+        prefabs::backdrop_colored(&mut self.world, WALL_FILL);
         prefabs::tilemap(
             &mut self.world,
             &dungeon.grid,
@@ -975,11 +974,7 @@ impl CinematicScene {
         };
         let dungeon = Dungeon { grid, rooms: vec![room], theme, surfaces: Surfaces::default(), vestibules: Vec::new() };
         let textures = &assets.textures;
-        let [red, green, blue] = theme.backdrop();
-        prefabs::backdrop_colored(
-            &mut self.world,
-            Vec4::new(f32::from(red) / 255.0, f32::from(green) / 255.0, f32::from(blue) / 255.0, 1.0),
-        );
+        prefabs::backdrop_colored(&mut self.world, WALL_FILL);
         prefabs::tilemap(&mut self.world, &dungeon.grid, assets.tileset_of(theme.wide_tiles()), textures.get(theme.tileset_texture()));
         let grid = &dungeon.grid;
         self.occluders = Some(Arc::new(Occluders::new(grid.columns(), grid.rows(), TILE_SIZE, |column, row| {
@@ -1344,7 +1339,9 @@ impl Scene for CinematicScene {
         self.clock += dt;
         let next = self.next.unwrap_or(SceneId::Training);
         let total: f32 = SHOTS.iter().map(|(seconds, _)| seconds).sum();
-        if self.clock > total || input.any_key() && self.clock > 0.5 {
+        // Skipped with Esc, Space or Enter only, so a stray key does not cut it short.
+        let skip = [KeyCode::Escape, KeyCode::Space, KeyCode::Enter].into_iter().any(|key| input.just_pressed(key));
+        if self.clock > total || skip && self.clock > 0.5 {
             return Transition::Switch(next);
         }
         // Which shot it is, and how far into it.
@@ -1398,6 +1395,8 @@ impl Scene for CinematicScene {
         systems::tick_overheads(&mut self.world, dt);
         systems::tick_drips(&mut self.world, &assets.textures, dt);
         systems::tick_dust(&mut self.world, self.clock, dt);
+        // The walls' colour behind the tiles, wherever the camera looks, so nothing shows black.
+        systems::follow_backdrop(&mut self.world, self.camera.view());
         Transition::None
     }
 }

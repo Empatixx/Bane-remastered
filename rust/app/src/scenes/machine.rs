@@ -141,8 +141,9 @@ impl Scenes {
 
     fn switch(&mut self, next: SceneId, assets: &Assets) {
         // The way into the lobby from the menu goes through the training crypt until it is done.
+        // The first time, Play opens the cinematic, which leads on into the training crypt.
         let next = if next == SceneId::Lobby && self.current == SceneId::Menu && !self.profile.training_done() {
-            SceneId::Training
+            SceneId::Intro
         } else {
             next
         };
@@ -248,7 +249,7 @@ mod tests {
         let (mut scenes, mut input, assets) = menu();
         let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 240.0));
         assert_eq!(flow, ControlFlow::Continue(()));
-        assert_eq!(scenes.current, SceneId::Training);
+        assert_eq!(scenes.current, SceneId::Intro);
 
         let (mut scenes, mut input, assets) = menu();
         scenes.profile.finish_training();

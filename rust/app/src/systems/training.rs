@@ -4,7 +4,7 @@
 //! checkpoint: dying there brings the player back to its start, whole again, with the lesson set
 //! out afresh; after a few deaths in one room the guide has a tip.
 
-use glam::{Vec2, Vec4};
+use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 use rapier2d::prelude::ColliderHandle;
 
@@ -42,6 +42,15 @@ const DONE_SECONDS: f32 = 1.5;
 /// and he speaks once he is there.
 const INTRO_FADE: f32 = 2.4;
 const INTRO_WALK: f32 = 2.6;
+/// The hero arrives by the order's light, not out of nowhere: a column of light comes down where
+/// he will stand, motes gather into it, and he steps out of a flash. When it begins (into the
+/// fade from black), when he shows, how long it lasts; the column's size and colour.
+const ARRIVAL_FROM: f32 = 0.9;
+const ARRIVAL_SHOWS: f32 = 0.75;
+const ARRIVAL_SECONDS: f32 = 1.5;
+const COLUMN: Vec2 = Vec2::new(30.0, 150.0);
+const COLUMN_COLOR: Vec3 = Vec3::new(0.86, 0.74, 1.0);
+const ARRIVAL_MOTES: usize = 14;
 /// How far below his place the guide sets out from, in tiles.
 const INTRO_FROM: f32 = 5.5;
 /// The warm light about Elian, so he shows in the dark crypt.
@@ -141,6 +150,18 @@ pub(crate) struct Training {
     intro: Option<f32>,
     /// Words over the player's head, and how long they stay.
     over_head: Option<(Entity, f32)>,
+    /// The hero's arrival at the start: how long since the fade began, the column of light, its
+    /// glow, and the motes gathering in (each with the angle and distance it starts from).
+    arrival: Option<Arrival>,
+}
+
+#[derive(Debug)]
+struct Arrival {
+    time: f32,
+    column: Entity,
+    glow: Entity,
+    motes: Vec<(Entity, f32, f32)>,
+    shown: bool,
 }
 
 fn player(world: &World) -> Option<(Entity, Vec2)> {
@@ -188,6 +209,98 @@ fn black(world: &mut World) -> Entity {
     ))
 }
 
+impl Training {
+    /// Hides the hero and sets up the light he arrives by; nothing shows until it begins.
+    fn arrive(&mut self, world: &mut World) {
+        if let Some(old) = self.arrival.take() {
+            for entity in [old.column, old.glow].into_iter().chain(old.motes.iter().map(|m| m.0)) {
+                let _ = world.despawn(entity);
+            }
+        }
+        let Some((hero, at)) = player(world) else { return };
+        let _ = world.insert_one(hero, crate::components::Hidden);
+        let column = world.spawn((
+            Position(at - Vec2::new(0.0, COLUMN.y / 2.0 - 20.0)),
+            Size(Vec2::new(COLUMN.x, COLUMN.y)),
+            Color(Vec4::ZERO),
+            Layer(6),
+        ));
+        let glow = world.spawn((
+            Position(at),
+            crate::components::Light::rgb(Vec2::ZERO, 210.0, 170.0, 255.0, 40.0, 0.0),
+        ));
+        let motes = (0..ARRIVAL_MOTES)
+            .map(|index| {
+                let angle = index as f32 / ARRIVAL_MOTES as f32 * std::f32::consts::TAU;
+                let reach = 46.0 + (index % 3) as f32 * 14.0;
+                let mote = world.spawn((Position(at), Size(Vec2::splat(4.0)), Color(Vec4::ZERO), Layer(6)));
+                (mote, angle, reach)
+            })
+            .collect();
+        self.arrival = Some(Arrival { time: 0.0, column, glow, motes, shown: false });
+    }
+
+    /// The column brightens and narrows as the motes spiral in; at the flash the hero shows and
+    /// the light thins away.
+    fn tick_arrival(&mut self, world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
+        let Some(arrival) = &mut self.arrival else { return };
+        let before = arrival.time;
+        arrival.time += dt;
+        let t = arrival.time - ARRIVAL_FROM;
+        if t < 0.0 {
+            return;
+        }
+        if before - ARRIVAL_FROM < 0.0 {
+            sounds.push(AudioCommand::Effect(SoundEffect::ArgusTeleport));
+        }
+        let Some((hero, at)) = player(world) else { return };
+        let done = (t / ARRIVAL_SECONDS).min(1.0);
+        let shows = ARRIVAL_SHOWS / ARRIVAL_SECONDS;
+        // Up to the flash it gathers; after it, it fades.
+        let strength = if done < shows { done / shows } else { 1.0 - (done - shows) / (1.0 - shows) };
+        let width = if done < shows { COLUMN.x * (1.0 - 0.5 * done / shows) } else { COLUMN.x * 0.5 * (1.0 - (done - shows) / (1.0 - shows)) };
+        if let Ok(mut position) = world.get::<&mut Position>(arrival.column) {
+            position.0 = at - Vec2::new(0.0, COLUMN.y / 2.0 - 20.0);
+        }
+        if let Ok(mut size) = world.get::<&mut Size>(arrival.column) {
+            size.0.x = width.max(2.0);
+        }
+        if let Ok(mut color) = world.get::<&mut Color>(arrival.column) {
+            color.0 = COLUMN_COLOR.extend(0.75 * strength);
+        }
+        if let Ok(mut light) = world.get::<&mut crate::components::Light>(arrival.glow) {
+            let flash = if done >= shows { 1.0 - (done - shows) / (1.0 - shows) } else { 0.0 };
+            light.intensity = 0.9 * strength + 1.6 * flash;
+            light.radius = 70.0 + 120.0 * flash;
+        }
+        if let Ok(mut position) = world.get::<&mut Position>(arrival.glow) {
+            position.0 = at;
+        }
+        for &(mote, angle, reach) in &arrival.motes {
+            let gathered = (done / shows).min(1.0);
+            let turn = angle + gathered * 2.2;
+            let distance = reach * (1.0 - gathered);
+            let rise = gathered * 18.0;
+            if let Ok(mut position) = world.get::<&mut Position>(mote) {
+                position.0 = at + Vec2::new(turn.cos() * distance, turn.sin() * distance * 0.6 - rise);
+            }
+            if let Ok(mut color) = world.get::<&mut Color>(mote) {
+                color.0 = Vec4::new(1.0, 0.95, 1.0, if done < shows { 0.9 * gathered.sqrt() } else { 0.0 });
+            }
+        }
+        if done >= shows && !arrival.shown {
+            arrival.shown = true;
+            let _ = world.remove_one::<crate::components::Hidden>(hero);
+        }
+        if done >= 1.0 {
+            let arrival = self.arrival.take().expect("checked above");
+            for entity in [arrival.column, arrival.glow].into_iter().chain(arrival.motes.iter().map(|m| m.0)) {
+                let _ = world.despawn(entity);
+            }
+        }
+    }
+}
+
 fn gone(world: &World, entity: Entity) -> bool {
     !world.contains(entity)
         || world.get::<&Broken>(entity).is_ok()
@@ -223,6 +336,7 @@ impl Training {
             fade: None,
             intro: None,
             over_head: None,
+            arrival: None,
         }
     }
 
@@ -265,6 +379,7 @@ impl Training {
         // Into the dark: the crypt fades in and the guide walks up from further down.
         self.fade = Some((black(world), 0.0, INTRO_FADE));
         self.intro = Some(0.0);
+        self.arrive(world);
         self.line_timer = INTRO_WALK;
         self.place_guide(world, self.lesson().guide + Vec2::new(0.0, INTRO_FROM * TILE_SIZE));
     }
@@ -552,6 +667,7 @@ impl Training {
             }
             self.place_guide(world, at);
         }
+        self.tick_arrival(world, sounds, dt);
         if let Some((fade, time, over)) = &mut self.fade {
             *time += dt;
             let alpha = (1.0 - *time / *over).max(0.0);
