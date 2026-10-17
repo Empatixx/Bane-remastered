@@ -54,8 +54,8 @@ const SLEEPING_PORTAL: [f32; 3] = [70.0, 70.0, 84.0];
 /// The five candles about Elian, from his feet, the first to go out first.
 const ELIAN_CANDLES: [(f32, f32); 5] = [(-58.0, -4.0), (58.0, -4.0), (-36.0, 22.0), (36.0, 22.0), (0.0, 32.0)];
 const ELIAN_MEMORIAL: Vec4 = Vec4::new(0.85, 0.7, 0.45, 1.0);
-/// Where Elian stands, by the training book, in tiles.
-const ELIAN_AT: (f32, f32) = (6.6, 2.6);
+/// Where Elian stands, in the middle of the hall's west end below the training book, in tiles.
+const ELIAN_AT: (f32, f32) = (6.07, 5.3);
 const PROPS: &[(Prop, f32, f32, Look)] = &[
     // The hall.
     (Prop::WeaponRack, 9.25, 0.5, Look::DEFAULT),
@@ -79,7 +79,6 @@ const PROPS: &[(Prop, f32, f32, Look)] = &[
     (Prop::Rock, 8.0, 7.0, Look::SECOND_ROW),
     (Prop::Bookshelf, 2.0, 0.0, Look::DEFAULT),
     (Prop::Bookshelf, 6.0, 0.0, Look::DEFAULT),
-    (Prop::MapTable, 5.0, 5.0, Look::DEFAULT),
     (Prop::Banner, 23.0, 0.0, Look::DEFAULT),
     (Prop::Banner, 25.5, 0.0, Look::DEFAULT),
     (Prop::LayingBook, 8.6, 2.8, Look::SECOND_ROW),
@@ -395,7 +394,7 @@ impl Scene for LobbyScene {
 
         // `BANE_AT=elian` starts beside Elian, for working on his lines.
         let player_top_left = if std::env::var("BANE_AT").as_deref() == Ok("elian") {
-            Vec2::new(ELIAN_AT.0 + 2.0, ELIAN_AT.1 + 0.8) * TILE_SIZE
+            Vec2::new(ELIAN_AT.0 + 2.2, ELIAN_AT.1 + 0.3) * TILE_SIZE
         } else {
             hall_middle
         };

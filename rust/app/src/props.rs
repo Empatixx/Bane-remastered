@@ -16,7 +16,6 @@ pub(crate) enum Prop {
     Chains,
     Rock,
     Bookshelf,
-    MapTable,
     Scientist,
     /// Elian, the novice who woke the hero, talking the player through the training crypt.
     Guide,
@@ -84,7 +83,6 @@ impl Prop {
                 | Self::Box
                 | Self::Rock
                 | Self::Bookshelf
-                | Self::MapTable
                 | Self::Scientist
                 | Self::Shopkeeper
                 | Self::ShopTable
@@ -256,7 +254,6 @@ impl Prop {
             Self::Chains => still(tex::CHAINS, Vec2::new(16.0, 32.0), 4.0),
             Self::Rock => variants(tex::ROCK, Vec2::new(16.0, 16.0), 4.0),
             Self::Bookshelf => still(tex::BOOKSHELF, Vec2::new(48.0, 43.0), 4.0),
-            Self::MapTable => still(tex::MAPTABLE, Vec2::new(59.0, 38.0), 3.0),
             Self::Banner => PropSpec {
                 texture: tex::BANNER,
                 columns: 4,

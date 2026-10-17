@@ -49,8 +49,6 @@ const SHOTS: [(f32, &str); 7] = [
     (9.5, "One acolyte escaped, and woke the temple's last guardian."),
     (5.5, "Rise. Close the wound."),
 ];
-/// What shows beyond the walls: the temple wall's own stone, not black.
-const WALL_FILL: Vec4 = Vec4::new(130.0 / 255.0, 106.0 / 255.0, 74.0 / 255.0, 1.0);
 /// The shots by what happens in them.
 const DAY: usize = 0;
 const SEAL: usize = 1;
@@ -75,7 +73,7 @@ const WALKING_IN: [usize; 3] = [1, 7, 3];
 const STRANGER_FROM: Vec2 = Vec2::new(-1.6, 1.8);
 const STRANGER_TO: Vec2 = Vec2::new(-9.0, 1.8);
 const STRANGER_WALK: f32 = 4.5;
-const STRANGER_SHADE: Vec4 = Vec4::new(0.16, 0.12, 0.2, 1.0);
+const STRANGER_SHADE: Vec4 = Vec4::new(0.2, 0.15, 0.24, 1.0);
 const PILGRIM_PACE: f32 = 1.4;
 /// The cut from the temple to the crypt: the screen goes black for this long either side.
 const CUT_SECONDS: f32 = 0.9;
@@ -356,7 +354,11 @@ impl CinematicScene {
             vestibules: Vec::new(),
         };
         let textures = &assets.textures;
-        prefabs::backdrop_colored(&mut self.world, WALL_FILL);
+        let [red, green, blue] = theme.backdrop();
+        prefabs::backdrop_colored(
+            &mut self.world,
+            Vec4::new(f32::from(red) / 255.0, f32::from(green) / 255.0, f32::from(blue) / 255.0, 1.0),
+        );
         prefabs::tilemap(
             &mut self.world,
             &dungeon.grid,
@@ -473,12 +475,14 @@ impl CinematicScene {
         // The stranger, hidden until the prayers fall silent.
         self.stranger = Some(self.world.spawn((
             Position(self.altar + STRANGER_FROM * TILE_SIZE),
-            Size(Prop::Scientist.spec().size()),
+            Size(PRIEST_SIZE),
             Color(STRANGER_SHADE),
-            Sprite::cell(textures.get(tex::SCIENTIST), 0, 0, 6, 1),
-            Animation::new(6, 1, Clip { row: 0, frames: 6, frame_time: 0.1, looping: true, flipped: true }),
+            // A hooded figure in a dark cloak, on its walk cycle (the priests' run, row 1),
+            // facing left, the way it goes: anything that moves steps, it never slides.
+            Sprite::cell(textures.get(tex::PRIEST), 0, 1, 4, 3),
+            Animation::new(4, 3, Clip { row: 1, frames: 4, frame_time: 0.16, looping: true, flipped: true }),
             Layer(1),
-            crate::components::YSort::bottom(Prop::Scientist.spec().size()),
+            crate::components::YSort::bottom(PRIEST_SIZE),
             crate::components::Hidden,
         )));
         let bounds = dungeon.grid.pixel_size();
@@ -994,7 +998,11 @@ impl CinematicScene {
         };
         let dungeon = Dungeon { grid, rooms: vec![room], theme, surfaces: Surfaces::default(), vestibules: Vec::new() };
         let textures = &assets.textures;
-        prefabs::backdrop_colored(&mut self.world, WALL_FILL);
+        let [red, green, blue] = theme.backdrop();
+        prefabs::backdrop_colored(
+            &mut self.world,
+            Vec4::new(f32::from(red) / 255.0, f32::from(green) / 255.0, f32::from(blue) / 255.0, 1.0),
+        );
         prefabs::tilemap(&mut self.world, &dungeon.grid, assets.tileset_of(theme.wide_tiles()), textures.get(theme.tileset_texture()));
         let grid = &dungeon.grid;
         self.occluders = Some(Arc::new(Occluders::new(grid.columns(), grid.rows(), TILE_SIZE, |column, row| {
