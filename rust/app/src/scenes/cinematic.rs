@@ -35,7 +35,7 @@ use crate::viewport::TARGET;
 use super::{Cursor, Scene, SceneId, Transition};
 
 /// The temple's nave, inside its walls, in tiles.
-const NAVE: (usize, usize) = (34, 7);
+const NAVE: (usize, usize) = (34, 9);
 const MARGIN: usize = 2;
 /// The shots: how long each runs and its line, typed out a few letters a second once the shot
 /// has settled. The cinematic fades in at the start and out at the end.
@@ -108,11 +108,12 @@ const MOTE_LAYER: i32 = 6;
 const MOTE_BRIGHT: Vec4 = Vec4::new(0.92, 0.55, 1.0, 1.0);
 const MOTE_DEEP: Vec4 = Vec4::new(0.62, 0.22, 0.9, 1.0);
 
-/// One of the temple's acolytes: where he kneels, where he hides once the ground shakes, and
-/// whether something has caught him (and when).
+/// One of the temple's acolytes: the way he runs once the ground shakes (from where he kneels,
+/// out into a lane beside the carpet, down it, and into a bay between the blocks), where he ends
+/// up, and whether something has caught him (and when).
 struct Acolyte {
     entity: Entity,
-    home: Vec2,
+    path: Vec<Vec2>,
     hide: Vec2,
     caught: Option<f32>,
 }
@@ -120,10 +121,18 @@ struct Acolyte {
 /// Where the acolytes of the Order of the Seal kneel along the carpet, in tiles inside the nave,
 /// and which way they run: Teodor, Oswin, Cassian, Aldric, and Elian the novice, the last, who
 /// gets away to the crypt (see story.md, chapter 9).
-const ACOLYTES: [(f32, f32, f32); 5] =
-    [(21.0, 1.3, -1.0), (23.5, 5.6, 1.0), (25.5, 1.3, -1.0), (27.5, 5.6, 1.0), (24.0, 1.3, -1.0)];
-/// How far each runs down the nave, in tiles: far enough to be in view when the creatures come.
-const RUNS: [f32; 5] = [10.0, 9.0, 8.0, 9.5, 26.0];
+///
+/// Each: where he kneels, the row of the lane he runs down, and the bay he hides in, in tiles
+/// inside the nave. The lanes run either side of the carpet, clear of the blocks along the walls,
+/// and the bays lie between the blocks, where they will be in view when the creatures come.
+const ACOLYTES: [((f32, f32), f32, (f32, f32)); 5] = [
+    ((24.5, 1.6), 2.3, (20.5, 1.3)),
+    ((25.5, 7.4), 6.4, (18.0, 7.6)),
+    ((27.5, 1.6), 2.3, (11.5, 1.3)),
+    ((28.5, 7.4), 6.4, (9.0, 7.6)),
+    // Elian runs the whole nave and out of the far end.
+    ((30.0, 1.6), 2.3, (-3.0, 2.3)),
+];
 /// The priests' sheet (tools/make_priest.py): four frames of 10x19 across; standing, running
 /// and praying rows; drawn four times over.
 const PRIEST_SIZE: Vec2 = Vec2::new(40.0, 76.0);
@@ -240,16 +249,15 @@ impl CinematicScene {
         }
         let theme = Theme::Temple;
         let mut surfaces = Surfaces::default();
-        let mut waterworks = Waterworks::default();
-        // Between the first pair and the second, and the second and the third, an alcove of
-        // sand with a pipe pouring more into it, against the top wall.
+        let waterworks = Waterworks::default();
+        // Between the first pair and the second, and the second and the third, a pool of holy
+        // water against the top wall.
         for &column in &[8usize, 17] {
             for dx in 0..3 {
                 for row in 0..2 {
-                    surfaces.insert(tile(column + dx, row), Surface::Sand);
+                    surfaces.insert(tile(column + dx, row), Surface::Water);
                 }
             }
-            waterworks.pipes.push((inside.0 + column + 1, inside.1 - 1));
         }
         let mut decor = Vec::new();
         for &column in &pillars {
@@ -260,21 +268,21 @@ impl CinematicScene {
         for &column in &[7usize, 11, 16, 20] {
             decor.push(Decor { kind: DecorKind::Banner, tile: (inside.0 + column, inside.1 - 1) });
         }
-        // Pennants hanging straight down from the top wall either side of each block.
-        let overheads = pillars
-            .iter()
-            .flat_map(|&column| [column - 1, column + 2])
+        // Pennants strung across the nave from wall to wall, the way a carpet crosses a corridor,
+        // every few tiles down its length.
+        let overheads = [3usize, 9, 12, 18, 21, 27]
+            .into_iter()
             .map(|column| Overhead {
                 kind: OverheadKind::Pennants,
                 upright: true,
                 first: tile(column, 0),
-                last: tile(column, 1),
+                last: tile(column, rows - 1),
             })
             .collect();
-        // Censers in pairs over the alcoves and the last bay, out of the way of the carpet.
-        let hanging = [(8usize, 2usize), (10, 2), (17, 2), (19, 2), (26, 2), (29, 2)]
+        // Red banners hanging in pairs over the pools and the last bay, out of the way of the carpet.
+        let hanging = [(8usize, 2usize), (10, 2), (17, 2), (19, 2), (26, 2), (28, 2)]
             .into_iter()
-            .map(|(column, row)| Hanging { kind: HangingKind::Censer, tile: tile(column, row) })
+            .map(|(column, row)| Hanging { kind: HangingKind::Banner, tile: tile(column, row) })
             .collect();
         let room = DungeonRoom {
             kind: RoomKind::Normal,
@@ -322,8 +330,13 @@ impl CinematicScene {
         self.occluders = Some(Arc::new(Occluders::new(grid.columns(), grid.rows(), TILE_SIZE, |column, row| {
             grid.is_wall(column as isize, row as isize)
         })));
-        for (spot, surface) in dungeon.surfaces.iter() {
-            prefabs::surface_tile(&mut self.world, &dungeon.grid, &dungeon.surfaces, spot, surface, textures);
+        // The temple's water is holy: pale and shining, not the sewers' murk.
+        for (index, (spot, surface)) in dungeon.surfaces.iter().enumerate() {
+            let entity = prefabs::surface_tile(&mut self.world, &dungeon.grid, &dungeon.surfaces, spot, surface, textures);
+            self.hallow(entity, tex::SURFACE_HOLY_WATER, textures);
+            if index % 3 == 0 {
+                let _ = self.world.insert_one(entity, Light::rgb(Vec2::ZERO, 150.0, 220.0, 255.0, 90.0, 0.9));
+            }
         }
         let mut shores = std::collections::BTreeSet::new();
         for (spot, _) in dungeon.surfaces.iter() {
@@ -335,7 +348,8 @@ impl CinematicScene {
         }
         for spot in shores {
             if let Some((surface, row)) = dungeon.surfaces.shore_at(&dungeon.grid, spot) {
-                prefabs::shore_tile(&mut self.world, surface, spot, row, textures);
+                let entity = prefabs::shore_tile(&mut self.world, surface, spot, row, textures);
+                self.hallow(entity, tex::SHORE_HOLY_WATER, textures);
             }
         }
         let mut physics = crate::physics::Physics::new();
@@ -361,9 +375,10 @@ impl CinematicScene {
         let candle = Prop::Candlestick.spec().size();
         // The acolytes, kneeling either side of the carpet down the nave.
         let size = crate::prefabs::PLAYER_SIZE;
-        for (index, &(column, row, run)) in ACOLYTES.iter().enumerate() {
+        for (index, &((column, row), lane, (bay, depth))) in ACOLYTES.iter().enumerate() {
             let home = at(column, row);
-            let hide = home + Vec2::new(-RUNS[index] * TILE_SIZE, run * 0.6 * TILE_SIZE);
+            let hide = at(bay, depth);
+            let path = vec![home, at(column, lane), at(bay, lane), hide];
             // Praying, hands raised, until the ground shakes.
             let clip = Clip { row: 2, frames: 2, frame_time: 0.5 + index as f32 * 0.05, looping: true, flipped: index % 2 == 1 };
             let _ = size;
@@ -377,7 +392,7 @@ impl CinematicScene {
                 crate::components::YSort::bottom(PRIEST_SIZE),
                 crate::components::Lit,
             ));
-            self.acolytes.push(Acolyte { entity, home, hide, caught: None });
+            self.acolytes.push(Acolyte { entity, path, hide, caught: None });
         }
         // Four candles round it, the same above as below.
         for (dx, dy) in [(-2.2, -1.9), (2.2, -1.9), (-2.2, 1.9), (2.2, 1.9)] {
@@ -407,7 +422,8 @@ impl CinematicScene {
                 1 => row += 1,
                 _ => {}
             }
-            row = row.clamp(2, rows as i32 - 4);
+            // In the carpet's three rows, clear of the lanes either side.
+            row = row.clamp(3, rows as i32 - 5);
             // A tile wide, two by the altar where it opened first.
             crack.push(tile(column, row as usize));
             if column > columns * 2 / 3 {
@@ -418,6 +434,15 @@ impl CinematicScene {
         self.crack = crack;
         self.opened = 0;
         self.seed = 0x0b5e_55ed;
+    }
+
+    /// Gives a water tile the holy water's sheet in place of the plain one, same cell, and takes it
+    /// out of the liquid shading so it keeps its own colours.
+    fn hallow(&mut self, entity: Entity, texture: crate::assets::Tex, textures: &crate::assets::Textures) {
+        if let Ok(mut sprite) = self.world.get::<&mut Sprite>(entity) {
+            sprite.texture = textures.get(texture);
+        }
+        let _ = self.world.remove_one::<crate::components::Liquid>(entity);
     }
 
     fn roll(&mut self) -> f32 {
@@ -629,17 +654,33 @@ impl CinematicScene {
                 continue;
             }
             let since = at - FLEE_AFTER;
-            let span = acolyte.home.distance(acolyte.hide).max(1.0);
-            let run = (since * FLEE_SPEED * TILE_SIZE / span).clamp(0.0, 1.0);
+            // How far along his way he has run, leg by leg.
+            let mut left = (since * FLEE_SPEED * TILE_SIZE).max(0.0);
+            let mut spot = acolyte.path[0];
+            let mut heading = 0.0;
+            let mut arrived = true;
+            for leg in acolyte.path.windows(2) {
+                let length = leg[0].distance(leg[1]);
+                if left < length {
+                    spot = leg[0].lerp(leg[1], left / length.max(1.0));
+                    heading = leg[1].x - leg[0].x;
+                    arrived = false;
+                    break;
+                }
+                left -= length;
+                spot = leg[1];
+            }
+            let run = if arrived { 1.0 } else { 0.5 };
+            let facing_left = heading < 0.0 || (heading == 0.0 && acolyte.hide.x < acolyte.path[0].x);
             if let Ok(mut position) = self.world.get::<&mut Position>(acolyte.entity) {
-                position.0 = acolyte.home.lerp(acolyte.hide, run);
+                position.0 = spot;
             }
             if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
                 // Running on their side, then cowering facing the room.
                 let row = if since <= 0.0 { 2 } else if run < 1.0 { 1 } else { 0 };
                 if animation.clip().row != row {
                     let frames = if row == 2 { 2 } else { 4 };
-                    animation.play(Clip { row, frames, frame_time: if row == 1 { 0.09 } else { 0.22 }, looping: true, flipped: row == 1 });
+                    animation.play(Clip { row, frames, frame_time: if row == 1 { 0.09 } else { 0.22 }, looping: true, flipped: row == 1 && facing_left });
                 }
             }
         }
