@@ -1,7 +1,6 @@
-//! The true ending, after a won run of the Bane challenge, the one gone without the Scientist's
-//! work: who silenced the prayers, told one line at a time out of the dark, then the choice.
-//! One prayer can close the wound, and it will be Elian's last. Let him pray, or stop him.
-//! Either way the lobby comes after, changed.
+//! The ending at the bottom of the wound: the brothers waiting there, what the wound offers,
+//! and what Elian remembers at last; then the choice. Let them go and close the wound, or stay
+//! with them. Either way the lobby comes after, changed.
 
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
@@ -18,18 +17,18 @@ use crate::viewport::TARGET;
 
 use super::{Cursor, Scene, SceneId, Transition};
 
-/// The truth, one line at a time.
+/// What waits at the bottom, one line at a time.
 pub(crate) const LINES: [&str; 4] = [
-    "Silas Vane cut the bell rope. Silas Vane poured the wine.",
-    "When the last prayer stopped, the seal broke. He was waiting with his jars.",
-    "Every talent he sold you was a piece of the wound.",
-    "Elian kneels at its edge. He has one prayer left in him.",
+    "At the bottom of the wound, the brothers are waiting.",
+    "Teodor. Cassian. Oswin. Changed, but there.",
+    "\"Stay,\" it says. \"And you will never be alone again.\"",
+    "Elian remembers that night. He fell asleep. It was him.",
 ];
-const CHOOSING: &str = "One prayer can close it. It will be his last.";
+const CHOOSING: &str = "Close the wound and let them go? Or stay with them?";
 /// What follows each choice, before the lobby.
-const CLOSED: &str = "The wound closes on Elian's last prayer. Velmor will remember him.";
-const LEFT_OPEN: &str = "Elian lives. Above, Silas Vane smiles. \"We understand each other.\"";
-const CHOICES: [&str; 2] = ["Let him pray", "Stop him"];
+const CLOSED: &str = "The wound closes. For the first time since that night, Elian sleeps.";
+const LEFT_OPEN: &str = "Elian stays. Above, the Scientist writes: Subject 41, lost.";
+const CHOICES: [&str; 2] = ["Let them go", "Stay"];
 
 const LINE_SECONDS: f32 = 5.0;
 const FADE: f32 = 0.8;

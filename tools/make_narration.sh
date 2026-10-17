@@ -34,21 +34,31 @@ effect() {
         -d "{\"text\":\"$text\",\"duration_seconds\":$seconds,\"prompt_influence\":0.6}"
 }
 
-speak 1 "For four hundred years... the people of Velmor came to pray at the temple on the hill."
-speak 2 "Their prayers kept something asleep beneath it."
-speak 3 "Then, one night... the prayers fell silent."
-speak 4 "And something tore open beneath the temple."
-speak 5 "They called it Bane. The wound."
-speak 6 "One acolyte escaped... and woke the temple's last guardian."
-speak 7 "Rise. Close the wound."
+# `ONLY="3 4 7 8 steps"` makes just those lines (by number) and effects (by name), to save
+# credits when only some have changed.
+wanted() {
+    [ -z "${ONLY:-}" ] && return 0
+    case " $ONLY " in *" $1 "*) return 0 ;; esac
+    return 1
+}
+line() { wanted "$1" && speak "$1" "$2"; return 0; }
+sound() { wanted "$1" && effect "$1" "$2" "$3"; return 0; }
 
-effect rumble 6 "deep earthquake rumble inside a stone temple, low and growing"
-effect statue 3 "stone statue cracking and bursting apart, heavy chunks falling on stone floor"
-effect rift 5 "a magical rift tearing open, crackling purple energy, otherworldly hum"
-effect crawl 6 "many spiders and rats skittering and scratching out of a pit, dark and eerie"
-effect lid 4 "heavy stone sarcophagus lid grinding and sliding open in a crypt"
-effect awaken 3 "ethereal holy shimmer swelling, a soul returning to a body, deep breath"
-effect day_bed 22 "dark fantasy game soundtrack, a sacred temple by day, a calm choir and warm strings, peaceful and reverent, slow"
-effect night_bed 10 "dark fantasy game soundtrack, night falls over a temple, the choir fades to silence, a low uneasy drone, wind"
-effect cry 1.6 "a short muffled male death cry, then a wet bite and tearing, dark fantasy"
+line 1 "For four hundred years... the people of Velmor came to pray at the temple on the hill."
+line 2 "Their prayers kept something asleep beneath it."
+line 3 "One night... the brothers fell asleep at their prayers... one by one."
+line 4 "Only Elian, the youngest, was still awake... Then he slept too."
+line 5 "And something tore open beneath the temple."
+line 6 "They called it Bane. The wound."
+line 7 "Only Elian and Brother Aldric reached the crypt alive."
+line 8 "Elian never told anyone... that he had fallen asleep."
+
+sound rumble 6 "deep earthquake rumble inside a stone temple, low and growing"
+sound statue 3 "stone statue cracking and bursting apart, heavy chunks falling on stone floor"
+sound rift 5 "a magical rift tearing open, crackling purple energy, otherworldly hum"
+sound crawl 6 "many spiders and rats skittering and scratching out of a pit, dark and eerie"
+sound steps 4 "hurried footsteps of two people running into an echoing stone crypt, one limping, ragged breathing"
+sound day_bed 22 "dark fantasy game soundtrack, a sacred temple by day, a calm choir and warm strings, peaceful and reverent, slow"
+sound night_bed 10 "dark fantasy game soundtrack, night falls over a temple, the choir fades to silence, a low uneasy drone, wind"
+sound cry 1.6 "a short muffled male death cry, then a wet bite and tearing, dark fantasy"
 ls "$OUT"

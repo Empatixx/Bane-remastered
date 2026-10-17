@@ -336,17 +336,17 @@ pub(crate) fn fit_price_boxes(world: &mut World, fonts: &crate::render::Fonts) {
     }
 }
 
-/// The merchant, subject twelve: the miller of Velmor, who carried the Scientist's jars up to
-/// the temple on the night of the feast, and chose not to go back up. His first lines come in order,
-/// one per visit, so the truth comes out slowly; after that he picks among them.
+/// The merchant, subject twelve: the miller of Velmor, who went down through the Scientist's
+/// portal before Elian and chose not to come back up. His first lines come in order, one per
+/// visit; after that he picks among them.
 pub(crate) const MERCHANT: [&str; 8] = [
     "New one? Coins on the table. No credit.",
     "He calls you subject? He called me twelve.",
-    "I was the miller in Velmor, before. I heard the bells stop.",
-    "He paid me to carry jars up to the temple that night. I didn't ask.",
+    "I was the miller in Velmor. I heard the prayers stop that night.",
+    "Down here it talks to you. Don't answer.",
     "The slimes. They were my neighbours. Don't eat them.",
-    "Eleven went down before me. None of them came back up.",
-    "I stay down here. Up there he'd want to know what I remember.",
+    "It offered me my wife back. I almost said yes.",
+    "Whoever was on watch that night... I hope he sleeps well.",
     "Enjoy your purchase. Enjoy anything.",
 ];
 
@@ -356,15 +356,14 @@ pub(crate) fn merchant_line(visit: u64, roll: usize) -> &'static str {
     MERCHANT.get(index).copied().unwrap_or(MERCHANT[roll % MERCHANT.len()])
 }
 
-/// The altar: the curse's own voice, in capitals and without stops. It tells the truth from
-/// the start; nobody understands it.
+/// The altar: the wound's own voice, in capitals and without stops. It knows who was on watch.
 pub(crate) const ALTAR: [&str; 6] = [
-    "YOU ARE MINE ALREADY",
-    "HE ONLY BORROWS YOU",
-    "GIVE A PIECE  I GIVE IT BACK  LATER",
-    "FORTY BEFORE YOU  NONE WENT HOME",
-    "THE DOG KNOWS",
-    "THE BOY PAYS FOR YOU",
+    "YOU WANTED SILENCE",
+    "SLEEP  SLEEP  SLEEP",
+    "I CAN GIVE THEM BACK",
+    "WHO WAS ON WATCH",
+    "DEEPER  THEY ARE WAITING",
+    "YOU ONLY HAD TO STAY AWAKE",
 ];
 pub(crate) const ALTAR_SECONDS: f32 = 4.0;
 

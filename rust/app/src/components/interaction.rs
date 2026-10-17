@@ -16,8 +16,6 @@ pub(crate) enum Interaction {
     RefillAmmo,
     /// The book of lessons in the lobby: back through the training crypt.
     Training,
-    /// A page of Teodor's chronicle on the floor.
-    ReadPage,
 }
 
 #[derive(Debug, Clone, Copy)]

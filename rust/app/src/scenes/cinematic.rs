@@ -40,22 +40,31 @@ const NAVE: (usize, usize) = (34, 9);
 const MARGIN: usize = 2;
 /// The shots: how long each runs and its line, typed out a few letters a second once the shot
 /// has settled. The cinematic fades in at the start and out at the end.
-const SHOTS: [(f32, &str); 7] = [
+const SHOTS: [(f32, &str); 8] = [
     (12.0, "For four hundred years, the people of Velmor came to pray at the temple on the hill."),
     (9.0, "Their prayers kept something asleep beneath it."),
-    (8.0, "Then, one night, the prayers fell silent."),
+    (10.0, "One night, the brothers fell asleep at their prayers, one by one."),
+    (9.0, "Only Elian, the youngest, was still awake. Then he slept too."),
     (14.0, "And something tore open beneath the temple."),
     (10.0, "They called it Bane. The wound."),
-    (9.5, "One acolyte escaped, and woke the temple's last guardian."),
-    (5.5, "Rise. Close the wound."),
+    (11.0, "Only Elian and Brother Aldric reached the crypt alive."),
+    (6.0, "Elian never told anyone he had fallen asleep."),
 ];
 /// The shots by what happens in them.
 const DAY: usize = 0;
 const SEAL: usize = 1;
 const NIGHT: usize = 2;
-const TEAR: usize = 3;
-const CRAWL: usize = 4;
-const VAULT: usize = 5;
+const LAST: usize = 3;
+const TEAR: usize = 4;
+const CRAWL: usize = 5;
+const VAULT: usize = 6;
+/// The brothers nodding off at night: the first goes this long after nightfall, the rest one
+/// after another. Elian, the last, starts to nod this long into his shot.
+const FIRST_SLEEPS: f32 = 1.2;
+const SLEEPS_EVERY: f32 = 1.4;
+const ELIAN_NODS: f32 = 2.2;
+/// How far the camera leans in on Elian while he falls asleep.
+const LEAN_IN: f32 = 0.35;
 /// The day and the night: how long night takes to fall, the warm lights of day down the nave,
 /// the dark blue of night over it all, and the seal's glow under the altar.
 const NIGHTFALL: f32 = 3.0;
@@ -71,15 +80,14 @@ const WALKING_IN: [usize; 3] = [1, 7, 3];
 const PILGRIM_PACE: f32 = 1.4;
 /// The cut from the temple to the crypt: the screen goes black for this long either side.
 const CUT_SECONDS: f32 = 0.9;
-/// The crypt: its inside in tiles; when light starts to leak from the sarcophagus, when its lid
-/// shakes, slides and falls, and the white flash as the hero rises.
+/// The crypt: its inside in tiles; when Elian runs in and how fast, when Aldric follows him and
+/// how fast (he is hurt), and how long the camera takes to move across to the sarcophagus.
 const CRYPT: (usize, usize) = (17, 9);
-const GLOW_FROM: f32 = 1.4;
-const LID_SHAKES: f32 = 2.8;
-const LID_SLIDES: f32 = 3.8;
-const LID_FALLS: f32 = 5.6;
-const RISE_AT: f32 = 8.4;
-const FLASH_SECONDS: f32 = 0.9;
+const ELIAN_ENTERS: f32 = 0.6;
+const ELIAN_RUNS: f32 = 3.0;
+const ALDRIC_ENTERS: f32 = 2.4;
+const ALDRIC_LIMPS: f32 = 1.3;
+const CROSSING: f32 = 6.0;
 /// The sarcophagus and its lid on screen (tools/make_bier.py draws them at 50x26 and 46x20).
 const SARCOPHAGUS: Vec2 = Vec2::new(50.0 * 3.0, 26.0 * 3.0);
 const LID_SIZE: Vec2 = Vec2::new(46.0 * 3.0, 20.0 * 3.0);
@@ -142,8 +150,8 @@ struct Acolyte {
 }
 
 /// Where the acolytes of the Order of the Seal kneel along the carpet, in tiles inside the nave,
-/// and which way they run: Teodor, Oswin, Cassian, Aldric, and Elian the novice, the last, who
-/// gets away to the crypt (see story.md, chapter 9).
+/// and which way they run: Teodor, Oswin, Cassian, Brother Aldric, and Elian the novice. Elian
+/// kneels alone before the altar; he and Aldric get away to the crypt.
 ///
 /// Each: where he kneels, the row of the lane he runs down, and the bay he hides in, in tiles
 /// inside the nave. The lanes run either side of the carpet, clear of the blocks along the walls,
@@ -152,15 +160,22 @@ const ACOLYTES: [((f32, f32), f32, (f32, f32)); 5] = [
     ((24.5, 1.6), 2.3, (20.5, 1.3)),
     ((25.5, 7.4), 6.4, (18.0, 7.6)),
     ((27.5, 1.6), 2.3, (11.5, 1.3)),
-    ((28.5, 7.4), 6.4, (9.0, 7.6)),
-    // Elian runs the whole nave and out of the far end.
-    ((30.0, 1.6), 2.3, (-4.0, 4.5)),
+    ((28.5, 7.4), 6.4, (-4.0, 4.5)),
+    // Elian kneels before the altar (where is worked out from it) and runs the whole nave and
+    // out of the far end.
+    ((0.0, 0.0), 0.0, (-4.0, 4.5)),
 ];
-/// The priests' sheet (tools/make_priest.py): four frames of 10x19 across; standing, running
-/// and praying rows; drawn four times over.
+/// The priests' sheet (tools/make_priest.py): four frames of 10x19 across; standing, running,
+/// praying and asleep-at-prayer rows; drawn four times over.
 const PRIEST_SIZE: Vec2 = Vec2::new(40.0, 76.0);
-/// Elian, who escapes: he runs on out of the nave, and waits in the crypt.
+/// Brother Aldric and Elian, who escape: they run on out of the nave to the crypt.
+const ALDRIC: usize = 3;
 const ELIAN: usize = 4;
+/// Elian's sheets: kneeling (tools/make_elian.py, 4x3) and, to run, the hero's own (6x4; row 1
+/// runs to the right).
+const KNEELING: (usize, usize) = (4, 3);
+const HERO_SHEET: (usize, usize) = (6, 4);
+const HERO_RUN: usize = 1;
 /// When they start to run once the ground shakes, how fast, how fast the creatures hunt them,
 /// and how long one takes to fall.
 const FLEE_AFTER: f32 = 1.2;
@@ -178,6 +193,17 @@ struct Debris {
     height: f32,
     rise: f32,
     left: Option<f32>,
+}
+/// Elian or Aldric coming into the crypt: who, from where to where, from when, at what pace
+/// (tiles a second), and whether he is there yet.
+struct Refugee {
+    entity: Entity,
+    from: Vec2,
+    to: Vec2,
+    enters: f32,
+    pace: f32,
+    elian: bool,
+    arrived: bool,
 }
 const LETTERS_PER_SECOND: f32 = 18.0;
 /// The black bars of a film frame, and where the line sits in the lower one.
@@ -222,16 +248,16 @@ pub(crate) struct CinematicScene {
     acolytes: Vec<Acolyte>,
     hunters: Vec<(usize, usize)>,
     dusk: Option<Entity>,
-    /// The crypt, once the cinematic has cut to it: the sarcophagus and its lid, the light
-    /// leaking out of it, the white flash, and the hero once risen.
+    /// The crypt, once the cinematic has cut to it: the sarcophagus, and Elian and Aldric coming
+    /// in (each, where from, where to, when and how fast, and whether arrived).
     crypt: bool,
     bier: Option<Entity>,
-    lid: Option<Entity>,
-    lid_at: Vec2,
-    lid_landed: bool,
-    glow: Option<Entity>,
-    flash: Option<Entity>,
-    hero: Option<Entity>,
+    refugees: Vec<Refugee>,
+    /// Where Elian kneels before the altar, and the hero's sheet he runs on.
+    elian_at: Vec2,
+    hero_sheet: Option<crate::render::TextureId>,
+    leaned: bool,
+    kneeling_sheet: Option<crate::render::TextureId>,
     /// The day: the people at prayer (each, where it kneels, and whether it walks in first), the
     /// lights of day, the night falling over it, the seal's glow.
     pilgrims: Vec<(Entity, Vec2, bool)>,
@@ -404,28 +430,48 @@ impl CinematicScene {
         self.altar = altar;
         // The acolytes, kneeling either side of the carpet down the nave.
         let size = crate::prefabs::PLAYER_SIZE;
+        let door = rows as f32 / 2.0;
+        // Elian kneels on the carpet right before the altar, facing it.
+        let before_altar = (columns as f32 - apse.0 as f32 / 2.0 - 2.6, door + 0.2);
+        self.elian_at = at(before_altar.0, before_altar.1);
+        self.hero_sheet = Some(textures.get(tex::PLAYER));
+        self.kneeling_sheet = Some(textures.get(tex::ELIAN_KNEELING));
         for (index, &((column, row), lane, (bay, depth))) in ACOLYTES.iter().enumerate() {
+            let (column, row) = if index == ELIAN { before_altar } else { (column, row) };
             let home = at(column, row);
             let hide = at(bay, depth);
-            let mut path = vec![home, at(column, lane), at(bay, lane), hide];
-            if index == ELIAN {
-                // Down the lane to the near end, then across into the doorway and out.
-                let door = rows as f32 / 2.0;
-                path = vec![home, at(column, lane), at(1.0, lane), at(1.0, door), at(-4.0, door)];
-            }
-            // Praying, hands raised, until the ground shakes.
-            let clip = Clip { row: 2, frames: 2, frame_time: 0.5 + index as f32 * 0.05, looping: true, flipped: index % 2 == 1 };
-            let _ = size;
-            let entity = self.world.spawn((
-                Position(home),
-                Size(PRIEST_SIZE),
-                Color(Vec4::ONE),
-                Sprite::cell(textures.get(tex::PRIEST), 0, 2, 4, 3),
-                Animation::new(4, 3, clip),
-                Layer(1),
-                crate::components::YSort::bottom(PRIEST_SIZE),
-                crate::components::Lit,
-            ));
+            let path = match index {
+                // Straight down the carpet and out of the doorway.
+                ELIAN => vec![home, at(1.0, row), at(1.0, door), at(-4.0, door)],
+                // Down his lane to the near end, then across into the doorway and out.
+                ALDRIC => vec![home, at(column, lane), at(1.0, lane), at(1.0, door), at(-4.0, door)],
+                _ => vec![home, at(column, lane), at(bay, lane), hide],
+            };
+            let entity = if index == ELIAN {
+                self.world.spawn((
+                    Position(home),
+                    Size(size),
+                    Color(Vec4::ONE),
+                    Sprite::cell(textures.get(tex::ELIAN_KNEELING), 0, 0, KNEELING.0, KNEELING.1),
+                    Animation::new(KNEELING.0, KNEELING.1, Clip { row: 0, frames: 4, frame_time: 0.7, looping: true, flipped: false }),
+                    Layer(1),
+                    crate::components::YSort::bottom(size),
+                    crate::components::Lit,
+                ))
+            } else {
+                // Praying, hands raised, until sleep takes them.
+                let clip = Clip { row: 2, frames: 2, frame_time: 0.5 + index as f32 * 0.05, looping: true, flipped: index % 2 == 1 };
+                self.world.spawn((
+                    Position(home),
+                    Size(PRIEST_SIZE),
+                    Color(Vec4::ONE),
+                    Sprite::cell(textures.get(tex::PRIEST), 0, 2, 4, 4),
+                    Animation::new(4, 4, clip),
+                    Layer(1),
+                    crate::components::YSort::bottom(PRIEST_SIZE),
+                    crate::components::Lit,
+                ))
+            };
             self.acolytes.push(Acolyte { entity, path, hide, caught: None });
         }
         // The people of Velmor, kneeling either side of the carpet; a few still coming in.
@@ -443,8 +489,8 @@ impl CinematicScene {
                 Position(if walking { door } else { spot }),
                 Size(PRIEST_SIZE),
                 Color(Vec4::new(shade, shade, shade, 1.0)),
-                Sprite::cell(textures.get(tex::PILGRIM), 0, clip.row, 4, 3),
-                Animation::new(4, 3, clip),
+                Sprite::cell(textures.get(tex::PILGRIM), 0, clip.row, 4, 4),
+                Animation::new(4, 4, clip),
                 Layer(1),
                 crate::components::YSort::bottom(PRIEST_SIZE),
                 crate::components::Lit,
@@ -731,7 +777,7 @@ impl CinematicScene {
 
     /// The acolytes, once the ground shakes, get up and run for the walls, away from the altar.
     fn flee(&mut self, at: f32) {
-        for acolyte in &self.acolytes {
+        for (index, acolyte) in self.acolytes.iter().enumerate() {
             if acolyte.caught.is_some() {
                 continue;
             }
@@ -756,6 +802,32 @@ impl CinematicScene {
             let facing_left = heading < 0.0 || (heading == 0.0 && acolyte.hide.x < acolyte.path[0].x);
             if let Ok(mut position) = self.world.get::<&mut Position>(acolyte.entity) {
                 position.0 = spot;
+            }
+            if index == ELIAN {
+                // He wakes with a start on his knees, then gets up and runs on the hero's own
+                // run cycle, facing the way he goes.
+                let _ = self.world.remove_one::<crate::components::ThenPlay>(acolyte.entity);
+                if since <= 0.0 {
+                    if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
+                        if animation.clip().row != 0 || !animation.clip().looping {
+                            animation.play(Clip { row: 0, frames: 4, frame_time: 0.25, looping: true, flipped: false });
+                        }
+                    }
+                } else if let Some(sheet) = self.hero_sheet {
+                    let running = self.world.get::<&Sprite>(acolyte.entity).map(|sprite| sprite.texture == sheet).unwrap_or(false);
+                    if !running {
+                        let clip = Clip { row: HERO_RUN, frames: 6, frame_time: 0.07, looping: true, flipped: facing_left };
+                        let _ = self.world.insert(
+                            acolyte.entity,
+                            (Sprite::cell(sheet, 0, HERO_RUN, HERO_SHEET.0, HERO_SHEET.1), Animation::new(HERO_SHEET.0, HERO_SHEET.1, clip)),
+                        );
+                    } else if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
+                        if animation.clip().flipped != facing_left {
+                            animation.play(Clip { row: HERO_RUN, frames: 6, frame_time: 0.07, looping: true, flipped: facing_left });
+                        }
+                    }
+                }
+                continue;
             }
             if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
                 // Running on their side, then cowering facing the room.
@@ -849,7 +921,7 @@ impl CinematicScene {
                     .iter()
                     .enumerate()
                     .filter(|(index, acolyte)| {
-                        *index != ELIAN && acolyte.caught.is_none() && !self.hunters.iter().any(|&(_, hunted)| hunted == *index)
+                        *index != ELIAN && *index != ALDRIC && acolyte.caught.is_none() && !self.hunters.iter().any(|&(_, hunted)| hunted == *index)
                     })
                     .min_by(|(_, a), (_, b)| a.hide.distance(from).total_cmp(&b.hide.distance(from)))
                     .map(|(index, _)| index);
@@ -1005,38 +1077,22 @@ impl CinematicScene {
             self.world.spawn((Position(spot - Vec2::new(0.0, 0.1 * SARCOPHAGUS.y * 0.8)), Size(LID_SIZE * 0.8),
                 Color(Vec4::new(0.8, 0.8, 0.85, 1.0)), Sprite::whole(textures.get(tex::SARCOPHAGUS_LID)), Layer(0), crate::components::Lit));
         }
-        // His own, in the middle, candles round it.
-        // In the middle of the vault, on the middle of its carpet.
+        // The order's oldest, closed, in the middle of the vault on its carpet, candles round it.
         let centre = at(columns as f32 / 2.0, rows as f32 / 2.0);
         self.bier = Some(self.world.spawn((
             Position(centre),
             Size(SARCOPHAGUS),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get(tex::SARCOPHAGUS), 0, 0, 2, 1),
+            Sprite::cell(textures.get(tex::SARCOPHAGUS), 1, 0, 2, 1),
             Layer(0),
             crate::components::Lit,
         )));
-        self.lid_at = centre - Vec2::new(0.0, (SARCOPHAGUS.y - LID_SIZE.y) / 2.0 + 3.0 * 3.0);
-        self.lid = Some(self.world.spawn((
-            Position(self.lid_at),
+        self.world.spawn((
+            Position(centre - Vec2::new(0.0, (SARCOPHAGUS.y - LID_SIZE.y) / 2.0 + 3.0 * 3.0)),
             Size(LID_SIZE),
             Color(Vec4::ONE),
             Sprite::whole(textures.get(tex::SARCOPHAGUS_LID)),
             Layer(1),
-            crate::components::Lit,
-        )));
-        // Elian, who ran down here, standing at its head.
-        let size = crate::prefabs::PLAYER_SIZE;
-        let clip = Clip { row: 2, frames: 2, frame_time: 0.5, looping: true, flipped: false };
-        let _ = size;
-        self.world.spawn((
-            Position(centre + Vec2::new(-SARCOPHAGUS.x / 2.0 - 0.7 * TILE_SIZE, 0.1 * TILE_SIZE)),
-            Size(PRIEST_SIZE),
-            Color(Vec4::ONE),
-            Sprite::cell(textures.get(tex::PRIEST), 0, 2, 4, 3),
-            Animation::new(4, 3, clip),
-            Layer(1),
-            crate::components::YSort::bottom(PRIEST_SIZE),
             crate::components::Lit,
         ));
         let candle = Prop::Candlestick.spec().size();
@@ -1044,111 +1100,79 @@ impl CinematicScene {
             let spot = centre + Vec2::new(dx, dy) * TILE_SIZE;
             prefabs::prop(&mut self.world, Prop::Candlestick, spot - candle / 2.0, Look::DEFAULT, textures);
         }
-        // The light that leaks out of it, and grows as the lid comes off.
-        self.glow = Some(self.world.spawn((
-            Position(centre),
-            Light::rgb(Vec2::ZERO, 255.0, 226.0, 150.0, 40.0, 0.0),
-        )));
+        self.world.spawn((Position(centre), Light::rgb(Vec2::ZERO, 255.0, 214.0, 150.0, 220.0, 0.9)));
+        // Elian runs in from the dark at the vault's west end and drops to his knees before the
+        // sarcophagus; Aldric, hurt, comes in after him and stands over him.
+        let size = crate::prefabs::PLAYER_SIZE;
+        let kneel = centre + Vec2::new(0.0, SARCOPHAGUS.y / 2.0 + size.y / 2.0 + 6.0);
+        let enter = |row: f32| at(-1.5, row);
+        let elian = self.world.spawn((
+            Position(enter(rows as f32 / 2.0 + 1.2)),
+            Size(size),
+            Color(Vec4::ONE),
+            Sprite::cell(textures.get(tex::PLAYER), 0, HERO_RUN, HERO_SHEET.0, HERO_SHEET.1),
+            Animation::new(HERO_SHEET.0, HERO_SHEET.1, Clip { row: HERO_RUN, frames: 6, frame_time: 0.07, looping: true, flipped: false }),
+            Layer(1),
+            crate::components::YSort::bottom(size),
+            crate::components::Lit,
+        ));
+        self.refugees.push(Refugee { entity: elian, from: enter(rows as f32 / 2.0 + 1.2), to: kneel, enters: ELIAN_ENTERS, pace: ELIAN_RUNS, elian: true, arrived: false });
+        let beside = kneel + Vec2::new(-1.3 * TILE_SIZE, -0.15 * TILE_SIZE);
+        let aldric = self.world.spawn((
+            Position(enter(rows as f32 / 2.0 + 0.6)),
+            Size(PRIEST_SIZE),
+            Color(Vec4::ONE),
+            Sprite::cell(textures.get(tex::PRIEST), 0, 1, 4, 4),
+            Animation::new(4, 4, Clip { row: 1, frames: 4, frame_time: 0.2, looping: true, flipped: false }),
+            Layer(1),
+            crate::components::YSort::bottom(PRIEST_SIZE),
+            crate::components::Lit,
+        ));
+        self.refugees.push(Refugee { entity: aldric, from: enter(rows as f32 / 2.0 + 0.6), to: beside, enters: ALDRIC_ENTERS, pace: ALDRIC_LIMPS, elian: false, arrived: false });
         let bounds = dungeon.grid.pixel_size();
         self.camera = Camera::new(bounds);
-        self.glide = (at(6.0, rows as f32 / 2.0) - TARGET / 2.0, centre - TARGET / 2.0);
+        self.glide = (at(6.0, rows as f32 / 2.0) - TARGET / 2.0, kneel - Vec2::new(0.0, 0.6 * TILE_SIZE) - TARGET / 2.0);
         self.camera.snap_to(self.glide.0);
-        self.flash = Some(self.world.spawn((
-            Position(TARGET / 2.0),
-            Size(TARGET),
-            Color(Vec4::new(1.0, 0.97, 0.88, 0.0)),
-            Layer(OVERLAY_LAYER - 1),
-            ScreenSpace,
-        )));
     }
 
-    /// The fourth and fifth shots: the camera moves across the vault to the sarcophagus, light
-    /// leaks round its lid, the lid shakes, grinds aside and falls, and in a white flash the
-    /// hero stands beside it.
-    fn revive(&mut self, assets: &Assets, at: f32, dt: f32) {
-        let textures = &assets.textures;
-        let push = (at / (LID_SLIDES + 1.0)).clamp(0.0, 1.0);
+    /// The crypt: the camera moves across the vault to the sarcophagus as Elian runs in and
+    /// drops to his knees before it, and Aldric limps in after him and stands over him.
+    fn refuge(&mut self, at: f32, dt: f32) {
+        let push = (at / CROSSING).clamp(0.0, 1.0);
         let eased = push * push * (3.0 - 2.0 * push);
         self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
-        let centre = self.bier.and_then(|bier| self.world.get::<&Position>(bier).ok().map(|p| p.0)).unwrap_or_default();
-        // The lid: still, then shaking, then grinding aside, then falling off onto the floor.
-        if let Some(lid) = self.lid {
-            let slide = ((at - LID_SLIDES) / (LID_FALLS - LID_SLIDES)).clamp(0.0, 1.0);
-            let slide = slide * slide * (3.0 - 2.0 * slide);
-            let fall = ((at - LID_FALLS) / 0.35).clamp(0.0, 1.0);
-            let mut spot = self.lid_at + Vec2::new(slide * 0.55 * LID_SIZE.x, 0.0);
-            spot += Vec2::new(fall * 0.3 * LID_SIZE.x, fall * fall * 0.55 * SARCOPHAGUS.y);
-            if at > LID_SHAKES && at < LID_FALLS {
-                spot += Vec2::new((at * 57.0).sin(), (at * 43.0).cos()) * 2.0;
-                self.camera.add_trauma(0.25 * dt);
+        let kneeling = self.kneeling_sheet;
+        for refugee in &mut self.refugees {
+            if refugee.arrived {
+                continue;
             }
-            if let Ok(mut position) = self.world.get::<&mut Position>(lid) {
-                position.0 = spot.round();
+            let walked = ((at - refugee.enters) * refugee.pace * TILE_SIZE).max(0.0);
+            let way = refugee.to - refugee.from;
+            let done = walked >= way.length();
+            let spot = if done { refugee.to } else { refugee.from + way.normalize_or_zero() * walked };
+            if let Ok(mut position) = self.world.get::<&mut Position>(refugee.entity) {
+                position.0 = spot;
             }
-            if at >= LID_FALLS + 0.35 && !self.lid_landed {
-                self.lid_landed = true;
-                self.camera.add_trauma(0.55);
-                for i in 0..8 {
-                    let angle = i as f32 / 8.0 * std::f32::consts::TAU;
-                    let entity = self.world.spawn((
-                        Position(spot + Vec2::new(0.0, 20.0)),
-                        Size(Vec2::splat(24.0)),
-                        Color(Vec4::new(0.55, 0.5, 0.52, 0.5)),
-                        Layer(MOTE_LAYER - 1),
-                    ));
-                    self.debris.push(Debris { entity, ground: spot + Vec2::new(0.0, 20.0), velocity: Vec2::from_angle(angle) * 80.0, height: 6.0, rise: 30.0, left: Some(1.3) });
+            if done {
+                refugee.arrived = true;
+                if refugee.elian {
+                    // Down on his knees, facing the sarcophagus, breathing hard.
+                    if let Some(sheet) = kneeling {
+                        let _ = self.world.insert(
+                            refugee.entity,
+                            (
+                                Sprite::cell(sheet, 0, 0, KNEELING.0, KNEELING.1),
+                                Animation::new(KNEELING.0, KNEELING.1, Clip { row: 0, frames: 4, frame_time: 0.3, looping: true, flipped: false }),
+                            ),
+                        );
+                    }
+                } else if let Ok(mut animation) = self.world.get::<&mut Animation>(refugee.entity) {
+                    animation.play(Clip { row: 0, frames: 4, frame_time: 0.3, looping: true, flipped: false });
                 }
             }
-        }
-        // Light leaking round the lid, then pouring out once it is off.
-        let leak = ((at - GLOW_FROM) / (LID_SLIDES - GLOW_FROM)).clamp(0.0, 1.0) * 0.4;
-        let open = ((at - LID_SLIDES) / (RISE_AT - LID_SLIDES)).clamp(0.0, 1.0) * 0.6;
-        let after = if at > RISE_AT { (1.0 - (at - RISE_AT) / 3.0).max(0.3) } else { 1.0 };
-        if let Some(glow) = self.glow {
-            if let Ok(mut light) = self.world.get::<&mut Light>(glow) {
-                light.radius = 40.0 + 260.0 * (leak + open);
-                light.intensity = 2.4 * (leak + open) * after;
-            }
-        }
-        // Gold motes rising out of the open sarcophagus.
-        let rate = if at > LID_SLIDES && at < RISE_AT + 0.8 { 8.0 + 30.0 * open } else { 0.0 };
-        let mut wanted = rate * dt;
-        while wanted >= 1.0 || (wanted > 0.0 && self.roll() < wanted) {
-            wanted -= 1.0;
-            let spot = centre + Vec2::new((self.roll() - 0.5) * 120.0, (self.roll() - 0.6) * 40.0);
-            let entity = self.world.spawn((Position(spot), Size(Vec2::splat(4.0)), Color(Vec4::new(1.0, 0.9, 0.55, 1.0)), Layer(MOTE_LAYER)));
-            let drift = Vec2::new((self.roll() - 0.5) * 16.0, -30.0 - self.roll() * 40.0);
-            let life = 1.0 + self.roll();
-            self.motes.push((entity, drift, life, life));
         }
         self.churn(dt, 0.0);
         self.fly_debris(dt);
-        if at > RISE_AT - 0.25 && self.hero.is_none() {
-            self.camera.add_trauma(0.35);
-            if let Some(bier) = self.bier {
-                if let Ok(mut sprite) = self.world.get::<&mut Sprite>(bier) {
-                    *sprite = Sprite::cell(textures.get(tex::SARCOPHAGUS), 1, 0, 2, 1);
-                }
-            }
-            let size = crate::prefabs::PLAYER_SIZE;
-            let clip = Clip { row: 0, frames: 6, frame_time: 0.16, looping: true, flipped: false };
-            self.hero = Some(self.world.spawn((
-                Position(centre + Vec2::new(0.0, SARCOPHAGUS.y / 2.0 + size.y / 2.0 - 4.0)),
-                Size(size),
-                Color(Vec4::ONE),
-                Sprite::cell(textures.get(tex::PLAYER), 0, 0, 6, 4),
-                Animation::new(6, 4, clip),
-                Layer(1),
-                crate::components::Lit,
-            )));
-        }
-        if let Some(flash) = self.flash {
-            let since = at - (RISE_AT - 0.25);
-            let alpha = if since < 0.0 { 0.0 } else if since < 0.12 { since / 0.12 } else { (1.0 - (since - 0.12) / FLASH_SECONDS).max(0.0) };
-            if let Ok(mut color) = self.world.get::<&mut Color>(flash) {
-                color.0.w = alpha * 0.9;
-            }
-        }
     }
 
     /// Goes from the temple to the crypt: everything of the temple cleared, the crypt built and
@@ -1210,14 +1234,34 @@ impl CinematicScene {
                 }
             }
         }
-        // The priests stop praying once night has fallen.
-        if fallen >= 1.0 {
-            for acolyte in &self.acolytes {
+        // Night: the brothers fall asleep at their prayers one by one, Elian last of all.
+        let night = clock - night_from - NIGHTFALL;
+        for (index, acolyte) in self.acolytes.iter().enumerate() {
+            if index == ELIAN {
+                continue;
+            }
+            if night >= FIRST_SLEEPS + SLEEPS_EVERY * index as f32 {
                 if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
-                    if animation.clip().row == 2 {
+                    if animation.clip().row != 3 {
                         let flipped = animation.clip().flipped;
-                        animation.play(Clip { row: 0, frames: 4, frame_time: 0.22, looping: true, flipped });
+                        animation.play(Clip { row: 3, frames: 2, frame_time: 1.1, looping: true, flipped });
                     }
+                }
+            }
+        }
+        let last_from: f32 = SHOTS[..LAST].iter().map(|(seconds, _)| seconds).sum();
+        if clock - last_from >= ELIAN_NODS {
+            if let Some(elian) = self.acolytes.get(ELIAN).map(|acolyte| acolyte.entity) {
+                let nodding = self.world.get::<&Animation>(elian).map(|animation| animation.clip().row).unwrap_or(0);
+                if nodding == 0 {
+                    // His head dips, jerks up, drops; then he sleeps on his knees.
+                    if let Ok(mut animation) = self.world.get::<&mut Animation>(elian) {
+                        animation.play(Clip { row: 1, frames: 4, frame_time: 0.95, looping: false, flipped: false });
+                    }
+                    let _ = self.world.insert_one(
+                        elian,
+                        crate::components::ThenPlay(Clip { row: 2, frames: 4, frame_time: 0.9, looping: true, flipped: false }),
+                    );
                 }
             }
         }
@@ -1227,7 +1271,8 @@ impl CinematicScene {
             if let Ok(mut light) = self.world.get::<&mut Light>(seal) {
                 let woken = ((clock - seal_from) / 2.0).clamp(0.0, 1.0);
                 let breath = 0.5 + 0.5 * (clock * 1.6).sin();
-                let swell = ((clock - night_from - NIGHTFALL) / (SHOTS[NIGHT].0 - NIGHTFALL)).clamp(0.0, 1.0);
+                // It swells once the last voice has stopped.
+                let swell = ((clock - last_from - ELIAN_NODS - 3.0) / (SHOTS[LAST].0 - ELIAN_NODS - 3.0)).clamp(0.0, 1.0);
                 light.intensity = woken * (0.5 + 0.4 * breath) + swell * 2.0;
                 light.radius = 110.0 + swell * 200.0;
             }
@@ -1288,9 +1333,8 @@ impl Scene for CinematicScene {
     fn enter(&mut self, assets: &Assets) {
         self.clock = 0.0;
         self.crypt = false;
-        self.lid = None;
-        self.lid_landed = false;
-        self.hero = None;
+        self.refugees.clear();
+        self.leaned = false;
         self.build_temple(assets);
         self.frame();
     }
@@ -1311,9 +1355,8 @@ impl Scene for CinematicScene {
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();
-        self.lid = None;
-        self.lid_landed = false;
-        self.hero = None;
+        self.refugees.clear();
+        self.leaned = false;
         self.crypt = false;
     }
 
@@ -1372,13 +1415,26 @@ impl Scene for CinematicScene {
                 let eased = t * t * (3.0 - 2.0 * t);
                 self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
             }
-            // Night: held on the altar while the prayers fall silent.
+            // Night: held on the altar while the brothers fall asleep; then leaning in on Elian.
             NIGHT => self.camera.snap_to(self.glide.1),
-            TEAR => self.tear(assets, into_shot, dt),
+            LAST => {
+                let t = (into_shot / SHOTS[LAST].0).clamp(0.0, 1.0);
+                let eased = t * t * (3.0 - 2.0 * t);
+                let on_elian = self.glide.1.lerp(self.elian_at - TARGET / 2.0, LEAN_IN);
+                self.camera.snap_to(self.glide.1.lerp(on_elian, eased));
+            }
+            TEAR => {
+                // The tear picks up where the lean in on Elian left the camera.
+                if !self.leaned {
+                    self.leaned = true;
+                    self.glide.1 = self.glide.1.lerp(self.glide.1.lerp(self.elian_at - TARGET / 2.0, LEAN_IN), 1.0);
+                }
+                self.tear(assets, into_shot, dt)
+            }
             CRAWL => self.crawl(assets, into_shot, dt),
             // The crypt runs on through its two lines.
-            VAULT => self.revive(assets, into_shot, dt),
-            _ => self.revive(assets, into_shot + SHOTS[VAULT].0, dt),
+            VAULT => self.refuge(into_shot, dt),
+            _ => self.refuge(into_shot + SHOTS[VAULT].0, dt),
         }
         if let Some(line) = self.line {
             let from = if shot == 0 { LINE_FROM + 0.4 } else { LINE_FROM };

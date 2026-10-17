@@ -16,7 +16,7 @@ pub(crate) const RICH_COINS: i32 = 100;
 const GREETINGS: [&str; 2] = ["Welcome back!", "Ah, my test subject!"];
 /// Before the first run.
 const INTRO: [&str; 2] = [
-    "A new subject! Welcome, welcome.",
+    "A novice! My forty-first volunteer. Welcome!",
     "The portal is ready. Just step in.",
 ];
 /// After the first win: no more tests, only "our work".
@@ -46,35 +46,31 @@ const SHOWN: &str = "...What did it show you?";
 const REST: &str = "Rest. Tomorrow we go down together.";
 const BEGUN: &str = "Our work has only begun.";
 
-/// Elian, the last of the order, keeps the training book in the laboratory. He believes the
-/// hero is the guardian the order kept; the Scientist calls him subject 41. Before the first run.
-const ELIAN_FIRST: [&str; 2] = [
-    "This laboratory is built from our temple's stones.",
-    "He calls you a subject. You are the guardian.",
+/// Brother Aldric, the only other brother who lived, keeps the training book in the laboratory.
+/// He fell asleep at his prayers that night too, and blames himself; he never asks who was the
+/// last awake. Before the first run.
+const ALDRIC_FIRST: [&str; 2] = [
+    "So this is where the Scientist works.",
+    "Go down, Elian. I'll keep the lessons here.",
 ];
-/// After the true ending, if the wound was left open: Elian lives, and knows what for.
-const ELIAN_LEFT_OPEN: [&str; 2] = ["You stopped me. He's still up there, smiling.", "I'll keep praying. Someone has to."];
-/// The Scientist after it: silent if the wound was closed, pleased if not.
-const SILENT: [&str; 2] = ["...", "My work. All of it."];
+/// After the true ending: the wound closed, or Elian stayed with what it gave him.
+const ALDRIC_CLOSED: [&str; 2] = ["It's quiet. Truly quiet.", "Sleep, boy. You've earned it."];
+const ALDRIC_LEFT_OPEN: [&str; 2] = ["You brought them back... like that?", "I'll keep praying. Someone has to."];
+/// The Scientist after it: put out if the wound was closed, pleased if not.
+const SILENT: [&str; 2] = ["...", "My portal. Useless now."];
 const UNDERSTOOD: [&str; 2] = ["Good. Good. We understand each other.", "Welcome back, partner!"];
-const ELIAN_GREETINGS: [&str; 2] = ["Guardian! You're back.", "The light is with you still."];
-const ELIAN_HINTS: [&str; 5] = [
+const ALDRIC_GREETINGS: [&str; 2] = ["Elian! You came back.", "Sit a moment, boy."];
+const ALDRIC_HINTS: [&str; 5] = [
     "The book has the lessons, if you need them again.",
-    "The prayers didn't just stop that night. Someone stopped them.",
-    "Who cut Oswin's bell rope? I keep asking myself.",
-    "Teodor, Cassian, Oswin... they all wrote. Their pages went below.",
-    "The Scientist asks how deep. Never how to close it.",
+    "Don't listen to what whispers down there.",
+    "I fell asleep at my prayers that night. God forgive me.",
+    "Oswin rang the bell every dawn. I miss it.",
+    "The Scientist asks how deep it goes. Never how to close it.",
 ];
-/// Lines that join Elian's once the profile has earned them.
-const ELIAN_EARNED_DEEP: &str = "You smell of the deep. Like the night it opened.";
-const ELIAN_EARNED_WOLF: &str = "The wolf came up from the wound. It chose you.";
-const ELIAN_EARNED_WIN: &str = "He was glad you reached the bottom. Too glad.";
-const ELIAN_PAGE: &str = "Teodor's hand! He wrote every night. Find the rest.";
-const ELIAN_NAME: &str = "Silas Vane... the scholar in Teodor's pages. I know that face.";
-const ELIAN_ALMONDS: &str = "Almonds in the wine. We weren't tired. We were put to sleep.";
-const ELIAN_KNOWS: &str = "It was him. The Scientist. Don't let him see that you know.";
-/// The Scientist, once pages have come up: he wants them.
-const PAPERS: &str = "Papers from below? Bring them to me first, partner.";
+/// Lines that join Aldric's once the profile has earned them.
+const ALDRIC_EARNED_DEEP: &str = "You smell of the deep. Like that night.";
+const ALDRIC_EARNED_WOLF: &str = "That wolf came up out of the wound. It chose you.";
+const ALDRIC_EARNED_WIN: &str = "Is it closing? Tell me it's closing.";
 
 /// What the Scientist says once, on the lobby visit after it happened.
 pub(crate) fn remark_line(remark: Remark) -> &'static str {
@@ -131,8 +127,6 @@ pub(crate) struct Standing {
     pub(crate) went_without: bool,
     /// One-time remarks waiting to be said.
     pub(crate) remarks: Vec<Remark>,
-    /// Pages of Teodor's chronicle found.
-    pub(crate) pages: usize,
     /// The choice at the true ending, if made.
     pub(crate) ending: Option<Ending>,
 }
@@ -144,7 +138,7 @@ pub(crate) struct Repertoire {
     pub(crate) remarks: Vec<Remark>,
     pub(crate) greetings: &'static [&'static str],
     pub(crate) hints: Vec<&'static str>,
-    /// Whether the talker remarks on the player's purse (the Scientist sells; Elian does not).
+    /// Whether the talker remarks on the player's purse (the Scientist sells; Aldric does not).
     pub(crate) purse: bool,
 }
 
@@ -180,7 +174,6 @@ impl Repertoire {
             (profile.went_without, SHOWN),
             (profile.wins > 0, REST),
             (profile.wins > 0, BEGUN),
-            (profile.pages > 0, PAPERS),
         ];
         let mut hints = HINTS.to_vec();
         hints.extend(earned.iter().filter(|(has, _)| *has).map(|(_, line)| *line));
@@ -192,27 +185,23 @@ impl Repertoire {
         }
     }
 
-    /// Elian's lines: the order's lore, and what he makes of the hero's runs.
-    pub(crate) fn elian(profile: &Standing) -> Self {
+    /// Brother Aldric's lines: the order, that night, and what Elian brings back from below.
+    pub(crate) fn aldric(profile: &Standing) -> Self {
         let greetings: &'static [&'static str] = match profile.ending {
-            Some(Ending::LeftOpen) => &ELIAN_LEFT_OPEN,
-            _ if profile.runs == 0 => &ELIAN_FIRST,
-            _ => &ELIAN_GREETINGS,
+            Some(Ending::Closed) => &ALDRIC_CLOSED,
+            Some(Ending::LeftOpen) => &ALDRIC_LEFT_OPEN,
+            None if profile.runs == 0 => &ALDRIC_FIRST,
+            None => &ALDRIC_GREETINGS,
         };
         let earned = [
-            (profile.best_floor >= 3, ELIAN_EARNED_DEEP),
-            (profile.has_pet, ELIAN_EARNED_WOLF),
-            (profile.wins > 0, ELIAN_EARNED_WIN),
-            (profile.pages > 0, ELIAN_PAGE),
-            (profile.pages >= 3, ELIAN_NAME),
-            (profile.pages >= 6, ELIAN_ALMONDS),
-            (profile.pages >= super::PAGES.len(), ELIAN_KNOWS),
+            (profile.best_floor >= 3, ALDRIC_EARNED_DEEP),
+            (profile.has_pet, ALDRIC_EARNED_WOLF),
+            (profile.wins > 0, ALDRIC_EARNED_WIN),
         ];
-        let mut hints = ELIAN_HINTS.to_vec();
+        let mut hints = ALDRIC_HINTS.to_vec();
         hints.extend(earned.iter().filter(|(has, _)| *has).map(|(_, line)| *line));
-        // The bosses he knew, put to rest; and what each waking is costing him.
-        hints.extend(profile.bosses_slain.iter().filter_map(|&boss| crate::lore::identity(boss)).map(|who| who.elian));
-        hints.extend(crate::lore::elian_on_his_price(profile.deaths));
+        // The brothers and the temple's people Elian has put to rest.
+        hints.extend(profile.bosses_slain.iter().filter_map(|&boss| crate::lore::identity(boss)).map(|who| who.aldric));
         Self { remarks: Vec::new(), greetings, hints, purse: false }
     }
 }
@@ -297,7 +286,7 @@ const SPEECH_CEILING: f32 = 106.0;
 const SPEECH_MARGIN: f32 = 12.0;
 
 /// Pushes the speech bubble onto the screen when its talker stands so near an edge that it
-/// would be cut off (the merchant at his wall, Elian at the side of a hall), or would sit under
+/// would be cut off (the merchant at his wall, a talker at the side of a hall), or would sit under
 /// the HUD.
 pub(crate) fn keep_speech_on_screen(world: &mut World, camera: Vec2) {
     let Some((anchor, size)) = world
@@ -402,14 +391,14 @@ mod tests {
     }
 
     #[test]
-    fn elian_speaks_over_his_own_head_calls_the_hero_the_guardian_and_never_talks_money() {
+    fn aldric_speaks_over_his_own_head_and_never_talks_money() {
         let mut world = World::new();
         world.spawn((Player, Position(Vec2::new(100.0, 0.0)), Wallet { coins: 0 }));
         let over_him = Vec2::new(0.0, -60.0);
         world.spawn((
             Position(Vec2::ZERO),
             Chatty::default(),
-            Repertoire::elian(&Standing::default()),
+            Repertoire::aldric(&Standing::default()),
             Speaker { anchor: over_him },
         ));
         world.spawn((SpeechBubble { remaining: 0.0, message: "" }, Position(Vec2::new(900.0, 0.0))));
@@ -421,7 +410,7 @@ mod tests {
             chat(&mut world, PAUSE_SECONDS);
             said.push(spoken(&world).1);
         }
-        assert_eq!(said[0], ELIAN_FIRST[0]);
+        assert_eq!(said[0], ALDRIC_FIRST[0]);
         assert!(said.iter().all(|line| *line != BROKE && *line != RICH), "{said:?}");
         let at = world.query::<&Position>().with::<&SpeechBubble>().iter().next().map(|p| p.0);
         assert_eq!(at, Some(over_him));

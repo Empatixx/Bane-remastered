@@ -422,7 +422,7 @@ impl Scene for InGameScene {
         );
         systems::flicker_flames(&mut self.world);
         systems::tick_speech(&mut self.world, dt);
-        systems::tick_reading(&mut self.world, dt);
+        systems::tick_captions(&mut self.world, dt);
         if let Some(left) = &mut self.slay_in {
             *left -= dt;
             if *left <= 0.0 {
@@ -463,13 +463,6 @@ impl Scene for InGameScene {
             }
             Some(Interaction::PickUpGun) => {
                 systems::pick_up_gun(&mut self.world, &assets.textures, &mut self.sounds);
-            }
-            Some(Interaction::ReadPage) => {
-                if let Some(page) = systems::read_page(&mut self.world, &mut self.sounds) {
-                    if let Some(profile) = &self.profile {
-                        profile.find_page(page);
-                    }
-                }
             }
             Some(Interaction::EnterPortal) => {
                 if let Some(training) = &mut self.training {
@@ -742,7 +735,8 @@ impl Scene for InGameScene {
 
 impl InGameScene {
     fn start_run(&mut self, seed: u64, assets: &Assets) {
-        self.floor = 1;
+        // `BANE_FLOOR=n` starts the run on floor n, for working on the deeper floors.
+        self.floor = std::env::var("BANE_FLOOR").ok().and_then(|n| n.trim().parse().ok()).unwrap_or(1).max(1);
         self.run_seed = seed;
         tracing::info!(seed, "a new run starts, set BANE_SEED to replay it");
         self.victory = false;
@@ -1118,13 +1112,7 @@ impl InGameScene {
             start += Vec2::new(dx, dy) * TILE_SIZE;
         }
         let player = prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
-        // `BANE_PAGE=n` lays page n of the order's pages at the start and opens it, and
         // `BANE_SLAY=s` fells the boss s seconds into the floor, for working on the story.
-        if let Some(page) = std::env::var("BANE_PAGE").ok().and_then(|n| n.trim().parse::<u8>().ok()) {
-            let page = page.min(systems::PAGES.len() as u8 - 1);
-            systems::lay_page(&mut self.world, start + Vec2::new(90.0, 40.0), page, textures);
-            systems::show_page(&mut self.world, page);
-        }
         self.slay_in = std::env::var("BANE_SLAY").ok().and_then(|n| n.trim().parse::<f32>().ok());
         // `BANE_GOD=1` keeps the player from being hurt, for watching enemies at work.
         if std::env::var_os("BANE_GOD").is_some() {
@@ -1201,21 +1189,10 @@ impl InGameScene {
         }
         // One bubble for whoever speaks on the floor: the merchant, or an altar.
         prefabs::minimal_speech(&mut self.world, Vec2::ZERO);
-        // Now and then a page of Teodor's chronicle lies in one of the fighting rooms.
-        let unfound = self.profile.as_ref().and_then(SharedProfile::next_page);
-        if let (Some(page), None) = (unfound, &self.training) {
-            let fights: Vec<Vec2> = dungeon
-                .rooms
-                .iter()
-                .skip(1)
-                .filter(|room| room.kind == crate::dungeon::RoomKind::Normal)
-                .map(|room| room.pixel_center())
-                .collect();
-            if !fights.is_empty() && self.loot_rng.below(100) < systems::PAGE_CHANCE {
-                let center = fights[self.loot_rng.below(fights.len())];
-                let spot = systems::chest_spot(&self.navigation, center);
-                systems::lay_page(&mut self.world, spot, page, textures);
-            }
+        // On the way down, the wound whispers.
+        if self.training.is_none() && self.floor >= 2 {
+            let words = crate::lore::WHISPERS[self.loot_rng.below(crate::lore::WHISPERS.len())];
+            systems::whisper(&mut self.world, words);
         }
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
         // The training needs no map: its rooms run one after another.

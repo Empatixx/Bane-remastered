@@ -455,7 +455,7 @@ impl Prop {
             Self::Guide => PropSpec {
                 texture: tex::PRIEST,
                 columns: 4,
-                rows: 3,
+                rows: 4,
                 frame: Vec2::new(10.0, 19.0),
                 scale: 4.0,
                 animation: Some(Animated {

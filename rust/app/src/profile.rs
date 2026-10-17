@@ -49,8 +49,6 @@ pub(crate) struct Profile {
     pub(crate) training_done: bool,
     /// Shops walked into, over all runs: the merchant opens up the more often he is visited.
     pub(crate) shop_visits: u64,
-    /// The pages of Teodor's chronicle found so far, by number.
-    pub(crate) pages: BTreeSet<u8>,
     /// The choice at the true ending, once made.
     pub(crate) ending: Option<Ending>,
 }
@@ -166,7 +164,6 @@ impl Profile {
             has_pet: self.perks().pet,
             went_without: self.progress.completed(ChallengeId::Bane),
             remarks: self.remarks.clone(),
-            pages: self.pages.len(),
             ending: self.ending,
         }
     }
@@ -349,16 +346,6 @@ impl SharedProfile {
             profile.shop_visits += 1;
             profile.shop_visits
         })
-    }
-
-    /// The first page of the chronicle not yet found, if any is left.
-    pub(crate) fn next_page(&self) -> Option<u8> {
-        let found = &self.0.borrow().profile.pages;
-        (0..crate::systems::PAGES.len() as u8).find(|page| !found.contains(page))
-    }
-
-    pub(crate) fn find_page(&self, page: u8) {
-        self.change(|profile| profile.pages.insert(page));
     }
 
     pub(crate) fn ending(&self) -> Option<Ending> {

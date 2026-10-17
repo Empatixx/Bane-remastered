@@ -9,8 +9,7 @@ use crate::assets::{Assets, TILESET};
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{
-    Blend, Color, Hidden, Interaction, Layer, Loadout, Player, Position, Text, UiAction, Weapon,
-    WeaponSlot,
+    Blend, Hidden, Interaction, Loadout, Player, UiAction, Weapon, WeaponSlot,
 };
 use crate::controls::Action;
 use crate::guns::GunKind;
@@ -21,7 +20,7 @@ use crate::postfx::SceneFx;
 use crate::prefabs::{self, PLAYER_SIZE};
 use crate::profile::SharedProfile;
 use crate::props::{Look, Prop};
-use crate::render::{FontSize, Occluders};
+use crate::render::Occluders;
 use crate::rng::Rng;
 use crate::settings::Settings;
 use crate::systems;
@@ -51,11 +50,11 @@ const AMMO_CRATE_AT: (f32, f32) = (30.3, 7.0);
 
 /// The portal's colour once the wound is closed.
 const SLEEPING_PORTAL: [f32; 3] = [70.0, 70.0, 84.0];
-/// The five candles about Elian, from his feet, the first to go out first.
-const ELIAN_CANDLES: [(f32, f32); 5] = [(-58.0, -4.0), (58.0, -4.0), (-36.0, 22.0), (36.0, 22.0), (0.0, 32.0)];
-const ELIAN_MEMORIAL: Vec4 = Vec4::new(0.85, 0.7, 0.45, 1.0);
-/// Where Elian stands, in the middle of the hall's west end below the training book, in tiles.
-const ELIAN_AT: (f32, f32) = (6.07, 5.3);
+/// The five candles of Aldric's vigil, from his feet.
+const VIGIL_CANDLES: [(f32, f32); 5] = [(-58.0, -4.0), (58.0, -4.0), (-36.0, 22.0), (36.0, 22.0), (0.0, 32.0)];
+/// Where Brother Aldric stands, in the middle of the hall's west end below the training book,
+/// in tiles.
+const ALDRIC_AT: (f32, f32) = (6.07, 5.3);
 const PROPS: &[(Prop, f32, f32, Look)] = &[
     // The hall.
     (Prop::WeaponRack, 9.25, 0.5, Look::DEFAULT),
@@ -347,54 +346,31 @@ impl Scene for LobbyScene {
         let head = scientist_at + Vec2::new(Prop::Scientist.spec().size().x / 2.0, 0.0);
         prefabs::minimal_speech(&mut self.world, head);
         let _ = self.world.insert_one(scientist, crate::components::Speaker { anchor: prefabs::speech_anchor(head) });
-        // Elian, the last of the order, keeps the training book, five candles about him. Each
-        // time he wakes the guardian it costs him, and a candle goes out. If the wound was
-        // closed, he gave his last prayer to close it: only one candle burns where he stood.
-        let elian_at = Vec2::new(ELIAN_AT.0, ELIAN_AT.1) * TILE_SIZE;
+        // Brother Aldric keeps the training book, keeping his vigil between five candles.
+        let aldric_at = Vec2::new(ALDRIC_AT.0, ALDRIC_AT.1) * TILE_SIZE;
         let standing = self.profile.as_ref().map(|profile| profile.snapshot().standing()).unwrap_or_default();
         let candle = Prop::Candlestick.spec().size();
-        let feet = elian_at + Vec2::new(Prop::Guide.spec().size().x / 2.0, Prop::Guide.spec().size().y);
-        if closed {
-            let memorial = prefabs::prop(&mut self.world, Prop::Candlestick, feet - candle / 2.0 - Vec2::new(0.0, 20.0), Look::DEFAULT, textures);
-            let _ = self.world.insert_one(memorial, crate::components::Light::rgb(Vec2::new(0.0, -24.0), 255.0, 196.0, 120.0, 90.0, 1.0));
-            self.world.spawn((
-                Position(feet + Vec2::new(0.0, 22.0)),
-                Text::centered("Elian".to_owned(), ELIAN_MEMORIAL, FontSize::Size16),
-                Layer(2),
-            ));
-        } else {
-            let elian = prefabs::prop(&mut self.world, Prop::Guide, elian_at, Look::DEFAULT, textures);
-            let elian_head = elian_at + Vec2::new(Prop::Guide.spec().size().x / 2.0, 0.0);
-            let out = crate::lore::candles_out(standing.deaths);
-            // He greys a little with every candle gone.
-            let shade = 1.0 - 0.07 * out as f32;
-            let _ = self.world.insert(
-                elian,
-                (
-                    crate::components::Chatty::default(),
-                    systems::Repertoire::elian(&standing),
-                    crate::components::Speaker { anchor: prefabs::speech_anchor(elian_head) },
-                    Color(Vec4::new(shade, shade, shade * 1.03, 1.0)),
-                ),
-            );
-            for (index, &(dx, dy)) in ELIAN_CANDLES.iter().enumerate() {
-                let spot = feet + Vec2::new(dx, dy) - candle / 2.0;
-                let lit = index >= out;
-                let entity = prefabs::prop(&mut self.world, Prop::Candlestick, spot, Look::DEFAULT, textures);
-                // Warm prayer candles, not the altar's red.
-                let _ = self.world.insert_one(entity, crate::components::Light::rgb(Vec2::new(0.0, -24.0), 255.0, 196.0, 120.0, 70.0, 0.8));
-                if !lit {
-                    let _ = self.world.remove_one::<crate::components::Light>(entity);
-                    if let Ok(mut animation) = self.world.get::<&mut crate::components::Animation>(entity) {
-                        animation.play(crate::components::Clip { row: 1, frames: 1, frame_time: 1.0, looping: true, flipped: false });
-                    }
-                }
-            }
+        let feet = aldric_at + Vec2::new(Prop::Guide.spec().size().x / 2.0, Prop::Guide.spec().size().y);
+        let aldric = prefabs::prop(&mut self.world, Prop::Guide, aldric_at, Look::DEFAULT, textures);
+        let head = aldric_at + Vec2::new(Prop::Guide.spec().size().x / 2.0, 0.0);
+        let _ = self.world.insert(
+            aldric,
+            (
+                crate::components::Chatty::default(),
+                systems::Repertoire::aldric(&standing),
+                crate::components::Speaker { anchor: prefabs::speech_anchor(head) },
+            ),
+        );
+        for &(dx, dy) in &VIGIL_CANDLES {
+            let spot = feet + Vec2::new(dx, dy) - candle / 2.0;
+            let entity = prefabs::prop(&mut self.world, Prop::Candlestick, spot, Look::DEFAULT, textures);
+            // Warm prayer candles, not the altar's red.
+            let _ = self.world.insert_one(entity, crate::components::Light::rgb(Vec2::new(0.0, -24.0), 255.0, 196.0, 120.0, 70.0, 0.8));
         }
 
-        // `BANE_AT=elian` starts beside Elian, for working on his lines.
-        let player_top_left = if std::env::var("BANE_AT").as_deref() == Ok("elian") {
-            Vec2::new(ELIAN_AT.0 + 2.2, ELIAN_AT.1 + 0.3) * TILE_SIZE
+        // `BANE_AT=aldric` starts beside Brother Aldric, for working on his lines.
+        let player_top_left = if std::env::var("BANE_AT").as_deref() == Ok("aldric") {
+            Vec2::new(ALDRIC_AT.0 + 2.2, ALDRIC_AT.1 + 0.3) * TILE_SIZE
         } else {
             hall_middle
         };

@@ -3,7 +3,9 @@ shown four times over (40x76, the hero's height) so their pixels are as chunky a
 dungeon's props. A hooded white robe with gold trim, the face in the hood's shadow.
 
 Rows: 0 standing (four frames, the hem stirring), 1 running (four frames, side view, facing
-right), 2 praying (two frames, hands raised, the second with a glint of light).
+right), 2 praying (two frames, hands raised, the second with a glint of light), 3 asleep on his
+knees at prayer (two frames: hands fallen to his lap, the hood bowed over the face, sinking a
+little further on the second).
 
     uv run -q --with pillow python tools/make_priest.py [preview.png]
 """
@@ -99,6 +101,28 @@ PRAY = [
 ]
 
 
+# Asleep at prayer: the hands have fallen, the hood bows over the face. Drawn from the standing
+# robe, the head a pixel lower and its face gone into the hood's shadow.
+def asleep(sink):
+    rows = [list(line) for line in STAND]
+    head = [row[:] for row in rows[:7]]
+    for y in range(6 + sink, sink - 1, -1):
+        rows[y] = head[y - sink][:] if y - sink >= 0 else list("..........")
+    for y in range(sink):
+        rows[y] = list("..........")
+    for row in rows[:8]:
+        for x, key in enumerate(row):
+            if key == "f":
+                row[x] = "h"
+    # The hands, fallen into the lap.
+    for y in (9, 10):
+        rows[y][0] = "."
+    rows[9][1] = "k"
+    rows[13][4] = "F"
+    rows[13][5] = "F"
+    return draw(["".join(row) for row in rows])
+
+
 def draw(rows, lift=0, sway=0, legs=None, glint=False):
     image = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     px = image.load()
@@ -154,13 +178,15 @@ def run_frame(step):
 
 
 def sheet():
-    out = Image.new("RGBA", (W * 4, H * 3), (0, 0, 0, 0))
+    out = Image.new("RGBA", (W * 4, H * 4), (0, 0, 0, 0))
     for i, lift in enumerate((0, 0, 1, 1)):
         out.alpha_composite(draw(STAND, sway=1 if i == 2 else 0), (i * W, 0))
     for i in range(4):
         out.alpha_composite(run_frame(i), (i * W, H))
     out.alpha_composite(draw(PRAY), (0, H * 2))
     out.alpha_composite(draw(PRAY, glint=True), (W, H * 2))
+    out.alpha_composite(asleep(1), (0, H * 3))
+    out.alpha_composite(asleep(2), (W, H * 3))
     return out
 
 
@@ -193,7 +219,7 @@ def main():
     image = sheet()
     if len(sys.argv) > 1:
         hero = Image.open(ROOT / "assets/textures/ingame/player.tga").convert("RGBA").crop((0, 0, 16, 38))
-        big = image.resize((W * 4 * 4, H * 3 * 4), Image.NEAREST)
+        big = image.resize((W * 4 * 4, H * 4 * 4), Image.NEAREST)
         preview = Image.new("RGBA", (big.width + 16 * 2 + 16, big.height), (30, 28, 36, 255))
         preview.alpha_composite(big, (0, 0))
         preview.alpha_composite(hero.resize((32, 76), Image.NEAREST), (big.width + 8, 0))

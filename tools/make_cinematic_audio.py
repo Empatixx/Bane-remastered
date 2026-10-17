@@ -18,12 +18,12 @@ ROOT = Path(__file__).resolve().parent.parent
 AUDIO = ROOT / "assets/audio"
 MADE = AUDIO / "cinematic"
 
-# The shots, as in cinematic.rs: a day at the temple, the seal, nightfall, the tear, the crawl,
-# the crypt (two lines).
-SHOTS = [12.0, 9.0, 8.0, 14.0, 10.0, 9.5, 5.5]
+# The shots, as in cinematic.rs: a day at the temple, the seal, the brothers falling asleep,
+# Elian the last, the tear, the crawl, the crypt (two lines).
+SHOTS = [12.0, 9.0, 10.0, 9.0, 14.0, 10.0, 11.0, 6.0]
 START = [sum(SHOTS[:i]) for i in range(len(SHOTS))]
 LENGTH = sum(SHOTS)
-DAY, SEAL, NIGHT, TEAR, CRAWL, CRYPT, RISE = START
+DAY, SEAL, NIGHT, LAST, TEAR, CRAWL, CRYPT, NEVER_TOLD = START
 TEMPLE = DAY
 LINE_FROM = 1.4
 # How loud each layer is, in LUFS: the narrator well above the effects, the score under both.
@@ -33,10 +33,10 @@ SCORE = -29
 # The tear starts once its line is spoken; the angel bursts a little after.
 TEAR_FROM = TEAR + 4.4
 ANGEL_FALLS = TEAR_FROM + 1.9
-# The crypt: the lid shakes, slides, lands; the hero rises.
-LID_SHAKES = CRYPT + 2.8
-LID_LANDS = CRYPT + 5.6 + 0.35
-RISES = CRYPT + 8.4 - 0.25
+# Elian nods off this long into his shot, and is asleep a few seconds later; the crypt's
+# footsteps start as he runs in.
+ASLEEP = LAST + 2.2 + 3.8
+STEPS = CRYPT + 0.6
 
 args = [arg for i, arg in enumerate(sys.argv[1:], 1) if not arg.startswith("--") and sys.argv[i - 1] != "--stems"]
 OUT = Path(args[0]) if args else AUDIO / "cinematic.flac"
@@ -141,7 +141,10 @@ def score(mix):
     # The day: a calm choir through the day and the seal, dying away as night falls; then the
     # night's uneasy drone until the ground shakes.
     made("day_bed", DAY, 0.9, fade_out=(NIGHT - DAY - 1.0, 3.0))
-    made("night_bed", NIGHT + 0.5, 0.9, fade_out=(TEAR_FROM - NIGHT - 0.5, 2.0))
+    # Night: the drone carries on while the brothers fall asleep, and dies away as Elian, the
+    # last, sleeps too, leaving silence until the ground shakes.
+    made("night_bed", NIGHT + 0.5, 0.9)
+    made("night_bed", LAST - 0.6, 0.8, fade_out=(ASLEEP - LAST + 0.6 - 2.5, 2.5))
     # Under the tear and the crawl, a low drone of dread.
     for freq, amp in ((55, 0.2), (58.27, 0.1), (82.41, 0.06)):
         mix.tone(f"sine=frequency={freq}:sample_rate=44100",
@@ -171,14 +174,10 @@ def effects(mix):
         mix.file(AUDIO / name, CRAWL + offset, volume)
     # The acolytes caught as the creatures pour out (the times the scene logs: "an acolyte is
     # caught", seconds into the crawl).
-    for caught in (1.83, 2.43, 4.65, 5.48,):
+    for caught in (1.83, 2.43, 4.65):
         made("cry", CRAWL + caught - 0.1, 0.8)
-    made("lid", LID_SHAKES - 0.2, 1.0)
-    mix.file(AUDIO / "enemies/golem_slam.ogg", LID_LANDS, 0.7)
-    made("awaken", RISES - 0.5, 0.9)
-    for freq, amp in ((1318.5, 0.12), (1760, 0.09), (2637, 0.04)):
-        mix.tone(f"sine=frequency={freq}:sample_rate=44100",
-                 f"volume='{amp}*if(lt(t,{RISES}),0,exp(-(t-{RISES})*1.4))':eval=frame")
+    # Elian and Aldric running into the crypt.
+    made("steps", STEPS, 0.9)
 
 
 def voice(mix):
