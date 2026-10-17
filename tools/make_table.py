@@ -1,12 +1,18 @@
-"""An iron workbench that can be knocked over for cover: standing, fallen away from the camera
-(its top standing up towards us as a plate), fallen towards the camera (showing its underside and
-legs), and broken into scrap.
+"""A workbench that can be knocked over for cover, one look per floor: standing, fallen away from
+the camera (its top standing up towards us as a plate), fallen towards the camera (showing its
+underside and legs), and broken into scrap.
 
-table.tga is six 32x32 cells in a row: those four, then the same bench turned upright (standing
-lengthwise down the screen) and that upright bench fallen over to the right, its top facing left
-(the game mirrors it for a fall to the left). Hand-picked palette of worn steel with a little rust,
-to sit with the sewer pipes and grates, drawn at the tiles' pixel scale.
+table.tga has a row per floor, in the order of `Theme::style`, of nine 32x32 cells: those four,
+then the same bench turned upright (standing lengthwise down the screen), that upright bench
+fallen over to the right, its top facing left (the game mirrors it for a fall to the left), and
+three frames of it bursting apart, bits flying out and settling into the scrap of the fourth
+cell. The looks: worn steel with a little rust (stone), verdigris copper with brass rivets and
+slime (sewer), planks grown over with moss (moss), dark wood hung with webs (spider), frosted
+steel (ice), blackened iron with ember-bright cracks (lava) and red wood studded with gold
+(temple). Drawn at the tiles' pixel scale.
 """
+
+import random
 
 import sys
 from pathlib import Path
@@ -226,11 +232,56 @@ def upright_fallen_right():
     return image
 
 
+def burst(frame, seed):
+    """The bench bursting apart: chunks of it flying out from the middle, further and fewer each
+    frame, over the scrap they leave."""
+    import math
+
+    image = broken() if frame == 2 else blank()
+    rng = random.Random(seed)
+    reach = (7, 12, 15)[frame]
+    count = (14, 11, 6)[frame]
+    for _ in range(count):
+        angle = rng.uniform(0, math.tau)
+        distance = rng.uniform(reach * 0.45, reach)
+        x = int(15 + distance * 1.3 * math.cos(angle))
+        y = int(17 + distance * math.sin(angle))
+        width = rng.choice((2, 3, 4)) if frame < 2 else rng.choice((1, 2))
+        height = 2 if frame < 2 else 1
+        rect(image, x, y, x + width - 1, y + height - 1, rng.choice((L, M, L, H)))
+        rect(image, x, y + height, x + width - 1, y + height, D)
+        if rng.random() < 0.3:
+            put(image, x + width - 1, y, R)
+    return image
+
+
+# Each floor's look: the bench's darkest edge, its body, light and highlight, the shade in its
+# seams, rivet (or nail, or stud) heads, and its two "rust" colours, which are whatever grows
+# or glows on it there.
+LOOKS = [
+    ((24, 26, 32), (62, 66, 78), (92, 98, 112), (138, 144, 158), (46, 50, 60), (172, 176, 188), (112, 64, 42), (86, 52, 38)),
+    ((18, 30, 26), (52, 84, 70), (76, 118, 98), (112, 156, 130), (38, 62, 52), (196, 156, 92), (88, 140, 64), (62, 104, 46)),
+    ((34, 24, 16), (84, 60, 36), (112, 84, 50), (146, 112, 68), (66, 48, 30), (60, 56, 50), (92, 134, 52), (66, 100, 40)),
+    ((16, 10, 14), (52, 38, 40), (74, 56, 56), (100, 80, 78), (40, 28, 30), (150, 150, 160), (214, 212, 196), (164, 162, 146)),
+    ((18, 30, 48), (70, 96, 128), (110, 140, 172), (176, 206, 232), (52, 74, 104), (232, 242, 252), (224, 240, 252), (182, 212, 238)),
+    ((14, 10, 10), (40, 32, 32), (60, 48, 46), (90, 74, 70), (30, 24, 24), (124, 104, 92), (255, 140, 50), (204, 80, 30)),
+    ((40, 20, 14), (110, 62, 30), (146, 88, 44), (190, 128, 64), (84, 46, 24), (238, 198, 92), (228, 184, 82), (172, 130, 52)),
+]
+
+
+def look(index):
+    global D, M, L, H, SHADE, N, R, r
+    D, M, L, H, SHADE, N, R, r = LOOKS[index]
+
+
 def main():
-    sheet = Image.new("RGBA", (6 * S, S), CLEAR)
-    cells = [standing(), fallen_away(), fallen_towards(), broken(), upright(), upright_fallen_right()]
-    for column, image in enumerate(cells):
-        sheet.paste(image, (column * S, 0))
+    sheet = Image.new("RGBA", (9 * S, len(LOOKS) * S), CLEAR)
+    for row in range(len(LOOKS)):
+        look(row)
+        cells = [standing(), fallen_away(), fallen_towards(), broken(), upright(), upright_fallen_right()]
+        cells += [burst(frame, row * 7 + frame) for frame in range(3)]
+        for column, image in enumerate(cells):
+            sheet.paste(image, (column * S, row * S))
     sheet.save(OUT / "table.tga")
 
 

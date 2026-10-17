@@ -5,7 +5,7 @@ with glowing veins; and for the moss floor roots hung with glowing mushrooms, a 
 a branch, a cage overgrown with moss and flowers, and a swarm of fireflies (no chain at all); and for
 the ice floor a chandelier of icicles, a skeleton frozen in a block of ice and a great icicle;
 and for the temple a golden censer puffing smoke, a bronze bell and a long red banner on a cord;
-and for the stone floor a rusty hook under a wooden pulley and a ring of skulls and candles.
+and for the stone floor a rusty hook under a wooden pulley.
 
 hanging.tga has one row per kind in that order and four 16x24 cells per row: the thing, the
 thing with its flames or glow flickering, a piece of its chain (or thread, or vine) that repeats
@@ -841,36 +841,6 @@ HOOK = [
 ]
 HOOK.append(HOOK[0])
 
-SKULL_CANDLES = [
-    [
-        "........d.......",
-        "........d.......",
-        "...y....d...y...",
-        "..yoy...d..yoy..",
-        "...o....d...o...",
-        "...w...d.d..w...",
-        "...w..d...d.w...",
-        "...c.d.....dc...",
-        "dddmmmmmmmmmmddd",
-        "mhhhhhhhhhhhhhhm",
-        ".dmmmmmmmmmmmmd.",
-        "....m.......m...",
-        "...ddd.....ddd..",
-        "..dbbbd...dbbbd.",
-        ".dbbbbBd.dbbbbBd",
-        ".dbkbkBd.dbkbkBd",
-        ".dbkbkBd.dbkbkBd",
-        "..dbkBd...dbkBd.",
-        "..dbdbd...dbdbd.",
-        "...d.d.....d.d..",
-        "................",
-        "................",
-        "................",
-        "................",
-    ],
-]
-SKULL_CANDLES.append([row.replace("yoy", "oyo") for row in SKULL_CANDLES[0]])
-
 KINDS = [
     (CHANDELIER, CHAIN, {**IRON, **FLAME}),
     (CAGE, CHAIN, {**IRON, **BONE}),
@@ -892,7 +862,6 @@ KINDS = [
     (BELL, CHAIN, {**IRON, **BRONZE}),
     (BANNER, CORD, CLOTH),
     (HOOK, CHAIN, {**IRON, **WOODEN}),
-    (SKULL_CANDLES, CHAIN, {**IRON, **FLAME, **BONE}),
 ]
 
 

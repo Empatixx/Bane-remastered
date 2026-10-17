@@ -119,6 +119,8 @@ pub(crate) struct Carpet {
     pub(crate) origin: (usize, usize),
     pub(crate) columns: usize,
     pub(crate) rows: usize,
+    /// Its look, one per floor (see `Theme::style`); the shop's and the treasure rooms' are red.
+    pub(crate) style: usize,
 }
 
 impl Carpet {
@@ -199,6 +201,7 @@ impl Frame {
             origin: (self.origin.0 + margin_columns, self.origin.1 + margin_rows),
             columns: self.columns - 2 * margin_columns,
             rows: self.rows - 2 * margin_rows,
+            style: 0,
         }
     }
 }

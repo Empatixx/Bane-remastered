@@ -90,7 +90,7 @@ pub(crate) use cart::{spawn_tracks, tick_carts};
 pub(crate) use waterworks::{spawn_waterworks, tick_waterworks};
 pub(crate) use prison::{spawn_prison, tick_pendulums};
 pub(crate) use casings::tick_casings;
-pub(crate) use table::{break_tables, shove_tables, spawn_furniture};
+pub(crate) use table::{batter_tables, break_tables, shove_tables, spawn_furniture};
 pub(crate) use dummy::tick_dummies;
 pub(crate) use frost::tick_icicle_bats;
 pub(crate) use lava::{tick_ashes, tick_ember_rats, tick_magma_slimes, tick_swoopers, tick_worms};

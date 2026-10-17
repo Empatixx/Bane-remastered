@@ -664,11 +664,13 @@ impl Scene for InGameScene {
             self.hit = true;
         }
         systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
+        systems::batter_tables(&mut self.world, hostile_dt);
         systems::break_tables(
             &mut self.world,
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
+            dt,
         );
         self.feel_impacts();
         Transition::None

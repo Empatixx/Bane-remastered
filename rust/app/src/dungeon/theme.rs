@@ -130,6 +130,21 @@ impl Theme {
         }
     }
 
+    /// Which of the floor's own looks its rugs, tables and mine carts take: their row (or block
+    /// of rows) in the sheets that hold one per floor, in this order. The stone floor's are the
+    /// first, which the shop and the treasure rooms use on every floor.
+    pub(crate) fn style(self) -> usize {
+        match self {
+            Self::Stone => 0,
+            Self::Sewer => 1,
+            Self::Moss => 2,
+            Self::Spider => 3,
+            Self::Ice => 4,
+            Self::Lava => 5,
+            Self::Temple => 6,
+        }
+    }
+
     pub(crate) fn backdrop(self) -> [u8; 3] {
         match self {
             Self::Stone => [37, 19, 26],

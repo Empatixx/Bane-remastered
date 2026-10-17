@@ -201,6 +201,12 @@ pub(super) fn too_close(a: &Overhead, b: &Overhead) -> bool {
     }
 }
 
+/// Whether a span would end on, or lie over, a torch, a banner or anything else fixed to the
+/// walls round it.
+pub(super) fn on_decor(room: &DungeonRoom, span: &Overhead) -> bool {
+    room.decor.iter().any(|decor| span.near(decor.tile, 1))
+}
+
 pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, theme: Theme, rng: &mut Rng) -> Vec<Overhead> {
     if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush)
         || rng.below(100) >= ROOM_CHANCE_PERCENT
@@ -218,7 +224,7 @@ pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, theme: Theme, rng: &mut 
             first,
             last,
         };
-        if planned.iter().any(|other| too_close(other, &candidate)) {
+        if planned.iter().any(|other| too_close(other, &candidate)) || on_decor(room, &candidate) {
             continue;
         }
         planned.push(Overhead {
@@ -279,8 +285,6 @@ pub(crate) enum HangingKind {
     Banner,
     /// A rusty hook under a wooden pulley.
     Hook,
-    /// A ring of skulls with candles burning on it.
-    SkullCandles,
 }
 
 impl HangingKind {
@@ -307,7 +311,6 @@ impl HangingKind {
             Self::Bell => 17,
             Self::Banner => 18,
             Self::Hook => 19,
-            Self::SkullCandles => 20,
         }
     }
 }
@@ -316,7 +319,7 @@ impl Theme {
     pub(crate) fn hanging_kinds(self) -> &'static [HangingKind] {
         use HangingKind::*;
         match self {
-            Self::Stone => &[Chandelier, Cage, Hook, SkullCandles],
+            Self::Stone => &[Chandelier, Cage, Hook],
             Self::Temple => &[Censer, Censer, Bell, Banner, Chandelier],
             Self::Moss => &[Vine, GlowRoots, GlowRoots, Hive, MossCage, Fireflies],
             Self::Sewer => &[Lantern, Cage],
@@ -411,7 +414,7 @@ pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom, theme: Theme) -> Vec
         Theme::Moss => [GlowRoots, Hive, MossCage, Fireflies, Vine],
         Theme::Ice => [IceChandelier, FrozenBlock, BigIcicle, Lantern, Cage],
         Theme::Temple => [Censer, Bell, Banner, Chandelier, Cage],
-        Theme::Stone => [Hook, SkullCandles, Chandelier, Cage, Lantern],
+        Theme::Stone => [Hook, Chandelier, Cage, Lantern, Vine],
         _ => [Chandelier, Cage, Cocoon, Lantern, Vine],
     };
     let clear = |column: usize, row: usize| {
@@ -476,6 +479,7 @@ mod tests {
                     }
                     assert!(room.overheads.len() <= MAX_PER_ROOM);
                     for span in &room.overheads {
+                        assert!(room.pendulum == Some(*span) || !on_decor(room, span), "{span:?}");
                         total += 1;
                         upright += usize::from(span.upright);
                         let step = if span.upright { (0, 1) } else { (1, 0) };

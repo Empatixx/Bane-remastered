@@ -23,6 +23,8 @@ use crate::tilemap::TILE_SIZE;
 use super::damage::{Damage, DamageSource, deal};
 
 const COLUMNS: usize = 5;
+/// One row of pictures per floor's look (see `Theme::style`).
+const ROWS: usize = 7;
 const RAIL: usize = 0;
 const BUFFER: usize = 1;
 const CART: usize = 2;
@@ -157,6 +159,8 @@ pub(crate) struct Cart {
     hurt: Vec<(Entity, f32)>,
     sparks_due: f32,
     sparks: TextureId,
+    /// Its floor's look: its row in the sheet.
+    style: usize,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -237,6 +241,7 @@ pub(crate) fn spawn_tracks(
 ) {
     let texture = textures.get(tex::RAILS);
     let sparks = textures.get(tex::MOTES);
+    let style = dungeon.theme.style();
     for track in dungeon.rooms.iter().filter_map(|room| room.track.as_ref()) {
         for (&tile, (cell, angle)) in track.path.iter().zip(rail_pieces(track)) {
             let at = (Vec2::new(tile.0 as f32, tile.1 as f32) + 0.5) * TILE_SIZE;
@@ -244,7 +249,7 @@ pub(crate) fn spawn_tracks(
                 Position(at),
                 Size(Vec2::splat(TILE_SIZE)),
                 Color(Vec4::ONE),
-                Sprite::cell(texture, cell, 0, COLUMNS, 1),
+                Sprite::cell(texture, cell, style, COLUMNS, ROWS),
                 Heading(angle),
                 Layer(RAIL_LAYER),
                 Lit,
@@ -266,11 +271,12 @@ pub(crate) fn spawn_tracks(
                 hurt: Vec::new(),
                 sparks_due: 0.0,
                 sparks,
+                style,
             },
             Position(start - Vec2::new(0.0, CART_LIFT)),
             Size(CART_SIZE),
             Color(Vec4::ONE),
-            Sprite::cell(texture, CART, 0, COLUMNS, 1),
+            Sprite::cell(texture, CART, style, COLUMNS, ROWS),
             Heading(lying(direction)),
             Layer(Layer::ACTORS.0),
             Lit,
@@ -351,7 +357,7 @@ pub(crate) fn tick_carts(world: &mut World, physics: &mut Physics, dt: f32) {
         }
         if let Ok(mut sprite) = world.get::<&mut Sprite>(entity) {
             let frame = CART + ((cart.rolled / WHEEL_STEP) as usize % 2);
-            sprite.uv = Sprite::cell_uv(frame, 0, COLUMNS, 1);
+            sprite.uv = Sprite::cell_uv(frame, cart.style, COLUMNS, ROWS);
         }
         run_over(world, &mut cart, to, dt);
         throw_sparks(world, &mut cart, to, along, dt);
@@ -486,6 +492,7 @@ mod tests {
                 hurt: Vec::new(),
                 sparks_due: 0.0,
                 sparks: TextureId::WHITE,
+                style: 0,
             },
             Position(start),
             Size(CART_SIZE),

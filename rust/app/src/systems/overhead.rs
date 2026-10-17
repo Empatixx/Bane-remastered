@@ -154,7 +154,7 @@ pub(crate) fn tick_overheads(world: &mut World, dt: f32) {
 }
 
 const HANGING_COLUMNS: usize = 4;
-const HANGING_ROWS: usize = 21;
+const HANGING_ROWS: usize = 20;
 const CHAIN_CELL: usize = 2;
 /// The topmost chain piece, fading out upwards in the texture itself.
 const CHAIN_TOP_CELL: usize = 3;
@@ -213,8 +213,7 @@ fn frame_rate(kind: HangingKind) -> Option<f32> {
         HangingKind::Chandelier
         | HangingKind::Lantern
         | HangingKind::Brazier
-        | HangingKind::Crucible
-        | HangingKind::SkullCandles => Some(FLICKER_RATE),
+        | HangingKind::Crucible => Some(FLICKER_RATE),
         HangingKind::Stalactite
         | HangingKind::GlowRoots
         | HangingKind::IceChandelier
@@ -236,7 +235,6 @@ fn frame_rate(kind: HangingKind) -> Option<f32> {
 fn glow(kind: HangingKind) -> Option<(Vec3, f32)> {
     match kind {
         HangingKind::Chandelier | HangingKind::Lantern => Some((GLOW, 90.0)),
-        HangingKind::SkullCandles => Some((GLOW, 80.0)),
         HangingKind::Brazier => Some((EMBER_GLOW, 120.0)),
         HangingKind::Crucible => Some((EMBER_GLOW, 80.0)),
         HangingKind::Stalactite => Some((EMBER_GLOW, 55.0)),

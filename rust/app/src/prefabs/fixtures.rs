@@ -99,7 +99,9 @@ const FLAME_LAST_FRAME: usize = 3;
 const SLOT_PROMPT_GAP: f32 = -10.0;
 const DROP_DRAG: f32 = 6.0;
 const CARPET_COLUMNS: usize = 4;
+/// Each look of carpet is a block of four rows, one under another.
 const CARPET_ROWS: usize = 4;
+const CARPET_STYLES: usize = 7;
 const CARPET_LAYER: i32 = -2;
 /// The floor's tiles, under everything.
 const FLOOR_TILE_LAYER: i32 = -4;
@@ -173,9 +175,9 @@ pub(crate) fn carpet(world: &mut World, carpet: &Carpet, textures: &Textures) {
             Sprite::cell(
                 texture,
                 number % CARPET_COLUMNS,
-                number / CARPET_COLUMNS,
+                carpet.style * CARPET_ROWS + number / CARPET_COLUMNS,
                 CARPET_COLUMNS,
-                CARPET_ROWS,
+                CARPET_ROWS * CARPET_STYLES,
             ),
             Layer(CARPET_LAYER),
             Lit,

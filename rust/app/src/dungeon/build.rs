@@ -297,7 +297,7 @@ impl Dungeon {
         }
         let mut furniture_rng = Rng::new(rng.next_u64());
         for room in &mut rooms {
-            room.rug = furniture::plan_rug(&grid, room, &surfaces, &mut furniture_rng);
+            room.rug = furniture::plan_rug(&grid, room, &surfaces, theme.style(), &mut furniture_rng);
             room.tables = furniture::plan_tables(&grid, room, &surfaces, &mut furniture_rng);
         }
         let mut track_rng = Rng::new(rng.next_u64());

@@ -38,6 +38,7 @@ pub(crate) fn plan_pendulum(grid: &TileGrid, rooms: &mut [DungeonRoom], rng: &mu
             if !upright
                 && PENDULUM_SPAN.contains(&span.length())
                 && !room.overheads.iter().any(|other| overhead::too_close(other, &span))
+                && !overhead::on_decor(room, &span)
             {
                 candidates.push((index, span));
             }

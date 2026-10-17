@@ -1,8 +1,9 @@
 //! Rugs and tables in some combat rooms. A table, lying across the room or turned lengthwise down
 //! it, stands in everyone's way while bullets fly over it. The player walking (or rolling) into
 //! it knocks it over to the far side (up or down for one lying across, left or right for a
-//! turned one), and then it stops enemy bullets (the player's still fly over) until enough of
-//! them have broken it into scrap.
+//! turned one), and then it stops enemy bullets (the player's still fly over). Enemy bullets
+//! chip a flipped table and enemies pushing against any table batter it, until it bursts apart
+//! into scrap. Each floor has its own look of table.
 
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
@@ -10,13 +11,23 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Body, Color, Layer, Lit, Player, Position, Size, Sprite, Velocity, YSort,
+    Body, Color, Enemy, Expiring, Layer, Lit, Player, Position, Size, Spawning, Sprite, Velocity,
+    YSort,
 };
 use crate::dungeon::Dungeon;
 use crate::physics::Physics;
 use crate::tilemap::TILE_SIZE;
 
-const COLUMNS: usize = 6;
+const COLUMNS: usize = 9;
+/// One row of pictures per floor's look (see `Theme::style`).
+const ROWS: usize = 7;
+/// The frames of a table bursting apart, then the scrap it leaves.
+const BURST: [usize; 4] = [6, 7, 8, BROKEN];
+const BURST_FRAME: f32 = 0.09;
+/// An enemy pushing against a table batters it this often.
+const BATTER_EVERY: f32 = 0.5;
+/// How close an enemy has to be to the table to be pushing against it.
+const BATTER_REACH: f32 = 6.0;
 const STANDING: usize = 0;
 /// Fallen with its top facing up the screen: we see the plate, the legs stick up behind it.
 const TOP_UP: usize = 1;
@@ -67,6 +78,19 @@ pub(crate) struct Table {
     pub(crate) upright: bool,
     /// The middle of the two tiles it stands on.
     pub(crate) center: Vec2,
+    /// Its floor's look: its row in the sheet.
+    pub(crate) style: usize,
+    /// Where its body is, and how big, standing or fallen.
+    pub(crate) body: (Vec2, Vec2),
+    /// Until the enemies pushing against it can batter it again.
+    pub(crate) battered: f32,
+}
+
+/// What is left of a table bursting apart, flying out and settling into scrap.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct TableBurst {
+    style: usize,
+    time: f32,
 }
 
 pub(crate) fn spawn_furniture(
@@ -76,6 +100,7 @@ pub(crate) fn spawn_furniture(
     textures: &Textures,
 ) {
     let texture = textures.get(tex::TABLE);
+    let style = dungeon.theme.style();
     for room in &dungeon.rooms {
         if let Some(rug) = &room.rug {
             crate::prefabs::carpet(world, rug, textures);
@@ -89,24 +114,27 @@ pub(crate) fn spawn_furniture(
                 let center = Vec2::new(column + 1.0, row + 0.5) * TILE_SIZE;
                 (center, center - Vec2::new(0.0, SIZE.y / 4.0), STANDING, STANDING_BODY)
             };
+            let offset = if spot.upright { Vec2::ZERO } else { STANDING_OFFSET };
             let table = world.spawn((
                 Table {
                     state: TableState::Standing,
                     hits_left: TABLE_HITS,
                     upright: spot.upright,
                     center,
+                    style,
+                    body: (center + offset, body_size),
+                    battered: 0.0,
                 },
                 Position(at),
                 Size(SIZE),
                 Color(Vec4::ONE),
-                Sprite::cell(texture, cell, 0, COLUMNS, 1),
+                Sprite::cell(texture, cell, style, COLUMNS, ROWS),
                 Layer(Layer::ACTORS.0),
                 Lit,
                 YSort {
                     foot: center.y - at.y + if spot.upright { TILE_SIZE } else { TILE_SIZE / 2.0 },
                 },
             ));
-            let offset = if spot.upright { Vec2::ZERO } else { STANDING_OFFSET };
             let body = physics.add_table(table, center + offset, body_size, false);
             let _ = world.insert_one(table, body);
         }
@@ -218,13 +246,15 @@ fn flip(
         position.0 += moved;
     }
     let body = physics.add_table(entity, center + shift, size, true);
-    let mut sprite = Sprite::cell(textures.get(tex::TABLE), cell, 0, COLUMNS, 1);
+    let style = world.get::<&Table>(entity).map_or(0, |table| table.style);
+    let mut sprite = Sprite::cell(textures.get(tex::TABLE), cell, style, COLUMNS, ROWS);
     if mirrored {
         sprite.uv = Sprite::flipped(sprite.uv);
     }
     let _ = world.insert(entity, (body, sprite));
     if let Ok(mut table) = world.get::<&mut Table>(entity) {
         table.state = TableState::Flipped;
+        table.body = (center + shift, size);
     }
 }
 
@@ -239,33 +269,76 @@ pub(crate) fn chip_table(world: &mut World, entity: Entity) -> bool {
     }
 }
 
-/// Tables shot to pieces fall apart into scrap on the floor.
+/// Enemies pushing against a table, standing or knocked over, batter it, a knock every half
+/// second or so whoever is doing it.
+pub(crate) fn batter_tables(world: &mut World, dt: f32) {
+    let enemies: Vec<(Vec2, Vec2)> = world
+        .query::<(&Position, &Size)>()
+        .with::<&Enemy>()
+        .without::<&Expiring>()
+        .without::<&Spawning>()
+        .iter()
+        .map(|(position, size)| (position.0, size.0))
+        .collect();
+    for table in world.query_mut::<&mut Table>() {
+        table.battered = (table.battered - dt).max(0.0);
+        if table.battered > 0.0 || table.hits_left == 0 {
+            continue;
+        }
+        let (at, size) = table.body;
+        let pushing = enemies.iter().any(|(enemy, enemy_size)| {
+            ((*enemy - at).abs() * 2.0).cmple(size + *enemy_size + Vec2::splat(BATTER_REACH * 2.0)).all()
+        });
+        if pushing {
+            table.hits_left -= 1;
+            table.battered = BATTER_EVERY;
+        }
+    }
+}
+
+/// Tables battered or shot to pieces burst apart, bits flying, and settle into scrap on the
+/// floor.
 pub(crate) fn break_tables(
     world: &mut World,
     physics: &mut Physics,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    dt: f32,
 ) {
-    let broken: Vec<(Entity, Vec2)> = world
+    let broken: Vec<(Entity, Vec2, usize)> = world
         .query::<(Entity, &Table, &Position)>()
         .iter()
         .filter(|(_, table, _)| table.hits_left == 0)
-        .map(|(entity, _, position)| (entity, position.0))
+        .map(|(entity, table, position)| (entity, position.0, table.style))
         .collect();
-    for (entity, at) in broken {
+    let texture = textures.get(tex::TABLE);
+    for (entity, at, style) in broken {
         if let Ok(body) = world.remove_one::<Body>(entity) {
             physics.remove(body);
         }
         let _ = world.despawn(entity);
         world.spawn((
+            TableBurst { style, time: 0.0 },
             Position(at),
             Size(SIZE),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get(tex::TABLE), BROKEN, 0, COLUMNS, 1),
+            Sprite::cell(texture, BURST[0], style, COLUMNS, ROWS),
             Layer(DEBRIS_LAYER),
             Lit,
         ));
         sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
+    }
+    let mut settled = Vec::new();
+    for (entity, burst, sprite) in world.query_mut::<(Entity, &mut TableBurst, &mut Sprite)>() {
+        burst.time += dt;
+        let frame = ((burst.time / BURST_FRAME) as usize).min(BURST.len() - 1);
+        sprite.uv = Sprite::cell_uv(BURST[frame], burst.style, COLUMNS, ROWS);
+        if frame == BURST.len() - 1 {
+            settled.push(entity);
+        }
+    }
+    for entity in settled {
+        let _ = world.remove_one::<TableBurst>(entity);
     }
 }
 
@@ -280,13 +353,17 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         let textures = Textures::default();
-        let table = Table {
+        let mut table = Table {
             state: TableState::Standing,
             hits_left: TABLE_HITS,
             upright,
             center: CENTER,
+            style: 0,
+            body: (CENTER, Vec2::ZERO),
+            battered: 0.0,
         };
-        let (body_at, body_size) = standing_body(&table);
+        table.body = standing_body(&table);
+        let (body_at, body_size) = table.body;
         let entity = world.spawn((
             table,
             Position(CENTER),
@@ -323,10 +400,10 @@ mod tests {
     fn walking_into_a_table_from_below_knocks_it_over_away_and_from_above_towards() {
         let (world, _, table) = bump(false, Vec2::new(0.0, 60.0), Vec2::new(0.0, -200.0));
         assert_eq!(state(&world, table), Some(TableState::Flipped));
-        assert_eq!(picture(&world, table), Sprite::cell_uv(UNDERSIDE, 0, COLUMNS, 1));
+        assert_eq!(picture(&world, table), Sprite::cell_uv(UNDERSIDE, 0, COLUMNS, ROWS));
 
         let (world, _, table) = bump(false, Vec2::new(0.0, -50.0), Vec2::new(0.0, 200.0));
-        assert_eq!(picture(&world, table), Sprite::cell_uv(TOP_UP, 0, COLUMNS, 1));
+        assert_eq!(picture(&world, table), Sprite::cell_uv(TOP_UP, 0, COLUMNS, ROWS));
     }
 
     #[test]
@@ -335,11 +412,11 @@ mod tests {
         // Pushed right, its top faces right and its legs back left at the player.
         assert_eq!(
             picture(&world, table),
-            Sprite::flipped(Sprite::cell_uv(FELL_SIDEWAYS, 0, COLUMNS, 1))
+            Sprite::flipped(Sprite::cell_uv(FELL_SIDEWAYS, 0, COLUMNS, ROWS))
         );
 
         let (world, _, table) = bump(true, Vec2::new(50.0, 0.0), Vec2::new(-200.0, 0.0));
-        assert_eq!(picture(&world, table), Sprite::cell_uv(FELL_SIDEWAYS, 0, COLUMNS, 1));
+        assert_eq!(picture(&world, table), Sprite::cell_uv(FELL_SIDEWAYS, 0, COLUMNS, ROWS));
     }
 
     #[test]
@@ -407,8 +484,38 @@ mod tests {
         for _ in 0..TABLE_HITS {
             assert!(chip_table(&mut world, table));
         }
-        break_tables(&mut world, &mut physics, &textures, &mut Vec::new());
+        break_tables(&mut world, &mut physics, &textures, &mut Vec::new(), 0.0);
         assert!(world.get::<&Table>(table).is_err());
         assert_eq!(world.query::<&Sprite>().iter().count(), 1, "the scrap");
+        // It bursts apart and then lies as scrap.
+        assert_eq!(world.query::<&TableBurst>().iter().count(), 1);
+        for _ in 0..30 {
+            break_tables(&mut world, &mut physics, &textures, &mut Vec::new(), 1.0 / 60.0);
+        }
+        assert_eq!(world.query::<&TableBurst>().iter().count(), 0);
+    }
+
+    #[test]
+    fn an_enemy_pushing_against_a_table_batters_it_to_pieces() {
+        let (mut world, mut physics, table, textures) = room_with(false);
+        world.spawn((
+            Enemy {
+                death: crate::components::Clip {
+                    row: 0,
+                    frames: 1,
+                    frame_time: 1.0,
+                    looping: false,
+                    flipped: false,
+                },
+                kind: crate::enemies::EnemyKind::Rat,
+            },
+            Position(CENTER + Vec2::new(0.0, 50.0)),
+            Size(Vec2::splat(48.0)),
+        ));
+        for _ in 0..(TABLE_HITS as f32 * BATTER_EVERY * 60.0 + 10.0) as usize {
+            batter_tables(&mut world, 1.0 / 60.0);
+        }
+        break_tables(&mut world, &mut physics, &textures, &mut Vec::new(), 1.0 / 60.0);
+        assert!(world.get::<&Table>(table).is_err());
     }
 }

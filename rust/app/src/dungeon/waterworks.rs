@@ -208,6 +208,12 @@ pub(crate) fn plan(
         .filter(|&(column, row)| {
             grid.is_wall(column as isize, row as isize) && water(surfaces, (column, row + 1))
         })
+        // Not where a banner, a torch or a trap already hangs on the wall, or right beside it.
+        .filter(|&(column, row)| {
+            !room.decor.iter().any(|decor| {
+                decor.tile.0.abs_diff(column) <= 1 && decor.tile.1.abs_diff(row) <= 1
+            })
+        })
         .collect();
     let wanted = 1 + usize::from(rng.below(100) < SECOND_PIPE_PERCENT);
     while works.pipes.len() < wanted.min(MAX_PIPES) && !spots.is_empty() {
@@ -465,6 +471,22 @@ mod tests {
             }
         }
         assert!(falls > 3, "{falls}");
+    }
+
+    #[test]
+    fn falls_and_pipes_keep_clear_of_banners_torches_and_traps_on_the_walls() {
+        for theme in [Theme::Sewer, Theme::Lava, Theme::Moss, Theme::Ice, Theme::Temple] {
+            for seed in 0..12 {
+                let dungeon = Dungeon::generate_themed(&mut Rng::new(seed), theme).expect("a dungeon");
+                for room in &dungeon.rooms {
+                    for &(column, row) in &room.waterworks.pipes {
+                        assert!(room.decor.iter().all(|decor| {
+                            decor.tile.0.abs_diff(column) > 1 || decor.tile.1.abs_diff(row) > 1
+                        }));
+                    }
+                }
+            }
+        }
     }
 
     #[test]

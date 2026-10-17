@@ -73,6 +73,7 @@ pub(crate) fn plan_rug(
     grid: &TileGrid,
     room: &DungeonRoom,
     surfaces: &Surfaces,
+    style: usize,
     rng: &mut Rng,
 ) -> Option<Carpet> {
     if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) || rng.below(100) >= RUG_PERCENT {
@@ -99,6 +100,7 @@ pub(crate) fn plan_rug(
                 origin,
                 columns,
                 rows,
+                style,
             });
         }
     }
