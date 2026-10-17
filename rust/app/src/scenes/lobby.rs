@@ -48,6 +48,8 @@ const WEAPON_TABLE_AT: (f32, f32) = (30.5, 0.5);
 /// Where the range keeps its ammo, by the door.
 const AMMO_CRATE_AT: (f32, f32) = (30.3, 7.0);
 
+/// The portal's colour once the wound is closed.
+const SLEEPING_PORTAL: [f32; 3] = [70.0, 70.0, 84.0];
 /// Where Elian stands, by the training book, in tiles.
 const ELIAN_AT: (f32, f32) = (6.6, 2.6);
 const PROPS: &[(Prop, f32, f32, Look)] = &[
@@ -288,9 +290,11 @@ impl Scene for LobbyScene {
         let hall_middle = Vec2::new(tilemap::HALL_COLUMNS as f32 * TILE_SIZE, bounds.y) / 2.0;
         let portal_top_left = Vec2::new(hall_middle.x - 96.0, TILE_SIZE / 2.0);
         prefabs::portal(&mut self.world, portal_top_left, textures);
+        // Once the wound is closed the portal sleeps, grey and dim.
+        let closed = self.profile.as_ref().and_then(SharedProfile::ending) == Some(crate::progress::Ending::Closed);
         systems::tint_portal(
             &mut self.world,
-            self.profile.as_ref().and_then(SharedProfile::accent),
+            if closed { Some(SLEEPING_PORTAL) } else { self.profile.as_ref().and_then(SharedProfile::accent) },
         );
         systems::sign_portal(
             &mut self.world,

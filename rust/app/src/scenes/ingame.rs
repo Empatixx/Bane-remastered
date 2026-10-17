@@ -192,8 +192,14 @@ impl Scene for InGameScene {
             systems::update_death_ui(&mut self.world, screen);
             systems::update_status_bars(&mut self.world, dt);
             if screen.finished() {
+                // The Bane challenge won for the first time: what lies under the last guardian.
+                let truth = self.victory
+                    && self.challenge == Some(ChallengeId::Bane)
+                    && self.profile.as_ref().is_some_and(|profile| profile.ending().is_none());
                 return Transition::Switch(if self.leave_to_menu {
                     SceneId::Menu
+                } else if truth {
+                    SceneId::Epilogue
                 } else {
                     SceneId::Lobby
                 });

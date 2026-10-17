@@ -1,4 +1,5 @@
 mod cinematic;
+mod epilogue;
 mod ingame;
 mod loading;
 mod lobby;
@@ -43,6 +44,8 @@ pub(crate) enum SceneId {
     Training,
     /// The opening cinematic, before the training.
     Intro,
+    /// The true ending, after the Bane challenge is won.
+    Epilogue,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

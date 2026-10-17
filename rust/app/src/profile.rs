@@ -8,7 +8,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::components::RunStats;
 use crate::enemies::EnemyKind;
 use crate::progress::{
-    self, BoardView, ChallengeId, ProgressState, Remark, RunOutcome, RunRecord, Tally, known,
+    self, BoardView, ChallengeId, Ending, ProgressState, Remark, RunOutcome, RunRecord, Tally, known,
 };
 use crate::rng::Rng;
 use crate::rules::RunRules;
@@ -51,6 +51,8 @@ pub(crate) struct Profile {
     pub(crate) shop_visits: u64,
     /// The pages of Teodor's chronicle found so far, by number.
     pub(crate) pages: BTreeSet<u8>,
+    /// The choice at the true ending, once made.
+    pub(crate) ending: Option<Ending>,
 }
 
 const PROFILE_VERSION: u32 = 1;
@@ -165,6 +167,7 @@ impl Profile {
             went_without: self.progress.completed(ChallengeId::Bane),
             remarks: self.remarks.clone(),
             pages: self.pages.len(),
+            ending: self.ending,
         }
     }
 
@@ -356,6 +359,14 @@ impl SharedProfile {
 
     pub(crate) fn find_page(&self, page: u8) {
         self.change(|profile| profile.pages.insert(page));
+    }
+
+    pub(crate) fn ending(&self) -> Option<Ending> {
+        self.0.borrow().profile.ending
+    }
+
+    pub(crate) fn set_ending(&self, ending: Ending) {
+        self.change(|profile| profile.ending = Some(ending));
     }
 
     pub(crate) fn runs(&self) -> u64 {

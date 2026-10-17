@@ -10,6 +10,7 @@ use crate::settings::Settings;
 use crate::systems;
 
 use super::cinematic::CinematicScene;
+use super::epilogue::EpilogueScene;
 use super::ingame::InGameScene;
 use super::loading::LoadingScene;
 use super::lobby::LobbyScene;
@@ -25,6 +26,7 @@ pub(crate) struct Scenes {
     lobby: LobbyScene,
     ingame: InGameScene,
     intro: CinematicScene,
+    epilogue: EpilogueScene,
 }
 
 impl fmt::Debug for Scenes {
@@ -46,7 +48,9 @@ impl Scenes {
             lobby: LobbyScene::default(),
             ingame: InGameScene::default(),
             intro: CinematicScene::default(),
+            epilogue: EpilogueScene::default(),
         };
+        scenes.epilogue.attach_profile(profile.clone());
         scenes.lobby.attach_profile(profile.clone());
         scenes.ingame.attach_profile(profile);
         scenes.scene_mut().enter(assets);
@@ -162,6 +166,7 @@ impl Scenes {
             SceneId::Lobby => &self.lobby,
             SceneId::InGame | SceneId::Training => &self.ingame,
             SceneId::Intro => &self.intro,
+            SceneId::Epilogue => &self.epilogue,
         }
     }
 
@@ -172,6 +177,7 @@ impl Scenes {
             SceneId::Lobby => &mut self.lobby,
             SceneId::InGame | SceneId::Training => &mut self.ingame,
             SceneId::Intro => &mut self.intro,
+            SceneId::Epilogue => &mut self.epilogue,
         }
     }
 }
@@ -253,7 +259,7 @@ mod tests {
 
         let (mut scenes, mut input, assets) = menu();
         scenes.profile.finish_training();
-        click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 240.0));
+        let _ = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 240.0));
         assert_eq!(scenes.current, SceneId::Lobby);
     }
 

@@ -103,6 +103,7 @@ fn first_scene() -> SceneId {
         Ok("dungeon") => SceneId::InGame,
         Ok("training") => SceneId::Training,
         Ok("intro") => SceneId::Intro,
+        Ok("epilogue") => SceneId::Epilogue,
         _ => SceneId::Menu,
     }
 }

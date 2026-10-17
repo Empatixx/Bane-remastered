@@ -4,7 +4,7 @@ use glam::Vec2;
 
 use crate::components::{Chatty, Player, Position, Size, Speaker, SpeechBubble, SpeechPart, Wallet};
 use crate::enemies::EnemyKind;
-use crate::progress::{ChallengeId, Remark};
+use crate::progress::{ChallengeId, Ending, Remark};
 use crate::render::{FontSize, Fonts};
 use crate::systems::shop::say;
 
@@ -52,6 +52,12 @@ const ELIAN_FIRST: [&str; 2] = [
     "This laboratory is built from our temple's stones.",
     "He calls you a subject. You are the guardian.",
 ];
+/// After the true ending: Elian grateful, or afraid.
+const ELIAN_CLOSED: [&str; 2] = ["You closed it. Velmor will pray again.", "Whatever you were, you were ours."];
+const ELIAN_LEFT_OPEN: [&str; 2] = ["You left it open. For him.", "I will keep praying. Someone has to."];
+/// The Scientist after it: silent if the wound was closed, pleased if not.
+const SILENT: [&str; 2] = ["...", "My work. All of it."];
+const UNDERSTOOD: [&str; 2] = ["Good. Good. We understand each other.", "Welcome back, partner!"];
 const ELIAN_GREETINGS: [&str; 2] = ["Guardian! You're back.", "The light is with you still."];
 const ELIAN_HINTS: [&str; 5] = [
     "The book has the lessons, if you need them again.",
@@ -124,6 +130,8 @@ pub(crate) struct Standing {
     pub(crate) remarks: Vec<Remark>,
     /// Pages of Teodor's chronicle found.
     pub(crate) pages: usize,
+    /// The choice at the true ending, if made.
+    pub(crate) ending: Option<Ending>,
 }
 
 /// What the Scientist knows about the player, taken from the profile when the lobby opens.
@@ -150,7 +158,11 @@ impl Default for Repertoire {
 
 impl Repertoire {
     pub(crate) fn of(profile: &Standing) -> Self {
-        let greetings: &'static [&'static str] = if profile.runs == 0 {
+        let greetings: &'static [&'static str] = if profile.ending == Some(Ending::Closed) {
+            &SILENT
+        } else if profile.ending == Some(Ending::LeftOpen) {
+            &UNDERSTOOD
+        } else if profile.runs == 0 {
             &INTRO
         } else if profile.wins > 0 {
             &PARTNER
@@ -178,7 +190,12 @@ impl Repertoire {
 
     /// Elian's lines: the order's lore, and what he makes of the hero's runs.
     pub(crate) fn elian(profile: &Standing) -> Self {
-        let greetings: &'static [&'static str] = if profile.runs == 0 { &ELIAN_FIRST } else { &ELIAN_GREETINGS };
+        let greetings: &'static [&'static str] = match profile.ending {
+            Some(Ending::Closed) => &ELIAN_CLOSED,
+            Some(Ending::LeftOpen) => &ELIAN_LEFT_OPEN,
+            None if profile.runs == 0 => &ELIAN_FIRST,
+            None => &ELIAN_GREETINGS,
+        };
         let earned = [
             (profile.deaths > 0, ELIAN_EARNED_DEATH),
             (profile.best_floor >= 3, ELIAN_EARNED_DEEP),
