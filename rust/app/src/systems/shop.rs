@@ -336,16 +336,17 @@ pub(crate) fn fit_price_boxes(world: &mut World, fonts: &crate::render::Fonts) {
     }
 }
 
-/// The merchant, subject twelve, who chose not to go back up. His first lines come in order,
+/// The merchant, subject twelve: the miller of Velmor, who carried the Scientist's jars up to
+/// the temple on the night of the feast, and chose not to go back up. His first lines come in order,
 /// one per visit, so the truth comes out slowly; after that he picks among them.
 pub(crate) const MERCHANT: [&str; 8] = [
     "New one? Coins on the table. No credit.",
     "He calls you subject? He called me twelve.",
-    "I stopped going up. The air up there costs more.",
-    "The slimes. You know what they are? Don't eat them.",
-    "The hound let me pass once. I think it felt sorry.",
-    "You don't remember the surface. None of us did.",
-    "He doesn't pull us from up there. He pulls us from down here.",
+    "I was the miller in Velmor, before. I heard the bells stop.",
+    "He paid me to carry jars up to the temple that night. I didn't ask.",
+    "The slimes. They were my neighbours. Don't eat them.",
+    "Eleven went down before me. None of them came back up.",
+    "I stay down here. Up there he'd want to know what I remember.",
     "Enjoy your purchase. Enjoy anything.",
 ];
 
@@ -357,12 +358,13 @@ pub(crate) fn merchant_line(visit: u64, roll: usize) -> &'static str {
 
 /// The altar: the curse's own voice, in capitals and without stops. It tells the truth from
 /// the start; nobody understands it.
-pub(crate) const ALTAR: [&str; 5] = [
+pub(crate) const ALTAR: [&str; 6] = [
     "YOU ARE MINE ALREADY",
     "HE ONLY BORROWS YOU",
     "GIVE A PIECE  I GIVE IT BACK  LATER",
-    "FORTY BEFORE YOU  ALL CAME HOME",
+    "FORTY BEFORE YOU  NONE WENT HOME",
     "THE DOG KNOWS",
+    "THE BOY PAYS FOR YOU",
 ];
 pub(crate) const ALTAR_SECONDS: f32 = 4.0;
 
@@ -681,7 +683,7 @@ mod tests {
     #[test]
     fn the_merchant_tells_his_story_one_visit_at_a_time_then_picks_among_it() {
         assert_eq!(merchant_line(1, 5), MERCHANT[0]);
-        assert_eq!(merchant_line(2, 5), "He calls you subject? He called me twelve.");
+        assert_eq!(merchant_line(2, 5), MERCHANT[1]);
         assert_eq!(merchant_line(8, 0), MERCHANT[7]);
         assert_eq!(merchant_line(9, 3), MERCHANT[3]);
     }

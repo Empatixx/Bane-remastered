@@ -1,6 +1,7 @@
 //! The true ending, after a won run of the Bane challenge, the one gone without the Scientist's
-//! work: three lines of what lies under the last guardian, one at a time out of the dark, then
-//! the choice. Close the wound, or leave it open. Either way the lobby comes after, changed.
+//! work: who silenced the prayers, told one line at a time out of the dark, then the choice.
+//! One prayer can close the wound, and it will be Elian's last. Let him pray, or stop him.
+//! Either way the lobby comes after, changed.
 
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
@@ -18,15 +19,17 @@ use crate::viewport::TARGET;
 use super::{Cursor, Scene, SceneId, Transition};
 
 /// The truth, one line at a time.
-pub(crate) const LINES: [&str; 3] = [
-    "Below the last guardian there is no floor.",
-    "Only the others. Forty of them. Waiting to be pulled up again.",
-    "You remember now. You were never brought here. You were brought UP.",
+pub(crate) const LINES: [&str; 4] = [
+    "Silas Vane cut the bell rope. Silas Vane poured the wine.",
+    "When the last prayer stopped, the seal broke. He was waiting with his jars.",
+    "Every talent he sold you was a piece of the wound.",
+    "Elian kneels at its edge. He has one prayer left in him.",
 ];
+const CHOOSING: &str = "One prayer can close it. It will be his last.";
 /// What follows each choice, before the lobby.
-const CLOSED: &str = "The wound closes. In Velmor, someone begins to pray again.";
-const LEFT_OPEN: &str = "\"Good. Good. We understand each other.\"";
-const CHOICES: [&str; 2] = ["Close the wound", "Leave it open"];
+const CLOSED: &str = "The wound closes on Elian's last prayer. Velmor will remember him.";
+const LEFT_OPEN: &str = "Elian lives. Above, Silas Vane smiles. \"We understand each other.\"";
+const CHOICES: [&str; 2] = ["Let him pray", "Stop him"];
 
 const LINE_SECONDS: f32 = 5.0;
 const FADE: f32 = 0.8;
@@ -54,6 +57,8 @@ pub(crate) struct EpilogueScene {
     stage: Stage,
     words: Option<Entity>,
     choices: Vec<Entity>,
+    /// How long the choice has waited.
+    waited: f32,
 }
 
 impl Default for EpilogueScene {
@@ -64,6 +69,7 @@ impl Default for EpilogueScene {
             stage: Stage::Telling(0, 0.0),
             words: None,
             choices: Vec::new(),
+            waited: 0.0,
         }
     }
 }
@@ -95,7 +101,7 @@ impl EpilogueScene {
     }
 
     fn offer(&mut self) {
-        self.say("The wound is open beneath you.", INK);
+        self.say(CHOOSING, INK);
         for (index, label) in CHOICES.into_iter().enumerate() {
             let entity = self.world.spawn((
                 Position(choice_center(index)),
@@ -107,6 +113,7 @@ impl EpilogueScene {
             self.choices.push(entity);
         }
         self.stage = Stage::Choosing(0);
+        self.waited = 0.0;
     }
 
     fn choose(&mut self, ending: Ending) {
@@ -191,6 +198,12 @@ impl Scene for EpilogueScene {
                 }
             }
             Stage::Choosing(current) => {
+                // `BANE_CHOOSE=close` or `open` makes the choice itself, for recording the ending.
+                self.waited += dt;
+                if let Some(choice) = std::env::var("BANE_CHOOSE").ok().filter(|_| self.waited > 3.0) {
+                    self.choose(if choice == "open" { Ending::LeftOpen } else { Ending::Closed });
+                    return Transition::None;
+                }
                 let mut current = current;
                 if let Some(hovered) = choice_at(input.mouse()) {
                     current = hovered;

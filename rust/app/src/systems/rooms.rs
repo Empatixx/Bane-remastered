@@ -5,7 +5,7 @@ use rapier2d::prelude::ColliderHandle;
 use crate::assets::Textures;
 use crate::components::{Expiring, Player, Position, RoomId};
 use crate::dungeon::{Dungeon, RoomKind};
-use crate::enemies;
+use crate::enemies::{self, EnemyKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
@@ -38,7 +38,7 @@ pub(crate) fn wave_plan(kind: RoomKind, columns: usize, rows: usize) -> (usize, 
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum RoomEvent {
-    BossEntered,
+    BossEntered { kind: EnemyKind },
     WaveStarted { number: usize, total: usize },
     AmbushCleared { center: Vec2 },
     ShopEntered,
@@ -243,13 +243,17 @@ fn enter(
             _ => None,
         };
     }
+    let mut boss_kind = None;
     if boss {
         let kind = enemies::pick_boss(context.floor, context.dungeon.theme, rng);
+        boss_kind = Some(kind);
         let center = data.pixel_center();
         let spec = kind.spec();
         prefabs::enemy_in_room(world, kind, center, context.floor, context.textures, room);
+        // The bar carries who the boss was, not what it has become.
+        let named = crate::lore::identity(kind).map(|who| who.name);
         if let enemies::Role::Boss(name) = spec.role {
-            prefabs::boss_hud(world, name, context.textures);
+            prefabs::boss_hud(world, named.unwrap_or(name), context.textures);
         }
     } else {
         spawn_wave(context, room, world, rng);
@@ -277,8 +281,8 @@ fn enter(
         waves,
         delay: None,
     });
-    if boss {
-        Some(RoomEvent::BossEntered)
+    if let Some(kind) = boss_kind {
+        Some(RoomEvent::BossEntered { kind })
     } else if waves > 1 {
         Some(RoomEvent::WaveStarted {
             number: 1,
@@ -471,7 +475,7 @@ mod tests {
             2.0,
         );
 
-        assert_eq!(events, vec![RoomEvent::BossEntered]);
+        assert!(matches!(events.as_slice(), [RoomEvent::BossEntered { .. }]));
         assert!(runtime.is_locked(boss_room));
         assert_eq!(living_enemies(&world, boss_room), 1);
         let bosses = world.query::<&crate::components::Boss>().iter().count();
@@ -540,7 +544,7 @@ mod tests {
 
         assert!(events.iter().all(|event| !matches!(
             event,
-            RoomEvent::BossEntered | RoomEvent::BossDefeated { .. }
+            RoomEvent::BossEntered { .. } | RoomEvent::BossDefeated { .. }
         )));
     }
 

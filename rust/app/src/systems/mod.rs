@@ -142,13 +142,13 @@ pub(crate) use player_animation::animate_player;
 pub(crate) use portal::{sign_portal, tint_portal};
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
 pub(crate) use rules::toughen_enemies;
-pub(crate) use scientist::{PURCHASE, Repertoire, Standing, chat, fit_speech};
+pub(crate) use scientist::{PURCHASE, Repertoire, Standing, chat, fit_speech, keep_speech_on_screen};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};
 pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{
     RoundTextures, ShotContext, ShotRoll, bullet_hits, burn_out_rounds, shoot,
 };
-pub(crate) use chronicle::{PAGES, PAGE_CHANCE, lay_page, read_page, tick_reading};
+pub(crate) use chronicle::{last_words, name_boss, show_page, PAGES, PAGE_CHANCE, lay_page, read_page, tick_reading};
 pub(crate) use shop::{ALTAR, ALTAR_SECONDS, SPEECH_SECONDS, buy, fit_price_boxes, merchant_line, say, say_at, say_for, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use training::{Training, TrainingEvent};
 pub(crate) use simulation::simulate;

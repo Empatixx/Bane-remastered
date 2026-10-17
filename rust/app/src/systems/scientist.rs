@@ -52,29 +52,29 @@ const ELIAN_FIRST: [&str; 2] = [
     "This laboratory is built from our temple's stones.",
     "He calls you a subject. You are the guardian.",
 ];
-/// After the true ending: Elian grateful, or afraid.
-const ELIAN_CLOSED: [&str; 2] = ["You closed it. Velmor will pray again.", "Whatever you were, you were ours."];
-const ELIAN_LEFT_OPEN: [&str; 2] = ["You left it open. For him.", "I will keep praying. Someone has to."];
+/// After the true ending, if the wound was left open: Elian lives, and knows what for.
+const ELIAN_LEFT_OPEN: [&str; 2] = ["You stopped me. He's still up there, smiling.", "I'll keep praying. Someone has to."];
 /// The Scientist after it: silent if the wound was closed, pleased if not.
 const SILENT: [&str; 2] = ["...", "My work. All of it."];
 const UNDERSTOOD: [&str; 2] = ["Good. Good. We understand each other.", "Welcome back, partner!"];
 const ELIAN_GREETINGS: [&str; 2] = ["Guardian! You're back.", "The light is with you still."];
 const ELIAN_HINTS: [&str; 5] = [
     "The book has the lessons, if you need them again.",
-    "The wound is under our feet. It must be closed.",
-    "Brother Aldric said the seal could be mended.",
-    "Teodor wrote everything down. His books went below.",
+    "The prayers didn't just stop that night. Someone stopped them.",
+    "Who cut Oswin's bell rope? I keep asking myself.",
+    "Teodor, Cassian, Oswin... they all wrote. Their pages went below.",
     "The Scientist asks how deep. Never how to close it.",
 ];
 /// Lines that join Elian's once the profile has earned them.
-const ELIAN_EARNED_DEATH: &str = "You came back again. Guardians do, I suppose.";
 const ELIAN_EARNED_DEEP: &str = "You smell of the deep. Like the night it opened.";
-const ELIAN_EARNED_ARGUS: &str = "That eye... I saw it in his drawings.";
 const ELIAN_EARNED_WOLF: &str = "The wolf came up from the wound. It chose you.";
 const ELIAN_EARNED_WIN: &str = "He was glad you reached the bottom. Too glad.";
 const ELIAN_PAGE: &str = "Teodor's hand! He wrote every night. Find the rest.";
-const ELIAN_SCHOLAR: &str = "The scholar in Teodor's pages... he smiled like the Scientist.";
-const ELIAN_ALL_PAGES: &str = "It came up, the first night. Then what are you?";
+const ELIAN_NAME: &str = "Silas Vane... the scholar in Teodor's pages. I know that face.";
+const ELIAN_ALMONDS: &str = "Almonds in the wine. We weren't tired. We were put to sleep.";
+const ELIAN_KNOWS: &str = "It was him. The Scientist. Don't let him see that you know.";
+/// The Scientist, once pages have come up: he wants them.
+const PAPERS: &str = "Papers from below? Bring them to me first, partner.";
 
 /// What the Scientist says once, on the lobby visit after it happened.
 pub(crate) fn remark_line(remark: Remark) -> &'static str {
@@ -104,6 +104,9 @@ pub(crate) fn remark_line(remark: Remark) -> &'static str {
 }
 
 fn boss_line(boss: EnemyKind) -> &'static str {
+    if let Some(identity) = crate::lore::identity(boss) {
+        return identity.scientist;
+    }
     match boss {
         EnemyKind::Spider => "You cut a stitch! The spiders hold the wound shut.",
         EnemyKind::KingSlime => "The king slime... Do not ask what it was made of.",
@@ -177,6 +180,7 @@ impl Repertoire {
             (profile.went_without, SHOWN),
             (profile.wins > 0, REST),
             (profile.wins > 0, BEGUN),
+            (profile.pages > 0, PAPERS),
         ];
         let mut hints = HINTS.to_vec();
         hints.extend(earned.iter().filter(|(has, _)| *has).map(|(_, line)| *line));
@@ -191,23 +195,24 @@ impl Repertoire {
     /// Elian's lines: the order's lore, and what he makes of the hero's runs.
     pub(crate) fn elian(profile: &Standing) -> Self {
         let greetings: &'static [&'static str] = match profile.ending {
-            Some(Ending::Closed) => &ELIAN_CLOSED,
             Some(Ending::LeftOpen) => &ELIAN_LEFT_OPEN,
-            None if profile.runs == 0 => &ELIAN_FIRST,
-            None => &ELIAN_GREETINGS,
+            _ if profile.runs == 0 => &ELIAN_FIRST,
+            _ => &ELIAN_GREETINGS,
         };
         let earned = [
-            (profile.deaths > 0, ELIAN_EARNED_DEATH),
             (profile.best_floor >= 3, ELIAN_EARNED_DEEP),
-            (profile.bosses_slain.contains(&EnemyKind::Argus), ELIAN_EARNED_ARGUS),
             (profile.has_pet, ELIAN_EARNED_WOLF),
             (profile.wins > 0, ELIAN_EARNED_WIN),
             (profile.pages > 0, ELIAN_PAGE),
-            (profile.pages >= 4, ELIAN_SCHOLAR),
-            (profile.pages >= super::PAGES.len(), ELIAN_ALL_PAGES),
+            (profile.pages >= 3, ELIAN_NAME),
+            (profile.pages >= 6, ELIAN_ALMONDS),
+            (profile.pages >= super::PAGES.len(), ELIAN_KNOWS),
         ];
         let mut hints = ELIAN_HINTS.to_vec();
         hints.extend(earned.iter().filter(|(has, _)| *has).map(|(_, line)| *line));
+        // The bosses he knew, put to rest; and what each waking is costing him.
+        hints.extend(profile.bosses_slain.iter().filter_map(|&boss| crate::lore::identity(boss)).map(|who| who.elian));
+        hints.extend(crate::lore::elian_on_his_price(profile.deaths));
         Self { remarks: Vec::new(), greetings, hints, purse: false }
     }
 }
@@ -284,6 +289,38 @@ pub(crate) fn chat(world: &mut World, dt: f32) -> Option<Remark> {
         _ => {}
     }
     remark
+}
+
+/// The highest a speech bubble's top may sit on the screen: below the hearts and the armour.
+const SPEECH_CEILING: f32 = 106.0;
+
+/// Pushes the speech bubble down onto the screen when its talker stands so high that it would
+/// be cut off (the merchant at his wall, the altar's angel) or would sit under the HUD.
+pub(crate) fn keep_speech_on_screen(world: &mut World, camera: Vec2) {
+    let Some((anchor, size)) = world
+        .query::<(&Position, &Size)>()
+        .with::<&SpeechBubble>()
+        .iter()
+        .next()
+        .map(|(position, size)| (position.0, size.0))
+    else {
+        return;
+    };
+    let top = anchor.y - size.y / 2.0 - camera.y;
+    let push = SPEECH_CEILING - top;
+    if push <= 0.0 {
+        return;
+    }
+    let moved: Vec<hecs::Entity> = world
+        .query::<hecs::Entity>()
+        .with::<hecs::Or<&SpeechBubble, hecs::Or<&SpeechPart, &crate::components::SpeechText>>>()
+        .iter()
+        .collect();
+    for entity in moved {
+        if let Ok(mut position) = world.get::<&mut Position>(entity) {
+            position.0.y += push;
+        }
+    }
 }
 
 pub(crate) fn fit_speech(world: &mut World, fonts: &Fonts) {

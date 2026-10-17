@@ -81,6 +81,10 @@ pub(crate) struct InGameScene {
     training: Option<systems::Training>,
     /// Where the merchant's words show on this floor, if it has a shop.
     keeper: Option<Vec2>,
+    /// Who the boss of this floor was, while it is being fought.
+    boss: Option<crate::lore::Identity>,
+    /// `BANE_SLAY`: how long until the boss is felled, for working on the story.
+    slay_in: Option<f32>,
 }
 
 impl Scene for InGameScene {
@@ -419,7 +423,17 @@ impl Scene for InGameScene {
         systems::flicker_flames(&mut self.world);
         systems::tick_speech(&mut self.world, dt);
         systems::tick_reading(&mut self.world, dt);
+        if let Some(left) = &mut self.slay_in {
+            *left -= dt;
+            if *left <= 0.0 {
+                self.slay_in = None;
+                for health in self.world.query_mut::<&mut crate::components::Health>().with::<&crate::components::Boss>() {
+                    health.current = 0;
+                }
+            }
+        }
         systems::fit_speech(&mut self.world, &assets.fonts);
+        systems::keep_speech_on_screen(&mut self.world, self.camera.view());
         systems::fit_price_boxes(&mut self.world, &assets.fonts);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &self.rooms) {
             systems::update_minimaps(&mut self.world, rooms.entered(), rooms.current(), dt);
@@ -1104,6 +1118,14 @@ impl InGameScene {
             start += Vec2::new(dx, dy) * TILE_SIZE;
         }
         let player = prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        // `BANE_PAGE=n` lays page n of the order's pages at the start and opens it, and
+        // `BANE_SLAY=s` fells the boss s seconds into the floor, for working on the story.
+        if let Some(page) = std::env::var("BANE_PAGE").ok().and_then(|n| n.trim().parse::<u8>().ok()) {
+            let page = page.min(systems::PAGES.len() as u8 - 1);
+            systems::lay_page(&mut self.world, start + Vec2::new(90.0, 40.0), page, textures);
+            systems::show_page(&mut self.world, page);
+        }
+        self.slay_in = std::env::var("BANE_SLAY").ok().and_then(|n| n.trim().parse::<f32>().ok());
         // `BANE_GOD=1` keeps the player from being hurt, for watching enemies at work.
         if std::env::var_os("BANE_GOD").is_some() {
             let _ = self.world.insert_one(
@@ -1285,10 +1307,17 @@ impl InGameScene {
                         systems::say_at(&mut self.world, prefabs::speech_anchor(head), line, systems::ALTAR_SECONDS);
                     }
                 }
-                systems::RoomEvent::BossEntered => {
+                systems::RoomEvent::BossEntered { kind } => {
                     self.sounds.push(AudioCommand::Music(Soundtrack::Boss));
+                    self.boss = crate::lore::identity(kind);
+                    if let Some(identity) = self.boss {
+                        systems::name_boss(&mut self.world, identity);
+                    }
                 }
                 systems::RoomEvent::BossDefeated { center } => {
+                    if let Some(identity) = self.boss.take() {
+                        systems::last_words(&mut self.world, identity);
+                    }
                     self.camera.add_trauma(BOSS_DEFEATED_SHAKE);
                     self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
                     let textures = &assets.textures;

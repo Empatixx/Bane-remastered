@@ -70,6 +70,12 @@ const PILGRIMS: [(f32, f32); 12] = [
     (4.0, 6.4), (6.5, 6.4), (9.5, 6.4), (11.5, 6.4), (16.0, 6.4), (19.0, 6.4),
 ];
 const WALKING_IN: [usize; 3] = [1, 7, 3];
+/// The stranger leaving the silent temple: from beside the altar towards the door, in tiles
+/// from the altar, over how long, and how dark.
+const STRANGER_FROM: Vec2 = Vec2::new(-1.6, 1.8);
+const STRANGER_TO: Vec2 = Vec2::new(-9.0, 1.8);
+const STRANGER_WALK: f32 = 4.5;
+const STRANGER_SHADE: Vec4 = Vec4::new(0.16, 0.12, 0.2, 1.0);
 const PILGRIM_PACE: f32 = 1.4;
 /// The cut from the temple to the crypt: the screen goes black for this long either side.
 const CUT_SECONDS: f32 = 0.9;
@@ -240,6 +246,9 @@ pub(crate) struct CinematicScene {
     daylight: Vec<Entity>,
     night: Option<Entity>,
     seal: Option<Entity>,
+    /// A dark figure slipping out of the silent temple, once night has fallen: the one who
+    /// silenced the prayers, though nobody watching the film knows it yet.
+    stranger: Option<Entity>,
     /// What comes after: the training the first time, otherwise the lobby.
     next: Option<SceneId>,
 }
@@ -460,6 +469,17 @@ impl CinematicScene {
         self.seal = Some(self.world.spawn((
             Position(self.altar + Vec2::new(0.0, statue.y * 0.3)),
             Light::rgb(Vec2::ZERO, SEAL_GLOW.0, SEAL_GLOW.1, SEAL_GLOW.2, 120.0, 0.0),
+        )));
+        // The stranger, hidden until the prayers fall silent.
+        self.stranger = Some(self.world.spawn((
+            Position(self.altar + STRANGER_FROM * TILE_SIZE),
+            Size(Prop::Scientist.spec().size()),
+            Color(STRANGER_SHADE),
+            Sprite::cell(textures.get(tex::SCIENTIST), 0, 0, 6, 1),
+            Animation::new(6, 1, Clip { row: 0, frames: 6, frame_time: 0.1, looping: true, flipped: true }),
+            Layer(1),
+            crate::components::YSort::bottom(Prop::Scientist.spec().size()),
+            crate::components::Hidden,
         )));
         let bounds = dungeon.grid.pixel_size();
         self.camera = Camera::new(bounds);
@@ -1156,6 +1176,7 @@ impl CinematicScene {
         self.daylight.clear();
         self.night = None;
         self.seal = None;
+        self.stranger = None;
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();
@@ -1171,6 +1192,18 @@ impl CinematicScene {
     fn day(&mut self, clock: f32, dt: f32) {
         let night_from: f32 = SHOTS[..NIGHT].iter().map(|(seconds, _)| seconds).sum();
         let fallen = ((clock - night_from) / NIGHTFALL).clamp(0.0, 1.0);
+        // Once night has fallen, a figure slips away from the altar and out of the temple.
+        if let Some(stranger) = self.stranger {
+            let walked = (clock - night_from - NIGHTFALL - 0.3) / STRANGER_WALK;
+            if (0.0..1.0).contains(&walked) {
+                let _ = self.world.remove_one::<crate::components::Hidden>(stranger);
+                if let Ok(mut position) = self.world.get::<&mut Position>(stranger) {
+                    position.0 = self.altar + STRANGER_FROM.lerp(STRANGER_TO, walked) * TILE_SIZE;
+                }
+            } else {
+                let _ = self.world.insert_one(stranger, crate::components::Hidden);
+            }
+        }
         for &light in &self.daylight {
             if let Ok(mut glow) = self.world.get::<&mut Light>(light) {
                 glow.intensity = 0.65 * (1.0 - fallen);
@@ -1302,6 +1335,7 @@ impl Scene for CinematicScene {
         self.daylight.clear();
         self.night = None;
         self.seal = None;
+        self.stranger = None;
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();

@@ -1,74 +1,87 @@
 ---
 title: Příběh a lore
-description: Příběh Bane (směr „Pokusný subjekt“) — svět, postavy, bossové, konce — a co z něj už ve hře je.
+description: Příběh Bane — kdo umlčel modlitby, co stojí každé oživení, kým byli bossové — a co z něj už ve hře je.
 ---
 
-Příběh Bane je zatím hlavně v příběhové bibli (schválený směr **„Pokusný subjekt“**). Herní texty
-jsou anglicky. Tato stránka shrnuje lore a u každého prvku uvádí, jestli už ho ve hře uvidíš.
+Herní texty jsou anglicky. Tato stránka shrnuje příběh a u každého prvku uvádí, jestli už ho ve
+hře uvidíš. Všechny herní věty příběhu jsou v kódu na jednom místě, `rust/app/src/lore.rs`
+(bossové, stránky, Elianova cena), plus repliky v `systems/scientist.rs` a `systems/shop.rs`.
 
 ## Jak to funguje
 
+Příběh táhnou dvě otázky, které se odkrývají po kouscích přes runy:
+
+1. **Kdo umlčel modlitby?** Nebyla to náhoda. Byl to Vědec, ten laskavý pán, co ti prodává upgrady.
+2. **Co stojí oživení?** Elian tě po každé smrti znovu probudí a platí za to vlastními léty.
+
 ### Premisa
 
-Jsi **pokusný subjekt** (navržené číslo **41**). **Vědec** tě posílá portálem do **Bane** — **rány**
-ve světě pod zničeným chrámem — a platí ti **talenty** za každý kus pravdy, který vyneseš.
-Nejsi první a nejsi tak docela člověk.
+Čtyři sta let se lidé z Velmoru modlili v chrámu na kopci. Dokud se modlil aspoň jeden hlas,
+pečeť pod oltářem držela a to, co pod ní spí, spalo. Jedné noci modlitby utichly, pod chrámem se
+otevřela rána (**Bane**) a vylezlé věci pobily řád Pečeti. Přežil jen novic **Elian**. Utekl do
+krypty a probudil **strážce**, tebe.
 
-### Svět
+### Záhada: kdo umlčel modlitby
 
-- **Bane (rána):** co do ní spadne, to se překroutí (krysy, hadi, netopýři, pavouci). Po každém sestupu se „zahojí“ a přeskládá — proto vypadá každý run jinak. Žebříky dolů vytesali lidé z chrámu, kteří se ji snažili zavřít.
-- **Pavouci jsou „stehy“**, které drží ránu u povrchu. Příběh je proto staví na patro 1; ve hře ale rána při každém sestupu přeskládá i biomy, takže pavoučí patro může přijít kdykoli.
-- **Laboratoř** stojí nad ranou z trosek chrámu. Portál je Vědcův vynález, nástěnka jeho pracovní poznámky, stůl se zbraněmi to, co vynesly předchozí subjekty.
-- **Kletba** chce jen růst. Obětní oltář si bere zdraví. Talenty jsou ve skutečnosti „vyčištěné“ kousky kletby.
+Učenec z města, **Silas Vane**, chtěl vědět, co rána *dává*, ne co je. Bratr Aldric ho vyhodil.
+Vane se vrátil se zlatem za nejstarší záznamy řádu a jeden z nich zmizel. Na noc svátku přišel
+s **padělaným dopisem** s Aldricovou pečetí a strážce brány Cassian ho pustil dovnitř. Přeřízl
+**provaz zvonu**, nalil kněžím do vína **uspávací nápoj** (chutnalo po mandlích) a když usnul
+poslední hlas, pečeť povolila. Čekal tam se svými sklenicemi. **Vane je Vědec.** Talenty, které ti
+prodává, jsou vyčištěné kousky rány.
 
-### Úvod: řád Pečeti
+Hráč to skládá ze stop:
+- **Úvodní cinematic:** v noci, když modlitby utichnou, odchází od oltáře temná postava.
+- **Stránky řádu:** Teodorova kronika, Cassianova kniha brány, Oswinův zvonický deník, Aldricův nejstarší záznam.
+- **Poslední slova bossů:** „THE WINE  HE POURED THE WINE“, „...the letter... had Aldric's seal...“.
+- **Obchodník Subjekt 12:** byl mlynářem ve Velmoru a tu noc Vědci nosil sklenice nahoru do chrámu.
+- **Elian:** čím víc víš, tím víc tuší („Almonds in the wine. We weren't tired. We were put to sleep.“).
+- **Vědec:** zamlčuje („You closed the Eye? It was... mine. Never mind.“) a chce, abys mu stránky nosil jako prvnímu.
 
-Chrám na kopci patřil **řádu Pečeti**, který držel to, co spí pod kopcem. V kryptě uložil
-**posledního strážce**, tělo v sarkofágu, které se má probudit, až pečeť povolí. Úvodní cinematic
-ukazuje, jak se pod chrámem otevře fialová trhlina a vylezlí tvorové pobijí akolyty: písaře
-Teodora, zvoníka Oswina, strážce brány Cassiana a bratra Aldrica. Přežije jen novic **Elian**.
-Uteče do krypty a probudí strážce, tedy hráče. Pak ho provede výcvikovou kryptou a pošle nahoru
-do laboratoře k Vědci. Elian věří, že hráč je slíbený strážce. Vědec mu říká Subjekt 41 a pravý
-konec ukáže, že tělo v sarkofágu byla jen další věc, kterou rána vrátila nahoru.
+### Elianova cena
+
+Aldricův nejstarší záznam: *kdo strážce probudí, platí za každé probuzení vlastními léty.* Elian
+to neřekne. V laboratoři kolem něj hoří pět svíček a s přibývajícími smrtmi zhasínají (po 3, 8,
+15 a 25 smrtích, jedna hoří vždy). Elian šedne a jeho věty se mění: od „*cough* It's nothing. The
+dust down there.“ přes „Don't worry about me. Just come back.“ až po „A few more times. I can do it
+a few more times.“
 
 ### Postavy
 
-| Postava | Role v příběhu |
+| Postava | Kdo to je |
 |---|---|
-| **Subjekt (ty)** | Bez paměti, probudil se u portálu. Pravda: Vědec subjekty **vytahuje z rány** — jsou to, co kletba vyplivne. 41 je nejstabilnější („my finest work“). |
-| **Vědec** | Prodává talenty. Nadšený, laskavý, nikdy nelže, jen zamlčuje. Ránu nechce zavřít, chce ji **ovládnout**. |
-| **Obchodník** | Subjekt **č. 12**, rozhodl se nevrátit nahoru. Suchý humor, pravdu řekne po několika návštěvách. |
-| **Oltář** | Hlas kletby, mluví VELKÝMI PÍSMENY bez interpunkce. Říká pravdu od začátku. |
-| **Vlk (mazlíček)** | Jediné, co Vědec nestvořil; vylezl z rány sám. |
-| **Elian** | Novic řádu Pečeti, jediný přeživší. Probudí hráče a provede ho výcvikem. Pak stojí v laboratoři u knihy výcviku a mluví o řádu, o ráně a o tom, co hráč dole viděl. Vědci nevěří: „He calls you a subject. You are the guardian.“ |
+| **Strážce (ty)** | Tělo z krypty. Řád ho tam uložil před 400 lety; podle Aldrica „came UP on the first night“. Vědec ti říká Subjekt 41. |
+| **Elian** | Novic řádu, jediný přeživší. Probudil tě, provedl výcvikem, stojí v laboratoři u knihy výcviku a s každou tvou smrtí slábne. |
+| **Vědec (Silas Vane)** | Umlčel modlitby a otevřel ránu. Laskavý, nadšený, nikdy přímo nelže. Před tebou poslal dolů 40 lidí, vrátil se jen jeden. |
+| **Obchodník (Subjekt 12)** | Mlynář z Velmoru, nosil Vědci sklenice. Zůstal dole, protože „up there he'd want to know what I remember“. |
+| **Oltář** | Hlas rány, VELKÝMI PÍSMENY: „HE ONLY BORROWS YOU“, „THE BOY PAYS FOR YOU“. |
+| **Bratr Aldric** | Představený řádu, držel pečeť. Zmizel v ráně; jeho pes hlídá dno. |
+| **Teodor, Cassian, Oswin** | Písař, strážce brány a zvoník. Jejich zápisky leží dole, Teodor a Cassian jsou bossové. |
 
-### Bossové jako strážci
+### Bossové: lidé chrámu, které rána vrátila
 
-| Boss | Lore |
-|---|---|
-| Spider king | Steh, drží ránu u povrchu zavřenou |
-| King slime | Zbytky rozpuštěných subjektů |
-| Sewer ogre | Chrámový dělník, první, koho rána vzala |
-| Stone golem | Oživená socha strážce chrámu |
-| Argus | Vědcovo oko, které se mu vymklo |
-| Hellhound | Strážce dna — nehlídá ránu před tebou, ale tebe před tím, co je pod ní |
-| Mimic | Ve hře je, v příběhu zatím chybí |
-| **The Heart** | Navržený finální boss patra 5: jádro arény, přivolává pavoučata a slizy, ve třetí fázi siluety předchozích subjektů s pistolí |
+Při vstupu do arény se ukáže jméno a kým byl, při jeho pádu poslední slova. Ukazatel zdraví nese jeho jméno.
 
-### Kapitoly po patrech
-
-| Patro | Boss | Co pochopíš |
+| Boss | Kdo to byl | Poslední slova |
 |---|---|---|
-| 1 | Spider king | Rána se hojí, pavouci jsou stehy |
-| 2 | King slime / Sewer ogre | Tady skončila většina subjektů |
-| 3 | Stone golem / Argus | Vědec tě sleduje, Argus je jeho |
-| 4 | Hellhound | Hellhound tě nechce zabít, chce tě zastavit |
-| 5 | The Heart (chrám) | Dno rány; Vědec ji chce použít, ne zavřít |
+| Spider king | **Teodor**, písař, „who wrote until the threads came out of his hands“ | „...he asked me... for the oldest page...“ |
+| King slime | **The Faithful**, lidé z Velmoru, co se přišli modlit | „WE ONLY CAME TO PRAY“ |
+| Sewer ogre | **Cassian**, strážce brány, který pustil jednoho hosta po setmění | „...the letter... had Aldric's seal... I let him in...“ |
+| Stone golem | **The Angel**, socha nad oltářem, která všechno viděla | „THE WINE  HE POURED THE WINE“ |
+| Argus | **The Eye**, co pro svého pána hlídalo chrám | Ukáže noc: postavu ve zvonici, jak přeřezává provaz |
+| Hellhound | **Bratr Aldricův pes**, hlídá dno a čeká na pána | Přestane bojovat; chtěl jen, abys nešel dál |
+| Mimic | **The Offering Box**, 400 let mincí pro chudé | „...more... more... MORE...“ |
+
+Elian o každém poraženém bossovi v laboratoři promluví („Cassian never let anyone in after dark. Never. Who had a letter?“) a Vědec u každého zamlčuje.
 
 ### Konce
 
-- **Základní vítězství:** poražení The Heart. Vědec jásá („Now we can begin.“), hra pokračuje a Vědec mluví o „our work“.
-- **Pravý konec:** splnit challenge **Bane** a v ní zabít The Heart → místo truhly portál dolů → krátká textová sekvence („You were never brought here. You were brought UP.“) → volba **Close the wound** (laboratoř vyhasne, new game+) nebo **Leave it open** (pokračování).
+- **Výhra:** Vědec jásá („Now we can begin.“) a mluví o „our work“. Pro někoho jiného.
+- **Pravý konec:** po první výhře challenge **Bane** (run bez Vědcovy práce) přijde epilog:
+  „Silas Vane cut the bell rope. Silas Vane poured the wine.“ … „Elian kneels at its edge. He has
+  one prayer left in him.“ Volba:
+  - **Let him pray** — rána se zavře na Elianově poslední modlitbě. V laboratoři po něm zůstane hořící svíčka se jménem, portál je šedý a vyhaslý, Vědec mlčí („...“).
+  - **Stop him** — Elian žije, rána zůstane otevřená, Vědec: „We understand each other.“
 
 ## Obsah
 
@@ -91,10 +104,12 @@ Co z příběhu už ve hře je:
 | Vědcova poznámka pod každou misí | **Ne** | |
 | Popisy challenge jako Vědcovy poznámky | **Ne** | Dnes věcné popisy |
 | Řádek „Subject 41. Attempt N. Recorded.“ na obrazovce konce runu | **Ano** | Po výhře „Subject 41. The wound is open. Recorded.“ |
-| Pravý konec (portál dolů, epilog, volba, new game+) | **Částečně** | Po první výhře challenge **Bane** přijde epilog: tři věty pravdy („You were never brought here. You were brought UP.“) a volba **Close the wound** / **Leave it open**. Volba se uloží do profilu. Portál dolů, The Heart a new game+ zatím nejsou |
+| Pravý konec (epilog, volba) | **Ano** | Po první výhře challenge **Bane**: pravda o Silasi Vaneovi a volba **Let him pray** / **Stop him**. The Heart a new game+ zatím nejsou |
 | Proměněná laboratoř po zavření rány | **Částečně** | Po zavření je portál šedý a vyhaslý, Vědec jen „...“ / „My work. All of it.“, Elian děkuje. Po ponechání otevřené Vědec: „Good. Good. We understand each other.“ |
-| Elian v laboratoři | **Ano** | Stojí u knihy výcviku; repliky o řádu a podle postupu (smrti, hloubka, Argus, vlk, výhra, nalezené stránky) |
-| Teodorova kronika | **Ano** | 8 stránek písaře Teodora; dokud nejsou všechny, leží s 60% šancí v jedné bojové místnosti patra jako kniha se světlem. E ji přečte (panel na 9 s) a profil si ji pamatuje. Stránka 6 prozradí, že strážce „came UP, the first night“ |
+| Elian v laboratoři | **Ano** | U knihy výcviku, pět svíček zhasíná podle smrtí; repliky o řádu, stránkách, bossech a jeho ceně |
+| Stránky řádu | **Ano** | 8 stránek (Teodor, Cassian, Oswin, Aldric); dokud nejsou všechny, leží s 60% šancí v jedné bojové místnosti patra jako kniha se světlem. E ji přečte a profil si ji pamatuje |
+| Identity bossů | **Ano** | Jméno a kým byl při vstupu do arény, poslední slova při pádu, jméno na ukazateli zdraví |
+| Temná postava v cinematicu | **Ano** | V noční scéně odchází od oltáře ke dveřím |
 | Vlk u portálu | **Částečně** | Mazlíček z talentu Pet existuje, ale chodí s tebou, ne jako postava u portálu |
 
 Doporučené pořadí: nejdřív levné texty (repliky, popisy, řádek na obrazovce konce runu), pak patro 5 =

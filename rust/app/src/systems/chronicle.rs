@@ -1,5 +1,5 @@
-//! Teodor's chronicle: the order's scribe wrote every night, and his pages went down into the
-//! wound with everything else. One may lie on a floor, a book on the ground under a faint light;
+//! The order's pages: Teodor's chronicle, Cassian's gate ledger, Oswin's bell log, Aldric's
+//! oldest record, gone down into the wound with everything else (see `lore::PAGES`). One may lie on a floor, a book on the ground under a faint light;
 //! reading it (E) keeps it in the profile and shows its words over the screen for a while.
 
 use glam::{Vec2, Vec4};
@@ -16,17 +16,7 @@ use crate::props::{Look, Prop};
 use crate::render::FontSize;
 use crate::viewport::TARGET;
 
-/// The pages, in the order they are found.
-pub(crate) const PAGES: [&str; 8] = [
-    "Year 412 of the watch. The prayers held again tonight. The people of Velmor sang until dawn, and below the altar it slept.",
-    "We do not name what sleeps under the altar. Brother Aldric says a name would feed it. So we only say: the wound.",
-    "Oswin rang the bells late tonight. For a breath the seal glowed through the floor, purple as a bruise. Nobody slept.",
-    "A scholar from the city came asking how deep it goes. Aldric sent him away. He smiled as if he already knew.",
-    "The scholar is back, with gold for the temple's old records. I have hidden the oldest of them in the crypt.",
-    "The oldest record says the guardian was never made. It came UP, the first night. We only laid it in stone and called it ours.",
-    "If the guardian wakes, it will not remember. Tell it that it is ours. Pray that it believes.",
-    "The prayers are thinning. If you read this, the seal is broken. Close the wound. Do not let anyone use it.",
-];
+pub(crate) use crate::lore::PAGES;
 /// How likely a floor is to hold a page while some are still unfound, in percent.
 pub(crate) const PAGE_CHANCE: usize = 60;
 
@@ -36,6 +26,10 @@ const READ_FADE: f32 = 0.6;
 const PAPER: Vec4 = Vec4::new(0.08, 0.06, 0.07, 0.86);
 const INK: Vec4 = Vec4::new(0.93, 0.88, 0.78, 1.0);
 const HEADING: Vec4 = Vec4::new(0.85, 0.66, 0.36, 1.0);
+const BOSS_NAME: Vec4 = Vec4::new(0.86, 0.3, 0.3, 1.0);
+const LAST_WORDS: Vec4 = Vec4::new(0.82, 0.7, 0.95, 1.0);
+const BOSS_TITLE_SECONDS: f32 = 4.0;
+const LAST_WORDS_SECONDS: f32 = 6.0;
 const LINE_CHARS: usize = 54;
 const LINE_STEP: f32 = 26.0;
 const PANEL_TOP: f32 = 286.0;
@@ -50,6 +44,8 @@ pub(crate) struct Reading {
     pub(crate) shown: f32,
     /// Its colour's own opacity, which the fade scales.
     base: f32,
+    /// How long it stays up.
+    seconds: f32,
 }
 
 /// Lays page `page` on the floor at `center`.
@@ -79,24 +75,25 @@ pub(crate) fn read_page(world: &mut World, sounds: &mut Vec<AudioCommand>) -> Op
         .map(|(entity, page)| (entity, page.0))?;
     let _ = world.despawn(entity);
     sounds.push(AudioCommand::Effect(SoundEffect::Pickup));
-    show(world, page);
+    show_page(world, page);
     Some(page)
 }
 
-fn show(world: &mut World, page: u8) {
+pub(crate) fn show_page(world: &mut World, page: u8) {
     clear(world);
-    let lines = wrap(PAGES[usize::from(page)], LINE_CHARS);
+    let (author, words) = PAGES[usize::from(page)];
+    let lines = wrap(words, LINE_CHARS);
     let height = 70.0 + LINE_STEP * lines.len() as f32;
-    let reading = Reading { shown: 0.0, base: 1.0 };
+    let reading = Reading { shown: 0.0, base: 1.0, seconds: READ_SECONDS };
     world.spawn((
-        Reading { shown: 0.0, base: PAPER.w },
+        Reading { shown: 0.0, base: PAPER.w, seconds: READ_SECONDS },
         Position(Vec2::new(TARGET.x / 2.0, PANEL_TOP + height / 2.0)),
         Size(Vec2::new(TARGET.x - 200.0, height)),
         Color(PAPER),
         Layer(15),
         ScreenSpace,
     ));
-    let heading = format!("Teodor's chronicle, page {} of {}", page + 1, PAGES.len());
+    let heading = format!("{author}  ({} of {})", page + 1, PAGES.len());
     world.spawn((
         reading,
         Position(Vec2::new(TARGET.x / 2.0, PANEL_TOP + 34.0)),
@@ -117,6 +114,38 @@ fn show(world: &mut World, page: u8) {
     }
 }
 
+/// Words over the screen for `seconds`, fading in and out: a boss's name as it rises, its last
+/// words as it falls. Each line is its text, size, colour and height.
+pub(crate) fn caption(world: &mut World, lines: &[(String, FontSize, Vec4, f32)], seconds: f32) {
+    for (text, size, color, y) in lines {
+        world.spawn((
+            Reading { shown: 0.0, base: 1.0, seconds },
+            Position(Vec2::new(TARGET.x / 2.0, *y)),
+            Text::centered(text.clone(), *color, *size),
+            Color(*color),
+            Layer(16),
+            ScreenSpace,
+        ));
+    }
+}
+
+/// A boss's name and who it was, high over the fight.
+pub(crate) fn name_boss(world: &mut World, identity: crate::lore::Identity) {
+    caption(
+        world,
+        &[
+            (identity.name.to_uppercase(), FontSize::Size32, BOSS_NAME, 118.0),
+            (identity.epithet.to_owned(), FontSize::Size22, INK, 152.0),
+        ],
+        BOSS_TITLE_SECONDS,
+    );
+}
+
+/// What a boss says as it falls, low on the screen.
+pub(crate) fn last_words(world: &mut World, identity: crate::lore::Identity) {
+    caption(world, &[(identity.last_words.to_owned(), FontSize::Size22, LAST_WORDS, 420.0)], LAST_WORDS_SECONDS);
+}
+
 fn clear(world: &mut World) {
     let shown: Vec<Entity> = world.query::<Entity>().with::<&Reading>().iter().collect();
     for entity in shown {
@@ -132,12 +161,12 @@ pub(crate) fn tick_reading(world: &mut World, dt: f32) {
     {
         reading.shown += dt;
         let t = reading.shown;
-        let alpha = (t / READ_FADE).min(1.0).min(((READ_SECONDS - t) / READ_FADE).max(0.0));
+        let alpha = (t / READ_FADE).min(1.0).min(((reading.seconds - t) / READ_FADE).max(0.0));
         color.0.w = reading.base * alpha;
         if let Some(text) = text {
             text.color.w = alpha;
         }
-        if t >= READ_SECONDS {
+        if t >= reading.seconds {
             done.push(entity);
         }
     }
@@ -172,7 +201,7 @@ mod tests {
 
     #[test]
     fn every_page_fits_the_panel() {
-        for page in PAGES {
+        for (_, page) in PAGES {
             let lines = wrap(page, LINE_CHARS);
             assert!(lines.len() <= 3, "{page}");
             assert!(lines.iter().all(|line| line.len() <= LINE_CHARS));

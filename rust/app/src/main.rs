@@ -17,6 +17,7 @@ mod guns;
 mod headless;
 mod input;
 mod items;
+mod lore;
 mod navigation;
 mod objects;
 mod palette;
