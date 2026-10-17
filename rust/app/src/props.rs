@@ -453,17 +453,17 @@ impl Prop {
             Self::WebPatch => still(tex::WEB_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::ArrowTrap => still(tex::ARROW_TRAP, Vec2::new(16.0, 16.0), 4.0),
             Self::Ladder => still(tex::LADDER, Vec2::new(32.0, 32.0), 3.0),
-            // Elian, the novice of the Order of the Seal: the acolytes' sheet, the hero's own
-            // drawn in the temple's colours, his front-facing frames.
+            // Elian, the novice of the Order of the Seal, drawn like the temple's other priests
+            // (tools/make_priest.py): low resolution, four times over, standing.
             Self::Guide => PropSpec {
-                texture: tex::ACOLYTE,
-                columns: 6,
-                rows: 4,
-                frame: Vec2::new(16.0, 38.0),
-                scale: 2.0,
+                texture: tex::PRIEST,
+                columns: 4,
+                rows: 3,
+                frame: Vec2::new(10.0, 19.0),
+                scale: 4.0,
                 animation: Some(Animated {
-                    frames: 6,
-                    frame_time: 0.16,
+                    frames: 4,
+                    frame_time: 0.22,
                 }),
             },
             Self::Scientist => PropSpec {

@@ -278,8 +278,8 @@ a staletí to držel modlitbou a ohněm. V kryptě pod chrámem uložil **posled
 v kamenném sarkofágu, které se má probudit, až pečeť povolí. Kdo strážce je, řád nevěděl. Jen
 že „přišel zdola a čeká“.
 
-Akolyté nosí bílá roucha, modré kalhoty a zlatou šerpu (hrdinův sprite v barvách chrámu,
-`tools/make_acolyte.py`).
+Kněží řádu nosí bílá roucha s kapucí a zlatým lemem. Jsou kreslení v nízkém rozlišení
+(10×19 px, 4× zvětšené, `tools/make_priest.py`), stejně hrubě jako rekvizity v dungeonu.
 
 ### Akolyté (v cinematicu)
 | Jméno | Úloha v řádu | Osud |

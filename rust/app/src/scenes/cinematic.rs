@@ -121,7 +121,12 @@ struct Acolyte {
 /// and which way they run: Teodor, Oswin, Cassian, Aldric, and Elian the novice, the last, who
 /// gets away to the crypt (see story.md, chapter 9).
 const ACOLYTES: [(f32, f32, f32); 5] =
-    [(10.0, 1.3, -1.0), (14.0, 5.6, 1.0), (18.0, 1.3, -1.0), (22.0, 5.6, 1.0), (7.0, 5.6, 1.0)];
+    [(21.0, 1.3, -1.0), (23.5, 5.6, 1.0), (25.5, 1.3, -1.0), (27.5, 5.6, 1.0), (24.0, 1.3, -1.0)];
+/// How far each runs down the nave, in tiles: far enough to be in view when the creatures come.
+const RUNS: [f32; 5] = [10.0, 9.0, 8.0, 9.5, 26.0];
+/// The priests' sheet (tools/make_priest.py): four frames of 10x19 across; standing, running
+/// and praying rows; drawn four times over.
+const PRIEST_SIZE: Vec2 = Vec2::new(40.0, 76.0);
 /// Elian, who escapes: he runs on out of the nave, and waits in the crypt.
 const ELIAN: usize = 4;
 /// When they start to run once the ground shakes, how fast, how fast the creatures hunt them,
@@ -348,6 +353,8 @@ impl CinematicScene {
         // The altar in the apse: an angel between two candlesticks, two fire bowls before it.
         let altar = at(columns as f32 - apse.0 as f32 / 2.0, rows as f32 / 2.0);
         let statue = Prop::AngelStatue.spec().size();
+        // Standing on the nave's middle line and rising up from it.
+        let altar = altar - Vec2::new(0.0, statue.y * 0.3);
         self.angel = Some(prefabs::prop(&mut self.world, Prop::AngelStatue, altar - statue / 2.0, Look::DEFAULT, textures));
         self.angel_at = altar;
         self.altar = altar;
@@ -356,17 +363,18 @@ impl CinematicScene {
         let size = crate::prefabs::PLAYER_SIZE;
         for (index, &(column, row, run)) in ACOLYTES.iter().enumerate() {
             let home = at(column, row);
-            let away = if index == ELIAN { 7.5 } else { 3.0 };
-            let hide = home + Vec2::new(-away * TILE_SIZE, run * 0.6 * TILE_SIZE);
-            let clip = Clip { row: 0, frames: 6, frame_time: 0.16 + index as f32 * 0.01, looping: true, flipped: index % 2 == 1 };
+            let hide = home + Vec2::new(-RUNS[index] * TILE_SIZE, run * 0.6 * TILE_SIZE);
+            // Praying, hands raised, until the ground shakes.
+            let clip = Clip { row: 2, frames: 2, frame_time: 0.5 + index as f32 * 0.05, looping: true, flipped: index % 2 == 1 };
+            let _ = size;
             let entity = self.world.spawn((
                 Position(home),
-                Size(size),
+                Size(PRIEST_SIZE),
                 Color(Vec4::ONE),
-                Sprite::cell(textures.get(tex::ACOLYTE), 0, 0, 6, 4),
-                Animation::new(6, 4, clip),
+                Sprite::cell(textures.get(tex::PRIEST), 0, 2, 4, 3),
+                Animation::new(4, 3, clip),
                 Layer(1),
-                crate::components::YSort::bottom(size),
+                crate::components::YSort::bottom(PRIEST_SIZE),
                 crate::components::Lit,
             ));
             self.acolytes.push(Acolyte { entity, home, hide, caught: None });
@@ -628,9 +636,10 @@ impl CinematicScene {
             }
             if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
                 // Running on their side, then cowering facing the room.
-                let row = if since > 0.0 && run < 1.0 { 1 } else { 0 };
+                let row = if since <= 0.0 { 2 } else if run < 1.0 { 1 } else { 0 };
                 if animation.clip().row != row {
-                    animation.play(Clip { row, frames: 6, frame_time: if row == 1 { 0.08 } else { 0.16 }, looping: true, flipped: row == 1 });
+                    let frames = if row == 2 { 2 } else { 4 };
+                    animation.play(Clip { row, frames, frame_time: if row == 1 { 0.09 } else { 0.22 }, looping: true, flipped: row == 1 });
                 }
             }
         }
@@ -648,7 +657,7 @@ impl CinematicScene {
             color.0 = Vec4::new(1.0, 0.25, 0.25, 1.0);
         }
         self.camera.add_trauma(0.15);
-        let foot = spot + Vec2::new(0.0, crate::prefabs::PLAYER_SIZE.y * 0.35);
+        let foot = spot + Vec2::new(0.0, PRIEST_SIZE.y * 0.35);
         for _ in 0..7 {
             let offset = Vec2::new((self.roll() - 0.5) * 50.0, (self.roll() - 0.5) * 22.0);
             let side = 10.0 + self.roll() * 16.0;
@@ -895,15 +904,16 @@ impl CinematicScene {
         )));
         // Elian, who ran down here, standing at its head.
         let size = crate::prefabs::PLAYER_SIZE;
-        let clip = Clip { row: 0, frames: 6, frame_time: 0.16, looping: true, flipped: false };
+        let clip = Clip { row: 2, frames: 2, frame_time: 0.5, looping: true, flipped: false };
+        let _ = size;
         self.world.spawn((
             Position(centre + Vec2::new(-SARCOPHAGUS.x / 2.0 - 0.7 * TILE_SIZE, 0.1 * TILE_SIZE)),
-            Size(size),
+            Size(PRIEST_SIZE),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get(tex::ACOLYTE), 0, 0, 6, 4),
-            Animation::new(6, 4, clip),
+            Sprite::cell(textures.get(tex::PRIEST), 0, 2, 4, 3),
+            Animation::new(4, 3, clip),
             Layer(1),
-            crate::components::YSort::bottom(size),
+            crate::components::YSort::bottom(PRIEST_SIZE),
             crate::components::Lit,
         ));
         let candle = Prop::Candlestick.spec().size();
