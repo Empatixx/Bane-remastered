@@ -18,6 +18,8 @@ pub(crate) enum Prop {
     Bookshelf,
     MapTable,
     Scientist,
+    /// The hooded keeper with a lantern who talks the player through the training crypt.
+    Guide,
     Banner,
     Spike,
     TorchOff,
@@ -176,6 +178,8 @@ const fn variants(texture: Tex, frame: Vec2, scale: f32) -> PropSpec {
     }
 }
 
+/// The treasure rooms' brick piles: one row per floor's look (see `Theme::style`).
+pub(crate) const BRICK_STYLES: usize = 7;
 pub(crate) const SURFACE_ROWS: usize = 141;
 const SHORE_ROWS: usize = 40;
 
@@ -295,13 +299,13 @@ impl Prop {
             },
             Self::Shopkeeper => PropSpec {
                 texture: tex::SHOPKEEPER,
-                columns: 10,
+                columns: 24,
                 rows: 1,
                 frame: Vec2::new(80.0, 90.0),
                 scale: 4.0,
                 animation: Some(Animated {
-                    frames: 10,
-                    frame_time: 0.17,
+                    frames: 24,
+                    frame_time: 0.2,
                 }),
             },
             Self::ShopTable => still(tex::SHOPTABLE, Vec2::new(24.0, 16.0), 6.0),
@@ -338,7 +342,14 @@ impl Prop {
                     frame_time: 0.175,
                 }),
             },
-            Self::Bricks => variants(tex::BRICKS, Vec2::new(16.0, 16.0), 4.0),
+            Self::Bricks => PropSpec {
+                texture: tex::BRICKS,
+                columns: 1,
+                rows: BRICK_STYLES,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: None,
+            },
             Self::AngelStatue => still(tex::ANGEL_STATUE, Vec2::new(64.0, 64.0), 4.0),
             Self::Candlestick => PropSpec {
                 texture: tex::CANDLESTICK,
@@ -441,6 +452,17 @@ impl Prop {
             Self::WebPatch => still(tex::WEB_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::ArrowTrap => still(tex::ARROW_TRAP, Vec2::new(16.0, 16.0), 4.0),
             Self::Ladder => still(tex::LADDER, Vec2::new(32.0, 32.0), 3.0),
+            Self::Guide => PropSpec {
+                texture: tex::GUIDE,
+                columns: 6,
+                rows: 1,
+                frame: Vec2::new(16.0, 40.0),
+                scale: 2.5,
+                animation: Some(Animated {
+                    frames: 6,
+                    frame_time: 0.18,
+                }),
+            },
             Self::Scientist => PropSpec {
                 texture: tex::SCIENTIST,
                 columns: 6,

@@ -44,6 +44,7 @@ fn impact_shake(effect: SoundEffect) -> f32 {
     }
 }
 
+
 #[derive(Default)]
 pub(crate) struct InGameScene {
     world: World,
@@ -75,6 +76,9 @@ pub(crate) struct InGameScene {
     challenge: Option<ChallengeId>,
     kills_without_drop: u32,
     drag_from: Option<Vec2>,
+    /// Whether the next start is the training crypt rather than a run.
+    training_mode: bool,
+    training: Option<systems::Training>,
 }
 
 impl Scene for InGameScene {
@@ -173,6 +177,11 @@ impl Scene for InGameScene {
         settings: &mut Settings,
     ) -> Transition {
         self.camera.update_shake(dt);
+        if self.training.is_some() && systems::player_is_dead(&self.world) {
+            if let Some(training) = &mut self.training {
+                training.respawn(&mut self.world, &mut self.physics, &assets.textures);
+            }
+        }
         if self.death.is_none() && (self.victory || systems::player_is_dead(&self.world)) {
             self.start_death_screen(assets);
         }
@@ -197,8 +206,8 @@ impl Scene for InGameScene {
             if self.big_map {
                 self.set_big_map(false);
             } else {
-                self.pause
-                    .escape(&mut self.world, assets, &prefabs::PAUSE_GAME);
+                let buttons = self.pause_buttons();
+                self.pause.escape(&mut self.world, assets, buttons);
             }
         }
         if self.pause.is_active() {
@@ -207,10 +216,17 @@ impl Scene for InGameScene {
                     .update(&mut self.world, input, assets, settings, &mut self.sounds);
             return match action {
                 Some(UiAction::Resume) => {
-                    self.pause
-                        .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
+                    let buttons = self.pause_buttons();
+                    self.pause.toggle(&mut self.world, assets, buttons);
                     Transition::None
                 }
+                Some(UiAction::SkipTraining) => {
+                    let buttons = self.pause_buttons();
+                    self.pause.toggle(&mut self.world, assets, buttons);
+                    self.pause.toggle(&mut self.world, assets, &prefabs::PAUSE_SKIP);
+                    Transition::None
+                }
+                Some(UiAction::ConfirmSkip) => self.finish_training(),
                 Some(UiAction::Die) => {
                     self.pause
                         .toggle(&mut self.world, assets, &prefabs::PAUSE_GAME);
@@ -398,7 +414,7 @@ impl Scene for InGameScene {
         systems::fit_price_boxes(&mut self.world, &assets.fonts);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &self.rooms) {
             systems::update_minimaps(&mut self.world, rooms.entered(), rooms.current(), dt);
-            if let Some(position) = player_tile(&self.world) {
+            if let Some(position) = player_tile(&self.world).filter(|_| self.training.is_none()) {
                 if let Some((min, max)) = dungeon.camera_region(position.0, position.1) {
                     self.camera.glide_bounds(min, max, dt);
                 }
@@ -425,9 +441,26 @@ impl Scene for InGameScene {
             Some(Interaction::PickUpGun) => {
                 systems::pick_up_gun(&mut self.world, &assets.textures, &mut self.sounds);
             }
+            Some(Interaction::EnterPortal) => {
+                if let Some(training) = &mut self.training {
+                    training.enter_portal();
+                }
+            }
             _ => {}
         }
         self.feel_impacts();
+        if let Some(training) = &mut self.training {
+            let event = training.update(
+                &mut self.world,
+                &mut self.physics,
+                &assets.textures,
+                &mut self.sounds,
+                dt,
+            );
+            if event == systems::TrainingEvent::Finished {
+                return self.finish_training();
+            }
+        }
         Transition::None
     }
 
@@ -696,6 +729,10 @@ impl InGameScene {
     }
 
     fn perks(&self) -> Perks {
+        // The training is the same for everyone: no upgrades bought yet count in it.
+        if self.training_mode {
+            return Perks::default();
+        }
         let owned = self
             .profile
             .as_ref()
@@ -721,6 +758,27 @@ impl InGameScene {
                 self.camera.add_trauma(impact_shake(*effect));
             }
         }
+    }
+
+    /// Whether the scene next starts the training crypt rather than a run.
+    pub(crate) fn set_training(&mut self, on: bool) {
+        self.training_mode = on;
+    }
+
+    fn pause_buttons(&self) -> &'static [(&'static str, UiAction)] {
+        if self.training.is_some() {
+            &prefabs::PAUSE_TRAINING
+        } else {
+            &prefabs::PAUSE_GAME
+        }
+    }
+
+    /// The training is over, learnt or skipped: noted in the profile, on to the lobby.
+    fn finish_training(&mut self) -> Transition {
+        if let Some(profile) = &self.profile {
+            profile.finish_training();
+        }
+        Transition::Switch(SceneId::Lobby)
     }
 
     pub(crate) fn attach_profile(&mut self, profile: SharedProfile) {
@@ -761,8 +819,20 @@ impl InGameScene {
             .ok()
             .and_then(|name| Theme::parse(&name))
             .unwrap_or_else(|| Theme::for_floor(self.run_seed, self.floor));
-        let mut dungeon = match Dungeon::generate_for_run(&mut self.map_rng, theme, self.rules.shops)
-        {
+        self.training = None;
+        let generated = if self.training_mode {
+            let (dungeon, lessons) = crate::dungeon::crypt();
+            let mut training = systems::Training::new(lessons);
+            // `BANE_LESSON=n` starts the training at its n-th lesson (from 1), for working on it.
+            if let Some(lesson) = std::env::var("BANE_LESSON").ok().and_then(|n| n.trim().parse::<usize>().ok()) {
+                training.start_at(lesson.saturating_sub(1));
+            }
+            self.training = Some(training);
+            Ok(dungeon)
+        } else {
+            Dungeon::generate_for_run(&mut self.map_rng, theme, self.rules.shops)
+        };
+        let mut dungeon = match generated {
             Ok(dungeon) => dungeon,
             Err(error) => {
                 tracing::error!(%error, "cannot generate the dungeon");
@@ -857,7 +927,12 @@ impl InGameScene {
             }
         }
         self.flow = FlowField::default();
-        let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
+        let mut start = self
+            .training
+            .as_ref()
+            .and_then(systems::Training::start_position)
+            .or_else(|| dungeon.start_position())
+            .unwrap_or(bounds / 2.0);
         // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
         // `table`, `rug`, `vestibule`, `water`, `bowl`, `statue`, `shackles` or `pendulum` starts the floor there (by the first one of those), for working on the
         // game.
@@ -1079,9 +1154,15 @@ impl InGameScene {
             prefabs::minimal_speech(&mut self.world, head);
         }
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
-        spawn_minimaps(&mut self.world, &dungeon, textures);
+        // The training needs no map: its rooms run one after another.
+        if self.training.is_none() {
+            spawn_minimaps(&mut self.world, &dungeon, textures);
+        }
         self.camera = Camera::new(bounds);
-        if let Some(room) = dungeon.rooms.first() {
+        if self.training.is_some() {
+            // Free over the whole crypt, so it follows the player round the bends of its corridors.
+            self.camera.set_bounds(Vec2::ZERO, bounds);
+        } else if let Some(room) = dungeon.rooms.first() {
             if let Some((min, max)) = dungeon.camera_region(room.origin.0 + 1, room.origin.1 + 1) {
                 self.camera.set_bounds(min, max);
             }
@@ -1097,6 +1178,9 @@ impl InGameScene {
         );
         prefabs::weapon_hud(&mut self.world, textures);
         prefabs::artefact_hud(&mut self.world, textures);
+        if let Some(training) = &mut self.training {
+            training.begin(&mut self.world, &mut self.physics, textures);
+        }
         if let Some(target) = systems::camera_target(&self.world, TARGET / 2.0, 1.0) {
             self.camera.snap_to(target);
         }

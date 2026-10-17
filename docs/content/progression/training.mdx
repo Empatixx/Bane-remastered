@@ -1,0 +1,59 @@
+---
+title: Výcviková krypta
+description: Úvodní výcvik před laboratoří. Má deset místností a každá naučí jednu věc. Provází tě průvodce, smrt tě vrátí na začátek místnosti a výcvik jde přeskočit i zopakovat.
+---
+
+Při **prvním spuštění** tě tlačítko **Play** nepošle rovnou do laboratoře, ale do výcvikové krypty.
+Krypta je deset malých místností v řadě. Každá naučí jednu věc a mříž do další místnosti se
+otevře, až ji zvládneš. Celou cestu tě provází **průvodce** v kápi s lucernou a radí bublinami nad hlavou.
+
+## Jak to funguje
+
+### Lekce
+
+| # | Lekce | Úkol | Klávesy |
+|---|---|---|---|
+| 1 | Pohyb | Projdi klikatou chodbou na její konec. Klávesy blikají na zemi. | **W A S D** |
+| 2 | Střelba | Rozstřel 3 květináče. Náboje vidíš vpravo dole, **R** přebíjí. | myš |
+| 3 | Kořist | Rozstřel sud (vypadnou coins, náboje a brokovnice), seber brokovnici (E) a přepni zbraně (1/2). Nápisy na zemi se objevují postupně. | **E**, **1**, **2** |
+| 4 | Úhyb | Přeskoč pás bodců kotoulem. Během kotoulu tě nic nezraní. | **Space** |
+| 5 | Životy | Zabij krysu, pak vypij lektvar. Zbroj chytá zásahy dřív než srdce. | — |
+| 6 | Pasti a povrchy | Projdi místnost: šípové pasti, voda zpomalí, láva pálí, led klouže, bodce | **Space** |
+| 7 | Kryt | U vstupu leží Uzi (E). Poraz slizouna a krysy. Stůl převrhneš a schováš se za ním. | — |
+| 8 | Artefakt | Na zemi leží Ring of Death: seber ho (E), tím přilákáš 3 krysy, a použij ho (F) | **E**, **F** |
+| 9 | Zkouška | U vstupu leží M4. Vstup se za tebou zavře a přijde vlna: 3 krysy a netopýr. Po ní se vstup zase otevře. | — |
+| 10 | Odchod | E u portálu tě hned pošle do laboratoře | **E** |
+
+### Místnosti
+
+Každá lekce má jiný tvar: širokou klikatou chodbu na chůzi, úzkou chodbu s bodci na úskok, dlouhý průchod
+s pastmi a různě velké síně. Místnosti leží v různé výšce a chodby mezi nimi zatáčejí. Chodby i dveře jsou
+tři dlaždice široké. V místnostech jsou prapory, okovy, řetězy na zdech, pavučiny, kosti, sudy a velké červené koberce. Přes ústí chodeb vedou prkna a v zatáčkách chodeb visí svislé řetězy. Ve třech místnostech je na zemi krev. Ze stropu visí jen tu a tam lucerna nebo klec, vždy u zdi. Nad některými místnostmi jsou za mřížemi výklenky s vodou a trubkou (v místnosti s pastmi s lávou). Krypta nemá
+minimapu a kamera jde volně za hráčem.
+
+### Nápověda
+
+- Klávesy, které lekce učí, **blikají na zemi**: W A S D u startu, Space před bodci, E a F u artefaktu.
+- Krátké nápovědy jsou **napsané na podlaze** v místnosti (např. *Move*, *R reloads*, *Water slows · Lava burns · Ice slides*). Na obrazovce žádný panel ani minimapa nejsou, jinak radí průvodce v bublinách.
+- Po splnění lekce zazní zvuk, nad hráčem se objeví zelené *Done!* a mříž se otevře.
+- Hráč začíná jen s pistolí a bez artefaktu. Brokovnici najde ve 3. lekci, Uzi v 7., M4 v 9. a artefakt v 8.
+- Když zahodí zbraň (Q) a zůstane s prázdnou rukou, hra mu sama vezme do ruky druhou.
+- Zásoba nábojů se ve výcviku sama doplňuje, přebíjet (R) ale musí.
+
+### Smrt
+
+Každá místnost je checkpoint. Když zemřeš, obraz krátce ztmavne a objevíš se na začátku místnosti
+s plnými životy i zbrojí. Lekce se nachystá znovu a nic neztratíš. Po **třetí smrti** v téže
+místnosti ti průvodce poradí.
+
+### Přeskočení a opakování
+
+- **Esc → Skip Training** v pauze výcvik přeskočí. Hra se nejdřív zeptá, jestli to myslíš vážně.
+- Dokončení i přeskočení se uloží do profilu, takže příště už **Play** vede rovnou do laboratoře.
+- Výcvik můžeš kdykoli zopakovat: v laboratoři u **knihy na stole** vlevo s cedulí **Training** (E, *Train again*).
+
+## Tipy a souvislosti
+
+- Ve výcviku neplatí koupená vylepšení ani perky, každý ho hraje stejně.
+- Ovládání podrobně: [Ovládání](/docs/player/controls). Pasti a povrchy: [Dungeon](/docs/dungeon).
+- Pro vývoj: `BANE_START=training` spustí hru rovnou v kryptě a `BANE_LESSON=n` začne n-tou lekcí.

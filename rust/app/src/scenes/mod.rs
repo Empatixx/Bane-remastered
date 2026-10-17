@@ -38,6 +38,8 @@ pub(crate) enum SceneId {
     Menu,
     Lobby,
     InGame,
+    /// The training crypt: the in-game scene running the lessons instead of a run.
+    Training,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -356,7 +356,7 @@ mod tests {
                     assert!(matches!(room.kind, RoomKind::Normal | RoomKind::Ambush));
                     assert!(!room.spawns.contains(&tile));
                     assert!(!near_door(room, tile), "{tile:?}");
-                    // Frozen skulls are moved onto the ice afterwards; nothing else lies on it.
+                    // Frozen skulls are taken out of every room afterwards; nothing else lies on the ice.
                     assert!(room.decor.iter().all(|decor| {
                         decor.tile != tile || decor.kind == DecorKind::FrozenSkull
                     }));

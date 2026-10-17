@@ -3,7 +3,7 @@ title: Herní obrazovky a přechody
 description: Jaké obrazovky ve hře jsou (načítání, menu, laboratoř, dungeon), jak se mezi nimi pohybuješ a jaká hudba kde hraje.
 ---
 
-Hra má čtyři hlavní obrazovky: **načítání → hlavní menu → laboratoř → dungeon**. Pauza, nastavení,
+Hra má čtyři hlavní obrazovky: **načítání → hlavní menu → laboratoř → dungeon**. Při prvním spuštění je před laboratoří ještě [výcviková krypta](/docs/progression/training). Pauza, nastavení,
 obrazovka konce runu a panely stanic v laboratoři nejsou samostatná místa — otevírají se jako okno
 přes právě hranou obrazovku.
 
@@ -14,7 +14,10 @@ přes právě hranou obrazovku.
 | Odkud | Kam | Jak |
 |---|---|---|
 | Načítání | Hlavní menu | Automaticky po načtení (krátká půlsekundová pauza) |
-| Hlavní menu | Laboratoř | Tlačítko **Play** |
+| Hlavní menu | Výcviková krypta | Tlačítko **Play**, dokud výcvik nedokončíš nebo nepřeskočíš |
+| Hlavní menu | Laboratoř | Tlačítko **Play** (po výcviku) |
+| Výcviková krypta | Laboratoř | Portál v poslední místnosti, nebo Esc → **Skip Training** |
+| Laboratoř | Výcviková krypta | Kniha s cedulí Training (E) |
 | Hlavní menu | Konec hry | Tlačítko **Exit** |
 | Laboratoř | Dungeon (nový run) | Klávesa Interakce (výchozí **E**) u portálu |
 | Laboratoř | Hlavní menu | Esc → **Main Menu** |

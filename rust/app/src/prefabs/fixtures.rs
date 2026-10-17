@@ -76,13 +76,7 @@ pub(crate) fn prop(
             looping: true,
             flipped: look.flipped,
         };
-        let animation = Animation::new(spec.columns, spec.rows, clip);
-        let animation = if prop == Prop::Shopkeeper {
-            animation.ping_pong()
-        } else {
-            animation
-        };
-        let _ = world.insert_one(entity, animation);
+        let _ = world.insert_one(entity, Animation::new(spec.columns, spec.rows, clip));
     }
     entity
 }
@@ -249,7 +243,7 @@ pub(crate) fn furnishing(
                 let look = if right { Look::FLIPPED } else { Look::DEFAULT };
                 place(Prop::Torch, look);
             }
-            FixtureKind::Bricks => place(Prop::Bricks, Look::DEFAULT),
+            FixtureKind::Bricks { style } => place(Prop::Bricks, Look::row(style, false)),
             FixtureKind::Chest => {
                 chest(world, ChestKind::Weapon, top_left, textures);
             }
@@ -274,7 +268,8 @@ pub(crate) fn furnishing(
     }
 }
 
-fn key_hint(world: &mut World, texture: Tex, top_left: Vec2, size: Vec2, textures: &Textures) {
+/// A key drawn on the floor, its two frames blinking, showing what to press there.
+pub(crate) fn key_hint(world: &mut World, texture: Tex, top_left: Vec2, size: Vec2, textures: &Textures) -> Entity {
     let clip = Clip {
         row: 0,
         frames: KEY_FRAMES,
@@ -290,7 +285,7 @@ fn key_hint(world: &mut World, texture: Tex, top_left: Vec2, size: Vec2, texture
         Animation::new(KEY_FRAMES, 1, clip),
         Layer(-1),
         Lit,
-    ));
+    ))
 }
 
 const SIDE_ROW: usize = 0;
@@ -494,6 +489,35 @@ pub(crate) fn scientist(world: &mut World, top_left: Vec2, textures: &Textures) 
             Prompt {
                 text: "Press E to upgrade",
                 gap: 30.0,
+                color: PROMPT_COLOR,
+                size: FontSize::Size22,
+            },
+        ),
+    );
+    entity
+}
+
+const TRAINING_SIGN_LIFT: f32 = 12.0;
+
+/// The book of lessons on the lobby's desk: reading it goes through the training crypt again.
+pub(crate) fn training_book(world: &mut World, top_left: Vec2, textures: &Textures) -> Entity {
+    let entity = prop(world, Prop::LayingBook, top_left, Look::DEFAULT, textures);
+    let size = Prop::LayingBook.spec().size();
+    // A sign over it, so it reads as the way to the training from across the room.
+    world.spawn((
+        Position(top_left + Vec2::new(size.x / 2.0, -TRAINING_SIGN_LIFT)),
+        Text::centered("Training".to_owned(), PROMPT_COLOR, FontSize::Size22),
+        Layer(2),
+    ));
+    let _ = world.insert(
+        entity,
+        (
+            Interactable {
+                action: Interaction::Training,
+            },
+            Prompt {
+                text: "Press E to train again",
+                gap: 20.0,
                 color: PROMPT_COLOR,
                 size: FontSize::Size22,
             },

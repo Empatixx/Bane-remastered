@@ -96,7 +96,8 @@ pub(crate) enum FixtureKind {
     Goods { barrel: bool },
     Lamp,
     Torch { right: bool },
-    Bricks,
+    /// A pile of loose bricks in the floor's own stone: its row in the sheet (see `Theme::style`).
+    Bricks { style: usize },
     Chest,
     AngelStatue,
     Candlestick,
@@ -206,11 +207,13 @@ impl Frame {
     }
 }
 
+/// `style` is the floor's look (see `Theme::style`), which the treasure rooms' bricks take.
 pub(crate) fn plan(
     kind: RoomKind,
     origin: (usize, usize),
     columns: usize,
     rows: usize,
+    style: usize,
 ) -> Option<Furnishing> {
     let frame = Frame {
         origin,
@@ -219,7 +222,7 @@ pub(crate) fn plan(
     };
     match kind {
         RoomKind::Shop => Some(shop(&frame)),
-        RoomKind::Treasure => Some(treasure(&frame)),
+        RoomKind::Treasure => Some(treasure(&frame, style)),
         RoomKind::Sacrifice => Some(sacrifice(&frame)),
         RoomKind::Start => Some(start(&frame)),
         RoomKind::Normal | RoomKind::Boss | RoomKind::Ambush => None,
@@ -314,7 +317,7 @@ fn shop(frame: &Frame) -> Furnishing {
     }
 }
 
-fn treasure(frame: &Frame) -> Furnishing {
+fn treasure(frame: &Frame, style: usize) -> Furnishing {
     let (width, height) = (frame.width(), frame.height());
     let torch =
         |right, x, y| frame.place(FixtureKind::Torch { right }, Vec2::new(x, y), TORCH_SIZE);
@@ -324,12 +327,12 @@ fn treasure(frame: &Frame) -> Furnishing {
         torch(false, TILE_SIZE * 5.0, height - TILE_SIZE * 5.0),
         torch(true, width - TILE_SIZE * 6.0, height - TILE_SIZE * 5.0),
         frame.place(
-            FixtureKind::Bricks,
+            FixtureKind::Bricks { style },
             Vec2::new(TILE_SIZE * 4.0, TILE_SIZE * 4.5),
             BRICKS_SIZE,
         ),
         frame.place(
-            FixtureKind::Bricks,
+            FixtureKind::Bricks { style },
             Vec2::new(TILE_SIZE * 3.0, height - TILE_SIZE * 3.5),
             BRICKS_SIZE,
         ),
@@ -462,7 +465,7 @@ mod tests {
     }
 
     fn furnish(kind: RoomKind, columns: usize, rows: usize) -> Furnishing {
-        plan(kind, (10, 10), columns, rows).expect("this room kind is furnished")
+        plan(kind, (10, 10), columns, rows, 0).expect("this room kind is furnished")
     }
 
     #[test]
@@ -496,13 +499,41 @@ mod tests {
         let treasure = furnish(RoomKind::Treasure, 20, 16);
         let torches = |right: bool| count(&treasure, |k| *k == FixtureKind::Torch { right });
         assert_eq!((torches(false), torches(true)), (2, 2));
-        assert_eq!(count(&treasure, |k| *k == FixtureKind::Bricks), 2);
+        assert_eq!(count(&treasure, |k| matches!(k, FixtureKind::Bricks { .. })), 2);
         assert_eq!(count(&treasure, |k| *k == FixtureKind::Chest), 1);
         let carpet = treasure.carpet.expect("treasure has a carpet");
         assert_eq!(
             (carpet.origin, carpet.columns, carpet.rows),
             ((17, 15), 6, 6)
         );
+    }
+
+    #[test]
+    fn the_treasure_bricks_take_the_floors_own_row_of_the_sheet() {
+        use super::super::Theme;
+        let themes = [
+            Theme::Stone,
+            Theme::Sewer,
+            Theme::Moss,
+            Theme::Spider,
+            Theme::Ice,
+            Theme::Lava,
+            Theme::Temple,
+        ];
+        let mut rows = Vec::new();
+        for theme in themes {
+            let treasure =
+                plan(RoomKind::Treasure, (10, 10), 20, 16, theme.style()).expect("furnished");
+            for fixture in &treasure.fixtures {
+                if let FixtureKind::Bricks { style } = fixture.kind {
+                    assert_eq!(style, theme.style(), "{theme:?}");
+                    assert!(style < crate::props::BRICK_STYLES, "{theme:?} has no row of bricks");
+                    rows.push(style);
+                }
+            }
+        }
+        rows.dedup();
+        assert_eq!(rows.len(), themes.len(), "every floor's bricks look its own");
     }
 
     #[test]
@@ -526,8 +557,8 @@ mod tests {
 
     #[test]
     fn plain_rooms_are_not_furnished() {
-        assert!(plan(RoomKind::Normal, (0, 0), 20, 16).is_none());
-        assert!(plan(RoomKind::Boss, (0, 0), 20, 16).is_none());
+        assert!(plan(RoomKind::Normal, (0, 0), 20, 16, 0).is_none());
+        assert!(plan(RoomKind::Boss, (0, 0), 20, 16, 0).is_none());
     }
 
     #[test]
@@ -553,7 +584,7 @@ mod tests {
 
     #[test]
     fn shop_tables_are_evenly_spaced_in_the_middle() {
-        let shop = plan(RoomKind::Shop, (0, 0), 20, 16).expect("shop is furnished");
+        let shop = plan(RoomKind::Shop, (0, 0), 20, 16, 0).expect("shop is furnished");
         let tables: Vec<f32> = shop
             .fixtures
             .iter()
@@ -565,7 +596,7 @@ mod tests {
 
     #[test]
     fn the_carpet_is_framed_by_corners_and_edges() {
-        let carpet = plan(RoomKind::Shop, (0, 0), 20, 16)
+        let carpet = plan(RoomKind::Shop, (0, 0), 20, 16, 0)
             .and_then(|shop| shop.carpet)
             .expect("shop has a carpet");
         assert_eq!(

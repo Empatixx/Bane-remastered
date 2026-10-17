@@ -65,6 +65,7 @@ mod surfaces;
 mod table;
 mod time_slow;
 mod trails;
+mod training;
 mod ui;
 mod unstick;
 
@@ -146,7 +147,8 @@ pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{
     RoundTextures, ShotContext, ShotRoll, bullet_hits, burn_out_rounds, shoot,
 };
-pub(crate) use shop::{buy, fit_price_boxes, say, stock_rooms, tick_speech, update_price_tags};
+pub(crate) use shop::{buy, fit_price_boxes, say, say_for, stock_rooms, tick_speech, update_price_tags};
+pub(crate) use training::{Training, TrainingEvent};
 pub(crate) use simulation::simulate;
 pub(crate) use skills::{
     burn_fuses, enemy_bullet_hits, steer_homing, tick_eye_shooters, tick_smashes,

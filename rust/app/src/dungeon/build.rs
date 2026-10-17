@@ -266,7 +266,7 @@ impl Dungeon {
             .collect();
         let mix = theme.mix();
         for room in &mut rooms {
-            room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows);
+            room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows, theme.style());
             room.decor = decor::plan(&grid, room, &mix, rng);
         }
         let mut surfaces = Surfaces::default();
@@ -277,11 +277,11 @@ impl Dungeon {
                 }
             }
         }
-        // A skull frozen in a block of ice belongs on the ice: the ice spreads round the decor,
-        // so each one moves onto a free ice tile of its room afterwards, or goes.
-        let mut frost_rng = Rng::new(rng.next_u64());
+        // No skulls frozen in blocks of ice: they did not look right. The draw that placed them
+        // stays, so every floor is the same as before but for them.
+        let _ = rng.next_u64();
         for room in &mut rooms {
-            freeze_skulls(room, &surfaces, &mut frost_rng);
+            room.decor.retain(|decor| decor.kind != decor::DecorKind::FrozenSkull);
         }
         // A stream of its own, so what hangs overhead never changes the rest of the floor.
         let mut overhead_rng = Rng::new(rng.next_u64());
@@ -396,24 +396,6 @@ impl Dungeon {
     }
 }
 
-fn freeze_skulls(room: &mut DungeonRoom, surfaces: &Surfaces, rng: &mut Rng) {
-    let taken: Vec<(usize, usize)> = room.decor.iter().map(|decor| decor.tile).collect();
-    let mut ice: Vec<(usize, usize)> = (room.origin.1..room.origin.1 + room.rows)
-        .flat_map(|row| (room.origin.0..room.origin.0 + room.columns).map(move |column| (column, row)))
-        .filter(|tile| surfaces.at(*tile) == Some(surface::Surface::Ice) && !taken.contains(tile))
-        .collect();
-    room.decor.retain_mut(|decor| {
-        if decor.kind != decor::DecorKind::FrozenSkull {
-            return true;
-        }
-        if ice.is_empty() {
-            return false;
-        }
-        decor.tile = ice.swap_remove(rng.below(ice.len()));
-        true
-    });
-}
-
 fn door_direction(columns: usize, rows: usize, column: usize, row: usize) -> Direction {
     if row == 0 {
         Direction::Up
@@ -484,19 +466,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn frozen_skulls_lie_on_the_ice() {
-        let mut skulls = 0;
+    fn no_skulls_are_frozen_in_the_ice() {
         for seed in 0..20 {
             let dungeon =
                 Dungeon::generate_themed(&mut Rng::new(seed), Theme::Ice).expect("a dungeon");
             for room in &dungeon.rooms {
-                for decor in room.decor.iter().filter(|decor| decor.kind == decor::DecorKind::FrozenSkull) {
-                    skulls += 1;
-                    assert_eq!(dungeon.surfaces.at(decor.tile), Some(surface::Surface::Ice));
-                }
+                assert!(room.decor.iter().all(|decor| decor.kind != decor::DecorKind::FrozenSkull));
             }
         }
-        assert!(skulls > 0);
     }
 
     #[test]

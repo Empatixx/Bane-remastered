@@ -220,6 +220,19 @@ pub(crate) const PAUSE_GAME: [(&str, UiAction); 5] = [
     ("Exit Game", UiAction::ExitGame),
 ];
 
+pub(crate) const PAUSE_TRAINING: [(&str, UiAction); 4] = [
+    ("Resume", UiAction::Resume),
+    ("Settings", UiAction::Settings),
+    ("Skip Training", UiAction::SkipTraining),
+    ("Exit Game", UiAction::ExitGame),
+];
+
+/// Asked before the training is skipped.
+pub(crate) const PAUSE_SKIP: [(&str, UiAction); 2] = [
+    ("Yes, skip it", UiAction::ConfirmSkip),
+    ("Keep training", UiAction::Resume),
+];
+
 pub(crate) const PAUSE_LOBBY: [(&str, UiAction); 4] = [
     ("Resume", UiAction::Resume),
     ("Settings", UiAction::Settings),

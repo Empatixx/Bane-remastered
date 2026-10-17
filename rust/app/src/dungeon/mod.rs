@@ -9,6 +9,7 @@ mod surface;
 mod template;
 mod theme;
 mod track;
+mod training;
 mod vestibule;
 mod waterworks;
 
@@ -24,3 +25,4 @@ pub(crate) use waterworks::{Bridge, Debris, Floater, FloatingBarrel, Mark};
 pub(crate) use template::RoomKind;
 pub(crate) use theme::Theme;
 pub(crate) use track::Track;
+pub(crate) use training::{Lesson, LessonRoom, crypt};

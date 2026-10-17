@@ -17,6 +17,7 @@ use super::{Cursor, Scene, SceneId, Transition};
 
 pub(crate) struct Scenes {
     current: SceneId,
+    profile: SharedProfile,
     pending: Vec<AudioCommand>,
     loading: LoadingScene,
     menu: MenuScene,
@@ -36,6 +37,7 @@ impl Scenes {
     pub(crate) fn new(assets: &Assets, profile: SharedProfile) -> Self {
         let mut scenes = Self {
             current: SceneId::Loading,
+            profile: profile.clone(),
             pending: Vec::new(),
             loading: LoadingScene::default(),
             menu: MenuScene::default(),
@@ -135,7 +137,14 @@ impl Scenes {
     }
 
     fn switch(&mut self, next: SceneId, assets: &Assets) {
+        // The way into the lobby from the menu goes through the training crypt until it is done.
+        let next = if next == SceneId::Lobby && self.current == SceneId::Menu && !self.profile.training_done() {
+            SceneId::Training
+        } else {
+            next
+        };
         self.scene_mut().leave();
+        self.ingame.set_training(next == SceneId::Training);
         self.current = next;
         self.scene_mut().enter(assets);
         self.queue_music();
@@ -147,7 +156,7 @@ impl Scenes {
             SceneId::Loading => &self.loading,
             SceneId::Menu => &self.menu,
             SceneId::Lobby => &self.lobby,
-            SceneId::InGame => &self.ingame,
+            SceneId::InGame | SceneId::Training => &self.ingame,
         }
     }
 
@@ -156,7 +165,7 @@ impl Scenes {
             SceneId::Loading => &mut self.loading,
             SceneId::Menu => &mut self.menu,
             SceneId::Lobby => &mut self.lobby,
-            SceneId::InGame => &mut self.ingame,
+            SceneId::InGame | SceneId::Training => &mut self.ingame,
         }
     }
 }
@@ -230,10 +239,15 @@ mod tests {
     }
 
     #[test]
-    fn play_button_opens_lobby() {
+    fn play_button_opens_the_training_the_first_time_and_the_lobby_after() {
         let (mut scenes, mut input, assets) = menu();
         let flow = click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 240.0));
         assert_eq!(flow, ControlFlow::Continue(()));
+        assert_eq!(scenes.current, SceneId::Training);
+
+        let (mut scenes, mut input, assets) = menu();
+        scenes.profile.finish_training();
+        click_at(&mut scenes, &mut input, &assets, Vec2::new(480.0, 240.0));
         assert_eq!(scenes.current, SceneId::Lobby);
     }
 

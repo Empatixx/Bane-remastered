@@ -12,6 +12,8 @@ pub(crate) enum UiAction {
     SettingsExit,
     ResolutionNext,
     ResolutionPrevious,
+    SkipTraining,
+    ConfirmSkip,
 }
 
 #[derive(Debug, Clone, Copy)]

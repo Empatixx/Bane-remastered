@@ -14,6 +14,8 @@ pub(crate) enum Interaction {
     Quests,
     Weapons,
     RefillAmmo,
+    /// The book of lessons in the lobby: back through the training crypt.
+    Training,
 }
 
 #[derive(Debug, Clone, Copy)]

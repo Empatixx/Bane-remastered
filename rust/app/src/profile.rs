@@ -44,6 +44,9 @@ pub(crate) struct Profile {
     /// One-time Scientist remarks waiting for the next lobby visit.
     #[serde(deserialize_with = "known")]
     pub(crate) remarks: Vec<Remark>,
+    /// The training crypt is behind the player (finished or skipped), so the game goes
+    /// straight to the lobby.
+    pub(crate) training_done: bool,
 }
 
 const PROFILE_VERSION: u32 = 1;
@@ -330,6 +333,15 @@ impl SharedProfile {
     /// Forgets a one-time remark once the Scientist has said it.
     pub(crate) fn heard(&self, remark: Remark) {
         self.change(|profile| profile.remarks.retain(|waiting| *waiting != remark));
+    }
+
+    pub(crate) fn training_done(&self) -> bool {
+        self.0.borrow().profile.training_done
+    }
+
+    /// The training crypt is finished (or skipped) and won't come up on its own again.
+    pub(crate) fn finish_training(&self) {
+        self.change(|profile| profile.training_done = true);
     }
 
     pub(crate) fn snapshot(&self) -> Profile {

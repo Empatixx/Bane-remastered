@@ -4,6 +4,7 @@
   "pages": [
     "index",
     "scenes",
+    "training",
     "run",
     "run-end",
     "rules",

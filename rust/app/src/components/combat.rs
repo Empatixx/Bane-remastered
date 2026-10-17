@@ -396,7 +396,6 @@ impl Loadout {
         self.slots.get_mut(self.current).and_then(Option::as_mut)
     }
 
-    #[cfg(test)]
     pub(crate) fn current_slot(&self) -> usize {
         self.current
     }
@@ -472,6 +471,29 @@ impl Loadout {
     pub(crate) fn clear(&mut self) {
         self.slots.iter_mut().for_each(|slot| *slot = None);
         self.current = 0;
+    }
+
+    /// Every gun's reserve full again, for the training, where ammo is not the lesson.
+    pub(crate) fn top_up_reserves(&mut self) {
+        for weapon in self.slots.iter_mut().flatten() {
+            if !weapon.runs_on_battery() {
+                weapon.ammo = weapon.max_ammo();
+            }
+        }
+    }
+
+    /// With nothing in hand, takes up the first gun there is; whether it changed hands.
+    pub(crate) fn arm(&mut self) -> bool {
+        if self.slots.get(self.current).is_some_and(Option::is_some) {
+            return false;
+        }
+        match self.slots.iter().position(Option::is_some) {
+            Some(slot) => {
+                self.current = slot;
+                true
+            }
+            None => false,
+        }
     }
 
     pub(crate) fn drop_current(&mut self) -> Option<Weapon> {

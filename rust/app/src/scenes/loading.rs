@@ -101,6 +101,7 @@ fn first_scene() -> SceneId {
     match std::env::var("BANE_START").as_deref() {
         Ok("lobby") => SceneId::Lobby,
         Ok("dungeon") => SceneId::InGame,
+        Ok("training") => SceneId::Training,
         _ => SceneId::Menu,
     }
 }

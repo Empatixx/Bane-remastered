@@ -343,6 +343,14 @@ pub(crate) fn say(world: &mut World, message: &'static str) {
     }
 }
 
+/// Says `message` for `seconds` rather than the usual few.
+pub(crate) fn say_for(world: &mut World, message: &'static str, seconds: f32) {
+    for bubble in world.query_mut::<&mut SpeechBubble>() {
+        bubble.remaining = seconds;
+        bubble.message = message;
+    }
+}
+
 pub(crate) fn tick_speech(world: &mut World, dt: f32) {
     let mut visible = false;
     let mut message = "";

@@ -74,7 +74,6 @@ const PROPS: &[(Prop, f32, f32, Look)] = &[
     (Prop::MapTable, 5.0, 5.0, Look::DEFAULT),
     (Prop::Banner, 23.0, 0.0, Look::DEFAULT),
     (Prop::Banner, 25.5, 0.0, Look::DEFAULT),
-    (Prop::LayingBook, 4.8, 3.0, Look::DEFAULT),
     (Prop::LayingBook, 8.6, 2.8, Look::SECOND_ROW),
     (Prop::Mushrooms, 1.2, 7.8, Look::DEFAULT),
     (Prop::Mushrooms, 2.1, 8.0, Look::SECOND_ROW),
@@ -306,6 +305,7 @@ impl Scene for LobbyScene {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::prop(&mut self.world, prop, top_left, look, textures);
         }
+        prefabs::training_book(&mut self.world, Vec2::new(4.8, 3.0) * TILE_SIZE, textures);
         prefabs::task_board(&mut self.world, Vec2::new(18.5, 0.0) * TILE_SIZE, textures);
         prefabs::weapon_table(
             &mut self.world,
@@ -538,6 +538,7 @@ impl Scene for LobbyScene {
         systems::follow_backdrop(&mut self.world, self.camera.position());
         match systems::interact(&mut self.world, input) {
             Some(Interaction::EnterPortal) => Transition::Switch(SceneId::InGame),
+            Some(Interaction::Training) => Transition::Switch(SceneId::Training),
             Some(Interaction::Upgrade) => {
                 if let Some(profile) = &self.profile {
                     self.upgrades.toggle(&mut self.world, assets, profile);

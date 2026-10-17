@@ -3,7 +3,8 @@ round the hood's opening and a gold clasp under the chin. The green lantern in h
 and so does the flame he used to conjure: he only sways now, through his first three frames.
 
 Works on shopkeeper.tga in place (ten 80x90 frames in a row). Each rule only touches the
-robe's own colours, so running it again changes nothing.
+robe's own colours, so running it again changes nothing. Its sway moved his arm in and out;
+make_shopkeeper_idle.py now rebuilds the sheet from the rest pose (frame 0) instead.
 """
 
 import sys
