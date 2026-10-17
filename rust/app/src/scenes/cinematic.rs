@@ -20,7 +20,7 @@ use crate::components::{Animation, Clip, Color, Layer, Light, Position, ScreenSp
 use crate::enemies::EnemyKind;
 use crate::dungeon::{
     Carpet, Decor, DecorKind, Dungeon, DungeonRoom, Hanging, HangingKind, Mount, Overhead, OverheadKind, RoomKind,
-    Surface, Surfaces, Theme, Waterworks,
+    Surfaces, Theme, Waterworks,
 };
 use crate::input::Input;
 use crate::postfx::SceneFx;
@@ -131,7 +131,7 @@ const ACOLYTES: [((f32, f32), f32, (f32, f32)); 5] = [
     ((27.5, 1.6), 2.3, (11.5, 1.3)),
     ((28.5, 7.4), 6.4, (9.0, 7.6)),
     // Elian runs the whole nave and out of the far end.
-    ((30.0, 1.6), 2.3, (-3.0, 2.3)),
+    ((30.0, 1.6), 2.3, (-4.0, 4.5)),
 ];
 /// The priests' sheet (tools/make_priest.py): four frames of 10x19 across; standing, running
 /// and praying rows; drawn four times over.
@@ -237,6 +237,12 @@ impl CinematicScene {
                 grid.carve(column, row);
             }
         }
+        // The way in: a doorway three tiles high through the west wall, out into the dark.
+        for row in rows / 2 - 1..=rows / 2 + 1 {
+            for column in 0..inside.0 {
+                grid.carve(column, inside.1 + row);
+            }
+        }
         // Pairs of blocks down the nave, against both walls.
         let pillars = [4usize, 13, 22];
         for &column in &pillars {
@@ -248,18 +254,13 @@ impl CinematicScene {
             }
         }
         let theme = Theme::Temple;
-        let mut surfaces = Surfaces::default();
+        let surfaces = Surfaces::default();
         let waterworks = Waterworks::default();
-        // Between the first pair and the second, and the second and the third, a pool of holy
-        // water against the top wall.
-        for &column in &[8usize, 17] {
-            for dx in 0..3 {
-                for row in 0..2 {
-                    surfaces.insert(tile(column + dx, row), Surface::Water);
-                }
-            }
-        }
-        let mut decor = Vec::new();
+        let mut decor = vec![
+            // Torches either side of the doorway.
+            Decor { kind: DecorKind::Torch { mount: Mount::FacingLeft, lit: true }, tile: tile(0, rows / 2 - 3) },
+            Decor { kind: DecorKind::Torch { mount: Mount::FacingLeft, lit: true }, tile: tile(0, rows / 2 + 3) },
+        ];
         for &column in &pillars {
             decor.push(Decor { kind: DecorKind::FireBowl, tile: tile(column - 2, 1) });
             decor.push(Decor { kind: DecorKind::FireBowl, tile: tile(column + 2, rows - 2) });
@@ -279,8 +280,8 @@ impl CinematicScene {
                 last: tile(column, rows - 3),
             })
             .collect();
-        // Red banners hanging in pairs over the pools and the last bay, out of the way of the carpet.
-        let hanging = [(8usize, 2usize), (10, 2), (17, 2), (19, 2), (26, 2), (28, 2)]
+        // Red banners hanging in pairs between the blocks, low enough to be in view.
+        let hanging = [(8usize, 4usize), (10, 4), (17, 4), (19, 4), (26, 4), (28, 4)]
             .into_iter()
             .map(|(column, row)| Hanging { kind: HangingKind::Banner, tile: tile(column, row) })
             .collect();
@@ -372,13 +373,17 @@ impl CinematicScene {
         self.angel = Some(prefabs::prop(&mut self.world, Prop::AngelStatue, altar - statue / 2.0, Look::DEFAULT, textures));
         self.angel_at = altar;
         self.altar = altar;
-        let candle = Prop::Candlestick.spec().size();
         // The acolytes, kneeling either side of the carpet down the nave.
         let size = crate::prefabs::PLAYER_SIZE;
         for (index, &((column, row), lane, (bay, depth))) in ACOLYTES.iter().enumerate() {
             let home = at(column, row);
             let hide = at(bay, depth);
-            let path = vec![home, at(column, lane), at(bay, lane), hide];
+            let mut path = vec![home, at(column, lane), at(bay, lane), hide];
+            if index == ELIAN {
+                // Down the lane to the near end, then across into the doorway and out.
+                let door = rows as f32 / 2.0;
+                path = vec![home, at(column, lane), at(1.0, lane), at(1.0, door), at(-4.0, door)];
+            }
             // Praying, hands raised, until the ground shakes.
             let clip = Clip { row: 2, frames: 2, frame_time: 0.5 + index as f32 * 0.05, looping: true, flipped: index % 2 == 1 };
             let _ = size;
@@ -394,18 +399,13 @@ impl CinematicScene {
             ));
             self.acolytes.push(Acolyte { entity, path, hide, caught: None });
         }
-        // Four candles round it, the same above as below.
-        for (dx, dy) in [(-2.2, -1.9), (2.2, -1.9), (-2.2, 1.9), (2.2, 1.9)] {
-            let spot = altar + Vec2::new(dx * TILE_SIZE, dy * TILE_SIZE);
-            prefabs::prop(&mut self.world, Prop::Candlestick, spot - candle / 2.0, Look::DEFAULT, textures);
-        }
         let bounds = dungeon.grid.pixel_size();
         self.camera = Camera::new(bounds);
         // The camera's position is its top left corner; it glides with the nave's middle row
         // in the middle of the screen.
         let middle = at(0.0, rows as f32 / 2.0).y;
         self.glide = (
-            Vec2::new(at(6.0, 0.0).x, middle) - TARGET / 2.0,
+            Vec2::new(at(3.5, 0.0).x, middle) - TARGET / 2.0,
             Vec2::new(at(columns as f32 - 5.5, 0.0).x, middle) - TARGET / 2.0,
         );
         self.camera.snap_to(self.glide.0);

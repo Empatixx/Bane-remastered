@@ -52,25 +52,27 @@ STAND = [
     "kkkkkkkkkk",
 ]
 
+# Running, side view facing right: a clean profile, the hood forward. The arm and the hem are
+# drawn per frame (see run_frame).
 RUN = [
-    "...kkkk...",
-    "..kwwwwk..",
-    "..kwwhhwk.",
-    "..kwwfhwk.",
-    "..kswffwk.",
-    "..kswhwwk.",
+    "....kkkk..",
+    "...kwwwwk.",
+    "..kwwwhhk.",
+    "..kwwhffk.",
+    "..kswhffk.",
+    "..kswwhhk.",
     "..kgggggk.",
     ".kswwwwwk.",
-    "kswwwwwFk.",
-    "kswwwwwkk.",
     ".kswwwwwk.",
     ".kswwwwwk.",
-    "..kswwwwk.",
-    "..kswwwwk.",
+    ".kswwwwwk.",
+    ".kswwwwwk.",
+    ".kswwwwwk.",
+    ".kswwwwwk.",
     ".kswwwwwwk",
-    "kswwwwwwsk",
-    "kGggggggGk",
-    "kk.kk.kk.k",
+    ".kswwwwwwk",
+    ".kGggggggk",
+    "..........",
     "..........",
 ]
 
@@ -125,12 +127,38 @@ def draw(rows, lift=0, sway=0, legs=None, glint=False):
     return image
 
 
+def run_frame(step):
+    """One running frame: the arm swinging forward and back, the hem kicking, the feet
+    stepping. `step` 0..3."""
+    rows = [list(line) for line in RUN]
+    # The arm: a hand out in front on 0 and 1, tucked back at the side on 2 and 3.
+    if step in (0, 1):
+        rows[9][8] = "F"
+        rows[9][9] = "k"
+    else:
+        rows[10][1] = "F"
+    # The hem kicks back as the leg goes forward.
+    if step in (1, 3):
+        for y in (14, 15, 16):
+            rows[y] = list("k" + "".join(rows[y])[:-1]) if False else rows[y]
+        rows[15] = list("kswwwwwwk.")
+        rows[16] = list("kGggggggk.")
+    image = draw(["".join(row) for row in rows])
+    px = image.load()
+    feet = {0: (3, 7), 1: (4, 6), 2: (6, 3), 3: (5, 4)}[step]
+    for x in feet:
+        for y in (H - 2, H - 1):
+            px[x, y] = (*PALETTE["k"], 255)
+            px[x + 1 if x + 1 < W else x, y] = (*PALETTE["k"], 255)
+    return image
+
+
 def sheet():
     out = Image.new("RGBA", (W * 4, H * 3), (0, 0, 0, 0))
     for i, lift in enumerate((0, 0, 1, 1)):
         out.alpha_composite(draw(STAND, sway=1 if i == 2 else 0), (i * W, 0))
-    for i, legs in enumerate(((2, 3, 6), (3, 4, 7), (4, 5, 7), (2, 6, 7))):
-        out.alpha_composite(draw(RUN, legs=legs), (i * W, H))
+    for i in range(4):
+        out.alpha_composite(run_frame(i), (i * W, H))
     out.alpha_composite(draw(PRAY), (0, H * 2))
     out.alpha_composite(draw(PRAY, glint=True), (W, H * 2))
     return out
