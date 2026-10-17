@@ -43,18 +43,23 @@ const SHOTS: [(f32, &str); 5] = [
     (11.0, "Long ago, a temple stood on the hill."),
     (10.0, "Then something tore open beneath it."),
     (10.0, "They called it Bane. The wound."),
-    (9.5, "Its last priestesses woke you from the crypt."),
+    (9.5, "Deep in its crypt, the temple kept one last guardian."),
     (5.5, "Rise. Close the wound."),
 ];
 /// The cut from the temple to the crypt: the screen goes black for this long either side.
 const CUT_SECONDS: f32 = 0.9;
-/// The crypt: its inside in tiles; when the priestesses start to pray, when the light breaks
-/// over the bier, and the white flash as the hero rises.
-const CRYPT: (usize, usize) = (13, 6);
-const PRAY_FROM: f32 = 1.2;
-const RISE_AT: f32 = 7.6;
+/// The crypt: its inside in tiles; when light starts to leak from the sarcophagus, when its lid
+/// shakes, slides and falls, and the white flash as the hero rises.
+const CRYPT: (usize, usize) = (17, 9);
+const GLOW_FROM: f32 = 1.4;
+const LID_SHAKES: f32 = 2.8;
+const LID_SLIDES: f32 = 3.8;
+const LID_FALLS: f32 = 5.6;
+const RISE_AT: f32 = 8.4;
 const FLASH_SECONDS: f32 = 0.9;
-const BIER_SIZE: Vec2 = Vec2::new(48.0 * 3.0, 24.0 * 3.0);
+/// The sarcophagus and its lid on screen (tools/make_bier.py draws them at 50x26 and 46x20).
+const SARCOPHAGUS: Vec2 = Vec2::new(50.0 * 3.0, 26.0 * 3.0);
+const LID_SIZE: Vec2 = Vec2::new(46.0 * 3.0, 20.0 * 3.0);
 /// What crawls out of the wound in the third shot: what, how long into the shot it climbs out,
 /// how far along the crack (0 at the altar, 1 at its far end), and where it heads, in tiles from
 /// where it climbed out.
@@ -151,11 +156,13 @@ pub(crate) struct CinematicScene {
     /// heads, and when.
     crawlers: Vec<(Entity, Vec2, Vec2, f32)>,
     dusk: Option<Entity>,
-    /// The crypt, once the cinematic has cut to it: the bier, the priestesses round it, the
-    /// light over it, the white flash, the hero once risen, and the gold motes rising.
+    /// The crypt, once the cinematic has cut to it: the sarcophagus and its lid, the light
+    /// leaking out of it, the white flash, and the hero once risen.
     crypt: bool,
     bier: Option<Entity>,
-    priestesses: Vec<Entity>,
+    lid: Option<Entity>,
+    lid_at: Vec2,
+    lid_landed: bool,
     glow: Option<Entity>,
     flash: Option<Entity>,
     hero: Option<Entity>,
@@ -597,33 +604,42 @@ impl CinematicScene {
         }
     }
 
-    /// The crypt the hero sleeps in: a small stone vault, torches either side, the bier in the
-    /// middle with four priestesses round it.
+    /// The crypt the hero sleeps in: a stone vault with blocks in its corners, his sarcophagus in
+    /// the middle at the end of a red runner, candles round it, older sarcophagi closed along the
+    /// walls, torches, shackles, chains, cobwebs and bones.
     fn build_crypt(&mut self, assets: &Assets) {
         let (columns, rows) = CRYPT;
         let width = columns + 2 + 2 * MARGIN;
         let height = rows + 2 + 2 * MARGIN;
         let mut grid = TileGrid::filled(width, height);
         let inside = (MARGIN + 1, MARGIN + 1);
+        let tile = |column: usize, row: usize| (inside.0 + column, inside.1 + row);
         for row in 0..rows {
             for column in 0..columns {
                 grid.carve(inside.0 + column, inside.1 + row);
             }
         }
+        // Blocks in the four corners, as the dungeon's treasure rooms have.
+        for (column, row) in [(1, 1), (columns - 3, 1), (1, rows - 3), (columns - 3, rows - 3)] {
+            for (dx, dy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+                let (x, y) = tile(column + dx, row + dy);
+                grid.fill(x, y);
+            }
+        }
         let theme = Theme::Stone;
         let wall = |column: usize| (inside.0 + column, inside.1 - 1);
-        let tile = |column: usize, row: usize| (inside.0 + column, inside.1 + row);
         let last = columns - 1;
+        let middle = columns / 2;
         let decor = vec![
-            Decor { kind: DecorKind::Torch { mount: Mount::Top, lit: true }, tile: wall(3) },
-            Decor { kind: DecorKind::Torch { mount: Mount::Top, lit: true }, tile: wall(last - 3) },
-            Decor { kind: DecorKind::Shackles { variant: 1 }, tile: wall(1) },
-            Decor { kind: DecorKind::Shackles { variant: 0 }, tile: wall(last - 1) },
-            Decor { kind: DecorKind::Banner, tile: wall(columns / 2) },
+            Decor { kind: DecorKind::Torch { mount: Mount::Top, lit: true }, tile: wall(4) },
+            Decor { kind: DecorKind::Torch { mount: Mount::Top, lit: true }, tile: wall(last - 4) },
+            Decor { kind: DecorKind::Banner, tile: wall(middle) },
+            Decor { kind: DecorKind::Shackles { variant: 1 }, tile: wall(middle - 2) },
+            Decor { kind: DecorKind::Shackles { variant: 0 }, tile: wall(middle + 2) },
             Decor { kind: DecorKind::Cobweb { variant: 0, left: false }, tile: tile(0, 0) },
             Decor { kind: DecorKind::Cobweb { variant: 1, left: true }, tile: tile(last, 0) },
-            Decor { kind: DecorKind::Bones { variant: 0 }, tile: tile(1, rows - 2) },
-            Decor { kind: DecorKind::Bones { variant: 1 }, tile: tile(last - 1, rows - 1) },
+            Decor { kind: DecorKind::Bones { variant: 0 }, tile: tile(3, rows - 1) },
+            Decor { kind: DecorKind::Bones { variant: 1 }, tile: tile(last - 3, 0) },
         ];
         let room = DungeonRoom {
             kind: RoomKind::Normal,
@@ -638,7 +654,8 @@ impl CinematicScene {
             overheads: Vec::new(),
             hanging: Vec::new(),
             track: None,
-            rug: None,
+            // A red runner up the middle to the sarcophagus.
+            rug: Some(Carpet { origin: tile(0, rows / 2 - 1), columns: middle, rows: 3, style: 0 }),
             tables: Vec::new(),
             waterworks: Waterworks::default(),
             pendulum: None,
@@ -659,33 +676,54 @@ impl CinematicScene {
         for decor in &dungeon.rooms[0].decor {
             prefabs::decor(&mut self.world, &mut physics, *decor, textures);
         }
+        systems::spawn_furniture(&mut self.world, &mut physics, &dungeon, textures);
         systems::spawn_atmosphere(&mut self.world, &dungeon, 0x41);
         let at = |column: f32, row: f32| Vec2::new(inside.0 as f32 + column, inside.1 as f32 + row) * TILE_SIZE;
-        let centre = at(columns as f32 / 2.0, rows as f32 / 2.0);
+        // Chains down the wall either side of the banner.
+        for column in [middle as f32 - 4.0, middle as f32 + 4.0] {
+            prefabs::prop(&mut self.world, Prop::Chains, at(column, -1.0), Look::DEFAULT, textures);
+        }
+        // Older sarcophagi, closed, between the corner blocks along both walls.
+        for (column, row) in [(5.5, 0.9), (columns as f32 - 5.5, 0.9), (5.5, rows as f32 - 0.9), (columns as f32 - 5.5, rows as f32 - 0.9)] {
+            let spot = at(column, row);
+            self.world.spawn((Position(spot), Size(SARCOPHAGUS * 0.8), Color(Vec4::new(0.8, 0.8, 0.85, 1.0)),
+                Sprite::cell(textures.get(tex::SARCOPHAGUS), 1, 0, 2, 1), Layer(0), crate::components::Lit));
+            self.world.spawn((Position(spot - Vec2::new(0.0, 0.1 * SARCOPHAGUS.y * 0.8)), Size(LID_SIZE * 0.8),
+                Color(Vec4::new(0.8, 0.8, 0.85, 1.0)), Sprite::whole(textures.get(tex::SARCOPHAGUS_LID)), Layer(0), crate::components::Lit));
+        }
+        // His own, in the middle, candles round it.
+        let centre = at(middle as f32 + 1.5, rows as f32 / 2.0);
         self.bier = Some(self.world.spawn((
             Position(centre),
-            Size(BIER_SIZE),
+            Size(SARCOPHAGUS),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get(tex::BIER), 0, 0, 2, 1),
+            Sprite::cell(textures.get(tex::SARCOPHAGUS), 0, 0, 2, 1),
             Layer(0),
             crate::components::Lit,
         )));
-        // The light that gathers over him while they pray.
+        self.lid_at = centre - Vec2::new(0.0, (SARCOPHAGUS.y - LID_SIZE.y) / 2.0 + 3.0 * 3.0);
+        self.lid = Some(self.world.spawn((
+            Position(self.lid_at),
+            Size(LID_SIZE),
+            Color(Vec4::ONE),
+            Sprite::whole(textures.get(tex::SARCOPHAGUS_LID)),
+            Layer(1),
+            crate::components::Lit,
+        )));
+        let candle = Prop::Candlestick.spec().size();
+        for (dx, dy) in [(-2.4, -1.4), (2.4, -1.4), (-2.4, 1.6), (2.4, 1.6)] {
+            let spot = centre + Vec2::new(dx, dy) * TILE_SIZE;
+            prefabs::prop(&mut self.world, Prop::Candlestick, spot - candle / 2.0, Look::DEFAULT, textures);
+        }
+        // The light that leaks out of it, and grows as the lid comes off.
         self.glow = Some(self.world.spawn((
             Position(centre),
             Light::rgb(Vec2::ZERO, 255.0, 226.0, 150.0, 40.0, 0.0),
         )));
-        let size = Prop::Priestess.spec().size();
-        for (dx, dy) in [(-2.7, -0.9), (2.7, -0.9), (-2.7, 1.9), (2.7, 1.9)] {
-            let foot = centre + Vec2::new(dx * TILE_SIZE, dy * TILE_SIZE);
-            let entity = prefabs::prop(&mut self.world, Prop::Priestess, foot - Vec2::new(size.x / 2.0, size.y), Look::row(0, dx > 0.0), textures);
-            let _ = self.world.insert_one(entity, crate::components::YSort::bottom(size));
-            self.priestesses.push(entity);
-        }
         let bounds = dungeon.grid.pixel_size();
         self.camera = Camera::new(bounds);
-        self.camera.snap_to(centre - TARGET / 2.0);
-        self.glide = (centre - TARGET / 2.0 + Vec2::new(0.0, 30.0), centre - TARGET / 2.0 - Vec2::new(0.0, 10.0));
+        self.glide = (at(6.0, rows as f32 / 2.0) - TARGET / 2.0, centre - TARGET / 2.0);
+        self.camera.snap_to(self.glide.0);
         self.flash = Some(self.world.spawn((
             Position(TARGET / 2.0),
             Size(TARGET),
@@ -695,55 +733,78 @@ impl CinematicScene {
         )));
     }
 
-    /// The fourth and fifth shots: the priestesses pray, light gathers over the bier, a flash,
-    /// and the hero stands beside it.
+    /// The fourth and fifth shots: the camera moves up the runner to the sarcophagus, light
+    /// leaks round its lid, the lid shakes, grinds aside and falls, and in a white flash the
+    /// hero stands beside it.
     fn revive(&mut self, assets: &Assets, at: f32, dt: f32) {
         let textures = &assets.textures;
-        let push = (at / (RISE_AT + 3.0)).clamp(0.0, 1.0);
+        let push = (at / (LID_SLIDES + 1.0)).clamp(0.0, 1.0);
         let eased = push * push * (3.0 - 2.0 * push);
         self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
-        if at > PRAY_FROM {
-            for &entity in &self.priestesses {
-                if let Ok(mut animation) = self.world.get::<&mut Animation>(entity) {
-                    if animation.clip().row == 0 {
-                        let flipped = animation.clip().flipped;
-                        animation.play(Clip { row: 1, frames: 6, frame_time: 0.18, looping: true, flipped });
-                    }
+        let centre = self.bier.and_then(|bier| self.world.get::<&Position>(bier).ok().map(|p| p.0)).unwrap_or_default();
+        // The lid: still, then shaking, then grinding aside, then falling off onto the floor.
+        if let Some(lid) = self.lid {
+            let slide = ((at - LID_SLIDES) / (LID_FALLS - LID_SLIDES)).clamp(0.0, 1.0);
+            let slide = slide * slide * (3.0 - 2.0 * slide);
+            let fall = ((at - LID_FALLS) / 0.35).clamp(0.0, 1.0);
+            let mut spot = self.lid_at + Vec2::new(slide * 0.55 * LID_SIZE.x, 0.0);
+            spot += Vec2::new(fall * 0.3 * LID_SIZE.x, fall * fall * 0.55 * SARCOPHAGUS.y);
+            if at > LID_SHAKES && at < LID_FALLS {
+                spot += Vec2::new((at * 57.0).sin(), (at * 43.0).cos()) * 2.0;
+                self.camera.add_trauma(0.25 * dt);
+            }
+            if let Ok(mut position) = self.world.get::<&mut Position>(lid) {
+                position.0 = spot.round();
+            }
+            if at >= LID_FALLS + 0.35 && !self.lid_landed {
+                self.lid_landed = true;
+                self.camera.add_trauma(0.55);
+                for i in 0..8 {
+                    let angle = i as f32 / 8.0 * std::f32::consts::TAU;
+                    let entity = self.world.spawn((
+                        Position(spot + Vec2::new(0.0, 20.0)),
+                        Size(Vec2::splat(24.0)),
+                        Color(Vec4::new(0.55, 0.5, 0.52, 0.5)),
+                        Layer(MOTE_LAYER - 1),
+                    ));
+                    self.debris.push(Debris { entity, ground: spot + Vec2::new(0.0, 20.0), velocity: Vec2::from_angle(angle) * 80.0, height: 6.0, rise: 30.0, left: Some(1.3) });
                 }
             }
         }
-        let gathering = ((at - PRAY_FROM) / (RISE_AT - PRAY_FROM)).clamp(0.0, 1.0);
+        // Light leaking round the lid, then pouring out once it is off.
+        let leak = ((at - GLOW_FROM) / (LID_SLIDES - GLOW_FROM)).clamp(0.0, 1.0) * 0.4;
+        let open = ((at - LID_SLIDES) / (RISE_AT - LID_SLIDES)).clamp(0.0, 1.0) * 0.6;
+        let after = if at > RISE_AT { (1.0 - (at - RISE_AT) / 3.0).max(0.3) } else { 1.0 };
         if let Some(glow) = self.glow {
             if let Ok(mut light) = self.world.get::<&mut Light>(glow) {
-                let after = if at > RISE_AT { (1.0 - (at - RISE_AT) / 3.0).max(0.35) } else { 1.0 };
-                light.radius = 40.0 + 200.0 * gathering;
-                light.intensity = 2.2 * gathering * after;
+                light.radius = 40.0 + 260.0 * (leak + open);
+                light.intensity = 2.4 * (leak + open) * after;
             }
         }
-        // Gold motes rising off the bier as the light gathers.
-        let rate = if at > PRAY_FROM && at < RISE_AT + 1.0 { 6.0 + 30.0 * gathering } else { 0.0 };
+        // Gold motes rising out of the open sarcophagus.
+        let rate = if at > LID_SLIDES && at < RISE_AT + 0.8 { 8.0 + 30.0 * open } else { 0.0 };
         let mut wanted = rate * dt;
-        let centre = self.bier.and_then(|bier| self.world.get::<&Position>(bier).ok().map(|p| p.0)).unwrap_or_default();
         while wanted >= 1.0 || (wanted > 0.0 && self.roll() < wanted) {
             wanted -= 1.0;
-            let spot = centre + Vec2::new((self.roll() - 0.5) * 130.0, (self.roll() - 0.5) * 40.0);
+            let spot = centre + Vec2::new((self.roll() - 0.5) * 120.0, (self.roll() - 0.6) * 40.0);
             let entity = self.world.spawn((Position(spot), Size(Vec2::splat(4.0)), Color(Vec4::new(1.0, 0.9, 0.55, 1.0)), Layer(MOTE_LAYER)));
             let drift = Vec2::new((self.roll() - 0.5) * 16.0, -30.0 - self.roll() * 40.0);
             let life = 1.0 + self.roll();
             self.motes.push((entity, drift, life, life));
         }
         self.churn(dt, 0.0);
+        self.fly_debris(dt);
         if at > RISE_AT - 0.25 && self.hero.is_none() {
             self.camera.add_trauma(0.35);
             if let Some(bier) = self.bier {
                 if let Ok(mut sprite) = self.world.get::<&mut Sprite>(bier) {
-                    *sprite = Sprite::cell(textures.get(tex::BIER), 1, 0, 2, 1);
+                    *sprite = Sprite::cell(textures.get(tex::SARCOPHAGUS), 1, 0, 2, 1);
                 }
             }
             let size = crate::prefabs::PLAYER_SIZE;
             let clip = Clip { row: 0, frames: 6, frame_time: 0.16, looping: true, flipped: false };
             self.hero = Some(self.world.spawn((
-                Position(centre + Vec2::new(0.0, BIER_SIZE.y / 2.0 + size.y / 2.0 - 6.0)),
+                Position(centre + Vec2::new(0.0, SARCOPHAGUS.y / 2.0 + size.y / 2.0 - 4.0)),
                 Size(size),
                 Color(Vec4::ONE),
                 Sprite::cell(textures.get(tex::PLAYER), 0, 0, 6, 4),
@@ -823,7 +884,8 @@ impl Scene for CinematicScene {
     fn enter(&mut self, assets: &Assets) {
         self.clock = 0.0;
         self.crypt = false;
-        self.priestesses.clear();
+        self.lid = None;
+        self.lid_landed = false;
         self.hero = None;
         self.build_temple(assets);
         self.frame();
@@ -839,13 +901,14 @@ impl Scene for CinematicScene {
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();
-        self.priestesses.clear();
+        self.lid = None;
+        self.lid_landed = false;
         self.hero = None;
         self.crypt = false;
     }
 
     fn soundtrack(&self) -> Option<Soundtrack> {
-        Some(Soundtrack::ProgressRoom)
+        Some(Soundtrack::Cinematic)
     }
 
     fn take_sounds(&mut self) -> Vec<AudioCommand> {

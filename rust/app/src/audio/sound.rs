@@ -309,11 +309,13 @@ pub(crate) enum Soundtrack {
     InGame,
     ProgressRoom,
     Boss,
+    /// The opening cinematic's own track, timed to its shots (tools/make_cinematic_audio.py).
+    Cinematic,
 }
 
 impl Soundtrack {
-    pub(crate) const ALL: [Self; 4] =
-        [Self::MainMenu, Self::InGame, Self::ProgressRoom, Self::Boss];
+    pub(crate) const ALL: [Self; 5] =
+        [Self::MainMenu, Self::InGame, Self::ProgressRoom, Self::Boss, Self::Cinematic];
 
     pub(crate) fn file(self) -> &'static str {
         match self {
@@ -321,6 +323,7 @@ impl Soundtrack {
             Self::InGame => "audio.ogg",
             Self::ProgressRoom => "ambient.ogg",
             Self::Boss => "boss.ogg",
+            Self::Cinematic => "cinematic.ogg",
         }
     }
 }
