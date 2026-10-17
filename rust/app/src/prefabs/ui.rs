@@ -15,6 +15,8 @@ const DEATH_ICON: f32 = 32.0;
 const SKULL_SIZE: Vec2 = Vec2::new(102.0, 96.0);
 const TITLE_BASELINE: f32 = 175.0;
 const NOTE_BASELINE: f32 = 450.0;
+const RECORD_BASELINE: f32 = 422.0;
+const RECORD_COLOR: Vec4 = Vec4::new(0.62, 0.6, 0.66, 1.0);
 const PROMPT_POSITION: Vec2 = Vec2::new(700.0, 500.0);
 
 const BUTTON_SIZE: Vec2 = Vec2::new(126.0, 63.0);
@@ -91,7 +93,7 @@ pub(crate) fn minimal_speech(world: &mut World, head: Vec2) {
     ));
 }
 
-pub(crate) fn death_ui(world: &mut World, victory: bool, textures: &Textures) {
+pub(crate) fn death_ui(world: &mut World, victory: bool, record: String, textures: &Textures) {
     let overlay = |part, position: Vec2, size: Vec2, texture, layer| {
         (
             part,
@@ -190,6 +192,17 @@ pub(crate) fn death_ui(world: &mut World, victory: bool, textures: &Textures) {
             FontSize::Size22,
         )
         .aligned(Align::Center),
+        Layer(22),
+        Overlay,
+        ScreenSpace,
+        Hidden,
+    ));
+    world.spawn((
+        DeathPart::Record,
+        Position(Vec2::new(TARGET.x / 2.0, RECORD_BASELINE)),
+        Size(Vec2::ONE),
+        Color(Vec4::ONE),
+        Text::new(record, RECORD_COLOR, FontSize::Size16).aligned(Align::Center),
         Layer(22),
         Overlay,
         ScreenSpace,

@@ -8,7 +8,7 @@ use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, ArtefactDrop, ArtefactSlot, Candle, Clip, Currency, GunDrop, Health, Hidden,
     InRange, Interactable, Interaction, Light, Loadout, Pickup, Player, PriceBox, PriceDigits,
-    PriceTag, Shop, Size, SpeechBubble, SpeechPart, SpeechText, Text, Wallet,
+    PriceTag, Position, Shop, Size, SpeechBubble, SpeechPart, SpeechText, Text, Wallet,
 };
 use crate::dungeon::{Dungeon, FixtureKind};
 use crate::guns::GunKind;
@@ -18,7 +18,7 @@ use crate::systems::artefacts::{pick_up_artefact, unused_artefact};
 use crate::systems::items::use_item;
 use crate::systems::loadout::{pick_up_gun, unused_gun};
 
-const SPEECH_SECONDS: f32 = 3.0;
+pub(crate) const SPEECH_SECONDS: f32 = 3.0;
 const MAX_MULTIPLIER_ROLL: usize = 4;
 const MAX_HEALTH_PRICE: usize = 3;
 
@@ -336,6 +336,47 @@ pub(crate) fn fit_price_boxes(world: &mut World, fonts: &crate::render::Fonts) {
     }
 }
 
+/// The merchant, subject twelve, who chose not to go back up. His first lines come in order,
+/// one per visit, so the truth comes out slowly; after that he picks among them.
+pub(crate) const MERCHANT: [&str; 8] = [
+    "New one? Coins on the table. No credit.",
+    "He calls you subject? He called me twelve.",
+    "I stopped going up. The air up there costs more.",
+    "The slimes. You know what they are? Don't eat them.",
+    "The hound let me pass once. I think it felt sorry.",
+    "You don't remember the surface. None of us did.",
+    "He doesn't pull us from up there. He pulls us from down here.",
+    "Enjoy your purchase. Enjoy anything.",
+];
+
+/// What the merchant says on the `visit`th visit (from 1); `roll` picks once the cycle is done.
+pub(crate) fn merchant_line(visit: u64, roll: usize) -> &'static str {
+    let index = visit.saturating_sub(1) as usize;
+    MERCHANT.get(index).copied().unwrap_or(MERCHANT[roll % MERCHANT.len()])
+}
+
+/// The altar: the curse's own voice, in capitals and without stops. It tells the truth from
+/// the start; nobody understands it.
+pub(crate) const ALTAR: [&str; 5] = [
+    "YOU ARE MINE ALREADY",
+    "HE ONLY BORROWS YOU",
+    "GIVE A PIECE  I GIVE IT BACK  LATER",
+    "FORTY BEFORE YOU  ALL CAME HOME",
+    "THE DOG KNOWS",
+];
+pub(crate) const ALTAR_SECONDS: f32 = 4.0;
+
+/// Says `message` over `anchor`, moving the bubble there first: one bubble serves every talker.
+pub(crate) fn say_at(world: &mut World, anchor: Vec2, message: &'static str, seconds: f32) {
+    for position in world.query_mut::<&mut Position>().with::<&SpeechBubble>() {
+        position.0 = anchor;
+    }
+    for position in world.query_mut::<&mut Position>().with::<&SpeechText>() {
+        position.0 = anchor;
+    }
+    say_for(world, message, seconds);
+}
+
 pub(crate) fn say(world: &mut World, message: &'static str) {
     for bubble in world.query_mut::<&mut SpeechBubble>() {
         bubble.remaining = SPEECH_SECONDS;
@@ -635,6 +676,27 @@ mod tests {
         buy(&mut world, &Textures::default(), &mut Vec::new());
 
         assert!(world.get::<&Shop>(entity).is_ok());
+    }
+
+    #[test]
+    fn the_merchant_tells_his_story_one_visit_at_a_time_then_picks_among_it() {
+        assert_eq!(merchant_line(1, 5), MERCHANT[0]);
+        assert_eq!(merchant_line(2, 5), "He calls you subject? He called me twelve.");
+        assert_eq!(merchant_line(8, 0), MERCHANT[7]);
+        assert_eq!(merchant_line(9, 3), MERCHANT[3]);
+    }
+
+    #[test]
+    fn saying_over_a_talker_moves_the_bubble_to_him() {
+        let mut world = World::new();
+        world.spawn((SpeechBubble { remaining: 0.0, message: "" }, Position(Vec2::ZERO)));
+        world.spawn((SpeechText, Position(Vec2::ZERO)));
+        let over = Vec2::new(300.0, 120.0);
+        say_at(&mut world, over, ALTAR[0], ALTAR_SECONDS);
+        let bubble = world.query::<(&SpeechBubble, &Position)>().iter().map(|(b, p)| (b.message, b.remaining, p.0)).next();
+        assert_eq!(bubble, Some((ALTAR[0], ALTAR_SECONDS, over)));
+        let text = world.query::<&Position>().with::<&SpeechText>().iter().map(|p| p.0).next();
+        assert_eq!(text, Some(over));
     }
 
     #[test]

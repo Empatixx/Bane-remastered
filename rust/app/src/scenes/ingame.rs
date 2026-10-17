@@ -79,6 +79,8 @@ pub(crate) struct InGameScene {
     /// Whether the next start is the training crypt rather than a run.
     training_mode: bool,
     training: Option<systems::Training>,
+    /// Where the merchant's words show on this floor, if it has a shop.
+    keeper: Option<Vec2>,
 }
 
 impl Scene for InGameScene {
@@ -793,6 +795,7 @@ impl InGameScene {
         let summary = systems::summarize(stats, self.floor);
         tracing::info!(victory = self.victory, ?summary, "the run is over");
         let mut note = None;
+        let mut attempt = 1;
         if let Some(profile) = &self.profile {
             profile.record_run(stats, &summary, self.victory);
             let outcome = profile.finish_run(&RunRecord {
@@ -802,9 +805,15 @@ impl InGameScene {
                 challenge: self.challenge,
             });
             note = progress_note(&outcome);
+            attempt = profile.runs();
         }
+        let record = if self.victory {
+            "Subject 41. The wound is open. Recorded.".to_owned()
+        } else {
+            format!("Subject 41. Attempt {attempt}. Recorded.")
+        };
         systems::clear_artefact_effects(&mut self.world);
-        prefabs::death_ui(&mut self.world, self.victory, &assets.textures);
+        prefabs::death_ui(&mut self.world, self.victory, record, &assets.textures);
         self.death = Some(systems::DeathScreen::new(summary).with_note(note));
         self.set_big_map(false);
     }
@@ -1142,6 +1151,7 @@ impl InGameScene {
             textures,
             |bound| self.loot_rng.below(bound),
         );
+        self.keeper = None;
         if let Some(keeper) = dungeon
             .rooms
             .iter()
@@ -1151,8 +1161,10 @@ impl InGameScene {
         {
             let head = keeper.top_left
                 + Vec2::new(crate::props::Prop::Shopkeeper.spec().size().x / 2.0, 0.0);
-            prefabs::minimal_speech(&mut self.world, head);
+            self.keeper = Some(prefabs::speech_anchor(head));
         }
+        // One bubble for whoever speaks on the floor: the merchant, or an altar.
+        prefabs::minimal_speech(&mut self.world, Vec2::ZERO);
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
         // The training needs no map: its rooms run one after another.
         if self.training.is_none() {
@@ -1223,7 +1235,25 @@ impl InGameScene {
                     );
                 }
                 systems::RoomEvent::ShopEntered => {
-                    systems::say(&mut self.world, "Welcome to my shop!");
+                    let visit = self.profile.as_ref().map_or(1, SharedProfile::visit_shop);
+                    let line = systems::merchant_line(visit, self.loot_rng.below(64));
+                    match self.keeper {
+                        Some(anchor) => systems::say_at(&mut self.world, anchor, line, systems::SPEECH_SECONDS + 1.0),
+                        None => systems::say(&mut self.world, line),
+                    }
+                }
+                systems::RoomEvent::SacrificeEntered { room } => {
+                    // The altar speaks over the angel at the room's head.
+                    let statue = self.dungeon.as_ref().and_then(|dungeon| {
+                        dungeon.rooms.get(room)?.furnishing.as_ref()?.fixtures.iter().find_map(|fixture| {
+                            (fixture.kind == crate::dungeon::FixtureKind::AngelStatue)
+                                .then(|| fixture.top_left + Vec2::new(fixture.size.x / 2.0, 0.0))
+                        })
+                    });
+                    if let Some(head) = statue {
+                        let line = systems::ALTAR[self.loot_rng.below(systems::ALTAR.len())];
+                        systems::say_at(&mut self.world, prefabs::speech_anchor(head), line, systems::ALTAR_SECONDS);
+                    }
                 }
                 systems::RoomEvent::BossEntered => {
                     self.sounds.push(AudioCommand::Music(Soundtrack::Boss));

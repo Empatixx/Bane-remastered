@@ -186,6 +186,7 @@ pub(crate) fn update_death_ui(world: &mut World, screen: &DeathScreen) {
                 _ => false,
             },
             DeathPart::Prompt => screen.prompt_visible(),
+            DeathPart::Record => screen.ready() && screen.continued.is_none(),
             DeathPart::Note => match &screen.note {
                 Some(note) if screen.ready() && screen.continued.is_none() => {
                     if let Some(text) = text {

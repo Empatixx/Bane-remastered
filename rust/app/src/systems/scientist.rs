@@ -2,7 +2,7 @@ use hecs::World;
 
 use glam::Vec2;
 
-use crate::components::{Chatty, Player, Position, Size, Speaker, SpeechBubble, SpeechPart, SpeechText, Wallet};
+use crate::components::{Chatty, Player, Position, Size, Speaker, SpeechBubble, SpeechPart, Wallet};
 use crate::enemies::EnemyKind;
 use crate::progress::{ChallengeId, Remark};
 use crate::render::{FontSize, Fonts};
@@ -253,16 +253,10 @@ pub(crate) fn chat(world: &mut World, dt: f32) -> Option<Remark> {
             break;
         }
     }
-    if let Some(line) = line {
-        if let Some(anchor) = anchor {
-            for position in world.query_mut::<&mut Position>().with::<&SpeechBubble>() {
-                position.0 = anchor;
-            }
-            for position in world.query_mut::<&mut Position>().with::<&SpeechText>() {
-                position.0 = anchor;
-            }
-        }
-        say(world, line);
+    match (line, anchor) {
+        (Some(line), Some(anchor)) => super::shop::say_at(world, anchor, line, super::shop::SPEECH_SECONDS),
+        (Some(line), None) => say(world, line),
+        _ => {}
     }
     remark
 }
