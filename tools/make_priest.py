@@ -2,7 +2,7 @@
 shown four times over (40x76, the hero's height) so their pixels are as chunky as the
 dungeon's props. A hooded white robe with gold trim, the face in the hood's shadow.
 
-Rows: 0 standing (four frames, a slow breath), 1 running (four frames, side view, facing
+Rows: 0 standing (four frames, the hem stirring), 1 running (four frames, side view, facing
 right), 2 praying (two frames, hands raised, the second with a glint of light).
 
     uv run -q --with pillow python tools/make_priest.py [preview.png]
@@ -102,7 +102,8 @@ def draw(rows, lift=0, sway=0, legs=None, glint=False):
     px = image.load()
     for y, line in enumerate(rows):
         line = line.ljust(W, ".")[:W]
-        # The upper body rises a pixel on a breath; the hem sways.
+        # The hem sways. (The head never moves on its own: at this size a head that rises
+        # without the body looks as if it comes off.)
         dy = -lift if y < 7 else 0
         dx = sway if y >= 14 else 0
         for x, key in enumerate(line):
@@ -127,11 +128,11 @@ def draw(rows, lift=0, sway=0, legs=None, glint=False):
 def sheet():
     out = Image.new("RGBA", (W * 4, H * 3), (0, 0, 0, 0))
     for i, lift in enumerate((0, 0, 1, 1)):
-        out.alpha_composite(draw(STAND, lift=lift, sway=1 if i == 2 else 0), (i * W, 0))
+        out.alpha_composite(draw(STAND, sway=1 if i == 2 else 0), (i * W, 0))
     for i, legs in enumerate(((2, 3, 6), (3, 4, 7), (4, 5, 7), (2, 6, 7))):
-        out.alpha_composite(draw(RUN, lift=i % 2, legs=legs), (i * W, H))
+        out.alpha_composite(draw(RUN, legs=legs), (i * W, H))
     out.alpha_composite(draw(PRAY), (0, H * 2))
-    out.alpha_composite(draw(PRAY, lift=1, glint=True), (W, H * 2))
+    out.alpha_composite(draw(PRAY, glint=True), (W, H * 2))
     return out
 
 
