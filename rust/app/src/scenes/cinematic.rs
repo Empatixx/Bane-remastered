@@ -4,7 +4,8 @@
 //!
 //! Its shots so far: the temple as it was before the wound, the camera moving down the nave to
 //! the altar; then the wound tearing open beneath it, a burning crack running from the altar
-//! down the nave as the ground shakes and the angel falls.
+//! down the nave as the ground shakes and the angel falls; then what crawls out of it, the
+//! first spiders, rats and bats, scattering into the dark as the temple's fires redden.
 
 use std::sync::Arc;
 
@@ -15,6 +16,7 @@ use crate::assets::Assets;
 use crate::audio::{AudioCommand, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{Color, Layer, Position, ScreenSpace, Size, Text};
+use crate::enemies::EnemyKind;
 use crate::dungeon::{
     Carpet, Decor, DecorKind, Dungeon, DungeonRoom, Hanging, HangingKind, Overhead, OverheadKind, RoomKind, Surface,
     Surfaces, Theme, Waterworks,
@@ -36,10 +38,35 @@ const NAVE: (usize, usize) = (34, 7);
 const MARGIN: usize = 2;
 /// The shots: how long each runs and its line, typed out a few letters a second once the shot
 /// has settled. The cinematic fades in at the start and out at the end.
-const SHOTS: [(f32, &str); 2] = [
+const SHOTS: [(f32, &str); 3] = [
     (11.0, "Long ago, a temple stood on the hill."),
     (10.0, "Then something tore open beneath it."),
+    (10.0, "They called it Bane. The wound."),
 ];
+/// What crawls out of the wound in the third shot: what, how long into the shot it climbs out,
+/// how far along the crack (0 at the altar, 1 at its far end), and where it heads, in tiles from
+/// where it climbed out.
+const CRAWLERS: [(EnemyKind, f32, f32, (f32, f32)); 14] = [
+    (EnemyKind::RedSpiderling, 0.6, 0.62, (-2.5, -1.8)),
+    (EnemyKind::Rat, 0.9, 0.7, (-4.0, 1.8)),
+    (EnemyKind::PurpleSpiderling, 1.3, 0.55, (3.0, 1.8)),
+    (EnemyKind::Bat, 1.6, 0.66, (-3.0, -5.0)),
+    (EnemyKind::Spider, 2.0, 0.6, (-1.5, 1.8)),
+    (EnemyKind::Rat, 2.3, 0.74, (2.5, -1.8)),
+    (EnemyKind::RedSpiderling, 2.6, 0.68, (-5.0, -1.8)),
+    (EnemyKind::Bat, 3.0, 0.58, (4.0, -5.5)),
+    (EnemyKind::GreenSpiderling, 3.3, 0.72, (-3.5, 1.8)),
+    (EnemyKind::Rat, 3.7, 0.64, (-6.0, -1.8)),
+    (EnemyKind::PurpleSpiderling, 4.1, 0.78, (2.0, 1.8)),
+    (EnemyKind::Bat, 4.4, 0.7, (-5.0, -6.0)),
+    (EnemyKind::Rat, 4.8, 0.6, (5.5, 1.8)),
+    (EnemyKind::RedSpiderling, 5.2, 0.66, (-6.5, 1.8)),
+];
+/// How fast they climb out (fading in from the glow) and how fast they scurry, tiles a second.
+const CLIMB_SECONDS: f32 = 0.7;
+const SCURRY: f32 = 1.6;
+/// The red the temple sinks into once the wound is open.
+const DUSK: Vec4 = Vec4::new(0.18, 0.02, 0.03, 0.42);
 const FADE_SECONDS: f32 = 1.6;
 const LINE_FROM: f32 = 1.4;
 /// The tear: the ground shakes for a moment, then the crack runs from the altar down the nave
@@ -80,6 +107,10 @@ pub(crate) struct CinematicScene {
     altar: Vec2,
     /// Where the camera pulls back to as the crack runs past it.
     retreat: Vec2,
+    /// What has climbed out of the wound so far: each one, where it came out and where it
+    /// heads, and when.
+    crawlers: Vec<(Entity, Vec2, Vec2, f32)>,
+    dusk: Option<Entity>,
     /// What comes after: the training the first time, otherwise the lobby.
     next: Option<SceneId>,
 }
@@ -335,6 +366,53 @@ impl CinematicScene {
         self.camera.snap_to(self.glide.1.lerp(self.retreat, eased));
     }
 
+    /// The third shot: spiders, rats and bats climb out of the crack and scatter, and the temple
+    /// sinks into the wound's red.
+    fn crawl(&mut self, assets: &Assets, at: f32, dt: f32) {
+        let textures = &assets.textures;
+        for &(kind, when, along, (dx, dy)) in &CRAWLERS[self.crawlers.len()..] {
+            if at < when || self.crack.is_empty() {
+                break;
+            }
+            let index = (along * (self.crack.len() - 1) as f32) as usize;
+            let spot = self.crack[index.min(self.crack.len() - 1)];
+            let from = (Vec2::new(spot.0 as f32, spot.1 as f32) + 0.5) * TILE_SIZE;
+            let to = from + Vec2::new(dx, dy) * TILE_SIZE;
+            let entity = prefabs::enemy(&mut self.world, kind, from, 1, textures);
+            let _ = self.world.remove_one::<crate::components::Spawning>(entity);
+            if let Ok(mut color) = self.world.get::<&mut Color>(entity) {
+                color.0.w = 0.0;
+            }
+            if let Ok(mut animation) = self.world.get::<&mut crate::components::Animation>(entity) {
+                let idle = kind.spec().idle_clip();
+                animation.play(crate::components::Clip { flipped: to.x < from.x, ..idle });
+            }
+            self.crawlers.push((entity, from, to, when));
+        }
+        for &(entity, from, to, when) in &self.crawlers {
+            let since = at - when;
+            let climbed = (since / CLIMB_SECONDS).clamp(0.0, 1.0);
+            let walked = ((since - CLIMB_SECONDS * 0.5) * SCURRY * TILE_SIZE / from.distance(to).max(1.0)).clamp(0.0, 1.0);
+            if let Ok(mut position) = self.world.get::<&mut Position>(entity) {
+                position.0 = from.lerp(to, walked);
+            }
+            if let Ok(mut color) = self.world.get::<&mut Color>(entity) {
+                color.0.w = climbed;
+            }
+        }
+        if let Some(dusk) = self.dusk {
+            if let Ok(mut color) = self.world.get::<&mut Color>(dusk) {
+                color.0 = DUSK * Vec4::new(1.0, 1.0, 1.0, (at / 4.0).min(1.0));
+            }
+        }
+        // A last slow drift down the nave as they pour out.
+        let drift = (at / SHOTS[2].0).clamp(0.0, 1.0);
+        self.camera.snap_to(self.retreat.lerp(self.retreat + Vec2::new(-2.0 * TILE_SIZE, 0.0), drift));
+        if at < 2.5 {
+            self.camera.add_trauma(SHAKE * dt * 2.0);
+        }
+    }
+
     /// The film frame over it all: bars above and below, the line in the lower one, and the
     /// black it fades in from.
     fn frame(&mut self) {
@@ -347,6 +425,13 @@ impl CinematicScene {
                 ScreenSpace,
             ));
         }
+        self.dusk = Some(self.world.spawn((
+            Position(TARGET / 2.0),
+            Size(TARGET),
+            Color(Vec4::ZERO),
+            Layer(OVERLAY_LAYER - 1),
+            ScreenSpace,
+        )));
         self.line = Some(self.world.spawn((
             Position(LINE_AT),
             Text::centered(String::new(), LINE_COLOR, FontSize::Size22),
@@ -383,6 +468,8 @@ impl Scene for CinematicScene {
         self.occluders = None;
         self.line = None;
         self.fade = None;
+        self.dusk = None;
+        self.crawlers.clear();
     }
 
     fn soundtrack(&self) -> Option<Soundtrack> {
@@ -431,7 +518,8 @@ impl Scene for CinematicScene {
                 let eased = t * t * (3.0 - 2.0 * t);
                 self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
             }
-            _ => self.tear(assets, into_shot, dt),
+            1 => self.tear(assets, into_shot, dt),
+            _ => self.crawl(assets, into_shot, dt),
         }
         if let Some(line) = self.line {
             let from = if shot == 0 { LINE_FROM + 0.4 } else { LINE_FROM };
