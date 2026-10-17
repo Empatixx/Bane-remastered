@@ -20,6 +20,9 @@ pub(crate) enum Prop {
     Scientist,
     /// The hooded keeper with a lantern who talks the player through the training crypt.
     Guide,
+    /// A priestess of the temple that raised the hero: idle (row 0) and praying with raised,
+    /// glowing hands (row 1).
+    Priestess,
     Banner,
     Spike,
     TorchOff,
@@ -458,6 +461,17 @@ impl Prop {
                 rows: 1,
                 frame: Vec2::new(16.0, 40.0),
                 scale: 2.5,
+                animation: Some(Animated {
+                    frames: 6,
+                    frame_time: 0.18,
+                }),
+            },
+            Self::Priestess => PropSpec {
+                texture: tex::PRIESTESS,
+                columns: 6,
+                rows: 2,
+                frame: Vec2::new(16.0, 38.0),
+                scale: 2.0,
                 animation: Some(Animated {
                     frames: 6,
                     frame_time: 0.18,

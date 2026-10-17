@@ -19,8 +19,8 @@ use crate::assets::tex;
 use crate::components::{Animation, Clip, Color, Layer, Light, Position, ScreenSpace, Size, Sprite, Text};
 use crate::enemies::EnemyKind;
 use crate::dungeon::{
-    Carpet, Decor, DecorKind, Dungeon, DungeonRoom, Hanging, HangingKind, Overhead, OverheadKind, RoomKind, Surface,
-    Surfaces, Theme, Waterworks,
+    Carpet, Decor, DecorKind, Dungeon, DungeonRoom, Hanging, HangingKind, Mount, Overhead, OverheadKind, RoomKind,
+    Surface, Surfaces, Theme, Waterworks,
 };
 use crate::input::Input;
 use crate::postfx::SceneFx;
@@ -39,11 +39,22 @@ const NAVE: (usize, usize) = (34, 7);
 const MARGIN: usize = 2;
 /// The shots: how long each runs and its line, typed out a few letters a second once the shot
 /// has settled. The cinematic fades in at the start and out at the end.
-const SHOTS: [(f32, &str); 3] = [
+const SHOTS: [(f32, &str); 5] = [
     (11.0, "Long ago, a temple stood on the hill."),
     (10.0, "Then something tore open beneath it."),
     (10.0, "They called it Bane. The wound."),
+    (9.5, "Its last priestesses woke you from the crypt."),
+    (5.5, "Rise. Close the wound."),
 ];
+/// The cut from the temple to the crypt: the screen goes black for this long either side.
+const CUT_SECONDS: f32 = 0.9;
+/// The crypt: its inside in tiles; when the priestesses start to pray, when the light breaks
+/// over the bier, and the white flash as the hero rises.
+const CRYPT: (usize, usize) = (13, 6);
+const PRAY_FROM: f32 = 1.2;
+const RISE_AT: f32 = 7.6;
+const FLASH_SECONDS: f32 = 0.9;
+const BIER_SIZE: Vec2 = Vec2::new(48.0 * 3.0, 24.0 * 3.0);
 /// What crawls out of the wound in the third shot: what, how long into the shot it climbs out,
 /// how far along the crack (0 at the altar, 1 at its far end), and where it heads, in tiles from
 /// where it climbed out.
@@ -140,6 +151,14 @@ pub(crate) struct CinematicScene {
     /// heads, and when.
     crawlers: Vec<(Entity, Vec2, Vec2, f32)>,
     dusk: Option<Entity>,
+    /// The crypt, once the cinematic has cut to it: the bier, the priestesses round it, the
+    /// light over it, the white flash, the hero once risen, and the gold motes rising.
+    crypt: bool,
+    bier: Option<Entity>,
+    priestesses: Vec<Entity>,
+    glow: Option<Entity>,
+    flash: Option<Entity>,
+    hero: Option<Entity>,
     /// What comes after: the training the first time, otherwise the lobby.
     next: Option<SceneId>,
 }
@@ -578,6 +597,185 @@ impl CinematicScene {
         }
     }
 
+    /// The crypt the hero sleeps in: a small stone vault, torches either side, the bier in the
+    /// middle with four priestesses round it.
+    fn build_crypt(&mut self, assets: &Assets) {
+        let (columns, rows) = CRYPT;
+        let width = columns + 2 + 2 * MARGIN;
+        let height = rows + 2 + 2 * MARGIN;
+        let mut grid = TileGrid::filled(width, height);
+        let inside = (MARGIN + 1, MARGIN + 1);
+        for row in 0..rows {
+            for column in 0..columns {
+                grid.carve(inside.0 + column, inside.1 + row);
+            }
+        }
+        let theme = Theme::Stone;
+        let wall = |column: usize| (inside.0 + column, inside.1 - 1);
+        let tile = |column: usize, row: usize| (inside.0 + column, inside.1 + row);
+        let last = columns - 1;
+        let decor = vec![
+            Decor { kind: DecorKind::Torch { mount: Mount::Top, lit: true }, tile: wall(3) },
+            Decor { kind: DecorKind::Torch { mount: Mount::Top, lit: true }, tile: wall(last - 3) },
+            Decor { kind: DecorKind::Shackles { variant: 1 }, tile: wall(1) },
+            Decor { kind: DecorKind::Shackles { variant: 0 }, tile: wall(last - 1) },
+            Decor { kind: DecorKind::Banner, tile: wall(columns / 2) },
+            Decor { kind: DecorKind::Cobweb { variant: 0, left: false }, tile: tile(0, 0) },
+            Decor { kind: DecorKind::Cobweb { variant: 1, left: true }, tile: tile(last, 0) },
+            Decor { kind: DecorKind::Bones { variant: 0 }, tile: tile(1, rows - 2) },
+            Decor { kind: DecorKind::Bones { variant: 1 }, tile: tile(last - 1, rows - 1) },
+        ];
+        let room = DungeonRoom {
+            kind: RoomKind::Normal,
+            cell: (0, 0),
+            origin: (MARGIN, MARGIN),
+            columns: columns + 2,
+            rows: rows + 2,
+            spawns: Vec::new(),
+            doors: Vec::new(),
+            decor,
+            furnishing: None,
+            overheads: Vec::new(),
+            hanging: Vec::new(),
+            track: None,
+            rug: None,
+            tables: Vec::new(),
+            waterworks: Waterworks::default(),
+            pendulum: None,
+        };
+        let dungeon = Dungeon { grid, rooms: vec![room], theme, surfaces: Surfaces::default(), vestibules: Vec::new() };
+        let textures = &assets.textures;
+        let [red, green, blue] = theme.backdrop();
+        prefabs::backdrop_colored(
+            &mut self.world,
+            Vec4::new(f32::from(red) / 255.0, f32::from(green) / 255.0, f32::from(blue) / 255.0, 1.0),
+        );
+        prefabs::tilemap(&mut self.world, &dungeon.grid, assets.tileset_of(theme.wide_tiles()), textures.get(theme.tileset_texture()));
+        let grid = &dungeon.grid;
+        self.occluders = Some(Arc::new(Occluders::new(grid.columns(), grid.rows(), TILE_SIZE, |column, row| {
+            grid.is_wall(column as isize, row as isize)
+        })));
+        let mut physics = crate::physics::Physics::new();
+        for decor in &dungeon.rooms[0].decor {
+            prefabs::decor(&mut self.world, &mut physics, *decor, textures);
+        }
+        systems::spawn_atmosphere(&mut self.world, &dungeon, 0x41);
+        let at = |column: f32, row: f32| Vec2::new(inside.0 as f32 + column, inside.1 as f32 + row) * TILE_SIZE;
+        let centre = at(columns as f32 / 2.0, rows as f32 / 2.0);
+        self.bier = Some(self.world.spawn((
+            Position(centre),
+            Size(BIER_SIZE),
+            Color(Vec4::ONE),
+            Sprite::cell(textures.get(tex::BIER), 0, 0, 2, 1),
+            Layer(0),
+            crate::components::Lit,
+        )));
+        // The light that gathers over him while they pray.
+        self.glow = Some(self.world.spawn((
+            Position(centre),
+            Light::rgb(Vec2::ZERO, 255.0, 226.0, 150.0, 40.0, 0.0),
+        )));
+        let size = Prop::Priestess.spec().size();
+        for (dx, dy) in [(-2.7, -0.9), (2.7, -0.9), (-2.7, 1.9), (2.7, 1.9)] {
+            let foot = centre + Vec2::new(dx * TILE_SIZE, dy * TILE_SIZE);
+            let entity = prefabs::prop(&mut self.world, Prop::Priestess, foot - Vec2::new(size.x / 2.0, size.y), Look::row(0, dx > 0.0), textures);
+            let _ = self.world.insert_one(entity, crate::components::YSort::bottom(size));
+            self.priestesses.push(entity);
+        }
+        let bounds = dungeon.grid.pixel_size();
+        self.camera = Camera::new(bounds);
+        self.camera.snap_to(centre - TARGET / 2.0);
+        self.glide = (centre - TARGET / 2.0 + Vec2::new(0.0, 30.0), centre - TARGET / 2.0 - Vec2::new(0.0, 10.0));
+        self.flash = Some(self.world.spawn((
+            Position(TARGET / 2.0),
+            Size(TARGET),
+            Color(Vec4::new(1.0, 0.97, 0.88, 0.0)),
+            Layer(OVERLAY_LAYER - 1),
+            ScreenSpace,
+        )));
+    }
+
+    /// The fourth and fifth shots: the priestesses pray, light gathers over the bier, a flash,
+    /// and the hero stands beside it.
+    fn revive(&mut self, assets: &Assets, at: f32, dt: f32) {
+        let textures = &assets.textures;
+        let push = (at / (RISE_AT + 3.0)).clamp(0.0, 1.0);
+        let eased = push * push * (3.0 - 2.0 * push);
+        self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
+        if at > PRAY_FROM {
+            for &entity in &self.priestesses {
+                if let Ok(mut animation) = self.world.get::<&mut Animation>(entity) {
+                    if animation.clip().row == 0 {
+                        let flipped = animation.clip().flipped;
+                        animation.play(Clip { row: 1, frames: 6, frame_time: 0.18, looping: true, flipped });
+                    }
+                }
+            }
+        }
+        let gathering = ((at - PRAY_FROM) / (RISE_AT - PRAY_FROM)).clamp(0.0, 1.0);
+        if let Some(glow) = self.glow {
+            if let Ok(mut light) = self.world.get::<&mut Light>(glow) {
+                let after = if at > RISE_AT { (1.0 - (at - RISE_AT) / 3.0).max(0.35) } else { 1.0 };
+                light.radius = 40.0 + 200.0 * gathering;
+                light.intensity = 2.2 * gathering * after;
+            }
+        }
+        // Gold motes rising off the bier as the light gathers.
+        let rate = if at > PRAY_FROM && at < RISE_AT + 1.0 { 6.0 + 30.0 * gathering } else { 0.0 };
+        let mut wanted = rate * dt;
+        let centre = self.bier.and_then(|bier| self.world.get::<&Position>(bier).ok().map(|p| p.0)).unwrap_or_default();
+        while wanted >= 1.0 || (wanted > 0.0 && self.roll() < wanted) {
+            wanted -= 1.0;
+            let spot = centre + Vec2::new((self.roll() - 0.5) * 130.0, (self.roll() - 0.5) * 40.0);
+            let entity = self.world.spawn((Position(spot), Size(Vec2::splat(4.0)), Color(Vec4::new(1.0, 0.9, 0.55, 1.0)), Layer(MOTE_LAYER)));
+            let drift = Vec2::new((self.roll() - 0.5) * 16.0, -30.0 - self.roll() * 40.0);
+            let life = 1.0 + self.roll();
+            self.motes.push((entity, drift, life, life));
+        }
+        self.churn(dt, 0.0);
+        if at > RISE_AT - 0.25 && self.hero.is_none() {
+            self.camera.add_trauma(0.35);
+            if let Some(bier) = self.bier {
+                if let Ok(mut sprite) = self.world.get::<&mut Sprite>(bier) {
+                    *sprite = Sprite::cell(textures.get(tex::BIER), 1, 0, 2, 1);
+                }
+            }
+            let size = crate::prefabs::PLAYER_SIZE;
+            let clip = Clip { row: 0, frames: 6, frame_time: 0.16, looping: true, flipped: false };
+            self.hero = Some(self.world.spawn((
+                Position(centre + Vec2::new(0.0, BIER_SIZE.y / 2.0 + size.y / 2.0 - 6.0)),
+                Size(size),
+                Color(Vec4::ONE),
+                Sprite::cell(textures.get(tex::PLAYER), 0, 0, 6, 4),
+                Animation::new(6, 4, clip),
+                Layer(1),
+                crate::components::Lit,
+            )));
+        }
+        if let Some(flash) = self.flash {
+            let since = at - (RISE_AT - 0.25);
+            let alpha = if since < 0.0 { 0.0 } else if since < 0.12 { since / 0.12 } else { (1.0 - (since - 0.12) / FLASH_SECONDS).max(0.0) };
+            if let Ok(mut color) = self.world.get::<&mut Color>(flash) {
+                color.0.w = alpha * 0.9;
+            }
+        }
+    }
+
+    /// Goes from the temple to the crypt: everything of the temple cleared, the crypt built and
+    /// the film frame put back over it.
+    fn cut_to_crypt(&mut self, assets: &Assets) {
+        self.world.clear();
+        self.crawlers.clear();
+        self.opening.clear();
+        self.motes.clear();
+        self.debris.clear();
+        self.angel = None;
+        self.dusk = None;
+        self.build_crypt(assets);
+        self.frame();
+        self.crypt = true;
+    }
+
     /// The film frame over it all: bars above and below, the line in the lower one, and the
     /// black it fades in from.
     fn frame(&mut self) {
@@ -624,6 +822,9 @@ impl Scene for CinematicScene {
 
     fn enter(&mut self, assets: &Assets) {
         self.clock = 0.0;
+        self.crypt = false;
+        self.priestesses.clear();
+        self.hero = None;
         self.build_temple(assets);
         self.frame();
     }
@@ -638,6 +839,9 @@ impl Scene for CinematicScene {
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();
+        self.priestesses.clear();
+        self.hero = None;
+        self.crypt = false;
     }
 
     fn soundtrack(&self) -> Option<Soundtrack> {
@@ -679,6 +883,9 @@ impl Scene for CinematicScene {
             shot += 1;
         }
         self.camera.update_shake(dt);
+        if shot >= 3 && !self.crypt {
+            self.cut_to_crypt(assets);
+        }
         match shot {
             0 => {
                 // A slow glide down the nave, easing in and out.
@@ -687,7 +894,10 @@ impl Scene for CinematicScene {
                 self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
             }
             1 => self.tear(assets, into_shot, dt),
-            _ => self.crawl(assets, into_shot, dt),
+            2 => self.crawl(assets, into_shot, dt),
+            // The crypt runs on through its two lines.
+            3 => self.revive(assets, into_shot, dt),
+            _ => self.revive(assets, into_shot + SHOTS[3].0, dt),
         }
         if let Some(line) = self.line {
             let from = if shot == 0 { LINE_FROM + 0.4 } else { LINE_FROM };
@@ -699,8 +909,10 @@ impl Scene for CinematicScene {
         if let Some(fade) = self.fade {
             let into = 1.0 - self.clock / FADE_SECONDS;
             let out = 1.0 - (total - self.clock) / FADE_SECONDS;
+            let cut_at: f32 = SHOTS[..3].iter().map(|(seconds, _)| seconds).sum();
+            let cut = 1.0 - (self.clock - cut_at).abs() / CUT_SECONDS;
             if let Ok(mut color) = self.world.get::<&mut Color>(fade) {
-                color.0.w = into.max(out).clamp(0.0, 1.0);
+                color.0.w = into.max(out).max(cut).clamp(0.0, 1.0);
             }
         }
         systems::flicker_flames(&mut self.world);
