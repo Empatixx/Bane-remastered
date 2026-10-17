@@ -20,20 +20,40 @@ Plošné útoky (padající kameny, dopady skoků, paprsky) tě ale zasáhnou i 
 
 ### Hledání cesty
 
-Nepřátelé „cítí“ vzdálenost k tobě v okruhu zhruba 12 dlaždic. Když na tebe vidí přímo, jdou rovně;
-jinak obcházejí zdi a pevné objekty (sudy, truhly…) po nejkratší cestě. Mapa cest se přepočítá, kdykoli
-se pohneš, takže nepřítele nesetřeseš tím, že zalezeš za roh. Mimo dosah jdou nepřátelé prostě
-rovnou za tebou.
+Nepřátelé „cítí“ vzdálenost k tobě v okruhu zhruba 18 dlaždic (přes celou místnost). Mapa cest se
+počítá zvlášť pro každou velikost nepřítele: velký nepřítel (krysa, golem, stilt spider) je posílán jen
+mezerami, kterými se opravdu protáhne, malý jde i úzkou škvírou. Když nepřítel tvou cestu na šířku
+svého těla vidí volnou, jde rovně za tebou; jinak jde rovně k nejvzdálenějšímu bodu své cesty, kam
+dojde v přímce, takže zatáčí plynule a nekličkuje po dlaždicích. Mapa se přepočítá, kdykoli se
+pohneš (nejvýš 10× za sekundu), takže nepřítele nesetřeseš tím, že zalezeš za roh. Kdo má cestu jen
+užší, než je sám, zkusí se protlačit cestou pro menší nepřátele.
 
-### Rozestupy v davu
+### Řízení pohybu a rozestupy v davu
 
-Nepřátelé se navzájem odstrkují, takže se nehromadí v jednom bodě, ale rozprostírají se kolem tebe.
-Bossové a zmražení nebo stojící nepřátelé se odstrčit nedají, ostatní se jim ale vyhnou.
+Kudy přesně nepřítel v danou chvíli půjde, rozhoduje řízení pohybu (context steering): z 16 směrů kolem
+sebe každý ohodnotí podle toho, jak vede k cíli, a ubere body směrům, kde má zeď nebo jiného nepřítele
+blízko před sebou (dívá se asi třetinu sekundy chůze dopředu). Vybere nejlepší směr a když má zeď
+těsně před sebou, zpomalí, místo aby do ní narazil. Jinému nepříteli uhne, jen když stojí přímo
+v jeho cestě a nejde stejným směrem; za tím, kdo jde stejně, prostě jde. Necouvá ani neodskakuje.
+Směr i rychlost mění plynule během zlomku sekundy, takže zatáčí obloukem a necuká.
+
+### Místa kolem hráče
+
+Aby se nepřátelé u tebe nepřetlačovali o jedno místo, má kolem tebe každý své místo. Kolem hráče je
+16 míst do kruhu, každé tak blízko, že nepřítel na něm tě dotýká (a zraňuje). Nepřítel, který se
+přiblíží asi na 3,5 dlaždice, si zabere nejbližší volné místo ze strany, odkud jde, kam se jeho tělo
+vejde vedle ostatních. Dojde tam a stojí, dokud se nevzdálí (víc než asi 5,5 dlaždice, např. když
+utečeš). Kdo místo nedostane, protože je kolem tebe plno, pomalu tě obchází asi dvě dlaždice
+opodál a čeká, až se nějaké uvolní. Kolem tebe se tak vejdou zhruba 4–6 nepřátel podle velikosti.
+Střílející nepřátelé místa nezabírají, drží si svůj odstup.
+
+Nepřátelé se navzájem fyzicky nesrážejí (procházejí si skrz), odstup mezi sebou drží jen svým
+řízením pohybu a místy kolem tebe. Se zdmi, objekty a nábytkem se srážejí normálně.
 
 ### Zaseknutí
 
-Když nepřítel uvízne (např. o roh), na 0,6 s zkusí jít šikmo jiným směrem. Při dalším zaseknutí zkusí
-druhou stranu.
+Když nepřítel přesto uvízne (např. v tlačenici), na 0,6 s se vyhne směru, kterým se tlačil, a zkusí
+obejít překážku z boku. Při dalším zaseknutí zkusí druhou stranu.
 
 ### Natočení
 
@@ -93,8 +113,8 @@ nápřahů a bez zuřivosti.
 ## Známé nesrovnalosti
 
 - Nepřátelé nemají žádný dosah vnímání – vidí tě hned po zhmotnění, i přes zdi.
-- Mimo okruh asi 12 dlaždic nepřátelé jdou rovně za tebou, i když jim stojí v cestě zeď; uvolní je až
-  manévr při zaseknutí.
+- Mimo okruh asi 18 dlaždic nepřátelé jdou rovně za tebou, i když jim stojí v cestě zeď.
+- Nepřítel, který se nikudy nevejde (např. obří stilt spider v úzké chodbě), se pořád může zaseknout.
 - Útoky bossů závisí na místě, kde se boss objevil, ne na seedu runu – při stejném seedu se tak
   nemusí opakovat stejně.
 

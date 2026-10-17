@@ -454,7 +454,7 @@ impl Scene for InGameScene {
             &self.navigation,
             dt,
         );
-        systems::chase_player(&mut self.world, &self.flow);
+        systems::chase_player(&mut self.world, &self.flow, hostile_dt);
         systems::tick_golem(
             &mut self.world,
             &mut self.physics,
@@ -553,7 +553,6 @@ impl Scene for InGameScene {
             hostile_dt,
         );
         systems::tick_orbiters(&mut self.world, &mut self.physics, hostile_dt);
-        systems::separate_chasers(&mut self.world);
         systems::pick_pet_targets(&mut self.world);
         systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
         systems::steer_pets(&mut self.world);
@@ -1004,7 +1003,14 @@ impl InGameScene {
         }) {
             start += Vec2::new(dx, dy) * TILE_SIZE;
         }
-        prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        let player = prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
+        // `BANE_GOD=1` keeps the player from being hurt, for watching enemies at work.
+        if std::env::var_os("BANE_GOD").is_some() {
+            let _ = self.world.insert_one(
+                player,
+                crate::components::Invulnerable { remaining: f32::MAX },
+            );
+        }
         // `BANE_COINS=n` starts the floor with that many coins, for trying out the shop.
         if let Some(coins) = std::env::var("BANE_COINS").ok().and_then(|n| n.trim().parse().ok()) {
             let wallets = self.world.query_mut::<&mut crate::components::Wallet>();

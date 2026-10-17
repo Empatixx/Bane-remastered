@@ -39,10 +39,11 @@ pub(super) const BULLETS: InteractionGroups = InteractionGroups::new(
     InteractionTestMode::And,
 );
 
+/// Enemies pass through one another: their steering keeps them apart, and bodies shoving at
+/// each other only had them fighting for room.
 pub(super) const ENEMIES: InteractionGroups = InteractionGroups::new(
     ENEMY,
     WALL.union(BULLET)
-        .union(ENEMY)
         .union(OBJECT)
         .union(FURNITURE),
     InteractionTestMode::And,

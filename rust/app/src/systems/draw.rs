@@ -3,6 +3,7 @@ use hecs::World;
 
 use crate::components::{
     Afterimage, Casing, Chilled, Color, DodgeVisual, DropShadow, EnemyArrow, Frozen, Heading, Hidden,
+    HitFlash,
     Hover, InRange, Layer, Liquid, Lit, MapSize, Minimap, Outline, Overlay, Phantom, Player,
     Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text, YSort,
     blended,
@@ -10,6 +11,10 @@ use crate::components::{
 use crate::render::{Draw, Fonts, Layers, Quad, TextureId};
 
 use crate::viewport::TARGET;
+
+/// How red the player turns when hurt, fading over this long.
+const HURT_TINT: Vec4 = Vec4::new(1.0, 0.35, 0.35, 1.0);
+const HURT_TINT_SECONDS: f32 = 0.35;
 
 const FROST_RIM: Vec4 = Vec4::new(0.7, 0.95, 1.0, 0.9);
 
@@ -96,7 +101,7 @@ pub(crate) fn collect_draws(
         hover,
         frozen,
         (shine, heading),
-        (sky, standing),
+        (sky, standing, hit),
         (liquid, cloakable),
     ) in world
         .query::<(
@@ -113,7 +118,7 @@ pub(crate) fn collect_draws(
             Option<&Hover>,
             (Option<&Frozen>, Option<&Chilled>),
             (Option<&Shine>, Option<&Heading>),
-            (Option<&Sky>, Option<&YSort>),
+            (Option<&Sky>, Option<&YSort>, Option<&HitFlash>),
             (
                 Option<&Liquid>,
                 Option<hecs::Or<&Player, hecs::Or<&DodgeVisual, &Afterimage>>>,
@@ -132,7 +137,16 @@ pub(crate) fn collect_draws(
         }
         let draw = match sprite {
             Some(sprite) => {
-                let mut quad = Quad::with_uv(center, size.0, color.0, sprite.uv).lit(lit.is_some());
+                // The player flushes red for a moment when hurt, over the red outline every hit
+                // gives, so a hit can't be missed.
+                let tint = match (hit, cloakable) {
+                    (Some(hit), Some(_)) => {
+                        let strength = (hit.remaining / HURT_TINT_SECONDS).clamp(0.0, 1.0);
+                        Vec4::ONE.lerp(HURT_TINT, strength)
+                    }
+                    _ => Vec4::ONE,
+                };
+                let mut quad = Quad::with_uv(center, size.0, color.0 * tint, sprite.uv).lit(lit.is_some());
                 if let Some(liquid) = liquid {
                     quad = quad.liquid(liquid.kind, liquid.time);
                 }

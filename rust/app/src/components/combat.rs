@@ -158,6 +158,10 @@ pub(crate) struct Progress {
     pub(crate) turn: f32,
 }
 
+/// Which of the places round the player an enemy closing in has taken.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Slot(pub(crate) usize);
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Detour {
     pub(crate) remaining: f32,

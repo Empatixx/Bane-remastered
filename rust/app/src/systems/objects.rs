@@ -733,7 +733,7 @@ mod tests {
         }
         let _ = world.insert_one(slime, Frozen::new(2.0));
 
-        crate::systems::chase_player(&mut world, &crate::flow::FlowField::default());
+        crate::systems::chase_player(&mut world, &crate::flow::FlowField::default(), 1.0);
         crate::systems::tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 0.016);
 
         let velocity = world
@@ -825,7 +825,7 @@ mod tests {
         hurt_player(&mut world, player, 1, &mut Vec::new());
         crate::systems::flash_hits(&mut world, 0.01);
         let red = outline(&world).expect("outline");
-        assert!(red.x == 1.0 && red.y == 0.0 && red.w > 0.9, "{red:?}");
+        assert!(red.x == 1.0 && red.y < 0.5 && red.w > 0.9, "{red:?}");
 
         crate::systems::flash_hits(&mut world, 1.0);
         assert!(outline(&world).is_none());

@@ -6,7 +6,6 @@ const CHECK_SECONDS: f32 = 0.3;
 const MIN_EXPECTED: f32 = 8.0;
 const MIN_PROGRESS: f32 = 0.25;
 pub(crate) const DETOUR_SECONDS: f32 = 0.6;
-pub(crate) const DETOUR_ANGLE: f32 = 1.2;
 
 pub(crate) fn watch_progress(world: &mut World, dt: f32) {
     let missing: Vec<(Entity, Position)> = world

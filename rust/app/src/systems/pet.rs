@@ -21,7 +21,8 @@ const FOLLOW_RAMP: f32 = 120.0;
 const IDLE_SPEED: f32 = 40.0;
 const TURN_RATIO: f32 = 1.4;
 const BITE_DAMAGE: i32 = 1;
-const BITE_COOLDOWN: f32 = 0.2;
+/// One bite a second at most.
+const BITE_COOLDOWN: f32 = 1.0;
 
 fn owner(world: &World) -> Option<Entity> {
     world.query::<Entity>().with::<&Player>().iter().next()
@@ -545,7 +546,8 @@ mod tests {
         let before = world.get::<&Health>(rat).map_or(0, |h| h.current);
 
         pet_bites(&mut world, 0.0);
-        pet_bites(&mut world, 0.1);
+        pet_bites(&mut world, 0.5);
+        pet_bites(&mut world, 0.4);
         assert_eq!(
             world.get::<&Health>(rat).map_or(0, |h| h.current),
             before - 1
