@@ -2,8 +2,8 @@
 //! built from the dungeon's tiles and props, lit by its lights, the camera gliding through
 //! them with black bars above and below and a line of the story typed out at the bottom.
 //!
-//! Its shots so far: the temple as it was before the wound, the camera moving down the nave to
-//! the altar; then the wound tearing open beneath it, a rift of purple chaos running from the
+//! Its shots: a day at the temple, the people of Velmor at prayer, the seal breathing under the
+//! altar, night falling and the prayers falling silent; then the wound tearing open beneath it, a rift of purple chaos running from the
 //! altar down the nave as the ground shakes and the angel bursts apart; then what crawls out of it, the
 //! first spiders, rats and bats, scattering into the dark as the temple sinks into the rift's purple.
 
@@ -39,13 +39,35 @@ const NAVE: (usize, usize) = (34, 9);
 const MARGIN: usize = 2;
 /// The shots: how long each runs and its line, typed out a few letters a second once the shot
 /// has settled. The cinematic fades in at the start and out at the end.
-const SHOTS: [(f32, &str); 5] = [
-    (11.0, "Long ago, a temple stood on the hill."),
-    (14.0, "Then something tore open beneath it."),
+const SHOTS: [(f32, &str); 7] = [
+    (12.0, "For four hundred years, the people of Velmor came to pray at the temple on the hill."),
+    (9.0, "Their prayers kept something asleep beneath it."),
+    (8.0, "Then, one night, the prayers fell silent."),
+    (14.0, "And something tore open beneath the temple."),
     (10.0, "They called it Bane. The wound."),
     (9.5, "One acolyte escaped, and woke the temple's last guardian."),
     (5.5, "Rise. Close the wound."),
 ];
+/// The shots by what happens in them.
+const DAY: usize = 0;
+const SEAL: usize = 1;
+const NIGHT: usize = 2;
+const TEAR: usize = 3;
+const CRAWL: usize = 4;
+const VAULT: usize = 5;
+/// The day and the night: how long night takes to fall, the warm lights of day down the nave,
+/// the dark blue of night over it all, and the seal's glow under the altar.
+const NIGHTFALL: f32 = 3.0;
+const NIGHT_TINT: Vec4 = Vec4::new(0.02, 0.03, 0.12, 0.45);
+const SEAL_GLOW: (f32, f32, f32) = (170.0, 80.0, 255.0);
+/// The people of Velmor at prayer along the carpet, in tiles inside the nave: where each kneels,
+/// and the few still walking in from the doorway when the film opens.
+const PILGRIMS: [(f32, f32); 12] = [
+    (3.0, 2.4), (5.0, 2.4), (8.0, 2.4), (10.5, 2.4), (15.0, 2.4), (17.5, 2.4),
+    (4.0, 6.4), (6.5, 6.4), (9.5, 6.4), (11.5, 6.4), (16.0, 6.4), (19.0, 6.4),
+];
+const WALKING_IN: [usize; 3] = [1, 7, 3];
+const PILGRIM_PACE: f32 = 1.4;
 /// The cut from the temple to the crypt: the screen goes black for this long either side.
 const CUT_SECONDS: f32 = 0.9;
 /// The crypt: its inside in tiles; when light starts to leak from the sarcophagus, when its lid
@@ -209,6 +231,12 @@ pub(crate) struct CinematicScene {
     glow: Option<Entity>,
     flash: Option<Entity>,
     hero: Option<Entity>,
+    /// The day: the people at prayer (each, where it kneels, and whether it walks in first), the
+    /// lights of day, the night falling over it, the seal's glow.
+    pilgrims: Vec<(Entity, Vec2, bool)>,
+    daylight: Vec<Entity>,
+    night: Option<Entity>,
+    seal: Option<Entity>,
     /// What comes after: the training the first time, otherwise the lobby.
     next: Option<SceneId>,
 }
@@ -399,6 +427,41 @@ impl CinematicScene {
             ));
             self.acolytes.push(Acolyte { entity, path, hide, caught: None });
         }
+        // The people of Velmor, kneeling either side of the carpet; a few still coming in.
+        let door = at(-3.0, rows as f32 / 2.0);
+        for (index, &(column, row)) in PILGRIMS.iter().enumerate() {
+            let spot = at(column, row);
+            let walking = WALKING_IN.contains(&index);
+            let clip = if walking {
+                Clip { row: 1, frames: 4, frame_time: 0.14, looping: true, flipped: false }
+            } else {
+                Clip { row: 2, frames: 2, frame_time: 0.6 + index as f32 * 0.04, looping: true, flipped: index % 2 == 0 }
+            };
+            let shade = 0.85 + (index % 3) as f32 * 0.07;
+            let entity = self.world.spawn((
+                Position(if walking { door } else { spot }),
+                Size(PRIEST_SIZE),
+                Color(Vec4::new(shade, shade, shade, 1.0)),
+                Sprite::cell(textures.get(tex::PILGRIM), 0, clip.row, 4, 3),
+                Animation::new(4, 3, clip),
+                Layer(1),
+                crate::components::YSort::bottom(PRIEST_SIZE),
+                crate::components::Lit,
+            ));
+            self.pilgrims.push((entity, spot, walking));
+        }
+        // Daylight down the nave, warm through the doorway and high windows.
+        for column in [2.0, 10.0, 18.0, 26.0] {
+            self.daylight.push(self.world.spawn((
+                Position(at(column, rows as f32 / 2.0)),
+                Light::rgb(Vec2::ZERO, 255.0, 228.0, 180.0, 420.0, 0.65),
+            )));
+        }
+        // The seal under the altar: a glow that breathes while the prayers hold.
+        self.seal = Some(self.world.spawn((
+            Position(self.altar + Vec2::new(0.0, statue.y * 0.3)),
+            Light::rgb(Vec2::ZERO, SEAL_GLOW.0, SEAL_GLOW.1, SEAL_GLOW.2, 120.0, 0.0),
+        )));
         let bounds = dungeon.grid.pixel_size();
         self.camera = Camera::new(bounds);
         // The camera's position is its top left corner; it glides with the nave's middle row
@@ -695,9 +758,9 @@ impl CinematicScene {
             }
             if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
                 // Running on their side, then cowering facing the room.
-                let row = if since <= 0.0 { 2 } else if run < 1.0 { 1 } else { 0 };
+                let row = if since <= 0.0 { 0 } else if run < 1.0 { 1 } else { 0 };
                 if animation.clip().row != row {
-                    let frames = if row == 2 { 2 } else { 4 };
+                    let frames = 4;
                     animation.play(Clip { row, frames, frame_time: if row == 1 { 0.09 } else { 0.22 }, looping: true, flipped: row == 1 && facing_left });
                 }
             }
@@ -847,7 +910,7 @@ impl CinematicScene {
             }
         }
         // A last slow drift down the nave as they pour out.
-        let drift = (at / SHOTS[2].0).clamp(0.0, 1.0);
+        let drift = (at / SHOTS[CRAWL].0).clamp(0.0, 1.0);
         self.camera.snap_to(self.retreat.lerp(self.retreat + Vec2::new(-2.0 * TILE_SIZE, 0.0), drift));
         if at < 2.5 {
             self.camera.add_trauma(SHAKE * dt * 2.0);
@@ -1094,6 +1157,10 @@ impl CinematicScene {
         self.crawlers.clear();
         self.acolytes.clear();
         self.hunters.clear();
+        self.pilgrims.clear();
+        self.daylight.clear();
+        self.night = None;
+        self.seal = None;
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();
@@ -1102,6 +1169,68 @@ impl CinematicScene {
         self.build_crypt(assets);
         self.frame();
         self.crypt = true;
+    }
+
+    /// The day before the wound: the people walk in and kneel; the seal breathes under the altar;
+    /// then night falls, the people are gone, the priests fall silent and the seal swells.
+    fn day(&mut self, clock: f32, dt: f32) {
+        let night_from: f32 = SHOTS[..NIGHT].iter().map(|(seconds, _)| seconds).sum();
+        let fallen = ((clock - night_from) / NIGHTFALL).clamp(0.0, 1.0);
+        for &light in &self.daylight {
+            if let Ok(mut glow) = self.world.get::<&mut Light>(light) {
+                glow.intensity = 0.65 * (1.0 - fallen);
+            }
+        }
+        if let Some(night) = self.night {
+            if let Ok(mut color) = self.world.get::<&mut Color>(night) {
+                color.0 = NIGHT_TINT * Vec4::new(1.0, 1.0, 1.0, fallen);
+            }
+        }
+        // The people: the last few walk in from the doorway and kneel; at nightfall they are gone.
+        let gone = fallen > 0.0;
+        for &(entity, spot, walking) in &self.pilgrims {
+            if gone {
+                let _ = self.world.insert_one(entity, crate::components::Hidden);
+                continue;
+            }
+            if !walking {
+                continue;
+            }
+            let Ok(at) = self.world.get::<&Position>(entity).map(|p| p.0) else { continue };
+            let gap = spot - at;
+            if gap.length() > 2.0 {
+                let step = gap.normalize() * (PILGRIM_PACE * TILE_SIZE * dt).min(gap.length());
+                if let Ok(mut position) = self.world.get::<&mut Position>(entity) {
+                    position.0 += step;
+                }
+            } else if let Ok(mut animation) = self.world.get::<&mut Animation>(entity) {
+                if animation.clip().row != 2 {
+                    animation.play(Clip { row: 2, frames: 2, frame_time: 0.6, looping: true, flipped: false });
+                }
+            }
+        }
+        // The priests stop praying once night has fallen.
+        if fallen >= 1.0 {
+            for acolyte in &self.acolytes {
+                if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
+                    if animation.clip().row == 2 {
+                        let flipped = animation.clip().flipped;
+                        animation.play(Clip { row: 0, frames: 4, frame_time: 0.22, looping: true, flipped });
+                    }
+                }
+            }
+        }
+        // The seal: faint and breathing by day, swelling in the silent night.
+        let seal_from: f32 = SHOTS[..SEAL].iter().map(|(seconds, _)| seconds).sum();
+        if let Some(seal) = self.seal {
+            if let Ok(mut light) = self.world.get::<&mut Light>(seal) {
+                let woken = ((clock - seal_from) / 2.0).clamp(0.0, 1.0);
+                let breath = 0.5 + 0.5 * (clock * 1.6).sin();
+                let swell = ((clock - night_from - NIGHTFALL) / (SHOTS[NIGHT].0 - NIGHTFALL)).clamp(0.0, 1.0);
+                light.intensity = woken * (0.5 + 0.4 * breath) + swell * 2.0;
+                light.radius = 110.0 + swell * 200.0;
+            }
+        }
     }
 
     /// The film frame over it all: bars above and below, the line in the lower one, and the
@@ -1116,6 +1245,13 @@ impl CinematicScene {
                 ScreenSpace,
             ));
         }
+        self.night = Some(self.world.spawn((
+            Position(TARGET / 2.0),
+            Size(TARGET),
+            Color(Vec4::ZERO),
+            Layer(OVERLAY_LAYER - 2),
+            ScreenSpace,
+        )));
         self.dusk = Some(self.world.spawn((
             Position(TARGET / 2.0),
             Size(TARGET),
@@ -1167,6 +1303,10 @@ impl Scene for CinematicScene {
         self.crawlers.clear();
         self.acolytes.clear();
         self.hunters.clear();
+        self.pilgrims.clear();
+        self.daylight.clear();
+        self.night = None;
+        self.seal = None;
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();
@@ -1215,21 +1355,27 @@ impl Scene for CinematicScene {
             shot += 1;
         }
         self.camera.update_shake(dt);
-        if shot >= 3 && !self.crypt {
+        if shot < TEAR {
+            self.day(self.clock, dt);
+        }
+        if shot >= VAULT && !self.crypt {
             self.cut_to_crypt(assets);
         }
         match shot {
-            0 => {
-                // A slow glide down the nave, easing in and out.
-                let t = (into_shot / SHOTS[0].0).clamp(0.0, 1.0);
+            DAY | SEAL => {
+                // One slow glide down the nave over the day and the seal, easing in and out.
+                let into = if shot == SEAL { into_shot + SHOTS[DAY].0 } else { into_shot };
+                let t = (into / (SHOTS[DAY].0 + SHOTS[SEAL].0)).clamp(0.0, 1.0);
                 let eased = t * t * (3.0 - 2.0 * t);
                 self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
             }
-            1 => self.tear(assets, into_shot, dt),
-            2 => self.crawl(assets, into_shot, dt),
+            // Night: held on the altar while the prayers fall silent.
+            NIGHT => self.camera.snap_to(self.glide.1),
+            TEAR => self.tear(assets, into_shot, dt),
+            CRAWL => self.crawl(assets, into_shot, dt),
             // The crypt runs on through its two lines.
-            3 => self.revive(assets, into_shot, dt),
-            _ => self.revive(assets, into_shot + SHOTS[3].0, dt),
+            VAULT => self.revive(assets, into_shot, dt),
+            _ => self.revive(assets, into_shot + SHOTS[VAULT].0, dt),
         }
         if let Some(line) = self.line {
             let from = if shot == 0 { LINE_FROM + 0.4 } else { LINE_FROM };
@@ -1241,7 +1387,7 @@ impl Scene for CinematicScene {
         if let Some(fade) = self.fade {
             let into = 1.0 - self.clock / FADE_SECONDS;
             let out = 1.0 - (total - self.clock) / FADE_SECONDS;
-            let cut_at: f32 = SHOTS[..3].iter().map(|(seconds, _)| seconds).sum();
+            let cut_at: f32 = SHOTS[..VAULT].iter().map(|(seconds, _)| seconds).sum();
             let cut = 1.0 - (self.clock - cut_at).abs() / CUT_SECONDS;
             if let Ok(mut color) = self.world.get::<&mut Color>(fade) {
                 color.0.w = into.max(out).max(cut).clamp(0.0, 1.0);

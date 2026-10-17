@@ -34,11 +34,13 @@ effect() {
         -d "{\"text\":\"$text\",\"duration_seconds\":$seconds,\"prompt_influence\":0.6}"
 }
 
-speak 1 "Long ago... a temple stood on the hill."
-speak 2 "Then something tore open beneath it."
-speak 3 "They called it Bane. The wound."
-speak 4 "One acolyte escaped... and woke the temple's last guardian."
-speak 5 "Rise. Close the wound."
+speak 1 "For four hundred years... the people of Velmor came to pray at the temple on the hill."
+speak 2 "Their prayers kept something asleep beneath it."
+speak 3 "Then, one night... the prayers fell silent."
+speak 4 "And something tore open beneath the temple."
+speak 5 "They called it Bane. The wound."
+speak 6 "One acolyte escaped... and woke the temple's last guardian."
+speak 7 "Rise. Close the wound."
 
 effect rumble 6 "deep earthquake rumble inside a stone temple, low and growing"
 effect statue 3 "stone statue cracking and bursting apart, heavy chunks falling on stone floor"
@@ -46,5 +48,7 @@ effect rift 5 "a magical rift tearing open, crackling purple energy, otherworldl
 effect crawl 6 "many spiders and rats skittering and scratching out of a pit, dark and eerie"
 effect lid 4 "heavy stone sarcophagus lid grinding and sliding open in a crypt"
 effect awaken 3 "ethereal holy shimmer swelling, a soul returning to a body, deep breath"
+effect day_bed 22 "dark fantasy game soundtrack, a sacred temple by day, a calm choir and warm strings, peaceful and reverent, slow"
+effect night_bed 10 "dark fantasy game soundtrack, night falls over a temple, the choir fades to silence, a low uneasy drone, wind"
 effect cry 1.6 "a short muffled male death cry, then a wet bite and tearing, dark fantasy"
 ls "$OUT"

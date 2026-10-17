@@ -269,8 +269,18 @@ Doporučené pořadí: řádky S nejdřív (texty jsou levné a dají celou atmo
 
 ## 9. Úvod: chrám, rána a řád Pečeti
 
-Úvodní cinematic (`scenes/cinematic.rs`) a výcviková krypta vyprávějí, co se stalo předtím, než
+Úvodní cinematic (`scenes/cinematic.rs`: den v chrámu, pečeť, noc, trhlina, tvorové, krypta)
+a výcviková krypta vyprávějí, co se stalo předtím, než
 hráč poprvé vkročí do laboratoře.
+
+### Říše Velmor
+Chrám stojí na kopci nad říší **Velmor**. Čtyři sta let k němu lidé z Velmoru každý den chodili
+se modlit. Nevěděli proč. Věděli jen, že se to tak dělá a že dokud se modlí, je klid. Modlitby
+lidu a kněží ve skutečnosti držely spící zlo pod kopcem: pod oltářem je **pečeť**, která
+slabě dýchá fialovým světlem, dokud ji modlitby živí.
+
+Jednou v noci modlitby utichly (proč, zůstává otázkou pro pozdější příběh, například Teodorova
+kronika). Pečeť povolila a pod chrámem se otevřela trhlina, Bane.
 
 ### Řád Pečeti
 Chrám na kopci patřil **řádu Pečeti** (*Order of the Seal*). Řád věděl, že pod kopcem něco spí,

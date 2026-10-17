@@ -164,6 +164,31 @@ def sheet():
     return out
 
 
+# The people of Velmor who come to pray: the same figure in a plain brown cloak and a dark
+# undyed sash instead of the order's white and gold.
+PILGRIM = {
+    PALETTE["w"]: (150, 116, 84),
+    PALETTE["s"]: (112, 84, 62),
+    PALETTE["d"]: (78, 58, 46),
+    PALETTE["g"]: (92, 74, 58),
+    PALETTE["G"]: (64, 50, 40),
+}
+
+
+def pilgrim(image):
+    out = image.copy()
+    px = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = px[x, y]
+            if a and (r, g, b) in PILGRIM:
+                px[x, y] = (*PILGRIM[(r, g, b)], a)
+    # No glint for the people: only the priests' prayers shine.
+    for x, y in ((0, 1), (9, 1), (1, 0), (8, 0)):
+        px[W + x, 2 * H + y] = (0, 0, 0, 0)
+    return out
+
+
 def main():
     image = sheet()
     if len(sys.argv) > 1:
@@ -175,6 +200,7 @@ def main():
         preview.resize((preview.width * 2, preview.height * 2), Image.NEAREST).save(sys.argv[1])
         return
     image.save(ROOT / "assets/textures/ingame/priest.tga")
+    pilgrim(image).save(ROOT / "assets/textures/ingame/pilgrim.tga")
 
 
 if __name__ == "__main__":

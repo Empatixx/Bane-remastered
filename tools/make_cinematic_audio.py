@@ -18,11 +18,13 @@ ROOT = Path(__file__).resolve().parent.parent
 AUDIO = ROOT / "assets/audio"
 MADE = AUDIO / "cinematic"
 
-# The shots: temple, tear, crawl, crypt (two lines), as in cinematic.rs.
-SHOTS = [11.0, 14.0, 10.0, 9.5, 5.5]
+# The shots, as in cinematic.rs: a day at the temple, the seal, nightfall, the tear, the crawl,
+# the crypt (two lines).
+SHOTS = [12.0, 9.0, 8.0, 14.0, 10.0, 9.5, 5.5]
 START = [sum(SHOTS[:i]) for i in range(len(SHOTS))]
 LENGTH = sum(SHOTS)
-TEMPLE, TEAR, CRAWL, CRYPT, RISE = START
+DAY, SEAL, NIGHT, TEAR, CRAWL, CRYPT, RISE = START
+TEMPLE = DAY
 LINE_FROM = 1.4
 # How loud each layer is, in LUFS: the narrator well above the effects, the score under both.
 VOICE = -14
@@ -136,8 +138,10 @@ def score(mix):
         if (MADE / f"{name}.mp3").exists():
             mix.file(MADE / f"{name}.mp3", at, volume, fade_out=fade_out, loudness=SCORE)
 
-    # The temple bed runs from the start until the ground shakes, then fades.
-    made("temple_bed", TEMPLE, 0.8, fade_out=(TEAR_FROM - TEMPLE, 2.5))
+    # The day: a calm choir through the day and the seal, dying away as night falls; then the
+    # night's uneasy drone until the ground shakes.
+    made("day_bed", DAY, 0.9, fade_out=(NIGHT - DAY - 1.0, 3.0))
+    made("night_bed", NIGHT + 0.5, 0.9, fade_out=(TEAR_FROM - NIGHT - 0.5, 2.0))
     # Under the tear and the crawl, a low drone of dread.
     for freq, amp in ((55, 0.2), (58.27, 0.1), (82.41, 0.06)):
         mix.tone(f"sine=frequency={freq}:sample_rate=44100",
@@ -178,7 +182,7 @@ def effects(mix):
 
 
 def voice(mix):
-    for number, at in enumerate((TEMPLE, TEAR, CRAWL, CRYPT, RISE), start=1):
+    for number, at in enumerate(START, start=1):
         line = MADE / f"line_{number}.mp3"
         if line.exists():
             mix.file(line, at + LINE_FROM + 0.2, 1.0, fade_out=(30.0, 0.1), bus="voice", loudness=VOICE)
