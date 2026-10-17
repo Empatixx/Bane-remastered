@@ -615,7 +615,7 @@ impl CinematicScene {
     }
 
     /// The crypt the hero sleeps in: a stone vault with blocks in its corners, his sarcophagus in
-    /// the middle at the end of a red runner, candles round it, older sarcophagi closed along the
+    /// the middle on a red carpet, candles round it, older sarcophagi closed along the
     /// walls, torches, shackles, chains, cobwebs and bones.
     fn build_crypt(&mut self, assets: &Assets) {
         let (columns, rows) = CRYPT;
@@ -664,8 +664,8 @@ impl CinematicScene {
             overheads: Vec::new(),
             hanging: Vec::new(),
             track: None,
-            // A red runner up the middle to the sarcophagus.
-            rug: Some(Carpet { origin: tile(0, rows / 2 - 1), columns: middle, rows: 3, style: 0 }),
+            // A red carpet in the middle of the vault, the sarcophagus on it.
+            rug: Some(Carpet { origin: tile(middle - 3, rows / 2 - 2), columns: 7, rows: 5, style: 0 }),
             tables: Vec::new(),
             waterworks: Waterworks::default(),
             pendulum: None,
@@ -702,8 +702,8 @@ impl CinematicScene {
                 Color(Vec4::new(0.8, 0.8, 0.85, 1.0)), Sprite::whole(textures.get(tex::SARCOPHAGUS_LID)), Layer(0), crate::components::Lit));
         }
         // His own, in the middle, candles round it.
-        // Straight at the end of the runner, its lid on the runner's middle line.
-        let centre = at(middle as f32 + 1.2, rows as f32 / 2.0 + 0.2);
+        // In the middle of the vault, on the middle of its carpet.
+        let centre = at(columns as f32 / 2.0, rows as f32 / 2.0);
         self.bier = Some(self.world.spawn((
             Position(centre),
             Size(SARCOPHAGUS),
@@ -744,7 +744,7 @@ impl CinematicScene {
         )));
     }
 
-    /// The fourth and fifth shots: the camera moves up the runner to the sarcophagus, light
+    /// The fourth and fifth shots: the camera moves across the vault to the sarcophagus, light
     /// leaks round its lid, the lid shakes, grinds aside and falls, and in a white flash the
     /// hero stands beside it.
     fn revive(&mut self, assets: &Assets, at: f32, dt: f32) {

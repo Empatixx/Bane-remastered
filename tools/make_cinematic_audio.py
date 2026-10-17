@@ -8,7 +8,9 @@ With --stems it also writes the score alone (no voice, no effects) to DIR, for l
 on its own. The timings follow SHOTS and the constants in rust/app/src/scenes/cinematic.rs.
 """
 
+import json
 import subprocess
+import tempfile
 import sys
 from pathlib import Path
 
@@ -22,6 +24,10 @@ START = [sum(SHOTS[:i]) for i in range(len(SHOTS))]
 LENGTH = sum(SHOTS)
 TEMPLE, TEAR, CRAWL, CRYPT, RISE = START
 LINE_FROM = 1.4
+# How loud each layer is, in LUFS: the narrator well above the effects, the score under both.
+VOICE = -14
+EFFECTS = -26
+SCORE = -29
 # The tear starts once its line is spoken; the angel bursts a little after.
 TEAR_FROM = TEAR + 4.4
 ANGEL_FALLS = TEAR_FROM + 1.9
@@ -35,33 +41,84 @@ OUT = Path(args[0]) if args else AUDIO / "cinematic.flac"
 STEMS = Path(sys.argv[sys.argv.index("--stems") + 1]) if "--stems" in sys.argv else None
 
 
+WORK = Path(tempfile.mkdtemp(prefix="bane-cinematic-"))
+
+
+def normalised(path, loudness):
+    """A copy of `path` brought to `loudness` LUFS, measured first and then set exactly
+    (two-pass), as plain 44.1 kHz audio."""
+    out = WORK / f"{path.stem}_{-loudness}.wav"
+    if out.exists():
+        return out
+    probe = subprocess.run(["ffmpeg", "-nostats", "-i", str(path), "-af",
+                            f"loudnorm=I={loudness}:TP=-2:LRA=11:print_format=json", "-f", "null", "-"],
+                           capture_output=True, text=True, check=True).stderr
+    found = json.loads(probe[probe.rindex("{"):probe.rindex("}") + 1])
+    measured = (f"measured_I={found['input_i']}:measured_TP={found['input_tp']}:measured_LRA={found['input_lra']}:"
+                f"measured_thresh={found['input_thresh']}:offset={found['target_offset']}:linear=true")
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(path), "-af",
+                    f"loudnorm=I={loudness}:TP=-2:LRA=11:{measured},aresample=44100", "-ac", "2", str(out)], check=True)
+    return out
+
+
 class Mix:
+    """Two buses: the bed (score and effects) and the voice. The bed ducks under the voice
+    whenever the narrator speaks, so the words always sit clearly on top."""
+
     def __init__(self):
         self.inputs = []
         self.chains = []
-        self.labels = []
+        self.buses = {"bed": [], "voice": []}
 
-    def _add(self, args, chain):
-        index = len(self.labels)
+    def _add(self, args, chain, bus):
+        index = len(self.inputs_count())
         self.inputs.extend(args)
         label = f"s{index}"
         self.chains.append(f"[{index}:a]{chain}[{label}]")
-        self.labels.append(label)
+        self.buses[bus].append(label)
+
+    def inputs_count(self):
+        return [arg for arg in self.inputs if arg == "-i"]
 
     def tone(self, expr, chain):
-        self._add(["-f", "lavfi", "-t", str(LENGTH), "-i", expr], f"{chain},aformat=channel_layouts=stereo")
+        self._add(["-f", "lavfi", "-t", str(LENGTH), "-i", expr], f"{chain},aformat=channel_layouts=stereo", "bed")
 
-    def file(self, path, at, volume, chain="", fade_out=None):
+    def file(self, path, at, volume, chain="", fade_out=None, bus="bed", loudness=None):
+        """A file at `at` seconds. Unless told how, it eases in and dies away over its last
+        stretch, so nothing starts or stops with a click."""
         delay = int(at * 1000)
         extra = f"{chain}," if chain else ""
-        tail = f",afade=t=out:st={fade_out[0]}:d={fade_out[1]}" if fade_out else ""
+        # Every clip brought to a set loudness first, so the voice, the effects and the score
+        # each sit at their own level however loud the source was.
+        if loudness is not None:
+            path = normalised(path, loudness)
+        if fade_out is None:
+            length = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
+                                           str(path)], capture_output=True, text=True, check=True).stdout)
+            tail_len = min(0.8, length * 0.3)
+            fade_out = (max(0.0, length - tail_len), tail_len)
+        tail = f",afade=t=in:d=0.04,afade=t=out:st={fade_out[0]}:d={fade_out[1]}"
         self._add(["-i", str(path)],
-                  f"{extra}aformat=channel_layouts=stereo,volume={volume}{tail},adelay={delay}|{delay}")
+                  f"{extra}aformat=channel_layouts=stereo,volume={volume}{tail},adelay={delay}|{delay}", bus)
 
     def render(self, out):
-        mix = "".join(f"[{label}]" for label in self.labels)
-        graph = (";".join(self.chains) + f";{mix}amix=inputs={len(self.labels)}:normalize=0,"
-                 f"alimiter=limit=0.9,apad,atrim=0:{LENGTH},afade=t=in:d=1.2,afade=t=out:st={LENGTH - 2}:d=2[out]")
+        def bus(name):
+            labels = self.buses[name]
+            return "".join(f"[{label}]" for label in labels) + f"amix=inputs={len(labels)}:normalize=0,apad,atrim=0:{LENGTH}"
+
+        parts = list(self.chains)
+        if self.buses["voice"]:
+            # The bed sits well under the narrator even where he is silent.
+            parts.append(f"{bus('bed')}[bed]")
+            # The narrator split: once to steer the duck, once to be heard.
+            parts.append(f"{bus('voice')}[voice]")
+            parts.append("[voice]asplit=2[key][said]")
+            parts.append("[bed][key]sidechaincompress=threshold=0.015:ratio=10:attack=30:release=600:makeup=1[ducked]")
+            parts.append("[ducked][said]amix=inputs=2:normalize=0[all]")
+        else:
+            parts.append(f"{bus('bed')}[all]")
+        graph = ";".join(parts) + (f";[all]apad,atrim=0:{LENGTH},alimiter=limit=0.9,afade=t=in:d=1.2,"
+                                   f"afade=t=out:st={LENGTH - 1.2}:d=1.2[out]")
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *self.inputs, "-filter_complex", graph,
                         "-map", "[out]", "-c:a", "flac", "-ac", "2", str(out)],
                        check=True)
@@ -77,7 +134,7 @@ def score(mix):
     """The music under it all: the temple at peace, dread as the creatures come, the crypt."""
     def made(name, at, volume, fade_out=None):
         if (MADE / f"{name}.mp3").exists():
-            mix.file(MADE / f"{name}.mp3", at, volume, fade_out=fade_out)
+            mix.file(MADE / f"{name}.mp3", at, volume, fade_out=fade_out, loudness=SCORE)
 
     # The temple bed runs from the start until the ground shakes, then fades.
     made("temple_bed", TEMPLE, 0.8, fade_out=(TEAR_FROM - TEMPLE, 2.5))
@@ -94,7 +151,7 @@ def score(mix):
 def effects(mix):
     def made(name, at, volume):
         if (MADE / f"{name}.mp3").exists():
-            mix.file(MADE / f"{name}.mp3", at, volume)
+            mix.file(MADE / f"{name}.mp3", at, volume, loudness=EFFECTS)
 
     made("rumble", TEAR_FROM - 0.1, 0.9)
     made("rumble", TEAR_FROM + 5.4, 0.55)
@@ -120,7 +177,7 @@ def voice(mix):
     for number, at in enumerate((TEMPLE, TEAR, CRAWL, CRYPT, RISE), start=1):
         line = MADE / f"line_{number}.mp3"
         if line.exists():
-            mix.file(line, at + LINE_FROM + 0.2, 1.7)
+            mix.file(line, at + LINE_FROM + 0.2, 1.0, fade_out=(30.0, 0.1), bus="voice", loudness=VOICE)
 
 
 full = Mix()
