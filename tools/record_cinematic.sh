@@ -24,7 +24,7 @@ for frame in "$WORK"/f_*.png; do
     mv "$frame" "$WORK/$(printf 'g_%05d.png' "$((10#$number))")"
 done
 # With the cinematic's own track (tools/make_cinematic_audio.py) under it, where there is one.
-AUDIO=assets/audio/cinematic.ogg
+AUDIO=assets/audio/cinematic.flac
 if [ -f "$AUDIO" ]; then
     ffmpeg -y -loglevel error -framerate "$FPS" -start_number 1 -i "$WORK/g_%05d.png" -i "$AUDIO" \
         -vf "scale=960:540:flags=neighbor,format=yuv420p" -c:v libx264 -crf 20 -c:a aac -b:a 160k \

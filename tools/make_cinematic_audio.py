@@ -2,7 +2,7 @@
 narrator's lines, the score and effects made with ElevenLabs (assets/audio/cinematic/, see
 tools/make_narration.sh), a low synthesised drone and the game's own sounds.
 
-    python3 tools/make_cinematic_audio.py [out.ogg] [--stems DIR]
+    python3 tools/make_cinematic_audio.py [out.flac] [--stems DIR]
 
 With --stems it also writes the score alone (no voice, no effects) to DIR, for listening to it
 on its own. The timings follow SHOTS and the constants in rust/app/src/scenes/cinematic.rs.
@@ -31,7 +31,7 @@ LID_LANDS = CRYPT + 5.6 + 0.35
 RISES = CRYPT + 8.4 - 0.25
 
 args = [arg for i, arg in enumerate(sys.argv[1:], 1) if not arg.startswith("--") and sys.argv[i - 1] != "--stems"]
-OUT = Path(args[0]) if args else AUDIO / "cinematic.ogg"
+OUT = Path(args[0]) if args else AUDIO / "cinematic.flac"
 STEMS = Path(sys.argv[sys.argv.index("--stems") + 1]) if "--stems" in sys.argv else None
 
 
@@ -63,7 +63,7 @@ class Mix:
         graph = (";".join(self.chains) + f";{mix}amix=inputs={len(self.labels)}:normalize=0,"
                  f"alimiter=limit=0.9,apad,atrim=0:{LENGTH},afade=t=in:d=1.2,afade=t=out:st={LENGTH - 2}:d=2[out]")
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *self.inputs, "-filter_complex", graph,
-                        "-map", "[out]", "-c:a", "vorbis", "-strict", "-2", "-ac", "2", "-b:a", "160k", str(out)],
+                        "-map", "[out]", "-c:a", "flac", "-ac", "2", str(out)],
                        check=True)
 
 
@@ -133,5 +133,5 @@ if STEMS:
     STEMS.mkdir(parents=True, exist_ok=True)
     alone = Mix()
     score(alone)
-    alone.render(STEMS / "score_only.ogg")
-    print(STEMS / "score_only.ogg")
+    alone.render(STEMS / "score_only.flac")
+    print(STEMS / "score_only.flac")

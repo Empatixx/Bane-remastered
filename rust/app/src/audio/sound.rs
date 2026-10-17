@@ -323,7 +323,7 @@ impl Soundtrack {
             Self::InGame => "audio.ogg",
             Self::ProgressRoom => "ambient.ogg",
             Self::Boss => "boss.ogg",
-            Self::Cinematic => "cinematic.ogg",
+            Self::Cinematic => "cinematic.flac",
         }
     }
 }

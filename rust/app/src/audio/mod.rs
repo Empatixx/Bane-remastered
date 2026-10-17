@@ -237,3 +237,14 @@ mod tests {
         audio.preload("menuclick.ogg");
     }
 }
+
+#[cfg(test)]
+mod cinematic_track {
+    #[test]
+    fn the_cinematic_track_decodes_to_its_end() {
+        let sound = kira::sound::static_sound::StaticSoundData::from_file(super::audio_root().join(super::Soundtrack::Cinematic.file()))
+            .expect("the cinematic track loads");
+        assert!(sound.duration().as_secs_f32() > 49.0, "{:?}", sound.duration());
+    }
+
+}
