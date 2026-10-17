@@ -293,9 +293,12 @@ pub(crate) fn chat(world: &mut World, dt: f32) -> Option<Remark> {
 
 /// The highest a speech bubble's top may sit on the screen: below the hearts and the armour.
 const SPEECH_CEILING: f32 = 106.0;
+/// How far a speech bubble keeps from the screen's sides.
+const SPEECH_MARGIN: f32 = 12.0;
 
-/// Pushes the speech bubble down onto the screen when its talker stands so high that it would
-/// be cut off (the merchant at his wall, the altar's angel) or would sit under the HUD.
+/// Pushes the speech bubble onto the screen when its talker stands so near an edge that it
+/// would be cut off (the merchant at his wall, Elian at the side of a hall), or would sit under
+/// the HUD.
 pub(crate) fn keep_speech_on_screen(world: &mut World, camera: Vec2) {
     let Some((anchor, size)) = world
         .query::<(&Position, &Size)>()
@@ -307,8 +310,19 @@ pub(crate) fn keep_speech_on_screen(world: &mut World, camera: Vec2) {
         return;
     };
     let top = anchor.y - size.y / 2.0 - camera.y;
-    let push = SPEECH_CEILING - top;
-    if push <= 0.0 {
+    let left = anchor.x - size.x / 2.0 - camera.x;
+    let right = anchor.x + size.x / 2.0 - camera.x;
+    let push = Vec2::new(
+        if left < SPEECH_MARGIN {
+            SPEECH_MARGIN - left
+        } else if right > crate::viewport::TARGET.x - SPEECH_MARGIN {
+            crate::viewport::TARGET.x - SPEECH_MARGIN - right
+        } else {
+            0.0
+        },
+        (SPEECH_CEILING - top).max(0.0),
+    );
+    if push == Vec2::ZERO {
         return;
     }
     let moved: Vec<hecs::Entity> = world
@@ -318,7 +332,7 @@ pub(crate) fn keep_speech_on_screen(world: &mut World, camera: Vec2) {
         .collect();
     for entity in moved {
         if let Ok(mut position) = world.get::<&mut Position>(entity) {
-            position.0.y += push;
+            position.0 += push;
         }
     }
 }
