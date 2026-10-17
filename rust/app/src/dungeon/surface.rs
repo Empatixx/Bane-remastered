@@ -42,6 +42,8 @@ pub(crate) enum Surface {
     Lava,
     Water,
     Bog,
+    /// The temple's sand, which the player sinks into the longer they stand in it.
+    Sand,
 }
 
 impl Surface {
@@ -51,6 +53,7 @@ impl Surface {
             Self::Lava => (8, 14),
             Self::Water => (16, 30),
             Self::Bog => (14, 26),
+            Self::Sand => (10, 20),
         }
     }
 
@@ -60,6 +63,7 @@ impl Surface {
             Self::Lava => 3,
             Self::Water => 4,
             Self::Bog => 4,
+            Self::Sand => 4,
         }
     }
 }
@@ -318,7 +322,7 @@ mod tests {
         assert_eq!(Theme::Spider.surface(), None);
         assert_eq!(Theme::Stone.surface(), None);
         assert_eq!(Theme::Moss.surface(), Some(Surface::Bog));
-        assert_eq!(Theme::Temple.surface(), None);
+        assert_eq!(Theme::Temple.surface(), Some(Surface::Sand));
     }
 
     #[test]

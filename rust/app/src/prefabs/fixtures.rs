@@ -365,6 +365,21 @@ pub(crate) fn decor(
             Look::row(variant, false),
             textures,
         ),
+        DecorKind::FireBowl => {
+            let entity = prop(world, Prop::FireBowl, top_left, Look::DEFAULT, textures);
+            let _ = world.insert_one(
+                entity,
+                Light::rgb(Vec2::new(0.0, -20.0), 255.0, 150.0, 60.0, 85.0, 1.1),
+            );
+            entity
+        }
+        DecorKind::StatuePiece { variant } => prop(
+            world,
+            Prop::StatuePiece,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
         DecorKind::IcePatch => {
             floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
         }
@@ -728,6 +743,7 @@ pub(crate) fn surface_tile(
         Surface::Lava => Prop::LavaSurface,
         Surface::Water => Prop::WaterSurface,
         Surface::Bog => Prop::BogSurface,
+        Surface::Sand => Prop::SandSurface,
     };
     let row = surfaces.liquid_row(grid, tile);
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
@@ -742,6 +758,7 @@ pub(crate) fn surface_tile(
                     Surface::Ice => 2.0,
                     Surface::Lava => 3.0,
                     Surface::Bog => 4.0,
+                    Surface::Sand => 5.0,
                 },
                 time: 0.0,
             },
@@ -772,6 +789,7 @@ pub(crate) fn shore_tile(
         Surface::Lava => Prop::LavaShore,
         Surface::Water => Prop::WaterShore,
         Surface::Bog => Prop::BogShore,
+        Surface::Sand => Prop::SandShore,
     };
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
     let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);

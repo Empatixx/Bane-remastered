@@ -72,6 +72,10 @@ pub(crate) struct TrapArrow {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct RippleTimer(pub(crate) f32);
 
+/// How long the player has been sinking into the sand, in seconds.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct SandSunk(pub(crate) f32);
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct PoisonTrail;
 

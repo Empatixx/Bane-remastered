@@ -3,7 +3,8 @@ skeleton, a spider's cocoon, a lantern and a vine; and for the lava floor a braz
 coals, a crucible of molten metal, a charred skeleton hung on hooks and an obsidian stalactite
 with glowing veins; and for the moss floor roots hung with glowing mushrooms, a wasps' nest on
 a branch, a cage overgrown with moss and flowers, and a swarm of fireflies (no chain at all); and for
-the ice floor a chandelier of icicles, a skeleton frozen in a block of ice and a great icicle.
+the ice floor a chandelier of icicles, a skeleton frozen in a block of ice and a great icicle;
+and for the temple a golden censer puffing smoke, a bronze bell and a long red banner on a cord.
 
 hanging.tga has one row per kind in that order and four 16x24 cells per row: the thing, the
 thing with its flames or glow flickering, a piece of its chain (or thread, or vine) that repeats
@@ -682,6 +683,132 @@ ICE_ROOT = [
     "...eIIIIIhIe....",
 ] * 6
 
+GOLD = {"d": (90, 58, 20), "m": (170, 120, 40), "l": (220, 170, 60), "h": (255, 226, 130)}
+SMOKE = {"s": (214, 206, 196, 170), "S": (160, 152, 146, 120), "o": (255, 160, 50), "k": (40, 26, 16)}
+
+CENSER = [
+    [
+        ".......md.......",
+        "..s....md.......",
+        ".sS....md....s..",
+        "..s...d..d..sS..",
+        "...s.d....d..s..",
+        "....d......d....",
+        "...dmhmhmhmhd...",
+        "...mlokkoklom...",
+        "..dmmmmmmmmmmd..",
+        "..dlhhllllhlld..",
+        "..dlhllllllmmd..",
+        "...dlhlllllmd...",
+        "....dmllllmd....",
+        ".....ddmmdd.....",
+        "......dmmd......",
+        ".....dmmmmd.....",
+        ".....dddddd.....",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    [
+        ".s.....md.......",
+        "sS.....md...s...",
+        ".s.....md..sS...",
+        "..s...d..d..s...",
+        ".....d....d.s...",
+        "....d......d....",
+        "...dmhmhmhmhd...",
+        "...mlkokkolkm...",
+        "..dmmmmmmmmmmd..",
+        "..dlhhllllhlld..",
+        "..dlhllllllmmd..",
+        "...dlhlllllmd...",
+        "....dmllllmd....",
+        ".....ddmmdd.....",
+        "......dmmd......",
+        ".....dmmmmd.....",
+        ".....dddddd.....",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+
+BRONZE = {"d": (54, 32, 18), "B": (96, 62, 30), "b": (140, 90, 44), "n": (184, 128, 62), "N": (222, 170, 96), "h": (240, 204, 140)}
+BELL = [
+    [
+        ".......dd.......",
+        "......dBBd......",
+        ".....dbNNbd.....",
+        ".....dNnnbd.....",
+        "....dNNnnbbd....",
+        "....dNnnnbbd....",
+        "....dNnnnbbd....",
+        "...dNNnnnbbbd...",
+        "...dNnnnnnbbd...",
+        "..dNNnnnnnbbbd..",
+        ".dNNnnnnnnnbbBd.",
+        ".dhhhhhhhhhhhhd.",
+        "..dddBBBBBBddd..",
+        "......dbbd......",
+        ".......dd.......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+BELL.append(BELL[0])
+
+CLOTH = {"y": (230, 180, 70), "Y": (255, 226, 130), "w": (80, 50, 26), "g": (200, 150, 50),
+         "R": (120, 22, 28), "r": (172, 38, 40), "q": (204, 64, 56)}
+BANNER = [
+    [
+        "......y..y......",
+        ".....y....y.....",
+        "..YwwwwwwwwwwY..",
+        "...gRRRRRRRRg...",
+        "...grqrrrrrRg...",
+        "...grqrrrrrRg...",
+        "...grqrYYrrRg...",
+        "...grqYyyYrRg...",
+        "...grYyrryYRg...",
+        "...grqYyyYrRg...",
+        "...grqrYYrrRg...",
+        "...grqrrrrrRg...",
+        "...grqrrrrrRg...",
+        "...grqrrrrrRg...",
+        "...grrrrrrrRg...",
+        "...grrrggrrRg...",
+        "...grrg..grRg...",
+        "...grg....gRg...",
+        "...gg......gg...",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+# The cloth stirs: its lower half sways a pixel to the side.
+BANNER.append(BANNER[0][:11] + ["." + row[:-1] for row in BANNER[0][11:]])
+CORD = [
+    ".......y........",
+    ".......g........",
+] * 12
+
 KINDS = [
     (CHANDELIER, CHAIN, {**IRON, **FLAME}),
     (CAGE, CHAIN, {**IRON, **BONE}),
@@ -699,6 +826,9 @@ KINDS = [
     (ICE_CHANDELIER, CHAIN, {**IRON, **FROST}),
     (FROZEN_BLOCK, CHAIN, {**IRON, **BONE, **FROST}),
     (BIG_ICICLE, ICE_ROOT, FROST),
+    (CENSER, CHAIN, {**GOLD, **SMOKE}),
+    (BELL, CHAIN, {**IRON, **BRONZE}),
+    (BANNER, CORD, CLOTH),
 ]
 
 

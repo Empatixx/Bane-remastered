@@ -73,6 +73,7 @@ pub(crate) fn player(
             DropShadow::default(),
             GazeWind::default(),
             YSort::bottom(PLAYER_SIZE),
+            crate::components::SandSunk::default(),
         ),
     );
     let body = physics.add_player(entity, position, PLAYER_SIZE);

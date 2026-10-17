@@ -299,8 +299,24 @@ fn bog_color(px: vec2<f32>, t: f32) -> vec3<f32> {
     return rgb;
 }
 
+// Sand: wind ripples running across it, bent by the dunes and creeping slowly along.
+fn sand_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+    let dune = flow_fbm(px * 0.035 + vec2<f32>(9.0, 2.0));
+    let bend = flow_fbm(px * 0.08 + vec2<f32>(3.0, 14.0));
+    let ripple = fract(px.y * 0.13 + px.x * 0.03 + dune * 2.2 + bend * 0.8 - t * 0.12);
+    var rgb = vec3<f32>(164.0, 132.0, 82.0) / 255.0;
+    if (dune > 0.56) { rgb = vec3<f32>(176.0, 144.0, 90.0) / 255.0; }
+    if (dune < 0.38) { rgb = vec3<f32>(150.0, 120.0, 74.0) / 255.0; }
+    let patchy = noise(floor(px / 3.0)) > 0.35;
+    if (ripple < 0.08 && patchy) { rgb = rgb + vec3<f32>(18.0, 16.0, 10.0) / 255.0; }
+    else if (ripple < 0.16 && patchy) { rgb = rgb - vec3<f32>(16.0, 14.0, 10.0) / 255.0; }
+    if (noise(px + floor(t * 2.0) * 0.37) > 0.998) { rgb = vec3<f32>(226.0, 200.0, 140.0) / 255.0; }
+    return rgb;
+}
+
 fn liquid_color(kind: f32, world: vec2<f32>, t: f32) -> vec3<f32> {
     let px = floor(world / LIQUID_PIXEL);
+    if (kind > 4.5) { return sand_color(px, t); }
     if (kind > 3.5) { return bog_color(px, t); }
     if (kind > 2.5) { return lava_color(px, t); }
     if (kind > 1.5) { return ice_color(px, t); }

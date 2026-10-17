@@ -192,6 +192,28 @@ def bog(x, y, mask, frame, d, v):
     return (52, 42, 28, 255)
 
 
+def sand(x, y, mask, frame, d, v):
+    if d == 0:
+        return (186, 154, 98, 255) if noise(x, y, 70 + v) > 0.45 else (172, 140, 88, 255)
+    if d == 1:
+        return (140, 110, 68, 255)
+    n = smooth_noise(x + v * 5, y + v * 3, 71 + v)
+    if n > 0.6:
+        return (176, 144, 90, 255)
+    if n > 0.35:
+        return (164, 132, 82, 255)
+    return (150, 120, 74, 255)
+
+
+def sand_shore(x, y, d, v):
+    """Sand spilt over the floor round the edge of the pit, grains thinning out."""
+    if d >= 4:
+        return None
+    if noise(x, y, 420 + v) > 0.35 + d * 0.18:
+        return (176, 144, 90, 220 - d * 40)
+    return (40, 28, 18, alpha_by(d, 90, 4))
+
+
 def bog_shore(x, y, d, v):
     if d >= 4:
         return None
@@ -267,6 +289,8 @@ def main():
     make_shore(water_shore).save(OUT / "shore_water.tga")
     make_shore(bog_shore).save(OUT / "shore_bog.tga")
     make_sheet(1, bog, True).save(OUT / "surface_bog.tga")
+    make_shore(sand_shore).save(OUT / "shore_sand.tga")
+    make_sheet(1, sand, True).save(OUT / "surface_sand.tga")
     make_shore(ice_shore).save(OUT / "shore_ice.tga")
     make_shore(lava_shore).save(OUT / "shore_lava.tga")
     shade_tile().save(OUT / "surface_shade.tga")

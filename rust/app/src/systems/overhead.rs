@@ -7,12 +7,12 @@ use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
-use crate::components::{Color, Layer, Light, Lit, Player, Position, Size, Sprite};
+use crate::components::{Bullet, Color, Layer, Light, Lit, Player, Position, Size, Sprite};
 use crate::dungeon::{Dungeon, HangingKind, Overhead, OverheadKind};
 use crate::tilemap::TILE_SIZE;
 
 const COLUMNS: usize = 4;
-const ROWS: usize = 9;
+const ROWS: usize = 10;
 const LEFT_END: usize = 0;
 const MIDDLE: usize = 1;
 const RIGHT_END: usize = 2;
@@ -154,7 +154,7 @@ pub(crate) fn tick_overheads(world: &mut World, dt: f32) {
 }
 
 const HANGING_COLUMNS: usize = 4;
-const HANGING_ROWS: usize = 16;
+const HANGING_ROWS: usize = 19;
 const CHAIN_CELL: usize = 2;
 /// The topmost chain piece, fading out upwards in the texture itself.
 const CHAIN_TOP_CELL: usize = 3;
@@ -180,6 +180,12 @@ const BLINK_RATE: f32 = 3.0;
 const SPORE_GLOW: Vec3 = Vec3::new(120.0, 230.0, 150.0);
 const FIREFLY_GLOW: Vec3 = Vec3::new(200.0, 255.0, 140.0);
 const FROST_GLOW: Vec3 = Vec3::new(150.0, 205.0, 255.0);
+/// The censer's smoke curls one way and then the other.
+const SMOKE_RATE: f32 = 1.4;
+/// A shot sets a bell swinging this many times harder, the swing dying away at this rate.
+const BELL_KICK: f32 = 4.0;
+const BELL_SETTLE: f32 = 0.6;
+const BELL_EASE: f32 = 5.0;
 /// Fireflies wander about where they hover, this far each way.
 const HOVER: Vec2 = Vec2::new(12.0, 7.0);
 const WASPS: usize = 3;
@@ -213,12 +219,14 @@ fn frame_rate(kind: HangingKind) -> Option<f32> {
         | HangingKind::IceChandelier
         | HangingKind::BigIcicle => Some(PULSE_RATE),
         HangingKind::Fireflies => Some(BLINK_RATE),
-        HangingKind::Vine | HangingKind::Hooks => Some(SWAY_RATE),
+        HangingKind::Censer => Some(SMOKE_RATE),
+        HangingKind::Vine | HangingKind::Hooks | HangingKind::Banner => Some(SWAY_RATE),
         HangingKind::Cage
         | HangingKind::Cocoon
         | HangingKind::Hive
         | HangingKind::MossCage
-        | HangingKind::FrozenBlock => None,
+        | HangingKind::FrozenBlock
+        | HangingKind::Bell => None,
     }
 }
 
@@ -233,6 +241,7 @@ fn glow(kind: HangingKind) -> Option<(Vec3, f32)> {
         HangingKind::Fireflies => Some((FIREFLY_GLOW, 60.0)),
         HangingKind::IceChandelier => Some((FROST_GLOW, 95.0)),
         HangingKind::BigIcicle => Some((FROST_GLOW, 40.0)),
+        HangingKind::Censer => Some((EMBER_GLOW, 45.0)),
         _ => None,
     }
 }
@@ -266,6 +275,9 @@ pub(crate) struct HangingPart {
     opacity: f32,
     /// Hovers about rather than swinging on a chain (the fireflies).
     hover: bool,
+    /// A bell's, which a shot sets swinging harder: how hard it swings now, and how hard the
+    /// last shot asked for, which it eases towards.
+    bell: Option<(f32, f32)>,
     min: Vec2,
     max: Vec2,
     alpha: f32,
@@ -283,6 +295,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
             let phase = (hanging.tile.0 * 7 + hanging.tile.1 * 13) as f32 * 0.37;
             let row = hanging.kind.row();
             let hover = hanging.kind == HangingKind::Fireflies;
+            let bell = (hanging.kind == HangingKind::Bell).then_some((0.0, 0.0));
             let part = |base: Vec2, reach: f32, thing: Option<Option<f32>>, opacity: f32| HangingPart {
                 base,
                 reach,
@@ -291,6 +304,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                 row,
                 opacity,
                 hover,
+                bell,
                 min,
                 max,
                 alpha: opacity,
@@ -384,6 +398,23 @@ pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
         .next()
         .map(|(position, size)| (position.0 - size.0 / 2.0, position.0 + size.0 / 2.0));
     let fade = (FADE_RATE * dt).min(1.0);
+    // A shot through a bell sets it and its chain swinging hard.
+    let shots: Vec<Vec2> = world
+        .query::<&Position>()
+        .with::<&Bullet>()
+        .iter()
+        .map(|position| position.0)
+        .collect();
+    let struck: Vec<Vec2> = world
+        .query::<(&HangingPart, &Position)>()
+        .iter()
+        .filter(|(part, _)| part.bell.is_some() && part.thing.is_some())
+        .filter(|(part, position)| {
+            let half = (part.max - part.min) / 2.0;
+            shots.iter().any(|shot| (*shot - position.0).abs().cmple(half).all())
+        })
+        .map(|(part, _)| part.min)
+        .collect();
     for (part, position, color, sprite) in
         world.query_mut::<(&mut HangingPart, &mut Position, &mut Color, &mut Sprite)>()
     {
@@ -391,7 +422,16 @@ pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
             let t = clock * 0.6 + part.phase;
             part.base + Vec2::new(t.sin(), (t * 0.7).cos()) * HOVER
         } else {
-            let swing = (clock * SWAY_RATE + part.phase).sin() * SWAY * part.reach;
+            let mut amplitude = SWAY;
+            if let Some((now, wanted)) = part.bell.as_mut() {
+                if struck.contains(&part.min) {
+                    *wanted = 1.0;
+                }
+                *wanted = (*wanted - BELL_SETTLE * dt).max(0.0);
+                *now += (*wanted - *now) * (BELL_EASE * dt).min(1.0);
+                amplitude *= 1.0 + BELL_KICK * *now;
+            }
+            let swing = (clock * SWAY_RATE + part.phase).sin() * amplitude * part.reach;
             part.base + Vec2::new(swing, 0.0)
         };
         if let Some(Some(rate)) = part.thing {
@@ -534,6 +574,38 @@ mod tests {
         let after = positions(&world);
         assert!(before.iter().zip(&after).any(|(a, b)| (a.x - b.x).abs() > 0.5));
         assert!(before.iter().zip(&after).all(|(a, b)| (a.x - b.x).abs() <= 2.0 * SWAY && a.y == b.y));
+    }
+
+    #[test]
+    fn a_shot_through_a_bell_sets_it_swinging_harder() {
+        let textures = Textures::default();
+        let dungeon = (0..60)
+            .map(|seed| Dungeon::generate_themed(&mut Rng::new(seed), Theme::Temple).expect("a dungeon"))
+            .find(|dungeon| {
+                dungeon
+                    .rooms
+                    .iter()
+                    .any(|room| room.hanging.iter().any(|hanging| hanging.kind == HangingKind::Bell))
+            })
+            .expect("a temple with a bell");
+        let mut world = World::new();
+        spawn_hanging(&mut world, &dungeon, &textures);
+        let bell = |world: &World| -> (Vec2, f32) {
+            world
+                .query::<(&HangingPart, &Position)>()
+                .iter()
+                .find(|(part, _)| part.bell.is_some() && part.thing.is_some())
+                .map(|(part, position)| (position.0, part.bell.map_or(0.0, |(now, _)| now)))
+                .expect("the bell")
+        };
+        tick_hanging(&mut world, 0.0, 1.0 / 60.0);
+        let (at, calm) = bell(&world);
+        world.spawn((Bullet::plain(1), Position(at)));
+        for step in 0..30 {
+            tick_hanging(&mut world, step as f32 / 60.0, 1.0 / 60.0);
+        }
+        let (_, struck) = bell(&world);
+        assert!(calm == 0.0 && struck > 0.5, "{calm} {struck}");
     }
 
     fn piece_alpha(world: &World) -> Vec<f32> {

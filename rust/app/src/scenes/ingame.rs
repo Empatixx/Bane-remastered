@@ -12,7 +12,7 @@ use crate::components::{
     BigMap, Blend, Hidden, InfiniteAmmo, Interaction, Loadout, MapSize, Minimap, UiAction,
 };
 use crate::controls::Action;
-use crate::dungeon::{Dungeon, RoomKind, Surfaces, Theme};
+use crate::dungeon::{DecorKind, Dungeon, RoomKind, Surfaces, Theme};
 use crate::flow::FlowField;
 use crate::input::Input;
 use crate::navigation::Navigation;
@@ -856,7 +856,7 @@ impl InGameScene {
         self.flow = FlowField::default();
         let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
         // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
-        // `table`, `rug`, `vestibule` or `water` starts the floor there (by the first one of those), for working on the
+        // `table`, `rug`, `vestibule`, `water`, `bowl` or `statue` starts the floor there (by the first one of those), for working on the
         // game.
         match std::env::var("BANE_AT").as_deref() {
             Ok("boss") => {
@@ -946,6 +946,18 @@ impl InGameScene {
                     start = Vec2::new(bank.0 as f32 + 0.5, bank.1 as f32 + 0.5) * TILE_SIZE;
                 } else if let Some(&(column, row)) = works().flat_map(|works| &works.pipes).next() {
                     start = Vec2::new(column as f32 + 1.5, row as f32 + 3.0) * TILE_SIZE;
+                }
+            }
+            Ok(at @ ("bowl" | "statue")) => {
+                let wanted = |kind: &DecorKind| match at {
+                    "bowl" => *kind == DecorKind::FireBowl,
+                    _ => matches!(kind, DecorKind::StatuePiece { .. }),
+                };
+                if let Some(decor) =
+                    dungeon.rooms.iter().flat_map(|room| &room.decor).find(|decor| wanted(&decor.kind))
+                {
+                    let (column, row) = decor.tile;
+                    start = Vec2::new(column as f32 + 0.5, row as f32 + 2.5) * TILE_SIZE;
                 }
             }
             Ok("vestibule") => {

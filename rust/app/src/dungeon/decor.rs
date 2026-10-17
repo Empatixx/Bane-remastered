@@ -76,6 +76,12 @@ pub(crate) enum DecorKind {
     Wrapped {
         variant: usize,
     },
+    /// A bowl of fire on a low pedestal against a wall.
+    FireBowl,
+    /// A piece of a toppled statue: its head, its torso or a column drum.
+    StatuePiece {
+        variant: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -412,6 +418,23 @@ pub(crate) fn plan(
                 }
             }
         }
+        // Now and then (not in every room) a bowl of fire by a wall, or a piece of a statue.
+        let rare: [ThemedSlot; 2] = [
+            (mix.fire_bowl_percent, &hugging, 1, |_| DecorKind::FireBowl),
+            (mix.statue_percent, &open_floor, 3, |variant| DecorKind::StatuePiece { variant }),
+        ];
+        for (percent, spots, variants, make) in rare {
+            if percent == 0 || rng.below(100) >= percent {
+                continue;
+            }
+            if let Some(spot) = planner.pick(spots, rng) {
+                planner.take(spot.tile);
+                decor.push(Decor {
+                    kind: make(rng.below(variants)),
+                    tile: spot.tile,
+                });
+            }
+        }
         if mix.arrow_traps > 0 {
             for _ in 0..1 + rng.below(mix.arrow_traps) {
                 if let Some(spot) = planner.pick(&top_faces, rng) {
@@ -563,6 +586,10 @@ mod tests {
         );
         assert!(count_in(Theme::Temple, DecorKind::ArrowTrap) > 0);
         assert_eq!(count_in(Theme::Sewer, DecorKind::ArrowTrap), 0);
+        assert!(count_in(Theme::Temple, DecorKind::FireBowl) > 0);
+        assert_eq!(count_in(Theme::Stone, DecorKind::FireBowl), 0);
+        assert!(count_in(Theme::Temple, DecorKind::StatuePiece { variant: 0 }) > 0);
+        assert_eq!(count_in(Theme::Spider, DecorKind::StatuePiece { variant: 0 }), 0);
     }
 
     #[test]
@@ -638,7 +665,9 @@ mod tests {
                         | DecorKind::Mushrooms { .. }
                         | DecorKind::Cocoon { .. }
                         | DecorKind::Eggs { .. }
-                        | DecorKind::Wrapped { .. } => {
+                        | DecorKind::Wrapped { .. }
+                        | DecorKind::FireBowl
+                        | DecorKind::StatuePiece { .. } => {
                             assert!(!dungeon.grid.is_wall(column, row), "{decor:?}");
                         }
                     }

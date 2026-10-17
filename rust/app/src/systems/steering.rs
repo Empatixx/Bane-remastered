@@ -2,8 +2,8 @@ use hecs::World;
 
 use crate::artefacts::BERSERK_SPEED;
 use crate::components::{
-    Berserk, Cobweb, Dodge, FloorPatch, Health, PatchKind, Player, PlayerPerks, Position, Size,
-    Velocity,
+    Berserk, Cobweb, Dodge, FloorPatch, Health, PatchKind, Player, PlayerPerks, Position, SandSunk,
+    Size, Velocity,
 };
 use crate::dungeon::{Surface, Surfaces};
 use crate::geometry;
@@ -33,6 +33,17 @@ fn accelerate_with(
 
 const WATER_SLOWDOWN: f32 = 0.55;
 const BOG_SLOWDOWN: f32 = 0.45;
+/// Sand slows the player down a little at first and more and more the longer they stay in it,
+/// up to the most after this many seconds; out of it they climb free several times as fast.
+const SAND_SLOWDOWN: (f32, f32) = (0.01, 0.8);
+const SINK_TIME: f32 = 3.0;
+const CLIMB_OUT_RATE: f32 = 4.0;
+
+/// How much of their speed the player loses after sinking for `sunk` seconds.
+pub(crate) fn sand_slowdown(sunk: f32) -> f32 {
+    let (least, most) = SAND_SLOWDOWN;
+    least + (most - least) * (sunk / SINK_TIME).clamp(0.0, 1.0)
+}
 
 pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
     steer_player_on(world, input, &Surfaces::default(), dt);
@@ -51,7 +62,7 @@ pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfa
         .iter()
         .map(|(position, size, patch)| (position.0, size.0, patch.0))
         .collect();
-    for (velocity, health, position, size, berserk, perks, dodge, frozen) in world
+    for (velocity, health, position, size, berserk, perks, dodge, frozen, sinking) in world
         .query_mut::<(
             &mut Velocity,
             &Health,
@@ -61,6 +72,7 @@ pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfa
             Option<&PlayerPerks>,
             Option<&Dodge>,
             Option<&crate::components::Frozen>,
+            Option<&mut SandSunk>,
         )>()
         .with::<&Player>()
     {
@@ -84,7 +96,18 @@ pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfa
         } else {
             1.0
         } * perks.map_or(1.0, |perks| perks.0.speed);
-        let speed = if ground == Some(Surface::Water) {
+        let in_sand = ground == Some(Surface::Sand);
+        let sunk = sinking.map_or(0.0, |sinking| {
+            sinking.0 = if in_sand {
+                (sinking.0 + dt).min(SINK_TIME)
+            } else {
+                (sinking.0 - CLIMB_OUT_RATE * dt).max(0.0)
+            };
+            sinking.0
+        });
+        let speed = if in_sand {
+            PLAYER_SPEED * (1.0 - sand_slowdown(sunk))
+        } else if ground == Some(Surface::Water) {
             PLAYER_SPEED * WATER_SLOWDOWN
         } else if ground == Some(Surface::Bog) {
             PLAYER_SPEED * BOG_SLOWDOWN
@@ -231,5 +254,32 @@ mod tests {
         let dry = run_on(None);
         let mud = run_on(Some(crate::dungeon::Surface::Bog));
         assert!(mud < dry * 0.7, "{mud} vs {dry}");
+    }
+
+    #[test]
+    fn sand_slows_from_a_hundredth_to_four_fifths_the_longer_one_stays_in_it() {
+        assert!((sand_slowdown(0.0) - 0.01).abs() < 1e-6);
+        assert!((sand_slowdown(SINK_TIME) - 0.8).abs() < 1e-6);
+        assert!((sand_slowdown(100.0) - 0.8).abs() < 1e-6);
+        assert!(sand_slowdown(SINK_TIME / 2.0) > 0.3 && sand_slowdown(SINK_TIME / 2.0) < 0.5);
+    }
+
+    #[test]
+    fn the_player_sinks_into_sand_and_climbs_out_of_it() {
+        let (mut world, player) = walker(Vec2::new(96.0, 96.0));
+        let _ = world.insert_one(player, SandSunk::default());
+        let mut sand = Surfaces::default();
+        sand.insert((1, 1), crate::dungeon::Surface::Sand);
+        let input = Input::default();
+        let sunk = |world: &World| world.get::<&SandSunk>(player).map_or(0.0, |sunk| sunk.0);
+        for _ in 0..90 {
+            steer_player_on(&mut world, &input, &sand, STEP);
+        }
+        let deep = sunk(&world);
+        assert!(deep > 1.4, "{deep}");
+        for _ in 0..30 {
+            steer_player_on(&mut world, &input, &Surfaces::default(), STEP);
+        }
+        assert_eq!(sunk(&world), 0.0);
     }
 }

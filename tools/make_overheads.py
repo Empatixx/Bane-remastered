@@ -1,5 +1,6 @@
 """Things that lie across a room from one wall to another at the height of their tops: an iron
-grate, wooden beams, a chain, pipes, a stone arch, a thick web, a metal walkway, a liana and a few strands of silk.
+grate, wooden beams, a chain, pipes, a stone arch, a thick web, a metal walkway, a liana, a few strands of silk and a
+garland of red and gold pennants.
 
 overheads.tga has one row per kind in that order and four 16x24 cells per row: the left end
 (meeting the side of the wall), a middle piece that repeats seamlessly, the right end, and a centre piece
@@ -340,6 +341,31 @@ def strands_end():
     return ["".join(row) for row in rows]
 
 
+PENNANTS = {"c": (150, 108, 56), "C": (200, 150, 70), "r": (172, 38, 40), "R": (120, 22, 28),
+            "g": (230, 180, 70), "G": (170, 120, 40), "p": (60, 44, 30), "P": (110, 84, 52)}
+PENNANTS_MID = pad([
+    "cCccccCccccCcccc",
+    ".rrrrr...ggggg..",
+    ".rrrrR...gggGG..",
+    "..rrR.....ggG...",
+    "..rR......gG....",
+    "...R.......G....",
+])
+
+
+def pennants_end():
+    """The cord tied round a bronze peg driven into the wall's side."""
+    rows = [list(row) for row in PENNANTS_MID]
+    top = next(index for index, row in enumerate(rows) if "".join(row).strip("."))
+    for y in range(H):
+        for x in range(0, 3):
+            rows[y][x] = "."
+    fill(rows, 0, top - 1, 1, top + 1, "P")
+    fill(rows, 0, top + 1, 1, top + 1, "p")
+    rows[top][2] = "C"
+    return ["".join(row) for row in rows]
+
+
 KINDS = [
     ("grate", GRATE_MID, GRATE_MID, IRON),
     ("beams", BEAMS_MID, BEAMS_MID, WOOD),
@@ -350,6 +376,7 @@ KINDS = [
     ("walk", WALK_MID, WALK_MID, IRON),
     ("vines", VINES_MID, VINES_MID, LEAVES),
     ("strands", STRANDS_MID, STRANDS_MID, SILK_STRANDS),
+    ("pennants", PENNANTS_MID, PENNANTS_MID, PENNANTS),
 ]
 
 
@@ -397,7 +424,8 @@ def beams_end():
     return ["".join(row) for row in rows]
 
 
-MOUNTED = {"chain": chain_end, "beams": beams_end, "vines": vines_end, "strands": strands_end}
+MOUNTED = {"chain": chain_end, "beams": beams_end, "vines": vines_end, "strands": strands_end,
+           "pennants": pennants_end}
 
 
 def transpose(rows):

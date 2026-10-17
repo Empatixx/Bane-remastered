@@ -1,7 +1,8 @@
 //! What the pools of the sewer, the lava floor and the moss floor's bog get besides their liquid:
 //! outflow pipes (glowing cracks, seeps between roots) in the walls pouring into them, rubbish
 //! and barrels (cooled crusts, lily pads and frogs) drifting on them, and plank footbridges
-//! (stepping stones, fallen logs) across them.
+//! (stepping stones, fallen logs) across them. The temple's sand gets only the cracks in its walls
+//! with sand pouring out of them: nothing floats on it and nothing crosses it.
 
 use std::collections::HashSet;
 
@@ -223,15 +224,16 @@ pub(crate) fn plan(
                 .all(|tile| !works.pipes.iter().any(|pipe| (pipe.0, pipe.1 + 1) == tile))
         })
         .collect();
-    // Ice is walked on as it is: no bridges over it.
-    if kind != Surface::Ice && !crossings.is_empty() && rng.below(100) < BRIDGE_PERCENT {
+    // Ice and sand are walked on as they are: no bridges over them.
+    if !matches!(kind, Surface::Ice | Surface::Sand) && !crossings.is_empty() && rng.below(100) < BRIDGE_PERCENT {
         works.bridges.push(crossings[rng.below(crossings.len())]);
     }
     let bridged: HashSet<(usize, usize)> =
         works.bridges.iter().flat_map(|bridge| bridge.tiles().collect::<Vec<_>>()).collect();
     // Something afloat on the bigger pools, off the bridge and away from the splashes.
     let mut barrel_left = kind == Surface::Water && rng.below(100) < BARREL_PERCENT;
-    for pool in pools.iter().filter(|pool| pool.len() >= POOL_FOR_FLOATERS) {
+    let floating = if kind == Surface::Sand { 0 } else { POOL_FOR_FLOATERS };
+    for pool in pools.iter().filter(|pool| floating > 0 && pool.len() >= floating) {
         let mut open: Vec<(usize, usize)> = pool
             .iter()
             .copied()
@@ -449,8 +451,25 @@ mod tests {
     }
 
     #[test]
+    fn temple_sand_gets_falls_but_nothing_floats_on_it_or_crosses_it() {
+        let mut falls = 0;
+        for seed in 0..20 {
+            let dungeon =
+                Dungeon::generate_themed(&mut Rng::new(seed), Theme::Temple).expect("a dungeon");
+            let sand = |tile: (usize, usize)| dungeon.surfaces.at(tile) == Some(Surface::Sand);
+            for room in &dungeon.rooms {
+                let works = &room.waterworks;
+                assert!(works.floaters.is_empty() && works.bridges.is_empty() && works.marks.is_empty());
+                falls += works.pipes.len();
+                assert!(works.pipes.iter().all(|&(c, r)| sand((c, r + 1))));
+            }
+        }
+        assert!(falls > 3, "{falls}");
+    }
+
+    #[test]
     fn other_floors_have_no_waterworks() {
-        for theme in [Theme::Stone, Theme::Spider, Theme::Temple] {
+        for theme in [Theme::Stone, Theme::Spider] {
             let dungeon = Dungeon::generate_themed(&mut Rng::new(3), theme).expect("a dungeon");
             assert!(dungeon.rooms.iter().all(|room| room.waterworks == Waterworks::default()));
         }

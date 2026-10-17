@@ -61,7 +61,7 @@ pub(crate) use motion::Velocity;
 pub(crate) use objects::{
     ArrowTrap, BreakKind, Breakable, Broken, CHILL_SECONDS, CHILL_SLOWDOWN, CHILL_STACKS_TO_FREEZE,
     Chilled, Flame, FloorPatch, Friendly, Frozen, PatchKind, PoisonPool, PoisonTrail, Poisoned,
-    RippleTimer, SlotMachine, SlotPrice, Solid, TrailLayer, TrainingDummy, TrapArrow,
+    RippleTimer, SandSunk, SlotMachine, SlotPrice, Solid, TrailLayer, TrainingDummy, TrapArrow,
 };
 pub(crate) use perks::{HitRoll, PlayerPerks};
 pub(crate) use pet::Pet;

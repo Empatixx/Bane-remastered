@@ -18,6 +18,8 @@ const RIPPLE_FRAMES: usize = 6;
 /// Rings in a bog spread slower and come less often than on water, in the colour of the mud.
 const BOG_RIPPLE_EVERY: f32 = 0.32;
 const BOG_RIPPLE: Vec4 = Vec4::new(0.55, 0.45, 0.3, 0.75);
+/// Wading through sand stirs it in pale rings.
+const SAND_RIPPLE: Vec4 = Vec4::new(1.0, 0.82, 0.62, 0.6);
 
 pub(crate) fn burn_on_lava(
     world: &mut World,
@@ -79,6 +81,7 @@ pub(crate) fn ripple_on_water(
     let (every, tint) = match surfaces.at_point(feet) {
         Some(Surface::Water) => (RIPPLE_EVERY, Vec4::ONE),
         Some(Surface::Bog) => (BOG_RIPPLE_EVERY, BOG_RIPPLE),
+        Some(Surface::Sand) => (BOG_RIPPLE_EVERY, SAND_RIPPLE),
         _ => return,
     };
     if !ready || !moving {

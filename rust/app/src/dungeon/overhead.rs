@@ -1,8 +1,8 @@
 //! Things that hang high above a combat room, stretched between two walls: grates, wooden
-//! beams, chains, pipes, stone arches, thick webs, metal walkways and lianas. They span a gap between
+//! beams, chains, pipes, stone arches, thick webs, metal walkways, lianas and pennants. They span a gap between
 //! two wall blocks in one row, or down the screen from one block to the block below it, so the
 //! player walks underneath them. Others hang from the ceiling on a chain or a thread over open
-//! floor: chandeliers, cages, cocoons, lanterns, vines.
+//! floor: chandeliers, cages, cocoons, lanterns, vines, censers, bells, banners.
 
 use crate::rng::Rng;
 use crate::tilemap::TileGrid;
@@ -32,6 +32,8 @@ pub(crate) enum OverheadKind {
     Vines,
     /// A few strands of silk strung between two blocks.
     Strands,
+    /// A garland of red and gold pennants on a cord.
+    Pennants,
 }
 
 impl OverheadKind {
@@ -47,6 +49,7 @@ impl OverheadKind {
             Self::Walkway => 6,
             Self::Vines => 7,
             Self::Strands => 8,
+            Self::Pennants => 9,
         }
     }
 
@@ -56,6 +59,7 @@ impl OverheadKind {
             Self::Chain => 18.0,
             Self::Vines => 22.0,
             Self::Strands => 8.0,
+            Self::Pennants => 14.0,
             Self::Web => 12.0,
             Self::Arch => -20.0,
             _ => 0.0,
@@ -68,7 +72,7 @@ impl Theme {
         use OverheadKind::*;
         match self {
             Self::Stone => &[Grate, Beams, Chain],
-            Self::Temple => &[Arch, Arch, Chain, Beams],
+            Self::Temple => &[Arch, Arch, Chain, Pennants, Pennants],
             Self::Moss => &[Vines, Vines, Chain],
             Self::Sewer => &[Pipes, Pipes, Grate],
             Self::Spider => &[Web, Strands, Strands, Beams],
@@ -267,6 +271,12 @@ pub(crate) enum HangingKind {
     FrozenBlock,
     /// A great icicle.
     BigIcicle,
+    /// A golden censer puffing smoke.
+    Censer,
+    /// A bronze bell, which a shot sets swinging.
+    Bell,
+    /// A long red banner on a cord.
+    Banner,
 }
 
 impl HangingKind {
@@ -289,6 +299,9 @@ impl HangingKind {
             Self::IceChandelier => 13,
             Self::FrozenBlock => 14,
             Self::BigIcicle => 15,
+            Self::Censer => 16,
+            Self::Bell => 17,
+            Self::Banner => 18,
         }
     }
 }
@@ -298,7 +311,7 @@ impl Theme {
         use HangingKind::*;
         match self {
             Self::Stone => &[Chandelier, Cage],
-            Self::Temple => &[Chandelier, Chandelier, Cage],
+            Self::Temple => &[Censer, Censer, Bell, Banner, Chandelier],
             Self::Moss => &[Vine, GlowRoots, GlowRoots, Hive, MossCage, Fireflies],
             Self::Sewer => &[Lantern, Cage],
             Self::Spider => &[Cocoon, Cocoon, Cage],
@@ -384,13 +397,14 @@ pub(crate) fn plan_hanging(
 }
 
 /// One of every hanging kind in a row across the middle of a room, for looking at them all at
-/// once (`BANE_SHOWCASE`): the lava, moss and ice floors' own, or the rest on any other floor.
+/// once (`BANE_SHOWCASE`): the lava, moss, ice and temple floors' own, or the rest on any other floor.
 pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom, theme: Theme) -> Vec<Hanging> {
     use HangingKind::*;
     let kinds = match theme {
         Theme::Lava => [Brazier, Crucible, Hooks, Stalactite, Cage],
         Theme::Moss => [GlowRoots, Hive, MossCage, Fireflies, Vine],
         Theme::Ice => [IceChandelier, FrozenBlock, BigIcicle, Lantern, Cage],
+        Theme::Temple => [Censer, Bell, Banner, Chandelier, Cage],
         _ => [Chandelier, Cage, Cocoon, Lantern, Vine],
     };
     let clear = |column: usize, row: usize| {

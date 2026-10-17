@@ -42,6 +42,8 @@ pub(crate) enum Prop {
     SurfaceShade,
     BogShore,
     BogSurface,
+    SandShore,
+    SandSurface,
     Mushrooms,
     IceShore,
     LavaShore,
@@ -55,6 +57,8 @@ pub(crate) enum Prop {
     Cocoon,
     SpiderEggs,
     SpiderWrapped,
+    FireBowl,
+    StatuePiece,
     TrainingDummy,
     MossDrape,
     MossyBanner,
@@ -94,6 +98,8 @@ impl Prop {
                 | Self::Cocoon
                 | Self::SpiderEggs
                 | Self::SpiderWrapped
+                | Self::FireBowl
+                | Self::StatuePiece
         )
     }
 }
@@ -358,6 +364,8 @@ impl Prop {
             Self::SurfaceShade => still(tex::SURFACE_SHADE, Vec2::new(16.0, 16.0), 4.0),
             Self::BogShore => shore(tex::SHORE_BOG),
             Self::BogSurface => surface(tex::SURFACE_BOG, 1),
+            Self::SandShore => shore(tex::SHORE_SAND),
+            Self::SandSurface => surface(tex::SURFACE_SAND, 1),
             Self::Mushrooms => variants(tex::MUSHROOMS, Vec2::new(16.0, 16.0), 4.0),
             Self::IceShore => shore(tex::SHORE_ICE),
             Self::LavaShore => shore(tex::SHORE_LAVA),
@@ -388,6 +396,25 @@ impl Prop {
                 }),
             },
             Self::SpiderWrapped => variants(tex::SPIDER_WRAPPED, Vec2::new(16.0, 16.0), 4.0),
+            Self::FireBowl => PropSpec {
+                texture: tex::FIRE_BOWL,
+                columns: 3,
+                rows: 1,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 3,
+                    frame_time: 0.14,
+                }),
+            },
+            Self::StatuePiece => PropSpec {
+                texture: tex::STATUE_PIECES,
+                columns: 1,
+                rows: 3,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: None,
+            },
             Self::TrainingDummy => still(tex::TRAINING_DUMMY, Vec2::new(24.0, 32.0), 3.0),
             Self::MossDrape => PropSpec {
                 texture: tex::MOSS_DRAPE,

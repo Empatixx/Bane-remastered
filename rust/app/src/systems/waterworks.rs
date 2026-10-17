@@ -3,7 +3,8 @@
 //! about and get shoved along by shots, and footbridges cross them. The lava floor gets the
 //! same in its own colours (lava running out of glowing cracks, cooled crusts afloat, stepping
 //! stones), and so does the moss floor's bog (murky water seeping between roots, lily pads and a
-//! frog that leaps now and then, fallen logs).
+//! frog that leaps now and then, fallen logs). The temple's sand pours out of cracks in its walls
+//! the same way, into heaps in its sand.
 
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
@@ -99,6 +100,15 @@ impl Kit {
                 debris: tex::BOG_DEBRIS,
                 bridge: tex::BOG_LOG,
                 ripple: Some(Vec4::new(0.55, 0.45, 0.3, 0.75)),
+            }),
+            // Sand pours out of cracks into the temple's sand; nothing floats on it or bridges it.
+            Surface::Sand => Some(Self {
+                liquid,
+                pipe: tex::SAND_CRACK,
+                stream: tex::SAND_FALL,
+                debris: tex::SAND_FALL,
+                bridge: tex::SAND_FALL,
+                ripple: None,
             }),
             Surface::Ice => Some(Self {
                 liquid,
