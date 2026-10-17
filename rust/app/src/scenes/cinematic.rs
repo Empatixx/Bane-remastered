@@ -268,15 +268,15 @@ impl CinematicScene {
         for &column in &[7usize, 11, 16, 20] {
             decor.push(Decor { kind: DecorKind::Banner, tile: (inside.0 + column, inside.1 - 1) });
         }
-        // Pennants strung across the nave from wall to wall, the way a carpet crosses a corridor,
-        // every few tiles down its length.
-        let overheads = [3usize, 9, 12, 18, 21, 27]
+        // Two strings of pennants, each slung across the nave from a block on the top wall to its
+        // twin on the bottom one.
+        let overheads = [13usize, 22]
             .into_iter()
             .map(|column| Overhead {
                 kind: OverheadKind::Pennants,
                 upright: true,
-                first: tile(column, 0),
-                last: tile(column, rows - 1),
+                first: tile(column, 2),
+                last: tile(column, rows - 3),
             })
             .collect();
         // Red banners hanging in pairs over the pools and the last bay, out of the way of the carpet.
@@ -540,11 +540,29 @@ impl CinematicScene {
         self.angel = None;
         self.camera.add_trauma(0.7);
         let origin = self.angel_at + Vec2::new(0.0, 60.0);
-        // The pieces: its head, its body and a drum of its pedestal, thrown out and down.
-        for (row, throw) in [(0usize, Vec2::new(-150.0, 30.0)), (1, Vec2::new(120.0, 70.0)), (2, Vec2::new(-40.0, 110.0))] {
-            let size = Prop::StatuePiece.spec().size();
-            let entity = prefabs::prop(&mut self.world, Prop::StatuePiece, origin - size / 2.0, Look::row(row, false), textures);
-            self.debris.push(Debris { entity, ground: origin, velocity: throw, height: 90.0, rise: 160.0, left: None });
+        // The angel itself in four pieces, each a quarter of its own sprite: the head and one
+        // wing, the other wing, the body, the pedestal. They fly out from where they were and
+        // come to rest round the altar, darkened.
+        let statue = Prop::AngelStatue.spec().size();
+        let quarter = statue / 2.0;
+        let pieces = [
+            ((0, 0), Vec2::new(-170.0, 20.0)),
+            ((1, 0), Vec2::new(160.0, 10.0)),
+            ((0, 1), Vec2::new(-90.0, 120.0)),
+            ((1, 1), Vec2::new(110.0, 100.0)),
+        ];
+        for ((column, row), throw) in pieces {
+            let from = self.angel_at + (Vec2::new(column as f32, row as f32) - 0.5) * quarter;
+            let entity = self.world.spawn((
+                Position(from),
+                Size(quarter),
+                Color(Vec4::new(0.85, 0.82, 0.85, 1.0)),
+                Sprite::cell(textures.get(tex::ANGEL_STATUE), column, row, 2, 2),
+                Layer(1),
+                crate::components::Lit,
+            ));
+            let ground = Vec2::new(from.x, origin.y + row as f32 * 18.0);
+            self.debris.push(Debris { entity, ground, velocity: throw, height: ground.y - from.y, rise: 120.0, left: None });
         }
         for _ in 0..22 {
             let angle = self.roll() * std::f32::consts::TAU;
