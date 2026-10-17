@@ -13,7 +13,8 @@ tougher look, keeping the character as drawn:
 
 Reads tools/art/player_base.tga (the sheet as first drawn: six 16x38 frames in each of four rows:
 standing, walking sideways, walking down, walking up) and writes
-assets/textures/ingame/player.tga; run make_dodge_sheet.py after it, as the dodge roll is cut
+tools/art/player_full.tga (the full-size hero); run make_player_softer.py after it to make the
+game's player.tga, then make_dodge_sheet.py, as the dodge roll is cut
 from this sheet.
 
     polish_player.py [out.tga] [--hair ROWS,SIDE]
@@ -263,7 +264,7 @@ def main():
         at = args.index("--hair")
         hair = tuple(int(n) for n in args[at + 1].split(","))
         del args[at:at + 2]
-    path = Path(args[0]) if args else ROOT / "assets/textures/ingame/player.tga"
+    path = Path(args[0]) if args else ROOT / "tools/art/player_full.tga"
     sheet(hair).save(path)
 
 

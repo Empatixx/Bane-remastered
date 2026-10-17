@@ -92,10 +92,11 @@ def lid():
 
 def laid(open_box):
     sheet = Image.open(ROOT / "assets/textures/ingame/player.tga").convert("RGBA")
-    hero = sheet.crop((0, 0, 16, 38))
+    cell = (sheet.width // 6, sheet.height // 4)
+    hero = sheet.crop((0, 0, *cell))
     hpx = hero.load()
-    for y in range(38):
-        for x in range(16):
+    for y in range(cell[1]):
+        for x in range(cell[0]):
             r, g, b, a = hpx[x, y]
             if a and (b > r + 20 or (r > 200 and g > 200 and b > 200)):
                 hpx[x, y] = (*SKIN, 255)
