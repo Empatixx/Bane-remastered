@@ -2,8 +2,9 @@
 //! built from the dungeon's tiles and props, lit by its lights, the camera gliding through
 //! them with black bars above and below and a line of the story typed out at the bottom.
 //!
-//! For now it holds its first shot: the temple as it was before the wound, the camera moving
-//! down the nave to the altar.
+//! Its shots so far: the temple as it was before the wound, the camera moving down the nave to
+//! the altar; then the wound tearing open beneath it, a burning crack running from the altar
+//! down the nave as the ground shakes and the angel falls.
 
 use std::sync::Arc;
 
@@ -33,18 +34,28 @@ use super::{Cursor, Scene, SceneId, Transition};
 /// The temple's nave, inside its walls, in tiles.
 const NAVE: (usize, usize) = (34, 7);
 const MARGIN: usize = 2;
-/// How long the shot runs, and the fade into it and out of it.
-const SHOT_SECONDS: f32 = 11.0;
+/// The shots: how long each runs and its line, typed out a few letters a second once the shot
+/// has settled. The cinematic fades in at the start and out at the end.
+const SHOTS: [(f32, &str); 2] = [
+    (11.0, "Long ago, a temple stood on the hill."),
+    (10.0, "Then something tore open beneath it."),
+];
 const FADE_SECONDS: f32 = 1.6;
-/// The line, typed out a few letters a second once the shot has settled.
-const LINE: &str = "Long ago, a temple stood on the hill.";
-const LINE_FROM: f32 = 1.8;
+const LINE_FROM: f32 = 1.4;
+/// The tear: the ground shakes for a moment, then the crack runs from the altar down the nave
+/// over this long, the angel falling a little after it starts.
+const RUMBLE_SECONDS: f32 = 1.2;
+const CRACK_SECONDS: f32 = 3.6;
+const ANGEL_FALLS: f32 = 1.9;
+const SHAKE: f32 = 0.45;
 const LETTERS_PER_SECOND: f32 = 18.0;
 /// The black bars of a film frame, and where the line sits in the lower one.
 const BAR: f32 = 40.0;
 const LINE_AT: Vec2 = Vec2::new(TARGET.x / 2.0, TARGET.y - BAR / 2.0);
 const LINE_COLOR: Vec4 = Vec4::new(0.93, 0.89, 0.82, 1.0);
 const OVERLAY_LAYER: i32 = 20;
+/// The layer the carpet's tiles lie on (see `prefabs::carpet`), for tearing it.
+const CARPET_LAYER: i32 = -2;
 
 #[derive(Default)]
 pub(crate) struct CinematicScene {
@@ -57,6 +68,18 @@ pub(crate) struct CinematicScene {
     fade: Option<Entity>,
     /// Where the camera starts and ends its glide.
     glide: (Vec2, Vec2),
+    /// The nave's floor plan and what lies on it, for the crack to burn its way through.
+    grid: Option<TileGrid>,
+    surfaces: Surfaces,
+    /// The crack's tiles, from the altar down the nave, and how many have opened.
+    crack: Vec<(usize, usize)>,
+    opened: usize,
+    /// The tiles round the crack that already have their bank drawn.
+    banks: std::collections::HashSet<(usize, usize)>,
+    angel: Option<Entity>,
+    altar: Vec2,
+    /// Where the camera pulls back to as the crack runs past it.
+    retreat: Vec2,
     /// What comes after: the training the first time, otherwise the lobby.
     next: Option<SceneId>,
 }
@@ -207,7 +230,8 @@ impl CinematicScene {
         // The altar in the apse: an angel between two candlesticks, two fire bowls before it.
         let altar = at(columns as f32 - apse.0 as f32 / 2.0, rows as f32 / 2.0 - 0.4);
         let statue = Prop::AngelStatue.spec().size();
-        prefabs::prop(&mut self.world, Prop::AngelStatue, altar - statue / 2.0, Look::DEFAULT, textures);
+        self.angel = Some(prefabs::prop(&mut self.world, Prop::AngelStatue, altar - statue / 2.0, Look::DEFAULT, textures));
+        self.altar = altar;
         let candle = Prop::Candlestick.spec().size();
         for dx in [-2.4, 2.4] {
             let spot = altar + Vec2::new(dx * TILE_SIZE, 1.8 * TILE_SIZE);
@@ -223,6 +247,92 @@ impl CinematicScene {
             Vec2::new(at(columns as f32 - 5.5, 0.0).x, middle) - TARGET / 2.0,
         );
         self.camera.snap_to(self.glide.0);
+        self.retreat = Vec2::new(at(15.0, 0.0).x, middle) - TARGET / 2.0;
+        // The crack: from the altar's foot down the nave, wandering across the carpet a row at
+        // a time, two tiles wide where it is oldest.
+        let mut crack = Vec::new();
+        let mut row = rows as i32 / 2;
+        let mut seed = 0x5eed_u32;
+        for column in (6..columns - 3).rev() {
+            seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+            match (seed >> 16) % 5 {
+                0 => row -= 1,
+                1 => row += 1,
+                _ => {}
+            }
+            row = row.clamp(2, rows as i32 - 4);
+            // A tile wide, two by the altar where it opened first.
+            crack.push(tile(column, row as usize));
+            if column > columns * 2 / 3 {
+                crack.push(tile(column, row as usize + 1));
+            }
+        }
+        // The whole crack is known from the start, so each tile joins its neighbours and the
+        // edges get their banks as it opens.
+        self.surfaces = dungeon.surfaces.clone();
+        for &spot in &crack {
+            self.surfaces.insert(spot, Surface::Lava);
+        }
+        self.crack = crack;
+        self.opened = 0;
+        self.banks.clear();
+        self.grid = Some(dungeon.grid.clone());
+    }
+
+    /// The second shot: the ground shakes, a burning crack runs from the altar down the nave,
+    /// the angel falls in pieces and the camera backs away along the crack.
+    fn tear(&mut self, assets: &Assets, at: f32, dt: f32) {
+        let textures = &assets.textures;
+        if at > 0.3 {
+            self.camera.add_trauma(SHAKE * dt * 4.0);
+        }
+        let running = ((at - RUMBLE_SECONDS) / CRACK_SECONDS).clamp(0.0, 1.0);
+        let wanted = (running * self.crack.len() as f32) as usize;
+        if let Some(grid) = &self.grid {
+            while self.opened < wanted {
+                let spot = self.crack[self.opened];
+                prefabs::surface_tile(&mut self.world, grid, &self.surfaces, spot, Surface::Lava, textures);
+                self.opened += 1;
+                for dy in -1isize..=1 {
+                    for dx in -1isize..=1 {
+                        let near = ((spot.0 as isize + dx) as usize, (spot.1 as isize + dy) as usize);
+                        if self.banks.insert(near) {
+                            if let Some((surface, row)) = self.surfaces.shore_at(grid, near) {
+                                prefabs::shore_tile(&mut self.world, surface, near, row, textures);
+                            }
+                        }
+                    }
+                }
+                // The carpet tears where the crack runs through it.
+                let centre = (Vec2::new(spot.0 as f32, spot.1 as f32) + 0.5) * TILE_SIZE;
+                let torn: Vec<Entity> = self
+                    .world
+                    .query::<(Entity, &Position, &Layer)>()
+                    .iter()
+                    .filter(|(_, position, layer)| layer.0 == CARPET_LAYER && position.0.distance(centre) < 1.0)
+                    .map(|(entity, ..)| entity)
+                    .collect();
+                for entity in torn {
+                    let _ = self.world.despawn(entity);
+                }
+            }
+        }
+        if at > ANGEL_FALLS {
+            if let Some(angel) = self.angel.take() {
+                let _ = self.world.despawn(angel);
+                self.camera.add_trauma(0.6);
+                let mut physics = crate::physics::Physics::new();
+                let base = (self.altar / TILE_SIZE).floor();
+                for (variant, (dx, dy)) in [(1, (-1.0, 0.5)), (2, (1.0, -0.5)), (2, (0.0, 1.5))] {
+                    let spot = ((base.x + dx) as usize, (base.y + dy) as usize);
+                    prefabs::decor(&mut self.world, &mut physics, Decor { kind: DecorKind::StatuePiece { variant }, tile: spot }, textures);
+                }
+            }
+        }
+        // Hold on the altar while it breaks, then back away down the nave with the crack.
+        let back = ((at - ANGEL_FALLS - 0.6) / 5.5).clamp(0.0, 1.0);
+        let eased = back * back * (3.0 - 2.0 * back);
+        self.camera.snap_to(self.glide.1.lerp(self.retreat, eased));
     }
 
     /// The film frame over it all: bars above and below, the line in the lower one, and the
@@ -292,7 +402,7 @@ impl Scene for CinematicScene {
     }
 
     fn camera(&self) -> Vec2 {
-        self.camera.position()
+        self.camera.view()
     }
 
     fn occluders(&self) -> Option<Arc<Occluders>> {
@@ -302,22 +412,37 @@ impl Scene for CinematicScene {
     fn update(&mut self, input: &Input, dt: f32, assets: &Assets, _settings: &mut Settings) -> Transition {
         self.clock += dt;
         let next = self.next.unwrap_or(SceneId::Training);
-        if self.clock > SHOT_SECONDS || input.any_key() && self.clock > 0.5 {
+        let total: f32 = SHOTS.iter().map(|(seconds, _)| seconds).sum();
+        if self.clock > total || input.any_key() && self.clock > 0.5 {
             return Transition::Switch(next);
         }
-        // A slow glide down the nave, easing in and out.
-        let t = (self.clock / SHOT_SECONDS).clamp(0.0, 1.0);
-        let eased = t * t * (3.0 - 2.0 * t);
-        self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
+        // Which shot it is, and how far into it.
+        let mut shot = 0;
+        let mut into_shot = self.clock;
+        while shot + 1 < SHOTS.len() && into_shot > SHOTS[shot].0 {
+            into_shot -= SHOTS[shot].0;
+            shot += 1;
+        }
+        self.camera.update_shake(dt);
+        match shot {
+            0 => {
+                // A slow glide down the nave, easing in and out.
+                let t = (into_shot / SHOTS[0].0).clamp(0.0, 1.0);
+                let eased = t * t * (3.0 - 2.0 * t);
+                self.camera.snap_to(self.glide.0.lerp(self.glide.1, eased));
+            }
+            _ => self.tear(assets, into_shot, dt),
+        }
         if let Some(line) = self.line {
-            let shown = ((self.clock - LINE_FROM).max(0.0) * LETTERS_PER_SECOND) as usize;
+            let from = if shot == 0 { LINE_FROM + 0.4 } else { LINE_FROM };
+            let shown = ((into_shot - from).max(0.0) * LETTERS_PER_SECOND) as usize;
             if let Ok(mut text) = self.world.get::<&mut Text>(line) {
-                text.content = LINE.chars().take(shown).collect();
+                text.content = SHOTS[shot].1.chars().take(shown).collect();
             }
         }
         if let Some(fade) = self.fade {
             let into = 1.0 - self.clock / FADE_SECONDS;
-            let out = 1.0 - (SHOT_SECONDS - self.clock) / FADE_SECONDS;
+            let out = 1.0 - (total - self.clock) / FADE_SECONDS;
             if let Ok(mut color) = self.world.get::<&mut Color>(fade) {
                 color.0.w = into.max(out).clamp(0.0, 1.0);
             }
