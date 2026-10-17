@@ -1,4 +1,5 @@
 mod ambience;
+mod chronicle;
 mod animation;
 mod argus;
 mod arrows;
@@ -147,6 +148,7 @@ pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{
     RoundTextures, ShotContext, ShotRoll, bullet_hits, burn_out_rounds, shoot,
 };
+pub(crate) use chronicle::{PAGES, PAGE_CHANCE, lay_page, read_page, tick_reading};
 pub(crate) use shop::{ALTAR, ALTAR_SECONDS, SPEECH_SECONDS, buy, fit_price_boxes, merchant_line, say, say_at, say_for, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use training::{Training, TrainingEvent};
 pub(crate) use simulation::simulate;

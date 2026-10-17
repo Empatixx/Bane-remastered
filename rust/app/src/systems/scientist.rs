@@ -66,6 +66,9 @@ const ELIAN_EARNED_DEEP: &str = "You smell of the deep. Like the night it opened
 const ELIAN_EARNED_ARGUS: &str = "That eye... I saw it in his drawings.";
 const ELIAN_EARNED_WOLF: &str = "The wolf came up from the wound. It chose you.";
 const ELIAN_EARNED_WIN: &str = "He was glad you reached the bottom. Too glad.";
+const ELIAN_PAGE: &str = "Teodor's hand! He wrote every night. Find the rest.";
+const ELIAN_SCHOLAR: &str = "The scholar in Teodor's pages... he smiled like the Scientist.";
+const ELIAN_ALL_PAGES: &str = "It came up, the first night. Then what are you?";
 
 /// What the Scientist says once, on the lobby visit after it happened.
 pub(crate) fn remark_line(remark: Remark) -> &'static str {
@@ -119,6 +122,8 @@ pub(crate) struct Standing {
     pub(crate) went_without: bool,
     /// One-time remarks waiting to be said.
     pub(crate) remarks: Vec<Remark>,
+    /// Pages of Teodor's chronicle found.
+    pub(crate) pages: usize,
 }
 
 /// What the Scientist knows about the player, taken from the profile when the lobby opens.
@@ -180,6 +185,9 @@ impl Repertoire {
             (profile.bosses_slain.contains(&EnemyKind::Argus), ELIAN_EARNED_ARGUS),
             (profile.has_pet, ELIAN_EARNED_WOLF),
             (profile.wins > 0, ELIAN_EARNED_WIN),
+            (profile.pages > 0, ELIAN_PAGE),
+            (profile.pages >= 4, ELIAN_SCHOLAR),
+            (profile.pages >= super::PAGES.len(), ELIAN_ALL_PAGES),
         ];
         let mut hints = ELIAN_HINTS.to_vec();
         hints.extend(earned.iter().filter(|(has, _)| *has).map(|(_, line)| *line));
