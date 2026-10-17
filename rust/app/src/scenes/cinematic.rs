@@ -41,7 +41,7 @@ const MARGIN: usize = 2;
 /// has settled. The cinematic fades in at the start and out at the end.
 const SHOTS: [(f32, &str); 5] = [
     (11.0, "Long ago, a temple stood on the hill."),
-    (10.0, "Then something tore open beneath it."),
+    (14.0, "Then something tore open beneath it."),
     (10.0, "They called it Bane. The wound."),
     (9.5, "Deep in its crypt, the temple kept one last guardian."),
     (5.5, "Rise. Close the wound."),
@@ -88,6 +88,9 @@ const FADE_SECONDS: f32 = 1.6;
 const LINE_FROM: f32 = 1.4;
 /// The tear: the ground shakes for a moment, then the crack runs from the altar down the nave
 /// over this long, the angel falling a little after it starts.
+/// The narrator speaks the shot's line over a still temple first; the ground starts to shake only
+/// this long into it, once the line is spoken.
+const TEAR_FROM: f32 = 4.4;
 const RUMBLE_SECONDS: f32 = 1.2;
 const CRACK_SECONDS: f32 = 3.6;
 const ANGEL_FALLS: f32 = 1.9;
@@ -235,9 +238,10 @@ impl CinematicScene {
                 last: tile(pair[1] - 1, rows - 2),
             })
             .collect();
-        let hanging = [8.5f32, 17.5, 26.5]
-            .iter()
-            .map(|&column| Hanging { kind: HangingKind::Censer, tile: tile(column as usize, rows / 2 + 1) })
+        // Censers in pairs along the top wall, out of the way of the carpet.
+        let hanging = [(6usize, 2usize), (11, 2), (15, 2), (20, 2), (24, 2), (29, 2)]
+            .into_iter()
+            .map(|(column, row)| Hanging { kind: HangingKind::Censer, tile: tile(column, row) })
             .collect();
         let room = DungeonRoom {
             kind: RoomKind::Normal,
@@ -529,6 +533,12 @@ impl CinematicScene {
     /// away along the rift.
     fn tear(&mut self, assets: &Assets, at: f32, dt: f32) {
         let textures = &assets.textures;
+        let at = at - TEAR_FROM;
+        if at < 0.0 {
+            // Still, on the altar, while the line is spoken.
+            self.camera.snap_to(self.glide.1);
+            return;
+        }
         if at > 0.3 {
             self.camera.add_trauma(SHAKE * dt * 4.0);
         }
@@ -692,7 +702,8 @@ impl CinematicScene {
                 Color(Vec4::new(0.8, 0.8, 0.85, 1.0)), Sprite::whole(textures.get(tex::SARCOPHAGUS_LID)), Layer(0), crate::components::Lit));
         }
         // His own, in the middle, candles round it.
-        let centre = at(middle as f32 + 1.5, rows as f32 / 2.0);
+        // Straight at the end of the runner, its lid on the runner's middle line.
+        let centre = at(middle as f32 + 1.2, rows as f32 / 2.0 + 0.2);
         self.bier = Some(self.world.spawn((
             Position(centre),
             Size(SARCOPHAGUS),
