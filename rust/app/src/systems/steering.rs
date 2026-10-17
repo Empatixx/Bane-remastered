@@ -33,6 +33,7 @@ fn accelerate_with(
 
 const WATER_SLOWDOWN: f32 = 0.55;
 const BOG_SLOWDOWN: f32 = 0.45;
+const BLOOD_SLOWDOWN: f32 = 0.7;
 /// Sand slows the player down a little at first and more and more the longer they stay in it,
 /// up to the most after this many seconds; out of it they climb free several times as fast.
 const SAND_SLOWDOWN: (f32, f32) = (0.01, 0.8);
@@ -111,6 +112,8 @@ pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfa
             PLAYER_SPEED * WATER_SLOWDOWN
         } else if ground == Some(Surface::Bog) {
             PLAYER_SPEED * BOG_SLOWDOWN
+        } else if ground == Some(Surface::Blood) {
+            PLAYER_SPEED * BLOOD_SLOWDOWN
         } else if stuck {
             PLAYER_SPEED * COBWEB_SLOWDOWN
         } else {

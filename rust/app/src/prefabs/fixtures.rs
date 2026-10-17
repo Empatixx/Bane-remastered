@@ -373,6 +373,13 @@ pub(crate) fn decor(
             );
             entity
         }
+        DecorKind::Shackles { variant } => prop(
+            world,
+            Prop::Shackles,
+            top_left,
+            Look::row(variant, false),
+            textures,
+        ),
         DecorKind::StatuePiece { variant } => prop(
             world,
             Prop::StatuePiece,
@@ -744,6 +751,7 @@ pub(crate) fn surface_tile(
         Surface::Water => Prop::WaterSurface,
         Surface::Bog => Prop::BogSurface,
         Surface::Sand => Prop::SandSurface,
+        Surface::Blood => Prop::BloodSurface,
     };
     let row = surfaces.liquid_row(grid, tile);
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
@@ -759,6 +767,7 @@ pub(crate) fn surface_tile(
                     Surface::Lava => 3.0,
                     Surface::Bog => 4.0,
                     Surface::Sand => 5.0,
+                    Surface::Blood => 6.0,
                 },
                 time: 0.0,
             },
@@ -790,6 +799,7 @@ pub(crate) fn shore_tile(
         Surface::Water => Prop::WaterShore,
         Surface::Bog => Prop::BogShore,
         Surface::Sand => Prop::SandShore,
+        Surface::Blood => Prop::BloodShore,
     };
     let top_left = Vec2::new(tile.0 as f32, tile.1 as f32) * tilemap::TILE_SIZE;
     let entity = prop(world, prop_kind, top_left, Look::row(row, false), textures);

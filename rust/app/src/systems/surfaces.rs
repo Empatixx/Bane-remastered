@@ -20,6 +20,8 @@ const BOG_RIPPLE_EVERY: f32 = 0.32;
 const BOG_RIPPLE: Vec4 = Vec4::new(0.55, 0.45, 0.3, 0.75);
 /// Wading through sand stirs it in pale rings.
 const SAND_RIPPLE: Vec4 = Vec4::new(1.0, 0.82, 0.62, 0.6);
+/// Wading through blood leaves dark red rings.
+const BLOOD_RIPPLE: Vec4 = Vec4::new(0.75, 0.12, 0.1, 0.7);
 
 pub(crate) fn burn_on_lava(
     world: &mut World,
@@ -82,6 +84,7 @@ pub(crate) fn ripple_on_water(
         Some(Surface::Water) => (RIPPLE_EVERY, Vec4::ONE),
         Some(Surface::Bog) => (BOG_RIPPLE_EVERY, BOG_RIPPLE),
         Some(Surface::Sand) => (BOG_RIPPLE_EVERY, SAND_RIPPLE),
+        Some(Surface::Blood) => (BOG_RIPPLE_EVERY, BLOOD_RIPPLE),
         _ => return,
     };
     if !ready || !moving {
@@ -106,6 +109,200 @@ pub(crate) fn ripple_on_water(
         Animation::new(RIPPLE_FRAMES, 1, clip),
         Layer(-1),
     ));
+}
+
+/// How often, while walking, the surface underfoot is kicked up.
+const SPRAY_EVERY: f32 = 0.09;
+const SPRAY_MIN_SPEED: f32 = 40.0;
+/// Kicked-up bits fly round the feet, over the floor and under the overheads.
+const SPRAY_LAYER: i32 = 2;
+
+/// What one surface throws up when walked through: its two colours, how many bits at a time,
+/// how hard they're thrown up and out, how fast they fall back, how big they are and how long
+/// they last; whether they glow (and so ignore the dark) and fade as they go rather than land.
+#[derive(Debug, Clone, Copy)]
+struct Spray {
+    colours: [Vec4; 2],
+    count: usize,
+    rise: (f32, f32),
+    spread: f32,
+    gravity: f32,
+    size: f32,
+    life: f32,
+    glows: bool,
+}
+
+fn spray(surface: Surface) -> Spray {
+    match surface {
+        // Drops of water and pale foam.
+        Surface::Water => Spray {
+            colours: [Vec4::new(0.7, 0.85, 0.62, 1.0), Vec4::new(0.92, 0.98, 0.86, 1.0)],
+            count: 3,
+            rise: (180.0, 260.0),
+            spread: 80.0,
+            gravity: 900.0,
+            size: 8.0,
+            life: 0.7,
+            glows: false,
+        },
+        // Heavy blobs of mud.
+        Surface::Bog => Spray {
+            colours: [Vec4::new(0.5, 0.4, 0.22, 1.0), Vec4::new(0.66, 0.56, 0.32, 1.0)],
+            count: 3,
+            rise: (120.0, 190.0),
+            spread: 55.0,
+            gravity: 900.0,
+            size: 10.0,
+            life: 0.7,
+            glows: false,
+        },
+        // Black cinders and white-hot sparks, floating up and dying out.
+        Surface::Lava => Spray {
+            colours: [Vec4::new(0.22, 0.08, 0.06, 1.0), Vec4::new(1.0, 1.0, 0.82, 1.0)],
+            count: 3,
+            rise: (160.0, 260.0),
+            spread: 60.0,
+            gravity: 150.0,
+            size: 7.0,
+            life: 0.9,
+            glows: true,
+        },
+        // Chips of ice and glittering frost.
+        Surface::Ice => Spray {
+            colours: [Vec4::new(0.85, 0.95, 1.0, 1.0), Vec4::new(1.0, 1.0, 1.0, 1.0)],
+            count: 2,
+            rise: (110.0, 180.0),
+            spread: 90.0,
+            gravity: 700.0,
+            size: 6.0,
+            life: 0.55,
+            glows: true,
+        },
+        // A spray of grains.
+        Surface::Sand => Spray {
+            colours: [Vec4::new(0.92, 0.8, 0.54, 1.0), Vec4::new(0.66, 0.52, 0.3, 1.0)],
+            count: 4,
+            rise: (110.0, 190.0),
+            spread: 70.0,
+            gravity: 800.0,
+            size: 6.0,
+            life: 0.6,
+            glows: false,
+        },
+        // Drops of blood, the bright red of it fresh.
+        Surface::Blood => Spray {
+            colours: [Vec4::new(0.78, 0.1, 0.12, 1.0), Vec4::new(0.95, 0.24, 0.22, 1.0)],
+            count: 3,
+            rise: (150.0, 230.0),
+            spread: 65.0,
+            gravity: 950.0,
+            size: 8.0,
+            life: 0.65,
+            glows: true,
+        },
+    }
+}
+
+/// When the next spray is due, and a little state for scattering the bits.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct SprayTimer {
+    timer: f32,
+    seed: u32,
+}
+
+/// A bit kicked up from the surface underfoot, flying in an arc over the spot below it.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Kicked {
+    ground: Vec2,
+    drift: Vec2,
+    height: f32,
+    rise: f32,
+    gravity: f32,
+    life: f32,
+    lasts: f32,
+    alpha: f32,
+    glows: bool,
+}
+
+/// Walking through any liquid kicks bits of it up round the feet: drops of water, blobs of mud,
+/// sparks off the lava, chips of ice, grains of sand, drops of blood.
+pub(crate) fn kick_up_surfaces(world: &mut World, surfaces: &Surfaces, dt: f32) {
+    let walker = world
+        .query::<(Entity, &Position, &Size, &Velocity, &Health)>()
+        .with::<&Player>()
+        .iter()
+        .filter(|(_, _, _, _, health)| health.current > 0)
+        .map(|(entity, position, size, velocity, _)| {
+            (entity, position.0 + Vec2::new(0.0, size.0.y * 0.4), velocity.0)
+        })
+        .next();
+    if let Some((player, feet, velocity)) = walker {
+        if world.get::<&SprayTimer>(player).is_err() {
+            let _ = world.insert_one(player, SprayTimer { timer: 0.0, seed: 0x2545_F491 });
+        }
+        let mut thrown = Vec::new();
+        if let Ok(mut timer) = world.get::<&mut SprayTimer>(player) {
+            timer.timer -= dt;
+            let surface = surfaces.at_point(feet);
+            if let (Some(surface), true) = (surface, timer.timer <= 0.0 && velocity.length() > SPRAY_MIN_SPEED) {
+                timer.timer = SPRAY_EVERY;
+                let kind = spray(surface);
+                let mut roll = || {
+                    timer.seed ^= timer.seed << 13;
+                    timer.seed ^= timer.seed >> 17;
+                    timer.seed ^= timer.seed << 5;
+                    (timer.seed % 10_000) as f32 / 10_000.0
+                };
+                for _ in 0..kind.count {
+                    let out = Vec2::new(roll() * 2.0 - 1.0, (roll() * 2.0 - 1.0) * 0.5) * kind.spread;
+                    let rise = kind.rise.0 + (kind.rise.1 - kind.rise.0) * roll();
+                    let colour = kind.colours[usize::from(roll() > 0.5)];
+                    let start = feet + Vec2::new((roll() - 0.5) * 16.0, (roll() - 0.5) * 8.0);
+                    thrown.push((kind, start, out - velocity * 0.15, rise, colour));
+                }
+            }
+        }
+        for (kind, start, drift, rise, colour) in thrown {
+            let bit = world.spawn((
+                Kicked {
+                    ground: start,
+                    drift,
+                    height: 0.0,
+                    rise,
+                    gravity: kind.gravity,
+                    life: kind.life,
+                    lasts: kind.life,
+                    alpha: colour.w,
+                    glows: kind.glows,
+                },
+                Position(start),
+                Size(Vec2::splat(kind.size)),
+                Color(colour),
+                Sprite::whole(crate::render::TextureId::WHITE),
+                Layer(SPRAY_LAYER),
+            ));
+            if !kind.glows {
+                let _ = world.insert_one(bit, crate::components::Lit);
+            }
+        }
+    }
+    let mut gone = Vec::new();
+    for (entity, bit, position, color) in world.query_mut::<(Entity, &mut Kicked, &mut Position, &mut Color)>() {
+        bit.life -= dt;
+        bit.ground += bit.drift * dt;
+        bit.rise -= bit.gravity * dt;
+        bit.height += bit.rise * dt;
+        position.0 = bit.ground - Vec2::new(0.0, bit.height.max(0.0));
+        if bit.glows {
+            color.0.w = bit.alpha * (bit.life / bit.lasts).max(0.0);
+        }
+        if bit.life <= 0.0 || bit.height < 0.0 {
+            gone.push(entity);
+        }
+    }
+    for entity in gone {
+        let _ = world.despawn(entity);
+    }
 }
 
 #[cfg(test)]
@@ -279,5 +476,42 @@ mod tests {
                 Some(12.5)
             );
         }
+    }
+
+    #[test]
+    fn walking_through_any_liquid_kicks_bits_of_it_up_that_fall_back_down() {
+        for surface in [Surface::Water, Surface::Bog, Surface::Lava, Surface::Ice, Surface::Sand, Surface::Blood] {
+            let (mut world, player) = standing_at((4, 4));
+            let mut surfaces = Surfaces::default();
+            for column in 2..7 {
+                for row in 2..7 {
+                    surfaces.insert((column, row), surface);
+                }
+            }
+            if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+                velocity.0 = Vec2::new(200.0, 0.0);
+            }
+            let mut most = 0;
+            for _ in 0..30 {
+                kick_up_surfaces(&mut world, &surfaces, 1.0 / 60.0);
+                most = most.max(world.query::<&Kicked>().iter().count());
+            }
+            assert!(most > 0, "{surface:?}");
+            if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+                velocity.0 = Vec2::ZERO;
+            }
+            for _ in 0..120 {
+                kick_up_surfaces(&mut world, &surfaces, 1.0 / 60.0);
+            }
+            assert_eq!(world.query::<&Kicked>().iter().count(), 0, "{surface:?}");
+        }
+        let (mut world, player) = standing_at((4, 4));
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+            velocity.0 = Vec2::new(200.0, 0.0);
+        }
+        for _ in 0..30 {
+            kick_up_surfaces(&mut world, &Surfaces::default(), 1.0 / 60.0);
+        }
+        assert_eq!(world.query::<&Kicked>().iter().count(), 0);
     }
 }

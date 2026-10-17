@@ -110,6 +110,8 @@ impl Kit {
                 bridge: tex::SAND_FALL,
                 ripple: None,
             }),
+            // Nothing pours into the blood, floats on it or crosses it.
+            Surface::Blood => None,
             Surface::Ice => Some(Self {
                 liquid,
                 pipe: tex::ICE_SPOUT,

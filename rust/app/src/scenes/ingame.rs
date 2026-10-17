@@ -605,6 +605,7 @@ impl Scene for InGameScene {
             self.clock,
             dt,
         );
+        systems::tick_pendulums(&mut self.world, &mut self.sounds, self.clock, hostile_dt);
         systems::shove_tables(
             &mut self.world,
             &mut self.physics,
@@ -659,6 +660,7 @@ impl Scene for InGameScene {
         }
         systems::sync_liquids(&mut self.world, self.clock);
         systems::ripple_on_water(&mut self.world, &self.surfaces, &assets.textures, dt);
+        systems::kick_up_surfaces(&mut self.world, &self.surfaces, dt);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
             self.hit = true;
         }
@@ -856,7 +858,7 @@ impl InGameScene {
         self.flow = FlowField::default();
         let mut start = dungeon.start_position().unwrap_or(bounds / 2.0);
         // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
-        // `table`, `rug`, `vestibule`, `water`, `bowl` or `statue` starts the floor there (by the first one of those), for working on the
+        // `table`, `rug`, `vestibule`, `water`, `bowl`, `statue`, `shackles` or `pendulum` starts the floor there (by the first one of those), for working on the
         // game.
         match std::env::var("BANE_AT").as_deref() {
             Ok("boss") => {
@@ -948,9 +950,10 @@ impl InGameScene {
                     start = Vec2::new(column as f32 + 1.5, row as f32 + 3.0) * TILE_SIZE;
                 }
             }
-            Ok(at @ ("bowl" | "statue")) => {
+            Ok(at @ ("bowl" | "statue" | "shackles")) => {
                 let wanted = |kind: &DecorKind| match at {
                     "bowl" => *kind == DecorKind::FireBowl,
+                    "shackles" => matches!(kind, DecorKind::Shackles { .. }),
                     _ => matches!(kind, DecorKind::StatuePiece { .. }),
                 };
                 if let Some(decor) =
@@ -958,6 +961,12 @@ impl InGameScene {
                 {
                     let (column, row) = decor.tile;
                     start = Vec2::new(column as f32 + 0.5, row as f32 + 2.5) * TILE_SIZE;
+                }
+            }
+            Ok("pendulum") => {
+                if let Some(span) = dungeon.rooms.iter().find_map(|room| room.pendulum) {
+                    let middle = (span.first.0 + span.last.0 + 1) as f32 / 2.0;
+                    start = Vec2::new(middle, span.first.1 as f32 + 3.0) * TILE_SIZE;
                 }
             }
             Ok("vestibule") => {
@@ -1036,6 +1045,7 @@ impl InGameScene {
         systems::spawn_furniture(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_tracks(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_waterworks(&mut self.world, &mut self.physics, &dungeon, textures);
+        systems::spawn_prison(&mut self.world, &dungeon, textures);
         systems::spawn_atmosphere(
             &mut self.world,
             &dungeon,

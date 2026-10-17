@@ -44,6 +44,8 @@ pub(crate) enum Surface {
     Bog,
     /// The temple's sand, which the player sinks into the longer they stand in it.
     Sand,
+    /// The stone floor's pools of blood, sticky underfoot.
+    Blood,
 }
 
 impl Surface {
@@ -54,6 +56,7 @@ impl Surface {
             Self::Water => (16, 30),
             Self::Bog => (14, 26),
             Self::Sand => (10, 20),
+            Self::Blood => (6, 14),
         }
     }
 
@@ -64,6 +67,7 @@ impl Surface {
             Self::Water => 4,
             Self::Bog => 4,
             Self::Sand => 4,
+            Self::Blood => 4,
         }
     }
 }
@@ -320,7 +324,7 @@ mod tests {
         assert_eq!(Theme::Lava.surface(), Some(Surface::Lava));
         assert_eq!(Theme::Sewer.surface(), Some(Surface::Water));
         assert_eq!(Theme::Spider.surface(), None);
-        assert_eq!(Theme::Stone.surface(), None);
+        assert_eq!(Theme::Stone.surface(), Some(Surface::Blood));
         assert_eq!(Theme::Moss.surface(), Some(Surface::Bog));
         assert_eq!(Theme::Temple.surface(), Some(Surface::Sand));
     }
@@ -331,7 +335,7 @@ mod tests {
             .map(|seed| dungeon(seed, Theme::Ice).surfaces.len())
             .sum();
         let without: usize = (0..20)
-            .map(|seed| dungeon(seed, Theme::Stone).surfaces.len())
+            .map(|seed| dungeon(seed, Theme::Spider).surfaces.len())
             .sum();
         assert!(with > 100, "{with}");
         assert_eq!(without, 0);

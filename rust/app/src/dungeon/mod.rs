@@ -4,6 +4,7 @@ mod furnish;
 mod furniture;
 mod layout;
 mod overhead;
+mod prison;
 mod surface;
 mod template;
 mod theme;

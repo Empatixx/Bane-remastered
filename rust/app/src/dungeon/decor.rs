@@ -78,6 +78,10 @@ pub(crate) enum DecorKind {
     },
     /// A bowl of fire on a low pedestal against a wall.
     FireBowl,
+    /// Shackles on chains in a wall's face, empty or with a skeleton hung in them.
+    Shackles {
+        variant: usize,
+    },
     /// A piece of a toppled statue: its head, its torso or a column drum.
     StatuePiece {
         variant: usize,
@@ -418,8 +422,10 @@ pub(crate) fn plan(
                 }
             }
         }
-        // Now and then (not in every room) a bowl of fire by a wall, or a piece of a statue.
-        let rare: [ThemedSlot; 2] = [
+        // Now and then (not in every room) shackles in a wall, a bowl of fire by a wall, or a
+        // piece of a statue.
+        let rare: [ThemedSlot; 3] = [
+            (mix.shackles_percent, &top_faces, 2, |variant| DecorKind::Shackles { variant }),
             (mix.fire_bowl_percent, &hugging, 1, |_| DecorKind::FireBowl),
             (mix.statue_percent, &open_floor, 3, |variant| DecorKind::StatuePiece { variant }),
         ];
@@ -590,6 +596,12 @@ mod tests {
         assert_eq!(count_in(Theme::Stone, DecorKind::FireBowl), 0);
         assert!(count_in(Theme::Temple, DecorKind::StatuePiece { variant: 0 }) > 0);
         assert_eq!(count_in(Theme::Spider, DecorKind::StatuePiece { variant: 0 }), 0);
+        assert!(
+            count_in(Theme::Stone, DecorKind::Shackles { variant: 0 })
+                + count_in(Theme::Stone, DecorKind::Shackles { variant: 1 })
+                > 0
+        );
+        assert_eq!(count_in(Theme::Ice, DecorKind::Shackles { variant: 1 }), 0);
     }
 
     #[test]
@@ -622,6 +634,7 @@ mod tests {
                         | DecorKind::Flamethrower
                         | DecorKind::ArrowTrap
                         | DecorKind::Icicles { .. }
+                        | DecorKind::Shackles { .. }
                         | DecorKind::Torch {
                             mount: Mount::Top, ..
                         } => {

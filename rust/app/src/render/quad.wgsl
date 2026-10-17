@@ -314,8 +314,24 @@ fn sand_color(px: vec2<f32>, t: f32) -> vec3<f32> {
     return rgb;
 }
 
+// Blood: thick and dark, slowly stirring, a sheen of light sliding over it and clotted patches.
+fn blood_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+    let a = flow_fbm(px * 0.05 + vec2<f32>(t * 0.012, -t * 0.008) + vec2<f32>(31.0, 4.0));
+    let b = flow_fbm(px * 0.1 + vec2<f32>(-t * 0.01, t * 0.006) + vec2<f32>(2.0, 23.0));
+    let f = a * 0.6 + b * 0.4;
+    var rgb = vec3<f32>(48.0, 8.0, 12.0) / 255.0;
+    if (f > 0.42) { rgb = vec3<f32>(62.0, 10.0, 14.0) / 255.0; }
+    if (f > 0.56) { rgb = vec3<f32>(78.0, 14.0, 18.0) / 255.0; }
+    let clot = flow_fbm(px * 0.04 + vec2<f32>(50.0, 9.0));
+    if (clot > 0.66) { rgb = vec3<f32>(34.0, 6.0, 10.0) / 255.0; }
+    let sheen = abs(fract(px.x * 0.02 + px.y * 0.035 + a * 1.5 - t * 0.04) - 0.5);
+    if (sheen < 0.02 && f > 0.45) { rgb = vec3<f32>(120.0, 40.0, 44.0) / 255.0; }
+    return rgb;
+}
+
 fn liquid_color(kind: f32, world: vec2<f32>, t: f32) -> vec3<f32> {
     let px = floor(world / LIQUID_PIXEL);
+    if (kind > 5.5) { return blood_color(px, t); }
     if (kind > 4.5) { return sand_color(px, t); }
     if (kind > 3.5) { return bog_color(px, t); }
     if (kind > 2.5) { return lava_color(px, t); }

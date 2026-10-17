@@ -9,6 +9,7 @@ use super::furnish::{self, Carpet, Furnishing};
 use super::furniture::{self, TableSpot};
 use super::layout::{Direction, Layout, LayoutSpec};
 use super::overhead::{self, Hanging, Overhead};
+use super::prison;
 use super::surface::{self, Surfaces};
 use super::template::{Cell, RoomKind, RoomTemplate, Templates, door_columns, door_rows};
 use super::theme::Theme;
@@ -47,6 +48,8 @@ pub(crate) struct DungeonRoom {
     pub(crate) tables: Vec<TableSpot>,
     /// The sewer's pipes, floating things and footbridges.
     pub(crate) waterworks: Waterworks,
+    /// On the stone floor, the gap a pendulum swings across (under a beam among the overheads).
+    pub(crate) pendulum: Option<Overhead>,
 }
 
 impl DungeonRoom {
@@ -239,6 +242,7 @@ impl Dungeon {
                 rug: None,
                 tables: Vec::new(),
                 waterworks: Waterworks::default(),
+                pendulum: None,
             });
         }
 
@@ -283,6 +287,11 @@ impl Dungeon {
         let mut overhead_rng = Rng::new(rng.next_u64());
         for room in &mut rooms {
             room.overheads = overhead::plan(&grid, room, theme, &mut overhead_rng);
+        }
+        if theme == Theme::Stone {
+            prison::plan_pendulum(&grid, &mut rooms, &mut overhead_rng);
+        }
+        for room in &mut rooms {
             room.hanging =
                 overhead::plan_hanging(&grid, room, theme, &room.overheads, &surfaces, &mut overhead_rng);
         }

@@ -1,10 +1,10 @@
 ---
 title: Povrchy a kapaliny
-description: Led, láva, voda, bažina a písek – kde se objevují, jak vypadají a jak mění pohyb hráče.
+description: Led, láva, voda, bažina, písek a krev – kde se objevují, jak vypadají a jak mění pohyb hráče.
 ---
 
-Pět témat má vlastní **kapalinu** na podlaze: Ice led, Lava lávu, Sewer vodu, Moss
-bažinu a Temple písek. V každé Normal a Ambush místnosti takového patra se rozlije několik nepravidelných
+Šest témat má vlastní **kapalinu** (nebo sypký povrch) na podlaze: Ice led, Lava lávu, Sewer
+vodu, Moss bažinu, Temple písek a Stone krev. V každé Normal a Ambush místnosti takového patra se rozlije několik nepravidelných
 louží, které mění pohyb hráče – nebo ho rovnou pálí.
 
 ## Jak to funguje
@@ -15,6 +15,9 @@ louží, které mění pohyb hráče – nebo ho rovnou pálí.
   nich), místa, kde se rodí nepřátelé, ani dekorace a pasti.
 - **Láva nikdy nerozdělí místnost** – vždy zůstane suchá cesta ke všem částem místnosti.
 - Jestli na hráče kapalina působí, rozhoduje jeho střed; vlnky ve vodě jdou od nohou.
+- Při chůzi kapalinou od nohou odlétají částice podle povrchu: kapky vody a pěna, hroudy bláta,
+  saze a jiskry z lávy, ledové střípky, zrnka písku, kapky krve. Letí obloučkem a padají zpátky
+  (jiskry a střípky jen vyhasnou). Jsou jen na ozdobu.
 - Louže mají kolem sebe vykreslený břeh a pod zdí stín. Láva a voda jsou animované, láva
   navíc oranžově svítí.
 
@@ -26,6 +29,7 @@ louží, které mění pohyb hráče – nebo ho rovnou pálí.
 | **Láva** | Lava | 8–14 % | 1–3 | 2 poškození rovnou do životů, nejvýš 2 za sekundu; během dodge nepálí |
 | **Voda** | Sewer | 16–30 % | 1–4 | rychlost na 55 %; při chůzi dělá vlnky |
 | **Bažina** | Moss | 14–26 % | 1–4 | rychlost na 45 %; při chůzi dělá bahnité kruhy |
+| **Krev** | Stone | 6–14 % | 1–4 | rychlost na 70 % (lepí); při chůzi dělá rudé kruhy |
 | **Písek** | Temple | 10–20 % | 1–4 | boříš se: zpomalení roste z 1 % na 80 % za 3 s v písku; po vylezení zmizí 4× rychleji |
 
 Hráč normálně ujde asi 6,4 dlaždice za sekundu, ve vodě asi 3,5 a v bažině asi 2,9.
@@ -80,6 +84,11 @@ Led v Ice patře má vlastní obdobu, bez mostů (po ledu se chodí tak, jak je)
   meč nebo pár mincí. Jen na ozdobu, sebrat nejdou.
 - **Praskliny a závěje:** 1–2 praskliny v ledu a až 3 sněhové závěje u zdí.
 
+### Krev
+
+Louže krve ve Stone patře jsou tmavé, pomalu se vlní a přejíždí po nich odlesk. Při chůzi dělají
+tmavě rudé kruhy.
+
 ### Vybavení písku
 
 Písek v Temple má jen pramínky: z 1–2 prasklin v čele zdi nad pískem padá proud písku
@@ -108,6 +117,6 @@ Magma bosse Hellhounda vypadá stejně jako láva, ale funguje jinak – viz
 
 - Interakce prvků: mrazivý sud zamrazí vodu na led, výbuch vysuší bažinu, láva zapaluje.
 - Bažina by mohla „lepit“ nebo otrávit, ne jen víc zpomalovat.
-- Kapaliny pro Stone a Spider (např. jed, pavučinová kaše).
+- Kapalina pro Spider (např. pavučinová kaše).
 - Hráč by se mohl v písku viditelně bořit (sprite klesá).
 - Louže v boss arénách.

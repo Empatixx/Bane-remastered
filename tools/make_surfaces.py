@@ -214,6 +214,28 @@ def sand_shore(x, y, d, v):
     return (40, 28, 18, alpha_by(d, 90, 4))
 
 
+def blood(x, y, mask, frame, d, v):
+    if d == 0:
+        return (84, 16, 20, 255) if noise(x, y, 80 + v) > 0.5 else (68, 12, 16, 255)
+    if d == 1:
+        return (40, 6, 10, 255)
+    n = smooth_noise(x + v * 5, y + v * 3, 81 + v)
+    if n > 0.6:
+        return (78, 14, 18, 255)
+    if n > 0.35:
+        return (62, 10, 14, 255)
+    return (48, 8, 12, 255)
+
+
+def blood_shore(x, y, d, v):
+    """Blood soaked into the floor round the pool and spattered beyond it."""
+    if d >= 4:
+        return None
+    if d >= 2 and noise(x, y, 430 + v) > 0.9:
+        return (70, 12, 16, 200)
+    return (40, 6, 10, alpha_by(d, 150, 4))
+
+
 def bog_shore(x, y, d, v):
     if d >= 4:
         return None
@@ -291,6 +313,8 @@ def main():
     make_sheet(1, bog, True).save(OUT / "surface_bog.tga")
     make_shore(sand_shore).save(OUT / "shore_sand.tga")
     make_sheet(1, sand, True).save(OUT / "surface_sand.tga")
+    make_shore(blood_shore).save(OUT / "shore_blood.tga")
+    make_sheet(1, blood, True).save(OUT / "surface_blood.tga")
     make_shore(ice_shore).save(OUT / "shore_ice.tga")
     make_shore(lava_shore).save(OUT / "shore_lava.tga")
     shade_tile().save(OUT / "surface_shade.tga")

@@ -4,7 +4,8 @@ coals, a crucible of molten metal, a charred skeleton hung on hooks and an obsid
 with glowing veins; and for the moss floor roots hung with glowing mushrooms, a wasps' nest on
 a branch, a cage overgrown with moss and flowers, and a swarm of fireflies (no chain at all); and for
 the ice floor a chandelier of icicles, a skeleton frozen in a block of ice and a great icicle;
-and for the temple a golden censer puffing smoke, a bronze bell and a long red banner on a cord.
+and for the temple a golden censer puffing smoke, a bronze bell and a long red banner on a cord;
+and for the stone floor a rusty hook under a wooden pulley and a ring of skulls and candles.
 
 hanging.tga has one row per kind in that order and four 16x24 cells per row: the thing, the
 thing with its flames or glow flickering, a piece of its chain (or thread, or vine) that repeats
@@ -809,6 +810,67 @@ CORD = [
     ".......g........",
 ] * 12
 
+WOODEN = {"w": (106, 70, 42), "W": (150, 104, 62), "v": (58, 36, 24), "u": (124, 70, 44), "U": (84, 46, 30)}
+HOOK = [
+    [
+        ".......md.......",
+        ".......md.......",
+        "....vvvvvvvv....",
+        "...vWWWWWWWWv...",
+        "...vwwmhhmwwv...",
+        "...vwmd..dmwv...",
+        "...vwwmhhmwwv...",
+        "....vvvvvvvv....",
+        ".......md.......",
+        ".......md.......",
+        ".......md.......",
+        "......dmmd......",
+        "......dlld......",
+        "......dmmd......",
+        ".......ud.......",
+        ".......uU.......",
+        "..d....uU.......",
+        "..ud...uU.......",
+        "..uUd.dUu.......",
+        "...uUUUUd.......",
+        "....dddd........",
+        "................",
+        "................",
+        "................",
+    ],
+]
+HOOK.append(HOOK[0])
+
+SKULL_CANDLES = [
+    [
+        ".......md.......",
+        ".......md.......",
+        "...y...md...y...",
+        "..yoy..md..yoy..",
+        "...o...md...o...",
+        "...w..d..d..w...",
+        "...w.d....d.w...",
+        "...c........c...",
+        "dddmmmmmmmmmmddd",
+        "mhhhhhhhhhhhhhhm",
+        "dbbkbbbmmbbbkbbd",
+        ".bkbkb.dd.bkbkb.",
+        ".bBbBb....bBbBb.",
+        "..bbb......bbb..",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+SKULL_CANDLES.append([row.replace("yoy", "oyo") for row in SKULL_CANDLES[0]])
+
 KINDS = [
     (CHANDELIER, CHAIN, {**IRON, **FLAME}),
     (CAGE, CHAIN, {**IRON, **BONE}),
@@ -829,6 +891,8 @@ KINDS = [
     (CENSER, CHAIN, {**GOLD, **SMOKE}),
     (BELL, CHAIN, {**IRON, **BRONZE}),
     (BANNER, CORD, CLOTH),
+    (HOOK, CHAIN, {**IRON, **WOODEN}),
+    (SKULL_CANDLES, CHAIN, {**IRON, **FLAME, **BONE}),
 ]
 
 

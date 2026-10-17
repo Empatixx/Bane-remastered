@@ -14,7 +14,7 @@ use super::theme::Theme;
 
 const MIN_SPAN: usize = 3;
 const MAX_SPAN: usize = 9;
-const MAX_PER_ROOM: usize = 2;
+pub(super) const MAX_PER_ROOM: usize = 2;
 const ROOM_CHANCE_PERCENT: usize = 75;
 /// Rows kept between two spans in one room, so they never stack into a ceiling.
 const ROW_GAP: usize = 3;
@@ -124,11 +124,11 @@ impl Overhead {
 
 /// A gap something could lie across: whether it runs down the screen, and its first and last
 /// open tiles.
-type Gap = (bool, (usize, usize), (usize, usize));
+pub(super) type Gap = (bool, (usize, usize), (usize, usize));
 
 /// The gaps between two walls in a row of the room that something could hang across. Of the
 /// rows a wall block spans, only its top one is kept, so a span sits on top of the blocks.
-fn spans(grid: &TileGrid, room: &DungeonRoom) -> Vec<Gap> {
+pub(super) fn spans(grid: &TileGrid, room: &DungeonRoom) -> Vec<Gap> {
     let wall = |column: usize, row: usize| grid.is_wall(column as isize, row as isize);
     let mut found = Vec::new();
     for row in room.origin.1 + 1..room.origin.1 + room.rows - 1 {
@@ -192,7 +192,7 @@ fn upright_spans(grid: &TileGrid, room: &DungeonRoom) -> Vec<Gap> {
 
 /// Two spans the same way keep a few rows (or columns) apart; one across and one upright don't
 /// cross or touch.
-fn too_close(a: &Overhead, b: &Overhead) -> bool {
+pub(super) fn too_close(a: &Overhead, b: &Overhead) -> bool {
     if a.upright == b.upright {
         let line = |span: &Overhead| if span.upright { span.first.0 } else { span.first.1 };
         line(a).abs_diff(line(b)) < ROW_GAP
@@ -277,6 +277,10 @@ pub(crate) enum HangingKind {
     Bell,
     /// A long red banner on a cord.
     Banner,
+    /// A rusty hook under a wooden pulley.
+    Hook,
+    /// A ring of skulls with candles burning on it.
+    SkullCandles,
 }
 
 impl HangingKind {
@@ -302,6 +306,8 @@ impl HangingKind {
             Self::Censer => 16,
             Self::Bell => 17,
             Self::Banner => 18,
+            Self::Hook => 19,
+            Self::SkullCandles => 20,
         }
     }
 }
@@ -310,7 +316,7 @@ impl Theme {
     pub(crate) fn hanging_kinds(self) -> &'static [HangingKind] {
         use HangingKind::*;
         match self {
-            Self::Stone => &[Chandelier, Cage],
+            Self::Stone => &[Chandelier, Cage, Hook, SkullCandles],
             Self::Temple => &[Censer, Censer, Bell, Banner, Chandelier],
             Self::Moss => &[Vine, GlowRoots, GlowRoots, Hive, MossCage, Fireflies],
             Self::Sewer => &[Lantern, Cage],
@@ -397,7 +403,7 @@ pub(crate) fn plan_hanging(
 }
 
 /// One of every hanging kind in a row across the middle of a room, for looking at them all at
-/// once (`BANE_SHOWCASE`): the lava, moss, ice and temple floors' own, or the rest on any other floor.
+/// once (`BANE_SHOWCASE`): the lava, moss, ice, temple and stone floors' own, or the rest on any other floor.
 pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom, theme: Theme) -> Vec<Hanging> {
     use HangingKind::*;
     let kinds = match theme {
@@ -405,6 +411,7 @@ pub(crate) fn showcase(grid: &TileGrid, room: &DungeonRoom, theme: Theme) -> Vec
         Theme::Moss => [GlowRoots, Hive, MossCage, Fireflies, Vine],
         Theme::Ice => [IceChandelier, FrozenBlock, BigIcicle, Lantern, Cage],
         Theme::Temple => [Censer, Bell, Banner, Chandelier, Cage],
+        Theme::Stone => [Hook, SkullCandles, Chandelier, Cage, Lantern],
         _ => [Chandelier, Cage, Cocoon, Lantern, Vine],
     };
     let clear = |column: usize, row: usize| {

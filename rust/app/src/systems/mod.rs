@@ -45,6 +45,7 @@ mod perks;
 mod pet;
 mod player_animation;
 mod portal;
+mod prison;
 mod rooms;
 mod rules;
 mod scientist;
@@ -85,6 +86,7 @@ pub(crate) use camera::{camera_target, follow_backdrop};
 pub(crate) use carry::{carried_stats, restore_stats};
 pub(crate) use cart::{spawn_tracks, tick_carts};
 pub(crate) use waterworks::{spawn_waterworks, tick_waterworks};
+pub(crate) use prison::{spawn_prison, tick_pendulums};
 pub(crate) use casings::tick_casings;
 pub(crate) use table::{break_tables, shove_tables, spawn_furniture};
 pub(crate) use crowd::separate_chasers;
@@ -153,7 +155,7 @@ pub(crate) use stats::{
     Summary, close_floor as close_stats_floor, current as current_stats, summarize,
 };
 pub(crate) use steering::{steer_player, steer_player_on};
-pub(crate) use surfaces::{burn_on_lava, ripple_on_water, sync_liquids};
+pub(crate) use surfaces::{burn_on_lava, kick_up_surfaces, ripple_on_water, sync_liquids};
 pub(crate) use time_slow::time_scale;
 pub(crate) use trails::{TrailTextures, shed_trails};
 pub(crate) use ui::{update_buttons, update_text_buttons};

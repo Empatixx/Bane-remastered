@@ -199,7 +199,7 @@ pub(crate) fn plan(
     let water = |surfaces: &Surfaces, tile: (usize, usize)| liquid(surfaces, kind, tile);
     let mut works = Waterworks::default();
     let pools = pools(room, surfaces, kind);
-    if pools.is_empty() {
+    if pools.is_empty() || kind == Surface::Blood {
         return works;
     }
     // Pipes in wall faces right above the water.
