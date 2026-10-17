@@ -43,7 +43,7 @@ const SHOTS: [(f32, &str); 5] = [
     (11.0, "Long ago, a temple stood on the hill."),
     (14.0, "Then something tore open beneath it."),
     (10.0, "They called it Bane. The wound."),
-    (9.5, "Deep in its crypt, the temple kept one last guardian."),
+    (9.5, "One acolyte escaped, and woke the temple's last guardian."),
     (5.5, "Rise. Close the wound."),
 ];
 /// The cut from the temple to the crypt: the screen goes black for this long either side.
@@ -108,6 +108,29 @@ const MOTE_LAYER: i32 = 6;
 const MOTE_BRIGHT: Vec4 = Vec4::new(0.92, 0.55, 1.0, 1.0);
 const MOTE_DEEP: Vec4 = Vec4::new(0.62, 0.22, 0.9, 1.0);
 
+/// One of the temple's acolytes: where he kneels, where he hides once the ground shakes, and
+/// whether something has caught him (and when).
+struct Acolyte {
+    entity: Entity,
+    home: Vec2,
+    hide: Vec2,
+    caught: Option<f32>,
+}
+
+/// Where the acolytes of the Order of the Seal kneel along the carpet, in tiles inside the nave,
+/// and which way they run: Teodor, Oswin, Cassian, Aldric, and Elian the novice, the last, who
+/// gets away to the crypt (see story.md, chapter 9).
+const ACOLYTES: [(f32, f32, f32); 5] =
+    [(10.0, 1.3, -1.0), (14.0, 5.6, 1.0), (18.0, 1.3, -1.0), (22.0, 5.6, 1.0), (7.0, 5.6, 1.0)];
+/// Elian, who escapes: he runs on out of the nave, and waits in the crypt.
+const ELIAN: usize = 4;
+/// When they start to run once the ground shakes, how fast, how fast the creatures hunt them,
+/// and how long one takes to fall.
+const FLEE_AFTER: f32 = 1.2;
+const FLEE_SPEED: f32 = 2.6;
+const HUNT_SPEED: f32 = 3.4;
+const FALL_SECONDS: f32 = 0.35;
+
 /// A piece of the broken angel, a chip of stone or a puff of dust in flight: the spot on the
 /// floor under it and its speed across, its height and how fast that changes, and how long it
 /// has left (pieces stay where they land).
@@ -158,6 +181,9 @@ pub(crate) struct CinematicScene {
     /// What has climbed out of the wound so far: each one, where it came out and where it
     /// heads, and when.
     crawlers: Vec<(Entity, Vec2, Vec2, f32)>,
+    /// The acolytes, and which crawler hunts which of them.
+    acolytes: Vec<Acolyte>,
+    hunters: Vec<(usize, usize)>,
     dusk: Option<Entity>,
     /// The crypt, once the cinematic has cut to it: the sarcophagus and its lid, the light
     /// leaking out of it, the white flash, and the hero once risen.
@@ -222,24 +248,26 @@ impl CinematicScene {
         }
         let mut decor = Vec::new();
         for &column in &pillars {
-            decor.push(Decor { kind: DecorKind::FireBowl, tile: tile(column - 1, 1) });
+            decor.push(Decor { kind: DecorKind::FireBowl, tile: tile(column - 2, 1) });
             decor.push(Decor { kind: DecorKind::FireBowl, tile: tile(column + 2, rows - 2) });
         }
         // Banners on the top wall either side of each alcove.
         for &column in &[7usize, 11, 16, 20] {
             decor.push(Decor { kind: DecorKind::Banner, tile: (inside.0 + column, inside.1 - 1) });
         }
+        // Pennants hanging straight down from the top wall either side of each block.
         let overheads = pillars
-            .windows(2)
-            .map(|pair| Overhead {
+            .iter()
+            .flat_map(|&column| [column - 1, column + 2])
+            .map(|column| Overhead {
                 kind: OverheadKind::Pennants,
-                upright: false,
-                first: tile(pair[0] + 2, rows - 2),
-                last: tile(pair[1] - 1, rows - 2),
+                upright: true,
+                first: tile(column, 0),
+                last: tile(column, 1),
             })
             .collect();
-        // Censers in pairs along the top wall, out of the way of the carpet.
-        let hanging = [(6usize, 2usize), (11, 2), (15, 2), (20, 2), (24, 2), (29, 2)]
+        // Censers in pairs over the alcoves and the last bay, out of the way of the carpet.
+        let hanging = [(8usize, 2usize), (10, 2), (17, 2), (19, 2), (26, 2), (29, 2)]
             .into_iter()
             .map(|(column, row)| Hanging { kind: HangingKind::Censer, tile: tile(column, row) })
             .collect();
@@ -318,14 +346,34 @@ impl CinematicScene {
         systems::spawn_atmosphere(&mut self.world, &dungeon, 0x7e3);
         let at = |column: f32, row: f32| (Vec2::new(inside.0 as f32 + column, inside.1 as f32 + row)) * TILE_SIZE;
         // The altar in the apse: an angel between two candlesticks, two fire bowls before it.
-        let altar = at(columns as f32 - apse.0 as f32 / 2.0, rows as f32 / 2.0 - 0.4);
+        let altar = at(columns as f32 - apse.0 as f32 / 2.0, rows as f32 / 2.0);
         let statue = Prop::AngelStatue.spec().size();
         self.angel = Some(prefabs::prop(&mut self.world, Prop::AngelStatue, altar - statue / 2.0, Look::DEFAULT, textures));
         self.angel_at = altar;
         self.altar = altar;
         let candle = Prop::Candlestick.spec().size();
-        for dx in [-2.4, 2.4] {
-            let spot = altar + Vec2::new(dx * TILE_SIZE, 1.8 * TILE_SIZE);
+        // The acolytes, kneeling either side of the carpet down the nave.
+        let size = crate::prefabs::PLAYER_SIZE;
+        for (index, &(column, row, run)) in ACOLYTES.iter().enumerate() {
+            let home = at(column, row);
+            let away = if index == ELIAN { 7.5 } else { 3.0 };
+            let hide = home + Vec2::new(-away * TILE_SIZE, run * 0.6 * TILE_SIZE);
+            let clip = Clip { row: 0, frames: 6, frame_time: 0.16 + index as f32 * 0.01, looping: true, flipped: index % 2 == 1 };
+            let entity = self.world.spawn((
+                Position(home),
+                Size(size),
+                Color(Vec4::ONE),
+                Sprite::cell(textures.get(tex::ACOLYTE), 0, 0, 6, 4),
+                Animation::new(6, 4, clip),
+                Layer(1),
+                crate::components::YSort::bottom(size),
+                crate::components::Lit,
+            ));
+            self.acolytes.push(Acolyte { entity, home, hide, caught: None });
+        }
+        // Four candles round it, the same above as below.
+        for (dx, dy) in [(-2.2, -1.9), (2.2, -1.9), (-2.2, 1.9), (2.2, 1.9)] {
+            let spot = altar + Vec2::new(dx * TILE_SIZE, dy * TILE_SIZE);
             prefabs::prop(&mut self.world, Prop::Candlestick, spot - candle / 2.0, Look::DEFAULT, textures);
         }
         let bounds = dungeon.grid.pixel_size();
@@ -557,12 +605,86 @@ impl CinematicScene {
             grown < 1.0
         });
         self.churn(dt, 30.0 * running.min(1.0) + if self.opened > 0 { 8.0 } else { 0.0 });
+        self.flee(at);
         self.break_angel(at, textures);
         self.fly_debris(dt);
         // Hold on the altar while it breaks, then back away down the nave with the rift.
         let back = ((at - ANGEL_FALLS - 0.6) / 5.5).clamp(0.0, 1.0);
         let eased = back * back * (3.0 - 2.0 * back);
         self.camera.snap_to(self.glide.1.lerp(self.retreat, eased));
+    }
+
+    /// The acolytes, once the ground shakes, get up and run for the walls, away from the altar.
+    fn flee(&mut self, at: f32) {
+        for acolyte in &self.acolytes {
+            if acolyte.caught.is_some() {
+                continue;
+            }
+            let since = at - FLEE_AFTER;
+            let span = acolyte.home.distance(acolyte.hide).max(1.0);
+            let run = (since * FLEE_SPEED * TILE_SIZE / span).clamp(0.0, 1.0);
+            if let Ok(mut position) = self.world.get::<&mut Position>(acolyte.entity) {
+                position.0 = acolyte.home.lerp(acolyte.hide, run);
+            }
+            if let Ok(mut animation) = self.world.get::<&mut Animation>(acolyte.entity) {
+                // Running on their side, then cowering facing the room.
+                let row = if since > 0.0 && run < 1.0 { 1 } else { 0 };
+                if animation.clip().row != row {
+                    animation.play(Clip { row, frames: 6, frame_time: if row == 1 { 0.08 } else { 0.16 }, looping: true, flipped: row == 1 });
+                }
+            }
+        }
+    }
+
+    /// A creature falls on an acolyte: he flashes red and falls, and his blood spreads where he
+    /// lay.
+    fn kill(&mut self, index: usize, at: f32) {
+        let acolyte = &mut self.acolytes[index];
+        acolyte.caught = Some(at);
+        tracing::info!(at, index, "an acolyte is caught");
+        let spot = self.world.get::<&Position>(acolyte.entity).map(|p| p.0).unwrap_or(acolyte.hide);
+        let entity = acolyte.entity;
+        if let Ok(mut color) = self.world.get::<&mut Color>(entity) {
+            color.0 = Vec4::new(1.0, 0.25, 0.25, 1.0);
+        }
+        self.camera.add_trauma(0.15);
+        let foot = spot + Vec2::new(0.0, crate::prefabs::PLAYER_SIZE.y * 0.35);
+        for _ in 0..7 {
+            let offset = Vec2::new((self.roll() - 0.5) * 50.0, (self.roll() - 0.5) * 22.0);
+            let side = 10.0 + self.roll() * 16.0;
+            let shade = 0.32 + self.roll() * 0.2;
+            self.world.spawn((
+                Position((foot + offset).round()),
+                Size(Vec2::new(side, side * 0.6).round()),
+                Color(Vec4::new(shade, 0.02, 0.04, 1.0)),
+                Layer(-1),
+            ));
+        }
+        for _ in 0..14 {
+            let angle = self.roll() * std::f32::consts::TAU;
+            let speed = 60.0 + self.roll() * 120.0;
+            let entity = self.world.spawn((
+                Position(spot),
+                Size(Vec2::splat(4.0)),
+                Color(Vec4::new(0.7, 0.05, 0.08, 1.0)),
+                Layer(MOTE_LAYER),
+            ));
+            let left = 0.5 + self.roll() * 0.5;
+            let rise = 60.0 + self.roll() * 90.0;
+            self.debris.push(Debris { entity, ground: foot, velocity: Vec2::from_angle(angle) * speed, height: 30.0, rise, left: Some(left) });
+        }
+    }
+
+    /// The fallen: red, then fading into the floor.
+    fn fall(&mut self, at: f32) {
+        for acolyte in &self.acolytes {
+            let Some(caught) = acolyte.caught else { continue };
+            let since = at - caught;
+            if let Ok(mut color) = self.world.get::<&mut Color>(acolyte.entity) {
+                let gone = (since / FALL_SECONDS).clamp(0.0, 1.0);
+                color.0 = Vec4::new(1.0, 0.25 + 0.2 * gone, 0.25, 1.0 - gone);
+            }
+        }
     }
 
     /// The third shot: spiders, rats and bats climb out of the rift and scatter, and the temple
@@ -586,14 +708,64 @@ impl CinematicScene {
                 let idle = kind.spec().idle_clip();
                 animation.play(crate::components::Clip { flipped: to.x < from.x, ..idle });
             }
+            let crawler = self.crawlers.len();
             self.crawlers.push((entity, from, to, when));
+            // The first walkers out each go for the nearest acolyte nobody is hunting yet.
+            if kind != EnemyKind::Bat {
+                let prey = self
+                    .acolytes
+                    .iter()
+                    .enumerate()
+                    .filter(|(index, acolyte)| {
+                        *index != ELIAN && acolyte.caught.is_none() && !self.hunters.iter().any(|&(_, hunted)| hunted == *index)
+                    })
+                    .min_by(|(_, a), (_, b)| a.hide.distance(from).total_cmp(&b.hide.distance(from)))
+                    .map(|(index, _)| index);
+                if let Some(prey) = prey {
+                    self.hunters.push((crawler, prey));
+                }
+            }
         }
-        for &(entity, from, to, when) in &self.crawlers {
+        // The hunters run their prey down.
+        let mut caught = Vec::new();
+        for &(crawler, prey) in &self.hunters {
+            let (entity, _, _, when) = self.crawlers[crawler];
+            if at - when < CLIMB_SECONDS * 0.5 || self.acolytes[prey].caught.is_some() {
+                continue;
+            }
+            let target = self.world.get::<&Position>(self.acolytes[prey].entity).map(|p| p.0).unwrap_or_default();
+            if let Ok(mut position) = self.world.get::<&mut Position>(entity) {
+                let gap = target - position.0;
+                if gap.length() < 26.0 {
+                    caught.push(prey);
+                } else {
+                    position.0 += gap.normalize() * (HUNT_SPEED * TILE_SIZE * dt).min(gap.length());
+                }
+                let left = gap.x < 0.0;
+                drop(position);
+                if let Ok(mut animation) = self.world.get::<&mut Animation>(entity) {
+                    if animation.clip().flipped != left {
+                        let clip = animation.clip();
+                        animation.play(Clip { flipped: left, ..clip });
+                    }
+                }
+            }
+        }
+        for prey in caught {
+            self.kill(prey, at);
+        }
+        self.fall(at);
+        for (crawler, &(entity, from, to, when)) in self.crawlers.iter().enumerate() {
+            let hunting = self.hunters.iter().any(|&(hunter, prey)| hunter == crawler && self.acolytes[prey].caught.is_none());
+            let fed = self.hunters.iter().any(|&(hunter, prey)| hunter == crawler && self.acolytes[prey].caught.is_some());
             let since = at - when;
             let climbed = (since / CLIMB_SECONDS).clamp(0.0, 1.0);
             let walked = ((since - CLIMB_SECONDS * 0.5) * SCURRY * TILE_SIZE / from.distance(to).max(1.0)).clamp(0.0, 1.0);
-            if let Ok(mut position) = self.world.get::<&mut Position>(entity) {
-                position.0 = from.lerp(to, walked);
+            // A hunter moves by its own chase; once it has caught its prey it stays on it.
+            if !hunting && !fed {
+                if let Ok(mut position) = self.world.get::<&mut Position>(entity) {
+                    position.0 = from.lerp(to, walked);
+                }
             }
             if let Ok(mut color) = self.world.get::<&mut Color>(entity) {
                 color.0.w = climbed;
@@ -721,6 +893,19 @@ impl CinematicScene {
             Layer(1),
             crate::components::Lit,
         )));
+        // Elian, who ran down here, standing at its head.
+        let size = crate::prefabs::PLAYER_SIZE;
+        let clip = Clip { row: 0, frames: 6, frame_time: 0.16, looping: true, flipped: false };
+        self.world.spawn((
+            Position(centre + Vec2::new(-SARCOPHAGUS.x / 2.0 - 0.7 * TILE_SIZE, 0.1 * TILE_SIZE)),
+            Size(size),
+            Color(Vec4::ONE),
+            Sprite::cell(textures.get(tex::ACOLYTE), 0, 0, 6, 4),
+            Animation::new(6, 4, clip),
+            Layer(1),
+            crate::components::YSort::bottom(size),
+            crate::components::Lit,
+        ));
         let candle = Prop::Candlestick.spec().size();
         for (dx, dy) in [(-2.4, -1.4), (2.4, -1.4), (-2.4, 1.6), (2.4, 1.6)] {
             let spot = centre + Vec2::new(dx, dy) * TILE_SIZE;
@@ -838,6 +1023,8 @@ impl CinematicScene {
     fn cut_to_crypt(&mut self, assets: &Assets) {
         self.world.clear();
         self.crawlers.clear();
+        self.acolytes.clear();
+        self.hunters.clear();
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();
@@ -909,6 +1096,8 @@ impl Scene for CinematicScene {
         self.fade = None;
         self.dusk = None;
         self.crawlers.clear();
+        self.acolytes.clear();
+        self.hunters.clear();
         self.opening.clear();
         self.motes.clear();
         self.debris.clear();

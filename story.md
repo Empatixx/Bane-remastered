@@ -264,3 +264,54 @@ Doporučené pořadí: řádky S nejdřív (texty jsou levné a dají celou atmo
 - Bossové: Spider king, King slime, Stone golem, Argus, Hellhound, Sewer ogre.
 - Existující texty: Vědec (`GREETINGS`, `HINTS`, `PURCHASE`), shop („Enjoy your
   purchase!“), missions (názvy + popisy), death screen („Game Over“ / „Victory!“).
+
+---
+
+## 9. Úvod: chrám, rána a řád Pečeti
+
+Úvodní cinematic (`scenes/cinematic.rs`) a výcviková krypta vyprávějí, co se stalo předtím, než
+hráč poprvé vkročí do laboratoře.
+
+### Řád Pečeti
+Chrám na kopci patřil **řádu Pečeti** (*Order of the Seal*). Řád věděl, že pod kopcem něco spí,
+a staletí to držel modlitbou a ohněm. V kryptě pod chrámem uložil **posledního strážce**: tělo
+v kamenném sarkofágu, které se má probudit, až pečeť povolí. Kdo strážce je, řád nevěděl. Jen
+že „přišel zdola a čeká“.
+
+Akolyté nosí bílá roucha, modré kalhoty a zlatou šerpu (hrdinův sprite v barvách chrámu,
+`tools/make_acolyte.py`).
+
+### Akolyté (v cinematicu)
+| Jméno | Úloha v řádu | Osud |
+|---|---|---|
+| **Bratr Aldric** | Nejstarší, strážce oltářního ohně. Klečí nejblíž oltáři. | Utíká poslední, chytí ho velký pavouk. |
+| **Oswin** | Zvoník, nejmladší z řádu. | Chytí ho krysa u dolní zdi. |
+| **Teodor** | Písař, vedl kroniku krypty. Jeho kronika se později najde v dungeonu (nápad: sběratelné stránky). | Chytí ho pavouček u horní zdi. |
+| **Cassian** | Strážce brány. | Chytí ho pavouček, když se snaží dostat ke dveřím. |
+| **Elian** | Novic a nosič lampy. Měl na starost svíce v kryptě, proto jako jediný zná cestu dolů. | **Přežije.** Uteče do krypty a probudí strážce. |
+
+### Elian, průvodce
+- Je to on, kdo v cinematicu doběhne do krypty, odsune víko a probudí hráče („Rise. Close the
+  wound.“).
+- Ve výcvikové kryptě hráče provází (dosavadní průvodce v kápi se nahrazuje Elianem). Mluví
+  rychle a nervózně, je mladý a vyděšený, ale věří, že hráč je ten slíbený strážce.
+- Výcvik končí portálem: Elian hráče posílá nahoru do jediného bezpečného místa, které zbylo,
+  do laboratoře, kterou si mezitím z trosek chrámu postavil **Vědec**.
+- Repliky (anglicky, ve hře):
+  ```
+  "You're awake! It's me, Elian. I'm... all that's left of the order."
+  "They said you'd come back when the seal broke. It broke."
+  "I'll show you what Brother Aldric showed me. Follow me."
+  (zkouška) "That's how they took Oswin. Don't let them take you."
+  (portál) "Go up. The Scientist says he can close it. I hope he's right."
+  ```
+
+### Napojení na zbytek příběhu
+- Elian věří, že hráč je strážce řádu. Vědec mu říká **Subjekt 41**. Pravda z pravého konce
+  („You were never brought here. You were brought UP.“) platí dál: tělo v sarkofágu nebylo
+  strážcem řádu, ale čtyřicátou první věcí, kterou rána vrátila nahoru. Řád ho jen uložil
+  a čekal.
+- Teodorova kronika (nápad) je přirozený nosič téhle pravdy: stránky v dungeonu postupně
+  odhalí, odkud se strážce v kryptě vzal.
+- Elian může později stát v laboratoři u vstupu do výcviku (kniha „Training“), jako postava,
+  se kterou se dá mluvit.

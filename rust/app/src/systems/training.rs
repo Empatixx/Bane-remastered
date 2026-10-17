@@ -38,14 +38,14 @@ const RESPAWN_GRACE: f32 = 1.0;
 /// The trial's foes come in a moment after its gate shuts.
 const TRIAL_DELAY: f32 = 1.0;
 const DONE_SECONDS: f32 = 1.5;
-/// The training opens in the dark: the crypt fades in while the guide walks up with his lantern,
+/// The training opens in the dark: the crypt fades in while Elian walks up, a light about him,
 /// and he speaks once he is there.
 const INTRO_FADE: f32 = 2.4;
 const INTRO_WALK: f32 = 2.6;
 /// How far below his place the guide sets out from, in tiles.
 const INTRO_FROM: f32 = 5.5;
-/// The light of the guide's lantern, held out in his right hand.
-const LANTERN_AT: Vec2 = Vec2::new(15.0, 4.0);
+/// The warm light about Elian, so he shows in the dark crypt.
+const LANTERN_AT: Vec2 = Vec2::new(0.0, -10.0);
 /// Guns and artefacts lie up on the stand's top, not in its middle.
 const STAND_LIFT: f32 = 26.0;
 
@@ -65,7 +65,7 @@ const SPEECH_RISE: f32 = 26.0;
 
 fn lines(lesson: Lesson) -> &'static [&'static str] {
     match lesson {
-        Lesson::Move => &["You're awake! Good.", "WASD moves you. Follow the passage."],
+        Lesson::Move => &["You're awake! It's me, Elian.", "I'm... all that's left of the order.", "They said you'd come back when the seal broke.", "WASD moves you. Follow me down the passage."],
         Lesson::Shoot => &["Aim with the mouse, click to shoot.", "Break all three pots!", "Your ammo is bottom right. R reloads."],
         Lesson::Loot => &["Shoot the barrel, see what falls out.", "Coins and ammo: just walk over them.", "Take the shotgun from the stand with E.", "Then switch between your guns with 1 and 2."],
         Lesson::Dodge => &["Spikes! Too many to walk over.", "Press Space to roll across them.", "While you roll, nothing can hurt you."],
@@ -73,8 +73,8 @@ fn lines(lesson: Lesson) -> &'static [&'static str] {
         Lesson::Traps => &["Arrow traps shoot when you come close.", "Water slows you, lava burns, ice slides.", "Spikes come and go. Time your steps!"],
         Lesson::Cover => &["Walk into a table to knock it over.", "A fallen table stops enemy shots.", "Fight from behind it!"],
         Lesson::Artefact => &["See that ring? It's an artefact. Take it with E.", "Press F to use it: a ring of bullets!", "One use per artefact, so pick your moment."],
-        Lesson::Trial => &["Now a real fight.", "Show me what you've learnt!"],
-        Lesson::Exit => &["Well done! You're ready.", "Step up to the portal and press E. Welcome home!"],
+        Lesson::Trial => &["That's how they took Oswin.", "Don't let them take you!"],
+        Lesson::Exit => &["You're ready. Brother Aldric would be proud.", "Go up. The Scientist says he can close it.", "Step up to the portal and press E."],
     }
 }
 

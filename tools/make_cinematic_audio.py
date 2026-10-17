@@ -165,6 +165,10 @@ def effects(mix):
     for offset, name, volume in ((0.6, "enemies/spider_hatch.ogg", 0.5), (2.3, "enemies/spider_hatch.ogg", 0.4),
                                  (4.4, "enemies/spider_hatch.ogg", 0.35)):
         mix.file(AUDIO / name, CRAWL + offset, volume)
+    # The acolytes caught as the creatures pour out (the times the scene logs: "an acolyte is
+    # caught", seconds into the crawl).
+    for caught in (1.67, 1.85, 4.75, 6.02):
+        made("cry", CRAWL + caught - 0.1, 0.8)
     made("lid", LID_SHAKES - 0.2, 1.0)
     mix.file(AUDIO / "enemies/golem_slam.ogg", LID_LANDS, 0.7)
     made("awaken", RISES - 0.5, 0.9)

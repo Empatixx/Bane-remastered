@@ -18,7 +18,7 @@ pub(crate) enum Prop {
     Bookshelf,
     MapTable,
     Scientist,
-    /// The hooded keeper with a lantern who talks the player through the training crypt.
+    /// Elian, the novice who woke the hero, talking the player through the training crypt.
     Guide,
     /// A priestess of the temple that raised the hero: idle (row 0) and praying with raised,
     Banner,
@@ -453,15 +453,17 @@ impl Prop {
             Self::WebPatch => still(tex::WEB_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::ArrowTrap => still(tex::ARROW_TRAP, Vec2::new(16.0, 16.0), 4.0),
             Self::Ladder => still(tex::LADDER, Vec2::new(32.0, 32.0), 3.0),
+            // Elian, the novice of the Order of the Seal: the acolytes' sheet, the hero's own
+            // drawn in the temple's colours, his front-facing frames.
             Self::Guide => PropSpec {
-                texture: tex::GUIDE,
+                texture: tex::ACOLYTE,
                 columns: 6,
-                rows: 1,
-                frame: Vec2::new(16.0, 40.0),
-                scale: 2.5,
+                rows: 4,
+                frame: Vec2::new(16.0, 38.0),
+                scale: 2.0,
                 animation: Some(Animated {
                     frames: 6,
-                    frame_time: 0.18,
+                    frame_time: 0.16,
                 }),
             },
             Self::Scientist => PropSpec {
