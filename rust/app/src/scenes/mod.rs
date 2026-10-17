@@ -1,3 +1,4 @@
+mod cinematic;
 mod ingame;
 mod loading;
 mod lobby;
@@ -40,6 +41,8 @@ pub(crate) enum SceneId {
     InGame,
     /// The training crypt: the in-game scene running the lessons instead of a run.
     Training,
+    /// The opening cinematic, before the training.
+    Intro,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,6 +50,8 @@ pub(crate) enum Cursor {
     Default,
     Crosshair,
     Reload,
+    /// No pointer at all, as in the cinematic.
+    Hidden,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

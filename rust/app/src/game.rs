@@ -137,7 +137,9 @@ impl Game {
             controls::key_label(self.input.bindings().key(Action::Interact)),
         );
         if self.assets.is_loaded() {
-            layers.overlay.push(self.cursor_draw());
+            if let Some(cursor) = self.cursor_draw() {
+                layers.overlay.push(cursor);
+            }
         }
         Frame {
             layers,
@@ -148,9 +150,10 @@ impl Game {
         }
     }
 
-    fn cursor_draw(&self) -> Draw {
+    fn cursor_draw(&self) -> Option<Draw> {
         let textures = &self.assets.textures;
         let (name, hotspot, uv) = match self.scenes.cursor() {
+            Cursor::Hidden => return None,
             Cursor::Default => (tex::CURSOR, ARROW_HOTSPOT, Sprite::cell_uv(0, 0, 1, 1)),
             Cursor::Crosshair => (tex::CROSSHAIR, AIM_HOTSPOT, Sprite::cell_uv(0, 0, 1, 1)),
             Cursor::Reload => {
@@ -163,7 +166,7 @@ impl Game {
             }
         };
         let top_left = self.input.mouse() - hotspot;
-        Draw {
+        Some(Draw {
             texture: textures.get(name),
             quad: Quad::with_uv(
                 top_left + CURSOR_SIZE / 2.0,
@@ -171,6 +174,6 @@ impl Game {
                 glam::Vec4::ONE,
                 uv,
             ),
-        }
+        })
     }
 }

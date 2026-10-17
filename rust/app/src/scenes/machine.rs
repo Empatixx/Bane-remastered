@@ -9,6 +9,7 @@ use crate::render::{Fonts, Layers, LightSource, Occluders};
 use crate::settings::Settings;
 use crate::systems;
 
+use super::cinematic::CinematicScene;
 use super::ingame::InGameScene;
 use super::loading::LoadingScene;
 use super::lobby::LobbyScene;
@@ -23,6 +24,7 @@ pub(crate) struct Scenes {
     menu: MenuScene,
     lobby: LobbyScene,
     ingame: InGameScene,
+    intro: CinematicScene,
 }
 
 impl fmt::Debug for Scenes {
@@ -43,6 +45,7 @@ impl Scenes {
             menu: MenuScene::default(),
             lobby: LobbyScene::default(),
             ingame: InGameScene::default(),
+            intro: CinematicScene::default(),
         };
         scenes.lobby.attach_profile(profile.clone());
         scenes.ingame.attach_profile(profile);
@@ -157,6 +160,7 @@ impl Scenes {
             SceneId::Menu => &self.menu,
             SceneId::Lobby => &self.lobby,
             SceneId::InGame | SceneId::Training => &self.ingame,
+            SceneId::Intro => &self.intro,
         }
     }
 
@@ -166,6 +170,7 @@ impl Scenes {
             SceneId::Menu => &mut self.menu,
             SceneId::Lobby => &mut self.lobby,
             SceneId::InGame | SceneId::Training => &mut self.ingame,
+            SceneId::Intro => &mut self.intro,
         }
     }
 }
