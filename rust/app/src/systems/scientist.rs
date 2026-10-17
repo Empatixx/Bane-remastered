@@ -2,7 +2,7 @@ use hecs::World;
 
 use glam::Vec2;
 
-use crate::components::{Chatty, Player, Position, Size, SpeechBubble, SpeechPart, Wallet};
+use crate::components::{Chatty, Player, Position, Size, Speaker, SpeechBubble, SpeechPart, SpeechText, Wallet};
 use crate::enemies::EnemyKind;
 use crate::progress::{ChallengeId, Remark};
 use crate::render::{FontSize, Fonts};
@@ -45,6 +45,27 @@ const WOLF: &str = "It followed you. I did not plan that.";
 const SHOWN: &str = "...What did it show you?";
 const REST: &str = "Rest. Tomorrow we go down together.";
 const BEGUN: &str = "Our work has only begun.";
+
+/// Elian, the last of the order, keeps the training book in the laboratory. He believes the
+/// hero is the guardian the order kept; the Scientist calls him subject 41. Before the first run.
+const ELIAN_FIRST: [&str; 2] = [
+    "This laboratory is built from our temple's stones.",
+    "He calls you a subject. You are the guardian.",
+];
+const ELIAN_GREETINGS: [&str; 2] = ["Guardian! You're back.", "The light is with you still."];
+const ELIAN_HINTS: [&str; 5] = [
+    "The book has the lessons, if you need them again.",
+    "The wound is under our feet. It must be closed.",
+    "Brother Aldric said the seal could be mended.",
+    "Teodor wrote everything down. His books went below.",
+    "The Scientist asks how deep. Never how to close it.",
+];
+/// Lines that join Elian's once the profile has earned them.
+const ELIAN_EARNED_DEATH: &str = "You came back again. Guardians do, I suppose.";
+const ELIAN_EARNED_DEEP: &str = "You smell of the deep. Like the night it opened.";
+const ELIAN_EARNED_ARGUS: &str = "That eye... I saw it in his drawings.";
+const ELIAN_EARNED_WOLF: &str = "The wolf came up from the wound. It chose you.";
+const ELIAN_EARNED_WIN: &str = "He was glad you reached the bottom. Too glad.";
 
 /// What the Scientist says once, on the lobby visit after it happened.
 pub(crate) fn remark_line(remark: Remark) -> &'static str {
@@ -107,6 +128,8 @@ pub(crate) struct Repertoire {
     pub(crate) remarks: Vec<Remark>,
     pub(crate) greetings: &'static [&'static str],
     pub(crate) hints: Vec<&'static str>,
+    /// Whether the talker remarks on the player's purse (the Scientist sells; Elian does not).
+    pub(crate) purse: bool,
 }
 
 impl Default for Repertoire {
@@ -115,6 +138,7 @@ impl Default for Repertoire {
             remarks: Vec::new(),
             greetings: &GREETINGS,
             hints: HINTS.to_vec(),
+            purse: true,
         }
     }
 }
@@ -143,7 +167,23 @@ impl Repertoire {
             remarks: profile.remarks.clone(),
             greetings,
             hints,
+            purse: true,
         }
+    }
+
+    /// Elian's lines: the order's lore, and what he makes of the hero's runs.
+    pub(crate) fn elian(profile: &Standing) -> Self {
+        let greetings: &'static [&'static str] = if profile.runs == 0 { &ELIAN_FIRST } else { &ELIAN_GREETINGS };
+        let earned = [
+            (profile.deaths > 0, ELIAN_EARNED_DEATH),
+            (profile.best_floor >= 3, ELIAN_EARNED_DEEP),
+            (profile.bosses_slain.contains(&EnemyKind::Argus), ELIAN_EARNED_ARGUS),
+            (profile.has_pet, ELIAN_EARNED_WOLF),
+            (profile.wins > 0, ELIAN_EARNED_WIN),
+        ];
+        let mut hints = ELIAN_HINTS.to_vec();
+        hints.extend(earned.iter().filter(|(has, _)| *has).map(|(_, line)| *line));
+        Self { remarks: Vec::new(), greetings, hints, purse: false }
     }
 }
 
@@ -166,8 +206,8 @@ fn pick(
         return (greetings[line % greetings.len().max(1)], None);
     }
     let said = match line % 3 {
-        1 if coins <= 0 => BROKE,
-        2 if coins >= RICH_COINS => RICH,
+        1 if repertoire.purse && coins <= 0 => BROKE,
+        2 if repertoire.purse && coins >= RICH_COINS => RICH,
         _ => repertoire
             .hints
             .get(line % repertoire.hints.len().max(1))
@@ -191,8 +231,9 @@ pub(crate) fn chat(world: &mut World, dt: f32) -> Option<Remark> {
         .any(|bubble| bubble.remaining > 0.0);
     let mut line = None;
     let mut remark = None;
-    for (position, chatty, repertoire) in
-        world.query_mut::<(&Position, &mut Chatty, Option<&mut Repertoire>)>()
+    let mut anchor = None;
+    for (position, chatty, repertoire, speaker) in
+        world.query_mut::<(&Position, &mut Chatty, Option<&mut Repertoire>, Option<&Speaker>)>()
     {
         chatty.cooldown = (chatty.cooldown - dt).max(0.0);
         let distance = position.0.distance(player);
@@ -207,9 +248,20 @@ pub(crate) fn chat(world: &mut World, dt: f32) -> Option<Remark> {
             };
             line = Some(said);
             remark = made;
+            anchor = speaker.map(|speaker| speaker.anchor);
+            // One talker at a time: the others wait for the bubble to clear.
+            break;
         }
     }
     if let Some(line) = line {
+        if let Some(anchor) = anchor {
+            for position in world.query_mut::<&mut Position>().with::<&SpeechBubble>() {
+                position.0 = anchor;
+            }
+            for position in world.query_mut::<&mut Position>().with::<&SpeechText>() {
+                position.0 = anchor;
+            }
+        }
         say(world, line);
     }
     remark
@@ -277,6 +329,32 @@ mod tests {
             .next()
             .map(|bubble| (bubble.remaining, bubble.message))
             .unwrap_or((0.0, ""))
+    }
+
+    #[test]
+    fn elian_speaks_over_his_own_head_calls_the_hero_the_guardian_and_never_talks_money() {
+        let mut world = World::new();
+        world.spawn((Player, Position(Vec2::new(100.0, 0.0)), Wallet { coins: 0 }));
+        let over_him = Vec2::new(0.0, -60.0);
+        world.spawn((
+            Position(Vec2::ZERO),
+            Chatty::default(),
+            Repertoire::elian(&Standing::default()),
+            Speaker { anchor: over_him },
+        ));
+        world.spawn((SpeechBubble { remaining: 0.0, message: "" }, Position(Vec2::new(900.0, 0.0))));
+        let mut said = Vec::new();
+        for _ in 0..8 {
+            for bubble in world.query_mut::<&mut SpeechBubble>() {
+                bubble.remaining = 0.0;
+            }
+            chat(&mut world, PAUSE_SECONDS);
+            said.push(spoken(&world).1);
+        }
+        assert_eq!(said[0], ELIAN_FIRST[0]);
+        assert!(said.iter().all(|line| *line != BROKE && *line != RICH), "{said:?}");
+        let at = world.query::<&Position>().with::<&SpeechBubble>().iter().next().map(|p| p.0);
+        assert_eq!(at, Some(over_him));
     }
 
     #[test]

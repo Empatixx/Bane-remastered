@@ -48,6 +48,8 @@ const WEAPON_TABLE_AT: (f32, f32) = (30.5, 0.5);
 /// Where the range keeps its ammo, by the door.
 const AMMO_CRATE_AT: (f32, f32) = (30.3, 7.0);
 
+/// Where Elian stands, by the training book, in tiles.
+const ELIAN_AT: (f32, f32) = (6.6, 2.6);
 const PROPS: &[(Prop, f32, f32, Look)] = &[
     // The hall.
     (Prop::WeaponRack, 9.25, 0.5, Look::DEFAULT),
@@ -337,6 +339,20 @@ impl Scene for LobbyScene {
         }
         let head = scientist_at + Vec2::new(Prop::Scientist.spec().size().x / 2.0, 0.0);
         prefabs::minimal_speech(&mut self.world, head);
+        let _ = self.world.insert_one(scientist, crate::components::Speaker { anchor: prefabs::speech_anchor(head) });
+        // Elian, the last of the order, keeps the training book.
+        let elian_at = Vec2::new(ELIAN_AT.0, ELIAN_AT.1) * TILE_SIZE;
+        let elian = prefabs::prop(&mut self.world, Prop::Guide, elian_at, Look::DEFAULT, textures);
+        let elian_head = elian_at + Vec2::new(Prop::Guide.spec().size().x / 2.0, 0.0);
+        let standing = self.profile.as_ref().map(|profile| profile.snapshot().standing()).unwrap_or_default();
+        let _ = self.world.insert(
+            elian,
+            (
+                crate::components::Chatty::default(),
+                systems::Repertoire::elian(&standing),
+                crate::components::Speaker { anchor: prefabs::speech_anchor(elian_head) },
+            ),
+        );
 
         let player_top_left = hall_middle;
         prefabs::player(

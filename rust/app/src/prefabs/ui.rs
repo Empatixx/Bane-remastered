@@ -54,8 +54,13 @@ const MINIMAL_EDGE: Vec4 = Vec4::new(0.78, 0.36, 0.07, 0.9);
 const MINIMAL_TEXT: Vec4 = Vec4::new(0.95, 0.9, 0.8, 1.0);
 const MINIMAL_RISE: f32 = 26.0;
 
+/// Where the minimal speech bubble sits over a talker's head.
+pub(crate) fn speech_anchor(head: Vec2) -> Vec2 {
+    head - Vec2::new(0.0, MINIMAL_RISE)
+}
+
 pub(crate) fn minimal_speech(world: &mut World, head: Vec2) {
-    let anchor = head - Vec2::new(0.0, MINIMAL_RISE);
+    let anchor = speech_anchor(head);
     world.spawn((
         SpeechBubble {
             remaining: 0.0,

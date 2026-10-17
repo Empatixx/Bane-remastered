@@ -64,6 +64,12 @@ pub(crate) enum SpeechPart {
     Tail,
 }
 
+/// Where a talker's words show: the speech bubble moves over this point when it speaks.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Speaker {
+    pub(crate) anchor: glam::Vec2,
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct Chatty {
     pub(crate) cooldown: f32,
