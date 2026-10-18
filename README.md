@@ -1,20 +1,27 @@
 <div align="center">
 
-# BANE
+<img src="media/banner.png" alt="Bane Remastered - top-down roguelike shooter, rebuilt in Rust" width="100%">
 
-### Five floors down. Every floor remembers you.
+**A fast, hand-drawn top-down roguelike shooter. Five floors down. Every floor remembers you.**
 
-A fast, hand-drawn top-down roguelike shooter. Dodge, shoot, die, get stronger, go deeper.
+[![Rust](https://img.shields.io/badge/Rust-2021-DEA584?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![wgpu](https://img.shields.io/badge/graphics-wgpu-5586A4)](https://wgpu.rs/)
+[![ECS](https://img.shields.io/badge/ECS-hecs-1B1B1B)](https://github.com/Ralith/hecs)
+[![Tested on](https://img.shields.io/badge/tested%20on-macOS-000000?logo=apple&logoColor=white)](#play-it)
+[![Wiki](https://img.shields.io/badge/wiki-online-E27226)](https://empatixx.github.io/Bane-remastered/docs)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-black)](LICENSE)
 
 ![Bane trailer](media/trailer.gif)
 
-[Watch the trailer in full quality](media/trailer.mp4)
-
-English | [Cesky](README.cs.md)
+[Watch the trailer in full quality](media/trailer.mp4) | English | [Cesky](README.cs.md)
 
 </div>
 
 ---
+
+> **Bane Remastered is the new version of [Bane](https://github.com/Empatixx/Bane).**
+> The first Bane was written in Java. It is archived now. This is the same game, built again from
+> zero in Rust, with much more content.
 
 ## The Bane is open. Go in.
 
@@ -26,7 +33,7 @@ You start with a pistol, a shotgun and a dodge roll. Everything else you have to
 
 ## Why one more run
 
-**16 guns.** Pistol, Uzi, Sniper, Flamethrower, Tesla Gun, RPG, Railgun and more. Every gun has
+**17 guns.** Pistol, Uzi, Sniper, Flamethrower, Tesla Gun, RPG, Railgun and more. Every gun has
 its own upgrade tree and a mutation at the end of it.
 
 **7 bosses with a name and a story.** A hellhound that waits at the bottom, a scribe who wrote
@@ -61,6 +68,24 @@ dodge roll that feels right, screen shake and hit flashes.
 |:-:|:-:|:-:|
 | ![Boss](media/room-boss.png)<br>**Every floor ends with a boss** | ![Shop](media/room-shop.png)<br>**Spend your coins** | ![Treasure](media/room-treasure.png)<br>**Treasure for the brave** |
 
+## From the first Bane to Remastered
+
+| | [Bane](https://github.com/Empatixx/Bane) (Java, archived) | Bane Remastered (Rust) |
+|---|---|---|
+| Guns | 9 | 17 |
+| Enemies | 10 and 1 boss | 31 kinds, 7 of them bosses |
+| Artefacts | 9 | 13, made again |
+| Floors | A dungeon with no fixed end | 5 floors, a final boss and a win |
+| Look of a floor | One look | 7 biomes |
+| Between runs | A progress room and upgrades | A lab, talents, a weapon table, missions and challenges |
+| Story | None | A story told through the bosses |
+| Dodge roll | No | Yes |
+| Platform | Windows | Built and tested on macOS |
+| Wiki | None | Online |
+
+Some things from the first Bane are not here yet: floor affixes, co-op multiplayer and Discord
+Rich Presence. The Modern shotgun and the Grenade launcher are not here either.
+
 ## Controls
 
 | | |
@@ -70,6 +95,8 @@ dodge roll that feels right, screen shake and hit flashes.
 | **Switch gun** `1`-`9` or mouse wheel | **Interact** `E` |
 | **Use artefact** `F` | **Map** `Tab` |
 
+All keys can be changed in the settings.
+
 ## Play it
 
 ```bash
@@ -78,13 +105,12 @@ cd Bane-remastered/rust
 cargo run --release
 ```
 
-You need the [Rust toolchain](https://rustup.rs).
+You need the [Rust toolchain](https://rustup.rs). We tested the game on macOS only.
 
 ## Wiki
 
-The game wiki is online: **https://empatixx.github.io/Bane-remastered/docs** (in Czech). Its source is in [`docs/`](docs/). It describes every gun, enemy, artefact and biome.
-Its pages are plain Markdown files in [`docs/content/`](docs/content/), so you can read them right
-on GitHub.
+The game wiki is online: **https://empatixx.github.io/Bane-remastered/docs** (in Czech). Its source
+is in [`docs/`](docs/). It describes every gun, enemy, artefact and biome.
 
 ## License
 
@@ -96,8 +122,7 @@ Bane is free software under the [GNU GPL v3](LICENSE).
 <summary>For developers</summary>
 
 Bane is written in Rust: `wgpu` and `winit` for graphics, `hecs` for the ECS, `rapier2d` for
-physics, `kira` for audio. The simulation runs at a fixed 60 Hz. The game started as a Java game
-and was ported to Rust. The Java version is still in the git history.
+physics, `kira` for audio. The simulation runs at a fixed 60 Hz.
 
 - [`rust/`](rust/): the game. Headless screenshots, debug switches (`BANE_THEME`, `BANE_AT`,
   `BANE_SEED`) and ECS notes are in [`rust/README.md`](rust/README.md) and [`rust/docs/`](rust/docs/).
