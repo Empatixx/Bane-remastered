@@ -1,4 +1,5 @@
 mod build;
+pub(crate) mod debug_spawn;
 mod decor;
 mod furnish;
 mod furniture;

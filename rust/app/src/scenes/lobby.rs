@@ -12,8 +12,8 @@ use crate::components::{
     Blend, Hidden, Interaction, Loadout, Player, UiAction, Weapon, WeaponSlot,
 };
 use crate::controls::Action;
-use crate::guns::GunKind;
 use crate::dungeon::Surfaces;
+use crate::guns::GunKind;
 use crate::input::Input;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
