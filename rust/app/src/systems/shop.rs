@@ -258,7 +258,6 @@ pub(crate) fn buy(world: &mut World, textures: &Textures, sounds: &mut Vec<Audio
     match shop.currency {
         Currency::Coins => {
             sounds.push(AudioCommand::Effect(SoundEffect::Buy));
-            say(world, "Enjoy your purchase!");
         }
         Currency::Health => {
             sounds.push(AudioCommand::Effect(SoundEffect::Sacrifice));
@@ -335,37 +334,6 @@ pub(crate) fn fit_price_boxes(world: &mut World, fonts: &crate::render::Fonts) {
         }
     }
 }
-
-/// The merchant, subject twelve: the miller of Velmor, who went down through the Scientist's
-/// portal before Elian and chose not to come back up. His first lines come in order, one per
-/// visit; after that he picks among them.
-pub(crate) const MERCHANT: [&str; 8] = [
-    "New one? Coins on the table. No credit.",
-    "He calls you subject? He called me twelve.",
-    "I was the miller in Velmor. I heard the prayers stop that night.",
-    "Down here it talks to you. Don't answer.",
-    "The slimes. They were my neighbours. Don't eat them.",
-    "It offered me my wife back. I almost said yes.",
-    "Whoever was on watch that night... I hope he sleeps well.",
-    "Enjoy your purchase. Enjoy anything.",
-];
-
-/// What the merchant says on the `visit`th visit (from 1); `roll` picks once the cycle is done.
-pub(crate) fn merchant_line(visit: u64, roll: usize) -> &'static str {
-    let index = visit.saturating_sub(1) as usize;
-    MERCHANT.get(index).copied().unwrap_or(MERCHANT[roll % MERCHANT.len()])
-}
-
-/// The altar: the wound's own voice, in capitals and without stops. It knows who was on watch.
-pub(crate) const ALTAR: [&str; 6] = [
-    "YOU WANTED SILENCE",
-    "SLEEP  SLEEP  SLEEP",
-    "I CAN GIVE THEM BACK",
-    "WHO WAS ON WATCH",
-    "DEEPER  THEY ARE WAITING",
-    "YOU ONLY HAD TO STAY AWAKE",
-];
-pub(crate) const ALTAR_SECONDS: f32 = 4.0;
 
 /// Says `message` over `anchor`, moving the bubble there first: one bubble serves every talker.
 pub(crate) fn say_at(world: &mut World, anchor: Vec2, message: &'static str, seconds: f32) {
@@ -680,22 +648,14 @@ mod tests {
     }
 
     #[test]
-    fn the_merchant_tells_his_story_one_visit_at_a_time_then_picks_among_it() {
-        assert_eq!(merchant_line(1, 5), MERCHANT[0]);
-        assert_eq!(merchant_line(2, 5), MERCHANT[1]);
-        assert_eq!(merchant_line(8, 0), MERCHANT[7]);
-        assert_eq!(merchant_line(9, 3), MERCHANT[3]);
-    }
-
-    #[test]
     fn saying_over_a_talker_moves_the_bubble_to_him() {
         let mut world = World::new();
         world.spawn((SpeechBubble { remaining: 0.0, message: "" }, Position(Vec2::ZERO)));
         world.spawn((SpeechText, Position(Vec2::ZERO)));
         let over = Vec2::new(300.0, 120.0);
-        say_at(&mut world, over, ALTAR[0], ALTAR_SECONDS);
+        say_at(&mut world, over, "Deeper.", 4.0);
         let bubble = world.query::<(&SpeechBubble, &Position)>().iter().map(|(b, p)| (b.message, b.remaining, p.0)).next();
-        assert_eq!(bubble, Some((ALTAR[0], ALTAR_SECONDS, over)));
+        assert_eq!(bubble, Some(("Deeper.", 4.0, over)));
         let text = world.query::<&Position>().with::<&SpeechText>().iter().map(|p| p.0).next();
         assert_eq!(text, Some(over));
     }

@@ -41,9 +41,6 @@ pub(crate) enum RoomEvent {
     BossEntered { kind: EnemyKind },
     WaveStarted { number: usize, total: usize },
     AmbushCleared { center: Vec2 },
-    ShopEntered,
-    /// Walked into a sacrifice room (its index in the dungeon): the altar speaks.
-    SacrificeEntered { room: usize },
     RoomCleared,
     BossDefeated { center: Vec2 },
 }
@@ -237,11 +234,7 @@ fn enter(
         || (matches!(data.kind, RoomKind::Normal | RoomKind::Ambush) && !data.spawns.is_empty());
     if !fights {
         runtime.states[room] = RoomState::Cleared;
-        return match data.kind {
-            RoomKind::Shop => Some(RoomEvent::ShopEntered),
-            RoomKind::Sacrifice => Some(RoomEvent::SacrificeEntered { room }),
-            _ => None,
-        };
+        return None;
     }
     let mut boss_kind = None;
     if boss {

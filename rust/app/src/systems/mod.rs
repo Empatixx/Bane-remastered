@@ -151,7 +151,7 @@ pub(crate) use shooting::{
 };
 pub(crate) use captions::{last_words, name_boss, tick_captions};
 pub(crate) use souls::{WHISPER_SECONDS, open_tear, raise_ghost, tick_souls};
-pub(crate) use shop::{ALTAR, ALTAR_SECONDS, SPEECH_SECONDS, buy, fit_price_boxes, merchant_line, say, say_at, say_for, stock_rooms, tick_speech, update_price_tags};
+pub(crate) use shop::{buy, fit_price_boxes, say, say_at, say_for, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use training::{Training, TrainingEvent};
 pub(crate) use simulation::simulate;
 pub(crate) use skills::{

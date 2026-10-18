@@ -47,8 +47,6 @@ pub(crate) struct Profile {
     /// The training crypt is behind the player (finished or skipped), so the game goes
     /// straight to the lobby.
     pub(crate) training_done: bool,
-    /// Shops walked into, over all runs: the merchant opens up the more often he is visited.
-    pub(crate) shop_visits: u64,
     /// The choice at the true ending, once made.
     pub(crate) ending: Option<Ending>,
 }
@@ -338,14 +336,6 @@ impl SharedProfile {
     /// Forgets a one-time remark once the Scientist has said it.
     pub(crate) fn heard(&self, remark: Remark) {
         self.change(|profile| profile.remarks.retain(|waiting| *waiting != remark));
-    }
-
-    /// One more visit to the merchant; returns how many there have been.
-    pub(crate) fn visit_shop(&self) -> u64 {
-        self.change(|profile| {
-            profile.shop_visits += 1;
-            profile.shop_visits
-        })
     }
 
     pub(crate) fn ending(&self) -> Option<Ending> {
