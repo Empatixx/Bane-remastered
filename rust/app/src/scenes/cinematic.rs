@@ -413,7 +413,6 @@ impl CinematicScene {
         systems::spawn_hanging(&mut self.world, &dungeon, textures);
         systems::spawn_furniture(&mut self.world, &mut physics, &dungeon, textures);
         systems::spawn_waterworks(&mut self.world, &mut physics, &dungeon, textures);
-        systems::spawn_atmosphere(&mut self.world, &dungeon, 0x7e3);
         let at = |column: f32, row: f32| (Vec2::new(inside.0 as f32 + column, inside.1 as f32 + row)) * TILE_SIZE;
         // The altar in the apse: an angel between two candlesticks, two fire bowls before it.
         let altar = at(columns as f32 - apse.0 as f32 / 2.0, rows as f32 / 2.0);
@@ -1058,7 +1057,6 @@ impl CinematicScene {
             prefabs::decor(&mut self.world, &mut physics, *decor, textures);
         }
         systems::spawn_furniture(&mut self.world, &mut physics, &dungeon, textures);
-        systems::spawn_atmosphere(&mut self.world, &dungeon, 0x41);
         let at = |column: f32, row: f32| Vec2::new(inside.0 as f32 + column, inside.1 as f32 + row) * TILE_SIZE;
         // Chains down the wall either side of the banner.
         for column in [middle as f32 - 4.0, middle as f32 + 4.0] {

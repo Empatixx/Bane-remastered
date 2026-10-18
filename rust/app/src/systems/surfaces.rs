@@ -402,15 +402,22 @@ pub(crate) struct Stirred {
     twinkles: bool,
 }
 
-/// The scatter for what the surfaces give off.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct StirSeed(u32);
+/// The scatter for what the surfaces give off. Not an entity: the scene keeps it with the
+/// floor's other resources, and a fresh floor starts it over.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct StirSeed(pub(crate) u32);
+
+impl Default for StirSeed {
+    fn default() -> Self {
+        Self(0x9E37_79B9)
+    }
+}
 
 /// The surfaces in view, alive on their own: embers off the lava, glints on the water, bubbles
 /// in the bog and the blood, glitter on the ice, grains blowing over the sand. `view` is the
 /// top left of the camera and `size` what it shows.
-pub(crate) fn stir_surfaces(world: &mut World, surfaces: &Surfaces, view: Vec2, size: Vec2, dt: f32) {
-    let mut seed = world.query::<&StirSeed>().iter().next().map_or(0x9E37_79B9, |seed| seed.0);
+pub(crate) fn stir_surfaces(world: &mut World, scatter: &mut StirSeed, surfaces: &Surfaces, view: Vec2, size: Vec2, dt: f32) {
+    let mut seed = scatter.0;
     let mut roll = || {
         seed ^= seed << 13;
         seed ^= seed >> 17;
@@ -462,10 +469,7 @@ pub(crate) fn stir_surfaces(world: &mut World, surfaces: &Surfaces, view: Vec2, 
     for entity in gone {
         let _ = world.despawn(entity);
     }
-    let kept = world.query_mut::<&mut StirSeed>().into_iter().next().map(|kept| kept.0 = seed).is_some();
-    if !kept {
-        world.spawn((StirSeed(seed),));
-    }
+    scatter.0 = seed;
 }
 
 #[cfg(test)]

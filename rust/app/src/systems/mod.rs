@@ -55,6 +55,7 @@ mod portal;
 mod prison;
 mod rooms;
 mod rules;
+mod run_state;
 mod scientist;
 mod settings_ui;
 mod shadow;
@@ -85,7 +86,7 @@ pub(crate) use artefacts::{
     activate_artefact, clear_artefact_effects, pick_up_artefact, tick_artefact_effects, tick_berserk, unused_artefact, update_artefact_hud,
     update_shield_aura,
 };
-pub(crate) use atmosphere::{AtmosphereTextures, spawn_atmosphere, tick_atmosphere};
+pub(crate) use atmosphere::{Atmosphere, AtmosphereTextures, tick_atmosphere};
 pub(crate) use overhead::{spawn_hanging, spawn_overheads, tick_drips, tick_hanging, tick_overheads};
 pub(crate) use blood::{
     apply_heal_percent, bloodlust_heals_on_kill, pulse_bloodlust, spawn_bloodlust_drops,
@@ -157,6 +158,7 @@ pub(crate) use player_animation::animate_player;
 pub(crate) use portal::{sign_portal, tint_portal};
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
 pub(crate) use rules::toughen_enemies;
+pub(crate) use run_state::{FloorAir, Resources};
 pub(crate) use scientist::{PURCHASE, Repertoire, Standing, chat, fit_speech, keep_speech_on_screen};
 pub(crate) use settings_ui::{update_settings_ui, update_side_buttons};
 pub(crate) use shadow::update_shadow;
@@ -176,7 +178,7 @@ pub(crate) use stats::{
     Summary, close_floor as close_stats_floor, current as current_stats, summarize,
 };
 pub(crate) use steering::{steer_player, steer_player_on};
-pub(crate) use surfaces::{burn_on_lava, kick_up_surfaces, ripple_on_water, stir_surfaces, sync_liquids};
+pub(crate) use surfaces::{StirSeed, burn_on_lava, kick_up_surfaces, ripple_on_water, stir_surfaces, sync_liquids};
 pub(crate) use time_slow::time_scale;
 pub(crate) use trails::{TrailTextures, shed_trails};
 pub(crate) use ui::{update_buttons, update_text_buttons};

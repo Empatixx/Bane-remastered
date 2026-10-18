@@ -22,7 +22,7 @@ use crate::prefabs;
 use crate::profile::SharedProfile;
 use crate::progress::{ChallengeId, RunOutcome, RunRecord};
 use crate::render::Occluders;
-use crate::rng::{Rng, Stream};
+use crate::rng::Rng;
 use crate::rules::RunRules;
 use crate::settings::Settings;
 use crate::systems;
@@ -44,37 +44,25 @@ pub(crate) struct InGameScene {
     pause: Pause,
     clock: f32,
     sounds: Vec<AudioCommand>,
-    /// The camera trauma the systems gathered since the camera last took it.
-    fx: systems::Fx,
+    /// The run's state, the floor's air and the frame's camera trauma: what the systems share
+    /// that is not an entity.
+    resources: systems::Resources,
     throttle: crate::audio::Throttle,
     hit: bool,
     dungeon: Option<Dungeon>,
     occluders: Option<Arc<Occluders>>,
     rooms: Option<systems::RoomRuntime>,
-    run_seed: u64,
-    map_rng: Rng,
-    loot_rng: Rng,
-    combat_rng: Rng,
     big_map: bool,
-    floor: u32,
     navigation: Navigation,
     surfaces: Surfaces,
     flow: FlowField,
-    victory: bool,
     leave_to_menu: bool,
     death: Option<systems::DeathScreen>,
     profile: Option<SharedProfile>,
-    rules: RunRules,
-    challenge: Option<ChallengeId>,
-    kills_without_drop: u32,
     drag_from: Option<Vec2>,
     /// Whether the next start is the training crypt rather than a run.
     training_mode: bool,
     training: Option<systems::Training>,
-    /// Who the boss of this floor was, while it is being fought.
-    boss: Option<crate::lore::Identity>,
-    /// `BANE_SLAY`: how long until the boss is felled, for working on the story.
-    slay_in: Option<f32>,
 }
 
 impl Scene for InGameScene {
@@ -178,7 +166,7 @@ impl Scene for InGameScene {
                 training.respawn(&mut self.world, &mut self.physics, &assets.textures);
             }
         }
-        if self.death.is_none() && (self.victory || systems::player_is_dead(&self.world)) {
+        if self.death.is_none() && (self.resources.run.victory || systems::player_is_dead(&self.world)) {
             self.start_death_screen(assets);
         }
         if let Some(screen) = &mut self.death {
@@ -187,8 +175,8 @@ impl Scene for InGameScene {
             systems::update_status_bars(&mut self.world, dt);
             if screen.finished() {
                 // The Bane challenge won for the first time: what lies under the last guardian.
-                let truth = self.victory
-                    && self.challenge == Some(ChallengeId::Bane)
+                let truth = self.resources.run.victory
+                    && self.resources.run.challenge == Some(ChallengeId::Bane)
                     && self.profile.as_ref().is_some_and(|profile| profile.ending().is_none());
                 return Transition::Switch(if self.leave_to_menu {
                     SceneId::Menu
@@ -266,7 +254,7 @@ impl Scene for InGameScene {
                     rounds: systems::RoundTextures::load(&assets.textures),
                     casing_texture: assets.textures.get(tex::CASING),
                     dt,
-                    roll: systems::ShotRoll::from(&mut self.combat_rng),
+                    roll: systems::ShotRoll::from(&mut self.resources.run.combat_rng),
                 },
                 &mut self.sounds,
             );
@@ -289,7 +277,7 @@ impl Scene for InGameScene {
         }
         let seed = crate::rng::cosmetic() * 1000.0;
         if systems::cast_lightning(&mut self.world, &assets.textures, seed) > 0 {
-            self.fx.shake(systems::LIGHTNING_SHAKE);
+            self.resources.fx.shake(systems::LIGHTNING_SHAKE);
         }
         // The lightning's hits flash and float their numbers in this frame, before those tick.
         systems::hit_phase(&mut self.world);
@@ -303,8 +291,8 @@ impl Scene for InGameScene {
         systems::open_chests(
             &mut self.world,
             &assets.textures,
-            self.loot_rng.float(),
-            |bound| self.loot_rng.below(bound),
+            self.resources.run.loot_rng.float(),
+            |bound| self.resources.run.loot_rng.below(bound),
             &mut self.sounds,
         );
         systems::tick_invulnerability(&mut self.world, dt);
@@ -337,12 +325,15 @@ impl Scene for InGameScene {
             self.clock,
         );
         systems::tick_dust(&mut self.world, self.clock, dt);
-        systems::tick_atmosphere(
-            &mut self.world,
-            systems::AtmosphereTextures::load(&assets.textures),
-            self.camera.position(),
-            dt,
-        );
+        if let Some(air) = &mut self.resources.air.atmosphere {
+            systems::tick_atmosphere(
+                &mut self.world,
+                air,
+                systems::AtmosphereTextures::load(&assets.textures),
+                self.camera.position(),
+                dt,
+            );
+        }
         systems::tick_overheads(&mut self.world, dt);
         systems::tick_hanging(&mut self.world, self.clock, dt);
         systems::tick_drips(&mut self.world, &assets.textures, dt);
@@ -369,14 +360,14 @@ impl Scene for InGameScene {
             let context = systems::RoomContext {
                 dungeon,
                 textures: &assets.textures,
-                floor: self.floor,
+                floor: self.resources.run.floor,
             };
             events = systems::update_rooms(
                 rooms,
                 &context,
                 &mut self.world,
                 &mut self.physics,
-                &mut self.map_rng,
+                &mut self.resources.run.map_rng,
                 hostile_dt,
             );
         }
@@ -388,9 +379,9 @@ impl Scene for InGameScene {
         systems::midas_kill_coins(&mut self.world, &assets.textures);
         systems::enemy_drops(
             &mut self.world,
-            &mut self.kills_without_drop,
+            &mut self.resources.run.kills_without_drop,
             &assets.textures,
-            |bound| self.loot_rng.below(bound),
+            |bound| self.resources.run.loot_rng.below(bound),
         );
         systems::despawn_gone(&mut self.world);
         systems::collect_items(&mut self.world, &mut self.sounds);
@@ -412,16 +403,16 @@ impl Scene for InGameScene {
             &assets.textures,
             dt,
             &mut self.sounds,
-            |bound| self.loot_rng.below(bound),
+            |bound| self.resources.run.loot_rng.below(bound),
         );
         systems::flicker_flames(&mut self.world);
         systems::tick_speech(&mut self.world, dt);
         systems::tick_captions(&mut self.world, dt);
         systems::tick_souls(&mut self.world, dt);
-        if let Some(left) = &mut self.slay_in {
+        if let Some(left) = &mut self.resources.run.slay_in {
             *left -= dt;
             if *left <= 0.0 {
-                self.slay_in = None;
+                self.resources.run.slay_in = None;
                 for health in self.world.query_mut::<&mut crate::components::Health>().with::<&crate::components::Boss>() {
                     health.current = 0;
                 }
@@ -455,7 +446,7 @@ impl Scene for InGameScene {
                     &mut self.world,
                     &assets.textures,
                     &mut self.sounds,
-                    &mut self.fx,
+                    &mut self.resources.fx,
                 );
             }
             Some(Interaction::PickUpArtefact) => {
@@ -492,7 +483,7 @@ impl Scene for InGameScene {
             return Transition::None;
         }
         let hostile_dt = dt * systems::time_scale(&self.world);
-        systems::cast_hit_roll(&mut self.world, self.combat_rng.float());
+        systems::cast_hit_roll(&mut self.world, self.resources.run.combat_rng.float());
         systems::start_dodge(
             &mut self.world,
             input,
@@ -516,7 +507,7 @@ impl Scene for InGameScene {
             navigation: &self.navigation,
             textures: &assets.textures,
             sounds: &mut self.sounds,
-            fx: &mut self.fx,
+            fx: &mut self.resources.fx,
             dt: hostile_dt,
         };
         systems::tick_golem(&mut self.world, &mut hostile);
@@ -578,7 +569,7 @@ impl Scene for InGameScene {
             &mut self.sounds,
             hostile_dt,
         );
-        systems::tick_leapers(&mut self.world, &mut self.sounds, &mut self.fx, hostile_dt);
+        systems::tick_leapers(&mut self.world, &mut self.sounds, &mut self.resources.fx, hostile_dt);
         systems::tick_armageddon(
             &mut self.world,
             &mut self.physics,
@@ -599,7 +590,7 @@ impl Scene for InGameScene {
         systems::tick_pendulums(
             &mut self.world,
             &mut self.sounds,
-            &mut self.fx,
+            &mut self.resources.fx,
             self.clock,
             hostile_dt,
         );
@@ -618,7 +609,7 @@ impl Scene for InGameScene {
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
-            &mut self.fx,
+            &mut self.resources.fx,
         );
         systems::pet_bites(&mut self.world, dt);
         systems::tick_ghosts(&mut self.world, dt);
@@ -629,7 +620,7 @@ impl Scene for InGameScene {
             navigation: &self.navigation,
             textures: &assets.textures,
             sounds: &mut self.sounds,
-            fx: &mut self.fx,
+            fx: &mut self.resources.fx,
             dt: hostile_dt,
         };
         systems::tick_arrow_traps(&mut self.world, &mut hostile);
@@ -638,17 +629,17 @@ impl Scene for InGameScene {
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
-            &mut self.fx,
-            |bound| self.loot_rng.below(bound),
+            &mut self.resources.fx,
+            |bound| self.resources.run.loot_rng.below(bound),
         );
         systems::leave_poison_trails(&mut self.world, &assets.textures);
-        systems::tick_poison(&mut self.world, dt, &mut self.sounds, &mut self.fx);
+        systems::tick_poison(&mut self.world, dt, &mut self.sounds, &mut self.resources.fx);
         systems::tick_frozen(&mut self.world, dt);
         systems::tick_chilled(&mut self.world, dt);
         systems::toughen_enemies(
             &mut self.world,
-            self.rules.enemy_health,
-            self.rules.enemy_damage,
+            self.resources.run.rules.enemy_health,
+            self.resources.run.rules.enemy_damage,
         );
         // Every hit dealt above flashes, counts and floats its number before the deaths read the
         // hit counts.
@@ -659,14 +650,14 @@ impl Scene for InGameScene {
             &assets.textures,
             &mut self.sounds,
         );
-        if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds, &mut self.fx) {
+        if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds, &mut self.resources.fx) {
             self.hit = true;
         }
         systems::sync_liquids(&mut self.world, self.clock);
         systems::ripple_on_water(&mut self.world, &self.surfaces, &assets.textures, dt);
         systems::kick_up_surfaces(&mut self.world, &self.surfaces, dt);
-        systems::stir_surfaces(&mut self.world, &self.surfaces, self.camera.view(), crate::viewport::TARGET, dt);
-        if systems::contact_damage(&mut self.world, &mut self.sounds, &mut self.fx) {
+        systems::stir_surfaces(&mut self.world, &mut self.resources.air.stir, &self.surfaces, self.camera.view(), crate::viewport::TARGET, dt);
+        if systems::contact_damage(&mut self.world, &mut self.sounds, &mut self.resources.fx) {
             self.hit = true;
         }
         systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
@@ -686,17 +677,16 @@ impl Scene for InGameScene {
 impl InGameScene {
     fn start_run(&mut self, seed: u64, assets: &Assets) {
         // `BANE_FLOOR=n` starts the run on floor n, for working on the deeper floors.
-        self.floor = std::env::var("BANE_FLOOR").ok().and_then(|n| n.trim().parse().ok()).unwrap_or(1).max(1);
-        self.run_seed = seed;
+        let floor = std::env::var("BANE_FLOOR").ok().and_then(|n| n.trim().parse().ok()).unwrap_or(1).max(1);
         tracing::info!(seed, "a new run starts, set BANE_SEED to replay it");
-        self.victory = false;
         self.leave_to_menu = false;
         self.death = None;
-        self.rules = self
+        let rules = self
             .profile
             .as_ref()
             .map_or_else(RunRules::default, SharedProfile::rules);
-        self.challenge = self.profile.as_ref().and_then(SharedProfile::challenge);
+        let challenge = self.profile.as_ref().and_then(SharedProfile::challenge);
+        self.resources.run.begin(seed, floor, rules, challenge);
         self.build(assets);
         let perks = self.perks();
         systems::apply_run_perks(&mut self.world, perks);
@@ -711,7 +701,7 @@ impl InGameScene {
             .profile
             .as_ref()
             .map_or_else(Perks::default, SharedProfile::perks);
-        self.rules.shape(owned)
+        self.resources.run.rules.shape(owned)
     }
 
     fn time_slow(&self) -> f32 {
@@ -728,7 +718,7 @@ impl InGameScene {
     /// The camera takes the trauma the systems gathered, at the end of every fixed step and
     /// of every frame update, so a hard hit shakes the frame it happened in.
     fn take_trauma(&mut self) {
-        self.camera.add_trauma(self.fx.take_trauma());
+        self.camera.add_trauma(self.resources.fx.take_trauma());
     }
 
     /// Whether the scene next starts the training crypt rather than a run.
@@ -761,42 +751,43 @@ impl InGameScene {
             return;
         }
         let stats = systems::current_stats(&self.world);
-        let summary = systems::summarize(stats, self.floor);
-        tracing::info!(victory = self.victory, ?summary, "the run is over");
+        let summary = systems::summarize(stats, self.resources.run.floor);
+        tracing::info!(victory = self.resources.run.victory, ?summary, "the run is over");
         let mut note = None;
         let mut attempt = 1;
         if let Some(profile) = &self.profile {
-            profile.record_run(stats, &summary, self.victory);
+            profile.record_run(stats, &summary, self.resources.run.victory);
             let outcome = profile.finish_run(&RunRecord {
                 stats,
-                floor: self.floor,
-                victory: self.victory,
-                challenge: self.challenge,
+                floor: self.resources.run.floor,
+                victory: self.resources.run.victory,
+                challenge: self.resources.run.challenge,
             });
             note = progress_note(&outcome);
             attempt = profile.runs();
         }
-        let record = if self.victory {
+        let record = if self.resources.run.victory {
             "Subject 41. The wound is open. Recorded.".to_owned()
         } else {
             format!("Subject 41. Attempt {attempt}. Recorded.")
         };
         systems::clear_artefact_effects(&mut self.world);
-        prefabs::death_ui(&mut self.world, self.victory, record, &assets.textures);
+        prefabs::death_ui(&mut self.world, self.resources.run.victory, record, &assets.textures);
         self.death = Some(systems::DeathScreen::new(summary).with_note(note));
         self.set_big_map(false);
     }
 
     fn build(&mut self, assets: &Assets) {
-        self.map_rng = Rng::stream(self.run_seed, self.floor, Stream::Map);
-        self.loot_rng = Rng::stream(self.run_seed, self.floor, Stream::Loot);
-        self.combat_rng = Rng::stream(self.run_seed, self.floor, Stream::Combat);
-        tracing::info!(floor = self.floor, "generating the dungeon");
+        self.resources.run.begin_floor();
+        // A fresh floor gets fresh air: no weather until it is built, the surfaces' scatter
+        // started over (as when both were entities, gone with the last floor's world).
+        self.resources.air = systems::FloorAir::default();
+        tracing::info!(floor = self.resources.run.floor, "generating the dungeon");
         // `BANE_THEME=lava` (or any theme name) forces every floor's biome, for working on the game.
         let theme = std::env::var("BANE_THEME")
             .ok()
             .and_then(|name| Theme::parse(&name))
-            .unwrap_or_else(|| Theme::for_floor(self.run_seed, self.floor));
+            .unwrap_or_else(|| Theme::for_floor(self.resources.run.seed, self.resources.run.floor));
         self.training = None;
         let generated = if self.training_mode {
             let (dungeon, lessons) = crate::dungeon::crypt();
@@ -808,7 +799,7 @@ impl InGameScene {
             self.training = Some(training);
             Ok(dungeon)
         } else {
-            Dungeon::generate_for_run(&mut self.map_rng, theme, self.rules.shops)
+            Dungeon::generate_for_run(&mut self.resources.run.map_rng, theme, self.resources.run.rules.shops)
         };
         let mut dungeon = match generated {
             Ok(dungeon) => dungeon,
@@ -1070,7 +1061,7 @@ impl InGameScene {
         }
         let player = prefabs::player(&mut self.world, &mut self.physics, start, &assets.textures);
         // `BANE_SLAY=s` fells the boss s seconds into the floor, for working on the story.
-        self.slay_in = std::env::var("BANE_SLAY").ok().and_then(|n| n.trim().parse::<f32>().ok());
+        self.resources.run.slay_in = std::env::var("BANE_SLAY").ok().and_then(|n| n.trim().parse::<f32>().ok());
         // `BANE_GOD=1` keeps the player from being hurt, for watching enemies at work.
         if std::env::var_os("BANE_GOD").is_some() {
             let _ = self.world.insert_one(
@@ -1119,24 +1110,20 @@ impl InGameScene {
         systems::spawn_tracks(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_waterworks(&mut self.world, &mut self.physics, &dungeon, textures);
         systems::spawn_prison(&mut self.world, &dungeon, textures);
-        systems::spawn_atmosphere(
-            &mut self.world,
-            &dungeon,
-            self.run_seed ^ u64::from(self.floor).rotate_left(32),
-        );
+        self.resources.air.atmosphere = Some(systems::Atmosphere::new(&dungeon, self.resources.run.air_seed()));
         systems::stock_rooms(
             &mut self.world,
             &dungeon,
-            self.floor,
+            self.resources.run.floor,
             perks.discount,
             textures,
-            |bound| self.loot_rng.below(bound),
+            |bound| self.resources.run.loot_rng.below(bound),
         );
         // One bubble for whoever speaks on the floor: a fallen boss's ghost, or the wound.
         prefabs::minimal_speech(&mut self.world, Vec2::ZERO);
         // On the way down, the wound whispers.
-        if self.training.is_none() && self.floor >= 2 {
-            let words = crate::lore::WHISPERS[self.loot_rng.below(crate::lore::WHISPERS.len())];
+        if self.training.is_none() && self.resources.run.floor >= 2 {
+            let words = crate::lore::WHISPERS[self.resources.run.loot_rng.below(crate::lore::WHISPERS.len())];
             // A tear opens in the floor just below him, clear of the controls shown at the start, and whispers.
             let tear = start + Vec2::new(0.0, 1.8) * TILE_SIZE;
             systems::open_tear(&mut self.world, tear, words, systems::WHISPER_SECONDS, textures);
@@ -1155,7 +1142,7 @@ impl InGameScene {
                 self.camera.set_bounds(min, max);
             }
         }
-        systems::immobilize_traps(&mut self.world, perks, |bound| self.loot_rng.below(bound));
+        systems::immobilize_traps(&mut self.world, perks, |bound| self.resources.run.loot_rng.below(bound));
         self.dungeon = Some(dungeon);
         prefabs::status_bars(&mut self.world, textures);
         prefabs::coin_hud(
@@ -1183,8 +1170,8 @@ impl InGameScene {
         self.dungeon = None;
         self.rooms = None;
         self.big_map = false;
-        self.floor += 1;
-        tracing::info!(floor = self.floor, "entering the next floor");
+        self.resources.run.floor += 1;
+        tracing::info!(floor = self.resources.run.floor, "entering the next floor");
         self.build(assets);
         systems::restore_stats(&mut self.world, carried);
         self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
@@ -1212,13 +1199,13 @@ impl InGameScene {
                 }
                 systems::RoomEvent::BossEntered { kind } => {
                     self.sounds.push(AudioCommand::Music(Soundtrack::Boss));
-                    self.boss = crate::lore::identity(kind);
-                    if let Some(identity) = self.boss {
+                    self.resources.run.boss = crate::lore::identity(kind);
+                    if let Some(identity) = self.resources.run.boss {
                         systems::name_boss(&mut self.world, identity);
                     }
                 }
                 systems::RoomEvent::BossDefeated { center } => {
-                    if let Some(identity) = self.boss.take() {
+                    if let Some(identity) = self.resources.run.boss.take() {
                         // Who it was comes back and stands beside Elian to say its last words;
                         // what was never a person has them told.
                         let elian = self
@@ -1243,10 +1230,10 @@ impl InGameScene {
                         chest_top_left,
                         textures,
                     );
-                    if self.floor >= crate::enemies::FINAL_FLOOR {
+                    if self.resources.run.floor >= crate::enemies::FINAL_FLOOR {
                         tracing::info!("the last boss is defeated");
                         systems::close_stats_floor(&mut self.world);
-                        self.victory = true;
+                        self.resources.run.victory = true;
                     } else {
                         let ladder_top_left = center - Vec2::new(48.0, 0.0);
                         let theme = self
@@ -1380,14 +1367,14 @@ mod tests {
             ..InGameScene::default()
         };
         scene.camera.snap_to(Vec2::new(500.0, 500.0));
-        systems::explosion(&mut scene.sounds, &mut scene.fx);
+        systems::explosion(&mut scene.sounds, &mut scene.resources.fx);
 
         scene.take_trauma();
         scene.camera.update_shake(0.05);
 
         assert_ne!(scene.camera(), scene.camera.position());
         assert_eq!(scene.camera.position(), Vec2::new(500.0, 500.0));
-        assert_eq!(scene.fx, systems::Fx::default(), "the camera took all of it");
+        assert_eq!(scene.resources.fx, systems::Fx::default(), "the camera took all of it");
     }
 
     /// The camera takes the same trauma from a hard hit as it did when the shake was read from
@@ -1407,9 +1394,9 @@ mod tests {
             .map(|(entity, position)| (entity, position.0))
             .expect("the dungeon has a player");
         let trauma_of = |scene: &mut InGameScene, hit: &dyn Fn(&mut InGameScene)| {
-            scene.fx = systems::Fx::default();
+            scene.resources.fx = systems::Fx::default();
             hit(scene);
-            scene.fx.take_trauma().to_bits()
+            scene.resources.fx.take_trauma().to_bits()
         };
 
         let explosion = trauma_of(&mut scene, &|scene| {
@@ -1428,7 +1415,7 @@ mod tests {
                 &mut scene.physics,
                 &assets.textures,
                 &mut scene.sounds,
-                &mut scene.fx,
+                &mut scene.resources.fx,
                 |_| 0,
             );
         });
@@ -1440,7 +1427,7 @@ mod tests {
                 player,
                 1,
                 &mut scene.sounds,
-                &mut scene.fx,
+                &mut scene.resources.fx,
             ));
         });
         assert_eq!(hurt, 0.5f32.to_bits());
@@ -1452,7 +1439,7 @@ mod tests {
                 player,
                 1000,
                 &mut scene.sounds,
-                &mut scene.fx,
+                &mut scene.resources.fx,
             ));
         });
         assert_eq!(death, 0.7f32.to_bits());
@@ -1593,7 +1580,7 @@ mod tests {
             if let Ok(mut health) = scene.world.get::<&mut Health>(rat) {
                 health.current = 0;
             }
-            scene.kills_without_drop = 10;
+            scene.resources.run.kills_without_drop = 10;
             let pickups = |world: &World| world.query::<&Pickup>().iter().count();
             let hearts = |world: &World| world.get::<&Health>(player).map_or(0, |h| h.current);
             let before = pickups(&scene.world);
@@ -1707,7 +1694,7 @@ mod tests {
         let mut scene = scene_with_challenge(ChallengeId::GlassCannon);
         scene.start_run(7, &assets);
         assert_eq!(player_max_health(&scene), Some(1));
-        assert_eq!(scene.challenge, Some(ChallengeId::GlassCannon));
+        assert_eq!(scene.resources.run.challenge, Some(ChallengeId::GlassCannon));
     }
 
     #[test]
@@ -1906,5 +1893,47 @@ mod tests {
             .world
             .get::<&crate::components::TimeSlow>(player)
             .is_err());
+    }
+
+    /// The floor's air (its weather and the surfaces' scatter) used to be entities, gone with the
+    /// floor's world: a new floor still starts them over, while the run carries on.
+    #[test]
+    fn a_new_floor_brings_fresh_air_but_the_run_carries_on() {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.start_run(7, &assets);
+        for _ in 0..30 {
+            frame(&mut scene, &assets, 1.0 / 60.0);
+        }
+        let air = |scene: &InGameScene| {
+            scene
+                .resources
+                .air
+                .atmosphere
+                .as_ref()
+                .expect("a built floor has its weather")
+                .clock()
+        };
+        assert!(air(&scene) > 0.4);
+        scene.resources.air.stir = systems::StirSeed(12345);
+        scene.resources.run.kills_without_drop = 3;
+        let boss = crate::lore::identity(EnemyKind::Spider);
+        scene.resources.run.boss = boss;
+
+        scene.next_floor(&assets);
+
+        assert_eq!(air(&scene), 0.0, "the weather starts over");
+        assert_eq!(scene.resources.air.stir, systems::StirSeed::default());
+        assert_eq!(scene.resources.run.floor, 2);
+        assert_eq!(scene.resources.run.seed, 7);
+        assert_eq!(scene.resources.run.kills_without_drop, 3);
+        assert_eq!(scene.resources.run.boss, boss);
+
+        scene.leave();
+        scene.start_run(9, &assets);
+        assert_eq!(air(&scene), 0.0, "and so it does on a new run");
+        assert_eq!((scene.resources.run.floor, scene.resources.run.seed), (1, 9));
+        assert!(!scene.resources.run.victory);
     }
 }

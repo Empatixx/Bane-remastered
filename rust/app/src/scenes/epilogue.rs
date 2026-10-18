@@ -301,7 +301,6 @@ impl EpilogueScene {
             prefabs::decor(&mut self.world, &mut physics, *decor, textures);
         }
         systems::spawn_furniture(&mut self.world, &mut physics, &dungeon, textures);
-        systems::spawn_atmosphere(&mut self.world, &dungeon, 0x29);
 
         // The rift: purple chaos with a torn edge wherever it does not go on.
         for &(column, row) in &RIFT {

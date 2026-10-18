@@ -213,7 +213,10 @@ impl AtmosphereTextures {
     }
 }
 
-struct Atmosphere {
+/// A floor's weather: what its biome puts in the air and the dice and clock it is drawn with.
+/// Not an entity: the scene keeps it with the floor's other resources and a fresh floor builds a
+/// fresh one, so it lasts exactly one floor.
+pub(crate) struct Atmosphere {
     mood: Mood,
     rng: Rng,
     clock: f32,
@@ -254,37 +257,39 @@ fn between(rng: &mut Rng, low: f32, high: f32) -> f32 {
     low + (high - low) * rng.float()
 }
 
-/// Fills the floor's air for its biome; [`tick_atmosphere`] keeps it topped up around the camera.
-pub(crate) fn spawn_atmosphere(world: &mut World, dungeon: &Dungeon, seed: u64) {
-    let mood = mood(dungeon.theme);
-    let rng = Rng::new(seed);
-    let lava = dungeon
-        .surfaces
-        .iter()
-        .filter(|(_, surface)| *surface == Surface::Lava)
-        .map(|(tile, _)| (Vec2::new(tile.0 as f32, tile.1 as f32) + 0.5) * TILE_SIZE)
-        .collect();
-    world.spawn((Atmosphere {
-        mood,
-        rng,
-        clock: 0.0,
-        lava,
-        ember_debt: 0.0,
-    },));
+impl Atmosphere {
+    /// The air for a floor's biome; [`tick_atmosphere`] keeps it topped up around the camera.
+    pub(crate) fn new(dungeon: &Dungeon, seed: u64) -> Self {
+        let lava = dungeon
+            .surfaces
+            .iter()
+            .filter(|(_, surface)| *surface == Surface::Lava)
+            .map(|(tile, _)| (Vec2::new(tile.0 as f32, tile.1 as f32) + 0.5) * TILE_SIZE)
+            .collect();
+        Self {
+            mood: mood(dungeon.theme),
+            rng: Rng::new(seed),
+            clock: 0.0,
+            lava,
+            ember_debt: 0.0,
+        }
+    }
+
+    /// How long this floor's air has been going.
+    #[cfg(test)]
+    pub(crate) fn clock(&self) -> f32 {
+        self.clock
+    }
 }
 
+/// Fills the air around the camera for the floor's biome and moves what is already in it.
 pub(crate) fn tick_atmosphere(
     world: &mut World,
+    air: &mut Atmosphere,
     textures: AtmosphereTextures,
     camera: Vec2,
     dt: f32,
 ) {
-    let Some(controller) = world.query::<Entity>().with::<&Atmosphere>().iter().next() else {
-        return;
-    };
-    let Ok(mut air) = world.remove_one::<Atmosphere>(controller) else {
-        return;
-    };
     air.clock += dt;
     cull(world, camera);
     if let Some(spec) = air.mood.floor_fog {
@@ -310,10 +315,9 @@ pub(crate) fn tick_atmosphere(
     if let Some(spec) = air.mood.motes {
         top_up_motes(world, &mut air.rng, textures.motes, spec, camera);
     }
-    rise_embers(world, &mut air, textures.motes, camera, dt);
+    rise_embers(world, air, textures.motes, camera, dt);
     drift_haze(world, camera, dt);
     drift_motes(world, air.clock, dt);
-    let _ = world.insert_one(controller, air);
 }
 
 fn in_view(rng: &mut Rng, camera: Vec2, pad: f32) -> Vec2 {
@@ -545,16 +549,15 @@ mod tests {
         }
     }
 
-    fn floor(theme: Theme, seed: u64) -> (World, Dungeon) {
+    fn floor(theme: Theme, seed: u64) -> (World, Atmosphere, Dungeon) {
         let dungeon = Dungeon::generate_themed(&mut Rng::new(seed), theme).expect("a dungeon");
-        let mut world = World::new();
-        spawn_atmosphere(&mut world, &dungeon, seed);
-        (world, dungeon)
+        let air = Atmosphere::new(&dungeon, seed);
+        (World::new(), air, dungeon)
     }
 
-    fn run(world: &mut World, camera: Vec2, seconds: f32) {
+    fn run(world: &mut World, air: &mut Atmosphere, camera: Vec2, seconds: f32) {
         for _ in 0..(seconds * 60.0) as usize {
-            tick_atmosphere(world, textures(), camera, 1.0 / 60.0);
+            tick_atmosphere(world, air, textures(), camera, 1.0 / 60.0);
         }
     }
 
@@ -565,24 +568,24 @@ mod tests {
     #[test]
     fn every_biome_has_something_in_the_air_and_never_more_than_it_asks_for() {
         for theme in ALL {
-            let (mut world, _) = floor(theme, 5);
-            run(&mut world, Vec2::new(400.0, 400.0), 20.0);
-            let air = mood(theme);
+            let (mut world, mut air, _) = floor(theme, 5);
+            run(&mut world, &mut air, Vec2::new(400.0, 400.0), 20.0);
+            let wants = mood(theme);
             let fog = count::<Haze>(&world);
             let motes = count::<Mote>(&world);
             if theme != Theme::Lava {
                 assert!(fog + motes > 0, "{theme:?}");
             }
-            let fog_cap = air.floor_fog.map_or(0, |f| f.count) + air.wisps.map_or(0, |f| f.count);
+            let fog_cap = wants.floor_fog.map_or(0, |f| f.count) + wants.wisps.map_or(0, |f| f.count);
             assert!(fog <= fog_cap, "{theme:?}");
-            assert!(motes <= air.motes.map_or(0, |m| m.count), "{theme:?}");
+            assert!(motes <= wants.motes.map_or(0, |m| m.count), "{theme:?}");
         }
     }
 
     #[test]
     fn snow_falls() {
-        let (mut world, _) = floor(Theme::Ice, 9);
-        run(&mut world, Vec2::ZERO, 0.1);
+        let (mut world, mut air, _) = floor(Theme::Ice, 9);
+        run(&mut world, &mut air, Vec2::ZERO, 0.1);
         let before: Vec<(Entity, f32)> = world
             .query::<(Entity, &Position)>()
             .with::<&Mote>()
@@ -590,7 +593,7 @@ mod tests {
             .map(|(entity, position)| (entity, position.0.y))
             .collect();
         assert!(!before.is_empty());
-        run(&mut world, Vec2::ZERO, 1.0);
+        run(&mut world, &mut air, Vec2::ZERO, 1.0);
         for (entity, y) in before {
             if let Ok(now) = world.get::<&Position>(entity) {
                 assert!(now.0.y > y);
@@ -600,7 +603,7 @@ mod tests {
 
     #[test]
     fn embers_only_rise_out_of_lava_in_view() {
-        let (mut world, dungeon) = floor(Theme::Lava, 9);
+        let (mut world, mut air, dungeon) = floor(Theme::Lava, 9);
         let lava: Vec<Vec2> = dungeon
             .surfaces
             .iter()
@@ -609,13 +612,13 @@ mod tests {
             .collect();
         let pool = *lava.first().expect("a lava floor has lava");
         // Far from any lava: nothing in the air.
-        run(&mut world, Vec2::new(-50_000.0, -50_000.0), 3.0);
+        run(&mut world, &mut air, Vec2::new(-50_000.0, -50_000.0), 3.0);
         assert_eq!(count::<Mote>(&world), 0);
         // Over a pool: a few embers, each starting on a lava tile and rising.
         let camera = pool - TARGET / 2.0;
         // Half a second over the pool brings the first ember, which has barely moved yet.
         for _ in 0..31 {
-            tick_atmosphere(&mut world, textures(), camera, 1.0 / 60.0);
+            tick_atmosphere(&mut world, &mut air, textures(), camera, 1.0 / 60.0);
         }
         let embers: Vec<Vec2> = world
             .query::<&Position>()
@@ -631,9 +634,9 @@ mod tests {
 
     #[test]
     fn air_left_behind_by_the_camera_is_removed() {
-        let (mut world, _) = floor(Theme::Moss, 4);
-        run(&mut world, Vec2::ZERO, 5.0);
-        run(&mut world, Vec2::new(20_000.0, 20_000.0), 1.0 / 60.0);
+        let (mut world, mut air, _) = floor(Theme::Moss, 4);
+        run(&mut world, &mut air, Vec2::ZERO, 5.0);
+        run(&mut world, &mut air, Vec2::new(20_000.0, 20_000.0), 1.0 / 60.0);
         let near_start = world
             .query::<&Position>()
             .with::<&Mote>()
@@ -645,15 +648,15 @@ mod tests {
 
     #[test]
     fn wisps_slide_faster_than_the_floor_when_the_camera_moves() {
-        let (mut world, _) = floor(Theme::Moss, 2);
-        run(&mut world, Vec2::ZERO, 2.0);
+        let (mut world, mut air, _) = floor(Theme::Moss, 2);
+        run(&mut world, &mut air, Vec2::ZERO, 2.0);
         let wisp = world
             .query::<(Entity, &Haze, &Position)>()
             .iter()
             .find(|(_, haze, _)| haze.kind == HazeKind::Wisp)
             .map(|(entity, _, position)| (entity, position.0))
             .expect("a wisp");
-        tick_atmosphere(&mut world, textures(), Vec2::new(100.0, 0.0), 0.0);
+        tick_atmosphere(&mut world, &mut air, textures(), Vec2::new(100.0, 0.0), 0.0);
         let moved = world
             .get::<&Position>(wisp.0)
             .map(|p| p.0)
