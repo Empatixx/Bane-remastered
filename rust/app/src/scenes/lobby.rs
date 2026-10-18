@@ -881,16 +881,12 @@ mod tests {
     fn put_player(scene: &mut LobbyScene, at: Vec2) {
         let player = scene
             .world
-            .query::<(&crate::components::Body, &mut crate::components::Position)>()
-            .with::<&Player>()
+            .query::<hecs::Entity>()
+            .with::<(&crate::components::Body, &crate::components::Position, &Player)>()
             .iter()
-            .map(|(body, position)| {
-                position.0 = at;
-                *body
-            })
             .next()
             .expect("player");
-        scene.physics.teleport(player, at);
+        scene.physics.place(&mut scene.world, player, at);
     }
 
     fn range_spot() -> Vec2 {

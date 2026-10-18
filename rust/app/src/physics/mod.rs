@@ -9,7 +9,7 @@ use rapier2d::prelude::{
     ColliderBuilder, ColliderHandle, PhysicsWorld, RigidBodyBuilder, RigidBodyHandle, Vector,
 };
 
-use crate::components::{Body, Solid};
+use crate::components::{Body, Position, Solid, Velocity};
 
 const WALL_OWNER: u128 = 0;
 const PLAYER_CORNER_RADIUS: f32 = 2.0;
@@ -296,6 +296,29 @@ impl Physics {
     pub(crate) fn teleport(&mut self, body: Body, position: Vec2) {
         if let Some(rigid_body) = self.world.bodies.get_mut(body.body) {
             rigid_body.set_translation(to_rapier(position), true);
+        }
+    }
+
+    /// Puts the entity at `at` at once: its body and its `Position` together. For a move that
+    /// something later in the same step or frame must already see; otherwise systems ask
+    /// `simulate` with a `Teleport` (see `systems::simulation`).
+    pub(crate) fn place(&mut self, world: &mut World, entity: Entity, at: Vec2) {
+        if let Ok(body) = world.get::<&Body>(entity).map(|body| *body) {
+            self.teleport(body, at);
+        }
+        if let Ok(mut position) = world.get::<&mut Position>(entity) {
+            position.0 = at;
+        }
+    }
+
+    /// Stops the entity at once: its body and its `Velocity` together, for the same reason as
+    /// [`Physics::place`].
+    pub(crate) fn halt(&mut self, world: &mut World, entity: Entity) {
+        if let Ok(body) = world.get::<&Body>(entity).map(|body| *body) {
+            self.set_velocity(body, Vec2::ZERO);
+        }
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
+            velocity.0 = Vec2::ZERO;
         }
     }
 

@@ -1,10 +1,69 @@
+//! The one place that moves the bodies of the simulation.
+//!
+//! # Who writes a body
+//!
+//! [`simulate`] is the single owner of the rapier bodies during a step. It drives every body
+//! whose entity has `Velocity` from that component, steps, and copies the bodies back into
+//! `Position` (and the player's `Velocity`). Systems that want a body somewhere else, or moving
+//! otherwise, ask for it with a request component on the entity, which `simulate` carries out
+//! and removes before it steps:
+//!
+//! - `Teleport(at)`: the body is put at `at`. The system writes `Position` itself at once, so
+//!   the systems after it in the step see the new spot.
+//! - `MoveTo(at)`: where a body moved only by the game (a cart) gets to over the step.
+//! - `SetVelocity(v)`: the velocity of a body whose entity has no `Velocity`. An entity with
+//!   `Velocity` writes that component instead, which `simulate` applies every step anyway.
+//!
+//! A request waits for the next `simulate`, so it is only for a write that nothing reads
+//! before then: nothing between the request and the step asks the physics where that body is
+//! or how fast it goes (`Physics::position`, `Physics::velocity`), and colliders only follow
+//! their bodies in the step itself. When something later in the same step or frame must see
+//! the body already moved, the system uses `Physics::place` or `Physics::halt`, which write
+//! the body and its components together at once (a training respawn, whose frame reads the
+//! player's body speed for the gaze wind before the next step).
+
 use hecs::{Entity, World};
 
 use crate::components::{
-    Body, BodyOffset, CHILL_SLOWDOWN, Chilled, Enemy, EnemyBullet, Player, Position, Previous,
-    Velocity,
+    Body, BodyOffset, CHILL_SLOWDOWN, Chilled, Enemy, EnemyBullet, MoveTo, Player, Position,
+    Previous, SetVelocity, Teleport, Velocity,
 };
 use crate::physics::Physics;
+
+/// Carries out the requests the systems left for the bodies since the last step (see the
+/// module docs), and drops them, also from entities that lost their body meanwhile.
+fn carry_out_requests(world: &mut World, physics: &mut Physics) {
+    let mut teleported = Vec::new();
+    for (entity, teleport, body) in world.query_mut::<(Entity, &Teleport, Option<&Body>)>() {
+        if let Some(body) = body {
+            physics.teleport(*body, teleport.0);
+        }
+        teleported.push(entity);
+    }
+    for entity in teleported {
+        let _ = world.remove_one::<Teleport>(entity);
+    }
+    let mut moved = Vec::new();
+    for (entity, move_to, body) in world.query_mut::<(Entity, &MoveTo, Option<&Body>)>() {
+        if let Some(body) = body {
+            physics.move_to(*body, move_to.0);
+        }
+        moved.push(entity);
+    }
+    for entity in moved {
+        let _ = world.remove_one::<MoveTo>(entity);
+    }
+    let mut set = Vec::new();
+    for (entity, velocity, body) in world.query_mut::<(Entity, &SetVelocity, Option<&Body>)>() {
+        if let Some(body) = body {
+            physics.set_velocity(*body, velocity.0);
+        }
+        set.push(entity);
+    }
+    for entity in set {
+        let _ = world.remove_one::<SetVelocity>(entity);
+    }
+}
 
 pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
     let orphans = physics.remove_orphans(world);
@@ -14,6 +73,7 @@ pub(crate) fn simulate(world: &mut World, physics: &mut Physics, dt: f32) {
             "despawned without Physics::despawn, cleaned up the leftovers"
         );
     }
+    carry_out_requests(world, physics);
     let time_scale = super::time_scale(world);
     for (body, velocity, chilled, enemy, enemy_bullet) in world.query_mut::<(
         &Body,
@@ -430,5 +490,83 @@ mod tests {
         assert_eq!(before.len(), after.len());
         assert!(after[0].0.x > before[0].0.x + 40.0);
         let _ = barrel;
+    }
+
+    fn body_of(world: &World, entity: Entity) -> Body {
+        *world.get::<&Body>(entity).expect("a body")
+    }
+
+    #[test]
+    fn a_teleport_request_moves_the_body_in_the_next_step_and_is_dropped() {
+        let (mut world, mut physics, _player, barrel) = barrel_scene(Vec2::new(300.0, -64.0));
+        let body = body_of(&world, barrel);
+        let start = physics.position(body).unwrap_or_default();
+        let spot = start + Vec2::new(200.0, 100.0);
+
+        let _ = world.insert_one(barrel, Teleport(spot));
+        assert_eq!(physics.position(body), Some(start), "waits for the step");
+        simulate(&mut world, &mut physics, 1.0 / 60.0);
+
+        assert!(physics.position(body).unwrap_or_default().distance(spot) < 0.5);
+        assert!(world.get::<&Teleport>(barrel).is_err());
+    }
+
+    #[test]
+    fn a_velocity_request_drives_a_body_without_velocity_for_the_step() {
+        let (mut world, mut physics, _player, barrel) = barrel_scene(Vec2::new(300.0, -64.0));
+        let body = body_of(&world, barrel);
+        let start = physics.position(body).unwrap_or_default();
+
+        let _ = world.insert_one(barrel, SetVelocity(Vec2::new(120.0, 0.0)));
+        simulate(&mut world, &mut physics, 1.0 / 60.0);
+
+        assert!(physics.position(body).unwrap_or_default().x > start.x + 1.0);
+        assert!(world.get::<&SetVelocity>(barrel).is_err());
+    }
+
+    #[test]
+    fn a_move_request_carries_a_moving_object_there_over_the_step() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let cart = world.spawn((Position(Vec2::new(100.0, 100.0)),));
+        let body = physics.add_moving_object(cart, Vec2::new(100.0, 100.0), Vec2::splat(40.0));
+        let _ = world.insert_one(cart, body);
+
+        let _ = world.insert_one(cart, MoveTo(Vec2::new(110.0, 100.0)));
+        simulate(&mut world, &mut physics, 1.0 / 60.0);
+
+        assert!(position(&world, cart).distance(Vec2::new(110.0, 100.0)) < 0.01);
+        assert!(world.get::<&MoveTo>(cart).is_err());
+    }
+
+    #[test]
+    fn a_request_left_on_an_entity_without_a_body_is_dropped() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let ghost = world.spawn((Teleport(Vec2::ONE), MoveTo(Vec2::ONE), SetVelocity(Vec2::ONE)));
+
+        simulate(&mut world, &mut physics, 1.0 / 60.0);
+
+        assert!(world.get::<&Teleport>(ghost).is_err());
+        assert!(world.get::<&MoveTo>(ghost).is_err());
+        assert!(world.get::<&SetVelocity>(ghost).is_err());
+    }
+
+    #[test]
+    fn placing_and_halting_write_the_body_and_the_components_at_once() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let player = prefabs::player(&mut world, &mut physics, Vec2::ZERO, &Textures::default());
+        walk_right(&mut world, &mut physics, player, 10);
+        let spot = Vec2::new(500.0, 200.0);
+
+        physics.place(&mut world, player, spot);
+        physics.halt(&mut world, player);
+
+        let body = body_of(&world, player);
+        assert_eq!(physics.position(body), Some(spot));
+        assert_eq!(physics.velocity(body), Some(Vec2::ZERO));
+        assert_eq!(position(&world, player), spot);
+        assert_eq!(world.get::<&Velocity>(player).map(|v| v.0).ok(), Some(Vec2::ZERO));
     }
 }

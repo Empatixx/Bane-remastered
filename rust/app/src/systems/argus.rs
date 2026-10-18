@@ -4,8 +4,8 @@ use hecs::{Entity, Satisfies, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    ArgusAttack, ArgusBoss, ArgusStage, Body, Clip, Color, ContactDamage, Enraged, Expiring, Health,
-    Orbiter, Position, RoomId, Rooted, Spawning,
+    ArgusAttack, ArgusBoss, ArgusStage, Clip, Color, ContactDamage, Enraged, Expiring, Health,
+    Orbiter, Position, RoomId, Rooted, Spawning, Teleport,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
@@ -387,16 +387,14 @@ fn execute(
                 if let Ok(mut position) = world.get::<&mut Position>(entity) {
                     position.0 = spot;
                 }
-                if let Ok(body) = world.get::<&Body>(entity) {
-                    physics.teleport(*body, spot);
-                }
+                let _ = world.insert_one(entity, Teleport(spot));
                 break;
             }
         }
     }
 }
 
-pub(crate) fn tick_orbiters(world: &mut World, physics: &mut Physics, dt: f32) {
+pub(crate) fn tick_orbiters(world: &mut World, dt: f32) {
     let orbiters: Vec<(Entity, Orbiter)> = world
         .query::<(Entity, &Orbiter)>()
         .without::<&Spawning>()
@@ -426,9 +424,7 @@ pub(crate) fn tick_orbiters(world: &mut World, physics: &mut Physics, dt: f32) {
         if let Ok(mut position) = world.get::<&mut Position>(entity) {
             position.0 = spot;
         }
-        if let Ok(body) = world.get::<&Body>(entity) {
-            physics.teleport(*body, spot);
-        }
+        let _ = world.insert_one(entity, Teleport(spot));
     }
 }
 

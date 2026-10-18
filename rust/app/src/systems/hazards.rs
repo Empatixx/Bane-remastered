@@ -164,6 +164,10 @@ pub(crate) fn slow_bullets_in_webs(world: &mut World, physics: &mut Physics, dt:
         if slowed.length() < WEB_CATCHES_BELOW {
             caught.push(entity);
         } else {
+            // Left on the body on purpose: every bullet also has `Velocity`, which `simulate`
+            // puts back on the body before it steps, so in a run this slowing does not stick.
+            // Writing `Velocity` instead would make webs slow bullets for real, a gameplay
+            // change, not a refactor.
             physics.set_velocity(body, slowed);
         }
     }

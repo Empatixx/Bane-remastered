@@ -129,10 +129,10 @@ mod tests {
             Vec2::new(200.0, 200.0),
             &Textures::default(),
         );
-        if let Ok(body) = world.get::<&Body>(player).map(|body| *body) {
-            physics.set_velocity(body, Vec2::new(411.0, 0.0));
-            physics.step(1.0 / 60.0);
+        if let Ok(mut velocity) = world.get::<&mut crate::components::Velocity>(player) {
+            velocity.0 = Vec2::new(411.0, 0.0);
         }
+        crate::systems::simulate(&mut world, &mut physics, 1.0 / 60.0);
         (world, physics)
     }
 

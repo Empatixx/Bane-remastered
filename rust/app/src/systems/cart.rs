@@ -11,7 +11,7 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    Body, BodyOffset, Bullet, Color, DropShadow, Enemy, Heading, Layer, Lit, Player, Position, Size, Spawning, Sprite,
+    Body, BodyOffset, Bullet, Color, DropShadow, Enemy, Heading, Layer, Lit, MoveTo, Player, Position, Size, Spawning, Sprite,
     Velocity, YSort,
 };
 use crate::dungeon::{Dungeon, Track};
@@ -325,15 +325,15 @@ fn push(world: &World, at: Vec2, along: Vec2) -> Option<f32> {
     })
 }
 
-pub(crate) fn tick_carts(world: &mut World, physics: &mut Physics, dt: f32) {
+pub(crate) fn tick_carts(world: &mut World, dt: f32) {
     let carts: Vec<Entity> = world.query::<Entity>().with::<&Cart>().iter().collect();
     for entity in carts {
         let Ok(mut cart) = world.get::<&Cart>(entity).map(|cart| (*cart).clone()) else {
             continue;
         };
-        let Some(&body) = world.get::<&Body>(entity).ok().as_deref() else {
+        if world.get::<&Body>(entity).is_err() {
             continue;
-        };
+        }
         let (at, along) = cart.rail.at(cart.distance);
         if let Some(direction) = push(world, at, along) {
             let at_the_end = (direction < 0.0 && cart.distance <= cart.min)
@@ -351,7 +351,7 @@ pub(crate) fn tick_carts(world: &mut World, physics: &mut Physics, dt: f32) {
         cart.rolled += (cart.distance - before).abs();
         let (to, along) = cart.rail.at(cart.distance);
         // The picture follows the body through the simulation, lifted by its BodyOffset.
-        physics.move_to(body, to);
+        let _ = world.insert_one(entity, MoveTo(to));
         if let Ok(mut heading) = world.get::<&mut Heading>(entity) {
             heading.0 = lying(along);
         }
@@ -512,8 +512,8 @@ mod tests {
 
     fn run(world: &mut World, physics: &mut Physics, seconds: f32) {
         for _ in 0..(seconds * 60.0) as usize {
-            tick_carts(world, physics, 1.0 / 60.0);
-            physics.step(1.0 / 60.0);
+            tick_carts(world, 1.0 / 60.0);
+            crate::systems::simulate(world, physics, 1.0 / 60.0);
         }
     }
 
@@ -554,7 +554,7 @@ mod tests {
 
     #[test]
     fn walking_into_the_cart_sends_it_rolling_away_from_the_player() {
-        let (mut world, mut physics, cart) = yard(false);
+        let (mut world, physics, cart) = yard(false);
         let at = cart_at(&world, &physics, cart);
         world.spawn((
             Player,
@@ -562,13 +562,13 @@ mod tests {
             Size(Vec2::splat(56.0)),
             Velocity(Vec2::new(200.0, 0.0)),
         ));
-        tick_carts(&mut world, &mut physics, 1.0 / 60.0);
+        tick_carts(&mut world, 1.0 / 60.0);
         assert!(speed(&world, cart) > PUSH_SPEED * 0.9);
     }
 
     #[test]
     fn a_bullet_pushes_it_the_way_it_flies_and_enemies_never_do() {
-        let (mut world, mut physics, cart) = yard(false);
+        let (mut world, physics, cart) = yard(false);
         let at = cart_at(&world, &physics, cart);
         world.spawn((
             rat(),
@@ -576,7 +576,7 @@ mod tests {
             Size(Vec2::splat(48.0)),
             Velocity(Vec2::new(300.0, 0.0)),
         ));
-        tick_carts(&mut world, &mut physics, 1.0 / 60.0);
+        tick_carts(&mut world, 1.0 / 60.0);
         assert_eq!(speed(&world, cart), 0.0);
 
         world.spawn((
@@ -585,13 +585,13 @@ mod tests {
             Size(Vec2::splat(8.0)),
             Velocity(Vec2::new(-900.0, 0.0)),
         ));
-        tick_carts(&mut world, &mut physics, 1.0 / 60.0);
+        tick_carts(&mut world, 1.0 / 60.0);
         assert!(speed(&world, cart) < -PUSH_SPEED * 0.9);
     }
 
     #[test]
     fn a_push_across_the_rail_does_not_move_it() {
-        let (mut world, mut physics, cart) = yard(false);
+        let (mut world, physics, cart) = yard(false);
         let at = cart_at(&world, &physics, cart);
         world.spawn((
             Bullet::plain(1),
@@ -599,7 +599,7 @@ mod tests {
             Size(Vec2::splat(8.0)),
             Velocity(Vec2::new(0.0, 900.0)),
         ));
-        tick_carts(&mut world, &mut physics, 1.0 / 60.0);
+        tick_carts(&mut world, 1.0 / 60.0);
         assert_eq!(speed(&world, cart), 0.0);
     }
 
@@ -609,8 +609,8 @@ mod tests {
         set_speed(&mut world, cart, PUSH_SPEED);
         let mut turned = false;
         for _ in 0..(4 * 60) {
-            tick_carts(&mut world, &mut physics, 1.0 / 60.0);
-            physics.step(1.0 / 60.0);
+            tick_carts(&mut world, 1.0 / 60.0);
+            crate::systems::simulate(&mut world, &mut physics, 1.0 / 60.0);
             assert!(speed(&world, cart) >= 0.0, "it never comes back by itself");
             let heading = world.get::<&Heading>(cart).map(|h| h.0).unwrap_or(0.0);
             turned |= (heading - FRAC_PI_2).abs() < 0.01;

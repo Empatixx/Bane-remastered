@@ -41,6 +41,13 @@
 //!    [`pickups_phase`] and before [`scenery_phase`], whose wind, trails, dust and swaying read
 //!    it. The tick lends the clock (`&mut f32`) rather than copying it, so no phase can read a
 //!    stale time.
+//! 8. **Body requests before `simulate`.** The `Teleport`, `MoveTo` and `SetVelocity` requests
+//!    of [`hostile_phase`] (Argus's blink, the orbiting eyes), [`pets_phase`] (the pet's jump
+//!    to its owner) and [`contraptions_phase`] (carts, floating barrels) are carried out by
+//!    `simulate` in [`physics_phase`] of the same step; a ricochet's `Teleport` from
+//!    [`bullets_phase`] by the next step's. Nothing in between asks the physics where those
+//!    bodies are or how fast they go; a write that must be seen at once uses `Physics::place`
+//!    or `Physics::halt` instead (see `systems::simulation`).
 
 use glam::Vec2;
 use hecs::World;
@@ -177,7 +184,7 @@ pub(crate) fn hostile_phase(tick: &mut Tick, floor: &mut Floor) {
     super::tick_argus(world, &mut hostile);
     super::tick_laser(world, &mut hostile);
     super::tick_flames(world, &mut hostile);
-    super::tick_orbiters(world, &mut *hostile.physics, hostile_dt);
+    super::tick_orbiters(world, hostile_dt);
 }
 
 /// The pet picks its target, plans its path and steers. Shared by the in-game step and the
@@ -211,7 +218,7 @@ pub(crate) fn contraptions_phase(tick: &mut Tick, floor: &mut Floor) {
     let assets = tick.assets;
     let textures = &assets.textures;
     super::slow_bullets_in_webs(tick.world, tick.physics, tick.dt);
-    super::tick_carts(tick.world, tick.physics, tick.dt);
+    super::tick_carts(tick.world, tick.dt);
     super::tick_waterworks(tick.world, tick.physics, floor.surfaces, textures, *tick.clock, tick.dt);
     super::tick_pendulums(tick.world, tick.sounds, tick.fx, *tick.clock, tick.hostile_dt);
     super::shove_tables(tick.world, tick.physics, textures, tick.sounds, tick.input.direction());

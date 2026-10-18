@@ -131,16 +131,15 @@ fn blocked_by_enemy(world: &World, center: Vec2) -> bool {
         .any(|(position, size)| geometry::overlaps(center, PET_SIZE, position.0, size.0))
 }
 
-fn teleport_to_owner(world: &mut World, physics: &mut Physics, pet: Entity, destination: Vec2) {
+fn teleport_to_owner(world: &mut World, pet: Entity, destination: Vec2) {
     if blocked_by_enemy(world, destination) {
         tracing::warn!("the pet cannot teleport, an enemy stands next to the owner");
         return;
     }
-    if let Ok((position, body, path, state)) =
+    if let Ok((position, _, path, state)) =
         world.query_one_mut::<(&mut Position, &crate::components::Body, &mut Path, &mut Pet)>(pet)
     {
         position.0 = destination;
-        physics.teleport(*body, destination);
         path.cells.clear();
         path.planned_for = None;
         state.stranded = false;
@@ -150,6 +149,8 @@ fn teleport_to_owner(world: &mut World, physics: &mut Physics, pet: Entity, dest
             y = destination.y,
             "the pet teleports to its owner"
         );
+        // The body follows in this step's `simulate`, after the pets phase.
+        let _ = world.insert_one(pet, crate::components::Teleport(destination));
     }
 }
 
@@ -204,7 +205,7 @@ pub(crate) fn plan_pet_paths(world: &mut World, physics: &mut Physics, navigatio
         let far = position.distance(target) > TELEPORT_DISTANCE;
         let lost = world.get::<&Pet>(entity).is_ok_and(|pet| pet.stranded);
         if goal == owner && (far || lost) {
-            teleport_to_owner(world, physics, entity, target);
+            teleport_to_owner(world, entity, target);
         }
     }
 }

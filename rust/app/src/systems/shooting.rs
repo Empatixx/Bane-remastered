@@ -7,7 +7,8 @@ use crate::components::BULLET_IMPACT;
 use crate::components::{
     Animation, Body, Boss, Breakable, Bullet, Burst, CHILL_SECONDS, CHILL_STACKS_TO_FREEZE,
     Chilled, Enemy, Expiring, Friendly, Frozen, Heading, Health, InfiniteAmmo, Loadout, Phantom,
-    Player, PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, TrainingDummy, Velocity,
+    Player, PlayerPerks, PoisonPool, Position, Size, Spawning, Summoned, Teleport, TrainingDummy,
+    Velocity,
 };
 use crate::controls::Action;
 use crate::geometry;
@@ -344,7 +345,9 @@ pub(crate) fn bullet_hits(
                 bullet.last_hit = None;
                 let _ = world.insert_one(entity, bullet);
                 let pushed = at + normal * (depth + BOUNCE_CLEARANCE);
-                physics.teleport(body, pushed);
+                // The body follows in the next step's `simulate`; nothing asks the physics
+                // where this bullet is before then.
+                let _ = world.insert_one(entity, Teleport(pushed));
                 if let Ok(mut position) = world.get::<&mut Position>(entity) {
                     position.0 = pushed;
                 }

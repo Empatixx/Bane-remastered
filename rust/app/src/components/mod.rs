@@ -33,7 +33,7 @@ pub(crate) use artefacts::{
     HealPercent, InfiniteAmmo, MidasTouch, Phantom, PlaceTurret, ShieldAura, Shielded,
     SummonGhosts, TimeSlow,
 };
-pub(crate) use body::{Body, BodyOffset};
+pub(crate) use body::{Body, BodyOffset, MoveTo, SetVelocity, Teleport};
 pub(crate) use combat::{
     Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
     ContactDamage, Dash, Detour, Slot, Died, Enemy, Expiring, Gone, GunDrop, Health, HitFlash,

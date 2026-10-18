@@ -12,9 +12,9 @@ use crate::artefacts::ArtefactKind;
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    ArtefactSlot, Armor, Body, BreakKind, Broken, Color, Dodge, Health, Invulnerable,
+    ArtefactSlot, Armor, BreakKind, Broken, Color, Dodge, Health, Invulnerable,
     Layer, Loadout, Player, Position, ScreenSpace, Size, SpeechBubble, SpeechText,
-    Text, Velocity, Weapon,
+    Text, Weapon,
 };
 use crate::dungeon::{Direction, Lesson, LessonRoom};
 use crate::enemies::EnemyKind;
@@ -575,16 +575,10 @@ impl Training {
             if let Ok(mut armor) = world.get::<&mut Armor>(entity) {
                 armor.current = armor.max;
             }
-            if let Ok(body) = world.get::<&Body>(entity).map(|body| *body) {
-                physics.teleport(body, checkpoint);
-                physics.set_velocity(body, Vec2::ZERO);
-            }
-            if let Ok(mut position) = world.get::<&mut Position>(entity) {
-                position.0 = checkpoint;
-            }
-            if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
-                velocity.0 = Vec2::ZERO;
-            }
+            // At once rather than through `simulate`: the rest of this frame reads the body's
+            // speed for the gaze wind before the next step.
+            physics.place(world, entity, checkpoint);
+            physics.halt(world, entity);
             let _ = world.remove_one::<Dodge>(entity);
             let _ = world.insert_one(entity, Invulnerable { remaining: RESPAWN_GRACE });
         }

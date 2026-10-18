@@ -12,7 +12,7 @@ use hecs::{Entity, World};
 use crate::assets::{Tex, Textures, tex};
 use crate::components::{
     Animation, Body, BodyOffset, BreakKind, Bullet, Clip, Color, Expiring, Health,
-    Layer, Light, Lit, Position, Size, Sprite,
+    Layer, Light, Lit, Position, SetVelocity, Size, Sprite,
 };
 use crate::dungeon::{Bridge, Debris, Dungeon, Floater, FloatingBarrel, Mark, Surface, Surfaces};
 use crate::physics::Physics;
@@ -463,7 +463,7 @@ pub(crate) fn tick_waterworks(
                     velocity = -velocity;
                 }
                 adrift.velocity = velocity;
-                physics.set_velocity(body, velocity);
+                let _ = world.insert_one(entity, SetVelocity(velocity));
                 if let Ok(mut body_offset) = world.get::<&mut BodyOffset>(entity) {
                     body_offset.0 = offset + bob;
                 }
