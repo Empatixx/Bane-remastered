@@ -11,7 +11,7 @@ use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::boss_kit::play;
+use crate::systems::boss_kit::{self, play};
 use crate::systems::player::living_player_at;
 use crate::systems::hostile::Hostile;
 
@@ -75,22 +75,7 @@ pub(crate) fn choose_attack(argus: &mut ArgusBoss, orbiters: usize) -> ArgusAtta
         (ArgusAttack::Barrage, 3.0),
         (ArgusAttack::Shield, shield),
     ];
-    let total: f32 = weights
-        .iter()
-        .filter(|(attack, weight)| Some(*attack) != argus.last && *weight > 0.0)
-        .map(|(_, weight)| weight)
-        .sum();
-    let mut roll = crate::rng::roll(&mut argus.seed) * total;
-    for (attack, weight) in weights {
-        if Some(attack) == argus.last || weight == 0.0 {
-            continue;
-        }
-        if roll < weight {
-            return attack;
-        }
-        roll -= weight;
-    }
-    ArgusAttack::Volley
+    boss_kit::pick_attack(&mut argus.brain, &weights, ArgusAttack::Volley)
 }
 
 pub(crate) fn orbit_count(enraged: bool) -> usize {
@@ -103,80 +88,80 @@ pub(crate) fn orbit_count(enraged: bool) -> usize {
 
 pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> {
     let mut commands = Vec::new();
-    match argus.stage {
+    match argus.brain.stage {
         ArgusStage::Float => {
-            argus.cooldown -= dt;
-            if argus.cooldown > 0.0 {
+            argus.brain.cooldown -= dt;
+            if argus.brain.cooldown > 0.0 {
                 return commands;
             }
             commands.push(Cmd::Root);
             if argus.attacks >= enemies::ARGUS_TELEPORT_EVERY {
                 argus.attacks = 0;
-                argus.stage = ArgusStage::FadingOut;
-                argus.timer = enemies::ARGUS_FADE;
+                argus.brain.stage = ArgusStage::FadingOut;
+                argus.brain.timer = enemies::ARGUS_FADE;
                 commands.push(Cmd::Sound(SoundEffect::ArgusTeleport));
                 return commands;
             }
             let attack = choose_attack(argus, orbiters);
-            argus.attack = attack;
-            argus.last = Some(attack);
-            argus.stage = ArgusStage::Winding;
+            argus.brain.attack = attack;
+            argus.brain.last = Some(attack);
+            argus.brain.stage = ArgusStage::Winding;
             match attack {
                 ArgusAttack::Volley => {
-                    argus.timer = enemies::ARGUS_VOLLEY_WINDUP;
+                    argus.brain.timer = enemies::ARGUS_VOLLEY_WINDUP;
                     commands.push(Cmd::Play(volley_clip()));
                     commands.push(Cmd::Sound(SoundEffect::ArgusCharge));
                 }
                 ArgusAttack::Barrage => {
-                    argus.timer = enemies::ARGUS_BARRAGE_WINDUP;
+                    argus.brain.timer = enemies::ARGUS_BARRAGE_WINDUP;
                     commands.push(Cmd::Play(aim_clip()));
                     commands.push(Cmd::Sound(SoundEffect::ArgusCharge));
                 }
                 ArgusAttack::Shield => {
-                    argus.timer = enemies::ARGUS_SHIELD_WINDUP;
+                    argus.brain.timer = enemies::ARGUS_SHIELD_WINDUP;
                     commands.push(Cmd::Play(volley_clip()));
                     commands.push(Cmd::Sound(SoundEffect::ArgusSummon));
                 }
             }
         }
         ArgusStage::Winding => {
-            argus.timer -= dt;
-            if argus.timer > 0.0 {
+            argus.brain.timer -= dt;
+            if argus.brain.timer > 0.0 {
                 return commands;
             }
             argus.pulse = 0.0;
             argus.pulses = 0;
-            match argus.attack {
+            match argus.brain.attack {
                 ArgusAttack::Volley => {
-                    argus.stage = ArgusStage::Acting;
+                    argus.brain.stage = ArgusStage::Acting;
                     let pulses = if argus.enraged {
                         enemies::ARGUS_VOLLEY_RAGE_PULSES
                     } else {
                         enemies::ARGUS_VOLLEY_PULSES
                     };
-                    argus.timer = pulses as f32 * enemies::ARGUS_VOLLEY_EVERY - 0.05;
+                    argus.brain.timer = pulses as f32 * enemies::ARGUS_VOLLEY_EVERY - 0.05;
                 }
                 ArgusAttack::Barrage => {
-                    argus.stage = ArgusStage::Acting;
+                    argus.brain.stage = ArgusStage::Acting;
                     let shots = if argus.enraged {
                         enemies::ARGUS_BARRAGE_RAGE_SHOTS
                     } else {
                         enemies::ARGUS_BARRAGE_SHOTS
                     };
-                    argus.timer = shots as f32 * enemies::ARGUS_BARRAGE_EVERY - 0.05;
+                    argus.brain.timer = shots as f32 * enemies::ARGUS_BARRAGE_EVERY - 0.05;
                 }
                 ArgusAttack::Shield => {
                     commands.push(Cmd::Shield);
-                    argus.stage = ArgusStage::Recovering;
-                    argus.timer = enemies::ARGUS_RECOVER;
+                    argus.brain.stage = ArgusStage::Recovering;
+                    argus.brain.timer = enemies::ARGUS_RECOVER;
                 }
             }
         }
         ArgusStage::Acting => {
-            argus.timer -= dt;
+            argus.brain.timer -= dt;
             argus.pulse -= dt;
-            while argus.pulse <= 0.0 && argus.timer > 0.0 {
-                match argus.attack {
+            while argus.pulse <= 0.0 && argus.brain.timer > 0.0 {
+                match argus.brain.attack {
                     ArgusAttack::Volley => {
                         argus.angle += 0.37;
                         commands.push(Cmd::Ring(argus.angle));
@@ -190,19 +175,19 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
                 }
                 argus.pulses += 1;
             }
-            if argus.timer <= 0.0 {
-                argus.stage = ArgusStage::Recovering;
-                argus.timer = enemies::ARGUS_RECOVER;
+            if argus.brain.timer <= 0.0 {
+                argus.brain.stage = ArgusStage::Recovering;
+                argus.brain.timer = enemies::ARGUS_RECOVER;
             }
         }
         ArgusStage::Recovering => {
-            argus.timer -= dt;
-            if argus.timer <= 0.0 {
+            argus.brain.timer -= dt;
+            if argus.brain.timer <= 0.0 {
                 argus.attacks += 1;
-                commands.push(Cmd::Play(argus.idle));
+                commands.push(Cmd::Play(argus.brain.idle));
                 commands.push(Cmd::Free);
-                argus.stage = ArgusStage::Float;
-                argus.cooldown = if argus.enraged {
+                argus.brain.stage = ArgusStage::Float;
+                argus.brain.cooldown = if argus.enraged {
                     enemies::ARGUS_RAGE_COOLDOWN
                 } else {
                     enemies::ARGUS_COOLDOWN
@@ -210,19 +195,19 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
             }
         }
         ArgusStage::FadingOut => {
-            argus.timer -= dt;
-            if argus.timer <= 0.0 {
+            argus.brain.timer -= dt;
+            if argus.brain.timer <= 0.0 {
                 commands.push(Cmd::Teleport);
-                argus.stage = ArgusStage::FadingIn;
-                argus.timer = enemies::ARGUS_FADE;
+                argus.brain.stage = ArgusStage::FadingIn;
+                argus.brain.timer = enemies::ARGUS_FADE;
             }
         }
         ArgusStage::FadingIn => {
-            argus.timer -= dt;
-            if argus.timer <= 0.0 {
+            argus.brain.timer -= dt;
+            if argus.brain.timer <= 0.0 {
                 commands.push(Cmd::Free);
-                argus.stage = ArgusStage::Float;
-                argus.cooldown = enemies::ARGUS_FIRST_COOLDOWN * 0.4;
+                argus.brain.stage = ArgusStage::Float;
+                argus.brain.cooldown = enemies::ARGUS_FIRST_COOLDOWN * 0.4;
             }
         }
     }
@@ -230,9 +215,9 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
 }
 
 pub(crate) fn fade(argus: &ArgusBoss) -> f32 {
-    match argus.stage {
-        ArgusStage::FadingOut => (argus.timer / enemies::ARGUS_FADE).clamp(0.0, 1.0),
-        ArgusStage::FadingIn => 1.0 - (argus.timer / enemies::ARGUS_FADE).clamp(0.0, 1.0),
+    match argus.brain.stage {
+        ArgusStage::FadingOut => (argus.brain.timer / enemies::ARGUS_FADE).clamp(0.0, 1.0),
+        ArgusStage::FadingIn => 1.0 - (argus.brain.timer / enemies::ARGUS_FADE).clamp(0.0, 1.0),
         _ => 1.0,
     }
 }
@@ -463,21 +448,22 @@ pub(crate) fn tick_orbiters(world: &mut World, physics: &mut Physics, dt: f32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::components::BossBrain;
 
     fn argus() -> ArgusBoss {
         ArgusBoss {
-            stage: ArgusStage::Float,
-            attack: ArgusAttack::Volley,
-            last: None,
-            timer: 0.0,
-            cooldown: 0.0,
+            brain: BossBrain::new(
+                ArgusStage::Float,
+                ArgusAttack::Volley,
+                0.0,
+                777,
+                volley_clip(),
+            ),
             pulse: 0.0,
             pulses: 0,
             angle: 0.0,
             attacks: 0,
             enraged: false,
-            seed: 777,
-            idle: volley_clip(),
         }
     }
 
@@ -496,12 +482,12 @@ mod tests {
         let mut boss = argus();
         let mut last = None;
         for _ in 0..200 {
-            boss.last = last;
+            boss.brain.last = last;
             let attack = choose_attack(&mut boss, 0);
             assert_ne!(Some(attack), last);
             last = Some(attack);
         }
-        boss.last = None;
+        boss.brain.last = None;
         for _ in 0..200 {
             assert_ne!(
                 choose_attack(&mut boss, enemies::ARGUS_ORBIT_COUNT),
@@ -514,13 +500,13 @@ mod tests {
     fn argus_charges_audibly_before_shooting_and_chimes_before_calling_its_eyes() {
         for seed in 0..40 {
             let mut boss = argus();
-            boss.seed = seed * 7919 + 1;
+            boss.brain.seed = seed * 7919 + 1;
             let commands = step(&mut boss, 0, 0.02);
-            let expected = match boss.attack {
+            let expected = match boss.brain.attack {
                 ArgusAttack::Volley | ArgusAttack::Barrage => SoundEffect::ArgusCharge,
                 ArgusAttack::Shield => SoundEffect::ArgusSummon,
             };
-            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.brain.attack);
         }
     }
 
@@ -529,17 +515,17 @@ mod tests {
         let mut boss = argus();
         boss.attacks = enemies::ARGUS_TELEPORT_EVERY;
         let commands = step(&mut boss, 0, 0.02);
-        assert_eq!(boss.stage, ArgusStage::FadingOut);
+        assert_eq!(boss.brain.stage, ArgusStage::FadingOut);
         assert!(commands.contains(&Cmd::Sound(SoundEffect::ArgusTeleport)));
     }
 
     #[test]
     fn a_volley_fires_rotating_rings_and_returns_to_floating() {
         let mut boss = argus();
-        boss.stage = ArgusStage::Winding;
-        boss.attack = ArgusAttack::Volley;
-        boss.last = Some(ArgusAttack::Volley);
-        boss.timer = 0.01;
+        boss.brain.stage = ArgusStage::Winding;
+        boss.brain.attack = ArgusAttack::Volley;
+        boss.brain.last = Some(ArgusAttack::Volley);
+        boss.brain.timer = 0.01;
         let commands = run(&mut boss, 4.0);
         let rings = commands
             .iter()
@@ -547,15 +533,15 @@ mod tests {
             .count();
         assert_eq!(rings, enemies::ARGUS_VOLLEY_PULSES as usize);
         assert!(commands.contains(&Cmd::Free));
-        assert_eq!(boss.stage, ArgusStage::Float);
+        assert_eq!(boss.brain.stage, ArgusStage::Float);
     }
 
     #[test]
     fn a_shield_attack_raises_the_orbiting_eyes_once() {
         let mut boss = argus();
-        boss.stage = ArgusStage::Winding;
-        boss.attack = ArgusAttack::Shield;
-        boss.timer = 0.01;
+        boss.brain.stage = ArgusStage::Winding;
+        boss.brain.attack = ArgusAttack::Shield;
+        boss.brain.timer = 0.01;
         let summons = run(&mut boss, 1.0)
             .iter()
             .filter(|command| **command == Cmd::Shield)
@@ -570,20 +556,20 @@ mod tests {
         let commands = run(&mut boss, 1.5);
         assert!(commands.contains(&Cmd::Teleport));
         assert_eq!(boss.attacks, 0);
-        boss.stage = ArgusStage::FadingOut;
-        boss.timer = enemies::ARGUS_FADE / 2.0;
+        boss.brain.stage = ArgusStage::FadingOut;
+        boss.brain.timer = enemies::ARGUS_FADE / 2.0;
         assert!((fade(&boss) - 0.5).abs() < 1e-4);
-        boss.stage = ArgusStage::FadingIn;
+        boss.brain.stage = ArgusStage::FadingIn;
         assert!((fade(&boss) - 0.5).abs() < 1e-4);
     }
 
     #[test]
     fn a_barrage_fires_one_aimed_shot_per_pulse() {
         let mut boss = argus();
-        boss.stage = ArgusStage::Winding;
-        boss.attack = ArgusAttack::Barrage;
-        boss.last = Some(ArgusAttack::Barrage);
-        boss.timer = 0.01;
+        boss.brain.stage = ArgusStage::Winding;
+        boss.brain.attack = ArgusAttack::Barrage;
+        boss.brain.last = Some(ArgusAttack::Barrage);
+        boss.brain.timer = 0.01;
         let shots = run(&mut boss, 3.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Shot(_)))
@@ -595,10 +581,10 @@ mod tests {
     fn rage_fires_more_rings() {
         let mut boss = argus();
         boss.enraged = true;
-        boss.stage = ArgusStage::Winding;
-        boss.attack = ArgusAttack::Volley;
-        boss.last = Some(ArgusAttack::Volley);
-        boss.timer = 0.01;
+        boss.brain.stage = ArgusStage::Winding;
+        boss.brain.attack = ArgusAttack::Volley;
+        boss.brain.last = Some(ArgusAttack::Volley);
+        boss.brain.timer = 0.01;
         let rings = run(&mut boss, 5.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Ring(_)))

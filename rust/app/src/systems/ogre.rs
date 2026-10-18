@@ -81,35 +81,19 @@ pub(crate) fn choose_attack(ogre: &mut OgreBoss, distance: f32, rats: usize) -> 
         ),
         (OgreAttack::Roar, if crowded { 0.0 } else { 2.0 }),
     ];
-    let allowed = |attack: OgreAttack, weight: f32| weight > 0.0 && Some(attack) != ogre.last;
-    let total: f32 = weights
-        .iter()
-        .filter(|(attack, weight)| allowed(*attack, *weight))
-        .map(|(_, weight)| weight)
-        .sum();
-    let mut roll = crate::rng::roll(&mut ogre.seed) * total;
-    for (attack, weight) in weights {
-        if !allowed(attack, weight) {
-            continue;
-        }
-        if roll < weight {
-            return attack;
-        }
-        roll -= weight;
-    }
-    OgreAttack::Jump
+    boss_kit::pick_attack(&mut ogre.brain, &weights, OgreAttack::Jump)
 }
 
 pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> Vec<Cmd> {
     let mut commands = Vec::new();
-    match ogre.stage {
+    match ogre.brain.stage {
         OgreStage::Walk => {
-            ogre.cooldown -= dt;
-            if ogre.cooldown <= 0.0 {
+            ogre.brain.cooldown -= dt;
+            if ogre.brain.cooldown <= 0.0 {
                 let attack = choose_attack(ogre, distance, rats);
-                ogre.attack = attack;
-                ogre.last = Some(attack);
-                ogre.stage = OgreStage::Winding;
+                ogre.brain.attack = attack;
+                ogre.brain.last = Some(attack);
+                ogre.brain.stage = OgreStage::Winding;
                 commands.push(Cmd::Root);
                 let (row, windup, sound) = match attack {
                     OgreAttack::Jump => (6, enemies::OGRE_JUMP_WINDUP, SoundEffect::OgreJump),
@@ -117,15 +101,15 @@ pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> 
                     OgreAttack::Slam => (3, enemies::OGRE_SLAM_WINDUP, SoundEffect::OgreSwing),
                     OgreAttack::Roar => (4, enemies::OGRE_ROAR_WINDUP, SoundEffect::OgreRoar),
                 };
-                ogre.timer = windup;
+                ogre.brain.timer = windup;
                 commands.push(Cmd::Play(clip(row)));
                 commands.push(Cmd::Sound(sound));
             }
         }
         OgreStage::Winding => {
-            ogre.timer -= dt;
-            if ogre.timer <= 0.0 {
-                let (command, recover) = match ogre.attack {
+            ogre.brain.timer -= dt;
+            if ogre.brain.timer <= 0.0 {
+                let (command, recover) = match ogre.brain.attack {
                     OgreAttack::Jump => (Cmd::Ring, enemies::OGRE_JUMP_RECOVER),
                     OgreAttack::Throw => (
                         Cmd::Rats(enemies::OGRE_THROW_RATS),
@@ -138,17 +122,17 @@ pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> 
                     ),
                 };
                 commands.push(command);
-                ogre.stage = OgreStage::Recovering;
-                ogre.timer = recover;
+                ogre.brain.stage = OgreStage::Recovering;
+                ogre.brain.timer = recover;
             }
         }
         OgreStage::Recovering => {
-            ogre.timer -= dt;
-            if ogre.timer <= 0.0 {
-                commands.push(Cmd::Play(ogre.idle));
+            ogre.brain.timer -= dt;
+            if ogre.brain.timer <= 0.0 {
+                commands.push(Cmd::Play(ogre.brain.idle));
                 commands.push(Cmd::Free);
-                ogre.stage = OgreStage::Walk;
-                ogre.cooldown = if ogre.enraged {
+                ogre.brain.stage = OgreStage::Walk;
+                ogre.brain.cooldown = if ogre.enraged {
                     enemies::OGRE_RAGE_COOLDOWN
                 } else {
                     enemies::OGRE_COOLDOWN
@@ -299,17 +283,18 @@ fn execute(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::components::BossBrain;
 
     fn ogre() -> OgreBoss {
         OgreBoss {
-            stage: OgreStage::Walk,
-            attack: OgreAttack::Jump,
-            last: None,
-            timer: 0.0,
-            cooldown: 0.0,
+            brain: BossBrain::new(
+                OgreStage::Walk,
+                OgreAttack::Jump,
+                0.0,
+                4242,
+                clip(0),
+            ),
             enraged: false,
-            seed: 4242,
-            idle: clip(0),
         }
     }
 
@@ -328,12 +313,12 @@ mod tests {
         let mut boss = ogre();
         let mut last = None;
         for _ in 0..200 {
-            boss.last = last;
+            boss.brain.last = last;
             let attack = choose_attack(&mut boss, 200.0, 0);
             assert_ne!(Some(attack), last);
             last = Some(attack);
         }
-        boss.last = None;
+        boss.brain.last = None;
         for _ in 0..200 {
             let attack = choose_attack(&mut boss, 600.0, enemies::OGRE_RAT_LIMIT);
             assert!(matches!(attack, OgreAttack::Jump | OgreAttack::Slam));
@@ -343,14 +328,14 @@ mod tests {
     #[test]
     fn a_jump_roots_rings_and_frees_the_ogre_again() {
         let mut boss = ogre();
-        boss.stage = OgreStage::Winding;
-        boss.attack = OgreAttack::Jump;
-        boss.last = Some(OgreAttack::Jump);
-        boss.timer = 0.01;
+        boss.brain.stage = OgreStage::Winding;
+        boss.brain.attack = OgreAttack::Jump;
+        boss.brain.last = Some(OgreAttack::Jump);
+        boss.brain.timer = 0.01;
         let commands = run(&mut boss, 1.0);
         assert!(commands.contains(&Cmd::Ring));
         assert!(commands.contains(&Cmd::Free));
-        assert_eq!(boss.stage, OgreStage::Walk);
+        assert_eq!(boss.brain.stage, OgreStage::Walk);
     }
 
     #[test]
@@ -360,10 +345,10 @@ mod tests {
             (OgreAttack::Throw, enemies::OGRE_THROW_RATS),
         ] {
             let mut boss = ogre();
-            boss.stage = OgreStage::Winding;
-            boss.attack = attack;
-            boss.last = Some(attack);
-            boss.timer = 0.01;
+            boss.brain.stage = OgreStage::Winding;
+            boss.brain.attack = attack;
+            boss.brain.last = Some(attack);
+            boss.brain.timer = 0.01;
             assert!(run(&mut boss, 0.5).contains(&Cmd::Rats(count)));
         }
     }
@@ -372,25 +357,25 @@ mod tests {
     fn every_wind_up_announces_its_attack_with_a_sound() {
         for seed in 0..40 {
             let mut boss = ogre();
-            boss.seed = seed * 7919 + 1;
+            boss.brain.seed = seed * 7919 + 1;
             let commands = step(&mut boss, 200.0, 0, 0.02);
-            let expected = match boss.attack {
+            let expected = match boss.brain.attack {
                 OgreAttack::Jump => SoundEffect::OgreJump,
                 OgreAttack::Throw => SoundEffect::OgreThrow,
                 OgreAttack::Slam => SoundEffect::OgreSwing,
                 OgreAttack::Roar => SoundEffect::OgreRoar,
             };
-            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.brain.attack);
         }
     }
 
     #[test]
     fn the_club_slam_fires_a_fan() {
         let mut boss = ogre();
-        boss.stage = OgreStage::Winding;
-        boss.attack = OgreAttack::Slam;
-        boss.last = Some(OgreAttack::Slam);
-        boss.timer = 0.01;
+        boss.brain.stage = OgreStage::Winding;
+        boss.brain.attack = OgreAttack::Slam;
+        boss.brain.last = Some(OgreAttack::Slam);
+        boss.brain.timer = 0.01;
         assert!(run(&mut boss, 0.5).contains(&Cmd::Fan));
     }
 }

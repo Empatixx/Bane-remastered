@@ -7,8 +7,8 @@ use hecs::{Entity, World};
 use crate::assets::{Tex, Textures};
 use crate::audio::AudioCommand;
 use crate::components::{
-    Animation, BeamPart, Clip, Color, ContactDamage, Dodge, Drag, Expiring, Layer, Light, Position,
-    RoomId, Size, Sprite, Velocity,
+    Animation, BeamPart, BossBrain, Clip, Color, ContactDamage, Dodge, Drag, Expiring, Layer,
+    Light, Position, RoomId, Size, Sprite, Velocity,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
@@ -212,6 +212,33 @@ pub(crate) fn draw_beam(
     }
 }
 
+/// A weighted roll of the boss's dice among `weights`, never the attack it used last nor one
+/// weighted zero; `fallback` if nothing is left to roll.
+pub(crate) fn pick_attack<Stage, Attack: Copy + PartialEq>(
+    brain: &mut BossBrain<Stage, Attack>,
+    weights: &[(Attack, f32)],
+    fallback: Attack,
+) -> Attack {
+    let last = brain.last;
+    let allowed = |attack: Attack, weight: f32| weight > 0.0 && Some(attack) != last;
+    let total: f32 = weights
+        .iter()
+        .filter(|(attack, weight)| allowed(*attack, *weight))
+        .map(|(_, weight)| weight)
+        .sum();
+    let mut roll = crate::rng::roll(&mut brain.seed) * total;
+    for &(attack, weight) in weights {
+        if !allowed(attack, weight) {
+            continue;
+        }
+        if roll < weight {
+            return attack;
+        }
+        roll -= weight;
+    }
+    fallback
+}
+
 /// The attack named by `value` — trimmed, any case — among a boss's `names`.
 pub(crate) fn attack_named<A: Copy>(value: &str, names: &[(&str, A)]) -> Option<A> {
     let wanted = value.trim().to_ascii_lowercase();
@@ -249,6 +276,26 @@ mod tests {
     fn turning_takes_the_short_way_round() {
         let turned = turn_towards(3.0, -3.0, 0.5);
         assert!(turned > 3.0);
+    }
+
+    #[test]
+    fn a_picked_attack_is_never_the_last_one_nor_weighted_zero() {
+        let idle = Clip {
+            row: 0,
+            frames: 1,
+            frame_time: 0.1,
+            looping: true,
+            flipped: false,
+        };
+        let mut brain = BossBrain::new((), 0, 0.0, 99, idle);
+        for _ in 0..200 {
+            let attack = pick_attack(&mut brain, &[(0, 1.0), (1, 2.0), (2, 0.0)], 9);
+            assert_ne!(Some(attack), brain.last);
+            assert_ne!(attack, 2);
+            brain.last = Some(attack);
+        }
+        brain.last = Some(0);
+        assert_eq!(pick_attack(&mut brain, &[(0, 1.0), (1, 0.0)], 9), 9);
     }
 
     #[test]

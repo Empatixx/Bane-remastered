@@ -83,36 +83,21 @@ pub(crate) fn choose_attack(hound: &mut HoundBoss, distance: f32) -> HoundAttack
         (HoundAttack::Breath, if close { 4.0 } else { 2.0 }),
         (HoundAttack::Howl, 1.5),
     ];
-    let total: f32 = weights
-        .iter()
-        .filter(|(attack, _)| Some(*attack) != hound.last)
-        .map(|(_, weight)| weight)
-        .sum();
-    let mut roll = crate::rng::roll(&mut hound.seed) * total;
-    for (attack, weight) in weights {
-        if Some(attack) == hound.last {
-            continue;
-        }
-        if roll < weight {
-            return attack;
-        }
-        roll -= weight;
-    }
-    HoundAttack::Lunge
+    boss_kit::pick_attack(&mut hound.brain, &weights, HoundAttack::Lunge)
 }
 
 pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32) -> Vec<Cmd> {
     let mut commands = Vec::new();
-    match hound.stage {
+    match hound.brain.stage {
         HoundStage::Prowl => {
-            hound.cooldown -= dt;
-            if hound.cooldown > 0.0 {
+            hound.brain.cooldown -= dt;
+            if hound.brain.cooldown > 0.0 {
                 return commands;
             }
             let attack = choose_attack(hound, distance);
-            hound.attack = attack;
-            hound.last = Some(attack);
-            hound.stage = HoundStage::Winding;
+            hound.brain.attack = attack;
+            hound.brain.last = Some(attack);
+            hound.brain.stage = HoundStage::Winding;
             commands.push(Cmd::Root);
             let (row, frame_time, windup, sound) = match attack {
                 HoundAttack::Lunge => (
@@ -129,7 +114,7 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32)
                 ),
                 HoundAttack::Howl => (3, 0.1, enemies::HOUND_HOWL_WINDUP, SoundEffect::HoundHowl),
             };
-            hound.timer = windup;
+            hound.brain.timer = windup;
             commands.push(Cmd::Play(clip(row, frame_time)));
             commands.push(Cmd::Sound(sound));
             if attack == HoundAttack::Breath {
@@ -137,39 +122,39 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32)
             }
         }
         HoundStage::Winding => {
-            hound.timer -= dt;
-            if hound.timer > 0.0 {
+            hound.brain.timer -= dt;
+            if hound.brain.timer > 0.0 {
                 return commands;
             }
-            match hound.attack {
+            match hound.brain.attack {
                 HoundAttack::Lunge => {
-                    hound.stage = HoundStage::Acting;
-                    hound.timer = enemies::HOUND_LUNGE_SECONDS;
+                    hound.brain.stage = HoundStage::Acting;
+                    hound.brain.timer = enemies::HOUND_LUNGE_SECONDS;
                     commands.push(Cmd::Free);
                     commands.push(Cmd::Charge(true));
                 }
                 HoundAttack::Breath => {
-                    hound.stage = HoundStage::Acting;
-                    hound.timer = enemies::HOUND_BREATH_SECONDS;
+                    hound.brain.stage = HoundStage::Acting;
+                    hound.brain.timer = enemies::HOUND_BREATH_SECONDS;
                     commands.push(Cmd::Sound(SoundEffect::HoundBreath));
                 }
                 HoundAttack::Howl => {
                     commands.push(Cmd::Ring);
-                    hound.stage = HoundStage::Recovering;
-                    hound.timer = enemies::HOUND_HOWL_RECOVER;
+                    hound.brain.stage = HoundStage::Recovering;
+                    hound.brain.timer = enemies::HOUND_HOWL_RECOVER;
                 }
             }
         }
         HoundStage::Acting => {
-            hound.timer -= dt;
-            if crashed && hound.attack == HoundAttack::Lunge {
+            hound.brain.timer -= dt;
+            if crashed && hound.brain.attack == HoundAttack::Lunge {
                 commands.push(Cmd::Crash);
-                hound.stage = HoundStage::Recovering;
-                hound.timer = enemies::HOUND_CRASH_STUN;
+                hound.brain.stage = HoundStage::Recovering;
+                hound.brain.timer = enemies::HOUND_CRASH_STUN;
                 return commands;
             }
-            if hound.timer <= 0.0 {
-                let recover = match hound.attack {
+            if hound.brain.timer <= 0.0 {
+                let recover = match hound.brain.attack {
                     HoundAttack::Lunge => {
                         commands.push(Cmd::Charge(false));
                         commands.push(Cmd::Root);
@@ -177,17 +162,17 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32)
                     }
                     _ => enemies::HOUND_BREATH_RECOVER,
                 };
-                hound.stage = HoundStage::Recovering;
-                hound.timer = recover;
+                hound.brain.stage = HoundStage::Recovering;
+                hound.brain.timer = recover;
             }
         }
         HoundStage::Recovering => {
-            hound.timer -= dt;
-            if hound.timer <= 0.0 {
-                commands.push(Cmd::Play(hound.idle));
+            hound.brain.timer -= dt;
+            if hound.brain.timer <= 0.0 {
+                commands.push(Cmd::Play(hound.brain.idle));
                 commands.push(Cmd::Free);
-                hound.stage = HoundStage::Prowl;
-                hound.cooldown = if hound.enraged {
+                hound.brain.stage = HoundStage::Prowl;
+                hound.brain.cooldown = if hound.enraged {
                     enemies::HOUND_RAGE_COOLDOWN
                 } else {
                     enemies::HOUND_COOLDOWN
@@ -383,16 +368,16 @@ pub(crate) fn tick_flames(world: &mut World, hostile: &mut Hostile<'_>) {
         .without::<&Expiring>()
         .iter()
         .filter(|(_, _, hound)| {
-            hound.attack == HoundAttack::Breath
-                && matches!(hound.stage, HoundStage::Winding | HoundStage::Acting)
+            hound.brain.attack == HoundAttack::Breath
+                && matches!(hound.brain.stage, HoundStage::Winding | HoundStage::Acting)
         })
         .map(|(entity, position, hound)| {
             (
                 entity,
                 position.0,
-                hound.stage == HoundStage::Acting,
+                hound.brain.stage == HoundStage::Acting,
                 hound.enraged,
-                hound.timer,
+                hound.brain.timer,
             )
         })
         .collect();
@@ -435,19 +420,20 @@ pub(crate) fn tick_flames(world: &mut World, hostile: &mut Hostile<'_>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::components::BossBrain;
 
     fn hound() -> HoundBoss {
         HoundBoss {
-            stage: HoundStage::Prowl,
-            attack: HoundAttack::Lunge,
-            last: None,
-            timer: 0.0,
-            cooldown: 0.0,
+            brain: BossBrain::new(
+                HoundStage::Prowl,
+                HoundAttack::Lunge,
+                0.0,
+                99,
+                clip(0, 0.07),
+            ),
             angles: [0.0; 3],
             charging: false,
             enraged: false,
-            seed: 99,
-            idle: clip(0, 0.07),
         }
     }
 
@@ -466,7 +452,7 @@ mod tests {
         let mut boss = hound();
         let mut last = None;
         for _ in 0..200 {
-            boss.last = last;
+            boss.brain.last = last;
             let attack = choose_attack(&mut boss, 200.0);
             assert_ne!(Some(attack), last);
             last = Some(attack);
@@ -477,19 +463,19 @@ mod tests {
     fn every_wind_up_announces_its_attack_and_the_breath_roars_while_it_burns() {
         for seed in 0..40 {
             let mut boss = hound();
-            boss.seed = seed * 7919 + 1;
+            boss.brain.seed = seed * 7919 + 1;
             let commands = step(&mut boss, 200.0, false, 0.02);
-            let expected = match boss.attack {
+            let expected = match boss.brain.attack {
                 HoundAttack::Lunge => SoundEffect::HoundGrowl,
                 HoundAttack::Breath => SoundEffect::HoundInhale,
                 HoundAttack::Howl => SoundEffect::HoundHowl,
             };
-            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.brain.attack);
         }
         let mut boss = hound();
-        boss.stage = HoundStage::Winding;
-        boss.attack = HoundAttack::Breath;
-        boss.timer = 0.01;
+        boss.brain.stage = HoundStage::Winding;
+        boss.brain.attack = HoundAttack::Breath;
+        boss.brain.timer = 0.01;
         let commands = step(&mut boss, 200.0, false, 0.02);
         assert!(commands.contains(&Cmd::Sound(SoundEffect::HoundBreath)));
     }
@@ -497,10 +483,10 @@ mod tests {
     #[test]
     fn a_lunge_charges_for_a_while_and_then_stops_and_rests() {
         let mut boss = hound();
-        boss.stage = HoundStage::Winding;
-        boss.attack = HoundAttack::Lunge;
-        boss.last = Some(HoundAttack::Lunge);
-        boss.timer = 0.01;
+        boss.brain.stage = HoundStage::Winding;
+        boss.brain.attack = HoundAttack::Lunge;
+        boss.brain.last = Some(HoundAttack::Lunge);
+        boss.brain.timer = 0.01;
         let commands = run(&mut boss, 3.0);
         let on = commands
             .iter()
@@ -509,38 +495,38 @@ mod tests {
             .iter()
             .position(|command| *command == Cmd::Charge(false));
         assert!(on.is_some() && off.is_some() && on < off);
-        assert_eq!(boss.stage, HoundStage::Prowl);
+        assert_eq!(boss.brain.stage, HoundStage::Prowl);
     }
 
     #[test]
     fn crashing_into_a_wall_ends_the_lunge_and_stuns_the_hound_longer() {
         let mut boss = hound();
-        boss.stage = HoundStage::Acting;
-        boss.attack = HoundAttack::Lunge;
-        boss.timer = 1.0;
+        boss.brain.stage = HoundStage::Acting;
+        boss.brain.attack = HoundAttack::Lunge;
+        boss.brain.timer = 1.0;
         boss.charging = true;
         let commands = step(&mut boss, 200.0, true, 0.02);
         assert!(commands.contains(&Cmd::Crash));
-        assert_eq!(boss.stage, HoundStage::Recovering);
-        assert!(boss.timer > enemies::HOUND_LUNGE_RECOVER);
+        assert_eq!(boss.brain.stage, HoundStage::Recovering);
+        assert!(boss.brain.timer > enemies::HOUND_LUNGE_RECOVER);
     }
 
     #[test]
     fn a_breath_holds_its_stage_for_the_whole_beam_and_a_howl_rings_once() {
         let mut boss = hound();
-        boss.stage = HoundStage::Winding;
-        boss.attack = HoundAttack::Breath;
-        boss.last = Some(HoundAttack::Breath);
-        boss.timer = 0.01;
+        boss.brain.stage = HoundStage::Winding;
+        boss.brain.attack = HoundAttack::Breath;
+        boss.brain.last = Some(HoundAttack::Breath);
+        boss.brain.timer = 0.01;
         run(&mut boss, 1.0);
-        assert_eq!(boss.stage, HoundStage::Acting);
+        assert_eq!(boss.brain.stage, HoundStage::Acting);
         run(&mut boss, 3.0);
-        assert_eq!(boss.stage, HoundStage::Prowl);
+        assert_eq!(boss.brain.stage, HoundStage::Prowl);
         let mut boss = hound();
-        boss.stage = HoundStage::Winding;
-        boss.attack = HoundAttack::Howl;
-        boss.last = Some(HoundAttack::Howl);
-        boss.timer = 0.01;
+        boss.brain.stage = HoundStage::Winding;
+        boss.brain.attack = HoundAttack::Howl;
+        boss.brain.last = Some(HoundAttack::Howl);
+        boss.brain.timer = 0.01;
         let rings = run(&mut boss, 1.0)
             .iter()
             .filter(|command| **command == Cmd::Ring)

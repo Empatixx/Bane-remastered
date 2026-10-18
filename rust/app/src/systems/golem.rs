@@ -96,22 +96,7 @@ pub(crate) fn choose_attack(golem: &mut GolemBoss, distance: f32) -> GolemAttack
         (GolemAttack::Rain, 2.0),
         (GolemAttack::Laser, if close { 1.5 } else { 3.0 }),
     ];
-    let total: f32 = weights
-        .iter()
-        .filter(|(attack, _)| Some(*attack) != golem.last)
-        .map(|(_, weight)| weight)
-        .sum();
-    let mut roll = crate::rng::roll(&mut golem.seed) * total;
-    for (attack, weight) in weights {
-        if Some(attack) == golem.last {
-            continue;
-        }
-        if roll < weight {
-            return attack;
-        }
-        roll -= weight;
-    }
-    GolemAttack::Slam
+    boss_kit::pick_attack(&mut golem.brain, &weights, GolemAttack::Slam)
 }
 
 pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
@@ -125,33 +110,33 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
             ));
         }
     }
-    match golem.stage {
+    match golem.brain.stage {
         GolemStage::Walk => {
-            golem.cooldown -= dt;
-            if golem.cooldown <= 0.0 {
+            golem.brain.cooldown -= dt;
+            if golem.brain.cooldown <= 0.0 {
                 let attack = choose_attack(golem, distance);
-                golem.attack = attack;
-                golem.last = Some(attack);
-                golem.stage = GolemStage::Winding;
+                golem.brain.attack = attack;
+                golem.brain.last = Some(attack);
+                golem.brain.stage = GolemStage::Winding;
                 commands.push(Cmd::Root);
                 match attack {
                     GolemAttack::Slam => {
-                        golem.timer = enemies::GOLEM_SLAM_WINDUP;
+                        golem.brain.timer = enemies::GOLEM_SLAM_WINDUP;
                         commands.push(Cmd::Play(slam_clip()));
                         commands.push(Cmd::Sound(SoundEffect::GolemSlam));
                     }
                     GolemAttack::Throw => {
-                        golem.timer = enemies::GOLEM_THROW_WINDUP;
+                        golem.brain.timer = enemies::GOLEM_THROW_WINDUP;
                         commands.push(Cmd::Play(throw_clip()));
                         commands.push(Cmd::Sound(SoundEffect::GolemThrow));
                     }
                     GolemAttack::Rain => {
-                        golem.timer = enemies::GOLEM_RAIN_WINDUP;
+                        golem.brain.timer = enemies::GOLEM_RAIN_WINDUP;
                         commands.push(Cmd::Play(rain_clip()));
                         commands.push(Cmd::Sound(SoundEffect::GolemRain));
                     }
                     GolemAttack::Laser => {
-                        golem.timer = enemies::GOLEM_LASER_CHARGE;
+                        golem.brain.timer = enemies::GOLEM_LASER_CHARGE;
                         commands.push(Cmd::Play(laser_clip()));
                         commands.push(Cmd::AimBeam);
                         commands.push(Cmd::Sound(SoundEffect::LaserCharge));
@@ -160,61 +145,61 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
             }
         }
         GolemStage::Winding => {
-            golem.timer -= dt;
-            if golem.timer <= 0.0 {
-                match golem.attack {
+            golem.brain.timer -= dt;
+            if golem.brain.timer <= 0.0 {
+                match golem.brain.attack {
                     GolemAttack::Slam => {
                         commands.push(Cmd::Ring(0.0));
                         if golem.enraged {
                             golem.second_ring = enemies::GOLEM_SECOND_RING;
                         }
-                        golem.stage = GolemStage::Recovering;
-                        golem.timer = enemies::GOLEM_SLAM_RECOVER;
+                        golem.brain.stage = GolemStage::Recovering;
+                        golem.brain.timer = enemies::GOLEM_SLAM_RECOVER;
                     }
                     GolemAttack::Throw => {
                         commands.push(Cmd::Boulder);
-                        golem.stage = GolemStage::Recovering;
-                        golem.timer = enemies::GOLEM_THROW_RECOVER;
+                        golem.brain.stage = GolemStage::Recovering;
+                        golem.brain.timer = enemies::GOLEM_THROW_RECOVER;
                     }
                     GolemAttack::Rain => {
-                        golem.stage = GolemStage::Acting;
-                        golem.timer = enemies::GOLEM_RAIN_SECONDS;
+                        golem.brain.stage = GolemStage::Acting;
+                        golem.brain.timer = enemies::GOLEM_RAIN_SECONDS;
                         golem.pulse = 0.0;
                         golem.rain_dropped = 0;
                     }
                     GolemAttack::Laser => {
-                        golem.stage = GolemStage::Acting;
-                        golem.timer = enemies::GOLEM_LASER_SECONDS;
+                        golem.brain.stage = GolemStage::Acting;
+                        golem.brain.timer = enemies::GOLEM_LASER_SECONDS;
                         commands.push(Cmd::Sound(SoundEffect::LaserFire));
                     }
                 }
             }
         }
         GolemStage::Acting => {
-            golem.timer -= dt;
-            if golem.attack == GolemAttack::Rain {
+            golem.brain.timer -= dt;
+            if golem.brain.attack == GolemAttack::Rain {
                 golem.pulse -= dt;
-                while golem.pulse <= 0.0 && golem.timer > 0.0 {
+                while golem.pulse <= 0.0 && golem.brain.timer > 0.0 {
                     commands.push(Cmd::Rain(golem.rain_dropped));
                     golem.rain_dropped += 1;
                     golem.pulse += enemies::GOLEM_RAIN_EVERY;
                 }
             }
-            if golem.timer <= 0.0 {
-                golem.stage = GolemStage::Recovering;
-                golem.timer = match golem.attack {
+            if golem.brain.timer <= 0.0 {
+                golem.brain.stage = GolemStage::Recovering;
+                golem.brain.timer = match golem.brain.attack {
                     GolemAttack::Laser => enemies::GOLEM_LASER_RECOVER,
                     _ => enemies::GOLEM_RAIN_RECOVER,
                 };
             }
         }
         GolemStage::Recovering => {
-            golem.timer -= dt;
-            if golem.timer <= 0.0 {
-                commands.push(Cmd::Play(golem.idle));
+            golem.brain.timer -= dt;
+            if golem.brain.timer <= 0.0 {
+                commands.push(Cmd::Play(golem.brain.idle));
                 commands.push(Cmd::Free);
-                golem.stage = GolemStage::Walk;
-                golem.cooldown = if golem.enraged {
+                golem.brain.stage = GolemStage::Walk;
+                golem.brain.cooldown = if golem.enraged {
                     enemies::GOLEM_RAGE_COOLDOWN
                 } else {
                     enemies::GOLEM_COOLDOWN
@@ -531,7 +516,7 @@ pub(crate) fn tick_laser(world: &mut World, hostile: &mut Hostile<'_>) {
         .without::<&Expiring>()
         .iter()
         .filter(|(_, _, golem)| {
-            golem.attack == GolemAttack::Laser && golem.stage == GolemStage::Acting
+            golem.brain.attack == GolemAttack::Laser && golem.brain.stage == GolemStage::Acting
         })
         .map(|(entity, position, golem)| (entity, position.0, golem.enraged))
         .collect();
@@ -577,21 +562,22 @@ pub(crate) fn clear_golem_effects(world: &mut World) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::components::BossBrain;
 
     fn golem() -> GolemBoss {
         GolemBoss {
-            stage: GolemStage::Walk,
-            attack: GolemAttack::Slam,
-            last: None,
-            timer: 0.0,
-            cooldown: 0.0,
+            brain: BossBrain::new(
+                GolemStage::Walk,
+                GolemAttack::Slam,
+                0.0,
+                12345,
+                slam_clip(),
+            ),
             pulse: 0.0,
             rain_dropped: 0,
             second_ring: 0.0,
             beam_angle: 0.0,
             enraged: false,
-            seed: 12345,
-            idle: slam_clip(),
         }
     }
 
@@ -610,7 +596,7 @@ mod tests {
         let mut boss = golem();
         let mut last = None;
         for _ in 0..200 {
-            boss.last = last;
+            boss.brain.last = last;
             let attack = choose_attack(&mut boss, 200.0);
             assert_ne!(Some(attack), last);
             last = Some(attack);
@@ -621,50 +607,50 @@ mod tests {
     fn every_wind_up_announces_its_attack_with_a_sound() {
         for seed in 0..40 {
             let mut boss = golem();
-            boss.seed = seed * 7919 + 1;
+            boss.brain.seed = seed * 7919 + 1;
             let commands = step(&mut boss, 200.0, 0.02);
-            let expected = match boss.attack {
+            let expected = match boss.brain.attack {
                 GolemAttack::Slam => SoundEffect::GolemSlam,
                 GolemAttack::Throw => SoundEffect::GolemThrow,
                 GolemAttack::Rain => SoundEffect::GolemRain,
                 GolemAttack::Laser => SoundEffect::LaserCharge,
             };
-            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.brain.attack);
         }
     }
 
     #[test]
     fn the_laser_hums_once_it_starts_firing() {
         let mut boss = golem();
-        boss.attack = GolemAttack::Laser;
-        boss.last = Some(GolemAttack::Laser);
-        boss.stage = GolemStage::Winding;
-        boss.timer = 0.01;
+        boss.brain.attack = GolemAttack::Laser;
+        boss.brain.last = Some(GolemAttack::Laser);
+        boss.brain.stage = GolemStage::Winding;
+        boss.brain.timer = 0.01;
         let commands = step(&mut boss, 200.0, 0.02);
         assert!(commands.contains(&Cmd::Sound(SoundEffect::LaserFire)));
-        assert_eq!(boss.stage, GolemStage::Acting);
+        assert_eq!(boss.brain.stage, GolemStage::Acting);
     }
 
     #[test]
     fn a_slam_roots_the_golem_fires_a_ring_and_frees_it_again() {
         let mut boss = golem();
-        boss.attack = GolemAttack::Slam;
-        boss.last = Some(GolemAttack::Slam);
-        boss.stage = GolemStage::Winding;
-        boss.timer = enemies::GOLEM_SLAM_WINDUP;
+        boss.brain.attack = GolemAttack::Slam;
+        boss.brain.last = Some(GolemAttack::Slam);
+        boss.brain.stage = GolemStage::Winding;
+        boss.brain.timer = enemies::GOLEM_SLAM_WINDUP;
         let commands = run(&mut boss, 3.0);
         assert!(commands.contains(&Cmd::Ring(0.0)));
         assert!(commands.contains(&Cmd::Free));
-        assert_eq!(boss.stage, GolemStage::Walk);
+        assert_eq!(boss.brain.stage, GolemStage::Walk);
     }
 
     #[test]
     fn rage_adds_a_second_ring() {
         let mut boss = golem();
         boss.enraged = true;
-        boss.stage = GolemStage::Winding;
-        boss.attack = GolemAttack::Slam;
-        boss.timer = 0.01;
+        boss.brain.stage = GolemStage::Winding;
+        boss.brain.attack = GolemAttack::Slam;
+        boss.brain.timer = 0.01;
         let rings = run(&mut boss, 2.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Ring(_)))
@@ -675,9 +661,9 @@ mod tests {
     #[test]
     fn rain_drops_rocks_over_its_whole_duration() {
         let mut boss = golem();
-        boss.stage = GolemStage::Winding;
-        boss.attack = GolemAttack::Rain;
-        boss.timer = 0.01;
+        boss.brain.stage = GolemStage::Winding;
+        boss.brain.attack = GolemAttack::Rain;
+        boss.brain.timer = 0.01;
         let rocks = run(&mut boss, 4.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Rain(_)))

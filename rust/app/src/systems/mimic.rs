@@ -87,23 +87,7 @@ pub(crate) fn choose_attack(
         ),
         (MimicAttack::Rest, 1.5),
     ];
-    let allowed = |attack: MimicAttack, weight: f32| weight > 0.0 && Some(attack) != mimic.last;
-    let total: f32 = weights
-        .iter()
-        .filter(|(attack, weight)| allowed(*attack, *weight))
-        .map(|(_, weight)| weight)
-        .sum();
-    let mut roll = crate::rng::roll(&mut mimic.seed) * total;
-    for (attack, weight) in weights {
-        if !allowed(attack, weight) {
-            continue;
-        }
-        if roll < weight {
-            return attack;
-        }
-        roll -= weight;
-    }
-    MimicAttack::Hop
+    boss_kit::pick_attack(&mut mimic.brain, &weights, MimicAttack::Hop)
 }
 
 fn speed_of(attack: MimicAttack) -> f32 {
@@ -121,16 +105,16 @@ pub(crate) fn step(
     dt: f32,
 ) -> Vec<Cmd> {
     let mut commands = Vec::new();
-    match mimic.stage {
+    match mimic.brain.stage {
         MimicStage::Walk => {
-            mimic.cooldown -= dt;
-            if mimic.cooldown > 0.0 {
+            mimic.brain.cooldown -= dt;
+            if mimic.brain.cooldown > 0.0 {
                 return commands;
             }
             let attack = choose_attack(mimic, distance, mobs, baits);
-            mimic.attack = attack;
-            mimic.last = Some(attack);
-            mimic.stage = MimicStage::Winding;
+            mimic.brain.attack = attack;
+            mimic.brain.last = Some(attack);
+            mimic.brain.stage = MimicStage::Winding;
             commands.push(Cmd::Root);
             let (row, windup, sound) = match attack {
                 MimicAttack::Hop => (1, enemies::MIMIC_HOP_WINDUP, SoundEffect::MimicCreak),
@@ -139,57 +123,57 @@ pub(crate) fn step(
                 MimicAttack::Lure => (3, enemies::MIMIC_LURE_WINDUP, SoundEffect::MimicJingle),
                 MimicAttack::Rest => (4, enemies::MIMIC_REST_WINDUP, SoundEffect::MimicShut),
             };
-            mimic.timer = windup;
+            mimic.brain.timer = windup;
             commands.push(Cmd::Play(clip(row)));
             commands.push(Cmd::Sound(sound));
         }
         MimicStage::Winding => {
-            mimic.timer -= dt;
-            if mimic.timer > 0.0 {
+            mimic.brain.timer -= dt;
+            if mimic.brain.timer > 0.0 {
                 return commands;
             }
-            match mimic.attack {
+            match mimic.brain.attack {
                 MimicAttack::Hop | MimicAttack::Bite => {
-                    mimic.stage = MimicStage::Acting;
-                    mimic.timer = if mimic.attack == MimicAttack::Hop {
+                    mimic.brain.stage = MimicStage::Acting;
+                    mimic.brain.timer = if mimic.brain.attack == MimicAttack::Hop {
                         enemies::MIMIC_HOP_SECONDS
                     } else {
                         enemies::MIMIC_BITE_SECONDS
                     };
                     commands.push(Cmd::Free);
-                    commands.push(Cmd::Charge(true, speed_of(mimic.attack)));
+                    commands.push(Cmd::Charge(true, speed_of(mimic.brain.attack)));
                 }
                 MimicAttack::Spit => {
                     commands.push(Cmd::Spit);
-                    mimic.stage = MimicStage::Recovering;
-                    mimic.timer = enemies::MIMIC_SPIT_RECOVER;
+                    mimic.brain.stage = MimicStage::Recovering;
+                    mimic.brain.timer = enemies::MIMIC_SPIT_RECOVER;
                 }
                 MimicAttack::Lure => {
                     commands.push(Cmd::Lure);
-                    mimic.stage = MimicStage::Recovering;
-                    mimic.timer = enemies::MIMIC_LURE_RECOVER;
+                    mimic.brain.stage = MimicStage::Recovering;
+                    mimic.brain.timer = enemies::MIMIC_LURE_RECOVER;
                 }
                 MimicAttack::Rest => {
                     commands.push(Cmd::Shield(true));
-                    mimic.stage = MimicStage::Acting;
-                    mimic.timer = enemies::MIMIC_REST_SECONDS;
+                    mimic.brain.stage = MimicStage::Acting;
+                    mimic.brain.timer = enemies::MIMIC_REST_SECONDS;
                 }
             }
         }
         MimicStage::Acting => {
-            mimic.timer -= dt;
-            if mimic.timer > 0.0 {
+            mimic.brain.timer -= dt;
+            if mimic.brain.timer > 0.0 {
                 return commands;
             }
-            let recover = match mimic.attack {
+            let recover = match mimic.brain.attack {
                 MimicAttack::Hop => {
-                    commands.push(Cmd::Charge(false, speed_of(mimic.attack)));
+                    commands.push(Cmd::Charge(false, speed_of(mimic.brain.attack)));
                     commands.push(Cmd::Root);
                     commands.push(Cmd::Ring);
                     enemies::MIMIC_HOP_RECOVER
                 }
                 MimicAttack::Bite => {
-                    commands.push(Cmd::Charge(false, speed_of(mimic.attack)));
+                    commands.push(Cmd::Charge(false, speed_of(mimic.brain.attack)));
                     commands.push(Cmd::Root);
                     commands.push(Cmd::Fan);
                     enemies::MIMIC_BITE_RECOVER
@@ -200,16 +184,16 @@ pub(crate) fn step(
                     enemies::MIMIC_REST_RECOVER
                 }
             };
-            mimic.stage = MimicStage::Recovering;
-            mimic.timer = recover;
+            mimic.brain.stage = MimicStage::Recovering;
+            mimic.brain.timer = recover;
         }
         MimicStage::Recovering => {
-            mimic.timer -= dt;
-            if mimic.timer <= 0.0 {
-                commands.push(Cmd::Play(mimic.idle));
+            mimic.brain.timer -= dt;
+            if mimic.brain.timer <= 0.0 {
+                commands.push(Cmd::Play(mimic.brain.idle));
                 commands.push(Cmd::Free);
-                mimic.stage = MimicStage::Walk;
-                mimic.cooldown = if mimic.enraged {
+                mimic.brain.stage = MimicStage::Walk;
+                mimic.brain.cooldown = if mimic.enraged {
                     enemies::MIMIC_RAGE_COOLDOWN
                 } else {
                     enemies::MIMIC_COOLDOWN
@@ -482,18 +466,19 @@ pub(crate) fn clear_baits(world: &mut World) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::components::BossBrain;
 
     fn mimic() -> MimicBoss {
         MimicBoss {
-            stage: MimicStage::Walk,
-            attack: MimicAttack::Hop,
-            last: None,
-            timer: 0.0,
-            cooldown: 0.0,
+            brain: BossBrain::new(
+                MimicStage::Walk,
+                MimicAttack::Hop,
+                0.0,
+                31,
+                clip(0),
+            ),
             charging: false,
             enraged: false,
-            seed: 31,
-            idle: clip(0),
         }
     }
 
@@ -509,10 +494,10 @@ mod tests {
 
     fn winding(attack: MimicAttack) -> MimicBoss {
         let mut boss = mimic();
-        boss.stage = MimicStage::Winding;
-        boss.attack = attack;
-        boss.last = Some(attack);
-        boss.timer = 0.01;
+        boss.brain.stage = MimicStage::Winding;
+        boss.brain.attack = attack;
+        boss.brain.last = Some(attack);
+        boss.brain.timer = 0.01;
         boss
     }
 
@@ -521,12 +506,12 @@ mod tests {
         let mut boss = mimic();
         let mut last = None;
         for _ in 0..200 {
-            boss.last = last;
+            boss.brain.last = last;
             let attack = choose_attack(&mut boss, 200.0, 0, 0);
             assert_ne!(Some(attack), last);
             last = Some(attack);
         }
-        boss.last = None;
+        boss.brain.last = None;
         for _ in 0..200 {
             assert_ne!(
                 choose_attack(&mut boss, 200.0, enemies::MIMIC_MOB_LIMIT, 0),
@@ -539,16 +524,16 @@ mod tests {
     fn every_wind_up_announces_its_attack_with_a_sound() {
         for seed in 0..40 {
             let mut boss = mimic();
-            boss.seed = seed * 7919 + 1;
+            boss.brain.seed = seed * 7919 + 1;
             let commands = step(&mut boss, 200.0, 0, 0, 0.02);
-            let expected = match boss.attack {
+            let expected = match boss.brain.attack {
                 MimicAttack::Hop => SoundEffect::MimicCreak,
                 MimicAttack::Bite => SoundEffect::MimicChomp,
                 MimicAttack::Spit => SoundEffect::MimicGurgle,
                 MimicAttack::Lure => SoundEffect::MimicJingle,
                 MimicAttack::Rest => SoundEffect::MimicShut,
             };
-            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.attack);
+            assert!(commands.contains(&Cmd::Sound(expected)), "{:?}", boss.brain.attack);
         }
     }
 
@@ -561,7 +546,7 @@ mod tests {
             .position(|command| matches!(command, Cmd::Charge(true, _)));
         let ring = commands.iter().position(|command| *command == Cmd::Ring);
         assert!(on.is_some() && ring.is_some() && on < ring);
-        assert_eq!(boss.stage, MimicStage::Walk);
+        assert_eq!(boss.brain.stage, MimicStage::Walk);
     }
 
     #[test]

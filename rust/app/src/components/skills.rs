@@ -103,6 +103,36 @@ pub(crate) enum MimicAttack {
     Rest,
 }
 
+/// The part of a boss's mind every boss has: where it is in its attack cycle, the attack it is
+/// on and the one it used last (it never repeats an attack twice in a row), the clocks of the
+/// current stage and of the wait before the next attack, its own dice, and the clip it idles in.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct BossBrain<Stage, Attack> {
+    pub(crate) stage: Stage,
+    pub(crate) attack: Attack,
+    pub(crate) last: Option<Attack>,
+    pub(crate) timer: f32,
+    pub(crate) cooldown: f32,
+    pub(crate) seed: u32,
+    pub(crate) idle: Clip,
+}
+
+impl<Stage, Attack> BossBrain<Stage, Attack> {
+    /// A boss that has not attacked yet: in `stage` with `attack` as a placeholder, waiting
+    /// `cooldown` seconds before its first attack.
+    pub(crate) fn new(stage: Stage, attack: Attack, cooldown: f32, seed: u32, idle: Clip) -> Self {
+        Self {
+            stage,
+            attack,
+            last: None,
+            timer: 0.0,
+            cooldown,
+            seed,
+            idle,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum MimicStage {
     Walk,
@@ -113,15 +143,9 @@ pub(crate) enum MimicStage {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MimicBoss {
-    pub(crate) stage: MimicStage,
-    pub(crate) attack: MimicAttack,
-    pub(crate) last: Option<MimicAttack>,
-    pub(crate) timer: f32,
-    pub(crate) cooldown: f32,
+    pub(crate) brain: BossBrain<MimicStage, MimicAttack>,
     pub(crate) charging: bool,
     pub(crate) enraged: bool,
-    pub(crate) seed: u32,
-    pub(crate) idle: Clip,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -141,16 +165,10 @@ pub(crate) enum HoundStage {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct HoundBoss {
-    pub(crate) stage: HoundStage,
-    pub(crate) attack: HoundAttack,
-    pub(crate) last: Option<HoundAttack>,
-    pub(crate) timer: f32,
-    pub(crate) cooldown: f32,
+    pub(crate) brain: BossBrain<HoundStage, HoundAttack>,
     pub(crate) angles: [f32; 3],
     pub(crate) charging: bool,
     pub(crate) enraged: bool,
-    pub(crate) seed: u32,
-    pub(crate) idle: Clip,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -170,14 +188,8 @@ pub(crate) enum OgreStage {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct OgreBoss {
-    pub(crate) stage: OgreStage,
-    pub(crate) attack: OgreAttack,
-    pub(crate) last: Option<OgreAttack>,
-    pub(crate) timer: f32,
-    pub(crate) cooldown: f32,
+    pub(crate) brain: BossBrain<OgreStage, OgreAttack>,
     pub(crate) enraged: bool,
-    pub(crate) seed: u32,
-    pub(crate) idle: Clip,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -188,34 +200,22 @@ pub(crate) struct Orbiter {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ArgusBoss {
-    pub(crate) stage: ArgusStage,
-    pub(crate) attack: ArgusAttack,
-    pub(crate) last: Option<ArgusAttack>,
-    pub(crate) timer: f32,
-    pub(crate) cooldown: f32,
+    pub(crate) brain: BossBrain<ArgusStage, ArgusAttack>,
     pub(crate) pulse: f32,
     pub(crate) pulses: u32,
     pub(crate) angle: f32,
     pub(crate) attacks: u32,
     pub(crate) enraged: bool,
-    pub(crate) seed: u32,
-    pub(crate) idle: Clip,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct GolemBoss {
-    pub(crate) stage: GolemStage,
-    pub(crate) attack: GolemAttack,
-    pub(crate) last: Option<GolemAttack>,
-    pub(crate) timer: f32,
-    pub(crate) cooldown: f32,
+    pub(crate) brain: BossBrain<GolemStage, GolemAttack>,
     pub(crate) pulse: f32,
     pub(crate) rain_dropped: u32,
     pub(crate) second_ring: f32,
     pub(crate) beam_angle: f32,
     pub(crate) enraged: bool,
-    pub(crate) seed: u32,
-    pub(crate) idle: Clip,
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -7,7 +7,7 @@ use crate::assets::{PET, PLAYER, Textures};
 use crate::components::{
     YSort,
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
-    BULLET_FLIGHT, BULLET_ROWS, Boss, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
+    BULLET_FLIGHT, BULLET_ROWS, Boss, BossBrain, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
     Burrower, Chills, DeathAsh, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, DropShadow,
     Enemy, Kindling, MagmaShell, SwoopStage, Swooper, WormStage,
     EnemyBullet, EyeShooter, Fuse, IcicleDropper,
@@ -346,15 +346,15 @@ pub(crate) fn enemy(
             let _ = world.insert_one(
                 entity,
                 MimicBoss {
-                    stage: MimicStage::Walk,
-                    attack: MimicAttack::Hop,
-                    last: None,
-                    timer: 0.0,
-                    cooldown: enemies::MIMIC_FIRST_COOLDOWN,
+                    brain: BossBrain::new(
+                        MimicStage::Walk,
+                        MimicAttack::Hop,
+                        enemies::MIMIC_FIRST_COOLDOWN,
+                        0x7A3C_91D5 ^ (position.x as u32).wrapping_mul(23) ^ (position.y as u32),
+                        idle,
+                    ),
                     charging: false,
                     enraged: false,
-                    seed: 0x7A3C_91D5 ^ (position.x as u32).wrapping_mul(23) ^ (position.y as u32),
-                    idle,
                 },
             );
         }
@@ -363,16 +363,16 @@ pub(crate) fn enemy(
             let _ = world.insert_one(
                 entity,
                 HoundBoss {
-                    stage: HoundStage::Prowl,
-                    attack: HoundAttack::Lunge,
-                    last: None,
-                    timer: 0.0,
-                    cooldown: enemies::HOUND_FIRST_COOLDOWN,
+                    brain: BossBrain::new(
+                        HoundStage::Prowl,
+                        HoundAttack::Lunge,
+                        enemies::HOUND_FIRST_COOLDOWN,
+                        0x27D4_EB2F ^ (position.x as u32).wrapping_mul(19) ^ (position.y as u32),
+                        idle,
+                    ),
                     angles: [0.0; 3],
                     charging: false,
                     enraged: false,
-                    seed: 0x27D4_EB2F ^ (position.x as u32).wrapping_mul(19) ^ (position.y as u32),
-                    idle,
                 },
             );
         }
@@ -380,14 +380,14 @@ pub(crate) fn enemy(
             let _ = world.insert_one(
                 entity,
                 OgreBoss {
-                    stage: OgreStage::Walk,
-                    attack: OgreAttack::Jump,
-                    last: None,
-                    timer: 0.0,
-                    cooldown: enemies::OGRE_FIRST_COOLDOWN,
+                    brain: BossBrain::new(
+                        OgreStage::Walk,
+                        OgreAttack::Jump,
+                        enemies::OGRE_FIRST_COOLDOWN,
+                        0xC2B2_AE35 ^ (position.x as u32).wrapping_mul(13) ^ (position.y as u32),
+                        idle,
+                    ),
                     enraged: false,
-                    seed: 0xC2B2_AE35 ^ (position.x as u32).wrapping_mul(13) ^ (position.y as u32),
-                    idle,
                 },
             );
         }
@@ -395,18 +395,18 @@ pub(crate) fn enemy(
             let _ = world.insert_one(
                 entity,
                 ArgusBoss {
-                    stage: ArgusStage::Float,
-                    attack: ArgusAttack::Volley,
-                    last: None,
-                    timer: 0.0,
-                    cooldown: enemies::ARGUS_FIRST_COOLDOWN,
+                    brain: BossBrain::new(
+                        ArgusStage::Float,
+                        ArgusAttack::Volley,
+                        enemies::ARGUS_FIRST_COOLDOWN,
+                        0x85EB_CA6B ^ (position.x as u32).wrapping_mul(17) ^ (position.y as u32),
+                        idle,
+                    ),
                     pulse: 0.0,
                     pulses: 0,
                     angle: 0.0,
                     attacks: 0,
                     enraged: false,
-                    seed: 0x85EB_CA6B ^ (position.x as u32).wrapping_mul(17) ^ (position.y as u32),
-                    idle,
                 },
             );
         }
@@ -414,18 +414,18 @@ pub(crate) fn enemy(
             let _ = world.insert_one(
                 entity,
                 GolemBoss {
-                    stage: GolemStage::Walk,
-                    attack: GolemAttack::Slam,
-                    last: None,
-                    timer: 0.0,
-                    cooldown: enemies::GOLEM_FIRST_COOLDOWN,
+                    brain: BossBrain::new(
+                        GolemStage::Walk,
+                        GolemAttack::Slam,
+                        enemies::GOLEM_FIRST_COOLDOWN,
+                        0x9E37_79B9 ^ (position.x as u32).wrapping_mul(31) ^ (position.y as u32),
+                        idle,
+                    ),
                     pulse: 0.0,
                     rain_dropped: 0,
                     second_ring: 0.0,
                     beam_angle: 0.0,
                     enraged: false,
-                    seed: 0x9E37_79B9 ^ (position.x as u32).wrapping_mul(31) ^ (position.y as u32),
-                    idle,
                 },
             );
         }
