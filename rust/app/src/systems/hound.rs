@@ -11,8 +11,8 @@ use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{
-    BeamStyle, Ray, aim, beam_end, draw_beam, play, turn_towards,
+use crate::systems::boss_kit::{
+    self, BeamStyle, Ray, aim, beam_end, draw_beam, play, turn_towards,
 };
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
@@ -61,17 +61,15 @@ fn clip(row: usize, frame_time: f32) -> Clip {
 fn forced_attack() -> Option<HoundAttack> {
     static FORCED: std::sync::OnceLock<Option<HoundAttack>> = std::sync::OnceLock::new();
     *FORCED.get_or_init(|| {
-        match std::env::var(ATTACK_VAR)
-            .ok()?
-            .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "lunge" | "charge" => Some(HoundAttack::Lunge),
-            "breath" => Some(HoundAttack::Breath),
-            "howl" => Some(HoundAttack::Howl),
-            _ => None,
-        }
+        boss_kit::forced_attack(
+            ATTACK_VAR,
+            &[
+                ("lunge", HoundAttack::Lunge),
+                ("charge", HoundAttack::Lunge),
+                ("breath", HoundAttack::Breath),
+                ("howl", HoundAttack::Howl),
+            ],
+        )
     })
 }
 

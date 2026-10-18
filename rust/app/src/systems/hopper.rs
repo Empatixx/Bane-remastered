@@ -3,7 +3,7 @@ use hecs::{Entity, World};
 
 use crate::components::{Charge, Clip, Expiring, Frozen, Hopper, Position, Rooted, Spawning};
 use crate::enemies;
-use crate::systems::golem::play;
+use crate::systems::boss_kit::play;
 use crate::systems::player::living_player_at;
 
 fn hop_clip() -> Clip {

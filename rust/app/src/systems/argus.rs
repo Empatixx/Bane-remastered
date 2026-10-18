@@ -11,7 +11,7 @@ use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::play;
+use crate::systems::boss_kit::play;
 use crate::systems::player::living_player_at;
 use crate::systems::hostile::Hostile;
 

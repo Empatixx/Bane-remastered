@@ -11,7 +11,7 @@ use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{play, spawn_rock};
+use crate::systems::boss_kit::{self, play, spawn_rock};
 use crate::systems::player::living_player_at;
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
@@ -47,18 +47,16 @@ fn clip(row: usize) -> Clip {
 fn forced_attack() -> Option<OgreAttack> {
     static FORCED: std::sync::OnceLock<Option<OgreAttack>> = std::sync::OnceLock::new();
     *FORCED.get_or_init(|| {
-        match std::env::var(ATTACK_VAR)
-            .ok()?
-            .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "jump" | "stomp" => Some(OgreAttack::Jump),
-            "throw" => Some(OgreAttack::Throw),
-            "slam" => Some(OgreAttack::Slam),
-            "roar" => Some(OgreAttack::Roar),
-            _ => None,
-        }
+        boss_kit::forced_attack(
+            ATTACK_VAR,
+            &[
+                ("jump", OgreAttack::Jump),
+                ("stomp", OgreAttack::Jump),
+                ("throw", OgreAttack::Throw),
+                ("slam", OgreAttack::Slam),
+                ("roar", OgreAttack::Roar),
+            ],
+        )
     })
 }
 

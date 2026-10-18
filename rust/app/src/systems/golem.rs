@@ -1,18 +1,20 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::{Tex, Textures, tex};
+use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, BeamPart, Chase, Clip, Color, ContactDamage, Despawn, Dodge, Drag, Expiring,
-    FallingRock, Frozen, GolemAttack, GolemBoss, GolemStage, Health, Layer, Light, Minion,
-    Position, RockFall, RoomId, Rooted, Size, Spawning, Sprite, Velocity,
+    Animation, Chase, Clip, Color, Despawn, Dodge, Expiring, FallingRock, Frozen, GolemAttack,
+    GolemBoss, GolemStage, Health, Layer, Minion, Position, RockFall, RoomId, Rooted, Size,
+    Spawning, Sprite,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::geometry;
-use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
+use crate::systems::boss_kit::{
+    self, BeamStyle, Ray, aim, clear_beam, draw_beam, play, spawn_rock, turn_towards,
+};
 use crate::systems::damage::hurt_player;
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
@@ -26,11 +28,6 @@ const LOB_HEIGHT: f32 = 140.0;
 const SHADOW_SIZE: Vec2 = Vec2::new(150.0, 75.0);
 const ROCK_SIZE: Vec2 = Vec2::new(72.0, 72.0);
 const IMPACT_SIZE: Vec2 = Vec2::new(150.0, 150.0);
-const BEAM_STEP: f32 = 12.0;
-const BEAM_GLOW: f32 = 34.0;
-const BEAM_CORE: f32 = 12.0;
-const SPARK_SIZE: f32 = 14.0;
-const SPARK_FRAMES: usize = 4;
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.62, 0.55, 1.0);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -76,18 +73,15 @@ const ATTACK_VAR: &str = "BANE_GOLEM_ATTACK";
 fn forced_attack() -> Option<GolemAttack> {
     static FORCED: std::sync::OnceLock<Option<GolemAttack>> = std::sync::OnceLock::new();
     *FORCED.get_or_init(|| {
-        match std::env::var(ATTACK_VAR)
-            .ok()?
-            .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "slam" => Some(GolemAttack::Slam),
-            "throw" => Some(GolemAttack::Throw),
-            "rain" => Some(GolemAttack::Rain),
-            "laser" => Some(GolemAttack::Laser),
-            _ => None,
-        }
+        boss_kit::forced_attack(
+            ATTACK_VAR,
+            &[
+                ("slam", GolemAttack::Slam),
+                ("throw", GolemAttack::Throw),
+                ("rain", GolemAttack::Rain),
+                ("laser", GolemAttack::Laser),
+            ],
+        )
     })
 }
 
@@ -231,32 +225,6 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
     commands
 }
 
-pub(crate) fn play(world: &mut World, entity: Entity, clip: Clip) {
-    if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
-        let facing = animation.flipped();
-        animation.play(Clip {
-            flipped: facing,
-            ..clip
-        });
-    }
-}
-
-pub(crate) fn aim(from: Vec2, to: Vec2) -> f32 {
-    let direction = to - from;
-    direction.y.atan2(direction.x)
-}
-
-pub(crate) fn turn_towards(current: f32, wanted: f32, step: f32) -> f32 {
-    let mut difference = wanted - current;
-    while difference > std::f32::consts::PI {
-        difference -= std::f32::consts::TAU;
-    }
-    while difference < -std::f32::consts::PI {
-        difference += std::f32::consts::TAU;
-    }
-    current + difference.clamp(-step, step)
-}
-
 pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
     let physics = &mut *hostile.physics;
     let textures = hostile.textures;
@@ -309,24 +277,6 @@ pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
                 command,
             );
         }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn spawn_rock(
-    world: &mut World,
-    physics: &mut Physics,
-    kind: ProjectileKind,
-    origin: Vec2,
-    direction: Vec2,
-    damage: i32,
-    room: Option<RoomId>,
-    textures: &Textures,
-) {
-    let bullet = prefabs::enemy_bullet(world, physics, kind, origin, direction, textures);
-    let _ = world.insert_one(bullet, ContactDamage(damage));
-    if let Some(room) = room {
-        let _ = world.insert_one(bullet, room);
     }
 }
 
@@ -558,74 +508,6 @@ fn icicle_lands(
     }
 }
 
-pub(crate) fn beam_end(navigation: &Navigation, origin: Vec2, angle: f32) -> Vec2 {
-    let direction = Vec2::from_angle(angle);
-    let mut length = 0.0;
-    while length < enemies::GOLEM_LASER_REACH {
-        let point = origin + direction * length;
-        if navigation.is_blocked(point, Vec2::splat(6.0)) {
-            return origin + direction * (length - BEAM_STEP).max(0.0);
-        }
-        length += BEAM_STEP;
-    }
-    origin + direction * enemies::GOLEM_LASER_REACH
-}
-
-fn distance_to_segment(point: Vec2, a: Vec2, b: Vec2) -> f32 {
-    let line = b - a;
-    let length = line.length_squared();
-    if length <= f32::EPSILON {
-        return point.distance(a);
-    }
-    let t = ((point - a).dot(line) / length).clamp(0.0, 1.0);
-    point.distance(a + line * t)
-}
-
-pub(crate) fn clear_beam(world: &mut World) {
-    let parts: Vec<Entity> = world.query::<Entity>().with::<&BeamPart>().iter().collect();
-    for part in parts {
-        let _ = world.despawn(part);
-    }
-}
-
-pub(crate) fn spark(world: &mut World, textures: &Textures, sprite: Tex, at: Vec2, velocity: Vec2) {
-    let burn = Clip {
-        row: 0,
-        frames: SPARK_FRAMES,
-        frame_time: 0.09,
-        looping: false,
-        flipped: false,
-    };
-    world.spawn((
-        Expiring,
-        Position(at),
-        Velocity(velocity),
-        Drag { rate: 3.0 },
-        Size(Vec2::splat(SPARK_SIZE)),
-        Color(Vec4::ONE),
-        Sprite::cell(textures.get(sprite), 0, 0, SPARK_FRAMES, 1),
-        Animation::new(burn.frames, 1, burn),
-        Layer(5),
-    ));
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct BeamStyle {
-    pub(crate) glow: Vec4,
-    pub(crate) core: Vec4,
-    pub(crate) light: [f32; 3],
-    pub(crate) spark: Tex,
-    pub(crate) damage: i32,
-    pub(crate) wave: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Ray {
-    pub(crate) eye: Vec2,
-    pub(crate) angle: f32,
-    pub(crate) phase: f32,
-}
-
 pub(crate) const BLUE_BEAM: BeamStyle = BeamStyle {
     glow: Vec4::new(0.2, 0.5, 1.0, 0.5),
     core: Vec4::new(0.85, 0.96, 1.0, 1.0),
@@ -634,82 +516,6 @@ pub(crate) const BLUE_BEAM: BeamStyle = BeamStyle {
     damage: enemies::GOLEM_LASER_DAMAGE,
     wave: 0.0,
 };
-
-pub(crate) fn draw_beam(
-    world: &mut World,
-    navigation: &Navigation,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-    fx: &mut Fx,
-    ray: Ray,
-    style: BeamStyle,
-) {
-    let Ray { eye, angle, phase } = ray;
-    let player = player_body(world);
-    let end = beam_end(navigation, eye, angle);
-    let direction = Vec2::from_angle(angle);
-    let length = eye.distance(end);
-    let mut distance = 0.0;
-    while distance <= length {
-        let at = eye + direction * distance;
-        world.spawn((
-            BeamPart,
-            Position(at),
-            Size(Vec2::splat(
-                BEAM_GLOW + style.wave * (phase + distance * 0.09).sin(),
-            )),
-            Color(style.glow),
-            Layer(4),
-        ));
-        world.spawn((
-            BeamPart,
-            Position(at),
-            Size(Vec2::splat(BEAM_CORE)),
-            Color(style.core),
-            Layer(5),
-        ));
-        distance += BEAM_STEP;
-    }
-    let [red, green, blue] = style.light;
-    world.spawn((
-        BeamPart,
-        Position(end),
-        Light::rgb(Vec2::ZERO, red, green, blue, 140.0, 1.6),
-    ));
-    let mut seed = (eye.x as u32).wrapping_mul(2_654_435_761) ^ (end.y as u32) ^ (angle.to_bits());
-    for _ in 0..3 {
-        let along = crate::rng::roll(&mut seed) * length;
-        let side = Vec2::new(-direction.y, direction.x) * (crate::rng::roll(&mut seed) - 0.5) * 2.0;
-        spark(
-            world,
-            textures,
-            style.spark,
-            eye + direction * along + side * 18.0,
-            side * 70.0 + direction * 20.0,
-        );
-    }
-    if length < enemies::GOLEM_LASER_REACH - BEAM_STEP {
-        for _ in 0..3 {
-            let spread = (crate::rng::roll(&mut seed) - 0.5) * 2.2;
-            let away = -direction;
-            let back = Vec2::from_angle(away.y.atan2(away.x) + spread);
-            spark(
-                world,
-                textures,
-                style.spark,
-                end,
-                back * (140.0 + crate::rng::roll(&mut seed) * 160.0),
-            );
-        }
-    }
-    if let Some((player, player_position, size)) = player {
-        let flying = world.get::<&Dodge>(player).is_ok();
-        let reach = enemies::GOLEM_LASER_WIDTH / 2.0 + size.x.min(size.y) / 2.0;
-        if !flying && distance_to_segment(player_position, eye, end) < reach {
-            hurt_player(world, player, style.damage, sounds, fx);
-        }
-    }
-}
 
 pub(crate) fn tick_laser(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
@@ -877,25 +683,5 @@ mod tests {
             .filter(|command| matches!(command, Cmd::Rain(_)))
             .count();
         assert!(rocks >= 8, "{rocks}");
-    }
-
-    #[test]
-    fn the_beam_stops_at_a_wall() {
-        let navigation = Navigation::new(&[(10, 5)]);
-        let origin = Vec2::new(
-            3.0 * crate::tilemap::TILE_SIZE,
-            5.5 * crate::tilemap::TILE_SIZE,
-        );
-        let end = beam_end(&navigation, origin, 0.0);
-        assert!(end.x < 10.0 * crate::tilemap::TILE_SIZE);
-        assert!(end.x > origin.x);
-        let free = beam_end(&Navigation::new(&[]), origin, 0.0);
-        assert!(free.distance(origin) > end.distance(origin));
-    }
-
-    #[test]
-    fn turning_takes_the_short_way_round() {
-        let turned = turn_towards(3.0, -3.0, 0.5);
-        assert!(turned > 3.0);
     }
 }

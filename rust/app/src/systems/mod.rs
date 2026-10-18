@@ -6,6 +6,7 @@ mod arrows;
 mod artefacts;
 mod atmosphere;
 mod blood;
+mod boss_kit;
 mod bosses;
 mod camera;
 mod carry;

@@ -12,7 +12,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
-use crate::systems::golem::{play, spark, spawn_rock};
+use crate::systems::boss_kit::{self, play, spark, spawn_rock};
 use crate::systems::player::living_player_at;
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
@@ -49,19 +49,16 @@ fn clip(row: usize) -> Clip {
 fn forced_attack() -> Option<MimicAttack> {
     static FORCED: std::sync::OnceLock<Option<MimicAttack>> = std::sync::OnceLock::new();
     *FORCED.get_or_init(|| {
-        match std::env::var(ATTACK_VAR)
-            .ok()?
-            .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
-            "hop" => Some(MimicAttack::Hop),
-            "bite" => Some(MimicAttack::Bite),
-            "spit" => Some(MimicAttack::Spit),
-            "lure" => Some(MimicAttack::Lure),
-            "rest" => Some(MimicAttack::Rest),
-            _ => None,
-        }
+        boss_kit::forced_attack(
+            ATTACK_VAR,
+            &[
+                ("hop", MimicAttack::Hop),
+                ("bite", MimicAttack::Bite),
+                ("spit", MimicAttack::Spit),
+                ("lure", MimicAttack::Lure),
+                ("rest", MimicAttack::Rest),
+            ],
+        )
     })
 }
 
