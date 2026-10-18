@@ -3,7 +3,7 @@
 //!
 //! | function | accepts |
 //! |---|---|
-//! | [`player`], [`player_at`], [`player_entity_at`], [`player_placement`] | the player, however he is |
+//! | `player`, [`player_at`], [`player_entity_at`], [`player_placement`] | the player, however he is |
 //! | [`player_body`] | the player while he is alive (cloaked or not) |
 //! | [`uncloaked_player`] | the player while he is not a `Phantom` (dead or alive) |
 //! | [`living_player_at`] | the player while he is alive and not a `Phantom`: what enemies can target |

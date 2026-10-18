@@ -649,7 +649,8 @@ pub(crate) fn enemy_body(world: &mut World, physics: &mut Physics, entity: Entit
 }
 
 /// Makes a just-built enemy ready at once, without rising from the floor (a hatchling, a
-/// test's enemy): no `Spawning`, full colour, its body in the simulation.
+/// test's enemy): no `Spawning`, full colour, its body in the simulation. The same transition
+/// as the end of the rise in `systems::enemies::tick_spawning`; keep the two in step.
 pub(crate) fn make_ready(world: &mut World, physics: &mut Physics, entity: Entity) {
     let _ = world.remove_one::<Spawning>(entity);
     if let Ok(color) = world.query_one_mut::<&mut Color>(entity) {

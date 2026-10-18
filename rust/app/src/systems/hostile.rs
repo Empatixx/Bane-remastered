@@ -10,8 +10,8 @@ use crate::physics::Physics;
 /// frozen. Used as `.without::<Inactive>()` to query only the hostiles that are free to act.
 pub(crate) type Inactive = Or<&'static Spawning, Or<&'static Expiring, &'static Frozen>>;
 
-/// What every enemy-side fixed-step system needs besides the world. Built once per
-/// `fixed_update`; `dt` is already scaled by the hourglass (`hostile_dt`).
+/// What every enemy-side fixed-step system needs besides the world. Built by
+/// `Tick::hostile()` (in both `hostile_phase` and `combat_phase`); `dt` is already scaled by the hourglass (`hostile_dt`).
 pub(crate) struct Hostile<'a> {
     pub(crate) physics: &'a mut Physics,
     pub(crate) navigation: &'a Navigation,

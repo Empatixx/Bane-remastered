@@ -27,6 +27,9 @@
 //!    end of [`combat_phase`], before `death_phase` (a burst reads the hit count); in the frame
 //!    in [`lightning_phase`], before `flash_hits` and `float_texts` tick in [`hud_phase`]; in the
 //!    lobby right after [`bullets_phase`]. No system after it in the same loop deals damage.
+//!    One reader sits before it on purpose: `tick_poison` checks `HitFlash` between `deal` and
+//!    `hit_phase`, so a hit dealt this tick has not flashed yet. That is harmless, because
+//!    `flash_hits` overwrites the outline in the frame anyway.
 //! 3. **Died lasts the death phase.** `death_phase` tags the fallen `Died`, every death effect
 //!    reads the tag, and the tag is cleared at its end; nothing outside it reads `Died`.
 //! 4. **Gone readers before `despawn_gone`.** In the frame, [`gone_phase`] tags finished corpses

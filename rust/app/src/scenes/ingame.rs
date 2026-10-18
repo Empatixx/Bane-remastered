@@ -276,8 +276,8 @@ impl Scene for InGameScene {
         schedule::scenery_phase(&mut tick, &mut floor);
         schedule::hud_phase(&mut tick);
         let mut events = Vec::new();
-        // Read now, not from the tick: an hourglass turned in `arms_phase` this frame must
-        // already slow the rooms' waves.
+        // Recomputed here: the tick was dropped for the scene's own `&mut self` work, so its
+        // hostile dt is gone (and it also sees an hourglass turned in `arms_phase` this frame).
         let hostile_dt = dt * systems::time_scale(&self.world);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
             let context = systems::RoomContext {

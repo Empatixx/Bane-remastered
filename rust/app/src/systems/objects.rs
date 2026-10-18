@@ -260,6 +260,8 @@ pub(crate) fn tick_poison(
             }
         }
         let _ = world.insert_one(entity, Poisoned);
+        // Reads `HitFlash` between `deal` and `hit_phase` (see the ordering contract, item 2):
+        // a hit dealt this tick has not flashed yet. Harmless, `flash_hits` overwrites the outline.
         if world.get::<&HitFlash>(entity).is_err() {
             let _ = world.insert_one(entity, Outline(POISON_OUTLINE));
         }

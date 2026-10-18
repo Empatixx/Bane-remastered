@@ -345,7 +345,6 @@ fn fire(
 
 #[cfg(test)]
 mod tests {
-    use crate::components::HitFlash;
     use crate::enemies::EnemyKind;
 
     use super::*;
@@ -441,7 +440,6 @@ mod tests {
         spawn_ghost(&mut world, Vec2::new(1400.0, 1000.0), 0.0, &textures);
         tick_ghosts(&mut world, 1.0 / 60.0);
         assert_eq!(health(&world, enemy), before - 2);
-        let _ = world.remove_one::<HitFlash>(enemy);
         tick_ghosts(&mut world, 0.3);
         assert_eq!(health(&world, enemy), before - 2);
         tick_ghosts(&mut world, 0.3);

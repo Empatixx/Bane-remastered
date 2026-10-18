@@ -146,6 +146,10 @@ pub(crate) fn tick_armageddon(
 
 /// When a boss falls (`Died`), its brood dies with it and whatever it left in the room goes.
 /// The minions it kills here are reaped by the death phase's second `reap_dead`.
+///
+/// Behaviour change of the ECS refactor: this runs once, on the tick the boss falls (`Died`).
+/// Before, it ran on every tick of the corpse animation, so minions born after that tick (a
+/// Hatcher still in the room, or a second boss) were killed too; now they live.
 pub(super) fn clean_up_after_boss(world: &mut World) {
     let fallen = world
         .query::<()>()

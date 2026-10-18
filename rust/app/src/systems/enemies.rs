@@ -391,6 +391,7 @@ pub(crate) fn tick_spawning(world: &mut World, physics: &mut Physics, dt: f32) {
         }
     }
     // The rise is over: the enemy shows whole and joins the simulation, in this step.
+    // Same transition as `prefabs::make_ready`; keep the two in step.
     for entity in finished {
         let _ = world.remove_one::<Spawning>(entity);
         if let Ok(color) = world.query_one_mut::<&mut Color>(entity) {
