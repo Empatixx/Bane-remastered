@@ -33,15 +33,17 @@ pub(crate) struct RunState {
     /// `BANE_SLAY`: how long until the boss is felled, for working on the story. Floor.
     pub(crate) slay_in: Option<f32>,
     /// Who the boss of this floor was, while it is being fought: set when its room is entered,
-    /// taken when it falls. Never cleared otherwise, so it lasts as long as the scene.
+    /// taken when it falls, and the ladder only stands once it has, so a floor never ends mid-fight.
+    /// A new run clears it. Run.
     pub(crate) boss: Option<Identity>,
-    /// Kills in a row that dropped nothing, which makes the next drop likelier. Never reset, so
-    /// it lasts as long as the scene: across floors and across runs.
+    /// Kills in a row that dropped nothing, which makes the next drop likelier. Carries across
+    /// the floors of a run; a new run starts it over. Run.
     pub(crate) kills_without_drop: u32,
 }
 
 impl RunState {
-    /// A new run on `floor`: forgets the last run's seed, outcome, rules and challenge.
+    /// A new run on `floor`: forgets the last run's seed, outcome, rules, challenge,
+    /// boss and drop streak.
     pub(crate) fn begin(
         &mut self,
         seed: u64,
@@ -54,6 +56,8 @@ impl RunState {
         self.victory = false;
         self.rules = rules;
         self.challenge = challenge;
+        self.boss = None;
+        self.kills_without_drop = 0;
     }
 
     /// A new floor of the run: its three dice drawn afresh from the run's seed and the floor.
@@ -105,16 +109,29 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_new_run_forgets_the_last_one_but_not_the_drop_streak() {
+    fn a_new_run_forgets_the_last_one() {
         let mut run = RunState {
             victory: true,
             challenge: Some(ChallengeId::GlassCannon),
             kills_without_drop: 7,
+            boss: crate::lore::identity(crate::enemies::EnemyKind::Spider),
             ..RunState::default()
         };
+        assert!(run.boss.is_some());
         run.begin(42, 1, RunRules::default(), None);
         assert_eq!((run.seed, run.floor, run.victory, run.challenge), (42, 1, false, None));
-        assert_eq!(run.kills_without_drop, 7);
+        assert_eq!(run.kills_without_drop, 0);
+        assert_eq!(run.boss, None);
+    }
+
+    #[test]
+    fn a_new_floor_keeps_the_drop_streak() {
+        let mut run = RunState::default();
+        run.begin(42, 1, RunRules::default(), None);
+        run.kills_without_drop = 5;
+        run.floor += 1;
+        run.begin_floor();
+        assert_eq!(run.kills_without_drop, 5);
     }
 
     #[test]

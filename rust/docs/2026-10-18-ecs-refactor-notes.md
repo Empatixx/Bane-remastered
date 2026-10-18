@@ -32,10 +32,6 @@ Branch `ecs-refactor`. Plan: `2026-10-18-ecs-refactor-plan.md`.
 - Rage sounds are queued before boss sounds within a frame.
 - `Atmosphere` is no longer spawned in the cinematic and epilogue scenes (it was never ticked there).
 
-## Known pre-existing issues, found and not fixed
-
-- `kills_without_drop` and `boss` are never reset across runs.
-
 ## Follow-ups
 
 - `enemy_attacks_phase` still passes the physics/textures/sounds/dt tuple instead of `Hostile`.
