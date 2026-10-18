@@ -39,7 +39,7 @@ mod items;
 mod leapers;
 mod lighting;
 mod lightning;
-mod loadout;
+pub(crate) mod loadout;
 mod magma;
 mod midas;
 mod mimic;

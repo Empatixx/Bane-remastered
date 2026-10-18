@@ -410,7 +410,7 @@ mod tests {
         loadout.drop_current();
         let mut weapon = Weapon::new(kind);
         weapon.clip = clip;
-        loadout.add(weapon);
+        crate::systems::loadout::add_gun(&mut loadout, weapon);
         world.spawn((Player, loadout));
         crate::prefabs::weapon_hud(&mut world, &Textures::default());
         update_weapon_hud(&mut world, &Textures::default(), None);

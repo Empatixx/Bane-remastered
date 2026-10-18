@@ -20,6 +20,7 @@ use crate::render::TextureId;
 use crate::rng::Rng;
 use crate::systems::damage::{Damage, DamageSource};
 use crate::systems::fx::{self, Fx};
+use crate::systems::loadout;
 use crate::upgrades::Perks;
 
 const BOUNCE_CLEARANCE: f32 = 2.0;
@@ -137,8 +138,8 @@ pub(crate) fn shoot(
         if infinite {
             weapon.reloading = None;
         }
-        weapon.advance(dt);
-        if !infinite && input.action_pressed(Action::Reload) && weapon.start_reload() {
+        loadout::advance_weapon(weapon, dt);
+        if !infinite && input.action_pressed(Action::Reload) && loadout::start_reload(weapon) {
             sounds.push(AudioCommand::Effect(spec.reload));
         }
         if let Some(mut burst) = weapon.burst {
@@ -149,7 +150,7 @@ pub(crate) fn shoot(
                         weapon.clip -= 1;
                     }
                     weapon.cooldown = spec.fire_interval;
-                    let deadeye = weapon.count_shot();
+                    let deadeye = loadout::count_shot(weapon);
                     shots.push(Shot {
                         origin: position.0,
                         direction: burst.aim,
@@ -200,7 +201,7 @@ pub(crate) fn shoot(
                 aim: to_target,
             });
         }
-        let deadeye = weapon.count_shot();
+        let deadeye = loadout::count_shot(weapon);
         shots.push(Shot {
             origin: position.0,
             direction: to_target,
@@ -775,7 +776,7 @@ mod tests {
     fn give(world: &mut World, kind: crate::guns::GunKind) {
         for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
             loadout.drop_current();
-            loadout.add(Weapon::new(kind));
+            loadout::add_gun(loadout, Weapon::new(kind));
         }
     }
 
@@ -1267,7 +1268,7 @@ mod tests {
             ..Default::default()
         });
 
-        let crits: Vec<bool> = (0..10).map(|_| weapon.count_shot()).collect();
+        let crits: Vec<bool> = (0..10).map(|_| loadout::count_shot(&mut weapon)).collect();
 
         assert_eq!(
             crits,
@@ -1276,7 +1277,7 @@ mod tests {
             ]
         );
         let mut plain = Weapon::new(crate::guns::GunKind::Pistol);
-        assert!((0..10).all(|_| !plain.count_shot()));
+        assert!((0..10).all(|_| !loadout::count_shot(&mut plain)));
     }
 
     #[test]
@@ -1306,7 +1307,7 @@ mod tests {
         dropped.clip = 1;
         for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
             loadout.drop_current();
-            loadout.add(dropped);
+            loadout::add_gun(loadout, dropped);
         }
         assert_eq!(current(&world).mods, mods.of(kind));
         assert_eq!(current(&world).clip, 1);

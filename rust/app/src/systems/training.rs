@@ -24,6 +24,7 @@ use crate::physics::Physics;
 use crate::prefabs;
 use crate::props::{Look, Prop};
 use crate::render::FontSize;
+use crate::systems::loadout;
 use crate::tilemap::TILE_SIZE;
 
 /// How close the player has to come to the far end of a room to have crossed it.
@@ -364,7 +365,7 @@ impl Training {
         }
         for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
             loadout.clear();
-            let _ = loadout.add(Weapon::new(GunKind::Pistol));
+            let _ = loadout::add_gun(loadout, Weapon::new(GunKind::Pistol));
         }
         self.set_out(world, physics, textures);
         // Into the dark: the crypt fades in and the guide walks up from further down.
@@ -974,7 +975,7 @@ mod tests {
         let drops = world.query::<&crate::components::GunDrop>().iter().count();
         assert_eq!(drops, 1);
         if let Ok(mut loadout) = world.get::<&mut Loadout>(player) {
-            let _ = loadout.add(Weapon::new(GunKind::Shotgun));
+            let _ = loadout::add_gun(&mut loadout, Weapon::new(GunKind::Shotgun));
         }
         step(&mut world, &mut physics, &mut training, &textures);
         assert!(!training.learnt);
@@ -990,7 +991,7 @@ mod tests {
         let (mut world, mut physics, mut training, textures) = scene();
         let (player, _) = crate::systems::player::player_entity_at(&world).expect("player");
         if let Ok(mut loadout) = world.get::<&mut Loadout>(player) {
-            let _ = loadout.add(Weapon::new(GunKind::Shotgun));
+            let _ = loadout::add_gun(&mut loadout, Weapon::new(GunKind::Shotgun));
             let _ = loadout.drop_current();
         }
         step(&mut world, &mut physics, &mut training, &textures);

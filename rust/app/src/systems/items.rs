@@ -14,6 +14,7 @@ use crate::items::{
     AmmoBox, BLINK_PERIOD, BLINK_SECONDS, DROP_ROLL_RANGE, ItemKind, Vital, drop_threshold_reached,
 };
 use crate::prefabs;
+use crate::systems::loadout;
 
 const BURST_ITEMS: usize = 5;
 const DROP_OUTLINE: glam::Vec4 = glam::Vec4::new(1.0, 1.0, 0.0, 1.0);
@@ -65,7 +66,7 @@ pub(crate) fn common_drop(world: &World, kind: ItemKind) -> ItemKind {
     if loadout.accepts_ammo(ammo) && loadout.feeds_a_held_gun(ammo) {
         return kind;
     }
-    if let Some(class) = loadout.neediest() {
+    if let Some(class) = loadout::neediest_ammo(loadout) {
         return ItemKind::Ammo(AmmoBox::feeding(class));
     }
     if loadout.accepts_ammo(ammo) {
@@ -85,7 +86,7 @@ pub(crate) fn can_use(world: &World, item: ItemKind) -> bool {
             .with::<&Player>()
             .iter()
             .next()
-            .is_some_and(|loadout| loadout.wants_ammo(ammo)),
+            .is_some_and(|loadout| loadout::wants_ammo(loadout, ammo)),
         ItemKind::Potion(Vital::Health, _) => world
             .query::<&Health>()
             .with::<&Player>()
@@ -113,7 +114,7 @@ pub(crate) fn use_item(world: &mut World, item: ItemKind, sounds: &mut Vec<Audio
         }
         ItemKind::Ammo(ammo) => {
             for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
-                loadout.add_ammo(ammo);
+                loadout::add_ammo(loadout, ammo);
             }
             sounds.push(AudioCommand::Effect(SoundEffect::Pickup));
         }
@@ -417,7 +418,7 @@ mod tests {
         );
 
         for loadout in world.query_mut::<&mut Loadout>() {
-            loadout.restrict(Some(crate::guns::GunKind::Pistol));
+            loadout::restrict_to(loadout, Some(crate::guns::GunKind::Pistol));
         }
         burst_items(&mut world, Vec2::new(500.0, 500.0), &textures, shotgun_roll);
 
@@ -568,7 +569,7 @@ mod tests {
             loadout.clear();
             let mut tesla = crate::components::Weapon::new(crate::guns::GunKind::TeslaGun);
             tesla.clip = 0;
-            loadout.add(tesla);
+            loadout::add_gun(loadout, tesla);
         }
         assert_eq!(
             common_drop(&world, ItemKind::Ammo(AmmoBox::Shotgun)),

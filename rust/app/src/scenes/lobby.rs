@@ -24,6 +24,7 @@ use crate::render::Occluders;
 use crate::rng::Rng;
 use crate::settings::Settings;
 use crate::systems;
+use crate::systems::loadout;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::upgrades::Perks;
 use crate::viewport::TARGET;
@@ -126,7 +127,7 @@ impl LobbyScene {
                         .range_gun
                         .take()
                         .unwrap_or_else(|| loadout.fresh(GunKind::Pistol));
-                    loadout.add(gun);
+                    loadout::add_gun(loadout, gun);
                 }
                 (false, true) => self.range_gun = loadout.drop_current(),
                 _ => {}
@@ -160,7 +161,7 @@ impl LobbyScene {
         for loadout in self.world.query_mut::<&mut Loadout>().with::<&Player>() {
             let fresh = loadout.fresh(kind);
             loadout.drop_current();
-            loadout.add(fresh);
+            loadout::add_gun(loadout, fresh);
         }
     }
 

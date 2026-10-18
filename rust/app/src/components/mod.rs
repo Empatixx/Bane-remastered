@@ -38,7 +38,7 @@ pub(crate) use combat::{
     Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
     ContactDamage, Dash, Detour, Slot, Died, Enemy, Expiring, Gone, GunDrop, Health, HitFlash,
     Invulnerable, Loadout,
-    Path, Progress, Puddle, Revives, Spawning, Toughened, Trap, Wallet, Weapon,
+    Path, Progress, Puddle, Revives, STARTING_SLOTS, Spawning, Toughened, Trap, Wallet, Weapon,
 };
 pub(crate) use death::DeathPart;
 pub(crate) use dodge::{Afterimage, Dodge, DodgeBar, DodgeCooldown, DodgeVisual};

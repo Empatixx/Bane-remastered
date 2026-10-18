@@ -3,6 +3,7 @@ use hecs::{Entity, World};
 use crate::components::{
     Animation, Armor, ContactDamage, Flame, Health, HitRoll, Loadout, Player, PlayerPerks, Trap,
 };
+use crate::systems::loadout;
 use crate::upgrades::Perks;
 use crate::weapon_upgrades::WeaponMods;
 
@@ -17,8 +18,8 @@ pub(crate) fn apply_floor_perks(world: &mut World, perks: Perks) {
     };
     let _ = world.insert_one(player, PlayerPerks(perks));
     if let Ok(mut loadout) = world.get::<&mut Loadout>(player) {
-        loadout.apply_perks(perks.extra_slots, perks.ammo_scale);
-        loadout.restrict(perks.only_gun);
+        loadout::apply_perks(&mut loadout, perks.extra_slots, perks.ammo_scale);
+        loadout::restrict_to(&mut loadout, perks.only_gun);
     }
 }
 
