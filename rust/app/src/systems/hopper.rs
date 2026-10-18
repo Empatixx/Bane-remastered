@@ -1,9 +1,10 @@
 use glam::Vec2;
 use hecs::{Entity, World};
 
-use crate::components::{Charge, Clip, Expiring, Frozen, Hopper, Position, Rooted, Spawning};
+use crate::components::{Charge, Clip, Hopper, Position, Rooted};
 use crate::enemies;
 use crate::systems::boss_kit::play;
+use crate::systems::hostile::Inactive;
 use crate::systems::player::living_player_at;
 
 fn hop_clip() -> Clip {
@@ -20,9 +21,7 @@ pub(crate) fn tick_hoppers(world: &mut World, dt: f32) {
     let target = living_player_at(world).map(|(_, position, _)| position);
     let hoppers: Vec<(Entity, Vec2, Hopper)> = world
         .query::<(Entity, &Position, &Hopper)>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
         .iter()
         .map(|(entity, position, hopper)| (entity, position.0, *hopper))
         .collect();

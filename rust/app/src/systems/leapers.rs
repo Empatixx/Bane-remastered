@@ -3,12 +3,12 @@ use hecs::{Entity, World};
 
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, ContactDamage, Dodge, Expiring, Frozen, Layer, LeapStage, Leaper,
-    Position, Rooted, Spawning, Velocity,
+    Animation, ContactDamage, Dodge, Layer, LeapStage, Leaper, Position, Rooted, Velocity,
 };
 use crate::enemies;
 use crate::systems::damage::hurt_player;
 use crate::systems::fx::Fx;
+use crate::systems::hostile::Inactive;
 
 struct Event {
     entity: Entity,
@@ -33,9 +33,7 @@ pub(crate) fn tick_leapers(
     let mut events = Vec::new();
     for (entity, position, leaper, velocity) in world
         .query_mut::<(Entity, &Position, &mut Leaper, &mut Velocity)>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
     {
         leaper.timer -= dt;
         match leaper.stage {

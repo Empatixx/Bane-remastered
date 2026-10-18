@@ -4,8 +4,7 @@ use hecs::{Entity, Satisfies, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Clip, Enraged, Expiring, Frozen, Minion, OgreAttack, OgreBoss, OgreStage, Position,
-    RoomId, Rooted, Spawning,
+    Animation, Clip, Enraged, Minion, OgreAttack, OgreBoss, OgreStage, Position, RoomId, Rooted,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
@@ -14,7 +13,7 @@ use crate::prefabs;
 use crate::systems::boss_kit::{self, play, spawn_rock};
 use crate::systems::player::living_player_at;
 use crate::systems::fx::{self, Fx};
-use crate::systems::hostile::Hostile;
+use crate::systems::hostile::{Hostile, Inactive};
 
 const RING_DROP: f32 = 110.0;
 const CLUB_REACH: Vec2 = Vec2::new(91.0, 133.0);
@@ -159,9 +158,7 @@ pub(crate) fn tick_ogre(world: &mut World, hostile: &mut Hostile<'_>) {
     let rats = world.query::<&Minion>().iter().count();
     let bosses: Vec<(Entity, Vec2, bool)> = world
         .query::<(Entity, &Position, &OgreBoss, Satisfies<&Enraged>)>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
         .iter()
         .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();

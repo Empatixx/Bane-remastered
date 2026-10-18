@@ -1,5 +1,6 @@
 //! What the bosses share: playing a clip without turning round, aiming and turning, firing a
-//! rock, sparks, and drawing a damaging beam.
+//! rock, sparks, drawing a damaging beam, rolling the next attack, the debug override of that
+//! roll, and losing their temper (`tick_enrage`).
 
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
@@ -8,8 +9,7 @@ use crate::assets::{Tex, Textures};
 use crate::audio::AudioCommand;
 use crate::components::{
     Animation, BeamPart, BossBrain, Chase, Clip, Color, ContactDamage, Dodge, Drag, Enrage,
-    Enraged, Expiring, Frozen, Health, Layer, Light, Position, RoomId, Size, Spawning, Sprite,
-    Velocity,
+    Enraged, Expiring, Health, Layer, Light, Position, RoomId, Size, Sprite, Velocity,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
@@ -17,6 +17,7 @@ use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
 use crate::systems::fx::Fx;
+use crate::systems::hostile::Inactive;
 use crate::systems::player::player_body;
 
 const BEAM_STEP: f32 = 12.0;
@@ -220,9 +221,7 @@ pub(crate) fn tick_enrage(world: &mut World, sounds: &mut Vec<AudioCommand>) {
     let due: Vec<(Entity, Vec2, Enrage)> = world
         .query::<(Entity, &Position, &Health, &Enrage)>()
         .without::<&Enraged>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
         .iter()
         .filter(|(_, _, health, enrage)| health.current as f32 <= health.max as f32 * enrage.at)
         .map(|(entity, position, _, enrage)| (entity, position.0, *enrage))
@@ -285,16 +284,37 @@ pub(crate) fn forced_attack<A: Copy>(var: &str, names: &[(&str, A)]) -> Option<A
 mod tests {
     use super::*;
     use crate::audio::SoundEffect;
+    use crate::components::Frozen;
     use crate::enemies::EnemyKind;
 
     /// Each boss as it enraged before the shared `tick_enrage`: the sound, the chase speed
     /// multiplier and the tint its own tick used (Argus tints itself every tick instead).
     const BOSSES: [(EnemyKind, SoundEffect, f32, Option<Vec4>); 5] = [
-        (EnemyKind::Golem, SoundEffect::GolemRage, 1.35, Some(Vec4::new(1.0, 0.62, 0.55, 1.0))),
-        (EnemyKind::Ogre, SoundEffect::OgreRage, 1.35, Some(Vec4::new(1.0, 0.7, 0.62, 1.0))),
-        (EnemyKind::Hellhound, SoundEffect::HoundRage, 1.25, Some(Vec4::new(1.0, 0.7, 0.62, 1.0))),
+        (
+            EnemyKind::Golem,
+            SoundEffect::GolemRage,
+            1.35,
+            Some(Vec4::new(1.0, 0.62, 0.55, 1.0)),
+        ),
+        (
+            EnemyKind::Ogre,
+            SoundEffect::OgreRage,
+            1.35,
+            Some(Vec4::new(1.0, 0.7, 0.62, 1.0)),
+        ),
+        (
+            EnemyKind::Hellhound,
+            SoundEffect::HoundRage,
+            1.25,
+            Some(Vec4::new(1.0, 0.7, 0.62, 1.0)),
+        ),
         (EnemyKind::Argus, SoundEffect::ArgusRage, 1.3, None),
-        (EnemyKind::Mimic, SoundEffect::MimicRage, 1.3, Some(Vec4::new(1.0, 0.72, 0.66, 1.0))),
+        (
+            EnemyKind::Mimic,
+            SoundEffect::MimicRage,
+            1.3,
+            Some(Vec4::new(1.0, 0.72, 0.66, 1.0)),
+        ),
     ];
 
     fn set_health(world: &mut World, boss: Entity, current: i32) {

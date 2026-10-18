@@ -4,8 +4,8 @@ use hecs::{Entity, Satisfies, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    ArgusAttack, ArgusBoss, ArgusStage, Body, Clip, Color, ContactDamage, Enraged, Expiring, Frozen,
-    Health, Orbiter, Position, RoomId, Rooted, Spawning,
+    ArgusAttack, ArgusBoss, ArgusStage, Body, Clip, Color, ContactDamage, Enraged, Expiring, Health,
+    Orbiter, Position, RoomId, Rooted, Spawning,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
@@ -13,7 +13,7 @@ use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::boss_kit::{self, play};
 use crate::systems::player::living_player_at;
-use crate::systems::hostile::Hostile;
+use crate::systems::hostile::{Hostile, Inactive};
 
 const SPRITE_SCALE: f32 = 4.0;
 const EYES: [(f32, f32); 7] = [
@@ -244,9 +244,7 @@ pub(crate) fn tick_argus(world: &mut World, hostile: &mut Hostile<'_>) {
     let target = living_player_at(world).map(|(_, position, _)| position);
     let bosses: Vec<(Entity, Vec2, bool)> = world
         .query::<(Entity, &Position, &ArgusBoss, Satisfies<&Enraged>)>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
         .iter()
         .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();

@@ -4,8 +4,8 @@ use hecs::{Entity, Satisfies, World};
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, BeamPart, Charge, Chase, Clip, Color, ContactDamage, Enraged, Expiring, Frozen,
-    HoundAttack, HoundBoss, HoundStage, Layer, Position, RoomId, Rooted, Size, Spawning,
+    Animation, BeamPart, Charge, Chase, Clip, Color, ContactDamage, Enraged, Expiring, HoundAttack,
+    HoundBoss, HoundStage, Layer, Position, RoomId, Rooted, Size, Spawning,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
@@ -15,7 +15,7 @@ use crate::systems::boss_kit::{
     self, BeamStyle, Ray, aim, beam_end, draw_beam, play, turn_towards,
 };
 use crate::systems::fx::{self, Fx};
-use crate::systems::hostile::Hostile;
+use crate::systems::hostile::{Hostile, Inactive};
 use crate::systems::player::living_player_at;
 
 const SPRITE_SCALE: f32 = 2.4;
@@ -203,9 +203,7 @@ pub(crate) fn tick_hound(world: &mut World, hostile: &mut Hostile<'_>) {
     let target = living_player_at(world).map(|(_, position, _)| position);
     let bosses: Vec<(Entity, Vec2, bool)> = world
         .query::<(Entity, &Position, &HoundBoss, Satisfies<&Enraged>)>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
         .iter()
         .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();

@@ -4,9 +4,8 @@ use hecs::{Entity, Satisfies, World};
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Clip, Color, Despawn, Dodge, Enraged, Expiring, FallingRock, Frozen, GolemAttack,
-    GolemBoss, GolemStage, Layer, Minion, Position, RockFall, RoomId, Rooted, Size, Spawning,
-    Sprite,
+    Animation, Clip, Color, Despawn, Dodge, Enraged, Expiring, FallingRock, GolemAttack, GolemBoss,
+    GolemStage, Layer, Minion, Position, RockFall, RoomId, Rooted, Size, Spawning, Sprite,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::geometry;
@@ -17,7 +16,7 @@ use crate::systems::boss_kit::{
 };
 use crate::systems::damage::hurt_player;
 use crate::systems::fx::{self, Fx};
-use crate::systems::hostile::Hostile;
+use crate::systems::hostile::{Hostile, Inactive};
 use crate::systems::player::{living_player_at, player_body};
 
 const ROCK_RING_ORIGIN_DROP: f32 = 60.0;
@@ -218,9 +217,7 @@ pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
     let target = living_player_at(world);
     let golems: Vec<(Entity, Vec2, bool)> = world
         .query::<(Entity, &Position, &GolemBoss, Satisfies<&Enraged>)>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
         .iter()
         .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();

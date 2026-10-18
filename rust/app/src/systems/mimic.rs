@@ -4,8 +4,8 @@ use hecs::{Entity, Satisfies, World};
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Bait, Charge, Chase, Clip, Color, Enraged, Expiring, Frozen, Layer, MimicAttack,
-    MimicBoss, MimicStage, Minion, Position, RoomId, Rooted, Sealed, Size, Spawning, Sprite,
+    Animation, Bait, Charge, Chase, Clip, Color, Enraged, Expiring, Layer, MimicAttack, MimicBoss,
+    MimicStage, Minion, Position, RoomId, Rooted, Sealed, Size, Sprite,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
@@ -15,7 +15,7 @@ use crate::systems::damage::hurt_player;
 use crate::systems::boss_kit::{self, play, spark, spawn_rock};
 use crate::systems::player::living_player_at;
 use crate::systems::fx::{self, Fx};
-use crate::systems::hostile::Hostile;
+use crate::systems::hostile::{Hostile, Inactive};
 
 const MOUTH: Vec2 = Vec2::new(44.0, 29.0);
 const FOOT: f32 = 85.0;
@@ -216,9 +216,7 @@ pub(crate) fn tick_mimic(world: &mut World, hostile: &mut Hostile<'_>) {
     let baits = world.query::<&Bait>().iter().count();
     let bosses: Vec<(Entity, Vec2, bool)> = world
         .query::<(Entity, &Position, &MimicBoss, Satisfies<&Enraged>)>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
-        .without::<&Frozen>()
+        .without::<Inactive>()
         .iter()
         .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();

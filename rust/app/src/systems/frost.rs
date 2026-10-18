@@ -6,13 +6,13 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    CHILL_SECONDS, Chilled, Color, DeathSplit, Died, Expiring, Frozen, IcicleDropper, Layer,
-    Position, RockFall, RoomId, Size, Spawning, Sprite,
+    CHILL_SECONDS, Chilled, Color, DeathSplit, Died, Frozen, IcicleDropper, Layer, Position,
+    RockFall, RoomId, Size, Sprite,
 };
 use crate::enemies;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::hostile::Hostile;
+use crate::systems::hostile::{Hostile, Inactive};
 
 const ICICLE_SIZE: Vec2 = Vec2::new(30.0, 45.0);
 const ICICLE_SHADOW: Vec2 = Vec2::new(56.0, 26.0);
@@ -51,9 +51,7 @@ pub(crate) fn tick_icicle_bats(world: &mut World, hostile: &mut Hostile<'_>) {
     let mut drops = Vec::new();
     for (position, dropper, room) in world
         .query_mut::<(&Position, &mut IcicleDropper, Option<&RoomId>)>()
-        .without::<&Frozen>()
-        .without::<&Spawning>()
-        .without::<&Expiring>()
+        .without::<Inactive>()
     {
         dropper.remaining -= dt;
         if dropper.remaining <= 0.0 && position.0.distance(player) <= enemies::ICICLE_RANGE {
