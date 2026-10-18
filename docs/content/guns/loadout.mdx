@@ -1,85 +1,85 @@
 ---
-title: Sloty a munice
-description: Kolik zbraní hráč unese, jak je přepíná, zahazuje a sbírá, jak funguje zásobník, přebíjení a krabice s municí.
+title: Slots and ammo
+description: How many guns the player can carry, how to switch, drop and pick them up, and how the magazine, reloading and ammo boxes work.
 ---
 
-Hráč nosí zbraně ve **slotech**. Na začátku runu má dva — Pistol a Shotgun, v ruce drží Pistol. Každá zbraň má vlastní zásobník a vlastní rezervu nábojů.
+The player carries guns in **slots**. At the start of a run there are two: Pistol and Shotgun, and the player holds the Pistol. Each gun has its own magazine and its own ammo reserve.
 
-## Jak to funguje
+## How it works
 
-### Sloty
+### Slots
 
-- Na začátku runu: **2 sloty** (Pistol + Shotgun).
-- Upgrade *Additional Gun* od Scientista přidá **3. slot**.
-- Každá zbraň si pamatuje svůj zásobník, rezervu i rozdělané přebíjení.
+- At the start of a run: **2 slots** (Pistol + Shotgun).
+- The Scientist's *Additional Gun* upgrade adds a **3rd slot**.
+- Each gun remembers its magazine, its reserve and a reload in progress.
 
-### Ovládání
+### Controls
 
-| Akce | Klávesa | Poznámka |
+| Action | Key | Note |
 | --- | --- | --- |
-| Přepnout na slot | 1–9 | jen na existující slot |
-| Další / předchozí zbraň | kolečko myši | dokola, včetně prázdných slotů |
-| Přebít | R | dá se přenastavit |
-| Zahodit zbraň | Q | zbraň odletí kousek směrem k myši |
-| Sebrat zbraň | E | |
+| Switch to a slot | 1–9 | only to an existing slot |
+| Next / previous gun | mouse wheel | wraps around, including empty slots |
+| Reload | R | can be rebound |
+| Drop the gun | Q | the gun flies a short way toward the mouse |
+| Pick up a gun | E | |
 
-### Sebrání zbraně
+### Picking up a gun
 
-- Má-li hráč volný slot, nová zbraň jde do něj (přednostně do aktuálního, pokud je prázdný).
-- Jsou-li všechny sloty plné, zbraň v ruce spadne na zem a nová zaujme její místo.
-- Zbraň si nese svůj stav — zahozená pistole s jedním nábojem bude mít po sebrání pořád jeden náboj.
-- Sebraná zbraň dostane všechna vylepšení ze [stromu zbraně](/docs/guns/strom-zbrane).
+- If the player has a free slot, the new gun goes into it (into the current one first, if it is empty).
+- If all slots are full, the gun in hand drops to the ground and the new one takes its place.
+- A gun keeps its state. A dropped pistol with one round will still have one round after pickup.
+- A picked-up gun gets all the upgrades from its [weapon tree](/docs/guns/weapon-trees).
 
-### Zásobník a přebíjení
+### Magazine and reloading
 
-- Nová zbraň má plný zásobník i plnou rezervu.
-- Upgrade *Additional Ammo* zvětší rezervu všech zbraní o 10 %.
-- Přebít jde jen tehdy, když zásobník není plný, v rezervě něco zbývá a neprobíhá dávka M4.
-- Přebíjí se jen zbraň v ruce. **Automatické přebití neexistuje.**
-- HUD ukazuje ikonu zbraně, počet nábojů ve formátu „zásobník/rezerva“ (např. „7/120“) a jednotlivé náboje v zásobníku jako řadu ikonek (pistolové, brokové nebo ve dvou sloupcích u samopalů).
+- A new gun has a full magazine and a full reserve.
+- The *Additional Ammo* upgrade increases the reserve of all guns by 10%.
+- You can reload only if the magazine is not full, there is something left in the reserve and no M4 burst is in progress.
+- Only the gun in hand reloads. **There is no automatic reload.**
+- The HUD shows the gun icon, the ammo count in the format "magazine/reserve" (for example "7/120") and the individual rounds in the magazine as a row of icons (pistol or shotgun rounds, or in two columns for SMGs).
 
-### Krabice s municí
+### Ammo boxes
 
-| Krabice | Doplní rezervy | Pro které zbraně |
+| Box | Refills reserves | For which guns |
 | --- | --- | --- |
-| Krabice s náboji | 10 % | všechny kromě Shotgunu |
-| Krabice s náboji do samopalu | 10 % | totéž co krabice s náboji |
-| Krabice s broky | 25 % | jen Shotgun |
-| Univerzální krabice | 50 % | všechny |
+| Ammo box | 10% | all except the Shotgun |
+| SMG ammo box | 10% | the same as the ammo box |
+| Shotgun shell box | 25% | the Shotgun only |
+| Universal box | 50% | all |
 
-Krabice doplní **každou** odpovídající zbraň, kterou hráč nese. Rezerva nepřeteče maximum. Pokud žádná odpovídající zbraň munici nepotřebuje, krabice zůstane ležet. Univerzální krabici prodává obchod a padá z hracího automatu.
+A box refills **every** matching gun the player carries. The reserve does not overflow the maximum. If no matching gun needs ammo, the box stays on the ground. The shop sells the universal box and it drops from the slot machine.
 
-### Nekonečná munice
+### Infinite ammo
 
-Artefakt **Infinity Quiver** dá na 8 s nekonečnou munici: zásobník neubývá, střílí se i z prázdného a přebíjení se přeruší. Náboje v HUD se zlatě třpytí a místo počtu se ukáže znak nekonečna.
+The **Infinity Quiver** artefact gives 8 s of infinite ammo: the magazine does not drain, you can shoot even from an empty one, and reloading is interrupted. The rounds in the HUD glitter gold and an infinity sign shows instead of the count.
 
-### Výzva Pistol Only
+### The Pistol Only challenge
 
-Výzva „No gun but the pistol. Reach floor 3“:
+The challenge "No gun but the pistol. Reach floor 3":
 
-- hráč začíná jen s Pistolí,
-- truhly, obchod ani automat žádnou zbraň nenabídnou,
-- padající krabice s municí se změní na takové, které pistole použije.
+- the player starts with only the Pistol,
+- chests, the shop and the slot machine offer no gun,
+- falling ammo boxes change into ones the pistol can use.
 
-### Mezi patry
+### Between floors
 
-Při přechodu do dalšího patra si hráč nese všechny zbraně včetně stavu zásobníků a rezerv.
+When moving to the next floor, the player keeps all guns, including the state of magazines and reserves.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Na začátku runu se vyplatí naplnit třetí slot (s upgradem *Additional Gun*) zbraní s jiným typem munice než ostatní, aby krabice nezůstávaly ležet.
-- Před přepnutím zbraň přebij — v kapse se nepřebije.
-- [Hráč](/docs/player), [Progrese](/docs/progression) (*Additional Gun*, *Additional Ammo*, výzvy), [Artefakty a předměty](/docs/artefacts-items) (krabice, Infinity Quiver), [Získávání zbraní](/docs/guns/ziskavani).
+- At the start of a run, it pays to fill the third slot (with the *Additional Gun* upgrade) with a gun that uses a different ammo type from the others, so the boxes do not stay on the ground.
+- Reload before switching. A gun does not reload in the pocket.
+- [Player](/docs/player), [Progression](/docs/progression) (*Additional Gun*, *Additional Ammo*, challenges), [Artefacts and items](/docs/artefacts-items) (boxes, Infinity Quiver), [Acquiring guns](/docs/guns/acquiring).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Klávesy 1–9 jsou připravené, ale slotů je nejvýš 3.
-- Krabice s náboji do samopalu vypadá i funguje stejně jako obyčejná krabice s náboji — v praxi tak běžné náboje padají dvakrát častěji než broky.
-- Raketomet ani energetické zbraně nemají vlastní munici, plní je stejná krabice jako pistoli.
-- Kolečko myši projíždí i prázdné sloty.
+- Keys 1–9 are ready, but there are at most 3 slots.
+- The SMG ammo box looks and works the same as the ordinary ammo box, so in practice ordinary ammo drops twice as often as shells.
+- The rocket launcher and energy guns have no ammo of their own. The same box refills them as the pistol.
+- The mouse wheel also scrolls through empty slots.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Upgrade na automatické přebití nebo přebíjení zbraní „v kapse“.
-- Vlastní munice pro energetické zbraně (baterie) nebo přehřívání místo zásobníku.
-- Rozebrání nepotřebné zbraně na munici nebo mince.
+- An upgrade for automatic reload or reloading guns "in the pocket".
+- Own ammo for energy guns (batteries) or overheating instead of a magazine.
+- Dismantling an unneeded gun into ammo or coins.

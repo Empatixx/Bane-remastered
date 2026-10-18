@@ -1,57 +1,57 @@
 ---
-title: Co si hra pamatuje
-description: Co zůstane uložené mezi runy a po vypnutí hry — měny, talenty, vylepšení zbraní, mise, challenge, statistiky a nastavení.
+title: What the game remembers
+description: What stays saved between runs and after the game is turned off — currencies, talents, weapon upgrades, missions, challenges, stats and settings.
 ---
 
-Bane ukládá průběžně a automaticky, žádné ruční ukládání není potřeba. Máš jeden **profil** a jedno
-**nastavení**. Rozehraný run se ale neukládá — když hru během runu vypneš, run je ztracený.
+Bane saves continuously and automatically, no manual saving is needed. You have one **profile** and one
+**settings** file. A run in progress is not saved, though — if you turn the game off during a run, the run is lost.
 
-## Jak to funguje
+## How it works
 
-- **Profil** se uloží pokaždé, když se v něm něco změní: nákup talentu nebo vylepšení zbraně, konec runu,
-  vyzvednutí mise, výběr challenge.
-- **Nastavení** se uloží, když v něm zmáčkneš **Apply**.
-- Ukládání je bezpečné: i když hra spadne uprostřed zápisu, starý stav zůstane celý.
-- Když se uložená data poškodí, hra si poškozený soubor odloží stranou jako zálohu a začne s čistým profilem — o původní data tedy nepřijdeš úplně.
-- Pokud nová verze hry odebere nebo přejmenuje nějaký talent, zbraň, misi nebo challenge, zmizí z profilu jen ta jedna položka; zbytek zůstane. Chybějící mise se doplní nové.
-- Když se změní podoba stromů vylepšení zbraní, staré stromy se vyresetují a utracený gold se vrátí.
+- The **profile** is saved every time something in it changes: buying a talent or a weapon upgrade, the end of a run,
+  claiming a mission, selecting a challenge.
+- **Settings** are saved when you press **Apply** in them.
+- Saving is safe: even if the game crashes in the middle of a write, the old state stays whole.
+- When the saved data gets damaged, the game sets the damaged file aside as a backup and starts with a clean profile — so you do not lose the original data completely.
+- If a new version of the game removes or renames a talent, weapon, mission or challenge, only that one item disappears from the profile; the rest stays. Missing missions are filled in with new ones.
+- When the shape of the weapon upgrade trees changes, the old trees are reset and the gold spent is returned.
 
-## Obsah
+## Contents
 
-### Co se pamatuje mezi runy
+### What is remembered between runs
 
-| Co | Poznámka |
+| What | Note |
 |---|---|
-| **Talenty** k utracení | [Měny](/docs/progression/currencies) |
-| **Gold** k utracení a celkem vydělaný gold | [Měny](/docs/progression/currencies) |
-| Koupené talenty | Talentový strom u Vědce |
-| Vylepšení každé zbraně | Koupené uzly, počet rerollů, utracený gold — [Zbraně](/docs/guns) |
-| Aktivní mise a jejich postup | Včetně pořadí losování nových misí — [Mise](/docs/progression/missions) |
-| Vybraná challenge a splněné challenge | [Challenge](/docs/progression/challenges) |
-| Statistiky profilu | Počet runů, výher a smrtí, zabití, sebrané předměty, výstřely a zásahy, nejhlubší patro |
-| Nastavení | Rozlišení, fullscreen, v-sync, hlasitosti, ovládání — [Menu a nastavení](/docs/progression/menus-settings) |
+| **Talents** to spend | [Currencies](/docs/progression/currencies) |
+| **Gold** to spend and total gold earned | [Currencies](/docs/progression/currencies) |
+| Bought talents | The talent tree at the Scientist |
+| Upgrades of each weapon | Bought nodes, number of rerolls, gold spent — [Guns](/docs/guns) |
+| Active missions and their progress | Including the roll order of new missions — [Missions](/docs/progression/missions) |
+| The selected challenge and completed challenges | [Challenges](/docs/progression/challenges) |
+| Profile stats | Number of runs, wins and deaths, kills, items picked up, shots and hits, deepest floor |
+| Settings | Resolution, fullscreen, v-sync, volumes, controls — [Menus and settings](/docs/progression/menus-settings) |
 
-### Co se nepamatuje
+### What is not remembered
 
-| Co | Poznámka |
+| What | Note |
 |---|---|
-| Rozehraný run | Vypnutím hry se ztratí |
-| Coins | Propadnou na konci každého runu |
-| Zbraně a artefakty z runu | Každý run začínáš znovu |
-| Historie jednotlivých runů | Ukládají se jen souhrnná čísla |
+| A run in progress | Lost when the game is turned off |
+| Coins | Lost at the end of every run |
+| Weapons and artefacts from the run | You start every run anew |
+| History of individual runs | Only summary numbers are saved |
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Co se do profilu zapisuje na konci runu: [Konec runu](/docs/progression/run-end).
-- Uložené statistiky profilu zatím nikde ve hře neuvidíš.
+- What gets written to the profile at the end of a run: [End of run](/docs/progression/run-end).
+- You cannot see the saved profile stats anywhere in the game yet.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Postup ze staré Java verze hry se nepřenáší.
+- Progress from the old Java version of the game does not carry over.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Víc profilů a možnost profil smazat / začít znovu přímo ve hře.
-- „New game+“ po pravém konci, jak počítá příběh.
+- More profiles and the ability to delete a profile / start over right in the game.
+- "New game+" after the true ending, as the story envisions.
 - Steam Cloud.
-- Uložení rozehraného runu při vypnutí hry a historie runů (seed, výsledek, zbraně).
+- Saving a run in progress when the game is turned off, and a run history (seed, result, weapons).

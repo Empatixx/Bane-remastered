@@ -1,77 +1,77 @@
 ---
-title: Statistiky běhu
-description: Co hra během běhu počítá, jak se z toho na konci spočítá odměna ve zlatě a které statistiky si tvůj profil pamatuje napořád.
+title: Run stats
+description: What the game counts during a run, how the gold reward is calculated from it at the end and which stats your profile remembers forever.
 ---
 
-Během každého běhu hra potichu sleduje, jak hraješ — kolik střílíš a trefuješ, kolik zabíjíš a co sbíráš.
-Na konci běhu z toho vypočítá odměnu ve **zlatě**, za které si v lobby vylepšuješ zbraně.
+During every run the game quietly tracks how you play — how much you shoot and hit, how many you kill and what you collect.
+At the end of the run it calculates a **gold** reward from it, which you spend in the lobby on weapon upgrades.
 
-## Jak to funguje
+## How it works
 
-### Co se počítá během běhu
+### What is counted during a run
 
-Statistiky se přenášejí mezi patry a sčítají se za celý běh.
+Stats carry over between floors and add up over the whole run.
 
-| Statistika | Kdy se přičítá |
+| Stat | When it is added |
 |------------|----------------|
-| Výstřely | každý vystřelený projektil — výstřel z brokovnice se počítá tolikrát, kolik má broků |
-| Zásahy | zásah nepřítele **tvou kulkou**; výbuchy, mazlíček, vyvolaní pomocníci ani jed se nepočítají |
-| Zabití | každý zabitý nepřítel (kromě drobných přisluhovačů bosse), i když ho zabila past nebo mazlíček; počítá se i podle druhu nepřítele |
-| Předměty | každá sebraná mince, munice, lektvar, zbraň i artefakt |
-| Mince | každá sebraná mince |
-| Zásahy v patře | kolikrát tě v aktuálním patře něco zasáhlo (i zásah pohlcený štítem) |
-| Nedotčená patra | +1 za každé patro, které opustíš (nebo dokončíš poražením posledního bosse), aniž by tě něco zasáhlo |
+| Shots | every fired projectile — a shotgun shot counts as many times as it has pellets |
+| Hits | a hit on an enemy **with your bullet**; explosions, the pet, summoned helpers and poison do not count |
+| Kills | every killed enemy (except the boss's small minions), even if a trap or the pet killed it; it is also counted by enemy type |
+| Items | every coin, ammo, potion, weapon and artefact picked up |
+| Coins | every coin picked up |
+| Hits on the floor | how many times something hit you on the current floor (even a hit absorbed by a shield) |
+| Untouched floors | +1 for every floor you leave (or finish by defeating the last boss) without being hit |
 
-### Shrnutí na konci běhu
+### Summary at the end of the run
 
-Závěrečná obrazovka se ukáže po smrti, po výhře nebo po volbě *Die* v pauze.
+The final screen appears after death, after a win or after choosing *Die* in the pause menu.
 
-- **Přesnost** = zásahy ÷ výstřely (0 %, pokud jsi nestřílel).
-- **Odměna ve zlatě** má čtyři řádky. První tři rostou s dosaženým patrem a s hodnotou statistiky — zhruba
-  *násobitel × patro × hodnota*, s nepatrným zrychlením u vyšších čísel:
+- **Accuracy** = hits ÷ shots (0% if you did not shoot).
+- The **gold reward** has four rows. The first three grow with the floor reached and with the stat value — roughly
+  *multiplier × floor × value*, with a slight acceleration at higher numbers:
 
-| Řádek | Odměna |
-|-------|--------|
-| Accuracy: N % | násobitel 2 × patro × přesnost v % (plně až od 50 výstřelů) |
-| Kills: N | násobitel 2 × patro × počet zabití |
-| Loot: N | násobitel 4 × patro × počet předmětů |
-| Floor: N | 5 zlata za každé patro po prvním |
+| Row | Reward |
+|-------|---------|
+| Accuracy: N% | multiplier 2 × floor × accuracy in % (full only from 50 shots) |
+| Kills: N | multiplier 2 × floor × number of kills |
+| Loot: N | multiplier 4 × floor × number of items |
+| Floor: N | 5 gold for every floor after the first |
 
-**Příklad:** patro 3, přesnost 60 %, 40 zabití, 20 předmětů → 383 + 254 + 252 + 10 = **899 zlata**.
+**Example:** floor 3, accuracy 60%, 40 kills, 20 items → 383 + 254 + 252 + 10 = **899 gold**.
 
-Výsledek se zapíše do profilu a vyhodnotí se mise a zvolená výzva — splněná výzva přidá talenty. Pokud jsi
-něco splnil, ukáže se poznámka přímo na závěrečné obrazovce.
+The result is written to the profile and the mission and the chosen challenge are evaluated — a completed challenge adds talents. If you
+completed something, a note is shown right on the final screen.
 
-### Závěrečná obrazovka
+### The final screen
 
-Nejdřív vyjede lebka, pak nadpis a potom postupně čtyři řádky (ikona, popisek a načítající se „+N“ zlata).
-Až animace doběhne, blikající nápis tě vyzve k pokračování — jakákoli klávesa tě vrátí do lobby.
+First a skull slides in, then the heading and then the four rows one after another (an icon, a label and a counting-up "+N" of gold).
+When the animation finishes, a blinking prompt asks you to continue — any key takes you back to the lobby.
 
-### Co si profil pamatuje napořád
+### What the profile remembers forever
 
-| Statistika | Význam |
+| Stat | Meaning |
 |------------|--------|
-| Zlato | aktuální zlato a celkem vydělané zlato |
-| Talenty | měna pro [talenty](/docs/player/upgrades) |
-| Běhy | počet běhů, výher a smrtí |
-| Zabití a předměty | součty za všechny běhy |
-| Výstřely a zásahy | součty za všechny běhy |
-| Nejhlubší patro | rekord |
+| Gold | current gold and total gold earned |
+| Talents | currency for [talents](/docs/player/upgrades) |
+| Runs | the number of runs, wins and deaths |
+| Kills and items | totals over all runs |
+| Shots and hits | totals over all runs |
+| Deepest floor | record |
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Mise sledují zabití (i podle druhu nepřítele), dosažené patro, mince, předměty a nedotčená patra — viz [Průběh hry a progrese](/docs/progression).
-- Zlato utrácíš za stromy vylepšení zbraní — [Zbraně](/docs/guns).
-- Sbírání čehokoli se vyplácí: řádek Loot má dvojnásobný násobitel oproti zabitím.
-- Hloubka se násobí se vším — jedno patro navíc zvedne všechny tři hlavní odměny.
+- Missions track kills (also by enemy type), floor reached, coins, items and untouched floors — see [Run and progression](/docs/progression).
+- You spend gold on weapon upgrade trees — [Guns](/docs/guns).
+- Collecting anything pays off: the Loot row has a multiplier twice that of kills.
+- Depth multiplies everything — one extra floor raises all three main rewards.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Zásah pohlcený štítem (*Shield Horn*) se počítá jako zásah a pokazí nedotčené patro (viz [Zdraví, brnění a poškození](/docs/player/damage)).
-- Patro, na kterém zemřeš, se do nedotčených pater nikdy nezapočítá.
-- Přesnost penalizuje brokovnice — každý brok je samostatný „výstřel“, a minout pár broků je běžné.
+- A hit absorbed by a shield (*Shield Horn*) counts as a hit and ruins the untouched floor (see [Health, armor and damage](/docs/player/damage)).
+- The floor you die on never counts toward untouched floors.
+- Accuracy penalizes shotguns — every pellet is a separate "shot", and missing a few pellets is normal.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Obrazovka se statistikami profilu — hra je sbírá, ale hráč je nikde neuvidí (kromě talentů a zlata v lobby).
-- Další statistiky: čas běhu, počet úhybů, nejsilnější zásah, zabití bossů, utracené mince.
+- A profile stats screen — the game collects them, but the player never sees them anywhere (except talents and gold in the lobby).
+- More stats: run time, number of dodges, strongest hit, boss kills, coins spent.

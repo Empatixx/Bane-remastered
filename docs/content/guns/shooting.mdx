@@ -1,0 +1,98 @@
+---
+title: Shooting
+description: How a shot works exactly — trigger, bursts, spread, damage calculation, critical hits, screen shake, shell casings and projectile impact.
+---
+
+Shooting is the player's main action. This page describes the rules shared by all guns: when you can fire, where the shot flies, how much damage it does and what happens when it lands.
+
+## How it works
+
+### When you can shoot
+
+- During a **dodge** and while the player is **frozen**, the gun does not fire.
+- If the current slot is empty (the gun was dropped), pressing the trigger does nothing.
+- You cannot shoot while reloading or between two shots (cooldown).
+- **Semi-automatic** guns fire once per click. **Automatic** guns fire as long as the player holds the button.
+- An empty magazine only clicks. **The gun does not reload itself.** The player has to press R.
+- Reloading and cooldown run only for the gun in the player's hand. Guns in the other slots "stand still".
+
+### Bursts (M4)
+
+On a press, the M4 fires a burst of 4 shots 0.05 s apart. The direction locks at the moment of the press, so moving the mouse during the burst does not turn it. You cannot reload during a burst.
+
+### Spread
+
+Each gun has a spread given as an angle. The shot flies randomly up to half of that angle to the left or right. The M4, Sniper, Crossbow and Railgun are perfectly accurate. The Flamethrower spreads the most (±14°).
+
+The Shotgun is an exception. Its 4 pellets are not random but fly in a fixed fan: straight, −2.9°, +5.7° and −8.6°.
+
+### Damage calculation
+
+For each projectile, damage is calculated in this order:
+
+1. **Base**: a random number from the gun's range. The upper end of the range **never lands** (just like in the original Java version of Bane). A Pistol with range 1–3 always does 1 or 2.
+2. **Weapon tree**: Damage nodes add percentages. The remainder after the decimal point turns into an extra point with a matching chance (1 × 1.25 = 25% chance of 2), so even a small bonus helps weak guns.
+3. **Player upgrades**: *Sharpened Bullets* (×1.2) and *Dangerous Bullets* (×1.25), together ×1.5. The remainder after the decimal point again turns into an extra point with a matching chance (1 × 1.2 = 20% chance of 2).
+4. **Critical hit**: ×2.
+5. **Sneak attack**: the first shot after the Phantom artefact ×2.
+
+### Critical hits
+
+- Chance = the *Critical Hit* upgrade (+10%) + the gun's own chance (only the Sniper, 20%) + Crit nodes from the tree (+4/8/12%).
+- It is rolled **separately for each projectile**. Each of the Shotgun's 4 pellets has its own roll.
+- The **Deadeye** mutation makes every fifth shot critical regardless of chance. On the Shotgun, that is all 4 pellets at once.
+
+### Screen shake
+
+Every shot shakes the camera, from barely noticeable for the flamethrower to a strong shake for the RPG and Railgun. The shake fades quickly, so even continuous automatic fire does not "lock" the screen in a shake. Recoil does not push the player.
+
+### Shell casings
+
+Bullets, Minigun tracers and Sniper shots eject casings to the side. They bounce off the ground and stay for 25 s, then disappear. At most 140 can lie on the ground, and the oldest vanish first. The Shotgun ejects shotgun shells. The crossbow, rocket launcher and energy guns have no casings.
+
+### Projectile impact
+
+When a projectile reaches something, this happens:
+
+1. A **rocket** explodes and hurts everything around it. Nothing else is evaluated.
+2. The enemy or object that was hit takes damage, flashes and a number pops up above it.
+3. **Plasma** splashes the surroundings for half damage.
+4. A Tesla **spark** jumps to other enemies with lightning.
+5. The gun's **mutation** takes effect.
+6. If the projectile has **pierce**, it keeps flying. Otherwise it stops.
+7. A projectile with the **Ricochet** mutation bounces off a wall once. With the **Explosive** mutation, it explodes on a wall too.
+
+A bullet hit counts toward the accuracy statistic and charges abilities that count hits. Explosions (rocket, Explosive, plasma splash) do **not** count as hits.
+
+## Stats
+
+Sources of player shots other than guns:
+
+| Source | What it fires | Damage | Note |
+| --- | --- | --- | --- |
+| Ring of Death (artefact) | 50 bullets in a circle | 2 | same bullets as from the pistol |
+| Bone Turret (artefact) | bone shards | 2 | the turret shoots, not the player |
+| Thunder Idol (artefact) | chain lightning | 6 per target | hits the nearest enemy within about 7 tiles, then jumps to the next within about 4.7 tiles, max 6 targets |
+
+## Tips and connections
+
+- Damage upgrades from the Scientist and Damage nodes in the [weapon tree](/docs/guns/weapon-trees) help weak guns too. A fraction of a point shows up on average every time.
+- Deadeye and a high crit chance pay off most on guns with a big hit (Sniper, Railgun, Shotgun).
+- Phantom + RPG or Railgun = a huge first sneak attack.
+- What the projectile does after the hit: [Projectiles](/docs/guns/projectiles), [Mutations](/docs/guns/mutations).
+- [Artefacts and items](/docs/artefacts-items): Phantom, Infinity Quiver, Ring of Death, Bone Turret, Thunder Idol.
+
+## Known inconsistencies
+
+- The weapon table shows the damage range including the upper end (for example 1–3), which never lands in the game.
+- A critical hit has no special feedback: no number color, sound or effect, only a higher number.
+- For an M4 burst, only the first shot is audible.
+- With an empty magazine the gun does not reload itself, and inactive guns do not reload "in the pocket".
+- A piercing projectile (flame, railgun) touching two enemies at once can apparently hit them alternately and repeatedly, so the damage may be higher than expected.
+- Tesla's chain lightning and the Thunder Idol artefact's lightning each work differently (different range, number of targets and look).
+
+## Ideas for expansion
+
+- Clear feedback for a critical hit (yellow number, sound, sparks).
+- Knockback and a muzzle flash for a better shooting feel.
+- Automatic reload on an empty magazine as an upgrade.

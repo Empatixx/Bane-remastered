@@ -1,76 +1,76 @@
 ---
-title: Hráč
-description: Všechno o tvé postavě — se kolika životy začínáš, co si neseš mezi patry a kde najdeš podrobnosti o pohybu, poškození a talentech.
+title: Player
+description: Everything about your character — how much health you start with, what you carry between floors and where to find details on movement, damage and talents.
 ---
 
-V Bane ovládáš jedinou postavu, osamělého střelce, který sestupuje patro po patře do procedurálně generovaného dungeonu.
-Postava nemá úrovně ani zkušenosti — sílu jí dávají zbraně, artefakty, předměty sebrané během běhu a trvalé
-talenty koupené v lobby.
+In Bane you control a single character, a lone shooter who descends floor by floor into a procedurally generated dungeon.
+The character has no levels or experience. Power comes from weapons, artefacts, items picked up during the run and permanent
+talents bought in the lobby.
 
-## Jak to funguje
+## How it works
 
-### Výchozí hodnoty postavy
+### Starting values
 
-| Vlastnost | Na začátku běhu | Poznámka |
+| Property | At the start of a run | Note |
 |-----------|-----------------|----------|
-| Zdraví | **12** | základ 10, talent *Hero's Heart* (+20 %) máš vždy zdarma; s *Titan's Heart* 15 |
-| Brnění | **5** | s *Improved Armor* 6 |
-| Rychlost chůze | asi **7 dlaždic za sekundu** | základ ~6,4 dlaždice/s, talent *Swiftwind Steps* (+10 %) je zdarma |
-| Rychlost úhybu | asi 12 dlaždic za sekundu | talenty ani povrch ji nemění |
-| Nezranitelnost po zásahu | 1 s | |
-| Varování „málo zdraví“ | pod 30 % max. zdraví | zvukový signál a pulzující rudé okraje obrazovky |
-| Zbraňové sloty | 2 (Pistol + Shotgun) | s talentem *Additional Gun* 3 |
-| Artefakt | Reveal Map | jeden slot, aktivuje se klávesou F |
-| Mince | 0 | |
-| Poškození zbraní | **+20 %** | talent *Sharpened Bullets* je zdarma |
+| Health | **12** | base 10, the talent *Hero's Heart* (+20%) is always yours for free; with *Titan's Heart* 15 |
+| Armor | **5** | with *Improved Armor* 6 |
+| Walking speed | about **7 tiles per second** | base ~6.4 tiles/s, the talent *Swiftwind Steps* (+10%) is free |
+| Dodge speed | about 12 tiles per second | neither talents nor surfaces change it |
+| Invulnerability after a hit | 1 s | |
+| "Low health" warning | below 30% of max health | a sound signal and pulsing red screen edges |
+| Weapon slots | 2 (Pistol + Shotgun) | with the talent *Additional Gun* 3 |
+| Artefact | Reveal Map | one slot, activated with the F key |
+| Coins | 0 | |
+| Weapon damage | **+20%** | the talent *Sharpened Bullets* is free |
 
-Postava kolem sebe vrhá teplé světlo, takže i v temných místnostech vidíš nejbližší okolí.
+The character casts a warm light around itself, so you can see your nearest surroundings even in dark rooms.
 
-### Průběh běhu
+### How a run goes
 
-1. **Start** — vstoupíš do portálu v lobby. Hra podle zvolené výzvy (challenge) nastaví pravidla, postaví první
-   patro a přepočítá tvé zdraví a brnění podle vlastněných talentů.
-2. **Každé patro** — talenty se znovu uplatní (sloty zbraní, kapacita munice, případná omezení výzvy). Pokud
-   máš talent *Pet*, objeví se vedle tebe mazlíček.
-3. **Hraní** — čistíš místnosti, sbíráš předměty, nakupuješ v obchodě a hledáš schody dolů.
-4. **Sestup** — do dalšího patra si neseš zdraví, brnění, mince, zbraně, artefakt i statistiky běhu.
-   **Zdraví se mezi patry neobnovuje.**
-5. **Konec** — když zdraví klesne na 0, když vyhraješ, nebo když v pauze zvolíš *Die*. Následuje závěrečná
-   obrazovka se shrnutím a odměnou ve zlatě a návrat do lobby.
+1. **Start** — you step into the portal in the lobby. The game sets the rules based on the chosen challenge, builds the first
+   floor and recalculates your health and armor from the talents you own.
+2. **Every floor** — talents are applied again (weapon slots, ammo capacity, any challenge limits). If
+   you have the talent *Pet*, a pet appears next to you.
+3. **Playing** — you clear rooms, collect items, shop and look for the stairs down.
+4. **Descent** — you carry health, armor, coins, weapons, artefact and run stats to the next floor.
+   **Health does not recover between floors.**
+5. **End** — when health drops to 0, when you win, or when you choose *Die* in the pause menu. Then comes the final
+   screen with a summary and a gold reward, and you return to the lobby.
 
 <Callout type="info">
-Postava nemá žádnou pasivní regeneraci zdraví. Obnovit se dá jen lektvary, některými artefakty a brnění také
-talentem *Armor Regeneration* (+1 brnění za vyčištěnou místnost).
+The character has no passive health regeneration. You can only restore it with potions, some artefacts, and armor also with the
+talent *Armor Regeneration* (+1 armor per cleared room).
 </Callout>
 
-## Obsah
+## Contents
 
 <Cards>
-  <Card title="Ovládání" href="/docs/player/controls" />
-  <Card title="Pohyb a úhyb" href="/docs/player/movement-dodge" />
-  <Card title="Zdraví, brnění a poškození" href="/docs/player/damage" />
-  <Card title="Co hráč umí" href="/docs/player/abilities" />
-  <Card title="Talenty" href="/docs/player/upgrades" />
-  <Card title="Statistiky běhu" href="/docs/player/stats" />
-  <Card title="Rozhraní (HUD)" href="/docs/player/hud" />
+  <Card title="Controls" href="/docs/player/controls" />
+  <Card title="Movement and dodge" href="/docs/player/movement-dodge" />
+  <Card title="Health, armor and damage" href="/docs/player/damage" />
+  <Card title="What the player can do" href="/docs/player/abilities" />
+  <Card title="Talents" href="/docs/player/upgrades" />
+  <Card title="Run stats" href="/docs/player/stats" />
+  <Card title="Interface (HUD)" href="/docs/player/hud" />
 </Cards>
 
-## Tipy a souvislosti
+## Tips and connections
 
-- **Zbraně** — střelba, přebíjení, kritické zásahy a vylepšení zbraní: [Zbraně](/docs/guns).
-- **Artefakty a předměty** — slot artefaktu, lektvary, mince a munice: [Artefakty a předměty](/docs/artefacts-items).
-- **Nepřátelé** — kdo tě zraní dotykem a kdo střílí: [Nepřátelé](/docs/enemies).
-- **Dungeon** — voda, bažina, led, láva, pasti a obchod: [Dungeon a svět](/docs/dungeon).
-- **Progrese** — talenty se získávají z misí a výzev, zlato z běhů jde do vylepšení zbraní: [Průběh hry a progrese](/docs/progression).
+- **Guns** — shooting, reloading, critical hits and weapon upgrades: [Guns](/docs/guns).
+- **Artefacts and items** — the artefact slot, potions, coins and ammo: [Artefacts and items](/docs/artefacts-items).
+- **Enemies** — who hurts you on touch and who shoots: [Enemies](/docs/enemies).
+- **Dungeon** — water, swamp, ice, lava, traps and the shop: [Dungeon and world](/docs/dungeon).
+- **Progression** — talents come from missions and challenges, gold from runs goes into weapon upgrades: [Run and progression](/docs/progression).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- První talent každého stromu je zdarma, takže +10 % rychlosti, +20 % zdraví a +20 % poškození má hráč vždy.
-  „Holé“ základní hodnoty postavy (10 zdraví, nižší rychlost) tak ve hře nikdy neuvidíš.
-- Starší popisy hry tvrdí, že postava nemá úhyb — v aktuální verzi úhyb existuje (viz [Pohyb a úhyb](/docs/player/movement-dodge)).
+- The first talent of every tree is free, so the player always has +10% speed, +20% health and +20% damage.
+  You never see the "bare" base values of the character (10 health, lower speed) in the game.
+- Older descriptions of the game say the character has no dodge — in the current version a dodge exists (see [Movement and dodge](/docs/player/movement-dodge)).
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Výběr více postav s odlišnými výchozími staty, odemykaných v meta-progresi.
-- Vylepšení v rámci běhu („boons“ po vyčištění místnosti, ve stylu Hades).
-- Zpoplatnit první uzly talentových stromů, aby základní postava byla opravdu základní.
+- A choice of several characters with different starting stats, unlocked through meta-progression.
+- In-run upgrades ("boons" after clearing a room, Hades style).
+- Make the first nodes of the talent trees cost something, so the base character is really basic.

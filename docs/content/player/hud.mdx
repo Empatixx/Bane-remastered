@@ -1,71 +1,71 @@
 ---
-title: Rozhraní (HUD)
-description: Co všechno vidíš na obrazovce ve hře a v lobby — ukazatele zdraví a brnění, zbraň a munice, artefakt, mince, mapa, šipky k nepřátelům a efekty obrazovky.
+title: Interface (HUD)
+description: Everything you see on the screen in the game and in the lobby — health and armor meters, weapon and ammo, artefact, coins, map, arrows to enemies and screen effects.
 ---
 
-Rozhraní ukazuje stav postavy, zbraně a okolí. Většina prvků je v rozích obrazovky, aby nepřekážela ve
-výhledu; nápisy, cenovky a čísla poškození se zobrazují přímo ve světě nad objekty.
+The interface shows the state of the character, the weapon and the surroundings. Most elements are in the corners of the screen so they do not block
+the view; labels, price tags and damage numbers are shown right in the world above objects.
 
-## Jak to funguje
+## How it works
 
-### Ve hře
+### In the game
 
-| Prvek | Kde | Co ukazuje |
+| Element | Where | What it shows |
 |-------|-----|------------|
-| Ukazatel zdraví | vlevo nahoře | výplň podle zbývajícího zdraví; při ztrátě chvíli zůstává světlejší „stopa“, která pomalu dojíždí, při léčení zelenavá |
-| Ukazatel brnění | pod ukazatelem zdraví | totéž pro brnění, šedomodrá barva |
-| Ukazatel bosse | nahoře uprostřed | zdraví bosse a jeho jméno červeně; po jeho smrti zmizí |
-| Zbraň | vpravo dole | ikona zbraně, kterou právě držíš |
-| Munice | vpravo dole pod zbraní | „zásobník/zásoba“, např. 12/120 |
-| Náboje v zásobníku | ve slotu zbraně | jedna ikonka za každý náboj (u brokovnic náboje do brokovnice); vystřelený náboj se „vyprázdní“ |
-| Nekonečná munice | u munice | při *Infinity Quiver* se místo čísel ukáže animované ∞ a náboje se zlatě třpytí |
-| Artefakt | vlevo od zbraně | ikona artefaktu ve slotu; prázdný slot se nezobrazuje |
-| Mince | vlevo dole | počet mincí, které máš u sebe |
-| Minimapa | vpravo nahoře | místnosti v okolí, aktuální zvýrazněná, nenavštívené slabší |
-| Velká mapa | Tab, přes celou obrazovku | dá se posouvat myší; zavřeš ji Esc nebo Tab; artefakt *Reveal Map* odkryje celé patro |
-| Šipky k nepřátelům | okraje obrazovky | poloprůhledná šipka ke každému živému nepříteli mimo obrazovku; blízké šipky se slučují |
-| Nabíjení úhybu | pod postavou | bílý proužek, který se zkracuje, dokud nemůžeš znovu uhnout |
-| Vlna | uprostřed | „Wave N/M“ — jen v místnostech s více vlnami nepřátel |
-| Nápisy k interakci | nad objektem | „Press E to …“, když stojíš v dosahu |
-| Cenovky | nad zbožím v obchodě | cena; při slevě zeleně s nápisem „SALE x%“ |
-| Čísla poškození | nad nepřítelem | létající −N (poškození) nebo +N (léčení) |
-| Kurzor | myš | zaměřovač; při přebíjení se změní na kurzor „Reload“; v pauze, na mapě a na závěrečné obrazovce běžná šipka |
+| Health meter | top left | a fill based on remaining health; when you lose health a lighter "trail" stays for a moment and slowly catches up, when you heal it is greenish |
+| Armor meter | below the health meter | the same for armor, gray-blue color |
+| Boss meter | top center | the boss's health and its name in red; it disappears after its death |
+| Weapon | bottom right | the icon of the weapon you are holding |
+| Ammo | bottom right below the weapon | "magazine/reserve", e.g. 12/120 |
+| Rounds in the magazine | in the weapon slot | one icon per round (for shotguns, shotgun shells); a fired round "empties" |
+| Infinite ammo | by the ammo | with *Infinity Quiver* an animated ∞ is shown instead of numbers and the rounds shimmer gold |
+| Artefact | left of the weapon | the icon of the artefact in the slot; an empty slot is not shown |
+| Coins | bottom left | the number of coins you carry |
+| Minimap | top right | nearby rooms, the current one highlighted, unvisited ones fainter |
+| Big map | Tab, full screen | can be moved with the mouse; close it with Esc or Tab; the artefact *Reveal Map* reveals the whole floor |
+| Arrows to enemies | screen edges | a semi-transparent arrow to every living enemy off screen; nearby arrows merge |
+| Dodge cooldown | below the character | a white bar that shortens until you can dodge again |
+| Wave | center | "Wave N/M" — only in rooms with several waves of enemies |
+| Interaction labels | above an object | "Press E to …" when you stand in range |
+| Price tags | above goods in the shop | the price; on a sale in green with the text "SALE x%" |
+| Damage numbers | above an enemy | flying −N (damage) or +N (healing) |
+| Cursor | mouse | a crosshair; while reloading it changes to a "Reload" cursor; in the pause menu, on the map and on the final screen a normal arrow |
 
-### Efekty obrazovky
+### Screen effects
 
-| Efekt | Kdy | Jak vypadá |
-|-------|-----|------------|
-| Rudý záblesk | zásah (dotek, projektil, past, láva) | okraje obrazovky zrudnou a během zhruba půl sekundy vyblednou |
-| Pulzující rudé okraje | zdraví pod 30 % | trvale, pomalý pulz každé 3 s |
-| Rozmazání a ztmavení | pauza | obraz se rozostří a ztmavne |
-| Zpomalení času | *Hourglass of Ash* | plynulý nástup i konec efektu |
-| Otřesy kamery | výstřely silnějších zbraní, výbuchy, blesky | obraz se zatřese |
+| Effect | When | What it looks like |
+|-------|------|------------|
+| Red flash | a hit (touch, projectile, trap, lava) | the screen edges turn red and fade within about half a second |
+| Pulsing red edges | health below 30% | constantly, a slow pulse every 3 s |
+| Blur and darkening | pause | the image blurs and darkens |
+| Time slow | *Hourglass of Ash* | a smooth start and end of the effect |
+| Camera shake | shots from stronger weapons, explosions, lightning | the image shakes |
 
-### V lobby
+### In the lobby
 
-| Prvek | Co ukazuje |
+| Element | What it shows |
 |-------|------------|
-| Ukazatele zdraví a brnění | stejně jako ve hře |
-| Počítadla vlevo dole | počet talentů a zlato v profilu |
-| Talentové menu | viz [Talenty](/docs/player/upgrades) |
+| Health and armor meters | the same as in the game |
+| Counters bottom left | the number of talents and the gold in your profile |
+| Talent menu | see [Talents](/docs/player/upgrades) |
 
-### Závěrečná obrazovka běhu
+### Final run screen
 
-Lebka, nadpis a čtyři řádky (Accuracy, Kills, Loot, Floor) s odměnami ve zlatě — viz [Statistiky běhu](/docs/player/stats).
+A skull, a heading and four rows (Accuracy, Kills, Loot, Floor) with gold rewards — see [Run stats](/docs/player/stats).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Odkud se berou hodnoty ukazatelů: [Zdraví, brnění a poškození](/docs/player/damage); munice a zbraně: [Zbraně](/docs/guns).
-- Minimapa a místnosti: [Dungeon a svět](/docs/dungeon); artefakty: [Artefakty a předměty](/docs/artefacts-items).
-- Šipky na okrajích pomáhají najít posledního nepřítele, který blokuje dveře místnosti.
+- Where the meter values come from: [Health, armor and damage](/docs/player/damage); ammo and weapons: [Guns](/docs/guns).
+- The minimap and rooms: [Dungeon and world](/docs/dungeon); artefacts: [Artefacts and items](/docs/artefacts-items).
+- The arrows on the edges help you find the last enemy that blocks the room's doors.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Rudý záblesk při zásahu chybí u šípů z pastí, výbuchů, jedu a útoků bossů (viz [Zdraví, brnění a poškození](/docs/player/damage)).
+- The red flash on a hit is missing for arrows from traps, explosions, poison and boss attacks (see [Health, armor and damage](/docs/player/damage)).
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Ukazatel zbývajícího trvání efektů (Berserk 15 s, neviditelnost 5 s …) — teď nevíš, kdy efekt skončí.
-- Číselné zobrazení zdraví a brnění, ne jen výplň.
-- Číslo aktuálního patra a přehled zbraní ve všech slotech.
-- Ukazatel aktivní výzvy (challenge) během běhu.
+- A meter for the remaining duration of effects (Berserk 15 s, invisibility 5 s …) — right now you do not know when an effect ends.
+- A numeric display of health and armor, not just a fill.
+- The number of the current floor and an overview of the weapons in all slots.
+- An indicator of the active challenge during the run.

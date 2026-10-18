@@ -1,50 +1,50 @@
 ---
-title: Pravidla runu
-description: Modifikátory, kterými challenge mění celý run — HP, poškození, povolené zbraně, obchody, úskok a regenerace armoru.
+title: Run rules
+description: The modifiers with which a challenge changes a whole run — HP, damage, allowed weapons, shops, dodging and armor regeneration.
 ---
 
-Každý run se hraje podle sady pravidel. Normálně jsou všechna neutrální; změní je až vybraná
-[challenge](/docs/progression/challenges). Pravidla platí od vstupu do portálu až do konce runu.
+Every run is played under a set of rules. Normally they are all neutral; only a selected
+[challenge](/docs/progression/challenges) changes them. The rules apply from entering the portal until the end of the run.
 
-## Jak to funguje
+## How it works
 
-Pravidla působí na tři věci:
+The rules affect three things:
 
-1. **Na tebe** — mohou ti omezit maximální HP, zvýšit poškození, nechat ti jen jednu zbraň, vypnout
-   úskok nebo regeneraci armoru. Pravidlo umí talent jen **vypnout**, nikdy ti nedá talent, který nemáš.
-2. **Na nepřátele** — mohou jim zvýšit HP (včetně bossů) a poškození (dotykem i střelami).
-3. **Na dungeon** — mohou zakázat obchody.
+1. **You** — they can cap your maximum HP, raise your damage, leave you only one weapon, turn off
+   dodging or armor regeneration. A rule can only **turn off** a talent, it never gives you a talent you do not have.
+2. **Enemies** — they can raise their HP (including bosses) and damage (by touch and by projectiles).
+3. **The dungeon** — they can forbid shops.
 
-U nepřátel se zaokrouhluje na celá čísla a nic neklesne pod 1 — např. poškození 2 × 1,3 = 2,6 → **3**. Násobič tvého poškození se přidá k násobku z talentů a zlomek bodu se mění na šanci na bod navíc — viz [Perky](/docs/artefacts-items/perks).
+For enemies, values are rounded to whole numbers and nothing drops below 1 — for example damage 2 × 1.3 = 2.6 → **3**. Your damage multiplier is added to the multiplier from talents, and a fraction of a point turns into a chance for an extra point — see [Perks](/docs/artefacts-items/perks).
 
-## Obsah
+## Contents
 
-| Pravidlo | Normálně | Co dělá |
+| Rule | Normally | What it does |
 |---|---|---|
-| Strop max HP | bez stropu | Maximální zdraví hráče nepřekročí danou hodnotu |
-| Poškození hráče | ×1 | Násobí veškeré tvoje poškození |
-| HP nepřátel | ×1 | Násobí zdraví nepřátel i bossů |
-| Poškození nepřátel | ×1 | Násobí dotykové i projektilové poškození nepřátel |
-| Jediná zbraň | žádné omezení | Můžeš používat jen jednu konkrétní zbraň |
-| Obchody | ano | Na patrech se generuje obchod |
-| Úskok | ano | Můžeš uskakovat |
-| Regenerace armoru | ano | Talent Armor Regeneration funguje |
+| Max HP cap | no cap | The player's maximum health does not exceed the given value |
+| Player damage | ×1 | Multiplies all your damage |
+| Enemy HP | ×1 | Multiplies the health of enemies and bosses |
+| Enemy damage | ×1 | Multiplies the touch and projectile damage of enemies |
+| Single weapon | no restriction | You can use only one specific weapon |
+| Shops | yes | A shop is generated on the floors |
+| Dodging | yes | You can dodge |
+| Armor regeneration | yes | The Armor Regeneration talent works |
 
-Které challenge co mění: tabulka v [Challenge](/docs/progression/challenges).
+Which challenge changes what: the table in [Challenges](/docs/progression/challenges).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Úskok a HP: [Hráč](/docs/player).
-- Omezení na jednu zbraň: [Zbraně](/docs/guns).
-- Násobiče nepřátel se sčítají s růstem obtížnosti podle patra: [Nepřátelé](/docs/enemies), [Průběh runu](/docs/progression/run).
-- Obchod: [Dungeon](/docs/dungeon).
+- Dodging and HP: [Player](/docs/player).
+- The single weapon restriction: [Guns](/docs/guns).
+- Enemy multipliers stack with the difficulty growth by floor: [Enemies](/docs/enemies), [Run flow](/docs/progression/run).
+- Shop: [Dungeon](/docs/dungeon).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Zesílení nepřátel (Horde, Bane) se týká jen dotykového poškození, skoků a běžných střel. Některé speciální útoky (lasery, plameny, padající kameny, magma) pravděpodobně zůstávají slabší, než by měly.
-- Pravidla nejdou kombinovat — aktivní může být jen jedna challenge.
+- Enemy buffs (Horde, Bane) affect only touch damage, jumps and regular projectiles. Some special attacks (lasers, flames, falling rocks, magma) probably stay weaker than they should be.
+- Rules cannot be combined — only one challenge can be active.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Nová pravidla: rychlejší nepřátelé, víc nepřátel ve vlně, žádné léčení, dražší obchod, bez artefaktů.
-- Skládání více pravidel najednou s rostoucí odměnou (systém à la Heat z Hades).
+- New rules: faster enemies, more enemies per wave, no healing, more expensive shop, no artefacts.
+- Stacking several rules at once with a growing reward (a Heat-like system from Hades).

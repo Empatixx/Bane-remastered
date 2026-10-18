@@ -24,7 +24,7 @@ BANE_START=dungeon BANE_THEME=lava cargo run --release -- --shot x.png --seconds
   `components/`, `prefabs/` (entity spawning), `dungeon/` (generation, themes), `physics/`
   (rapier2d wrapper), `assets/`.
 - `rust/assets/` — textures, audio, shaders, fonts, room templates.
-- `docs/` — the Bane wiki (Fumadocs, Czech), content in `docs/content/<topic>/`.
+- `docs/` — the Bane wiki (Fumadocs, English), content in `docs/content/<topic>/`.
 - `tools/` — Python asset generators.
 - `media/` — pictures and GIFs used by `README.md`.
 

@@ -1,111 +1,111 @@
 ---
-title: Pasti a nebezpečí
-description: Bodce, plamenomety, šípové pasti, pavučiny, efekty sudů, láva a magma Hellhounda – kolik zraňují a jak se jim vyhnout.
+title: Traps and hazards
+description: Spikes, flamethrowers, arrow traps, cobwebs, barrel effects, lava and the Hellhound's magma - how much they hurt and how to avoid them.
 ---
 
-Bojové místnosti jsou kromě nepřátel plné pastí. Většina z nich pracuje v pravidelném rytmu
-– chvíli jsou nebezpečné, chvíli ne – a zraňují **hráče i nepřátele**. Které pasti se na
-patře objeví, určuje jeho [téma](/docs/dungeon/themes).
+Besides enemies, combat rooms are full of traps. Most of them work in a regular rhythm
+- dangerous for a while, then not - and they hurt **both the player and enemies**. Which traps appear on a
+floor is decided by its [theme](/docs/dungeon/themes).
 
-## Jak to funguje
+## How it works
 
-- Past zraňuje jen ve své aktivní fázi (bodce vysunuté, plamen šlehá). Mimo ni se přes ni dá
-  bezpečně přejít.
-- Hráč po zásahu pastí ztratí nejdřív brnění, pak životy, a má **1 s nezranitelnosti**.
-- Nepřítel, kterého zraní past, je pak 1 s vůči pastem odolný. Nepřátele jde do pastí lákat.
-- Pasti, sudy i dekorace se nikdy neobjeví blíž než 3 dlaždice ode dveří ani na místech,
-  kde se rodí nepřátelé.
-- Talent **Trap Master**: každá past má na začátku patra zhruba 30% šanci, že bude
-  vypnutá (bodce zůstanou zatažené, plamen nehoří).
+- A trap hurts only in its active phase (spikes extended, flame blasting). Outside it, you can
+  walk across safely.
+- After a trap hit, the player loses armor first, then health, and gets **1 s of invulnerability**.
+- An enemy hurt by a trap is then resistant to traps for 1 s. Enemies can be lured into traps.
+- Traps, barrels and decor never appear closer than 3 tiles to a door or on spots
+  where enemies spawn.
+- The **Trap Master** talent: at the start of a floor, every trap has roughly a 30% chance of being
+  switched off (spikes stay retracted, the flame does not burn).
 
-## Statistiky
+## Stats
 
-### Pasti
+### Traps
 
-| Past | Kde | Cyklus | Nebezpečná | Poškození | Poznámka |
+| Trap | Where | Cycle | Dangerous | Damage | Note |
 |---|---|---|---|---|---|
-| **Bodce** | podlaha Normal místností, vždy mimo zdi | 0,7 s | 0,35 s z cyklu | 1 | 1–4 na místnost podle tématu |
-| **Plamenomet** | ve zdi, šlehá dolů | 0,7 s | 0,175 s z cyklu | 1 | svítí rudě a bliká v rytmu plamene |
-| **Šípová past** | ve zdi, jen Temple | 2,4 s | – | 1 | střílí šíp dolů, jen když je hráč do 10 dlaždic |
-| **Kyvadlo** | jen Stone, nejvýš 1 na patro (asi na 7 z 10 pater) | 2,5 s tam a zpět | pořád | 1 | čepel na řetězu se houpe přes mezeru mezi bloky |
+| **Spikes** | floor of Normal rooms, always away from walls | 0.7 s | 0.35 s of the cycle | 1 | 1-4 per room depending on the theme |
+| **Flamethrower** | in a wall, blasts downward | 0.7 s | 0.175 s of the cycle | 1 | glows red and flickers with the flame's rhythm |
+| **Arrow trap** | in a wall, Temple only | 2.4 s | – | 1 | fires an arrow downward, only when the player is within 10 tiles |
+| **Pendulum** | Stone only, at most 1 per floor (on about 7 of 10 floors) | 2.5 s there and back | always | 1 | a blade on a chain swings across the gap between blocks |
 
-**Kyvadlo** podrobně:
+**Pendulum** in detail:
 
-- Visí na řetězu z oka železného třmenu, který svírá prkna položená přes mezeru 3–6 dlaždic
-  mezi dvěma bloky v bojové místnosti, a houpe
-  se z jedné strany mezery na druhou, do bloků nezajede. Uprostřed visí nejníž, na krajích se
-  zvedá.
-- Zasáhne **jen hráče** za 1 poškození, a to nejvýš jednou za průlet (pak 0,8 s nesekne).
-  Během dodge neublíží.
-- Kreslí se nad hráčem a na podlaze pod ním je jeho stín.
+- It hangs on a chain from the eye of an iron bracket that clamps planks laid across a 3-6 tile gap
+  between two blocks in a combat room, and swings
+  from one side of the gap to the other without going into the blocks. It hangs lowest in the middle and rises
+  at the edges.
+- It hits **only the player** for 1 damage, at most once per pass (then it will not cut for 0.8 s).
+  It does no harm during a dodge.
+- It is drawn above the player, and its shadow is on the floor beneath it.
 
-**Šípová past** podrobně:
+**Arrow trap** in detail:
 
-- Pasti v jedné řadě nestřílí naráz – první šíp vyletí po 0,8–2,2 s podle pozice, pak každé 2,4 s.
-- Je-li hráč dál než 10 dlaždic, past čeká.
-- Šíp letí rovně dolů rychlostí asi 8 dlaždic za sekundu, „vysouvá“ se ze štěrbiny ve zdi.
-- Zasáhne **jen hráče** (1 poškození přes brnění), o zeď se roztříští.
+- Traps in one row do not fire all at once - the first arrow flies after 0.8-2.2 s depending on position, then every 2.4 s.
+- If the player is farther than 10 tiles, the trap waits.
+- The arrow flies straight down at about 8 tiles per second, "sliding out" of a slot in the wall.
+- It hits **only the player** (1 damage through armor) and shatters on a wall.
 
-### Zpomalující plochy
+### Slowing patches
 
-| Plocha | Kde | Velikost | Efekt |
+| Patch | Where | Size | Effect |
 |---|---|---|---|
-| **Pavučinová plocha** | Spider, 1–3 na místnost | 2 × 2 dlaždice | hráč jde poloviční rychlostí; **střely** (hráče i nepřátel) v ní rychle brzdí a nakonec se zachytí a zmizí |
-| **Ledová plocha** | ve hře se zatím neobjevuje | 2 × 2 dlaždice | hráč klouže |
+| **Cobweb patch** | Spider, 1-3 per room | 2 × 2 tiles | the player moves at half speed; **bullets** (the player's and enemies') quickly slow down in it, and finally get caught and vanish |
+| **Ice patch** | does not appear in the game yet | 2 × 2 tiles | the player slides |
 
-Pavučina, kterou plete boss Spider king (boss tématu Spider na kterémkoli patře), zpomaluje hráče stejně (na polovinu) a zmizí
-po jeho smrti.
+The cobweb spun by the Spider king boss (the boss of the Spider theme on any floor) slows the player the same way (to half) and disappears
+when it dies.
 
-### Efekty sudů
+### Barrel effects
 
-| Sud | Efekt | Dosah | Čísla |
+| Barrel | Effect | Range | Numbers |
 |---|---|---|---|
-| **Výbušný** | výbuch, otřes obrazovky | asi 5 × 4 dlaždice | 3 poškození hráči (brnění chrání), nepřátelům i dalším sudům → řetězové výbuchy |
-| **Mrazivý** | zmrazení | asi 8 × 6 dlaždic | nepřátelé 4 s, boss 2 s, hráč 1,5 s (ne během dodge); zmrazený nemůže chodit a nezraňuje dotykem |
-| **Jedový** | jedová louže pod sudem | louže asi 2 × 1,5 dlaždice | trvá 8 s (poslední sekundu mizí); hráč 1 poškození, nepřátelé 1 poškození za sekundu; otrávení svítí zeleně |
+| **Explosive** | an explosion, screen shake | about 5 × 4 tiles | 3 damage to the player (armor protects), to enemies and to other barrels -> chain explosions |
+| **Frost** | freezing | about 8 × 6 tiles | enemies 4 s, boss 2 s, player 1.5 s (not during a dodge); a frozen one cannot walk and does not hurt on touch |
+| **Poison** | a poison puddle under the barrel | puddle about 2 × 1.5 tiles | lasts 8 s (fades during the last second); player 1 damage, enemies 1 damage per second; the poisoned glow green |
 
-Jedovou stopu za sebou nechává i nepřítel Snake (kapky vydrží 5 s a zraňují jen hráče).
-Louže z hráčových zdrojů zraňují jen nepřátele.
+The Snake enemy also leaves a poison trail behind it (the drops last 5 s and hurt only the player).
+Puddles from the player's sources hurt only enemies.
 
-### Láva a magma
+### Lava and magma
 
-| Nebezpečí | Kde | Poškození | Pravidla |
+| Hazard | Where | Damage | Rules |
 |---|---|---|---|
-| **Láva** | louže v Lava patrech | 2, **rovnou do životů** | pálí, když stojíš uprostřed lávy; ne během dodge; nejvýš 2 poškození za sekundu |
-| **Magma** | boss aréna Hellhounda | 2, **rovnou do životů** | viz níže |
+| **Lava** | puddles on Lava floors | 2, **straight to health** | burns when you stand in the middle of the lava; not during a dodge; at most 2 damage per second |
+| **Magma** | the Hellhound boss arena | 2, **straight to health** | see below |
 
-**Magma Hellhounda:**
+**The Hellhound's magma:**
 
-- 3 s po začátku boje začne pes zaplavovat arénu magmatem.
-- Magma se plíží **od stěn ke středu** – postupně zabírá pás až 3 dlaždice od zdí.
-- Nová dlaždice magmatu přibude každých 0,45 s, rozzuřený pes ji přidává každých 0,28 s.
-- Každá dlaždice se 1 s zahřívá (šedá → oranžová, zatím bez poškození), pak 16 s žhne
-  a poslední 1,2 s chladne.
-- Pálí, když na rozžhavené dlaždici stojí hráčovy **nohy**.
-- Po smrti bosse všechno magma zmizí.
+- 3 s after the fight begins, the hound starts flooding the arena with magma.
+- The magma creeps **from the walls toward the center** - it gradually fills a strip up to 3 tiles from the walls.
+- A new magma tile is added every 0.45 s, and the enraged hound adds one every 0.28 s.
+- Each tile heats up for 1 s (gray -> orange, no damage yet), then glows for 16 s
+  and cools for the last 1.2 s.
+- It burns when the player's **feet** are on a glowing tile.
+- When the boss dies, all the magma disappears.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Hráč](/docs/player) – dodge chrání před lávou, magmatem i zmrazením; *Phantom* před
-  pastmi nechrání.
-- [Nepřátelé](/docs/enemies) – pasti zraňují i nepřátele, vyplatí se je do nich lákat.
-- [Progrese](/docs/progression) – talent *Trap Master*.
-- [Povrchy a kapaliny](/docs/dungeon/surfaces) – láva, voda, bažina, led.
-- Bodce i plamenomety mají stejný rytmus 0,7 s – stačí počkat na zatažení a projít.
-- V boji s Hellhoundem drž střed arény; čím déle boj trvá, tím menší je bezpečná plocha.
-- Pavučinové plochy pohltí i nepřátelské střely – můžou posloužit jako štít.
+- [Player](/docs/player) - a dodge protects against lava, magma and freezing; *Phantom* does not protect
+  against traps.
+- [Enemies](/docs/enemies) - traps hurt enemies too, so it pays to lure them into them.
+- [Progression](/docs/progression) - the *Trap Master* talent.
+- [Surfaces and liquids](/docs/dungeon/surfaces) - lava, water, swamp, ice.
+- Spikes and flamethrowers share the same 0.7 s rhythm - just wait for them to retract and walk through.
+- In the Hellhound fight, hold the center of the arena; the longer the fight lasts, the smaller the safe area.
+- Cobweb patches swallow enemy bullets too - they can serve as a shield.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Ledové plochy jsou ve hře hotové, ale neobjevují se v žádném tématu.
-- Šípové pasti nezraňují nepřátele a talent *Trap Master* je nevypíná.
-- Láva, voda a bažina působí **jen na hráče** – nepřátelé lávou chodí bez újmy a ve vodě
-  se nezpomalují.
-- Láva bere životy přes brnění bez varování – hráč nijak neukazuje, že se pálí.
+- Ice patches are finished in the game, but they do not appear in any theme.
+- Arrow traps do not hurt enemies, and the *Trap Master* talent does not switch them off.
+- Lava, water and swamp affect **only the player** - enemies walk through lava unharmed and are not slowed
+  in water.
+- Lava takes health through armor with no warning - the player gives no sign that they are burning.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Rampouchy v Ice by mohly padat jako past.
-- Tlakové desky, propadla, otáčející se plameny, pasti spouštěné hráčem.
-- Nová past „padající kámen“ pro Stone nebo Temple.
-- Vizuální varování při stání v lávě.
+- Icicles in Ice could fall as a trap.
+- Pressure plates, trapdoors, rotating flames, traps triggered by the player.
+- A new "falling rock" trap for Stone or Temple.
+- A visual warning when standing in lava.

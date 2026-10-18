@@ -1,112 +1,112 @@
 ---
-title: Dungeon a svět
-description: Jak vypadá a jak je postavené patro Banu – místnosti, chodby, témata, pasti a cesta až k bossovi.
+title: Dungeon and world
+description: What a Bane floor looks like and how it is built - rooms, corridors, themes, traps and the way to the boss.
 ---
 
-Každý run v Banu vede přes **5 pater** dungeonu. Každé patro je pokaždé nově vygenerované:
-síť místností propojených krátkými rovnými chodbami. Patro má své **téma** (biom) – určuje
-vzhled zdí a podlahy, barvu tmy kolem mapy, kapalinu na podlaze, druhy pastí, dekorace
-i to, kteří nepřátelé a který boss se tu objeví. Na konci každého patra čeká boss;
-po jeho porážce hráč sestoupí po žebříku o patro níž. Po bossovi na patře 5 run končí
-vítězstvím.
+Every run in Bane leads through **5 floors** of the dungeon. Each floor is generated fresh:
+a network of rooms connected by short straight corridors. A floor has its own **theme** (biome). It sets
+the look of the walls and floor, the color of the darkness around the map, the liquid on the floor, the kinds of traps, the decor,
+and which enemies and which boss appear there. A boss waits at the end of every floor.
+After the player defeats it, they go down a ladder to the next floor. After the boss on floor 5, the run ends
+in victory.
 
-## Jak to funguje
+## How it works
 
-### Stavba patra
+### Floor layout
 
-Skladba patra se **losuje znovu pro každé patro**, takže žádné dvě patra nejsou stejně velká
-ani stejně bohatá. Patro má **8–15 místností** (při challenge *Merchant's Strike* o jednu méně):
+The makeup of a floor is **rolled again for every floor**, so no two floors are the same size
+or equally rich. A floor has **8-15 rooms** (one fewer with the *Merchant's Strike* challenge):
 
-| Místnost | Počet | Kde |
+| Room | Count | Where |
 |---|---|---|
-| Start | 1 | odsud hráč vychází |
-| Normal | 4–7 | tvoří páteř patra, rozvětvují se |
-| Shop | 1 | slepá odbočka (žádný při challenge *Merchant's Strike*) |
-| Treasure | 0–2 | slepá odbočka – patro nemusí mít žádnou pokladnici, nebo může mít dvě |
-| Sacrifice | 0–1 (50 %) | slepá odbočka |
-| Ambush | 1–2 | slepá odbočka |
-| Boss | 1 | vždy co nejdál od startu |
+| Start | 1 | the player begins here |
+| Normal | 4-7 | forms the backbone of the floor, branches out |
+| Shop | 1 | dead-end branch (none with the *Merchant's Strike* challenge) |
+| Treasure | 0-2 | dead-end branch - a floor may have no treasure room, or it may have two |
+| Sacrifice | 0-1 (50%) | dead-end branch |
+| Ambush | 1-2 | dead-end branch |
+| Boss | 1 | always as far from the start as possible |
 
-- Startovní a Normal místnosti tvoří rozvětvenou páteř – generátor dává přednost
-  „osamělejším“ místnostem, takže patro se větví do stran a neslije se do jednoho bloku.
-- Všechny speciální místnosti (Shop, Treasure, Sacrifice, Ambush, Boss) jsou **slepé konce**
-  napojené na některou Normal místnost – nikdy přes ně nevede cesta dál.
-- Boss je připojený k jedné z Normal místností, které jsou od startu nejdál.
-- Patro nemá smyčky: do každé místnosti vede právě jedna cesta. Kdo chce zpět, musí se
-  vracet stejnou chodbou.
-- Chodby jsou vždy rovné, 2 dlaždice široké a 4 dlaždice dlouhé. Dveře protilehlých místností
-  leží v jedné ose.
+- The Start and Normal rooms form a branching backbone. The generator prefers
+  "lonelier" rooms, so the floor spreads out to the sides and does not merge into one block.
+- All special rooms (Shop, Treasure, Sacrifice, Ambush, Boss) are **dead ends**
+  attached to some Normal room. The path never continues through them.
+- The Boss room is attached to one of the Normal rooms that are farthest from the start.
+- A floor has no loops: there is exactly one path to every room. To go back, the player has to
+  return through the same corridor.
+- Corridors are always straight, 2 tiles wide and 4 tiles long. The doors of rooms that face each other
+  lie on one axis.
 
-Příklad rozvržení patra: ze Startu vede chodba do Normal místnosti, odkud se cesta větví
-nahoru (Normal → Shop, odbočka do Treasure) a dolů (Normal → Sacrifice). Hlavní větev
-pokračuje přes dvě další Normal místnosti, z nichž jedna má odbočku do Ambush, až k Boss
-místnosti na samém konci.
+Example floor layout: from the Start a corridor leads to a Normal room, where the path branches
+up (Normal -> Shop, a branch to Treasure) and down (Normal -> Sacrifice). The main branch
+continues through two more Normal rooms, one of which has a branch to Ambush, all the way to the Boss
+room at the very end.
 
-### Průchod patrem
+### Moving through the floor
 
-- Když hráč vkročí dál do bojové místnosti (aspoň 2 dlaždice od okraje), na všechny dveře
-  spadnou **mříže** a objeví se nepřátelé. Mříže se zvednou, až padne poslední z nich.
-- Start, Shop, Treasure a Sacrifice jsou mírové – mříže se v nich nezavírají.
-- Ambush má 3 vlny, Normal jednu, Boss místnost jen bosse.
-- Kamera se uvnitř místnosti drží jejích hranic; v chodbě plynule přejede do další místnosti.
-- Po bossovi se objeví truhla s artefaktem a (na patrech 1–4) žebřík do dalšího patra.
-  Hráč si do nového patra odnáší zdraví, brnění, mince, zbraně a artefakt.
+- When the player steps further into a combat room (at least 2 tiles from the edge), **gates**
+  fall over all the doors and enemies appear. The gates rise when the last of them falls.
+- Start, Shop, Treasure and Sacrifice are peaceful - the gates do not close in them.
+- Ambush has 3 waves, Normal has one, and the Boss room has only the boss.
+- Inside a room the camera stays within its bounds. In a corridor it glides smoothly into the next room.
+- After the boss, a chest with an artefact appears and (on floors 1-4) a ladder to the next floor.
+  The player carries health, armor, coins, weapons and the artefact into the new floor.
 
-### Náhoda a seed
+### Randomness and seed
 
-Každý run má svůj **seed**. Rozvržení patra, výběr místností, dekorace, pasti i kapaliny jsou
-pro stejný seed vždy stejné. Které typy nepřátel padnou do které místnosti, ale záleží i na
-pořadí, v jakém hráč místnosti otevírá. Vzhled jednotlivých dlaždic a odstínů podlahy je dán
-jen polohou – stejné místo vypadá vždy stejně.
+Every run has its own **seed**. The floor layout, the choice of rooms, decor, traps and liquids are
+always the same for the same seed. Which enemy types land in which room also depends on the
+order in which the player opens the rooms, though. The look of individual tiles and floor shades is determined
+by position only - the same spot always looks the same.
 
-## Statistiky
+## Stats
 
-| Parametr | Hodnota |
+| Parameter | Value |
 |---|---|
-| Pater v runu | 5 |
-| Místností na patře | 8–15 (náhodně pro každé patro) |
-| Variant místností | 23 (15 Normal, 3 Ambush, po jedné Start, Shop, Treasure, Sacrifice, Boss) |
-| Témat | 7 (Stone, Sewer, Moss, Spider, Ice, Lava, Temple) |
-| Chodba | 4 dlaždice dlouhá, 2 široká |
-| Nepřátel v místnosti | 5–9 na vlnu podle velikosti místnosti |
+| Floors per run | 5 |
+| Rooms per floor | 8-15 (random for each floor) |
+| Room variants | 23 (15 Normal, 3 Ambush, one each of Start, Shop, Treasure, Sacrifice, Boss) |
+| Themes | 7 (Stone, Sewer, Moss, Spider, Ice, Lava, Temple) |
+| Corridor | 4 tiles long, 2 wide |
+| Enemies per room | 5-9 per wave depending on room size |
 
-## Obsah
+## Contents
 
 <Cards>
-  <Card title="Typy místností" href="/docs/dungeon/rooms" />
-  <Card title="Patra a témata" href="/docs/dungeon/themes" />
-  <Card title="Objekty a interaktivní prvky" href="/docs/dungeon/objects" />
-  <Card title="Pasti a nebezpečí" href="/docs/dungeon/hazards" />
-  <Card title="Povrchy a kapaliny" href="/docs/dungeon/surfaces" />
-  <Card title="Dekorace" href="/docs/dungeon/decor" />
-  <Card title="Osvětlení a atmosféra" href="/docs/dungeon/lighting" />
-  <Card title="Minimapa" href="/docs/dungeon/minimap" />
+  <Card title="Room types" href="/docs/dungeon/rooms" />
+  <Card title="Floors and themes" href="/docs/dungeon/themes" />
+  <Card title="Objects and interactive items" href="/docs/dungeon/objects" />
+  <Card title="Traps and hazards" href="/docs/dungeon/hazards" />
+  <Card title="Surfaces and liquids" href="/docs/dungeon/surfaces" />
+  <Card title="Decor" href="/docs/dungeon/decor" />
+  <Card title="Lighting and atmosphere" href="/docs/dungeon/lighting" />
+  <Card title="Minimap" href="/docs/dungeon/minimap" />
 </Cards>
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Nepřátelé](/docs/enemies) – kdo se objeví, závisí na čísle patra a jeho tématu;
-  Hellhound rozlévá po boss aréně magma.
-- [Artefakty a předměty](/docs/artefacts-items) – sudy, květináče a truhly sypou mince
-  a munici; artefakt *Reveal Map* odkryje celou mapu patra.
-- [Hráč](/docs/player) – kapaliny mění pohyb (led klouže, voda a bažina zpomalují, láva pálí).
-- [Progrese](/docs/progression) – talenty *Trap Master*, *Discount*, *Gamble Machine*,
-  *Armor Regeneration*; challenge *Merchant's Strike* zruší obchody.
-- Speciální místnosti jsou vždy slepé konce – když narazíš na odbočku z Normal místnosti,
-  skoro jistě vede k odměně, obchodu nebo ambushi.
+- [Enemies](/docs/enemies) - who appears depends on the floor number and its theme;
+  the Hellhound spreads magma over the boss arena.
+- [Artefacts and items](/docs/artefacts-items) - barrels, flowerpots and chests drop coins
+  and ammo; the *Reveal Map* artefact reveals the whole floor map.
+- [Player](/docs/player) - liquids change movement (ice slides, water and swamp slow you down, lava burns).
+- [Progression](/docs/progression) - the talents *Trap Master*, *Discount*, *Gamble Machine*,
+  *Armor Regeneration*; the *Merchant's Strike* challenge removes shops.
+- Special rooms are always dead ends. When you find a branch off a Normal room,
+  it almost certainly leads to a reward, a shop or an ambush.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Podle příběhu má být patro 5 vždy chrám (Temple) s finálním bossem The Heart. Ve hře je
-  téma pátého patra náhodné a boss na patře 5 je běžný boss.
-- Na patrech 2 a dál se obchod a oltář zaplní dřív, než hra „vrátí“ hráči jeho výbavu z
-  předchozího patra. Proto mohou nabízet zbraň, kterou už hráč má.
-- Z dungeonu se nedá vrátit do lobby jinak než smrtí nebo vítězstvím.
+- According to the story, floor 5 should always be a temple (Temple) with the final boss The Heart. In the game the
+  theme of the fifth floor is random and the boss on floor 5 is a regular boss.
+- On floors 2 and up, the shop and the altar are filled before the game "gives back" the player's gear from the
+  previous floor. Because of this they may offer a weapon the player already has.
+- You cannot return from the dungeon to the lobby except by death or victory.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Patro by mohlo růst s hloubkou – dnes je jeho velikost čistě náhodná bez ohledu na číslo patra.
-- Smyčky a zkratky v rozvržení, zahnuté chodby nebo chodby s vlastním obsahem.
-- Odměna po vyčištění místnosti (výběr ze tří „boonů“), tajné místnosti, místnosti s kletbou
-  nebo elitními nepřáteli.
-- Pevné finále: patro 5 vždy Temple s bossem The Heart.
+- A floor could grow with depth - today its size is purely random regardless of the floor number.
+- Loops and shortcuts in the layout, curved corridors or corridors with their own content.
+- A reward after clearing a room (a choice of three "boons"), secret rooms, rooms with a curse
+  or elite enemies.
+- A fixed finale: floor 5 is always a Temple with the boss The Heart.

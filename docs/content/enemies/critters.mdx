@@ -1,71 +1,70 @@
 ---
-title: Základní nepřátelé
-description: Rat, Snake, Bat a Ghost – nejčastější nepřátelé, kteří tě pronásledují na všech patrech.
+title: Basic enemies
+description: Rat, Snake, Bat and Ghost – the most common enemies, who chase you on all floors.
 ---
 
-Čtyři zvířecí nepřátelé, kteří se objevují na **všech patrech a ve všech tématech**. Všichni jdou přímo
-po tobě a zraňují dotykem; liší se rychlostí, odolností a jednou drobnou schopností.
+Four animal enemies that appear on **all floors and in all themes**. All of them go straight at you
+and hurt you on touch; they differ in speed, toughness and one small ability.
 
-## Statistiky
+## Stats
 
-Základní hodnoty – s každým patrem rostou (viz
-[Spawnování a síla nepřátel](/docs/enemies/spawning#síla-podle-patra)).
+Base values – they grow with every floor (see
+[Spawning and enemy strength](/docs/enemies/spawning#strength-by-floor)).
 
 | | Rat | Snake | Bat | Ghost |
 |---|--:|--:|--:|--:|
 | HP | 12 | 8 | 9 | 7 |
-| Kontaktní poškození | 2 | 3 | 2 | 2 |
-| Rychlost | 45 % | 42 % | 77 % | 32 % (výpad 153 %) |
-| Velikost | podlouhlá | střední | střední | střední |
-| Schopnost | žádná | jedovatá stopa | žádná | výpad |
+| Contact damage | 2 | 3 | 2 | 2 |
+| Speed | 45 % | 42 % | 77 % | 32 % (dash 153 %) |
+| Size | elongated | medium | medium | medium |
+| Ability | none | poison trail | none | dash |
 
-## Jak to funguje
+## How it works
 
 ### Rat
 
-Nejodolnější ze základních nepřátel, střední rychlost, bez schopnosti. Krysy také vyvolává boss
-[Sewer ogre](/docs/enemies/bosses/ogre) – takové krysy mají základní hodnoty (12 HP, 2 poškození) a nic
-nedropnou. V hlavním menu pobíhají krysy a netopýři jako dekorace.
+The toughest of the basic enemies, medium speed, no ability. Rats are also summoned by the boss
+[Sewer ogre](/docs/enemies/bosses/ogre) – those rats have the base stats (12 HP, 2 damage) and drop
+nothing. In the main menu, rats and bats run around as decoration.
 
-### Snake – jedovatá stopa
+### Snake – poison trail
 
-Had za sebou nechává souvislou **jedovatou stopu**:
+The snake leaves a continuous **poison trail** behind it:
 
-- každá kapka vydrží 5 s (poslední sekundu bledne),
-- zraňuje **jen tebe** – 1 poškození při dotyku, kvůli nezranitelnosti po zásahu nejvýš jednou za sekundu,
-- dostaneš otravu (zelený obrys),
-- ostatním nepřátelům nevadí.
+- each drop lasts 5 s (it fades during the last second),
+- it hurts **only you** – 1 damage on touch, at most once per second because of the invulnerability after a hit,
+- you get poisoned (green outline),
+- it does not bother other enemies.
 
-Had je nejnebezpečnější, když kolem něj kroužíš – stopa ti postupně uzavře prostor.
+The snake is most dangerous when you circle around it – the trail gradually closes off your space.
 
 ### Bat
 
-Nejrychlejší běžný nepřítel (77 % tvé rychlosti). Žádná schopnost, tlačí čistou rychlostí.
+The fastest regular enemy (77 % of your speed). No ability, it pushes with pure speed.
 
-### Ghost – výpad
+### Ghost – dash
 
-Duch se pohybuje ve 3sekundovém cyklu: **1 sekundu** vyrazí rychlostí asi 153 % tvé rychlosti (je
-rychlejší než ty) a nechává za sebou stíny, pak 2 sekundy pluje pomalu. Výpad udělá **hned po
-zhmotnění**. Začátek každého výpadu provází přízračné **zasvištění** – i když ducha zrovna nevidíš,
-poznáš, že se rozjel.
+The ghost moves in a 3-second cycle: for **1 second** it dashes at about 153 % of your speed (faster
+than you) and leaves shadows behind, then for 2 seconds it drifts slowly. It does the dash **right after
+materializing**. The start of every dash is accompanied by a ghostly **whoosh** – even when you cannot
+see the ghost, you know it has started moving.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Duchovi neutečeš během výpadu – uhni do strany nebo použij dodge ([Hráč](/docs/player)), pak ho
-  dožeň, dokud je pomalý.
-- Hadí stopa funguje stejně jako jedovatý mrak Bloated spidera ([Pavouci](/docs/enemies/spiders))
-  a jedovaté sudy v [dungeonu](/docs/dungeon).
-- Mise „zabij N krys / netopýrů / duchů / hadů“ – viz [Progrese](/docs/progression).
+- You cannot outrun the ghost during the dash – step aside or use dodge ([Player](/docs/player)), then
+  catch up with it while it is slow.
+- The snake's trail works the same as the poison cloud of the Bloated spider ([Spiders](/docs/enemies/spiders))
+  and the poison barrels in the [dungeon](/docs/dungeon).
+- The missions "kill N rats / bats / ghosts / snakes" – see [Progression](/docs/progression).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Duch nemá před výpadem žádné varování – zasvištění zazní až ve chvíli, kdy vyrazí – a jeho první
-  výpad přijde hned, jak se zhmotní.
+- The ghost has no warning before the dash – the whoosh sounds only at the moment it launches – and its
+  first dash comes as soon as it materializes.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Postupně nahrazovat základní nepřátele silnějšími verzemi – na patře 5 už je krysa jen „houba na
-  kulky“.
-- Ghost s duchovským chováním – průchod zdmi nebo zprůhlednění – a varováním před výpadem.
-- Tematické varianty: had s jedovatým bahnem pro Moss/Sewer, netopýr s ohnivou stopou pro Lavu.
-- Žádný z nich nestřílí – z běžných nepřátel střílí jen Slime, Red slime a Eye watcher.
+- Gradually replace the basic enemies with stronger versions – on floor 5 the rat is just a "bullet sponge".
+- A Ghost with ghostly behavior – passing through walls or becoming transparent – and a warning before the dash.
+- Themed variants: a snake with poisonous mud for Moss/Sewer, a bat with a fiery trail for Lava.
+- None of them shoots – of the regular enemies only Slime, Red slime and Eye watcher shoot.

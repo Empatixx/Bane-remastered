@@ -1,104 +1,104 @@
 ---
-title: Typy místností
-description: Sedm druhů místností – co v nich najdeš, kolik nepřátel čekat, jak probíhá boj za zavřenými mřížemi a jaké jsou odměny.
+title: Room types
+description: Seven kinds of rooms - what you find in them, how many enemies to expect, how combat behind closed gates works and what the rewards are.
 ---
 
-Každé patro se skládá ze sedmi druhů místností. Normal a Ambush jsou bojové, Start, Shop,
-Treasure a Sacrifice mírové a Boss je finále patra. Každá místnost je postavená podle ručně
-nakreslené předlohy – Normal místnosti mají 15 různých tvarů, Ambush 3, ostatní typy po
-jednom. Kolik místností kterého druhu patro dostane, se losuje pro každé patro znovu – viz
+Every floor is made of seven kinds of rooms. Normal and Ambush are combat rooms, Start, Shop,
+Treasure and Sacrifice are peaceful, and Boss is the finale of the floor. Every room is built from a hand-drawn
+template. Normal rooms have 15 different shapes, Ambush has 3, and the other types have one
+each. How many rooms of each kind a floor gets is rolled again for every floor - see
 [Dungeon](/docs/dungeon).
 
-## Jak to funguje
+## How it works
 
-### Boj za mřížemi
+### Combat behind gates
 
-- Místnost „ožije“, až když hráč dojde aspoň 2 dlaždice od okraje – mříže tedy nespadnou
-  hráči na hlavu ve dveřích. Na minimapě se místnost označí jako navštívená hned po vstupu.
-- V bojové místnosti (Normal, Ambush, Boss) se na všechny dveře spustí **mříže**, které se
-  chovají jako zeď.
-- Když padne poslední nepřítel, buď po **1,5 s** přijde další vlna (jen Ambush), nebo se mříže
-  zvednou a místnost je vyčištěná. Zpomalení času zpomalí i pauzu mezi vlnami.
-- Vyčištěná místnost už zůstane prázdná, i když se do ní hráč vrátí.
+- A room "comes alive" only when the player gets at least 2 tiles from the edge, so the gates do not
+  fall on the player's head in the doorway. On the minimap the room is marked as visited right after entering.
+- In a combat room (Normal, Ambush, Boss) **gates** drop over all the doors and
+  act as a wall.
+- When the last enemy falls, either the next wave comes after **1.5 s** (Ambush only), or the gates
+  rise and the room is cleared. Slowing time also slows the pause between waves.
+- A cleared room stays empty even if the player returns to it.
 
-### Kolik nepřátel
+### How many enemies
 
-- Počet nepřátel v jedné vlně roste s velikostí místnosti: zhruba **1 nepřítel na 100 dlaždic**
-  plochy, nejméně 5 (strop je 12, ale ten dnes žádná místnost nedosáhne – maximum je 9).
-- Ambush má **3 vlny**, každou zhruba o 30 % menší než by měla stejně velká Normal místnost
-  (aspoň 4 nepřátelé na vlnu).
-- Nepřátelé se objevují na předem daných místech v místnosti, nikdy blíž než 3 dlaždice
-  ode dveří. Který typ nepřítele kde vyskočí, se losuje podle patra a tématu.
-- Boss místnost obsahuje jen bosse, který se objeví uprostřed.
+- The number of enemies in one wave grows with the room size: roughly **1 enemy per 100 tiles**
+  of area, at least 5 (the cap is 12, but no room reaches it today - the maximum is 9).
+- Ambush has **3 waves**, each about 30% smaller than a Normal room of the same size would have
+  (at least 4 enemies per wave).
+- Enemies appear at preset spots in the room, never closer than 3 tiles
+  to a door. Which enemy type spawns where is rolled based on the floor and theme.
+- The Boss room contains only the boss, who appears in the middle.
 
-## Obsah
+## Contents
 
 ### Start
-- Mírová místnost 20 × 16 dlaždic, bez nepřátel a bez dekorací.
-- Na podlaze svítí animované **nápovědy kláves**: Q „Drop gun“, E „Interact“, F „Use artefact“,
-  1 „Switch slot 1“, 2 „Switch slot 2“, WASD „Movement“, mezerník „Dodge“.
-- Hráč se objeví na volném místě co nejblíž středu.
+- A peaceful 20 x 16 tile room, with no enemies and no decor.
+- Animated **key hints** glow on the floor: Q "Drop gun", E "Interact", F "Use artefact",
+  1 "Switch slot 1", 2 "Switch slot 2", WASD "Movement", space "Dodge".
+- The player appears on a free spot as close to the center as possible.
 
 ### Normal
-- 4–7 na patře (losuje se pro každé patro), 15 různých tvarů. Hlavní zdroj boje, mincí a munice.
-- 1 vlna, 5–9 nepřátel podle velikosti.
-- Výbava: 2–5 pochodní (víc ve větších místnostech), 2 prapory, pavučiny, kosti, bodce
-  a další pasti, sudy a květináče podle tématu patra; v tematických patrech i louže
-  vody, bažiny, ledu nebo lávy.
+- 4-7 per floor (rolled for every floor), 15 different shapes. The main source of combat, coins and ammo.
+- 1 wave, 5-9 enemies depending on size.
+- Furnishings: 2-5 torches (more in larger rooms), 2 banners, cobwebs, bones, spikes
+  and other traps, barrels and flowerpots depending on the floor theme; on themed floors also puddles
+  of water, swamp, ice or lava.
 
 ### Ambush
-- 1–2 na patře, vždy slepá odbočka, 3 velké arény.
-- **3 vlny** po 5–7 nepřátelích; před každou vlnou se ukáže nápis „vlna X/3“.
-- Odměna: **zbraňová truhla** co nejblíž středu místnosti.
-- Výbava jako Normal, ale **bez bodců a pavučin**.
+- 1-2 per floor, always a dead-end branch, 3 large arenas.
+- **3 waves** of 5-7 enemies; before each wave the text "wave X/3" is shown.
+- Reward: a **weapon chest** as close to the middle of the room as possible.
+- Furnishings like Normal, but **without spikes and cobwebs**.
 
 ### Treasure
-- 0–2 na patře (losuje se pro každé patro – některé patro pokladnici nemá, jiné má dvě),
-  slepá odbočka, místnost 20 × 16 se 4 sloupy.
-- Uprostřed na koberci stojí **zbraňová truhla**, okolo 4 pochodně, cihly, 3 pavučiny
-  a 3 hromádky kostí. Žádné pasti ani nepřátelé.
-- Truhla se otevře dotykem a vysype 5 běžných předmětů a zbraň, kterou hráč ještě nemá.
+- 0-2 per floor (rolled for every floor - some floors have no treasure room, others have two),
+  a dead-end branch, a 20 x 16 room with 4 pillars.
+- In the middle, on a carpet, stands a **weapon chest**, with 4 torches around, bricks, 3 cobwebs
+  and 3 piles of bones. No traps or enemies.
+- The chest opens on touch and spills 5 regular items and a weapon the player does not have yet.
 
 ### Shop
-- 1 na patře (žádný při challenge *Merchant's Strike*), slepá odbočka, místnost 20 × 16.
-- **Obchodník** nic neříká.
-- **3 stoly** se zbožím, **slot machine** (jen s talentem *Gamble Machine*), 2 rozbitné
-  květináče a velký koberec.
+- 1 per floor (none with the *Merchant's Strike* challenge), a dead-end branch, a 20 x 16 room.
+- The **merchant** says nothing.
+- **3 tables** with goods, a **slot machine** (only with the *Gamble Machine* talent), 2 breakable
+  flowerpots and a large carpet.
 
-| Stůl | Zboží | Cena na patře 1 |
+| Table | Goods | Price on floor 1 |
 |---|---|---|
-| levý | velký lektvar zdraví nebo brnění (50/50) | 1–6 mincí |
-| prostřední | univerzální munice | 1–4 mince |
-| pravý | 50 %: zbraň, kterou hráč nemá; jinak artefakt | 2–8 mincí |
+| left | large health potion or armor (50/50) | 1-6 coins |
+| middle | universal ammo | 1-4 coins |
+| right | 50%: a weapon the player does not have; otherwise an artefact | 2-8 coins |
 
-- Ceny rostou s patrem: základ 1–4 mince × číslo patra × násobek stolu (obrana 1,5×,
-  munice 1×, útok 2×).
-- Talent *Discount*: jeden stůl může být ve slevě – 23 % šance na −25 %, 5 % na −50 %,
-  5 % na −75 %.
-- Talent *Gamble Machine*: bez něj v obchodě slot machine vůbec nestojí.
-- Lektvar nebo munice se po koupi rovnou použije, zbraň nebo artefakt se rovnou sebere.
-- Slot machine a její výhry: viz [Objekty](/docs/dungeon/objects).
+- Prices grow with the floor: base 1-4 coins x floor number x table multiplier (defense 1.5x,
+  ammo 1x, offense 2x).
+- *Discount* talent: one table may be on sale - 23% chance of -25%, 5% for -50%,
+  5% for -75%.
+- *Gamble Machine* talent: without it the shop has no slot machine at all.
+- A potion or ammo is used right after purchase, and a weapon or artefact is picked up right away.
+- For the slot machine and its prizes, see [Objects](/docs/dungeon/objects).
 
-### Sacrifice (oltář)
-- 0–1 na patře (50 %), slepá odbočka, místnost 20 × 16 se 4 sloupy.
-- **Socha anděla**, **pentagram** uprostřed, 5 **svícnů** s rudým světlem, knihy a řetězy.
-- Na pentagramu leží jeden předmět (lektvar, munice, nebo zbraň či artefakt) a platí se za
-  něj **1–3 životy**. Oltář tě nezabije – koupit jde jen tehdy, když máš víc životů, než je cena.
-- Po obětování všechny svíčky zhasnou.
+### Sacrifice (altar)
+- 0-1 per floor (50%), a dead-end branch, a 20 x 16 room with 4 pillars.
+- An **angel statue**, a **pentagram** in the middle, 5 **candelabras** with red light, books and chains.
+- One item lies on the pentagram (a potion, ammo, or a weapon or artefact) and it costs
+  **1-3 lives**. The altar will not kill you - you can buy only if you have more lives than the price.
+- After the sacrifice, all the candles go out.
 
 ### Boss
-- 1 na patře, na konci nejdelší větve patra. Prázdná aréna 20 × 16 bez krytů.
-- Při vstupu se změní hudba a objeví se ukazatel zdraví bosse se jménem.
-- Po vítězství: otřes obrazovky, **artefaktová truhla** kousek nad středem a na patrech 1–4
-  **žebřík** do dalšího patra. Na patře 5 následuje obrazovka vítězství.
-- Hellhound během boje zaplavuje arénu **magmatem** (viz [Pasti](/docs/dungeon/hazards)).
+- 1 per floor, at the end of the longest branch of the floor. An empty 20 x 16 arena with no cover.
+- On entry the music changes and the boss health bar with its name appears.
+- After victory: screen shake, an **artefact chest** a little above the middle and, on floors 1-4, a
+  **ladder** to the next floor. On floor 5 the victory screen follows.
+- The Hellhound floods the arena with **magma** during the fight (see [Traps](/docs/dungeon/hazards)).
 
-### Varianty místností
+### Room variants
 
-Velikost je v dlaždicích (šířka × výška). Překážky = kolik dlaždic uvnitř místnosti tvoří
-sloupy a zídky, za které se dá schovat.
+The size is in tiles (width x height). Obstacles = how many tiles inside the room are
+pillars and low walls you can hide behind.
 
-| Varianta | Typ | Velikost | Podlaha | Překážky | Nepřátel na vlnu | Vln |
+| Variant | Type | Size | Floor | Obstacles | Enemies per wave | Waves |
 |---|---|---|---|---|---|---|
 | start | Start | 20 × 16 | 252 | 0 | – | – |
 | normal_05 | Normal | 22 × 14 | 208 | 32 | 5 | 1 |
@@ -119,52 +119,52 @@ sloupy a zídky, za které se dá schovat.
 | ambush_01 | Ambush | 34 × 22 | 592 | 48 | 5 | 3 |
 | ambush_02 | Ambush | 38 × 24 | 728 | 64 | 7 | 3 |
 | ambush_03 | Ambush | 32 × 22 | 548 | 52 | 5 | 3 |
-| treasure | Treasure | 20 × 16 | 236 | 4 sloupy | – | – |
+| treasure | Treasure | 20 × 16 | 236 | 4 pillars | – | – |
 | shop | Shop | 20 × 16 | 252 | 0 | – | – |
-| sacrifice | Sacrifice | 20 × 16 | 236 | 4 sloupy | – | – |
+| sacrifice | Sacrifice | 20 × 16 | 236 | 4 pillars | – | – |
 | boss | Boss | 20 × 16 | 252 | 0 | boss | 1 |
 
-Pravidla, která všechny místnosti dodržují: dveře jsou vždy uprostřed každé stěny
-(2 dlaždice široké, otevřené jen tam, kam vede chodba), nikde není průchod široký jen
-1 dlaždici a Normal místnosti mají aspoň 300 dlaždic plochy.
+Rules that all rooms follow: doors are always in the middle of each wall
+(2 tiles wide, open only where a corridor leads), there is no passage only
+1 tile wide, and Normal rooms have at least 300 tiles of area.
 
-### Předsíňky
+### Vestibules
 
-Chodby mezi místnostmi jsou aspoň 7 dlaždic dlouhé. Asi u 2 z 5 rovných chodeb se prostředek
-rozšíří do malé předsíňky: 3–5 dlaždic podél chodby a 4 nebo 6 napříč, s dlaždicí
-obyčejné chodby na každém konci. Cesta skrz zůstává volná, vybavení stojí v bočních
-výklencích: 1–2 rozbitné květináče nebo sudy (padá z nich jako jinde 1 běžný předmět),
-někdy kousek biomu (Moss houby, Spider kokon, Ice krystaly, jinde kosti), občas louč
-na zdi nebo pavučina v rohu. Kamera v předsíňce ukazuje obě spojené místnosti stejně
-jako v chodbě.
+Corridors between rooms are at least 7 tiles long. On about 2 of 5 straight corridors the middle
+widens into a small vestibule: 3-5 tiles along the corridor and 4 or 6 across, with a tile
+of plain corridor at each end. The way through stays clear, and the furnishings stand in side
+alcoves: 1-2 breakable flowerpots or barrels (they drop 1 regular item, as elsewhere),
+sometimes a bit of biome (Moss mushrooms, a Spider cocoon, Ice crystals, bones elsewhere), occasionally a torch
+on the wall or a cobweb in the corner. In a vestibule the camera shows both connected rooms equally,
+as it does in a corridor.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Nepřátelé](/docs/enemies) – kteří nepřátelé a bossové se objevují na kterém patře.
-- [Objekty](/docs/dungeon/objects) – truhly, mříže, žebřík, slot machine.
-- [Progrese](/docs/progression) – talenty *Discount*, *Gamble Machine*, *Armor Regeneration*
-  (+1 brnění po každé vyčištěné bojové místnosti); challenge *Merchant's Strike*.
-- [Minimapa](/docs/dungeon/minimap) – každý typ místnosti má svou ikonu.
-- Místnosti s hodně překážkami (normal_13, normal_16) jsou těsné a bezpečnější proti střelcům,
-  velké otevřené arény (normal_19, ambush_02) naopak dávají prostor na uhýbání.
-- Ambush se vyplatí – zbraňová truhla je druhý zdroj nových zbraní vedle Treasure a obchodu.
+- [Enemies](/docs/enemies) - which enemies and bosses appear on which floor.
+- [Objects](/docs/dungeon/objects) - chests, gates, ladder, slot machine.
+- [Progression](/docs/progression) - the talents *Discount*, *Gamble Machine*, *Armor Regeneration*
+  (+1 armor after every cleared combat room); the *Merchant's Strike* challenge.
+- [Minimap](/docs/dungeon/minimap) - every room type has its own icon.
+- Rooms with many obstacles (normal_13, normal_16) are tight and safer against shooters,
+  while large open arenas (normal_19, ambush_02) give room to dodge.
+- Ambush pays off - the weapon chest is a second source of new weapons next to Treasure and the shop.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Velké Normal místnosti mají připravených až 24 míst pro nepřátele, ale využije se jich jen
-  5–9; strop 12 nepřátel na vlnu se nikdy nedosáhne.
-- Start místnost ukazuje pevné klávesy (Q/E/F/1/2/WASD/mezerník), i když jde ovládání
-  přemapovat; chybí nápověda pro mapu (Tab).
-- Výhra „Cashout“ na slot machine dává stejně jako „Double“ (10 mincí).
-- Shop, Treasure, Sacrifice, Start i Boss mají jen jednu podobu – vypadají na každém patře
-  stejně, jen v jiném tématu.
+- Large Normal rooms have up to 24 enemy spawn spots ready, but only
+  5-9 are used; the cap of 12 enemies per wave is never reached.
+- The Start room shows fixed keys (Q/E/F/1/2/WASD/space) even though the controls can be
+  remapped; there is no hint for the map (Tab).
+- The "Cashout" win on the slot machine pays the same as "Double" (10 coins).
+- Shop, Treasure, Sacrifice, Start and Boss each have only one form - they look the same on every floor,
+  just in a different theme.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Oltář by mohl promlouvat – příběh plánuje kletby při vstupu („YOU ARE MINE ALREADY“…).
-- Treasure varianty: zamčená truhla, truhla-mimik, výběr 1 ze 3.
-- Vlastní arény pro bosse s odlišnými mechanikami (Golem, Ogre, Hellhound), případně větší
-  a s kryty.
-- Tematické tvary místností (např. vodní kanály v Sewer), místa určená jen pro létající
-  nebo elitní nepřátele, pevně umístěné pasti.
-- Odměna za vyčištění Normal místnosti, místnosti typu elite, curse, secret nebo léčivá fontána.
+- The altar could speak - the story plans curses on entry ("YOU ARE MINE ALREADY"...).
+- Treasure variants: a locked chest, a mimic chest, a choice of 1 of 3.
+- Custom boss arenas with different mechanics (Golem, Ogre, Hellhound), possibly larger
+  and with cover.
+- Themed room shapes (e.g. water channels in Sewer), spots for flying
+  or elite enemies only, fixed trap placement.
+- A reward for clearing a Normal room, elite, curse or secret rooms, or a healing fountain.

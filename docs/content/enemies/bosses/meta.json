@@ -1,5 +1,5 @@
 {
-  "title": "Bossové",
+  "title": "Bosses",
   "icon": "Crown",
   "pages": ["index", "spider-king", "king-slime", "golem", "argus", "ogre", "hellhound", "mimic"]
 }

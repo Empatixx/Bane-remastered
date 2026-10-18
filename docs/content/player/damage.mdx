@@ -1,108 +1,108 @@
 ---
-title: Zdraví, brnění a poškození
-description: Jak tě nepřátelé a pasti zraňují, k čemu je brnění, jak funguje nezranitelnost, kritické zásahy a všechny dočasné efekty na postavě.
+title: Health, armor and damage
+description: How enemies and traps hurt you, what armor is for, how invulnerability works, critical hits and all temporary effects on the character.
 ---
 
-Postava má dva ukazatele: **zdraví** a **brnění**. Brnění funguje jako štít navíc — zásahy nejdřív ubírají
-z něj a teprve potom ze zdraví. Když zdraví klesne na nulu, běh končí.
+The character has two meters: **health** and **armor**. Armor works as an extra shield — hits take from it first
+and only then from health. When health drops to zero, the run ends.
 
-## Jak to funguje
+## How it works
 
-### Když tě něco zasáhne
+### When something hits you
 
-1. Pokud jsi **nezranitelný** (po nedávném zásahu nebo během kotoulu), zásah se ignoruje.
-2. Talent **Kevlar** sníží poškození o 10 %; zlomek bodu rozhodne náhoda. Zásah za 1 tak v 10 % případů neubere nic, zásah za 3 ve 30 % případů ubere jen 2.
-3. Máš-li aktivní **štít** z artefaktu *Shield Horn*, zásah ho rozbije a nezpůsobí žádné poškození.
-4. Poškození se odečte z **brnění**; co se do brnění nevejde, ubere **zdraví**. Některé zdroje (láva, magma)
-   brnění **ignorují** a jdou rovnou do zdraví.
-5. Zazní zvuk zásahu. Když poprvé klesneš pod 30 % zdraví, ozve se varovný signál a okraje obrazovky začnou rudě pulzovat.
-6. Následuje **1 sekunda nezranitelnosti** a postava krátce zabliká.
-7. Zásah se započítá do statistik — patro, kde jsi byl zasažen, se nepočítá jako „nedotčené“ (mise *Untouched*).
+1. If you are **invulnerable** (after a recent hit or during a roll), the hit is ignored.
+2. The **Kevlar** talent reduces damage by 10%; a fraction of a point is decided by chance. A hit for 1 deals nothing 10% of the time, and a hit for 3 deals only 2 in 30% of cases.
+3. If you have an active **shield** from the artefact *Shield Horn*, the hit breaks it and deals no damage.
+4. Damage is subtracted from **armor**; whatever does not fit into armor takes **health**. Some sources (lava, magma)
+   **ignore** armor and go straight to health.
+5. A hit sound plays. The first time you drop below 30% health, a warning signal sounds and the screen edges start pulsing red.
+6. **1 second of invulnerability** follows and the character flashes briefly.
+7. The hit counts in the stats — a floor where you were hit does not count as "untouched" (the mission *Untouched*).
 
-### Co tě zraní
+### What hurts you
 
-| Zdroj | Poškození | Poznámka |
+| Source | Damage | Note |
 |-------|-----------|----------|
-| Dotek nepřítele | podle druhu nepřítele | zmrazení nepřátelé a ti, kteří se teprve objevují, nezraňují |
-| Nepřátelský projektil | 1 | |
-| Hroty (past) | 1 | jen když jsou hroty venku |
-| Plamenná past | 1 | jen když šlehá plamen |
-| Šíp z pasti | 1 | |
-| Výbuch sudu | 3 | dosah zhruba 2 dlaždice do stran a 1,5 nahoru a dolů od sudu |
-| Jedová louže | 1 | zhruba 1 za sekundu, dokud v louži stojíš |
-| Láva | 2, ignoruje brnění | kotoulem ji přeletíš bez úhony |
-| Magma (boss Hound) | 2, ignoruje brnění | |
-| Golem — déšť kamenů | 2 | |
-| Golem — laser | 2 | kotoulem ho přeletíš |
-| Leaper — dopad skoku | podle nepřítele | |
-| Mimic — návnada | 2 | |
+| Enemy touch | depends on the enemy type | frozen enemies and ones that are still appearing do not hurt |
+| Enemy projectile | 1 | |
+| Spikes (trap) | 1 | only when the spikes are out |
+| Flame trap | 1 | only when flame is burning |
+| Arrow from a trap | 1 | |
+| Barrel explosion | 3 | range about 2 tiles to the sides and 1.5 up and down from the barrel |
+| Poison puddle | 1 | about 1 per second while you stand in the puddle |
+| Lava | 2, ignores armor | you can fly over it with a roll unharmed |
+| Magma (boss Hound) | 2, ignores armor | |
+| Golem — rock rain | 2 | |
+| Golem — laser | 2 | you can fly over it with a roll |
+| Leaper — jump impact | depends on the enemy | |
+| Mimic — lure | 2 | |
 
-Výzvy, které zvyšují sílu nepřátel (např. *Horde* +30 %), posilují jejich dotek, projektily a skoky — ne pasti,
-lávu ani výbuchy. Podrobnosti o nepřátelích viz [Nepřátelé](/docs/enemies), pasti a povrchy viz [Dungeon a svět](/docs/dungeon).
+Challenges that raise enemy strength (e.g. *Horde* +30%) strengthen their touch, projectiles and jumps — not traps,
+lava or explosions. For details on enemies see [Enemies](/docs/enemies), for traps and surfaces see [Dungeon and world](/docs/dungeon).
 
-### Když zraňuješ ty
+### When you deal damage
 
-Poškození každého projektilu se počítá takto:
+The damage of each projectile is calculated like this:
 
-1. **Základ** — náhodná hodnota z rozsahu zbraně (včetně vylepšení ze stromu zbraní).
-2. **Talenty** — *Sharpened Bullets* +20 % (máš vždy; ve výzvě *Glass Cannon* dokonce 2,4×) a *Dangerous Bullets* +25 % se vynásobí dohromady (×1,5). Zlomek bodu se mění na šanci na bod navíc — rána za 1 dá se *Sharpened Bullets* každou pátou ránu 2.
-3. **Kritický zásah** — dvojnásobek.
-4. **Útok ze zálohy** — první výstřel z neviditelnosti (*Phantom Cloak*) dává dvojnásobek a neviditelnost tím skončí.
+1. **Base** — a random value from the weapon's range (including upgrades from the weapon tree).
+2. **Talents** — *Sharpened Bullets* +20% (you always have it; in the challenge *Glass Cannon* even 2.4×) and *Dangerous Bullets* +25% are multiplied together (×1.5). A fraction of a point turns into a chance of an extra point — a hit for 1 deals 2 on every fifth hit with *Sharpened Bullets*.
+3. **Critical hit** — double.
+4. **Sneak attack** — the first shot from invisibility (*Phantom Cloak*) deals double and ends the invisibility.
 
-**Šance na kritický zásah** = 10 % z talentu *Critical Hit* + vlastní šance zbraně (Sniper 20 %) + bonus ze
-stromu zbraní. Vylepšení *Deadeye* udělá kritickým každý pátý výstřel. Kritický zásah se určuje pro každý
-projektil zvlášť — u brokovnice má každý brok vlastní šanci (jen *Deadeye* krituje všechny broky naráz).
+**Critical hit chance** = 10% from the talent *Critical Hit* + the weapon's own chance (Sniper 20%) + a bonus from the
+weapon tree. The upgrade *Deadeye* makes every fifth shot critical. A critical hit is decided for each
+projectile separately — with a shotgun every pellet has its own chance (only *Deadeye* crits all pellets at once).
 
-Zasažený nepřítel krátce zbělá a nad ním vyletí číslo poškození. Výbuchy, plazma a řetězový blesk dávají
-poloviční poškození (aspoň 1) — viz [Zbraně](/docs/guns).
+A hit enemy flashes white briefly and a damage number flies up above it. Explosions, plasma and chain lightning deal
+half damage (at least 1) — see [Guns](/docs/guns).
 
-### Dočasné efekty na postavě
+### Temporary effects on the character
 
-| Efekt | Odkud | Co dělá | Trvání |
+| Effect | Source | What it does | Duration |
 |-------|-------|---------|--------|
-| Nezranitelnost | zásah, kotoul | ignoruje veškeré poškození | 1 s po zásahu / 0,36 s kotoul |
-| Zmrazení | mrazivý sud poblíž | nemůžeš chodit, střílet ani uhnout | 1,5 s |
-| Otrava | stojíš v jedové louži | zelený obrys, louže zraňuje | dokud stojíš v louži |
-| Štít | *Shield Horn* | další zásah nezpůsobí poškození | do prvního zásahu |
-| Berserk | *Berserk Pot* | rychlost +30 % | 15 s |
-| Neviditelnost | *Phantom Cloak* | nepřátelé tě nevidí, nedotýkají se tě a naváděné střely tě nesledují; první výstřel 2× | 5 s nebo do výstřelu |
-| Zpomalení času | *Hourglass of Ash* | nepřátelé se pohybují rychlostí 35 % | 6 s |
-| Krvežíznivost | *Blood Chalice* | léčí za každé zabití; při použití navíc hned vyléčí 50 % zdraví | 10 s |
-| Nekonečná munice | *Infinity Quiver* | střílíš bez přebíjení | 8 s |
-| Midasův dotek | *Midas Coin* | mince za každé zabití | 6 s |
+| Invulnerability | hit, roll | ignores all damage | 1 s after a hit / 0.36 s roll |
+| Freeze | a frozen barrel nearby | you cannot walk, shoot or dodge | 1.5 s |
+| Poison | you stand in a poison puddle | green outline, the puddle hurts | while you stand in the puddle |
+| Shield | *Shield Horn* | the next hit deals no damage | until the first hit |
+| Berserk | *Berserk Pot* | speed +30% | 15 s |
+| Invisibility | *Phantom Cloak* | enemies cannot see you, do not touch you and homing projectiles do not follow you; first shot 2× | 5 s or until a shot |
+| Time slow | *Hourglass of Ash* | enemies move at 35% speed | 6 s |
+| Bloodlust | *Blood Chalice* | heals for every kill; on use it also heals 50% of health at once | 10 s |
+| Infinite ammo | *Infinity Quiver* | you shoot without reloading | 8 s |
+| Midas touch | *Midas Coin* | coins for every kill | 6 s |
 
-Artefakty podrobně: [Artefakty a předměty](/docs/artefacts-items).
+Artefacts in detail: [Artefacts and items](/docs/artefacts-items).
 
-### Léčení a obnova
+### Healing and recovery
 
-- Lektvar zdraví / brnění: malý +1, velký +4 (do maxima; při plném ukazateli ho nesebereš).
-- Talent *Armor Regeneration*: +1 brnění po vyčištění místnosti (výzva *Bane* ho vypíná).
-- Artefakty *Armor Refill* a *Blood Chalice* (vyléčí 50 %).
-- Mezi patry se nic neobnovuje.
+- Health / armor potion: small +1, large +4 (up to the maximum; you cannot pick it up when the meter is full).
+- The talent *Armor Regeneration*: +1 armor after clearing a room (the challenge *Bane* turns it off).
+- The artefacts *Armor Refill* and *Blood Chalice* (heals 50%).
+- Nothing recovers between floors.
 
-### Smrt
+### Death
 
-Když zdraví klesne na 0, postava se zastaví a ukáže se závěrečná obrazovka běhu. V pauze můžeš běh kdykoli
-ukončit volbou *Die*.
+When health drops to 0, the character stops and the final run screen appears. In the pause menu you can end the run
+at any time by choosing *Die*.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Talenty *Kevlar*, *Critical Hit*, *Sharpened Bullets*, *Dangerous Bullets*, *Hero's Heart*, *Titan's Heart* a
-  *Improved Armor*: [Talenty](/docs/player/upgrades).
-- Rudé okraje obrazovky a další efekty: [Rozhraní](/docs/player/hud).
-- Brnění chrání jen proti „běžným“ zásahům — na lávu a magma spoléhej na kotoul, ne na brnění.
-- Brokovnice s vysokou šancí na kritický zásah dává občas obrovské „jackpot“ výstřely.
+- The talents *Kevlar*, *Critical Hit*, *Sharpened Bullets*, *Dangerous Bullets*, *Hero's Heart*, *Titan's Heart* and
+  *Improved Armor*: [Talents](/docs/player/upgrades).
+- The red screen edges and other effects: [Interface](/docs/player/hud).
+- Armor only protects against "normal" hits — against lava and magma rely on the roll, not on armor.
+- A shotgun with a high critical chance sometimes deals huge "jackpot" shots.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- **Štít z Shield Horn** sice zásah pohltí, ale hra ho přesto bere jako zásah: přehraje zvuk zranění, dá ti
-  nezranitelnost a pokazí ti „nedotčené“ patro pro misi *Untouched*.
-- Totéž platí, když **Kevlar** srazí zásah za 1 na nulu — neubere nic, ale počítá se jako zásah.
-- **Rudý záblesk obrazovky** při zásahu se objeví jen při doteku nepřítele, projektilu, hrotů, plamenné pasti nebo lávy — šípy z pastí, výbuchy,
-  jed, útoky Golema, dopady Leaperů a Mimic tě zraní bez záblesku.
+- The **shield from Shield Horn** absorbs the hit, but the game still treats it as a hit: it plays the damage sound, gives you
+  invulnerability and ruins the "untouched" floor for the mission *Untouched*.
+- The same applies when **Kevlar** knocks a hit for 1 down to zero — it deals nothing, but it counts as a hit.
+- The **red screen flash** on a hit appears only on enemy touch, projectiles, spikes, flame traps or lava — arrows from traps, explosions,
+  poison, Golem attacks, Leaper impacts and Mimics hurt you without a flash.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Čísla poškození nad postavou (nepřátelé je mají).
-- Více efektů na hráči: hoření, krvácení, zpomalená střelba; jed, který působí i po opuštění louže.
-- Odolnosti proti konkrétním zdrojům (např. talent nebo artefakt „imunita vůči jedu“).
+- Damage numbers above the character (enemies have them).
+- More effects on the player: burning, bleeding, slowed shooting; poison that works even after leaving the puddle.
+- Resistances against specific sources (e.g. a talent or artefact "poison immunity").

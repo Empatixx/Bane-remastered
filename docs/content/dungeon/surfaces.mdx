@@ -1,126 +1,126 @@
 ---
-title: Povrchy a kapaliny
-description: Led, láva, voda, bažina, písek a krev – kde se objevují, jak vypadají a jak mění pohyb hráče.
+title: Surfaces and liquids
+description: Ice, lava, water, swamp, sand and blood - where they appear, what they look like and how they change the player's movement.
 ---
 
-Šest témat má vlastní **kapalinu** (nebo sypký povrch) na podlaze: Ice led, Lava lávu, Sewer
-vodu, Moss bažinu, Temple písek a Stone krev. V každé Normal a Ambush místnosti takového patra se rozlije několik nepravidelných
-louží, které mění pohyb hráče – nebo ho rovnou pálí.
+Six themes have their own **liquid** (or loose surface) on the floor: Ice has ice, Lava has lava, Sewer
+water, Moss swamp, Temple sand and Stone blood. In every Normal and Ambush room of such a floor, several irregular
+puddles spread out. They change the player's movement - or burn them outright.
 
-## Jak to funguje
+## How it works
 
-- Louže vznikají jen v bojových místnostech (Normal, Ambush), nikdy ve Startu, obchodě,
-  oltáři, pokladnici ani v boss aréně.
-- Mají nepravidelné, „organické“ tvary. Nikdy nezakryjí dveře (drží se aspoň 3 dlaždice od
-  nich), místa, kde se rodí nepřátelé, ani dekorace a pasti.
-- **Láva nikdy nerozdělí místnost** – vždy zůstane suchá cesta ke všem částem místnosti.
-- Jestli na hráče kapalina působí, rozhoduje jeho střed; vlnky ve vodě jdou od nohou.
-- Při chůzi kapalinou od nohou odlétají částice podle povrchu: kapky vody a pěna, hroudy bláta,
-  saze a jiskry z lávy, ledové střípky, zrnka písku, kapky krve. Letí obloučkem a padají zpátky
-  (jiskry a střípky jen vyhasnou). Jsou jen na ozdobu.
-- Louže mají kolem sebe vykreslený břeh a pod zdí stín. Láva a voda jsou animované, láva
-  navíc oranžově svítí.
-- **Samy od sebe** (`stir_surfaces` v `systems/surfaces.rs`) dělají louže v záběru drobné
-  částice i bez hráče: z lávy stoupají černé škváry a bílé jiskry, na vodě a ledu se třpytí
-  odlesky, v bažině a krvi vystoupají a prasknou bubliny a přes písek fouká zrnka. Každá
-  dlaždice dá zhruba jednu za 2–8 s.
+- Puddles appear only in combat rooms (Normal, Ambush), never in the Start, shop,
+  altar, treasure room or boss arena.
+- They have irregular, "organic" shapes. They never cover doors (they stay at least 3 tiles away from
+  them), enemy spawn spots, or decor and traps.
+- **Lava never splits a room** - a dry path always remains to every part of the room.
+- Whether a liquid affects the player is decided by the player's center; ripples in water come from the feet.
+- When walking through a liquid, particles fly off the feet depending on the surface: water drops and foam, clumps of mud,
+  soot and sparks from lava, ice shards, grains of sand, drops of blood. They fly in an arc and fall back
+  (sparks and shards just fade out). They are only decoration.
+- Puddles have a shore drawn around them and a shadow under the wall. Lava and water are animated, and lava
+  also glows orange.
+- **On their own** (`stir_surfaces` in `systems/surfaces.rs`), puddles in view make tiny
+  particles even without the player: black embers and white sparks rise from lava, glints shimmer
+  on water and ice, bubbles rise and pop in swamp and blood, and grains blow across sand. Each
+  tile produces roughly one every 2-8 s.
 
-## Statistiky
+## Stats
 
-| Povrch | Téma | Kolik místnosti zabírá | Louží | Efekt na hráče |
+| Surface | Theme | How much of the room it covers | Puddles | Effect on the player |
 |---|---|---|---|---|
-| **Led** | Ice | 22–40 % | 1–5 | klouže – pomalu se rozjíždí i brzdí |
-| **Láva** | Lava | 8–14 % | 1–3 | 2 poškození rovnou do životů, nejvýš 2 za sekundu; během dodge nepálí |
-| **Voda** | Sewer | 16–30 % | 1–4 | rychlost na 55 %; při chůzi dělá vlnky |
-| **Bažina** | Moss | 14–26 % | 1–4 | rychlost na 45 %; při chůzi dělá bahnité kruhy |
-| **Krev** | Stone | 6–14 % | 1–4 | rychlost na 70 % (lepí); při chůzi dělá rudé kruhy |
-| **Písek** | Temple | 10–20 % | 1–4 | boříš se: zpomalení roste z 1 % na 80 % za 3 s v písku; po vylezení zmizí 4× rychleji |
+| **Ice** | Ice | 22-40% | 1-5 | slides - speeds up and brakes slowly |
+| **Lava** | Lava | 8-14% | 1-3 | 2 damage straight to health, at most 2 per second; does not burn during a dodge |
+| **Water** | Sewer | 16-30% | 1-4 | speed to 55%; makes ripples when walking |
+| **Swamp** | Moss | 14-26% | 1-4 | speed to 45%; makes muddy rings when walking |
+| **Blood** | Stone | 6-14% | 1-4 | speed to 70% (sticky); makes red rings when walking |
+| **Sand** | Temple | 10-20% | 1-4 | you sink: the slowdown grows from 1% to 80% over 3 s in the sand; after climbing out it fades 4x faster |
 
-Hráč normálně ujde asi 6,4 dlaždice za sekundu, ve vodě asi 3,5 a v bažině asi 2,9.
-Zpomalení se násobí s ostatními bonusy a postihy rychlosti. Voda a bažina se se zpomalením
-pavučinou nesčítají – platí jen jedno z nich. V písku se zpomalení počítá podle toho, jak
-dlouho v něm hráč je (stát a chodit je stejné) – krátké přeběhnutí skoro nebrzdí, kdo se
-v písku zdrží, skoro stojí. Dodge jde pískem plnou rychlostí.
+The player normally covers about 6.4 tiles per second, about 3.5 in water and about 2.9 in swamp.
+The slowdown multiplies with other speed bonuses and penalties. Water and swamp do not stack with the cobweb
+slowdown - only one of them applies. In sand the slowdown depends on how
+long the player has been in it (standing and walking are the same) - a short dash across barely slows you,
+and anyone who lingers in the sand nearly stops. A dodge goes through sand at full speed.
 
-### Vybavení kanalizace
+### Sewer furnishings
 
-Kaluže v Sewer patře nejsou jen voda:
+Puddles on a Sewer floor are not just water:
 
-- **Odpadní trouby:** v 1–2 místech zdi přímo nad vodou je kulatá trouba v barvách zdi.
-  Teče z ní voda, šplouchá do kaluže a dělá na hladině kruhy.
-- **Lávky:** asi v 7 z 10 místností s vodou vede přes rovný úsek vody (2–6 dlaždic) dřevěná
-  lávka s lany, napříč nebo svisle. Konce má na kraji břehu. Na lávce voda nezpomaluje.
-- **Smetí:** po větších kalužích (aspoň 6 dlaždic) plují 1–2 kousky smetí: prkno, bedýnka,
-  lahev, bota a občas krysa na prkně. Pohupují se, od břehu se otočí a pod lávkou neproplují.
-  Jsou jen na ozdobu, nic neblokují.
-- **Plovoucí sudy:** asi ve třetině místností s vodou se po hladině pomalu unáší sud, obyčejný,
-  výbušný nebo jedový. Blokuje jako každý sud, střela ho postrčí směrem, kam letí, a pak
-  znovu zpomalí na unášení. Od břehu se odrazí, vytlačený na souš zůstane stát.
+- **Drain pipes:** in 1-2 places on a wall right above the water there is a round pipe in the colors of the wall.
+  Water flows from it, splashes into the puddle and makes rings on the surface.
+- **Walkways:** in about 7 of 10 rooms with water, a wooden walkway with ropes runs across a straight stretch of water
+  (2-6 tiles), across or vertically. Its ends rest on the edge of the shore. Water does not slow you on the walkway.
+- **Trash:** 1-2 pieces of trash float on larger puddles (at least 6 tiles): a plank, a crate,
+  a bottle, a boot and occasionally a rat on a plank. They bob, turn away from the shore and do not float under a walkway.
+  They are only decoration and block nothing.
+- **Floating barrels:** in about a third of rooms with water, a barrel slowly drifts along the surface, plain,
+  explosive or poison. It blocks like any barrel, a bullet nudges it in the direction it flies, and then
+  it slows back down to drifting. It bounces off the shore, and if pushed onto dry land it stays put.
 
-### Vybavení lávy
+### Lava furnishings
 
-Lava patro má totéž co kanalizace, jen ve vlastních barvách a bez sudů:
+A Lava floor has the same as the sewer, just in its own colors and without barrels:
 
-- **Lávopády:** 1–2 rozžhavené pukliny ve zdi přímo nad lávou. Z nich stéká láva, šplouchá do
-  jezírka, jiskří a obojí svítí.
-- **Kamenné cesty:** asi v 7 z 10 místností s lávou vede přes rovný úsek lávy (2–6 dlaždic)
-  řada plochých čedičových kamenů, mezi kterými prosvítá láva. Po kamenech láva nepálí.
-- **Krusty:** po větších jezírkách (aspoň 6 dlaždic) plují 1–2 kusy ztuhlé černé horniny se
-  žhnoucími švy, jen na ozdobu.
+- **Lavafalls:** 1-2 glowing cracks in a wall right above the lava. Lava runs down from them, splashes into
+  a pool, sparks, and both glow.
+- **Stone paths:** in about 7 of 10 rooms with lava, a row of flat basalt stones runs across a straight stretch of lava
+  (2-6 tiles), with lava glowing between them. Lava does not burn on the stones.
+- **Crusts:** 1-2 pieces of hardened black rock with glowing seams float on larger pools
+  (at least 6 tiles), only for decoration.
 
-### Vybavení bažiny
+### Swamp furnishings
 
-Bažina v Moss patře má totéž ve svém stylu, bez sudů:
+Swamp on a Moss floor has the same in its own style, without barrels:
 
-- **Pramínky z kořenů:** z 1–2 spár mezi kořeny ve zdi nad bažinou stéká kalná voda.
-- **Padlé kmeny:** asi v 7 z 10 místností s bažinou leží přes rovný úsek (2–6 dlaždic)
-  mechem obrostlý kmen. Na kmeni bažina nezpomaluje.
-- **Lekníny a listí:** po větších bažinách plují lekníny (některé kvetou), spadané listí
-  a občas žába na lekníně, která asi každé 3 s vyskočí a udělá na hladině kruh.
+- **Root trickles:** murky water runs down from 1-2 gaps between roots in a wall above the swamp.
+- **Fallen logs:** in about 7 of 10 rooms with swamp, a moss-covered log lies across a straight stretch (2-6 tiles).
+  The swamp does not slow you on the log.
+- **Lily pads and leaves:** lily pads (some in bloom) float on larger swamps, along with fallen leaves
+  and occasionally a frog on a lily pad that jumps about every 3 s and makes a ring on the surface.
 
-### Vybavení ledu
+### Ice furnishings
 
-Led v Ice patře má vlastní obdobu, bez mostů (po ledu se chodí tak, jak je):
+Ice on an Ice floor has its own version, without bridges (you walk on the ice as it is):
 
-- **Zamrzlé vodopády:** z 1–2 puklin s rampouchy ve zdi nad ledem visí ztuhlá kaskáda.
-  Po ní sjíždí odlesk a dole je ledová hromádka, která se třpytí.
-- **Pod ledem:** ve větších ledových plochách jsou vidět 1–2 zamrzlé věci: ryba, kostra ruky,
-  meč nebo pár mincí. Jen na ozdobu, sebrat nejdou.
-- **Praskliny a závěje:** 1–2 praskliny v ledu a až 3 sněhové závěje u zdí.
+- **Frozen waterfalls:** from 1-2 cracks with icicles in a wall above the ice hangs a frozen cascade.
+  A glint slides down it, and at the bottom is an icy pile that sparkles.
+- **Under the ice:** in larger ice patches you can see 1-2 frozen things: a fish, a skeleton hand,
+  a sword or a few coins. Only decoration, they cannot be picked up.
+- **Cracks and drifts:** 1-2 cracks in the ice and up to 3 snow drifts by the walls.
 
-### Krev
+### Blood
 
-Louže krve ve Stone patře jsou tmavé, pomalu se vlní a přejíždí po nich odlesk. Při chůzi dělají
-tmavě rudé kruhy.
+Blood puddles on a Stone floor are dark, slowly ripple and a glint passes over them. When walking they make
+dark red rings.
 
-### Vybavení písku
+### Sand furnishings
 
-Písek v Temple má jen pramínky: z 1–2 prasklin v čele zdi nad pískem padá proud písku
-rovnou dolů a mizí v písku, odskočí jen pár zrnek. Nic po něm neplave a nevedou přes něj mosty.
+Sand in Temple has only trickles: from 1-2 cracks in the face of a wall above the sand, a stream of sand falls
+straight down and vanishes into the sand, with only a few grains bouncing off. Nothing floats on it and no bridges lead across it.
 
-Magma bosse Hellhounda vypadá stejně jako láva, ale funguje jinak – viz
-[Pasti a nebezpečí](/docs/dungeon/hazards).
+The Hellhound boss's magma looks the same as lava, but works differently - see
+[Traps and hazards](/docs/dungeon/hazards).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Hráč](/docs/player) – dodge přes lávu je bezpečný, přes led je nejlepší způsob, jak rychle
-  změnit směr.
-- [Patra a témata](/docs/dungeon/themes) – které patro má kterou kapalinu.
-- [Dekorace](/docs/dungeon/decor) – kapaliny se rozlévají až po dekoracích a vyhýbají se jim.
-- [Osvětlení](/docs/dungeon/lighting) – láva je zdroj světla.
-- V Ice patře zabírá led až 40 % místnosti – počítej s tím, že zastavení trvá a nepřátelé
-  na kontakt tě snadno doženou.
+- [Player](/docs/player) - a dodge across lava is safe, and across ice it is the best way to quickly
+  change direction.
+- [Floors and themes](/docs/dungeon/themes) - which floor has which liquid.
+- [Decor](/docs/dungeon/decor) - liquids spread only after the decor is placed and avoid it.
+- [Lighting](/docs/dungeon/lighting) - lava is a light source.
+- On an Ice floor the ice covers up to 40% of the room - expect stopping to take a while, and enemies
+  that attack on contact can easily catch you.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Kapaliny působí **jen na hráče** – nepřátelé chodí vodou, bažinou, ledem i lávou bez
-  postihu a nevyhýbají se jim.
-- Voda a bažina se liší jen o 10 % zpomalení.
+- Liquids affect **only the player** - enemies walk through water, swamp, ice and lava without
+  penalty and do not avoid them.
+- Water and swamp differ by only 10% of slowdown.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Interakce prvků: mrazivý sud zamrazí vodu na led, výbuch vysuší bažinu, láva zapaluje.
-- Bažina by mohla „lepit“ nebo otrávit, ne jen víc zpomalovat.
-- Kapalina pro Spider (např. pavučinová kaše).
-- Hráč by se mohl v písku viditelně bořit (sprite klesá).
-- Louže v boss arénách.
+- Interaction between elements: a frost barrel freezes water into ice, an explosion dries up swamp, lava sets things on fire.
+- Swamp could "stick" or poison, not just slow more.
+- A liquid for Spider (e.g. cobweb mush).
+- The player could visibly sink into sand (the sprite goes down).
+- Puddles in boss arenas.

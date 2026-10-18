@@ -1,74 +1,74 @@
 ---
-title: Pohyb a úhyb
-description: Jak rychle se postava pohybuje, co ji zpomalí a jak funguje úhybový kotoul, během kterého jsi nezranitelný.
+title: Movement and dodge
+description: How fast the character moves, what slows it down and how the dodge roll works, during which you are invulnerable.
 ---
 
-Postava se nepohybuje „skokově“ — chvíli trvá, než se rozběhne, a po puštění kláves ještě kousek dojede.
-Hlavní obranou je **úhybový kotoul**: krátký rychlý přesun, během kterého tě nic nezraní.
+The character does not move in "jumps" — it takes a moment to get running, and after you release the keys it coasts a little.
+The main defense is the **dodge roll**: a short fast move during which nothing can hurt you.
 
-## Jak to funguje
+## How it works
 
-### Chůze
+### Walking
 
-- Plné rychlosti dosáhneš zhruba za půl až jednu sekundu; po puštění kláves se zastavíš za necelé 2 sekundy.
-  Otočení do opačného směru trvá déle než samotné zastavení.
-- Základní rychlost je asi 6,4 dlaždice za sekundu, s talentem *Swiftwind Steps* (který máš vždy) asi 7 dlaždic za sekundu.
-- Animace postavy se řídí směrem, kterým jdeš (ne směrem míření).
-- Ve vodě za sebou necháváš vlnky.
+- You reach full speed in about half a second to one second; after you release the keys you stop in under 2 seconds.
+  Turning to the opposite direction takes longer than just stopping.
+- Base speed is about 6.4 tiles per second, with the talent *Swiftwind Steps* (which you always have) about 7 tiles per second.
+- The character's animation follows the direction you walk in (not the aim direction).
+- In water you leave ripples behind you.
 
-### Co mění rychlost
+### What changes speed
 
-| Vliv | Rychlost | Poznámka |
+| Influence | Speed | Note |
 |------|----------|----------|
-| Voda | 55 % | |
-| Bažina | 45 % | |
-| Pavučina | 50 % | pavučiny na zemi i ty, které plivou pavoučí nepřátelé |
-| Led | 100 % | rychlost se nemění, ale postava klouže — rozjezd i zastavení trvají přes 3× déle |
-| Berserk (artefakt *Berserk Pot*) | 130 % | 15 s |
-| Talent *Swiftwind Steps* | 110 % | vždy aktivní |
-| Zmrazení (mrazivý sud) | — | 1,5 s nemůžeš ovládat pohyb, jen dojedeš setrvačností |
+| Water | 55% | |
+| Swamp | 45% | |
+| Cobweb | 50% | cobwebs on the ground and also the ones spat by spider enemies |
+| Ice | 100% | speed does not change, but the character slides — starting and stopping take over 3× longer |
+| Berserk (artefact *Berserk Pot*) | 130% | 15 s |
+| Talent *Swiftwind Steps* | 110% | always active |
+| Freeze (frozen barrel) | — | for 1.5 s you cannot control movement, you only coast on momentum |
 
-Zpomalení z povrchů se nesčítají — platí jen jedno (voda má přednost před bažinou a ta před pavučinou).
-Berserk a talent se k nim násobí.
+Slowdowns from surfaces do not stack — only one applies (water takes priority over swamp and swamp over cobweb).
+Berserk and the talent multiply with them.
 
-### Úhyb (kotoul)
+### Dodge (roll)
 
-| Vlastnost | Hodnota |
+| Property | Value |
 |-----------|---------|
-| Klávesa | Space |
-| Délka kotoulu | 0,36 s |
-| Rychlost | asi 12 dlaždic za sekundu (skoro 2× rychlejší než chůze) |
-| Uražená vzdálenost | asi 4 dlaždice |
-| Nabíjení | 1,26 s od začátku kotoulu |
-| Nezranitelnost | po celou dobu kotoulu |
+| Key | Space |
+| Roll length | 0.36 s |
+| Speed | about 12 tiles per second (almost 2× faster than walking) |
+| Distance covered | about 4 tiles |
+| Cooldown | 1.26 s from the start of the roll |
+| Invulnerability | for the whole roll |
 
-Pravidla úhybu:
+Dodge rules:
 
-- Kotoul míří směrem, kterým se pohybuješ. Když stojíš, kotoulíš se směrem ke kurzoru.
-- Uhnout nejde během jiného kotoulu, během nabíjení, když jsi zmrazený, ani ve výzvě *Two Left Feet*, která úhyb vypíná.
-- Během kotoulu **nestřílíš**, povrchy tě nezpomalují a jsi imunní vůči veškerému poškození.
-- Kotoulem můžeš bezpečně přeletět **lávu**, **laser Golema** a **mrazivý výbuch sudu**.
-- Při kotoulu se přehraje speciální animace, ozve se krátké **švihnutí** (střídají se dvě varianty) a za
-  postavou zůstávají modravé „stíny“.
-- Pod postavou se po kotoulu ukáže bílý proužek, který se zkracuje — až zmizí, můžeš uhnout znovu.
+- The roll goes in the direction you are moving. When you stand still, you roll toward the cursor.
+- You cannot dodge during another roll, during the cooldown, when frozen, or in the challenge *Two Left Feet*, which disables the dodge.
+- During the roll you **do not shoot**, surfaces do not slow you and you are immune to all damage.
+- With a roll you can safely fly over **lava**, the **Golem's laser** and a **frozen barrel explosion**.
+- A special animation plays during the roll, a short **swish** sounds (two variants alternate) and bluish "shadows"
+  stay behind the character.
+- After the roll a white bar appears below the character and shortens — when it disappears, you can dodge again.
 
-Úhyb funguje i v lobby.
+The dodge works in the lobby too.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Nezranitelnost z kotoulu i po zásahu je tentýž efekt — viz [Zdraví, brnění a poškození](/docs/player/damage).
-- Povrchy a pasti: [Dungeon a svět](/docs/dungeon).
-- Pavučiny plive pavoučí boss a *WebSpitter*: [Nepřátelé](/docs/enemies).
-- *Berserk Pot*: [Artefakty a předměty](/docs/artefacts-items).
-- Výzva *Two Left Feet* (bez úhybu): [Průběh hry a progrese](/docs/progression).
-- Na ledu začni brzdit dřív — dojezd je výrazně delší než na běžné podlaze.
+- Invulnerability from the roll and after a hit is the same effect — see [Health, armor and damage](/docs/player/damage).
+- Surfaces and traps: [Dungeon and world](/docs/dungeon).
+- Cobwebs are spat by the spider boss and the *WebSpitter*: [Enemies](/docs/enemies).
+- *Berserk Pot*: [Artefacts and items](/docs/artefacts-items).
+- The challenge *Two Left Feet* (no dodge): [Run and progression](/docs/progression).
+- On ice start braking earlier — the coasting distance is much longer than on a normal floor.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Během kotoulu se pozastaví i **přebíjení** — když uhneš uprostřed přebíjení, dokončí se až po kotoulu.
-- Délku ani rychlost kotoulu neovlivňuje Berserk ani *Swiftwind Steps*.
+- **Reloading** is also paused during the roll — if you dodge in the middle of a reload, it finishes only after the roll.
+- Neither Berserk nor *Swiftwind Steps* affects the length or speed of the roll.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Talenty pro úhyb: kratší nabíjení, dvojitý kotoul, „perfektní úhyb“ se zpomalením času při těsném vyhnutí.
-- Otáčení postavy podle míření (jako v Enter the Gungeon).
+- Talents for the dodge: shorter cooldown, a double roll, a "perfect dodge" with time slow on a close escape.
+- Turning the character by aim direction (like in Enter the Gungeon).

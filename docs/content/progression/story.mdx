@@ -1,69 +1,68 @@
 ---
-title: Příběh a lore
-description: Příběh Bane — Elian, novic, který tu noc usnul jako poslední — a jak ho hra vypráví.
+title: Story and lore
+description: The story of Bane — Elian, the novice who fell asleep that night as the last one — and how the game tells it.
 ---
 
-Herní texty jsou anglicky. Příběh se vypráví jako v The Binding of Isaac: skoro žádný text během
-runu, krátké věty postav a bossů, pravda postupně. Herní věty jsou v `rust/app/src/lore.rs`
-(bossové, šepot rány), `systems/scientist.rs` (Vědec, Aldric) a `scenes/epilogue.rs` (konec). Duchové bossů a trhliny se šepotem jsou v `systems/souls.rs`.
+Game text is in English. The story is told as in The Binding of Isaac: almost no text during
+a run, short lines from characters and bosses, the truth bit by bit. The in-game lines are in `rust/app/src/lore.rs`
+(bosses, the whisper of the wound), `systems/scientist.rs` (the Scientist, Aldric) and `scenes/epilogue.rs` (the ending). The ghosts of bosses and the rifts with whispers are in `systems/souls.rs`.
 
-## Příběh
+## The story
 
-Čtyři sta let se lidé z Velmoru modlili v chrámu na kopci. Bratři řádu Pečeti drželi stráž tak,
-aby se vždycky modlil aspoň jeden hlas, a to, co spí pod oltářem, spalo.
+For four hundred years, the people of Velmor prayed in the temple on the hill. The brothers of the Order of the Seal kept watch
+so that at least one voice was always praying, and what sleeps under the altar kept sleeping.
 
-Jedné noci bratři usnuli při modlitbách, jeden po druhém. **Elian**, nejmladší novic, byl poslední
-vzhůru. Pak usnul i on. Pod chrámem se otevřela rána (**Bane**), vylezlé věci pobily řád a do krypty
-utekli jen Elian a zraněný **bratr Aldric**. **Elian nikdy nikomu neřekl, že usnul.**
+One night the brothers fell asleep at their prayers, one after another. **Elian**, the youngest novice, was the last
+awake. Then he fell asleep too. A wound (**Bane**) opened under the temple, the things that crawled out slaughtered the order, and only Elian and the wounded
+**brother Aldric** escaped into the crypt. **Elian never told anyone that he had fallen asleep.**
 
-Hráč je Elian. Aldric ho ve výcviku naučí bojovat a pošle ho za **Vědcem**, jehož portál vede dolů.
-Elian chce ránu zavřít a bratry vrátit. Rána mu nabízí přesně tohle, jen hlouběji.
+The player is Elian. In training, Aldric teaches him to fight and sends him to the **Scientist**, whose portal leads down.
+Elian wants to close the wound and bring the brothers back. The wound offers him exactly that, only deeper.
 
 | | |
 |---|---|
-| **Co chce** | zavřít ránu a vrátit bratry |
-| **Lež** | „Nebyla to moje vina, něco nás napadlo.“ |
-| **Co potřebuje** | přiznat si to a nechat je jít |
+| **What he wants** | to close the wound and bring the brothers back |
+| **The lie** | "It wasn't my fault, something attacked us." |
+| **What he needs** | to admit it and let them go |
 
-## Jak se to vypráví
+## How it is told
 
-- **Úvodní cinematic:** den v chrámu, noc, bratři usínají jeden po druhém, Elian klečí sám před oltářem a nakonec usne. Rána, stvůry, útěk do krypty. Poslední věta: „Elian never told anyone that he had fallen asleep.“
-- **Šepot rány:** na začátku každého patra od druhého se vedle Eliana otevře malá trhlina v podlaze, z bubliny nad ní zašeptá („Deeper. I'll give them back.“, „You wanted to sleep. So sleep.“) a zase se zavře.
-- **Bossové jsou lidé chrámu.** Při vstupu jméno a kým byl. Když padne někdo, kdo byl člověk (Teodor, Cassian, The Faithful), vedle Eliana se z jisker objeví jeho duch (kněz nebo poutník, fialově průsvitný). V bublině řekne poslední slova, zvedne ruce a rozplyne se ve zlatém světle. Za ty ostatní (anděl, oko, pes, truhla) mluví titulek. Poslední slova po kouscích prozrazují, kdo měl tu noc hlídku:
+- **Intro cinematic:** a day in the temple, night, the brothers falling asleep one by one, Elian kneeling alone before the altar and finally falling asleep. The wound, the monsters, the escape into the crypt. The last line: "Elian never told anyone that he had fallen asleep."
+- **The whisper of the wound:** at the start of every floor from the second on, a small rift opens in the floor next to Elian, whispers from a bubble above it ("Deeper. I'll give them back.", "You wanted to sleep. So sleep.") and closes again.
+- **The bosses are people of the temple.** On entering, you see their name and who they were. When someone who was a person falls (Teodor, Cassian, The Faithful), their ghost appears next to Elian out of sparks (a priest or a pilgrim, translucent purple). In a bubble it says its last words, raises its hands and dissolves into golden light. For the others (the angel, the eye, the dog, the chest) a caption speaks. The last words reveal bit by bit who was on watch that night:
 
-| Boss | Kdo to byl | Poslední slova |
+| Boss | Who it was | Last words |
 |---|---|---|
-| Spider king | **Teodor**, písař | „...who was on watch... that night...?“ |
-| King slime | **The Faithful**, lidé z Velmoru | „WE PRAYED ALL DAY  YOU ONLY HAD THE NIGHT“ |
-| Sewer ogre | **Cassian**, strážce brány | „...the prayers stopped... I ran to the nave... the boy...“ |
-| Stone golem | **The Angel** nad oltářem | „I SAW YOU CLOSE YOUR EYES“ |
-| Argus | **The Eye** rány | ukáže klečící postavičku se svěšenou hlavou, spící |
-| Hellhound | **Oswinův pes** | přestane bojovat, očichá tě a lehne si |
-| Mimic | **The Offering Box** | „...more... more... MORE...“ |
+| Spider king | **Teodor**, the scribe | "...who was on watch... that night...?" |
+| King slime | **The Faithful**, the people of Velmor | "WE PRAYED ALL DAY  YOU ONLY HAD THE NIGHT" |
+| Sewer ogre | **Cassian**, the gatekeeper | "...the prayers stopped... I ran to the nave... the boy..." |
+| Stone golem | **The Angel** above the altar | "I SAW YOU CLOSE YOUR EYES" |
+| Argus | **The Eye** of the wound | shows a small kneeling figure with a bowed head, asleep |
+| Hellhound | **Oswin's dog** | stops fighting, sniffs you and lies down |
+| Mimic | **The Offering Box** | "...more... more... MORE..." |
 
-- **Laboratoř:** bratr Aldric drží u knihy výcviku vigilii mezi pěti svíčkami. Viní sám sebe („I fell asleep at my prayers that night. God forgive me.“) a o poražených bossech mluví jako o bratrech.
-- **Obrazovka smrti:** „Subject 41. Attempt N. Recorded.“ (Elian je Vědcův 41. dobrovolník.)
+- **The lab:** brother Aldric keeps a vigil between five candles by the training book. He blames himself ("I fell asleep at my prayers that night. God forgive me.") and speaks of the defeated bosses as brothers.
+- **Death screen:** "Subject 41. Attempt N. Recorded." (Elian is the Scientist's 41st volunteer.)
 
-## Konec
+## The ending
 
-Zatím po první výhře challenge **Bane**, jako scéna v enginu se stejným filmovým rámem jako úvod
-(`BANE_START=epilogue`, `BANE_CHOOSE=close|open`). Je to síň z kamene chrámu hluboko pod ním, nahoře
-trhlina. Elian přijde po koberci (vlastní chůze, zády ke kameře). Z jisker se před trhlinou objeví
-Teodor, Oswin, Cassian a jeden z Věrných. Rána promluví, trhlina zesílí a země se zachvěje. Elian
-poklekne jako tu noc a začne klimbat. Přes síň padne noc a bratři znovu klečí při modlitbě: Elian si
-vzpomene, že usnul on. Volba:
+For now it comes after the first win of the **Bane** challenge, as a scene in the engine with the same cinematic frame as the intro
+(`BANE_START=epilogue`, `BANE_CHOOSE=close|open`). It is a hall of temple stone deep below it, with a rift
+at the top. Elian arrives along a carpet (his own walk, back to the camera). Out of sparks, Teodor, Oswin, Cassian and one of the Faithful appear before the rift. The wound speaks, the rift
+grows stronger and the ground trembles. Elian kneels as he did that night and begins to nod off. Night falls across the hall and the brothers are kneeling in prayer again: Elian
+remembers that he was the one who fell asleep. A choice:
 
-- **Let them go:** bratři se jeden po druhém rozplynou ve zlatých jiskrách, trhlina se zavře od krajů ke středu, rozsvítí se teplé světlo a Elian usne. Portál v laboratoři vyhasne, Aldric: „It's quiet. Truly quiet.“
-- **Stay:** Elian vstane a dojde do trhliny mezi nimi. Bratři zmizí za ním, všechno pohltí fialová. Vědec si zapíše „Subject 41, lost.“
+- **Let them go:** the brothers dissolve one by one in golden sparks, the rift closes from the edges to the middle, a warm light turns on and Elian falls asleep. The portal in the lab goes dark, Aldric: "It's quiet. Truly quiet."
+- **Stay:** Elian stands up and walks into the rift among them. The brothers vanish behind him, purple swallows everything. The Scientist writes down "Subject 41, lost."
 
-## Co ještě chybí
+## What is still missing
 
-- Krátké scény po jednotlivých výhrách (zatím jen jeden epilog po challenge Bane).
-- Hlubší kapitoly přes víc dungeonů, odemykané výhrami, každá s vlastním koncem.
-- Kratší popisky předmětů jako drobné stopy.
+- Short scenes after individual wins (for now only one epilogue after the Bane challenge).
+- Deeper chapters across more dungeons, unlocked by wins, each with its own ending.
+- Shorter item descriptions as small clues.
 
-## Souvislosti
+## Connections
 
-- Úvod a výcvik: [Výcvik](/docs/progression/training), [Scény](/docs/progression/scenes).
-- Vědec a laboratoř: [Laboratoř](/docs/progression/lobby). Challenge Bane: [Challenge](/docs/progression/challenges).
-- Bossové: [Nepřátelé](/docs/enemies).
+- Intro and training: [Training](/docs/progression/training), [Scenes](/docs/progression/scenes).
+- The Scientist and the lab: [The lab](/docs/progression/lobby). The Bane challenge: [Challenges](/docs/progression/challenges).
+- Bosses: [Enemies](/docs/enemies).

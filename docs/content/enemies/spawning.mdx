@@ -1,51 +1,53 @@
 ---
-title: Spawnování a síla nepřátel
-description: Kolik nepřátel se kde objeví, kteří přicházejí na kterém patře, jak sílí a co z nich padá.
+title: Spawning and enemy strength
+description: How many enemies appear where, which ones come on which floor, how they grow stronger and what drops from them.
 ---
 
-Nepřátelé se neobjevují předem rozmístění – zhmotní se, až když vstoupíš do bojové místnosti. Které
-druhy přijdou, záleží na patře a tématu dungeonu; jak silní budou, záleží na patře a zvolené výzvě.
+Enemies do not appear pre-placed – they materialize only when you enter a combat room. Which kinds
+come depends on the floor and the dungeon theme; how strong they are depends on the floor and the
+chosen challenge.
 
-## Jak to funguje
+## How it works
 
-### Místnosti a vlny
+### Rooms and waves
 
-Boj začne, když vejdeš do místnosti (aspoň 2 dlaždice od okraje). Dveře se zavřou mřížemi a otevřou se,
-až když v místnosti nezbude žádný nepřítel – včetně pomocníků bosse a nepřátelských střel, které ještě letí.
+Combat starts when you enter a room (at least 2 tiles from the edge). The doors close with bars and
+open only when no enemy is left in the room – including the boss's helpers and enemy projectiles that
+are still flying.
 
-- **Počet nepřátel** – jeden na každých 100 dlaždic plochy místnosti, nejméně 5, nejvýš 12. Omezuje to
-  i počet míst, kde se nepřátelé mohou objevit.
-- **Běžná místnost** – jedna vlna.
-- **Přepadení (Ambush)** – 3 vlny, každá asi o 70 % velikosti běžné vlny (nejméně 4 nepřátelé). Další
-  vlna přijde 1,5 s po vyčištění předchozí a na obrazovce se ukáže „vlna N/3“. Po poslední vlně se
-  objeví **truhla se zbraní**.
-- **Boss** – boss se objeví uprostřed místnosti, nahoře se ukáže jeho jméno a ukazatel HP a začne
-  hrát boss hudba. Po jeho smrti se otřese obrazovka, objeví se **truhla s artefaktem** a žebřík
-  o patro níž. Na patře 5 místo žebříku přichází **vítězství**.
+- **Number of enemies** – one for every 100 tiles of room area, at least 5, at most 12. This is also
+  limited by the number of places where enemies can appear.
+- **Regular room** – one wave.
+- **Ambush** – 3 waves, each about 70 % of the size of a regular wave (at least 4 enemies). The next
+  wave comes 1.5 s after the previous one is cleared, and "wave N/3" is shown on the screen. After the
+  last wave a **weapon chest** appears.
+- **Boss** – the boss appears in the middle of the room, its name and HP bar show at the top and the
+  boss music starts. After its death the screen shakes, an **artefact chest** appears and a ladder
+  down one floor. On floor 5, **victory** comes instead of the ladder.
 
-### Výběr nepřátel
+### Choosing enemies
 
-Každý nepřítel ve vlně se losuje se stejnou pravděpodobností ze všech druhů, které patří na dané
-patro a téma. Na začátku runu se všech sedm témat (Spider, Stone, Sewer, Moss, Ice, Lava, Temple)
-náhodně zamíchá a patra 1–5 dostanou prvních pět – každé téma se v jednom runu objeví nejvýš jednou
-a žádné není vázané na konkrétní patro.
+Each enemy in a wave is drawn with equal probability from all kinds that belong to the given floor
+and theme. At the start of a run, all seven themes (Spider, Stone, Sewer, Moss, Ice, Lava, Temple)
+are shuffled randomly and floors 1–5 get the first five – each theme appears at most once in a run
+and none is tied to a specific floor.
 
-## Obsah
+## Contents
 
-### Běžní nepřátelé podle patra
+### Regular enemies by floor
 
-| Patro | Téma | Kdo se může objevit | Druhů |
+| Floor | Theme | Who can appear | Kinds |
 |---|---|---|--:|
-| 1–2 | jakékoli kromě Spider | Rat, Snake, Bat, Ghost, Slime, Red slime | 6 |
-| 1–2 | Spider | to samé + Red / Green / Purple spiderling, Bloated spider, Stilt spider | 11 |
-| 3–5 | jakékoli kromě Spider | Rat, Snake, Bat, Ghost, Slime, Red slime, Demon eye, Eye watcher | 8 |
-| 3–5 | Spider | to samé + všech pět pavouků | 13 |
+| 1–2 | any except Spider | Rat, Snake, Bat, Ghost, Slime, Red slime | 6 |
+| 1–2 | Spider | the same + Red / Green / Purple spiderling, Bloated spider, Stilt spider | 11 |
+| 3–5 | any except Spider | Rat, Snake, Bat, Ghost, Slime, Red slime, Demon eye, Eye watcher | 8 |
+| 3–5 | Spider | the same + all five spiders | 13 |
 
-### Bossové podle tématu
+### Bosses by theme
 
-Každé téma má jednoho vlastního bosse, který s ním putuje na kterékoli patro:
+Each theme has one boss of its own, who travels with it to any floor:
 
-| Téma | Boss |
+| Theme | Boss |
 |---|---|
 | Spider | Spider king |
 | Stone | Stone golem |
@@ -55,13 +57,13 @@ Každé téma má jednoho vlastního bosse, který s ním putuje na kterékoli p
 | Lava | Hellhound |
 | Temple | Mimic |
 
-### Síla podle patra
+### Strength by floor
 
-Běžní nepřátelé **i bossové** sílí s patrem: **+12 % HP a +8 % poškození dotykem za patro**
-(zaokrouhleno). Pomocníci bossů, útoky bossů a nepřátelské střely (vždy 1 poškození) zůstávají stejní.
-Rychlost se nemění. Hodnoty bossů po patrech jsou v přehledu [Bossů](/docs/enemies/bosses).
+Regular enemies **and bosses** grow stronger with the floor: **+12 % HP and +8 % contact damage per floor**
+(rounded). Boss helpers, boss attacks and enemy projectiles (always 1 damage) stay the same.
+Speed does not change. The values of bosses by floor are in the overview of [Bosses](/docs/enemies/bosses).
 
-| Nepřítel | HP na patře 1 / 2 / 3 / 4 / 5 | Poškození na patře 1 / 2 / 3 / 4 / 5 |
+| Enemy | HP on floor 1 / 2 / 3 / 4 / 5 | Damage on floor 1 / 2 / 3 / 4 / 5 |
 |---|---|---|
 | Rat | 13 / 15 / 16 / 18 / 19 | 2 / 2 / 2 / 3 / 3 |
 | Snake | 9 / 10 / 11 / 12 / 13 | 3 / 3 / 4 / 4 / 4 |
@@ -74,52 +76,52 @@ Rychlost se nemění. Hodnoty bossů po patrech jsou v přehledu [Bossů](/docs/
 | Green spiderling, Bloated spider | 6 / 6 / 7 / 7 / 8 | Green 2 / 2 / 2 / 3 / 3, Bloated 1 |
 | Stilt spider | 8 / 9 / 10 / 10 / 11 | 1 |
 
-### Výzvy
+### Challenges
 
-Některé výzvy zesilují úplně všechny nepřátele – i bosse, jejich pomocníky a nepřátelské střely.
+Some challenges strengthen absolutely all enemies – including the boss, its helpers and enemy projectiles.
 
-| Výzva | HP nepřátel | Poškození nepřátel |
+| Challenge | Enemy HP | Enemy damage |
 |---|--:|--:|
-| Horde | × 1,6 | × 1,3 |
-| Bane | × 1,6 | × 1,3 (a armor se neobnovuje) |
-| ostatní | beze změny | beze změny |
+| Horde | × 1.6 | × 1.3 |
+| Bane | × 1.6 | × 1.3 (and armor does not regenerate) |
+| others | unchanged | unchanged |
 
-### Elitní nepřátelé
+### Elite enemies
 
-Ve hře nejsou. Jediná „silnější verze“ je fáze zuřivosti bossů (viz [Bossové](/docs/enemies/bosses)).
+There are none in the game. The only "stronger version" is the boss enrage phase (see [Bosses](/docs/enemies/bosses)).
 
-### Dropy
+### Drops
 
-Z nepřátel padá náhodně **mince** nebo **krabička munice** (pro tvé zbraně). Hra má pojistku proti
-smůle – čím déle nic nepadlo, tím vyšší šance:
+Enemies randomly drop a **coin** or an **ammo box** (for your guns). The game has a safeguard against
+bad luck – the longer nothing has dropped, the higher the chance:
 
-| Zabití od posledního dropu | 1. | 2. | 3. | 4. | 5. |
+| Kills since the last drop | 1st | 2nd | 3rd | 4th | 5th |
 |---|--:|--:|--:|--:|--:|
-| Šance na drop | 33 % | 50 % | 67 % | 83 % | 100 % |
+| Drop chance | 33 % | 50 % | 67 % | 83 % | 100 % |
 
-Pomocníci bossů a King slime nic nedropnou (a nedávají ani bonusové mince z Midase). Zabití se
-počítají do misí v [Progresi](/docs/progression).
+Boss helpers and King slime drop nothing (and also give no bonus coins from Midas). Kills count toward
+the missions in [Progression](/docs/progression).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Přepadení je náročné, ale odměnou je zbraňová truhla – viz [Artefakty a předměty](/docs/artefacts-items).
-- Ve Spider patře je skoro polovina poolu pavouků; ostatní témata mají pool stejný.
-- Výzvy Horde a Bane dělají z bossů opravdové houby na kulky (Argus má na patře 5 192 HP, s Horde přes 300).
-- Typy místností, témata a mříže popisuje [Dungeon](/docs/dungeon).
+- An ambush is hard, but the reward is a weapon chest – see [Artefacts and items](/docs/artefacts-items).
+- On a Spider floor almost half of the pool is spiders; the other themes have the same pool.
+- The Horde and Bane challenges turn bosses into real bullet sponges (Argus has 192 HP on floor 5, over 300 with Horde).
+- Room types, themes and bars are described in [Dungeon](/docs/dungeon).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Počet nepřátel neroste s patrem – závisí jen na velikosti místnosti.
-- Místnost se neotevře, dokud ve vzduchu letí nepřátelské střely. U King slime to po jeho smrti může
-  chvíli trvat.
-- Nepřítel se může zhmotnit hned vedle tebe – místo objevení nebere ohled na tvou pozici (chrání tě jen
-  to, že zhmotňující se nepřítel 2 s nezraňuje).
-- Všichni bossové kromě King slime se počítají do pojistky dropů jako běžné zabití.
-- Podle příběhu má být patro 5 vždy Temple s finálním bossem, ve hře je téma patra 5 náhodné.
+- The number of enemies does not grow with the floor – it depends only on the room size.
+- The room does not open while enemy projectiles are flying in the air. With King slime this can take a
+  while after its death.
+- An enemy can materialize right next to you – the spawn spot ignores your position (you are protected
+  only by the fact that a materializing enemy does not deal damage for 2 s).
+- All bosses except King slime count toward the drop safeguard as a regular kill.
+- According to the story, floor 5 should always be Temple with the final boss; in the game the theme of floor 5 is random.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Víc nepřátel na vyšších patrech (např. maximum 12 + číslo patra).
-- Vzácní nepřátelé – různé šance na výběr místo rovnoměrného losování.
-- Vlastní nepřátelé pro každé téma, aby se patra lišila i běžnými nepřáteli.
-- Bezpečná vzdálenost od hráče pro místa objevení.
+- More enemies on higher floors (for example a maximum of 12 + the floor number).
+- Rare enemies – different selection chances instead of an even draw.
+- Enemies of their own for each theme, so that the floors differ in regular enemies too.
+- A safe distance from the player for spawn spots.

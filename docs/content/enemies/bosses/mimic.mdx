@@ -1,89 +1,91 @@
 ---
 title: Mimic
-description: Oživlá truhla, která skáče, kouše, plive sliz, rozhazuje falešné mince a zavírá se do neprůstřelné schránky.
+description: A living chest that jumps, bites, spits slime, scatters fake coins and closes into a bulletproof box.
 ---
 
-Truhla s tlamou plnou zubů. Mimic skáče po místnosti, kouše, plive slizy a kolem tebe rozhazuje falešné
-mince, které sklapnou, když na ně šlápneš. Občas se zavře a je chvíli úplně nezranitelný.
+A chest with a mouth full of teeth. Mimic jumps around the room, bites, spits slimes and scatters fake
+coins around you that snap shut when you step on them. Now and then it closes up and is completely
+invulnerable for a while.
 
-## Statistiky
+## Stats
 
 | | |
 |---|---|
-| HP | 115 základ, na patrech 1–5 129–184 |
-| Kontaktní poškození | 2 (na patrech 4–5 3) |
-| Rychlost | 32 % hráče (v zuřivosti 42 %) |
-| Velikost | velký |
-| Kde | kterékoli patro, jen téma Temple |
-| První útok | po 2,2 s |
-| Pauza mezi útoky | 2,6 s (v zuřivosti 1,5 s) |
-| Pomocníci | Saliva slime (nejvýš 4) |
+| HP | 115 base, 129–184 on floors 1–5 |
+| Contact damage | 2 (3 on floors 4–5) |
+| Speed | 32 % of the player (42 % when enraged) |
+| Size | large |
+| Where | any floor, only the Temple theme |
+| First attack | after 2.2 s |
+| Pause between attacks | 2.6 s (1.5 s when enraged) |
+| Helpers | Saliva slime (at most 4) |
 
-## Jak to funguje
+## How it works
 
-Mimic jde za tebou a po pauze zvolí útok. Když jsi blízko (do asi 5 dlaždic), kouše; na dálku spíš
-skáče. Když je v místnosti 4 a víc pomocníků, už neplive, a když leží 8 a víc návnad, už je nerozhazuje.
+Mimic walks after you and picks an attack after a pause. When you are close (within about 5 tiles), it
+bites; at a distance it prefers to jump. When there are 4 or more helpers in the room, it no longer
+spits, and when 8 or more lures are lying around, it no longer scatters them.
 
-| Útok | Šance blízko | Šance daleko | Kdy ne |
+| Attack | Chance when close | Chance when far | When not |
 |---|---|---|---|
-| Hop | střední | vysoká | – |
-| Bite | vysoká | velmi nízká | – |
-| Spit | střední | střední | 4+ pomocníci |
-| Lure | střední | střední | 8+ návnad |
-| Rest | nízká | nízká | – |
+| Hop | medium | high | – |
+| Bite | high | very low | – |
+| Spit | medium | medium | 4+ helpers |
+| Lure | medium | medium | 8+ lures |
+| Rest | low | low | – |
 
-## Obsah
+## Contents
 
-### Hop – skok
+### Hop – jump
 
-- Nápřah 0,2 s provází **vrzání víka**, pak skočí přímo na tebe (asi 2× tvá rychlost) na 0,45 s.
-- Při dopadu se z něj rozletí prstenec **14 mincí** (84 % tvé rychlosti, 2 poškození, 1,8 s).
+- A 0.2 s wind-up comes with the **creaking of a lid**, then it jumps straight at you (about 2× your speed) for 0.45 s.
+- On landing, a ring of **14 coins** flies out of it (84 % of your speed, 2 damage, 1.8 s).
 
-### Bite – kousnutí
+### Bite
 
-- Nápřah asi 0,3 s – vrznutí a **cvaknutí zubů** – pak krátký rychlý výpad.
-- Na konci z tlamy vystřelí vějíř **7 zubů** po tobě – **nejrychlejší nepřátelská střela ve hře**
-  (118 % tvé rychlosti), 2 poškození.
+- A wind-up of about 0.3 s – a creak and the **snap of teeth** – then a short fast lunge.
+- At the end, a fan of **7 teeth** shoots from the mouth at you – **the fastest enemy projectile in the game**
+  (118 % of your speed), 2 damage.
 
-### Spit – plivnutí slizu
+### Spit – spitting slime
 
-- Nápřah asi 0,3 s provází **bublavé chrchlání**, pak vyplivne **Saliva slime** (a spršku slin, které nezraňují).
-- Saliva slime má 5 HP, skáče k tobě a po první smrti se 10 s skládá z louže a vstane s plnými HP (viz
-  [Slizy](/docs/enemies/slimes#saliva-slime--louže-a-oživení)).
+- A wind-up of about 0.3 s comes with a **bubbling gurgle**, then it spits out a **Saliva slime** (and a burst of spit that does no damage).
+- Saliva slime has 5 HP, jumps at you, and after its first death it forms a puddle for 10 s and rises with full HP (see
+  [Slimes](/docs/enemies/slimes#saliva-slime--puddle-and-revival)).
 
-### Lure – návnady
+### Lure
 
-- Nápřah asi 0,4 s provází **cinkání mincí**, pak kolem tebe (2 až 4 dlaždice od tebe) rozmístí **5 návnad** – zlatých mincí na zemi.
-- Návnada vydrží 9 s. Když se k ní přiblížíš (asi na půl dlaždice), sklapne a dá **2 poškození**
-  – **i když zrovna uhýbáš**.
+- A wind-up of about 0.4 s comes with the **jingle of coins**, then it places **5 lures** around you (2 to 4 tiles from you) – gold coins on the ground.
+- A lure lasts 9 s. When you get close to it (about half a tile), it snaps shut and deals **2 damage**
+  – **even if you are dodging**.
 
-### Rest – schránka
+### Rest – box
 
-- Nápřah 0,3 s zakončí **bouchnutí víka a cvaknutí zámku**, pak se na **2,2 s zavře**: stojí na místě a je **imunní vůči jakémukoli poškození**
-  (střely, výbuchy, jed).
-- Jediný obranný útok mezi bossy – využij ho k uhýbání zbylým střelám a likvidaci slizů.
+- A 0.3 s wind-up ends with the **slam of the lid and the click of a lock**, then it **closes for 2.2 s**: it stands in place and is **immune to any damage**
+  (projectiles, explosions, poison).
+- It is the only defensive attack among the bosses – use it to dodge the remaining projectiles and to kill slimes.
 
-### Zuřivost (od poloviny HP)
+### Enrage (from half HP)
 
-Mimic zachrastí a zavrčí, zčervená, zrychlí o 30 % (rychlejší jsou i skoky) a pauza mezi útoky klesne na 1,5 s. Útoky
-samotné se nemění.
+Mimic rattles and growls, turns red, speeds up by 30 % (the jumps are faster too) and the pause between attacks drops to 1.5 s. The attacks
+themselves do not change.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Nesbírej během boje mince ze země – můžou to být návnady. Skutečné mince jsou popsané v
-  [Artefaktech a předmětech](/docs/artefacts-items).
-- Zuby z Bite neutečeš, musíš uhnout do strany.
-- Když se zavře, nestřílej do něj – zabij Saliva slimy.
-- Po porážce zmizí všechny návnady i Saliva slimy včetně louží.
+- Do not pick up coins from the ground during the fight – they may be lures. Real coins are described in
+  [Artefacts and items](/docs/artefacts-items).
+- You cannot outrun the teeth from Bite, you have to dodge to the side.
+- When it closes up, do not shoot at it – kill the Saliva slimes.
+- After it is defeated, all lures and Saliva slimes disappear, including the puddles.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Návnady zraňují i během úhybu, ostatní plošné útoky bossů úhyb vykryje.
-- Jako jediný boss nemá příběh.
-- Zuřivost nemění útoky, jen tempo.
+- Lures hurt even during a dodge, while the other area attacks of bosses are avoided by a dodge.
+- It is the only boss without a story.
+- Enrage does not change the attacks, only the pace.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Mimic převlečený za obyčejnou truhlu v pokladnici, který se probudí, když ji otevřeš.
-- V zuřivosti dvojitý skok nebo víc návnad; v útoku Rest by se mohl léčit.
-- Příběh, který ho zařadí do světa Bane.
+- A Mimic disguised as an ordinary chest in a treasury, which wakes up when you open it.
+- In the enrage a double jump or more lures; during Rest it could heal.
+- A story that places it in the world of Bane.

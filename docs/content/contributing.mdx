@@ -1,46 +1,47 @@
 ---
-title: Jak psát wiki
-description: Kde wiki leží, jak ji spustit a jak přidat novou stránku.
+title: How to write the wiki
+description: Where the wiki lives, how to run it and how to add a new page.
 ---
 
-## Spuštění
+## Running it
 
 ```bash
 cd docs
 pnpm install
 pnpm dev        # http://localhost:3000/docs
-pnpm build      # ověří, že všechny MDX stránky jdou zkompilovat
+pnpm build      # checks that all MDX pages compile
 ```
 
-## Struktura
+## Structure
 
-- `docs/content/<téma>/` — jedna složka na téma (`guns`, `enemies`, …).
-- `index.mdx` — přehled tématu, ostatní `.mdx` jsou podstránky.
-- `meta.json` — název složky v menu, ikona ([lucide](https://lucide.dev/icons)) a pořadí stránek.
-- Ostatní soubory v `docs/` (`app/`, `lib/`, `components/`) jsou Fumadocs aplikace — na obsah je není třeba měnit.
+- `docs/content/<topic>/` — one folder per topic (`guns`, `enemies`, …).
+- `index.mdx` — overview of the topic; the other `.mdx` files are subpages.
+- `meta.json` — the folder name in the menu, the icon ([lucide](https://lucide.dev/icons)) and the page order.
+- Other files in `docs/` (`app/`, `lib/`, `components/`) are the Fumadocs app — you do not need to change them for content.
 
-## Šablona stránky
+## Page template
 
 ```mdx
 ---
-title: Název
-description: Jedna věta.
+title: Name
+description: One sentence.
 ---
 
-Krátký úvod: co to je a jakou roli hraje ve hře.
+Short intro: what it is and what role it plays in the game.
 
-## Jak to funguje
-## Statistiky
-## Obsah
-## Tipy a souvislosti
-## Známé nesrovnalosti
-## Nápady na rozšíření
+## How it works
+## Stats
+## Contents
+## Tips and connections
+## Known inconsistencies
+## Ideas for expansion
 ```
 
-## Pravidla MDX
+## MDX rules
 
-- Znaky menší-než a složené závorky v textu rozbijí build — piš slovy („méně než“).
-- Komponenty: `<Callout type="info|warn|error">`, `<Cards>` + `<Card title href />`.
-- Piš jako herní wiki, ne jako dokumentaci kódu: žádné názvy souborů, typů ani proměnných.
-- Odkazy mezi stránkami: `/docs/<téma>/<stránka>`.
-- Když měníš hodnoty ve hře (damage, HP, ceny), uprav i příslušnou tabulku tady.
+- Less-than signs and curly braces in text break the build — write them in words ("less than").
+- Components: `<Callout type="info|warn|error">`, `<Cards>` + `<Card title href />`.
+- Write like a game wiki, not code documentation: no file names, types or variable names.
+- The wiki is written in simple English. Every page must stay in English.
+- Links between pages: `/docs/<topic>/<page>`.
+- When you change values in the game (damage, HP, prices), update the matching table here too.

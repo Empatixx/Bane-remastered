@@ -1,74 +1,74 @@
 ---
-title: Co hráč umí
-description: Přehled všeho, co může postava aktivně dělat — pohyb, úhyb, střelba, artefakt, interakce s okolím — a pasivních pomocníků.
+title: What the player can do
+description: An overview of everything the character can actively do — movement, dodge, shooting, artefact, interaction with the surroundings — and of passive helpers.
 ---
 
-Postava nemá vlastní kouzla ani speciální schopnosti s nabíjením — jedinou takovou akcí je úhyb. Všechno
-ostatní obstarávají zbraně, jednorázové artefakty a interakce s předměty v okolí.
+The character has no spells or special abilities with cooldowns — the only such action is the dodge. Everything
+else is handled by weapons, one-use artefacts and interaction with items around you.
 
 <Callout type="info">
-Speciální útoky, které vidíš u nepřátel (dopad Smash, výbuch po smrti, jedový mrak, léčení spojenců, samonaváděné
-střely…), jsou schopnosti **nepřátel**, ne hráče — popisuje je stránka [Nepřátelé](/docs/enemies).
+The special attacks you see on enemies (the Smash impact, explosion on death, poison cloud, healing allies, homing
+projectiles…) are abilities of **enemies**, not of the player — they are described on the [Enemies](/docs/enemies) page.
 </Callout>
 
-## Jak to funguje
+## How it works
 
-### Aktivní akce
+### Active actions
 
-| Akce | Klávesa | Omezení | Více |
+| Action | Key | Limit | More |
 |------|---------|---------|------|
-| Chůze | WASD | zpomalují ji povrchy, zmrazení ji zastaví | [Pohyb a úhyb](/docs/player/movement-dodge) |
-| Úhyb s nezranitelností | Space | nabíjení 1,26 s; vypnutý ve výzvě *Two Left Feet* | [Pohyb a úhyb](/docs/player/movement-dodge) |
-| Střelba | levé tlačítko | ne během úhybu ani zmrazení | [Zbraně](/docs/guns) |
-| Přebíjení | R | zbytečné při nekonečné munici | [Zbraně](/docs/guns) |
-| Přepnutí zbraně | 1–9, kolečko | 2 sloty, s *Additional Gun* 3 | [Zbraně](/docs/guns) |
-| Zahození zbraně | Q | zbraň odhodíš směrem ke kurzoru | [Zbraně](/docs/guns) |
-| Použití artefaktu | F | jeden slot, artefakt se použitím spotřebuje | [Artefakty a předměty](/docs/artefacts-items) |
-| Interakce | E | musíš stát u objektu | níže |
-| Velká mapa | Tab | | [Rozhraní](/docs/player/hud) |
+| Walking | WASD | surfaces slow it down, freezing stops it | [Movement and dodge](/docs/player/movement-dodge) |
+| Dodge with invulnerability | Space | 1.26 s cooldown; disabled in the challenge *Two Left Feet* | [Movement and dodge](/docs/player/movement-dodge) |
+| Shooting | left button | not during a dodge or freeze | [Guns](/docs/guns) |
+| Reloading | R | pointless with infinite ammo | [Guns](/docs/guns) |
+| Switching weapons | 1–9, wheel | 2 slots, 3 with *Additional Gun* | [Guns](/docs/guns) |
+| Dropping a weapon | Q | you throw the weapon toward the cursor | [Guns](/docs/guns) |
+| Using the artefact | F | one slot, the artefact is used up | [Artefacts and items](/docs/artefacts-items) |
+| Interaction | E | you must stand next to the object | below |
+| Big map | Tab | | [Interface](/docs/player/hud) |
 
-### Interakce s okolím
+### Interacting with the surroundings
 
-Když stojíš u objektu, se kterým jde něco dělat, objeví se nad ním nápis. Stiskem klávesy Interakce
-(výchozí E) akci provedeš. Nápis vždy ukazuje klávesu, kterou máš opravdu nastavenou — v tabulce je
-uvedený s výchozí klávesou.
+When you stand next to an object you can do something with, a label appears above it. Pressing the Interact key
+(E by default) performs the action. The label always shows the key you actually have set — the table
+lists the default key.
 
-Když stojíš u více objektů najednou (třeba dvě zbraně ležící vedle sebe), nápis se ukáže jen
-u **nejbližšího** z nich a klávesa použije právě ten. Stačí kousek popojít a nabídka se přesune
-na druhý objekt.
+When you stand next to several objects at once (for example two weapons lying side by side), the label shows
+only on the **nearest** one and the key uses exactly that one. Move a little and the prompt switches
+to the other object.
 
-| Objekt | Kde | Nápis | Co se stane |
-|--------|-----|-------|-------------|
-| Portál | lobby | Press E to enter the portal | začne nový běh |
-| Vědec | lobby | Press E to upgrade | otevře / zavře talentové menu |
-| Nástěnka | lobby | Press E to read the board | mise a výzvy |
-| Stůl se zbraněmi | lobby | Press E to upgrade weapons | stromy vylepšení zbraní za zlato |
-| Schody | dungeon | Press E to enter next floor | sestup do dalšího patra |
-| Zbraň na zemi | dungeon | | vezmeš ji; při plných slotech za ni odhodíš tu, kterou držíš |
-| Artefakt na zemi | dungeon | | vymění se s artefaktem ve slotu |
-| Zboží v obchodě | obchod | Press E to buy | koupíš za mince |
-| Hrací automat | obchod (s talentem Gamble Machine) | Press E to spin | zatočení stojí 5 mincí |
+| Object | Where | Label | What happens |
+|--------|-----|-------|-----------|
+| Portal | lobby | Press E to enter the portal | starts a new run |
+| Scientist | lobby | Press E to upgrade | opens / closes the talent menu |
+| Board | lobby | Press E to read the board | missions and challenges |
+| Weapon table | lobby | Press E to upgrade weapons | weapon upgrade trees for gold |
+| Stairs | dungeon | Press E to enter next floor | descend to the next floor |
+| Weapon on the ground | dungeon | | you take it; with full slots you drop the one you hold for it |
+| Artefact on the ground | dungeon | | swaps with the artefact in your slot |
+| Goods in the shop | shop | Press E to buy | you buy with coins |
+| Slot machine | shop (with the talent Gamble Machine) | Press E to spin | a spin costs 5 coins |
 
-Mince, munici a lektvary sbíráš automaticky, když přes ně přejdeš. Truhly se zbraněmi se otevřou dotykem.
+Coins, ammo and potions are picked up automatically when you walk over them. Weapon chests open on touch.
 
-### Pasivní pomocníci
+### Passive helpers
 
-- **Talenty** — trvalá vylepšení z lobby: [Talenty](/docs/player/upgrades).
-- **Mazlíček** — talent *Pet*, kouše nepřátele a sbírá kořist: [Talenty → Pet](/docs/player/upgrades#pet).
-- **Vylepšení zbraní** (např. *Deadeye*): [Zbraně](/docs/guns).
+- **Talents** — permanent upgrades from the lobby: [Talents](/docs/player/upgrades).
+- **Pet** — the talent *Pet*, bites enemies and collects loot: [Talents → Pet](/docs/player/upgrades#pet).
+- **Weapon upgrades** (e.g. *Deadeye*): [Guns](/docs/guns).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Postavy a objekty v lobby (Vědec, nástěnka, stůl se zbraněmi, portál): [Průběh hry a progrese](/docs/progression).
-- Obchod a hrací automat: [Dungeon a svět](/docs/dungeon).
-- Artefakt je jediná „ultimátka“, kterou máš — šetři ho na bosse nebo přeplněné místnosti.
+- Characters and objects in the lobby (Scientist, board, weapon table, portal): [Run and progression](/docs/progression).
+- The shop and the slot machine: [Dungeon and world](/docs/dungeon).
+- The artefact is the only "ultimate" you have — save it for a boss or a crowded room.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Zbraně a artefakty ležící na zemi nemají vlastní nápis — poznáš je jen podle žlutého obrysu.
+- Weapons and artefacts lying on the ground have no label of their own — you only recognize them by a yellow outline.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Vylepšení v rámci běhu („boons“ po místnostech) jako přirozené místo pro aktivní schopnosti.
-- Opakovaně nabíjená schopnost místo jednorázového artefaktu.
-- Kandidáti: útočný dash, granát na pravém tlačítku, odražení projektilů (parry), krátký štít s nabíjením.
+- In-run upgrades ("boons" after rooms) as a natural place for active abilities.
+- A rechargeable ability instead of a one-use artefact.
+- Candidates: an attack dash, a grenade on the right button, deflecting projectiles (parry), a short shield with a cooldown.

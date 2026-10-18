@@ -1,81 +1,82 @@
 ---
-title: Pavouci
-description: Spiderlingové, Bloated spider a Stilt spider – pavoučí nepřátelé tématu Spider.
+title: Spiders
+description: Spiderlings, Bloated spider and Stilt spider – the spider enemies of the Spider theme.
 ---
 
-Pět pavoučích nepřátel patří k tématu **Spider**. Témata pater se v každém runu náhodně zamíchají,
-takže pavoučí patro může přijít hned na začátku, ale klidně až na patře 5 – a s ním i pavouci. Jejich bossem je [Spider king](/docs/enemies/bosses/spider-king), který spiderlingy
-během boje líhne.
+Five spider enemies belong to the **Spider** theme. The floor themes are shuffled randomly in every
+run, so the spider floor can come right at the start, but just as well only on floor 5 – and the
+spiders come with it. Their boss is [Spider king](/docs/enemies/bosses/spider-king), who hatches
+spiderlings during the fight.
 
-## Statistiky
+## Stats
 
-HP na patře 1 (v závorce základní hodnota). Jako všichni běžní nepřátelé sílí o 12 % HP a 8 %
-poškození za patro – viz [Spawnování](/docs/enemies/spawning#síla-podle-patra).
+HP on floor 1 (the base value in brackets). Like all regular enemies they gain 12 % HP and 8 %
+damage per floor – see [Spawning](/docs/enemies/spawning#strength-by-floor).
 
 | | Red spiderling | Green spiderling | Purple spiderling | Bloated spider | Stilt spider |
 |---|--:|--:|--:|--:|--:|
 | HP | 3 (3) | 6 (5) | 3 (3) | 6 (5) | 8 (7) |
-| Poškození | 2 | 2 | 1 | 1 | 1 (dotyk i dopad) |
-| Rychlost | 46 % | 46 % | 55 % | 41 % | 15 % + skoky |
-| Velikost | malá | malá | malá | střední | střední |
-| Schopnost | žádná | léčí spiderlingy při smrti | žádná | jedovatý mrak při smrti | skok na hráče |
+| Damage | 2 | 2 | 1 | 1 | 1 (touch and landing) |
+| Speed | 46 % | 46 % | 55 % | 41 % | 15 % + jumps |
+| Size | small | small | small | medium | medium |
+| Ability | none | heals spiderlings on death | none | poison cloud on death | jump at the player |
 
-## Jak to funguje
+## How it works
 
 ### Red spiderling
 
-Malý rychlý pronásledovatel se 3 HP a bez schopnosti. Spider king ho líhne jako prvního.
+A small fast chaser with 3 HP and no ability. Spider king hatches it first.
 
-### Green spiderling – léčitel
+### Green spiderling – healer
 
-Když zemře, vyléčí všechny živé spiderlingy (červené, zelené i fialové) v okolí asi 1,5 dlaždice o
-**+1 HP** (nejvýš do maxima) a nad nimi se ukáže zelené číslo. Bloated a Stilt spidera neléčí.
-Léčení doprovází tichá zvonivá **melodie**.
+When it dies, it heals all living spiderlings (red, green and purple) within about 1.5 tiles by
+**+1 HP** (up to the maximum) and a green number shows above them. It does not heal Bloated or Stilt
+spiders. The healing is accompanied by a quiet ringing **melody**.
 
 ### Purple spiderling
 
-Nejrychlejší pavouk, ale dává jen 1 poškození. Bez schopnosti.
+The fastest spider, but it deals only 1 damage. No ability.
 
-### Bloated spider – jedovatý mrak
+### Bloated spider – poison cloud
 
-Při smrti vypustí **jedovatý mrak** na 1,4 s:
+On death it releases a **poison cloud** for 1.4 s:
 
-- prasknutí doprovází **syčení** unikajícího plynu,
-- tebe uvnitř zraní za 1,
-- **zraňuje i nepřátele** v mraku (1 za sekundu) – můžeš ho využít proti ostatním pavoukům.
+- the burst is accompanied by the **hiss** of escaping gas,
+- it hurts you for 1 while you are inside,
+- it **also hurts enemies** in the cloud (1 per second) – you can use it against other spiders.
 
-### Stilt spider – skokan
+### Stilt spider – jumper
 
-Sám chodí pomalu, ale útočí skokem:
+It walks slowly on its own, but attacks with a jump:
 
-1. **Plížení** – jde za tebou. Poprvé může skočit po 1,4 s, pak vždy po 2,4 s, a jen když jsi ve
-   vzdálenosti asi 2,5–6,5 dlaždice.
-2. **Přikrčení** – 0,5 s se krčí na místě a ozve se zrychlující **cvakavé štěbetání**. To je tvé varování.
-3. **Skok** – 0,5 s letí na místo, kde jsi byl na konci přikrčení. Během letu tě dotykem nezraní.
-4. **Dopad** – tupé **žuchnutí**. Když jsi blíž než asi 1,75 dlaždice od místa dopadu a neuhýbáš,
-   dostaneš poškození.
-5. **Odpočinek** – 0,8 s stojí, pak znovu plížení.
+1. **Creeping** – it walks after you. It can jump for the first time after 1.4 s, then always after 2.4 s, and only when you are
+   at a distance of about 2.5–6.5 tiles.
+2. **Crouching** – for 0.5 s it crouches in place and an accelerating **clicking chatter** sounds. That is your warning.
+3. **Jump** – for 0.5 s it flies to the spot where you were at the end of the crouch. It does not hurt you by touch during the flight.
+4. **Landing** – a dull **thud**. If you are closer than about 1.75 tiles to the landing spot and do not dodge,
+   you take damage.
+5. **Rest** – it stands for 0.8 s, then creeping again.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Zabíjej Green spiderlingy jako poslední, nebo naopak rychle za sebou, ať se ostatní nestihnou léčit.
-- Bloated spidera zabij uprostřed skupiny – jeho mrak zraní i ostatní.
-- Proti Stilt spiderovi stačí po přikrčení změnit směr – doskočí tam, kde jsi byl.
-- Jedovatý mrak a hadí stopa ([Snake](/docs/enemies/critters#snake--jedovatá-stopa)) fungují stejně jako
-  jedovaté sudy v [dungeonu](/docs/dungeon).
-- Spider king líhne Red → Green → Purple spiderlingy dokola.
-- Úhyb tě ochrání před dopadem skoku ([Hráč](/docs/player)).
+- Kill Green spiderlings last, or conversely quickly one after another, so the others cannot heal in time.
+- Kill Bloated spider in the middle of a group – its cloud hurts the others too.
+- Against Stilt spider it is enough to change direction after the crouch – it lands where you were.
+- The poison cloud and the snake's trail ([Snake](/docs/enemies/critters#snake--poison-trail)) work the same as
+  the poison barrels in the [dungeon](/docs/dungeon).
+- Spider king hatches Red → Green → Purple spiderlings over and over.
+- Dodge protects you from the landing of the jump ([Player](/docs/player)).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Stilt spider nemá na zemi žádný stín ani kruh, kam dopadne – Stone golem ho u padajících kamenů má.
-- Léčení Green spiderlinga nemá na zemi vidět dosah, takže se těžko odhaduje.
-- Red spiderling ani Purple spiderling nemají vlastní schopnost; ve starší verzi hry se Red léčil za
-  zásahy a Purple se teleportoval za hráče.
+- Stilt spider has no shadow or circle on the ground showing where it will land – Stone golem has one for the falling rocks.
+- The healing range of Green spiderling cannot be seen on the ground, so it is hard to judge.
+- Red spiderling and Purple spiderling have no ability of their own; in an older version of the game Red
+  healed itself when hit and Purple teleported behind the player.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Pavouci i v dalších tématech (např. Moss) nebo pavoučí hnízdo jako speciální místnost – dnes
-  pět druhů nepřátel uvidíš jen v pavoučím patře.
-- Vrátit Purple spiderlingovi teleport za hráče, aby měl vlastní identitu.
-- Stín v místě dopadu Stilt spidera.
+- Spiders in other themes too (for example Moss) or a spider nest as a special room – today you see
+  all five enemy kinds only on the spider floor.
+- Give Purple spiderling its teleport behind the player back, so that it has an identity of its own.
+- A shadow at the landing spot of Stilt spider.

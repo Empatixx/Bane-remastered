@@ -1,72 +1,74 @@
 ---
-title: Nepřátelské střely
-description: Všechny střely a plošné útoky nepřátel – jak rychle letí, kolik zraňují a kdo je používá.
+title: Enemy projectiles
+description: All enemy projectiles and area attacks – how fast they fly, how much damage they deal and who uses them.
 ---
 
-Kromě kontaktu tě nepřátelé zraňují střelami a plošnými útoky. Běžní střelci (slizy, Eye watcher) mají
-slabé střely za 1 poškození, bossové kamenné a ostré střely za 2.
+Besides contact, enemies hurt you with projectiles and area attacks. Regular shooters (slimes, Eye
+watcher) have weak projectiles that deal 1 damage, while bosses have stone and sharp projectiles that
+deal 2.
 
-## Jak to funguje
+## How it works
 
-- Střela letí rovně stálou rychlostí, dokud nenarazí do zdi, do tebe nebo do pevného objektu. Pak se
-  přehraje animace dopadu.
-- Některé střely mají omezenou dobu letu – po ní zmizí samy.
-- Nepřátelské střely **prolétají skrz ostatní nepřátele**.
-- V pavučinách zpomalují.
-- Každá střela svítí svou barvou, takže je vidět i ve tmě.
-- Zásah ti stejně jako kontakt ubere armor, pak HP, a dá ti 1 s nezranitelnosti.
-- Poškození střel neroste s patrem, jen s výzvami Horde a Bane.
+- A projectile flies straight at a constant speed until it hits a wall, you or a solid object. Then
+  an impact animation plays.
+- Some projectiles have a limited flight time – after that they disappear on their own.
+- Enemy projectiles **fly through other enemies**.
+- They slow down in webs.
+- Every projectile glows in its own color, so it is visible even in the dark.
+- A hit takes your armor first, then HP, just like contact, and gives you 1 s of invulnerability.
+- Projectile damage does not grow with the floor, only with the Horde and Bane challenges.
 
-Rychlost je v procentech tvé rychlosti.
+Speed is given as a percentage of your speed.
 
-## Obsah
+## Contents
 
-### Střely
+### Projectiles
 
-| Střela | Velikost | Rychlost | Poškození | Doba letu | Kdo ji používá |
+| Projectile | Size | Speed | Damage | Flight time | Used by |
 |---|---|--:|--:|---|---|
-| Zelená | malá | 79 % | 1 | do zdi | Slime (salva 5) |
-| Červená | malá | 79 % | 1 | do zdi | Red slime (výbuch při smrti) |
-| Fialová | malá | 79 % | 1 | do zdi | King slime (salva 25 + spirála) |
-| Oko | velká | 62 %, naváděná | 1 | 5 s | Eye watcher |
-| Kámen | střední | 75 % | 2 | 2,4 s | Stone golem (Slam), Sewer ogre (Jump, Slam) |
-| Balvan | velká | 61 % | 2 | 3,2 s | Stone golem (Throw) |
-| Střela Arguse | střední | 81 % | 1 | 4 s | Argus (Volley, Barrage) |
-| Žhavý uhlík | velká | 47 % | 1 | 3 s | Hellhound (Howl) |
-| Mince Mimica | střední | 84 % | 2 | 1,8 s | Mimic (Hop) |
-| Zub Mimica | střední | 118 % | 2 | 1,5 s | Mimic (Bite) |
+| Green | small | 79 % | 1 | until a wall | Slime (volley of 5) |
+| Red | small | 79 % | 1 | until a wall | Red slime (burst on death) |
+| Purple | small | 79 % | 1 | until a wall | King slime (volley of 25 + spiral) |
+| Eye | large | 62 %, homing | 1 | 5 s | Eye watcher |
+| Rock | medium | 75 % | 2 | 2.4 s | Stone golem (Slam), Sewer ogre (Jump, Slam) |
+| Boulder | large | 61 % | 2 | 3.2 s | Stone golem (Throw) |
+| Argus projectile | medium | 81 % | 1 | 4 s | Argus (Volley, Barrage) |
+| Hot ember | large | 47 % | 1 | 3 s | Hellhound (Howl) |
+| Mimic's coin | medium | 84 % | 2 | 1.8 s | Mimic (Hop) |
+| Mimic's tooth | medium | 118 % | 2 | 1.5 s | Mimic (Bite) |
 
-### Ostatní útoky
+### Other attacks
 
-| Útok | Poškození | Jak funguje | Kdo |
+| Attack | Damage | How it works | Who |
 |---|--:|---|---|
-| Pavučina | 0 | rychle vyletí, zpomalí a zůstane ležet; zpomalí tě na 50 % | Spider king |
-| Padající kámen | 2 | na zemi se 0,7 s ukazuje stín, pak dopad do plochy asi 2 × 2 dlaždice | Stone golem (Rain) |
-| Laser | 2 | otáčivý paprsek přes celou místnost (do zdi) | Stone golem (Laser) |
-| Plamenný paprsek | 1 | 2–3 otáčivé paprsky přes celou místnost | Hellhound (Breath) |
-| Magma | 2, **ignoruje armor** | rozžhavené dlaždice u zdí, každá vydrží 16 s | Hellhound |
-| Návnada | 2 | falešná mince na zemi, sklapne, když na ni šlápneš; vydrží 9 s | Mimic (Lure) |
-| Jedovatý mrak | 1 | 1,4 s, zraňuje i nepřátele | Bloated spider (při smrti) |
-| Jedovatá stopa | 1 | vydrží 5 s, zraňuje jen tebe | Snake |
-| Dopad skoku | jako pavouk | zasáhne okolí místa dopadu (asi 1,75 dlaždice) | Stilt spider |
+| Web | 0 | shoots out quickly, slows down and stays on the ground; slows you to 50 % | Spider king |
+| Falling rock | 2 | a shadow shows on the ground for 0.7 s, then it lands in an area of about 2 × 2 tiles | Stone golem (Rain) |
+| Laser | 2 | a rotating beam across the whole room (up to the wall) | Stone golem (Laser) |
+| Flame beam | 1 | 2–3 rotating beams across the whole room | Hellhound (Breath) |
+| Magma | 2, **ignores armor** | glowing tiles by the walls, each lasts 16 s | Hellhound |
+| Lure | 2 | a fake coin on the ground that snaps shut when you step on it; lasts 9 s | Mimic (Lure) |
+| Poison cloud | 1 | 1.4 s, also hurts enemies | Bloated spider (on death) |
+| Poison trail | 1 | lasts 5 s, hurts only you | Snake |
+| Jump landing | like a spider | hits the area around the landing spot (about 1.75 tiles) | Stilt spider |
 
-Díky 1 s nezranitelnosti po zásahu tě paprsky a stopy reálně zraní nejvýš jednou za sekundu.
+Thanks to the 1 s of invulnerability after a hit, beams and trails can realistically hurt you at most
+once per second.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Artefakt **Midas** promění nepřátelské střely v mince – viz [Artefakty a předměty](/docs/artefacts-items).
-- **Úhyb** tě ochrání před dopady, paprsky a magmatem (ale ne před návnadami Mimica). Viz [Hráč](/docs/player).
-- Naváděná střela Eye watchera zatáčí plynule – ostrým úhybem do strany ji setřeseš.
-- Zuby Mimica jsou jediná nepřátelská střela rychlejší než ty – neutečeš jim, musíš uhnout do strany.
-- Pavučiny na zemi v [dungeonu](/docs/dungeon) zpomalují i nepřátelské střely.
+- The **Midas** artefact turns enemy projectiles into coins – see [Artefacts and items](/docs/artefacts-items).
+- **Dodge** protects you from landings, beams and magma (but not from Mimic's lures). See [Player](/docs/player).
+- Eye watcher's homing projectile turns smoothly – a sharp dodge to the side shakes it off.
+- Mimic's teeth are the only enemy projectile faster than you – you cannot outrun them, you have to dodge to the side.
+- Webs on the ground in the [dungeon](/docs/dungeon) also slow down enemy projectiles.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Pavučiny Spider kinga nikdy nezmizí samy – během dlouhého boje se hromadí až do smrti bosse.
-- Zelená, červená a fialová střela vypadají a letí stejně – podle vzhledu nepoznáš, která je nebezpečnější.
+- Spider king's webs never disappear on their own – during a long fight they pile up until the boss dies.
+- The green, red and purple projectiles look and fly the same – you cannot tell by looking which one is more dangerous.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Odlišit malé střely velikostí nebo rychlostí podle toho, jak jsou nebezpečné.
-- Nové vzory střel: vlnovka, bumerang, střela, která se po chvíli rozštěpí.
-- Víc naváděných střel – dnes je má jen Eye watcher.
+- Tell the small projectiles apart by size or speed according to how dangerous they are.
+- New projectile patterns: a wave, a boomerang, a projectile that splits after a moment.
+- More homing projectiles – today only Eye watcher has them.

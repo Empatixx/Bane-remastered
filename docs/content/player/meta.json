@@ -1,5 +1,5 @@
 {
-  "title": "Hráč",
+  "title": "Player",
   "icon": "User",
   "pages": ["index", "controls", "movement-dodge", "damage", "abilities", "upgrades", "stats", "hud"]
 }

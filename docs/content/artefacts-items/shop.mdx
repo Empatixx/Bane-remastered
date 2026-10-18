@@ -1,90 +1,90 @@
 ---
-title: Obchod a Sacrifice
-description: Obchodní místnost se třemi stoly, ceny rostoucí s patrem, slevy z talentu Discount a pentagram, kde se platí vlastním zdravím.
+title: Shop and Sacrifice
+description: A shop room with three tables, prices that grow with the floor, discounts from the Discount talent, and a pentagram where you pay with your own health.
 ---
 
-Na každém patře najdeš jeden obchod, kde za mince koupíš lektvar, munici nebo novou zbraň či artefakt. Některá patra navíc skrývají místnost **Sacrifice** s pentagramem, kde se neplatí mincemi, ale vlastní krví.
+On every floor you find one shop where you buy a potion, ammo, or a new gun or artefact for coins. Some floors also hide a **Sacrifice** room with a pentagram, where you pay not with coins but with your own blood.
 
-## Jak to funguje
+## How it works
 
-### Obchodní místnost
+### Shop room
 
-Uprostřed horní části stojí obchodník, v polovině místnosti **tři stoly se zbožím**, dole dva rozbitné květináče a – jen s talentem **Gamble Machine** – vpravo nahoře [hrací automat](/docs/artefacts-items/slot-machine). Nabídka se vygeneruje jednou při vzniku patra a už se nemění.
+In the middle of the upper part stands the merchant, in the middle of the room are **three tables with goods**, at the bottom are two breakable flowerpots and - only with the **Gamble Machine** talent - the [slot machine](/docs/artefacts-items/slot-machine) at the top right. The offer is generated once when the floor is created and does not change.
 
-| Stůl | Kategorie | Zboží | Cena |
+| Table | Category | Goods | Price |
 |---|---|---|---|
-| levý | Obrana | velký lektvar – napůl zdraví, napůl armor (+4) | ×1,5 |
-| prostřední | Munice | univerzální munice (+50 % rezervy všech zbraní) | ×1 |
-| pravý | Útok | 50 %: zbraň, kterou ještě nemáš (pokud nějaká zbývá), jinak artefakt jiný než ten, který držíš | ×2 |
+| left | Defense | large potion - half health, half armor (+4) | x1.5 |
+| middle | Ammo | universal ammo (+50% reserve of all guns) | x1 |
+| right | Attack | 50%: a gun you do not have yet (if any remain), otherwise an artefact other than the one you hold | x2 |
 
-### Ceny
+### Prices
 
-Základní cena je náhodně 1–4 mince krát číslo patra, vynásobená koeficientem stolu (zaokrouhleno dolů). Ceny tedy s každým patrem rostou:
+The base price is a random 1-4 coins times the floor number, multiplied by the table coefficient (rounded down). So prices grow with each floor:
 
-| Patro | Munice | Obrana | Útok |
+| Floor | Ammo | Defense | Attack |
 |---|---|---|---|
-| 1 | 1–4 | 1, 3, 4, 6 | 2, 4, 6, 8 |
-| 2 | 2–8 | 3–12 | 4–16 |
-| 3 | 3–12 | 4, 9, 13, 18 | 6–24 |
-| 4 | 4–16 | 6–24 | 8–32 |
-| 5 | 5–20 | 7, 15, 22, 30 | 10–40 |
+| 1 | 1-4 | 1, 3, 4, 6 | 2, 4, 6, 8 |
+| 2 | 2-8 | 3-12 | 4-16 |
+| 3 | 3-12 | 4, 9, 13, 18 | 6-24 |
+| 4 | 4-16 | 6-24 | 8-32 |
+| 5 | 5-20 | 7, 15, 22, 30 | 10-40 |
 
-### Slevy (talent Discount)
+### Discounts (Discount talent)
 
-S talentem **Discount** ([Perky](/docs/artefacts-items/perks)) má každý obchod šanci, že na **jednom náhodném stole** bude sleva:
+With the **Discount** talent ([Perks](/docs/artefacts-items/perks)), every shop has a chance of a discount on **one random table**:
 
-| Výsledek | Nápis | Nová cena | Šance |
+| Result | Label | New price | Chance |
 |---|---|---|---|
-| malá sleva | −25% | 75 % původní | 23 % |
-| střední sleva | −50% | 50 % původní | 5 % |
-| velká sleva | −75% | 25 % původní | 5 % |
-| bez slevy | – | 100 % | 67 % |
+| small discount | -25% | 75% of original | 23% |
+| medium discount | -50% | 50% of original | 5% |
+| large discount | -75% | 25% of original | 5% |
+| no discount | - | 100% | 67% |
 
-Cena po slevě je vždy alespoň 1 mince. Zlevněné zboží má zelenou cenovku a nad ní nápis s tím, kolik se z ceny odečítá (např. „−75%“).
+The price after a discount is always at least 1 coin. Discounted goods have a green price tag and a label above it showing how much is taken off the price (e.g. "-75%").
 
-### Nákup
+### Buying
 
-- Postav se k zboží a stiskni **E** („Press E to buy“). Máš-li dost mincí, zaplatíš a obchodník poděkuje: „Enjoy your purchase!“
-- Lektvar nebo munice se použije hned, pokud to jde. Jinak zboží zůstane ležet jako běžný pickup a sebereš ho později dotykem.
-- Zbraň nebo artefakt se ti rovnou vloží do výbavy; to, co tím nahradíš, vypadne na zem.
-- Obchodník mlčí: nic neřekne při vstupu ani po nákupu.
-- Zboží v obchodě nikdy nezmizí.
+- Stand next to the goods and press **E** ("Press E to buy"). If you have enough coins, you pay and the merchant thanks you: "Enjoy your purchase!"
+- A potion or ammo is used right away, if possible. Otherwise the goods stay on the ground as a regular pickup and you collect them later by touch.
+- A gun or artefact is put straight into your gear; whatever it replaces drops to the ground.
+- The merchant is silent: he says nothing on entry or after a purchase.
+- Goods in the shop never disappear.
 
 ### Sacrifice (pentagram)
 
-- Místnost Sacrifice se objeví zhruba na každém druhém patře (0 nebo 1). Je v ní andělská socha, pět svící, knihy, řetězy a uprostřed **pentagram**.
-- Na pentagramu leží jedno zboží náhodné kategorie (obrana, munice nebo útok – každá s třetinovou šancí), se stejným výběrem jako na stolech.
-- Cena: **1–3 zdraví**. Platí se ze zdraví, ne z armoru.
-- Koupit lze jen tehdy, když máš **víc** zdraví, než je cena – obětí se zabít nedá.
-- Po oběti zazní rituální zvuk a **všechny svíce v místnosti zhasnou**.
+- A Sacrifice room appears on roughly every second floor (0 or 1). It has an angel statue, five candles, books, chains and a **pentagram** in the middle.
+- On the pentagram lies one item of a random category (defense, ammo or attack - each with a one-third chance), chosen the same way as on the tables.
+- Price: **1-3 health**. It is paid from health, not from armor.
+- You can buy only when you have **more** health than the price - you cannot kill yourself with the sacrifice.
+- After the sacrifice a ritual sound plays and **all candles in the room go out**.
 
-## Obsah
+## Contents
 
-| Místo | Zboží | Měna | Počet |
+| Place | Goods | Currency | Count |
 |---|---|---|---|
-| Stůl Obrana | velký lektvar zdraví / armoru | mince | 1 |
-| Stůl Munice | univerzální munice | mince | 1 |
-| Stůl Útok | zbraň nebo artefakt | mince | 1 |
-| Pentagram | cokoliv z výše uvedených | 1–3 zdraví | 0–1 |
-| Automat | hazard | 5 mincí | 1 (jen s talentem Gamble Machine) |
+| Defense table | large health / armor potion | coins | 1 |
+| Ammo table | universal ammo | coins | 1 |
+| Attack table | gun or artefact | coins | 1 |
+| Pentagram | anything from the above | 1-3 health | 0-1 |
+| Slot machine | gambling | 5 coins | 1 (only with the Gamble Machine talent) |
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Dungeon](/docs/dungeon) – obchod je na každém patře, kromě challenge **Merchant's Strike**, kde se negeneruje vůbec. Sacrifice na obchodě nezávisí.
-- [Zbraně](/docs/guns) – zbraň z obchodu už má aplikované vylepšení zbraní. V challenge Pistol Only se zbraně nenabízejí, takže stůl Útok má vždy artefakt.
-- [Artefakty](/docs/artefacts-items/artefacts) – stůl Útok je nejspolehlivější zdroj artefaktů.
-- Pentagram se vyplatí, když máš plné zdraví a hodně armoru – zdraví si pak doplníš lektvarem nebo Blood Chalicem.
-- Nekupuj lektvar při plném zdraví – mince zaplatíš a lektvar jen zůstane ležet.
+- [Dungeon](/docs/dungeon) - the shop is on every floor, except in the **Merchant's Strike** challenge, where it is not generated at all. Sacrifice does not depend on the shop.
+- [Guns](/docs/guns) - a gun from the shop already has the gun upgrades applied. In the Pistol Only challenge guns are not offered, so the Attack table always has an artefact.
+- [Artefacts](/docs/artefacts-items/artefacts) - the Attack table is the most reliable source of artefacts.
+- The pentagram pays off when you have full health and a lot of armor - you then refill health with a potion or Blood Chalice.
+- Do not buy a potion at full health - you pay the coins and the potion just stays on the ground.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- **Nákup nepoužitelného zboží** (lektvar při plném zdraví) mince sebere bez varování.
-- **Obchodník umí jen dvě věty** – plánovaný cyklus replik podle počtu návštěv zatím ve hře není. Oltář v Sacrifice místnosti nemluví vůbec.
-- Původní verze hry měla v obchodě 3–5 předmětů a jiný výpočet cen; současná verze má vždy 3 stoly.
+- **Buying unusable goods** (a potion at full health) takes the coins without a warning.
+- **The merchant knows only two sentences** - the planned cycle of lines by number of visits is not in the game yet. The altar in the Sacrifice room does not speak at all.
+- The original version of the game had 3-5 items in the shop and a different price calculation; the current version always has 3 tables.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Přehození nabídky (re-roll) za mince.
-- Vlastní hlas oltáře – podle příběhu „mluví velkými písmeny“.
-- Varování nebo zablokování nákupu, když zboží nemůžeš hned použít.
-- Další stoly nebo kategorie zboží (např. jen artefakty, jen lektvary).
+- Re-rolling the offer for coins.
+- A voice for the altar - according to the story it "speaks in capital letters".
+- A warning or a blocked purchase when you cannot use the goods right away.
+- More tables or categories of goods (e.g. artefacts only, potions only).

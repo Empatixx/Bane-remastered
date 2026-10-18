@@ -1,91 +1,91 @@
 ---
-title: Kde a jak co padá
-description: Všechny zdroje lootu – nepřátelé, bedny, truhly, bossové, Ambush místnosti, obchod, automat a artefakty – i s pravděpodobnostmi.
+title: Where and how things drop
+description: All loot sources - enemies, crates, chests, bosses, Ambush rooms, the shop, the slot machine and artefacts - with probabilities.
 ---
 
-Tato stránka shrnuje, odkud v Bane loot přichází a s jakou šancí. Veškerý loot se řídí seedem runu – při stejném seedu najdeš stejné obchody a truhly a při stejné hře i stejné dropy.
+This page summarizes where loot comes from in Bane and with what chance. All loot follows the run seed - with the same seed you find the same shops and chests, and with the same play you get the same drops.
 
-## Jak to funguje
+## How it works
 
-### 1. Nepřátelé
+### 1. Enemies
 
-Drop se rozhoduje ve chvíli, kdy nepřítel dohraje animaci smrti. Hra si pamatuje, kolik nepřátel jsi zabil od posledního dropu, a s každým dalším zabitím šance roste:
+The drop is decided when the enemy finishes its death animation. The game remembers how many enemies you have killed since the last drop, and the chance grows with each further kill:
 
-| Zabití od posledního dropu | Šance na drop |
+| Kills since last drop | Drop chance |
 |---|---|
-| 1. | 33 % |
-| 2. | 50 % |
-| 3. | 67 % |
-| 4. | 83 % |
-| 5. | 100 % (garantovaný) |
+| 1st | 33% |
+| 2nd | 50% |
+| 3rd | 67% |
+| 4th | 83% |
+| 5th | 100% (guaranteed) |
 
-- Po dropu se počítadlo vynuluje.
-- Co padne: **25 % mince, 50 % pistolová munice, 25 % brokovnicová munice**. Předmět zmizí po 10 s.
-- **King Slime a všichni vyvolaní minioni nic nedropují.** Minioni se ani nepočítají do statistiky zabití.
+- After a drop, the counter resets.
+- What drops: **25% coin, 50% pistol ammo, 25% shotgun ammo**. The item disappears after 10 s.
+- **King Slime and all summoned minions drop nothing.** Minions do not even count toward the kill statistics.
 
-### 2. Rozbitné objekty
+### 2. Breakable objects
 
-- Květináče a sudy (obyčejné, výbušné, jedové i mrazivé) mají 4 body výdrže.
-- Po rozbití padne **vždy 1 předmět** (mince nebo munice, stejné šance jako u nepřátel), který zmizí po 10 s. Speciální sudy navíc vybuchnou, zmrazí nebo vylijí jed.
-- Více o objektech: [Dungeon](/docs/dungeon).
+- Flowerpots and barrels (plain, explosive, poison and frost) have 4 hit points.
+- When broken, they **always drop 1 item** (coin or ammo, same chances as for enemies), which disappears after 10 s. Special barrels also explode, freeze or spill poison.
+- More about objects: [Dungeon](/docs/dungeon).
 
-### 3. Truhly
+### 3. Chests
 
-- Otevírají se **dotykem**, ne klávesou.
-- Po animaci otevření truhla zmizí a do kruhu vystřelí **5 běžných předmětů** (mince / munice) – ty **nemizí**.
-- Navíc podle druhu truhly:
+- They open on **touch**, not with a key.
+- After the opening animation the chest disappears and **5 regular items** (coins / ammo) shoot out in a circle - they **do not disappear**.
+- In addition, depending on the chest type:
 
-| Truhla | Kde se objeví | Obsah navíc |
+| Chest | Where it appears | Extra contents |
 |---|---|---|
-| Zbraňová | uprostřed Treasure místnosti (1 na patro) a po vyčištění každé Ambush místnosti | náhodná zbraň, kterou ještě nemáš (pokud nějaká zbývá) |
-| Artefaktová | po poražení bosse, nad středem arény | náhodný artefakt kromě toho, který právě držíš |
+| Weapon | in the middle of the Treasure room (1 per floor) and after clearing every Ambush room | a random gun you do not have yet (if any remain) |
+| Artefact | after defeating a boss, above the center of the arena | a random artefact other than the one you hold |
 
-### 4. Obchod a Sacrifice
+### 4. Shop and Sacrifice
 
-Viz [Obchod](/docs/artefacts-items/shop) – tři stoly (velký lektvar / univerzální munice / zbraň nebo artefakt) a pentagram, kde platíš zdravím. V obchodě stojí i 2 květináče.
+See [Shop](/docs/artefacts-items/shop) - three tables (large potion / universal ammo / gun or artefact) and a pentagram where you pay with health. The shop also has 2 flowerpots.
 
-### 5. Hrací automat
+### 5. Slot machine
 
-Jen s talentem Gamble Machine. Viz [Automat](/docs/artefacts-items/slot-machine) – mince, sprška 5 předmětů nebo vzácná cena (lektvar, univerzální munice, zbraň, artefakt).
+Only with the Gamble Machine talent. See [Slot machine](/docs/artefacts-items/slot-machine) - coins, a burst of 5 items, or a rare prize (potion, universal ammo, gun, artefact).
 
-### 6. Artefakty
+### 6. Artefacts
 
-- [Midas Coin](/docs/artefacts-items/artefacts/midas-coin) – promění nepřátelské střely v mince a 6 s dává +2 mince za zabití.
-- [Blood Chalice](/docs/artefacts-items/artefacts/blood-chalice) – léčení místo předmětů.
+- [Midas Coin](/docs/artefacts-items/artefacts/midas-coin) - turns enemy projectiles into coins and gives +2 coins per kill for 6 s.
+- [Blood Chalice](/docs/artefacts-items/artefacts/blood-chalice) - healing instead of items.
 
-### 7. Výměna
+### 7. Swapping
 
-Když sebereš nový artefakt, starý ti vypadne na zem. Totéž platí pro zbraň při plném arzenálu (viz [Zbraně](/docs/guns)).
+When you pick up a new artefact, the old one drops to the ground. The same goes for a gun when your arsenal is full (see [Guns](/docs/guns)).
 
-## Obsah
+## Contents
 
-| Zdroj | Mince | Munice | Lektvary | Zbraň | Artefakt | Mizí? |
+| Source | Coins | Ammo | Potions | Gun | Artefact | Disappears? |
 |---|---|---|---|---|---|---|
-| Nepřítel | 25 % z dropu | 75 % z dropu | – | – | – | ano, 10 s |
-| Bedna / sud / květináč | 25 % | 75 % | – | – | – | ano, 10 s |
-| Treasure truhla | 5 běžných předmětů | 5 běžných předmětů | – | ano | – | ne |
-| Ambush truhla | 5 běžných předmětů | 5 běžných předmětů | – | ano | – | ne |
-| Truhla po bossovi | 5 běžných předmětů | 5 běžných předmětů | – | – | ano | ne |
-| Obchod | – | univerzální | velký | 50 % | 50 % a víc | ne |
-| Pentagram | – | univerzální | velký | ano | ano | ne |
-| Automat | 10 / 15 / 10 | ve spršce předmětů | malý / velký | vzácně | vzácně | ano (kromě zbraně a artefaktu) |
-| Midas Coin | ano | – | – | – | – | ano, 10 s |
+| Enemy | 25% of the drop | 75% of the drop | - | - | - | yes, 10 s |
+| Crate / barrel / flowerpot | 25% | 75% | - | - | - | yes, 10 s |
+| Treasure chest | 5 regular items | 5 regular items | - | yes | - | no |
+| Ambush chest | 5 regular items | 5 regular items | - | yes | - | no |
+| Chest after a boss | 5 regular items | 5 regular items | - | - | yes | no |
+| Shop | - | universal | large | 50% | 50% and more | no |
+| Pentagram | - | universal | large | yes | yes | no |
+| Slot machine | 10 / 15 / 10 | in the item burst | small / large | rarely | rarely | yes (except gun and artefact) |
+| Midas Coin | yes | - | - | - | - | yes, 10 s |
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Nepřátelé](/docs/enemies) – kdo dropuje a kdo ne.
-- [Dungeon](/docs/dungeon) – na každém patře je 1 Treasure, 1 obchod (kromě challenge Merchant's Strike), 0–1 Sacrifice, 1–2 Ambush a boss.
-- [Pet](/docs/artefacts-items/pet) – sbírá dropy za tebe.
-- Garantovaný drop po pátém zabití znamená, že v průměru padne něco zhruba každé třetí zabití.
+- [Enemies](/docs/enemies) - who drops and who does not.
+- [Dungeon](/docs/dungeon) - every floor has 1 Treasure, 1 shop (except in the Merchant's Strike challenge), 0-1 Sacrifice, 1-2 Ambush and a boss.
+- [Pet](/docs/artefacts-items/pet) - collects drops for you.
+- The guaranteed drop after the fifth kill means that on average something drops roughly every third kill.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- **Počítadlo „zabití bez dropu“ se mezi patry nenuluje** – rozehranou sérii si neseš do dalšího patra.
-- **Mince jsou vzácné** – v průměru padne zhruba 1 mince na 12 zabití, zatímco ceny v obchodě s patrem rostou.
-- **Treasure místnost má vždy zbraňovou truhlu** – nikdy artefaktovou ani zamčenou.
+- **The "kills without a drop" counter does not reset between floors** - you carry a running streak to the next floor.
+- **Coins are rare** - on average roughly 1 coin drops per 12 kills, while shop prices grow with the floor.
+- **The Treasure room always has a weapon chest** - never an artefact chest or a locked one.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Širší pool dropů: malý lektvar (např. 5 %), vzácný artefakt z elitních nepřátel, vlastní drop bossů mimo truhlu.
-- Statistika „štěstí“ nebo talent, který zvedá šanci na drop.
-- Balanc přísunu mincí vůči cenám v pozdějších patrech.
+- A wider drop pool: a small potion (e.g. 5%), a rare artefact from elite enemies, boss drops of their own outside the chest.
+- A "luck" stat or a talent that raises the drop chance.
+- Balancing the coin supply against prices on later floors.

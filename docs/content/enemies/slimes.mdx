@@ -1,70 +1,70 @@
 ---
-title: Slizy
-description: Slime, Red slime a Saliva slime – pomalí střelci, výbušná odveta a sliz, který vstane z louže.
+title: Slimes
+description: Slime, Red slime and Saliva slime – slow shooters, an explosive retaliation and a slime that rises from a puddle.
 ---
 
-Slizy se plazí velmi pomalu, ale střílejí. Slime a Red slime jsou běžní nepřátelé na všech patrech
-a ve všech tématech; Saliva slime je pomocník bosse [Mimic](/docs/enemies/bosses/mimic). Jejich velkým
-bratrem je boss [King slime](/docs/enemies/bosses/king-slime).
+Slimes crawl very slowly, but they shoot. Slime and Red slime are regular enemies on all floors and in
+all themes; Saliva slime is a helper of the boss [Mimic](/docs/enemies/bosses/mimic). Their big
+brother is the boss [King slime](/docs/enemies/bosses/king-slime).
 
-## Statistiky
+## Stats
 
 | | Slime | Red slime | Saliva slime |
 |---|--:|--:|--:|
-| Druh | běžný | běžný | pomocník Mimica |
-| HP | 9 | 9 | 5 (+ jedno oživení) |
-| Kontaktní poškození | 1 | 1 | 1 |
-| Rychlost | 7 % | 7 % | 34 %, jen při skoku |
-| Patra | všechna | všechna | jen v boji s Mimicem |
-| Schopnost | salva 5 střel, drží odstup | střely při smrti | skoky, vstane z louže |
+| Kind | regular | regular | Mimic's helper |
+| HP | 9 | 9 | 5 (+ one revival) |
+| Contact damage | 1 | 1 | 1 |
+| Speed | 7 % | 7 % | 34 %, only while jumping |
+| Floors | all | all | only in the Mimic fight |
+| Ability | volley of 5 projectiles, keeps its distance | projectiles on death | jumps, rises from a puddle |
 
-HP běžných slizů roste s patrem (viz [Spawnování](/docs/enemies/spawning#síla-podle-patra)).
+The HP of regular slimes grows with the floor (see [Spawning](/docs/enemies/spawning#strength-by-floor)).
 
-## Jak to funguje
+## How it works
 
-### Slime – salva a odstup
+### Slime – volley and distance
 
-- Každé **2 sekundy** vystřelí 5 zelených střel rovnoměrně do kruhu. První salvu vypálí hned po zhmotnění.
-- Každou salvu provází mlaskavé **plesknutí**.
-- Zelená střela: malá, 79 % tvé rychlosti, 1 poškození, letí až do zdi.
-- Jediný běžný nepřítel, který **drží odstup**: když jsi blíž než asi 4,5 dlaždice, zastaví se, a když
-  jsi blíž než 3 dlaždice, couvá (viz [Chování a pohyb](/docs/enemies/ai)).
+- Every **2 seconds** it fires 5 green projectiles evenly in a circle. It fires the first volley right after materializing.
+- Every volley is accompanied by a squelchy **splat**.
+- Green projectile: small, 79 % of your speed, 1 damage, flies until it hits a wall.
+- The only regular enemy that **keeps its distance**: when you are closer than about 4.5 tiles, it
+  stops, and when you are closer than 3 tiles, it backs off (see [Behavior and movement](/docs/enemies/ai)).
 
-### Red slime – odveta za zásahy
+### Red slime – retaliation for hits
 
-- Počítá, kolikrát jsi ho trefil střelou nebo pomocníkem.
-- Při smrti vystřelí **dvakrát tolik červených střel, kolik zásahů dostal** – polovinu ve spirále,
-  polovinu v pravidelném kruhu. Zabití jednou silnou ranou = 2 střely, „ukousání“ brokovnicí nebo
-  samopalem = desítky střel.
-- Výbuch při smrti doprovází hlasité **mlasknutí** – když ho uslyšíš, čekej spršku střel.
-- Jinak se jen pomalu plazí za tebou (odstup nedrží).
-- Červená střela má stejné vlastnosti jako zelená.
+- It counts how many times you hit it with a projectile or a helper.
+- On death it fires **twice as many red projectiles as the hits it took** – half in a spiral, half in a
+  regular circle. Killing it with one strong blow = 2 projectiles, "nibbling" it with a shotgun or
+  submachine gun = dozens of projectiles.
+- The burst on death is accompanied by a loud **smack** – when you hear it, expect a shower of projectiles.
+- Otherwise it just slowly crawls after you (it does not keep its distance).
+- The red projectile has the same properties as the green one.
 
-### Saliva slime – louže a oživení
+### Saliva slime – puddle and revival
 
-- Vyplivne ho Mimic útokem Spit (jen když je v místnosti méně než 4 pomocníci). Je aktivní hned, bez
-  zhmotnění, a nic nedropne.
-- Pohybuje se skoky: chvíli stojí, pak skočí přímo k tobě (asi 0,4 s), pak odpočívá zhruba 0,5–0,8 s.
-- **První smrt**: místo umření se rozteče v louži. 10 s je louží – nedá se trefit a neútočí. Na konci
-  se znovu slije a vstane s plnými HP.
-- **Druhá smrt** je definitivní.
-- Když zemře Mimic, zemřou i všechny Saliva slimy včetně louží.
+- Mimic spits it out with the Spit attack (only when there are fewer than 4 helpers in the room). It is
+  active at once, without materializing, and drops nothing.
+- It moves by jumps: it stands for a while, then jumps straight at you (about 0.4 s), then rests for roughly 0.5–0.8 s.
+- **First death**: instead of dying, it melts into a puddle. For 10 s it is a puddle – it cannot be hit and does not attack. At the end
+  it merges again and rises with full HP.
+- **The second death** is final.
+- When Mimic dies, all Saliva slimes die too, including the puddles.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Na Red slime použij nejsilnější jednotlivou ránu, ne rychlopalnou zbraň ([Zbraně](/docs/guns)).
-- Na Slime se musí jít – sám k tobě nepřijde.
-- Střely slizů zpomalují v pavučinách ([Dungeon](/docs/dungeon)).
-- Mise „zabij N slizů“ počítá jen obyčejný Slime ([Progrese](/docs/progression)).
+- Against Red slime use your strongest single shot, not a rapid-fire gun ([Guns](/docs/guns)).
+- You have to go after Slime – it will not come to you on its own.
+- Slime projectiles slow down in webs ([Dungeon](/docs/dungeon)).
+- The mission "kill N slimes" counts only the ordinary Slime ([Progression](/docs/progression)).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Red slime nijak neukazuje, kolik zásahů už nasbíral – nevíš, kolik střel z něj vyletí.
-- Salva Slimu je vždy stejně natočená.
+- Red slime does not show in any way how many hits it has collected – you do not know how many projectiles will fly out of it.
+- The Slime volley is always rotated the same way.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Běžný sliz, který vstává z louže, pro témata Sewer a Moss (dnes to umí jen Saliva slime v boji s Mimicem).
-- Běžný „fialový sliz“ – fialové střely má dnes jen King slime.
-- Slizy s jiným počtem nebo rotací střel v salvě.
-- Vizuální ukazatel nasbíraných zásahů u Red slime (např. bobtnání).
+- A regular slime that rises from a puddle, for the Sewer and Moss themes (today only Saliva slime can do this, in the Mimic fight).
+- A regular "purple slime" – today only King slime has purple projectiles.
+- Slimes with a different number or rotation of projectiles in the volley.
+- A visual indicator of collected hits on Red slime (for example swelling).

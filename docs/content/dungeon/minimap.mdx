@@ -1,72 +1,72 @@
 ---
-title: Minimapa
-description: Malá mapa v rohu obrazovky a velká mapa na Tab – co ukazují a jak se patro postupně odkrývá.
+title: Minimap
+description: A small map in the corner of the screen and a large map on Tab - what they show and how the floor is gradually revealed.
 ---
 
-Bane má dvě mapy patra: malou **minimapu** vpravo nahoře, která je vidět pořád, a velkou
-**mapu** přes celou obrazovku na klávesu **Tab**. Obě ukazují místnosti jako ikony podle
-typu, propojené chodbami, a odkrývají se, jak hráč patro prozkoumává.
+Bane has two floor maps: a small **minimap** at the top right that is always visible, and a large
+**map** across the whole screen on the **Tab** key. Both show rooms as icons by
+type, connected by corridors, and they reveal as the player explores the floor.
 
-## Jak to funguje
+## How it works
 
-- Každá místnost je na mapě jedna ikona podle typu. Na jejích hranách jsou vyznačené
-  průchody tam, kam vede chodba.
-- Místnost je **navštívená**, jakmile do ní hráč vkročí. Aktuální místnost je ta, ve které
-  naposledy stál – v chodbě se nemění.
-- Pohled plynule klouže na aktuální místnost.
-- Nenavštívené místnosti jsou zahalené pohyblivou **mlhou**.
-- Artefakt **Reveal Map** označí všechny místnosti patra jako navštívené.
+- Every room is one icon on the map, by type. On its edges the passages are marked
+  where a corridor leads.
+- A room is **visited** as soon as the player steps into it. The current room is the one the player
+  last stood in - it does not change in a corridor.
+- The view glides smoothly to the current room.
+- Unvisited rooms are covered by a moving **fog**.
+- The **Reveal Map** artefact marks all rooms of the floor as visited.
 
-### Malá minimapa
+### Small minimap
 
-- Pořád viditelná v pravém horním rohu.
-- Ukazuje aktuální místnost naplno, sousední místnosti trochu zeslabené a navštívené
-  místnosti o krok dál už jen slabě. Nenavštívené místnosti dál než u sousedů skoro nejsou
-  vidět.
+- Always visible in the top right corner.
+- It shows the current room at full strength, neighboring rooms a little faded, and visited
+  rooms one step further only faintly. Unvisited rooms farther than the neighbors are almost
+  invisible.
 
-| Vzdálenost od aktuální místnosti | Navštívená | Nenavštívená |
+| Distance from the current room | Visited | Unvisited |
 |---|---|---|
-| aktuální | 100 % | – |
-| soused | 75 % | 75 % |
-| o 2 místnosti dál | 41 % | 6 % |
-| o 3 místnosti dál | skoro neviditelná | – |
+| current | 100% | – |
+| neighbor | 75% | 75% |
+| 2 rooms away | 41% | 6% |
+| 3 rooms away | almost invisible | – |
 
-### Velká mapa
+### Large map
 
-- **Tab** ji otevře i zavře, **Esc** zavře. Klávesu lze přemapovat.
-- Ukazuje celou prozkoumanou část patra a k tomu sousední místnosti, do kterých hráč ještě
-  nevkročil („hranice“ průzkumu).
-- Mapou jde posouvat tažením myši; při otevření a změně místnosti se vycentruje.
-- Dokud je velká mapa otevřená, hráč nestřílí.
+- **Tab** opens and closes it, **Esc** closes it. The key can be remapped.
+- It shows the whole explored part of the floor plus the neighboring rooms the player has not yet
+  entered (the "frontier" of exploration).
+- The map can be moved by dragging with the mouse; it is centered when opened and when the room changes.
+- While the large map is open, the player does not shoot.
 
-| Místnost | Viditelnost |
+| Room | Visibility |
 |---|---|
-| aktuální | 100 % |
-| navštívená | 75 % |
-| nenavštívená, ale sousedí s prozkoumanou | 50 % (v mlze) |
-| ostatní | skrytá |
+| current | 100% |
+| visited | 75% |
+| unvisited, but next to an explored one | 50% (in fog) |
+| others | hidden |
 
-## Obsah
+## Contents
 
-Ikony místností: **Start**, **Normal**, **Treasure**, **Shop**, **Boss**, **Sacrifice**,
-**Ambush** – každý typ má vlastní ikonu. Popis místností v [Typech místností](/docs/dungeon/rooms).
+Room icons: **Start**, **Normal**, **Treasure**, **Shop**, **Boss**, **Sacrifice**,
+**Ambush** - each type has its own icon. A description of the rooms is in [Room types](/docs/dungeon/rooms).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Typy místností](/docs/dungeon/rooms) – co se skrývá za kterou ikonou.
-- [Artefakty a předměty](/docs/artefacts-items) – *Reveal Map*.
-- [Hráč](/docs/player) – ovládání a přemapování kláves.
-- Stačí stoupnout do Normal místnosti vedle odbočky a velká mapa prozradí, jestli je za ní
-  obchod, pokladnice, ambush nebo boss.
+- [Room types](/docs/dungeon/rooms) - what hides behind which icon.
+- [Artefacts and items](/docs/artefacts-items) - *Reveal Map*.
+- [Player](/docs/player) - controls and key remapping.
+- Just step into a Normal room next to a branch, and the large map will tell you whether there is a shop,
+  treasure room, ambush or boss behind it.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Velká mapa ukazuje typ i u nenavštívených sousedních místností – hráč tak vidí, kde je Boss
-  nebo Shop, jakmile stojí vedle. Pokud to není záměr, mohly by mít neutrální ikonu.
-- Malou minimapu nejde zvětšit, zmenšit ani vypnout v nastavení.
+- The large map shows the type even for unvisited neighboring rooms - so the player sees where the Boss
+  or Shop is as soon as they stand next to it. If that is not intended, they could have a neutral icon.
+- The small minimap cannot be enlarged, shrunk or turned off in the settings.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Značky obsahu na mapě: neotevřená truhla, žebřík, obchod s nekoupeným zbožím, vyčištěná
-  vs. nevyčištěná místnost.
-- Nastavení velikosti a průhlednosti minimapy.
+- Content markers on the map: an unopened chest, the ladder, a shop with unbought goods, cleared
+  vs. uncleared room.
+- A setting for the size and transparency of the minimap.

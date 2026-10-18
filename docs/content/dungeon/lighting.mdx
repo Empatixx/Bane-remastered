@@ -1,88 +1,88 @@
 ---
-title: Osvětlení a atmosféra
-description: Jak dungeon svítí – pochodně a další zdroje světla, stíny od zdí, barva tmy podle tématu, prach a světlušky v lobby.
+title: Lighting and atmosphere
+description: How the dungeon is lit - torches and other light sources, shadows from walls, the color of darkness by theme, dust and fireflies in the lobby.
 ---
 
-Dungeon je ponořený do šera. Kolem hráče je slabá teplá záře a místnosti osvětlují
-pochodně, svícny, láva, svítící houby nebo plamenomety. Světla vrhají měkké stíny od zdí,
-takže sloupy a zídky vytvářejí tmavší kouty.
+The dungeon is plunged into dimness. There is a faint warm glow around the player, and rooms are lit by
+torches, candelabras, lava, glowing mushrooms or flamethrowers. Lights cast soft shadows from walls,
+so pillars and low walls create darker corners.
 
-## Jak to funguje
+## How it works
 
-- Celý svět má stejný základní jas (zhruba 60 %) ve všech tématech. Světla k němu přidávají
-  barvu a jas a navzájem se sčítají.
-- **Stíny**: zeď zastíní světlo, které je za ní. Zdi samotné jsou ale osvětlené ze své strany
-  a pochodeň zapuštěná ve zdi svítí do místnosti. Okraje stínů jsou měkké.
-- Na obrazovce svítí nejvýš 64 světel najednou – při jejich přemíře se zobrazí ta nejblíž
-  středu obrazovky. Proto láva svítí jen z každé čtvrté dlaždice.
-- **Tma kolem mapy** má barvu tématu (vínová ve Stone, modrá v Ice, rudá v Lava…) a prosvítá
-  všude, kde je hluboká zeď.
-- **Hudba**: v dungeonu hraje herní soundtrack, v boss místnosti se přepne na boss hudbu
-  a po porážce bosse zpět. Téma patra hudbu nemění.
+- The whole world has the same base brightness (roughly 60%) in all themes. Lights add color
+  and brightness to it and add up with each other.
+- **Shadows**: a wall blocks the light that is behind it. The walls themselves are lit from their own side,
+  though, and a torch set into a wall shines into the room. The edges of shadows are soft.
+- At most 64 lights shine on the screen at once - when there are too many, the ones closest to the
+  center of the screen are shown. That is why lava glows only from every fourth tile.
+- **The darkness around the map** has the theme's color (burgundy in Stone, blue in Ice, red in Lava...) and shows through
+  wherever there is deep wall.
+- **Music**: the game soundtrack plays in the dungeon, switches to boss music in the boss room
+  and goes back after the boss is defeated. The floor's theme does not change the music.
 
-### Vzduch v dungeonu
+### Air in the dungeon
 
-Každé patro má ve vzduchu něco podle svého tématu. Částice a mlha se drží kolem kamery,
-pomalu se objevují a zase mizí, takže je jich na obrazovce pořád zhruba stejně.
+Every floor has something in the air based on its theme. Particles and fog stay around the camera,
+slowly appearing and fading away, so there are always about the same number on screen.
 
-| Téma | Mlha | Částice |
+| Theme | Fog | Particles |
 |---|---|---|
-| Stone | – | jemný prach, viditelný jen ve světle |
-| Temple | – | jemný zlatavý prach |
-| Moss | zelená mlha u země + chuchvalce nad hlavou | svítící spory stoupají vzhůru |
-| Sewer | zelenomodrá mlha u země | – |
-| Spider | – | jemný prach |
-| Ice | – | sníh padá šikmo |
-| Lava | – | občas vyletí z lávové louže jiskra a bliká |
+| Stone | – | fine dust, visible only in light |
+| Temple | – | fine golden dust |
+| Moss | green ground fog + wisps overhead | glowing spores rise upward |
+| Sewer | teal ground fog | – |
+| Spider | – | fine dust |
+| Ice | – | snow falls at a slant |
+| Lava | – | a spark occasionally flies off a lava puddle and flickers |
 
-- Mlha je jen ve vlhkých patrech (Moss, Sewer). **Mlha u země** je pod postavami a osvětlují ji
-  pochodně. **Chuchvalce nad hlavou** (Moss) jsou nad vším a při pohybu kamery ujíždějí rychleji
-  než podlaha, což dává pocit hloubky.
-- Jiskry a spory svítí samy, prach a sníh jsou vidět jen tam, kam dopadá světlo. Jiskry
-  stoupají jen z lávových louží v záběru (nejvýš pár za sekundu), jinde v Lava patře nejsou.
+- Fog is only on damp floors (Moss, Sewer). **Ground fog** is below the characters and is lit by
+  torches. **Wisps overhead** (Moss) are above everything and drift faster than the floor when the camera moves,
+  which gives a sense of depth.
+- Sparks and spores glow on their own, while dust and snow are visible only where light falls. Sparks
+  rise only from lava puddles in view (at most a few per second), and elsewhere on a Lava floor there are none.
 
-### Atmosféra lobby a menu
+### Atmosphere of the lobby and menu
 
-- **Prach**: v záběru se pomalu vznáší asi 14 jemných průsvitných smítek, každé vydrží 6–12 s.
-- **Světlušky**: 4 světlušky kroužící kolem portálu (v lobby) nebo oltáře (v menu) a kolem
-  středu mapy. Bloudí po plynulých křivkách, blikají žlutozeleně a **utíkají před hráčem**,
-  když se přiblíží.
-- Vzhled je pokaždé stejný.
+- **Dust**: about 14 fine translucent motes slowly float in view, each lasting 6-12 s.
+- **Fireflies**: 4 fireflies circling the portal (in the lobby) or the altar (in the menu) and around the
+  middle of the map. They wander along smooth curves, blink yellow-green and **run away from the player**
+  when the player gets close.
+- The look is the same every time.
 
-## Statistiky
+## Stats
 
-Dosah je přibližný, v dlaždicích.
+Range is approximate, in tiles.
 
-| Zdroj | Barva | Dosah | Síla | Poznámka |
+| Source | Color | Range | Strength | Note |
 |---|---|---|---|---|
-| Hráč | teplá oranžová | ~2,5 | slabá | svítí vždy kolem hráče |
-| Pochodeň | teplá žlutá | ~1 | střední | 10 % pochodní je zhaslých |
-| Svícen (oltář) | rudá | malý | silná | zhasne po obětování |
-| Svítící houby (Moss) | zelená | ~1 | slabá | |
-| Plamenomet | rudá | ~1 | bliká | rozsvítí se v rytmu plamene |
-| Láva | oranžová | ~1,25 | střední | svítí každá čtvrtá dlaždice |
-| Magma (Hellhound) | oranžová | ~1 | roste a slábne | sílí při zahřívání, slábne při chladnutí |
-| Portál (lobby) | fialová, nebo barva challenge | ~1 | velmi silná | |
-| Světluška (lobby, menu) | žlutozelená | ~1,5 | bliká | |
+| Player | warm orange | ~2.5 | weak | always shines around the player |
+| Torch | warm yellow | ~1 | medium | 10% of torches are extinguished |
+| Candelabra (altar) | red | small | strong | goes out after the sacrifice |
+| Glowing mushrooms (Moss) | green | ~1 | weak | |
+| Flamethrower | red | ~1 | flickers | lights up with the rhythm of the flame |
+| Lava | orange | ~1.25 | medium | every fourth tile glows |
+| Magma (Hellhound) | orange | ~1 | grows and fades | gets stronger while heating, weaker while cooling |
+| Portal (lobby) | purple, or the challenge color | ~1 | very strong | |
+| Firefly (lobby, menu) | yellow-green | ~1.5 | blinks | |
 
-Další světla – výbuchy, blesky, střely, golem, vyvolané bytosti – patří ke zbraním
-a nepřátelům, viz [Zbraně](/docs/guns) a [Nepřátelé](/docs/enemies).
+Other lights - explosions, lightning, bullets, the golem, summoned creatures - belong to weapons
+and enemies, see [Guns](/docs/guns) and [Enemies](/docs/enemies).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Dekorace](/docs/dungeon/decor) – většina statických světel jsou pochodně a houby.
-- [Povrchy a kapaliny](/docs/dungeon/surfaces) – lávové louže osvětlí okolí.
-- [Patra a témata](/docs/dungeon/themes) – barva tmy podle tématu.
-- Při pauze se obraz rozmaže a ztmaví; při zásahu a nízkém zdraví se okraje obrazovky
-  zbarví – viz [Hráč](/docs/player).
+- [Decor](/docs/dungeon/decor) - most static lights are torches and mushrooms.
+- [Surfaces and liquids](/docs/dungeon/surfaces) - lava puddles light up their surroundings.
+- [Floors and themes](/docs/dungeon/themes) - the color of darkness by theme.
+- When paused, the image blurs and darkens; on a hit and at low health the edges of the screen
+  change color - see [Player](/docs/player).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Všechna témata mají stejný základní jas – Spider nebo Lava nejsou tmavší a Ice není
-  světlejší, přestože by to atmosféře slušelo.
+- All themes have the same base brightness - Spider and Lava are not darker and Ice is not
+  lighter, even though that would suit the atmosphere.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Vlastní jas a odstín pro každé téma (tmavší Spider a Lava, světlejší namodralý Ice).
-- Artefakt nebo talent „lucerna“, který zvětší světlo kolem hráče.
-- Zvuková kulisa podle tématu (kapání vody, praskání lávy).
+- A custom brightness and tint for each theme (darker Spider and Lava, a lighter bluish Ice).
+- A "lantern" artefact or talent that enlarges the light around the player.
+- A soundscape by theme (dripping water, crackling lava).

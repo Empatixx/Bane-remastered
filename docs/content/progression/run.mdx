@@ -1,100 +1,100 @@
 ---
-title: Průběh runu a patra
-description: Co se děje od vstupu do portálu přes jednotlivá patra až po posledního bosse.
+title: Run flow and floors
+description: What happens from entering the portal through the individual floors to the last boss.
 ---
 
-Run je jeden sestup do dungeonu. Má **5 pater**, každé končí bossem. Kdo porazí bosse pátého patra,
-vyhrál. Kdo zemře dřív, vrací se do laboratoře s tím, co stihl vydělat.
+A run is one descent into the dungeon. It has **5 floors**, and each ends with a boss. Whoever defeats the boss of floor 5
+wins. Whoever dies earlier returns to the lab with what they managed to earn.
 
-## Jak to funguje
+## How it works
 
-### Start runu
+### Start of the run
 
-Vstupem do portálu začíná nový run na patře 1:
+Entering the portal starts a new run on floor 1:
 
-- Každý run má vlastní náhodný **seed** — rozložení pater i loot se pokaždé liší.
-- Pokud máš na Quest boardu vybranou **challenge**, platí její [pravidla](/docs/progression/rules) po celý run.
-- Hned se projeví talenty (víc HP, armoru, rychlost…) a vylepšení zbraní z Weapon table.
+- Every run has its own random **seed** — the floor layout and loot differ every time.
+- If you have a **challenge** selected on the Quest board, its [rules](/docs/progression/rules) apply for the whole run.
+- Talents (more HP, armor, speed...) and weapon upgrades from the Weapon table take effect right away.
 
-### Každé patro
+### Each floor
 
-- **Biom**: na začátku runu se všech sedm biomů (Spider, Stone, Sewer, Moss, Ice, Lava, Temple)
-  náhodně zamíchá a patra dostanou pět z nich — v jednom runu se žádný neopakuje a žádný není
-  vázaný na konkrétní patro. Každý biom má svého bosse, takže i boss patra je náhodný.
-- **Velikost patra** se losuje znovu pro každé patro: 4–7 bojových místností, 0–2 pokladnice,
-  0–1 oltář a 1–2 přepadení.
-- Místnosti s nepřáteli, obchod (pokud ho challenge nezakazuje), další speciální místnosti a boss. Podrobně: [Dungeon](/docs/dungeon).
-- Talent **Discount** dává slevu v obchodě, **Trap Master** vyřadí část pastí, **Pet** přivede mazlíčka.
-- Talent **Gamble machine**: v obchodě stojí slot machine – bez talentu tam není.
-- Minimapa (malá v rohu, velká na Tab) a HUD se zdravím, armorem, coins, zbraněmi a artefaktem.
+- **Biome**: at the start of the run, all seven biomes (Spider, Stone, Sewer, Moss, Ice, Lava, Temple)
+  are shuffled randomly and the floors get five of them — no biome repeats in one run and none is
+  tied to a specific floor. Each biome has its own boss, so the boss of a floor is random too.
+- **Floor size** is rolled again for every floor: 4–7 combat rooms, 0–2 treasure rooms,
+  0–1 altar and 1–2 ambushes.
+- Rooms with enemies, a shop (unless the challenge forbids it), other special rooms and a boss. In detail: [Dungeon](/docs/dungeon).
+- The talent **Discount** gives a discount in the shop, **Trap Master** removes some of the traps, **Pet** brings a pet.
+- The talent **Gamble machine**: a slot machine stands in the shop – without the talent it is not there.
+- A minimap (small in the corner, large on Tab) and a HUD with health, armor, coins, weapons and the artefact.
 
-### Co se během patra děje
+### What happens during a floor
 
-| Situace | Co se stane |
+| Situation | What happens |
 |---|---|
-| Vyčistíš místnost | S talentem **Armor Regeneration** +1 armor (až do maxima; některé challenge to vypínají) |
-| Začne další vlna | Banner „vlna X / Y“ (jen v místnostech s více vlnami) |
-| Přežiješ přepadení (ambush) | Truhla se zbraní |
-| Vstoupíš k bossovi | Hraje boss hudba |
-| Porazíš bosse | Otřes obrazu, **truhla s artefaktem**; na patrech 1–4 se objeví **žebřík**, na patře 5 **vítězství** |
+| You clear a room | With the talent **Armor Regeneration** +1 armor (up to the maximum; some challenges turn this off) |
+| The next wave starts | A "wave X / Y" banner (only in rooms with several waves) |
+| You survive an ambush | A chest with a weapon |
+| You enter the boss room | Boss music plays |
+| You defeat the boss | Screen shake, an **artefact chest**; on floors 1–4 a **ladder** appears, on floor 5 **victory** |
 
-### Sestup na další patro
+### Descending to the next floor
 
-U žebříku zmáčkni **E**. Do dalšího patra si neseš zdraví, armor, coins, všechny zbraně, artefakt
-i statistiky runu. Patro, na kterém tě nic nezasáhlo, se ti započítá jako „nedotčené“ (pro misi Untouchable).
+Press **E** at the ladder. You take your health, armor, coins, all weapons, the artefact
+and the run stats to the next floor. A floor where nothing hit you counts as "untouched" (for the Untouchable mission).
 
-### Konec
+### The end
 
-- **Vítězství**: poražený boss na patře 5.
-- **Smrt**: zdraví klesne na 0, nebo zvolíš **Die** či **Main Menu** v pauze.
+- **Victory**: the boss on floor 5 is defeated.
+- **Death**: health drops to 0, or you choose **Die** or **Main Menu** in the pause menu.
 
-Obojí vede na stejnou obrazovku — viz [Konec runu](/docs/progression/run-end).
+Both lead to the same screen — see [End of run](/docs/progression/run-end).
 
-## Obsah
+## Contents
 
-| Patro | Biom | Konec patra |
+| Floor | Biome | End of floor |
 |---|---|---|
-| 1–4 | Náhodný ze všech sedmi, bez opakování | Boss biomu → žebřík |
-| 5 | Náhodný (ze zbývajících) | Boss biomu → **Victory!** |
+| 1–4 | Random from all seven, no repeats | Biome boss → ladder |
+| 5 | Random (from the remaining ones) | Biome boss → **Victory!** |
 
-### Obtížnost podle patra
+### Difficulty by floor
 
-Platí pro běžné nepřátele i pro bosse.
+Applies to regular enemies and to bosses.
 
-| Patro | HP nepřátel | Poškození nepřátel |
+| Floor | Enemy HP | Enemy damage |
 |---|---|---|
-| 1 | ×1,12 | ×1,08 |
-| 2 | ×1,24 | ×1,16 |
-| 3 | ×1,36 | ×1,24 |
-| 4 | ×1,48 | ×1,32 |
-| 5 | ×1,60 | ×1,40 |
+| 1 | ×1.12 | ×1.08 |
+| 2 | ×1.24 | ×1.16 |
+| 3 | ×1.36 | ×1.24 |
+| 4 | ×1.48 | ×1.32 |
+| 5 | ×1.60 | ×1.40 |
 
-Challenge Horde a Bane přidávají navíc vlastní násobič.
+The Horde and Bane challenges add their own multiplier on top.
 
-### Co se během runu počítá
+### What is counted during the run
 
-| Statistika | K čemu je |
+| Stat | What it is for |
 |---|---|
-| Výstřely a zásahy | Přesnost na obrazovce konce runu |
-| Zabití (celkem i podle druhu nepřítele) | Odměna v goldu, mise |
-| Sebrané předměty | Řádek „Loot“, mise Scavenger |
-| Sebrané coins | Mise Gold Digger a Hoarder |
-| Patra bez zásahu | Mise Untouchable |
+| Shots and hits | Accuracy on the end-of-run screen |
+| Kills (total and by enemy type) | Gold reward, missions |
+| Items picked up | The "Loot" row, the Scavenger mission |
+| Coins collected | The Gold Digger and Hoarder missions |
+| Floors without a hit | The Untouchable mission |
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Biomy a bossové: [Dungeon](/docs/dungeon), [Nepřátelé](/docs/enemies).
-- Coins, obchod, truhly, artefakty: [Artefakty a předměty](/docs/artefacts-items).
-- Talenty a zbraně: [Hráč](/docs/player), [Zbraně](/docs/guns).
-- Coins se do dalšího runu nepřenášejí — utrať je v obchodě dřív, než zemřeš.
+- Biomes and bosses: [Dungeon](/docs/dungeon), [Enemies](/docs/enemies).
+- Coins, shop, chests, artefacts: [Artefacts and items](/docs/artefacts-items).
+- Talents and weapons: [Player](/docs/player), [Guns](/docs/guns).
+- Coins do not carry over to the next run — spend them in the shop before you die.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Podle příběhu má být patro 5 vždy chrám (Temple) s finálním bossem **The Heart**. Ve hře je biom pátého patra náhodný a finální boss je obyčejný boss daného biomu.
-- Po vítězství se objeví truhla s artefaktem, ale obrazovka Victory naskočí okamžitě — truhlu nejde otevřít.
+- According to the story, floor 5 should always be the temple (Temple) with the final boss **The Heart**. In the game, the biome of floor 5 is random and the final boss is just the ordinary boss of that biome.
+- After victory an artefact chest appears, but the Victory screen comes up immediately — the chest cannot be opened.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Pevné patro 5 = Temple a finální boss The Heart.
-- „Oddech“ mezi patry: volba odměny nebo obchod před sestupem.
-- Volitelná obtížnost se sčítajícími se modifikátory (Heat), nejen jedna challenge.
+- A fixed floor 5 = Temple and the final boss The Heart.
+- A "breather" between floors: a choice of reward or a shop before descending.
+- Optional difficulty with stacking modifiers (Heat), not just one challenge.

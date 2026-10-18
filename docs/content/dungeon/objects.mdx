@@ -1,165 +1,165 @@
 ---
-title: Objekty a interaktivní prvky
-description: Sudy a květináče, truhly, mříže, žebřík, obchod, slot machine, oltář a vybavení lobby – co dělají a co z nich padá.
+title: Objects and interactive items
+description: Barrels and flowerpots, chests, gates, the ladder, the shop, the slot machine, the altar and the lobby furnishings - what they do and what drops from them.
 ---
 
-Dungeon není jen kulisa – spoustu věcí jde rozbít, otevřít nebo použít. S většinou objektů
-se pracuje klávesou **E**: když hráč stojí u objektu, objeví se výzva („Press E to …“).
-Truhly se otevírají pouhým dotykem a sudy či květináče se rozbíjejí střelbou.
+The dungeon is not just scenery - a lot of things can be broken, opened or used. Most objects
+are used with the **E** key: when the player stands next to an object, a prompt appears ("Press E to ...").
+Chests open on a simple touch, and barrels and flowerpots are broken by shooting.
 
-## Jak to funguje
+## How it works
 
-- **Rozbitné objekty** (sudy, květináče) mají 4 životy. Rozbijí je střely hráče a výbuchy;
-  pasti ani nepřátelé je nepoškodí. Dají se odstrkovat – hráč je může posouvat po místnosti.
-- Z každého rozbitého objektu vypadne **1 běžný předmět** (mince nebo munice, přednostně ta,
-  kterou hráč skutečně používá). Předmět zmizí po 10 s.
-- **Truhly** se otevřou, když do nich hráč vejde: vysypou do kruhu 5 běžných předmětů
-  a k tomu zbraň nebo artefakt. Předměty z truhel **nemizí**.
+- **Breakable objects** (barrels, flowerpots) have 4 health. Player bullets and explosions break them;
+  traps and enemies do not damage them. They can be pushed - the player can shove them around the room.
+- Every broken object drops **1 regular item** (coins or ammo, preferably the kind
+  the player actually uses). The item disappears after 10 s.
+- **Chests** open when the player walks into them: they spill 5 regular items in a circle
+  and, on top of that, a weapon or an artefact. Items from chests **do not disappear**.
 
-## Obsah
+## Contents
 
-### Rozbitné objekty
+### Breakable objects
 
-| Objekt | Kde | Efekt po rozbití |
+| Object | Where | Effect when broken |
 |---|---|---|
-| Květináč | bojové místnosti podle tématu, 2 v obchodě | – |
-| Sud | bojové místnosti podle tématu | – |
-| Výbušný sud | bojové místnosti podle tématu | výbuch za 3 poškození – zraní hráče, nepřátele i další sudy (**řetězové reakce**) |
-| Jedový sud | bojové místnosti podle tématu | jedová louže na 8 s |
-| Mrazivý sud | bojové místnosti podle tématu | zmrazí okolí (nepřátelé 4 s, boss 2 s, hráč 1,5 s) |
+| Flowerpot | combat rooms depending on the theme, 2 in the shop | – |
+| Barrel | combat rooms depending on the theme | – |
+| Explosive barrel | combat rooms depending on the theme | an explosion for 3 damage - hurts the player, enemies and other barrels (**chain reactions**) |
+| Poison barrel | combat rooms depending on the theme | a poison puddle for 8 s |
+| Frost barrel | combat rooms depending on the theme | freezes the surroundings (enemies 4 s, boss 2 s, player 1.5 s) |
 
-Všechny mají 4 životy a dropnou 1 běžný předmět. Podrobná čísla efektů jsou v
-[Pastech a nebezpečích](/docs/dungeon/hazards), kolik sudů které téma má, v
-[Patrech a tématech](/docs/dungeon/themes).
+All of them have 4 health and drop 1 regular item. The detailed effect numbers are in
+[Traps and hazards](/docs/dungeon/hazards), and how many barrels each theme has is in
+[Floors and themes](/docs/dungeon/themes).
 
-### Stoly a koberce
+### Tables and carpets
 
-- Asi ve 2 z 5 bojových místností stojí jeden, občas dva stoly (2 dlaždice dlouhé),
-  buď napříč místností, nebo otočené podél ní. Stojící stůl je v cestě všem, ale střely obou
-  stran nad ním létají.
-- Když do stolu hráč **vrazí** (chůzí nebo kotoulem), stůl se **převrátí** na opačnou stranu:
-  stůl napříč padne nahoru nebo dolů, otočený stůl doleva nebo doprava. Náraz z konce, kam
-  stůl padnout nemůže, ho převrátí od hráče po jeho ose. Stačí i tlačit do stolu, o který se
-  hráč už opírá. Deska skončí odvrácená od hráče a nohy míří k němu, jako když se stůl
-  převrhne do krytu. Převrácený stůl je kryt: zastaví nepřátelské
-  střely, ale střely hráče nad ním dál létají. Převrátit jde jen jednou.
-- Stůl má **6 zásahů**. Ubírají mu je nepřátelské střely (jen převrácenému, stojící přelétají)
-  a nepřátelé, kteří se o něj, stojící i převrácený, opírají nebo do něj tlačí: každý takový
-  nepřítel mu ubere zásah zhruba jednou za půl sekundy. Pak se stůl rozletí na kusy (krátká
-  animace jako u sudu nebo hrnce) a zůstane po něm šrot na podlaze, který už nikomu nepřekáží.
-- Každé téma má vlastní stůl: Stone ocelový s rzí, Sewer z měděnky s mosaznými nýty a slizem,
-  Moss z prken porostlých mechem, Spider z tmavého dřeva s pavučinami, Ice z ojíněné oceli, Lava
-  z očazeného železa s doutnajícími spárami a Temple z červeného dřeva se zlatými cvočky.
-- Asi ve třetině bojových místností leží na podlaze koberec. Není to obdélník, ale tvar: ovál
-  6–10 × 5–7 dlaždic rozbitý šumem do laloků a zálivů, jako louže. Od vody, lávy a všech
-  ostatních kapalin drží odstup aspoň 2 dlaždice. Pak se uhladí: žádné pruhy
-  široké jednu dlaždici (každá dlaždice je v nějakém čtverci 2 × 2), jeden kus a žádné díry.
-  Bordura běží kolem celého tvaru i kolem vnitřních rohů, dlaždice jsou sada 47 „blob“ dílů
-  (`tools/make_carpets.py`, stejné pořadí jako u louží). Každé téma má
-  svůj: Stone červený se zlatou bordurou, Sewer měděnkově zelený s mosazí, Moss rohož ze slámy
-  se zeleným vzorem, Spider černofialový se stříbrnou nití, Ice tmavomodrý s jinovatkou, Lava
-  černý se žhnoucím vzorem a Temple královsky modrý se zlatem. V obchodě a pokladnici je vždy
-  červený. Koleje se stolům i kobercům vyhýbají.
+- In about 2 of 5 combat rooms there is one, sometimes two tables (2 tiles long),
+  either across the room or turned along it. A standing table is in everyone's way, but bullets from both
+  sides fly over it.
+- When the player **bumps into** a table (walking or rolling), the table **flips** to the opposite side:
+  a table across the room falls up or down, a turned table falls left or right. A bump from the end the
+  table cannot fall toward flips it away from the player along its axis. Even pushing against a table the
+  player is already leaning on is enough. The top ends up facing away from the player and the legs point at them, as when a table
+  is tipped over to make cover. A flipped table is cover: it stops enemy
+  bullets, but player bullets keep flying over it. It can be flipped only once.
+- A table has **6 hits**. They are taken off by enemy bullets (only for a flipped table, bullets pass over standing ones)
+  and by enemies that lean on it or push into it, standing or flipped: each such
+  enemy takes off a hit roughly once every half second. Then the table bursts into pieces (a short
+  animation like a barrel or a pot) and leaves scrap on the floor that no longer blocks anyone.
+- Each theme has its own table: Stone steel with rust, Sewer verdigris with brass rivets and slime,
+  Moss planks overgrown with moss, Spider dark wood with cobwebs, Ice frosted steel, Lava
+  sooty iron with smoldering seams and Temple red wood with gold studs.
+- In about a third of combat rooms a carpet lies on the floor. It is not a rectangle but a shape: an oval
+  6-10 x 5-7 tiles broken up by noise into lobes and bays, like a puddle. It keeps at least 2 tiles away from water, lava and all
+  other liquids. Then it is smoothed: no strips
+  one tile wide (every tile is in some 2 x 2 square), one piece and no holes.
+  The border runs around the whole shape and around inner corners, and the tiles are a set of 47 "blob" pieces
+  (`tools/make_carpets.py`, the same order as for puddles). Each theme has
+  its own: Stone red with a gold border, Sewer verdigris green with brass, Moss a straw mat
+  with a green pattern, Spider black-purple with silver thread, Ice dark blue with frost, Lava
+  black with a glowing pattern and Temple royal blue with gold. In the shop and the treasure room it is always
+  red. Rails avoid both tables and carpets.
 
-### Vozík na kolejích
+### Cart on rails
 
-- Asi v každé třetí až čtvrté bojové místnosti vedou přes volnou podlahu koleje (8–20 dlaždic)
-  s nárazníkem na každém konci a stojí na nich důlní vozík. Trať je rovná, nebo jednou či
-  dvakrát zahne o pravý úhel (tvar L nebo U); vozík projede zatáčku po oblouku a natočí se
-  podle směru jízdy. Pražce, kolejnice i vozík mají v každém tématu svůj vzhled a vozík vlastní
-  náklad: Stone uhlí, Sewer kal, Moss houby, Spider kokon, Ice led, Lava žhnoucí rudu, Temple
-  zlato.
-- Když do vozíku hráč vrazí nebo ho střelí podél kolejí, rozjede se na opačnou stranu (asi 10 dlaždic za
-  sekundu) a dojede vždy až k nárazníku na konci, kde zastaví. Zpátky ho pošle další náraz nebo
-  střela z druhé strany. Za koly mu srší jiskry.
-- Rozjetý vozík přejede nepřátele za **20 poškození** (každého jednou za průjezd). Hráče
-  a nepřátele odstrčí z cesty, střely zastaví.
-- Rozjet ho může jen hráč – nepřátelé do něj můžou narazit, ale nepohnou s ním.
+- In about every third or fourth combat room, rails (8-20 tiles) run across free floor,
+  with a buffer at each end, and a mine cart stands on them. The track is straight, or turns once or
+  twice at a right angle (an L or U shape); the cart goes through a turn along an arc and rotates
+  to match the direction of travel. The sleepers, rails and cart have their own look in each theme, and the cart has its own
+  cargo: Stone coal, Sewer sludge, Moss mushrooms, Spider a cocoon, Ice ice, Lava glowing ore, Temple
+  gold.
+- When the player bumps into the cart or shoots it along the rails, it sets off in the opposite direction (about 10 tiles per
+  second) and always rolls all the way to the buffer at the end, where it stops. The next bump or
+  a shot from the other side sends it back. Sparks fly behind its wheels.
+- A moving cart runs over enemies for **20 damage** (each one once per pass). It pushes the player
+  and enemies out of the way, and stops bullets.
+- Only the player can set it moving - enemies can bump into it, but cannot move it.
 
-### Truhly
+### Chests
 
-| Truhla | Kde | Obsah |
+| Chest | Where | Contents |
 |---|---|---|
-| Zbraňová | Treasure místnost (uprostřed), odměna za Ambush | 5 běžných předmětů + náhodná zbraň, kterou hráč nemá |
-| Artefaktová | po porážce bosse | 5 běžných předmětů + artefakt, který hráč nemá |
+| Weapon | Treasure room (in the middle), reward for Ambush | 5 regular items + a random weapon the player does not have |
+| Artefact | after defeating the boss | 5 regular items + an artefact the player does not have |
 
-Pokud už hráč vlastní všechny zbraně (nebo mu challenge omezuje výbavu), zbraňová truhla
-dá jen 5 předmětů.
+If the player already owns all weapons (or a challenge limits their gear), the weapon chest
+gives only 5 items.
 
-### Mříže
+### Gates
 
-- Spustí se na všechny dveře bojové místnosti, jakmile do ní hráč vstoupí, a chovají se jako
-  zeď. Po vyčištění místnosti se s animací zvednou.
+- They drop over all the doors of a combat room as soon as the player enters it, and act as a
+  wall. When the room is cleared, they rise with an animation.
 
-### Žebřík
+### Ladder
 
-- Objeví se po porážce bosse na patrech 1–4, kousek vlevo od středu arény. Vzhled podle tématu.
-- „Press E to enter next floor“ – sestup do dalšího patra.
+- It appears after defeating the boss on floors 1-4, a little left of the center of the arena. Its look depends on the theme.
+- "Press E to enter next floor" - go down to the next floor.
 
-### Obchod
+### Shop
 
-- **Obchodník** stojí mlčky za pultem mezi dvěma regály se zbožím. V rozích leží bedny a sudy, mezi stoly svítí
-  dvě mosazné lampy. Pult, regály, bedny i lampy jsou pevné, nedá se jimi projít.
-- **3 stoly** pod sametovým ubrusem se zbožím, nad každým cenovka (při slevě i s nápisem, kolik se odečítá, např. „−75%“). Nákup klávesou E
-  odečte mince; lektvar nebo munice se rovnou použije, zbraň či artefakt se rovnou sebere.
-  Zboží a ceny viz [Typy místností](/docs/dungeon/rooms).
-- **Slot machine** (jen s talentem *Gamble Machine*): „Press E to spin“, jedno zatočení
-  stojí **5 mincí**, točí se 2 s. Při točení je stažená páka a kolem nápisu běhají světla.
-  Po výhře světla blikají a do misky se sypou mince, po prohře světla na chvíli pohasnou.
+- The **merchant** stands silently behind the counter between two shelves of goods. Crates and barrels lie in the corners, and two brass lamps
+  glow between the tables. The counter, shelves, crates and lamps are solid and cannot be walked through.
+- **3 tables** under a velvet cloth with goods, with a price tag above each (on sale also with a label showing how much is taken off, e.g. "−75%"). Buying with the E key
+  takes the coins; a potion or ammo is used right away, and a weapon or artefact is picked up right away.
+  For goods and prices see [Room types](/docs/dungeon/rooms).
+- **Slot machine** (only with the *Gamble Machine* talent): "Press E to spin", one spin
+  costs **5 coins** and takes 2 s. While spinning the lever is pulled down and lights run around the sign.
+  After a win the lights flash and coins pour into the tray, and after a loss the lights dim for a moment.
 
-| Výsledek | Šance | Výhra |
+| Result | Chance | Prize |
 |---|---|---|
-| Rare item | 6,7 % | 50 %: malý lektvar zdraví nebo brnění; jinak jedno z: zbraň, artefakt, univerzální munice, velký lektvar zdraví, velký lektvar brnění |
-| Cashout | 6,7 % | 10 mincí |
-| Item shower | 6,7 % | 5 běžných předmětů |
-| Triple | 6,7 % | 15 mincí |
-| Double | 13,3 % | 10 mincí |
-| Lose | 60 % | nic |
+| Rare item | 6.7% | 50%: a small health or armor potion; otherwise one of: a weapon, an artefact, universal ammo, a large health potion, a large armor potion |
+| Cashout | 6.7% | 10 coins |
+| Item shower | 6.7% | 5 regular items |
+| Triple | 6.7% | 15 coins |
+| Double | 13.3% | 10 coins |
+| Lose | 60% | nothing |
 
-Předměty ze slot machine mizí po 10 s. V průměru vrátí v mincích zhruba 3 z 5 vložených
-(bez započtení předmětů) – čistě na mince se nevyplácí, hraje se kvůli šanci na vzácné věci.
+Items from the slot machine disappear after 10 s. On average it returns roughly 3 out of every 5 coins put in
+(not counting items) - it does not pay off in pure coins, you play for the chance at rare things.
 
-### Oltář (Sacrifice)
+### Altar (Sacrifice)
 
-- Pentagram s jedním předmětem, za který se platí **1–3 životy**. Oltář tě nezabije – koupit
-  jde jen s víc životy, než je cena.
-- Okolo socha anděla, 5 svícnů s rudým světlem, knihy a řetězy. Po obětování svíčky zhasnou.
+- A pentagram with one item, which costs **1-3 lives**. The altar will not kill you - you can buy
+  only with more lives than the price.
+- Around it are an angel statue, 5 candelabras with red light, books and chains. After the sacrifice the candles go out.
 
-### Portál (lobby)
+### Portal (lobby)
 
-- Fialově zářící portál v lobby: „Press E to enter the portal“ spustí nový run.
-- Při aktivní challenge se portál i jeho světlo zbarví do barvy dané challenge.
-- V dungeonu žádný portál není – z runu se do lobby vrací jen smrtí nebo vítězstvím.
+- A glowing purple portal in the lobby: "Press E to enter the portal" starts a new run.
+- With an active challenge, the portal and its light take on the color of the challenge.
+- There is no portal in the dungeon - the player returns from a run to the lobby only by death or victory.
 
-### Další objekty v lobby
+### Other objects in the lobby
 
-| Objekt | Co dělá | Výzva |
+| Object | What it does | Prompt |
 |---|---|---|
-| Vědec | menu talentů | „Press E to upgrade“ |
-| Nástěnka | mise a challenge | „Press E to read the board“ |
-| Stůl se zbraněmi | úpravy zbraní | „Press E to upgrade weapons“ |
-| Květináče (3×) | jen dekorace, nedají se rozbít | – |
+| Scientist | talent menu | "Press E to upgrade" |
+| Notice board | missions and challenges | "Press E to read the board" |
+| Weapon table | weapon upgrades | "Press E to upgrade weapons" |
+| Flowerpots (3x) | decor only, cannot be broken | – |
 
-Podrobnosti v [Progresi](/docs/progression).
+Details in [Progression](/docs/progression).
 
-## Tipy a souvislosti
+## Tips and connections
 
-- [Artefakty a předměty](/docs/artefacts-items) – co přesně padá z truhel, sudů a slot machine.
-- [Zbraně](/docs/guns) – zbraňové truhly nabízejí jen zbraně, které ještě nemáš.
-- [Progrese](/docs/progression) – talent *Gamble Machine* (slot machine v obchodě),
-  *Discount*, barvy challenge.
-- Sudy jdou dotlačit k nepřátelům – výbušný sud u skupiny nepřátel je levný granát.
-- Sudy a květináče jsou spolehlivý zdroj munice, když dochází: vždy z nich něco vypadne.
+- [Artefacts and items](/docs/artefacts-items) - what exactly drops from chests, barrels and the slot machine.
+- [Guns](/docs/guns) - weapon chests offer only weapons you do not have yet.
+- [Progression](/docs/progression) - the *Gamble Machine* talent (the slot machine in the shop),
+  *Discount*, challenge colors.
+- Barrels can be pushed toward enemies - an explosive barrel next to a group of enemies is a cheap grenade.
+- Barrels and flowerpots are a reliable source of ammo when you run low: something always drops from them.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- „Cashout“ dává stejně jako „Double“ (10 mincí), ačkoli by podle jména měl být jackpot.
-- Pasti nepoškozují sudy a nepřátelé je nerozbíjejí – rozbije je jen hráč nebo výbuch.
+- "Cashout" pays the same as "Double" (10 coins), even though by its name it should be a jackpot.
+- Traps do not damage barrels and enemies do not break them - only the player or an explosion breaks them.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Klíče a zamčené truhly, truhla-mimik jako past v Treasure místnosti.
-- Páky, tlačítka, tajné dveře, léčivé fontány, další NPC v dungeonu kromě obchodníka.
-- Nový rozbitný objekt, např. bedna s mincemi.
-- Využít lobby vybavení (stojany na zbraně a brnění, knihovny, mapový stůl, bedny, kameny)
-  jako dekorace ve Stone a Temple patrech.
+- Keys and locked chests, a mimic chest as a trap in the Treasure room.
+- Levers, buttons, secret doors, healing fountains, more NPCs in the dungeon besides the merchant.
+- A new breakable object, e.g. a crate with coins.
+- Use the lobby furnishings (weapon and armor racks, bookcases, a map table, crates, stones)
+  as decor on Stone and Temple floors.

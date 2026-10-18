@@ -1,81 +1,81 @@
 ---
-title: Konec runu a vítězství
-description: Jak run končí, co ukáže obrazovka Game Over / Victory a kolik goldu za run dostaneš.
+title: End of run and victory
+description: How a run ends, what the Game Over / Victory screen shows and how much gold you get for a run.
 ---
 
-Ať run skončí smrtí, vzdáním (**Die** nebo **Main Menu** v pauze) nebo vítězstvím, vždy následuje stejná obrazovka se
-statistikami. Tady se ti připíše **gold**, posunou se **mise** a vyhodnotí se vybraná **challenge**.
+Whether a run ends in death, giving up (**Die** or **Main Menu** in the pause menu) or victory, the same screen with
+stats always follows. This is where your **gold** is added, **missions** advance and the selected **challenge** is evaluated.
 
-## Jak to funguje
+## How it works
 
-### Kdy obrazovka naskočí
+### When the screen appears
 
-- Zdraví klesne na 0 → **Game Over**.
-- V pauze zvolíš **Die** → **Game Over** (se všemi odměnami jako při normální smrti).
-- V pauze zvolíš **Main Menu** → také **Game Over** se všemi odměnami, jen po stisku klávesy jdeš do hlavního menu místo do laboratoře.
-- Porazíš bosse na patře 5 → **Victory!**
+- Health drops to 0 → **Game Over**.
+- You choose **Die** in the pause menu → **Game Over** (with all rewards, as with a normal death).
+- You choose **Main Menu** in the pause menu → also **Game Over** with all rewards, except that after a key press you go to the main menu instead of the lab.
+- You defeat the boss on floor 5 → **Victory!**
 
-V tu chvíli se hra zastaví (nepřátelé ani střely se už nehýbou), efekty artefaktů skončí a velká mapa se zavře.
+At that moment the game stops (enemies and projectiles no longer move), artefact effects end and the large map closes.
 
-### Průběh obrazovky
+### How the screen plays out
 
-| Čas | Co vidíš |
+| Time | What you see |
 |---|---|
-| 0–1 s | Obraz ztmavne (na 70 %) |
-| 0–2,5 s | Shora sjíždí lebka |
-| od 2,5 s | Nápis **„Game Over“** nebo **„Victory!“** |
-| 2,5–4,5 s | Postupně vyjedou čtyři řádky statistik (každý půl sekundy) |
-| 4,5–6,5 s | U každého řádku se „načítá“ odměna v goldu |
-| od 6,5 s | Bliká „Press any key to continue...“ a poznámka o misích / challenge |
-| klávesa | Zatemnění a návrat do laboratoře (po **Main Menu** z pauzy do hlavního menu) |
+| 0–1 s | The screen darkens (to 70%) |
+| 0–2.5 s | A skull slides down from the top |
+| from 2.5 s | The text **"Game Over"** or **"Victory!"** |
+| 2.5–4.5 s | Four rows of stats slide in one by one (each takes half a second) |
+| 4.5–6.5 s | The gold reward "loads" for each row |
+| from 6.5 s | "Press any key to continue..." blinks, with a note about missions / challenge |
+| key | Fade out and return to the lab (to the main menu after **Main Menu** from the pause menu) |
 
-Poznámka dole zní například *„Horde complete! +4 talents   2 missions ready on the board“*.
+The note at the bottom reads for example *"Horde complete! +4 talents   2 missions ready on the board"*.
 
-### Odměna v goldu
+### Gold reward
 
-Každý řádek dává vlastní odměnu, která roste s dosaženým patrem (zhruba lineárně: na patře 3 je
-odměna přibližně trojnásobná oproti patru 1).
+Each row gives its own reward, which grows with the floor reached (roughly linearly: on floor 3 the
+reward is about three times that of floor 1).
 
-| Řádek | Co ukazuje | Odměna |
+| Row | What it shows | Reward |
 |---|---|---|
-| **Accuracy** | Přesnost v % (zásahy / výstřely) | ≈ 2 × patro × přesnost v %; plnou odměnu dá až od 50 výstřelů, méně výstřelů odměnu poměrně zkrátí |
-| **Kills** | Počet zabitých nepřátel | ≈ 2 × patro × kills |
-| **Loot** | Počet sebraných předmětů | ≈ 4 × patro × předměty |
-| **Floor** | Dosažené patro | (patro − 1) × 5 |
+| **Accuracy** | Accuracy in % (hits / shots) | ≈ 2 × floor × accuracy in %; you get the full reward only from 50 shots, fewer shots reduce the reward proportionally |
+| **Kills** | Number of enemies killed | ≈ 2 × floor × kills |
+| **Loot** | Number of items picked up | ≈ 4 × floor × items |
+| **Floor** | Floor reached | (floor − 1) × 5 |
 
-Součet všech čtyř řádků se připíše na tvůj gold.
+The sum of all four rows is added to your gold.
 
-**Příklad:** patro 3, přesnost 50 %, 30 zabití, 5 předmětů → zhruba 319 + 190 + 62 + 10 ≈ **581 gold**.
+**Example:** floor 3, accuracy 50%, 30 kills, 5 items → roughly 319 + 190 + 62 + 10 ≈ **581 gold**.
 
-### Smrt vs. vítězství
+### Death vs. victory
 
-| | Smrt | Vítězství |
+| | Death | Victory |
 |---|---|---|
-| Nápis | Game Over | Victory! |
-| Statistika profilu | +1 smrt | +1 výhra |
-| Challenge s cílem „poraz posledního bosse“ | nesplněna | splněna |
-| Ostatní challenge | splněna, pokud jsi dosáhl cílového patra | splněna |
+| Text | Game Over | Victory! |
+| Profile stat | +1 death | +1 win |
+| Challenge with the goal "defeat the last boss" | not completed | completed |
+| Other challenges | completed if you reached the target floor | completed |
 
-## Obsah
+## Contents
 
-Obrazovka obsahuje: ztmavení, lebku, nápis, čtyři řádky s ikonami (přesnost, zabití, loot, patro),
-čtyři odměny, výzvu „Press any key“ a poznámku o postupu.
+The screen contains: the darkening, a skull, the text, four rows with icons (accuracy, kills, loot, floor),
+four rewards, the "Press any key" prompt and a note about progress.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Gold utrácíš u [Weapon table](/docs/guns); talenty u Vědce — viz [Měny](/docs/progression/currencies).
-- Postup misí a challenge: [Mise](/docs/progression/missions), [Challenge](/docs/progression/challenges).
-- Přesnost je nejvýnosnější řádek — rozstřelovat zdi a vzduch se nevyplácí.
-- Coins z runu se do goldu **nepřevádějí**; propadnou.
+- You spend gold at the [Weapon table](/docs/guns); talents at the Scientist — see [Currencies](/docs/progression/currencies).
+- Mission and challenge progress: [Missions](/docs/progression/missions), [Challenges](/docs/progression/challenges).
+- Accuracy is the most profitable row — shooting at walls and air does not pay off.
+- Coins from the run are **not converted** to gold; they are lost.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Obrazovka Victory je stejná jako Game Over, jen s jiným nápisem.
-- Truhla s artefaktem po posledním bossovi nejde otevřít, protože obrazovka Victory naskočí okamžitě.
+- The Victory screen is the same as Game Over, just with a different text.
+- The artefact chest after the last boss cannot be opened, because the Victory screen comes up immediately.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Příběhový řádek pod nápisem („Subject 41. Attempt N. Recorded.“ / „The wound is open.“) a jiný tón pro vítězství.
-- Převod části nevyužitých coins na gold.
-- Krátká prodleva nebo portál zpět po vítězství, aby šla otevřít poslední truhla.
-- Shrnutí celého runu (zbraně, artefakty, čas, seed) — i pro sdílení seedu s ostatními.
+- A story line under the text ("Subject 41. Attempt N. Recorded." / "The wound is open.") and a different tone for victory.
+- Converting some of the unused coins to gold.
+- A short delay or a portal back after victory, so the last chest can be opened.
+- A summary of the whole run (weapons, artefacts, time, seed) — also for sharing the seed with others.

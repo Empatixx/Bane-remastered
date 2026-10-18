@@ -1,87 +1,88 @@
 ---
 title: Stone golem
-description: Kamenný strážce chrámu s rázovou vlnou, házením balvanů, deštěm kamenů a otočným laserem.
+description: A stone guardian of the temple with a shockwave, boulder throwing, a rain of rocks and a rotating laser.
 ---
 
-Obrovský kamenný golem, který se pohybuje pomalu, ale ovládá celou místnost: rázovou vlnou kamenů,
-balvany, deštěm kamenů z nebe a laserem, který tě sleduje. Z padajících kamenů se navíc rodí Mini golemové.
+A huge stone golem that moves slowly but controls the whole room: with a shockwave of rocks, boulders,
+a rain of rocks from the sky and a laser that follows you. Mini golems are also born from the falling
+rocks.
 
-> „Socha strážce z chrámu. Oživená, bez rozkazu, hlídá ze zvyku.“
+> "A statue of a guardian from the temple. Brought to life, without orders, it guards out of habit."
 
-## Statistiky
+## Stats
 
 | | |
 |---|---|
-| HP | 110 základ, na patrech 1–5 123–176 |
-| Kontaktní poškození | 2 (na patrech 4–5 3) |
-| Rychlost | 9 % hráče (v zuřivosti 12 %) |
-| Velikost | obří |
-| Kde | kterékoli patro, jen téma Stone |
-| První útok | po 2 s |
-| Pauza mezi útoky | 2,2 s (v zuřivosti 1,3 s) |
-| Pomocníci | Mini golem (nejvýš 4) |
+| HP | 110 base, 123–176 on floors 1–5 |
+| Contact damage | 2 (3 on floors 4–5) |
+| Speed | 9 % of the player (12 % when enraged) |
+| Size | giant |
+| Where | any floor, only the Stone theme |
+| First attack | after 2 s |
+| Pause between attacks | 2.2 s (1.3 s when enraged) |
+| Helpers | Mini golem (at most 4) |
 
-## Jak to funguje
+## How it works
 
-Golem jde pomalu za tebou, po pauze se zastaví, napřáhne se a zaútočí. Když jsi blízko (do asi 5
-dlaždic), volí častěji Slam; na dálku spíš Throw a Laser.
+The golem walks slowly after you, and after a pause it stops, winds up and attacks. When you are close
+(within about 5 tiles), it picks Slam more often; at a distance it prefers Throw and Laser.
 
-| Útok | Šance blízko | Šance daleko |
+| Attack | Chance when close | Chance when far |
 |---|---|---|
-| Slam | vysoká | nízká |
-| Throw | nízká | vysoká |
-| Rain | střední | střední |
-| Laser | nízká | vysoká |
+| Slam | high | low |
+| Throw | low | high |
+| Rain | medium | medium |
+| Laser | low | high |
 
-## Obsah
+## Contents
 
-### Slam – rázová vlna
+### Slam – shockwave
 
-- Nápřah 0,45 s provází **skřípění kamene** a dunění, pak výbuch: **16 kamenů** do kruhu kolem golema (75 % tvé rychlosti, 2 poškození).
-- **V zuřivosti** po 0,35 s druhý prstenec, který vyplní mezery prvního.
+- A 0.45 s wind-up comes with a **grinding of stone** and rumbling, then the blast: **16 rocks** in a circle around the golem (75 % of your speed, 2 damage).
+- **When enraged**, a second ring follows after 0.35 s and fills the gaps of the first.
 
-### Throw – balvan
+### Throw – boulder
 
-- Nápřah 0,45 s provází hluboké **zabručení** a švih, pak hodí **velký balvan** přímo po tobě (61 % tvé rychlosti, 2 poškození).
+- A 0.45 s wind-up comes with a deep **growl** and a swing, then it throws a **large boulder** straight at you (61 % of your speed, 2 damage).
 
-### Rain – déšť kamenů
+### Rain – rain of rocks
 
-- Nápřah 0,4 s ohlásí **dunění a drolení skály**, pak 2,8 s padá z nebe asi **23 kamenů** (jeden každých 0,12 s).
-- Před každým kamenem se na zemi 0,7 s ukazuje **stín**. Kámen zasáhne plochu asi 2 × 2 dlaždice –
-  2 poškození. Úhyb chrání. Každý dopad je slyšet.
-- První 3 kameny míří přímo na tebe, aby ses musel pohnout, další padají kdekoli v okolí ~5 dlaždic.
-- Z každého dopadu se s **16% šancí** zrodí Mini golem (pokud jich ještě není moc a místo je volné).
+- A 0.4 s wind-up announces it with **rumbling and crumbling rock**, then for 2.8 s about **23 rocks** fall from the sky (one every 0.12 s).
+- Before each rock, a **shadow** shows on the ground for 0.7 s. The rock hits an area of about 2 × 2 tiles –
+  2 damage. Dodge protects you. Every landing can be heard.
+- The first 3 rocks aim straight at you, so that you have to move; the others fall anywhere within ~5 tiles.
+- Each landing has a **16 % chance** to spawn a Mini golem (if there are not too many yet and the spot is free).
 
-### Laser – otočný paprsek
+### Laser – rotating beam
 
-- 1 s nabíjení – golem zamíří okem na tebe a ozve se stoupavé **kvílení**.
-- 1,9 s svítí modrý paprsek přes celou místnost (zastaví ho jen zeď). Pomalu se otáčí za tebou,
-  v zuřivosti rychleji. Dokud svítí, hlasitě **bzučí**. Zásah = 2 poškození (díky nezranitelnosti po zásahu nejvýš jednou za sekundu).
+- 1 s of charging – the golem aims its eye at you and a rising **wail** is heard.
+- For 1.9 s a blue beam shines across the whole room (only a wall stops it). It slowly turns after you,
+  faster when enraged. While it shines, it **hums** loudly. A hit = 2 damage (because of the invulnerability after a hit, at most once per second).
 
 ### Mini golem
 
-Malý kamenný pronásledovatel: 6 HP, 1 poškození, 47 % tvé rychlosti. Nic nedropne a zemře spolu s golemem.
+A small stone chaser: 6 HP, 1 damage, 47 % of your speed. It drops nothing and dies together with the golem.
 
-### Zuřivost (od poloviny HP)
+### Enrage (from half HP)
 
-Golem s hlubokým kamenným **řevem** zčervená, zrychlí o 35 %, pauza mezi útoky klesne na 1,3 s, Slam má dva prstence a laser se
-otáčí rychleji.
+With a deep stone **roar** the golem turns red and speeds up by 35 %, the pause between attacks drops to 1.3 s, Slam has two rings and the laser
+turns faster.
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Na blízku čekej Slam – po nápřahu odskoč nebo se postav do mezery mezi kameny.
-- Laser se otáčí pomalu – obíhej golema stálým směrem a paprsek tě nedožene.
-- Při Rain sleduj stíny, ne golema.
-- Úhyb chrání před dopady kamenů i laserem ([Hráč](/docs/player)).
-- Stejné kameny používá i [Sewer ogre](/docs/enemies/bosses/ogre).
+- When close, expect Slam – after the wind-up jump away or stand in a gap between the rocks.
+- The laser turns slowly – circle the golem in a steady direction and the beam will not catch you.
+- During Rain, watch the shadows, not the golem.
+- Dodge protects against rock landings and the laser ([Player](/docs/player)).
+- [Sewer ogre](/docs/enemies/bosses/ogre) uses the same rocks.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Laser nemá během nabíjení žádnou výstražnou čáru (Hellhound ji před svými paprsky má) – jen animaci.
-- Limit 4 Mini golemů se počítá dohromady se všemi pomocníky v místnosti.
-- Starší popis hry uváděl úplně jiného golema (léčení, armor, výpad) – dnešní golem je nový boss.
+- The laser has no warning line during charging (Hellhound has one before its beams) – only an animation.
+- The limit of 4 Mini golems is counted together with all helpers in the room.
+- An older description of the game listed a completely different golem (healing, armor, dash) – today's golem is a new boss.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Výstražná čára před laserem.
-- Mini golem, který při smrti exploduje do kamenů nebo se vrátí ke golemovi a vyléčí ho.
+- A warning line before the laser.
+- A Mini golem that explodes into rocks when it dies, or returns to the golem and heals it.

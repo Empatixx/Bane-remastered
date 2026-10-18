@@ -1,129 +1,132 @@
 ---
-title: Nepřátelé
-description: Přehled všech nepřátel a bossů v Bane – kdo se kde objevuje, kolik vydrží a čím je nebezpečný.
+title: Enemies
+description: An overview of all enemies and bosses in Bane – where each one appears, how much it can take and what makes it dangerous.
 ---
 
-V Bane na tebe v každé bojové místnosti čeká několik nepřátel a na konci každého patra boss. Hra má
-celkem **23 druhů**: 13 běžných nepřátel, 3 pomocníky, které vyvolávají bossové, a 7 bossů.
-Většina nepřátel jde přímo po tobě a zraňuje dotykem, někteří střílejí, skáčou nebo po sobě nechávají
-jed.
+In Bane, several enemies wait for you in every combat room, and a boss waits at the end of every
+floor. The game has **23 kinds** in total: 13 regular enemies, 3 helpers that bosses summon, and 7
+bosses. Most enemies run straight at you and hurt you on touch. Some shoot, jump or leave poison
+behind.
 
-## Jak to funguje
+## How it works
 
-### Život nepřítele
+### The life of an enemy
 
-1. **Objevení** – když vstoupíš do bojové místnosti, zavřou se dveře a na různých místech místnosti se
-   začnou zhmotňovat nepřátelé. Více v [Spawnování a síla nepřátel](/docs/enemies/spawning).
-2. **Zhmotnění** – nepřítel se 2 sekundy (boss 1,5 s) pomalu objevuje. Během té doby se nehýbe,
-   nezraňuje a nedá se trefit.
-3. **Boj** – pak tě začne pronásledovat a obchází při tom překážky. Viz [Chování a pohyb](/docs/enemies/ai).
-4. **Zásah** – trefený nepřítel krátce zrudne (0,3 s).
-5. **Smrt** – přehraje se animace smrti. Někteří nepřátelé při smrti ještě něco udělají: vystřelí
-   střely, vypustí jedovatý mrak nebo vyléčí své příbuzné.
-6. **Odměna** – po smrti může padnout mince nebo krabička munice (viz
-   [Dropy](/docs/enemies/spawning#dropy)).
+1. **Appearing** – when you enter a combat room, the doors close and enemies start to materialize at
+   different spots in the room. See [Spawning and enemy strength](/docs/enemies/spawning).
+2. **Materializing** – the enemy slowly fades in for 2 seconds (a boss for 1.5 s). During that time it
+   does not move, does not hurt you and cannot be hit.
+3. **Fighting** – then it starts to chase you and goes around obstacles. See [Behavior and movement](/docs/enemies/ai).
+4. **Getting hit** – a hit enemy briefly turns red (0.3 s).
+5. **Death** – the death animation plays. Some enemies do something when they die: they fire
+   projectiles, release a poison cloud or heal their relatives.
+6. **Reward** – after death a coin or an ammo box may drop (see
+   [Drops](/docs/enemies/spawning#drops)).
 
-### Kontaktní poškození
+### Contact damage
 
-Nepřátelé tě zraňují, když se jich dotkneš – fyzicky tě ale neodstrčí, můžeš jimi projít. Zásah ti
-ubere nejdřív armor, pak životy, a pak máš **1 sekundu nezranitelnosti**. Nepřítel, který se teprve
-zhmotňuje, umírá nebo je zmražený, nezraňuje. Když jsi neviditelný (artefakt Phantom), nepřátelé tě
-dotykem nezraní vůbec.
+Enemies hurt you when you touch them – but they do not push you away physically, and you can walk
+through them. A hit takes your armor first, then your health, and then you get **1 second of
+invulnerability**. An enemy that is still materializing, dying or frozen does not deal damage. When you
+are invisible (the Phantom artefact), enemies do not hurt you on touch at all.
 
-### Zvuky útoků
+### Attack sounds
 
-Nepřátelé a bossové se ozývají **jen ve chvíli, kdy útočí**: při nápřahu, výstřelu, skoku, vyvolání
-pomocníků nebo když se boss rozzuří. Chůze, dotyk ani zásah žádný zvuk nemají. Když má útok nápřah, zvuk
-zazní už na jeho začátku – útok tak často uslyšíš dřív, než ho uvidíš.
+Enemies and bosses make a sound **only when they attack**: on the wind-up, a shot, a jump, when
+summoning helpers or when a boss becomes enraged. Walking, touching and getting hit make no sound. If
+an attack has a wind-up, the sound plays at its very start – so you often hear an attack before you
+see it.
 
-- Hlasitost se řídí tím, jak daleko je nepřítel **od tebe** (ne od středu obrazovky). Do zhruba
-  3 dlaždic zní naplno, pak slábne a asi od 14 dlaždic ho už neslyšíš. Bossy slyšíš dál – naplno do
-  asi 6 dlaždic a úplně utichnou až kolem 24.
-- Zvuk se mírně přikloní doleva nebo doprava podle toho, na které straně nepřítel je.
-- Každé přehrání má trochu jinou výšku a stejný zvuk zazní najednou nejvýš třikrát, takže houf slizů
-  nezní jako kulomet.
-- Hlasitost těchto zvuků ovládá nastavení hlasitosti efektů.
+- The volume depends on how far the enemy is **from you** (not from the center of the screen). It is
+  at full volume up to about 3 tiles, then fades, and from about 14 tiles you no longer hear it. You
+  hear bosses from farther away – full volume up to about 6 tiles, and they go silent only around 24.
+- The sound is panned slightly left or right depending on which side the enemy is on.
+- Every playback has a slightly different pitch, and the same sound plays at most three times at once,
+  so a crowd of slimes does not sound like a machine gun.
+- The volume of these sounds is controlled by the effects volume setting.
 
-Co přesně který nepřítel vydává, najdeš na jeho stránce.
+You can find exactly what each enemy sounds like on its page.
 
-### Rychlost
+### Speed
 
-Rychlost nepřátel je v tabulkách uvedena v procentech tvé rychlosti (100 % = hráč). Obecně platí, že
-čím větší nepřítel, tím pomalejší.
+Enemy speed in the tables is given as a percentage of your speed (100 % = the player). In general, the
+bigger the enemy, the slower it is.
 
-## Obsah
+## Contents
 
-Hodnoty HP a poškození jsou základní. Běžní nepřátelé i bossové s každým patrem sílí (+12 % HP a +8 %
-poškození za patro), vyvolaní pomocníci ne.
+The HP and damage values are base values. Regular enemies and bosses both get stronger with every
+floor (+12 % HP and +8 % damage per floor); summoned helpers do not.
 
-| Nepřítel | Druh | HP | Poškození | Rychlost | Patra | Téma | Stránka |
+| Enemy | Kind | HP | Damage | Speed | Floors | Theme | Page |
 |---|---|--:|--:|---|---|---|---|
-| Rat | běžný | 12 | 2 | 45 % | všechna | všechna | [Základní](/docs/enemies/critters) |
-| Snake | běžný | 8 | 3 | 42 % | všechna | všechna | [Základní](/docs/enemies/critters) |
-| Bat | běžný | 9 | 2 | 77 % | všechna | všechna | [Základní](/docs/enemies/critters) |
-| Ghost | běžný | 7 | 2 | 32 % (výpad 153 %) | všechna | všechna | [Základní](/docs/enemies/critters) |
-| Slime | běžný | 9 | 1 | 7 % | všechna | všechna | [Slizy](/docs/enemies/slimes) |
-| Red slime | běžný | 9 | 1 | 7 % | všechna | všechna | [Slizy](/docs/enemies/slimes) |
-| Demon eye | běžný | 11 | 3 | 64 % | 3+ | všechna | [Oči](/docs/enemies/eyes) |
-| Eye watcher | běžný | 4 | 1 | stojí | 3+ | všechna | [Oči](/docs/enemies/eyes) |
-| Red spiderling | běžný | 3 | 2 | 46 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
-| Green spiderling | běžný | 5 | 2 | 46 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
-| Purple spiderling | běžný | 3 | 1 | 55 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
-| Bloated spider | běžný | 5 | 1 | 41 % | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
-| Stilt spider | běžný | 7 | 1 | 15 % + skoky | všechna | Spider | [Pavouci](/docs/enemies/spiders) |
-| Saliva slime | pomocník Mimica | 5 | 1 | 34 % (jen ve skoku) | – | – | [Slizy](/docs/enemies/slimes) |
-| Mini golem | pomocník Golema | 6 | 1 | 47 % | – | – | [Stone golem](/docs/enemies/bosses/golem) |
-| Argus eye | pomocník Arguse | 4 | 1 | obíhá bosse | – | – | [Argus](/docs/enemies/bosses/argus) |
-| Spider king | boss | 75 | 2 | 69 % | všechna | Spider | [Spider king](/docs/enemies/bosses/spider-king) |
-| King slime | boss | 90 | 2 | 10 % | všechna | Moss | [King slime](/docs/enemies/bosses/king-slime) |
-| Stone golem | boss | 110 | 2 | 9 % | všechna | Stone | [Stone golem](/docs/enemies/bosses/golem) |
-| Argus | boss | 120 | 2 | téměř stojí | všechna | Ice | [Argus](/docs/enemies/bosses/argus) |
-| Sewer ogre | boss | 130 | 2 | 9 % | všechna | Sewer | [Sewer ogre](/docs/enemies/bosses/ogre) |
-| Hellhound | boss | 110 | 2 | 59 % | všechna | Lava | [Hellhound](/docs/enemies/bosses/hellhound) |
-| Mimic | boss | 115 | 2 | 32 % | všechna | Temple | [Mimic](/docs/enemies/bosses/mimic) |
+| Rat | regular | 12 | 2 | 45 % | all | all | [Basic](/docs/enemies/critters) |
+| Snake | regular | 8 | 3 | 42 % | all | all | [Basic](/docs/enemies/critters) |
+| Bat | regular | 9 | 2 | 77 % | all | all | [Basic](/docs/enemies/critters) |
+| Ghost | regular | 7 | 2 | 32 % (dash 153 %) | all | all | [Basic](/docs/enemies/critters) |
+| Slime | regular | 9 | 1 | 7 % | all | all | [Slimes](/docs/enemies/slimes) |
+| Red slime | regular | 9 | 1 | 7 % | all | all | [Slimes](/docs/enemies/slimes) |
+| Demon eye | regular | 11 | 3 | 64 % | 3+ | all | [Eyes](/docs/enemies/eyes) |
+| Eye watcher | regular | 4 | 1 | stationary | 3+ | all | [Eyes](/docs/enemies/eyes) |
+| Red spiderling | regular | 3 | 2 | 46 % | all | Spider | [Spiders](/docs/enemies/spiders) |
+| Green spiderling | regular | 5 | 2 | 46 % | all | Spider | [Spiders](/docs/enemies/spiders) |
+| Purple spiderling | regular | 3 | 1 | 55 % | all | Spider | [Spiders](/docs/enemies/spiders) |
+| Bloated spider | regular | 5 | 1 | 41 % | all | Spider | [Spiders](/docs/enemies/spiders) |
+| Stilt spider | regular | 7 | 1 | 15 % + jumps | all | Spider | [Spiders](/docs/enemies/spiders) |
+| Saliva slime | Mimic's helper | 5 | 1 | 34 % (only while jumping) | – | – | [Slimes](/docs/enemies/slimes) |
+| Mini golem | Golem's helper | 6 | 1 | 47 % | – | – | [Stone golem](/docs/enemies/bosses/golem) |
+| Argus eye | Argus's helper | 4 | 1 | orbits the boss | – | – | [Argus](/docs/enemies/bosses/argus) |
+| Spider king | boss | 75 | 2 | 69 % | all | Spider | [Spider king](/docs/enemies/bosses/spider-king) |
+| King slime | boss | 90 | 2 | 10 % | all | Moss | [King slime](/docs/enemies/bosses/king-slime) |
+| Stone golem | boss | 110 | 2 | 9 % | all | Stone | [Stone golem](/docs/enemies/bosses/golem) |
+| Argus | boss | 120 | 2 | almost stationary | all | Ice | [Argus](/docs/enemies/bosses/argus) |
+| Sewer ogre | boss | 130 | 2 | 9 % | all | Sewer | [Sewer ogre](/docs/enemies/bosses/ogre) |
+| Hellhound | boss | 110 | 2 | 59 % | all | Lava | [Hellhound](/docs/enemies/bosses/hellhound) |
+| Mimic | boss | 115 | 2 | 32 % | all | Temple | [Mimic](/docs/enemies/bosses/mimic) |
 
-Krysy (Rat) navíc jako pomocníky vyvolává Sewer ogre.
+The Sewer ogre also summons Rats as helpers.
 
 <Callout type="info">
-Témata pater se v každém runu náhodně zamíchají, takže pavouci (téma Spider) se mohou objevit na
-kterémkoli patře. Každé téma má právě jednoho bosse. Demon eye a Eye watcher přicházejí až od patra 3. Podrobný rozpis je v [Spawnování a síla nepřátel](/docs/enemies/spawning).
+The floor themes are shuffled randomly in every run, so spiders (the Spider theme) can appear on any
+floor. Each theme has exactly one boss. Demon eye and Eye watcher only come from floor 3. A detailed
+breakdown is in [Spawning and enemy strength](/docs/enemies/spawning).
 </Callout>
 
 <Cards>
-  <Card title="Spawnování a síla nepřátel" href="/docs/enemies/spawning" />
-  <Card title="Chování a pohyb" href="/docs/enemies/ai" />
-  <Card title="Nepřátelské střely" href="/docs/enemies/projectiles" />
-  <Card title="Bossové" href="/docs/enemies/bosses" />
+  <Card title="Spawning and enemy strength" href="/docs/enemies/spawning" />
+  <Card title="Behavior and movement" href="/docs/enemies/ai" />
+  <Card title="Enemy projectiles" href="/docs/enemies/projectiles" />
+  <Card title="Bosses" href="/docs/enemies/bosses" />
 </Cards>
 
-## Tipy a souvislosti
+## Tips and connections
 
-- **Úhyb (dodge)** tě ochrání před dopady skoků, padajícími kameny, paprsky a magmatem. Viz [Hráč](/docs/player).
-- **Ledová munice** nepřítele zpomalí na polovinu, po 4 zásazích ho zmrazí – zmrazený nepřítel stojí,
-  neútočí a nezraňuje. Viz [Zbraně](/docs/guns).
-- **Red slime** reaguje na počet zásahů, ne na poškození – rychlopalné zbraně z něj při smrti vyrazí
-  spoustu střel.
-- **Phantom** (neviditelnost) způsobí, že běžní nepřátelé zůstanou stát a nestřílí. **Zpomalení času**
-  zpomalí všechny nepřátele i jejich střely, ale tebe ne. **Midas** dává za zabití bonusové mince.
-  Viz [Artefakty a předměty](/docs/artefacts-items).
-- **Pasti a jedovaté louže** v [dungeonu](/docs/dungeon) zraňují i nepřátele.
-- Mise „zabij N krys / netopýrů / slizů / duchů / hadů“ a „poraz bosse X“ a výzvy Horde a Bane (silnější
-  nepřátelé) najdeš v [Progrese](/docs/progression).
+- **Dodge** protects you from jump landings, falling rocks, beams and magma. See [Player](/docs/player).
+- **Ice ammo** slows an enemy to half speed, and after 4 hits it freezes it – a frozen enemy stands
+  still, does not attack and does not deal damage. See [Guns](/docs/guns).
+- **Red slime** reacts to the number of hits, not to damage – rapid-fire guns make it fire a lot of
+  projectiles when it dies.
+- **Phantom** (invisibility) makes regular enemies stand still and stop shooting. **Time slow** slows
+  down all enemies and their projectiles, but not you. **Midas** gives bonus coins for kills.
+  See [Artefacts and items](/docs/artefacts-items).
+- **Traps and poison puddles** in the [dungeon](/docs/dungeon) hurt enemies too.
+- Missions like "kill N rats / bats / slimes / ghosts / snakes" and "defeat boss X", plus the Horde and
+  Bane challenges (stronger enemies), are in [Progression](/docs/progression).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Bossové (kromě King slime) se počítají do systému garantovaného dropu jako obyčejné zabití, King slime
-  ne – chování bossů je v tomhle nejednotné.
-- Red spiderling ani Purple spiderling nemají žádnou speciální schopnost; ve starší verzi hry se Red
-  spiderling léčil za zásahy a Purple spiderling se teleportoval za hráče.
-- Starší popisy hry tvrdí, že nepřátelé s patrem nesílí – ve skutečnosti běžní nepřátelé i bossové sílí
-  o 12 % HP a 8 % poškození za patro.
+- Bosses (except King slime) count toward the guaranteed drop system as a normal kill, while King slime
+  does not – boss behavior is inconsistent here.
+- Red spiderling and Purple spiderling have no special ability; in an older version of the game, Red
+  spiderling healed itself when hit and Purple spiderling teleported behind the player.
+- Older descriptions of the game claim that enemies do not get stronger with the floor – in fact,
+  regular enemies and bosses both gain 12 % HP and 8 % damage per floor.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- **Elitní nepřátelé** s náhodnými vlastnostmi (opevněný, zuřivý, regenerující) se šancí rostoucí
-  s patrem.
-- **Finální boss „The Heart“** na patře 5 (téma Temple) podle příběhu hry – dnes na patře 5 čeká
-  obyčejný boss z poolu.
-- **Tematičtí nepřátelé**: z 13 běžných nepřátel je 5 vázáno na téma Spider a ostatní témata vlastní
-  nepřátele nemají. Nabízí se ledový sliz zanechávající náledí, lávový netopýr s ohnivou stopou apod.
+- **Elite enemies** with random traits (fortified, furious, regenerating), with a chance that grows
+  with the floor.
+- **The final boss "The Heart"** on floor 5 (Temple theme), following the game's story – today floor 5
+  has an ordinary boss from the pool.
+- **Themed enemies**: of the 13 regular enemies, 5 are tied to the Spider theme, and the other themes
+  have no enemies of their own. Ideas include an ice slime that leaves ice patches, a lava bat with a
+  fiery trail, and so on.

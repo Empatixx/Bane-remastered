@@ -1,0 +1,45 @@
+---
+title: Weapon table
+description: A place in the lobby where the player browses all guns, buys their upgrades and rerolls trees.
+---
+
+The weapon table stands in the lobby (the laboratory). According to the story, it is a "collection of what previous subjects brought up". Here the player spends gold from runs on permanent gun upgrades.
+
+## How it works
+
+### Opening
+
+The player walks up to the table and presses **E**. It closes with **Escape** or E again.
+
+### What is on the screen
+
+- **Gun list** on the left: all 16 guns with an image and a name, 6 visible at a time. It scrolls with the wheel or the up/down arrows.
+- **Gun overview** on the right: the name and a line of stats, for example "Damage 1-3 +10%   Rate 4.0/s   Clip 7   Reload 0.7s", already including purchased upgrades.
+- **Tree** below the overview: the root at the top, nodes below it. The tree can be moved by dragging with the mouse or with the movement keys (WASD by default, the hint shows the ones you have set). Arrows at the edge show that the tree continues outside the view.
+- **Node frame** shows the quality (Common / Rare / Epic) and the state (bought / available / locked).
+- **Node detail**: after clicking a node, you see a large icon, the name (for example "Damage II" or the mutation name), a two-line description, a Buy button (or Bought or Can't buy) and the price "Cost: N gold".
+- **Dice** below the tree: reroll the tree for 100 gold. After a click the dice rolls and the tree is rerolled. Without enough gold it is grayed out.
+- **Gold: N**: how much gold the player has.
+
+After a purchase, an unlock sound plays and the Scientist comments on it.
+
+## Tips and connections
+
+- Purchase rules, prices and rerolling: [Weapon trees](/docs/guns/weapon-trees).
+- What the mutations do: [Mutations](/docs/guns/mutations).
+- Other places in the lobby (the Scientist with upgrades, the quest board, the portal): [Progression](/docs/progression).
+- It looks like the Scientist's upgrade menu: the frames, buttons and detail panel are the same.
+
+## Known inconsistencies
+
+- The stats line shows the damage range including the upper end (for example "1-3"), which never lands in the game.
+- It does not show crit chance, pierce, projectile type or an already purchased mutation.
+- The table shows all guns from the start. Nothing is locked, and there are no statistics on how often the player used a gun.
+- The list cannot be sorted or filtered.
+- The texts are in English only.
+
+## Ideas for expansion
+
+- A small shooting range in the lobby where the player can try a gun before investing in it.
+- Unlocking guns on the table only after the first time they are brought out of a run (it fits the story of the table).
+- Showing the total cost of the tree and the cost left to the mutation.

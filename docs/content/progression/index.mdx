@@ -1,71 +1,71 @@
 ---
-title: Průběh hry a progrese
-description: Jak vypadá jedna hra od hlavního menu přes laboratoř a sestup do dungeonu až po návrat, a co si hráč odnáší do dalších pokusů.
+title: Gameplay and progression
+description: What one game looks like, from the main menu through the lab and the descent into the dungeon to the return, and what the player takes into later attempts.
 ---
 
-Bane se hraje v **runech**: z laboratoře sestoupíš portálem do dungeonu, probojuješ se pěti patry
-(nebo zemřeš) a vrátíš se zpět do laboratoře. Mezi runy utrácíš to, co sis vydělal, za trvalá
-vylepšení postavy a zbraní. Tato sekce popisuje celou tuto smyčku, měny, mise, challenge, laboratoř,
-menu a příběh.
+Bane is played in **runs**: you descend from the lab through a portal into the dungeon, fight through five floors
+(or die) and return to the lab. Between runs you spend what you earned on permanent
+upgrades for your character and weapons. This section describes the whole loop, the currencies, missions, challenges, the lab,
+the menus and the story.
 
-## Jak to funguje
+## How it works
 
-### Herní smyčka
+### The game loop
 
-1. **Načítání** — animovaný titulek a točící se ikonka.
-2. **Hlavní menu** — Play / Settings / Exit. V pozadí živá krypta s pobíhajícími krysami a netopýry.
-3. **Laboratoř (lobby)** — volně se procházíš místností a u stanic utrácíš meta-měny:
-   - **Vědec** → talentový strom za **talenty**,
-   - **Weapon table** → vylepšení zbraní za **gold**,
-   - **Quest board** → mise (odměna v talentech) a výběr **challenge**,
-   - **Portál** → start runu.
-4. **Run** — patra 1 až 5. Na každém patře místnosti s nepřáteli, obchod a boss. Po poražení bosse se
-   objeví **žebřík** o patro níž. Boss na patře 5 = **vítězství**.
-5. **Konec runu** — smrt, vzdání (Die v pauze) nebo vítězství → obrazovka se statistikami
-   (Game Over / Victory!), připíše se gold, posunou se mise a vyhodnotí challenge.
-6. Libovolná klávesa → zpět do **laboratoře**.
+1. **Loading** — an animated title and a spinning icon.
+2. **Main menu** — Play / Settings / Exit. In the background is a live crypt with rats and bats running around.
+3. **Lab (lobby)** — you walk freely around the room and spend meta currencies at the stations:
+   - **Scientist** → the talent tree, for **talents**,
+   - **Weapon table** → weapon upgrades, for **gold**,
+   - **Quest board** → missions (rewarded in talents) and the choice of **challenge**,
+   - **Portal** → starts a run.
+4. **Run** — floors 1 to 5. Each floor has rooms with enemies, a shop and a boss. When you defeat the boss, a
+   **ladder** to the next floor appears. The boss on floor 5 = **victory**.
+5. **End of run** — death, giving up (Die in the pause menu) or victory → a stats screen
+   (Game Over / Victory!), gold is added, missions advance and the challenge is evaluated.
+6. Any key → back to the **lab**.
 
-### Co se přenáší mezi runy
+### What carries over between runs
 
-| Co | Jak se získá | Za co se utrácí |
+| What | How you get it | What you spend it on |
 |---|---|---|
-| **Gold** | Odměna na obrazovce konce runu (přesnost, zabití, loot, patro) | Vylepšení zbraní u Weapon table |
-| **Talenty** | Splněné mise na Quest boardu, první splnění challenge | Talentový strom u Vědce |
-| **Coins** | Sbírání mincí v dungeonu | Obchod, slot machine — **na konci runu propadnou** |
-| Statistiky | Automaticky na konci každého runu | Zatím se nikde nezobrazují |
+| **Gold** | Reward on the end-of-run screen (accuracy, kills, loot, floor) | Weapon upgrades at the Weapon table |
+| **Talents** | Completed missions on the Quest board, first completion of a challenge | The talent tree at the Scientist |
+| **Coins** | Collecting coins in the dungeon | Shop, slot machine — **lost at the end of the run** |
+| Stats | Automatically at the end of every run | Not shown anywhere yet |
 
-## Obsah
+## Contents
 
 <Cards>
-  <Card title="Herní obrazovky a přechody" href="/docs/progression/scenes" />
-  <Card title="Průběh runu a patra" href="/docs/progression/run" />
-  <Card title="Konec runu a vítězství" href="/docs/progression/run-end" />
-  <Card title="Pravidla runu" href="/docs/progression/rules" />
-  <Card title="Měny a meta-progrese" href="/docs/progression/currencies" />
-  <Card title="Mise" href="/docs/progression/missions" />
-  <Card title="Challenge" href="/docs/progression/challenges" />
+  <Card title="Game screens and transitions" href="/docs/progression/scenes" />
+  <Card title="Run flow and floors" href="/docs/progression/run" />
+  <Card title="End of run and victory" href="/docs/progression/run-end" />
+  <Card title="Run rules" href="/docs/progression/rules" />
+  <Card title="Currencies and meta progression" href="/docs/progression/currencies" />
+  <Card title="Missions" href="/docs/progression/missions" />
+  <Card title="Challenges" href="/docs/progression/challenges" />
   <Card title="Quest board" href="/docs/progression/quest-board" />
-  <Card title="Laboratoř a její stanice" href="/docs/progression/lobby" />
-  <Card title="Menu, pauza, nastavení" href="/docs/progression/menus-settings" />
-  <Card title="Co si hra pamatuje" href="/docs/progression/saves" />
-  <Card title="Příběh a lore" href="/docs/progression/story" />
+  <Card title="The lab and its stations" href="/docs/progression/lobby" />
+  <Card title="Menus, pause, settings" href="/docs/progression/menus-settings" />
+  <Card title="What the game remembers" href="/docs/progression/saves" />
+  <Card title="Story and lore" href="/docs/progression/story" />
 </Cards>
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Patra, místnosti, biomy a bossové: [Dungeon](/docs/dungeon), [Nepřátelé](/docs/enemies).
-- Talentový strom a jeho efekty: [Hráč](/docs/player).
-- Weapon table a vylepšení zbraní: [Zbraně](/docs/guns).
-- Coins, obchod, truhly, artefakty: [Artefakty a předměty](/docs/artefacts-items).
+- Floors, rooms, biomes and bosses: [Dungeon](/docs/dungeon), [Enemies](/docs/enemies).
+- The talent tree and its effects: [Player](/docs/player).
+- The Weapon table and weapon upgrades: [Guns](/docs/guns).
+- Coins, shop, chests, artefacts: [Artefacts and items](/docs/artefacts-items).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Dorovnání talentů a goldu v laboratoři úplně vypíná ekonomiku — cokoli si koupíš, se při dalším vstupu doplní.
-- Hra si vede statistiky (počet runů, výher, zabití, nejhlubší patro…), ale nikde je neukazuje.
-- Z běžícího runu se nedá vrátit do menu ani do laboratoře jinak než smrtí nebo tlačítkem Die.
-- Většina příběhu zatím ve hře není — viz [Příběh](/docs/progression/story).
+- The talent and gold top-up in the lab switches the economy off completely — whatever you buy is refilled the next time you enter.
+- The game keeps stats (number of runs, wins, kills, deepest floor...) but does not show them anywhere.
+- You cannot get from a running run back to the menu or the lab other than by dying or using the Die button.
+- Most of the story is not in the game yet — see [Story](/docs/progression/story).
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Obrazovka profilu / historie runů se statistikami a seedem.
-- Volba „Vzdát a vrátit se do laboratoře“ v pauze bez nutnosti „zemřít“.
+- A profile / run history screen with stats and the seed.
+- A "Give up and return to the lab" option in the pause menu, without having to "die".

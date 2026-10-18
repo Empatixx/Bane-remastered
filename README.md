@@ -104,7 +104,7 @@ You need the [Rust toolchain](https://rustup.rs). We tested the game on macOS on
 
 ## Wiki
 
-The game wiki is online: **https://empatixx.github.io/Bane-remastered/docs** (in Czech). Its source
+The game wiki is online: **https://empatixx.github.io/Bane-remastered/docs**. Its source
 is in [`docs/`](docs/). It describes every gun, enemy, artefact and biome.
 
 ## License

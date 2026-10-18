@@ -1,65 +1,65 @@
 ---
-title: Herní obrazovky a přechody
-description: Jaké obrazovky ve hře jsou (načítání, menu, laboratoř, dungeon), jak se mezi nimi pohybuješ a jaká hudba kde hraje.
+title: Game screens and transitions
+description: Which screens the game has (loading, menu, lab, dungeon), how you move between them and what music plays where.
 ---
 
-Hra má čtyři hlavní obrazovky: **načítání → hlavní menu → laboratoř → dungeon**. Při prvním spuštění je před laboratoří ještě [výcviková krypta](/docs/progression/training). Pauza, nastavení,
-obrazovka konce runu a panely stanic v laboratoři nejsou samostatná místa — otevírají se jako okno
-přes právě hranou obrazovku.
+The game has four main screens: **loading → main menu → lab → dungeon**. On the first launch, the [training crypt](/docs/progression/training) comes before the lab. The pause menu, settings,
+the end-of-run screen and the station panels in the lab are not separate places — they open as a window
+over the screen currently being played.
 
-## Jak to funguje
+## How it works
 
-### Kudy se kam dostaneš
+### How to get where
 
-| Odkud | Kam | Jak |
+| From | To | How |
 |---|---|---|
-| Načítání | Hlavní menu | Automaticky po načtení (krátká půlsekundová pauza) |
-| Hlavní menu | Úvodní cinematic | Tlačítko **Play**, dokud výcvik nedokončíš nebo nepřeskočíš |
-| Úvodní cinematic | Výcviková krypta | Sám po 68 s se zatmívačkou, nebo Esc / mezerník / Enter |
-| Hlavní menu | Laboratoř | Tlačítko **Play** (po výcviku) |
-| Výcviková krypta | Laboratoř | Portál v poslední místnosti, nebo Esc → **Skip Training** |
-| Laboratoř | Výcviková krypta | Kniha s cedulí Training (E) |
-| Hlavní menu | Konec hry | Tlačítko **Exit** |
-| Laboratoř | Dungeon (nový run) | Klávesa Interakce (výchozí **E**) u portálu |
-| Laboratoř | Hlavní menu | Esc → **Main Menu** |
-| Dungeon | Hlavní menu | Esc → **Main Menu**: run skončí jako smrt, po obrazovce konce runu jdeš do menu |
-| Laboratoř / dungeon | Konec hry | Esc → **Exit Game** |
-| Dungeon | Další patro | Klávesa Interakce (výchozí **E**) u žebříku po poražení bosse |
-| Dungeon | Laboratoř | Po obrazovce Game Over / Victory libovolná klávesa, obraz se zatemní (necelá sekunda) |
+| Loading | Main menu | Automatically after loading (a short half-second pause) |
+| Main menu | Intro cinematic | The **Play** button, until you finish or skip training |
+| Intro cinematic | Training crypt | By itself after 68 s with a fade to black, or Esc / space / Enter |
+| Main menu | Lab | The **Play** button (after training) |
+| Training crypt | Lab | The portal in the last room, or Esc → **Skip Training** |
+| Lab | Training crypt | The book with the Training sign (E) |
+| Main menu | Quit the game | The **Exit** button |
+| Lab | Dungeon (new run) | The Interact key (**E** by default) at the portal |
+| Lab | Main menu | Esc → **Main Menu** |
+| Dungeon | Main menu | Esc → **Main Menu**: the run ends as a death, and after the end-of-run screen you go to the menu |
+| Lab / dungeon | Quit the game | Esc → **Exit Game** |
+| Dungeon | Next floor | The Interact key (**E** by default) at the ladder after defeating the boss |
+| Dungeon | Lab | After the Game Over / Victory screen, any key; the screen fades out (under a second) |
 
-### Hudba
+### Music
 
-| Obrazovka | Hudba |
+| Screen | Music |
 |---|---|
-| Načítání | ticho |
-| Hlavní menu | téma hlavního menu |
-| Laboratoř | klidná hudba laboratoře |
-| Dungeon | herní hudba; v místnosti s bossem se přepne na boss hudbu, po jeho smrti zpět |
+| Loading | silence |
+| Main menu | the main menu theme |
+| Lab | calm lab music |
+| Dungeon | game music; in the boss room it switches to boss music, and back after the boss dies |
 
-### Načítání
+### Loading
 
-Noční obloha, animovaný titulek Bane a točící se ikonka. Jakmile je hra připravená, po půl sekundě
-přejde do hlavního menu (titulek plynule odletí na své místo v menu).
+A night sky, the animated Bane title and a spinning icon. Once the game is ready, it moves on to the main menu
+after half a second (the title smoothly flies to its place in the menu).
 
-## Obsah
+## Contents
 
-| Obrazovka | Co tu děláš | Ovládání | Podrobně |
+| Screen | What you do here | Controls | Details |
 |---|---|---|---|
-| Načítání | Čekáš | — | výše |
-| Hlavní menu | Spustíš hru, nastavení, odejdeš | myš | [Menu, pauza, nastavení](/docs/progression/menus-settings) |
-| Laboratoř | Chodíš, utrácíš měny, volíš challenge, vstupuješ do portálu | pohyb + E, kurzor myši | [Laboratoř](/docs/progression/lobby) |
-| Dungeon | Hraješ run | pohyb, střelba, kurzor se mění na zaměřovač (a ukazuje přebíjení) | [Průběh runu](/docs/progression/run) |
+| Loading | You wait | — | above |
+| Main menu | Start the game, open settings, leave | mouse | [Menus, pause, settings](/docs/progression/menus-settings) |
+| Lab | Walk around, spend currencies, pick a challenge, enter the portal | movement + E, mouse cursor | [The lab](/docs/progression/lobby) |
+| Dungeon | Play a run | movement, shooting, the cursor turns into a crosshair (and shows reloading) | [Run flow](/docs/progression/run) |
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Nastavení otevřeš z hlavního menu i z pauzy (Esc → **Settings**) — hlasitost nebo klávesy si změníš, aniž bys opouštěl run.
-- Co se při přechodech ukládá: [Co si hra pamatuje](/docs/progression/saves).
+- You can open settings from the main menu and from the pause menu (Esc → **Settings**) — you can change the volume or keys without leaving the run.
+- What gets saved during transitions: [What the game remembers](/docs/progression/saves).
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Z dungeonu se nedá odejít do laboratoře bez ukončení runu — rozehraný run nejde uložit a dohrát později.
+- You cannot leave the dungeon for the lab without ending the run — a run in progress cannot be saved and finished later.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Epilog / pravý konec po splnění challenge Bane (viz [Příběh](/docs/progression/story)).
-- Obrazovka profilu se statistikami a credits.
+- An epilogue / true ending after completing the Bane challenge (see [Story](/docs/progression/story)).
+- A profile screen with stats and credits.

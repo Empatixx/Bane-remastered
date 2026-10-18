@@ -1,126 +1,133 @@
 ---
-title: Chování a pohyb
-description: Jak tě nepřátelé hledají, jak obcházejí překážky a jak se rozhodují bossové.
+title: Behavior and movement
+description: How enemies find you, how they go around obstacles and how bosses decide what to do.
 ---
 
-Nepřátelé v Bane mají jediný cíl – tebe. Hned po zhmotnění vědí, kde jsi, a jdou za tebou nejkratší
-cestou kolem zdí a objektů. Bossové navíc střídají útoky podle pevného vzorce s telegrafem a fází zuřivosti.
+Enemies in Bane have a single goal – you. Right after they materialize, they know where you are and
+take the shortest path to you around walls and objects. Bosses also alternate attacks in a fixed
+pattern with a telegraph and an enrage phase.
 
-## Jak to funguje
+## How it works
 
-### Koho nepřátelé sledují
+### Whom enemies follow
 
-Vždy jen hráče – nikdy tvého mazlíčka. Pokud jsi neviditelný (artefakt **Phantom**):
+Always only the player – never your pet. If you are invisible (the **Phantom** artefact):
 
-- běžní nepřátelé zůstanou stát,
-- Eye watcher přestane střílet a naváděné střely letí rovně,
-- bossové se chovají, jako bys byl daleko, a volí útoky na dálku.
+- regular enemies stand still,
+- Eye watcher stops shooting and homing projectiles fly straight,
+- bosses behave as if you were far away and pick ranged attacks.
 
-Plošné útoky (padající kameny, dopady skoků, paprsky) tě ale zasáhnou i neviditelného.
+Area attacks (falling rocks, jump landings, beams) still hit you even when you are invisible.
 
-### Hledání cesty
+### Pathfinding
 
-Nepřátelé „cítí“ vzdálenost k tobě v okruhu zhruba 18 dlaždic (přes celou místnost). Mapa cest se
-počítá zvlášť pro každou velikost nepřítele: velký nepřítel (krysa, golem, stilt spider) je posílán jen
-mezerami, kterými se opravdu protáhne, malý jde i úzkou škvírou. Když nepřítel tvou cestu na šířku
-svého těla vidí volnou, jde rovně za tebou; jinak jde rovně k nejvzdálenějšímu bodu své cesty, kam
-dojde v přímce, takže zatáčí plynule a nekličkuje po dlaždicích. Mapa se přepočítá, kdykoli se
-pohneš (nejvýš 10× za sekundu), takže nepřítele nesetřeseš tím, že zalezeš za roh. Kdo má cestu jen
-užší, než je sám, zkusí se protlačit cestou pro menší nepřátele.
+Enemies "sense" the distance to you within a radius of about 18 tiles (across a whole room). The path
+map is calculated separately for each enemy size: a large enemy (rat, golem, stilt spider) is sent only
+through gaps it can really fit through, while a small one can go through a narrow crack. If an enemy
+sees your path as clear for the width of its body, it walks straight to you; otherwise it walks
+straight to the farthest point of its path that it can reach in a straight line, so it turns smoothly
+and does not zigzag between tiles. The map is recalculated whenever you move (at most 10 times per
+second), so you cannot shake an enemy off by hiding around a corner. An enemy whose only path is
+narrower than itself tries to squeeze through the path made for smaller enemies.
 
-### Řízení pohybu a rozestupy v davu
+### Steering and spacing in a crowd
 
-Kudy přesně nepřítel v danou chvíli půjde, rozhoduje řízení pohybu (context steering): z 16 směrů kolem
-sebe každý ohodnotí podle toho, jak vede k cíli, a ubere body směrům, kde má zeď nebo jiného nepřítele
-blízko před sebou (dívá se asi třetinu sekundy chůze dopředu). Vybere nejlepší směr a když má zeď
-těsně před sebou, zpomalí, místo aby do ní narazil. Jinému nepříteli uhne, jen když stojí přímo
-v jeho cestě a nejde stejným směrem; za tím, kdo jde stejně, prostě jde. Necouvá ani neodskakuje.
-Směr i rychlost mění plynule během zlomku sekundy, takže zatáčí obloukem a necuká.
+Exactly which way an enemy goes at a given moment is decided by its steering (context steering): it
+scores each of 16 directions around itself by how well it leads to the target, and subtracts points
+from directions where a wall or another enemy is close ahead (it looks ahead about a third of a
+second of walking). It picks the best direction, and when a wall is right in front of it, it slows
+down instead of running into it. It steps aside for another enemy only when that enemy stands right in
+its way and is not going the same direction; behind one that goes the same way, it simply follows. It
+does not back off or jump away. It changes direction and speed smoothly over a fraction of a second,
+so it turns in an arc and does not twitch.
 
-### Místa kolem hráče
+### Spots around the player
 
-Aby se nepřátelé u tebe nepřetlačovali o jedno místo, má kolem tebe každý své místo. Kolem hráče je
-16 míst do kruhu, každé tak blízko, že nepřítel na něm tě dotýká (a zraňuje). Nepřítel, který se
-přiblíží asi na 3,5 dlaždice, si zabere nejbližší volné místo ze strany, odkud jde, kam se jeho tělo
-vejde vedle ostatních. Dojde tam a stojí, dokud se nevzdálí (víc než asi 5,5 dlaždice, např. když
-utečeš). Kdo místo nedostane, protože je kolem tebe plno, pomalu tě obchází asi dvě dlaždice
-opodál a čeká, až se nějaké uvolní. Kolem tebe se tak vejdou zhruba 4–6 nepřátel podle velikosti.
-Střílející nepřátelé místa nezabírají, drží si svůj odstup.
+So that enemies do not push each other for one spot at your side, each one has its own spot around you.
+There are 16 spots in a circle around the player, each so close that an enemy standing on it touches
+you (and hurts you). An enemy that comes within about 3.5 tiles takes the nearest free spot on the
+side it is coming from, where its body fits next to the others. It walks there and stands until you
+get away from it (more than about 5.5 tiles, for example when you run away). An enemy that gets no
+spot because it is crowded around you slowly circles you about two tiles away and waits for one to
+free up. About 4–6 enemies fit around you, depending on their size. Shooting enemies do not take
+spots; they keep their own distance.
 
-Nepřátelé se navzájem fyzicky nesrážejí (procházejí si skrz), odstup mezi sebou drží jen svým
-řízením pohybu a místy kolem tebe. Se zdmi, objekty a nábytkem se srážejí normálně.
+Enemies do not collide with each other physically (they pass through one another); they keep their
+distance only through their steering and the spots around you. They collide normally with walls,
+objects and furniture.
 
-### Zaseknutí
+### Getting stuck
 
-Když nepřítel přesto uvízne (např. v tlačenici), na 0,6 s se vyhne směru, kterým se tlačil, a zkusí
-obejít překážku z boku. Při dalším zaseknutí zkusí druhou stranu.
+If an enemy still gets stuck (for example in a crowd), it avoids the direction it was pushing for 0.6 s
+and tries to go around the obstacle from the side. If it gets stuck again, it tries the other side.
 
-### Natočení
+### Facing
 
-Nepřátelé se otáčejí čelem k tobě. Výjimkou jsou ti, kdo právě dělají výpad – ti drží směr útoku.
+Enemies turn to face you. The exception is those that are in the middle of a dash – they keep the
+direction of the attack.
 
-### Zpomalení času
+### Time slow
 
-Artefakt zpomalení času zpomalí všechny nepřátele, jejich útoky i jejich střely, ale ne tebe.
+The time slow artefact slows down all enemies, their attacks and their projectiles, but not you.
 
-### Stavy, které mění chování
+### States that change behavior
 
-| Stav | Kdy nastane | Co dělá |
+| State | When it happens | What it does |
 |---|---|---|
-| Zhmotňování | při objevení | neviditelný → viditelný, nedá se trefit, nic nedělá |
-| Zakořeněný | nápřah útoku, plivání pavučiny | stojí na místě, ale útok běží |
-| Zmražený | 4 zásahy ledovou municí | stojí, neútočí, nezraňuje |
-| Zchlazený | zásah ledovou municí | poloviční rychlost |
-| Výpad | útoky bossů, skok slizu | letí pevným směrem |
-| Uzavřený | Mimic v útoku Rest | imunní vůči poškození |
-| Zásah | každý zásah | červený obrys 0,3 s |
-| Otrávený | jedovatá louže | zelený obrys, 1 poškození za sekundu |
+| Materializing | on appearing | invisible → visible, cannot be hit, does nothing |
+| Rooted | attack wind-up, spitting a web | stands still, but the attack keeps running |
+| Frozen | 4 hits with ice ammo | stands still, does not attack, does not deal damage |
+| Chilled | a hit with ice ammo | half speed |
+| Dash | boss attacks, slime jump | flies in a fixed direction |
+| Closed | Mimic in the Rest attack | immune to damage |
+| Hit | every hit | red outline for 0.3 s |
+| Poisoned | poison puddle | green outline, 1 damage per second |
 
-### Jak se rozhodují bossové
+### How bosses decide
 
-Stone golem, Argus, Sewer ogre, Hellhound a Mimic mají stejný vzorec:
+Stone golem, Argus, Sewer ogre, Hellhound and Mimic share the same pattern:
 
-1. **Pohyb** – boss jde za tebou (Argus se jen vznáší) a čeká na konec pauzy mezi útoky.
-2. **Výběr útoku** – náhodně, ale ovlivněno vzdáleností od tebe a počtem pomocníků. **Stejný útok nikdy
-   nepoužije dvakrát po sobě.**
-3. **Nápřah** – boss se zastaví a přehraje animaci, podle které poznáš, co přijde.
-4. **Útok** – výstřel, paprsek, déšť kamenů, výpad…
-5. **Zotavení** – krátká pauza, pak zpět k pohybu.
-6. **Zuřivost** – když boss klesne na polovinu HP, zčervená, zrychlí, zkrátí pauzy a některé útoky
-   zesílí.
+1. **Movement** – the boss follows you (Argus only hovers) and waits for the pause between attacks to end.
+2. **Choosing an attack** – random, but influenced by your distance and the number of helpers. **It never
+   uses the same attack twice in a row.**
+3. **Wind-up** – the boss stops and plays an animation that tells you what is coming.
+4. **Attack** – a shot, a beam, a rock rain, a dash...
+5. **Recovery** – a short pause, then back to movement.
+6. **Enrage** – when the boss drops to half HP, it turns red, speeds up, shortens its pauses and makes
+   some attacks stronger.
 
-Spider king a King slime jsou jednodušší: jejich schopnosti běží pořád dokola na časovačích, bez
-nápřahů a bez zuřivosti.
+Spider king and King slime are simpler: their abilities run in a loop on timers, with no wind-ups and
+no enrage.
 
-## Obsah
+## Contents
 
-| Typ pohybu | Nepřátelé |
+| Movement type | Enemies |
 |---|---|
-| Pronásledovatel | Rat, Snake, Bat, Demon eye, spiderlingové, Bloated spider, Mini golem, Red slime, Spider king, King slime, ostatní bossové mezi útoky |
-| Pronásledovatel s výpadem | Ghost |
-| Drží odstup | Slime (ve vzdálenosti pod ~4,5 dlaždice zastaví, pod 3 dlaždice couvá) |
-| Stojí na místě | Eye watcher, Argus eye (obíhá Arguse) |
-| Skokan | Stilt spider |
-| Poskakuje | Saliva slime |
+| Chaser | Rat, Snake, Bat, Demon eye, spiderlings, Bloated spider, Mini golem, Red slime, Spider king, King slime, other bosses between attacks |
+| Chaser with a dash | Ghost |
+| Keeps its distance | Slime (stops below ~4.5 tiles, backs off below 3 tiles) |
+| Stands still | Eye watcher, Argus eye (orbits Argus) |
+| Jumper | Stilt spider |
+| Hops | Saliva slime |
 
-## Tipy a souvislosti
+## Tips and connections
 
-- Slime je jediný běžný nepřítel, který od tebe utíká – musíš za ním.
-- Neviditelnost (Phantom) je nejlepší způsob, jak se zbavit tlaku davu, ale nechrání před plošnými útoky bossů.
-- Ledová munice a zmražení vyřadí nepřítele z boje úplně, včetně kontaktního poškození. Viz [Zbraně](/docs/guns).
-- Zdi a pevné objekty [dungeonu](/docs/dungeon) jsou pro nepřátele překážkou, kterou musí obejít.
+- Slime is the only regular enemy that runs away from you – you have to go after it.
+- Invisibility (Phantom) is the best way to get rid of crowd pressure, but it does not protect you from the bosses' area attacks.
+- Ice ammo and freezing take an enemy out of the fight completely, including its contact damage. See [Guns](/docs/guns).
+- Walls and solid objects in the [dungeon](/docs/dungeon) are obstacles that enemies have to go around.
 
-## Známé nesrovnalosti
+## Known inconsistencies
 
-- Nepřátelé nemají žádný dosah vnímání – vidí tě hned po zhmotnění, i přes zdi.
-- Mimo okruh asi 18 dlaždic nepřátelé jdou rovně za tebou, i když jim stojí v cestě zeď.
-- Nepřítel, který se nikudy nevejde (např. obří stilt spider v úzké chodbě), se pořád může zaseknout.
-- Útoky bossů závisí na místě, kde se boss objevil, ne na seedu runu – při stejném seedu se tak
-  nemusí opakovat stejně.
+- Enemies have no perception range – they see you right after materializing, even through walls.
+- Outside a radius of about 18 tiles, enemies walk straight at you, even if a wall is in their way.
+- An enemy that fits nowhere (for example a giant stilt spider in a narrow corridor) can still get stuck.
+- Boss attacks depend on the place where the boss appeared, not on the run seed – so with the same seed
+  they may not repeat the same way.
 
-## Nápady na rozšíření
+## Ideas for expansion
 
-- Dosah vnímání a „probuzení“ nepřátel, když tě uvidí.
-- Skupinové chování – obkličování, útok z boku – místo toho, aby všichni šli stejnou cestou.
-- Víc nepřátel, kteří drží odstup nebo krouží (Eye watcher, Demon eye).
-- Převést Spider kinga a King slime na stejný vzorec s nápřahy a zuřivostí jako ostatní bossy.
+- A perception range and "waking up" enemies when they see you.
+- Group behavior – surrounding, flanking – instead of everyone taking the same path.
+- More enemies that keep their distance or circle (Eye watcher, Demon eye).
+- Convert Spider king and King slime to the same pattern with wind-ups and enrage as the other bosses.

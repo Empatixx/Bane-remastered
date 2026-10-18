@@ -1,5 +1,5 @@
 {
-  "title": "Nepřátelé",
+  "title": "Enemies",
   "icon": "Skull",
   "pages": ["index", "spawning", "ai", "critters", "slimes", "spiders", "eyes", "projectiles", "bosses"]
 }
