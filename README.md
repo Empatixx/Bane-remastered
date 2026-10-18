@@ -13,7 +13,7 @@
 
 ![Bane trailer](media/trailer.gif)
 
-[Watch the trailer in full quality](media/trailer.mp4) | English | [Cesky](README.cs.md)
+[Watch the trailer in full quality](media/trailer.mp4)
 
 </div>
 
