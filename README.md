@@ -1,82 +1,96 @@
-# Bane
+<div align="center">
 
-A 2D top-down roguelike shooter in Rust. You are Elian, a test subject sent through a portal into
-**the Bane** — a wound in the world whose floors rearrange themselves after every descent. Fight
-through five procedurally generated floors, spend what you earn between runs, and take down the
-boss at the bottom.
+# BANE
 
-![Combat in a moss floor](media/combat.gif)
+### Five floors down. Every one of them remembers who you are.
 
-## What's in it
+A fast, hand-drawn top-down roguelike shooter. Dodge, shoot, die, upgrade, go deeper.
 
-- **16 guns** — from the starting Pistol and Shotgun through Uzi, Sniper, RPG and Flamethrower to
-  the Tesla Gun and Railgun. Each has its own permanent upgrade tree and a mutation at the end of it.
-- **23 enemy kinds** — 13 regular enemies (rats, bats, slimes, spiders, eyes …), 3 summons and
-  **7 bosses**, each with its own attack patterns and enrage phase.
-- **7 biomes** — stone, sewer, moss, spider, ice, lava and temple. A biome sets the look, the
-  floor liquid, the traps, the decorations, the enemies and the boss.
-- **Procedural dungeons** — 8–15 rooms per floor: normal, ambush, treasure, shop, sacrifice and boss
-  rooms, with arrow traps, ice, webs, lava and destructibles.
-- **13 artefacts**, pickups, a shop, a slot machine, a combat pet and perks.
-- **Meta-progression** — a lab between runs with a talent tree, a weapon table, a quest board with
-  missions and challenges, and a story told through the bosses you meet.
-- **Dodge roll**, dynamic lighting, post-processing, a minimap and a big map.
+![Bane trailer](media/trailer.gif)
 
-### Biomes
+[▶ Watch the trailer in full quality](media/trailer.mp4)
+
+</div>
+
+---
+
+## The Bane is open. Go in.
+
+Something tore a hole in the world, and its floors never look the same twice. You are Elian, the one
+sent down through the portal. Below you wait rats, slimes, spiders and things with too many eyes,
+and at the bottom of every floor, a boss who used to be somebody.
+
+You get a pistol, a shotgun and a dodge roll. Everything else you have to take.
+
+## Why you'll want one more run
+
+**🔫 16 guns that feel different.** Pistol, Uzi, Sniper, Flamethrower, Tesla Gun, RPG, Railgun and
+more. Every gun has its own upgrade tree and a mutation waiting at the end of it.
+
+**👹 7 bosses with a name and a story.** A hellhound that waits at the bottom, a scribe who wrote
+down every prayer, a living chest, a king of spiders. Each has its own attack patterns and goes into
+a rage when it's losing.
+
+**🗺️ A new dungeon every time.** Rooms, traps, shops, treasure and sacrifice altars are generated
+fresh for every floor, across seven biomes: Stone, Sewer, Moss, Spider, Ice, Lava and Temple.
+
+**🎲 Loot that changes the run.** 13 one-shot artefacts, a shop, a slot machine, perks and a pet that
+fetches your coins. Gamble on a gun, pay for it in blood, or save up.
+
+**⬆️ You get stronger even when you die.** Between runs you walk around the lab: spend talents with
+the Scientist, upgrade guns at the weapon table, take on quests and challenges at the quest board.
+
+**🎨 Built to look good.** Hand-drawn pixel art, dynamic lighting, atmosphere in every biome, a
+dodge roll that feels right, screen shake and hit flashes where they belong.
+
+## Take a look
+
+### Seven biomes, seven moods
 
 | | | |
 |:-:|:-:|:-:|
-| ![Stone](media/biome-stone.png)<br>Stone | ![Sewer](media/biome-sewer.png)<br>Sewer | ![Moss](media/biome-moss.png)<br>Moss |
-| ![Spider](media/biome-spider.png)<br>Spider | ![Ice](media/biome-ice.png)<br>Ice | ![Lava](media/biome-lava.png)<br>Lava |
-| ![Temple](media/biome-temple.png)<br>Temple | | |
+| ![Stone](media/biome-stone.png)<br>**Stone** | ![Sewer](media/biome-sewer.png)<br>**Sewer** | ![Moss](media/biome-moss.png)<br>**Moss** |
+| ![Spider](media/biome-spider.png)<br>**Spider** | ![Ice](media/biome-ice.png)<br>**Ice** | ![Lava](media/biome-lava.png)<br>**Lava** |
+| ![Temple](media/biome-temple.png)<br>**Temple** | | |
 
-### Bosses, shops and loot
-
-![Oswin's Hound, the lava boss](media/boss.gif)
+### Meet the locals
 
 | | | |
 |:-:|:-:|:-:|
-| ![Boss room](media/room-boss.png)<br>Boss room | ![Shop](media/room-shop.png)<br>Shop | ![Treasure room](media/room-treasure.png)<br>Treasure room |
+| ![Boss](media/room-boss.png)<br>**Every floor ends in a boss** | ![Shop](media/room-shop.png)<br>**Spend it while you have it** | ![Treasure](media/room-treasure.png)<br>**Treasure for the brave** |
 
 ## Controls
 
-| Input | Action |
+| | |
 |---|---|
-| `W` `A` `S` `D` | Move |
-| Mouse | Aim |
-| Left mouse button | Shoot |
-| `Space` | Dodge roll |
-| `R` | Reload |
-| `1`–`9` / mouse wheel | Switch weapon |
-| `E` | Interact, pick up |
-| `F` | Use artefact |
-| `Q` | Drop weapon |
-| `Tab` | Map |
-| `Esc` | Pause |
+| **Move** `W` `A` `S` `D` | **Aim / shoot** mouse |
+| **Dodge roll** `Space` | **Reload** `R` |
+| **Switch gun** `1`–`9` or wheel | **Interact** `E` |
+| **Artefact** `F` | **Map** `Tab` |
 
-## Run it
+## Play it
 
 ```bash
-cd rust
+git clone git@github.com:Empatixx/Bane_refactor.git
+cd Bane_refactor/rust
 cargo run --release
 ```
 
-Debug knobs (`BANE_THEME=lava`, `BANE_START=dungeon`, `BANE_AT=boss`, `BANE_SEED=…`) and headless
-screenshots / GIFs (`--shot`) are described in [`rust/README.md`](rust/README.md). All the pictures
-above were made that way.
+You need a [Rust toolchain](https://rustup.rs). It runs on macOS, Windows and Linux.
 
-## How it's built
+---
 
-A Rust workspace in [`rust/`](rust/): `wgpu` + `winit` for the window and rendering, `hecs` ECS,
-`rapier2d` physics, `kira` audio, `glam` math. A fixed 60 Hz simulation with a variable render rate;
-the schedule, scenes and resources are described in
-[`rust/docs/`](rust/docs/2026-10-18-ecs-refactor-notes.md).
+<details>
+<summary><b>For developers</b></summary>
 
-The game started as a Java / LWJGL game and was ported to Rust; the Java code is gone from `master`
-but stays in the git history.
+Bane is written in Rust: `wgpu` + `winit` for rendering, `hecs` ECS, `rapier2d` physics, `kira`
+audio. The simulation runs at a fixed 60 Hz with a variable render rate. It started as a Java game
+and was ported; the Java version lives on in the git history.
 
-## Docs
-
-- [`docs/`](docs/) — the Bane wiki (Fumadocs, in Czech): every gun, enemy, artefact and biome.
-- [`story.md`](story.md) — the story and its direction.
+- [`rust/`](rust/) — the game. Headless screenshots, debug switches (`BANE_THEME`, `BANE_AT`,
+  `BANE_SEED`) and the ECS notes are in [`rust/README.md`](rust/README.md) and [`rust/docs/`](rust/docs/).
+- [`docs/`](docs/) — the Bane wiki (Czech): every gun, enemy, artefact and biome.
 - [`tools/`](tools/) — Python scripts that generate sprites, sounds and atmosphere assets.
+- [`story.md`](story.md) — the story and where it's going.
+
+</details>
