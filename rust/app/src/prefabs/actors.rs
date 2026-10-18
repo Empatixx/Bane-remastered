@@ -594,7 +594,7 @@ pub(crate) fn hatchling(
     textures: &Textures,
 ) -> Entity {
     let entity = enemy(world, kind, position, 0, textures);
-    finish_spawning(world, physics, entity);
+    make_ready(world, physics, entity);
     let _ = world.insert(entity, (Minion, NoDrop));
     if let Some(room) = room {
         let _ = world.insert_one(entity, room);
@@ -636,18 +636,26 @@ pub(crate) fn enemy_in_room(
     entity
 }
 
-pub(crate) fn finish_spawning(world: &mut World, physics: &mut Physics, entity: Entity) {
+/// Puts an enemy's body into the simulation, at its `Position` and `Size`: the last piece of an
+/// enemy built ready ([`make_ready`]), and what `systems::tick_spawning` gives a risen one.
+pub(crate) fn enemy_body(world: &mut World, physics: &mut Physics, entity: Entity) {
     let placement = world
         .query_one_mut::<(&Position, &Size)>(entity)
         .map(|(position, size)| (position.0, size.0));
-    let _ = world.remove_one::<Spawning>(entity);
-    if let Ok(color) = world.query_one_mut::<&mut Color>(entity) {
-        color.0 = Vec4::ONE;
-    }
     if let Ok((position, size)) = placement {
         let body = physics.add_enemy(entity, position, size);
         let _ = world.insert_one(entity, body);
     }
+}
+
+/// Makes a just-built enemy ready at once, without rising from the floor (a hatchling, a
+/// test's enemy): no `Spawning`, full colour, its body in the simulation.
+pub(crate) fn make_ready(world: &mut World, physics: &mut Physics, entity: Entity) {
+    let _ = world.remove_one::<Spawning>(entity);
+    if let Ok(color) = world.query_one_mut::<&mut Color>(entity) {
+        color.0 = Vec4::ONE;
+    }
+    enemy_body(world, physics, entity);
 }
 
 #[cfg(test)]
@@ -658,6 +666,6 @@ pub(crate) fn ready_enemy(
     position: Vec2,
 ) -> Entity {
     let entity = enemy(world, kind, position, 0, &Textures::default());
-    finish_spawning(world, physics, entity);
+    make_ready(world, physics, entity);
     entity
 }

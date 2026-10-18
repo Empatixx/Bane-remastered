@@ -208,7 +208,6 @@ mod tests {
     use crate::assets::Textures;
     use crate::assets::tex;
     use crate::components::{Chase, EnemyBullet, Player, Velocity};
-    use crate::prefabs::finish_spawning;
     use crate::systems::enemies::reap_dead;
     use crate::systems::{chase_player, tick_spawning};
 
@@ -246,7 +245,7 @@ mod tests {
             1,
             &Textures::default(),
         );
-        finish_spawning(world, physics, entity);
+        prefabs::make_ready(world, physics, entity);
         entity
     }
 

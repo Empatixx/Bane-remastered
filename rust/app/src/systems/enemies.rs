@@ -390,8 +390,13 @@ pub(crate) fn tick_spawning(world: &mut World, physics: &mut Physics, dt: f32) {
             finished.push(entity);
         }
     }
+    // The rise is over: the enemy shows whole and joins the simulation, in this step.
     for entity in finished {
-        crate::prefabs::finish_spawning(world, physics, entity);
+        let _ = world.remove_one::<Spawning>(entity);
+        if let Ok(color) = world.query_one_mut::<&mut Color>(entity) {
+            color.0 = Vec4::ONE;
+        }
+        crate::prefabs::enemy_body(world, physics, entity);
         if world.remove_one::<Puddle>(entity).is_ok() {
             stand_up(world, entity);
         }

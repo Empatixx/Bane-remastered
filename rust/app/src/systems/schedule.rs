@@ -48,6 +48,8 @@
 //!    [`bullets_phase`] by the next step's. Nothing in between asks the physics where those
 //!    bodies are or how fast they go; a write that must be seen at once uses `Physics::place`
 //!    or `Physics::halt` instead (see `systems::simulation`).
+//! 9. **Risers join the simulation in their step.** `tick_spawning` opens [`hostile_phase`]: an
+//!    enemy whose rise ends gets its body there and acts in the same step.
 
 use glam::Vec2;
 use hecs::World;
