@@ -89,6 +89,8 @@ pub(crate) use artefacts::{
     update_shield_aura,
 };
 pub(crate) use atmosphere::{Atmosphere, AtmosphereTextures, tick_atmosphere};
+#[cfg(test)]
+pub(crate) use overhead::Wasp;
 pub(crate) use overhead::{spawn_hanging, spawn_overheads, tick_drips, tick_hanging, tick_overheads};
 pub(crate) use blood::{
     apply_heal_percent, bloodlust_heals_on_kill, pulse_bloodlust, spawn_bloodlust_drops,

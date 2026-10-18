@@ -7,8 +7,8 @@
 //! [`enemy_attacks_phase`], [`contraptions_phase`], [`physics_phase`], [`combat_phase`],
 //! [`deaths_phase`], [`surfaces_phase`], [`contact_phase`], then the camera takes the trauma.
 //!
-//! The in-game frame: the shot, [`arms_phase`], [`lightning_phase`], [`pickups_phase`], the
-//! clock, [`scenery_phase`], [`hud_phase`], the rooms and their events, [`gone_phase`],
+//! The in-game frame: the shot, [`arms_phase`], [`lightning_phase`], [`pickups_phase`],
+//! [`advance_clock`], [`scenery_phase`], [`hud_phase`], the rooms and their events, [`gone_phase`],
 //! [`items_phase`], [`story_phase`], then the camera, the interactions and the trauma.
 //!
 //! The lobby shares [`move_player_phase`], [`pets_phase`], [`bullets_phase`] and
@@ -37,8 +37,10 @@
 //!    boss acts on this step's rage.
 //! 6. **Trauma drains last.** The camera takes the trauma the systems gathered at the end of
 //!    every fixed step and of every frame, so a hard hit shakes the frame it happened in.
-//! 7. **The clock before the scenery.** The scene's clock moves on after [`pickups_phase`] and
-//!    before [`scenery_phase`], whose wind, trails, dust and swaying read it.
+//! 7. **The clock before the scenery.** [`advance_clock`] moves the scene's clock on after
+//!    [`pickups_phase`] and before [`scenery_phase`], whose wind, trails, dust and swaying read
+//!    it. The tick lends the clock (`&mut f32`) rather than copying it, so no phase can read a
+//!    stale time.
 
 use glam::Vec2;
 use hecs::World;
@@ -71,8 +73,9 @@ pub(crate) struct Tick<'a> {
     pub(crate) fx: &'a mut Fx,
     /// Where the camera stands (without its shake), which the mouse is aimed from.
     pub(crate) camera: Vec2,
-    /// The scene's clock, in seconds.
-    pub(crate) clock: f32,
+    /// The scene's clock, in seconds. Lent rather than copied, so a phase after
+    /// [`advance_clock`] reads the advanced time and never a stale copy.
+    pub(crate) clock: &'a mut f32,
     /// The length of the step.
     pub(crate) dt: f32,
     /// The length of the step for the hostiles: `dt` slowed by the hourglass.
@@ -101,7 +104,7 @@ impl std::fmt::Debug for Tick<'_> {
         f.debug_struct("Tick")
             .field("dt", &self.dt)
             .field("hostile_dt", &self.hostile_dt)
-            .field("clock", &self.clock)
+            .field("clock", &*self.clock)
             .finish()
     }
 }
@@ -146,7 +149,7 @@ pub(crate) fn hostile_phase(tick: &mut Tick, floor: &mut Floor) {
     super::dash(tick.world, tick.sounds, hostile_dt);
     super::update_flow(floor.flow, tick.world, tick.physics, tick.navigation, tick.dt);
     super::chase_player(tick.world, floor.flow, hostile_dt);
-    let clock = tick.clock;
+    let clock = *tick.clock;
     let (world, mut hostile) = tick.hostile();
     super::tick_enrage(world, &mut *hostile.sounds);
     super::tick_golem(world, &mut hostile);
@@ -209,8 +212,8 @@ pub(crate) fn contraptions_phase(tick: &mut Tick, floor: &mut Floor) {
     let textures = &assets.textures;
     super::slow_bullets_in_webs(tick.world, tick.physics, tick.dt);
     super::tick_carts(tick.world, tick.physics, tick.dt);
-    super::tick_waterworks(tick.world, tick.physics, floor.surfaces, textures, tick.clock, tick.dt);
-    super::tick_pendulums(tick.world, tick.sounds, tick.fx, tick.clock, tick.hostile_dt);
+    super::tick_waterworks(tick.world, tick.physics, floor.surfaces, textures, *tick.clock, tick.dt);
+    super::tick_pendulums(tick.world, tick.sounds, tick.fx, *tick.clock, tick.hostile_dt);
     super::shove_tables(tick.world, tick.physics, textures, tick.sounds, tick.input.direction());
 }
 
@@ -272,7 +275,7 @@ pub(crate) fn surfaces_phase(tick: &mut Tick, floor: &mut Floor, view: Vec2) {
     if super::burn_on_lava(tick.world, floor.surfaces, tick.sounds, tick.fx) {
         *floor.hit = true;
     }
-    super::sync_liquids(tick.world, tick.clock);
+    super::sync_liquids(tick.world, *tick.clock);
     super::ripple_on_water(tick.world, floor.surfaces, &tick.assets.textures, tick.dt);
     super::kick_up_surfaces(tick.world, floor.surfaces, tick.dt);
     super::stir_surfaces(tick.world, &mut floor.air.stir, floor.surfaces, view, crate::viewport::TARGET, tick.dt);
@@ -325,12 +328,18 @@ pub(crate) fn pickups_phase(tick: &mut Tick, floor: &mut Floor) {
     super::tick_invulnerability(tick.world, tick.dt);
 }
 
+/// The scene's clock moves on by the frame. Runs after [`pickups_phase`] and before
+/// [`scenery_phase`], whose wind, trails, dust and swaying read the advanced time.
+pub(crate) fn advance_clock(tick: &mut Tick) {
+    *tick.clock += tick.dt;
+}
+
 /// What moves for the eye alone: the gaze wind (or the berserk's), bullet trails, dust, the
 /// floor's weather, what hangs overhead, drips, the lightning's fade and the shadows.
 pub(crate) fn scenery_phase(tick: &mut Tick, floor: &mut Floor) {
     let assets = tick.assets;
     let textures = &assets.textures;
-    let (dt, clock) = (tick.dt, tick.clock);
+    let (dt, clock) = (tick.dt, *tick.clock);
     let berserk = tick.world.query::<&Berserk>().iter().count() > 0;
     let (particle, phase) = if berserk {
         (tex::ARTEFACTS_BERSERKPOT_PARTICLE, crate::artefacts::BERSERK_PHASE)
@@ -367,7 +376,7 @@ pub(crate) fn hud_phase(tick: &mut Tick) {
         .with::<&Player>()
         .iter()
         .next()
-        .map(|_| tick.clock);
+        .map(|_| *tick.clock);
     super::update_weapon_hud(tick.world, &tick.assets.textures, infinite);
     super::fade_lights(tick.world);
     super::flash_hits(tick.world, dt);

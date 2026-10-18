@@ -271,11 +271,13 @@ impl Scene for InGameScene {
         let (mut tick, mut floor) = self.phases(input, assets, dt);
         schedule::lightning_phase(&mut tick);
         schedule::pickups_phase(&mut tick, &mut floor);
-        self.clock += dt;
-        let (mut tick, mut floor) = self.phases(input, assets, dt);
+        // The scenery reads the clock this moves on (contract item 7): it must stay between them.
+        schedule::advance_clock(&mut tick);
         schedule::scenery_phase(&mut tick, &mut floor);
         schedule::hud_phase(&mut tick);
         let mut events = Vec::new();
+        // Read now, not from the tick: an hourglass turned in `arms_phase` this frame must
+        // already slow the rooms' waves.
         let hostile_dt = dt * systems::time_scale(&self.world);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
             let context = systems::RoomContext {
@@ -398,7 +400,7 @@ impl InGameScene {
             sounds: &mut self.resources.sounds,
             fx: &mut self.resources.fx,
             camera: self.camera.position(),
-            clock: self.clock,
+            clock: &mut self.clock,
             dt,
             hostile_dt,
         };
@@ -1144,6 +1146,67 @@ mod tests {
         assert_eq!(scene.resources.fx, systems::Fx::default(), "the camera took all of it");
         scene.camera.update_shake(0.05);
         assert_ne!(scene.camera.view(), still, "and shakes");
+    }
+
+    /// A boss brought to its rage threshold enrages before its own tick in the same fixed
+    /// step, so that tick already acts enraged: a golem's slam landing in the step it falls to
+    /// half health readies the enraged second ring.
+    #[test]
+    fn a_boss_acts_enraged_in_the_step_it_loses_its_temper() {
+        use crate::components::{Enraged, GolemAttack, GolemBoss, GolemStage};
+
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let spot = scene
+            .world
+            .query::<&Position>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .map(|position| position.0)
+            .expect("the dungeon has a player");
+        let golem = prefabs::ready_enemy(
+            &mut scene.world,
+            &mut scene.physics,
+            EnemyKind::Golem,
+            spot + Vec2::new(0.0, 2000.0),
+        );
+        if let Ok(mut health) = scene.world.get::<&mut Health>(golem) {
+            health.current = health.max / 2;
+        }
+        if let Ok(mut boss) = scene.world.get::<&mut GolemBoss>(golem) {
+            boss.brain.stage = GolemStage::Winding;
+            boss.brain.attack = GolemAttack::Slam;
+            boss.brain.timer = 0.001;
+        }
+
+        scene.fixed_update(&Input::default(), 1.0 / 60.0, &assets);
+
+        assert!(scene.world.get::<&Enraged>(golem).is_ok());
+        let second_ring = scene.world.get::<&GolemBoss>(golem).map_or(0.0, |boss| boss.second_ring);
+        assert!(second_ring > 0.0, "the slam saw the golem enraged");
+    }
+
+    /// The scenery reads the clock as this frame moved it on, not as it stood before: a wasp is
+    /// drawn where it circles at the advanced time.
+    #[test]
+    fn the_scenery_reads_the_clock_after_the_frame_moved_it_on() {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let wasp = systems::Wasp::new(Vec2::new(-5000.0, -5000.0), 0.3, 2.0);
+        let entity = scene.world.spawn((wasp, Position(Vec2::ZERO)));
+        scene.clock = 10.0;
+        let dt = 0.25;
+
+        frame(&mut scene, &assets, dt);
+
+        let drawn = scene.world.get::<&Position>(entity).map(|position| position.0).ok();
+        assert_eq!(drawn, Some(wasp.at(10.0 + dt)));
+        assert_ne!(drawn, Some(wasp.at(10.0)));
     }
 
     /// One rendered frame as the scene machine runs it: animations advance, then the scene.

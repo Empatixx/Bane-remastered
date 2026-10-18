@@ -201,6 +201,20 @@ pub(crate) struct Wasp {
     phase: f32,
     speed: f32,
 }
+
+impl Wasp {
+    /// A wasp circling `nest` from `phase` at `speed`, for the tests.
+    #[cfg(test)]
+    pub(crate) fn new(nest: Vec2, phase: f32, speed: f32) -> Self {
+        Self { nest, phase, speed }
+    }
+
+    /// Where the wasp is on its circle at the scene's `clock`.
+    pub(crate) fn at(&self, clock: f32) -> Vec2 {
+        let t = clock * self.speed + self.phase;
+        self.nest + Vec2::new(t.cos(), (t * 1.3).sin()) * WASP_ORBIT
+    }
+}
 const DRIP_EVERY: f32 = 2.3;
 const DRIP_FALL: f32 = 0.45;
 const DRIP_SIZE: Vec2 = Vec2::new(8.0, 16.0);
@@ -389,8 +403,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
 
 pub(crate) fn tick_hanging(world: &mut World, clock: f32, dt: f32) {
     for (wasp, position) in world.query_mut::<(&Wasp, &mut Position)>() {
-        let t = clock * wasp.speed + wasp.phase;
-        position.0 = wasp.nest + Vec2::new(t.cos(), (t * 1.3).sin()) * WASP_ORBIT;
+        position.0 = wasp.at(clock);
     }
     let player = world
         .query::<(&Position, &Size)>()

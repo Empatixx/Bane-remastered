@@ -138,7 +138,7 @@ impl LobbyScene {
             sounds: &mut self.sounds,
             fx,
             camera: self.camera.position(),
-            clock: self.clock,
+            clock: &mut self.clock,
             dt,
             hostile_dt: dt,
         }
