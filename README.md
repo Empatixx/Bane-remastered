@@ -76,7 +76,7 @@ cd Bane_refactor/rust
 cargo run --release
 ```
 
-You need a [Rust toolchain](https://rustup.rs). It runs on macOS, Windows and Linux.
+You need a [Rust toolchain](https://rustup.rs).
 
 ---
 
