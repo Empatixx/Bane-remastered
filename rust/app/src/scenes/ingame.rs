@@ -26,6 +26,7 @@ use crate::rng::Rng;
 use crate::rules::RunRules;
 use crate::settings::Settings;
 use crate::systems;
+use crate::systems::schedule;
 use crate::tilemap::TILE_SIZE;
 use crate::upgrades::Perks;
 use crate::viewport::TARGET;
@@ -43,12 +44,10 @@ pub(crate) struct InGameScene {
     blend: Blend,
     pause: Pause,
     clock: f32,
-    sounds: Vec<AudioCommand>,
-    /// The run's state, the floor's air and the frame's camera trauma: what the systems share
-    /// that is not an entity.
+    /// The run's state, the floor's air and the frame's signals (camera trauma, sounds, the
+    /// hurt flag): what the systems share that is not an entity.
     resources: systems::Resources,
     throttle: crate::audio::Throttle,
-    hit: bool,
     dungeon: Option<Dungeon>,
     occluders: Option<Arc<Occluders>>,
     rooms: Option<systems::RoomRuntime>,
@@ -97,7 +96,7 @@ impl Scene for InGameScene {
             .next()
             .map(|position| position.0);
         crate::audio::resolve(
-            std::mem::take(&mut self.sounds),
+            std::mem::take(&mut self.resources.sounds),
             listener,
             &mut self.throttle,
             self.clock,
@@ -113,7 +112,7 @@ impl Scene for InGameScene {
     }
 
     fn take_hit(&mut self) -> bool {
-        std::mem::take(&mut self.hit)
+        std::mem::take(&mut self.resources.hit)
     }
 
     fn cursor(&self) -> Cursor {
@@ -203,7 +202,7 @@ impl Scene for InGameScene {
         if self.pause.is_active() {
             let action =
                 self.pause
-                    .update(&mut self.world, input, assets, settings, &mut self.sounds);
+                    .update(&mut self.world, input, assets, settings, &mut self.resources.sounds);
             return match action {
                 Some(UiAction::Resume) => {
                     let buttons = self.pause_buttons();
@@ -256,7 +255,7 @@ impl Scene for InGameScene {
                     dt,
                     roll: systems::ShotRoll::from(&mut self.resources.run.combat_rng),
                 },
-                &mut self.sounds,
+                &mut self.resources.sounds,
             );
             self.camera.add_trauma(recoil);
         }
@@ -264,7 +263,7 @@ impl Scene for InGameScene {
         systems::animate_player(&mut self.world, input);
         systems::show_dodge_visual(&mut self.world, &assets.textures);
         systems::show_dodge_cooldown(&mut self.world);
-        systems::switch_guns(&mut self.world, input, &mut self.sounds);
+        systems::switch_guns(&mut self.world, input, &mut self.resources.sounds);
         if let Some(crate::artefacts::ArtefactKind::RevealMap) = systems::activate_artefact(
             &mut self.world,
             &mut self.physics,
@@ -293,7 +292,7 @@ impl Scene for InGameScene {
             &assets.textures,
             self.resources.run.loot_rng.float(),
             |bound| self.resources.run.loot_rng.below(bound),
-            &mut self.sounds,
+            &mut self.resources.sounds,
         );
         systems::tick_invulnerability(&mut self.world, dt);
         self.clock += dt;
@@ -384,11 +383,11 @@ impl Scene for InGameScene {
             |bound| self.resources.run.loot_rng.below(bound),
         );
         systems::despawn_gone(&mut self.world);
-        systems::collect_items(&mut self.world, &mut self.sounds);
+        systems::collect_items(&mut self.world, &mut self.resources.sounds);
         systems::age_items(&mut self.world, dt);
         systems::update_price_tags(&mut self.world);
         systems::tick_berserk(&mut self.world, dt);
-        systems::apply_heal_percent(&mut self.world, &assets.textures, &mut self.sounds);
+        systems::apply_heal_percent(&mut self.world, &assets.textures, &mut self.resources.sounds);
         systems::convert_bullets(&mut self.world, &mut self.physics, &assets.textures);
         systems::tick_artefact_effects(&mut self.world, dt);
         systems::spawn_bloodlust_drops(&mut self.world, &assets.textures, dt);
@@ -402,7 +401,7 @@ impl Scene for InGameScene {
             &mut self.world,
             &assets.textures,
             dt,
-            &mut self.sounds,
+            &mut self.resources.sounds,
             |bound| self.resources.run.loot_rng.below(bound),
         );
         systems::flicker_flames(&mut self.world);
@@ -440,20 +439,20 @@ impl Scene for InGameScene {
         );
         match systems::interact(&mut self.world, input) {
             Some(Interaction::NextFloor) => self.next_floor(assets),
-            Some(Interaction::Spin) => systems::spin(&mut self.world, &mut self.sounds),
+            Some(Interaction::Spin) => systems::spin(&mut self.world, &mut self.resources.sounds),
             Some(Interaction::Buy) => {
                 systems::buy(
                     &mut self.world,
                     &assets.textures,
-                    &mut self.sounds,
+                    &mut self.resources.sounds,
                     &mut self.resources.fx,
                 );
             }
             Some(Interaction::PickUpArtefact) => {
-                systems::pick_up_artefact(&mut self.world, &assets.textures, &mut self.sounds);
+                systems::pick_up_artefact(&mut self.world, &assets.textures, &mut self.resources.sounds);
             }
             Some(Interaction::PickUpGun) => {
-                systems::pick_up_gun(&mut self.world, &assets.textures, &mut self.sounds);
+                systems::pick_up_gun(&mut self.world, &assets.textures, &mut self.resources.sounds);
             }
             Some(Interaction::EnterPortal) => {
                 if let Some(training) = &mut self.training {
@@ -468,7 +467,7 @@ impl Scene for InGameScene {
                 &mut self.world,
                 &mut self.physics,
                 &assets.textures,
-                &mut self.sounds,
+                &mut self.resources.sounds,
                 dt,
             );
             if event == systems::TrainingEvent::Finished {
@@ -482,200 +481,59 @@ impl Scene for InGameScene {
         if self.pause.is_active() || self.death.is_some() {
             return Transition::None;
         }
-        let hostile_dt = dt * systems::time_scale(&self.world);
-        systems::cast_hit_roll(&mut self.world, self.resources.run.combat_rng.float());
-        systems::start_dodge(
-            &mut self.world,
-            input,
-            input.mouse() + self.camera.position(),
-            &mut self.sounds,
-        );
-        systems::steer_player_on(&mut self.world, input, &self.surfaces, dt);
-        systems::tick_dodges(&mut self.world, dt);
-        systems::tick_spawning(&mut self.world, &mut self.physics, hostile_dt);
-        systems::dash(&mut self.world, &mut self.sounds, hostile_dt);
-        systems::update_flow(
-            &mut self.flow,
-            &self.world,
-            &self.physics,
-            &self.navigation,
-            dt,
-        );
-        systems::chase_player(&mut self.world, &self.flow, hostile_dt);
-        let mut hostile = systems::Hostile {
-            physics: &mut self.physics,
-            navigation: &self.navigation,
-            textures: &assets.textures,
-            sounds: &mut self.sounds,
-            fx: &mut self.resources.fx,
-            dt: hostile_dt,
-        };
-        systems::tick_enrage(&mut self.world, &mut *hostile.sounds);
-        systems::tick_golem(&mut self.world, &mut hostile);
-        systems::tick_rock_falls(&mut self.world, &mut hostile);
-        systems::tick_icicle_bats(&mut self.world, &mut hostile);
-        systems::tick_ember_rats(&mut self.world, &mut *hostile.sounds, self.clock);
-        systems::tick_swoopers(&mut self.world, &mut hostile);
-        systems::tick_magma_slimes(&mut self.world, &mut hostile);
-        systems::tick_worms(&mut self.world, &mut hostile);
-        systems::tick_ashes(&mut self.world, &mut hostile);
-        systems::tick_hoppers(&mut self.world, hostile_dt);
-        systems::tick_baits(&mut self.world, &mut hostile);
-        systems::tick_mimic(&mut self.world, &mut hostile);
-        systems::tick_hound(&mut self.world, &mut hostile);
-        let boss_room = self.dungeon.as_ref().and_then(|dungeon| {
-            dungeon
-                .rooms
-                .iter()
-                .find(|room| room.kind == RoomKind::Boss)
-                .map(|room| (room.origin.0, room.origin.1, room.columns, room.rows))
-        });
-        systems::tick_magma_spread(&mut self.world, &mut hostile, boss_room);
-        systems::tick_magma(&mut self.world, &mut hostile);
-        systems::tick_ogre(&mut self.world, &mut hostile);
-        systems::tick_argus(&mut self.world, &mut hostile);
-        systems::tick_laser(&mut self.world, &mut hostile);
-        systems::tick_flames(&mut self.world, &mut hostile);
-        systems::tick_orbiters(&mut self.world, &mut self.physics, hostile_dt);
-        systems::pick_pet_targets(&mut self.world);
-        systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
-        systems::steer_pets(&mut self.world);
-        systems::face_player(&mut self.world);
-        systems::tick_smashes(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_eye_shooters(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::steer_homing(&mut self.world, hostile_dt);
-        systems::burn_fuses(&mut self.world, &mut self.physics, hostile_dt);
-        systems::tick_hatchers(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_web_spitters(
-            &mut self.world,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::tick_leapers(&mut self.world, &mut self.sounds, &mut self.resources.fx, hostile_dt);
-        systems::tick_armageddon(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            hostile_dt,
-        );
-        systems::slow_bullets_in_webs(&mut self.world, &mut self.physics, dt);
-        systems::tick_carts(&mut self.world, &mut self.physics, dt);
-        systems::tick_waterworks(
-            &mut self.world,
-            &mut self.physics,
-            &self.surfaces,
-            &assets.textures,
-            self.clock,
-            dt,
-        );
-        systems::tick_pendulums(
-            &mut self.world,
-            &mut self.sounds,
-            &mut self.resources.fx,
-            self.clock,
-            hostile_dt,
-        );
-        systems::shove_tables(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            input.direction(),
-        );
-        systems::simulate(&mut self.world, &mut self.physics, dt);
-        systems::watch_progress(&mut self.world, hostile_dt);
-        systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
-        systems::bullet_hits(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            &mut self.resources.fx,
-        );
-        systems::pet_bites(&mut self.world, dt);
-        systems::tick_ghosts(&mut self.world, dt);
-        systems::tick_turrets(&mut self.world, &mut self.physics, &assets.textures, dt);
-        systems::trap_hits_enemies(&mut self.world, dt);
-        let mut hostile = systems::Hostile {
-            physics: &mut self.physics,
-            navigation: &self.navigation,
-            textures: &assets.textures,
-            sounds: &mut self.sounds,
-            fx: &mut self.resources.fx,
-            dt: hostile_dt,
-        };
-        systems::tick_arrow_traps(&mut self.world, &mut hostile);
-        systems::break_objects(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            &mut self.resources.fx,
-            |bound| self.resources.run.loot_rng.below(bound),
-        );
-        systems::leave_poison_trails(&mut self.world, &assets.textures);
-        systems::tick_poison(&mut self.world, dt, &mut self.sounds, &mut self.resources.fx);
-        systems::tick_frozen(&mut self.world, dt);
-        systems::tick_chilled(&mut self.world, dt);
-        systems::toughen_enemies(
-            &mut self.world,
-            self.resources.run.rules.enemy_health,
-            self.resources.run.rules.enemy_damage,
-        );
-        // Every hit dealt above flashes, counts and floats its number before the deaths read the
-        // hit counts.
-        systems::hit_phase(&mut self.world);
-        systems::death_phase(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-        );
-        if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds, &mut self.resources.fx) {
-            self.hit = true;
-        }
-        systems::sync_liquids(&mut self.world, self.clock);
-        systems::ripple_on_water(&mut self.world, &self.surfaces, &assets.textures, dt);
-        systems::kick_up_surfaces(&mut self.world, &self.surfaces, dt);
-        systems::stir_surfaces(&mut self.world, &mut self.resources.air.stir, &self.surfaces, self.camera.view(), crate::viewport::TARGET, dt);
-        if systems::contact_damage(&mut self.world, &mut self.sounds, &mut self.resources.fx) {
-            self.hit = true;
-        }
-        systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
-        systems::batter_tables(&mut self.world, hostile_dt);
-        systems::break_tables(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            dt,
-        );
+        // The phases in their order; `systems::schedule` says what must precede what and why.
+        let view = self.camera.view();
+        let (mut tick, mut floor) = self.phases(input, assets, dt);
+        schedule::player_phase(&mut tick, &mut floor);
+        schedule::hostile_phase(&mut tick, &mut floor);
+        schedule::pets_phase(&mut tick);
+        schedule::enemy_attacks_phase(&mut tick);
+        schedule::contraptions_phase(&mut tick, &mut floor);
+        schedule::physics_phase(&mut tick);
+        schedule::combat_phase(&mut tick, &mut floor);
+        schedule::deaths_phase(&mut tick);
+        schedule::surfaces_phase(&mut tick, &mut floor, view);
+        schedule::contact_phase(&mut tick, &mut floor);
         self.take_trauma();
         Transition::None
     }
 }
 
 impl InGameScene {
+    /// The scene lent out to a run of phases: the [`Tick`](schedule::Tick) every phase takes
+    /// and the [`Floor`](schedule::Floor) only the in-game phases take. The hostiles' step is
+    /// `dt` slowed by the hourglass as it stands now.
+    fn phases<'a>(
+        &'a mut self,
+        input: &'a Input,
+        assets: &'a Assets,
+        dt: f32,
+    ) -> (schedule::Tick<'a>, schedule::Floor<'a>) {
+        let hostile_dt = dt * systems::time_scale(&self.world);
+        let tick = schedule::Tick {
+            world: &mut self.world,
+            physics: &mut self.physics,
+            navigation: &self.navigation,
+            assets,
+            input,
+            sounds: &mut self.resources.sounds,
+            fx: &mut self.resources.fx,
+            camera: self.camera.position(),
+            clock: self.clock,
+            dt,
+            hostile_dt,
+        };
+        let floor = schedule::Floor {
+            run: &mut self.resources.run,
+            air: &mut self.resources.air,
+            surfaces: &self.surfaces,
+            flow: &mut self.flow,
+            dungeon: self.dungeon.as_ref(),
+            hit: &mut self.resources.hit,
+        };
+        (tick, floor)
+    }
+
     fn start_run(&mut self, seed: u64, assets: &Assets) {
         // `BANE_FLOOR=n` starts the run on floor n, for working on the deeper floors.
         let floor = std::env::var("BANE_FLOOR").ok().and_then(|n| n.trim().parse().ok()).unwrap_or(1).max(1);
@@ -1175,7 +1033,7 @@ impl InGameScene {
         tracing::info!(floor = self.resources.run.floor, "entering the next floor");
         self.build(assets);
         systems::restore_stats(&mut self.world, carried);
-        self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
+        self.resources.sounds.push(AudioCommand::Music(Soundtrack::InGame));
     }
 
     fn handle_room_events(&mut self, events: Vec<systems::RoomEvent>, assets: &Assets) {
@@ -1199,7 +1057,7 @@ impl InGameScene {
                     );
                 }
                 systems::RoomEvent::BossEntered { kind } => {
-                    self.sounds.push(AudioCommand::Music(Soundtrack::Boss));
+                    self.resources.sounds.push(AudioCommand::Music(Soundtrack::Boss));
                     self.resources.run.boss = crate::lore::identity(kind);
                     if let Some(identity) = self.resources.run.boss {
                         systems::name_boss(&mut self.world, identity);
@@ -1222,7 +1080,7 @@ impl InGameScene {
                         }
                     }
                     self.camera.add_trauma(BOSS_DEFEATED_SHAKE);
-                    self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
+                    self.resources.sounds.push(AudioCommand::Music(Soundtrack::InGame));
                     let textures = &assets.textures;
                     let chest_top_left = center - Vec2::new(32.0, 3.0 * TILE_SIZE);
                     prefabs::chest(
@@ -1250,7 +1108,7 @@ impl InGameScene {
 
     fn set_big_map(&mut self, open: bool) {
         if open && !self.big_map {
-            self.sounds.push(AudioCommand::Effect(SoundEffect::ShowMap));
+            self.resources.sounds.push(AudioCommand::Effect(SoundEffect::ShowMap));
             systems::reset_big_map_pan(&mut self.world);
         }
         self.big_map = open;
@@ -1368,7 +1226,7 @@ mod tests {
             ..InGameScene::default()
         };
         scene.camera.snap_to(Vec2::new(500.0, 500.0));
-        systems::explosion(&mut scene.sounds, &mut scene.resources.fx);
+        systems::explosion(&mut scene.resources.sounds, &mut scene.resources.fx);
 
         scene.take_trauma();
         scene.camera.update_shake(0.05);
@@ -1415,7 +1273,7 @@ mod tests {
                 &mut scene.world,
                 &mut scene.physics,
                 &assets.textures,
-                &mut scene.sounds,
+                &mut scene.resources.sounds,
                 &mut scene.resources.fx,
                 |_| 0,
             );
@@ -1427,7 +1285,7 @@ mod tests {
                 &mut scene.world,
                 player,
                 1,
-                &mut scene.sounds,
+                &mut scene.resources.sounds,
                 &mut scene.resources.fx,
             ));
         });
@@ -1439,7 +1297,7 @@ mod tests {
                 &mut scene.world,
                 player,
                 1000,
-                &mut scene.sounds,
+                &mut scene.resources.sounds,
                 &mut scene.resources.fx,
             ));
         });

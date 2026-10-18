@@ -1,3 +1,4 @@
+use crate::audio::AudioCommand;
 use crate::lore::Identity;
 use crate::progress::ChallengeId;
 use crate::rng::{Rng, Stream};
@@ -80,7 +81,8 @@ pub(crate) struct FloorAir {
 }
 
 /// Everything the in-game systems share that is not an entity, kept apart by how long it lasts:
-/// the run's state, the floor's air, and the signals of the frame.
+/// the run's state, the floor's air, and the signals of the frame (camera trauma, sounds and
+/// whether the player was hurt), each drained by its one taker.
 #[derive(Default)]
 pub(crate) struct Resources {
     /// Lasts the run (some fields a floor; see [`RunState`]).
@@ -90,6 +92,12 @@ pub(crate) struct Resources {
     /// The camera trauma the systems gathered since the camera last took it: drained every
     /// fixed step and every frame.
     pub(crate) fx: Fx,
+    /// The sounds the systems asked for since the scene machine last took them: drained every
+    /// frame by the scene's `take_sounds`.
+    pub(crate) sounds: Vec<AudioCommand>,
+    /// Whether lava or a touch hurt the player since the scene machine last asked: taken every
+    /// frame by the scene's `take_hit`, for the hurt flash.
+    pub(crate) hit: bool,
 }
 
 #[cfg(test)]

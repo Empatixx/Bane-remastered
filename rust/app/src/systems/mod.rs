@@ -57,6 +57,7 @@ mod prison;
 mod rooms;
 mod rules;
 mod run_state;
+pub(crate) mod schedule;
 mod scientist;
 mod settings_ui;
 mod shadow;
