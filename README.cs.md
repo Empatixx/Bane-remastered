@@ -72,15 +72,10 @@ zbraněmi vylepšuješ zbraně, na nástěnce bereš mise a výzvy.
 | | [Bane](https://github.com/Empatixx/Bane) (Java, archivovaná) | Bane Remastered (Rust) |
 |---|---|---|
 | Zbraně | 9 | 17 |
-| Nepřátelé | 10 a 1 boss | 31 druhů, 7 z nich jsou bossové |
+| Nepřátelé | 10 druhů včetně bossů | 31 druhů, 7 z nich jsou bossové |
 | Artefakty | 9 | 13, vytvořené znovu |
-| Patra | Dungeon bez pevného konce | 5 pater, finální boss a výhra |
-| Vzhled patra | Jeden vzhled | 7 biomů |
 | Mezi runy | Progress room a vylepšení | Laboratoř, talenty, stůl se zbraněmi, mise a výzvy |
-| Příběh | Žádný | Příběh vyprávěný přes bossy |
-| Úhyb | Ne | Ano |
 | Platforma | Windows | Stavěno a testováno na macOS |
-| Wiki | Žádná | Online |
 
 Některé věci z první Bane tu zatím nejsou: affixy pater, co-op multiplayer a Discord Rich
 Presence. Chybí i Modern shotgun a Grenade launcher.

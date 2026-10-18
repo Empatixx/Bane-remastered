@@ -73,15 +73,10 @@ dodge roll that feels right, screen shake and hit flashes.
 | | [Bane](https://github.com/Empatixx/Bane) (Java, archived) | Bane Remastered (Rust) |
 |---|---|---|
 | Guns | 9 | 17 |
-| Enemies | 10 and 1 boss | 31 kinds, 7 of them bosses |
+| Enemies | 10 kinds, bosses included | 31 kinds, 7 of them bosses |
 | Artefacts | 9 | 13, made again |
-| Floors | A dungeon with no fixed end | 5 floors, a final boss and a win |
-| Look of a floor | One look | 7 biomes |
 | Between runs | A progress room and upgrades | A lab, talents, a weapon table, missions and challenges |
-| Story | None | A story told through the bosses |
-| Dodge roll | No | Yes |
 | Platform | Windows | Built and tested on macOS |
-| Wiki | None | Online |
 
 Some things from the first Bane are not here yet: floor affixes, co-op multiplayer and Discord
 Rich Presence. The Modern shotgun and the Grenade launcher are not here either.
