@@ -78,6 +78,10 @@ cargo run --release
 
 You need a [Rust toolchain](https://rustup.rs).
 
+## License
+
+Bane is free software under the [GNU GPL v3](LICENSE).
+
 ---
 
 <details>
