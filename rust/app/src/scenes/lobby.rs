@@ -629,6 +629,7 @@ impl Scene for LobbyScene {
             &assets.textures,
             &mut self.sounds,
         );
+        systems::hit_phase(&mut self.world);
         systems::tick_dummies(&mut self.world, dt);
         Transition::None
     }
@@ -920,6 +921,10 @@ mod tests {
             .content
             .clone();
         assert!(shown.ends_with("DPS"), "{shown:?}");
+        // The hits on the dummy were handled in the fixed steps that dealt them.
+        assert_eq!(scene.world.query::<&systems::Hit>().iter().count(), 0);
+        let numbers = scene.world.query::<&crate::components::Floating>().iter().count();
+        assert!(numbers > 0, "the dummy shows the damage it took");
     }
 
     fn slot_hidden(scene: &LobbyScene) -> bool {

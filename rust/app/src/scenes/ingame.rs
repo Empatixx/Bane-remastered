@@ -299,6 +299,8 @@ impl Scene for InGameScene {
         if systems::cast_lightning(&mut self.world, &assets.textures, seed) > 0 {
             self.camera.add_trauma(systems::LIGHTNING_SHAKE);
         }
+        // The lightning's hits flash and float their numbers in this frame, before those tick.
+        systems::hit_phase(&mut self.world);
         systems::drop_gun(
             &mut self.world,
             input,
@@ -641,6 +643,9 @@ impl Scene for InGameScene {
             self.rules.enemy_health,
             self.rules.enemy_damage,
         );
+        // Every hit dealt above flashes, counts and floats its number before the deaths read the
+        // hit counts.
+        systems::hit_phase(&mut self.world);
         systems::death_phase(
             &mut self.world,
             &mut self.physics,
@@ -1425,6 +1430,62 @@ mod tests {
 
         assert!(scene.world.get::<&Expiring>(slime).is_ok());
         assert!(scene.world.get::<&DeathBurst>(slime).is_err());
+    }
+
+    fn deal_one(scene: &mut InGameScene, target: hecs::Entity) {
+        let damage = systems::Damage {
+            target,
+            amount: 1,
+            source: systems::DamageSource::Bullet,
+        };
+        assert!(systems::deal(&mut scene.world, damage));
+    }
+
+    fn hits_left(scene: &InGameScene) -> usize {
+        scene.world.query::<&systems::Hit>().iter().count()
+    }
+
+    /// A hit dealt in the fixed step or in the frame update is handled in that same step or
+    /// frame, once, and no `Hit` is left behind.
+    #[test]
+    fn a_hit_is_handled_once_in_the_step_or_frame_it_was_dealt() {
+        use crate::components::{Floating, HitFlash};
+
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let spot = scene
+            .world
+            .query::<&Position>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .map(|position| position.0)
+            .expect("the dungeon has a player");
+        let slime = prefabs::ready_enemy(
+            &mut scene.world,
+            &mut scene.physics,
+            EnemyKind::RedSlime,
+            spot + Vec2::new(400.0, 0.0),
+        );
+        let numbers = |scene: &InGameScene| scene.world.query::<&Floating>().iter().count();
+        let hit_count = |scene: &InGameScene| scene.world.get::<&Hits>(slime).map_or(0, |h| h.0);
+
+        deal_one(&mut scene, slime);
+        scene.fixed_update(&Input::default(), 1.0 / 60.0, &assets);
+
+        assert_eq!(hits_left(&scene), 0);
+        assert_eq!(hit_count(&scene), 1);
+        assert_eq!(numbers(&scene), 1);
+        assert!(scene.world.get::<&HitFlash>(slime).is_ok());
+
+        deal_one(&mut scene, slime);
+        frame(&mut scene, &assets, 1.0 / 60.0);
+
+        assert_eq!(hits_left(&scene), 0);
+        assert_eq!(hit_count(&scene), 2);
+        assert_eq!(numbers(&scene), 2);
     }
 
     /// One rendered frame as the scene machine runs it: animations advance, then the scene.

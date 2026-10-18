@@ -57,14 +57,18 @@ pub(crate) struct Damage {
     pub(crate) source: DamageSource,
 }
 
+/// A hit that landed: an event entity of its own, spawned by `deal` once the target's health
+/// has dropped. The hit reactions read it (the target's hit count, the run stats, the white
+/// flash, the floating number) and `clear_hits` despawns it at the end of `hit_phase`.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Hit(pub(crate) Damage);
+
 /// The one way to hurt an enemy or a breakable object, the player is hurt through `hurt_player`.
+/// The health drops at once, so systems later in the same tick see it; everything else a hit
+/// does waits for `hit_phase`, which reads the `Hit` spawned here.
 /// Returns whether the target could take damage at all.
 pub(crate) fn deal(world: &mut World, damage: Damage) -> bool {
-    let Damage {
-        target,
-        amount,
-        source,
-    } = damage;
+    let Damage { target, amount, .. } = damage;
     debug_assert!(world.get::<&Player>(target).is_err(), "use hurt_player");
     if world.get::<&crate::components::Sealed>(target).is_ok() {
         return false;
@@ -73,24 +77,64 @@ pub(crate) fn deal(world: &mut World, damage: Damage) -> bool {
         Ok(mut health) => health.current = (health.current - amount).max(0),
         Err(_) => return false,
     }
-    if source.counts_as_hit() {
-        super::skills::count_hits(world, target);
-        if source == DamageSource::Bullet && world.get::<&Enemy>(target).is_ok() {
-            stats::record(world, Stat::Hit, 1);
-        }
+    world.spawn((Hit(damage),));
+    true
+}
+
+/// Everything a landed hit does besides the health it took, then the hits are gone. Runs
+/// after the systems that deal damage and before anything that reads what a hit leaves behind:
+/// in the fixed step before the death phase (deaths read the hit count), in the frame update
+/// right after the artefact lightning and before the flashes and numbers tick, and in the
+/// lobby right after the bullets hit the dummies. A hit dealt anywhere is handled by the next
+/// of these, once.
+pub(crate) fn hit_phase(world: &mut World) {
+    let hits: Vec<Damage> = world.query::<&Hit>().iter().map(|hit| hit.0).collect();
+    for damage in &hits {
+        count_hit(world, damage);
+        flash_on_hit(world, damage);
+        show_hit_number(world, damage);
     }
-    if source.flashes() {
+    clear_hits(world);
+}
+
+/// A bullet or a summoned round adds to the target's hit count; a player's bullet on an enemy
+/// is also a hit in the run stats.
+fn count_hit(world: &mut World, damage: &Damage) {
+    if !damage.source.counts_as_hit() {
+        return;
+    }
+    super::skills::count_hits(world, damage.target);
+    if damage.source == DamageSource::Bullet && world.get::<&Enemy>(damage.target).is_ok() {
+        stats::record(world, Stat::Hit, 1);
+    }
+}
+
+/// Every hit but poison flashes the target white.
+fn flash_on_hit(world: &mut World, damage: &Damage) {
+    if damage.source.flashes() {
         let _ = world.insert_one(
-            target,
+            damage.target,
             HitFlash {
                 remaining: FLASH_SECONDS,
             },
         );
     }
-    if world.get::<&Breakable>(target).is_err() {
-        super::effects::show_change(world, target, -amount, crate::rng::cosmetic());
+}
+
+/// The damage floats up from the target, unless it is a breakable object.
+fn show_hit_number(world: &mut World, damage: &Damage) {
+    if world.get::<&Breakable>(damage.target).is_err() {
+        super::effects::show_change(world, damage.target, -damage.amount, crate::rng::cosmetic());
     }
-    true
+}
+
+/// The one cleanup point of `Hit`: the end of `hit_phase`, after its last reader. No hit
+/// outlives the phase that handled it.
+fn clear_hits(world: &mut World) {
+    let hits: Vec<Entity> = world.query::<Entity>().with::<&Hit>().iter().collect();
+    for hit in hits {
+        let _ = world.despawn(hit);
+    }
 }
 
 fn trap_is_armed(trap: Option<&Trap>, animation: Option<&Animation>) -> bool {
@@ -331,15 +375,72 @@ mod tests {
         world.query::<&crate::components::Floating>().iter().count()
     }
 
+    /// A hit dealt and handled, as the next hit phase would.
     fn hit(world: &mut World, target: Entity, amount: i32, source: DamageSource) -> bool {
-        deal(
+        let dealt = deal(
             world,
             Damage {
                 target,
                 amount,
                 source,
             },
-        )
+        );
+        hit_phase(world);
+        dealt
+    }
+
+    fn hits(world: &World) -> usize {
+        world.query::<&Hit>().iter().count()
+    }
+
+    #[test]
+    fn a_deal_takes_health_at_once_and_leaves_one_hit_for_the_hit_phase() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        prefabs::player(&mut world, &mut physics, Vec2::ZERO, &Textures::default());
+        let slime = enemy(&mut world, &mut physics, EnemyKind::RedSlime);
+        let before = world.get::<&Health>(slime).map_or(0, |h| h.current);
+        let damage = Damage {
+            target: slime,
+            amount: 1,
+            source: DamageSource::Bullet,
+        };
+
+        assert!(deal(&mut world, damage));
+
+        assert_eq!(world.get::<&Health>(slime).map_or(0, |h| h.current), before - 1);
+        assert_eq!(hits(&world), 1);
+        assert!(world.get::<&HitFlash>(slime).is_err());
+        assert_eq!(floating_numbers(&world), 0);
+        assert_eq!(world.get::<&Hits>(slime).map(|h| h.0).ok(), Some(0));
+        assert_eq!(stats::current(&world).hits, 0);
+
+        hit_phase(&mut world);
+
+        assert_eq!(hits(&world), 0);
+        assert!(world.get::<&HitFlash>(slime).is_ok());
+        assert_eq!(floating_numbers(&world), 1);
+        assert_eq!(world.get::<&Hits>(slime).map(|h| h.0).ok(), Some(1));
+        assert_eq!(stats::current(&world).hits, 1);
+
+        hit_phase(&mut world);
+
+        assert_eq!(floating_numbers(&world), 1, "a hit is handled once");
+        assert_eq!(world.get::<&Hits>(slime).map(|h| h.0).ok(), Some(1));
+        assert_eq!(stats::current(&world).hits, 1);
+    }
+
+    #[test]
+    fn a_target_that_takes_nothing_leaves_no_hit() {
+        let mut world = World::new();
+        let nothing = world.spawn((Position(Vec2::ZERO),));
+        let damage = Damage {
+            target: nothing,
+            amount: 1,
+            source: DamageSource::Bullet,
+        };
+        assert!(!deal(&mut world, damage));
+        assert_eq!(hits(&world), 0);
     }
 
     #[test]

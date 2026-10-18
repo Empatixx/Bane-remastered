@@ -558,6 +558,7 @@ mod tests {
             world.get::<&Health>(rat).map_or(0, |h| h.current),
             before - 2
         );
+        crate::systems::hit_phase(&mut world);
         assert!(world.get::<&HitFlash>(rat).is_ok());
         let _ = pet;
     }

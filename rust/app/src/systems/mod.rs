@@ -102,9 +102,11 @@ pub(crate) use dummy::tick_dummies;
 pub(crate) use frost::tick_icicle_bats;
 pub(crate) use lava::{tick_ashes, tick_ember_rats, tick_magma_slimes, tick_swoopers, tick_worms};
 pub(crate) use damage::{
-    contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,
+    contact_damage, hit_phase, player_is_dead, player_is_low_on_health, tick_invulnerability,
     trap_hits_enemies,
 };
+#[cfg(test)]
+pub(crate) use damage::{Damage, DamageSource, Hit, deal};
 pub(crate) use death::death_phase;
 pub(crate) use death_screen::{DeathScreen, update_death_ui};
 pub(crate) use dodge::{
