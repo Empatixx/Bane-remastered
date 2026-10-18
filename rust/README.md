@@ -1,6 +1,6 @@
 # Bane in Rust
 
-Step-by-step port of the Java game to Rust. Lives next to the Java code in `rust/`.
+The Rust game. See the [main README](../README.md) for what it contains.
 
 ```bash
 cd rust
