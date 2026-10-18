@@ -77,11 +77,13 @@ const RUG_ROUGHNESS: f32 = 1.6;
 /// How far apart, in tiles, the noise's lobes are.
 const RUG_LOBE: usize = 3;
 const RUG_FEWEST: usize = 10;
+/// How many tiles a rug keeps from water, lava and every other liquid.
+const RUG_SHORE: isize = 2;
 
 /// A rug for a combat room, in some of them: a shape on the open floor rather than a box, grown
-/// from an oval roughened by noise as the water's pools are, then cleaned up so it holds
-/// together. No strips a tile thin (every tile of it is in a two-by-two of it), all in one piece,
-/// and no holes.
+/// from an oval roughened by noise as the water's pools are, kept a couple of tiles clear of any
+/// liquid, then cleaned up so it holds together. No strips a tile thin (every tile of it is in a
+/// two-by-two of it), all in one piece, and no holes.
 pub(crate) fn plan_rug(
     grid: &TileGrid,
     room: &DungeonRoom,
@@ -105,7 +107,10 @@ pub(crate) fn plan_rug(
             room.origin.0 + rng.below(room.columns.saturating_sub(columns).max(1)),
             room.origin.1 + rng.below(room.rows.saturating_sub(rows).max(1)),
         );
-        let open = |column: usize, row: usize| floor.roomy(origin.0 + column, origin.1 + row);
+        let open = |column: usize, row: usize| {
+            let (column, row) = (origin.0 + column, origin.1 + row);
+            floor.roomy(column, row) && dry_around(surfaces, column, row)
+        };
         let shape = rug_shape(columns, rows, rng);
         if let Some(shape) = settle(shape, columns, rows, open) {
             let cover = shape.iter().enumerate().filter(|(_, &on)| on).fold(0u128, |cover, (index, _)| cover | 1 << index);
@@ -113,6 +118,16 @@ pub(crate) fn plan_rug(
         }
     }
     None
+}
+
+/// Whether no liquid lies within `RUG_SHORE` tiles of `column`, `row`.
+fn dry_around(surfaces: &Surfaces, column: usize, row: usize) -> bool {
+    (-RUG_SHORE..=RUG_SHORE).all(|dy| {
+        (-RUG_SHORE..=RUG_SHORE).all(|dx| {
+            let (x, y) = (column as isize + dx, row as isize + dy);
+            x < 0 || y < 0 || surfaces.at((x as usize, y as usize)).is_none()
+        })
+    })
 }
 
 /// An oval over `columns` by `rows` tiles, roughened by smoothed noise: row by row, whether
@@ -335,6 +350,23 @@ mod tests {
         let table_share = tabled as f32 / combat as f32;
         assert!((0.15..0.55).contains(&rug_share), "{rug_share}");
         assert!((0.2..0.65).contains(&table_share), "{table_share}");
+    }
+
+    #[test]
+    fn rugs_keep_clear_of_water_lava_and_the_other_liquids() {
+        let mut rugs = 0;
+        for theme in [Theme::Sewer, Theme::Lava, Theme::Moss, Theme::Temple] {
+            for seed in 0..16 {
+                let dungeon = Dungeon::generate_themed(&mut Rng::new(seed), theme).expect("a dungeon");
+                for rug in dungeon.rooms.iter().filter_map(|room| room.rug.as_ref()) {
+                    rugs += 1;
+                    for ((column, row), _) in rug.tiles() {
+                        assert!(dry_around(&dungeon.surfaces, column, row), "{theme:?} rug at {column},{row} by a liquid");
+                    }
+                }
+            }
+        }
+        assert!(rugs > 20, "{rugs} rugs");
     }
 
     #[test]
