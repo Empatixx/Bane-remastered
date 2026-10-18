@@ -23,6 +23,8 @@ const FIREFLY_LIGHT: f32 = 1.2;
 const FIREFLY_RADIUS: f32 = 90.0;
 const FIREFLY_TINT: Vec4 = Vec4::new(0.85, 1.0, 0.3, 0.0);
 
+/// The dice and clock a quiet room's dust and fireflies are drawn with. Not an entity: the scene
+/// that spawned the fireflies keeps it, for as long as their room stands.
 pub(crate) struct Ambience {
     rng: Rng,
     clock: f32,
@@ -50,7 +52,7 @@ pub(crate) fn spawn_ambience(
     bounds: Vec2,
     portal_center: Vec2,
     seed: u64,
-) {
+) -> Ambience {
     let mut rng = Rng::new(seed);
     for index in 0..FIREFLIES {
         let home = if index % 2 == 0 {
@@ -82,16 +84,16 @@ pub(crate) fn spawn_ambience(
             Light::rgb(Vec2::ZERO, 200.0, 255.0, 90.0, FIREFLY_RADIUS, 0.0),
         ));
     }
-    world.spawn((Ambience { rng, clock: 0.0 },));
+    Ambience { rng, clock: 0.0 }
 }
 
-pub(crate) fn tick_ambience(world: &mut World, texture: TextureId, camera: Vec2, dt: f32) {
-    let Some(controller) = world.query::<Entity>().with::<&Ambience>().iter().next() else {
-        return;
-    };
-    let Ok(mut ambience) = world.remove_one::<Ambience>(controller) else {
-        return;
-    };
+pub(crate) fn tick_ambience(
+    world: &mut World,
+    ambience: &mut Ambience,
+    texture: TextureId,
+    camera: Vec2,
+    dt: f32,
+) {
     ambience.clock += dt;
     let player = world
         .query::<&Position>()
@@ -101,9 +103,8 @@ pub(crate) fn tick_ambience(world: &mut World, texture: TextureId, camera: Vec2,
         .map(|position| position.0);
 
     cull_dust(world, camera);
-    top_up_dust(world, &mut ambience, texture, camera);
+    top_up_dust(world, ambience, texture, camera);
     glow_fireflies(world, ambience.clock, player);
-    let _ = world.insert_one(controller, ambience);
 }
 
 fn top_up_dust(world: &mut World, ambience: &mut Ambience, texture: TextureId, camera: Vec2) {
@@ -175,22 +176,22 @@ mod tests {
 
     use super::*;
 
-    fn lobby() -> World {
+    fn lobby() -> (World, Ambience) {
         let mut world = World::new();
-        spawn_ambience(
+        let ambience = spawn_ambience(
             &mut world,
             TextureId::WHITE,
             Vec2::new(1600.0, 900.0),
             Vec2::new(800.0, 300.0),
             7,
         );
-        world
+        (world, ambience)
     }
 
-    fn run(world: &mut World, seconds: f32) {
+    fn run(world: &mut World, ambience: &mut Ambience, seconds: f32) {
         let steps = (seconds * 60.0) as usize;
         for step in 0..steps {
-            tick_ambience(world, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
+            tick_ambience(world, ambience, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
             tick_dust(world, step as f32 / 60.0, 1.0 / 60.0);
         }
     }
@@ -201,19 +202,19 @@ mod tests {
 
     #[test]
     fn dust_fills_the_view_up_to_a_limit_and_never_beyond() {
-        let mut world = lobby();
-        run(&mut world, 0.05);
+        let (mut world, mut ambience) = lobby();
+        run(&mut world, &mut ambience, 0.05);
         assert!(ambient(&world) <= DUST_PER_TICK * 3);
-        run(&mut world, 3.0);
+        run(&mut world, &mut ambience, 3.0);
         assert_eq!(ambient(&world), DUST_COUNT);
-        run(&mut world, 30.0);
+        run(&mut world, &mut ambience, 30.0);
         assert!(ambient(&world) <= DUST_COUNT);
     }
 
     #[test]
     fn dust_stays_faint() {
-        let mut world = lobby();
-        run(&mut world, 5.0);
+        let (mut world, mut ambience) = lobby();
+        run(&mut world, &mut ambience, 5.0);
         let alphas: Vec<f32> = world
             .query::<(&Dust, &Color)>()
             .iter()
@@ -230,10 +231,11 @@ mod tests {
 
     #[test]
     fn dust_that_drifts_out_of_view_is_removed() {
-        let mut world = lobby();
-        run(&mut world, 1.0);
+        let (mut world, mut ambience) = lobby();
+        run(&mut world, &mut ambience, 1.0);
         tick_ambience(
             &mut world,
+            &mut ambience,
             TextureId::WHITE,
             Vec2::new(10_000.0, 10_000.0),
             1.0 / 60.0,
@@ -248,7 +250,7 @@ mod tests {
 
     #[test]
     fn fireflies_travel_visibly_and_blink_on_and_off() {
-        let mut world = lobby();
+        let (mut world, mut ambience) = lobby();
         let start: Vec<Vec2> = world
             .query::<(&Firefly, &Position)>()
             .iter()
@@ -258,7 +260,7 @@ mod tests {
         let mut dimmest: f32 = f32::MAX;
         let mut farthest: f32 = 0.0;
         for step in 0..1200 {
-            tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
+            tick_ambience(&mut world, &mut ambience, TextureId::WHITE, Vec2::ZERO, 1.0 / 60.0);
             for (firefly, position, light) in world.query::<(&Firefly, &Position, &Light)>().iter()
             {
                 assert!(
@@ -286,8 +288,8 @@ mod tests {
 
     #[test]
     fn a_firefly_shies_away_from_the_player() {
-        let mut world = lobby();
-        tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 0.0);
+        let (mut world, mut ambience) = lobby();
+        tick_ambience(&mut world, &mut ambience, TextureId::WHITE, Vec2::ZERO, 0.0);
         let target = world
             .query::<(&Firefly, &Position)>()
             .iter()
@@ -296,7 +298,7 @@ mod tests {
             .unwrap_or_default();
         world.spawn((Player, Position(target + Vec2::new(-30.0, 0.0))));
 
-        tick_ambience(&mut world, TextureId::WHITE, Vec2::ZERO, 0.0);
+        tick_ambience(&mut world, &mut ambience, TextureId::WHITE, Vec2::ZERO, 0.0);
 
         let after = world
             .query::<(&Firefly, &Position)>()

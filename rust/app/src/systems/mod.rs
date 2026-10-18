@@ -75,7 +75,7 @@ mod training;
 mod ui;
 mod unstick;
 
-pub(crate) use ambience::{spawn_ambience, tick_ambience};
+pub(crate) use ambience::{Ambience, spawn_ambience, tick_ambience};
 pub(crate) use animation::{
     animate, chain_animations, despawn_gone, mark_gone, open_gate, tick_openings,
 };

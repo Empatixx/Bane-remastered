@@ -111,6 +111,8 @@ pub(crate) struct LobbyScene {
     sounds: Vec<AudioCommand>,
     profile: Option<SharedProfile>,
     combat_rng: Rng,
+    /// The hall's dust and fireflies' dice and clock, from entering it until leaving it.
+    ambience: Option<systems::Ambience>,
     /// The gun the range gave out, kept with its ammo while the player is in the hall.
     range_gun: Option<Weapon>,
 }
@@ -230,6 +232,7 @@ impl Scene for LobbyScene {
         self.weapons = WeaponTable::default();
         self.occluders = None;
         self.navigation = Navigation::default();
+        self.ambience = None;
     }
 
     fn occluders(&self) -> Option<Arc<Occluders>> {
@@ -303,13 +306,13 @@ impl Scene for LobbyScene {
             &mut self.world,
             self.profile.as_ref().and_then(SharedProfile::challenge),
         );
-        systems::spawn_ambience(
+        self.ambience = Some(systems::spawn_ambience(
             &mut self.world,
             textures.get(tex::GAZEWIND_PARTICLE),
             bounds,
             portal_top_left + Prop::Portal.spec().size() / 2.0,
             0x1d57,
-        );
+        ));
         for &(prop, x, y, look) in PROPS {
             let top_left = Vec2::new(x, y) * TILE_SIZE;
             prefabs::prop(&mut self.world, prop, top_left, look, textures);
@@ -553,12 +556,15 @@ impl Scene for LobbyScene {
         systems::update_shadow(&mut self.world, dt);
         systems::update_status_bars(&mut self.world, dt);
         systems::update_weapon_hud(&mut self.world, &assets.textures, None);
-        systems::tick_ambience(
-            &mut self.world,
-            assets.textures.get(tex::GAZEWIND_PARTICLE),
-            self.camera.position(),
-            dt,
-        );
+        if let Some(ambience) = &mut self.ambience {
+            systems::tick_ambience(
+                &mut self.world,
+                ambience,
+                assets.textures.get(tex::GAZEWIND_PARTICLE),
+                self.camera.position(),
+                dt,
+            );
+        }
         systems::tick_dust(&mut self.world, self.clock, dt);
         if let Some(remark) = systems::chat(&mut self.world, dt) {
             if let Some(profile) = &self.profile {
@@ -1158,5 +1164,17 @@ mod tests {
 
         scene.update(&input, 0.0, &assets, &mut Settings::in_memory());
         assert_eq!(profile.balance(), before + u64::from(finished.talents));
+    }
+
+    /// The hall's dust and fireflies' dice used to be an entity, gone with the hall's world: they
+    /// still last from entering the hall until leaving it.
+    #[test]
+    fn the_hall_keeps_its_ambience_from_entering_until_leaving() {
+        let (mut scene, assets) = lobby();
+        assert!(scene.ambience.is_some());
+        scene.leave();
+        assert!(scene.ambience.is_none());
+        scene.enter(&assets);
+        assert!(scene.ambience.is_some());
     }
 }

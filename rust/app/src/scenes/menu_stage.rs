@@ -37,6 +37,8 @@ pub(crate) struct Stage {
     clock: f32,
     until_critter: f32,
     rng: Rng,
+    /// The dust and fireflies' dice and clock, for as long as this room stands.
+    ambience: systems::Ambience,
 }
 
 impl Stage {
@@ -114,7 +116,7 @@ impl Stage {
         for (prop, top_left, look) in placed {
             prefabs::prop(world, prop, top_left, look, textures);
         }
-        systems::spawn_ambience(
+        let ambience = systems::spawn_ambience(
             world,
             textures.get(PARTICLE_TEXTURE),
             bounds,
@@ -133,6 +135,7 @@ impl Stage {
             clock: 0.0,
             until_critter: CRITTER_FIRST,
             rng: Rng::from_clock(),
+            ambience,
         }
     }
 
@@ -148,7 +151,7 @@ impl Stage {
         self.clock += dt;
         let camera = self.camera();
         systems::follow_backdrop(world, camera);
-        systems::tick_ambience(world, assets.textures.get(PARTICLE_TEXTURE), camera, dt);
+        systems::tick_ambience(world, &mut self.ambience, assets.textures.get(PARTICLE_TEXTURE), camera, dt);
         systems::tick_dust(world, self.clock, dt);
         self.until_critter -= dt;
         if self.until_critter <= 0.0 {
@@ -236,6 +239,13 @@ mod tests {
             clock: 0.0,
             until_critter: 100.0,
             rng: Rng::new(3),
+            ambience: systems::spawn_ambience(
+                &mut World::new(),
+                crate::render::TextureId::WHITE,
+                Vec2::ZERO,
+                Vec2::ZERO,
+                3,
+            ),
         }
     }
 
