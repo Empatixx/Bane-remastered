@@ -13,6 +13,7 @@ use crate::components::{
 };
 use crate::controls::Action;
 use crate::guns::GunKind;
+use crate::dungeon::Surfaces;
 use crate::input::Input;
 use crate::navigation::Navigation;
 use crate::physics::Physics;
@@ -25,6 +26,7 @@ use crate::rng::Rng;
 use crate::settings::Settings;
 use crate::systems;
 use crate::systems::loadout;
+use crate::systems::schedule;
 use crate::tilemap::{self, TILE_SIZE};
 use crate::upgrades::Perks;
 use crate::viewport::TARGET;
@@ -118,6 +120,30 @@ pub(crate) struct LobbyScene {
 }
 
 impl LobbyScene {
+    /// The hall lent out to the shared phases. Nothing in the hall is slowed by the hourglass,
+    /// and the camera trauma goes to `fx`, which the hall's camera never takes.
+    fn tick<'a>(
+        &'a mut self,
+        input: &'a Input,
+        assets: &'a Assets,
+        dt: f32,
+        fx: &'a mut systems::Fx,
+    ) -> schedule::Tick<'a> {
+        schedule::Tick {
+            world: &mut self.world,
+            physics: &mut self.physics,
+            navigation: &self.navigation,
+            assets,
+            input,
+            sounds: &mut self.sounds,
+            fx,
+            camera: self.camera.position(),
+            clock: self.clock,
+            dt,
+            hostile_dt: dt,
+        }
+    }
+
     /// Hands the range gun over on the way in and takes it back on the way out,
     /// and shows the weapon slot of the HUD only while it is in hand.
     fn arm_for_range(&mut self) {
@@ -540,9 +566,8 @@ impl Scene for LobbyScene {
         systems::tick_casings(&mut self.world, dt);
         systems::flash_hits(&mut self.world, dt);
         systems::float_texts(&mut self.world, dt);
-        systems::animate_player(&mut self.world, input);
-        systems::show_dodge_visual(&mut self.world, &assets.textures);
-        systems::show_dodge_cooldown(&mut self.world);
+        let mut fx = systems::Fx::default();
+        schedule::player_look_phase(&mut self.tick(input, assets, dt, &mut fx));
         systems::fade_afterimages(&mut self.world, dt);
         systems::tick_invulnerability(&mut self.world, dt);
         self.clock += dt;
@@ -617,29 +642,17 @@ impl Scene for LobbyScene {
         if self.pause.is_active() || self.panel_is_open() {
             return Transition::None;
         }
-        systems::start_dodge(
-            &mut self.world,
-            input,
-            input.mouse() + self.camera.position(),
-            &mut self.sounds,
-        );
-        systems::steer_player(&mut self.world, input, dt);
-        systems::tick_dodges(&mut self.world, dt);
-        systems::pick_pet_targets(&mut self.world);
-        systems::plan_pet_paths(&mut self.world, &mut self.physics, &self.navigation);
-        systems::steer_pets(&mut self.world);
-        systems::simulate(&mut self.world, &mut self.physics, dt);
-        systems::burn_out_rounds(&mut self.world, &mut self.physics, dt);
-        systems::bullet_hits(
-            &mut self.world,
-            &mut self.physics,
-            &assets.textures,
-            &mut self.sounds,
-            // The lobby's camera does not shake from the rockets in the range.
-            &mut systems::Fx::default(),
-        );
-        systems::hit_phase(&mut self.world);
-        systems::tick_dummies(&mut self.world, dt);
+        // The lobby's camera does not shake from the rockets in the range: the trauma is
+        // gathered here and dropped.
+        let mut fx = systems::Fx::default();
+        let mut tick = self.tick(input, assets, dt, &mut fx);
+        // The hall has no lava, water or sand to slow the player.
+        schedule::move_player_phase(&mut tick, &Surfaces::default());
+        schedule::pets_phase(&mut tick);
+        systems::simulate(tick.world, tick.physics, dt);
+        schedule::bullets_phase(&mut tick);
+        systems::hit_phase(tick.world);
+        systems::tick_dummies(tick.world, dt);
         Transition::None
     }
 }

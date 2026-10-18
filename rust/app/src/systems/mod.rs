@@ -180,7 +180,9 @@ pub(crate) use slot::{spin, tick_slot_machines, update_slot_prices};
 pub(crate) use stats::{
     Summary, close_floor as close_stats_floor, current as current_stats, summarize,
 };
-pub(crate) use steering::{steer_player, steer_player_on};
+#[cfg(test)]
+pub(crate) use steering::steer_player;
+pub(crate) use steering::steer_player_on;
 pub(crate) use surfaces::{StirSeed, burn_on_lava, kick_up_surfaces, ripple_on_water, stir_surfaces, sync_liquids};
 pub(crate) use time_slow::time_scale;
 pub(crate) use trails::{TrailTextures, shed_trails};

@@ -46,6 +46,8 @@ pub(crate) fn sand_slowdown(sunk: f32) -> f32 {
     least + (most - least) * (sunk / SINK_TIME).clamp(0.0, 1.0)
 }
 
+/// Steers the player on a floor without surfaces, for the tests.
+#[cfg(test)]
 pub(crate) fn steer_player(world: &mut World, input: &Input, dt: f32) {
     steer_player_on(world, input, &Surfaces::default(), dt);
 }
