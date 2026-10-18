@@ -1,6 +1,8 @@
 use hecs::{Entity, World};
 
-use crate::components::{Animation, Enemy, EnemyBullet, Expiring, Gate, Opening, Sprite, ThenPlay};
+use crate::components::{
+    Animation, Enemy, EnemyBullet, Expiring, Gate, Gone, Opening, Sprite, ThenPlay,
+};
 
 pub(crate) fn animate(world: &mut World, dt: f32) {
     let hostile_dt = dt * super::time_scale(world);
@@ -77,7 +79,10 @@ pub(crate) fn tick_openings(world: &mut World, dt: f32) {
     }
 }
 
-pub(crate) fn remove_expired(world: &mut World) {
+/// Tags every `Expiring` entity whose animation finished as `Gone`: a corpse, a spent shot or a
+/// burnt-out effect that leaves the world this frame. Readers of `Gone` run next, then
+/// `despawn_gone` removes them.
+pub(crate) fn mark_gone(world: &mut World) {
     let finished: Vec<Entity> = world
         .query::<(Entity, &Animation)>()
         .with::<&Expiring>()
@@ -86,6 +91,16 @@ pub(crate) fn remove_expired(world: &mut World) {
         .map(|(entity, _)| entity)
         .collect();
     for entity in finished {
+        let _ = world.insert_one(entity, Gone);
+    }
+}
+
+/// The one place where `Gone` entities leave the world. It runs in the frame update right after
+/// the last reader of `Gone`, in the same frame that `mark_gone` tagged them, so a finished corpse
+/// shows no longer than before. Nothing in the fixed loop reads `Gone`, so no tag survives a frame.
+pub(crate) fn despawn_gone(world: &mut World) {
+    let gone: Vec<Entity> = world.query::<Entity>().with::<&Gone>().iter().collect();
+    for entity in gone {
         let _ = world.despawn(entity);
     }
 }

@@ -5,7 +5,7 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    Animation, Clip, Color, Enemy, EnemyBullet, Expiring, Layer, MidasTouch, NoDrop, Player,
+    Animation, Clip, Color, Enemy, EnemyBullet, Expiring, Gone, Layer, MidasTouch, NoDrop, Player,
     Position, Size, Sprite,
 };
 use crate::items::ItemKind;
@@ -69,17 +69,18 @@ pub(crate) fn convert_bullets(world: &mut World, physics: &mut Physics, textures
     }
 }
 
+/// While Midas touch lasts, scatters bonus coins from every enemy corpse that finished this
+/// frame (`Gone`).
 pub(crate) fn midas_kill_coins(world: &mut World, textures: &Textures) {
     if world.query::<&MidasTouch>().iter().next().is_none() {
         return;
     }
     let dead: Vec<Vec2> = world
-        .query::<(&Position, &Animation)>()
-        .with::<(&Enemy, &Expiring)>()
+        .query::<&Position>()
+        .with::<(&Enemy, &Gone)>()
         .without::<&NoDrop>()
         .iter()
-        .filter(|(_, animation)| animation.finished())
-        .map(|(position, _)| position.0)
+        .map(|position| position.0)
         .collect();
     for at in dead {
         let phase = (at.x * 0.37 + at.y * 0.91).sin().abs() * TAU;
@@ -126,6 +127,7 @@ mod tests {
             animation.play(EnemyKind::Rat.spec().death_clip());
             animation.advance(5.0);
         }
+        crate::systems::mark_gone(world);
     }
 
     #[test]
@@ -178,7 +180,8 @@ mod tests {
         );
 
         crate::systems::animate(&mut world, 1.0);
-        crate::systems::remove_expired(&mut world);
+        crate::systems::mark_gone(&mut world);
+        crate::systems::despawn_gone(&mut world);
 
         assert_eq!(
             world

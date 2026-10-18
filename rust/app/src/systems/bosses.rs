@@ -4,8 +4,8 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Expiring, Hatcher, Health, Minion, Player,
-    Position, Puddle, Revives, RoomId, Rooted, Size, Spawning, WebSpitter,
+    Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Died, Expiring, Hatcher, Health, Minion,
+    Player, Position, Puddle, Revives, RoomId, Rooted, Size, Spawning, WebSpitter,
 };
 use crate::enemies::{self, EnemyKind};
 use crate::physics::Physics;
@@ -154,12 +154,15 @@ pub(crate) fn tick_armageddon(
     }
 }
 
+/// When a boss falls (`Died`), its brood dies with it and whatever it left in the room goes.
+/// The minions it kills here are reaped by the death phase's second `reap_dead`.
 pub(super) fn clean_up_after_boss(world: &mut World) {
     let fallen = world
-        .query::<&Health>()
-        .with::<&Boss>()
+        .query::<()>()
+        .with::<(&Boss, &Died)>()
         .iter()
-        .any(|health| health.current <= 0);
+        .next()
+        .is_some();
     if !fallen {
         return;
     }
@@ -390,6 +393,7 @@ mod tests {
         if let Ok(mut health) = world.get::<&mut Health>(spider) {
             health.current = 0;
         }
+        reap_dead(&mut world, &mut physics);
         clean_up_after_boss(&mut world);
         reap_dead(&mut world, &mut physics);
 

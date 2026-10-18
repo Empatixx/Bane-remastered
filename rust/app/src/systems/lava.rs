@@ -9,9 +9,9 @@ use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::clip::Clip;
 use crate::components::{
-    Animation, AshPile, Burrower, Chase, Color, ContactDamage, DeathAsh, Dodge, Expiring, FallKind,
-    FallingRock, Health, Hidden, Invulnerable, Kindling, Layer, Light, Lit, MagmaShell, Position,
-    RockFall, RoomId, Sealed, Size, Spawning, Sprite, SwoopStage, Swooper, WormStage,
+    Animation, AshPile, Burrower, Chase, Color, ContactDamage, DeathAsh, Died, Dodge, Expiring,
+    FallKind, FallingRock, Health, Hidden, Invulnerable, Kindling, Layer, Light, Lit, MagmaShell,
+    Position, RockFall, RoomId, Sealed, Size, Spawning, Sprite, SwoopStage, Swooper, WormStage,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::geometry;
@@ -173,12 +173,10 @@ pub(crate) fn tick_swoopers(world: &mut World, hostile: &mut Hostile<'_>) {
 /// A dead flame bat leaves a heap of ash.
 pub(crate) fn death_ashes(world: &mut World, physics: &mut Physics, textures: &Textures) {
     let dying: Vec<(Entity, Vec2, Option<RoomId>)> = world
-        .query::<(Entity, &Position, &Health, Option<&RoomId>)>()
-        .with::<&DeathAsh>()
-        .without::<&Expiring>()
+        .query::<(Entity, &Position, Option<&RoomId>)>()
+        .with::<(&DeathAsh, &Died)>()
         .iter()
-        .filter(|(_, _, health, _)| health.current <= 0)
-        .map(|(entity, position, _, room)| (entity, position.0, room.copied()))
+        .map(|(entity, position, room)| (entity, position.0, room.copied()))
         .collect();
     for (entity, at, room) in dying {
         let _ = world.remove_one::<DeathAsh>(entity);
@@ -641,6 +639,7 @@ mod tests {
             Vec2::new(100.0, 100.0),
         );
         world.get::<&mut Health>(bat).expect("bat").current = 0;
+        let _ = world.insert_one(bat, Died);
         death_ashes(&mut world, &mut physics, &textures);
         let _ = world.despawn(bat);
         assert_eq!(world.query::<&AshPile>().iter().count(), 1);
@@ -667,6 +666,7 @@ mod tests {
             Vec2::new(300.0, 100.0),
         );
         world.get::<&mut Health>(second).expect("bat").current = 0;
+        let _ = world.insert_one(second, Died);
         death_ashes(&mut world, &mut physics, &textures);
         let _ = world.despawn(second);
         let ash = world

@@ -388,6 +388,8 @@ impl Scene for InGameScene {
         }
         self.handle_room_events(events, assets);
         systems::update_boss_hud(&mut self.world);
+        // Finished corpses and effects: tagged `Gone`, paid out, then despawned in this frame.
+        systems::mark_gone(&mut self.world);
         systems::bloodlust_heals_on_kill(&mut self.world);
         systems::midas_kill_coins(&mut self.world, &assets.textures);
         systems::enemy_drops(
@@ -396,7 +398,7 @@ impl Scene for InGameScene {
             &assets.textures,
             |bound| self.loot_rng.below(bound),
         );
-        systems::remove_expired(&mut self.world);
+        systems::despawn_gone(&mut self.world);
         systems::collect_items(&mut self.world, &mut self.sounds);
         systems::age_items(&mut self.world, dt);
         systems::update_price_tags(&mut self.world);
@@ -639,7 +641,7 @@ impl Scene for InGameScene {
             self.rules.enemy_health,
             self.rules.enemy_damage,
         );
-        systems::resolve_deaths(
+        systems::death_phase(
             &mut self.world,
             &mut self.physics,
             &assets.textures,
@@ -1423,6 +1425,83 @@ mod tests {
 
         assert!(scene.world.get::<&Expiring>(slime).is_ok());
         assert!(scene.world.get::<&DeathBurst>(slime).is_err());
+    }
+
+    /// One rendered frame as the scene machine runs it: animations advance, then the scene.
+    fn frame(scene: &mut InGameScene, assets: &Assets, dt: f32) {
+        systems::animate(&mut scene.world, dt);
+        systems::chain_animations(&mut scene.world);
+        systems::tick_openings(&mut scene.world, dt);
+        scene.update(&Input::default(), dt, assets, &mut Settings::in_memory());
+    }
+
+    /// A kill in the fixed loop pays out once, on the frame its corpse finishes and is removed,
+    /// however the fixed ticks and the frames interleave.
+    #[test]
+    fn a_kill_drops_bleeds_and_pays_once_whatever_the_frames_between_ticks() {
+        use crate::components::{Bloodlust, Died, Gone, MidasTouch, Pickup};
+
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        // (fixed ticks per frame, frames per fixed tick): 0, 1 and 3 updates between ticks.
+        for (ticks, frames) in [(3, 1), (1, 1), (1, 3)] {
+            let mut scene = InGameScene::default();
+            scene.enter(&assets);
+            let (player, spot) = scene
+                .world
+                .query::<(hecs::Entity, &Position)>()
+                .with::<&Player>()
+                .iter()
+                .next()
+                .map(|(entity, position)| (entity, position.0))
+                .expect("the dungeon has a player");
+            let rat = prefabs::ready_enemy(
+                &mut scene.world,
+                &mut scene.physics,
+                EnemyKind::Rat,
+                spot + Vec2::new(300.0, 0.0),
+            );
+            let _ = scene.world.insert(
+                player,
+                (Bloodlust { remaining: 100.0 }, MidasTouch { remaining: 100.0 }),
+            );
+            if let Ok(mut health) = scene.world.get::<&mut Health>(player) {
+                health.current = 2;
+            }
+            if let Ok(mut health) = scene.world.get::<&mut Health>(rat) {
+                health.current = 0;
+            }
+            scene.kills_without_drop = 10;
+            let pickups = |world: &World| world.query::<&Pickup>().iter().count();
+            let hearts = |world: &World| world.get::<&Health>(player).map_or(0, |h| h.current);
+            let before = pickups(&scene.world);
+            let dt = 1.0 / 60.0 * ticks as f32 / frames as f32;
+
+            let mut gone_on = None;
+            for step in 0..40 {
+                for _ in 0..ticks {
+                    scene.fixed_update(&Input::default(), 1.0 / 60.0, &assets);
+                    assert!(scene.world.query::<&Died>().iter().next().is_none());
+                }
+                for _ in 0..frames {
+                    frame(&mut scene, &assets, dt);
+                    assert!(scene.world.query::<&Gone>().iter().next().is_none());
+                    let alive = scene.world.contains(rat);
+                    let paid = (
+                        pickups(&scene.world) - before,
+                        hearts(&scene.world),
+                        systems::current_stats(&scene.world).kills,
+                    );
+                    if alive {
+                        assert_eq!(paid, (0, 2, 0), "{ticks}x{frames} step {step}");
+                    } else {
+                        gone_on.get_or_insert(step);
+                        assert_eq!(paid, (3, 3, 1), "{ticks}x{frames} step {step}");
+                    }
+                }
+            }
+            assert!(gone_on.is_some(), "{ticks}x{frames}: the corpse was never removed");
+        }
     }
 
     fn fingerprint(seed: u64, assets: &Assets) -> Vec<String> {

@@ -7,8 +7,8 @@ use crate::artefacts::BLOODLUST_SECONDS;
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Bloodlust, Color, Enemy, Expiring, HealPercent, Health, Layer, Lit, Minion, Player,
-    Position, Size, Sprite,
+    Bloodlust, Color, Enemy, Gone, HealPercent, Health, Layer, Lit, Minion, Player, Position, Size,
+    Sprite,
 };
 use crate::render::TextureId;
 
@@ -92,13 +92,13 @@ pub(crate) fn apply_heal_percent(
     }
 }
 
+/// Bloodlust heals for every enemy corpse that finished this frame (`Gone`), minions aside.
 pub(crate) fn bloodlust_heals_on_kill(world: &mut World) {
     let kills = world
-        .query::<&Animation>()
-        .with::<(&Enemy, &Expiring)>()
+        .query::<()>()
+        .with::<(&Enemy, &Gone)>()
         .without::<&Minion>()
         .iter()
-        .filter(|animation| animation.finished())
         .count() as i32;
     if kills == 0 {
         return;
@@ -200,6 +200,7 @@ pub(crate) fn pulse_bloodlust(world: &mut World) {
 
 #[cfg(test)]
 mod tests {
+    use crate::components::{Animation, Expiring};
     use crate::enemies::EnemyKind;
     use crate::physics::Physics;
     use crate::prefabs;
@@ -242,6 +243,7 @@ mod tests {
             animation.play(EnemyKind::Rat.spec().death_clip());
             animation.advance(5.0);
         }
+        crate::systems::mark_gone(world);
     }
 
     fn start_bloodlust(world: &mut World, player: Entity, remaining: f32) {

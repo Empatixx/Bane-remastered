@@ -1,12 +1,11 @@
 use glam::{Vec2, Vec4};
 use hecs::{Entity, World};
 
-use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Boss, Charge, Chase, Clip, Color, Dash, Detour, Enemy, Expiring, Frozen, Health,
-    HitFlash, Layer, Outline, Player, Position, Puddle, Revives, Rooted, Size, Smash, Spawning,
-    Slot, Sprite, Velocity,
+    Animation, Boss, Charge, Chase, Clip, Color, Dash, Detour, Died, Enemy, Expiring, Frozen,
+    Health, HitFlash, Layer, Outline, Player, Position, Puddle, Revives, Rooted, Size, Smash,
+    Spawning, Slot, Sprite, Velocity,
 };
 use crate::flow::FlowField;
 use crate::navigation::Navigation;
@@ -442,7 +441,7 @@ fn stand_up(world: &mut World, entity: Entity) {
 
 /// The first death of an enemy that revives: it melts into a puddle that cannot be hit and
 /// lies still until it re-forms, the second death is for good.
-fn collapse_into_puddles(world: &mut World, physics: &mut Physics) {
+pub(super) fn collapse_into_puddles(world: &mut World, physics: &mut Physics) {
     let melting: Vec<(Entity, Enemy)> = world
         .query::<(Entity, &Health, &Enemy)>()
         .with::<&Revives>()
@@ -543,24 +542,9 @@ pub(crate) fn flash_hits(world: &mut World, dt: f32) {
     }
 }
 
-/// The one place where enemies die: every death effect sees each kill before it is reaped,
-/// whichever system dealt the killing blow.
-pub(crate) fn resolve_deaths(
-    world: &mut World,
-    physics: &mut Physics,
-    textures: &Textures,
-    sounds: &mut Vec<AudioCommand>,
-) {
-    collapse_into_puddles(world, physics);
-    super::skills::death_bursts(world, physics, textures, sounds);
-    super::skills::death_clouds(world, textures, sounds);
-    super::skills::death_heals(world, sounds);
-    super::frost::death_splits(world, physics, textures);
-    super::lava::death_ashes(world, physics, textures);
-    super::bosses::clean_up_after_boss(world);
-    reap_dead(world, physics);
-}
-
+/// Reaps every enemy whose health reached zero: it loses its body, stops, plays its death clip
+/// and is tagged `Expiring` and `Died`. Enemies that collapse into a puddle instead were taken
+/// out by `collapse_into_puddles` before this runs.
 pub(super) fn reap_dead(world: &mut World, physics: &mut Physics) {
     let dead: Vec<(Entity, Enemy)> = world
         .query::<(Entity, &Health, &Enemy)>()
@@ -572,7 +556,7 @@ pub(super) fn reap_dead(world: &mut World, physics: &mut Physics) {
         .collect();
     for (entity, enemy) in dead {
         physics.detach(world, entity);
-        let _ = world.insert_one(entity, Expiring);
+        let _ = world.insert(entity, (Expiring, Died));
         let _ = world.remove_one::<Frozen>(entity);
         if let Ok(mut velocity) = world.get::<&mut Velocity>(entity) {
             velocity.0 = Vec2::ZERO;
@@ -596,6 +580,7 @@ mod tests {
     use crate::enemies::{COMMON_SPAWN_SECONDS, EnemyKind};
     use crate::navigation::Navigation;
     use crate::prefabs;
+    use crate::systems::death_phase;
 
     use super::*;
 
@@ -1002,7 +987,7 @@ mod tests {
             EnemyKind::BloatedSpider,
             Vec2::new(400.0, 400.0),
         );
-        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+        death_phase(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
         assert_eq!(
             world
                 .query::<&crate::components::PoisonPool>()
@@ -1014,8 +999,8 @@ mod tests {
         if let Ok(mut health) = world.get::<&mut crate::components::Health>(spider) {
             health.current = 0;
         }
-        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
-        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+        death_phase(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+        death_phase(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
 
         assert_eq!(
             world
@@ -1030,7 +1015,7 @@ mod tests {
         if let Ok(mut health) = world.get::<&mut Health>(entity) {
             health.current = 0;
         }
-        resolve_deaths(world, physics, &Textures::default(), &mut Vec::new());
+        death_phase(world, physics, &Textures::default(), &mut Vec::new());
     }
 
     fn wait(world: &mut World, physics: &mut Physics, seconds: f32) {
@@ -1113,15 +1098,18 @@ mod tests {
         let _ = world.insert_one(slime, crate::components::Minion);
         kill(&mut world, &mut physics, slime);
         assert!(world.get::<&Puddle>(slime).is_ok());
-        let boss = world.spawn((
-            crate::components::Boss,
-            Health {
-                current: 0,
-                max: 10,
-            },
-        ));
+        let boss = prefabs::ready_enemy(
+            &mut world,
+            &mut physics,
+            EnemyKind::Spider,
+            Vec2::new(-300.0, 0.0),
+        );
+        let _ = world.insert_one(boss, crate::components::Boss);
+        if let Ok(mut health) = world.get::<&mut Health>(boss) {
+            health.current = 0;
+        }
 
-        resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+        death_phase(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
 
         assert!(world.get::<&Expiring>(slime).is_ok());
         let _ = world.despawn(boss);

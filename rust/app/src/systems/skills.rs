@@ -6,9 +6,9 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Body, Clip, DeathBurst, DeathCloud, DeathHeal, EnemyBullet, Expiring, EyeShooter,
-    Fuse, Health, Hits, Homing, Impact, Kin, Player, Position, RoomId, Size, Smash, Spawning,
-    Velocity,
+    Animation, Body, Clip, DeathBurst, DeathCloud, DeathHeal, Died, EnemyBullet, Expiring,
+    EyeShooter, Fuse, Health, Hits, Homing, Impact, Kin, Player, Position, RoomId, Size, Smash,
+    Spawning, Velocity,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::geometry;
@@ -90,18 +90,10 @@ pub(super) fn death_bursts(
     sounds: &mut Vec<AudioCommand>,
 ) {
     let dying: Vec<(Entity, Vec2, ProjectileKind, u32, Option<RoomId>)> = world
-        .query::<(
-            Entity,
-            &Position,
-            &DeathBurst,
-            &Hits,
-            &Health,
-            Option<&RoomId>,
-        )>()
-        .without::<&Expiring>()
+        .query::<(Entity, &Position, &DeathBurst, &Hits, Option<&RoomId>)>()
+        .with::<&Died>()
         .iter()
-        .filter(|(_, _, _, _, health, _)| health.current <= 0)
-        .map(|(entity, position, burst, hits, _, room)| {
+        .map(|(entity, position, burst, hits, room)| {
             (entity, position.0, burst.kind, hits.0, room.copied())
         })
         .collect();
@@ -116,11 +108,10 @@ pub(super) fn death_bursts(
 
 pub(super) fn death_clouds(world: &mut World, textures: &Textures, sounds: &mut Vec<AudioCommand>) {
     let dying: Vec<(Entity, Vec2)> = world
-        .query::<(Entity, &Position, &DeathCloud, &Health)>()
-        .without::<&Expiring>()
+        .query::<(Entity, &Position)>()
+        .with::<(&DeathCloud, &Died)>()
         .iter()
-        .filter(|(_, _, _, health)| health.current <= 0)
-        .map(|(entity, position, _, _)| (entity, position.0))
+        .map(|(entity, position)| (entity, position.0))
         .collect();
     for (entity, at) in dying {
         let _ = world.remove_one::<DeathCloud>(entity);
@@ -131,11 +122,10 @@ pub(super) fn death_clouds(world: &mut World, textures: &Textures, sounds: &mut 
 
 pub(super) fn death_heals(world: &mut World, sounds: &mut Vec<AudioCommand>) {
     let dying: Vec<(Entity, Vec2, DeathHeal)> = world
-        .query::<(Entity, &Position, &DeathHeal, &Health)>()
-        .without::<&Expiring>()
+        .query::<(Entity, &Position, &DeathHeal)>()
+        .with::<&Died>()
         .iter()
-        .filter(|(_, _, _, health)| health.current <= 0)
-        .map(|(entity, position, heal, _)| (entity, position.0, *heal))
+        .map(|(entity, position, heal)| (entity, position.0, *heal))
         .collect();
     let mut healed: Vec<Entity> = Vec::new();
     for (entity, center, heal) in dying {
@@ -423,6 +413,7 @@ mod tests {
         if let Ok(mut health) = world.get::<&mut Health>(slime) {
             health.current = 0;
         }
+        let _ = world.insert_one(slime, Died);
         death_bursts(&mut world, &mut physics, &textures, &mut Vec::new());
         assert_eq!(bullets(&world), 6);
 
@@ -465,6 +456,7 @@ mod tests {
         if let Ok(mut health) = world.get::<&mut Health>(green) {
             health.current = 0;
         }
+        let _ = world.insert_one(green, Died);
 
         death_heals(&mut world, &mut Vec::new());
 

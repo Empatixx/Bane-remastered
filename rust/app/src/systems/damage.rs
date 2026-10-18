@@ -407,7 +407,12 @@ mod tests {
         hit(&mut world, slime, 1, DamageSource::Bullet);
         hit(&mut world, slime, 1000, DamageSource::Explosion);
 
-        crate::systems::resolve_deaths(&mut world, &mut physics, &Textures::default(), &mut Vec::new());
+        crate::systems::death_phase(
+            &mut world,
+            &mut physics,
+            &Textures::default(),
+            &mut Vec::new(),
+        );
 
         assert!(world.get::<&Expiring>(slime).is_ok());
         assert!(world.get::<&crate::components::DeathBurst>(slime).is_err());

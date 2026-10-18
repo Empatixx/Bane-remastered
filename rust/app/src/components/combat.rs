@@ -73,6 +73,18 @@ impl Bullet {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Expiring;
 
+/// A one-tick tag on an enemy that was reaped on this fixed tick: its health reached zero and it
+/// started its death animation. The death effects (bursts, clouds, heals, splits, ashes, the boss
+/// clean-up) read it; the death phase removes it at the end of the same death phase.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Died;
+
+/// A one-frame tag on an `Expiring` entity whose animation finished: it is about to leave the
+/// world. The payouts of a finished corpse (drops, kill stats, bloodlust, midas coins) read it;
+/// `systems::despawn_gone` despawns it later in the same frame.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Gone;
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Health {
     pub(crate) current: i32,

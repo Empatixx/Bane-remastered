@@ -567,7 +567,8 @@ impl Scene for LobbyScene {
         systems::tick_speech(&mut self.world, dt);
         systems::fit_speech(&mut self.world, &assets.fonts);
         systems::keep_speech_on_screen(&mut self.world, self.camera.position());
-        systems::remove_expired(&mut self.world);
+        systems::mark_gone(&mut self.world);
+        systems::despawn_gone(&mut self.world);
         if let Some(target) = systems::camera_target(&self.world, input.mouse(), self.blend.0) {
             self.camera.follow(target, dt);
         }

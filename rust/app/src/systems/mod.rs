@@ -16,6 +16,7 @@ mod casings;
 mod chase_bench;
 mod crowd;
 mod damage;
+mod death;
 pub(crate) mod death_screen;
 mod dodge;
 mod dummy;
@@ -73,7 +74,9 @@ mod ui;
 mod unstick;
 
 pub(crate) use ambience::{spawn_ambience, tick_ambience};
-pub(crate) use animation::{animate, chain_animations, open_gate, remove_expired, tick_openings};
+pub(crate) use animation::{
+    animate, chain_animations, despawn_gone, mark_gone, open_gate, tick_openings,
+};
 pub(crate) use argus::{tick_argus, tick_orbiters};
 pub(crate) use arrows::update_enemy_arrows;
 pub(crate) use artefacts::{
@@ -102,6 +105,7 @@ pub(crate) use damage::{
     contact_damage, player_is_dead, player_is_low_on_health, tick_invulnerability,
     trap_hits_enemies,
 };
+pub(crate) use death::death_phase;
 pub(crate) use death_screen::{DeathScreen, update_death_ui};
 pub(crate) use dodge::{
     DODGE_SPEED, fade_afterimages, show_dodge_cooldown, show_dodge_visual, spawn_afterimage,
@@ -111,7 +115,7 @@ pub(crate) use draw::collect_draws;
 pub(crate) use dust::tick_dust;
 pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::{
-    chase_player, dash, face_player, flash_hits, resolve_deaths, tick_spawning, update_flow,
+    chase_player, dash, face_player, flash_hits, tick_spawning, update_flow,
 };
 pub(crate) use glide::glide;
 pub(crate) use golem::{clear_golem_effects, tick_golem, tick_laser, tick_rock_falls};

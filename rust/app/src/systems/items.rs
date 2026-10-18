@@ -6,7 +6,7 @@ use hecs::{Entity, World};
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Armor, ArtefactDrop, Color, Despawn, Enemy, Expiring, GunDrop, HOVER_CYCLE, Health,
+    Armor, ArtefactDrop, Color, Despawn, Enemy, Expiring, Gone, GunDrop, HOVER_CYCLE, Health,
     Hover, InRange, Loadout, NoDrop, Outline, Pet, Pickup, Player, Position, Shop, Size, Wallet,
 };
 use crate::geometry;
@@ -184,6 +184,8 @@ pub(crate) fn age_items(world: &mut World, dt: f32) {
     }
 }
 
+/// Pays out the enemy corpses that finished this frame (`Gone`): a kill in the run stats and,
+/// now and then, a common drop where the corpse lay.
 pub(crate) fn enemy_drops(
     world: &mut World,
     kills_without_drop: &mut u32,
@@ -191,20 +193,18 @@ pub(crate) fn enemy_drops(
     mut roll: impl FnMut(usize) -> usize,
 ) {
     let dead: Vec<Vec2> = world
-        .query::<(&Position, &Animation)>()
-        .with::<(&Enemy, &Expiring)>()
+        .query::<&Position>()
+        .with::<(&Enemy, &Gone)>()
         .without::<&NoDrop>()
         .iter()
-        .filter(|(_, animation)| animation.finished())
-        .map(|(position, _)| position.0)
+        .map(|position| position.0)
         .collect();
     let killed: Vec<crate::enemies::EnemyKind> = world
-        .query::<(&Enemy, &Animation)>()
-        .with::<&Expiring>()
+        .query::<&Enemy>()
+        .with::<&Gone>()
         .without::<&crate::components::Minion>()
         .iter()
-        .filter(|(_, animation)| animation.finished())
-        .map(|(enemy, _)| enemy.kind)
+        .map(|enemy| enemy.kind)
         .collect();
     for kind in killed {
         super::stats::record(world, super::stats::Stat::Kill(kind), 1);
@@ -235,7 +235,7 @@ pub(crate) fn burst_items(
 
 #[cfg(test)]
 mod tests {
-    use crate::components::Velocity;
+    use crate::components::{Animation, Velocity};
     use crate::items::{AmmoBox, DESPAWN_SECONDS, PotionSize};
     use crate::physics::Physics;
 
@@ -481,6 +481,7 @@ mod tests {
             dying.push(rat);
         }
         let _ = world.insert_one(dying[0], NoDrop);
+        crate::systems::mark_gone(&mut world);
 
         enemy_drops(&mut world, &mut kills, &textures, |_| 0);
 
@@ -503,6 +504,7 @@ mod tests {
             animation.play(crate::enemies::EnemyKind::Golem.spec().death_clip());
             animation.advance(5.0);
         }
+        crate::systems::mark_gone(&mut world);
 
         enemy_drops(&mut world, &mut 0, &textures, |_| 0);
 

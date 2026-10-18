@@ -6,7 +6,7 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    CHILL_SECONDS, Chilled, Color, DeathSplit, Expiring, Frozen, Health, IcicleDropper, Layer,
+    CHILL_SECONDS, Chilled, Color, DeathSplit, Died, Expiring, Frozen, IcicleDropper, Layer,
     Position, RockFall, RoomId, Size, Spawning, Sprite,
 };
 use crate::enemies;
@@ -101,11 +101,10 @@ pub(crate) fn drop_icicle(
 /// Snow slimes break into slimelings that scatter a little.
 pub(crate) fn death_splits(world: &mut World, physics: &mut Physics, textures: &Textures) {
     let dying: Vec<(Entity, Vec2, DeathSplit, Option<RoomId>)> = world
-        .query::<(Entity, &Position, &DeathSplit, &Health, Option<&RoomId>)>()
-        .without::<&Expiring>()
+        .query::<(Entity, &Position, &DeathSplit, Option<&RoomId>)>()
+        .with::<&Died>()
         .iter()
-        .filter(|(.., health, _)| health.current <= 0)
-        .map(|(entity, position, split, _, room)| (entity, position.0, *split, room.copied()))
+        .map(|(entity, position, split, room)| (entity, position.0, *split, room.copied()))
         .collect();
     for (entity, at, split, room) in dying {
         let _ = world.remove_one::<DeathSplit>(entity);
@@ -119,7 +118,7 @@ pub(crate) fn death_splits(world: &mut World, physics: &mut Physics, textures: &
 
 #[cfg(test)]
 mod tests {
-    use crate::components::{ContactDamage, FallingRock};
+    use crate::components::{ContactDamage, FallingRock, Health};
     use crate::dungeon::Theme;
     use crate::enemies::{EnemyKind, ProjectileKind};
     use crate::rng::Rng;
@@ -242,6 +241,7 @@ mod tests {
             Vec2::new(900.0, 100.0),
         );
         kill(&mut world, slime);
+        let _ = world.insert_one(slime, Died);
         death_splits(&mut world, &mut physics, &Textures::default());
         let slimelings = world
             .query::<&crate::components::Enemy>()
