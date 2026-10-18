@@ -3,8 +3,8 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    Animation, ArrowTrap, Body, Bullet, Clip, Color, EnemyBullet, Expiring, FloorPatch,
-    Layer, Lit, PatchKind, Position, Size, Sprite, TrapArrow,
+    Animation, ArrowTrap, Bullet, Clip, Color, EnemyBullet, Expiring, FloorPatch,
+    Layer, Lit, PatchKind, Position, Size, Sprite, TrapArrow, Velocity,
 };
 use crate::geometry;
 use crate::physics::Physics;
@@ -141,34 +141,26 @@ pub(crate) fn slow_bullets_in_webs(world: &mut World, physics: &mut Physics, dt:
     }
     let keep = (-WEB_BULLET_DRAG * dt).exp();
     let mut caught = Vec::new();
-    let bullets: Vec<(Entity, Body, glam::Vec2)> = world
-        .query::<(Entity, &Body, &Position)>()
+    // `Velocity` is what a bullet flies by: `simulate` puts it on the body before every step, so
+    // slowing the body instead would be undone at once.
+    for (entity, position, velocity, is_bullet) in world
+        .query_mut::<(Entity, &Position, &mut Velocity, Option<&Bullet>, Option<&EnemyBullet>)>()
         .without::<&Expiring>()
-        .iter()
-        .filter(|(entity, _, _)| {
-            world.get::<&Bullet>(*entity).is_ok() || world.get::<&EnemyBullet>(*entity).is_ok()
+        .into_iter()
+        .map(|(entity, position, velocity, bullet, enemy)| {
+            (entity, position, velocity, bullet.is_some() || enemy.is_some())
         })
-        .map(|(entity, body, position)| (entity, *body, position.0))
-        .collect();
-    for (entity, body, at) in bullets {
-        if !webs
-            .iter()
-            .any(|(web, size)| geometry::contains(*web, *size, at))
+    {
+        if !is_bullet
+            || !webs
+                .iter()
+                .any(|(web, size)| geometry::contains(*web, *size, position.0))
         {
             continue;
         }
-        let Some(velocity) = physics.velocity(body) else {
-            continue;
-        };
-        let slowed = velocity * keep;
-        if slowed.length() < WEB_CATCHES_BELOW {
+        velocity.0 *= keep;
+        if velocity.0.length() < WEB_CATCHES_BELOW {
             caught.push(entity);
-        } else {
-            // Left on the body on purpose: every bullet also has `Velocity`, which `simulate`
-            // puts back on the body before it steps, so in a run this slowing does not stick.
-            // Writing `Velocity` instead would make webs slow bullets for real, a gameplay
-            // change, not a refactor.
-            physics.set_velocity(body, slowed);
         }
     }
     for entity in caught {
@@ -180,6 +172,7 @@ pub(crate) fn slow_bullets_in_webs(world: &mut World, physics: &mut Physics, dt:
 #[cfg(test)]
 mod tests {
     use crate::components::{Armor, Health, Invulnerable};
+    use crate::systems::simulate;
     use crate::navigation::Navigation;
     use crate::physics::Physics;
     use crate::prefabs;
@@ -291,7 +284,7 @@ mod tests {
     }
 
     fn bullet_at(world: &mut World, physics: &mut Physics, at: Vec2, enemy: bool) -> Entity {
-        let entity = world.spawn((Position(at),));
+        let entity = world.spawn((Position(at), Velocity(Vec2::new(700.0, 0.0))));
         let body = if enemy {
             let _ = world.insert_one(entity, EnemyBullet);
             physics.add_enemy_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0))
@@ -303,12 +296,10 @@ mod tests {
         entity
     }
 
-    fn speed(world: &World, physics: &Physics, entity: Entity) -> f32 {
+    fn speed(world: &World, entity: Entity) -> f32 {
         world
-            .get::<&Body>(entity)
-            .ok()
-            .and_then(|body| physics.velocity(*body))
-            .map_or(0.0, |velocity| velocity.length())
+            .get::<&Velocity>(entity)
+            .map_or(0.0, |velocity| velocity.0.length())
     }
 
     #[test]
@@ -322,9 +313,9 @@ mod tests {
 
         slow_bullets_in_webs(&mut world, &mut physics, 1.0 / 60.0);
 
-        assert!(speed(&world, &physics, player_shot) < 700.0 * 0.9);
-        assert!(speed(&world, &physics, enemy_shot) < 700.0 * 0.9);
-        assert!((speed(&world, &physics, free_shot) - 700.0).abs() < 0.5);
+        assert!(speed(&world, player_shot) < 700.0 * 0.9);
+        assert!(speed(&world, enemy_shot) < 700.0 * 0.9);
+        assert!((speed(&world, free_shot) - 700.0).abs() < 0.5);
     }
 
     #[test]
@@ -342,26 +333,26 @@ mod tests {
     }
 
     #[test]
-    fn a_bullet_fired_into_a_web_stops_within_a_fraction_of_its_width() {
+    fn a_bullet_fired_into_a_web_slows_step_by_step_and_is_caught() {
         let mut world = World::new();
         let mut physics = Physics::new();
         web_at(&mut world, Vec2::new(300.0, 300.0));
-        let start = Vec2::new(252.0, 300.0);
-        let shot = bullet_at(&mut world, &mut physics, start, false);
+        let shot = bullet_at(&mut world, &mut physics, Vec2::new(252.0, 300.0), false);
 
+        let mut speeds = Vec::new();
         for _ in 0..60 {
-            if let Ok(body) = world.get::<&Body>(shot).map(|body| *body) {
-                if let Some(at) = physics.position(body) {
-                    if let Ok(mut position) = world.get::<&mut Position>(shot) {
-                        position.0 = at;
-                    }
-                }
-            }
+            simulate(&mut world, &mut physics, 1.0 / 60.0);
             slow_bullets_in_webs(&mut world, &mut physics, 1.0 / 60.0);
-            physics.step(1.0 / 60.0);
+            if world.get::<&Expiring>(shot).is_ok() {
+                break;
+            }
+            speeds.push(speed(&world, shot));
         }
 
-        assert!(world.get::<&Expiring>(shot).is_ok());
+        assert!(world.get::<&Expiring>(shot).is_ok(), "{speeds:?}");
+        assert!(speeds.len() < 20, "caught within a few steps: {speeds:?}");
+        assert!(speeds.windows(2).all(|pair| pair[1] <= pair[0]), "{speeds:?}");
+        assert!(speeds.last().is_none_or(|last| *last < 700.0), "{speeds:?}");
     }
 
     fn impacts(world: &World) -> usize {

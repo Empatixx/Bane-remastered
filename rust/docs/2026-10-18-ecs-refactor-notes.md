@@ -34,8 +34,6 @@ Branch `ecs-refactor`. Plan: `2026-10-18-ecs-refactor-plan.md`.
 
 ## Known pre-existing issues, found and not fixed
 
-- Webs do not slow bullets: the `set_velocity` in `hazards.rs` is overwritten by `simulate`, and
-  `WEB_CATCHES_BELOW` never triggers.
 - `kills_without_drop` and `boss` are never reset across runs.
 
 ## Follow-ups
