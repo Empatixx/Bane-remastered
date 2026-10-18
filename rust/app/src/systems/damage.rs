@@ -8,6 +8,7 @@ use crate::components::{
 };
 use crate::geometry;
 use crate::systems::enemies::FLASH_SECONDS;
+use crate::systems::fx::{self, Fx};
 use crate::systems::stats::{self, Stat};
 
 const INVULNERABLE_SECONDS: f32 = 1.0;
@@ -204,7 +205,11 @@ pub(crate) fn trap_hits_enemies(world: &mut World, dt: f32) {
     }
 }
 
-pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) -> bool {
+pub(crate) fn contact_damage(
+    world: &mut World,
+    sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
+) -> bool {
     let Some((player, position, size)) = world
         .query::<(Entity, &Position, &Size)>()
         .with::<(&Player, &Health)>()
@@ -241,7 +246,7 @@ pub(crate) fn contact_damage(world: &mut World, sounds: &mut Vec<AudioCommand>) 
     let Some((damage, chills)) = damage else {
         return false;
     };
-    let hurt = hurt_player(world, player, damage, sounds);
+    let hurt = hurt_player(world, player, damage, sounds, fx);
     if hurt && chills {
         super::frost::chill_player(world, player);
     }
@@ -253,8 +258,9 @@ pub(crate) fn hurt_player(
     player: Entity,
     damage: i32,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
 ) -> bool {
-    hurt(world, player, damage, false, sounds)
+    hurt(world, player, damage, false, sounds, fx)
 }
 
 pub(crate) fn hurt_player_through_armor(
@@ -262,8 +268,9 @@ pub(crate) fn hurt_player_through_armor(
     player: Entity,
     damage: i32,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
 ) -> bool {
-    hurt(world, player, damage, true, sounds)
+    hurt(world, player, damage, true, sounds, fx)
 }
 
 fn hurt(
@@ -272,6 +279,7 @@ fn hurt(
     damage: i32,
     through_armor: bool,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
 ) -> bool {
     if world.get::<&Invulnerable>(player).is_ok() {
         return false;
@@ -298,11 +306,13 @@ fn hurt(
             absorb(health, armor, damage);
         }
         let is_low = (health.current as f32) < health.max as f32 * LOW_HEALTH;
-        sounds.push(AudioCommand::Effect(if health.current <= 0 {
-            SoundEffect::Death
+        let (effect, shake) = if health.current <= 0 {
+            (SoundEffect::Death, fx::DEATH_SHAKE)
         } else {
-            SoundEffect::PlayerHurt
-        }));
+            (SoundEffect::PlayerHurt, fx::HURT_SHAKE)
+        };
+        sounds.push(AudioCommand::Effect(effect));
+        fx.shake(shake);
         if is_low && !was_low && health.current > 0 {
             sounds.push(AudioCommand::Effect(SoundEffect::LowHealth));
         }
@@ -569,7 +579,7 @@ mod tests {
             Vec2::new(32.0, 32.0),
         );
 
-        assert!(!contact_damage(&mut world, &mut Vec::new()));
+        assert!(!contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
 
         let decor = crate::dungeon::Decor {
             kind: crate::dungeon::DecorKind::Spike,
@@ -580,7 +590,7 @@ mod tests {
             .get::<&mut Animation>(spike)
             .expect("the spike animates")
             .advance(0.8);
-        assert!(contact_damage(&mut world, &mut Vec::new()));
+        assert!(contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
     }
 
     #[test]
@@ -600,8 +610,8 @@ mod tests {
             Vec2::new(100.0, 100.0),
         );
 
-        contact_damage(&mut world, &mut Vec::new());
-        contact_damage(&mut world, &mut Vec::new());
+        contact_damage(&mut world, &mut Vec::new(), &mut Fx::default());
+        contact_damage(&mut world, &mut Vec::new(), &mut Fx::default());
 
         let armor = world.get::<&Armor>(player).map(|a| a.current).ok();
         let health = world.get::<&Health>(player).map(|h| h.current).ok();
@@ -632,14 +642,14 @@ mod tests {
             .get::<&mut Animation>(spike)
             .expect("the spike animates")
             .advance(0.4);
-        assert!(!contact_damage(&mut world, &mut Vec::new()));
+        assert!(!contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
         assert!(world.get::<&Invulnerable>(player).is_err());
 
         world
             .get::<&mut Animation>(spike)
             .expect("the spike animates")
             .advance(0.4);
-        assert!(contact_damage(&mut world, &mut Vec::new()));
+        assert!(contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
     }
 
     #[test]
@@ -680,7 +690,7 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         let player = prefabs::player(&mut world, &mut physics, Vec2::ZERO, &Textures::default());
-        assert!(hurt_player(&mut world, player, 1, &mut Vec::new()));
+        assert!(hurt_player(&mut world, player, 1, &mut Vec::new(), &mut Fx::default()));
         assert_eq!(stats::current(&world).hurt_this_floor, 1);
     }
 
@@ -700,7 +710,7 @@ mod tests {
         let before = player_health(&world, player);
 
         let rat = prefabs::ready_enemy(&mut world, &mut physics, EnemyKind::Rat, at);
-        assert!(!contact_damage(&mut world, &mut Vec::new()));
+        assert!(!contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
         assert_eq!(player_health(&world, player), before);
 
         let _ = world.despawn(rat);
@@ -712,7 +722,7 @@ mod tests {
             Vec2::X,
             &textures,
         );
-        assert!(contact_damage(&mut world, &mut Vec::new()));
+        assert!(contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
         assert!(player_health(&world, player) < before);
     }
 

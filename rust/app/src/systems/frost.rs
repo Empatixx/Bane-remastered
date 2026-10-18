@@ -203,7 +203,7 @@ mod tests {
         assert!(crate::systems::damage::contact_damage(
             &mut world,
             &mut Vec::new()
-        ));
+        , &mut crate::systems::Fx::default()));
         assert!(toughness(&world, player) < before);
         assert!(world.get::<&Chilled>(player).is_ok());
     }

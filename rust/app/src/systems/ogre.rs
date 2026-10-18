@@ -12,6 +12,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::golem::{play, player_at, spawn_rock};
+use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
@@ -164,6 +165,7 @@ pub(crate) fn tick_ogre(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let rats = world.query::<&Minion>().iter().count();
@@ -200,7 +202,7 @@ pub(crate) fn tick_ogre(world: &mut World, hostile: &mut Hostile<'_>) {
         };
         for command in commands {
             execute(
-                world, physics, navigation, textures, sounds, entity, at, target, command,
+                world, physics, navigation, textures, sounds, fx, entity, at, target, command,
             );
         }
     }
@@ -213,6 +215,7 @@ fn execute(
     navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
     entity: Entity,
     at: Vec2,
     player: Option<Vec2>,
@@ -229,7 +232,7 @@ fn execute(
             let _ = world.remove_one::<Rooted>(entity);
         }
         Cmd::Ring => {
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             let origin = at + Vec2::new(0.0, RING_DROP);
             for ring in 0..enemies::OGRE_JUMP_RINGS {
                 let count = enemies::OGRE_JUMP_RING;
@@ -252,7 +255,7 @@ fn execute(
             }
         }
         Cmd::Fan => {
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             let mirrored = world
                 .get::<&Animation>(entity)
                 .is_ok_and(|animation| animation.flipped());

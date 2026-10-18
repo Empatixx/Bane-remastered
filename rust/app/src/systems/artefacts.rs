@@ -397,7 +397,13 @@ mod tests {
             .next()
             .map(|(h, a)| (h.current, a.current));
         let mut sounds = Vec::new();
-        crate::systems::damage::hurt_player(&mut world, player, 3, &mut sounds);
+        crate::systems::damage::hurt_player(
+            &mut world,
+            player,
+            3,
+            &mut sounds,
+            &mut crate::systems::Fx::default(),
+        );
         let after = world
             .query::<(&Health, &Armor)>()
             .with::<&Player>()

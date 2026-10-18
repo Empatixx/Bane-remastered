@@ -35,16 +35,6 @@ use super::{Cursor, Pause, Scene, SceneId, Transition};
 
 const BOSS_DEFEATED_SHAKE: f32 = 1.0;
 
-fn impact_shake(effect: SoundEffect) -> f32 {
-    match effect {
-        SoundEffect::Explosion => 0.8,
-        SoundEffect::Death => 0.7,
-        SoundEffect::PlayerHurt => 0.5,
-        _ => 0.0,
-    }
-}
-
-
 #[derive(Default)]
 pub(crate) struct InGameScene {
     world: World,
@@ -54,6 +44,8 @@ pub(crate) struct InGameScene {
     pause: Pause,
     clock: f32,
     sounds: Vec<AudioCommand>,
+    /// The camera trauma the systems gathered since the camera last took it.
+    fx: systems::Fx,
     throttle: crate::audio::Throttle,
     hit: bool,
     dungeon: Option<Dungeon>,
@@ -297,7 +289,7 @@ impl Scene for InGameScene {
         }
         let seed = crate::rng::cosmetic() * 1000.0;
         if systems::cast_lightning(&mut self.world, &assets.textures, seed) > 0 {
-            self.camera.add_trauma(systems::LIGHTNING_SHAKE);
+            self.fx.shake(systems::LIGHTNING_SHAKE);
         }
         // The lightning's hits flash and float their numbers in this frame, before those tick.
         systems::hit_phase(&mut self.world);
@@ -459,7 +451,12 @@ impl Scene for InGameScene {
             Some(Interaction::NextFloor) => self.next_floor(assets),
             Some(Interaction::Spin) => systems::spin(&mut self.world, &mut self.sounds),
             Some(Interaction::Buy) => {
-                systems::buy(&mut self.world, &assets.textures, &mut self.sounds);
+                systems::buy(
+                    &mut self.world,
+                    &assets.textures,
+                    &mut self.sounds,
+                    &mut self.fx,
+                );
             }
             Some(Interaction::PickUpArtefact) => {
                 systems::pick_up_artefact(&mut self.world, &assets.textures, &mut self.sounds);
@@ -474,7 +471,7 @@ impl Scene for InGameScene {
             }
             _ => {}
         }
-        self.feel_impacts();
+        self.take_trauma();
         if let Some(training) = &mut self.training {
             let event = training.update(
                 &mut self.world,
@@ -519,6 +516,7 @@ impl Scene for InGameScene {
             navigation: &self.navigation,
             textures: &assets.textures,
             sounds: &mut self.sounds,
+            fx: &mut self.fx,
             dt: hostile_dt,
         };
         systems::tick_golem(&mut self.world, &mut hostile);
@@ -580,7 +578,7 @@ impl Scene for InGameScene {
             &mut self.sounds,
             hostile_dt,
         );
-        systems::tick_leapers(&mut self.world, &mut self.sounds, hostile_dt);
+        systems::tick_leapers(&mut self.world, &mut self.sounds, &mut self.fx, hostile_dt);
         systems::tick_armageddon(
             &mut self.world,
             &mut self.physics,
@@ -598,7 +596,13 @@ impl Scene for InGameScene {
             self.clock,
             dt,
         );
-        systems::tick_pendulums(&mut self.world, &mut self.sounds, self.clock, hostile_dt);
+        systems::tick_pendulums(
+            &mut self.world,
+            &mut self.sounds,
+            &mut self.fx,
+            self.clock,
+            hostile_dt,
+        );
         systems::shove_tables(
             &mut self.world,
             &mut self.physics,
@@ -614,6 +618,7 @@ impl Scene for InGameScene {
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
+            &mut self.fx,
         );
         systems::pet_bites(&mut self.world, dt);
         systems::tick_ghosts(&mut self.world, dt);
@@ -624,6 +629,7 @@ impl Scene for InGameScene {
             navigation: &self.navigation,
             textures: &assets.textures,
             sounds: &mut self.sounds,
+            fx: &mut self.fx,
             dt: hostile_dt,
         };
         systems::tick_arrow_traps(&mut self.world, &mut hostile);
@@ -632,10 +638,11 @@ impl Scene for InGameScene {
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
+            &mut self.fx,
             |bound| self.loot_rng.below(bound),
         );
         systems::leave_poison_trails(&mut self.world, &assets.textures);
-        systems::tick_poison(&mut self.world, dt, &mut self.sounds);
+        systems::tick_poison(&mut self.world, dt, &mut self.sounds, &mut self.fx);
         systems::tick_frozen(&mut self.world, dt);
         systems::tick_chilled(&mut self.world, dt);
         systems::toughen_enemies(
@@ -652,14 +659,14 @@ impl Scene for InGameScene {
             &assets.textures,
             &mut self.sounds,
         );
-        if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds) {
+        if systems::burn_on_lava(&mut self.world, &self.surfaces, &mut self.sounds, &mut self.fx) {
             self.hit = true;
         }
         systems::sync_liquids(&mut self.world, self.clock);
         systems::ripple_on_water(&mut self.world, &self.surfaces, &assets.textures, dt);
         systems::kick_up_surfaces(&mut self.world, &self.surfaces, dt);
         systems::stir_surfaces(&mut self.world, &self.surfaces, self.camera.view(), crate::viewport::TARGET, dt);
-        if systems::contact_damage(&mut self.world, &mut self.sounds) {
+        if systems::contact_damage(&mut self.world, &mut self.sounds, &mut self.fx) {
             self.hit = true;
         }
         systems::enemy_bullet_hits(&mut self.world, &mut self.physics);
@@ -671,7 +678,7 @@ impl Scene for InGameScene {
             &mut self.sounds,
             dt,
         );
-        self.feel_impacts();
+        self.take_trauma();
         Transition::None
     }
 }
@@ -718,13 +725,10 @@ impl InGameScene {
         if slowed { 1.0 } else { 0.0 }
     }
 
-    /// Shakes the screen for the hard hits of this step, read from the sounds they made.
-    fn feel_impacts(&mut self) {
-        for command in &self.sounds {
-            if let AudioCommand::Effect(effect) = command {
-                self.camera.add_trauma(impact_shake(*effect));
-            }
-        }
+    /// The camera takes the trauma the systems gathered, at the end of every fixed step and
+    /// of every frame update, so a hard hit shakes the frame it happened in.
+    fn take_trauma(&mut self) {
+        self.camera.add_trauma(self.fx.take_trauma());
     }
 
     /// Whether the scene next starts the training crypt rather than a run.
@@ -1385,16 +1389,82 @@ mod tests {
             ..InGameScene::default()
         };
         scene.camera.snap_to(Vec2::new(500.0, 500.0));
-        scene
-            .sounds
-            .push(AudioCommand::Effect(SoundEffect::Explosion));
+        systems::explosion(&mut scene.sounds, &mut scene.fx);
 
-        scene.feel_impacts();
+        scene.take_trauma();
         scene.camera.update_shake(0.05);
 
         assert_ne!(scene.camera(), scene.camera.position());
         assert_eq!(scene.camera.position(), Vec2::new(500.0, 500.0));
-        assert_eq!(impact_shake(SoundEffect::Coin), 0.0);
+        assert_eq!(scene.fx, systems::Fx::default(), "the camera took all of it");
+    }
+
+    /// The camera takes the same trauma from a hard hit as it did when the shake was read from
+    /// the sound the hit made: 0.8 for an explosion, 0.7 for the death blow, 0.5 for a hurt.
+    #[test]
+    fn a_hard_hit_shakes_the_camera_as_hard_as_its_sound_used_to() {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let (player, spot) = scene
+            .world
+            .query::<(hecs::Entity, &Position)>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .map(|(entity, position)| (entity, position.0))
+            .expect("the dungeon has a player");
+        let trauma_of = |scene: &mut InGameScene, hit: &dyn Fn(&mut InGameScene)| {
+            scene.fx = systems::Fx::default();
+            hit(scene);
+            scene.fx.take_trauma().to_bits()
+        };
+
+        let explosion = trauma_of(&mut scene, &|scene| {
+            let barrel = prefabs::breakable(
+                &mut scene.world,
+                &mut scene.physics,
+                crate::components::BreakKind::Explosive,
+                spot + Vec2::new(2000.0, 2000.0),
+                &assets.textures,
+            );
+            if let Ok(mut health) = scene.world.get::<&mut Health>(barrel) {
+                health.current = 0;
+            }
+            systems::break_objects(
+                &mut scene.world,
+                &mut scene.physics,
+                &assets.textures,
+                &mut scene.sounds,
+                &mut scene.fx,
+                |_| 0,
+            );
+        });
+        assert_eq!(explosion, 0.8f32.to_bits());
+
+        let hurt = trauma_of(&mut scene, &|scene| {
+            assert!(systems::hurt_player(
+                &mut scene.world,
+                player,
+                1,
+                &mut scene.sounds,
+                &mut scene.fx,
+            ));
+        });
+        assert_eq!(hurt, 0.5f32.to_bits());
+
+        let death = trauma_of(&mut scene, &|scene| {
+            let _ = scene.world.remove_one::<crate::components::Invulnerable>(player);
+            assert!(systems::hurt_player_through_armor(
+                &mut scene.world,
+                player,
+                1000,
+                &mut scene.sounds,
+                &mut scene.fx,
+            ));
+        });
+        assert_eq!(death, 0.7f32.to_bits());
     }
 
     #[test]

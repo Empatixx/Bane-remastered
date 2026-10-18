@@ -14,6 +14,7 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
+use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
 
 const ROCK_RING_ORIGIN_DROP: f32 = 60.0;
@@ -274,6 +275,7 @@ pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
     let physics = &mut *hostile.physics;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let target = player_at(world);
     let golems: Vec<(Entity, Vec2, i32, i32)> = world
@@ -314,6 +316,7 @@ pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
                 physics,
                 textures,
                 sounds,
+                fx,
                 entity,
                 at,
                 target.map(|(_, p, _)| p),
@@ -347,6 +350,7 @@ fn execute(
     physics: &mut Physics,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
     entity: Entity,
     at: Vec2,
     player: Option<Vec2>,
@@ -363,7 +367,7 @@ fn execute(
             let _ = world.remove_one::<Rooted>(entity);
         }
         Cmd::Ring(offset) => {
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             let origin = at + Vec2::new(0.0, ROCK_RING_ORIGIN_DROP);
             for index in 0..enemies::GOLEM_ROCK_RING {
                 let angle =
@@ -458,6 +462,7 @@ pub(crate) fn tick_rock_falls(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let mut landed = Vec::new();
     for (entity, fall, position) in world.query_mut::<(Entity, &mut RockFall, &Position)>() {
@@ -493,11 +498,11 @@ pub(crate) fn tick_rock_falls(world: &mut World, hostile: &mut Hostile<'_>) {
         let _ = world.despawn(rock);
         match kind {
             crate::components::FallKind::Icicle => {
-                icicle_lands(world, textures, ground, player, sounds);
+                icicle_lands(world, textures, ground, player, sounds, fx);
                 continue;
             }
             crate::components::FallKind::Magma => {
-                super::lava::magma_lands(world, textures, ground, player, sounds);
+                super::lava::magma_lands(world, textures, ground, player, sounds, fx);
                 continue;
             }
             crate::components::FallKind::Boulder => {}
@@ -529,7 +534,7 @@ pub(crate) fn tick_rock_falls(world: &mut World, hostile: &mut Hostile<'_>) {
                     size,
                 )
             {
-                hurt_player(world, player, enemies::GOLEM_RAIN_DAMAGE, sounds);
+                hurt_player(world, player, enemies::GOLEM_RAIN_DAMAGE, sounds, fx);
             }
         }
         let mut seed =
@@ -551,6 +556,7 @@ fn icicle_lands(
     ground: Vec2,
     player: Option<(Entity, Vec2, Vec2)>,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
 ) {
     sounds.push(AudioCommand::At(SoundEffect::WallHit, ground));
     prefabs::ice_shatter(world, ground, textures);
@@ -560,7 +566,7 @@ fn icicle_lands(
     let reach = Vec2::splat(enemies::ICICLE_RADIUS * 2.0);
     if world.get::<&Dodge>(player).is_err()
         && geometry::overlaps(ground, reach, at, size)
-        && hurt_player(world, player, enemies::ICICLE_DAMAGE, sounds)
+        && hurt_player(world, player, enemies::ICICLE_DAMAGE, sounds, fx)
     {
         super::frost::chill_player(world, player);
     }
@@ -648,6 +654,7 @@ pub(crate) fn draw_beam(
     navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
     ray: Ray,
     style: BeamStyle,
 ) {
@@ -713,7 +720,7 @@ pub(crate) fn draw_beam(
         let flying = world.get::<&Dodge>(player).is_ok();
         let reach = enemies::GOLEM_LASER_WIDTH / 2.0 + size.x.min(size.y) / 2.0;
         if !flying && distance_to_segment(player_position, eye, end) < reach {
-            hurt_player(world, player, style.damage, sounds);
+            hurt_player(world, player, style.damage, sounds, fx);
         }
     }
 }
@@ -722,6 +729,7 @@ pub(crate) fn tick_laser(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     clear_beam(world);
     let player = player_at(world);
@@ -756,7 +764,7 @@ pub(crate) fn tick_laser(world: &mut World, hostile: &mut Hostile<'_>) {
             angle,
             phase: 0.0,
         };
-        draw_beam(world, navigation, textures, sounds, ray, BLUE_BEAM);
+        draw_beam(world, navigation, textures, sounds, fx, ray, BLUE_BEAM);
     }
 }
 

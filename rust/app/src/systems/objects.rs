@@ -18,6 +18,7 @@ use crate::objects::{
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::{Damage, DamageSource, deal, hurt_player};
+use crate::systems::fx::{self, Fx};
 
 const DEATH_CLIP: Clip = Clip {
     row: 1,
@@ -36,6 +37,7 @@ pub(crate) fn break_objects(
     physics: &mut Physics,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
     mut roll: impl FnMut(usize) -> usize,
 ) {
     let fallen: Vec<(Entity, BreakKind, Vec2)> = world
@@ -55,7 +57,7 @@ pub(crate) fn break_objects(
         let item = super::items::common_drop(world, ItemKind::COMMON[roll(ItemKind::COMMON.len())]);
         prefabs::item(world, item, center, true, Vec2::ZERO, textures);
         match kind {
-            BreakKind::Explosive => explode(world, entity, center, textures, sounds),
+            BreakKind::Explosive => explode(world, entity, center, textures, sounds, fx),
             BreakKind::Frost => freeze_around(world, entity, center, textures, sounds),
             BreakKind::Poison => {
                 prefabs::poison_pool(world, center + Vec2::new(0.0, POOL_DROP), textures);
@@ -71,8 +73,9 @@ fn explode(
     center: Vec2,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
 ) {
-    sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+    fx::explosion(sounds, fx);
     prefabs::explosion(world, center - Vec2::new(0.0, 20.0), textures);
     let reach = BreakKind::Explosive.collider().size + EXPLOSION_REACH * 2.0;
     let victims: Vec<Entity> = world
@@ -89,7 +92,7 @@ fn explode(
     for entity in victims {
         if world.get::<&Player>(entity).is_ok() {
             if world.get::<&Invulnerable>(entity).is_err() {
-                hurt_player(world, entity, EXPLOSION_DAMAGE, sounds);
+                hurt_player(world, entity, EXPLOSION_DAMAGE, sounds, fx);
             }
             continue;
         }
@@ -184,7 +187,12 @@ pub(crate) fn tick_frozen(world: &mut World, dt: f32) {
     }
 }
 
-pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioCommand>) {
+pub(crate) fn tick_poison(
+    world: &mut World,
+    dt: f32,
+    sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
+) {
     let mut pools = Vec::new();
     let mut gone = Vec::new();
     for (entity, pool, position, color, trail, friendly) in world.query_mut::<(
@@ -239,7 +247,7 @@ pub(crate) fn tick_poison(world: &mut World, dt: f32, sounds: &mut Vec<AudioComm
     for (entity, hurt, is_player) in standing {
         if hurt {
             if is_player {
-                hurt_player(world, entity, POISON_DAMAGE, sounds);
+                hurt_player(world, entity, POISON_DAMAGE, sounds, fx);
             } else {
                 deal(
                     world,
@@ -352,18 +360,39 @@ mod tests {
             Vec2::new(500.0, 500.0),
             &textures,
         );
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(
+            &mut world,
+            &mut physics,
+            &textures,
+            &mut Vec::new(),
+            &mut Fx::default(),
+            |_| 0,
+        );
         assert!(world.get::<&Solid>(pot).is_ok());
         assert_eq!(world.query::<&Pickup>().iter().count(), 0);
 
         kill(&mut world, pot);
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(
+            &mut world,
+            &mut physics,
+            &textures,
+            &mut Vec::new(),
+            &mut Fx::default(),
+            |_| 0,
+        );
 
         assert!(world.get::<&Broken>(pot).is_ok());
         assert!(world.get::<&Solid>(pot).is_err());
         assert_eq!(world.query::<&Pickup>().iter().count(), 1);
 
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(
+            &mut world,
+            &mut physics,
+            &textures,
+            &mut Vec::new(),
+            &mut Fx::default(),
+            |_| 0,
+        );
         assert_eq!(world.query::<&Pickup>().iter().count(), 1);
     }
 
@@ -388,7 +417,13 @@ mod tests {
         let mut sounds = Vec::new();
         for _ in 0..40 {
             crate::systems::simulate(&mut world, &mut physics, 1.0 / 60.0);
-            crate::systems::bullet_hits(&mut world, &mut physics, &textures, &mut sounds);
+            crate::systems::bullet_hits(
+                &mut world,
+                &mut physics,
+                &textures,
+                &mut sounds,
+                &mut Fx::default(),
+            );
         }
         let health = world.get::<&Health>(barrel).map(|h| h.current).unwrap_or(0);
         assert_eq!(health, 3);
@@ -428,7 +463,7 @@ mod tests {
         let mut sounds = Vec::new();
 
         kill(&mut world, barrel);
-        break_objects(&mut world, &mut physics, &textures, &mut sounds, |_| 0);
+        break_objects(&mut world, &mut physics, &textures, &mut sounds, &mut Fx::default(), |_| 0);
 
         let hp = |entity| {
             world
@@ -458,7 +493,7 @@ mod tests {
         kill(&mut world, barrel);
         let mut sounds = Vec::new();
 
-        break_objects(&mut world, &mut physics, &textures, &mut sounds, |_| 0);
+        break_objects(&mut world, &mut physics, &textures, &mut sounds, &mut Fx::default(), |_| 0);
 
         let armor = world
             .query::<&Armor>()
@@ -483,7 +518,7 @@ mod tests {
         let flame = prefabs::flamethrower(&mut world, Vec2::new(-32.0, -64.0), &textures);
         let _ = &mut physics;
 
-        assert!(!crate::systems::contact_damage(&mut world, &mut Vec::new()));
+        assert!(!crate::systems::contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
         flicker_flames(&mut world);
         let dark = world
             .get::<&Light>(flame)
@@ -500,7 +535,7 @@ mod tests {
             .map(|l| l.intensity)
             .unwrap_or(-1.0);
         assert!(lit > 0.5, "{lit}");
-        assert!(crate::systems::contact_damage(&mut world, &mut Vec::new()));
+        assert!(crate::systems::contact_damage(&mut world, &mut Vec::new(), &mut Fx::default()));
     }
 
     #[test]
@@ -521,11 +556,25 @@ mod tests {
             &textures,
         );
         kill(&mut world, plain);
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(
+            &mut world,
+            &mut physics,
+            &textures,
+            &mut Vec::new(),
+            &mut Fx::default(),
+            |_| 0,
+        );
         assert_eq!(world.query::<&PoisonPool>().iter().count(), 0);
 
         kill(&mut world, poison);
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(
+            &mut world,
+            &mut physics,
+            &textures,
+            &mut Vec::new(),
+            &mut Fx::default(),
+            |_| 0,
+        );
         assert_eq!(world.query::<&PoisonPool>().iter().count(), 1);
     }
 
@@ -550,15 +599,15 @@ mod tests {
         let start = health(&world, rat);
         let mut sounds = Vec::new();
 
-        tick_poison(&mut world, 0.016, &mut sounds);
+        tick_poison(&mut world, 0.016, &mut sounds, &mut Fx::default());
         assert_eq!(health(&world, rat), start - POISON_DAMAGE);
         assert!(world.get::<&Poisoned>(rat).is_ok());
         assert!(world.get::<&Outline>(rat).is_ok());
 
-        tick_poison(&mut world, 0.5, &mut sounds);
+        tick_poison(&mut world, 0.5, &mut sounds, &mut Fx::default());
         assert_eq!(health(&world, rat), start - POISON_DAMAGE);
 
-        tick_poison(&mut world, 0.6, &mut sounds);
+        tick_poison(&mut world, 0.6, &mut sounds, &mut Fx::default());
         assert_eq!(health(&world, rat), start - POISON_DAMAGE * 2);
         assert_eq!(health(&world, far), start);
         assert!(world.get::<&Poisoned>(far).is_err());
@@ -585,12 +634,12 @@ mod tests {
         prefabs::poison_pool(&mut world, at, &textures);
         let mut sounds = Vec::new();
 
-        tick_poison(&mut world, 0.016, &mut sounds);
+        tick_poison(&mut world, 0.016, &mut sounds, &mut Fx::default());
         let after = world.get::<&Health>(player).map(|h| h.current).unwrap_or(0);
         assert_eq!(after, before - POISON_DAMAGE);
 
         for _ in 0..20 {
-            tick_poison(&mut world, 0.5, &mut sounds);
+            tick_poison(&mut world, 0.5, &mut sounds, &mut Fx::default());
         }
         assert_eq!(world.query::<&PoisonPool>().iter().count(), 0);
         assert!(world.get::<&Poisoned>(player).is_err());
@@ -633,7 +682,14 @@ mod tests {
         }
 
         kill(&mut world, barrel);
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(
+            &mut world,
+            &mut physics,
+            &textures,
+            &mut Vec::new(),
+            &mut Fx::default(),
+            |_| 0,
+        );
 
         assert_eq!(
             frozen_for(&world, near),
@@ -682,7 +738,14 @@ mod tests {
         );
 
         kill(&mut world, barrel);
-        break_objects(&mut world, &mut physics, &textures, &mut Vec::new(), |_| 0);
+        break_objects(
+            &mut world,
+            &mut physics,
+            &textures,
+            &mut Vec::new(),
+            &mut Fx::default(),
+            |_| 0,
+        );
 
         assert_eq!(
             frozen_for(&world, boss),
@@ -749,7 +812,7 @@ mod tests {
             0
         );
         let mut sounds = Vec::new();
-        assert!(!crate::systems::contact_damage(&mut world, &mut sounds));
+        assert!(!crate::systems::contact_damage(&mut world, &mut sounds, &mut Fx::default()));
 
         let _ = world.remove_one::<Frozen>(slime);
         crate::systems::tick_smashes(&mut world, &mut physics, &textures, &mut Vec::new(), 0.016);
@@ -822,7 +885,7 @@ mod tests {
             .expect("player");
         let outline = |world: &World| world.get::<&Outline>(player).map(|o| o.0).ok();
 
-        hurt_player(&mut world, player, 1, &mut Vec::new());
+        hurt_player(&mut world, player, 1, &mut Vec::new(), &mut Fx::default());
         crate::systems::flash_hits(&mut world, 0.01);
         let red = outline(&world).expect("outline");
         assert!(red.x == 1.0 && red.y < 0.5 && red.w > 0.9, "{red:?}");
@@ -835,7 +898,7 @@ mod tests {
             .map(|p| p.0)
             .unwrap_or_default();
         prefabs::poison_pool(&mut world, at, &textures);
-        tick_poison(&mut world, 0.016, &mut Vec::new());
+        tick_poison(&mut world, 0.016, &mut Vec::new(), &mut Fx::default());
         let green = outline(&world).expect("poison outline");
         assert!(green.y > green.x, "{green:?}");
     }
@@ -874,7 +937,7 @@ mod tests {
     }
 
     fn step(world: &mut World) {
-        tick_poison(world, 0.1, &mut Vec::new());
+        tick_poison(world, 0.1, &mut Vec::new(), &mut Fx::default());
         crate::systems::tick_invulnerability(world, 0.1);
     }
 
@@ -981,12 +1044,12 @@ mod tests {
         tick_poison(
             &mut world,
             crate::objects::TRAIL_SECONDS - 0.5,
-            &mut Vec::new(),
+            &mut Vec::new(), &mut Fx::default(),
         );
         let faint = world.get::<&Color>(dot).map(|c| c.0.w).unwrap_or(-1.0);
         assert!(faint > 0.0 && faint < 1.0, "{faint}");
 
-        tick_poison(&mut world, 1.0, &mut Vec::new());
+        tick_poison(&mut world, 1.0, &mut Vec::new(), &mut Fx::default());
         assert!(dots(&world).is_empty());
     }
 
@@ -997,7 +1060,7 @@ mod tests {
         prefabs::poison_dot(&mut world, Vec2::new(300.0, 0.0), 0, false, &textures);
         let before = player_life(&world);
 
-        tick_poison(&mut world, 0.1, &mut Vec::new());
+        tick_poison(&mut world, 0.1, &mut Vec::new(), &mut Fx::default());
 
         assert_eq!(player_life(&world), before);
     }

@@ -129,7 +129,13 @@ fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
         .map(|(entity, position, size)| (entity, position.0, size.0))
 }
 
-pub(crate) fn tick_pendulums(world: &mut World, sounds: &mut Vec<AudioCommand>, clock: f32, dt: f32) {
+pub(crate) fn tick_pendulums(
+    world: &mut World,
+    sounds: &mut Vec<AudioCommand>,
+    fx: &mut super::Fx,
+    clock: f32,
+    dt: f32,
+) {
     let player = player_at(world);
     let dodging = player.is_some_and(|(entity, _, _)| world.get::<&Dodge>(entity).is_ok());
     let mut moves: Vec<(Entity, Vec2)> = Vec::new();
@@ -160,7 +166,7 @@ pub(crate) fn tick_pendulums(world: &mut World, sounds: &mut Vec<AudioCommand>, 
         }
     }
     if let (true, Some((entity, _, _))) = (cut, player) {
-        super::damage::hurt_player(world, entity, BLADE_DAMAGE, sounds);
+        super::damage::hurt_player(world, entity, BLADE_DAMAGE, sounds, fx);
     }
 }
 
@@ -191,7 +197,13 @@ mod tests {
         let mut sounds = Vec::new();
         let (mut least, mut most) = (f32::MAX, f32::MIN);
         for step in 0..180 {
-            tick_pendulums(&mut world, &mut sounds, step as f32 / 60.0, 1.0 / 60.0);
+            tick_pendulums(
+                &mut world,
+                &mut sounds,
+                &mut crate::systems::Fx::default(),
+                step as f32 / 60.0,
+                1.0 / 60.0,
+            );
             least = least.min(blade(&world).x);
             most = most.max(blade(&world).x);
         }
@@ -215,7 +227,13 @@ mod tests {
         let mut clock = 3.0;
         for _ in 0..3 {
             let _ = world.insert_one(player, Position(blade(&world)));
-            tick_pendulums(&mut world, &mut sounds, clock, 1.0 / 60.0);
+            tick_pendulums(
+                &mut world,
+                &mut sounds,
+                &mut crate::systems::Fx::default(),
+                clock,
+                1.0 / 60.0,
+            );
             clock += 1.0 / 60.0;
         }
         assert_eq!(health(&world), before - BLADE_DAMAGE);

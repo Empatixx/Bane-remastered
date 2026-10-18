@@ -628,6 +628,8 @@ impl Scene for LobbyScene {
             &mut self.physics,
             &assets.textures,
             &mut self.sounds,
+            // The lobby's camera does not shake from the rockets in the range.
+            &mut systems::Fx::default(),
         );
         systems::hit_phase(&mut self.world);
         systems::tick_dummies(&mut self.world, dt);

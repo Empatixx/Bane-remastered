@@ -340,6 +340,7 @@ pub(crate) fn magma_lands(
     ground: Vec2,
     player: Option<(Entity, Vec2, Vec2)>,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut super::Fx,
 ) {
     sounds.push(AudioCommand::At(SoundEffect::SlimeBurst, ground));
     world.spawn((
@@ -357,7 +358,7 @@ pub(crate) fn magma_lands(
     };
     let reach = Vec2::splat(enemies::MORTAR_RADIUS * 2.0);
     if can_be_hit(world, player) && geometry::overlaps(ground, reach, at, size) {
-        hurt_player(world, player, enemies::MORTAR_DAMAGE, sounds);
+        hurt_player(world, player, enemies::MORTAR_DAMAGE, sounds, fx);
     }
 }
 

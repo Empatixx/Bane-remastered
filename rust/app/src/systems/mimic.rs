@@ -13,6 +13,7 @@ use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
 use crate::systems::golem::{play, player_at, spark, spawn_rock};
+use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
 
 const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
@@ -226,6 +227,7 @@ pub(crate) fn tick_mimic(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let mobs = world.query::<&Minion>().iter().count();
@@ -263,7 +265,7 @@ pub(crate) fn tick_mimic(world: &mut World, hostile: &mut Hostile<'_>) {
         };
         for command in commands {
             execute(
-                world, physics, navigation, textures, sounds, entity, at, target, command,
+                world, physics, navigation, textures, sounds, fx, entity, at, target, command,
             );
         }
     }
@@ -308,6 +310,7 @@ fn execute(
     navigation: &Navigation,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
     entity: Entity,
     at: Vec2,
     player: Option<Vec2>,
@@ -330,7 +333,7 @@ fn execute(
         Cmd::Charge(on, factor) => {
             set_charge(world, entity, on, factor, at, player);
             if on {
-                sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+                fx::explosion(sounds, fx);
             }
         }
         Cmd::Shield(on) => {
@@ -342,7 +345,7 @@ fn execute(
             }
         }
         Cmd::Ring => {
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             let origin = at + Vec2::new(0.0, FOOT);
             for index in 0..enemies::MIMIC_HOP_RING {
                 let angle = index as f32 / enemies::MIMIC_HOP_RING as f32 * std::f32::consts::TAU;
@@ -359,7 +362,7 @@ fn execute(
             }
         }
         Cmd::Fan => {
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             let origin = at + Vec2::new(side * MOUTH.x, MOUTH.y);
             let aim = player.map_or(Vec2::X, |player| player - origin).to_angle();
             for index in 0..enemies::MIMIC_BITE_FAN {
@@ -433,6 +436,7 @@ fn spawn_bait(world: &mut World, at: Vec2, textures: &Textures) -> Entity {
 pub(crate) fn tick_baits(world: &mut World, hostile: &mut Hostile<'_>) {
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let player = player_at(world);
     let mut gone = Vec::new();
@@ -465,7 +469,7 @@ pub(crate) fn tick_baits(world: &mut World, hostile: &mut Hostile<'_>) {
         }
         let _ = (at, textures);
         if let Some((player, _, _)) = player {
-            hurt_player(world, player, enemies::MIMIC_BAIT_DAMAGE, sounds);
+            hurt_player(world, player, enemies::MIMIC_BAIT_DAMAGE, sounds, fx);
         }
     }
 }
@@ -593,6 +597,7 @@ mod tests {
             navigation: &navigation,
             textures: &textures,
             sounds: &mut sounds,
+            fx: &mut Fx::default(),
             dt: 0.1,
         };
         tick_baits(&mut world, &mut hostile);

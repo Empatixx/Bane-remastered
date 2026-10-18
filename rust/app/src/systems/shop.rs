@@ -213,7 +213,12 @@ pub(crate) fn stock_rooms(
     }
 }
 
-pub(crate) fn buy(world: &mut World, textures: &Textures, sounds: &mut Vec<AudioCommand>) {
+pub(crate) fn buy(
+    world: &mut World,
+    textures: &Textures,
+    sounds: &mut Vec<AudioCommand>,
+    fx: &mut super::Fx,
+) {
     let offer = world
         .query::<(Entity, &Shop)>()
         .with::<&InRange>()
@@ -262,6 +267,7 @@ pub(crate) fn buy(world: &mut World, textures: &Textures, sounds: &mut Vec<Audio
         Currency::Health => {
             sounds.push(AudioCommand::Effect(SoundEffect::Sacrifice));
             sounds.push(AudioCommand::Effect(SoundEffect::PlayerHurt));
+            fx.shake(super::fx::HURT_SHAKE);
             disable_candles(world);
         }
     }
@@ -472,7 +478,7 @@ mod tests {
         );
         let mut sounds = Vec::new();
 
-        buy(&mut world, &Textures::default(), &mut sounds);
+        buy(&mut world, &Textures::default(), &mut sounds, &mut crate::systems::Fx::default());
 
         assert!(world.get::<&Shop>(entity).is_ok());
         assert!(sounds.is_empty());
@@ -500,7 +506,7 @@ mod tests {
         );
         let tag = world.spawn((PriceTag { owner: entity },));
 
-        buy(&mut world, &Textures::default(), &mut Vec::new());
+        buy(&mut world, &Textures::default(), &mut Vec::new(), &mut crate::systems::Fx::default());
         update_price_tags(&mut world);
 
         assert_eq!(coins(&world), 6);
@@ -528,7 +534,7 @@ mod tests {
         let potion = ItemKind::Potion(Vital::Health, PotionSize::Large);
         let entity = offer(&mut world, shop, potion);
 
-        buy(&mut world, &Textures::default(), &mut Vec::new());
+        buy(&mut world, &Textures::default(), &mut Vec::new(), &mut crate::systems::Fx::default());
 
         assert_eq!(coins(&world), 8);
         assert!(world.contains(entity));
@@ -561,7 +567,7 @@ mod tests {
         );
         let _ = world.insert_one(gun, InRange);
 
-        buy(&mut world, &textures, &mut Vec::new());
+        buy(&mut world, &textures, &mut Vec::new(), &mut crate::systems::Fx::default());
 
         let held = world
             .query::<&Loadout>()
@@ -600,7 +606,7 @@ mod tests {
             .next()
             .map(|h| h.current);
 
-        buy(&mut world, &textures, &mut Vec::new());
+        buy(&mut world, &textures, &mut Vec::new(), &mut crate::systems::Fx::default());
 
         let after = world
             .query::<&Health>()
@@ -625,7 +631,7 @@ mod tests {
         };
         let entity = offer(&mut world, shop, ItemKind::Coin);
 
-        buy(&mut world, &Textures::default(), &mut Vec::new());
+        buy(&mut world, &Textures::default(), &mut Vec::new(), &mut crate::systems::Fx::default());
 
         assert!(world.get::<&Shop>(entity).is_ok());
     }
@@ -642,7 +648,7 @@ mod tests {
         };
         let entity = offer(&mut world, shop, ItemKind::Coin);
 
-        buy(&mut world, &Textures::default(), &mut Vec::new());
+        buy(&mut world, &Textures::default(), &mut Vec::new(), &mut crate::systems::Fx::default());
 
         assert!(world.get::<&Shop>(entity).is_ok());
     }

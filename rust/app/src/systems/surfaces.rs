@@ -28,6 +28,7 @@ pub(crate) fn burn_on_lava(
     world: &mut World,
     surfaces: &Surfaces,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut super::Fx,
 ) -> bool {
     let Some((player, at)) = world
         .query::<(Entity, &Position, &Health)>()
@@ -41,7 +42,7 @@ pub(crate) fn burn_on_lava(
         return false;
     };
     surfaces.at_point(at) == Some(Surface::Lava)
-        && hurt_player_through_armor(world, player, LAVA_DAMAGE, sounds)
+        && hurt_player_through_armor(world, player, LAVA_DAMAGE, sounds, fx)
 }
 
 pub(crate) fn sync_liquids(world: &mut World, clock: f32) {
@@ -501,11 +502,11 @@ mod tests {
         surfaces.insert((4, 4), Surface::Lava);
 
         let (mut world, player) = standing_at((5, 4));
-        burn_on_lava(&mut world, &surfaces, &mut Vec::new());
+        burn_on_lava(&mut world, &surfaces, &mut Vec::new(), &mut crate::systems::Fx::default());
         assert_eq!(health(&world, player), 10);
 
         let (mut world, player) = standing_at((4, 4));
-        burn_on_lava(&mut world, &surfaces, &mut Vec::new());
+        burn_on_lava(&mut world, &surfaces, &mut Vec::new(), &mut crate::systems::Fx::default());
         assert_eq!(health(&world, player), 8);
         assert!(world.get::<&Invulnerable>(player).is_ok());
     }
@@ -518,7 +519,7 @@ mod tests {
         if let Ok(mut armor) = world.get::<&mut Armor>(player) {
             armor.current = 3;
         }
-        burn_on_lava(&mut world, &surfaces, &mut Vec::new());
+        burn_on_lava(&mut world, &surfaces, &mut Vec::new(), &mut crate::systems::Fx::default());
         assert_eq!(health(&world, player), 8);
         assert_eq!(world.get::<&Armor>(player).map(|a| a.current).ok(), Some(3));
     }
@@ -547,7 +548,12 @@ mod tests {
             if let Ok(mut armor) = world.get::<&mut Armor>(player) {
                 armor.current = 5;
             }
-            burn_on_lava(&mut world, &dungeon.surfaces, &mut Vec::new());
+            burn_on_lava(
+                &mut world,
+                &dungeon.surfaces,
+                &mut Vec::new(),
+                &mut crate::systems::Fx::default(),
+            );
             assert_eq!(health(&world, player), 8, "seed {seed} tile {tile:?}");
             found += 1;
         }
@@ -560,7 +566,12 @@ mod tests {
         surfaces.insert((4, 4), Surface::Lava);
         surfaces.bridge((4, 4));
         let (mut world, player) = standing_at((4, 4));
-        assert!(!burn_on_lava(&mut world, &surfaces, &mut Vec::new()));
+        assert!(!burn_on_lava(
+            &mut world,
+            &surfaces,
+            &mut Vec::new(),
+            &mut crate::systems::Fx::default(),
+        ));
         assert_eq!(health(&world, player), 10);
     }
 
@@ -569,7 +580,7 @@ mod tests {
         let mut surfaces = Surfaces::default();
         surfaces.insert((4, 4), Surface::Water);
         let (mut world, player) = standing_at((4, 4));
-        burn_on_lava(&mut world, &surfaces, &mut Vec::new());
+        burn_on_lava(&mut world, &surfaces, &mut Vec::new(), &mut crate::systems::Fx::default());
         assert_eq!(health(&world, player), 10);
     }
 
@@ -586,7 +597,7 @@ mod tests {
                 trail: 0.0,
             },
         );
-        burn_on_lava(&mut world, &surfaces, &mut Vec::new());
+        burn_on_lava(&mut world, &surfaces, &mut Vec::new(), &mut crate::systems::Fx::default());
         assert_eq!(health(&world, player), 10);
     }
 

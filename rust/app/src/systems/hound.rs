@@ -14,6 +14,7 @@ use crate::prefabs;
 use crate::systems::golem::{
     BeamStyle, Ray, aim, beam_end, draw_beam, play, player_at, turn_towards,
 };
+use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
 
 const SPRITE_SCALE: f32 = 2.4;
@@ -208,6 +209,7 @@ pub(crate) fn tick_hound(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let bosses: Vec<(Entity, Vec2, i32, i32)> = world
@@ -249,7 +251,7 @@ pub(crate) fn tick_hound(world: &mut World, hostile: &mut Hostile<'_>) {
         };
         for command in commands {
             execute(
-                world, physics, textures, sounds, entity, at, target, enraged, command,
+                world, physics, textures, sounds, fx, entity, at, target, enraged, command,
             );
         }
     }
@@ -261,6 +263,7 @@ fn execute(
     physics: &mut Physics,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
     entity: Entity,
     at: Vec2,
     player: Option<Vec2>,
@@ -283,13 +286,13 @@ fn execute(
         Cmd::Charge(on) => {
             set_charge(world, entity, on, at, player);
             if on {
-                sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+                fx::explosion(sounds, fx);
             }
         }
         Cmd::Crash => {
             set_charge(world, entity, false, at, player);
             let _ = world.insert_one(entity, Rooted);
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
         }
         Cmd::AimBreath => {
@@ -301,7 +304,7 @@ fn execute(
             }
         }
         Cmd::Ring => {
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             let count = if enraged {
                 enemies::HOUND_HOWL_RAGE_RING
             } else {
@@ -372,6 +375,7 @@ pub(crate) fn tick_flames(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let target = player_at(world).map(|(_, position, _)| position);
     let active: Vec<(Entity, Vec2, bool, bool, f32)> = world
@@ -421,7 +425,7 @@ pub(crate) fn tick_flames(world: &mut World, hostile: &mut Hostile<'_>) {
                 phase: timer * 16.0 + head as f32,
             };
             if firing {
-                draw_beam(world, navigation, textures, sounds, ray, FLAME_BEAM);
+                draw_beam(world, navigation, textures, sounds, fx, ray, FLAME_BEAM);
             } else {
                 warn(world, navigation, ray);
             }

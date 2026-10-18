@@ -8,6 +8,7 @@ use crate::components::{
 };
 use crate::enemies;
 use crate::systems::damage::hurt_player;
+use crate::systems::fx::Fx;
 
 struct Event {
     entity: Entity,
@@ -33,7 +34,12 @@ fn player_at(world: &World) -> Option<(Entity, Vec2)> {
         .next()
 }
 
-pub(crate) fn tick_leapers(world: &mut World, sounds: &mut Vec<AudioCommand>, dt: f32) {
+pub(crate) fn tick_leapers(
+    world: &mut World,
+    sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
+    dt: f32,
+) {
     let target = player_at(world);
     let mut events = Vec::new();
     for (entity, position, leaper, velocity) in world
@@ -95,7 +101,7 @@ pub(crate) fn tick_leapers(world: &mut World, sounds: &mut Vec<AudioCommand>, dt
         }
     }
     for event in events {
-        apply(world, sounds, target, event);
+        apply(world, sounds, fx, target, event);
     }
 }
 
@@ -112,6 +118,7 @@ fn play(world: &mut World, entity: Entity, clip: crate::components::Clip) {
 fn apply(
     world: &mut World,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
     target: Option<(Entity, Vec2)>,
     event: Event,
 ) {
@@ -164,7 +171,7 @@ fn apply(
                 };
                 let flying = world.get::<&Dodge>(player).is_ok();
                 if !flying && at.distance(landing_at) < enemies::LEAP_LANDING_RADIUS {
-                    hurt_player(world, player, damage, sounds);
+                    hurt_player(world, player, damage, sounds, fx);
                 }
             }
         }
@@ -228,7 +235,7 @@ mod tests {
     fn run(world: &mut World, seconds: f32) {
         let mut sounds = Vec::new();
         for _ in 0..(seconds / STEP) as usize {
-            tick_leapers(world, &mut sounds, STEP);
+            tick_leapers(world, &mut sounds, &mut Fx::default(), STEP);
         }
     }
 
@@ -280,7 +287,7 @@ mod tests {
             + enemies::LEAP_AIR_SECONDS
             + 0.1;
         for _ in 0..(seconds / STEP) as usize {
-            tick_leapers(&mut world, &mut sounds, STEP);
+            tick_leapers(&mut world, &mut sounds, &mut Fx::default(), STEP);
         }
         let effects: Vec<SoundEffect> = sounds
             .iter()

@@ -302,7 +302,13 @@ mod tests {
             .next()
             .expect("player");
         let before = vitals(&boosted_world);
-        crate::systems::damage::hurt_player(&mut boosted_world, player_entity, 1, &mut Vec::new());
+        crate::systems::damage::hurt_player(
+            &mut boosted_world,
+            player_entity,
+            1,
+            &mut Vec::new(),
+            &mut crate::systems::Fx::default(),
+        );
         assert_ne!(vitals(&boosted_world), before);
     }
 
@@ -319,7 +325,13 @@ mod tests {
                 .next()
                 .expect("player");
             let before = vitals(&world);
-            crate::systems::damage::hurt_player(&mut world, player, 1, &mut Vec::new());
+            crate::systems::damage::hurt_player(
+                &mut world,
+                player,
+                1,
+                &mut Vec::new(),
+                &mut crate::systems::Fx::default(),
+            );
             before != vitals(&world)
         };
 

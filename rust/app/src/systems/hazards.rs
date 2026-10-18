@@ -48,6 +48,7 @@ pub(crate) fn tick_arrow_traps(world: &mut World, hostile: &mut Hostile<'_>) {
     let navigation = hostile.navigation;
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let Some((player, player_at, player_size)) = world
         .query::<(Entity, &Position, &Size)>()
@@ -113,7 +114,7 @@ pub(crate) fn tick_arrow_traps(world: &mut World, hostile: &mut Hostile<'_>) {
         if travelled > free_after
             && geometry::overlaps(hitbox_at, ARROW_HITBOX, player_at, player_size)
         {
-            hurt_player(world, player, ARROW_DAMAGE, sounds);
+            hurt_player(world, player, ARROW_DAMAGE, sounds, fx);
             let _ = world.despawn(entity);
             impact(world, tip, textures);
             continue;
@@ -204,6 +205,7 @@ mod tests {
             navigation,
             textures: &Textures::default(),
             sounds: &mut sounds,
+            fx: &mut crate::systems::Fx::default(),
             dt,
         };
         tick_arrow_traps(world, &mut hostile);

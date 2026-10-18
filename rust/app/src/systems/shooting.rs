@@ -19,6 +19,7 @@ use crate::prefabs;
 use crate::render::TextureId;
 use crate::rng::Rng;
 use crate::systems::damage::{Damage, DamageSource};
+use crate::systems::fx::{self, Fx};
 use crate::upgrades::Perks;
 
 const BOUNCE_CLEARANCE: f32 = 2.0;
@@ -261,6 +262,7 @@ pub(crate) fn bullet_hits(
     physics: &mut Physics,
     textures: &Textures,
     sounds: &mut Vec<AudioCommand>,
+    fx: &mut Fx,
 ) {
     let hits: Vec<(Entity, Bullet, Vec<Owner>, Body)> = world
         .query::<(Entity, &Body, &Bullet)>()
@@ -282,7 +284,7 @@ pub(crate) fn bullet_hits(
         }
         if bullet.round.spec().blast {
             rocket_blast(world, bullet.damage, at, textures);
-            sounds.push(AudioCommand::Effect(SoundEffect::Explosion));
+            fx::explosion(sounds, fx);
             stop_round(world, physics, entity);
             continue;
         }
@@ -722,7 +724,7 @@ mod tests {
                 &mut world,
                 &mut physics,
                 &Textures::default(),
-                &mut Vec::new(),
+                &mut Vec::new(), &mut Fx::default(),
             );
         }
 
@@ -761,7 +763,7 @@ mod tests {
                 &mut world,
                 &mut physics,
                 &Textures::default(),
-                &mut Vec::new(),
+                &mut Vec::new(), &mut Fx::default(),
             );
         }
 
@@ -1077,7 +1079,7 @@ mod tests {
     fn fly(world: &mut World, physics: &mut Physics, steps: usize) {
         for _ in 0..steps {
             simulate(world, physics, 1.0 / 60.0);
-            bullet_hits(world, physics, &Textures::default(), &mut Vec::new());
+            bullet_hits(world, physics, &Textures::default(), &mut Vec::new(), &mut Fx::default());
         }
     }
 
@@ -1369,7 +1371,7 @@ mod tests {
         for _ in 0..frames {
             simulate(world, physics, 1.0 / 60.0);
             burn_out_rounds(world, physics, 1.0 / 60.0);
-            bullet_hits(world, physics, &Textures::default(), &mut Vec::new());
+            bullet_hits(world, physics, &Textures::default(), &mut Vec::new(), &mut Fx::default());
         }
     }
 

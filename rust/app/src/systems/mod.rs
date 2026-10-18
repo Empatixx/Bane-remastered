@@ -21,6 +21,7 @@ pub(crate) mod death_screen;
 mod dodge;
 mod dummy;
 mod frost;
+mod fx;
 mod lava;
 mod draw;
 mod dust;
@@ -106,7 +107,7 @@ pub(crate) use damage::{
     trap_hits_enemies,
 };
 #[cfg(test)]
-pub(crate) use damage::{Damage, DamageSource, Hit, deal};
+pub(crate) use damage::{Damage, DamageSource, Hit, deal, hurt_player, hurt_player_through_armor};
 pub(crate) use death::death_phase;
 pub(crate) use death_screen::{DeathScreen, update_death_ui};
 pub(crate) use dodge::{
@@ -119,6 +120,9 @@ pub(crate) use effects::{fade_lights, float_texts, spawn_gaze_wind};
 pub(crate) use enemies::{
     chase_player, dash, face_player, flash_hits, tick_spawning, update_flow,
 };
+pub(crate) use fx::Fx;
+#[cfg(test)]
+pub(crate) use fx::explosion;
 pub(crate) use glide::glide;
 pub(crate) use golem::{clear_golem_effects, tick_golem, tick_laser, tick_rock_falls};
 pub(crate) use hazards::{slow_bullets_in_webs, tick_arrow_traps};

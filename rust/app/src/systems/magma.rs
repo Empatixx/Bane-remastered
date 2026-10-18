@@ -164,6 +164,7 @@ pub(crate) fn burns(magma: &Magma) -> bool {
 
 pub(crate) fn tick_magma(world: &mut World, hostile: &mut Hostile<'_>) {
     let sounds = &mut *hostile.sounds;
+    let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let mut gone = Vec::new();
     for (entity, magma, color, light, size) in
@@ -195,7 +196,7 @@ pub(crate) fn tick_magma(world: &mut World, hostile: &mut Hostile<'_>) {
             && (feet.y / TILE_SIZE).floor() as usize == magma.tile.1
     });
     if standing {
-        hurt_player_through_armor(world, player, enemies::HOUND_MAGMA_DAMAGE, sounds);
+        hurt_player_through_armor(world, player, enemies::HOUND_MAGMA_DAMAGE, sounds, fx);
     }
 }
 

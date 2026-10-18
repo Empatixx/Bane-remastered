@@ -538,7 +538,7 @@ mod tests {
         );
         simulate(&mut world, &mut physics, 1.0 / 60.0);
 
-        let hurt = contact_damage(&mut world, &mut Vec::new());
+        let hurt = contact_damage(&mut world, &mut Vec::new(), &mut crate::systems::Fx::default());
         enemy_bullet_hits(&mut world, &mut physics);
 
         assert!(hurt);
