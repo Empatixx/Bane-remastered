@@ -15,3 +15,5 @@ settings.json
 /rust/settings.json
 /rust/profile.json
 .superpowers/
+.idea/
+.playwright-mcp/
