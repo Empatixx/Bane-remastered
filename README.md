@@ -82,7 +82,7 @@ You need the [Rust toolchain](https://rustup.rs).
 
 ## Wiki
 
-The game wiki is in [`docs/`](docs/) (in Czech). It describes every gun, enemy, artefact and biome.
+The game wiki is online: **https://empatixx.github.io/Bane-remastered/docs** (in Czech). Its source is in [`docs/`](docs/). It describes every gun, enemy, artefact and biome.
 Its pages are plain Markdown files in [`docs/content/`](docs/content/), so you can read them right
 on GitHub.
 

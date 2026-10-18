@@ -81,7 +81,7 @@ Potrebujes [Rust toolchain](https://rustup.rs).
 
 ## Wiki
 
-Wiki ke hre je ve slozce [`docs/`](docs/) (cesky). Popisuje kazdou zbran, nepritele, artefakt a
+Wiki ke hre je online: **https://empatixx.github.io/Bane-remastered/docs** (cesky). Zdroj je ve slozce [`docs/`](docs/). Popisuje kazdou zbran, nepritele, artefakt a
 biom. Stranky jsou obycejne Markdown soubory v [`docs/content/`](docs/content/), takze si je
 prectes rovnou na GitHubu.
 
