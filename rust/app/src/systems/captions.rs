@@ -1,5 +1,5 @@
 //! Words over the screen for a moment, fading in and out: a boss's name and who it was as the
-//! fight starts, what it says as it falls, and what the wound whispers on a new floor. The game
+//! fight starts, and what it says as it falls when no ghost comes back to say it. The game
 //! tells its story in these few lines and in the scenes between runs, never in long text.
 
 use glam::{Vec2, Vec4};
@@ -13,10 +13,8 @@ const FADE: f32 = 0.6;
 const INK: Vec4 = Vec4::new(0.93, 0.88, 0.78, 1.0);
 const BOSS_NAME: Vec4 = Vec4::new(0.86, 0.3, 0.3, 1.0);
 const LAST_WORDS: Vec4 = Vec4::new(0.82, 0.7, 0.95, 1.0);
-const WHISPER: Vec4 = Vec4::new(0.74, 0.56, 0.96, 1.0);
 const BOSS_TITLE_SECONDS: f32 = 4.0;
 const LAST_WORDS_SECONDS: f32 = 6.0;
-const WHISPER_SECONDS: f32 = 4.5;
 
 /// A line on the screen, and how long it has been up of how long it stays.
 #[derive(Debug, Clone, Copy)]
@@ -56,11 +54,6 @@ pub(crate) fn last_words(world: &mut World, identity: crate::lore::Identity) {
     caption(world, &[(identity.last_words.to_owned(), FontSize::Size22, LAST_WORDS, 420.0)], LAST_WORDS_SECONDS);
 }
 
-/// What the wound whispers as Elian comes down onto a floor.
-pub(crate) fn whisper(world: &mut World, words: &str) {
-    caption(world, &[(words.to_owned(), FontSize::Size22, WHISPER, 400.0)], WHISPER_SECONDS);
-}
-
 /// Fades each line in, keeps it up a while, fades it out.
 pub(crate) fn tick_captions(world: &mut World, dt: f32) {
     let mut done = Vec::new();
@@ -82,13 +75,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn a_whisper_fades_in_and_is_gone_after_its_time() {
+    fn last_words_fade_in_and_are_gone_after_their_time() {
         let mut world = World::new();
-        whisper(&mut world, "Deeper.");
+        last_words(&mut world, crate::lore::identity(crate::enemies::EnemyKind::Argus).expect("the Eye"));
         let alpha = |world: &World| world.query::<&Text>().iter().next().map(|text| text.color.w);
         tick_captions(&mut world, 0.1);
         assert!(alpha(&world).is_some_and(|alpha| alpha > 0.0 && alpha < 1.0));
-        tick_captions(&mut world, WHISPER_SECONDS);
+        tick_captions(&mut world, LAST_WORDS_SECONDS);
         assert_eq!(alpha(&world), None);
     }
 }

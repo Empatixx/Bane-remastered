@@ -6,7 +6,7 @@ description: Příběh Bane — Elian, novic, který tu noc usnul jako poslední
 Herní texty jsou anglicky. Příběh se vypráví jako v The Binding of Isaac: skoro žádný text během
 runu, krátké věty postav a bossů, pravda postupně. Herní věty jsou v `rust/app/src/lore.rs`
 (bossové, šepot rány), `systems/scientist.rs` (Vědec, Aldric), `systems/shop.rs` (obchodník, oltář)
-a `scenes/epilogue.rs` (konec).
+a `scenes/epilogue.rs` (konec). Duchové bossů a trhliny se šepotem jsou v `systems/souls.rs`.
 
 ## Příběh
 
@@ -29,8 +29,8 @@ Elian chce ránu zavřít a bratry vrátit. Rána mu nabízí přesně tohle, je
 ## Jak se to vypráví
 
 - **Úvodní cinematic:** den v chrámu, noc, bratři usínají jeden po druhém, Elian klečí sám před oltářem a nakonec usne. Rána, stvůry, útěk do krypty. Poslední věta: „Elian never told anyone that he had fallen asleep.“
-- **Šepot rány:** na začátku každého patra od druhého („Deeper. I'll give them back.“, „You wanted to sleep. So sleep.“).
-- **Bossové jsou lidé chrámu.** Při vstupu jméno a kým byl, při pádu poslední slova, která po kouscích prozrazují, kdo měl tu noc hlídku:
+- **Šepot rány:** na začátku každého patra od druhého se vedle Eliana otevře malá trhlina v podlaze, z bubliny nad ní zašeptá („Deeper. I'll give them back.“, „You wanted to sleep. So sleep.“) a zase se zavře.
+- **Bossové jsou lidé chrámu.** Při vstupu jméno a kým byl. Když padne někdo, kdo byl člověk (Teodor, Cassian, The Faithful), vedle Eliana se z jisker objeví jeho duch (kněz nebo poutník, fialově průsvitný). V bublině řekne poslední slova, zvedne ruce a rozplyne se ve zlatém světle. Za ty ostatní (anděl, oko, pes, truhla) mluví titulek. Poslední slova po kouscích prozrazují, kdo měl tu noc hlídku:
 
 | Boss | Kdo to byl | Poslední slova |
 |---|---|---|
@@ -49,17 +49,19 @@ Elian chce ránu zavřít a bratry vrátit. Rána mu nabízí přesně tohle, je
 
 ## Konec
 
-Zatím po první výhře challenge **Bane**: na dně rány čekají bratři, změnění, ale tam. Elian si
-vzpomene, že usnul. Volba:
+Zatím po první výhře challenge **Bane**, jako scéna v enginu se stejným filmovým rámem jako úvod
+(`BANE_START=epilogue`, `BANE_CHOOSE=close|open`). Je to síň z kamene chrámu hluboko pod ním, nahoře
+trhlina. Elian přijde po koberci (vlastní chůze, zády ke kameře). Z jisker se před trhlinou objeví
+Teodor, Oswin, Cassian a jeden z Věrných. Rána promluví, trhlina zesílí a země se zachvěje. Elian
+poklekne jako tu noc a začne klimbat. Přes síň padne noc a bratři znovu klečí při modlitbě: Elian si
+vzpomene, že usnul on. Volba:
 
-- **Let them go:** rána se zavře a Elian poprvé od té noci spí. Portál v laboratoři vyhasne, Aldric: „It's quiet. Truly quiet.“
-- **Stay:** Elian zůstane dole. Vědec si zapíše „Subject 41, lost.“
-
-Plán: konce jako krátké scény v enginu po výhrách a hlubší kapitoly přes víc dungeonů.
+- **Let them go:** bratři se jeden po druhém rozplynou ve zlatých jiskrách, trhlina se zavře od krajů ke středu, rozsvítí se teplé světlo a Elian usne. Portál v laboratoři vyhasne, Aldric: „It's quiet. Truly quiet.“
+- **Stay:** Elian vstane a dojde do trhliny mezi nimi. Bratři zmizí za ním, všechno pohltí fialová. Vědec si zapíše „Subject 41, lost.“
 
 ## Co ještě chybí
 
-- Konce jako scény v enginu po jednotlivých výhrách (místo jednoho epilogu po challenge Bane).
+- Krátké scény po jednotlivých výhrách (zatím jen jeden epilog po challenge Bane).
 - Hlubší kapitoly přes víc dungeonů, odemykané výhrami, každá s vlastním koncem.
 - Kratší popisky předmětů jako drobné stopy.
 

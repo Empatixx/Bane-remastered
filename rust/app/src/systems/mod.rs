@@ -56,6 +56,7 @@ mod settings_ui;
 mod shadow;
 mod shooting;
 mod shop;
+mod souls;
 mod simulation;
 mod skills;
 mod slot;
@@ -148,7 +149,8 @@ pub(crate) use shadow::update_shadow;
 pub(crate) use shooting::{
     RoundTextures, ShotContext, ShotRoll, bullet_hits, burn_out_rounds, shoot,
 };
-pub(crate) use captions::{last_words, name_boss, tick_captions, whisper};
+pub(crate) use captions::{last_words, name_boss, tick_captions};
+pub(crate) use souls::{WHISPER_SECONDS, open_tear, raise_ghost, tick_souls};
 pub(crate) use shop::{ALTAR, ALTAR_SECONDS, SPEECH_SECONDS, buy, fit_price_boxes, merchant_line, say, say_at, say_for, stock_rooms, tick_speech, update_price_tags};
 pub(crate) use training::{Training, TrainingEvent};
 pub(crate) use simulation::simulate;

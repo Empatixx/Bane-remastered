@@ -423,6 +423,7 @@ impl Scene for InGameScene {
         systems::flicker_flames(&mut self.world);
         systems::tick_speech(&mut self.world, dt);
         systems::tick_captions(&mut self.world, dt);
+        systems::tick_souls(&mut self.world, dt);
         if let Some(left) = &mut self.slay_in {
             *left -= dt;
             if *left <= 0.0 {
@@ -1192,7 +1193,9 @@ impl InGameScene {
         // On the way down, the wound whispers.
         if self.training.is_none() && self.floor >= 2 {
             let words = crate::lore::WHISPERS[self.loot_rng.below(crate::lore::WHISPERS.len())];
-            systems::whisper(&mut self.world, words);
+            // A tear opens in the floor just below him, clear of the controls shown at the start, and whispers.
+            let tear = start + Vec2::new(0.0, 1.8) * TILE_SIZE;
+            systems::open_tear(&mut self.world, tear, words, systems::WHISPER_SECONDS, textures);
         }
         self.rooms = Some(systems::RoomRuntime::new(&dungeon));
         // The training needs no map: its rooms run one after another.
@@ -1293,7 +1296,19 @@ impl InGameScene {
                 }
                 systems::RoomEvent::BossDefeated { center } => {
                     if let Some(identity) = self.boss.take() {
-                        systems::last_words(&mut self.world, identity);
+                        // Who it was comes back and stands beside Elian to say its last words;
+                        // what was never a person has them told.
+                        let elian = self
+                            .world
+                            .query::<&crate::components::Position>()
+                            .with::<&crate::components::Player>()
+                            .iter()
+                            .next()
+                            .map_or(center, |position| position.0);
+                        let ghost = elian + Vec2::new(1.5, -0.4) * TILE_SIZE;
+                        if !systems::raise_ghost(&mut self.world, identity, ghost, &assets.textures) {
+                            systems::last_words(&mut self.world, identity);
+                        }
                     }
                     self.camera.add_trauma(BOSS_DEFEATED_SHAKE);
                     self.sounds.push(AudioCommand::Music(Soundtrack::InGame));
@@ -1471,7 +1486,7 @@ mod tests {
         scene.enter(&assets);
         let spot = scene
             .world
-            .query::<&Position>()
+            .query::<&crate::components::Position>()
             .with::<&Player>()
             .iter()
             .next()

@@ -13,6 +13,14 @@
 
 use crate::enemies::EnemyKind;
 
+/// The shape a fallen boss's ghost comes back in: one of the brothers, or one of the people
+/// of Velmor. What was never a person (the angel, the eye, the hound, the box) has none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Figure {
+    Brother,
+    Pilgrim,
+}
+
 /// Who a boss was before the wound took it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Identity {
@@ -26,6 +34,8 @@ pub(crate) struct Identity {
     pub(crate) aldric: &'static str,
     /// What the Scientist says of it, the first time.
     pub(crate) scientist: &'static str,
+    /// The shape its ghost stands in as it says its last words, if it comes back as one.
+    pub(crate) figure: Option<Figure>,
 }
 
 pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
@@ -36,6 +46,7 @@ pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
             last_words: "\"...who was on watch... that night...?\"",
             aldric: "Teodor wrote down every prayer for forty years.",
             scientist: "A spider is a spider, novice. Do not give them names.",
+            figure: Some(Figure::Brother),
         },
         EnemyKind::KingSlime => Identity {
             name: "The Faithful",
@@ -43,6 +54,7 @@ pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
             last_words: "\"WE PRAYED ALL DAY  YOU ONLY HAD THE NIGHT\"",
             aldric: "The village folk. They were still in the nave when it came.",
             scientist: "The slime... Do not ask what it was made of.",
+            figure: Some(Figure::Pilgrim),
         },
         EnemyKind::Ogre => Identity {
             name: "Cassian",
@@ -50,6 +62,7 @@ pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
             last_words: "\"...the prayers stopped... I ran to the nave... the boy...\"",
             aldric: "Cassian never slept on watch. Not once in thirty years.",
             scientist: "A gatekeeper! Gates are for keeping things in, you know.",
+            figure: Some(Figure::Brother),
         },
         EnemyKind::Golem => Identity {
             name: "The Angel",
@@ -57,6 +70,7 @@ pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
             last_words: "\"I SAW YOU CLOSE YOUR EYES\"",
             aldric: "That angel watched over us. It saw everything.",
             scientist: "Temple stone. It guarded out of habit, poor thing.",
+            figure: None,
         },
         EnemyKind::Argus => Identity {
             name: "The Eye",
@@ -64,6 +78,7 @@ pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
             last_words: "It shows you the nave that night: one small figure kneeling, head bowed, asleep.",
             aldric: "An eye, you say? I dream of an eye.",
             scientist: "You closed the Eye? Remarkable. I have so many questions.",
+            figure: None,
         },
         EnemyKind::Hellhound => Identity {
             name: "Oswin's Hound",
@@ -71,6 +86,7 @@ pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
             last_words: "It stops, sniffs at you, and lies down. It knows your smell.",
             aldric: "Oswin's dog went down after him. Poor beast.",
             scientist: "The hound. Do not listen to it. Dogs lie.",
+            figure: None,
         },
         EnemyKind::Mimic => Identity {
             name: "The Offering Box",
@@ -78,6 +94,7 @@ pub(crate) fn identity(kind: EnemyKind) -> Option<Identity> {
             last_words: "\"...more... more... MORE...\"",
             aldric: "The poor box from the nave. It learned to want.",
             scientist: "A chest with teeth! Bring me a tooth next time.",
+            figure: None,
         },
         _ => return None,
     };
