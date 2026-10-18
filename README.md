@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="media/banner.png" alt="Bane Remastered - top-down roguelike shooter" width="100%">
+<img src="media/banner-remastered.png" alt="Bane Remastered - top-down roguelike shooter" width="100%">
 
 **A fast, hand-drawn top-down roguelike shooter. Five floors down. Every floor remembers you.**
 
