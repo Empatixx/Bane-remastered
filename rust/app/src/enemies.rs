@@ -1,4 +1,4 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 
 use crate::assets::{Tex, tex};
 use crate::clip::Clip;
@@ -91,6 +91,8 @@ pub(crate) const GOLEM_COOLDOWN: f32 = 2.2;
 pub(crate) const GOLEM_RAGE_COOLDOWN: f32 = 1.3;
 pub(crate) const GOLEM_RAGE_AT: f32 = 0.5;
 pub(crate) const GOLEM_RAGE_SPEED: f32 = 1.35;
+/// The colour the golem turns once it is enraged.
+pub(crate) const GOLEM_RAGE_TINT: Vec4 = Vec4::new(1.0, 0.62, 0.55, 1.0);
 pub(crate) const GOLEM_SLAM_WINDUP: f32 = 0.45;
 pub(crate) const GOLEM_SLAM_RECOVER: f32 = 0.45;
 pub(crate) const GOLEM_SECOND_RING: f32 = 0.35;
@@ -129,6 +131,8 @@ pub(crate) const MIMIC_COOLDOWN: f32 = 2.6;
 pub(crate) const MIMIC_RAGE_COOLDOWN: f32 = 1.5;
 pub(crate) const MIMIC_RAGE_AT: f32 = 0.5;
 pub(crate) const MIMIC_RAGE_SPEED: f32 = 1.3;
+/// The colour the mimic turns once it is enraged.
+pub(crate) const MIMIC_RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
 pub(crate) const MIMIC_NEAR: f32 = 330.0;
 pub(crate) const MIMIC_HOP_WINDUP: f32 = 0.2;
 pub(crate) const MIMIC_HOP_SECONDS: f32 = 0.45;
@@ -153,6 +157,8 @@ pub(crate) const HOUND_COOLDOWN: f32 = 2.4;
 pub(crate) const HOUND_RAGE_COOLDOWN: f32 = 1.3;
 pub(crate) const HOUND_RAGE_AT: f32 = 0.5;
 pub(crate) const HOUND_RAGE_SPEED: f32 = 1.25;
+/// The colour the hound turns once it is enraged.
+pub(crate) const HOUND_RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 pub(crate) const HOUND_NEAR: f32 = 360.0;
 pub(crate) const HOUND_LUNGE_WINDUP: f32 = 0.32;
 pub(crate) const HOUND_LUNGE_SECONDS: f32 = 1.4;
@@ -183,6 +189,8 @@ pub(crate) const OGRE_COOLDOWN: f32 = 3.0;
 pub(crate) const OGRE_RAGE_COOLDOWN: f32 = 1.8;
 pub(crate) const OGRE_RAGE_AT: f32 = 0.5;
 pub(crate) const OGRE_RAGE_SPEED: f32 = 1.35;
+/// The colour the ogre turns once it is enraged.
+pub(crate) const OGRE_RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 pub(crate) const OGRE_NEAR: f32 = 380.0;
 pub(crate) const OGRE_JUMP_WINDUP: f32 = 0.5;
 pub(crate) const OGRE_JUMP_RECOVER: f32 = 0.6;
@@ -206,6 +214,8 @@ pub(crate) const ARGUS_COOLDOWN: f32 = 1.7;
 pub(crate) const ARGUS_RAGE_COOLDOWN: f32 = 0.9;
 pub(crate) const ARGUS_RAGE_AT: f32 = 0.5;
 pub(crate) const ARGUS_RAGE_SPEED: f32 = 1.3;
+/// The colour the argus turns once it is enraged.
+pub(crate) const ARGUS_RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
 pub(crate) const ARGUS_VOLLEY_WINDUP: f32 = 0.5;
 pub(crate) const ARGUS_VOLLEY_PULSES: u32 = 5;
 pub(crate) const ARGUS_VOLLEY_RAGE_PULSES: u32 = 7;

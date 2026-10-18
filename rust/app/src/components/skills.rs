@@ -1,5 +1,6 @@
-use glam::Vec2;
+use glam::{Vec2, Vec4};
 
+use crate::audio::SoundEffect;
 use crate::components::Clip;
 use crate::enemies::ProjectileKind;
 
@@ -133,6 +134,22 @@ impl<Stage, Attack> BossBrain<Stage, Attack> {
     }
 }
 
+/// When and how a boss loses its temper: at or below `at` of its max health it roars `sound`,
+/// its chase speed is multiplied by `speed`, and it turns `tint` — none for a boss that colours
+/// itself every tick. `tick_enrage` reads it once per tick until the boss is `Enraged`.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Enrage {
+    pub(crate) at: f32,
+    pub(crate) speed: f32,
+    pub(crate) sound: SoundEffect,
+    pub(crate) tint: Option<Vec4>,
+}
+
+/// A boss that has lost its temper. Set by `tick_enrage`, it stays for the rest of the boss's
+/// life — a state, not a one-tick event, so nothing clears it.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Enraged;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum MimicStage {
     Walk,
@@ -145,7 +162,6 @@ pub(crate) enum MimicStage {
 pub(crate) struct MimicBoss {
     pub(crate) brain: BossBrain<MimicStage, MimicAttack>,
     pub(crate) charging: bool,
-    pub(crate) enraged: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -168,7 +184,6 @@ pub(crate) struct HoundBoss {
     pub(crate) brain: BossBrain<HoundStage, HoundAttack>,
     pub(crate) angles: [f32; 3],
     pub(crate) charging: bool,
-    pub(crate) enraged: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -189,7 +204,6 @@ pub(crate) enum OgreStage {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct OgreBoss {
     pub(crate) brain: BossBrain<OgreStage, OgreAttack>,
-    pub(crate) enraged: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -205,7 +219,6 @@ pub(crate) struct ArgusBoss {
     pub(crate) pulses: u32,
     pub(crate) angle: f32,
     pub(crate) attacks: u32,
-    pub(crate) enraged: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -215,7 +228,6 @@ pub(crate) struct GolemBoss {
     pub(crate) rain_dropped: u32,
     pub(crate) second_ring: f32,
     pub(crate) beam_angle: f32,
-    pub(crate) enraged: bool,
 }
 
 #[derive(Debug, Clone, Copy)]

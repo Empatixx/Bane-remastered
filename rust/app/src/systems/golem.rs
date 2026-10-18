@@ -1,12 +1,12 @@
 use glam::{Vec2, Vec4};
-use hecs::{Entity, World};
+use hecs::{Entity, Satisfies, World};
 
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Chase, Clip, Color, Despawn, Dodge, Expiring, FallingRock, Frozen, GolemAttack,
-    GolemBoss, GolemStage, Health, Layer, Minion, Position, RockFall, RoomId, Rooted, Size,
-    Spawning, Sprite,
+    Animation, Clip, Color, Despawn, Dodge, Enraged, Expiring, FallingRock, Frozen, GolemAttack,
+    GolemBoss, GolemStage, Layer, Minion, Position, RockFall, RoomId, Rooted, Size, Spawning,
+    Sprite,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::geometry;
@@ -28,7 +28,6 @@ const LOB_HEIGHT: f32 = 140.0;
 const SHADOW_SIZE: Vec2 = Vec2::new(150.0, 75.0);
 const ROCK_SIZE: Vec2 = Vec2::new(72.0, 72.0);
 const IMPACT_SIZE: Vec2 = Vec2::new(150.0, 150.0);
-const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.62, 0.55, 1.0);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Cmd {
@@ -99,7 +98,7 @@ pub(crate) fn choose_attack(golem: &mut GolemBoss, distance: f32) -> GolemAttack
     boss_kit::pick_attack(&mut golem.brain, &weights, GolemAttack::Slam)
 }
 
-pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
+pub(crate) fn step(golem: &mut GolemBoss, enraged: bool, distance: f32, dt: f32) -> Vec<Cmd> {
     let mut commands = Vec::new();
     if golem.second_ring > 0.0 {
         golem.second_ring -= dt;
@@ -150,7 +149,7 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
                 match golem.brain.attack {
                     GolemAttack::Slam => {
                         commands.push(Cmd::Ring(0.0));
-                        if golem.enraged {
+                        if enraged {
                             golem.second_ring = enemies::GOLEM_SECOND_RING;
                         }
                         golem.brain.stage = GolemStage::Recovering;
@@ -199,7 +198,7 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
                 commands.push(Cmd::Play(golem.brain.idle));
                 commands.push(Cmd::Free);
                 golem.brain.stage = GolemStage::Walk;
-                golem.brain.cooldown = if golem.enraged {
+                golem.brain.cooldown = if enraged {
                     enemies::GOLEM_RAGE_COOLDOWN
                 } else {
                     enemies::GOLEM_COOLDOWN
@@ -217,37 +216,21 @@ pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
     let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let target = living_player_at(world);
-    let golems: Vec<(Entity, Vec2, i32, i32)> = world
-        .query::<(Entity, &Position, &Health, &GolemBoss)>()
+    let golems: Vec<(Entity, Vec2, bool)> = world
+        .query::<(Entity, &Position, &GolemBoss, Satisfies<&Enraged>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .without::<&Frozen>()
         .iter()
-        .map(|(entity, position, health, _)| (entity, position.0, health.current, health.max))
+        .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();
-    for (entity, at, current, max) in golems {
-        if !world
-            .get::<&GolemBoss>(entity)
-            .is_ok_and(|golem| golem.enraged)
-            && current as f32 <= max as f32 * enemies::GOLEM_RAGE_AT
-        {
-            if let Ok(mut golem) = world.get::<&mut GolemBoss>(entity) {
-                golem.enraged = true;
-            }
-            sounds.push(AudioCommand::At(SoundEffect::GolemRage, at));
-            if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
-                chase.speed *= enemies::GOLEM_RAGE_SPEED;
-            }
-            if let Ok(mut color) = world.get::<&mut Color>(entity) {
-                color.0 = RAGE_TINT;
-            }
-        }
+    for (entity, at, enraged) in golems {
         let distance = target.map_or(f32::MAX, |(_, player, _)| player.distance(at));
         let commands = {
             let Ok(mut golem) = world.get::<&mut GolemBoss>(entity) else {
                 continue;
             };
-            step(&mut golem, distance, dt)
+            step(&mut golem, enraged, distance, dt)
         };
         for command in commands {
             execute(
@@ -511,14 +494,14 @@ pub(crate) fn tick_laser(world: &mut World, hostile: &mut Hostile<'_>) {
     clear_beam(world);
     let player = living_player_at(world);
     let firing: Vec<(Entity, Vec2, bool)> = world
-        .query::<(Entity, &Position, &GolemBoss)>()
+        .query::<(Entity, &Position, &GolemBoss, Satisfies<&Enraged>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .iter()
-        .filter(|(_, _, golem)| {
+        .filter(|(_, _, golem, _)| {
             golem.brain.attack == GolemAttack::Laser && golem.brain.stage == GolemStage::Acting
         })
-        .map(|(entity, position, golem)| (entity, position.0, golem.enraged))
+        .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();
     for (entity, at, enraged) in firing {
         let eye = at + Vec2::new(0.0, -EYE_HEIGHT);
@@ -577,15 +560,14 @@ mod tests {
             rain_dropped: 0,
             second_ring: 0.0,
             beam_angle: 0.0,
-            enraged: false,
         }
     }
 
-    fn run(golem: &mut GolemBoss, seconds: f32) -> Vec<Cmd> {
+    fn run(golem: &mut GolemBoss, enraged: bool, seconds: f32) -> Vec<Cmd> {
         let mut all = Vec::new();
         let mut time = 0.0;
         while time < seconds {
-            all.extend(step(golem, 200.0, 0.02));
+            all.extend(step(golem, enraged, 200.0, 0.02));
             time += 0.02;
         }
         all
@@ -608,7 +590,7 @@ mod tests {
         for seed in 0..40 {
             let mut boss = golem();
             boss.brain.seed = seed * 7919 + 1;
-            let commands = step(&mut boss, 200.0, 0.02);
+            let commands = step(&mut boss, false, 200.0, 0.02);
             let expected = match boss.brain.attack {
                 GolemAttack::Slam => SoundEffect::GolemSlam,
                 GolemAttack::Throw => SoundEffect::GolemThrow,
@@ -626,7 +608,7 @@ mod tests {
         boss.brain.last = Some(GolemAttack::Laser);
         boss.brain.stage = GolemStage::Winding;
         boss.brain.timer = 0.01;
-        let commands = step(&mut boss, 200.0, 0.02);
+        let commands = step(&mut boss, false, 200.0, 0.02);
         assert!(commands.contains(&Cmd::Sound(SoundEffect::LaserFire)));
         assert_eq!(boss.brain.stage, GolemStage::Acting);
     }
@@ -638,7 +620,7 @@ mod tests {
         boss.brain.last = Some(GolemAttack::Slam);
         boss.brain.stage = GolemStage::Winding;
         boss.brain.timer = enemies::GOLEM_SLAM_WINDUP;
-        let commands = run(&mut boss, 3.0);
+        let commands = run(&mut boss, false, 3.0);
         assert!(commands.contains(&Cmd::Ring(0.0)));
         assert!(commands.contains(&Cmd::Free));
         assert_eq!(boss.brain.stage, GolemStage::Walk);
@@ -647,11 +629,10 @@ mod tests {
     #[test]
     fn rage_adds_a_second_ring() {
         let mut boss = golem();
-        boss.enraged = true;
         boss.brain.stage = GolemStage::Winding;
         boss.brain.attack = GolemAttack::Slam;
         boss.brain.timer = 0.01;
-        let rings = run(&mut boss, 2.0)
+        let rings = run(&mut boss, true, 2.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Ring(_)))
             .count();
@@ -664,7 +645,7 @@ mod tests {
         boss.brain.stage = GolemStage::Winding;
         boss.brain.attack = GolemAttack::Rain;
         boss.brain.timer = 0.01;
-        let rocks = run(&mut boss, 4.0)
+        let rocks = run(&mut boss, false, 4.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Rain(_)))
             .count();

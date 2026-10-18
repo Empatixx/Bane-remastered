@@ -1,10 +1,10 @@
 use glam::{Vec2, Vec4};
-use hecs::{Entity, World};
+use hecs::{Entity, Satisfies, World};
 
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Bait, Charge, Chase, Clip, Color, Expiring, Frozen, Health, Layer, MimicAttack,
+    Animation, Bait, Charge, Chase, Clip, Color, Enraged, Expiring, Frozen, Layer, MimicAttack,
     MimicBoss, MimicStage, Minion, Position, RoomId, Rooted, Sealed, Size, Spawning, Sprite,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
@@ -17,7 +17,6 @@ use crate::systems::player::living_player_at;
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
 
-const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
 const MOUTH: Vec2 = Vec2::new(44.0, 29.0);
 const FOOT: f32 = 85.0;
 const ATTACK_VAR: &str = "BANE_MIMIC_ATTACK";
@@ -99,6 +98,7 @@ fn speed_of(attack: MimicAttack) -> f32 {
 
 pub(crate) fn step(
     mimic: &mut MimicBoss,
+    enraged: bool,
     distance: f32,
     mobs: usize,
     baits: usize,
@@ -193,7 +193,7 @@ pub(crate) fn step(
                 commands.push(Cmd::Play(mimic.brain.idle));
                 commands.push(Cmd::Free);
                 mimic.brain.stage = MimicStage::Walk;
-                mimic.brain.cooldown = if mimic.enraged {
+                mimic.brain.cooldown = if enraged {
                     enemies::MIMIC_RAGE_COOLDOWN
                 } else {
                     enemies::MIMIC_COOLDOWN
@@ -214,36 +214,21 @@ pub(crate) fn tick_mimic(world: &mut World, hostile: &mut Hostile<'_>) {
     let target = living_player_at(world).map(|(_, position, _)| position);
     let mobs = world.query::<&Minion>().iter().count();
     let baits = world.query::<&Bait>().iter().count();
-    let bosses: Vec<(Entity, Vec2, i32, i32)> = world
-        .query::<(Entity, &Position, &Health, &MimicBoss)>()
+    let bosses: Vec<(Entity, Vec2, bool)> = world
+        .query::<(Entity, &Position, &MimicBoss, Satisfies<&Enraged>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .without::<&Frozen>()
         .iter()
-        .map(|(entity, position, health, _)| (entity, position.0, health.current, health.max))
+        .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();
-    for (entity, at, current, max) in bosses {
-        let calm = world
-            .get::<&MimicBoss>(entity)
-            .is_ok_and(|mimic| !mimic.enraged);
-        if calm && current as f32 <= max as f32 * enemies::MIMIC_RAGE_AT {
-            if let Ok(mut mimic) = world.get::<&mut MimicBoss>(entity) {
-                mimic.enraged = true;
-            }
-            sounds.push(AudioCommand::At(SoundEffect::MimicRage, at));
-            if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
-                chase.speed *= enemies::MIMIC_RAGE_SPEED;
-            }
-            if let Ok(mut color) = world.get::<&mut Color>(entity) {
-                color.0 = RAGE_TINT;
-            }
-        }
+    for (entity, at, enraged) in bosses {
         let distance = target.map_or(f32::MAX, |player| player.distance(at));
         let commands = {
             let Ok(mut mimic) = world.get::<&mut MimicBoss>(entity) else {
                 continue;
             };
-            step(&mut mimic, distance, mobs, baits, dt)
+            step(&mut mimic, enraged, distance, mobs, baits, dt)
         };
         for command in commands {
             execute(
@@ -478,7 +463,6 @@ mod tests {
                 clip(0),
             ),
             charging: false,
-            enraged: false,
         }
     }
 
@@ -486,7 +470,7 @@ mod tests {
         let mut all = Vec::new();
         let mut time = 0.0;
         while time < seconds {
-            all.extend(step(mimic, 200.0, 0, 0, 0.02));
+            all.extend(step(mimic, false, 200.0, 0, 0, 0.02));
             time += 0.02;
         }
         all
@@ -525,7 +509,7 @@ mod tests {
         for seed in 0..40 {
             let mut boss = mimic();
             boss.brain.seed = seed * 7919 + 1;
-            let commands = step(&mut boss, 200.0, 0, 0, 0.02);
+            let commands = step(&mut boss, false, 200.0, 0, 0, 0.02);
             let expected = match boss.brain.attack {
                 MimicAttack::Hop => SoundEffect::MimicCreak,
                 MimicAttack::Bite => SoundEffect::MimicChomp,

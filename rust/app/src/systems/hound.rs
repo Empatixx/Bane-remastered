@@ -1,10 +1,10 @@
 use glam::{Vec2, Vec4};
-use hecs::{Entity, World};
+use hecs::{Entity, Satisfies, World};
 
 use crate::assets::{Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, BeamPart, Charge, Chase, Clip, Color, ContactDamage, Expiring, Frozen, Health,
+    Animation, BeamPart, Charge, Chase, Clip, Color, ContactDamage, Enraged, Expiring, Frozen,
     HoundAttack, HoundBoss, HoundStage, Layer, Position, RoomId, Rooted, Size, Spawning,
 };
 use crate::enemies::{self, ProjectileKind};
@@ -25,7 +25,6 @@ const HEADS: [Vec2; 3] = [
     Vec2::new(93.0, 4.0),
     Vec2::new(100.0, 55.0),
 ];
-const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const ATTACK_VAR: &str = "BANE_HOUND_ATTACK";
 const FLAME_BEAM: BeamStyle = BeamStyle {
     glow: Vec4::new(1.0, 0.4, 0.1, 0.55),
@@ -86,7 +85,13 @@ pub(crate) fn choose_attack(hound: &mut HoundBoss, distance: f32) -> HoundAttack
     boss_kit::pick_attack(&mut hound.brain, &weights, HoundAttack::Lunge)
 }
 
-pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32) -> Vec<Cmd> {
+pub(crate) fn step(
+    hound: &mut HoundBoss,
+    enraged: bool,
+    distance: f32,
+    crashed: bool,
+    dt: f32,
+) -> Vec<Cmd> {
     let mut commands = Vec::new();
     match hound.brain.stage {
         HoundStage::Prowl => {
@@ -172,7 +177,7 @@ pub(crate) fn step(hound: &mut HoundBoss, distance: f32, crashed: bool, dt: f32)
                 commands.push(Cmd::Play(hound.brain.idle));
                 commands.push(Cmd::Free);
                 hound.brain.stage = HoundStage::Prowl;
-                hound.brain.cooldown = if hound.enraged {
+                hound.brain.cooldown = if enraged {
                     enemies::HOUND_RAGE_COOLDOWN
                 } else {
                     enemies::HOUND_COOLDOWN
@@ -196,30 +201,15 @@ pub(crate) fn tick_hound(world: &mut World, hostile: &mut Hostile<'_>) {
     let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     let target = living_player_at(world).map(|(_, position, _)| position);
-    let bosses: Vec<(Entity, Vec2, i32, i32)> = world
-        .query::<(Entity, &Position, &Health, &HoundBoss)>()
+    let bosses: Vec<(Entity, Vec2, bool)> = world
+        .query::<(Entity, &Position, &HoundBoss, Satisfies<&Enraged>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .without::<&Frozen>()
         .iter()
-        .map(|(entity, position, health, _)| (entity, position.0, health.current, health.max))
+        .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();
-    for (entity, at, current, max) in bosses {
-        let calm = world
-            .get::<&HoundBoss>(entity)
-            .is_ok_and(|hound| !hound.enraged);
-        if calm && current as f32 <= max as f32 * enemies::HOUND_RAGE_AT {
-            if let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) {
-                hound.enraged = true;
-            }
-            sounds.push(AudioCommand::At(SoundEffect::HoundRage, at));
-            if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
-                chase.speed *= enemies::HOUND_RAGE_SPEED;
-            }
-            if let Ok(mut color) = world.get::<&mut Color>(entity) {
-                color.0 = RAGE_TINT;
-            }
-        }
+    for (entity, at, enraged) in bosses {
         let distance = target.map_or(f32::MAX, |player| player.distance(at));
         let crashed = world.get::<&Charge>(entity).is_ok_and(|charge| {
             navigation.is_blocked(
@@ -227,11 +217,11 @@ pub(crate) fn tick_hound(world: &mut World, hostile: &mut Hostile<'_>) {
                 Vec2::splat(48.0),
             )
         });
-        let (commands, enraged) = {
+        let commands = {
             let Ok(mut hound) = world.get::<&mut HoundBoss>(entity) else {
                 continue;
             };
-            (step(&mut hound, distance, crashed, dt), hound.enraged)
+            step(&mut hound, enraged, distance, crashed, dt)
         };
         for command in commands {
             execute(
@@ -363,20 +353,20 @@ pub(crate) fn tick_flames(world: &mut World, hostile: &mut Hostile<'_>) {
     let dt = hostile.dt;
     let target = living_player_at(world).map(|(_, position, _)| position);
     let active: Vec<(Entity, Vec2, bool, bool, f32)> = world
-        .query::<(Entity, &Position, &HoundBoss)>()
+        .query::<(Entity, &Position, &HoundBoss, Satisfies<&Enraged>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .iter()
-        .filter(|(_, _, hound)| {
+        .filter(|(_, _, hound, _)| {
             hound.brain.attack == HoundAttack::Breath
                 && matches!(hound.brain.stage, HoundStage::Winding | HoundStage::Acting)
         })
-        .map(|(entity, position, hound)| {
+        .map(|(entity, position, hound, enraged)| {
             (
                 entity,
                 position.0,
                 hound.brain.stage == HoundStage::Acting,
-                hound.enraged,
+                enraged,
                 hound.brain.timer,
             )
         })
@@ -433,7 +423,6 @@ mod tests {
             ),
             angles: [0.0; 3],
             charging: false,
-            enraged: false,
         }
     }
 
@@ -441,7 +430,7 @@ mod tests {
         let mut all = Vec::new();
         let mut time = 0.0;
         while time < seconds {
-            all.extend(step(hound, 200.0, false, 0.02));
+            all.extend(step(hound, false, 200.0, false, 0.02));
             time += 0.02;
         }
         all
@@ -464,7 +453,7 @@ mod tests {
         for seed in 0..40 {
             let mut boss = hound();
             boss.brain.seed = seed * 7919 + 1;
-            let commands = step(&mut boss, 200.0, false, 0.02);
+            let commands = step(&mut boss, false, 200.0, false, 0.02);
             let expected = match boss.brain.attack {
                 HoundAttack::Lunge => SoundEffect::HoundGrowl,
                 HoundAttack::Breath => SoundEffect::HoundInhale,
@@ -476,7 +465,7 @@ mod tests {
         boss.brain.stage = HoundStage::Winding;
         boss.brain.attack = HoundAttack::Breath;
         boss.brain.timer = 0.01;
-        let commands = step(&mut boss, 200.0, false, 0.02);
+        let commands = step(&mut boss, false, 200.0, false, 0.02);
         assert!(commands.contains(&Cmd::Sound(SoundEffect::HoundBreath)));
     }
 
@@ -505,7 +494,7 @@ mod tests {
         boss.brain.attack = HoundAttack::Lunge;
         boss.brain.timer = 1.0;
         boss.charging = true;
-        let commands = step(&mut boss, 200.0, true, 0.02);
+        let commands = step(&mut boss, false, 200.0, true, 0.02);
         assert!(commands.contains(&Cmd::Crash));
         assert_eq!(boss.brain.stage, HoundStage::Recovering);
         assert!(boss.brain.timer > enemies::HOUND_LUNGE_RECOVER);

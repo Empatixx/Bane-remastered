@@ -1,9 +1,9 @@
 use glam::{Vec2, Vec4};
-use hecs::{Entity, World};
+use hecs::{Entity, Satisfies, World};
 
 use crate::assets::Textures;
 use crate::components::{
-    Color, Dodge, Health, HoundBoss, Layer, Light, Liquid, Magma, MagmaSpreader, Size,
+    Color, Dodge, Enraged, Health, HoundBoss, Layer, Light, Liquid, Magma, MagmaSpreader, Size,
 };
 use crate::dungeon::Surfaces;
 use crate::enemies;
@@ -81,10 +81,11 @@ pub(crate) fn tick_magma_spread(
         return;
     };
     let spreaders: Vec<(Entity, bool)> = world
-        .query::<(Entity, &HoundBoss, &Health, &MagmaSpreader)>()
+        .query::<(Entity, &Health, &MagmaSpreader, Satisfies<&Enraged>)>()
+        .with::<&HoundBoss>()
         .iter()
-        .filter(|(_, _, health, _)| health.current > 0)
-        .map(|(entity, hound, _, _)| (entity, hound.enraged))
+        .filter(|(_, health, _, _)| health.current > 0)
+        .map(|(entity, _, _, enraged)| (entity, enraged))
         .collect();
     for (entity, enraged) in spreaders {
         let tile = {

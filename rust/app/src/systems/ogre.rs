@@ -1,11 +1,11 @@
-use glam::{Vec2, Vec4};
-use hecs::{Entity, World};
+use glam::Vec2;
+use hecs::{Entity, Satisfies, World};
 
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, Chase, Clip, Color, Expiring, Frozen, Health, Minion, OgreAttack, OgreBoss,
-    OgreStage, Position, RoomId, Rooted, Spawning,
+    Animation, Clip, Enraged, Expiring, Frozen, Minion, OgreAttack, OgreBoss, OgreStage, Position,
+    RoomId, Rooted, Spawning,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
@@ -16,7 +16,6 @@ use crate::systems::player::living_player_at;
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
 
-const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.7, 0.62, 1.0);
 const RING_DROP: f32 = 110.0;
 const CLUB_REACH: Vec2 = Vec2::new(91.0, 133.0);
 const HAND: Vec2 = Vec2::new(-110.0, -10.0);
@@ -84,7 +83,13 @@ pub(crate) fn choose_attack(ogre: &mut OgreBoss, distance: f32, rats: usize) -> 
     boss_kit::pick_attack(&mut ogre.brain, &weights, OgreAttack::Jump)
 }
 
-pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> Vec<Cmd> {
+pub(crate) fn step(
+    ogre: &mut OgreBoss,
+    enraged: bool,
+    distance: f32,
+    rats: usize,
+    dt: f32,
+) -> Vec<Cmd> {
     let mut commands = Vec::new();
     match ogre.brain.stage {
         OgreStage::Walk => {
@@ -132,7 +137,7 @@ pub(crate) fn step(ogre: &mut OgreBoss, distance: f32, rats: usize, dt: f32) -> 
                 commands.push(Cmd::Play(ogre.brain.idle));
                 commands.push(Cmd::Free);
                 ogre.brain.stage = OgreStage::Walk;
-                ogre.brain.cooldown = if ogre.enraged {
+                ogre.brain.cooldown = if enraged {
                     enemies::OGRE_RAGE_COOLDOWN
                 } else {
                     enemies::OGRE_COOLDOWN
@@ -152,36 +157,21 @@ pub(crate) fn tick_ogre(world: &mut World, hostile: &mut Hostile<'_>) {
     let dt = hostile.dt;
     let target = living_player_at(world).map(|(_, position, _)| position);
     let rats = world.query::<&Minion>().iter().count();
-    let bosses: Vec<(Entity, Vec2, i32, i32)> = world
-        .query::<(Entity, &Position, &Health, &OgreBoss)>()
+    let bosses: Vec<(Entity, Vec2, bool)> = world
+        .query::<(Entity, &Position, &OgreBoss, Satisfies<&Enraged>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .without::<&Frozen>()
         .iter()
-        .map(|(entity, position, health, _)| (entity, position.0, health.current, health.max))
+        .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();
-    for (entity, at, current, max) in bosses {
-        let calm = world
-            .get::<&OgreBoss>(entity)
-            .is_ok_and(|ogre| !ogre.enraged);
-        if calm && current as f32 <= max as f32 * enemies::OGRE_RAGE_AT {
-            if let Ok(mut ogre) = world.get::<&mut OgreBoss>(entity) {
-                ogre.enraged = true;
-            }
-            sounds.push(AudioCommand::At(SoundEffect::OgreRage, at));
-            if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
-                chase.speed *= enemies::OGRE_RAGE_SPEED;
-            }
-            if let Ok(mut color) = world.get::<&mut Color>(entity) {
-                color.0 = RAGE_TINT;
-            }
-        }
+    for (entity, at, enraged) in bosses {
         let distance = target.map_or(f32::MAX, |player| player.distance(at));
         let commands = {
             let Ok(mut ogre) = world.get::<&mut OgreBoss>(entity) else {
                 continue;
             };
-            step(&mut ogre, distance, rats, dt)
+            step(&mut ogre, enraged, distance, rats, dt)
         };
         for command in commands {
             execute(
@@ -294,7 +284,6 @@ mod tests {
                 4242,
                 clip(0),
             ),
-            enraged: false,
         }
     }
 
@@ -302,7 +291,7 @@ mod tests {
         let mut all = Vec::new();
         let mut time = 0.0;
         while time < seconds {
-            all.extend(step(ogre, 200.0, 0, 0.02));
+            all.extend(step(ogre, false, 200.0, 0, 0.02));
             time += 0.02;
         }
         all
@@ -358,7 +347,7 @@ mod tests {
         for seed in 0..40 {
             let mut boss = ogre();
             boss.brain.seed = seed * 7919 + 1;
-            let commands = step(&mut boss, 200.0, 0, 0.02);
+            let commands = step(&mut boss, false, 200.0, 0, 0.02);
             let expected = match boss.brain.attack {
                 OgreAttack::Jump => SoundEffect::OgreJump,
                 OgreAttack::Throw => SoundEffect::OgreThrow,

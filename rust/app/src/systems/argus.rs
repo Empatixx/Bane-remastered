@@ -1,10 +1,10 @@
 use glam::{Vec2, Vec4};
-use hecs::{Entity, World};
+use hecs::{Entity, Satisfies, World};
 
 use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    ArgusAttack, ArgusBoss, ArgusStage, Body, Chase, Clip, Color, ContactDamage, Expiring, Frozen,
+    ArgusAttack, ArgusBoss, ArgusStage, Body, Clip, Color, ContactDamage, Enraged, Expiring, Frozen,
     Health, Orbiter, Position, RoomId, Rooted, Spawning,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
@@ -25,7 +25,6 @@ const EYES: [(f32, f32); 7] = [
     (30.0, 48.0),
     (36.0, 40.0),
 ];
-const RAGE_TINT: Vec4 = Vec4::new(1.0, 0.72, 0.66, 1.0);
 const HOP_NEAR: f32 = 260.0;
 const HOP_FAR: f32 = 480.0;
 const HOP_ROOM: f32 = 140.0;
@@ -61,8 +60,8 @@ pub(crate) fn aim_clip() -> Clip {
     clip(1, 0.1, false)
 }
 
-pub(crate) fn choose_attack(argus: &mut ArgusBoss, orbiters: usize) -> ArgusAttack {
-    let wanted = orbit_count(argus.enraged);
+pub(crate) fn choose_attack(argus: &mut ArgusBoss, enraged: bool, orbiters: usize) -> ArgusAttack {
+    let wanted = orbit_count(enraged);
     let shield = if orbiters == 0 {
         6.0
     } else if orbiters < wanted {
@@ -86,7 +85,7 @@ pub(crate) fn orbit_count(enraged: bool) -> usize {
     }
 }
 
-pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> {
+pub(crate) fn step(argus: &mut ArgusBoss, enraged: bool, orbiters: usize, dt: f32) -> Vec<Cmd> {
     let mut commands = Vec::new();
     match argus.brain.stage {
         ArgusStage::Float => {
@@ -102,7 +101,7 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
                 commands.push(Cmd::Sound(SoundEffect::ArgusTeleport));
                 return commands;
             }
-            let attack = choose_attack(argus, orbiters);
+            let attack = choose_attack(argus, enraged, orbiters);
             argus.brain.attack = attack;
             argus.brain.last = Some(attack);
             argus.brain.stage = ArgusStage::Winding;
@@ -134,7 +133,7 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
             match argus.brain.attack {
                 ArgusAttack::Volley => {
                     argus.brain.stage = ArgusStage::Acting;
-                    let pulses = if argus.enraged {
+                    let pulses = if enraged {
                         enemies::ARGUS_VOLLEY_RAGE_PULSES
                     } else {
                         enemies::ARGUS_VOLLEY_PULSES
@@ -143,7 +142,7 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
                 }
                 ArgusAttack::Barrage => {
                     argus.brain.stage = ArgusStage::Acting;
-                    let shots = if argus.enraged {
+                    let shots = if enraged {
                         enemies::ARGUS_BARRAGE_RAGE_SHOTS
                     } else {
                         enemies::ARGUS_BARRAGE_SHOTS
@@ -187,7 +186,7 @@ pub(crate) fn step(argus: &mut ArgusBoss, orbiters: usize, dt: f32) -> Vec<Cmd> 
                 commands.push(Cmd::Play(argus.brain.idle));
                 commands.push(Cmd::Free);
                 argus.brain.stage = ArgusStage::Float;
-                argus.brain.cooldown = if argus.enraged {
+                argus.brain.cooldown = if enraged {
                     enemies::ARGUS_RAGE_COOLDOWN
                 } else {
                     enemies::ARGUS_COOLDOWN
@@ -243,37 +242,29 @@ pub(crate) fn tick_argus(world: &mut World, hostile: &mut Hostile<'_>) {
     let sounds = &mut *hostile.sounds;
     let dt = hostile.dt;
     let target = living_player_at(world).map(|(_, position, _)| position);
-    let bosses: Vec<(Entity, Vec2, i32, i32)> = world
-        .query::<(Entity, &Position, &Health, &ArgusBoss)>()
+    let bosses: Vec<(Entity, Vec2, bool)> = world
+        .query::<(Entity, &Position, &ArgusBoss, Satisfies<&Enraged>)>()
         .without::<&Spawning>()
         .without::<&Expiring>()
         .without::<&Frozen>()
         .iter()
-        .map(|(entity, position, health, _)| (entity, position.0, health.current, health.max))
+        .map(|(entity, position, _, enraged)| (entity, position.0, enraged))
         .collect();
-    for (entity, at, current, max) in bosses {
-        let calm = world
-            .get::<&ArgusBoss>(entity)
-            .is_ok_and(|argus| !argus.enraged);
-        if calm && current as f32 <= max as f32 * enemies::ARGUS_RAGE_AT {
-            if let Ok(mut argus) = world.get::<&mut ArgusBoss>(entity) {
-                argus.enraged = true;
-            }
-            sounds.push(AudioCommand::At(SoundEffect::ArgusRage, at));
-            if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
-                chase.speed *= enemies::ARGUS_RAGE_SPEED;
-            }
-        }
+    for (entity, at, enraged) in bosses {
         let orbiters = orbiters_of(world, entity).len();
-        let (commands, alpha, enraged) = {
+        let (commands, alpha) = {
             let Ok(mut argus) = world.get::<&mut ArgusBoss>(entity) else {
                 continue;
             };
-            let commands = step(&mut argus, orbiters, dt);
-            (commands, fade(&argus), argus.enraged)
+            let commands = step(&mut argus, enraged, orbiters, dt);
+            (commands, fade(&argus))
         };
         if let Ok(mut color) = world.get::<&mut Color>(entity) {
-            let tint = if enraged { RAGE_TINT } else { Vec4::ONE };
+            let tint = if enraged {
+                enemies::ARGUS_RAGE_TINT
+            } else {
+                Vec4::ONE
+            };
             color.0 = Vec4::new(tint.x, tint.y, tint.z, alpha);
         }
         for command in commands {
@@ -319,9 +310,7 @@ fn execute(
     command: Cmd,
 ) {
     let room = world.get::<&RoomId>(entity).map(|room| *room).ok();
-    let enraged = world
-        .get::<&ArgusBoss>(entity)
-        .is_ok_and(|argus| argus.enraged);
+    let enraged = world.satisfies::<&Enraged>(entity);
     match command {
         Cmd::Play(clip) => play(world, entity, clip),
         Cmd::Sound(effect) => sounds.push(AudioCommand::At(effect, at)),
@@ -463,15 +452,14 @@ mod tests {
             pulses: 0,
             angle: 0.0,
             attacks: 0,
-            enraged: false,
         }
     }
 
-    fn run(argus: &mut ArgusBoss, seconds: f32) -> Vec<Cmd> {
+    fn run(argus: &mut ArgusBoss, enraged: bool, seconds: f32) -> Vec<Cmd> {
         let mut all = Vec::new();
         let mut time = 0.0;
         while time < seconds {
-            all.extend(step(argus, 0, 0.02));
+            all.extend(step(argus, enraged, 0, 0.02));
             time += 0.02;
         }
         all
@@ -483,14 +471,14 @@ mod tests {
         let mut last = None;
         for _ in 0..200 {
             boss.brain.last = last;
-            let attack = choose_attack(&mut boss, 0);
+            let attack = choose_attack(&mut boss, false, 0);
             assert_ne!(Some(attack), last);
             last = Some(attack);
         }
         boss.brain.last = None;
         for _ in 0..200 {
             assert_ne!(
-                choose_attack(&mut boss, enemies::ARGUS_ORBIT_COUNT),
+                choose_attack(&mut boss, false, enemies::ARGUS_ORBIT_COUNT),
                 ArgusAttack::Shield
             );
         }
@@ -501,7 +489,7 @@ mod tests {
         for seed in 0..40 {
             let mut boss = argus();
             boss.brain.seed = seed * 7919 + 1;
-            let commands = step(&mut boss, 0, 0.02);
+            let commands = step(&mut boss, false, 0, 0.02);
             let expected = match boss.brain.attack {
                 ArgusAttack::Volley | ArgusAttack::Barrage => SoundEffect::ArgusCharge,
                 ArgusAttack::Shield => SoundEffect::ArgusSummon,
@@ -514,7 +502,7 @@ mod tests {
     fn fading_out_to_teleport_makes_a_sound() {
         let mut boss = argus();
         boss.attacks = enemies::ARGUS_TELEPORT_EVERY;
-        let commands = step(&mut boss, 0, 0.02);
+        let commands = step(&mut boss, false, 0, 0.02);
         assert_eq!(boss.brain.stage, ArgusStage::FadingOut);
         assert!(commands.contains(&Cmd::Sound(SoundEffect::ArgusTeleport)));
     }
@@ -526,7 +514,7 @@ mod tests {
         boss.brain.attack = ArgusAttack::Volley;
         boss.brain.last = Some(ArgusAttack::Volley);
         boss.brain.timer = 0.01;
-        let commands = run(&mut boss, 4.0);
+        let commands = run(&mut boss, false, 4.0);
         let rings = commands
             .iter()
             .filter(|command| matches!(command, Cmd::Ring(_)))
@@ -542,7 +530,7 @@ mod tests {
         boss.brain.stage = ArgusStage::Winding;
         boss.brain.attack = ArgusAttack::Shield;
         boss.brain.timer = 0.01;
-        let summons = run(&mut boss, 1.0)
+        let summons = run(&mut boss, false, 1.0)
             .iter()
             .filter(|command| **command == Cmd::Shield)
             .count();
@@ -553,7 +541,7 @@ mod tests {
     fn every_third_attack_ends_in_a_teleport_with_a_fade() {
         let mut boss = argus();
         boss.attacks = enemies::ARGUS_TELEPORT_EVERY;
-        let commands = run(&mut boss, 1.5);
+        let commands = run(&mut boss, false, 1.5);
         assert!(commands.contains(&Cmd::Teleport));
         assert_eq!(boss.attacks, 0);
         boss.brain.stage = ArgusStage::FadingOut;
@@ -570,7 +558,7 @@ mod tests {
         boss.brain.attack = ArgusAttack::Barrage;
         boss.brain.last = Some(ArgusAttack::Barrage);
         boss.brain.timer = 0.01;
-        let shots = run(&mut boss, 3.0)
+        let shots = run(&mut boss, false, 3.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Shot(_)))
             .count();
@@ -580,12 +568,11 @@ mod tests {
     #[test]
     fn rage_fires_more_rings() {
         let mut boss = argus();
-        boss.enraged = true;
         boss.brain.stage = ArgusStage::Winding;
         boss.brain.attack = ArgusAttack::Volley;
         boss.brain.last = Some(ArgusAttack::Volley);
         boss.brain.timer = 0.01;
-        let rings = run(&mut boss, 5.0)
+        let rings = run(&mut boss, true, 5.0)
             .iter()
             .filter(|command| matches!(command, Cmd::Ring(_)))
             .count();

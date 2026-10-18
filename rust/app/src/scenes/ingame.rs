@@ -510,6 +510,7 @@ impl Scene for InGameScene {
             fx: &mut self.resources.fx,
             dt: hostile_dt,
         };
+        systems::tick_enrage(&mut self.world, &mut *hostile.sounds);
         systems::tick_golem(&mut self.world, &mut hostile);
         systems::tick_rock_falls(&mut self.world, &mut hostile);
         systems::tick_icicle_bats(&mut self.world, &mut hostile);

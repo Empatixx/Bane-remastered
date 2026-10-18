@@ -3,11 +3,13 @@ use hecs::{Entity, World};
 
 use crate::artefacts::ArtefactKind;
 use crate::assets::tex;
+use crate::audio::SoundEffect;
 use crate::assets::{PET, PLAYER, Textures};
 use crate::components::{
     YSort,
     Animation, ArgusAttack, ArgusBoss, ArgusStage, Armageddon, Armor, ArtefactSlot, BULLET_COLUMNS,
-    BULLET_FLIGHT, BULLET_ROWS, Boss, BossBrain, Bullet, Chase, Cobweb, Color, ContactDamage, Dash,
+    BULLET_FLIGHT, BULLET_ROWS, Boss, BossBrain, Bullet,
+    Enrage, Chase, Cobweb, Color, ContactDamage, Dash,
     Burrower, Chills, DeathAsh, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, DropShadow,
     Enemy, Kindling, MagmaShell, SwoopStage, Swooper, WormStage,
     EnemyBullet, EyeShooter, Fuse, IcicleDropper,
@@ -354,7 +356,15 @@ pub(crate) fn enemy(
                         idle,
                     ),
                     charging: false,
-                    enraged: false,
+                },
+            );
+            let _ = world.insert_one(
+                entity,
+                Enrage {
+                    at: enemies::MIMIC_RAGE_AT,
+                    speed: enemies::MIMIC_RAGE_SPEED,
+                    sound: SoundEffect::MimicRage,
+                    tint: Some(enemies::MIMIC_RAGE_TINT),
                 },
             );
         }
@@ -372,7 +382,15 @@ pub(crate) fn enemy(
                     ),
                     angles: [0.0; 3],
                     charging: false,
-                    enraged: false,
+                },
+            );
+            let _ = world.insert_one(
+                entity,
+                Enrage {
+                    at: enemies::HOUND_RAGE_AT,
+                    speed: enemies::HOUND_RAGE_SPEED,
+                    sound: SoundEffect::HoundRage,
+                    tint: Some(enemies::HOUND_RAGE_TINT),
                 },
             );
         }
@@ -387,7 +405,15 @@ pub(crate) fn enemy(
                         0xC2B2_AE35 ^ (position.x as u32).wrapping_mul(13) ^ (position.y as u32),
                         idle,
                     ),
-                    enraged: false,
+                },
+            );
+            let _ = world.insert_one(
+                entity,
+                Enrage {
+                    at: enemies::OGRE_RAGE_AT,
+                    speed: enemies::OGRE_RAGE_SPEED,
+                    sound: SoundEffect::OgreRage,
+                    tint: Some(enemies::OGRE_RAGE_TINT),
                 },
             );
         }
@@ -406,7 +432,15 @@ pub(crate) fn enemy(
                     pulses: 0,
                     angle: 0.0,
                     attacks: 0,
-                    enraged: false,
+                },
+            );
+            let _ = world.insert_one(
+                entity,
+                Enrage {
+                    at: enemies::ARGUS_RAGE_AT,
+                    speed: enemies::ARGUS_RAGE_SPEED,
+                    sound: SoundEffect::ArgusRage,
+                    tint: None,
                 },
             );
         }
@@ -425,7 +459,15 @@ pub(crate) fn enemy(
                     rain_dropped: 0,
                     second_ring: 0.0,
                     beam_angle: 0.0,
-                    enraged: false,
+                },
+            );
+            let _ = world.insert_one(
+                entity,
+                Enrage {
+                    at: enemies::GOLEM_RAGE_AT,
+                    speed: enemies::GOLEM_RAGE_SPEED,
+                    sound: SoundEffect::GolemRage,
+                    tint: Some(enemies::GOLEM_RAGE_TINT),
                 },
             );
         }

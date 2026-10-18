@@ -7,8 +7,9 @@ use hecs::{Entity, World};
 use crate::assets::{Tex, Textures};
 use crate::audio::AudioCommand;
 use crate::components::{
-    Animation, BeamPart, BossBrain, Clip, Color, ContactDamage, Dodge, Drag, Expiring, Layer,
-    Light, Position, RoomId, Size, Sprite, Velocity,
+    Animation, BeamPart, BossBrain, Chase, Clip, Color, ContactDamage, Dodge, Drag, Enrage,
+    Enraged, Expiring, Frozen, Health, Layer, Light, Position, RoomId, Size, Spawning, Sprite,
+    Velocity,
 };
 use crate::enemies::{self, ProjectileKind};
 use crate::navigation::Navigation;
@@ -212,6 +213,32 @@ pub(crate) fn draw_beam(
     }
 }
 
+/// Enrages every active boss whose health has dropped to its `Enrage` threshold: tags it
+/// `Enraged`, plays its roar, speeds up its chase and tints it. Runs once per tick right before
+/// the bosses think, so a boss acts on its rage in the same tick it falls below the line.
+pub(crate) fn tick_enrage(world: &mut World, sounds: &mut Vec<AudioCommand>) {
+    let due: Vec<(Entity, Vec2, Enrage)> = world
+        .query::<(Entity, &Position, &Health, &Enrage)>()
+        .without::<&Enraged>()
+        .without::<&Spawning>()
+        .without::<&Expiring>()
+        .without::<&Frozen>()
+        .iter()
+        .filter(|(_, _, health, enrage)| health.current as f32 <= health.max as f32 * enrage.at)
+        .map(|(entity, position, _, enrage)| (entity, position.0, *enrage))
+        .collect();
+    for (entity, at, enrage) in due {
+        let _ = world.insert_one(entity, Enraged);
+        sounds.push(AudioCommand::At(enrage.sound, at));
+        if let Ok(mut chase) = world.get::<&mut Chase>(entity) {
+            chase.speed *= enrage.speed;
+        }
+        if let (Some(tint), Ok(mut color)) = (enrage.tint, world.get::<&mut Color>(entity)) {
+            color.0 = tint;
+        }
+    }
+}
+
 /// A weighted roll of the boss's dice among `weights`, never the attack it used last nor one
 /// weighted zero; `fallback` if nothing is left to roll.
 pub(crate) fn pick_attack<Stage, Attack: Copy + PartialEq>(
@@ -257,6 +284,68 @@ pub(crate) fn forced_attack<A: Copy>(var: &str, names: &[(&str, A)]) -> Option<A
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::audio::SoundEffect;
+    use crate::enemies::EnemyKind;
+
+    /// Each boss as it enraged before the shared `tick_enrage`: the sound, the chase speed
+    /// multiplier and the tint its own tick used (Argus tints itself every tick instead).
+    const BOSSES: [(EnemyKind, SoundEffect, f32, Option<Vec4>); 5] = [
+        (EnemyKind::Golem, SoundEffect::GolemRage, 1.35, Some(Vec4::new(1.0, 0.62, 0.55, 1.0))),
+        (EnemyKind::Ogre, SoundEffect::OgreRage, 1.35, Some(Vec4::new(1.0, 0.7, 0.62, 1.0))),
+        (EnemyKind::Hellhound, SoundEffect::HoundRage, 1.25, Some(Vec4::new(1.0, 0.7, 0.62, 1.0))),
+        (EnemyKind::Argus, SoundEffect::ArgusRage, 1.3, None),
+        (EnemyKind::Mimic, SoundEffect::MimicRage, 1.3, Some(Vec4::new(1.0, 0.72, 0.66, 1.0))),
+    ];
+
+    fn set_health(world: &mut World, boss: Entity, current: i32) {
+        world.get::<&mut Health>(boss).expect("health").current = current;
+    }
+
+    #[test]
+    fn every_boss_enrages_at_half_health_as_it_did_on_its_own() {
+        for (kind, sound, speed, tint) in BOSSES {
+            let mut world = World::new();
+            let mut physics = Physics::new();
+            let at = Vec2::new(400.0, 300.0);
+            let boss = prefabs::ready_enemy(&mut world, &mut physics, kind, at);
+            let max = world.get::<&Health>(boss).expect("health").max;
+            let calm_speed = world.get::<&Chase>(boss).expect("chase").speed;
+            let mut sounds = Vec::new();
+            let half = (max as f32 * 0.5).floor() as i32;
+            set_health(&mut world, boss, half + 1);
+            tick_enrage(&mut world, &mut sounds);
+            assert!(world.get::<&Enraged>(boss).is_err(), "{kind:?} above half");
+            assert!(sounds.is_empty(), "{kind:?}");
+            set_health(&mut world, boss, half);
+            tick_enrage(&mut world, &mut sounds);
+            assert!(world.get::<&Enraged>(boss).is_ok(), "{kind:?} at half");
+            assert_eq!(sounds, vec![AudioCommand::At(sound, at)], "{kind:?}");
+            let raged_speed = world.get::<&Chase>(boss).expect("chase").speed;
+            assert_eq!(raged_speed, calm_speed * speed, "{kind:?}");
+            let color = world.get::<&Color>(boss).expect("color").0;
+            assert_eq!(color, tint.unwrap_or(Vec4::ONE), "{kind:?}");
+            set_health(&mut world, boss, 1);
+            tick_enrage(&mut world, &mut sounds);
+            assert_eq!(sounds.len(), 1, "{kind:?} enrages once");
+            let speed_after = world.get::<&Chase>(boss).expect("chase").speed;
+            assert_eq!(speed_after, raged_speed, "{kind:?}");
+        }
+    }
+
+    #[test]
+    fn a_frozen_boss_keeps_its_temper_until_it_thaws() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let boss = prefabs::ready_enemy(&mut world, &mut physics, EnemyKind::Golem, Vec2::ZERO);
+        set_health(&mut world, boss, 1);
+        let _ = world.insert_one(boss, Frozen::new(1.0));
+        let mut sounds = Vec::new();
+        tick_enrage(&mut world, &mut sounds);
+        assert!(world.get::<&Enraged>(boss).is_err());
+        let _ = world.remove_one::<Frozen>(boss);
+        tick_enrage(&mut world, &mut sounds);
+        assert!(world.get::<&Enraged>(boss).is_ok());
+    }
 
     #[test]
     fn the_beam_stops_at_a_wall() {
