@@ -1,8 +1,52 @@
+//! The schedule of a scene's step, as named phases: plain functions over a [`Tick`] (and, for
+//! the in-game ones, a [`Floor`]) that a scene calls in order. The scene keeps its own gates
+//! (death screen, pause, big map, training, victory) and its own work (camera, rooms, room
+//! events, interactions) between the phases, and lends the tick out again after each piece.
+//!
+//! The in-game fixed step: [`player_phase`], [`hostile_phase`], [`pets_phase`],
+//! [`enemy_attacks_phase`], [`contraptions_phase`], [`physics_phase`], [`combat_phase`],
+//! [`deaths_phase`], [`surfaces_phase`], [`contact_phase`], then the camera takes the trauma.
+//!
+//! The in-game frame: the shot, [`arms_phase`], [`lightning_phase`], [`pickups_phase`], the
+//! clock, [`scenery_phase`], [`hud_phase`], the rooms and their events, [`gone_phase`],
+//! [`items_phase`], [`story_phase`], then the camera, the interactions and the trauma.
+//!
+//! The lobby shares [`move_player_phase`], [`pets_phase`], [`bullets_phase`] and
+//! [`player_look_phase`] and runs the rest of its short step by hand.
+//!
+//! # Ordering contract
+//!
+//! What must precede what, and why. Inside a phase the calls keep the order they had when the
+//! schedule was one long list; the phases keep it too.
+//!
+//! 1. **Bullets before deaths.** `simulate` moves the bullets, `bullet_hits` lands them
+//!    ([`physics_phase`]), and only then are the deaths resolved ([`deaths_phase`]), so a
+//!    killing shot kills in the step it lands.
+//! 2. **Hits before deaths, flashes and numbers.** `hit_phase` runs after every `deal` of its
+//!    loop and before anything that reads what a hit leaves behind: in the fixed step at the
+//!    end of [`combat_phase`], before `death_phase` (a burst reads the hit count); in the frame
+//!    in [`lightning_phase`], before `flash_hits` and `float_texts` tick in [`hud_phase`]; in the
+//!    lobby right after [`bullets_phase`]. No system after it in the same loop deals damage.
+//! 3. **Died lasts the death phase.** `death_phase` tags the fallen `Died`, every death effect
+//!    reads the tag, and the tag is cleared at its end; nothing outside it reads `Died`.
+//! 4. **Gone readers before `despawn_gone`.** In the frame, [`gone_phase`] tags finished corpses
+//!    `Gone`, pays out the bloodlust hearts, midas coins and drops, and only then despawns
+//!    them, so a kill pays once whatever the frames between fixed steps.
+//! 5. **Enrage before the bosses.** `tick_enrage` runs before the first boss tick in
+//!    [`hostile_phase`], and nothing between the boss ticks hurts or freezes a boss, so every
+//!    boss acts on this step's rage.
+//! 6. **Trauma drains last.** The camera takes the trauma the systems gathered at the end of
+//!    every fixed step and of every frame, so a hard hit shakes the frame it happened in.
+//! 7. **The clock before the scenery.** The scene's clock moves on after [`pickups_phase`] and
+//!    before [`scenery_phase`], whose wind, trails, dust and swaying read it.
+
 use glam::Vec2;
 use hecs::World;
 
-use crate::assets::Assets;
+use crate::artefacts::ArtefactKind;
+use crate::assets::{Assets, BULLET, tex};
 use crate::audio::AudioCommand;
+use crate::components::{Berserk, Boss, Health, InfiniteAmmo, Player};
 use crate::dungeon::{Dungeon, RoomKind, Surfaces};
 use crate::flow::FlowField;
 use crate::input::Input;
@@ -242,4 +286,155 @@ pub(crate) fn contact_phase(tick: &mut Tick, floor: &mut Floor) {
     super::enemy_bullet_hits(tick.world, tick.physics);
     super::batter_tables(tick.world, tick.hostile_dt);
     super::break_tables(tick.world, tick.physics, &tick.assets.textures, tick.sounds, tick.dt);
+}
+
+/// How the player looks in the frame: the walk animation and the dodge's look and cooldown.
+/// Shared by the in-game frame and the lobby.
+pub(crate) fn player_look_phase(tick: &mut Tick) {
+    super::animate_player(tick.world, tick.input);
+    super::show_dodge_visual(tick.world, &tick.assets.textures);
+    super::show_dodge_cooldown(tick.world);
+}
+
+/// The player's arms in the frame, after the shot: spent casings fly, the player's look, a gun
+/// switch and the artefact used. Returns the artefact used, if any, for the scene to act on.
+pub(crate) fn arms_phase(tick: &mut Tick) -> Option<ArtefactKind> {
+    super::tick_casings(tick.world, tick.dt);
+    player_look_phase(tick);
+    super::switch_guns(tick.world, tick.input, tick.sounds);
+    super::activate_artefact(tick.world, tick.physics, tick.input, tick.assets.textures.get(BULLET))
+}
+
+/// The artefact lightning strikes, and its hits are handled in this frame, before the flashes
+/// and numbers tick in [`hud_phase`].
+pub(crate) fn lightning_phase(tick: &mut Tick) {
+    let seed = crate::rng::cosmetic() * 1000.0;
+    if super::cast_lightning(tick.world, &tick.assets.textures, seed) > 0 {
+        tick.fx.shake(super::LIGHTNING_SHAKE);
+    }
+    super::hit_phase(tick.world);
+}
+
+/// A gun dropped, the drops glide, chests open and the player's invulnerability runs down.
+pub(crate) fn pickups_phase(tick: &mut Tick, floor: &mut Floor) {
+    let assets = tick.assets;
+    super::drop_gun(tick.world, tick.input, tick.camera, &assets.textures);
+    super::glide(tick.world, tick.dt);
+    let loot = &mut floor.run.loot_rng;
+    super::open_chests(tick.world, &assets.textures, loot.float(), |bound| loot.below(bound), tick.sounds);
+    super::tick_invulnerability(tick.world, tick.dt);
+}
+
+/// What moves for the eye alone: the gaze wind (or the berserk's), bullet trails, dust, the
+/// floor's weather, what hangs overhead, drips, the lightning's fade and the shadows.
+pub(crate) fn scenery_phase(tick: &mut Tick, floor: &mut Floor) {
+    let assets = tick.assets;
+    let textures = &assets.textures;
+    let (dt, clock) = (tick.dt, tick.clock);
+    let berserk = tick.world.query::<&Berserk>().iter().count() > 0;
+    let (particle, phase) = if berserk {
+        (tex::ARTEFACTS_BERSERKPOT_PARTICLE, crate::artefacts::BERSERK_PHASE)
+    } else {
+        (tex::GAZEWIND_PARTICLE, 0.0)
+    };
+    super::spawn_gaze_wind(tick.world, tick.physics, textures.get(particle), dt, clock + phase);
+    super::shed_trails(tick.world, &super::TrailTextures::load(textures), dt, clock);
+    super::tick_dust(tick.world, clock, dt);
+    if let Some(air) = &mut floor.air.atmosphere {
+        super::tick_atmosphere(
+            tick.world,
+            air,
+            super::AtmosphereTextures::load(textures),
+            tick.camera,
+            dt,
+        );
+    }
+    super::tick_overheads(tick.world, dt);
+    super::tick_hanging(tick.world, clock, dt);
+    super::tick_drips(tick.world, textures, dt);
+    super::tick_lightning(tick.world, dt);
+    super::update_shadow(tick.world, dt);
+}
+
+/// The bars and the weapon readout, then the frame's feedback: lights fade, hit flashes,
+/// afterimages, drops hover and are outlined, and the damage numbers float.
+pub(crate) fn hud_phase(tick: &mut Tick) {
+    let dt = tick.dt;
+    super::update_status_bars(tick.world, dt);
+    let infinite = tick
+        .world
+        .query::<&InfiniteAmmo>()
+        .with::<&Player>()
+        .iter()
+        .next()
+        .map(|_| tick.clock);
+    super::update_weapon_hud(tick.world, &tick.assets.textures, infinite);
+    super::fade_lights(tick.world);
+    super::flash_hits(tick.world, dt);
+    super::fade_afterimages(tick.world, dt);
+    super::hover_drops(tick.world, dt);
+    super::outline_drops(tick.world);
+    super::float_texts(tick.world, dt);
+}
+
+/// Finished corpses and effects are tagged `Gone`, paid out (bloodlust hearts, midas coins,
+/// drops) and despawned, all in this frame.
+pub(crate) fn gone_phase(tick: &mut Tick, floor: &mut Floor) {
+    let textures = &tick.assets.textures;
+    super::mark_gone(tick.world);
+    super::bloodlust_heals_on_kill(tick.world);
+    super::midas_kill_coins(tick.world, textures);
+    let run = &mut *floor.run;
+    super::enemy_drops(tick.world, &mut run.kills_without_drop, textures, |bound| {
+        run.loot_rng.below(bound)
+    });
+    super::despawn_gone(tick.world);
+}
+
+/// Items are collected and age, and the artefacts, bloodlust, summons, shops and slot machines
+/// tick; the flames flicker.
+pub(crate) fn items_phase(tick: &mut Tick, floor: &mut Floor) {
+    let assets = tick.assets;
+    let textures = &assets.textures;
+    let dt = tick.dt;
+    super::collect_items(tick.world, tick.sounds);
+    super::age_items(tick.world, dt);
+    super::update_price_tags(tick.world);
+    super::tick_berserk(tick.world, dt);
+    super::apply_heal_percent(tick.world, textures, tick.sounds);
+    super::convert_bullets(tick.world, tick.physics, textures);
+    super::tick_artefact_effects(tick.world, dt);
+    super::spawn_bloodlust_drops(tick.world, textures, dt);
+    super::tick_blood_drops(tick.world, dt);
+    super::pulse_bloodlust(tick.world);
+    super::spawn_summons(tick.world, textures);
+    super::update_shield_aura(tick.world, textures);
+    super::update_artefact_hud(tick.world, textures);
+    super::update_slot_prices(tick.world);
+    let loot = &mut floor.run.loot_rng;
+    super::tick_slot_machines(tick.world, textures, dt, tick.sounds, |bound| loot.below(bound));
+    super::flicker_flames(tick.world);
+}
+
+/// Who speaks and what is told: speech, captions and souls tick, `BANE_SLAY` fells the boss
+/// when its time is up, and the bubbles and price boxes are fitted. `view` is where the camera
+/// draws from.
+pub(crate) fn story_phase(tick: &mut Tick, floor: &mut Floor, view: Vec2) {
+    let assets = tick.assets;
+    let dt = tick.dt;
+    super::tick_speech(tick.world, dt);
+    super::tick_captions(tick.world, dt);
+    super::tick_souls(tick.world, dt);
+    if let Some(left) = &mut floor.run.slay_in {
+        *left -= dt;
+        if *left <= 0.0 {
+            floor.run.slay_in = None;
+            for health in tick.world.query_mut::<&mut Health>().with::<&Boss>() {
+                health.current = 0;
+            }
+        }
+    }
+    super::fit_speech(tick.world, &assets.fonts);
+    super::keep_speech_on_screen(tick.world, view);
+    super::fit_price_boxes(tick.world, &assets.fonts);
 }

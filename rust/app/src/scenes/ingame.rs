@@ -5,11 +5,11 @@ use hecs::World;
 use winit::keyboard::KeyCode;
 
 use crate::assets::tex;
-use crate::assets::{Assets, BULLET};
+use crate::assets::Assets;
 use crate::audio::{AudioCommand, SoundEffect, Soundtrack};
 use crate::camera::Camera;
 use crate::components::{
-    BigMap, Blend, Hidden, InfiniteAmmo, Interaction, Loadout, MapSize, Minimap, UiAction,
+    BigMap, Blend, Hidden, Interaction, Loadout, MapSize, Minimap, UiAction,
 };
 use crate::controls::Action;
 use crate::dungeon::{DecorKind, Dungeon, RoomKind, Surfaces, Theme};
@@ -259,100 +259,22 @@ impl Scene for InGameScene {
             );
             self.camera.add_trauma(recoil);
         }
-        systems::tick_casings(&mut self.world, dt);
-        systems::animate_player(&mut self.world, input);
-        systems::show_dodge_visual(&mut self.world, &assets.textures);
-        systems::show_dodge_cooldown(&mut self.world);
-        systems::switch_guns(&mut self.world, input, &mut self.resources.sounds);
-        if let Some(crate::artefacts::ArtefactKind::RevealMap) = systems::activate_artefact(
-            &mut self.world,
-            &mut self.physics,
-            input,
-            assets.textures.get(BULLET),
-        ) {
+        // The phases in their order; `systems::schedule` says what must precede what and why.
+        // The tick is lent out again after each piece of the scene's own work.
+        let (mut tick, _) = self.phases(input, assets, dt);
+        let used = schedule::arms_phase(&mut tick);
+        if let Some(crate::artefacts::ArtefactKind::RevealMap) = used {
             if let Some(rooms) = &mut self.rooms {
                 rooms.reveal_all();
             }
         }
-        let seed = crate::rng::cosmetic() * 1000.0;
-        if systems::cast_lightning(&mut self.world, &assets.textures, seed) > 0 {
-            self.resources.fx.shake(systems::LIGHTNING_SHAKE);
-        }
-        // The lightning's hits flash and float their numbers in this frame, before those tick.
-        systems::hit_phase(&mut self.world);
-        systems::drop_gun(
-            &mut self.world,
-            input,
-            self.camera.position(),
-            &assets.textures,
-        );
-        systems::glide(&mut self.world, dt);
-        systems::open_chests(
-            &mut self.world,
-            &assets.textures,
-            self.resources.run.loot_rng.float(),
-            |bound| self.resources.run.loot_rng.below(bound),
-            &mut self.resources.sounds,
-        );
-        systems::tick_invulnerability(&mut self.world, dt);
+        let (mut tick, mut floor) = self.phases(input, assets, dt);
+        schedule::lightning_phase(&mut tick);
+        schedule::pickups_phase(&mut tick, &mut floor);
         self.clock += dt;
-        let berserk = self
-            .world
-            .query::<&crate::components::Berserk>()
-            .iter()
-            .count()
-            > 0;
-        let (particle, phase) = if berserk {
-            (
-                tex::ARTEFACTS_BERSERKPOT_PARTICLE,
-                crate::artefacts::BERSERK_PHASE,
-            )
-        } else {
-            (tex::GAZEWIND_PARTICLE, 0.0)
-        };
-        systems::spawn_gaze_wind(
-            &mut self.world,
-            &self.physics,
-            assets.textures.get(particle),
-            dt,
-            self.clock + phase,
-        );
-        systems::shed_trails(
-            &mut self.world,
-            &systems::TrailTextures::load(&assets.textures),
-            dt,
-            self.clock,
-        );
-        systems::tick_dust(&mut self.world, self.clock, dt);
-        if let Some(air) = &mut self.resources.air.atmosphere {
-            systems::tick_atmosphere(
-                &mut self.world,
-                air,
-                systems::AtmosphereTextures::load(&assets.textures),
-                self.camera.position(),
-                dt,
-            );
-        }
-        systems::tick_overheads(&mut self.world, dt);
-        systems::tick_hanging(&mut self.world, self.clock, dt);
-        systems::tick_drips(&mut self.world, &assets.textures, dt);
-        systems::tick_lightning(&mut self.world, dt);
-        systems::update_shadow(&mut self.world, dt);
-        systems::update_status_bars(&mut self.world, dt);
-        let infinite = self
-            .world
-            .query::<&InfiniteAmmo>()
-            .with::<&crate::components::Player>()
-            .iter()
-            .next()
-            .map(|_| self.clock);
-        systems::update_weapon_hud(&mut self.world, &assets.textures, infinite);
-        systems::fade_lights(&mut self.world);
-        systems::flash_hits(&mut self.world, dt);
-        systems::fade_afterimages(&mut self.world, dt);
-        systems::hover_drops(&mut self.world, dt);
-        systems::outline_drops(&mut self.world);
-        systems::float_texts(&mut self.world, dt);
+        let (mut tick, mut floor) = self.phases(input, assets, dt);
+        schedule::scenery_phase(&mut tick, &mut floor);
+        schedule::hud_phase(&mut tick);
         let mut events = Vec::new();
         let hostile_dt = dt * systems::time_scale(&self.world);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &mut self.rooms) {
@@ -372,54 +294,11 @@ impl Scene for InGameScene {
         }
         self.handle_room_events(events, assets);
         systems::update_boss_hud(&mut self.world);
-        // Finished corpses and effects: tagged `Gone`, paid out, then despawned in this frame.
-        systems::mark_gone(&mut self.world);
-        systems::bloodlust_heals_on_kill(&mut self.world);
-        systems::midas_kill_coins(&mut self.world, &assets.textures);
-        systems::enemy_drops(
-            &mut self.world,
-            &mut self.resources.run.kills_without_drop,
-            &assets.textures,
-            |bound| self.resources.run.loot_rng.below(bound),
-        );
-        systems::despawn_gone(&mut self.world);
-        systems::collect_items(&mut self.world, &mut self.resources.sounds);
-        systems::age_items(&mut self.world, dt);
-        systems::update_price_tags(&mut self.world);
-        systems::tick_berserk(&mut self.world, dt);
-        systems::apply_heal_percent(&mut self.world, &assets.textures, &mut self.resources.sounds);
-        systems::convert_bullets(&mut self.world, &mut self.physics, &assets.textures);
-        systems::tick_artefact_effects(&mut self.world, dt);
-        systems::spawn_bloodlust_drops(&mut self.world, &assets.textures, dt);
-        systems::tick_blood_drops(&mut self.world, dt);
-        systems::pulse_bloodlust(&mut self.world);
-        systems::spawn_summons(&mut self.world, &assets.textures);
-        systems::update_shield_aura(&mut self.world, &assets.textures);
-        systems::update_artefact_hud(&mut self.world, &assets.textures);
-        systems::update_slot_prices(&mut self.world);
-        systems::tick_slot_machines(
-            &mut self.world,
-            &assets.textures,
-            dt,
-            &mut self.resources.sounds,
-            |bound| self.resources.run.loot_rng.below(bound),
-        );
-        systems::flicker_flames(&mut self.world);
-        systems::tick_speech(&mut self.world, dt);
-        systems::tick_captions(&mut self.world, dt);
-        systems::tick_souls(&mut self.world, dt);
-        if let Some(left) = &mut self.resources.run.slay_in {
-            *left -= dt;
-            if *left <= 0.0 {
-                self.resources.run.slay_in = None;
-                for health in self.world.query_mut::<&mut crate::components::Health>().with::<&crate::components::Boss>() {
-                    health.current = 0;
-                }
-            }
-        }
-        systems::fit_speech(&mut self.world, &assets.fonts);
-        systems::keep_speech_on_screen(&mut self.world, self.camera.view());
-        systems::fit_price_boxes(&mut self.world, &assets.fonts);
+        let view = self.camera.view();
+        let (mut tick, mut floor) = self.phases(input, assets, dt);
+        schedule::gone_phase(&mut tick, &mut floor);
+        schedule::items_phase(&mut tick, &mut floor);
+        schedule::story_phase(&mut tick, &mut floor, view);
         if let (Some(dungeon), Some(rooms)) = (&self.dungeon, &self.rooms) {
             systems::update_minimaps(&mut self.world, rooms.entered(), rooms.current(), dt);
             if let Some(position) = player_tile(&self.world).filter(|_| self.training.is_none()) {
@@ -1393,6 +1272,83 @@ mod tests {
         assert_eq!(hits_left(&scene), 0);
         assert_eq!(hit_count(&scene), 2);
         assert_eq!(numbers(&scene), 2);
+    }
+
+    /// A bullet that kills in a fixed step has its hit counted before the death phase reads
+    /// the count: a slime shot once bursts into the two rounds of one hit, in that same step,
+    /// and no `Hit` is left behind.
+    #[test]
+    fn a_killing_shot_is_counted_as_a_hit_before_the_death_phase_reads_it() {
+        use crate::components::{Bullet, EnemyBullet};
+
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let spot = scene
+            .world
+            .query::<&Position>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .map(|position| position.0)
+            .expect("the dungeon has a player");
+        let at = spot + Vec2::new(0.0, 2000.0);
+        let slime = prefabs::ready_enemy(&mut scene.world, &mut scene.physics, EnemyKind::RedSlime, at);
+        if let Ok(mut health) = scene.world.get::<&mut Health>(slime) {
+            health.current = 1;
+        }
+        let rounds = |scene: &InGameScene| scene.world.query::<&EnemyBullet>().iter().count();
+        let before = rounds(&scene);
+        prefabs::bullet(
+            &mut scene.world,
+            &mut scene.physics,
+            at - Vec2::new(40.0, 0.0),
+            Vec2::new(700.0, 0.0),
+            Bullet::plain(1),
+            crate::render::TextureId::WHITE,
+        );
+
+        let mut steps = 0;
+        while scene.world.get::<&Expiring>(slime).is_err() {
+            assert!(steps < 30, "the bullet never killed the slime");
+            assert_eq!(rounds(&scene), before, "no burst before the killing step");
+            scene.fixed_update(&Input::default(), 1.0 / 60.0, &assets);
+            steps += 1;
+        }
+
+        assert_eq!(scene.world.get::<&Hits>(slime).map(|hits| hits.0).ok(), Some(1));
+        assert_eq!(rounds(&scene) - before, 2, "the burst read the one hit");
+        assert!(scene.world.get::<&DeathBurst>(slime).is_err());
+        assert_eq!(hits_left(&scene), 0);
+    }
+
+    /// A touch that hurts the player in a fixed step flags the hurt and hands its trauma to the
+    /// camera by the end of that step: nothing is left for the next one.
+    #[test]
+    fn a_hurt_in_the_fixed_step_reaches_the_camera_by_its_end() {
+        let mut assets = Assets::new().expect("the embedded tileset is valid");
+        assets.mark_loaded();
+        let mut scene = InGameScene::default();
+        scene.enter(&assets);
+        let (player, spot) = scene
+            .world
+            .query::<(hecs::Entity, &Position)>()
+            .with::<&Player>()
+            .iter()
+            .next()
+            .map(|(entity, position)| (entity, position.0))
+            .expect("the dungeon has a player");
+        let _ = scene.world.remove_one::<crate::components::Invulnerable>(player);
+        prefabs::ready_enemy(&mut scene.world, &mut scene.physics, EnemyKind::Rat, spot);
+        let still = scene.camera.view();
+
+        scene.fixed_update(&Input::default(), 1.0 / 60.0, &assets);
+
+        assert!(scene.take_hit(), "the touch hurt the player");
+        assert_eq!(scene.resources.fx, systems::Fx::default(), "the camera took all of it");
+        scene.camera.update_shake(0.05);
+        assert_ne!(scene.camera.view(), still, "and shakes");
     }
 
     /// One rendered frame as the scene machine runs it: animations advance, then the scene.
