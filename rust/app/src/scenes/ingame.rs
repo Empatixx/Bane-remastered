@@ -1304,17 +1304,8 @@ fn open_spot_near_center(dungeon: &Dungeon, room: &crate::dungeon::DungeonRoom) 
 }
 
 fn player_tile(world: &World) -> Option<(usize, usize)> {
-    world
-        .query::<&crate::components::Position>()
-        .with::<&crate::components::Player>()
-        .iter()
-        .next()
-        .map(|position| {
-            (
-                (position.0.x / TILE_SIZE) as usize,
-                (position.0.y / TILE_SIZE) as usize,
-            )
-        })
+    systems::player_at(world)
+        .map(|at| ((at.x / TILE_SIZE) as usize, (at.y / TILE_SIZE) as usize))
 }
 
 fn spawn_minimaps(world: &mut World, dungeon: &Dungeon, textures: &crate::assets::Textures) {

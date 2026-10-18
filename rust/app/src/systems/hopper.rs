@@ -3,7 +3,8 @@ use hecs::{Entity, World};
 
 use crate::components::{Charge, Clip, Expiring, Frozen, Hopper, Position, Rooted, Spawning};
 use crate::enemies;
-use crate::systems::golem::{play, player_at};
+use crate::systems::golem::play;
+use crate::systems::player::living_player_at;
 
 fn hop_clip() -> Clip {
     Clip {
@@ -16,7 +17,7 @@ fn hop_clip() -> Clip {
 }
 
 pub(crate) fn tick_hoppers(world: &mut World, dt: f32) {
-    let target = player_at(world).map(|(_, position, _)| position);
+    let target = living_player_at(world).map(|(_, position, _)| position);
     let hoppers: Vec<(Entity, Vec2, Hopper)> = world
         .query::<(Entity, &Position, &Hopper)>()
         .without::<&Spawning>()

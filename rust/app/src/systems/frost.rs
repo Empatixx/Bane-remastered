@@ -45,7 +45,7 @@ pub(crate) fn chill_player(world: &mut World, player: Entity) {
 pub(crate) fn tick_icicle_bats(world: &mut World, hostile: &mut Hostile<'_>) {
     let textures = hostile.textures;
     let dt = hostile.dt;
-    let Some((_, player, _)) = super::golem::player_body(world) else {
+    let Some((_, player, _)) = super::player::player_body(world) else {
         return;
     };
     let mut drops = Vec::new();

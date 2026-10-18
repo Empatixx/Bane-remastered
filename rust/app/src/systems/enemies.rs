@@ -19,16 +19,6 @@ const DASH_PERIOD: f32 = 3.0;
 const DASH_TRAIL_INTERVAL: f32 = 0.04;
 const DASH_DURATION: f32 = 1.0;
 
-fn player_placement(world: &World) -> Option<(Vec2, Vec2)> {
-    world
-        .query::<(&Position, &Size)>()
-        .with::<&Player>()
-        .without::<&crate::components::Phantom>()
-        .iter()
-        .next()
-        .map(|(position, size)| (position.0, size.0))
-}
-
 /// Every chasing enemy's size, for the flow fields to be kept for.
 fn chasing_sizes(world: &World) -> Vec<Vec2> {
     let mut classes: Vec<Vec2> = world
@@ -50,7 +40,7 @@ pub(crate) fn update_flow(
     navigation: &Navigation,
     dt: f32,
 ) {
-    if let Some((target, _)) = player_placement(world) {
+    if let Some((target, _)) = crate::systems::player::uncloaked_player(world).map(|(_, at, size)| (at, size)) {
         flow.update(target, &chasing_sizes(world), navigation, physics, dt);
     }
 }
@@ -261,7 +251,7 @@ fn assign_slots(world: &mut World, player: Vec2, player_size: Vec2) {
 
 pub(crate) fn chase_player(world: &mut World, flow: &FlowField, dt: f32) {
     let ease = 1.0 - (-TURN_RATE * dt).exp();
-    let player = player_placement(world);
+    let player = crate::systems::player::uncloaked_player(world).map(|(_, at, size)| (at, size));
     let target = player.map(|(position, _)| position);
     match player {
         Some((at, body)) => assign_slots(world, at, body),
@@ -356,7 +346,7 @@ pub(crate) fn chase_player(world: &mut World, flow: &FlowField, dt: f32) {
 }
 
 pub(crate) fn face_player(world: &mut World) {
-    let Some((target, _)) = player_placement(world) else {
+    let Some((target, _)) = crate::systems::player::uncloaked_player(world).map(|(_, at, size)| (at, size)) else {
         return;
     };
     for (position, animation) in world
@@ -615,9 +605,9 @@ mod tests {
 
         chase_player(&mut world, &FlowField::default(), 1.0);
 
-        assert!(player_placement(&world).is_none());
-        assert!(crate::systems::golem::player_at(&world).is_none());
-        assert!(crate::systems::golem::player_body(&world).is_some());
+        assert!(crate::systems::player::uncloaked_player(&world).is_none());
+        assert!(crate::systems::player::living_player_at(&world).is_none());
+        assert!(crate::systems::player::player_body(&world).is_some());
         let velocity = world.get::<&Velocity>(rat).map(|v| v.0).ok();
         assert_eq!(velocity, Some(Vec2::ZERO));
     }

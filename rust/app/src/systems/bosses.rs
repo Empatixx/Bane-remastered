@@ -5,7 +5,7 @@ use crate::assets::Textures;
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, Armageddon, Boss, BossHud, Clip, Cobweb, Died, Expiring, Hatcher, Health, Minion,
-    Player, Position, Puddle, Revives, RoomId, Rooted, Size, Spawning, WebSpitter,
+    Position, Puddle, Revives, RoomId, Rooted, Size, Spawning, WebSpitter,
 };
 use crate::enemies::{self, EnemyKind};
 use crate::physics::Physics;
@@ -20,16 +20,6 @@ const WEB_SIDE_OFFSET: f32 = 36.0;
 const WEB_BOTTOM_INSET: f32 = 15.0;
 /// The king slime's spiral fires several times a second; only every few shots get a sound.
 const SPIRAL_SOUND_EVERY: u32 = 3;
-
-fn player_center(world: &World) -> Option<Vec2> {
-    world
-        .query::<&Position>()
-        .with::<&Player>()
-        .without::<&crate::components::Phantom>()
-        .iter()
-        .next()
-        .map(|position| position.0)
-}
 
 pub(crate) fn tick_hatchers(
     world: &mut World,
@@ -68,7 +58,7 @@ pub(crate) fn tick_web_spitters(
     sounds: &mut Vec<AudioCommand>,
     dt: f32,
 ) {
-    let target = player_center(world);
+    let target = crate::systems::player::uncloaked_player(world).map(|(_, at, _)| at);
     let mut casts = Vec::new();
     let mut spits = Vec::new();
     for (entity, position, size, spitter, animation) in world
@@ -217,7 +207,7 @@ pub(crate) fn update_boss_hud(world: &mut World) {
 mod tests {
     use crate::assets::Textures;
     use crate::assets::tex;
-    use crate::components::{Chase, EnemyBullet, Velocity};
+    use crate::components::{Chase, EnemyBullet, Player, Velocity};
     use crate::prefabs::finish_spawning;
     use crate::systems::enemies::reap_dead;
     use crate::systems::{chase_player, tick_spawning};
@@ -235,7 +225,7 @@ mod tests {
     #[test]
     fn bosses_cannot_find_a_cloaked_player() {
         let (mut world, _, _) = arena();
-        assert!(player_center(&world).is_some());
+        assert!(crate::systems::player::uncloaked_player(&world).is_some());
         let player = world
             .query::<Entity>()
             .with::<&Player>()
@@ -245,7 +235,7 @@ mod tests {
 
         let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
 
-        assert!(player_center(&world).is_none());
+        assert!(crate::systems::player::uncloaked_player(&world).is_none());
     }
 
     fn boss(world: &mut World, physics: &mut Physics, kind: EnemyKind) -> Entity {

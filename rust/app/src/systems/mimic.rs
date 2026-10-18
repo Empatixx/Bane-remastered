@@ -12,7 +12,8 @@ use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
 use crate::systems::damage::hurt_player;
-use crate::systems::golem::{play, player_at, spark, spawn_rock};
+use crate::systems::golem::{play, spark, spawn_rock};
+use crate::systems::player::living_player_at;
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
 
@@ -229,7 +230,7 @@ pub(crate) fn tick_mimic(world: &mut World, hostile: &mut Hostile<'_>) {
     let sounds = &mut *hostile.sounds;
     let fx = &mut *hostile.fx;
     let dt = hostile.dt;
-    let target = player_at(world).map(|(_, position, _)| position);
+    let target = living_player_at(world).map(|(_, position, _)| position);
     let mobs = world.query::<&Minion>().iter().count();
     let baits = world.query::<&Bait>().iter().count();
     let bosses: Vec<(Entity, Vec2, i32, i32)> = world
@@ -438,7 +439,7 @@ pub(crate) fn tick_baits(world: &mut World, hostile: &mut Hostile<'_>) {
     let sounds = &mut *hostile.sounds;
     let fx = &mut *hostile.fx;
     let dt = hostile.dt;
-    let player = player_at(world);
+    let player = living_player_at(world);
     let mut gone = Vec::new();
     let mut snapped = Vec::new();
     for (entity, bait, position) in world.query_mut::<(Entity, &mut Bait, &Position)>() {

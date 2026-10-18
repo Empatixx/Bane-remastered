@@ -8,7 +8,7 @@ use hecs::{Entity, World};
 use crate::assets::{Textures, tex};
 use crate::audio::AudioCommand;
 use crate::components::{
-    Color, Dodge, Layer, Lit, Player, Position, Size, Sprite,
+    Color, Dodge, Layer, Lit, Position, Size, Sprite,
 };
 use crate::dungeon::Dungeon;
 use crate::tilemap::TILE_SIZE;
@@ -120,15 +120,6 @@ fn spawn_pendulum(world: &mut World, first: (usize, usize), last: (usize, usize)
     ));
 }
 
-fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
-    world
-        .query::<(Entity, &Position, &Size)>()
-        .with::<&Player>()
-        .iter()
-        .next()
-        .map(|(entity, position, size)| (entity, position.0, size.0))
-}
-
 pub(crate) fn tick_pendulums(
     world: &mut World,
     sounds: &mut Vec<AudioCommand>,
@@ -136,7 +127,7 @@ pub(crate) fn tick_pendulums(
     clock: f32,
     dt: f32,
 ) {
-    let player = player_at(world);
+    let player = crate::systems::player::player_placement(world);
     let dodging = player.is_some_and(|(entity, _, _)| world.get::<&Dodge>(entity).is_ok());
     let mut moves: Vec<(Entity, Vec2)> = Vec::new();
     let mut cut = false;

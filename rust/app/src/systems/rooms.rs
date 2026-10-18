@@ -3,7 +3,7 @@ use hecs::{Entity, World};
 use rapier2d::prelude::ColliderHandle;
 
 use crate::assets::Textures;
-use crate::components::{Expiring, Player, Position, RoomId};
+use crate::components::{Expiring, RoomId};
 use crate::dungeon::{Dungeon, RoomKind};
 use crate::enemies::{self, EnemyKind};
 use crate::navigation::Navigation;
@@ -167,17 +167,8 @@ pub(crate) fn update_rooms(
     events
 }
 
-fn player_position(world: &World) -> Option<Vec2> {
-    world
-        .query::<&Position>()
-        .with::<&Player>()
-        .iter()
-        .next()
-        .map(|position| position.0)
-}
-
 fn player_tile(dungeon: &Dungeon, world: &World) -> Option<usize> {
-    let position = player_position(world)?;
+    let position = crate::systems::player::player_at(world)?;
     dungeon.room_at(
         (position.x / TILE_SIZE) as usize,
         (position.y / TILE_SIZE) as usize,
@@ -185,7 +176,7 @@ fn player_tile(dungeon: &Dungeon, world: &World) -> Option<usize> {
 }
 
 fn player_room(dungeon: &Dungeon, world: &World) -> Option<usize> {
-    let position = player_position(world)?;
+    let position = crate::systems::player::player_at(world)?;
     let column = (position.x / TILE_SIZE) as usize;
     let row = (position.y / TILE_SIZE) as usize;
     let room = dungeon.room_at(column, row)?;

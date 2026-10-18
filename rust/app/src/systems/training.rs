@@ -164,15 +164,6 @@ struct Arrival {
     shown: bool,
 }
 
-fn player(world: &World) -> Option<(Entity, Vec2)> {
-    world
-        .query::<(Entity, &Position)>()
-        .with::<&Player>()
-        .iter()
-        .next()
-        .map(|(entity, position)| (entity, position.0))
-}
-
 /// A few words written on the floor, centred on `at`.
 fn floor_text(world: &mut World, content: &str, at: Vec2) -> Entity {
     world.spawn((
@@ -217,7 +208,7 @@ impl Training {
                 let _ = world.despawn(entity);
             }
         }
-        let Some((hero, at)) = player(world) else { return };
+        let Some((hero, at)) = crate::systems::player::player_entity_at(world) else { return };
         let _ = world.insert_one(hero, crate::components::Hidden);
         let column = world.spawn((
             Position(at - Vec2::new(0.0, COLUMN.y / 2.0 - 20.0)),
@@ -253,7 +244,7 @@ impl Training {
         if before - ARRIVAL_FROM < 0.0 {
             sounds.push(AudioCommand::Effect(SoundEffect::ArgusTeleport));
         }
-        let Some((hero, at)) = player(world) else { return };
+        let Some((hero, at)) = crate::systems::player::player_entity_at(world) else { return };
         let done = (t / ARRIVAL_SECONDS).min(1.0);
         let shows = ARRIVAL_SHOWS / ARRIVAL_SECONDS;
         // Up to the flash it gathers; after it, it fades.
@@ -576,7 +567,7 @@ impl Training {
     /// afresh.
     pub(crate) fn respawn(&mut self, world: &mut World, physics: &mut Physics, textures: &Textures) {
         let checkpoint = self.lesson().checkpoint;
-        if let Some((entity, _)) = player(world) {
+        if let Some((entity, _)) = crate::systems::player::player_entity_at(world) {
             if let Ok(mut health) = world.get::<&mut Health>(entity) {
                 health.current = health.max;
             }
@@ -648,7 +639,7 @@ impl Training {
             if *left <= 0.0 {
                 let _ = world.despawn(*words);
                 self.over_head = None;
-            } else if let Some((_, at)) = player(world) {
+            } else if let Some((_, at)) = crate::systems::player::player_entity_at(world) {
                 if let Ok(mut position) = world.get::<&mut Position>(*words) {
                     position.0 = at - Vec2::new(0.0, OVER_HEAD);
                 }
@@ -687,7 +678,7 @@ impl Training {
             loadout.arm();
             loadout.top_up_reserves();
         }
-        let Some((_, at)) = player(world) else {
+        let Some((_, at)) = crate::systems::player::player_entity_at(world) else {
             return TrainingEvent::None;
         };
         if self.learnt {
@@ -863,7 +854,7 @@ impl Training {
         if let Some((words, _)) = self.over_head.take() {
             let _ = world.despawn(words);
         }
-        if let Some((_, at)) = player(world) {
+        if let Some((_, at)) = crate::systems::player::player_entity_at(world) {
             let words = world.spawn((
                 Position(at - Vec2::new(0.0, OVER_HEAD)),
                 Text::centered("Done!".to_owned(), DONE_COLOR, FontSize::Size32),
@@ -972,7 +963,7 @@ mod tests {
     #[test]
     fn the_loot_lesson_starts_with_a_pistol_alone_and_is_learnt_by_taking_the_shotgun_and_switching() {
         let (mut world, mut physics, mut training, textures) = scene();
-        let (player, _) = player(&world).expect("player");
+        let (player, _) = crate::systems::player::player_entity_at(&world).expect("player");
         let has = |world: &World, kind| world.get::<&Loadout>(player).map(|l| l.has(kind)).expect("loadout");
         assert!(has(&world, GunKind::Pistol) && !has(&world, GunKind::Shotgun));
         training.current = 2;
@@ -997,7 +988,7 @@ mod tests {
     #[test]
     fn an_empty_hand_takes_up_the_other_gun() {
         let (mut world, mut physics, mut training, textures) = scene();
-        let (player, _) = player(&world).expect("player");
+        let (player, _) = crate::systems::player::player_entity_at(&world).expect("player");
         if let Ok(mut loadout) = world.get::<&mut Loadout>(player) {
             let _ = loadout.add(Weapon::new(GunKind::Shotgun));
             let _ = loadout.drop_current();
@@ -1024,7 +1015,7 @@ mod tests {
     #[test]
     fn dying_brings_the_player_back_whole_to_the_rooms_start_and_three_deaths_bring_a_tip() {
         let (mut world, mut physics, mut training, textures) = scene();
-        let (player, _) = player(&world).expect("player");
+        let (player, _) = crate::systems::player::player_entity_at(&world).expect("player");
         for _ in 0..DEATHS_FOR_A_TIP {
             if let Ok(mut health) = world.get::<&mut Health>(player) {
                 health.current = 0;

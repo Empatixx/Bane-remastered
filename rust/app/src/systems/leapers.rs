@@ -3,7 +3,7 @@ use hecs::{Entity, World};
 
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
-    Animation, ContactDamage, Dodge, Expiring, Frozen, Health, Layer, LeapStage, Leaper, Player,
+    Animation, ContactDamage, Dodge, Expiring, Frozen, Layer, LeapStage, Leaper,
     Position, Rooted, Spawning, Velocity,
 };
 use crate::enemies;
@@ -23,24 +23,13 @@ enum Step {
     Recover,
 }
 
-fn player_at(world: &World) -> Option<(Entity, Vec2)> {
-    world
-        .query::<(Entity, &Position, &Health)>()
-        .with::<&Player>()
-        .without::<&crate::components::Phantom>()
-        .iter()
-        .filter(|(_, _, health)| health.current > 0)
-        .map(|(entity, position, _)| (entity, position.0))
-        .next()
-}
-
 pub(crate) fn tick_leapers(
     world: &mut World,
     sounds: &mut Vec<AudioCommand>,
     fx: &mut Fx,
     dt: f32,
 ) {
-    let target = player_at(world);
+    let target = crate::systems::player::living_player_at(world).map(|(entity, at, _)| (entity, at));
     let mut events = Vec::new();
     for (entity, position, leaper, velocity) in world
         .query_mut::<(Entity, &Position, &mut Leaper, &mut Velocity)>()
@@ -192,7 +181,7 @@ fn apply(
 #[cfg(test)]
 mod tests {
     use crate::assets::Textures;
-    use crate::components::Armor;
+    use crate::components::{Armor, Health};
     use crate::enemies::EnemyKind;
     use crate::physics::Physics;
     use crate::prefabs;
@@ -204,11 +193,11 @@ mod tests {
     #[test]
     fn a_leaper_cannot_pick_a_cloaked_player() {
         let (mut world, player, _) = arena(200.0);
-        assert!(player_at(&world).is_some());
+        assert!(crate::systems::player::living_player_at(&world).is_some());
 
         let _ = world.insert_one(player, crate::components::Phantom { remaining: 5.0 });
 
-        assert!(player_at(&world).is_none());
+        assert!(crate::systems::player::living_player_at(&world).is_none());
     }
 
     fn arena(distance: f32) -> (World, Entity, Entity) {

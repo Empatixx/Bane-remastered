@@ -11,7 +11,7 @@ use crate::navigation::Navigation;
 use crate::prefabs;
 use crate::props::{Look, Prop};
 use crate::systems::damage::hurt_player_through_armor;
-use crate::systems::golem::player_body;
+use crate::systems::player::player_body;
 use crate::systems::hostile::Hostile;
 use crate::tilemap::TILE_SIZE;
 

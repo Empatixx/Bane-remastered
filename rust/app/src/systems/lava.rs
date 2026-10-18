@@ -74,10 +74,6 @@ const BALL_CLIP: Clip = Clip {
     flipped: false,
 };
 
-fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
-    super::golem::player_body(world)
-}
-
 fn can_be_hit(world: &World, player: Entity) -> bool {
     world.get::<&Dodge>(player).is_err() && world.get::<&Invulnerable>(player).is_err()
 }
@@ -122,7 +118,7 @@ pub(crate) fn tick_ember_rats(world: &mut World, sounds: &mut Vec<AudioCommand>,
 pub(crate) fn tick_swoopers(world: &mut World, hostile: &mut Hostile<'_>) {
     let sounds = &mut *hostile.sounds;
     let dt = hostile.dt;
-    let player = player_at(world).map(|(_, at, _)| at);
+    let player = crate::systems::player::player_body(world).map(|(_, at, _)| at);
     let mut flare = Vec::new();
     let mut calm = Vec::new();
     for (entity, swooper, chase, position) in world
@@ -247,7 +243,7 @@ pub(crate) fn tick_magma_slimes(world: &mut World, hostile: &mut Hostile<'_>) {
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
     let dt = hostile.dt;
-    let player = player_at(world).map(|(_, at, _)| at);
+    let player = crate::systems::player::player_body(world).map(|(_, at, _)| at);
     let mut turned = Vec::new();
     let mut lobs = Vec::new();
     for (entity, shell, chase, sprite, position, room) in world
@@ -372,7 +368,7 @@ pub(crate) fn tick_worms(world: &mut World, hostile: &mut Hostile<'_>) {
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
     let dt = hostile.dt;
-    let player = player_at(world).map(|(_, at, _)| at);
+    let player = crate::systems::player::player_body(world).map(|(_, at, _)| at);
     let mut changes: Vec<(Entity, WormStage, Vec2, Burrower)> = Vec::new();
     let mut shots: Vec<(Entity, Vec2)> = Vec::new();
     for (entity, worm, chase, position) in world

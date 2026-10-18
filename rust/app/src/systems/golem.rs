@@ -5,7 +5,7 @@ use crate::assets::{Tex, Textures, tex};
 use crate::audio::{AudioCommand, SoundEffect};
 use crate::components::{
     Animation, BeamPart, Chase, Clip, Color, ContactDamage, Despawn, Dodge, Drag, Expiring,
-    FallingRock, Frozen, GolemAttack, GolemBoss, GolemStage, Health, Layer, Light, Minion, Player,
+    FallingRock, Frozen, GolemAttack, GolemBoss, GolemStage, Health, Layer, Light, Minion,
     Position, RockFall, RoomId, Rooted, Size, Spawning, Sprite, Velocity,
 };
 use crate::enemies::{self, EnemyKind, ProjectileKind};
@@ -16,6 +16,7 @@ use crate::prefabs;
 use crate::systems::damage::hurt_player;
 use crate::systems::fx::{self, Fx};
 use crate::systems::hostile::Hostile;
+use crate::systems::player::{living_player_at, player_body};
 
 const ROCK_RING_ORIGIN_DROP: f32 = 60.0;
 const EYE_HEIGHT: f32 = 45.0;
@@ -230,21 +231,6 @@ pub(crate) fn step(golem: &mut GolemBoss, distance: f32, dt: f32) -> Vec<Cmd> {
     commands
 }
 
-pub(crate) fn player_at(world: &World) -> Option<(Entity, Vec2, Vec2)> {
-    player_body(world)
-        .filter(|(player, _, _)| world.get::<&crate::components::Phantom>(*player).is_err())
-}
-
-pub(crate) fn player_body(world: &World) -> Option<(Entity, Vec2, Vec2)> {
-    world
-        .query::<(Entity, &Position, &Size, &Health)>()
-        .with::<&Player>()
-        .iter()
-        .filter(|(_, _, _, health)| health.current > 0)
-        .map(|(entity, position, size, _)| (entity, position.0, size.0))
-        .next()
-}
-
 pub(crate) fn play(world: &mut World, entity: Entity, clip: Clip) {
     if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
         let facing = animation.flipped();
@@ -277,7 +263,7 @@ pub(crate) fn tick_golem(world: &mut World, hostile: &mut Hostile<'_>) {
     let sounds = &mut *hostile.sounds;
     let fx = &mut *hostile.fx;
     let dt = hostile.dt;
-    let target = player_at(world);
+    let target = living_player_at(world);
     let golems: Vec<(Entity, Vec2, i32, i32)> = world
         .query::<(Entity, &Position, &Health, &GolemBoss)>()
         .without::<&Spawning>()
@@ -732,7 +718,7 @@ pub(crate) fn tick_laser(world: &mut World, hostile: &mut Hostile<'_>) {
     let fx = &mut *hostile.fx;
     let dt = hostile.dt;
     clear_beam(world);
-    let player = player_at(world);
+    let player = living_player_at(world);
     let firing: Vec<(Entity, Vec2, bool)> = world
         .query::<(Entity, &Position, &GolemBoss)>()
         .without::<&Spawning>()

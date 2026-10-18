@@ -11,7 +11,8 @@ use crate::enemies::{self, EnemyKind, ProjectileKind};
 use crate::navigation::Navigation;
 use crate::physics::Physics;
 use crate::prefabs;
-use crate::systems::golem::{play, player_at};
+use crate::systems::golem::play;
+use crate::systems::player::living_player_at;
 use crate::systems::hostile::Hostile;
 
 const SPRITE_SCALE: f32 = 4.0;
@@ -256,7 +257,7 @@ pub(crate) fn tick_argus(world: &mut World, hostile: &mut Hostile<'_>) {
     let textures = hostile.textures;
     let sounds = &mut *hostile.sounds;
     let dt = hostile.dt;
-    let target = player_at(world).map(|(_, position, _)| position);
+    let target = living_player_at(world).map(|(_, position, _)| position);
     let bosses: Vec<(Entity, Vec2, i32, i32)> = world
         .query::<(Entity, &Position, &Health, &ArgusBoss)>()
         .without::<&Spawning>()

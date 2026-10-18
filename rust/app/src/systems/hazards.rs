@@ -3,8 +3,8 @@ use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
 use crate::components::{
-    Animation, ArrowTrap, Body, Bullet, Clip, Color, EnemyBullet, Expiring, FloorPatch, Health,
-    Layer, Lit, PatchKind, Player, Position, Size, Sprite, TrapArrow,
+    Animation, ArrowTrap, Body, Bullet, Clip, Color, EnemyBullet, Expiring, FloorPatch,
+    Layer, Lit, PatchKind, Position, Size, Sprite, TrapArrow,
 };
 use crate::geometry;
 use crate::physics::Physics;
@@ -50,13 +50,7 @@ pub(crate) fn tick_arrow_traps(world: &mut World, hostile: &mut Hostile<'_>) {
     let sounds = &mut *hostile.sounds;
     let fx = &mut *hostile.fx;
     let dt = hostile.dt;
-    let Some((player, player_at, player_size)) = world
-        .query::<(Entity, &Position, &Size)>()
-        .with::<(&Player, &Health)>()
-        .iter()
-        .next()
-        .map(|(entity, position, size)| (entity, position.0, size.0))
-    else {
+    let Some((player, player_at, player_size)) = crate::systems::player::player_placement(world) else {
         return;
     };
     let mut shots = Vec::new();
@@ -181,7 +175,7 @@ pub(crate) fn slow_bullets_in_webs(world: &mut World, physics: &mut Physics, dt:
 
 #[cfg(test)]
 mod tests {
-    use crate::components::{Armor, Invulnerable};
+    use crate::components::{Armor, Health, Invulnerable};
     use crate::navigation::Navigation;
     use crate::physics::Physics;
     use crate::prefabs;

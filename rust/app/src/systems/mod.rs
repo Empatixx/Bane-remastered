@@ -49,6 +49,7 @@ mod overhead;
 mod ogre;
 mod perks;
 mod pet;
+mod player;
 mod player_animation;
 mod portal;
 mod prison;
@@ -151,6 +152,7 @@ pub(crate) use perks::{
     regenerate_armor,
 };
 pub(crate) use pet::{pet_bites, pick_pet_targets, plan_pet_paths, steer_pets};
+pub(crate) use player::player_at;
 pub(crate) use player_animation::animate_player;
 pub(crate) use portal::{sign_portal, tint_portal};
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
