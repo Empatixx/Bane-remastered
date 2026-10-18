@@ -38,15 +38,6 @@ const SHOP_CARPET_ROWS: usize = 4;
 const TREASURE_CARPET_COLUMNS: usize = 7;
 const TREASURE_CARPET_ROWS: usize = 5;
 
-const TOP_LEFT: usize = 0;
-const TOP: [usize; 2] = [1, 2];
-const TOP_RIGHT: usize = 3;
-const LEFT: [usize; 2] = [4, 7];
-const CENTER: usize = 5;
-const RIGHT: [usize; 2] = [6, 8];
-const BOTTOM_LEFT: usize = 9;
-const BOTTOM: [usize; 2] = [10, 11];
-const BOTTOM_RIGHT: usize = 12;
 
 const HINT_TOP: f32 = 300.0;
 const HINT_STEP: f32 = 50.0;
@@ -115,6 +106,7 @@ pub(crate) struct Fixture {
     pub(crate) size: Vec2,
 }
 
+/// A carpet on the floor: the tiles it spans, and which of them it covers, as a shape.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Carpet {
     pub(crate) origin: (usize, usize),
@@ -122,37 +114,39 @@ pub(crate) struct Carpet {
     pub(crate) rows: usize,
     /// Its look, one per floor (see `Theme::style`); the shop's and the treasure rooms' are red.
     pub(crate) style: usize,
+    /// Which tiles of its span it covers, a bit each row by row from the top left; `None`
+    /// covers them all.
+    pub(crate) cover: Option<u128>,
 }
 
 impl Carpet {
+    /// A carpet covering the whole of `columns` by `rows` tiles from `origin`.
+    pub(crate) fn rect(origin: (usize, usize), columns: usize, rows: usize, style: usize) -> Self {
+        Self { origin, columns, rows, style, cover: None }
+    }
+
+    /// Whether it covers the tile `column`, `row` of its span.
+    pub(crate) fn covers(&self, column: isize, row: isize) -> bool {
+        if column < 0 || row < 0 || column as usize >= self.columns || row as usize >= self.rows {
+            return false;
+        }
+        self.cover.is_none_or(|cover| cover >> (row as usize * self.columns + column as usize) & 1 == 1)
+    }
+
+    /// The tiles it covers, each with the blob tile that draws it: its border running round the
+    /// outside of the shape and round the notches where the shape turns in.
     pub(crate) fn tiles(&self) -> Vec<((usize, usize), usize)> {
         let mut tiles = Vec::with_capacity(self.columns * self.rows);
-        for row in 0..self.rows {
-            for column in 0..self.columns {
-                let number = self.tile_number(column, row);
-                tiles.push(((self.origin.0 + column, self.origin.1 + row), number));
+        for row in 0..self.rows as isize {
+            for column in 0..self.columns as isize {
+                if !self.covers(column, row) {
+                    continue;
+                }
+                let number = super::surface::blob_index(|dx, dy| self.covers(column + dx, row + dy));
+                tiles.push(((self.origin.0 + column as usize, self.origin.1 + row as usize), number));
             }
         }
         tiles
-    }
-
-    fn tile_number(&self, column: usize, row: usize) -> usize {
-        let variant = (column + row) % 2;
-        let first = column == 0;
-        let last = column + 1 == self.columns;
-        let top = row == 0;
-        let bottom = row + 1 == self.rows;
-        match (first, last, top, bottom) {
-            (true, _, true, _) => TOP_LEFT,
-            (_, true, true, _) => TOP_RIGHT,
-            (true, _, _, true) => BOTTOM_LEFT,
-            (_, true, _, true) => BOTTOM_RIGHT,
-            (_, _, true, _) => TOP[variant],
-            (_, _, _, true) => BOTTOM[variant],
-            (true, ..) => LEFT[variant],
-            (_, true, ..) => RIGHT[variant],
-            _ => CENTER,
-        }
     }
 }
 
@@ -198,12 +192,12 @@ impl Frame {
     }
 
     fn carpet(&self, margin_columns: usize, margin_rows: usize) -> Carpet {
-        Carpet {
-            origin: (self.origin.0 + margin_columns, self.origin.1 + margin_rows),
-            columns: self.columns - 2 * margin_columns,
-            rows: self.rows - 2 * margin_rows,
-            style: 0,
-        }
+        Carpet::rect(
+            (self.origin.0 + margin_columns, self.origin.1 + margin_rows),
+            self.columns - 2 * margin_columns,
+            self.rows - 2 * margin_rows,
+            0,
+        )
     }
 }
 
@@ -610,13 +604,16 @@ mod tests {
                 .find(|(tile, _)| *tile == (column, row))
                 .map(|(_, number)| *number)
         };
-        assert_eq!(number(2, 4), Some(TOP_LEFT));
-        assert_eq!(number(17, 4), Some(TOP_RIGHT));
-        assert_eq!(number(2, 11), Some(BOTTOM_LEFT));
-        assert_eq!(number(17, 11), Some(BOTTOM_RIGHT));
-        assert_eq!(number(8, 8), Some(CENTER));
-        assert!(TOP.contains(&number(8, 4).unwrap_or(99)));
-        assert!(LEFT.contains(&number(2, 8).unwrap_or(99)));
+        // The blob tile for a tile whose neighbours at these offsets are carpet.
+        let blob = |with: &[(isize, isize)]| super::super::surface::blob_index(|dx, dy| with.contains(&(dx, dy)));
+        assert_eq!(number(2, 4), Some(blob(&[(1, 0), (0, 1), (1, 1)])));
+        assert_eq!(number(17, 4), Some(blob(&[(-1, 0), (0, 1), (-1, 1)])));
+        assert_eq!(number(2, 11), Some(blob(&[(1, 0), (0, -1), (1, -1)])));
+        assert_eq!(number(17, 11), Some(blob(&[(-1, 0), (0, -1), (-1, -1)])));
+        let all: Vec<(isize, isize)> = (-1..=1).flat_map(|dy| (-1..=1).map(move |dx| (dx, dy))).collect();
+        assert_eq!(number(8, 8), Some(blob(&all)));
+        let top: Vec<(isize, isize)> = all.iter().copied().filter(|&(_, dy)| dy >= 0).collect();
+        assert_eq!(number(8, 4), Some(blob(&top)));
         assert_eq!(tiles.len(), 16 * 8);
     }
 }

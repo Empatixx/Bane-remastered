@@ -235,12 +235,7 @@ fn dress(room: &mut DungeonRoom, lesson: Lesson, inside: (usize, usize), shape: 
         room.decor.push(decor(DecorKind::FireBowl, tile(column, row)));
     }
     if matches!(lesson, Lesson::Loot | Lesson::Health | Lesson::Exit) {
-        room.rug = Some(Carpet {
-            origin: tile(5, 2),
-            columns: columns - 10,
-            rows: rows - 4,
-            style: 0,
-        });
+        room.rug = Some(Carpet::rect(tile(5, 2), columns - 10, rows - 4, 0));
     }
     // The way out stands between two statues instead of four blocks.
     if lesson == Lesson::Exit {

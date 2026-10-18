@@ -279,7 +279,7 @@ impl EpilogueScene {
             overheads: Vec::new(),
             hanging: Vec::new(),
             track: None,
-            rug: Some(Carpet { origin: tile(AISLE as usize - 1, 5), columns: 3, rows: rows - 5, style: 0 }),
+            rug: Some(Carpet::rect(tile(AISLE as usize - 1, 5), 3, rows - 5, 0)),
             tables: Vec::new(),
             waterworks: Waterworks::default(),
             pendulum: None,

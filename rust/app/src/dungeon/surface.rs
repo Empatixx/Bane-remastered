@@ -29,6 +29,24 @@ fn reduce(code: u8) -> u8 {
     out
 }
 
+/// Which of the 47 blob tiles a tile takes, `has` saying which of its neighbours (by offset)
+/// belong with it: its edges where they do not, its corners where both sides do but the
+/// corner between them does not.
+pub(crate) fn blob_index(has: impl Fn(isize, isize) -> bool) -> usize {
+    let mut code = 0u8;
+    for (bit, (dx, dy)) in NEIGHBOURS.iter().enumerate() {
+        if has(*dx, *dy) {
+            code |= 1 << bit;
+        }
+    }
+    for (index, (dx, dy)) in DIAGONALS.iter().enumerate() {
+        if has(*dx, *dy) {
+            code |= 1 << (4 + index);
+        }
+    }
+    blob_rank(code)
+}
+
 fn blob_rank(code: u8) -> usize {
     let wanted = reduce(code);
     (0..wanted)

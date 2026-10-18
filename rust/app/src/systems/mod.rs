@@ -162,7 +162,7 @@ pub(crate) use stats::{
     Summary, close_floor as close_stats_floor, current as current_stats, summarize,
 };
 pub(crate) use steering::{steer_player, steer_player_on};
-pub(crate) use surfaces::{burn_on_lava, kick_up_surfaces, ripple_on_water, sync_liquids};
+pub(crate) use surfaces::{burn_on_lava, kick_up_surfaces, ripple_on_water, stir_surfaces, sync_liquids};
 pub(crate) use time_slow::time_scale;
 pub(crate) use trails::{TrailTextures, shed_trails};
 pub(crate) use ui::{update_buttons, update_text_buttons};

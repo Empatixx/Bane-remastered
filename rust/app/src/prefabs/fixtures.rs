@@ -92,9 +92,10 @@ const FLAME_DAMAGE: i32 = 1;
 const FLAME_LAST_FRAME: usize = 3;
 const SLOT_PROMPT_GAP: f32 = -10.0;
 const DROP_DRAG: f32 = 6.0;
-const CARPET_COLUMNS: usize = 4;
-/// Each look of carpet is a block of four rows, one under another.
-const CARPET_ROWS: usize = 4;
+/// Each look of carpet is a block of the 47 blob tiles (tools/make_carpets.py), eight across
+/// and six down, one look under another.
+const CARPET_COLUMNS: usize = 8;
+const CARPET_ROWS: usize = 6;
 const CARPET_STYLES: usize = 7;
 const CARPET_LAYER: i32 = -2;
 /// The floor's tiles, under everything.

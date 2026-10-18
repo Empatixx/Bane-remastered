@@ -353,12 +353,7 @@ impl CinematicScene {
             overheads,
             hanging,
             track: None,
-            rug: Some(Carpet {
-                origin: tile(0, rows / 2 - 1),
-                columns: columns - apse.0 + 3,
-                rows: 3,
-                style: theme.style(),
-            }),
+            rug: Some(Carpet::rect(tile(0, rows / 2 - 1), columns - apse.0 + 3, 3, theme.style())),
             tables: Vec::new(),
             waterworks,
             pendulum: None,
@@ -1041,7 +1036,7 @@ impl CinematicScene {
             hanging: Vec::new(),
             track: None,
             // A red carpet in the middle of the vault, the sarcophagus on it.
-            rug: Some(Carpet { origin: tile(middle - 3, rows / 2 - 2), columns: 7, rows: 5, style: 0 }),
+            rug: Some(Carpet::rect(tile(middle - 3, rows / 2 - 2), 7, 5, 0)),
             tables: Vec::new(),
             waterworks: Waterworks::default(),
             pendulum: None,

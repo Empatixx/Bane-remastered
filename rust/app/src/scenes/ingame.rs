@@ -715,6 +715,7 @@ impl Scene for InGameScene {
         systems::sync_liquids(&mut self.world, self.clock);
         systems::ripple_on_water(&mut self.world, &self.surfaces, &assets.textures, dt);
         systems::kick_up_surfaces(&mut self.world, &self.surfaces, dt);
+        systems::stir_surfaces(&mut self.world, &self.surfaces, self.camera.view(), crate::viewport::TARGET, dt);
         if systems::contact_damage(&mut self.world, &mut self.sounds) {
             self.hit = true;
         }
@@ -964,7 +965,8 @@ impl InGameScene {
             .or_else(|| dungeon.start_position())
             .unwrap_or(bounds / 2.0);
         // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
-        // `table`, `rug`, `vestibule`, `water`, `bowl`, `statue`, `shackles` or `pendulum` starts the floor there (by the first one of those), for working on the
+        // `table`, `rug`, `vestibule`, `water`, `surface` (the thickest patch of lava, water, sand
+        // and such), `bowl`, `statue`, `shackles` or `pendulum` starts the floor there (by the first one of those), for working on the
         // game.
         match std::env::var("BANE_AT").as_deref() {
             Ok("boss") => {
@@ -991,6 +993,15 @@ impl InGameScene {
                     .and_then(|room| open_spot_near_center(&dungeon, room))
                 {
                     start = spot;
+                }
+            }
+            Ok("surface") => {
+                let tiles: Vec<(usize, usize)> = dungeon.surfaces.iter().map(|(tile, _)| tile).collect();
+                let around = |tile: (usize, usize)| {
+                    tiles.iter().filter(|other| other.0.abs_diff(tile.0) <= 2 && other.1.abs_diff(tile.1) <= 2).count()
+                };
+                if let Some(&tile) = tiles.iter().max_by_key(|&&tile| (around(tile), std::cmp::Reverse(tile))) {
+                    start = (Vec2::new(tile.0 as f32, tile.1 as f32) + 0.5) * TILE_SIZE;
                 }
             }
             Ok("hanging") => {

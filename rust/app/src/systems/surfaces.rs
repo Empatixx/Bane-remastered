@@ -8,6 +8,7 @@ use crate::components::{
     Size, Sprite, Velocity,
 };
 use crate::dungeon::{Surface, Surfaces};
+use crate::tilemap::TILE_SIZE;
 use crate::systems::damage::hurt_player_through_armor;
 
 const LAVA_DAMAGE: i32 = 2;
@@ -302,6 +303,167 @@ pub(crate) fn kick_up_surfaces(world: &mut World, surfaces: &Surfaces, dt: f32) 
     }
     for entity in gone {
         let _ = world.despawn(entity);
+    }
+}
+
+/// What a surface gives off on its own, wherever it lies in view: the colours of it, how
+/// often a tile gives one off (a second), how it drifts, how big it is and how long it lasts,
+/// whether it glows in the dark, and whether it twinkles (fades in and out where it is) rather
+/// than drifting off and fading.
+#[derive(Debug, Clone, Copy)]
+struct Stir {
+    colours: [Vec4; 2],
+    rate: f32,
+    drift: (Vec2, Vec2),
+    size: f32,
+    life: f32,
+    glows: bool,
+    twinkles: bool,
+}
+
+fn stir(surface: Surface) -> Stir {
+    match surface {
+        // Black cinders and white-hot sparks floating up off the lava and dying out: the lava's
+        // own oranges would not show against it.
+        Surface::Lava => Stir {
+            colours: [Vec4::new(0.24, 0.08, 0.05, 1.0), Vec4::new(1.0, 1.0, 0.86, 1.0)],
+            rate: 0.5,
+            drift: (Vec2::new(-12.0, -55.0), Vec2::new(12.0, -30.0)),
+            size: 6.0,
+            life: 1.4,
+            glows: true,
+            twinkles: false,
+        },
+        // Glints of light on the water.
+        Surface::Water => Stir {
+            colours: [Vec4::new(0.85, 0.97, 0.9, 0.9), Vec4::new(1.0, 1.0, 1.0, 1.0)],
+            rate: 0.35,
+            drift: (Vec2::new(-3.0, 0.0), Vec2::new(3.0, 0.0)),
+            size: 5.0,
+            life: 0.8,
+            glows: true,
+            twinkles: true,
+        },
+        // Bubbles rising through the mud and bursting.
+        Surface::Bog => Stir {
+            colours: [Vec4::new(0.3, 0.24, 0.12, 1.0), Vec4::new(0.8, 0.72, 0.46, 1.0)],
+            rate: 0.3,
+            drift: (Vec2::new(-2.0, -8.0), Vec2::new(2.0, -4.0)),
+            size: 6.0,
+            life: 0.9,
+            glows: false,
+            twinkles: false,
+        },
+        // Glitter on the ice.
+        Surface::Ice => Stir {
+            colours: [Vec4::new(0.85, 0.95, 1.0, 0.9), Vec4::new(1.0, 1.0, 1.0, 1.0)],
+            rate: 0.3,
+            drift: (Vec2::ZERO, Vec2::ZERO),
+            size: 4.0,
+            life: 0.6,
+            glows: true,
+            twinkles: true,
+        },
+        // Grains of sand blown along the top of it.
+        Surface::Sand => Stir {
+            colours: [Vec4::new(1.0, 0.92, 0.7, 1.0), Vec4::new(0.55, 0.42, 0.24, 1.0)],
+            rate: 0.35,
+            drift: (Vec2::new(18.0, -4.0), Vec2::new(34.0, 2.0)),
+            size: 4.0,
+            life: 1.2,
+            glows: false,
+            twinkles: false,
+        },
+        // A bubble now and then in the blood.
+        Surface::Blood => Stir {
+            colours: [Vec4::new(0.6, 0.06, 0.08, 1.0), Vec4::new(0.85, 0.2, 0.2, 1.0)],
+            rate: 0.12,
+            drift: (Vec2::new(-1.0, -6.0), Vec2::new(1.0, -3.0)),
+            size: 4.0,
+            life: 0.8,
+            glows: false,
+            twinkles: false,
+        },
+    }
+}
+
+/// Bits rise off the surfaces over the floor and under whoever walks there.
+const STIR_LAYER: i32 = 0;
+
+/// A bit a surface gave off: its drift, how long it has left of how long, its full alpha and
+/// whether it twinkles.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Stirred {
+    drift: Vec2,
+    life: f32,
+    lasts: f32,
+    alpha: f32,
+    twinkles: bool,
+}
+
+/// The scatter for what the surfaces give off.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct StirSeed(u32);
+
+/// The surfaces in view, alive on their own: embers off the lava, glints on the water, bubbles
+/// in the bog and the blood, glitter on the ice, grains blowing over the sand. `view` is the
+/// top left of the camera and `size` what it shows.
+pub(crate) fn stir_surfaces(world: &mut World, surfaces: &Surfaces, view: Vec2, size: Vec2, dt: f32) {
+    let mut seed = world.query::<&StirSeed>().iter().next().map_or(0x9E37_79B9, |seed| seed.0);
+    let mut roll = || {
+        seed ^= seed << 13;
+        seed ^= seed >> 17;
+        seed ^= seed << 5;
+        (seed % 10_000) as f32 / 10_000.0
+    };
+    let first = ((view / TILE_SIZE).floor() - 1.0).max(Vec2::ZERO);
+    let last = ((view + size) / TILE_SIZE).ceil() + 1.0;
+    let mut given = Vec::new();
+    for (tile, surface) in surfaces.iter() {
+        let at = Vec2::new(tile.0 as f32, tile.1 as f32);
+        if at.x < first.x || at.y < first.y || at.x > last.x || at.y > last.y || surfaces.at_point((at + 0.5) * TILE_SIZE).is_none() {
+            continue;
+        }
+        let kind = stir(surface);
+        if roll() >= kind.rate * dt {
+            continue;
+        }
+        let spot = (at + Vec2::new(0.15 + roll() * 0.7, 0.15 + roll() * 0.7)) * TILE_SIZE;
+        let drift = kind.drift.0 + (kind.drift.1 - kind.drift.0) * Vec2::new(roll(), roll());
+        let colour = kind.colours[usize::from(roll() > 0.5)];
+        let life = kind.life * (0.7 + roll() * 0.6);
+        given.push((kind, spot, drift, colour, life));
+    }
+    for (kind, spot, drift, colour, life) in given {
+        let bit = world.spawn((
+            Stirred { drift, life, lasts: life, alpha: colour.w, twinkles: kind.twinkles },
+            Position(spot),
+            Size(Vec2::splat(kind.size)),
+            Color(Vec4::new(colour.x, colour.y, colour.z, 0.0)),
+            Sprite::whole(crate::render::TextureId::WHITE),
+            Layer(STIR_LAYER),
+        ));
+        if !kind.glows {
+            let _ = world.insert_one(bit, crate::components::Lit);
+        }
+    }
+    let mut gone = Vec::new();
+    for (entity, bit, position, color) in world.query_mut::<(Entity, &mut Stirred, &mut Position, &mut Color)>() {
+        bit.life -= dt;
+        position.0 += bit.drift * dt;
+        let through = 1.0 - (bit.life / bit.lasts).clamp(0.0, 1.0);
+        let shown = if bit.twinkles { (through * std::f32::consts::PI).sin() } else { (1.0 - through).min(through * 6.0).min(1.0) };
+        color.0.w = bit.alpha * shown;
+        if bit.life <= 0.0 {
+            gone.push(entity);
+        }
+    }
+    for entity in gone {
+        let _ = world.despawn(entity);
+    }
+    let kept = world.query_mut::<&mut StirSeed>().into_iter().next().map(|kept| kept.0 = seed).is_some();
+    if !kept {
+        world.spawn((StirSeed(seed),));
     }
 }
 
