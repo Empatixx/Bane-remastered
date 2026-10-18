@@ -7,7 +7,7 @@ export const docsContentRoute = '/llms.mdx/docs';
 
 export const gitConfig = {
   user: 'Empatixx',
-  repo: 'Bane_refactor',
+  repo: 'Bane-remastered',
   branch: 'master',
 };
 
