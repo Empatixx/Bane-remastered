@@ -71,8 +71,8 @@ dodge roll that feels right, screen shake and hit flashes where they belong.
 ## Play it
 
 ```bash
-git clone git@github.com:Empatixx/Bane_refactor.git
-cd Bane_refactor/rust
+git clone git@github.com:Empatixx/Bane-remastered.git
+cd Bane-remastered/rust
 cargo run --release
 ```
 
