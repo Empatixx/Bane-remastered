@@ -29,7 +29,7 @@ Something tore a hole in the world. Its floors never look the same twice. You ar
 through the portal. Below you wait rats, slimes, spiders and things with too many eyes. At the
 end of every floor waits a boss who used to be somebody.
 
-You start with a pistol, a shotgun and a dodge roll. Everything else you have to take.
+You start with a pistol and a dodge roll. Everything else you have to take.
 
 ## Why one more run
 

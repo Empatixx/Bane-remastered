@@ -545,6 +545,7 @@ mod tests {
     #[test]
     fn a_bought_gun_goes_straight_into_the_hand() {
         let mut world = setup();
+        crate::systems::loadout::give_a_shotgun(&mut world);
         for wallet in world.query_mut::<&mut Wallet>().with::<&Player>() {
             wallet.coins = 10;
         }

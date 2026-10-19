@@ -1,5 +1,5 @@
 {
   "title": "Enemies",
   "icon": "Skull",
-  "pages": ["index", "spawning", "ai", "critters", "slimes", "spiders", "eyes", "projectiles", "bosses"]
+  "pages": ["index", "spawning", "ai", "critters", "ice-lava", "slimes", "spiders", "eyes", "projectiles", "bosses"]
 }

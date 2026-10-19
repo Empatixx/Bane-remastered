@@ -98,7 +98,7 @@ stack modifiers:
 ## 4. Weapons
 
 `guns/` — 7 firearms, clip-based ammo with reserve pool, per-weapon fire mode.
-The player starts each run with **Pistol + Shotgun** (2 slots; expandable to 3 via the
+The player starts each run with a **Pistol** (2 slots, the second empty; expandable to 3 via the
 *Additional Gun* upgrade). Other weapons are found as drops from chests/combat.
 
 | Weapon | Damage | Fire rate | Reload | Clip | Reserve | Spread | Fire mode | Notes |

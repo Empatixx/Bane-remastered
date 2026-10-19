@@ -3,13 +3,13 @@ title: Slots and ammo
 description: How many guns the player can carry, how to switch, drop and pick them up, and how the magazine, reloading and ammo boxes work.
 ---
 
-The player carries guns in **slots**. At the start of a run there are two: Pistol and Shotgun, and the player holds the Pistol. Each gun has its own magazine and its own ammo reserve.
+The player carries guns in **slots**. At the start of a run there are two: the Pistol and an empty one, and the player holds the Pistol. Each gun has its own magazine and its own ammo reserve.
 
 ## How it works
 
 ### Slots
 
-- At the start of a run: **2 slots** (Pistol + Shotgun).
+- At the start of a run: **2 slots**, the Pistol in the first and the second empty.
 - The Scientist's *Additional Gun* upgrade adds a **3rd slot**.
 - Each gun remembers its magazine, its reserve and a reload in progress.
 
@@ -34,7 +34,7 @@ The player carries guns in **slots**. At the start of a run there are two: Pisto
 
 - A new gun has a full magazine and a full reserve.
 - The *Additional Ammo* upgrade increases the reserve of all guns by 10%.
-- You can reload only if the magazine is not full, there is something left in the reserve and no M4 burst is in progress.
+- You can reload only if the magazine is not full, there is something left in the reserve and no M4 burst is in progress. Energy guns have nothing to reload.
 - Only the gun in hand reloads. **There is no automatic reload.**
 - The HUD shows the gun icon, the ammo count in the format "magazine/reserve" (for example "7/120") and the individual rounds in the magazine as a row of icons (pistol or shotgun rounds, or in two columns for SMGs).
 
@@ -42,12 +42,34 @@ The player carries guns in **slots**. At the start of a run there are two: Pisto
 
 | Box | Refills reserves | For which guns |
 | --- | --- | --- |
-| Ammo box | 10% | all except the Shotgun |
+| Ammo box | 10% | Pistol, Luger, Revolver, M4, Uzi, Thompson, Minigun, Crossbow, Flamethrower |
 | SMG ammo box | 10% | the same as the ammo box |
 | Shotgun shell box | 25% | the Shotgun only |
+| Rifle box | 25% | the Sniper only |
+| Rocket box | 34% | the RPG only |
+| Battery cell | 25% of the battery | the energy guns (see below) |
 | Universal box | 50% | all |
 
 A box refills **every** matching gun the player carries. The reserve does not overflow the maximum. If no matching gun needs ammo, the box stays on the ground. The shop sells the universal box and it drops from the slot machine.
+
+Random drops start as coin, pistol, shotgun or SMG ammo. If the box that was rolled is useless to the guns the player holds, it turns into the box the neediest gun uses, so rifle boxes, rockets and battery cells drop only for those who carry the guns that take them.
+
+### Batteries
+
+The energy guns (Blaster, Plasma Rifle, Tesla Gun, Railgun and Arc Caster) have **no magazine, no reserve and no reload**. All their charge sits in one battery:
+
+| Gun | Battery |
+| --- | --- |
+| Blaster | 144 |
+| Plasma Rifle | 240 |
+| Tesla Gun | 80 |
+| Railgun | 24 |
+| Arc Caster | 200 |
+
+- One shot costs one charge. The HUD shows a battery that drains instead of a row of rounds.
+- A **battery cell** refills 25% of the battery, a universal box 50%.
+- The *Magazine* node of a weapon tree adds **+5 / +10 / +15** charge to a battery (and has no limit of 40).
+- The *Additional Ammo* upgrade does not change a battery, because it only grows reserves.
 
 ### Infinite ammo
 
@@ -75,11 +97,11 @@ When moving to the next floor, the player keeps all guns, including the state of
 
 - Keys 1–9 are ready, but there are at most 3 slots.
 - The SMG ammo box looks and works the same as the ordinary ammo box, so in practice ordinary ammo drops twice as often as shells.
-- The rocket launcher and energy guns have no ammo of their own. The same box refills them as the pistol.
+- The Crossbow, Minigun and Flamethrower have no ammo of their own. The same box refills them as the pistol.
 - The mouse wheel also scrolls through empty slots.
 
 ## Ideas for expansion
 
 - An upgrade for automatic reload or reloading guns "in the pocket".
-- Own ammo for energy guns (batteries) or overheating instead of a magazine.
+- Overheating for the energy guns as an alternative to the battery.
 - Dismantling an unneeded gun into ammo or coins.

@@ -1,9 +1,9 @@
 ---
 title: Projectiles
-description: The ten kinds of shots that guns in Bane fire, how fast they fly, what they pass through and what they do on a hit.
+description: The eleven kinds of shots that guns in Bane fire, how fast they fly, what they pass through and what they do on a hit.
 ---
 
-Each gun fires one kind of projectile. Most guns use a plain bullet, but special guns have their own shots: a rocket, flame, laser, plasma, spark or rail shot. Each projectile has its own light color, so it is easy to see in the dark of the dungeon.
+Each gun fires one kind of projectile. Most guns use a plain bullet, but special guns have their own shots: a rocket, flame, laser, plasma, spark, arc or rail shot. Each projectile has its own light color, so it is easy to see in the dark of the dungeon.
 
 ## How it works
 
@@ -13,7 +13,8 @@ Each gun fires one kind of projectile. Most guns use a plain bullet, but special
 - **Explosion** (rocket): on contact with anything it explodes and hurts all enemies and breakable objects in an area of about 2.75 × 2.75 tiles for **full** damage. It does not hurt the player.
 - **Splash** (plasma): after a hit, enemies and breakable objects within about 1.25 × 1.25 tiles take half the damage (min. 1). The target hit directly gets no splash.
 - **Chain lightning** (spark): after a hit, lightning jumps twice to the nearest other enemy within about 3.4 tiles, each jump for full damage.
-- **Trail**: the laser and spark leave glowing particles behind.
+- **Arc**: like chain lightning, but it jumps **four** times and every jump keeps only 75 % of the damage before it (at least 1).
+- **Trail**: the laser, spark and arc leave glowing particles behind.
 - Elongated projectiles (tracer, bolt, rocket, laser, rail) rotate in the direction of flight. Round ones do not.
 
 ## Contents
@@ -29,6 +30,7 @@ Each gun fires one kind of projectile. Most guns use a plain bullet, but special
 | Laser | Blaster | very fast (about 20 t/s) | 0 | red light trail | red | no |
 | Plasma | Plasma Rifle | medium (about 10 t/s) | 0 | splash for half damage | green | no |
 | Spark | Tesla Gun | medium (about 9.4 t/s) | 0 | lightning to 2 more targets, blue trail | blue | no |
+| Arc | Arc Caster | medium (about 10 t/s) | 0 | lightning to 4 more targets, each for 75 % of the one before, violet trail | violet | no |
 | Rail | Railgun | fastest (about 28 t/s) | unlimited | larger hit area | turquoise | no |
 
 Speed is in tiles per second (t/s). After impact, each projectile plays a short hit animation.

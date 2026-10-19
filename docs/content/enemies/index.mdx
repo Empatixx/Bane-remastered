@@ -4,7 +4,7 @@ description: An overview of all enemies and bosses in Bane – where each one ap
 ---
 
 In Bane, several enemies wait for you in every combat room, and a boss waits at the end of every
-floor. The game has **23 kinds** in total: 13 regular enemies, 3 helpers that bosses summon, and 7
+floor. The game has **31 kinds** in total: 20 regular enemies, 4 helpers that bosses and slimes summon, and 7
 bosses. Most enemies run straight at you and hurt you on touch. Some shoot, jump or leave poison
 behind.
 
@@ -59,11 +59,11 @@ floor (+12 % HP and +8 % damage per floor); summoned helpers do not.
 
 | Enemy | Kind | HP | Damage | Speed | Floors | Theme | Page |
 |---|---|--:|--:|---|---|---|---|
-| Rat | regular | 12 | 2 | 45 % | all | all | [Basic](/docs/enemies/critters) |
+| Rat | regular | 12 | 2 | 45 % | all | all but Ice and Lava | [Basic](/docs/enemies/critters) |
 | Snake | regular | 8 | 3 | 42 % | all | all | [Basic](/docs/enemies/critters) |
-| Bat | regular | 9 | 2 | 77 % | all | all | [Basic](/docs/enemies/critters) |
+| Bat | regular | 9 | 2 | 77 % | all | all but Ice and Lava | [Basic](/docs/enemies/critters) |
 | Ghost | regular | 7 | 2 | 32 % (dash 153 %) | all | all | [Basic](/docs/enemies/critters) |
-| Slime | regular | 9 | 1 | 7 % | all | all | [Slimes](/docs/enemies/slimes) |
+| Slime | regular | 9 | 1 | 7 % | all | all but Ice and Lava | [Slimes](/docs/enemies/slimes) |
 | Red slime | regular | 9 | 1 | 7 % | all | all | [Slimes](/docs/enemies/slimes) |
 | Demon eye | regular | 11 | 3 | 64 % | 3+ | all | [Eyes](/docs/enemies/eyes) |
 | Eye watcher | regular | 4 | 1 | stationary | 3+ | all | [Eyes](/docs/enemies/eyes) |
@@ -72,7 +72,15 @@ floor (+12 % HP and +8 % damage per floor); summoned helpers do not.
 | Purple spiderling | regular | 3 | 1 | 55 % | all | Spider | [Spiders](/docs/enemies/spiders) |
 | Bloated spider | regular | 5 | 1 | 41 % | all | Spider | [Spiders](/docs/enemies/spiders) |
 | Stilt spider | regular | 7 | 1 | 15 % + jumps | all | Spider | [Spiders](/docs/enemies/spiders) |
+| Frost rat | regular | 14 | 2 | 45 % | all | Ice | [Ice and Lava](/docs/enemies/ice-lava) |
+| Icicle bat | regular | 10 | 2 | 77 % | all | Ice | [Ice and Lava](/docs/enemies/ice-lava) |
+| Snow slime | regular | 11 | 1 | 7 % | all | Ice | [Ice and Lava](/docs/enemies/ice-lava) |
+| Ember rat | regular | 12 | 2 | about 42 % | all | Lava | [Ice and Lava](/docs/enemies/ice-lava) |
+| Flame bat | regular | 9 | 2 | about 64 % | all | Lava | [Ice and Lava](/docs/enemies/ice-lava) |
+| Magma slime | regular | 12 | 1 | 7 % | all | Lava | [Ice and Lava](/docs/enemies/ice-lava) |
+| Lava worm | regular | 20 | 2 | stationary | all | Lava | [Ice and Lava](/docs/enemies/ice-lava) |
 | Saliva slime | Mimic's helper | 5 | 1 | 34 % (only while jumping) | – | – | [Slimes](/docs/enemies/slimes) |
+| Snow slimeling | Snow slime's helper | 4 | 1 | slow | - | Ice | [Ice and Lava](/docs/enemies/ice-lava) |
 | Mini golem | Golem's helper | 6 | 1 | 47 % | – | – | [Stone golem](/docs/enemies/bosses/golem) |
 | Argus eye | Argus's helper | 4 | 1 | orbits the boss | – | – | [Argus](/docs/enemies/bosses/argus) |
 | Spider king | boss | 75 | 2 | 69 % | all | Spider | [Spider king](/docs/enemies/bosses/spider-king) |
@@ -83,7 +91,7 @@ floor (+12 % HP and +8 % damage per floor); summoned helpers do not.
 | Hellhound | boss | 110 | 2 | 59 % | all | Lava | [Hellhound](/docs/enemies/bosses/hellhound) |
 | Mimic | boss | 115 | 2 | 32 % | all | Temple | [Mimic](/docs/enemies/bosses/mimic) |
 
-The Sewer ogre also summons Rats as helpers.
+The Sewer ogre also summons Rats as helpers, and a dying Snow slime breaks into two Snow slimelings.
 
 <Callout type="info">
 The floor themes are shuffled randomly in every run, so spiders (the Spider theme) can appear on any
@@ -127,6 +135,5 @@ breakdown is in [Spawning and enemy strength](/docs/enemies/spawning).
   with the floor.
 - **The final boss "The Heart"** on floor 5 (Temple theme), following the game's story – today floor 5
   has an ordinary boss from the pool.
-- **Themed enemies**: of the 13 regular enemies, 5 are tied to the Spider theme, and the other themes
-  have no enemies of their own. Ideas include an ice slime that leaves ice patches, a lava bat with a
-  fiery trail, and so on.
+- **More themed enemies**: Ice and Lava now have their own rat, bat and slime (and Lava a worm), but the Stone,
+  Sewer, Moss and Temple themes still have no enemies of their own, and Snake and Ghost have no themed versions.

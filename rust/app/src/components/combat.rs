@@ -312,13 +312,21 @@ impl Loadout {
         Self {
             slots: vec![
                 Some(Weapon::new(GunKind::Pistol)),
-                Some(Weapon::new(GunKind::Shotgun)),
+                None,
             ],
             current: 0,
             ammo_scale: 1.0,
             mods: WeaponMods::default(),
             only: None,
         }
+    }
+
+    /// The starting loadout with a shotgun in the second slot, for tests that need full slots.
+    #[cfg(test)]
+    pub(crate) fn with_shotgun() -> Self {
+        let mut loadout = Self::starting();
+        loadout.slots[1] = Some(Weapon::new(GunKind::Shotgun));
+        loadout
     }
 
     pub(crate) fn allows(&self, kind: GunKind) -> bool {
@@ -436,16 +444,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_loadout_starts_with_a_pistol_and_a_shotgun() {
+    fn the_loadout_starts_with_only_a_pistol() {
         let loadout = Loadout::starting();
         assert_eq!(loadout.current().map(|w| w.kind), Some(GunKind::Pistol));
-        assert!(loadout.has(GunKind::Shotgun));
+        assert!(!loadout.has(GunKind::Shotgun));
         assert!(!loadout.has(GunKind::Uzi));
     }
 
     #[test]
     fn switching_slots_ignores_the_same_or_missing_slot() {
-        let mut loadout = Loadout::starting();
+        let mut loadout = Loadout::with_shotgun();
         assert!(!loadout.switch_to(0));
         assert!(!loadout.switch_to(5));
         assert!(loadout.switch_to(1));

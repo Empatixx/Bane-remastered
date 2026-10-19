@@ -1029,6 +1029,7 @@ mod tests {
     #[test]
     fn a_gun_keeps_its_own_clip_when_you_switch_away_and_back() {
         let (mut world, mut physics) = setup();
+        crate::systems::loadout::give_a_shotgun(&mut world);
         let input = clicked_at(Vec2::new(500.0, 100.0));
         fire(&mut world, &mut physics, &input, Vec2::ZERO, 0.0);
         for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {

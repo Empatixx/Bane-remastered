@@ -359,6 +359,7 @@ mod tests {
         collect_items(&mut world, &mut Vec::new());
         assert_eq!(world.query::<&Pickup>().iter().count(), 1);
 
+        loadout::give_a_shotgun(&mut world);
         for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
             loadout.switch_to(1);
             if let Some(weapon) = loadout.current_mut() {

@@ -1,0 +1,92 @@
+---
+title: Ice and Lava creatures
+description: Frost rat, Icicle bat, Snow slime, Ember rat, Flame bat, Magma slime and Lava worm - the enemies that replace the plain rat, bat and slime in the Ice and Lava themes.
+---
+
+The Ice and Lava themes have enemies of their own. In these two themes the plain Rat, Bat and Slime
+do not appear at all: each of them is replaced by a themed version, and the Lava theme adds a worm
+on top. Snake, Ghost, Red slime, Demon eye and Eye watcher still come in every theme.
+
+## Stats
+
+Base values - they grow with every floor (see
+[Spawning and enemy strength](/docs/enemies/spawning#strength-by-floor)).
+
+| | Theme | Replaces | HP | Contact damage | Speed | Floors | Ability |
+|---|---|---|--:|--:|--:|---|---|
+| Frost rat | Ice | Rat | 14 | 2 | 45 % | all | its bite chills |
+| Icicle bat | Ice | Bat | 10 | 2 | 77 % | all | drops icicles on you |
+| Snow slime | Ice | Slime | 11 | 1 | 7 % | all | throws snowballs, breaks into slimelings |
+| Snow slimeling | Ice | Snow slime's helper | 4 | 1 | slow | - | chills on touch |
+| Ember rat | Lava | Rat | 12 | 2 | about 42 % | all | flares up and rushes you when hit |
+| Flame bat | Lava | Bat | 9 | 2 | about 64 % | all | circles, then swoops through you |
+| Magma slime | Lava | Slime | 12 | 1 | 7 % | all | switches between molten and crusted, lobs magma |
+| Lava worm | Lava | - | 20 | 2 | stationary | all | digs in and out, spits magma |
+
+## How it works
+
+### Chill (Ice)
+
+A hit from a Frost rat, a Snow slime snowball or a Snow slimeling **chills** you: for 2.5 s you walk
+at half speed. If you are chilled **3 times in a row**, you are **frozen** for 1 s and cannot move or
+shoot. A frozen player cannot move or shoot, so avoid the third chill.
+
+### Frost rat
+
+A Rat with a cold bite. It runs straight at you and every bite that lands chills you.
+
+### Icicle bat
+
+A Bat that also rains icicles. When you are within about 6.5 tiles of it, it drops an icicle **every
+3.5 s** on the spot where you stand. A shadow shows on the floor for 0.9 s, then the icicle lands and
+hurts for 1 damage in a small area. Move out of the shadow, or use dodge.
+
+### Snow slime
+
+- Like the Slime it crawls slowly and shoots, but its volley is made of **snowballs** that chill.
+- When it dies, it **breaks into 2 Snow slimelings**: small, 4 HP, quick to kill, and they chill on touch.
+
+### Ember rat
+
+A slow Rat until it is hit. The first hit makes it **flare up**: it burns brighter and runs
+**2.4 times faster**. Kill it in one blow or keep your distance.
+
+### Flame bat
+
+- It circles you for about 3 s, then flares up (0.5 s wind-up) and **swoops** through the place where
+  you stand (0.55 s dive, 3.4 times faster than normal).
+- When it dies, it leaves a pile of **ash**. The ash **rises again** after 2 s as a new Flame bat unless
+  you shoot it first (the ash has 3 HP).
+
+### Magma slime
+
+- It takes turns every 3 s between **molten** and **crusted**.
+- Molten: fast and open to hits.
+- Crusted: slowed to 40 % and it **shrugs off your hits**, so do not waste ammo on it.
+- Every 2.8 s it lobs a ball of magma at you. A shadow shows where it will land, the flight takes 1 s,
+  and the blast does 1 damage in a small area.
+
+### Lava worm
+
+- It shows a hole in the floor (0.7 s), rises, spits **3 magma shots** (one every 0.7 s), sinks and
+  comes up somewhere else, 3 to 5 tiles from you.
+- It can only be hurt **while it is up**. While it is underground it cannot be hit.
+
+## Tips and connections
+
+- Every attack that lands from above (icicle, magma ball) shows a shadow first. Dodge protects against
+  them - see [Player](/docs/player).
+- Fight the Lava worm while it is up: save a reload for the moment it rises.
+- Ice themes end with the boss [Argus](/docs/enemies/bosses/argus), Lava themes with the
+  [Hellhound](/docs/enemies/bosses/hellhound).
+- Themes and their hazards: [Dungeon themes](/docs/dungeon/themes).
+
+## Known inconsistencies
+
+- The missions "kill N rats / bats / slimes" count only the plain Rat, Bat and Slime, so in Ice and Lava
+  rooms the themed versions do not count toward them.
+
+## Ideas for expansion
+
+- A snow variant of the Snake or the Ghost, so that no plain animal is left in these themes.
+- A lava version of the Red slime that leaves a puddle of fire.

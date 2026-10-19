@@ -292,6 +292,14 @@ pub(crate) fn open_chests(
     }
 }
 
+/// Gives the player the second gun the run no longer starts with, for tests that need full slots.
+#[cfg(test)]
+pub(crate) fn give_a_shotgun(world: &mut World) {
+    for loadout in world.query_mut::<&mut Loadout>().with::<&Player>() {
+        *loadout = Loadout::with_shotgun();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::components::{Burst, Velocity};
@@ -328,6 +336,7 @@ mod tests {
     #[test]
     fn number_keys_and_the_wheel_switch_slots() {
         let (mut world, _) = setup();
+        give_a_shotgun(&mut world);
         let mut sounds = Vec::new();
         let mut input = Input::default();
         input.press(KeyCode::Digit2);
@@ -380,6 +389,7 @@ mod tests {
     #[test]
     fn picking_up_with_full_slots_drops_the_current_gun() {
         let (mut world, textures) = setup();
+        give_a_shotgun(&mut world);
         let drop = prefabs::gun_drop(
             &mut world,
             Weapon::new(GunKind::Uzi),
@@ -427,7 +437,7 @@ mod tests {
             .iter()
             .map(|drop| drop.weapon.kind)
             .collect();
-        assert_eq!(kinds, vec![GunKind::Luger]);
+        assert_eq!(kinds, vec![GunKind::Shotgun]);
     }
 
     #[test]
@@ -534,7 +544,7 @@ mod tests {
 
     #[test]
     fn pistol_ammo_does_not_feed_the_shotgun_and_universal_feeds_everything() {
-        let mut loadout = Loadout::starting();
+        let mut loadout = Loadout::with_shotgun();
         for weapon in loadout.slots.iter_mut().flatten() {
             weapon.ammo = 0;
         }
@@ -588,7 +598,7 @@ mod tests {
 
     #[test]
     fn picking_up_with_full_slots_swaps_out_the_current_gun() {
-        let mut loadout = Loadout::starting();
+        let mut loadout = Loadout::with_shotgun();
         loadout.switch_to(1);
         let displaced = add_gun(&mut loadout, Weapon::new(GunKind::M4));
         assert_eq!(displaced.map(|w| w.kind), Some(GunKind::Shotgun));

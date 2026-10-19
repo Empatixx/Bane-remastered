@@ -1,14 +1,14 @@
 ---
 title: Guns
-description: All 16 guns in Bane, how they shoot, where they come from and how they are upgraded for good.
+description: All 17 guns in Bane, how they shoot, where they come from and how they are upgraded for good.
 ---
 
-Bane is a top-down shooter, so the gun is the main thing the player holds. There are **16 guns** in the game, from the starting pistol through the SMGs and the shotgun to the rocket launcher, flamethrower, tesla gun and railgun. Each gun fires one of **10 projectile types**, has its own permanent **upgrade tree**, and ends that tree with one of **6 mutations**.
+Bane is a top-down shooter, so the gun is the main thing the player holds. There are **17 guns** in the game, from the starting pistol through the SMGs and the shotgun to the rocket launcher, flamethrower, tesla gun, railgun and arc caster. Each gun fires one of **11 projectile types**, has its own permanent **upgrade tree**, and ends that tree with one of **6 mutations**.
 
 ## How it works
 
 1. **In the lobby**, the player uses gold from earlier runs to buy upgrades for specific guns at the [weapon table](/docs/guns/weapon-table). These last forever.
-2. **At the start of a run**, the player always gets a **Pistol** and a **Shotgun**. Tree upgrades apply right away, and so do the Scientist upgrades (a third gun slot, a bigger ammo reserve, higher damage and crit chance).
+2. **At the start of a run**, the player always gets a **Pistol** and an empty second slot. Tree upgrades apply right away, and so do the Scientist upgrades (a third gun slot, a bigger ammo reserve, higher damage and crit chance).
 3. **During a run**, the player aims with the mouse, shoots with the left button, reloads with R, switches guns with keys 1-9 or the scroll wheel, drops with Q and picks up with E.
 4. **New guns** drop from gun chests (the treasure room and a cleared ambush room), can be bought in the shop and won at the slot machine. It is always a gun the player does not have right now, with a full magazine and all purchased upgrades.
 5. **Between floors**, the player keeps the whole loadout, including magazine states. When the run ends, the loadout is lost. Only the upgrade trees are permanent.
@@ -29,10 +29,13 @@ Bane is a top-down shooter, so the gun is the main thing the player holds. There
 | [Minigun](/docs/guns/minigun) | 1 | 16.7/s | automatic | 40 / 400 | 2.2 s | tracer | 16.7 |
 | [Crossbow](/docs/guns/crossbow) | 5–7 | 1.7/s | single shot | 3 / 45 | 1.0 s | bolt (pierce 1) | 10 |
 | [Flamethrower](/docs/guns/flamethrower) | 1 | 14.3/s | automatic | 40 / 400 | 1.5 s | flame (passes through everything) | 14.3 |
-| [Blaster](/docs/guns/blaster) | 2–3 | 4.5/s | single shot | 12 / 144 | 1.0 s | laser | 11.4 |
-| [Plasma Rifle](/docs/guns/plasma-rifle) | 2 | 6.25/s | automatic | 24 / 240 | 1.4 s | plasma (splashes) | 12.5 |
-| [Tesla Gun](/docs/guns/tesla-gun) | 3–4 | 1.8/s | single shot | 8 / 80 | 1.2 s | spark (2 jumps) | 6.4 |
-| [Railgun](/docs/guns/railgun) | 14–19 | 0.6/s | single shot | 3 / 24 | 2.0 s | rail (passes through everything) | 10.3 |
+| [Blaster](/docs/guns/blaster) | 2–3 | 4.5/s | single shot | battery 144 | none | laser | 11.4 |
+| [Plasma Rifle](/docs/guns/plasma-rifle) | 2 | 6.25/s | automatic | battery 240 | none | plasma (splashes) | 12.5 |
+| [Tesla Gun](/docs/guns/tesla-gun) | 3–4 | 1.8/s | single shot | battery 80 | none | spark (2 jumps) | 6.4 |
+| [Railgun](/docs/guns/railgun) | 14–19 | 0.6/s | single shot | battery 24 | none | rail (passes through everything) | 10.3 |
+| [Arc Caster](/docs/guns/arc-caster) | 2 | 4.5/s | automatic | battery 200 | none | arc (4 jumps, 75 % each) | 9.1 |
+
+**Battery** guns (Blaster, Plasma Rifle, Tesla Gun, Railgun, Arc Caster) have no reserve and never reload: one shot costs one charge, and battery cells refill them (see [Slots and ammo](/docs/guns/loadout#batteries)).
 
 **DPS** = average damage to one target per second of continuous fire, without reloading, upgrades and bonus effects (pierce, splash, lightning, explosion). The damage is listed as it really lands in the game. The upper limit shown by the weapon table never lands (see [Shooting](/docs/guns/shooting)).
 
@@ -56,12 +59,12 @@ Bane is a top-down shooter, so the gun is the main thing the player holds. There
 
 ## Known inconsistencies
 
-- Pistol and Luger (DPS 6 and 4) are almost useless next to the starting **Shotgun** (DPS 20).
-- There is no **rarity or gun progression**. All 14 non-starting guns drop equally often from floor 1, so the Railgun can drop in the very first chest.
+- Pistol and Luger (DPS 6 and 4) are almost useless next to the **Shotgun** (DPS 20), so a Shotgun found in a chest replaces the starting Pistol right away.
+- There is no **rarity or gun progression**. All 16 guns other than the starting Pistol drop equally often from floor 1, so the Railgun can drop in the very first chest.
 - Hits do **not push enemies back** (no knockback).
 - The gun is **not visible in the player's hand**. Its image is only in the HUD and on the ground, and there is no muzzle flash either.
-- There are only two kinds of ammo: shotgun shells for the Shotgun and "bullets" for everything else. The rocket launcher, flamethrower, laser and railgun are all refilled by the same box as the pistol.
-- The older design document lists 7 guns and a Shotgun with damage 222–333. The game has 16 guns and the Shotgun does 2–3 per pellet.
+- Ammo comes in five kinds (bullets, shotgun shells, rifle rounds for the Sniper, rockets for the RPG and battery cells for the energy guns), but the Crossbow, Minigun and Flamethrower still share the ordinary bullet box with the pistol.
+- The older design document lists 7 guns and a Shotgun with damage 222–333. The game has 17 guns and the Shotgun does 2–3 per pellet.
 
 ## Ideas for expansion
 
