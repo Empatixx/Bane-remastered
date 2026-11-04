@@ -71,6 +71,12 @@ pub(crate) enum DecorKind {
         variant: usize,
     },
     FrozenSkull,
+    /// A drain grate in the sewer's floor; something with red eyes lives under it.
+    Grate,
+    /// A crack in the lava floor's ground, glowing with heat; one of four kinds.
+    Crack {
+        variant: usize,
+    },
     Mushrooms {
         variant: usize,
     },
@@ -583,12 +589,14 @@ pub(crate) fn plan(
                 }
             }
         }
-        // Now and then (not in every room) shackles in a wall, a bowl of fire by a wall, or a
-        // piece of a statue.
-        let rare: [ThemedSlot; 3] = [
+        // Now and then (not in every room) shackles in a wall, a bowl of fire by a wall, a
+        // piece of a statue, a drain grate or a glowing crack in the floor.
+        let rare: [ThemedSlot; 5] = [
             (mix.shackles_percent, &top_faces, 2, |variant| DecorKind::Shackles { variant }),
             (mix.fire_bowl_percent, &hugging, 1, |_| DecorKind::FireBowl),
             (mix.statue_percent, &open_floor, 3, |variant| DecorKind::StatuePiece { variant }),
+            (mix.grate_percent, &open_floor, 1, |_| DecorKind::Grate),
+            (mix.crack_percent, &open_floor, 4, |variant| DecorKind::Crack { variant }),
         ];
         for (percent, spots, variants, make) in rare {
             if percent == 0 || rng.below(100) >= percent {
@@ -914,6 +922,8 @@ mod tests {
                         | DecorKind::OffbeatSpike
                         | DecorKind::IceCrystals { .. }
                         | DecorKind::FrozenSkull
+                        | DecorKind::Grate
+                        | DecorKind::Crack { .. }
                         | DecorKind::Mushrooms { .. }
                         | DecorKind::Cocoon { .. }
                         | DecorKind::Eggs { .. }

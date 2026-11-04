@@ -327,6 +327,16 @@ pub(crate) fn decor(
             textures,
         ),
         DecorKind::FrozenSkull => prop(world, Prop::FrozenSkull, top_left, Look::DEFAULT, textures),
+        DecorKind::Grate => prop(world, Prop::SewerGrate, top_left, Look::DEFAULT, textures),
+        DecorKind::Crack { variant } => {
+            let crack = prop(world, Prop::FloorCrack, top_left, Look::row(variant, false), textures);
+            // Each crack glows in its own time.
+            if let Ok(mut animation) = world.get::<&mut Animation>(crack) {
+                animation.advance((top_left.x + top_left.y * 3.0) * 0.007);
+            }
+            let _ = world.insert_one(crack, Light::rgb(Vec2::ZERO, 255.0, 110.0, 30.0, 40.0, 0.5));
+            crack
+        }
         DecorKind::Mushrooms { variant } => {
             let entity = prop(
                 world,

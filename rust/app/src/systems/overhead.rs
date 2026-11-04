@@ -7,7 +7,9 @@ use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::{Textures, tex};
-use crate::components::{Bullet, Color, Layer, Light, Lit, Player, Position, Size, Sprite};
+use crate::components::{
+    Animation, Bullet, Clip, Color, Layer, Light, Lit, Player, Position, Size, Sprite,
+};
 use crate::dungeon::{Dungeon, HangingKind, Overhead, OverheadKind};
 use crate::tilemap::TILE_SIZE;
 
@@ -59,12 +61,18 @@ fn spawn_across(world: &mut World, span: &Overhead, textures: &Textures) {
     let min = Vec2::new(left as f32 * TILE_SIZE, row_y - LIFT - PIECE.y / 2.0);
     let max = Vec2::new((right + 1) as f32 * TILE_SIZE, row_y - LIFT + PIECE.y / 2.0);
     let middle_column = (left + right) / 2;
+    // Every other long run of pipes has a valve in its middle, puffing steam now and then.
+    let valve = span.kind == OverheadKind::Pipes
+        && count >= VALVE_RUN
+        && (left + row).is_multiple_of(2);
     for (index, column) in (left..=right).enumerate() {
         let cell = if column == left {
             LEFT_END
         } else if column == right {
             RIGHT_END
         } else if span.kind == OverheadKind::Arch && column == middle_column {
+            CENTRE
+        } else if valve && column == middle_column {
             CENTRE
         } else {
             MIDDLE
@@ -73,9 +81,111 @@ fn spawn_across(world: &mut World, span: &Overhead, textures: &Textures) {
         let t = index as f32 / (count - 1) as f32;
         let sag = span.kind.sag() * (1.0 - (2.0 * t - 1.0).powi(2));
         let anchor = Vec2::new((column as f32 + 0.5) * TILE_SIZE, row_y - LIFT + sag);
+        if span.kind == OverheadKind::Trough {
+            spawn_trough_piece(world, anchor, cell, min, max, textures);
+            if column == middle_column {
+                spawn_drip(world, anchor, (left * 5 + row * 7) as f32, textures);
+            }
+            continue;
+        }
         let sprite = Sprite::cell(texture, cell, span.kind.row(), COLUMNS, ROWS);
         spawn_piece(world, anchor, PIECE, sprite, min, max);
+        if valve && column == middle_column {
+            spawn_steam(world, anchor, (left * 7 + row * 3) as f32, min, max, textures);
+        }
     }
+}
+
+/// A run of pipes at least this many tiles long may have a valve.
+const VALVE_RUN: usize = 5;
+/// The steam's sheet (tools/make_sewer_props.py): a timeline of 24 frames, mostly nothing, then a
+/// puff, 24x16 pixels each at the tiles' pixel scale.
+const STEAM_FRAMES: usize = 24;
+const STEAM_FRAME_TIME: f32 = 0.15;
+const STEAM_SIZE: Vec2 = Vec2::new(TILE_SIZE * 1.5, TILE_SIZE);
+/// Where the puff starts, from the valve piece's middle: out of the right side of the valve's
+/// body, level with the pipe.
+const STEAM_OFFSET: Vec2 = Vec2::new(16.0 + TILE_SIZE * 0.75, -16.0);
+
+/// The steam puffing out of a valve now and then, fading with the pipes when the hero is under
+/// them; each valve keeps its own time.
+fn spawn_steam(world: &mut World, anchor: Vec2, phase: f32, min: Vec2, max: Vec2, textures: &Textures) {
+    let clip = Clip {
+        row: 0,
+        frames: STEAM_FRAMES,
+        frame_time: STEAM_FRAME_TIME,
+        looping: true,
+        flipped: false,
+    };
+    let mut animation = Animation::new(STEAM_FRAMES, 1, clip);
+    animation.advance(phase * STEAM_FRAME_TIME);
+    world.spawn((
+        OverheadPiece { min, max, alpha: 1.0 },
+        Position(anchor + STEAM_OFFSET),
+        Size(STEAM_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::VALVE_STEAM), 0, 0, STEAM_FRAMES, 1),
+        animation,
+        Layer(LAYER + 1),
+        Lit,
+    ));
+}
+
+/// The trough's sheet (tools/make_lava_props.py): a row per piece (the left end, the middle, the
+/// right end), four frames of the metal flowing along it.
+const TROUGH_FRAMES: usize = 4;
+const TROUGH_FRAME_TIME: f32 = 0.12;
+const TROUGH_GLOW: (f32, f32, f32) = (255.0, 130.0, 40.0);
+/// The drop's sheet: a timeline of 24 frames, mostly nothing, then a drop of metal forming
+/// under the trough, falling and splashing in the lava; 8x30 pixels at the tiles' scale.
+const METAL_DRIP_FRAMES: usize = 24;
+const METAL_DRIP_FRAME_TIME: f32 = 0.12;
+const METAL_DRIP_SIZE: Vec2 = Vec2::new(32.0, 120.0);
+/// From the trough piece's middle down to the top of the drop's picture: the trough's bottom.
+const METAL_DRIP_FROM: f32 = 22.0;
+
+/// One piece of a trough of molten metal: the metal flows along it and it glows on the room.
+fn spawn_trough_piece(world: &mut World, anchor: Vec2, cell: usize, min: Vec2, max: Vec2, textures: &Textures) {
+    let row = match cell {
+        LEFT_END => 0,
+        RIGHT_END => 2,
+        _ => 1,
+    };
+    let clip = Clip {
+        row,
+        frames: TROUGH_FRAMES,
+        frame_time: TROUGH_FRAME_TIME,
+        looping: true,
+        flipped: false,
+    };
+    let sprite = Sprite::cell(textures.get(tex::LAVA_TROUGH), 0, row, TROUGH_FRAMES, 3);
+    let piece = spawn_piece(world, anchor, PIECE, sprite, min, max);
+    let (red, green, blue) = TROUGH_GLOW;
+    let _ = world.insert(
+        piece,
+        (Animation::new(TROUGH_FRAMES, 3, clip), Light::rgb(Vec2::ZERO, red, green, blue, 70.0, 0.6)),
+    );
+}
+
+/// Now and then a drop of metal falls from the trough into the lava below.
+fn spawn_drip(world: &mut World, anchor: Vec2, phase: f32, textures: &Textures) {
+    let clip = Clip {
+        row: 0,
+        frames: METAL_DRIP_FRAMES,
+        frame_time: METAL_DRIP_FRAME_TIME,
+        looping: true,
+        flipped: false,
+    };
+    let mut animation = Animation::new(METAL_DRIP_FRAMES, 1, clip);
+    animation.advance(phase * METAL_DRIP_FRAME_TIME);
+    world.spawn((
+        Position(anchor + Vec2::new(0.0, METAL_DRIP_FROM + METAL_DRIP_SIZE.y / 2.0)),
+        Size(METAL_DRIP_SIZE),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::LAVA_DRIP), 0, 0, METAL_DRIP_FRAMES, 1),
+        animation,
+        Layer(LAYER - 1),
+    ));
 }
 
 /// How far an upright span's upper end reaches up into the block above, in tiles.
@@ -111,8 +221,8 @@ fn spawn_upright(world: &mut World, span: &Overhead, textures: &Textures) {
 }
 
 /// One piece of a span and its shadow on the floor.
-fn spawn_piece(world: &mut World, anchor: Vec2, size: Vec2, sprite: Sprite, min: Vec2, max: Vec2) {
-    world.spawn((
+fn spawn_piece(world: &mut World, anchor: Vec2, size: Vec2, sprite: Sprite, min: Vec2, max: Vec2) -> Entity {
+    let piece = world.spawn((
         OverheadPiece {
             min,
             max,
@@ -132,6 +242,7 @@ fn spawn_piece(world: &mut World, anchor: Vec2, size: Vec2, sprite: Sprite, min:
         sprite,
         Layer(SHADOW_LAYER),
     ));
+    piece
 }
 
 pub(crate) fn tick_overheads(world: &mut World, dt: f32) {

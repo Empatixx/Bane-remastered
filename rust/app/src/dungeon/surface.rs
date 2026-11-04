@@ -226,6 +226,9 @@ fn blocked_tiles(room: &DungeonRoom) -> HashSet<(usize, usize)> {
                 blocked.extend(patch_tiles(decor.tile));
                 blocked.insert((decor.tile.0, decor.tile.1.saturating_sub(1)));
             }
+            // A drain grate or a crack does not keep the liquid off: where the liquid comes, it
+            // goes instead (see `build`), so no dry notch is left round it.
+            DecorKind::Grate | DecorKind::Crack { .. } => {}
             _ => {
                 blocked.insert(decor.tile);
             }

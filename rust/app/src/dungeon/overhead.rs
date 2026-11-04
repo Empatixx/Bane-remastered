@@ -34,6 +34,8 @@ pub(crate) enum OverheadKind {
     Strands,
     /// A garland of red and gold pennants on a cord.
     Pennants,
+    /// A trough of molten metal across a gap over the lava; drawn from its own sheet, flowing.
+    Trough,
 }
 
 impl OverheadKind {
@@ -50,6 +52,8 @@ impl OverheadKind {
             Self::Vines => 7,
             Self::Strands => 8,
             Self::Pennants => 9,
+            // Drawn from lava_trough.tga instead; the walkway's row stands in for it elsewhere.
+            Self::Trough => 6,
         }
     }
 
@@ -207,14 +211,52 @@ pub(super) fn on_decor(room: &DungeonRoom, span: &Overhead) -> bool {
     room.decor.iter().any(|decor| span.near(decor.tile, 1))
 }
 
-pub(crate) fn plan(grid: &TileGrid, room: &DungeonRoom, theme: Theme, rng: &mut Rng) -> Vec<Overhead> {
-    if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush)
-        || rng.below(100) >= ROOM_CHANCE_PERCENT
-    {
+pub(crate) fn plan(
+    grid: &TileGrid,
+    room: &DungeonRoom,
+    theme: Theme,
+    surfaces: &Surfaces,
+    rng: &mut Rng,
+) -> Vec<Overhead> {
+    if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
         return Vec::new();
     }
-    let mut open = spans(grid, room);
-    let kinds = theme.overhead_kinds();
+    let open = spans(grid, room);
+    // In the sewer the pipes run over the water: a room with a gap over its water (clear of the
+    // wall decor) always gets pipes there, and nothing else across it.
+    // On the lava floor a trough of molten metal lies across a gap over the lava the same way
+    // (only across: it is drawn lying on its side).
+    let over_liquid_kind = match theme {
+        Theme::Sewer => Some(OverheadKind::Pipes),
+        Theme::Lava => Some(OverheadKind::Trough),
+        _ => None,
+    };
+    if let Some(kind) = over_liquid_kind {
+        let wet: Vec<Gap> = open
+            .iter()
+            .copied()
+            .filter(|gap| over_liquid(surfaces, gap) && !(kind == OverheadKind::Trough && gap.0))
+            .collect();
+        let placed = place(room, wet, &[kind], rng);
+        if !placed.is_empty() {
+            return placed;
+        }
+    }
+    if rng.below(100) >= ROOM_CHANCE_PERCENT {
+        return Vec::new();
+    }
+    place(room, open, theme.overhead_kinds(), rng)
+}
+
+/// At least half of the gap's floor is liquid.
+fn over_liquid(surfaces: &Surfaces, &(upright, first, last): &Gap) -> bool {
+    let span = Overhead { kind: OverheadKind::Pipes, upright, first, last };
+    let wet = span.tiles().filter(|&tile| surfaces.at(tile).is_some()).count();
+    wet * 2 >= span.length()
+}
+
+/// Picks up to `MAX_PER_ROOM` of the gaps at random, apart from each other and off the decor.
+fn place(room: &DungeonRoom, mut open: Vec<Gap>, kinds: &[OverheadKind], rng: &mut Rng) -> Vec<Overhead> {
     let mut planned: Vec<Overhead> = Vec::new();
     while planned.len() < MAX_PER_ROOM && !open.is_empty() {
         let (upright, first, last) = open.swap_remove(rng.below(open.len()));
@@ -466,6 +508,51 @@ mod tests {
     ];
 
     #[test]
+    fn sewer_pipes_run_over_the_water_wherever_a_gap_crosses_it() {
+        let (mut wet_rooms, mut over_water) = (0, 0);
+        for seed in 0..40 {
+            let dungeon = Dungeon::generate_themed(&mut Rng::new(seed), Theme::Sewer).expect("a dungeon");
+            for room in &dungeon.rooms {
+                if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
+                    continue;
+                }
+                let wet_gap = spans(&dungeon.grid, room).iter().any(|&(upright, first, last)| {
+                    let span = Overhead { kind: OverheadKind::Pipes, upright, first, last };
+                    over_liquid(&dungeon.surfaces, &(upright, first, last)) && !on_decor(room, &span)
+                });
+                if !wet_gap {
+                    continue;
+                }
+                wet_rooms += 1;
+                assert!(!room.overheads.is_empty(), "a room with water under a gap has pipes");
+                for span in &room.overheads {
+                    assert_eq!(span.kind, OverheadKind::Pipes);
+                    let gap = (span.upright, span.first, span.last);
+                    assert!(over_liquid(&dungeon.surfaces, &gap), "{span:?}");
+                    over_water += 1;
+                }
+            }
+        }
+        assert!(wet_rooms > 5, "{wet_rooms}");
+    }
+
+    #[test]
+    fn lava_troughs_lie_across_gaps_over_the_lava() {
+        let mut troughs = 0;
+        for seed in 0..40 {
+            let dungeon = Dungeon::generate_themed(&mut Rng::new(seed), Theme::Lava).expect("a dungeon");
+            for span in dungeon.rooms.iter().flat_map(|room| &room.overheads) {
+                if span.kind == OverheadKind::Trough {
+                    troughs += 1;
+                    assert!(!span.upright, "{span:?}");
+                    assert!(over_liquid(&dungeon.surfaces, &(span.upright, span.first, span.last)), "{span:?}");
+                }
+            }
+        }
+        assert!(troughs > 5, "{troughs}");
+    }
+
+    #[test]
     fn spans_hang_between_two_walls_over_open_floor_in_combat_rooms_only() {
         let (mut total, mut upright) = (0, 0);
         for theme in ALL {
@@ -489,7 +576,8 @@ mod tests {
                         assert!(wall(before) && wall(after));
                         assert!(span.tiles().all(|tile| !wall(tile)));
                         assert!((MIN_SPAN..=MAX_SPAN).contains(&span.length()));
-                        assert!(theme.overhead_kinds().contains(&span.kind));
+                        // Troughs over the lava are the lava floor's own, beside its usual kinds.
+                        assert!(theme.overhead_kinds().contains(&span.kind) || span.kind == OverheadKind::Trough);
                         assert!(room.contains_tile(span.first.0, span.first.1));
                         assert!(room.contains_inner_tile(before.0, before.1, 1));
                         assert!(room.contains_inner_tile(after.0, after.1, 1));

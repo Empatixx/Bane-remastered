@@ -282,11 +282,20 @@ impl Dungeon {
         let _ = rng.next_u64();
         for room in &mut rooms {
             room.decor.retain(|decor| decor.kind != decor::DecorKind::FrozenSkull);
+            // A drain grate or a crack belongs on dry floor: one that the liquid ended up round
+            // is dropped rather than left as a dry notch in a pool.
+            room.decor.retain(|decor| {
+                let (column, row) = decor.tile;
+                !matches!(decor.kind, decor::DecorKind::Grate | decor::DecorKind::Crack { .. })
+                    || (column.saturating_sub(1)..=column + 1).all(|c| {
+                        (row.saturating_sub(1)..=row + 1).all(|r| surfaces.at((c, r)).is_none())
+                    })
+            });
         }
         // A stream of its own, so what hangs overhead never changes the rest of the floor.
         let mut overhead_rng = Rng::new(rng.next_u64());
         for room in &mut rooms {
-            room.overheads = overhead::plan(&grid, room, theme, &mut overhead_rng);
+            room.overheads = overhead::plan(&grid, room, theme, &surfaces, &mut overhead_rng);
         }
         if theme == Theme::Stone {
             prison::plan_pendulum(&grid, &mut rooms, &mut overhead_rng);

@@ -413,8 +413,9 @@ def pieces(name, middle, centre):
 
 
 # Kinds drawn by hand in LibreSprite (tools/art/<name>.ase, exported to <name>.png with
-# `lsprite render tools/art/<name>.ase --scale 1 --out tools/art/<name>.png`): a 32x24 picture,
-# the left end in the first 16 columns and the middle piece in the other 16.
+# `lsprite render tools/art/<name>.ase --scale 1 --out tools/art/<name>.png`): 16x24 pieces side
+# by side, the left end, the middle piece and, if there is a third, the centre piece (the pipes'
+# valve). Running down the screen the centre is the plain middle again.
 DRAWN = {"pipes"}
 ART = Path(__file__).resolve().parent / "art"
 
@@ -423,7 +424,8 @@ def drawn_pieces(name):
     """The left end, middle, right end and centre of a hand-drawn kind, as 16x24 images."""
     art = Image.open(ART / f"{name}.png").convert("RGBA")
     end, middle = art.crop((0, 0, W, H)), art.crop((W, 0, 2 * W, H))
-    return [end, middle, end.transpose(Image.Transpose.FLIP_LEFT_RIGHT), middle]
+    centre = art.crop((2 * W, 0, 3 * W, H)) if art.width >= 3 * W else middle
+    return [end, middle, end.transpose(Image.Transpose.FLIP_LEFT_RIGHT), centre]
 
 
 def turned(image):
@@ -438,7 +440,8 @@ def upright_sheet():
     sheet = Image.new("RGBA", (4 * W, len(KINDS) * W), CLEAR)
     for row, (name, middle, centre, palette) in enumerate(KINDS):
         if name in DRAWN:
-            for column, image in enumerate(drawn_pieces(name)):
+            end, middle, other_end, _ = drawn_pieces(name)
+            for column, image in enumerate([end, middle, other_end, middle]):
                 sheet.paste(turned(image), (column * W, row * W))
             continue
         for column, rows in enumerate(pieces(name, middle, centre)):

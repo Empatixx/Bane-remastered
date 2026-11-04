@@ -634,7 +634,14 @@ mod tests {
         let (piece, start) = world
             .query::<(Entity, &Adrift)>()
             .iter()
-            .find(|(_, adrift)| adrift.offset.is_none())
+            // One with open water below it, so the push is not turned back by the bank.
+            .find(|(_, adrift)| {
+                adrift.offset.is_none()
+                    && (1..=3).all(|step| {
+                        let below = adrift.at + Vec2::new(0.0, step as f32 * TILE_SIZE / 2.0 + LOOK_AHEAD);
+                        afloat(&dungeon.surfaces, adrift.liquid, below)
+                    })
+            })
             .map(|(entity, adrift)| (entity, adrift.at))
             .expect("rubbish afloat");
         // The hero's feet just above it, wading down at it.

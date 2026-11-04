@@ -56,6 +56,8 @@ pub(crate) enum Prop {
     Icicles,
     IceCrystals,
     FrozenSkull,
+    SewerGrate,
+    FloorCrack,
     Cocoon,
     SpiderEggs,
     SpiderWrapped,
@@ -448,6 +450,31 @@ impl Prop {
             },
             Self::IceCrystals => variants(tex::ICE_CRYSTALS, Vec2::new(16.0, 16.0), 4.0),
             Self::FrozenSkull => still(tex::FROZEN_SKULL, Vec2::new(16.0, 16.0), 4.0),
+            // Four kinds of crack, a row each, glowing with heat (tools/make_lava_props.py).
+            Self::FloorCrack => PropSpec {
+                texture: tex::FLOOR_CRACK,
+                columns: 4,
+                rows: 4,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 4,
+                    frame_time: 0.3,
+                }),
+            },
+            // A timeline (tools/make_sewer_props.py): mostly still, now and then eyes in the
+            // dark, then a rat's snout through the bars.
+            Self::SewerGrate => PropSpec {
+                texture: tex::SEWER_GRATE,
+                columns: 24,
+                rows: 1,
+                frame: Vec2::new(16.0, 16.0),
+                scale: 4.0,
+                animation: Some(Animated {
+                    frames: 24,
+                    frame_time: 0.25,
+                }),
+            },
             Self::Cocoon => variants(tex::COCOON, Vec2::new(16.0, 16.0), 4.0),
             Self::SpiderEggs => PropSpec {
                 texture: tex::SPIDER_EGGS,

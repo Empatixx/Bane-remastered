@@ -44,6 +44,10 @@ pub(crate) struct TrapMix {
     pub(crate) statue_percent: usize,
     /// How often a room gets shackles in a wall, in percent.
     pub(crate) shackles_percent: usize,
+    /// How often a room gets a drain grate in its floor, in percent.
+    pub(crate) grate_percent: usize,
+    /// How often a room gets a crack glowing with heat in its floor, in percent.
+    pub(crate) crack_percent: usize,
     /// Moss grows over the walls and banners are overgrown.
     pub(crate) mossy: bool,
     pub(crate) moss_drapes: usize,
@@ -195,6 +199,8 @@ impl Theme {
             fire_bowl_percent: if self == Self::Temple { 45 } else { 0 },
             statue_percent: if self == Self::Temple { 30 } else { 0 },
             shackles_percent: if self == Self::Stone { 45 } else { 0 },
+            grate_percent: if self == Self::Sewer { 45 } else { 0 },
+            crack_percent: if self == Self::Lava { 60 } else { 0 },
             mossy: self == Self::Moss,
             moss_drapes: if self == Self::Moss { 7 } else { 0 },
         }

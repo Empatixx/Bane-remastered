@@ -47,7 +47,7 @@ pub(crate) fn showcase(dungeon: &mut Dungeon) -> Option<Vec2> {
 pub(crate) fn start_at(dungeon: &Dungeon, mut start: Vec2, showcase: Option<Vec2>) -> Vec2 {
     // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
     // `table`, `rug`, `vestibule`, `water`, `surface` (the thickest patch of lava, water, sand
-    // and such), `bowl`, `statue`, `shackles`, `pendulum`, `gauntlet` or `gauntlet-chest` starts the floor there (by the first one of those), for working on the
+    // and such), `bowl`, `statue`, `shackles`, `grate`, `crack`, `pendulum`, `gauntlet` or `gauntlet-chest` starts the floor there (by the first one of those), for working on the
     // game.
     match std::env::var("BANE_AT").as_deref() {
         Ok("boss") => {
@@ -172,9 +172,11 @@ pub(crate) fn start_at(dungeon: &Dungeon, mut start: Vec2, showcase: Option<Vec2
                 start = Vec2::new(column as f32 + 1.5, row as f32 + 3.0) * TILE_SIZE;
             }
         }
-        Ok(at @ ("bowl" | "statue" | "shackles")) => {
+        Ok(at @ ("bowl" | "statue" | "shackles" | "grate" | "crack")) => {
             let wanted = |kind: &DecorKind| match at {
                 "bowl" => *kind == DecorKind::FireBowl,
+                "grate" => *kind == DecorKind::Grate,
+                "crack" => matches!(kind, DecorKind::Crack { .. }),
                 "shackles" => matches!(kind, DecorKind::Shackles { .. }),
                 _ => matches!(kind, DecorKind::StatuePiece { .. }),
             };
