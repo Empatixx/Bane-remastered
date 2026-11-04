@@ -124,8 +124,8 @@ pub(crate) fn icicle_crash(world: &mut World, floor: Vec2, textures: &Textures) 
 }
 
 /// A cocoon shot down lands at `floor`: squashed, split open with its goo splashing, and what
-/// stays there for good, its torn halves, silk, a puddle of goo and the bones of whatever it held
-/// (tools/art/cocoon_burst.ase), as big as the cocoon that fell.
+/// stays there for good, its torn halves, silk and a puddle of goo (tools/art/cocoon_burst.ase),
+/// as big as the cocoon that fell.
 pub(crate) fn cocoon_remains(world: &mut World, floor: Vec2, textures: &Textures) {
     let clip = Clip { row: 0, frames: 3, frame_time: 0.09, looping: false, flipped: false };
     world.spawn((
