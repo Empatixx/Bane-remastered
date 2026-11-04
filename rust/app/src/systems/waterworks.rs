@@ -56,6 +56,11 @@ const SHOVE_SPEED: f32 = 170.0;
 /// How quickly a shoved barrel slows back down to drifting.
 const SETTLE_RATE: f32 = 1.2;
 const LOOK_AHEAD: f32 = 26.0;
+/// How near the hero's feet or a shot comes to rubbish afloat before it is pushed away: about
+/// the rubbish's own size.
+const DEBRIS_REACH: f32 = 30.0;
+/// How fast rubbish is pushed off at the least; wading into it pushes it at the hero's pace.
+const DEBRIS_PUSH: f32 = 120.0;
 const BOB: f32 = 1.5;
 const BOB_RATE: f32 = 1.7;
 /// The ring is drawn in the bottom of its cell; a barrel sits lower in the water than rubbish.
@@ -433,6 +438,13 @@ pub(crate) fn tick_waterworks(
         .iter()
         .map(|(position, size, velocity)| (position.0, size.0, velocity.0))
         .collect();
+    // The hero's feet, and how fast they go: wading into rubbish pushes it ahead of him.
+    let wader: Option<(Vec2, Vec2)> = world
+        .query::<(&Position, &crate::components::Velocity)>()
+        .with::<&crate::components::Player>()
+        .iter()
+        .next()
+        .map(|(position, velocity)| (prefabs::player_feet(position.0), velocity.0));
     let drifting: Vec<Entity> = world.query::<Entity>().with::<&Adrift>().iter().collect();
     let mut splashes = Vec::new();
     for entity in drifting {
@@ -469,6 +481,30 @@ pub(crate) fn tick_waterworks(
                 }
             }
         } else {
+            // Rubbish moves itself: pushed off by the hero's feet or a shot, then slowing back
+            // down to its drift.
+            if let Some((feet, pace)) = wader {
+                let away = adrift.at - feet;
+                if away.length() < DEBRIS_REACH {
+                    let direction = away.normalize_or(pace.normalize_or(Vec2::Y));
+                    let pushed = feet + direction * DEBRIS_REACH;
+                    if afloat(surfaces, adrift.liquid, pushed) {
+                        adrift.at = pushed;
+                    }
+                    adrift.velocity = direction * pace.length().max(DEBRIS_PUSH);
+                }
+            }
+            if let Some(direction) = shots.iter().find_map(|(position, size, velocity)| {
+                let reach = *size / 2.0 + Vec2::splat(DEBRIS_REACH);
+                ((*position - adrift.at).abs().cmple(reach).all()).then(|| velocity.normalize_or_zero())
+            }) {
+                adrift.velocity = direction * SHOVE_SPEED;
+            }
+            let speed = adrift.velocity.length();
+            if speed > DRIFT_SPEED {
+                let settled = adrift.velocity / speed * DRIFT_SPEED;
+                adrift.velocity += (settled - adrift.velocity) * (SETTLE_RATE * dt).min(1.0);
+            }
             let next = adrift.at + adrift.velocity * dt;
             if afloat(surfaces, adrift.liquid, next + adrift.velocity.normalize_or_zero() * LOOK_AHEAD) {
                 adrift.at = next;
@@ -476,7 +512,7 @@ pub(crate) fn tick_waterworks(
                 // Turn back from the bank, a little differently each time.
                 adrift.phase += 1.3;
                 let away = -adrift.velocity.normalize_or(Vec2::X);
-                adrift.velocity = Vec2::from_angle(adrift.phase.sin()).rotate(away) * DRIFT_SPEED;
+                adrift.velocity = Vec2::from_angle(adrift.phase.sin()).rotate(away) * adrift.velocity.length().max(DRIFT_SPEED);
             }
             if let Ok(mut position) = world.get::<&mut Position>(entity) {
                 position.0 = adrift.at + bob;
@@ -586,6 +622,33 @@ mod tests {
         let after = rubbish(&world);
         assert!(before.iter().zip(&after).any(|(a, b)| a.distance(*b) > 5.0));
         assert!(after.iter().all(|at| dungeon.surfaces.at_point(*at) == Some(Surface::Water)));
+    }
+
+    #[test]
+    fn wading_into_rubbish_pushes_it_ahead_and_it_stays_in_the_water() {
+        let dungeon = sewer();
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        spawn_waterworks(&mut world, &mut physics, &dungeon, &textures);
+        let (piece, start) = world
+            .query::<(Entity, &Adrift)>()
+            .iter()
+            .find(|(_, adrift)| adrift.offset.is_none())
+            .map(|(entity, adrift)| (entity, adrift.at))
+            .expect("rubbish afloat");
+        // The hero's feet just above it, wading down at it.
+        let feet = start - Vec2::new(0.0, DEBRIS_REACH * 0.5);
+        world.spawn((
+            crate::components::Player,
+            Position(feet - prefabs::PLAYER_FEET_OFFSET),
+            crate::components::Velocity(Vec2::new(0.0, 200.0)),
+        ));
+        tick_waterworks(&mut world, &mut physics, &dungeon.surfaces, &textures, 0.0, 1.0 / 60.0);
+        let adrift = *world.get::<&Adrift>(piece).expect("still afloat");
+        assert!(adrift.velocity.y > DRIFT_SPEED, "{:?}", adrift.velocity);
+        assert!(adrift.at.distance(feet) >= DEBRIS_REACH - 1.0 || adrift.at == start);
+        assert_eq!(dungeon.surfaces.at_point(adrift.at), Some(Surface::Water));
     }
 
     #[test]

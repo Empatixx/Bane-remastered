@@ -1122,3 +1122,127 @@ mod tests {
         assert_eq!(first, walk());
     }
 }
+
+/// How often a poison puddle lets a bubble up, per second.
+const PUDDLE_BUBBLE_RATE: f32 = 4.0;
+/// The puddle's liquid round its middle (tools/make_barrels.py `PUDDLE_BLOBS`, four world units
+/// to a pixel): bubbles well up only there.
+const PUDDLE_MIDDLE: Vec2 = Vec2::new(0.0, 4.0);
+const PUDDLE_REACH: Vec2 = Vec2::new(36.0, 22.0);
+/// Bubbles off a puddle only lift a little before they burst.
+const PUDDLE_RISE: (f32, f32) = (8.0, 18.0);
+/// A bubble is 5x5 pixels, shown three times over like the hero.
+const BUBBLE_SIZE: f32 = 15.0;
+/// How far a bubble sways to either side, per second.
+const BUBBLE_SWAY: f32 = 8.0;
+/// How long a bubble takes from forming to bursting: its four frames.
+const BUBBLE_LIFE: f32 = 1.2;
+
+/// A bubble of poison rising off a puddle.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PoisonBubble {
+    drift: Vec2,
+}
+
+/// The poison puddles of broken barrels let toxic bubbles up off their liquid; the bubbles
+/// lift a little, sway and burst.
+/// `scatter` is the floor's own randomness for what the surroundings give off.
+pub(crate) fn bubble_poison_puddles(
+    world: &mut World,
+    scatter: &mut super::StirSeed,
+    textures: &Textures,
+    dt: f32,
+) {
+    let mut seed = scatter.0;
+    let mut roll = || {
+        seed ^= seed << 13;
+        seed ^= seed >> 17;
+        seed ^= seed << 5;
+        (seed % 10_000) as f32 / 10_000.0
+    };
+    // A puddle from a broken barrel bubbles all over until it starts drying up.
+    let puddles: Vec<Vec2> = world
+        .query::<(&PoisonPool, &Position)>()
+        .with::<&crate::components::Liquid>()
+        .iter()
+        .filter(|(pool, _)| pool.remaining > POOL_FADE_SECONDS)
+        .map(|(_, position)| position.0)
+        .collect();
+    let mut born = Vec::new();
+    for at in puddles {
+        if roll() < PUDDLE_BUBBLE_RATE * dt {
+            // Somewhere on the liquid: inside the puddle's oval, not out on the floor round it.
+            let angle = roll() * std::f32::consts::TAU;
+            let reach = roll().sqrt();
+            let spot = at + PUDDLE_MIDDLE + Vec2::new(angle.cos(), angle.sin()) * PUDDLE_REACH * reach;
+            let rise = PUDDLE_RISE.0 + (PUDDLE_RISE.1 - PUDDLE_RISE.0) * roll();
+            let sway = (roll() * 2.0 - 1.0) * BUBBLE_SWAY;
+            born.push((spot, Vec2::new(sway, -rise)));
+        }
+    }
+    scatter.0 = seed;
+    let texture = textures.get(crate::assets::tex::POISON_BUBBLE);
+    let clip = Clip {
+        row: 0,
+        frames: 4,
+        frame_time: BUBBLE_LIFE / 4.0,
+        looping: false,
+        flipped: false,
+    };
+    for (spot, drift) in born {
+        world.spawn((
+            PoisonBubble { drift },
+            Position(spot),
+            Size(Vec2::splat(BUBBLE_SIZE)),
+            Color(glam::Vec4::ONE),
+            crate::components::Sprite::cell(texture, 0, 0, 4, 1),
+            Animation::new(4, 1, clip),
+            crate::components::Layer(2),
+            Expiring,
+        ));
+    }
+    for (bubble, position) in world.query_mut::<(&PoisonBubble, &mut Position)>() {
+        position.0 += bubble.drift * dt;
+    }
+}
+
+#[cfg(test)]
+mod bubble_tests {
+    use super::*;
+
+    fn bubbles(world: &World) -> Vec<Vec2> {
+        world
+            .query::<&Position>()
+            .with::<&PoisonBubble>()
+            .iter()
+            .map(|position| position.0)
+            .collect()
+    }
+
+    #[test]
+    fn only_a_poison_puddle_bubbles_and_only_over_its_liquid() {
+        let mut world = World::new();
+        let textures = Textures::default();
+        world.spawn((Breakable { kind: BreakKind::Poison }, Position(Vec2::new(500.0, 100.0))));
+        let mut scatter = crate::systems::StirSeed::default();
+        let step = |world: &mut World, scatter: &mut crate::systems::StirSeed| {
+            for _ in 0..120 {
+                bubble_poison_puddles(world, scatter, &textures, 1.0 / 60.0);
+            }
+        };
+        step(&mut world, &mut scatter);
+        assert!(bubbles(&world).is_empty(), "an unbroken barrel stays still");
+
+        let middle = Vec2::new(100.0, 100.0);
+        prefabs::poison_pool(&mut world, middle, &textures);
+        step(&mut world, &mut scatter);
+        let risen = bubbles(&world);
+        assert!(!risen.is_empty());
+        let reach = PUDDLE_REACH + Vec2::splat(BUBBLE_SWAY * 2.0);
+        assert!(
+            risen.iter().all(|at| (at.x - middle.x - PUDDLE_MIDDLE.x).abs() <= reach.x
+                && at.y <= middle.y + PUDDLE_MIDDLE.y + reach.y),
+            "{risen:?}"
+        );
+    }
+}

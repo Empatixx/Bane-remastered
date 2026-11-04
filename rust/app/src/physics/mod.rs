@@ -19,6 +19,16 @@ const PLAYER_FEET_ROUNDING: f32 = 0.5;
 /// of whoever walks up to it go in behind its top edge.
 const FRONT_WALL_GIVE: f32 = 0.19;
 const ENEMY_CORNER_FRACTION: f32 = 0.25;
+/// An enemy's feet: this share of its width, and of its height (at least `ENEMY_FEET_MIN`).
+const ENEMY_FEET_WIDTH: f32 = 0.8;
+const ENEMY_FEET_DEPTH: f32 = 0.3;
+const ENEMY_FEET_MIN: f32 = 14.0;
+/// The ground a body covers for shots: this share of its width, and this share of its height
+/// deep (at least `HURT_MIN_DEPTH`), reaching `HURT_BELOW_FEET` past the line it stands on.
+const HURT_WIDTH: f32 = 0.9;
+const HURT_DEPTH: f32 = 0.45;
+const HURT_MIN_DEPTH: f32 = 24.0;
+const HURT_BELOW_FEET: f32 = 6.0;
 const ENEMY_CORNER_MAX: f32 = 14.0;
 const LENGTH_UNIT: f32 = 32.0;
 const OBJECT_DAMPING: f32 = 5.0;
@@ -152,8 +162,12 @@ impl Physics {
             .collision_groups(groups::PLAYER_FEET)
             .user_data(owner_bits(entity));
         let body = self.insert(body, collider);
-        let hurtbox = ColliderBuilder::cuboid(figure.x / 2.0, figure.y / 2.0)
+        // What shots hit: the ground he stands on, as deep as his body, since rounds collide
+        // where their shadow is (see `Elevation`).
+        let (hurt_offset, hurt) = ground_hurt(figure, feet_offset.y + feet.y / 2.0);
+        let hurtbox = ColliderBuilder::cuboid(hurt.x / 2.0, hurt.y / 2.0)
             .density(0.0)
+            .translation(to_rapier(hurt_offset))
             .collision_groups(groups::PLAYER_FIGURE)
             .user_data(owner_bits(entity));
         self.world
@@ -172,24 +186,47 @@ impl Physics {
         self.insert(body, collider)
     }
 
+    /// An enemy of `size`, centred on `position`: like the hero it bumps into walls and props
+    /// only with its feet, a low box at the bottom of its figure, and shots hit the ground it
+    /// stands on (see `ground_hurt`).
     pub(crate) fn add_enemy(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
         let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(position))
             .lock_rotations();
-        let radius = (size.min_element() * ENEMY_CORNER_FRACTION).min(ENEMY_CORNER_MAX);
-        let half = size / 2.0 - Vec2::splat(radius);
+        let feet = Vec2::new(
+            size.x * ENEMY_FEET_WIDTH,
+            (size.y * ENEMY_FEET_DEPTH).max(ENEMY_FEET_MIN).min(size.y),
+        );
+        let radius = (feet.min_element() * ENEMY_CORNER_FRACTION).min(ENEMY_CORNER_MAX);
+        let half = feet / 2.0 - Vec2::splat(radius);
+        // As heavy as its whole figure, so pushes and knockback feel the same as before.
         let collider = ColliderBuilder::round_cuboid(half.x, half.y, radius)
-            .collision_groups(groups::ENEMIES)
+            .density(size.x * size.y / (feet.x * feet.y))
+            .translation(to_rapier(Vec2::new(0.0, size.y / 2.0 - feet.y / 2.0)))
+            .collision_groups(groups::ENEMY_FEET)
             .user_data(owner_bits(entity));
-        self.insert(body, collider)
+        let body = self.insert(body, collider);
+        let (offset, hurt) = ground_hurt(size, size.y / 2.0);
+        let hurtbox = ColliderBuilder::cuboid(hurt.x / 2.0, hurt.y / 2.0)
+            .density(0.0)
+            .translation(to_rapier(offset))
+            .collision_groups(groups::ENEMY_FIGURE)
+            .user_data(owner_bits(entity));
+        self.world
+            .colliders
+            .insert_with_parent(hurtbox, body.body, &mut self.world.bodies);
+        body
     }
 
+    /// `elevation` is how high the round flies (see `Elevation`): its body is where it is drawn,
+    /// its shape lies on the floor under it, so it hits what its shadow meets.
     pub(crate) fn add_bullet(
         &mut self,
         entity: Entity,
         position: Vec2,
         velocity: Vec2,
         size: Vec2,
+        elevation: f32,
     ) -> Body {
         let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(position))
@@ -197,17 +234,21 @@ impl Physics {
             .lock_rotations();
         let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
             .sensor(true)
+            .translation(to_rapier(Vec2::new(0.0, elevation)))
             .collision_groups(groups::BULLETS)
             .user_data(owner_bits(entity));
         self.insert(body, collider)
     }
 
+    /// `elevation` is how high the round flies (see `Elevation`): its body is where it is drawn,
+    /// its shape lies on the floor under it, so it hits what its shadow meets.
     pub(crate) fn add_enemy_bullet(
         &mut self,
         entity: Entity,
         position: Vec2,
         velocity: Vec2,
         size: Vec2,
+        elevation: f32,
     ) -> Body {
         let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(position))
@@ -215,6 +256,7 @@ impl Physics {
             .lock_rotations();
         let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
             .sensor(true)
+            .translation(to_rapier(Vec2::new(0.0, elevation)))
             .collision_groups(groups::ENEMY_BULLETS)
             .user_data(owner_bits(entity));
         self.insert(body, collider)
@@ -246,12 +288,22 @@ impl Physics {
         body
     }
 
-    /// Gives the entity's body a second shape, `size` at `offset` from it, that only bullets hit:
-    /// the tall part of an object whose base alone is in the way of walkers.
+    /// Gives the entity's body a second shape that only bullets hit: the ground under the tall
+    /// part of an object whose base alone is in the way of walkers. `offset` and `size` are that
+    /// tall part as drawn; since rounds collide where their shadow is (see `Elevation`), what
+    /// they hit is the floor it stands on, down to the bottom of the base, as deep as the object.
     pub(crate) fn add_figure(&mut self, entity: Entity, body: Body, offset: Vec2, size: Vec2) {
-        let figure = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+        // The base is centred on the body: its bottom is half its height below.
+        let bottom = self
+            .world
+            .colliders
+            .get(body.collider)
+            .and_then(|base| base.shape().as_cuboid().map(|cuboid| cuboid.half_extents.y))
+            .unwrap_or(offset.y + size.y / 2.0);
+        let (hurt_offset, hurt) = ground_hurt(size, bottom);
+        let figure = ColliderBuilder::cuboid(hurt.x / 2.0, hurt.y / 2.0)
             .density(0.0)
-            .translation(to_rapier(offset))
+            .translation(to_rapier(Vec2::new(offset.x, hurt_offset.y)))
             .collision_groups(groups::TARGETS)
             .user_data(owner_bits(entity));
         self.world
@@ -476,6 +528,14 @@ impl Physics {
     }
 }
 
+/// The ground a figure of `size` covers for shots, as the offset of its middle from the figure's
+/// middle and its size, given where its feet meet the floor (`foot`, below the figure's middle).
+pub(crate) fn ground_hurt(size: Vec2, foot: f32) -> (Vec2, Vec2) {
+    let depth = (size.y * HURT_DEPTH).max(HURT_MIN_DEPTH);
+    let hurt = Vec2::new(size.x * HURT_WIDTH, depth);
+    (Vec2::new(0.0, foot + HURT_BELOW_FEET - depth / 2.0), hurt)
+}
+
 fn owner_bits(entity: Entity) -> u128 {
     u128::from(entity.to_bits().get())
 }
@@ -491,6 +551,58 @@ fn from_rapier(vector: Vector) -> Vec2 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const STEP: f32 = 1.0 / 60.0;
+
+    fn steps_until_touching(physics: &mut Physics, round: Body, wanted: impl Fn(&Owner) -> bool) -> Option<Vec2> {
+        for _ in 0..240 {
+            physics.step(STEP);
+            if physics.touching(round).iter().any(&wanted) {
+                return physics.position(round);
+            }
+        }
+        None
+    }
+
+    #[test]
+    fn a_round_fired_from_behind_a_table_stops_where_its_shadow_meets_the_base() {
+        let mut physics = Physics::new();
+        // A table's base on the floor, its top 200 down; the round flies 30 above the floor.
+        physics.add_static_box(Vec2::new(0.0, 216.0), Vec2::new(120.0, 32.0));
+        let mut world = World::new();
+        let shooter = world.spawn(());
+        let round = physics.add_bullet(shooter, Vec2::new(0.0, 100.0), Vec2::new(0.0, 600.0), Vec2::splat(8.0), 30.0);
+        let drawn = steps_until_touching(&mut physics, round, |owner| *owner == Owner::Wall).expect("stopped");
+        // Its shadow reached the base while the round itself was still drawn over the top.
+        assert!(drawn.y + 30.0 + 4.0 >= 200.0 && drawn.y + 30.0 <= 200.0 + 14.0, "{drawn}");
+        assert!(drawn.y < 200.0 - 10.0, "{drawn}");
+    }
+
+    #[test]
+    fn a_round_drawn_over_an_enemys_head_but_flying_behind_it_misses_it() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let enemy = world.spawn(());
+        // Centred on the origin, 60 tall: its feet stand on the line 30 down.
+        let _ = physics.add_enemy(enemy, Vec2::ZERO, Vec2::new(40.0, 60.0));
+        let hits = |physics: &mut Physics, drawn_y: f32| {
+            let shooter = World::new().spawn(());
+            let round = physics.add_bullet(shooter, Vec2::new(-200.0, drawn_y), Vec2::new(900.0, 0.0), Vec2::splat(8.0), 10.0);
+            let hit = steps_until_touching(physics, round, |owner| *owner == Owner::Entity(enemy)).is_some();
+            physics.remove(round);
+            hit
+        };
+        // Drawn across the top of its head, the round's shadow runs far behind its feet.
+        assert!(!hits(&mut physics, -26.0));
+        // Drawn across its chest, the shadow crosses the ground it stands on.
+        assert!(hits(&mut physics, 10.0));
+    }
+
+    #[test]
+    fn something_flying_is_drawn_its_height_above_its_shadow() {
+        let elevation = crate::components::Elevation(24.0);
+        assert_eq!(elevation.ground(Vec2::new(5.0, 100.0)), Vec2::new(5.0, 124.0));
+    }
 
     #[test]
     fn solid_boxes_are_found_near_a_corridor_and_forgotten_when_removed() {

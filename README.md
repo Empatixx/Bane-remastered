@@ -33,7 +33,7 @@ You start with a pistol and a dodge roll. Everything else you have to take.
 
 ## Why one more run
 
-**17 guns.** Pistol, Uzi, Sniper, Flamethrower, Tesla Gun, RPG, Railgun and more. Every gun has
+**16 guns.** Pistol, Uzi, Sniper, Flamethrower, Tesla Gun, RPG, Railgun and more. Every gun has
 its own upgrade tree and a mutation at the end of it.
 
 **7 bosses with a name and a story.** A hellhound that waits at the bottom, a scribe who wrote

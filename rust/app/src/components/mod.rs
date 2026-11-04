@@ -26,7 +26,7 @@ mod ui;
 
 pub(crate) use animation::{Animation, Clip};
 pub(crate) use appearance::{
-    Color, Heading, Layer, Liquid, Outline, Shine, Sky, Sprite, Text, YSort,
+    Color, Elevation, Heading, Layer, Liquid, Outline, Shine, Sky, Sprite, Text, YSort,
 };
 pub(crate) use artefacts::{
     ArtefactDrop, ArtefactIcon, ArtefactSlot, Berserk, Bloodlust, CastLightning, ConvertBullets,

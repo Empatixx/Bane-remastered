@@ -27,11 +27,14 @@ const TOXIC_CLOUD_FRAMES: usize = 8;
 const TOXIC_CLOUD_FRAME_TIME: f32 = 0.13;
 const TOXIC_CLOUD_SIZE: Vec2 = Vec2::new(144.0, 144.0);
 
+/// The liquid kind the shader fills a poison puddle with.
+const POISON_LIQUID: f32 = 7.0;
+
 pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) -> Entity {
     let spawn = Clip {
         row: 0,
         frames: 6,
-        frame_time: 0.07,
+        frame_time: 0.03,
         looping: false,
         flipped: false,
     };
@@ -55,6 +58,8 @@ pub(crate) fn poison_pool(world: &mut World, center: Vec2, textures: &Textures) 
         ThenPlay(idle),
         Layer(0),
         Lit,
+        // Filled with churning poison like the floor's liquids (quad.wgsl, `poison_color`).
+        crate::components::Liquid { kind: POISON_LIQUID, time: 0.0 },
     ))
 }
 

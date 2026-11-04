@@ -30,7 +30,6 @@ pub(crate) enum GunKind {
     Sniper,
     Rpg,
     Minigun,
-    Crossbow,
     Flamethrower,
     Blaster,
     PlasmaRifle,
@@ -92,7 +91,6 @@ pub(crate) enum Round {
     Tracer,
     Slug,
     Rocket,
-    Bolt,
     Flame,
     Laser,
     Plasma,
@@ -187,12 +185,11 @@ impl Trail {
 }
 
 impl Round {
-    pub(crate) const ALL: [Self; 11] = [
+    pub(crate) const ALL: [Self; 10] = [
         Self::Bullet,
         Self::Tracer,
         Self::Slug,
         Self::Rocket,
-        Self::Bolt,
         Self::Flame,
         Self::Laser,
         Self::Plasma,
@@ -234,12 +231,6 @@ impl Round {
                 blast: true,
                 light: [255.0, 140.0, 0.0],
                 ..round(tex::ROUND_ROCKET, (24.0, 24.0), 480.0)
-            },
-            Self::Bolt => RoundSpec {
-                hitbox: Vec2::splat(12.0),
-                pierce: 1,
-                light: [255.0, 120.0, 60.0],
-                ..round(tex::ROUND_BOLT, (32.0, 16.0), 950.0)
             },
             Self::Flame => RoundSpec {
                 hitbox: Vec2::splat(20.0),
@@ -376,7 +367,7 @@ impl GunKind {
         }
     }
 
-    pub(crate) const ALL: [Self; 17] = [
+    pub(crate) const ALL: [Self; 16] = [
         Self::Pistol,
         Self::Shotgun,
         Self::Luger,
@@ -387,7 +378,6 @@ impl GunKind {
         Self::Sniper,
         Self::Rpg,
         Self::Minigun,
-        Self::Crossbow,
         Self::Flamethrower,
         Self::Blaster,
         Self::PlasmaRifle,
@@ -408,7 +398,6 @@ impl GunKind {
             Self::Sniper => "Sniper",
             Self::Rpg => "RPG",
             Self::Minigun => "Minigun",
-            Self::Crossbow => "Crossbow",
             Self::Flamethrower => "Flamethrower",
             Self::Blaster => "Blaster",
             Self::PlasmaRifle => "Plasma Rifle",
@@ -431,7 +420,6 @@ impl GunKind {
             Self::Sniper => "sniper",
             Self::Rpg => "rpg",
             Self::Minigun => "minigun",
-            Self::Crossbow => "crossbow",
             Self::Flamethrower => "flamethrower",
             Self::Blaster => "blaster",
             Self::PlasmaRifle => "plasma_rifle",
@@ -570,19 +558,6 @@ impl GunKind {
                     (40, 400),
                     (S::MinigunShoot, S::MinigunReload),
                     SubMachine,
-                )
-            },
-            Self::Crossbow => GunSpec {
-                shake: 0.25,
-                round: Round::Bolt,
-                ..gun(
-                    (tex::GUNS_CROSSBOW, (88.0, 42.0)),
-                    (5, 8),
-                    0.0,
-                    (0.6, 1.0),
-                    (3, 45),
-                    (S::CrossbowShoot, S::CrossbowReload),
-                    Shotgun,
                 )
             },
             Self::Flamethrower => GunSpec {

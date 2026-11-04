@@ -291,6 +291,24 @@ mod tests {
     }
 
     #[test]
+    fn the_light_the_hero_carries_stays_out_of_a_wall_he_presses_against() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let cells: Vec<_> = (0..6).map(|column| (column, 0)).collect();
+        physics.add_walls(&cells, |_, _| false, TILE);
+        let player = prefabs::player(&mut world, &mut physics, Vec2::new(160.0, 200.0), &Textures::default());
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+            velocity.0 = Vec2::new(0.0, -240.0);
+        }
+        run(&mut world, &mut physics, 90);
+        let light = world.get::<&crate::components::Light>(player).map(|light| light.offset).expect("a light");
+        let at = player_position(&world, player) + light;
+        // His middle stands over the wall's row, but the light shines from below its bottom edge.
+        assert!(player_position(&world, player).y < TILE, "{at}");
+        assert!(at.y > TILE, "{at}");
+    }
+
+    #[test]
     fn player_slides_along_a_wall() {
         let mut world = World::new();
         let mut physics = Physics::new();

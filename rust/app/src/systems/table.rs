@@ -492,6 +492,7 @@ mod tests {
             Vec2::new(400.0, 300.0),
             Vec2::new(0.0, 600.0),
             Vec2::splat(8.0),
+            0.0,
         );
         let _ = world.insert_one(enemy_round, enemy_body);
         let round = world.spawn((Bullet::plain(1), Position(Vec2::ZERO), Velocity(Vec2::ZERO)));
@@ -500,6 +501,7 @@ mod tests {
             Vec2::new(400.0, 480.0),
             Vec2::new(0.0, -600.0),
             Vec2::splat(8.0),
+            0.0,
         );
         let _ = world.insert_one(round, body);
         let (mut enemy_hit, mut player_hit) = (false, false);

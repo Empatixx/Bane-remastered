@@ -119,16 +119,6 @@ GUNS = {
         "..aYya...........",
         "..aaaa...........",
     ]),
-    "crossbow": dict(grip=(4, 4), muzzle=(15, 3), rows=[
-        "...........aa...",
-        "..........aRa...",
-        "aaa......aaRaaa.",
-        "aVVaaaaaaaWWWlla",
-        "awVVVVVVWWWWaaa.",
-        "aawwaVVaaaaRa...",
-        "....awVa..aRa...",
-        "....aaaa...aa...",
-    ]),
     "flamethrower": dict(grip=(4, 4), muzzle=(16, 2), rows=[
         "aaaaaaaaaaaa.aaa.",
         "aDGGllllGGGaaaBaa",

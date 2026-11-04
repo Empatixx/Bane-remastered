@@ -49,7 +49,6 @@ impl GunKind {
             Self::Sniper => held(tex::HELD_SNIPER, (21, 7), (6, 4), (20, 3)),
             Self::Rpg => held(tex::HELD_RPG, (21, 7), (6, 4), (20, 2)),
             Self::Minigun => held(tex::HELD_MINIGUN, (17, 8), (4, 5), (16, 3)),
-            Self::Crossbow => held(tex::HELD_CROSSBOW, (16, 8), (4, 4), (15, 3)),
             Self::Flamethrower => held(tex::HELD_FLAMETHROWER, (17, 8), (4, 4), (16, 2)),
             Self::PlasmaRifle => held(tex::HELD_PLASMA_RIFLE, (18, 7), (4, 4), (16, 3)),
             Self::TeslaGun => held(tex::HELD_TESLA_GUN, (17, 7), (4, 4), (15, 2)),

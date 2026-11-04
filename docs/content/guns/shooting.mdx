@@ -23,7 +23,7 @@ On a press, the M4 fires a burst of 4 shots 0.05 s apart. The direction locks at
 
 ### Spread
 
-Each gun has a spread given as an angle. The shot flies randomly up to half of that angle to the left or right. The M4, Sniper, Crossbow and Railgun are perfectly accurate. The Flamethrower spreads the most (±14°).
+Each gun has a spread given as an angle. The shot flies randomly up to half of that angle to the left or right. The M4, Sniper and Railgun are perfectly accurate. The Flamethrower spreads the most (±14°).
 
 The Shotgun is an exception. Its 4 pellets are not random but fly in a fixed fan: straight, −2.9°, +5.7° and −8.6°.
 
@@ -49,7 +49,21 @@ Every shot shakes the camera, from barely noticeable for the flamethrower to a s
 
 ### Shell casings
 
-Bullets, Minigun tracers and Sniper shots eject casings to the side. They bounce off the ground and stay for 25 s, then disappear. At most 140 can lie on the ground, and the oldest vanish first. The Shotgun ejects shotgun shells. The crossbow, rocket launcher and energy guns have no casings.
+Bullets, Minigun tracers and Sniper shots eject casings to the side. They bounce off the ground and stay for 25 s, then disappear. At most 140 can lie on the ground, and the oldest vanish first. The Shotgun ejects shotgun shells. The rocket launcher and energy guns have no casings.
+
+### Height and shadow
+
+Shots fly at gun height, with a small shadow on the floor under them. Everything a shot can hit
+is judged on the floor, where the shadow is: a shot stops when its shadow meets a wall, the
+base of a table, barrel, pot or statue, or the ground a hero or enemy stands on.
+
+- Fired from behind a table, a shot stops at the table's base, drawn just over its top.
+- A shot whose shadow runs behind an enemy passes behind it, even where it is drawn across its
+  head; one whose shadow crosses the ground under it hits.
+- Shots are drawn in order with everything standing, by their shadow, so a wall or a prop in
+  front of a shot covers it.
+- The hero's shots fly as high as his gun is over his feet; enemies' shots fly about an
+  enemy's chest high.
 
 ### Projectile impact
 

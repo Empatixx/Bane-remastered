@@ -287,10 +287,10 @@ mod tests {
         let entity = world.spawn((Position(at), Velocity(Vec2::new(700.0, 0.0))));
         let body = if enemy {
             let _ = world.insert_one(entity, EnemyBullet);
-            physics.add_enemy_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0))
+            physics.add_enemy_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0), 0.0)
         } else {
             let _ = world.insert_one(entity, Bullet::plain(1));
-            physics.add_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0))
+            physics.add_bullet(entity, at, Vec2::new(700.0, 0.0), Vec2::splat(8.0), 0.0)
         };
         let _ = world.insert_one(entity, body);
         entity

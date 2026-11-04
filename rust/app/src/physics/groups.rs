@@ -28,7 +28,7 @@ pub(super) const PLAYER_FEET: InteractionGroups = InteractionGroups::new(
     InteractionTestMode::And,
 );
 
-/// The hero's whole figure: what enemy bullets hit.
+/// The ground the hero covers for shots: what enemy bullets hit.
 pub(super) const PLAYER_FIGURE: InteractionGroups =
     InteractionGroups::new(PLAYER, ENEMY_BULLET, InteractionTestMode::And);
 
@@ -44,15 +44,18 @@ pub(super) const BULLETS: InteractionGroups = InteractionGroups::new(
     InteractionTestMode::And,
 );
 
-/// Enemies pass through one another: their steering keeps them apart, and bodies shoving at
-/// each other only had them fighting for room.
-pub(super) const ENEMIES: InteractionGroups = InteractionGroups::new(
+/// An enemy's feet: what bumps into walls, objects and furniture. Enemies pass through one
+/// another: their steering keeps them apart, and bodies shoving at each other only had them
+/// fighting for room.
+pub(super) const ENEMY_FEET: InteractionGroups = InteractionGroups::new(
     ENEMY,
-    WALL.union(BULLET)
-        .union(OBJECT)
-        .union(FURNITURE),
+    WALL.union(OBJECT).union(FURNITURE),
     InteractionTestMode::And,
 );
+
+/// The ground an enemy covers for shots (see `ground_hurt`): only the hero's bullets hit it.
+pub(super) const ENEMY_FIGURE: InteractionGroups =
+    InteractionGroups::new(ENEMY, BULLET, InteractionTestMode::And);
 
 pub(super) const OBJECTS: InteractionGroups = InteractionGroups::new(
     OBJECT,

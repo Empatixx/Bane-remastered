@@ -11,6 +11,7 @@ use crate::components::{
     BULLET_FLIGHT, BULLET_ROWS, Boss, BossBrain, Bullet,
     Enrage, Chase, Cobweb, Color, ContactDamage, Dash,
     Burrower, Chills, DeathAsh, DeathBurst, DeathCloud, DeathHeal, DeathSplit, Drag, DropShadow,
+    Elevation,
     Enemy, Kindling, MagmaShell, SwoopStage, Swooper, WormStage,
     EnemyBullet, EyeShooter, Fuse, IcicleDropper,
     GazeWind, GolemAttack, GolemBoss, GolemStage, Hatcher, Heading, Health, Hits, Homing, Hopper,
@@ -33,6 +34,11 @@ pub(crate) const PLAYER_LOOK: Vec2 = Vec2::new(20.0 * crate::held::PIXEL, 26.0 *
 pub(crate) const PLAYER_FEET: Vec2 = Vec2::new(36.0, 20.0);
 /// The middle of his feet, from his centre.
 pub(crate) const PLAYER_FEET_OFFSET: Vec2 = Vec2::new(0.0, PLAYER_LOOK.y / 2.0 - PLAYER_FEET.y / 2.0);
+/// Where the light the hero carries shines from: just inside the top of his feet, which never
+/// enter a wall (only his feet collide, so his middle can stand over a wall tile, and a light
+/// inside a wall would shine out of it like a torch, into the room beyond).
+pub(crate) const PLAYER_LIGHT_OFFSET: Vec2 =
+    Vec2::new(0.0, PLAYER_FEET_OFFSET.y - PLAYER_FEET.y / 2.0 + 2.0);
 
 /// Where the hero at `position` stands: the middle of his feet, for what is underfoot.
 pub(crate) fn player_feet(position: Vec2) -> Vec2 {
@@ -84,7 +90,7 @@ pub(crate) fn player(
         entity,
         (
             Lit,
-            Light::rgb(Vec2::ZERO, 216.0, 156.0, 36.0, 150.0, 0.5),
+            Light::rgb(PLAYER_LIGHT_OFFSET, 216.0, 156.0, 36.0, 150.0, 0.5),
             DropShadow::default(),
             GazeWind::default(),
             YSort::bottom(PLAYER_LOOK),
@@ -127,6 +133,30 @@ const COBWEB_SIZE: Vec2 = Vec2::new(64.0, 64.0);
 const COBWEB_FORCE: f32 = 150_000_000.0;
 const COBWEB_DRAG: f32 = 1.5;
 
+/// How high the hero's shots fly when he fires from the hip: the muzzle's height over his feet,
+/// within these bounds (see `Elevation`).
+const SHOT_HEIGHT: (f32, f32) = (6.0, 60.0);
+/// A shot fired away from the hero (a turret, a summoned shard) flies this high.
+const LOOSE_SHOT_HEIGHT: f32 = 18.0;
+/// How far from the hero a shot may start and still count as his, fired from his hand.
+const HAND_REACH: f32 = 120.0;
+/// Enemies' shots fly this high over the floor, about an enemy's chest.
+pub(crate) const ENEMY_SHOT_HEIGHT: f32 = 24.0;
+
+/// How high a round of the hero's starting at `muzzle` flies: from his hand, as high as the
+/// muzzle is over his feet; from anywhere else, a fixed height.
+pub(crate) fn shot_height(world: &World, muzzle: Vec2) -> f32 {
+    world
+        .query::<&Position>()
+        .with::<&Player>()
+        .iter()
+        .next()
+        .filter(|position| position.0.distance(muzzle) <= HAND_REACH)
+        .map_or(LOOSE_SHOT_HEIGHT, |position| {
+            (player_feet(position.0).y - muzzle.y).clamp(SHOT_HEIGHT.0, SHOT_HEIGHT.1)
+        })
+}
+
 pub(crate) fn bullet(
     world: &mut World,
     physics: &mut Physics,
@@ -137,6 +167,7 @@ pub(crate) fn bullet(
 ) -> Entity {
     let spec = bullet.round.spec();
     let [red, green, blue] = spec.light;
+    let elevation = shot_height(world, position);
     let entity = world.spawn((
         bullet,
         Position(position),
@@ -147,7 +178,8 @@ pub(crate) fn bullet(
         Animation::new(BULLET_COLUMNS, BULLET_ROWS, BULLET_FLIGHT),
         Layer(2),
         Lit,
-        Light::rgb(Vec2::ZERO, red, green, blue, 25.0, 0.75),
+        // Cast from the floor under the round, so it never shines out of a wall it is over.
+        Light::rgb(Vec2::new(0.0, elevation), red, green, blue, 25.0, 0.75),
         LightFade { base: 0.75 },
     ));
     if bullet.round.turns() {
@@ -156,8 +188,8 @@ pub(crate) fn bullet(
     if spec.trail.is_some() {
         let _ = world.insert_one(entity, Trailing::default());
     }
-    let body = physics.add_bullet(entity, position, velocity, spec.hitbox);
-    let _ = world.insert_one(entity, body);
+    let body = physics.add_bullet(entity, position, velocity, spec.hitbox, elevation);
+    let _ = world.insert(entity, (body, Elevation(elevation), YSort { foot: elevation }));
     entity
 }
 
@@ -575,7 +607,7 @@ pub(crate) fn enemy_bullet(
         Animation::new(spec.columns, spec.rows, idle),
         Layer(2),
         Lit,
-        Light::rgb(Vec2::ZERO, red, green, blue, radius, intensity),
+        Light::rgb(Vec2::new(0.0, ENEMY_SHOT_HEIGHT), red, green, blue, radius, intensity),
         LightFade { base: intensity },
     ));
     if spec.homing {
@@ -590,8 +622,11 @@ pub(crate) fn enemy_bullet(
     if let Some(seconds) = spec.lifetime {
         let _ = world.insert_one(entity, Fuse { remaining: seconds });
     }
-    let body = physics.add_enemy_bullet(entity, position, velocity, size);
-    let _ = world.insert_one(entity, body);
+    let body = physics.add_enemy_bullet(entity, position, velocity, size, ENEMY_SHOT_HEIGHT);
+    let _ = world.insert(
+        entity,
+        (body, Elevation(ENEMY_SHOT_HEIGHT), YSort { foot: ENEMY_SHOT_HEIGHT }),
+    );
     if kind == ProjectileKind::Snow {
         let _ = world.insert_one(entity, Chills);
     }

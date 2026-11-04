@@ -92,6 +92,20 @@ impl YSort {
     }
 }
 
+/// How high above the floor something flies, like a bullet at gun height. Its `Position` is
+/// where it is drawn; the point on the floor under it (its shadow) is `Position + (0, height)`,
+/// and that is where it collides and how it is depth-sorted: shots meet walls, props and bodies
+/// where their shadow meets their footprint.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Elevation(pub(crate) f32);
+
+impl Elevation {
+    /// The point on the floor under something drawn at `drawn`.
+    pub(crate) fn ground(self, drawn: glam::Vec2) -> glam::Vec2 {
+        drawn + glam::Vec2::new(0.0, self.0)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Text {
     pub(crate) content: String,

@@ -1408,7 +1408,6 @@ mod tests {
             (GunKind::Sniper, Round::Slug),
             (GunKind::Rpg, Round::Rocket),
             (GunKind::Minigun, Round::Tracer),
-            (GunKind::Crossbow, Round::Bolt),
             (GunKind::Flamethrower, Round::Flame),
         ] {
             let (mut world, mut physics) = setup();
@@ -1574,11 +1573,15 @@ mod tests {
                 )
             })
             .collect();
-        let first = world.get::<&Position>(dummies[0]).expect("dummy").0;
+        // Fired so its shadow runs along the floor just above the first dummy's base, where
+        // rounds meet it (they collide where their shadow is).
+        let (middle, base) = crate::props::Prop::TrainingDummy.footprint(false).expect("a base");
+        let ground = 100.0 + middle.y + base.y / 2.0 - 4.0;
+        let height = prefabs::shot_height(&world, Vec2::ZERO);
         prefabs::bullet(
             &mut world,
             &mut physics,
-            Vec2::new(200.0, first.y),
+            Vec2::new(200.0, ground - height),
             Vec2::new(600.0, 0.0),
             Bullet::plain(100).as_round(Round::Arc),
             TextureId::WHITE,

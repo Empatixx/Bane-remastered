@@ -626,6 +626,10 @@ impl InGameScene {
                 crate::components::Invulnerable { remaining: f32::MAX },
             );
         }
+        // `BANE_PUDDLE=1` spills a poison puddle beside the start, for looking at it.
+        if std::env::var_os("BANE_PUDDLE").is_some() {
+            prefabs::poison_pool(&mut self.world, start + Vec2::new(TILE_SIZE * 2.0, 0.0), &assets.textures);
+        }
         // `BANE_COINS=n` starts the floor with that many coins, for trying out the shop.
         if let Some(coins) = std::env::var("BANE_COINS").ok().and_then(|n| n.trim().parse().ok()) {
             let wallets = self.world.query_mut::<&mut crate::components::Wallet>();

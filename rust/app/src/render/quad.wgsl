@@ -329,8 +329,33 @@ fn blood_color(px: vec2<f32>, t: f32) -> vec3<f32> {
     return rgb;
 }
 
+// Poison: a dark toxic green slowly churning, lighter scum drifting over it and bright bubbles
+// welling up and bursting.
+fn poison_color(px: vec2<f32>, t: f32) -> vec3<f32> {
+    // Two layers of noise flowing against each other, warped by a third, so the surface
+    // never stops moving.
+    let warp = flow_fbm(px * 0.09 + vec2<f32>(t * 0.11, -t * 0.07) + vec2<f32>(40.0, 2.0));
+    let a = flow_fbm(px * 0.07 + vec2<f32>(t * 0.09, t * 0.04) + warp * 1.6 + vec2<f32>(11.0, 27.0));
+    let b = flow_fbm(px * 0.15 + vec2<f32>(-t * 0.07, t * 0.06) + vec2<f32>(5.0, 9.0));
+    let f = a * 0.6 + b * 0.4;
+    var rgb = vec3<f32>(24.0, 50.0, 28.0) / 255.0;
+    if (f > 0.40) { rgb = vec3<f32>(34.0, 70.0, 34.0) / 255.0; }
+    if (f > 0.52) { rgb = vec3<f32>(50.0, 96.0, 40.0) / 255.0; }
+    if (f > 0.64) { rgb = vec3<f32>(96.0, 156.0, 54.0) / 255.0; }
+    // A flicker of toxic light on the scum.
+    if (f > 0.60 && noise(px + floor(t * 6.0) * 0.71) > 0.97) { rgb = vec3<f32>(176.0, 240.0, 72.0) / 255.0; }
+    let cell = floor(px / 5.0);
+    let bubble_cycle = floor(t * 1.4 + noise(cell) * 7.0);
+    let bubble = noise(cell + vec2<f32>(bubble_cycle * 5.3, 3.1));
+    let local = fract(px / 5.0) - vec2<f32>(0.5);
+    if (bubble > 0.82 && length(local) < 0.3) { rgb = vec3<f32>(150.0, 226.0, 80.0) / 255.0; }
+    if (bubble > 0.82 && length(local) < 0.12) { rgb = vec3<f32>(214.0, 255.0, 170.0) / 255.0; }
+    return rgb;
+}
+
 fn liquid_color(kind: f32, world: vec2<f32>, t: f32) -> vec3<f32> {
     let px = floor(world / LIQUID_PIXEL);
+    if (kind > 6.5) { return poison_color(px, t); }
     if (kind > 5.5) { return blood_color(px, t); }
     if (kind > 4.5) { return sand_color(px, t); }
     if (kind > 3.5) { return bog_color(px, t); }
@@ -348,15 +373,16 @@ fn liquid(in: VertexOut) -> vec4<f32> {
     if (texel.a < 0.995) {
         rgb = srgb_to_linear(liquid_color(in.fx.y, in.world, in.fx.x)) * in.color.rgb;
     }
+    // A liquid fades out with its colour's alpha (a poison puddle drying up); surfaces stay whole.
     if (in.lit < 0.5) {
-        return vec4<f32>(rgb, 1.0);
+        return vec4<f32>(rgb, in.color.a);
     }
     let screen = (in.world - globals.camera) / globals.size;
     var light = textureSampleLevel(lightmap, lightmap_sampler, screen, 0.0).rgb;
     light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
     light = soft_highlights(light);
     let shaded = linear_to_srgb(rgb) * light;
-    return vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), 1.0);
+    return vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), in.color.a);
 }
 
 const SHADOW_TINT: vec3<f32> = vec3<f32>(0.12, 0.10, 0.20);
@@ -400,7 +426,7 @@ fn shadow(in: VertexOut, uv_per_pixel: vec2<f32>) -> vec4<f32> {
 // Lights add up without a limit, so where several overlap (the hero's own glow, a lamp, candles)
 // bright colours such as skin burn out to white. Above full light this rolls off gently and
 // never gets past HIGHLIGHT_CEILING.
-const HIGHLIGHT_CEILING: f32 = 1.3;
+const HIGHLIGHT_CEILING: f32 = 1.5;
 
 fn soft_highlights(light: vec3<f32>) -> vec3<f32> {
     let room = HIGHLIGHT_CEILING - 1.0;

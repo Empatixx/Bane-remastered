@@ -11,11 +11,10 @@ const BANE_ROWS: usize = 15;
 const SHOPKEEPER_SIZE: Vec2 = Vec2::new(60.0, 78.0);
 /// How far his feet stand below the counter's top edge: the counter hides his legs.
 const SHOPKEEPER_BEHIND: f32 = 24.0;
-const TABLE_SIZE: Vec2 = Vec2::new(144.0, 96.0);
+const TABLE_SIZE: Vec2 = Vec2::new(96.0, 64.0);
 const POT_SIZE: Vec2 = Vec2::new(192.0, 192.0);
-const SLOT_MACHINE_SIZE: Vec2 = Vec2::new(192.0, 192.0);
+const SLOT_MACHINE_SIZE: Vec2 = Vec2::new(96.0, 108.0);
 const COUNTER_SIZE: Vec2 = Vec2::new(320.0, 112.0);
-const SHELF_SIZE: Vec2 = Vec2::new(128.0, 192.0);
 const GOODS_SIZE: Vec2 = Vec2::new(128.0, 128.0);
 const LAMP_SIZE: Vec2 = Vec2::new(64.0, 128.0);
 /// The counter stands in front of the keeper, hiding the hem of the robe.
@@ -86,7 +85,6 @@ pub(crate) enum FixtureKind {
     Pot,
     SlotMachine,
     Counter,
-    Shelf { right: bool },
     Goods { barrel: bool },
     Lamp,
     Torch { right: bool },
@@ -227,8 +225,8 @@ pub(crate) fn plan(
     }
 }
 
-/// The keeper behind a counter between two shelves of wares, the goods on three draped tables
-/// with a lamp between each two, a pile of stock in two corners, two pots and the slot machine.
+/// The keeper behind a counter, the goods on three cloth-covered tables with a lamp between
+/// each two, a pile of stock in two corners, two pots and the slot machine.
 fn shop(frame: &Frame) -> Furnishing {
     let (width, height) = (frame.width(), frame.height());
     let center = width / 2.0;
@@ -247,19 +245,6 @@ fn shop(frame: &Frame) -> Furnishing {
             COUNTER_SIZE,
         ),
     ];
-    for right in [false, true] {
-        let gap = COUNTER_SIZE.x / 2.0 + TILE_SIZE;
-        let x = if right {
-            center + gap
-        } else {
-            center - gap - SHELF_SIZE.x
-        };
-        fixtures.push(frame.place(
-            FixtureKind::Shelf { right },
-            Vec2::new(x, TILE_SIZE),
-            SHELF_SIZE,
-        ));
-    }
     let tables_y = height / 2.0 + TABLES_BELOW_MIDDLE;
     for index in 0..TABLES {
         let center_x = width / 4.0 * (index + 1) as f32;
@@ -491,7 +476,6 @@ mod tests {
         let shop = furnish(RoomKind::Shop, 20, 16);
         assert_eq!(count(&shop, |k| *k == FixtureKind::Shopkeeper), 1);
         assert_eq!(count(&shop, |k| *k == FixtureKind::Counter), 1);
-        assert_eq!(count(&shop, |k| matches!(k, FixtureKind::Shelf { .. })), 2);
         assert_eq!(count(&shop, |k| *k == FixtureKind::Table), 3);
         assert_eq!(count(&shop, |k| *k == FixtureKind::Lamp), 2);
         assert_eq!(count(&shop, |k| matches!(k, FixtureKind::Goods { .. })), 2);

@@ -1,19 +1,18 @@
 """The shop's furniture, drawn at the tiles' pixel scale (one pixel is four world units):
 
 - shoptable.tga: a plain wooden table under a green cloth, the goods in the middle (24x16,
-  drawn coarser: shown six times over).
+  shown four times over).
 - bookshelf.tga: the lobby's bookshelf in the same style, books, scrolls, a candle and a skull
   (48x43).
 - shop_counter.tga: the keeper's plain wooden counter, a few coins and a candle on it (80x28).
-- shop_shelf.tga: two tall shelves of bottles, jars and scrolls standing against the wall
-  (32x48 each, one above the other).
 - shop_goods.tga: two piles of stock for the corners, crates with a coin sack and a barrel with
   rolled carpets (32x32 each, one above the other).
 - shop_lamp.tga: a brass floor lamp, four frames of its flame flickering (16x32 each).
-- slotmachine.tga: the slot machine, 48x48 frames in four rows of eight: spinning (the lever
+- slotmachine.tga: the slot machine, a small cabinet about as tall as the hero, 32x36 frames
+  (shown three times over) in four rows of eight: spinning (the lever
   pulled, the reels blurring, the lights chasing), winning (three of a kind, the lights
   flashing, coins spilling into the tray), losing (mismatched reels, the lights dimmed) and
-  idle (the lights running slowly along the marquee). Kept simple: a coin on the marquee, five
+  idle (the lights running slowly along the marquee). Kept simple: a coin on the marquee, four
   bulbs, the reels, a tray and the lever.
 
 Hand-picked palettes: worn dark wood, a green cloth, crimson velvet and old gold.
@@ -212,64 +211,6 @@ def books(c, x, y, colours):
         c.put(x + index * 2, y - tall + 1, G2)
 
 
-def shelf(stock):
-    c = Canvas(32, 48)
-    c.shadow(1, 45, 30, 47, 120)
-    # The frame and back.
-    c.rect(1, 2, 30, 44, W1)
-    c.rect(3, 4, 28, 43, W0)
-    c.rect(1, 1, 30, 3, W3)
-    c.hline(0, 31, 1, W4)
-    c.hline(0, 31, 0, W2)
-    c.vline(1, 2, 44, W2)
-    c.vline(2, 2, 44, W3)
-    c.vline(30, 2, 44, W0)
-    c.vline(29, 2, 44, W2)
-    # The boards, each lit on its top edge.
-    boards = (14, 26, 38)
-    for y in boards:
-        c.hline(3, 28, y, W3)
-        c.hline(3, 28, y + 1, W2)
-        c.hline(3, 28, y + 2, W1)
-    c.hline(1, 30, 44, W0)
-    c.rect(2, 44, 4, 46, W1)
-    c.rect(27, 44, 29, 46, W1)
-    for shelf_index, items in enumerate(stock):
-        y = boards[shelf_index] - 1
-        for draw in items:
-            draw(c, y)
-    # A small gold trim on the top.
-    for x in (6, 15, 16, 25):
-        c.put(x, 2, G2)
-    return c
-
-
-def left_shelf():
-    return shelf([
-        [lambda c, y: bottle(c, 5, y, RED, RED_D), lambda c, y: bottle(c, 9, y, RED, RED_D, False),
-         lambda c, y: bottle(c, 14, y, BLUE, BLUE_D), lambda c, y: jar(c, 20, y, GREEN_D),
-         lambda c, y: bottle(c, 25, y, PURPLE, PURPLE_D, False)],
-        [lambda c, y: books(c, 5, y, [V2, BLUE_D, GREEN_D, W3, V1]), lambda c, y: scroll(c, 17, y),
-         lambda c, y: jar(c, 24, y, PURPLE_D)],
-        [lambda c, y: bottle(c, 5, y, GREEN, GREEN_D), lambda c, y: bottle(c, 9, y, GREEN, GREEN_D, False),
-         lambda c, y: scroll(c, 14, y), lambda c, y: bottle(c, 22, y, BLUE, BLUE_D),
-         lambda c, y: bottle(c, 25, y, RED, RED_D, False)],
-    ])
-
-
-def right_shelf():
-    return shelf([
-        [lambda c, y: jar(c, 5, y, RED_D), lambda c, y: bottle(c, 11, y, PURPLE, PURPLE_D),
-         lambda c, y: bottle(c, 15, y, PURPLE, PURPLE_D, False), lambda c, y: bottle(c, 21, y, GREEN, GREEN_D),
-         lambda c, y: bottle(c, 25, y, BLUE, BLUE_D, False)],
-        [lambda c, y: scroll(c, 5, y), lambda c, y: bottle(c, 13, y, RED, RED_D),
-         lambda c, y: books(c, 18, y, [W3, V2, PURPLE_D, BLUE_D, G1])],
-        [lambda c, y: jar(c, 5, y, BLUE_D), lambda c, y: jar(c, 10, y, GREEN_D),
-         lambda c, y: bottle(c, 16, y, RED, RED_D), lambda c, y: bottle(c, 20, y, BLUE, BLUE_D, False),
-         lambda c, y: bottle(c, 24, y, GREEN, GREEN_D)],
-    ])
-
-
 def candle(c, x, y):
     c.rect(x, y - 3, x + 1, y, PAPER)
     c.put(x + 1, y - 3, PAPER_D)
@@ -451,56 +392,60 @@ SYMBOL_PALETTE = {
 REEL = (238, 232, 216)
 REEL_D = (196, 186, 166)
 # Where each reel's window is.
-REEL_X = (13, 20, 27)
-REEL_TOP = 17
-REEL_HEIGHT = 10
-# Five bulbs along the top of the marquee.
-BULBS = [(13 + 5 * i, 5) for i in range(5)]
+REEL_X = (7, 13, 19)
+REEL_TOP = 10
+REEL_HEIGHT = 9
+# Four bulbs along the bottom of the marquee, two each side of the coin.
+BULBS = [(7, 6), (10, 6), (20, 6), (23, 6)]
 BULB_ON = (255, 236, 150)
 BULB_ON_H = (255, 255, 230)
 BULB_OFF = (120, 70, 40)
+SLOT_W, SLOT_H = 32, 36
 
 
 def machine_body(c, lever_down):
-    c.shadow(5, 45, 42, 47, 120)
-    # The cabinet: crimson with gold edges, a rounded marquee on top.
-    c.rect(8, 3, 39, 15, V1)
-    c.hline(10, 37, 2, G1)
-    c.hline(9, 38, 3, G2)
-    c.rect(9, 4, 38, 15, V2)
-    c.rect(11, 6, 36, 13, V0)
-    # The sign in the marquee: one gold coin.
-    c.pattern(21, 7, [".ggg.", "gGcGg", "gcGcg", "gGcGg", ".ggg."], {"g": G1, "G": G2, "c": G3})
-    c.vline(8, 4, 44, G1)
-    c.vline(39, 4, 44, G0)
-    c.rect(9, 16, 38, 44, V2)
-    c.vline(9, 16, 44, V3)
-    c.vline(38, 16, 44, V1)
+    """A small cabinet, about as tall as the hero: a rounded marquee with a gold coin, three
+    reels behind gold-framed glass, a payout tray and a lever."""
+    c.shadow(3, 33, 29, 35, 120)
+    # The marquee, rounded on top.
+    c.hline(9, 22, 1, G2)
+    c.hline(7, 24, 2, V2)
+    c.put(7, 2, G1)
+    c.put(24, 2, G1)
+    c.rect(5, 3, 26, 7, V2)
+    c.vline(5, 3, 7, G1)
+    c.vline(26, 3, 7, G0)
+    c.rect(7, 3, 24, 6, V0)
+    c.pattern(13, 2, [".ggg.", "gGcGg", "gcGcg", "gGcGg", ".ggg."], {"g": G1, "G": G2, "c": G3})
+    # The cabinet below, lit on its left edge.
+    c.rect(5, 8, 26, 30, V2)
+    c.hline(5, 26, 8, G1)
+    c.vline(5, 8, 30, V3)
+    c.vline(26, 8, 30, V1)
     # The reel window, framed in gold.
-    c.rect(11, 15, 34, 28, G1)
-    c.hline(11, 34, 15, G2)
-    c.rect(12, 16, 33, 27, I0)
+    c.rect(6, 9, 25, 19, G1)
+    c.hline(6, 25, 9, G2)
+    c.rect(7, 10, 24, 18, I0)
     # The payout tray.
-    c.rect(13, 35, 34, 40, G0)
-    c.rect(14, 36, 33, 39, I0)
-    c.hline(13, 34, 35, G2)
-    c.hline(13, 34, 40, G1)
+    c.rect(8, 22, 23, 26, G0)
+    c.rect(9, 23, 22, 25, I0)
+    c.hline(8, 23, 22, G2)
+    c.hline(8, 23, 26, G1)
     # The plinth.
-    c.rect(7, 42, 40, 45, W1)
-    c.hline(7, 40, 42, W3)
-    c.hline(7, 40, 45, W0)
+    c.rect(4, 29, 27, 32, W1)
+    c.hline(4, 27, 29, W3)
+    c.hline(4, 27, 32, W0)
     # The lever on the right side, its knob up or pulled down.
-    c.rect(39, 22, 41, 27, I2)
-    c.put(41, 22, I3)
+    c.rect(27, 13, 28, 16, I2)
     if lever_down:
-        c.vline(42, 24, 33, I3)
-        c.vline(43, 24, 33, I1)
-        knob_y = 33
+        c.vline(29, 15, 23, I3)
+        c.vline(30, 15, 23, I1)
+        knob_y = 22
     else:
-        c.vline(42, 6, 24, I3)
-        c.vline(43, 6, 24, I1)
-        knob_y = 4
-    c.pattern(41, knob_y, [".rr.", "rRrr", "rrrd", ".dd."], {"r": (220, 40, 50), "R": (255, 150, 150), "d": (120, 16, 30)})
+        c.vline(29, 4, 15, I3)
+        c.vline(30, 4, 15, I1)
+        knob_y = 2
+    c.pattern(28, knob_y, [".rr.", "rRrr", "rrrd", ".dd."], {"r": (220, 40, 50), "R": (255, 150, 150), "d": (120, 16, 30)})
 
 
 def reel(c, index, symbols, offset=0, blur=False):
@@ -530,26 +475,20 @@ def reel(c, index, symbols, offset=0, blur=False):
 
 def bulbs(c, lit):
     for index, (x, y) in enumerate(BULBS):
-        if lit(index):
-            c.put(x, y, BULB_ON_H)
-            c.put(x + 1, y, BULB_ON)
-        else:
-            c.put(x, y, BULB_OFF)
-            c.put(x + 1, y, BULB_OFF)
+        c.put(x, y, BULB_ON_H if lit(index) else BULB_OFF)
 
 
 def coins_in_tray(c, count, frame):
-    spots = [(16, 38), (20, 37), (24, 38), (28, 37), (31, 38), (18, 36), (26, 36), (22, 39)]
+    spots = [(10, 24), (13, 23), (16, 24), (19, 23), (21, 24), (11, 25), (17, 25), (14, 24)]
     for x, y in spots[:count]:
         c.put(x, y, G3)
-        c.put(x + 1, y, G2)
     # A glint that moves along the tray.
-    gx = 15 + (frame * 3) % 18
-    c.put(gx, 37, G4)
+    gx = 9 + (frame * 3) % 13
+    c.put(gx, 24, G4)
 
 
 def spin_frame(frame):
-    c = Canvas(48, 48)
+    c = Canvas(SLOT_W, SLOT_H)
     machine_body(c, lever_down=True)
     for index in range(3):
         # The reels run at different speeds, so they never line up while spinning.
@@ -559,7 +498,7 @@ def spin_frame(frame):
 
 
 def win_frame(frame):
-    c = Canvas(48, 48)
+    c = Canvas(SLOT_W, SLOT_H)
     machine_body(c, lever_down=False)
     for index in range(3):
         reel(c, index, [SEVEN, CHERRY])
@@ -576,7 +515,7 @@ def win_frame(frame):
 
 
 def lose_frame(frame):
-    c = Canvas(48, 48)
+    c = Canvas(SLOT_W, SLOT_H)
     machine_body(c, lever_down=False)
     for index, symbol in enumerate((CHERRY, BAR, GEM)):
         reel(c, index, [symbol, SEVEN])
@@ -585,7 +524,7 @@ def lose_frame(frame):
 
 
 def idle_frame(frame):
-    c = Canvas(48, 48)
+    c = Canvas(SLOT_W, SLOT_H)
     machine_body(c, lever_down=False)
     for index, symbol in enumerate((SEVEN, BELL, CHERRY)):
         reel(c, index, [symbol, GEM])
@@ -601,7 +540,6 @@ def main():
     ]
     for name, canvas in single:
         canvas.image.save(OUT / name)
-    sheet([left_shelf(), right_shelf()], 1).save(OUT / "shop_shelf.tga")
     sheet([goods_crates(), goods_barrel()], 1).save(OUT / "shop_goods.tga")
     sheet([lamp(frame) for frame in range(4)], 4).save(OUT / "shop_lamp.tga")
     rows = (

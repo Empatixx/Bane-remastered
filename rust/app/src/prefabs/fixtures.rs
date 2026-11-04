@@ -223,10 +223,6 @@ pub(crate) fn furnishing(
             FixtureKind::Counter => {
                 solid_prop(world, physics, Prop::ShopCounter, top_left, Look::DEFAULT, textures);
             }
-            FixtureKind::Shelf { right } => {
-                let look = Look::row(usize::from(right), false);
-                solid_prop(world, physics, Prop::ShopShelf, top_left, look, textures);
-            }
             FixtureKind::Goods { barrel } => {
                 let look = Look::row(usize::from(barrel), false);
                 solid_prop(world, physics, Prop::ShopGoods, top_left, look, textures);
@@ -1083,10 +1079,9 @@ mod tests {
         assert_eq!(machines_in_a_shop(true), 1);
         assert_eq!(machines_in_a_shop(false), 0);
     }
-    const SOLID: [Prop; 11] = [
+    const SOLID: [Prop; 10] = [
         Prop::Pot,
         Prop::ShopCounter,
-        Prop::ShopShelf,
         Prop::ShopGoods,
         Prop::ShopLamp,
         Prop::ShopTable,
@@ -1137,8 +1132,8 @@ mod tests {
     }
 
     #[test]
-    fn the_hero_walks_in_behind_the_top_of_a_lamp_or_a_shelf_and_stops_at_its_base() {
-        for kind in [Prop::ShopLamp, Prop::ShopShelf, Prop::ShopTable, Prop::AngelStatue] {
+    fn the_hero_walks_in_behind_the_top_of_a_lamp_or_a_table_and_stops_at_its_base() {
+        for kind in [Prop::ShopLamp, Prop::ShopTable, Prop::AngelStatue] {
             let (feet, top_left, size) = feet_stop_above(kind);
             let (middle, base) = kind.footprint(false).expect("a base");
             let base_top = top_left.y + middle.y - base.y / 2.0;

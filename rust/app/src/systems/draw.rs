@@ -2,7 +2,8 @@ use glam::{Vec2, Vec4};
 use hecs::World;
 
 use crate::components::{
-    Afterimage, Casing, Chilled, Color, DodgeVisual, DropShadow, EnemyArrow, Frozen, Heading, Hidden,
+    Afterimage, Casing, Chilled, Color, DodgeVisual, DropShadow, Elevation, EnemyArrow, Frozen,
+    Heading, Hidden,
     HitFlash,
     Hover, InRange, Layer, Liquid, Lit, MapSize, Minimap, Outline, Overlay, Phantom, Player,
     Position, Previous, Prompt, ScreenSpace, Shine, Size, Sky, Sprite, StatusBar, Text, YSort,
@@ -72,6 +73,10 @@ impl Sorted {
         }
     }
 }
+
+/// The shadow under a round in flight: its width bounds, and its colour.
+const BULLET_SHADOW: (f32, f32) = (4.0, 14.0);
+const BULLET_SHADOW_COLOR: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.35);
 
 pub(crate) fn collect_draws(
     world: &World,
@@ -267,6 +272,23 @@ pub(crate) fn collect_draws(
             Draw {
                 texture: sprite.texture,
                 quad: Quad::with_uv(position.0, size.0, color.0, sprite.uv).rotated(arrow.angle),
+            },
+        ));
+    }
+    // A round in flight casts a small shadow on the floor under it, where it collides.
+    for (position, previous, size, elevation) in world
+        .query::<(&Position, Option<&Previous>, &Size, &Elevation)>()
+        .without::<&Hidden>()
+        .iter()
+    {
+        let ground = elevation.ground(blended(position.0, previous, blend)) - camera;
+        let width = (size.0.min_element() * 0.8).clamp(BULLET_SHADOW.0, BULLET_SHADOW.1);
+        let quad = Quad::new(ground, Vec2::new(width, width * 0.5), BULLET_SHADOW_COLOR);
+        sorted.scene.push((
+            Layer(Layer::ACTORS.0 - 1),
+            Draw {
+                texture: TextureId::WHITE,
+                quad,
             },
         ));
     }

@@ -291,6 +291,7 @@ pub(crate) fn surfaces_phase(tick: &mut Tick, floor: &mut Floor, view: Vec2) {
     super::ripple_on_water(tick.world, floor.surfaces, &tick.assets.textures, tick.dt);
     super::kick_up_surfaces(tick.world, floor.surfaces, tick.dt);
     super::stir_surfaces(tick.world, &mut floor.air.stir, floor.surfaces, view, crate::viewport::TARGET, tick.dt);
+    super::objects::bubble_poison_puddles(tick.world, &mut floor.air.stir, &tick.assets.textures, tick.dt);
 }
 
 /// The hostiles' touches and bullets hurt the player, and the tables take their knocks.

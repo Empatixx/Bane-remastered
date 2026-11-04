@@ -140,31 +140,6 @@ def rocket():
     return s.img
 
 
-def bolt():
-    s = Sheet(32, 16)
-    for frame in range(4):
-        c = s.cell(frame, 0)
-        c.rect(5, 7, 24, 8, WOOD)
-        c.rect(5, 7, 24, 7, WOOD_L)
-        c.rect(5, 8, 24, 8, WOOD_D)
-        c.poly([(3, 5), (9, 7), (9, 8), (3, 10)], FLETCH)
-        c.rect(3 + frame % 2, 6, 4 + frame % 2, 9, EMBER)
-        c.poly([(24, 5), (29, 7), (29, 8), (24, 10)], STEEL)
-        c.poly([(24, 5), (29, 7), (24, 7)], STEEL_L)
-        c.px(29, 7, WHITE)
-    rng = random.Random(5)
-    chips = [(rng.uniform(0, math.tau), rng.choice([WOOD, WOOD_L, STEEL_L])) for _ in range(6)]
-    for frame in range(4):
-        c = s.cell(frame, 1)
-        if frame < 2:
-            c.rect(18, 7, 24, 8, WOOD)
-            c.rect(24, 6, 26, 9, STEEL)
-        for a, color in chips:
-            d = 2 + frame * 2
-            c.px(round(23 + math.cos(a) * d), round(7 + math.sin(a) * d), color)
-    return s.img
-
-
 def flame():
     s = Sheet(24, 24)
     rng = random.Random(9)
@@ -345,7 +320,6 @@ ROUNDS = {
     "tracer": tracer,
     "slug": slug,
     "rocket": rocket,
-    "bolt": bolt,
     "flame": flame,
     "laser": laser,
     "plasma": plasma,

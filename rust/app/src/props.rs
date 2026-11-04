@@ -27,7 +27,6 @@ pub(crate) enum Prop {
     ShopTable,
     SlotMachine,
     ShopCounter,
-    ShopShelf,
     ShopGoods,
     ShopLamp,
     Chest,
@@ -87,7 +86,6 @@ impl Prop {
                 | Self::ShopTable
                 | Self::SlotMachine
                 | Self::ShopCounter
-                | Self::ShopShelf
                 | Self::ShopGoods
                 | Self::ShopLamp
                 | Self::Chest
@@ -114,11 +112,10 @@ impl Prop {
         match self {
             Self::Pot => base(25.0, 40.0, 41.0, 8.0),
             Self::ShopCounter => base(0.0, 80.0, 28.0, 10.0),
-            Self::ShopShelf => base(1.0, 31.0, 48.0, 10.0),
             Self::ShopGoods => base(2.0, 30.0, 31.0, 8.0),
             Self::ShopLamp => base(4.0, 12.0, 32.0, 4.0),
             Self::ShopTable => base(2.0, 22.0, 15.0, 4.0),
-            Self::SlotMachine => base(7.0, 41.0, 46.0, 8.0),
+            Self::SlotMachine => base(4.0, 28.0, 33.0, 5.0),
             Self::TrainingDummy => base(6.0, 18.0, 32.0, 5.0),
             Self::Armorstand => base(0.0, 17.0, 32.0, 6.0),
             Self::Box => base(1.0, 29.0, 27.0, 9.0),
@@ -361,17 +358,16 @@ impl Prop {
                     frame_time: 0.2,
                 }),
             },
-            Self::ShopTable => still(tex::SHOPTABLE, Vec2::new(24.0, 16.0), 6.0),
+            Self::ShopTable => still(tex::SHOPTABLE, Vec2::new(24.0, 16.0), 4.0),
             Self::SlotMachine => PropSpec {
                 texture: tex::SLOTMACHINE,
                 columns: crate::sheets::slot::COLUMNS,
                 rows: crate::sheets::slot::ROWS,
-                frame: Vec2::new(48.0, 48.0),
-                scale: 4.0,
+                frame: Vec2::new(32.0, 36.0),
+                scale: 3.0,
                 animation: None,
             },
             Self::ShopCounter => still(tex::SHOP_COUNTER, Vec2::new(80.0, 28.0), 4.0),
-            Self::ShopShelf => variants(tex::SHOP_SHELF, Vec2::new(32.0, 48.0), 4.0),
             Self::ShopGoods => variants(tex::SHOP_GOODS, Vec2::new(32.0, 32.0), 4.0),
             Self::ShopLamp => PropSpec {
                 texture: tex::SHOP_LAMP,

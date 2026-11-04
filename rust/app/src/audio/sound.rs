@@ -22,8 +22,6 @@ pub(crate) enum SoundEffect {
     RpgReload,
     MinigunShoot,
     MinigunReload,
-    CrossbowShoot,
-    CrossbowReload,
     FlamethrowerShoot,
     FlamethrowerReload,
     BlasterShoot,
@@ -96,7 +94,7 @@ pub(crate) enum SoundEffect {
 }
 
 impl SoundEffect {
-    pub(crate) const ALL: [Self; 93] = [
+    pub(crate) const ALL: [Self; 91] = [
         Self::Click,
         Self::PistolShoot,
         Self::EmptyGunShoot,
@@ -119,8 +117,6 @@ impl SoundEffect {
         Self::RpgReload,
         Self::MinigunShoot,
         Self::MinigunReload,
-        Self::CrossbowShoot,
-        Self::CrossbowReload,
         Self::FlamethrowerShoot,
         Self::FlamethrowerReload,
         Self::BlasterShoot,
@@ -220,8 +216,6 @@ impl SoundEffect {
                 "guns/minigun_shoot_3.ogg",
             ],
             Self::MinigunReload => &["guns/minigun_reload.ogg"],
-            Self::CrossbowShoot => &["guns/crossbow_shoot.ogg"],
-            Self::CrossbowReload => &["guns/crossbow_reload.ogg"],
             Self::FlamethrowerShoot => &[
                 "guns/flamethrower_shoot_1.ogg",
                 "guns/flamethrower_shoot_2.ogg",

@@ -240,32 +240,6 @@ def minigun():
     return c.outlined()
 
 
-def crossbow():
-    c = Canvas(88, 42)
-    # stock
-    c.poly([(3, 17), (40, 18), (40, 23), (30, 23), (22, 30), (3, 30)], WOOD)
-    c.line([(3, 17), (40, 18)], WOOD_L)
-    c.line([(6, 19), (26, 20)], WOOD_S)
-    c.line([(3, 30), (22, 30), (30, 23), (40, 23)], WOOD_D)
-    c.rect(1, 16, 2, 31, STEEL_D)
-    # tiller
-    c.wood(40, 18, 72, 22)
-    c.rect(38, 23, 44, 25, STEEL_D)
-    c.steel(72, 16, 76, 24)
-    # prod
-    c.poly([(72, 17), (67, 2), (71, 1), (77, 17)], STEEL)
-    c.poly([(72, 23), (67, 38), (71, 39), (77, 23)], STEEL_D)
-    c.line([(69, 2), (73, 15)], STEEL_L)
-    # string
-    c.line([(68, 3), (46, 18)], WOOD_S)
-    c.line([(68, 37), (46, 22)], WOOD_S)
-    # bolt
-    c.rect(46, 16, 80, 17, WOOD_L)
-    c.poly([(80, 13), (86, 16), (80, 19)], STEEL_L)
-    c.rect(46, 14, 51, 16, (200, 50, 46, 255))
-    return c.outlined()
-
-
 def flamethrower():
     c = Canvas(98, 44)
     # stock + rear grip
@@ -396,7 +370,6 @@ GUNS = {
     "sniper": sniper,
     "rpg": rpg,
     "minigun": minigun,
-    "crossbow": crossbow,
     "flamethrower": flamethrower,
     "blaster": blaster,
     "plasma_rifle": plasma_rifle,

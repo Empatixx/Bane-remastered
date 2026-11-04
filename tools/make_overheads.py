@@ -2,7 +2,7 @@
 grate, wooden beams, a chain, pipes, a stone arch, a thick web, a metal walkway, a liana, a few strands of silk and a
 garland of red and gold pennants.
 
-overheads.tga has one row per kind in that order and four 16x24 cells per row: the left end
+overheads.tga has one row per kind (the pipes drawn by hand in tools/art/pipes.ase) in that order and four 16x24 cells per row: the left end
 (meeting the side of the wall), a middle piece that repeats seamlessly, the right end, and a centre piece
 (the arch's keystone; for the others it is the plain middle again).
 
@@ -26,7 +26,6 @@ CLEAR = (0, 0, 0, 0)
 
 IRON = {"d": (34, 30, 40), "m": (78, 74, 90), "l": (110, 106, 122), "h": (140, 134, 154), "r": (178, 172, 188), "u": (112, 66, 48)}
 WOOD = {"d": (58, 36, 24), "m": (106, 70, 42), "l": (140, 96, 58), "h": (176, 128, 78), "n": (150, 146, 156), "i": (60, 56, 66)}
-PIPE = {"d": (30, 40, 36), "m": (70, 84, 76), "l": (104, 120, 108), "h": (146, 162, 146), "u": (124, 76, 46), "b": (170, 180, 166)}
 STONE = {"d": (70, 58, 44), "m": (130, 106, 74), "l": (164, 136, 92), "h": (204, 176, 122), "g": (232, 196, 110), "x": (40, 30, 22)}
 SILK = {"s": (220, 220, 196, 225), "f": (160, 160, 140, 170)}
 
@@ -129,34 +128,7 @@ CHAIN_END = pad([
     "..........dddd..",
 ])
 
-PIPES_MID = pad([
-    "dddddddddddddddd",
-    "hhhhhhhhhhhhhhhh",
-    "llllllllllllllll",
-    "mmmmmmmmmumbmmmm",
-    "mmmmmmmmmmmbmmmm",
-    "mmmmmmmmmmmbmmmm",
-    "dddddddddddddddd",
-    "................",
-    "dddddddddddddddd",
-    "llllllllllllllll",
-    "mmumbmmmmmmmmmmm",
-    "dddddddddddddddd",
-])
-PIPES_END = pad([
-    ".........ddddddd",
-    ".........dhbhhhh",
-    ".........dlblllll"[:16],
-    ".........dmbmmmm",
-    ".........dmbmmmm",
-    ".........dmbmmmm",
-    ".........ddddddd",
-    "...........dd...",
-    "...........ddddd",
-    "...........dbbll",
-    "...........dbmmm",
-    "...........ddddd",
-])
+PIPES_MID = []  # drawn by hand: tools/art/pipes.ase
 
 ARCH_MID = pad([
     "hhhhhhhhhhhhhhhh",
@@ -264,7 +236,6 @@ TERMINALS = {
     "grate": ["dhd", "dmd", "dmd", "dmd", "dmd", "dmd", "dmd", "dmd", "dmd", "dhd", "dmd", "ddd"],
     "beams": ["...", "...", "...", "...", "...", "...", "...", "...", "...", "...", "...", "..."],
     "chain": [".dd", "dhh", "dm.", "dm.", ".dd"],
-    "pipes": ["ddd", "dbh", "dbl", "dbm", "dbm", "dbm", "ddd", "...", "ddd", "dbl", "dbm", "ddd"],
     "arch": ["xhh", "xll", "xlm", "xlm", "xlm", "xlm", "xlm", "xdd", "xxx"],
     "web": ["...", "..s", ".s.", "s..", ".s.", "..s", "...", "...", "..s", ".ss"],
     "walk": ["d..", "d..", "d..", "d..", "dhh", "dmd", "dmd", "dmd", "dmd", "dmd", "dmm", "ddd", "..."],
@@ -370,7 +341,7 @@ KINDS = [
     ("grate", GRATE_MID, GRATE_MID, IRON),
     ("beams", BEAMS_MID, BEAMS_MID, WOOD),
     ("chain", CHAIN_MID, CHAIN_MID, IRON),
-    ("pipes", PIPES_MID, PIPES_MID, PIPE),
+    ("pipes", PIPES_MID, PIPES_MID, None),
     ("arch", ARCH_MID, ARCH_KEY, STONE),
     ("web", WEB_MID, WEB_MID, SILK),
     ("walk", WALK_MID, WALK_MID, IRON),
@@ -441,10 +412,35 @@ def pieces(name, middle, centre):
     return [end, middle, mirror(end), centre]
 
 
+# Kinds drawn by hand in LibreSprite (tools/art/<name>.ase, exported to <name>.png with
+# `lsprite render tools/art/<name>.ase --scale 1 --out tools/art/<name>.png`): a 32x24 picture,
+# the left end in the first 16 columns and the middle piece in the other 16.
+DRAWN = {"pipes"}
+ART = Path(__file__).resolve().parent / "art"
+
+
+def drawn_pieces(name):
+    """The left end, middle, right end and centre of a hand-drawn kind, as 16x24 images."""
+    art = Image.open(ART / f"{name}.png").convert("RGBA")
+    end, middle = art.crop((0, 0, W, H)), art.crop((W, 0, 2 * W, H))
+    return [end, middle, end.transpose(Image.Transpose.FLIP_LEFT_RIGHT), middle]
+
+
+def turned(image):
+    """A horizontal piece turned to run down the screen, its light from the left, cut to a tile."""
+    image = image.transpose(Image.Transpose.TRANSPOSE)
+    start = (image.width - W) // 2
+    return image.crop((start, 0, start + W, W))
+
+
 def upright_sheet():
     """Each piece transposed: the left end becomes the upper one, the right end the lower."""
     sheet = Image.new("RGBA", (4 * W, len(KINDS) * W), CLEAR)
     for row, (name, middle, centre, palette) in enumerate(KINDS):
+        if name in DRAWN:
+            for column, image in enumerate(drawn_pieces(name)):
+                sheet.paste(turned(image), (column * W, row * W))
+            continue
         for column, rows in enumerate(pieces(name, middle, centre)):
             sheet.paste(cell(transpose(rows), palette).crop((0, 0, W, W)), (column * W, row * W))
     return sheet
@@ -454,6 +450,10 @@ def main():
     upright_sheet().save(OUT / "overheads_upright.tga")
     sheet = Image.new("RGBA", (4 * W, len(KINDS) * H), CLEAR)
     for row, (name, middle, centre, palette) in enumerate(KINDS):
+        if name in DRAWN:
+            for column, image in enumerate(drawn_pieces(name)):
+                sheet.paste(image, (column * W, row * H))
+            continue
         for column, rows in enumerate(pieces(name, middle, centre)):
             assert all(len(line) == W for line in rows), (row, column)
             sheet.paste(cell(rows, palette), (column * W, row * H))

@@ -133,31 +133,6 @@ def minigun_reload():
     return fade_out(track, 0.15)
 
 
-def crossbow_shoot():
-    length = 0.55
-    t = seconds(length)
-    pitch = 150 * np.exp(-t * 3) + 85
-    phase = 2 * np.pi * np.cumsum(pitch) / RATE
-    twang = (np.sin(phase) + 0.5 * np.sin(2 * phase) + 0.25 * np.sin(3 * phase)) * decay(length, 9)
-    thwack = lowpass(noise(0.08, 7), 1800) * decay(0.08, 45)
-    swish = bandpass(noise(0.25, 8), 2000, 7000) * np.sin(np.pi * seconds(0.25) / 0.25) * 0.25
-    track = twang * 0.45
-    place(track, thwack * 1.2, 0.0)
-    place(track, swish, 0.02)
-    return track
-
-
-def crossbow_reload():
-    track = np.zeros(int(0.85 * RATE))
-    at = 0.04
-    for i in range(7):
-        place(track, click(20 + i, 1400 + 120 * i, 0.03, 120) * 0.7, at)
-        at += 0.085 - i * 0.005
-    place(track, scrape(30, 0.12, 400, 2000) * 1.2, at)
-    place(track, click(31, 900, 0.08, 40) * 1.6, at + 0.12)
-    return track
-
-
 def flamethrower_shoot(seed):
     def variant():
         length = 0.22
@@ -275,8 +250,6 @@ SOUNDS = {
     "minigun_shoot_2.ogg": (minigun_shoot(1), 0.5),
     "minigun_shoot_3.ogg": (minigun_shoot(2), 0.5),
     "minigun_reload.ogg": (minigun_reload, 0.6),
-    "crossbow_shoot.ogg": (crossbow_shoot, 0.7),
-    "crossbow_reload.ogg": (crossbow_reload, 0.5),
     "flamethrower_shoot_1.ogg": (flamethrower_shoot(0), 0.35),
     "flamethrower_shoot_2.ogg": (flamethrower_shoot(1), 0.35),
     "flamethrower_shoot_3.ogg": (flamethrower_shoot(2), 0.35),

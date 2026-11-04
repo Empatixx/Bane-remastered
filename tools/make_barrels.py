@@ -52,83 +52,8 @@ def poison_marks(image):
                     if a == 0:
                         continue
                     if ((x * 73856093) ^ (y * 19349663) ^ (column * 83492791)) % 31 == 0:
-                        pixels[px, py] = (190, 255, 90, a)
+                        pixels[px, py] = TOXIC
     return image
-
-
-RIM, BODY, DEEP, SHINE = (22, 84, 34, 255), (46, 150, 56, 235), (88, 205, 78, 225), (150, 242, 120, 210)
-BLOBS = [(32, 35, 26, 19), (14, 40, 12, 9), (50, 38, 12, 9), (29, 22, 15, 8), (37, 51, 15, 8), (44, 24, 9, 6)]
-
-
-def blob(scale, wobble):
-    layer = Image.new("RGBA", (FRAME, FRAME), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(layer)
-    parts = []
-    for index, (cx, cy, rx, ry) in enumerate(BLOBS):
-        w = wobble * (1 if index % 2 == 0 else -1)
-        parts.append((32 + (cx - 32) * scale, 35 + (cy - 35) * scale, max(2, rx * scale + w), max(2, ry * scale + w * 0.6)))
-    for cx, cy, rx, ry in parts:
-        draw.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=RIM)
-    for cx, cy, rx, ry in parts:
-        if rx > 4 and ry > 4:
-            draw.ellipse((cx - rx + 2, cy - ry + 2, cx + rx - 2, cy + ry - 2), fill=BODY)
-    for cx, cy, rx, ry in parts[:4]:
-        if rx > 8 and ry > 7:
-            draw.ellipse((cx - rx + 5, cy - ry + 4, cx + rx - 5, cy + ry - 4), fill=DEEP)
-    if scale > 0.6:
-        draw.ellipse((24, 24, 40, 32), fill=SHINE)
-        draw.ellipse((12, 36, 20, 40), fill=SHINE)
-    return layer, draw
-
-
-def droplets(draw, frame, count, spread, rise):
-    for index in range(count):
-        angle = index * 2.4 + frame
-        distance = spread * (0.55 + 0.45 * ((index * 7) % 5) / 4)
-        x = 32 + math.cos(angle) * distance
-        y = 36 + math.sin(angle) * distance * 0.7 - rise * (1 - abs(2 * ((index * 3 % 5) / 4) - 1))
-        draw.rectangle((x, y, x + 1, y + 1), fill=BODY)
-
-
-def bubble(draw, x, y, radius):
-    draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=(175, 255, 150, 235), outline=(40, 120, 50, 255))
-    draw.point((x - 1, y - 1), fill=(255, 255, 255, 255))
-
-
-def puddle():
-    columns, rows = 6, 2
-    sheet = Image.new("RGBA", (FRAME * columns, FRAME * rows), (0, 0, 0, 0))
-    grow = [0.08, 0.28, 0.5, 0.72, 0.9, 1.0]
-    for frame, scale in enumerate(grow):
-        layer, draw = blob(scale, 0)
-        droplets(draw, frame, 8 - frame, 10 + 26 * scale, 14 - frame * 2)
-        if frame == 5:
-            draw.arc((6, 14, 58, 56), 200, 340, fill=SHINE)
-        sheet.paste(layer, (frame * FRAME, 0))
-    rising = [
-        [(22, 33, 3), (40, 40, 2), (31, 45, 2), (47, 31, 1)],
-        [(22, 32, 3), (40, 39, 3), (30, 44, 2), (46, 30, 2)],
-        [(22, 31, 3), (41, 38, 3), (30, 44, 1), (46, 30, 2)],
-        [(23, 30, 2), (40, 36, 3), (32, 43, 3), (45, 29, 3)],
-        [(24, 32, 1), (39, 39, 2), (31, 46, 3), (47, 33, 2)],
-        [(23, 33, 2), (39, 41, 2), (31, 46, 2), (47, 32, 1)],
-    ]
-    around = [
-        [(8, 22), (54, 20), (58, 46)],
-        [(7, 24), (55, 18), (6, 46)],
-        [(7, 24), (55, 18)],
-        [(10, 20), (56, 22), (6, 46)],
-        [(9, 24), (57, 48)],
-        [(8, 22), (56, 20), (58, 47)],
-    ]
-    for frame in range(columns):
-        layer, draw = blob(1.0, 0)
-        for bx, by, radius in rising[frame]:
-            bubble(draw, bx, by, radius)
-        for dx, dy in around[frame]:
-            draw.rectangle((dx, dy, dx + 1, dy + 1), fill=BODY)
-        sheet.paste(layer, (frame * FRAME, FRAME))
-    return sheet
 
 
 def frost_burst():
@@ -167,21 +92,119 @@ def frost_burst():
     return sheet
 
 
+# The poison barrel: the wooden staves mapped colour by colour to a dark, toxic green, like the
+# bog under it; the iron bands stay iron. Lightest to darkest wood.
+POISON_WOOD = {
+    (153, 100, 62): (70, 128, 54),
+    (139, 89, 54): (54, 106, 46),
+    (125, 80, 49): (42, 88, 40),
+    (122, 72, 50): (34, 74, 36),
+    (118, 68, 49): (34, 74, 36),
+    (117, 68, 48): (34, 74, 36),
+    (114, 65, 48): (30, 66, 34),
+    (113, 64, 47): (30, 66, 34),
+    (110, 62, 46): (30, 66, 34),
+    (108, 59, 45): (26, 58, 32),
+    (104, 56, 44): (22, 50, 30),
+}
+TOXIC = (176, 240, 72, 255)
+
+
+def poison_wood(image):
+    out = image.copy()
+    pixels = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = pixels[x, y]
+            if a and (r, g, b) in POISON_WOOD:
+                pixels[x, y] = (*POISON_WOOD[(r, g, b)], a)
+    return out
+
+
+# A bubble of poison rising off the barrel, 5x5 pixels per frame (shown three times over):
+# forming, round, round with its shine slid over, bursting.
+BUBBLE = [
+    [".....", ".....", "..g..", ".gLg.", "..g.."],
+    [".ggg.", "gLllg", "glllg", "glllg", ".ggg."],
+    [".ggg.", "glLlg", "glllg", "glllg", ".ggg."],
+    ["g...g", ".....", ".....", ".....", "g...g"],
+]
+BUBBLE_PAL = {"g": (120, 210, 60, 255), "l": (70, 150, 50, 150), "L": (230, 255, 190, 255)}
+
+
+def bubble_sheet():
+    sheet = Image.new("RGBA", (5 * len(BUBBLE), 5), (0, 0, 0, 0))
+    for index, rows in enumerate(BUBBLE):
+        for y, line in enumerate(rows):
+            for x, key in enumerate(line):
+                if key in BUBBLE_PAL:
+                    sheet.putpixel((index * 5 + x, y), BUBBLE_PAL[key])
+    return sheet
+
+
+# The poison puddle in the style of the floor's liquids: 32x32 masks shown four times over, one
+# mask pixel to one liquid pixel. The inside is left half transparent, and the game fills it with
+# churning poison (quad.wgsl, `poison_color`); the rim is drawn: a dark outline, a lit inner edge
+# along the top and a few toxic glints. Row 0: the puddle spreading out of the broken barrel in
+# six frames; row 1: it lying there (the liquid moves on its own, the rim glints shift).
+PUDDLE_FRAME = 32
+PUDDLE_BLOBS = [(16, 17, 10, 7), (9, 18, 5, 4), (23, 16, 5, 4), (14, 12, 5, 3), (18, 22, 6, 3)]
+PUDDLE_GROW = [0.25, 0.45, 0.65, 0.8, 0.92, 1.0]
+PUDDLE_INSIDE = (40, 80, 36, 140)
+PUDDLE_OUTLINE = (12, 28, 16, 255)
+PUDDLE_EDGE = (58, 104, 42, 255)
+PUDDLE_GLINTS = [[(10, 13), (22, 12)], [(12, 12), (24, 13)], [(11, 13), (21, 11)]]
+
+
+def puddle_shape(scale):
+    inside = set()
+    for y in range(PUDDLE_FRAME):
+        for x in range(PUDDLE_FRAME):
+            for cx, cy, rx, ry in PUDDLE_BLOBS:
+                ex = 16 + (cx - 16) * scale
+                ey = 17 + (cy - 17) * scale
+                if ((x + 0.5 - ex) / max(1.0, rx * scale)) ** 2 + ((y + 0.5 - ey) / max(1.0, ry * scale)) ** 2 <= 1.0:
+                    inside.add((x, y))
+                    break
+    return inside
+
+
+def puddle_mask(scale, glints):
+    image = Image.new("RGBA", (PUDDLE_FRAME, PUDDLE_FRAME), (0, 0, 0, 0))
+    inside = puddle_shape(scale)
+    for x, y in inside:
+        image.putpixel((x, y), PUDDLE_INSIDE)
+    for x, y in inside:
+        if (x, y - 1) not in inside:
+            image.putpixel((x, y), PUDDLE_EDGE)
+    for x, y in inside:
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if (x + dx, y + dy) not in inside and 0 <= x + dx < PUDDLE_FRAME and 0 <= y + dy < PUDDLE_FRAME:
+                image.putpixel((x + dx, y + dy), PUDDLE_OUTLINE)
+    for x, y in glints:
+        if (x, y) in inside:
+            image.putpixel((x, y), TOXIC)
+    return image
+
+
+def liquid_puddle():
+    sheet = Image.new("RGBA", (PUDDLE_FRAME * 6, PUDDLE_FRAME * 2), (0, 0, 0, 0))
+    for frame, scale in enumerate(PUDDLE_GROW):
+        sheet.paste(puddle_mask(scale, []), (frame * PUDDLE_FRAME, 0))
+    for frame in range(6):
+        sheet.paste(puddle_mask(1.0, PUDDLE_GLINTS[frame % 3]), (frame * PUDDLE_FRAME, PUDDLE_FRAME))
+    return sheet
+
+
 def main():
     barrel = Image.open(SRC).convert("RGBA")
-    poison = poison_marks(recolor(barrel, 0.27, (1.0, 0.12), 0.95, 0.0))
+    poison = poison_marks(poison_wood(barrel))
+    bubble_sheet().save(f"{OUT}/poison_bubble.tga")
     frost = frost_speckles(recolor(barrel, 0.56, (0.7, 0.0), 1.25, 0.1))
     poison.save(f"{OUT}/poison_barrel.tga")
     frost.save(f"{OUT}/frost_barrel.tga")
-    puddle().save(f"{OUT}/poison_puddle.tga")
+    liquid_puddle().save(f"{OUT}/poison_puddle.tga")
     frost_burst().save(f"{OUT}/frost_burst.tga")
-    scratch = "/private/tmp/claude-501/-Users-jirka-IdeaProjects-redissun/232009fd-0059-46c5-af18-fa12d7ec52a4/scratchpad"
-    bg = (70, 70, 70, 255)
-    for name, sheet in (("puddle_sheet", puddle()), ("frost_sheet", frost_burst())):
-        big = sheet.resize((sheet.width * 3, sheet.height * 3), Image.NEAREST)
-        canvas = Image.new("RGBA", big.size, bg)
-        canvas.paste(big, (0, 0), big)
-        canvas.save(f"{scratch}/{name}.png")
 
 
 main()
