@@ -14,7 +14,7 @@ use crate::dungeon::{Dungeon, HangingKind, Overhead, OverheadKind};
 use crate::tilemap::TILE_SIZE;
 
 const COLUMNS: usize = 4;
-const ROWS: usize = 13;
+const ROWS: usize = 11;
 const LEFT_END: usize = 0;
 const MIDDLE: usize = 1;
 const RIGHT_END: usize = 2;
@@ -948,7 +948,7 @@ fn land(
     use crate::systems::damage::{Damage, DamageSource, deal, hurt_player};
     fx.shake(LANDING_SHAKE);
     if let Some(row) = liquid {
-        crate::prefabs::splash(world, floor, row, true, textures);
+        crate::prefabs::splash(world, floor, row, textures);
         sounds.push(AudioCommand::Effect(SoundEffect::SlimeBurst));
     }
     match drops {

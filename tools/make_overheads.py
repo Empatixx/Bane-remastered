@@ -1,6 +1,6 @@
-"""Things that lie across a room from one wall to another at the height of their tops: an iron
-grate, wooden beams, a chain, pipes, a stone arch, a thick web, a metal walkway, a liana, a few strands of silk and a
-garland of red and gold pennants.
+"""Things that lie across a room from one wall to another at the height of their tops: wooden
+beams, a chain, pipes, a stone arch, a thick web, a liana, a few strands of silk, a garland of
+red and gold pennants, an ice bridge, an obsidian bridge and a mossy root.
 
 overheads.tga has one row per kind (the pipes, the ice bridge, the obsidian bridge and the root
 drawn by hand in tools/art/*.ase) in that order and four 16x24 cells per row: the left end
@@ -52,35 +52,6 @@ def mirror(rows):
     return [row[::-1] for row in rows]
 
 
-GRATE_MID = pad([
-    "hhhhrhhhhhhhrhhh",
-    "mmmmmmmmmmmmmmmm",
-    "dddddddddddddddd",
-    "md.m..m.md.m..m.",
-    "md..m.m.md..m.m.",
-    "md...mm.md...mm.",
-    "md..m.m.md..m.m.",
-    "md.m..m.md.m..m.",
-    "mdm...m.mdm...m.",
-    "hhhhhhhhhhhhhhhh",
-    "mmmmmmmmmmmmmmmm",
-    "ddddudddddddddud",
-])
-GRATE_END = pad([
-    "..........dddddd",
-    "..........dhhhhh",
-    "..........dmrmmm",
-    "..........dmmddd",
-    "..........dm.md.",
-    "..........dm.md.",
-    "..........dmmmd.",
-    "..........dm.md.",
-    "..........dm.md.",
-    "..........dmmhhh",
-    "..........dmrmmm",
-    "..........dmmddd",
-    "..........dddd..",
-])
 
 BEAMS_MID = pad([
     "hhhhhhhhhhhhhhhh",
@@ -199,47 +170,15 @@ WEB_END = pad([
     "..........ssss..",
 ])
 
-WALK_MID = pad([
-    "h.......h.......",
-    "rhhhhhhhrhhhhhhh",
-    "m.......m.......",
-    "m.......m.......",
-    "hhhhhhhhhhhhhhhh",
-    "ldldldldldldldld",
-    "dldldldldldldldl",
-    "ldldldldldldldld",
-    "dldldldldldldldl",
-    "ldldldldldldldld",
-    "mmmmmmmmmmmmmmmm",
-    "dddddddddddddddd",
-    ".uu.......uu....",
-])
-WALK_END = pad([
-    "..........mmmmmm",
-    "..........mrhhhh",
-    "..........mm....",
-    "..........mm....",
-    "..........mmhhhh",
-    "..........mmldld",
-    "..........mmdldl",
-    "..........mmldld",
-    "..........mmdldl",
-    "..........mmldld",
-    "..........mmmmmm",
-    "..........mddddd",
-    "..........dd....",
-])
 
 # The outer three pixels of an end piece, row by row from the top of the object: what holds it
 # where it lies on the wall. Shorter lists repeat their last entry.
 PLATE = ["ddd", "dmh", "dmm", "dmm", "dmd"]
 TERMINALS = {
-    "grate": ["dhd", "dmd", "dmd", "dmd", "dmd", "dmd", "dmd", "dmd", "dmd", "dhd", "dmd", "ddd"],
     "beams": ["...", "...", "...", "...", "...", "...", "...", "...", "...", "...", "...", "..."],
     "chain": [".dd", "dhh", "dm.", "dm.", ".dd"],
     "arch": ["xhh", "xll", "xlm", "xlm", "xlm", "xlm", "xlm", "xdd", "xxx"],
     "web": ["...", "..s", ".s.", "s..", ".s.", "..s", "...", "...", "..s", ".ss"],
-    "walk": ["d..", "d..", "d..", "d..", "dhh", "dmd", "dmd", "dmd", "dmd", "dmd", "dmm", "ddd", "..."],
 }
 
 
@@ -339,13 +278,11 @@ def pennants_end():
 
 
 KINDS = [
-    ("grate", GRATE_MID, GRATE_MID, IRON),
     ("beams", BEAMS_MID, BEAMS_MID, WOOD),
     ("chain", CHAIN_MID, CHAIN_MID, IRON),
     ("pipes", PIPES_MID, PIPES_MID, None),
     ("arch", ARCH_MID, ARCH_KEY, STONE),
     ("web", WEB_MID, WEB_MID, SILK),
-    ("walk", WALK_MID, WALK_MID, IRON),
     ("vines", VINES_MID, VINES_MID, LEAVES),
     ("strands", STRANDS_MID, STRANDS_MID, SILK_STRANDS),
     ("pennants", PENNANTS_MID, PENNANTS_MID, PENNANTS),

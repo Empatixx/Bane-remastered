@@ -152,23 +152,19 @@ pub(crate) fn splash_row(surface: crate::dungeon::Surface) -> Option<usize> {
     }
 }
 
-/// Something falling into a liquid: a crown, a column of it shooting up and falling back, the
-/// ring spreading (`big`, 32x32 pixels three times over), or a little crown and a ring for a
-/// drop (16x16). `at` is where it meets the surface.
-pub(crate) fn splash(world: &mut World, at: Vec2, row: usize, big: bool, textures: &Textures) {
-    let (texture, frames, side) = if big { (tex::SPLASH_BIG, 7, 32.0) } else { (tex::SPLASH_SMALL, 5, 16.0) };
-    let clip = Clip { row, frames, frame_time: 0.07, looping: false, flipped: false };
-    let size = Vec2::splat(side * 3.0);
-    // The pictures stand on the water line six pixels (three for the small one) above their
-    // bottom edge.
-    let line = if big { 26.0 } else { 12.0 };
+/// Something big falling into a liquid at `at` (where it meets the surface): it goes in, a
+/// crown rises, a column of the liquid shoots up and falls back, the ring spreads; 32x32 pixels
+/// three times over.
+pub(crate) fn splash(world: &mut World, at: Vec2, row: usize, textures: &Textures) {
+    let clip = Clip { row, frames: 7, frame_time: 0.07, looping: false, flipped: false };
+    // The picture stands on the water line six pixels above its bottom edge.
     world.spawn((
         Expiring,
-        Position(at - Vec2::new(0.0, (line - side / 2.0) * 3.0)),
-        Size(size),
+        Position(at - Vec2::new(0.0, (26.0 - 16.0) * 3.0)),
+        Size(Vec2::splat(96.0)),
         Color(Vec4::ONE),
-        Sprite::cell(textures.get(texture), 0, row, frames, 4),
-        Animation::new(frames, 4, clip),
+        Sprite::cell(textures.get(tex::SPLASH_BIG), 0, row, 7, 4),
+        Animation::new(7, 4, clip),
         Layer(1),
         Lit,
     ));

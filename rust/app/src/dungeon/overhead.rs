@@ -46,19 +46,18 @@ impl OverheadKind {
     /// The kind's row in the overhead sheet.
     pub(crate) fn row(self) -> usize {
         match self {
-            Self::Beams => 1,
-            Self::Chain => 2,
-            Self::Pipes => 3,
-            Self::Arch => 4,
-            Self::Web => 5,
-            Self::Vines => 7,
-            Self::Strands => 8,
-            Self::Pennants => 9,
-            // Drawn from lava_trough.tga instead; the walkway's row stands in for it elsewhere.
-            Self::Trough => 6,
-            Self::IceBridge => 10,
-            Self::RockBridge => 11,
-            Self::Roots => 12,
+            Self::Beams => 0,
+            Self::Chain => 1,
+            Self::Pipes => 2,
+            Self::Arch => 3,
+            Self::Web => 4,
+            Self::Vines => 5,
+            Self::Strands => 6,
+            Self::Pennants => 7,
+            Self::IceBridge => 8,
+            // Drawn from lava_trough.tga instead, and only across; the obsidian bridge stands in.
+            Self::RockBridge | Self::Trough => 9,
+            Self::Roots => 10,
         }
     }
 

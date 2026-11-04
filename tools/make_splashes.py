@@ -1,11 +1,10 @@
-"""Splashes and drops for the floor's liquids, from the pictures drawn by hand in LibreSprite in
-the sewer water's colours (tools/art/splash_big.ase, splash_small.ase, exported to PNG
+"""The splash for the floor's liquids, from the pictures drawn by hand in LibreSprite in
+the sewer water's colours (tools/art/splash_big.ase, exported to PNG
 with `lsprite render tools/art/<name>.ase --scale 1 --out tools/art/<name>.png`), each colour
 mapped to a hand-picked one for every liquid. One row per liquid: water, lava, blood, bog.
 
 - assets/textures/ingame/splash_big.tga: something big falling in (7 frames of 32x32): it goes
   in, a crown rises, a column shoots up and falls back, the ring spreads.
-- assets/textures/ingame/splash_small.tga: a drop or a small thing falling in (5 frames of 16x16).
 
     uv run -q --with pillow python tools/make_splashes.py
 """
@@ -45,7 +44,6 @@ def sheet(name):
 
 def main():
     sheet("splash_big").save(OUT / "splash_big.tga")
-    sheet("splash_small").save(OUT / "splash_small.tga")
 
 
 if __name__ == "__main__":
