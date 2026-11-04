@@ -309,7 +309,7 @@ impl Scene for LobbyScene {
             &assets.tileset,
             textures.get(TILESET),
         );
-        self.physics.add_walls(&solid_cells, TILE_SIZE);
+        self.physics.add_walls(&solid_cells, |column, row| grid.is_front_wall(column, row), TILE_SIZE);
         self.navigation = Navigation::new(&solid_cells);
         self.occluders = Some(Arc::new(Occluders::new(
             grid.columns(),
@@ -398,11 +398,11 @@ impl Scene for LobbyScene {
             let _ = self.world.insert_one(entity, crate::components::Light::rgb(Vec2::new(0.0, -24.0), 255.0, 196.0, 120.0, 70.0, 0.8));
         }
 
-        // `BANE_AT=aldric` starts beside Brother Aldric, for working on his lines.
-        let player_top_left = if std::env::var("BANE_AT").as_deref() == Ok("aldric") {
-            Vec2::new(ALDRIC_AT.0 + 2.2, ALDRIC_AT.1 + 0.3) * TILE_SIZE
-        } else {
-            hall_middle
+        // `BANE_AT=aldric` or `BANE_AT=scientist` starts beside him, for working on his lines.
+        let player_top_left = match std::env::var("BANE_AT").as_deref() {
+            Ok("aldric") => Vec2::new(ALDRIC_AT.0 + 2.2, ALDRIC_AT.1 + 0.3) * TILE_SIZE,
+            Ok("scientist") => scientist_at - Vec2::new(2.0, 0.0) * TILE_SIZE,
+            _ => hall_middle,
         };
         prefabs::player(
             &mut self.world,

@@ -1,25 +1,31 @@
 //! Sprite-sheet layouts shared by the prefabs that spawn an entity and the systems that animate it.
 
 pub(crate) mod player {
+    //! The chibi hero (`tools/make_chibi_player.py`): 20x26 frames, no arms - a floating hand
+    //! holds the gun. He faces where he aims; his legs run while he moves.
     use crate::clip::Clip;
 
-    const FRAME_TIME: f32 = 0.1;
+    const RUN_TIME: f32 = 0.08;
+    const BREATH_TIME: f32 = 0.16;
     const FRAMES: usize = 6;
 
     pub(crate) const COLUMNS: usize = 6;
-    pub(crate) const ROWS: usize = 4;
+    pub(crate) const ROWS: usize = 6;
 
-    pub(crate) const IDLE: Clip = clip(0, false);
-    pub(crate) const RIGHT: Clip = clip(1, false);
-    pub(crate) const LEFT: Clip = clip(1, true);
-    pub(crate) const BOTTOM: Clip = clip(2, false);
-    pub(crate) const TOP: Clip = clip(3, false);
+    pub(crate) const IDLE: Clip = clip(0, BREATH_TIME, false);
+    pub(crate) const RUN_RIGHT: Clip = clip(1, RUN_TIME, false);
+    pub(crate) const RUN_LEFT: Clip = clip(1, RUN_TIME, true);
+    pub(crate) const RUN_DOWN: Clip = clip(2, RUN_TIME, false);
+    pub(crate) const RUN_UP: Clip = clip(3, RUN_TIME, false);
+    pub(crate) const STAND_RIGHT: Clip = clip(4, BREATH_TIME, false);
+    pub(crate) const STAND_LEFT: Clip = clip(4, BREATH_TIME, true);
+    pub(crate) const STAND_UP: Clip = clip(5, BREATH_TIME, false);
 
-    const fn clip(row: usize, flipped: bool) -> Clip {
+    const fn clip(row: usize, frame_time: f32, flipped: bool) -> Clip {
         Clip {
             row,
             frames: FRAMES,
-            frame_time: FRAME_TIME,
+            frame_time,
             looping: true,
             flipped,
         }
@@ -192,12 +198,15 @@ mod tests {
 
     #[test]
     fn the_player_sheet_keeps_its_rows() {
-        assert_eq!((player::COLUMNS, player::ROWS), (6, 4));
-        assert_eq!(player::IDLE, looping(0, 6, 0.1, false));
-        assert_eq!(player::RIGHT, looping(1, 6, 0.1, false));
-        assert_eq!(player::LEFT, looping(1, 6, 0.1, true));
-        assert_eq!(player::BOTTOM, looping(2, 6, 0.1, false));
-        assert_eq!(player::TOP, looping(3, 6, 0.1, false));
+        assert_eq!((player::COLUMNS, player::ROWS), (6, 6));
+        assert_eq!(player::IDLE, looping(0, 6, 0.16, false));
+        assert_eq!(player::RUN_RIGHT, looping(1, 6, 0.08, false));
+        assert_eq!(player::RUN_LEFT, looping(1, 6, 0.08, true));
+        assert_eq!(player::RUN_DOWN, looping(2, 6, 0.08, false));
+        assert_eq!(player::RUN_UP, looping(3, 6, 0.08, false));
+        assert_eq!(player::STAND_RIGHT, looping(4, 6, 0.16, false));
+        assert_eq!(player::STAND_LEFT, looping(4, 6, 0.16, true));
+        assert_eq!(player::STAND_UP, looping(5, 6, 0.16, false));
     }
 
     #[test]

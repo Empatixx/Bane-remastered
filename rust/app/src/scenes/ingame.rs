@@ -430,6 +430,8 @@ impl InGameScene {
         self.build(assets);
         let perks = self.perks();
         systems::apply_run_perks(&mut self.world, perks);
+        // Once more after the run's rules are applied, which would take the guns away again.
+        give_debug_guns(&mut self.world);
     }
 
     fn perks(&self) -> Perks {
@@ -569,8 +571,8 @@ impl InGameScene {
             assets.tileset_of(dungeon.theme.wide_tiles()),
             assets.textures.get(dungeon.theme.tileset_texture()),
         );
-        self.physics.add_walls(&solid_cells, TILE_SIZE);
         let grid = &dungeon.grid;
+        self.physics.add_walls(&solid_cells, |column, row| grid.is_front_wall(column, row), TILE_SIZE);
         self.occluders = Some(Arc::new(Occluders::new(
             grid.columns(),
             grid.rows(),
@@ -637,6 +639,7 @@ impl InGameScene {
             .as_ref()
             .map_or_else(WeaponMods::default, SharedProfile::weapon_mods);
         systems::apply_weapon_mods(&mut self.world, weapon_mods);
+        give_debug_guns(&mut self.world);
         if perks.pet {
             prefabs::pet(&mut self.world, &mut self.physics, start, &assets.textures);
         }
@@ -883,6 +886,26 @@ fn progress_note(outcome: &RunOutcome) -> Option<String> {
         count => parts.push(format!("{count} missions ready on the board")),
     }
     (!parts.is_empty()).then(|| parts.join("   "))
+}
+
+/// `BANE_GUNS=m4,sniper` gives the hero those guns (by key), the first in hand, for looking at a
+/// gun and its HUD. It overrides the challenge's rules (a pistol-only run would take them away).
+fn give_debug_guns(world: &mut World) {
+    let Ok(keys) = std::env::var("BANE_GUNS") else {
+        return;
+    };
+    let kinds: Vec<_> = keys
+        .split(',')
+        .filter_map(|key| crate::guns::GunKind::ALL.into_iter().find(|kind| kind.key() == key.trim()))
+        .collect();
+    for loadout in world.query_mut::<&mut Loadout>().with::<&crate::components::Player>() {
+        loadout.clear();
+        loadout.only = None;
+        for kind in &kinds {
+            let weapon = loadout.fresh(*kind);
+            let _ = systems::loadout::add_gun(loadout, weapon);
+        }
+    }
 }
 
 #[cfg(test)]

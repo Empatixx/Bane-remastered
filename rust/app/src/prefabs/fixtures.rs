@@ -52,7 +52,7 @@ pub(crate) fn prop(
         Lit,
     ));
     if prop.stands() {
-        let _ = world.insert_one(entity, YSort::bottom(size));
+        let _ = world.insert_one(entity, YSort { foot: prop.foot() });
     }
     if prop == Prop::Torch {
         let offset = if look.flipped {
@@ -81,10 +81,6 @@ pub(crate) fn prop(
     entity
 }
 
-const POT_COLLIDER_OFFSET: Vec2 = Vec2::new(75.0, 78.0);
-
-const POT_COLLIDER_SIZE: Vec2 = Vec2::new(45.0, 45.0);
-
 const BACKDROP_SIZE: Vec2 = Vec2::new(1000.0, 580.0);
 
 const BACKDROP_COLOR: Vec4 = Vec4::new(37.0 / 255.0, 19.0 / 255.0, 26.0 / 255.0, 1.0);
@@ -111,16 +107,32 @@ pub(crate) fn pot(
     top_left: Vec2,
     textures: &Textures,
 ) -> Entity {
-    let entity = prop(world, Prop::Pot, top_left, Look::DEFAULT, textures);
-    let collider_center = top_left + POT_COLLIDER_OFFSET + POT_COLLIDER_SIZE / 2.0;
-    physics.add_static_box(collider_center, POT_COLLIDER_SIZE);
+    solid_prop(world, physics, Prop::Pot, top_left, Look::DEFAULT, textures)
+}
+
+/// A prop solid only where it stands on the floor (see [`Prop::base`]): the hero walks up behind
+/// its top. A prop without a base is not solid at all.
+pub(crate) fn solid_prop(
+    world: &mut World,
+    physics: &mut Physics,
+    kind: Prop,
+    top_left: Vec2,
+    look: Look,
+    textures: &Textures,
+) -> Entity {
+    let entity = prop(world, kind, top_left, look, textures);
+    if let Some((middle, size)) = kind.footprint(look.flipped) {
+        physics.add_static_box(top_left + middle, size);
+    }
     entity
 }
 
 /// Big enough that no single hit can empty it; the dummy refills it every tick.
 pub(crate) const DUMMY_HEALTH: i32 = 1_000_000;
-const DUMMY_COLLIDER_OFFSET: Vec2 = Vec2::new(15.0, 9.0);
-const DUMMY_COLLIDER_SIZE: Vec2 = Vec2::new(42.0, 57.0);
+/// What of the dummy bullets hit: its straw body, from the picture's top-left corner. Only its
+/// base on the floor stops the hero (see [`Prop::base`]).
+const DUMMY_FIGURE_OFFSET: Vec2 = Vec2::new(15.0, 9.0);
+const DUMMY_FIGURE_SIZE: Vec2 = Vec2::new(42.0, 57.0);
 const DUMMY_READOUT_LIFT: f32 = 40.0;
 const DUMMY_READOUT_LAYER: i32 = 4;
 
@@ -137,8 +149,10 @@ pub(crate) fn training_dummy(
         Layer(DUMMY_READOUT_LAYER),
     ));
     let entity = prop(world, Prop::TrainingDummy, top_left, Look::DEFAULT, textures);
-    let collider_center = top_left + DUMMY_COLLIDER_OFFSET + DUMMY_COLLIDER_SIZE / 2.0;
-    let body = physics.add_fixed_object(entity, collider_center, DUMMY_COLLIDER_SIZE);
+    let figure = top_left + DUMMY_FIGURE_OFFSET + DUMMY_FIGURE_SIZE / 2.0;
+    let (middle, base) = Prop::TrainingDummy.footprint(false).unwrap_or((figure - top_left, DUMMY_FIGURE_SIZE));
+    let body = physics.add_fixed_object(entity, top_left + middle, base);
+    physics.add_figure(entity, body, figure - (top_left + middle), DUMMY_FIGURE_SIZE);
     let _ = world.insert(
         entity,
         (
@@ -182,25 +196,6 @@ pub(crate) fn carpet(world: &mut World, carpet: &Carpet, textures: &Textures) {
 
 /// The flame of a shop lamp, from the middle of its sprite.
 const LAMP_LIGHT_OFFSET: Vec2 = Vec2::new(0.0, -52.0);
-/// The shop's furniture blocks the floor under its lower part, which is what stands on it.
-const SHOP_FOOTPRINT: f32 = 0.4;
-
-/// A piece of the shop's furniture, solid where it stands on the floor.
-fn shop_piece(
-    world: &mut World,
-    physics: &mut Physics,
-    kind: Prop,
-    top_left: Vec2,
-    look: Look,
-    textures: &Textures,
-) -> Entity {
-    let entity = prop(world, kind, top_left, look, textures);
-    let size = kind.spec().size();
-    let footprint = Vec2::new(size.x * 0.85, size.y * SHOP_FOOTPRINT);
-    let center = top_left + Vec2::new(size.x / 2.0, size.y - footprint.y / 2.0);
-    physics.add_static_box(center, footprint);
-    entity
-}
 
 pub(crate) fn furnishing(
     world: &mut World,
@@ -218,26 +213,34 @@ pub(crate) fn furnishing(
             prop(world, kind, top_left, look, textures);
         };
         match fixture.kind {
-            FixtureKind::Shopkeeper => place(Prop::Shopkeeper, Look::DEFAULT),
-            FixtureKind::Table => place(Prop::ShopTable, Look::DEFAULT),
+            FixtureKind::Shopkeeper => {
+                let keeper = prop(world, Prop::Shopkeeper, top_left, Look::DEFAULT, textures);
+                let _ = world.insert_one(keeper, crate::components::Shopkeeper);
+            }
+            FixtureKind::Table => {
+                solid_prop(world, physics, Prop::ShopTable, top_left, Look::DEFAULT, textures);
+            }
             FixtureKind::Counter => {
-                shop_piece(world, physics, Prop::ShopCounter, top_left, Look::DEFAULT, textures);
+                solid_prop(world, physics, Prop::ShopCounter, top_left, Look::DEFAULT, textures);
             }
             FixtureKind::Shelf { right } => {
                 let look = Look::row(usize::from(right), false);
-                shop_piece(world, physics, Prop::ShopShelf, top_left, look, textures);
+                solid_prop(world, physics, Prop::ShopShelf, top_left, look, textures);
             }
             FixtureKind::Goods { barrel } => {
                 let look = Look::row(usize::from(barrel), false);
-                shop_piece(world, physics, Prop::ShopGoods, top_left, look, textures);
+                solid_prop(world, physics, Prop::ShopGoods, top_left, look, textures);
             }
             FixtureKind::Lamp => {
-                let lamp = shop_piece(world, physics, Prop::ShopLamp, top_left, Look::DEFAULT, textures);
+                let lamp = solid_prop(world, physics, Prop::ShopLamp, top_left, Look::DEFAULT, textures);
                 let _ = world.insert_one(lamp, Light::rgb(LAMP_LIGHT_OFFSET, 255.0, 196.0, 110.0, 110.0, 1.2));
             }
             FixtureKind::SlotMachine => {
                 if gamble_machine {
                     slot_machine(world, top_left, textures);
+                    if let Some((middle, size)) = Prop::SlotMachine.footprint(false) {
+                        physics.add_static_box(top_left + middle, size);
+                    }
                 }
             }
             FixtureKind::Torch { right } => {
@@ -385,9 +388,6 @@ pub(crate) fn decor(
             Look::row(variant, false),
             textures,
         ),
-        DecorKind::IcePatch => {
-            floor_patch(world, Prop::IcePatch, PatchKind::Ice, top_left, textures)
-        }
         DecorKind::WebPatch => {
             floor_patch(world, Prop::WebPatch, PatchKind::Web, top_left, textures)
         }
@@ -434,8 +434,15 @@ pub(crate) fn decor(
             Look::row(variant, false),
             textures,
         ),
-        DecorKind::Spike => {
+        DecorKind::Spike | DecorKind::OffbeatSpike => {
             let entity = prop(world, Prop::Spike, top_left, Look::DEFAULT, textures);
+            if decor.kind == DecorKind::OffbeatSpike {
+                if let Ok(mut animation) = world.get::<&mut Animation>(entity) {
+                    // Half a cycle on: up while the plain spikes are down.
+                    let cycle = animation.clip_frames() as f32 * animation.clip().frame_time;
+                    animation.advance(cycle / 2.0);
+                }
+            }
             let _ = world.insert(
                 entity,
                 (
@@ -608,7 +615,7 @@ pub(crate) fn tilemap(
             }
             let number = tileset.tile_number(grid, column, row);
             let center = Vec2::new(column as f32 + 0.5, row as f32 + 0.5) * tilemap::TILE_SIZE;
-            world.spawn((
+            let entity = world.spawn((
                 Position(center),
                 Size(Vec2::splat(tilemap::TILE_SIZE)),
                 Color(Vec4::ONE),
@@ -622,6 +629,11 @@ pub(crate) fn tilemap(
                 Layer(FLOOR_TILE_LAYER),
                 Lit,
             ));
+            // A wall walked up to from above stands in front of the walker: sorted by its foot
+            // like anyone standing, so it hides the feet of whoever is pressed against it.
+            if grid.is_front_wall(column, row) {
+                let _ = world.insert_one(entity, YSort::bottom(Vec2::splat(tilemap::TILE_SIZE)));
+            }
             if tileset.is_solid(number) {
                 solid_cells.push((column, row));
             }
@@ -711,6 +723,7 @@ pub(crate) fn breakable(
         looping: true,
         flipped: false,
     };
+    let collider = kind.collider();
     let entity = world.spawn((
         Breakable { kind },
         Health {
@@ -724,11 +737,16 @@ pub(crate) fn breakable(
         Animation::new(4, 2, clip),
         Layer(-1),
         Lit,
-        YSort::bottom(OBJECT_SIZE),
+        // Drawn in order by the bottom of its base, where it meets the floor.
+        YSort {
+            foot: collider.offset.y + collider.size.y - OBJECT_SIZE.y / 2.0,
+        },
     ));
-    let collider = kind.collider();
     let collider_center = top_left + collider.offset + collider.size / 2.0;
     let body = physics.add_object_body(entity, collider_center, collider.size);
+    let figure = kind.figure();
+    let figure_center = top_left + figure.offset + figure.size / 2.0;
+    physics.add_figure(entity, body, figure_center - collider_center, figure.size);
     let _ = world.insert(
         entity,
         (
@@ -1064,5 +1082,71 @@ mod tests {
     fn the_slot_machine_stands_in_the_shop_only_with_the_gamble_machine_talent() {
         assert_eq!(machines_in_a_shop(true), 1);
         assert_eq!(machines_in_a_shop(false), 0);
+    }
+    const SOLID: [Prop; 11] = [
+        Prop::Pot,
+        Prop::ShopCounter,
+        Prop::ShopShelf,
+        Prop::ShopGoods,
+        Prop::ShopLamp,
+        Prop::ShopTable,
+        Prop::SlotMachine,
+        Prop::TrainingDummy,
+        Prop::Armorstand,
+        Prop::Box,
+        Prop::AngelStatue,
+    ];
+
+    #[test]
+    fn solid_props_are_solid_only_low_at_the_bottom_of_their_picture() {
+        for kind in SOLID {
+            let size = kind.spec().size();
+            let (middle, base) = kind.footprint(false).expect("a base");
+            assert!(base.y >= 12.0, "{kind:?} {base}");
+            assert!(base.y <= size.y * 0.4, "{kind:?} {base} of {size}");
+            assert!(base.x <= size.x, "{kind:?}");
+            assert!(middle.y + base.y / 2.0 <= size.y, "{kind:?}");
+            // Drawn in order by the bottom of the base.
+            assert_eq!(kind.foot(), middle.y + base.y / 2.0 - size.y / 2.0, "{kind:?}");
+        }
+        let (left, _) = Prop::ShopGoods.footprint(false).expect("a base");
+        let (right, _) = Prop::ShopGoods.footprint(true).expect("a base");
+        assert_eq!(left.x + right.x, Prop::ShopGoods.spec().size().x);
+    }
+
+    /// Where the hero's feet stop walking down onto the solid prop `kind` from well above it.
+    fn feet_stop_above(kind: Prop) -> (f32, Vec2, Vec2) {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let textures = Textures::default();
+        let top_left = Vec2::new(400.0, 400.0);
+        solid_prop(&mut world, &mut physics, kind, top_left, Look::DEFAULT, &textures);
+        let size = kind.spec().size();
+        let (middle, _) = kind.footprint(false).expect("a base");
+        let start = Vec2::new(top_left.x + middle.x, top_left.y - 120.0);
+        let player = crate::prefabs::player(&mut world, &mut physics, start, &textures);
+        for _ in 0..90 {
+            if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+                velocity.0 = Vec2::new(0.0, 300.0);
+            }
+            crate::systems::simulate(&mut world, &mut physics, 1.0 / 60.0);
+        }
+        let at = world.get::<&Position>(player).map(|p| p.0).expect("the hero");
+        let feet = crate::prefabs::player_feet(at).y + crate::prefabs::PLAYER_FEET.y / 2.0;
+        (feet, top_left, size)
+    }
+
+    #[test]
+    fn the_hero_walks_in_behind_the_top_of_a_lamp_or_a_shelf_and_stops_at_its_base() {
+        for kind in [Prop::ShopLamp, Prop::ShopShelf, Prop::ShopTable, Prop::AngelStatue] {
+            let (feet, top_left, size) = feet_stop_above(kind);
+            let (middle, base) = kind.footprint(false).expect("a base");
+            let base_top = top_left.y + middle.y - base.y / 2.0;
+            // Past the top half of the picture, behind it ...
+            assert!(feet > top_left.y + size.y / 2.0, "{kind:?}: feet {feet}, top {}", top_left.y);
+            // ... but not into its base, and so drawn behind it.
+            assert!(feet <= base_top + 1.0, "{kind:?}: feet {feet}, base {base_top}");
+            assert!(feet < top_left.y + size.y / 2.0 + kind.foot(), "{kind:?}");
+        }
     }
 }

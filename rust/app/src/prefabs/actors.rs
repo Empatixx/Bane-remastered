@@ -24,7 +24,20 @@ use crate::physics::Physics;
 use crate::render::TextureId;
 use crate::sheets::{pet, player};
 
+/// What of the hero enemy bullets hit, and the size other figures of his height are drawn at.
 pub(crate) const PLAYER_SIZE: Vec2 = Vec2::new(32.0, 76.0);
+/// The hero as drawn: his chibi sheet's 20x26 frames at three screen pixels each.
+pub(crate) const PLAYER_LOOK: Vec2 = Vec2::new(20.0 * crate::held::PIXEL, 26.0 * crate::held::PIXEL);
+/// What of the hero walls and furniture stop: his feet, a low box at the bottom of his figure.
+/// His head and body pass in front of walls, as seen from above at an angle.
+pub(crate) const PLAYER_FEET: Vec2 = Vec2::new(36.0, 20.0);
+/// The middle of his feet, from his centre.
+pub(crate) const PLAYER_FEET_OFFSET: Vec2 = Vec2::new(0.0, PLAYER_LOOK.y / 2.0 - PLAYER_FEET.y / 2.0);
+
+/// Where the hero at `position` stands: the middle of his feet, for what is underfoot.
+pub(crate) fn player_feet(position: Vec2) -> Vec2 {
+    position + PLAYER_FEET_OFFSET
+}
 
 pub(crate) const PET_SIZE: Vec2 = Vec2::new(96.0, 96.0);
 const PET_GAZE_SPEED: f32 = 150.0;
@@ -55,7 +68,7 @@ pub(crate) fn player(
             max: PLAYER_ARMOR,
         },
         Wallet { coins: 0 },
-        Size(PLAYER_SIZE),
+        Size(PLAYER_LOOK),
         Color(Vec4::ONE),
         Sprite::cell(
             textures.get(PLAYER),
@@ -74,11 +87,11 @@ pub(crate) fn player(
             Light::rgb(Vec2::ZERO, 216.0, 156.0, 36.0, 150.0, 0.5),
             DropShadow::default(),
             GazeWind::default(),
-            YSort::bottom(PLAYER_SIZE),
+            YSort::bottom(PLAYER_LOOK),
             crate::components::SandSunk::default(),
         ),
     );
-    let body = physics.add_player(entity, position, PLAYER_SIZE);
+    let body = physics.add_player(entity, position, PLAYER_FEET, PLAYER_FEET_OFFSET, PLAYER_SIZE);
     let _ = world.insert_one(entity, body);
     entity
 }

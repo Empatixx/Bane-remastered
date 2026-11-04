@@ -41,10 +41,10 @@ walk/run row, faces the way it goes, and its feet keep pace with how fast it goe
 
 | Sheet | Grid | Rows |
 |---|---|---|
-| `PRIEST` / `PILGRIM` (`tools/make_priest.py`) | 4x3, 10x19 shown at 4x | 0 stand, 1 run (faces right), 2 pray |
-| `GUIDE` prop (Elian) | uses `PRIEST` | same |
-| `SCIENTIST` | 6x1, 16x40 | idle only, so he must stand still |
-| `SHOPKEEPER` | 24x1, 80x90 | idle only, so he must stand still |
+| `PRIEST` / `PILGRIM` (`tools/make_chibi_npcs.py`) | 4x4, 20x26 shown at 3x | 0 stand, 1 run (faces right), 2 pray, 3 asleep kneeling |
+| `GUIDE` prop (Brother Aldric) | uses `PRIEST` | same |
+| `SCIENTIST` (`tools/make_chibi_npcs.py`) | 6x1, 20x26 at 3x | idle only, so he must stand still |
+| `SHOPKEEPER`, the goblin (`tools/make_chibi_npcs.py`) | 6x2, 20x26 at 3x | 0 idle, 1 rubbing hands (no walk row) |
 | `player.tga` | see `systems/player_animation.rs` | walk rows per facing |
 
 ## Common mistakes

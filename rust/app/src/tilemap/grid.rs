@@ -50,6 +50,13 @@ impl TileGrid {
         self.walls.len()
     }
 
+    /// A wall with open floor just above it: the top of a wall seen from the room above it, which
+    /// stands in front of whoever walks up to it.
+    pub(crate) fn is_front_wall(&self, column: usize, row: usize) -> bool {
+        let (x, y) = (column as isize, row as isize);
+        self.is_wall(x, y) && !self.is_wall(x, y - 1)
+    }
+
     pub(crate) fn is_wall(&self, column: isize, row: isize) -> bool {
         let (Ok(column), Ok(row)) = (usize::try_from(column), usize::try_from(row)) else {
             return true;

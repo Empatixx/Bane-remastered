@@ -411,12 +411,12 @@ impl Training {
             };
             for (prop, foot, solid) in pieces {
                 let size = prop.spec().size();
-                let top_left = foot - Vec2::new(size.x / 2.0, size.y);
-                let entity = prefabs::prop(world, prop, top_left, Look::DEFAULT, textures);
-                let _ = world.insert_one(entity, crate::components::YSort::bottom(size));
+                // The base, not the picture's bottom edge, stands on the given point.
+                let top_left = foot - Vec2::new(size.x / 2.0, size.y / 2.0 + prop.foot());
                 if solid {
-                    let body = Vec2::new(size.x * 0.7, size.y.min(TILE_SIZE) * 0.6);
-                    let _ = physics.add_static_box(foot - Vec2::new(0.0, body.y / 2.0), body);
+                    prefabs::solid_prop(world, physics, prop, top_left, Look::DEFAULT, textures);
+                } else {
+                    prefabs::prop(world, prop, top_left, Look::DEFAULT, textures);
                 }
             }
         }

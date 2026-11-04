@@ -6,7 +6,7 @@ use crate::rng::Rng;
 use crate::tilemap::{TILE_SIZE, TileGrid};
 
 use super::build::DungeonRoom;
-use super::decor::{DecorKind, patch_tiles};
+use super::decor::{DecorKind, GAUNTLET_WIDE_RINGS, patch_tiles};
 use super::template::RoomKind;
 
 const DOOR_CLEARANCE: usize = 3;
@@ -222,7 +222,7 @@ fn blocked_tiles(room: &DungeonRoom) -> HashSet<(usize, usize)> {
     let mut blocked: HashSet<(usize, usize)> = room.spawns.iter().copied().collect();
     for decor in &room.decor {
         match decor.kind {
-            DecorKind::IcePatch | DecorKind::WebPatch => {
+            DecorKind::WebPatch => {
                 blocked.extend(patch_tiles(decor.tile));
                 blocked.insert((decor.tile.0, decor.tile.1.saturating_sub(1)));
             }
@@ -267,12 +267,54 @@ fn stays_connected(grid: &TileGrid, room: &DungeonRoom, covered: &HashSet<(usize
     seen.len() == wanted.len()
 }
 
+/// How near a wall (in tiles, across or down) the gauntlet's surface reaches: the strip by the
+/// walls and round its pillars that its spikes keep clear of.
+const GAUNTLET_MARGIN: isize = 2;
+
+/// The gauntlet's floor by the walls and round its pillars, all of it the biome's surface (lava,
+/// water, ice, sand and such), but for a way in from every door: the spikes are the only way
+/// round. Ice also covers the safe ring between its spikes, to slide on while waiting.
+fn gauntlet_margin(grid: &TileGrid, room: &DungeonRoom, surface: Surface) -> Vec<(usize, usize)> {
+    let blocked = blocked_tiles(room);
+    let middle = (
+        room.origin.0 as f32 + room.columns as f32 / 2.0,
+        room.origin.1 as f32 + room.rows as f32 / 2.0,
+    );
+    let (ring_from, ring_to) = (GAUNTLET_WIDE_RINGS[0].1, GAUNTLET_WIDE_RINGS[1].0);
+    let mut tiles = Vec::new();
+    for row in room.origin.1..room.origin.1 + room.rows {
+        for column in room.origin.0..room.origin.0 + room.columns {
+            let tile = (column, row);
+            let by_wall = (-GAUNTLET_MARGIN..=GAUNTLET_MARGIN).any(|dy| {
+                (-GAUNTLET_MARGIN..=GAUNTLET_MARGIN)
+                    .any(|dx| grid.is_wall(column as isize + dx, row as isize + dy))
+            });
+            let reach = (column as f32 + 0.5 - middle.0)
+                .abs()
+                .max((row as f32 + 0.5 - middle.1).abs());
+            let safe_ring = surface == Surface::Ice && reach > ring_from && reach < ring_to;
+            if (by_wall || safe_ring)
+                && room.contains_inner_tile(column, row, 1)
+                && walkable(grid, tile)
+                && !blocked.contains(&tile)
+                && !near_door(room, tile)
+            {
+                tiles.push(tile);
+            }
+        }
+    }
+    tiles
+}
+
 pub(crate) fn plan(
     grid: &TileGrid,
     room: &DungeonRoom,
     surface: Surface,
     rng: &mut Rng,
 ) -> Vec<(usize, usize)> {
+    if room.kind == RoomKind::Gauntlet {
+        return gauntlet_margin(grid, room, surface);
+    }
     if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
         return Vec::new();
     }
@@ -371,7 +413,7 @@ mod tests {
                         .iter()
                         .find(|room| room.contains_tile(tile.0, tile.1))
                         .expect("a room owns the tile");
-                    assert!(matches!(room.kind, RoomKind::Normal | RoomKind::Ambush));
+                    assert!(matches!(room.kind, RoomKind::Normal | RoomKind::Ambush | RoomKind::Gauntlet));
                     assert!(!room.spawns.contains(&tile));
                     assert!(!near_door(room, tile), "{tile:?}");
                     // Frozen skulls are taken out of every room afterwards; nothing else lies on the ice.
@@ -381,6 +423,28 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn a_gauntlet_lines_its_walls_and_pillars_with_the_surface_but_leaves_its_doors_open() {
+        let mut seen = 0;
+        for seed in 0..30 {
+            let dungeon = dungeon(seed, Theme::Lava);
+            for room in dungeon.rooms.iter().filter(|room| room.kind == RoomKind::Gauntlet) {
+                seen += 1;
+                let lava = (room.origin.1..room.origin.1 + room.rows)
+                    .flat_map(|row| (room.origin.0..room.origin.0 + room.columns).map(move |c| (c, row)))
+                    .filter(|&tile| dungeon.surfaces.at(tile) == Some(Surface::Lava))
+                    .count();
+                assert!(lava > 60, "seed {seed}: {lava} tiles of lava");
+                for door in &room.doors {
+                    for &tile in &door.tiles {
+                        assert_eq!(dungeon.surfaces.at(tile), None);
+                    }
+                }
+            }
+        }
+        assert!(seen > 5);
     }
 
     #[test]

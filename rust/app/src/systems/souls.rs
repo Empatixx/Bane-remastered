@@ -11,7 +11,8 @@ use crate::lore::{Figure, Identity};
 use crate::prefabs;
 use crate::tilemap::TILE_SIZE;
 
-const PRIEST_SIZE: Vec2 = Vec2::new(40.0, 76.0);
+/// The chibi people (tools/art/chibi_npcs.py): 20x26 frames shown three times over.
+const PRIEST_SIZE: Vec2 = Vec2::new(60.0, 78.0);
 const GHOST: Vec4 = Vec4::new(0.72, 0.62, 1.0, 0.74);
 const LET_GO: Vec4 = Vec4::new(1.0, 0.92, 0.7, 1.0);
 const STANDING: Clip = Clip { row: 0, frames: 4, frame_time: 0.3, looping: true, flipped: false };

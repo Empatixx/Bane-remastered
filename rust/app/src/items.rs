@@ -14,6 +14,7 @@ pub(crate) enum AmmoBox {
     Shotgun,
     SubMachine,
     Universal,
+    /// A stripper clip of 7.62 mm rounds for the Sniper and the M4.
     Rifle,
     Rocket,
     /// A battery cell for the laser and lightning guns.

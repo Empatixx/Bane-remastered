@@ -25,11 +25,12 @@ or equally rich. A floor has **8-15 rooms** (one fewer with the *Merchant's Stri
 | Treasure | 0-2 | dead-end branch - a floor may have no treasure room, or it may have two |
 | Sacrifice | 0-1 (50%) | dead-end branch |
 | Ambush | 1-2 | dead-end branch |
+| Gauntlet | 0-1 (50%) | dead-end branch: traps round a chest |
 | Boss | 1 | always as far from the start as possible |
 
 - The Start and Normal rooms form a branching backbone. The generator prefers
   "lonelier" rooms, so the floor spreads out to the sides and does not merge into one block.
-- All special rooms (Shop, Treasure, Sacrifice, Ambush, Boss) are **dead ends**
+- All special rooms (Shop, Treasure, Sacrifice, Ambush, Gauntlet, Boss) are **dead ends**
   attached to some Normal room. The path never continues through them.
 - The Boss room is attached to one of the Normal rooms that are farthest from the start.
 - A floor has no loops: there is exactly one path to every room. To go back, the player has to
@@ -65,7 +66,7 @@ by position only - the same spot always looks the same.
 |---|---|
 | Floors per run | 5 |
 | Rooms per floor | 8-15 (random for each floor) |
-| Room variants | 23 (15 Normal, 3 Ambush, one each of Start, Shop, Treasure, Sacrifice, Boss) |
+| Room variants | 25 (15 Normal, 3 Ambush, 2 Gauntlet, one each of Start, Shop, Treasure, Sacrifice, Boss) |
 | Themes | 7 (Stone, Sewer, Moss, Spider, Ice, Lava, Temple) |
 | Corridor | 4 tiles long, 2 wide |
 | Enemies per room | 5-9 per wave depending on room size |

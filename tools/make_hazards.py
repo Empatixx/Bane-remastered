@@ -1,5 +1,4 @@
 import math
-import random
 import sys
 from pathlib import Path
 
@@ -12,47 +11,6 @@ LAVA_DEEP = (176, 48, 22, 255)
 LAVA = (222, 92, 28, 255)
 LAVA_HOT = (255, 160, 48, 255)
 LAVA_CORE = (255, 226, 120, 255)
-
-
-def blob(size, seed, margin, wobble):
-    r = random.Random(seed)
-    phases = [(r.uniform(0, math.tau), r.uniform(0.6, 1.4)) for _ in range(3)]
-    mask = [[False] * size for _ in range(size)]
-    inside = {}
-    centre = (size - 1) / 2
-    radius = size / 2 - margin
-    for y in range(size):
-        for x in range(size):
-            dx, dy = x - centre, y - centre
-            angle = math.atan2(dy, dx)
-            edge = radius + wobble * sum(math.sin(angle * (index + 2) * freq + phase) for index, (phase, freq) in enumerate(phases)) / 3
-            distance = math.hypot(dx * 0.95, dy * 1.05)
-            inside[(x, y)] = edge - distance
-            mask[y][x] = distance < edge
-    return mask, inside
-
-
-def ice_patch():
-    size = 32
-    mask, depth = blob(size, 21, 2, 3.0)
-    image = Image.new("RGBA", (size, size), CLEAR)
-    r = random.Random(5)
-    for y in range(size):
-        for x in range(size):
-            if not mask[y][x]:
-                continue
-            d = depth[(x, y)]
-            if d < 1.4:
-                colour = (120, 170, 210, 200)
-            else:
-                colour = (170, 214, 240, 190) if (x + y // 2) % 5 else (196, 232, 250, 190)
-            image.putpixel((x, y), colour)
-    for _ in range(5):
-        x, y = r.randrange(7, 22), r.randrange(7, 22)
-        for step in range(r.randint(3, 6)):
-            if mask[min(31, y + step)][min(31, x + step)] and depth[(min(31, x + step), min(31, y + step))] > 2:
-                image.putpixel((x + step, y + step), (255, 255, 255, 230))
-    return image
 
 
 def web_patch():
@@ -185,7 +143,6 @@ def trap_arrow():
 
 
 def main():
-    ice_patch().save(OUT / "ice_patch.tga")
     web_patch().save(OUT / "web_patch.tga")
     arrow_trap().save(OUT / "arrow_trap.tga")
     arrow_hit().save(OUT / "arrow_hit.tga")

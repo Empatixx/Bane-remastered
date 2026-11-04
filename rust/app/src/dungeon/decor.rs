@@ -4,7 +4,7 @@ use crate::tilemap::TileGrid;
 
 use super::build::DungeonRoom;
 use super::template::RoomKind;
-use super::theme::TrapMix;
+use super::theme::{Theme, TrapMix};
 use crate::rng::Rng;
 
 const TORCHES_BASE: usize = 2;
@@ -17,6 +17,14 @@ const TREASURE_COBWEBS: usize = 3;
 const DISABLED_TORCH_PERCENT: usize = 10;
 const DOOR_CLEARANCE: usize = 3;
 const SPIKE_WALL_CLEARANCE: isize = 2;
+/// The gauntlet's spike rings, as distances (in tiles, the larger of across and down) from the
+/// middle of the room: a platform for the chest inside the first, a ring to stand on and time
+/// the next between them.
+const GAUNTLET_RINGS: [(f32, f32); 2] = [(2.0, 4.0), (5.0, 6.0)];
+/// The same with a safe ring two tiles wide, room for ice or webs to wait on.
+pub(super) const GAUNTLET_WIDE_RINGS: [(f32, f32); 2] = [(2.0, 3.0), (5.0, 6.0)];
+/// The chest's platform in the middle of a gauntlet, clear of traps, as a distance like the rings'.
+const GAUNTLET_PLATFORM: f32 = 2.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Mount {
@@ -46,13 +54,14 @@ pub(crate) enum DecorKind {
         variant: usize,
     },
     Spike,
+    /// A spike rising while the plain ones sink, for gauntlets whose spikes take turns.
+    OffbeatSpike,
     Pot,
     Barrel,
     ExplosiveBarrel,
     PoisonBarrel,
     FrostBarrel,
     Flamethrower,
-    IcePatch,
     WebPatch,
     ArrowTrap,
     Icicles {
@@ -207,9 +216,161 @@ struct Candidate {
     mount: Mount,
 }
 
+/// How a gauntlet lays its spikes between the doors and the chest.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum SpikeField {
+    /// Rings round the chest (as distances from the middle) with a safe ring between them, all
+    /// rising together.
+    Rings(&'static [(f32, f32)]),
+    /// A checkerboard over the floor, the two colours rising in turn: step onto the squares as
+    /// they sink.
+    Checker,
+    /// One-tile rings from the platform out, each rising out of step with its neighbours, like
+    /// ripples round the chest.
+    Ripple,
+}
+
+/// Each biome's gauntlet.
+#[derive(Debug, Clone, Copy)]
+struct GauntletStyle {
+    spikes: SpikeField,
+    /// Every this many tiles of the top wall (away from the doors) a trap, these in turn.
+    wall_step: usize,
+    wall_traps: &'static [DecorKind],
+    /// Webs laid over the safe ring between the spikes, to wade through.
+    cover: Option<DecorKind>,
+    /// Barrels at the corners of the chest's platform.
+    guards: Option<DecorKind>,
+}
+
+const ARROWS_AND_FLAMES: &[DecorKind] = &[DecorKind::ArrowTrap, DecorKind::Flamethrower];
+const ARROWS: &[DecorKind] = &[DecorKind::ArrowTrap];
+const FLAMES: &[DecorKind] = &[DecorKind::Flamethrower];
+
+fn gauntlet_style(theme: Theme, room: &DungeonRoom) -> GauntletStyle {
+    let style = |spikes, wall_step, wall_traps| GauntletStyle {
+        spikes,
+        wall_step,
+        wall_traps,
+        cover: None,
+        guards: None,
+    };
+    match theme {
+        // Picked by where the room lies, not from the floor's random stream, so a gauntlet
+        // never changes the rest of the floor.
+        Theme::Stone if (room.origin.0 + room.origin.1).is_multiple_of(2) => {
+            style(SpikeField::Rings(&GAUNTLET_RINGS), 3, ARROWS_AND_FLAMES)
+        }
+        Theme::Stone | Theme::Temple => style(SpikeField::Checker, 3, ARROWS_AND_FLAMES),
+        Theme::Moss => GauntletStyle {
+            guards: Some(DecorKind::PoisonBarrel),
+            ..style(SpikeField::Ripple, 3, ARROWS)
+        },
+        Theme::Sewer => style(SpikeField::Ripple, 2, ARROWS),
+        // Its safe ring is ice, laid with the floor's surface.
+        Theme::Ice => style(SpikeField::Rings(&GAUNTLET_WIDE_RINGS), 3, ARROWS),
+        Theme::Spider => GauntletStyle {
+            cover: Some(DecorKind::WebPatch),
+            ..style(SpikeField::Rings(&GAUNTLET_WIDE_RINGS), 3, ARROWS)
+        },
+        Theme::Lava => GauntletStyle {
+            guards: Some(DecorKind::ExplosiveBarrel),
+            ..style(SpikeField::Checker, 2, FLAMES)
+        },
+    }
+}
+
+/// The gauntlet's traps: spikes between the doors and the chest in the middle of the room, laid
+/// out as the biome likes them, and traps along the top wall shooting and burning down across
+/// them. No foes: getting through is the fight.
+fn gauntlet_traps(planner: &mut Planner<'_>, top_faces: &[Candidate], theme: Theme) -> Vec<Decor> {
+    let room = planner.room;
+    let style = gauntlet_style(theme, room);
+    let middle = (
+        room.origin.0 as f32 + room.columns as f32 / 2.0,
+        room.origin.1 as f32 + room.rows as f32 / 2.0,
+    );
+    let reach = |(column, row): (usize, usize)| {
+        (column as f32 + 0.5 - middle.0)
+            .abs()
+            .max((row as f32 + 0.5 - middle.1).abs())
+    };
+    let mut decor = Vec::new();
+    for tile in planner.room_tiles() {
+        let (column, row) = (tile.0 as isize, tile.1 as isize);
+        let clear = (-SPIKE_WALL_CLEARANCE..=SPIKE_WALL_CLEARANCE)
+            .all(|dy| (-SPIKE_WALL_CLEARANCE..=SPIKE_WALL_CLEARANCE).all(|dx| !planner.wall(column + dx, row + dy)));
+        let reach = reach(tile);
+        if !clear || reach < GAUNTLET_PLATFORM || !planner.free(tile) || !planner.away_from_doors(tile) {
+            continue;
+        }
+        let kind = match style.spikes {
+            SpikeField::Rings(rings) => rings
+                .iter()
+                .any(|&(from, to)| reach > from && reach < to)
+                .then_some(DecorKind::Spike),
+            SpikeField::Checker => Some(if (tile.0 + tile.1).is_multiple_of(2) {
+                DecorKind::Spike
+            } else {
+                DecorKind::OffbeatSpike
+            }),
+            SpikeField::Ripple => Some(if (reach as usize).is_multiple_of(2) {
+                DecorKind::Spike
+            } else {
+                DecorKind::OffbeatSpike
+            }),
+        };
+        if let Some(kind) = kind {
+            planner.take(tile);
+            decor.push(Decor { kind, tile });
+        }
+    }
+    if let Some(kind) = style.cover {
+        // Patches two tiles square, packed over the safe ring inside the outer spikes.
+        let (from, to) = (GAUNTLET_WIDE_RINGS[0].1, GAUNTLET_WIDE_RINGS[1].0);
+        for tile in planner.room_tiles() {
+            let (column, row) = (tile.0 as isize, tile.1 as isize);
+            let fits = (-1..=2).all(|dy| (-1..=2).all(|dx| !planner.wall(column + dx, row + dy)))
+                && patch_tiles(tile).iter().all(|&tile| {
+                    planner.free(tile) && planner.away_from_doors(tile) && reach(tile) > from && reach(tile) < to
+                });
+            if fits {
+                for tile in patch_tiles(tile) {
+                    planner.take(tile);
+                }
+                decor.push(Decor { kind, tile });
+            }
+        }
+    }
+    if let Some(kind) = style.guards {
+        let (left, top) = (middle.0 as usize - 2, middle.1 as usize - 2);
+        for tile in [(left, top), (left + 3, top), (left, top + 3), (left + 3, top + 3)] {
+            planner.take(tile);
+            decor.push(Decor { kind, tile });
+        }
+    }
+    let mut walls: Vec<Candidate> = top_faces
+        .iter()
+        .filter(|candidate| planner.away_from_doors(candidate.tile))
+        .copied()
+        .collect();
+    walls.sort_by_key(|candidate| candidate.tile.0);
+    let step = style.wall_step;
+    for (index, spot) in walls.iter().enumerate().filter(|(index, _)| index % step == step / 2) {
+        let kind = style.wall_traps[(index / step) % style.wall_traps.len()];
+        planner.take(spot.tile);
+        decor.push(Decor {
+            kind,
+            tile: spot.tile,
+        });
+    }
+    decor
+}
+
 pub(crate) fn plan(
     grid: &TileGrid,
     room: &DungeonRoom,
+    theme: Theme,
     mix: &TrapMix,
     rng: &mut Rng,
 ) -> Vec<Decor> {
@@ -255,6 +416,9 @@ pub(crate) fn plan(
         .collect();
     let mut wall_spots = top_faces.clone();
     wall_spots.extend(side_faces.iter().copied());
+    if room.kind == RoomKind::Gauntlet {
+        return gauntlet_traps(&mut planner, &top_faces, theme);
+    }
 
     let counts = Counts::for_room(room, mix);
     for _ in 0..counts.torches {
@@ -349,10 +513,7 @@ pub(crate) fn plan(
             })
             .copied()
             .collect();
-        for (kind, amount) in [
-            (DecorKind::IcePatch, mix.ice_patches),
-            (DecorKind::WebPatch, mix.web_patches),
-        ] {
+        for (kind, amount) in [(DecorKind::WebPatch, mix.web_patches)] {
             if amount == 0 {
                 continue;
             }
@@ -504,6 +665,81 @@ mod tests {
         Dungeon::generate(&mut rng).expect("a dungeon is generated")
     }
 
+    const THEMES: [Theme; 7] = [
+        Theme::Stone,
+        Theme::Sewer,
+        Theme::Moss,
+        Theme::Spider,
+        Theme::Ice,
+        Theme::Lava,
+        Theme::Temple,
+    ];
+
+    fn is_spike(kind: DecorKind) -> bool {
+        matches!(kind, DecorKind::Spike | DecorKind::OffbeatSpike)
+    }
+
+    fn gauntlets(theme: Theme) -> Vec<DungeonRoom> {
+        (0..40)
+            .flat_map(|seed| {
+                let mut rng = Rng::new(seed);
+                Dungeon::generate_themed(&mut rng, theme).expect("a dungeon").rooms
+            })
+            .filter(|room| room.kind == RoomKind::Gauntlet)
+            .collect()
+    }
+
+    #[test]
+    fn every_biome_has_its_gauntlet_of_spikes_and_wall_traps_round_a_clear_chest() {
+        for theme in THEMES {
+            let rooms = gauntlets(theme);
+            assert!(rooms.len() > 8, "{theme:?}: only {} gauntlets", rooms.len());
+            for room in &rooms {
+                let count = |kind: fn(DecorKind) -> bool| room.decor.iter().filter(|d| kind(d.kind)).count();
+                assert!(count(is_spike) >= 40, "{theme:?}");
+                assert!(count(|k| matches!(k, DecorKind::ArrowTrap | DecorKind::Flamethrower)) >= 4, "{theme:?}");
+                // The chest's platform in the middle is clear of everything but its guards.
+                let middle = (room.origin.0 + room.columns / 2, room.origin.1 + room.rows / 2);
+                for d in &room.decor {
+                    let near = d.tile.0 + 1 >= middle.0
+                        && d.tile.0 <= middle.0
+                        && d.tile.1 + 1 >= middle.1
+                        && d.tile.1 <= middle.1;
+                    assert!(!near, "{theme:?}: {:?} by the chest at {:?}", d.kind, d.tile);
+                }
+                assert!(room.spawns.is_empty(), "a gauntlet has no foes");
+            }
+        }
+    }
+
+    #[test]
+    fn biomes_lay_their_gauntlets_out_differently() {
+        let has = |theme, kind: fn(DecorKind) -> bool| {
+            gauntlets(theme).iter().all(|room| room.decor.iter().any(|d| kind(d.kind)))
+        };
+        // Spikes taking turns on a checkerboard or in ripples; plain rings in the ice.
+        assert!(has(Theme::Temple, |k| k == DecorKind::OffbeatSpike));
+        assert!(has(Theme::Sewer, |k| k == DecorKind::OffbeatSpike));
+        assert!(!has(Theme::Ice, |k| k == DecorKind::OffbeatSpike));
+        assert!(has(Theme::Spider, |k| k == DecorKind::WebPatch));
+        assert!(has(Theme::Lava, |k| k == DecorKind::ExplosiveBarrel));
+        assert!(!has(Theme::Lava, |k| k == DecorKind::ArrowTrap));
+        assert!(has(Theme::Moss, |k| k == DecorKind::PoisonBarrel));
+        assert!(!has(Theme::Sewer, |k| k == DecorKind::Flamethrower));
+    }
+
+    #[test]
+    fn checkerboard_neighbours_take_turns() {
+        for room in gauntlets(Theme::Temple) {
+            let kind_at = |tile| room.decor.iter().find(|d| d.tile == tile).map(|d| d.kind);
+            for d in room.decor.iter().filter(|d| is_spike(d.kind)) {
+                if let Some(right) = kind_at((d.tile.0 + 1, d.tile.1)).filter(|&k| is_spike(k)) {
+                    assert_ne!(right, d.kind, "{:?}", d.tile);
+                }
+            }
+        }
+    }
+
     #[test]
     fn rooms_get_decoration_and_normal_rooms_get_spikes() {
         let mut spikes = 0;
@@ -520,7 +756,7 @@ mod tests {
                     .iter()
                     .filter(|decor| decor.kind == DecorKind::Spike)
                     .count();
-                if room.kind != RoomKind::Normal {
+                if !matches!(room.kind, RoomKind::Normal | RoomKind::Gauntlet) {
                     assert_eq!(room_spikes, 0, "{:?} has spikes", room.kind);
                 }
                 spikes += room_spikes;
@@ -535,9 +771,11 @@ mod tests {
             .map(|seed| {
                 let mut rng = Rng::new(seed);
                 let dungeon = Dungeon::generate_themed(&mut rng, theme).expect("a dungeon");
+                // Gauntlets have traps of their own, laid out by biome.
                 dungeon
                     .rooms
                     .iter()
+                    .filter(|room| room.kind != RoomKind::Gauntlet)
                     .flat_map(|room| &room.decor)
                     .filter(|decor| decor.kind == kind)
                     .count()
@@ -666,13 +904,14 @@ mod tests {
                                 assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
                             }
                         }
-                        DecorKind::IcePatch | DecorKind::WebPatch => {
+                        DecorKind::WebPatch => {
                             for (dx, dy) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
                                 assert!(!dungeon.grid.is_wall(column + dx, row + dy), "{decor:?}");
                             }
                         }
                         DecorKind::Bones { .. }
                         | DecorKind::Spike
+                        | DecorKind::OffbeatSpike
                         | DecorKind::IceCrystals { .. }
                         | DecorKind::FrozenSkull
                         | DecorKind::Mushrooms { .. }
@@ -691,10 +930,11 @@ mod tests {
 
     #[test]
     fn spikes_keep_their_distance_from_walls_and_doors() {
-        for seed in 0..40 {
-            let dungeon = dungeon(seed);
+        for (seed, theme) in (0..40).zip(THEMES.iter().cycle()) {
+            let mut rng = Rng::new(seed);
+            let dungeon = Dungeon::generate_themed(&mut rng, *theme).expect("a dungeon");
             for room in &dungeon.rooms {
-                for decor in room.decor.iter().filter(|d| d.kind == DecorKind::Spike) {
+                for decor in room.decor.iter().filter(|d| is_spike(d.kind)) {
                     let (column, row) = (decor.tile.0 as isize, decor.tile.1 as isize);
                     for dy in -2..=2 {
                         for dx in -2..=2 {
@@ -725,10 +965,14 @@ mod tests {
             for room in &dungeon(seed).rooms {
                 let furnished = matches!(
                     room.kind,
-                    RoomKind::Shop | RoomKind::Treasure | RoomKind::Sacrifice | RoomKind::Start
+                    RoomKind::Shop
+                        | RoomKind::Treasure
+                        | RoomKind::Sacrifice
+                        | RoomKind::Start
+                        | RoomKind::Gauntlet
                 );
                 assert_eq!(room.furnishing.is_some(), furnished, "{:?}", room.kind);
-                if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush) {
+                if !matches!(room.kind, RoomKind::Normal | RoomKind::Ambush | RoomKind::Gauntlet) {
                     assert_eq!((room.columns, room.rows), (20, 16), "{:?}", room.kind);
                 }
                 match room.kind {
@@ -741,6 +985,16 @@ mod tests {
                         )));
                     }
                     RoomKind::Normal | RoomKind::Ambush => {}
+                    RoomKind::Gauntlet => assert!(room.decor.iter().all(|d| matches!(
+                        d.kind,
+                        DecorKind::Spike
+                            | DecorKind::OffbeatSpike
+                            | DecorKind::ArrowTrap
+                            | DecorKind::Flamethrower
+                            | DecorKind::WebPatch
+                            | DecorKind::PoisonBarrel
+                            | DecorKind::ExplosiveBarrel
+                    ))),
                     _ => assert!(room.decor.is_empty(), "{:?}", room.kind),
                 }
             }

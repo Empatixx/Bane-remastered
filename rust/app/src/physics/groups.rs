@@ -21,11 +21,16 @@ pub(super) const WALLS: InteractionGroups = InteractionGroups::new(
     InteractionTestMode::And,
 );
 
-pub(super) const PLAYERS: InteractionGroups = InteractionGroups::new(
+/// The hero's feet: what bumps into walls, objects and furniture.
+pub(super) const PLAYER_FEET: InteractionGroups = InteractionGroups::new(
     PLAYER,
-    WALL.union(ENEMY_BULLET).union(OBJECT).union(FURNITURE),
+    WALL.union(OBJECT).union(FURNITURE),
     InteractionTestMode::And,
 );
+
+/// The hero's whole figure: what enemy bullets hit.
+pub(super) const PLAYER_FIGURE: InteractionGroups =
+    InteractionGroups::new(PLAYER, ENEMY_BULLET, InteractionTestMode::And);
 
 pub(super) const ENEMY_BULLETS: InteractionGroups = InteractionGroups::new(
     ENEMY_BULLET,
@@ -61,6 +66,11 @@ pub(super) const OBJECTS: InteractionGroups = InteractionGroups::new(
         .union(FURNITURE),
     InteractionTestMode::And,
 );
+
+/// The tall part of an object above its base, like a barrel's or a training dummy's body: only
+/// bullets hit it, so walkers pass behind it and are stopped by the base alone.
+pub(super) const TARGETS: InteractionGroups =
+    InteractionGroups::new(OBJECT, BULLET.union(ENEMY_BULLET), InteractionTestMode::And);
 
 pub(super) const PETS: InteractionGroups = InteractionGroups::new(
     PET,

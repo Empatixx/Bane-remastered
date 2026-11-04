@@ -1,12 +1,12 @@
 ---
 title: Room types
-description: Seven kinds of rooms - what you find in them, how many enemies to expect, how combat behind closed gates works and what the rewards are.
+description: Eight kinds of rooms - what you find in them, how many enemies to expect, how combat behind closed gates works and what the rewards are.
 ---
 
-Every floor is made of seven kinds of rooms. Normal and Ambush are combat rooms, Start, Shop,
-Treasure and Sacrifice are peaceful, and Boss is the finale of the floor. Every room is built from a hand-drawn
-template. Normal rooms have 15 different shapes, Ambush has 3, and the other types have one
-each. How many rooms of each kind a floor gets is rolled again for every floor - see
+Every floor is made of eight kinds of rooms. Normal and Ambush are combat rooms, Start, Shop,
+Treasure and Sacrifice are peaceful, Gauntlet is a trap room, and Boss is the finale of the floor.
+Every room is built from a hand-drawn template. Normal rooms have 15 different shapes, Ambush 3,
+Gauntlet 2, and the other types have one each. How many rooms of each kind a floor gets is rolled again for every floor - see
 [Dungeon](/docs/dungeon).
 
 ## How it works
@@ -52,6 +52,37 @@ each. How many rooms of each kind a floor gets is rolled again for every floor -
 - Reward: a **weapon chest** as close to the middle of the room as possible.
 - Furnishings like Normal, but **without spikes and cobwebs**.
 
+### Gauntlet
+- 0-1 per floor (50%), always a dead-end branch, a 26 x 18 or 24 x 20 room.
+- **No enemies.** In the middle stands a **weapon chest** on a clear platform, and spikes fill the
+  floor between it and the doors. Traps along the top wall, away from the doors, shoot and burn
+  down across the spikes.
+- A **2 × 2 pillar** stands two tiles in from every corner. The strip along the walls and round
+  the pillars is the biome's surface (lava, water, bog, ice, sand or blood; none in the Spider
+  biome), except for a way in from each door, so the spikes are the only way round.
+- Every biome lays its gauntlet out in its own way:
+
+| Biome | Spikes | Top wall | Extra |
+|---|---|---|---|
+| Stone | rings or checkerboard (by room) | arrows and flamethrowers in turn, every 3rd tile | – |
+| Temple | checkerboard | arrows and flamethrowers in turn, every 3rd tile | – |
+| Lava | checkerboard | flamethrowers, every 2nd tile | explosive barrels at the platform's corners |
+| Moss | ripple | arrows, every 3rd tile | poison barrels at the platform's corners |
+| Sewer | ripple | arrows, every 2nd tile | – |
+| Ice | wide rings | arrows, every 3rd tile | ice tiles on the safe ring |
+| Spider | wide rings | arrows, every 3rd tile | webs on the safe ring |
+
+- **Rings:** two rings of spikes round the platform (two tiles thick, then one tile) with a safe
+  ring between them. All spikes rise and fall together: wait on the safe ring, then cross while
+  they are down. **Wide rings** have a safe ring two tiles wide, covered in ice tiles (the player slides
+  while waiting) or webs (the player is slow to cross).
+- **Checkerboard:** spikes on every tile, the two colours rising in turn, half a beat apart. Step
+  onto the next tile as its spikes sink.
+- **Ripple:** one-tile rings from the platform out, each rising while its neighbours sink.
+- The chest is the same as in the Treasure room: 5 regular items and a weapon the player does not
+  have yet.
+- On the minimap it has its own icon: a chest over spikes.
+
 ### Treasure
 - 0-2 per floor (rolled for every floor - some floors have no treasure room, others have two),
   a dead-end branch, a 20 x 16 room with 4 pillars.
@@ -61,7 +92,7 @@ each. How many rooms of each kind a floor gets is rolled again for every floor -
 
 ### Shop
 - 1 per floor (none with the *Merchant's Strike* challenge), a dead-end branch, a 20 x 16 room.
-- The **merchant** says nothing.
+- The **merchant** stands behind the counter; he says nothing, but rubs his hands after every sale.
 - **3 tables** with goods, a **slot machine** (only with the *Gamble Machine* talent), 2 breakable
   flowerpots and a large carpet.
 
@@ -119,6 +150,8 @@ pillars and low walls you can hide behind.
 | ambush_01 | Ambush | 34 × 22 | 592 | 48 | 5 | 3 |
 | ambush_02 | Ambush | 38 × 24 | 728 | 64 | 7 | 3 |
 | ambush_03 | Ambush | 32 × 22 | 548 | 52 | 5 | 3 |
+| gauntlet_01 | Gauntlet | 26 × 18 | 368 | 16 | – | – |
+| gauntlet_02 | Gauntlet | 24 × 20 | 380 | 16 | – | – |
 | treasure | Treasure | 20 × 16 | 236 | 4 pillars | – | – |
 | shop | Shop | 20 × 16 | 252 | 0 | – | – |
 | sacrifice | Sacrifice | 20 × 16 | 236 | 4 pillars | – | – |

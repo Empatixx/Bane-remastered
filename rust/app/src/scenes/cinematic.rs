@@ -165,13 +165,13 @@ const ACOLYTES: [((f32, f32), f32, (f32, f32)); 5] = [
     // out of the far end.
     ((0.0, 0.0), 0.0, (-4.0, 4.5)),
 ];
-/// The priests' sheet (tools/make_priest.py): four frames of 10x19 across; standing, running,
-/// praying and asleep-at-prayer rows; drawn four times over.
-const PRIEST_SIZE: Vec2 = Vec2::new(40.0, 76.0);
+/// The priests' sheet (tools/art/chibi_npcs.py): four chibi frames of 20x26 across; standing,
+/// running, praying and asleep-at-prayer rows; drawn three times over, like the hero.
+const PRIEST_SIZE: Vec2 = Vec2::new(60.0, 78.0);
 /// Brother Aldric and Elian, who escape: they run on out of the nave to the crypt.
 const ALDRIC: usize = 3;
 const ELIAN: usize = 4;
-/// Elian's sheets: kneeling (tools/make_elian.py, 4x3) and, to run, the hero's own (6x4; row 1
+/// Elian's sheets: kneeling (tools/make_chibi_npcs.py, 4x3) and, to run, the hero's own (6x4; row 1
 /// runs to the right).
 const KNEELING: (usize, usize) = (4, 3);
 const HERO_SHEET: (usize, usize) = (6, 4);
@@ -428,7 +428,7 @@ impl CinematicScene {
         // Elian kneels on the carpet right before the altar, facing it.
         let before_altar = (columns as f32 - apse.0 as f32 / 2.0 - 2.6, door + 0.2);
         self.elian_at = at(before_altar.0, before_altar.1);
-        self.hero_sheet = Some(textures.get(tex::PLAYER));
+        self.hero_sheet = Some(textures.get(tex::ELIAN_WALK));
         self.kneeling_sheet = Some(textures.get(tex::ELIAN_KNEELING));
         for (index, &((column, row), lane, (bay, depth))) in ACOLYTES.iter().enumerate() {
             let (column, row) = if index == ELIAN { before_altar } else { (column, row) };
@@ -1103,7 +1103,7 @@ impl CinematicScene {
             Position(enter(rows as f32 / 2.0 + 1.2)),
             Size(size),
             Color(Vec4::ONE),
-            Sprite::cell(textures.get(tex::PLAYER), 0, HERO_RUN, HERO_SHEET.0, HERO_SHEET.1),
+            Sprite::cell(textures.get(tex::ELIAN_WALK), 0, HERO_RUN, HERO_SHEET.0, HERO_SHEET.1),
             Animation::new(HERO_SHEET.0, HERO_SHEET.1, Clip { row: HERO_RUN, frames: 6, frame_time: 0.07, looping: true, flipped: false }),
             Layer(1),
             crate::components::YSort::bottom(size),

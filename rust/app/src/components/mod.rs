@@ -36,7 +36,8 @@ pub(crate) use artefacts::{
 pub(crate) use body::{Body, BodyOffset, MoveTo, SetVelocity, Teleport};
 pub(crate) use combat::{
     Armor, BULLET_COLUMNS, BULLET_FLIGHT, BULLET_IMPACT, BULLET_ROWS, Bullet, Burst, Chase,
-    ContactDamage, Dash, Detour, Slot, Died, Enemy, Expiring, Gone, GunDrop, Health, HitFlash,
+    ContactDamage, Dash, Detour, Slot, Died, Enemy, Expiring, Gone, GunDrop, GunKick, Health,
+    HeldGun, HeldHand, HitFlash,
     Invulnerable, Loadout,
     Path, Progress, Puddle, Revives, STARTING_SLOTS, Spawning, Toughened, Trap, Wallet, Weapon,
 };
@@ -62,7 +63,7 @@ pub(crate) use motion::Velocity;
 pub(crate) use objects::{
     ArrowTrap, BreakKind, Breakable, Broken, CHILL_SECONDS, CHILL_SLOWDOWN, CHILL_STACKS_TO_FREEZE,
     Chilled, Flame, FloorPatch, Friendly, Frozen, PatchKind, PoisonPool, PoisonTrail, Poisoned,
-    RippleTimer, SandSunk, SlotMachine, SlotPrice, Solid, TrailLayer, TrainingDummy, TrapArrow,
+    RippleTimer, SandSunk, Shopkeeper, SlotMachine, SlotPrice, Solid, TrailLayer, TrainingDummy, TrapArrow,
 };
 pub(crate) use perks::{HitRoll, PlayerPerks};
 pub(crate) use pet::Pet;

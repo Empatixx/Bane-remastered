@@ -10,15 +10,18 @@ use crate::components::{
 use crate::controls::Action;
 use crate::input::Input;
 
-pub(crate) const DODGE_SECONDS: f32 = 0.36;
-pub(crate) const DODGE_SPEED: f32 = 760.0;
+pub(crate) const DODGE_SECONDS: f32 = 0.42;
+/// Covers the same ground as before the roll was slowed (760 over 0.36 s).
+pub(crate) const DODGE_SPEED: f32 = 651.0;
 const DODGE_COOLDOWN: f32 = 0.9;
 const DODGE_TOTAL: f32 = DODGE_SECONDS + DODGE_COOLDOWN;
 const BAR_WIDTH: f32 = 36.0;
 const BAR_HEIGHT: f32 = 5.0;
 const BAR_DROP: f32 = 10.0;
 const BAR_COLOR: glam::Vec4 = glam::Vec4::new(1.0, 1.0, 1.0, 0.45);
-const VISUAL_SIZE: Vec2 = Vec2::new(64.0, 76.0);
+/// The roll's 24x32 frames (a leap and a somersault need room above his head), drawn at the
+/// hero's scale and centred on him so his feet stay put.
+const VISUAL_SIZE: Vec2 = Vec2::new(24.0 * crate::held::PIXEL, 32.0 * crate::held::PIXEL);
 const VISUAL_FRAMES: usize = 6;
 const TRAIL_INTERVAL: f32 = 0.04;
 const AFTERIMAGE_SECONDS: f32 = 0.25;
@@ -184,7 +187,8 @@ pub(crate) fn show_dodge_visual(world: &mut World, textures: &Textures) {
             position,
             Size(VISUAL_SIZE),
             Color(glam::Vec4::ONE),
-            Sprite::whole(textures.get(PLAYER_DODGE)),
+            // The first frame from the start: the whole strip would show squeezed for a frame.
+            Sprite::cell(textures.get(PLAYER_DODGE), 0, 0, VISUAL_FRAMES, 1),
             Animation::new(VISUAL_FRAMES, 1, clip),
             layer,
             Lit,
@@ -418,6 +422,9 @@ mod tests {
 
         start_dodge(&mut world, &pressed(), Vec2::X * 500.0, &mut Vec::new());
         show_dodge_visual(&mut world, &textures);
+        // From its first frame it shows one picture of the roll, never the whole strip.
+        let uv = world.query::<&Sprite>().with::<&DodgeVisual>().iter().next().map(|s| s.uv).unwrap();
+        assert!(uv[2] - uv[0] < 1.0 / VISUAL_FRAMES as f32 + 1e-3, "{uv:?}");
         show_dodge_visual(&mut world, &textures);
         assert_eq!(world.query::<&DodgeVisual>().iter().count(), 1);
         assert_eq!(world.get::<&Color>(hero).map(|c| c.0.w).ok(), Some(0.0));

@@ -12,7 +12,12 @@ use rapier2d::prelude::{
 use crate::components::{Body, Position, Solid, Velocity};
 
 const WALL_OWNER: u128 = 0;
-const PLAYER_CORNER_RADIUS: f32 = 2.0;
+/// How round the corners of the hero's feet are, as a share of half their height: round
+/// enough that he slides round the corner of a wall instead of catching on it.
+const PLAYER_FEET_ROUNDING: f32 = 0.5;
+/// How much of a tile at the top of a wall walked up to from above is not solid, so the feet
+/// of whoever walks up to it go in behind its top edge.
+const FRONT_WALL_GIVE: f32 = 0.19;
 const ENEMY_CORNER_FRACTION: f32 = 0.25;
 const ENEMY_CORNER_MAX: f32 = 14.0;
 const LENGTH_UNIT: f32 = 32.0;
@@ -67,10 +72,26 @@ impl Physics {
         }
     }
 
-    pub(crate) fn add_walls(&mut self, solid_cells: &[(usize, usize)], tile_size: f32) {
-        for rect in walls::merge_cells(solid_cells) {
+    /// Walls on these cells. Those `front` says are walked up to from above give way at the top
+    /// by [`FRONT_WALL_GIVE`] of a tile, so feet can step in behind the top of the wall, which is
+    /// drawn in front of them.
+    pub(crate) fn add_walls(
+        &mut self,
+        solid_cells: &[(usize, usize)],
+        front: impl Fn(usize, usize) -> bool,
+        tile_size: f32,
+    ) {
+        let (fronts, backs): (Vec<_>, Vec<_>) =
+            solid_cells.iter().partition(|&&(column, row)| front(column, row));
+        let give = tile_size * FRONT_WALL_GIVE;
+        let rects = walls::merge_cells(&backs)
+            .into_iter()
+            .map(|rect| (rect, 0.0))
+            .chain(walls::merge_cells(&fronts).into_iter().map(|rect| (rect, give)));
+        for (rect, give) in rects {
             let size = Vec2::new(rect.width as f32, rect.height as f32) * tile_size;
             let center = Vec2::new(rect.column as f32, rect.row as f32) * tile_size + size / 2.0;
+            let (size, center) = (size - Vec2::new(0.0, give), center + Vec2::new(0.0, give / 2.0));
             let collider = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
                 .translation(to_rapier(center))
                 .collision_groups(groups::WALLS)
@@ -108,15 +129,37 @@ impl Physics {
             .collect()
     }
 
-    pub(crate) fn add_player(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
-        let half = size / 2.0 - Vec2::splat(PLAYER_CORNER_RADIUS);
+    /// The hero's body: his feet (`feet`, a box `feet_offset` below his centre) are what walls,
+    /// furniture and objects stop, so his head and shoulders pass in front of a wall as it looks
+    /// like they should; his whole figure (`figure`) is what enemy bullets hit.
+    pub(crate) fn add_player(
+        &mut self,
+        entity: Entity,
+        position: Vec2,
+        feet: Vec2,
+        feet_offset: Vec2,
+        figure: Vec2,
+    ) -> Body {
+        let radius = feet.min_element() / 2.0 * PLAYER_FEET_ROUNDING;
+        let half = feet / 2.0 - Vec2::splat(radius);
         let body = RigidBodyBuilder::dynamic()
             .translation(to_rapier(position))
             .lock_rotations();
-        let collider = ColliderBuilder::round_cuboid(half.x, half.y, PLAYER_CORNER_RADIUS)
-            .collision_groups(groups::PLAYERS)
+        // As heavy as his whole figure, so he still shoves barrels about with only his feet.
+        let collider = ColliderBuilder::round_cuboid(half.x, half.y, radius)
+            .density(figure.x * figure.y / (feet.x * feet.y))
+            .translation(to_rapier(feet_offset))
+            .collision_groups(groups::PLAYER_FEET)
             .user_data(owner_bits(entity));
-        self.insert(body, collider)
+        let body = self.insert(body, collider);
+        let hurtbox = ColliderBuilder::cuboid(figure.x / 2.0, figure.y / 2.0)
+            .density(0.0)
+            .collision_groups(groups::PLAYER_FIGURE)
+            .user_data(owner_bits(entity));
+        self.world
+            .colliders
+            .insert_with_parent(hurtbox, body.body, &mut self.world.bodies);
+        body
     }
 
     pub(crate) fn add_pet(&mut self, entity: Entity, position: Vec2, size: Vec2) -> Body {
@@ -201,6 +244,19 @@ impl Physics {
         let body = self.insert(body, collider);
         self.solids.push((body.collider, center, size));
         body
+    }
+
+    /// Gives the entity's body a second shape, `size` at `offset` from it, that only bullets hit:
+    /// the tall part of an object whose base alone is in the way of walkers.
+    pub(crate) fn add_figure(&mut self, entity: Entity, body: Body, offset: Vec2, size: Vec2) {
+        let figure = ColliderBuilder::cuboid(size.x / 2.0, size.y / 2.0)
+            .density(0.0)
+            .translation(to_rapier(offset))
+            .collision_groups(groups::TARGETS)
+            .user_data(owner_bits(entity));
+        self.world
+            .colliders
+            .insert_with_parent(figure, body.body, &mut self.world.bodies);
     }
 
     /// A table, standing or flipped: it never moves; a flipped one (`cover`) also stops enemy

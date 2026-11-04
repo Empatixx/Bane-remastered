@@ -50,6 +50,8 @@ pub(crate) struct LayoutSpec {
     pub(crate) treasures: usize,
     pub(crate) sacrifices: usize,
     pub(crate) ambushes: usize,
+    /// Trap rooms with a chest: not on every floor.
+    pub(crate) gauntlets: usize,
 }
 
 impl LayoutSpec {
@@ -60,6 +62,7 @@ impl LayoutSpec {
             treasures: rng.below(3),
             sacrifices: rng.below(2),
             ambushes: 1 + rng.below(2),
+            gauntlets: rng.below(2),
         }
     }
 }
@@ -89,7 +92,8 @@ impl Layout {
         let specials = std::iter::repeat_n(RoomKind::Shop, spec.shops)
             .chain(std::iter::repeat_n(RoomKind::Treasure, spec.treasures))
             .chain(std::iter::repeat_n(RoomKind::Sacrifice, spec.sacrifices))
-            .chain(std::iter::repeat_n(RoomKind::Ambush, spec.ambushes));
+            .chain(std::iter::repeat_n(RoomKind::Ambush, spec.ambushes))
+            .chain(std::iter::repeat_n(RoomKind::Gauntlet, spec.gauntlets));
         for kind in specials {
             let candidates = layout.attachable(&[RoomKind::Normal]);
             let parent = *rng.pick(&candidates)?;
@@ -198,6 +202,7 @@ mod tests {
         treasures: 2,
         sacrifices: 1,
         ambushes: 2,
+        gauntlets: 1,
     };
 
     fn layouts() -> Vec<Layout> {

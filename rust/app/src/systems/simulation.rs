@@ -238,7 +238,7 @@ mod tests {
     fn wall_stops_the_player() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        physics.add_walls(&[(3, 0)], TILE);
+        physics.add_walls(&[(3, 0)], |_, _| false, TILE);
         let player = prefabs::player(
             &mut world,
             &mut physics,
@@ -257,10 +257,44 @@ mod tests {
     }
 
     #[test]
+    fn the_feet_step_in_behind_the_top_of_a_wall_walked_up_to_from_above() {
+        let feet_bottom = |front: bool| {
+            let mut world = World::new();
+            let mut physics = Physics::new();
+            let cells: Vec<_> = (0..6).map(|column| (column, 4)).collect();
+            physics.add_walls(&cells, |_, _| front, TILE);
+            let player = prefabs::player(&mut world, &mut physics, Vec2::new(160.0, 100.0), &Textures::default());
+            if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+                velocity.0 = Vec2::new(0.0, 240.0);
+            }
+            run(&mut world, &mut physics, 90);
+            player_position(&world, player).y + prefabs::PLAYER_FEET_OFFSET.y + prefabs::PLAYER_FEET.y / 2.0
+        };
+        let wall_top = 4.0 * TILE;
+        assert!((feet_bottom(false) - wall_top).abs() < 2.0, "{}", feet_bottom(false));
+        assert!(feet_bottom(true) > wall_top + 8.0, "{}", feet_bottom(true));
+    }
+
+    #[test]
+    fn only_the_feet_meet_a_wall_above_so_the_head_passes_in_front_of_it() {
+        let mut world = World::new();
+        let mut physics = Physics::new();
+        let cells: Vec<_> = (0..6).map(|column| (column, 0)).collect();
+        physics.add_walls(&cells, |_, _| false, TILE);
+        let player = prefabs::player(&mut world, &mut physics, Vec2::new(160.0, 200.0), &Textures::default());
+        if let Ok(mut velocity) = world.get::<&mut Velocity>(player) {
+            velocity.0 = Vec2::new(0.0, -240.0);
+        }
+        run(&mut world, &mut physics, 90);
+        let top_of_head = player_position(&world, player).y - prefabs::PLAYER_LOOK.y / 2.0;
+        assert!(top_of_head < TILE - 30.0, "{top_of_head}");
+    }
+
+    #[test]
     fn player_slides_along_a_wall() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        physics.add_walls(&[(3, 0), (3, 1), (3, 2), (3, 3)], TILE);
+        physics.add_walls(&[(3, 0), (3, 1), (3, 2), (3, 3)], |_, _| false, TILE);
         let player = prefabs::player(
             &mut world,
             &mut physics,
@@ -369,7 +403,6 @@ mod tests {
         let mut world = World::new();
         let mut physics = Physics::new();
         let textures = Textures::default();
-        let player = prefabs::player(&mut world, &mut physics, Vec2::new(0.0, 0.0), &textures);
         let barrel = prefabs::breakable(
             &mut world,
             &mut physics,
@@ -377,6 +410,11 @@ mod tests {
             barrel_at,
             &textures,
         );
+        // The player's feet level with the barrel's body: the feet are what push it.
+        let body = body_of(&world, barrel);
+        let level = physics.position(body).unwrap_or_default().y;
+        let at = Vec2::new(0.0, level) - prefabs::PLAYER_FEET_OFFSET;
+        let player = prefabs::player(&mut world, &mut physics, at, &textures);
         (world, physics, player, barrel)
     }
 

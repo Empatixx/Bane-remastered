@@ -41,7 +41,7 @@ pub(crate) fn burn_on_lava(
     else {
         return false;
     };
-    surfaces.at_point(at) == Some(Surface::Lava)
+    surfaces.at_point(crate::prefabs::player_feet(at)) == Some(Surface::Lava)
         && hurt_player_through_armor(world, player, LAVA_DAMAGE, sounds, fx)
 }
 

@@ -19,6 +19,9 @@ pub(crate) enum RoomKind {
     Boss,
     Sacrifice,
     Ambush,
+    /// No foes: a chest in the middle behind a ring of spikes, arrows and flames, the reward
+    /// for getting through them.
+    Gauntlet,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -136,7 +139,7 @@ pub(crate) fn is_door_slot(columns: usize, rows: usize, column: usize, row: usiz
     vertical || horizontal
 }
 
-const BUILT_IN: [&str; 23] = [
+const BUILT_IN: [&str; 25] = [
     include_str!("../../../assets/rooms/start.json"),
     include_str!("../../../assets/rooms/normal_05.json"),
     include_str!("../../../assets/rooms/normal_06.json"),
@@ -156,6 +159,8 @@ const BUILT_IN: [&str; 23] = [
     include_str!("../../../assets/rooms/ambush_01.json"),
     include_str!("../../../assets/rooms/ambush_02.json"),
     include_str!("../../../assets/rooms/ambush_03.json"),
+    include_str!("../../../assets/rooms/gauntlet_01.json"),
+    include_str!("../../../assets/rooms/gauntlet_02.json"),
     include_str!("../../../assets/rooms/treasure.json"),
     include_str!("../../../assets/rooms/shop.json"),
     include_str!("../../../assets/rooms/sacrifice.json"),
@@ -186,6 +191,7 @@ impl Templates {
             RoomKind::Boss,
             RoomKind::Sacrifice,
             RoomKind::Ambush,
+            RoomKind::Gauntlet,
         ] {
             if !by_kind.contains_key(&kind) {
                 return Err(format!("no template for {kind:?}").into());
@@ -222,6 +228,7 @@ mod tests {
             RoomKind::Boss,
             RoomKind::Sacrifice,
             RoomKind::Ambush,
+            RoomKind::Gauntlet,
         ] {
             assert!(templates.pick(kind, &mut rng).is_some(), "{kind:?}");
         }

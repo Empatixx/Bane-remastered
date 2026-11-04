@@ -33,7 +33,25 @@ pub(crate) struct Collider {
 }
 
 impl BreakKind {
+    /// What of it stands on the floor, from the picture's top-left corner: the low box at the
+    /// bottom of the pot or barrel that walkers bump into and push. The hero walks up behind
+    /// the rest of it.
     pub(crate) fn collider(self) -> Collider {
+        match self {
+            Self::Pot => Collider {
+                offset: Vec2::new(75.0, 99.0),
+                size: Vec2::new(45.0, 24.0),
+            },
+            Self::Barrel | Self::Explosive | Self::Poison | Self::Frost => Collider {
+                offset: Vec2::new(66.0, 102.0),
+                size: Vec2::new(57.0, 27.0),
+            },
+        }
+    }
+
+    /// All of it as drawn, from the picture's top-left corner: what bullets hit, and where a
+    /// blast spreads from.
+    pub(crate) fn figure(self) -> Collider {
         match self {
             Self::Pot => Collider {
                 offset: Vec2::new(75.0, 78.0),
@@ -62,7 +80,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn colliders_sit_near_the_middle_of_the_sprite() {
+    fn figures_sit_near_the_middle_of_the_sprite_and_bases_at_their_bottom() {
         for kind in [
             BreakKind::Pot,
             BreakKind::Barrel,
@@ -70,12 +88,16 @@ mod tests {
             BreakKind::Poison,
             BreakKind::Frost,
         ] {
-            let collider = kind.collider();
-            let center = collider.offset + collider.size / 2.0;
+            let figure = kind.figure();
+            let center = figure.offset + figure.size / 2.0;
             assert!(
                 (center - OBJECT_SIZE / 2.0).abs().max_element() < 10.0,
                 "{kind:?}"
             );
+            let base = kind.collider();
+            assert_eq!(base.offset.y + base.size.y, figure.offset.y + figure.size.y, "{kind:?}");
+            assert_eq!((base.offset.x, base.size.x), (figure.offset.x, figure.size.x), "{kind:?}");
+            assert!(base.size.y >= 12.0 && base.size.y < figure.size.y * 0.6, "{kind:?}");
         }
     }
 

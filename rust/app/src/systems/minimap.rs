@@ -8,6 +8,8 @@ use crate::dungeon::{Direction, RoomKind};
 use crate::render::{Draw, MapRoomLook, Quad};
 
 const ICON: f32 = 16.0;
+/// Cells in minimap_icons.tga, one per kind of room.
+const ICONS: usize = 8;
 const SMALL_CENTER: Vec2 = Vec2::new(865.0, 94.0);
 const BIG_CENTER: Vec2 = Vec2::new(480.0, 270.0);
 const BIG_SCALE: f32 = 4.0;
@@ -27,6 +29,7 @@ fn frame(kind: RoomKind) -> usize {
         RoomKind::Boss => 4,
         RoomKind::Sacrifice => 5,
         RoomKind::Ambush => 6,
+        RoomKind::Gauntlet => 7,
     }
 }
 
@@ -191,7 +194,7 @@ pub(crate) fn minimap_draws(map: &Minimap) -> Vec<Draw> {
         }
         let shown = Vec2::new(room.cell.0 as f32, room.cell.1 as f32) - map.shown;
         let position = center + shown * icon;
-        let uv = Sprite::cell_uv(frame(room.kind), 0, 7, 1);
+        let uv = Sprite::cell_uv(frame(room.kind), 0, ICONS, 1);
         let placed = match map.size {
             MapSize::Small => Some(Clipped {
                 center: position,

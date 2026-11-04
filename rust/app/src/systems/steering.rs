@@ -88,8 +88,8 @@ pub(crate) fn steer_player_on(world: &mut World, input: &Input, surfaces: &Surfa
             || webs
                 .iter()
                 .any(|(web, web_size)| geometry::overlaps(position.0, size.0, *web, *web_size));
-        let ground = surfaces.at_point(position.0);
-        let damping = if on(PatchKind::Ice) || ground == Some(Surface::Ice) {
+        let ground = surfaces.at_point(crate::prefabs::player_feet(position.0));
+        let damping = if ground == Some(Surface::Ice) {
             ICE_DAMPING
         } else {
             PLAYER_DAMPING

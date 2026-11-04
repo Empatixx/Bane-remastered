@@ -40,9 +40,10 @@ const UPRIGHT: usize = 4;
 const FELL_SIDEWAYS: usize = 5;
 /// The 32x32 picture at the tiles' scale.
 const SIZE: Vec2 = Vec2::splat(TILE_SIZE * 2.0);
-/// The standing table's footprint: its top and legs.
-const STANDING_BODY: Vec2 = Vec2::new(116.0, 48.0);
-const STANDING_OFFSET: Vec2 = Vec2::new(0.0, 4.0);
+/// The standing table's footprint: where its legs stand, at the bottom of the picture, so the
+/// hero walks up behind its top and is hidden by it there.
+const STANDING_BODY: Vec2 = Vec2::new(112.0, 32.0);
+const STANDING_OFFSET: Vec2 = Vec2::new(0.0, 12.0);
 /// A flipped table is a thin wall of boards.
 const COVER_BODY: Vec2 = Vec2::new(122.0, 26.0);
 /// How far up the screen the underside of a table fallen away lies.
@@ -50,7 +51,9 @@ const AWAY_COVER: f32 = 25.0;
 /// A table fallen towards us slides down the screen, its plate this far below the middle.
 const TOWARDS_MOVE: f32 = 16.0;
 const TOWARDS_COVER: f32 = 5.0;
-const UPRIGHT_BODY: Vec2 = Vec2::new(56.0, 108.0);
+/// A turned table's footprint: the lower half of its long top and its legs.
+const UPRIGHT_BODY: Vec2 = Vec2::new(56.0, 64.0);
+const UPRIGHT_OFFSET: Vec2 = Vec2::new(0.0, 24.0);
 const UPRIGHT_LIFT: f32 = 8.0;
 const SIDE_COVER_BODY: Vec2 = Vec2::new(30.0, 118.0);
 /// A turned table fallen sideways slides that way, its board this far from the middle.
@@ -114,7 +117,7 @@ pub(crate) fn spawn_furniture(
                 let center = Vec2::new(column + 1.0, row + 0.5) * TILE_SIZE;
                 (center, center - Vec2::new(0.0, SIZE.y / 4.0), STANDING, STANDING_BODY)
             };
-            let offset = if spot.upright { Vec2::ZERO } else { STANDING_OFFSET };
+            let offset = if spot.upright { UPRIGHT_OFFSET } else { STANDING_OFFSET };
             let table = world.spawn((
                 Table {
                     state: TableState::Standing,
@@ -131,8 +134,9 @@ pub(crate) fn spawn_furniture(
                 Sprite::cell(texture, cell, style, COLUMNS, ROWS),
                 Layer(Layer::ACTORS.0),
                 Lit,
+                // Drawn in order by the bottom of its footprint, the foot of its legs.
                 YSort {
-                    foot: center.y - at.y + if spot.upright { TILE_SIZE } else { TILE_SIZE / 2.0 },
+                    foot: center.y - at.y + offset.y + body_size.y / 2.0,
                 },
             ));
             let body = physics.add_table(table, center + offset, body_size, false);
@@ -143,7 +147,7 @@ pub(crate) fn spawn_furniture(
 
 fn standing_body(table: &Table) -> (Vec2, Vec2) {
     if table.upright {
-        (table.center, UPRIGHT_BODY)
+        (table.center + UPRIGHT_OFFSET, UPRIGHT_BODY)
     } else {
         (table.center + STANDING_OFFSET, STANDING_BODY)
     }
@@ -179,12 +183,13 @@ pub(crate) fn shove_tables(
     sounds: &mut Vec<AudioCommand>,
     intent: Vec2,
 ) {
-    let Some((player, player_size, push)) = world
-        .query::<(&Position, &Size, &Velocity)>()
+    // Only the hero's feet bump into a table, so only they knock it over.
+    let Some((player, push)) = world
+        .query::<(&Position, &Velocity)>()
         .with::<&Player>()
         .iter()
         .next()
-        .map(|(position, size, velocity)| (position.0, size.0, velocity.0))
+        .map(|(position, velocity)| (crate::prefabs::player_feet(position.0), velocity.0))
     else {
         return;
     };
@@ -203,7 +208,7 @@ pub(crate) fn shove_tables(
         .find_map(|(entity, table)| {
             let (center, size) = standing_body(table);
             let gap = center - player;
-            let reach = (size + player_size) / 2.0 + Vec2::splat(SHOVE_REACH);
+            let reach = (size + crate::prefabs::PLAYER_FEET) / 2.0 + Vec2::splat(SHOVE_REACH);
             let touching = gap.abs().cmple(reach).all();
             (touching && push.dot(gap) > 0.0).then_some((entity, *table))
         });
@@ -375,12 +380,13 @@ mod tests {
         (world, physics, entity, textures)
     }
 
-    /// The player walking into the table from `from` (relative to its middle) at `velocity`.
+    /// The player walking into the table, his feet at `from` (relative to its middle), at
+    /// `velocity`.
     fn bump(upright: bool, from: Vec2, velocity: Vec2) -> (World, Physics, Entity) {
         let (mut world, mut physics, table, textures) = room_with(upright);
         world.spawn((
             Player,
-            Position(CENTER + from),
+            Position(CENTER + from - crate::prefabs::PLAYER_FEET_OFFSET),
             Size(Vec2::splat(56.0)),
             Velocity(velocity),
         ));
@@ -398,11 +404,11 @@ mod tests {
 
     #[test]
     fn walking_into_a_table_from_below_knocks_it_over_away_and_from_above_towards() {
-        let (world, _, table) = bump(false, Vec2::new(0.0, 60.0), Vec2::new(0.0, -200.0));
+        let (world, _, table) = bump(false, Vec2::new(0.0, 40.0), Vec2::new(0.0, -200.0));
         assert_eq!(state(&world, table), Some(TableState::Flipped));
         assert_eq!(picture(&world, table), Sprite::cell_uv(UNDERSIDE, 0, COLUMNS, ROWS));
 
-        let (world, _, table) = bump(false, Vec2::new(0.0, -50.0), Vec2::new(0.0, 200.0));
+        let (world, _, table) = bump(false, Vec2::new(0.0, -16.0), Vec2::new(0.0, 200.0));
         assert_eq!(picture(&world, table), Sprite::cell_uv(TOP_UP, 0, COLUMNS, ROWS));
     }
 
@@ -424,12 +430,47 @@ mod tests {
         let (mut world, mut physics, table, textures) = room_with(true);
         world.spawn((
             Player,
-            Position(CENTER + Vec2::new(56.0, 0.0)),
+            Position(CENTER + Vec2::new(46.0, 24.0) - crate::prefabs::PLAYER_FEET_OFFSET),
             Size(Vec2::splat(56.0)),
             Velocity(Vec2::ZERO),
         ));
         shove_tables(&mut world, &mut physics, &textures, &mut Vec::new(), Vec2::new(-1.0, 0.0));
         assert_eq!(state(&world, table), Some(TableState::Flipped));
+    }
+
+    /// The hero, his feet `from` the table's middle, walking at `velocity` for a second; where
+    /// his feet end up.
+    fn walk_up(upright: bool, from: Vec2, velocity: Vec2) -> (Vec2, (Vec2, Vec2)) {
+        let (mut world, mut physics, table, textures) = room_with(upright);
+        let at = CENTER + from - crate::prefabs::PLAYER_FEET_OFFSET;
+        let player = crate::prefabs::player(&mut world, &mut physics, at, &textures);
+        for _ in 0..60 {
+            if let Ok(mut walking) = world.get::<&mut Velocity>(player) {
+                walking.0 = velocity;
+            }
+            crate::systems::simulate(&mut world, &mut physics, 1.0 / 60.0);
+        }
+        let feet = world.get::<&Position>(player).map(|p| crate::prefabs::player_feet(p.0));
+        let body = world.get::<&Table>(table).map(|table| table.body);
+        (feet.expect("the hero"), body.expect("the table"))
+    }
+
+    #[test]
+    fn the_hero_walks_in_behind_a_tables_top_but_not_into_its_legs() {
+        let feet_half = crate::prefabs::PLAYER_FEET.y / 2.0;
+        // From above his feet get past the top edge of the table as drawn, to its legs.
+        let drawn_top = CENTER.y - SIZE.y * 0.75 + 6.0 * SIZE.y / 32.0;
+        let (feet, (at, size)) = walk_up(false, Vec2::new(0.0, -160.0), Vec2::new(0.0, 300.0));
+        let base_top = at.y - size.y / 2.0;
+        assert!(feet.y + feet_half > drawn_top + 40.0, "feet {feet}, top {drawn_top}");
+        assert!(feet.y + feet_half <= base_top + 1.0, "feet {feet}, base {base_top}");
+        // From below they stop at the foot of its legs.
+        let (feet, (at, size)) = walk_up(false, Vec2::new(0.0, 160.0), Vec2::new(0.0, -300.0));
+        assert!(feet.y - feet_half >= at.y + size.y / 2.0 - 1.0, "feet {feet}");
+        // A turned table the same way, along its length.
+        let (feet, (at, size)) = walk_up(true, Vec2::new(0.0, -200.0), Vec2::new(0.0, 300.0));
+        assert!(feet.y + feet_half <= at.y - size.y / 2.0 + 1.0, "feet {feet}");
+        assert!(feet.y > CENTER.y - SIZE.y / 2.0, "feet {feet}");
     }
 
     #[test]
@@ -444,7 +485,7 @@ mod tests {
 
     #[test]
     fn a_flipped_table_stops_enemy_bullets_but_not_the_players() {
-        let (mut world, mut physics, table) = bump(false, Vec2::new(0.0, 60.0), Vec2::new(0.0, -200.0));
+        let (mut world, mut physics, table) = bump(false, Vec2::new(0.0, 40.0), Vec2::new(0.0, -200.0));
         let enemy_round = world.spawn((EnemyBullet, Position(Vec2::ZERO)));
         let enemy_body = physics.add_enemy_bullet(
             enemy_round,

@@ -27,7 +27,6 @@ pub(crate) struct TrapMix {
     pub(crate) poison_barrels: usize,
     pub(crate) frost_barrels: usize,
     pub(crate) cobwebs: usize,
-    pub(crate) ice_patches: usize,
     pub(crate) web_patches: usize,
     pub(crate) arrow_traps: usize,
     pub(crate) icicles: usize,
@@ -184,7 +183,6 @@ impl Theme {
             poison_barrels,
             frost_barrels,
             cobwebs: if self == Self::Spider { 5 } else { 2 },
-            ice_patches: 0,
             web_patches: if self == Self::Spider { 3 } else { 0 },
             arrow_traps: if self == Self::Temple { 2 } else { 0 },
             icicles: if self == Self::Ice { 5 } else { 0 },
@@ -304,9 +302,6 @@ mod tests {
             (2, 2, 2, 2)
         );
         assert_eq!(mix.cobwebs, 2);
-        assert_eq!(
-            (mix.ice_patches, mix.web_patches, mix.arrow_traps),
-            (0, 0, 0)
-        );
+        assert_eq!((mix.web_patches, mix.arrow_traps), (0, 0));
     }
 }

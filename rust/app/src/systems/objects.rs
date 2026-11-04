@@ -77,7 +77,7 @@ fn explode(
 ) {
     fx::explosion(sounds, fx);
     prefabs::explosion(world, center - Vec2::new(0.0, 20.0), textures);
-    let reach = BreakKind::Explosive.collider().size + EXPLOSION_REACH * 2.0;
+    let reach = BreakKind::Explosive.figure().size + EXPLOSION_REACH * 2.0;
     let victims: Vec<Entity> = world
         .query::<(Entity, &Position, &Size)>()
         .with::<&Health>()
@@ -120,7 +120,7 @@ fn freeze_around(
 ) {
     sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
     prefabs::frost_burst(world, center - Vec2::new(0.0, 20.0), textures);
-    let reach = BreakKind::Frost.collider().size + FROST_REACH * 2.0;
+    let reach = BreakKind::Frost.figure().size + FROST_REACH * 2.0;
     let victims: Vec<(Entity, f32)> = world
         .query::<(Entity, &Position, &Size, Option<&Player>, Option<&Boss>)>()
         .with::<&Health>()

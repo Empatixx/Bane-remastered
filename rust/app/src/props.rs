@@ -38,7 +38,6 @@ pub(crate) enum Prop {
     LayingBook,
     Ladder,
     Flamethrower,
-    IcePatch,
     WebPatch,
     ArrowTrap,
     SurfaceShade,
@@ -106,6 +105,60 @@ impl Prop {
                 | Self::StatuePiece
         )
     }
+
+    /// Where a solid prop stands on the floor, in its frame's pixels. Only this low box at the
+    /// bottom of the picture is solid, so the hero walks up behind the tall top of a lamp or a
+    /// shelf and is drawn behind it there, as seen from above at an angle.
+    pub(crate) fn base(self) -> Option<Base> {
+        let base = |left, right, bottom, depth| Some(Base { left, right, bottom, depth });
+        match self {
+            Self::Pot => base(25.0, 40.0, 41.0, 8.0),
+            Self::ShopCounter => base(0.0, 80.0, 28.0, 10.0),
+            Self::ShopShelf => base(1.0, 31.0, 48.0, 10.0),
+            Self::ShopGoods => base(2.0, 30.0, 31.0, 8.0),
+            Self::ShopLamp => base(4.0, 12.0, 32.0, 4.0),
+            Self::ShopTable => base(2.0, 22.0, 15.0, 4.0),
+            Self::SlotMachine => base(7.0, 41.0, 46.0, 8.0),
+            Self::TrainingDummy => base(6.0, 18.0, 32.0, 5.0),
+            Self::Armorstand => base(0.0, 17.0, 32.0, 6.0),
+            Self::Box => base(1.0, 29.0, 27.0, 9.0),
+            Self::AngelStatue => base(22.0, 42.0, 59.0, 6.0),
+            _ => None,
+        }
+    }
+
+    /// The solid box of [`Prop::base`] as drawn: its middle from the picture's top-left corner
+    /// and its size. Mirrored with the picture when `flipped`.
+    pub(crate) fn footprint(self, flipped: bool) -> Option<(Vec2, Vec2)> {
+        let spec = self.spec();
+        self.base().map(|base| {
+            let size = Vec2::new(base.right - base.left, base.depth) * spec.scale;
+            let size = size.max(Vec2::splat(MIN_FOOTPRINT));
+            let middle = (base.left + base.right) / 2.0 * spec.scale;
+            let x = if flipped { spec.size().x - middle } else { middle };
+            (Vec2::new(x, base.bottom * spec.scale - size.y / 2.0), size)
+        })
+    }
+
+    /// How far below the middle of the picture the prop meets the floor, for drawing in order.
+    pub(crate) fn foot(self) -> f32 {
+        let spec = self.spec();
+        let bottom = self.base().map_or(spec.size().y, |base| base.bottom * spec.scale);
+        bottom - spec.size().y / 2.0
+    }
+}
+
+/// Nothing solid is thinner than this, so nothing tunnels through it.
+const MIN_FOOTPRINT: f32 = 12.0;
+
+/// The base a prop stands on, in its frame's pixels: its left and right edges, the bottom of
+/// the picture and how far back from there the base reaches.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct Base {
+    pub(crate) left: f32,
+    pub(crate) right: f32,
+    pub(crate) bottom: f32,
+    pub(crate) depth: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -295,14 +348,16 @@ impl Prop {
                 scale: 2.0,
                 animation: None,
             },
+            // The merchant, a chibi like the hero (tools/art/chibi_npcs.py): row 0 idle,
+            // row 1 rubbing his hands.
             Self::Shopkeeper => PropSpec {
                 texture: tex::SHOPKEEPER,
-                columns: 24,
-                rows: 1,
-                frame: Vec2::new(80.0, 90.0),
-                scale: 4.0,
+                columns: 6,
+                rows: 2,
+                frame: Vec2::new(20.0, 26.0),
+                scale: 3.0,
                 animation: Some(Animated {
-                    frames: 24,
+                    frames: 6,
                     frame_time: 0.2,
                 }),
             },
@@ -446,29 +501,29 @@ impl Prop {
                 scale: 4.0,
                 animation: None,
             },
-            Self::IcePatch => still(tex::ICE_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::WebPatch => still(tex::WEB_PATCH, Vec2::new(32.0, 32.0), 4.0),
             Self::ArrowTrap => still(tex::ARROW_TRAP, Vec2::new(16.0, 16.0), 4.0),
             Self::Ladder => still(tex::LADDER, Vec2::new(32.0, 32.0), 3.0),
-            // Elian, the novice of the Order of the Seal, drawn like the temple's other priests
-            // (tools/make_priest.py): low resolution, four times over, standing.
+            // Brother Aldric, drawn like the temple's other priests: a chibi like the hero
+            // (tools/art/chibi_npcs.py), three times over, standing.
             Self::Guide => PropSpec {
                 texture: tex::PRIEST,
                 columns: 4,
                 rows: 4,
-                frame: Vec2::new(10.0, 19.0),
-                scale: 4.0,
+                frame: Vec2::new(20.0, 26.0),
+                scale: 3.0,
                 animation: Some(Animated {
                     frames: 4,
                     frame_time: 0.22,
                 }),
             },
+            // A chibi like the hero (tools/art/chibi_npcs.py): breathing, a blink, a glint.
             Self::Scientist => PropSpec {
                 texture: tex::SCIENTIST,
                 columns: 6,
                 rows: 1,
-                frame: Vec2::new(16.0, 40.0),
-                scale: 2.5,
+                frame: Vec2::new(20.0, 26.0),
+                scale: 3.0,
                 animation: Some(Animated {
                     frames: 6,
                     frame_time: 0.1,

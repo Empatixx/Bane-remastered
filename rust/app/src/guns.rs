@@ -79,8 +79,6 @@ pub(crate) enum ClipStyle {
     Pistol,
     Shotgun,
     SubMachine,
-    /// Long rifle rounds, one above the other.
-    Rifle,
     Rocket,
     /// No rounds and no reload: one battery holds all the charge (the clip)
     /// and drains by percent until a battery cell tops it up.
@@ -355,8 +353,10 @@ const fn gun(
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum AmmoClass {
+    /// 5.56 mm rounds, the ordinary bullet box: pistols, SMGs, the Minigun and the rest.
     Pistol,
     Shotgun,
+    /// 7.62 mm rifle rounds for the Sniper and the M4.
     Rifle,
     Rocket,
     /// The laser and lightning guns run on batteries.
@@ -367,7 +367,7 @@ impl GunKind {
     pub(crate) fn ammo_class(self) -> AmmoClass {
         match self {
             Self::Shotgun => AmmoClass::Shotgun,
-            Self::Sniper => AmmoClass::Rifle,
+            Self::Sniper | Self::M4 => AmmoClass::Rifle,
             Self::Rpg => AmmoClass::Rocket,
             Self::Blaster | Self::PlasmaRifle | Self::TeslaGun | Self::Railgun | Self::ArcCaster => {
                 AmmoClass::Energy
@@ -442,7 +442,7 @@ impl GunKind {
     }
 
     pub(crate) fn spec(self) -> GunSpec {
-        use ClipStyle::{Battery, Pistol, Rifle, Rocket, Shotgun, SubMachine};
+        use ClipStyle::{Battery, Pistol, Rocket, Shotgun, SubMachine};
         use SoundEffect as S;
         match self {
             Self::Pistol => gun(
@@ -542,7 +542,7 @@ impl GunKind {
                     (1.1, 1.6),
                     (5, 40),
                     (S::SniperShoot, S::SniperReload),
-                    Rifle,
+                    Pistol,
                 )
             },
             Self::Rpg => GunSpec {
@@ -705,7 +705,7 @@ pub(crate) fn pip_layout(style: ClipStyle, clip_size: usize) -> Vec<Vec2> {
         ClipStyle::Pistol => (0..clip_size)
             .map(|index| Vec2::new(PIPS_RIGHT, PIPS_BOTTOM - index as f32 * PIPS_STEP))
             .collect(),
-        ClipStyle::Shotgun | ClipStyle::Rifle | ClipStyle::Rocket => (0..clip_size)
+        ClipStyle::Shotgun | ClipStyle::Rocket => (0..clip_size)
             .map(|index| Vec2::new(PIPS_RIGHT, PIPS_BOTTOM - index as f32 * PIPS_STEP_SHOTGUN))
             .collect(),
         ClipStyle::Battery => Vec::new(),
@@ -872,13 +872,15 @@ mod tests {
     }
 
     #[test]
-    fn laser_guns_run_on_batteries_the_sniper_on_rifle_rounds_and_the_rpg_on_rockets() {
+    fn laser_guns_run_on_batteries_the_sniper_and_m4_on_rifle_rounds_and_the_rpg_on_rockets() {
         for kind in GunKind::ALL {
             let battery = kind.spec().clip_style == ClipStyle::Battery;
             assert_eq!(battery, kind.ammo_class() == AmmoClass::Energy, "{kind:?}");
         }
         assert_eq!(GunKind::Sniper.ammo_class(), AmmoClass::Rifle);
-        assert_eq!(GunKind::Sniper.spec().clip_style, ClipStyle::Rifle);
+        assert_eq!(GunKind::M4.ammo_class(), AmmoClass::Rifle);
+        assert_eq!(GunKind::Uzi.ammo_class(), AmmoClass::Pistol);
+        assert_eq!(GunKind::Minigun.ammo_class(), AmmoClass::Pistol);
         assert_eq!(GunKind::Rpg.ammo_class(), AmmoClass::Rocket);
         assert_eq!(GunKind::Rpg.spec().clip_style, ClipStyle::Rocket);
         assert_eq!(GunKind::Shotgun.ammo_class(), AmmoClass::Shotgun);

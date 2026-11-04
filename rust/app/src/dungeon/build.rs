@@ -267,7 +267,7 @@ impl Dungeon {
         let mix = theme.mix();
         for room in &mut rooms {
             room.furnishing = furnish::plan(room.kind, room.origin, room.columns, room.rows, theme.style());
-            room.decor = decor::plan(&grid, room, &mix, rng);
+            room.decor = decor::plan(&grid, room, theme, &mix, rng);
         }
         let mut surfaces = Surfaces::default();
         if let Some(kind) = theme.surface() {

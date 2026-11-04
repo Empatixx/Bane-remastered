@@ -354,6 +354,7 @@ fn liquid(in: VertexOut) -> vec4<f32> {
     let screen = (in.world - globals.camera) / globals.size;
     var light = textureSampleLevel(lightmap, lightmap_sampler, screen, 0.0).rgb;
     light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
+    light = soft_highlights(light);
     let shaded = linear_to_srgb(rgb) * light;
     return vec4<f32>(srgb_to_linear(min(shaded, vec3<f32>(1.0))), 1.0);
 }
@@ -396,6 +397,18 @@ fn shadow(in: VertexOut, uv_per_pixel: vec2<f32>) -> vec4<f32> {
     return vec4<f32>(rimmed.rgb, rimmed.a * in.color.a);
 }
 
+// Lights add up without a limit, so where several overlap (the hero's own glow, a lamp, candles)
+// bright colours such as skin burn out to white. Above full light this rolls off gently and
+// never gets past HIGHLIGHT_CEILING.
+const HIGHLIGHT_CEILING: f32 = 1.3;
+
+fn soft_highlights(light: vec3<f32>) -> vec3<f32> {
+    let room = HIGHLIGHT_CEILING - 1.0;
+    let over = max(light - vec3<f32>(1.0), vec3<f32>(0.0));
+    let rolled = vec3<f32>(1.0) + room * over / (over + vec3<f32>(room));
+    return select(light, rolled, light > vec3<f32>(1.0));
+}
+
 @fragment
 fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     if (in.fx.w > 3.5 && in.fx.w < 4.5) {
@@ -418,6 +431,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let screen = (in.world - globals.camera) / globals.size;
     var light = textureSampleLevel(lightmap, lightmap_sampler, screen, 0.0).rgb;
     light = light * (1.0 + noise(in.position.xy) * NOISE_INTENSITY);
+    light = soft_highlights(light);
     let shaded = linear_to_srgb(albedo.rgb) * light;
     return shined(
         frosted(

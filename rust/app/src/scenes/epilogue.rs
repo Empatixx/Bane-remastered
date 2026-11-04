@@ -58,7 +58,8 @@ const RIFT_GLOW: (f32, f32, f32) = (150.0, 60.0, 230.0);
 /// brothers (the priests' sheet) or the Faithful (the pilgrims'). The middle is left open.
 const WAITING: [(f32, bool); 4] = [(4.4, true), (5.9, true), (9.1, true), (10.6, false)];
 const WAITING_ROW: f32 = 4.1;
-const PRIEST_SIZE: Vec2 = Vec2::new(40.0, 76.0);
+/// The chibi people (tools/art/chibi_npcs.py): 20x26 frames shown three times over.
+const PRIEST_SIZE: Vec2 = Vec2::new(60.0, 78.0);
 const GHOST: Vec4 = Vec4::new(0.72, 0.62, 1.0, 0.74);
 const LET_GO: Vec4 = Vec4::new(1.0, 0.92, 0.7, 1.0);
 /// The priests' and pilgrims' rows: standing, and kneeling at prayer.
@@ -66,7 +67,7 @@ const STANDING: Clip = Clip { row: 0, frames: 4, frame_time: 0.3, looping: true,
 const PRAYING: Clip = Clip { row: 2, frames: 2, frame_time: 0.6, looping: true, flipped: false };
 
 /// Elian's sheets: the hero's own (6x4; row 3 walks away from the camera) and kneeling
-/// (tools/make_elian.py, 4x3: kneeling, nodding off, asleep).
+/// (tools/make_chibi_npcs.py, 4x3: kneeling, nodding off, asleep).
 const HERO: (usize, usize) = (6, 4);
 const WALK_AWAY: Clip = Clip { row: 3, frames: 6, frame_time: 0.1, looping: true, flipped: false };
 const KNEELING: (usize, usize) = (4, 3);
@@ -342,8 +343,8 @@ impl EpilogueScene {
         }
 
         // Elian, coming in at the doorway, his back to us.
-        let size = prefabs::PLAYER_SIZE;
-        let hero = textures.get(tex::PLAYER);
+        let size = prefabs::PLAYER_LOOK;
+        let hero = textures.get(tex::ELIAN_WALK);
         self.hero_sheet = Some(hero);
         self.kneeling_sheet = Some(textures.get(tex::ELIAN_KNEELING));
         let elian = self.world.spawn((

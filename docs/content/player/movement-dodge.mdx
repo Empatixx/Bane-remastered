@@ -13,7 +13,19 @@ The main defense is the **dodge roll**: a short fast move during which nothing c
 - You reach full speed in about half a second to one second; after you release the keys you stop in under 2 seconds.
   Turning to the opposite direction takes longer than just stopping.
 - Base speed is about 6.4 tiles per second, with the talent *Swiftwind Steps* (which you always have) about 7 tiles per second.
-- The character's animation follows the direction you walk in (not the aim direction).
+- The hero faces where you aim; his legs run while you move and stand still when you stop.
+- Only the hero's **feet** bump into walls, pillars, furniture and objects: a low box at the
+  bottom of his figure with slightly rounded corners. His head and body pass in front of a wall,
+  so he can walk right up to the foot of the top wall, and he slides round wall corners instead
+  of catching on them. Enemy bullets still hit his whole figure.
+- Walls he walks **down** into (the bottom wall of a room, the top of a pillar) give way a little
+  at their top edge: his feet step in behind it and the wall is drawn in front of them, as seen
+  from above at an angle.
+- Furniture and objects work the same way: only their **base** on the floor is solid, a low box at
+  the bottom of the table, lamp, shelf, pot, barrel or statue. The hero walks up behind the tall
+  top and is drawn behind it there; in front of it he is drawn over it. Bullets still hit the
+  whole of a barrel, a pot or a training dummy.
+- What is underfoot (lava, ice, water, sand) is checked at his feet.
 - In water you leave ripples behind you.
 
 ### What changes speed

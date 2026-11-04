@@ -7,7 +7,10 @@ use super::template::RoomKind;
 
 const BANE_ROWS: usize = 15;
 
-const SHOPKEEPER_SIZE: Vec2 = Vec2::new(320.0, 360.0);
+/// The merchant (`Prop::Shopkeeper`), a chibi as tall as the hero.
+const SHOPKEEPER_SIZE: Vec2 = Vec2::new(60.0, 78.0);
+/// How far his feet stand below the counter's top edge: the counter hides his legs.
+const SHOPKEEPER_BEHIND: f32 = 24.0;
 const TABLE_SIZE: Vec2 = Vec2::new(144.0, 96.0);
 const POT_SIZE: Vec2 = Vec2::new(192.0, 192.0);
 const SLOT_MACHINE_SIZE: Vec2 = Vec2::new(192.0, 192.0);
@@ -191,12 +194,12 @@ impl Frame {
         Vec2::new(column, row) * TILE_SIZE + Vec2::new(0.0, self.shift())
     }
 
-    fn carpet(&self, margin_columns: usize, margin_rows: usize) -> Carpet {
+    fn carpet(&self, margin_columns: usize, margin_rows: usize, style: usize) -> Carpet {
         Carpet::rect(
             (self.origin.0 + margin_columns, self.origin.1 + margin_rows),
             self.columns - 2 * margin_columns,
             self.rows - 2 * margin_rows,
-            0,
+            style,
         )
     }
 }
@@ -217,6 +220,7 @@ pub(crate) fn plan(
     match kind {
         RoomKind::Shop => Some(shop(&frame)),
         RoomKind::Treasure => Some(treasure(&frame, style)),
+        RoomKind::Gauntlet => Some(gauntlet(&frame)),
         RoomKind::Sacrifice => Some(sacrifice(&frame)),
         RoomKind::Start => Some(start(&frame)),
         RoomKind::Normal | RoomKind::Boss | RoomKind::Ambush => None,
@@ -233,7 +237,7 @@ fn shop(frame: &Frame) -> Furnishing {
             FixtureKind::Shopkeeper,
             Vec2::new(
                 center - SHOPKEEPER_SIZE.x / 2.0,
-                height / 4.0 - SHOPKEEPER_SIZE.y / 2.0,
+                COUNTER_TOP + SHOPKEEPER_BEHIND - SHOPKEEPER_SIZE.y,
             ),
             SHOPKEEPER_SIZE,
         ),
@@ -306,7 +310,7 @@ fn shop(frame: &Frame) -> Furnishing {
         SLOT_MACHINE_SIZE,
     ));
     Furnishing {
-        carpet: Some(frame.carpet(SHOP_CARPET_COLUMNS, SHOP_CARPET_ROWS)),
+        carpet: Some(frame.carpet(SHOP_CARPET_COLUMNS, SHOP_CARPET_ROWS, 0)),
         fixtures,
     }
 }
@@ -340,8 +344,28 @@ fn treasure(frame: &Frame, style: usize) -> Furnishing {
         ),
     ];
     Furnishing {
-        carpet: Some(frame.carpet(TREASURE_CARPET_COLUMNS, TREASURE_CARPET_ROWS)),
+        carpet: Some(frame.carpet(TREASURE_CARPET_COLUMNS, TREASURE_CARPET_ROWS, 0)),
         fixtures,
+    }
+}
+
+/// The gauntlet's chest in the middle of the room (its traps are planned with the decoration)
+/// and a torch either side of the top wall.
+fn gauntlet(frame: &Frame) -> Furnishing {
+    let (width, height) = (frame.width(), frame.height());
+    let torch =
+        |right, x, y| frame.place(FixtureKind::Torch { right }, Vec2::new(x, y), TORCH_SIZE);
+    Furnishing {
+        carpet: None,
+        fixtures: vec![
+            torch(false, TILE_SIZE * 2.0, TILE_SIZE * 1.0),
+            torch(true, width - TILE_SIZE * 3.0, TILE_SIZE * 1.0),
+            frame.place(
+                FixtureKind::Chest,
+                Vec2::new(width / 2.0 - CHEST_SIZE.x / 2.0, height / 2.0 - CHEST_SIZE.y / 2.0),
+                CHEST_SIZE,
+            ),
+        ],
     }
 }
 

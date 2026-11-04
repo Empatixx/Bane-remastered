@@ -17,3 +17,4 @@ settings.json
 .superpowers/
 .idea/
 .playwright-mcp/
+__pycache__/

@@ -36,7 +36,8 @@ All of them have 4 health and drop 1 regular item. The detailed effect numbers a
 
 - In about 2 of 5 combat rooms there is one, sometimes two tables (2 tiles long),
   either across the room or turned along it. A standing table is in everyone's way, but bullets from both
-  sides fly over it.
+  sides fly over it. Only where its legs stand is solid: the hero can walk up behind its top and is
+  hidden by it there.
 - When the player **bumps into** a table (walking or rolling), the table **flips** to the opposite side:
   a table across the room falls up or down, a turned table falls left or right. A bump from the end the
   table cannot fall toward flips it away from the player along its axis. Even pushing against a table the
@@ -98,9 +99,11 @@ gives only 5 items.
 
 ### Shop
 
-- The **merchant** stands silently behind the counter between two shelves of goods. Crates and barrels lie in the corners, and two brass lamps
-  glow between the tables. The counter, shelves, crates and lamps are solid and cannot be walked through.
-- **3 tables** under a velvet cloth with goods, with a price tag above each (on sale also with a label showing how much is taken off, e.g. "−75%"). Buying with the E key
+- The **merchant**, as tall as the hero, stands silently behind the counter (it hides his legs) between two shelves of goods. The counter is plain wood with a few coins and a candle on it. Crates and barrels lie in the corners, and two brass lamps
+  glow between the tables. The counter, shelves, crates, lamps, tables and the slot machine are solid
+  where they stand on the floor: the hero cannot walk through their base, but he can step in behind
+  their tall top and be drawn behind it.
+- **3 tables** under a green cloth with goods, with a price tag above each (on sale also with a label showing how much is taken off, e.g. "−75%"). Buying with the E key
   takes the coins; a potion or ammo is used right away, and a weapon or artefact is picked up right away.
   For goods and prices see [Room types](/docs/dungeon/rooms).
 - **Slot machine** (only with the *Gamble Machine* talent): "Press E to spin", one spin

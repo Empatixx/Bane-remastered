@@ -2,14 +2,14 @@ use glam::{Vec2, Vec3, Vec4};
 use hecs::{Entity, World};
 
 use crate::assets::Textures;
-use crate::assets::tex;
+use crate::assets::{tex, Tex};
 use crate::components::{
     AMMO_TEXT_COLOR, AmmoPip, AmmoText, Animation, Armor, BATTERY_CENTER, BATTERY_SIZE,
     BATTERY_WINDOW, BarKind, BatteryPart, Boss, CoinText, Color, GoldCount, GunIcon, Health,
     Hidden, InfinityMark, Loadout, PIP_EMPTY, PIP_FULL, Player, Position, Size, Sprite, StatusBar,
     TalentCount, Text, Wallet, Weapon,
 };
-use crate::guns::{ClipStyle, PIP_SIZE, pip_layout};
+use crate::guns::{AmmoClass, ClipStyle, GunKind, PIP_SIZE, pip_layout};
 use crate::render::{Draw, Quad, TextureId};
 
 const DELAY_TWEEN: f32 = 0.05;
@@ -97,6 +97,19 @@ pub(crate) fn update_lobby_counters(world: &mut World, talents: u64, gold: u64) 
     }
 }
 
+/// The round drawn for each bullet in the clip: the 7.62 mm guns share a rifle cartridge, the
+/// rest go by how their clip looks.
+fn pip_texture(kind: GunKind, style: ClipStyle) -> Tex {
+    if kind.ammo_class() == AmmoClass::Rifle {
+        return tex::AMMO_762_HUD;
+    }
+    match style {
+        ClipStyle::Shotgun => tex::SHOTGUN_AMMO_HUD,
+        ClipStyle::Rocket => tex::ROCKET_AMMO_HUD,
+        _ => tex::AMMO_HUD,
+    }
+}
+
 fn show_weapon(
     world: &mut World,
     weapon: Option<Weapon>,
@@ -147,7 +160,7 @@ fn show_weapon(
     let layout = weapon.map(|w| {
         let spec = w.spec();
         (
-            spec.clip_style,
+            pip_texture(w.kind, spec.clip_style),
             pip_layout(spec.clip_style, spec.clip_size as usize),
         )
     });
@@ -172,12 +185,7 @@ fn show_weapon(
         match placed {
             Some((w, style, top_left)) => {
                 position.0 = top_left + PIP_SIZE / 2.0;
-                sprite.texture = textures.get(match style {
-                    ClipStyle::Shotgun => tex::SHOTGUN_AMMO_HUD,
-                    ClipStyle::Rifle => tex::RIFLE_AMMO_HUD,
-                    ClipStyle::Rocket => tex::ROCKET_AMMO_HUD,
-                    _ => tex::AMMO_HUD,
-                });
+                sprite.texture = textures.get(style);
                 animation.switch_to(if gold.is_some() || pip.index < w.clip {
                     PIP_FULL
                 } else {
@@ -445,6 +453,21 @@ mod tests {
             .map(|(_, size)| size.0.y)
             .expect("charge");
         assert!((charge - (BATTERY_WINDOW.1.y * 0.25).round()).abs() < 0.5);
+    }
+
+    #[test]
+    fn the_sniper_and_the_m4_show_rifle_cartridges() {
+        use crate::guns::GunKind;
+        for kind in [GunKind::Sniper, GunKind::M4] {
+            assert_eq!(pip_texture(kind, kind.spec().clip_style), tex::AMMO_762_HUD, "{kind:?}");
+        }
+        for kind in [GunKind::Pistol, GunKind::Uzi, GunKind::Minigun] {
+            assert_eq!(pip_texture(kind, kind.spec().clip_style), tex::AMMO_HUD, "{kind:?}");
+        }
+        assert_eq!(
+            pip_texture(GunKind::Shotgun, GunKind::Shotgun.spec().clip_style),
+            tex::SHOTGUN_AMMO_HUD
+        );
     }
 
     #[test]

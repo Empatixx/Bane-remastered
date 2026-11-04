@@ -1,11 +1,10 @@
 """The shop's furniture, drawn at the tiles' pixel scale (one pixel is four world units):
 
-- shoptable.tga: a display table under a crimson cloth with a gold fringe, the goods lying on a
-  small cushion in the middle (24x16, drawn coarser: shown six times over).
+- shoptable.tga: a plain wooden table under a green cloth, the goods in the middle (24x16,
+  drawn coarser: shown six times over).
 - bookshelf.tga: the lobby's bookshelf in the same style, books, scrolls, a candle and a skull
   (48x43).
-- shop_counter.tga: the keeper's wooden counter with a balance, a ledger, coin stacks and a
-  candle on it (80x28).
+- shop_counter.tga: the keeper's plain wooden counter, a few coins and a candle on it (80x28).
 - shop_shelf.tga: two tall shelves of bottles, jars and scrolls standing against the wall
   (32x48 each, one above the other).
 - shop_goods.tga: two piles of stock for the corners, crates with a coin sack and a barrel with
@@ -14,9 +13,10 @@
 - slotmachine.tga: the slot machine, 48x48 frames in four rows of eight: spinning (the lever
   pulled, the reels blurring, the lights chasing), winning (three of a kind, the lights
   flashing, coins spilling into the tray), losing (mismatched reels, the lights dimmed) and
-  idle (the lights running slowly round the marquee).
+  idle (the lights running slowly along the marquee). Kept simple: a coin on the marquee, five
+  bulbs, the reels, a tray and the lever.
 
-Hand-picked palettes: worn dark wood, crimson velvet and old gold, matching the shop's carpet.
+Hand-picked palettes: worn dark wood, a green cloth, crimson velvet and old gold.
 """
 
 import sys
@@ -66,6 +66,11 @@ FLAME = (255, 200, 90)
 FLAME_H = (255, 246, 200)
 FLAME_D = (230, 110, 40)
 SHADOW = (0, 0, 0)
+# The tables' green cloth.
+C0 = (26, 46, 34)
+C1 = (44, 76, 52)
+C2 = (62, 104, 70)
+C3 = (92, 138, 96)
 
 
 class Canvas:
@@ -115,41 +120,26 @@ def sheet(cells, columns):
 
 
 def shop_table():
-    """Drawn coarser than the rest (24x16, shown six times over), so the goods on it stand out."""
+    """A plain wooden table under a green cloth, the goods in the middle. Drawn coarser than the
+    rest (24x16, shown six times over), so the goods on it stand out."""
     c = Canvas(24, 16)
     c.shadow(0, 14, 23, 15, 110)
     for x in (2, 20):
-        c.rect(x, 13, x + 1, 14, W1)
-    # The cloth over the top, a gold band round its edge, the cushion in the middle.
-    c.rect(0, 1, 23, 6, V3)
-    c.hline(1, 22, 1, V4)
-    c.hline(0, 23, 0, V0)
-    c.vline(0, 1, 6, V1)
-    c.vline(23, 1, 6, V1)
-    c.hline(2, 21, 2, G1)
-    c.hline(2, 21, 6, G1)
-    c.vline(2, 2, 6, G1)
-    c.vline(21, 2, 6, G1)
-    c.rect(8, 3, 15, 5, V1)
-    c.hline(8, 15, 3, V2)
-    for x, y in ((8, 3), (15, 3), (8, 5), (15, 5)):
-        c.put(x, y, G2)
-    # The drape down the front in folds, a gold band and fringe with three tassels.
-    c.rect(0, 7, 23, 11, V1)
-    for x in range(0, 24):
-        if x % 4 == 0:
-            c.vline(x, 7, 11, V0)
-        elif x % 4 == 2:
-            c.vline(x, 7, 11, V2)
-    c.hline(0, 23, 7, V0)
-    c.hline(0, 23, 8, G1)
-    c.hline(0, 23, 11, G2)
-    for x in range(0, 24, 2):
-        c.put(x, 12, G1)
-    for x in (4, 11, 19):
-        c.put(x, 12, G3)
-        c.put(x, 13, G1)
-    c.pattern(10, 9, ["gGGg"], {"g": G1, "G": G3})
+        c.rect(x, 12, x + 1, 14, W2)
+        c.vline(x + 1, 12, 14, W1)
+    # The cloth over the top, a lighter edge where it turns down.
+    c.rect(0, 1, 23, 6, C2)
+    c.hline(0, 23, 0, C0)
+    c.hline(1, 22, 1, C3)
+    c.vline(0, 1, 6, C1)
+    c.vline(23, 1, 6, C1)
+    # The drape down the front, a hem and two soft folds.
+    c.rect(0, 7, 23, 11, C1)
+    c.hline(0, 23, 7, C3)
+    c.hline(0, 23, 11, C0)
+    for x in (7, 16):
+        c.vline(x, 8, 10, C0)
+        c.vline(x + 1, 8, 10, C2)
     return c
 
 
@@ -157,20 +147,15 @@ def shop_table():
 
 
 def counter():
+    """The keeper's counter: a plain wooden top, three panels in front, a candle and a few coins."""
     c = Canvas(80, 28)
     c.shadow(1, 25, 78, 27, 120)
-    # The top, polished planks.
     c.rect(0, 4, 79, 11, W3)
     c.hline(0, 79, 4, W4)
     c.hline(0, 79, 8, W2)
-    for x in (13, 37, 61):
-        c.vline(x, 5, 7, W2)
-    for x in (25, 49, 70):
-        c.vline(x, 9, 11, W2)
     c.hline(0, 79, 11, W1)
     c.vline(0, 4, 11, W1)
     c.vline(79, 4, 11, W1)
-    # The front: panels framed in dark wood with gold corners.
     c.rect(0, 12, 79, 24, W2)
     c.hline(0, 79, 12, W0)
     c.hline(0, 79, 24, W0)
@@ -179,39 +164,18 @@ def counter():
         c.rect(x0, 14, x1, 22, W1)
         c.rect(x0 + 1, 15, x1 - 1, 21, W2)
         c.hline(x0 + 1, x1 - 1, 15, W3)
-        for x, y in ((x0, 14), (x1, 14), (x0, 22), (x1, 22)):
-            c.put(x, y, G2)
     c.vline(0, 12, 24, W0)
     c.vline(79, 12, 24, W0)
-    # A gold coin hung in the middle panel.
-    c.pattern(37, 16, [".ggggg.", "gGGcGGg", "gGcccGg", "gGGcGGg", ".ggggg."], {"g": G1, "G": G2, "c": G3})
-    # On the top: a balance...
-    c.vline(10, 0, 6, I2)
-    c.put(10, 0, G3)
-    c.hline(5, 15, 1, G1)
-    c.pattern(3, 2, ["g...g", ".ggg."], {"g": G2})
-    c.pattern(13, 3, ["g...g", ".ggg."], {"g": G2})
-    c.rect(8, 7, 12, 7, G1)
-    # ...an open ledger...
-    c.rect(20, 5, 33, 9, PAPER)
-    c.vline(26, 5, 9, PAPER_D)
-    c.vline(27, 5, 9, PAPER_D)
-    for y in (6, 8):
-        c.hline(21, 24, y, PAPER_D)
-        c.hline(29, 32, y, PAPER_D)
-    c.hline(20, 33, 10, W1)
-    # ...coin stacks...
-    for x, height in ((48, 4), (52, 6), (56, 3)):
+    # A few coins and a candle.
+    for x, height in ((14, 2), (18, 3)):
         for step in range(height):
-            y = 9 - step
-            c.hline(x, x + 2, y, G2 if step % 2 else G1)
+            c.hline(x, x + 2, 9 - step, G2 if step % 2 else G1)
         c.put(x + 1, 9 - height + 1, G3)
-    # ...and a candle.
-    c.rect(68, 3, 70, 9, PAPER)
-    c.vline(70, 3, 9, PAPER_D)
-    c.put(69, 2, FLAME)
-    c.put(69, 1, FLAME_H)
-    c.hline(66, 72, 10, G1)
+    c.rect(66, 3, 68, 9, PAPER)
+    c.vline(68, 3, 9, PAPER_D)
+    c.put(67, 2, FLAME)
+    c.put(67, 1, FLAME_H)
+    c.hline(64, 70, 10, G1)
     return c
 
 
@@ -490,7 +454,8 @@ REEL_D = (196, 186, 166)
 REEL_X = (13, 20, 27)
 REEL_TOP = 17
 REEL_HEIGHT = 10
-BULBS = [(12 + 3 * i, 5) for i in range(9)] + [(37, 8), (37, 11)] + [(12 + 3 * i, 14) for i in range(8, -1, -1)] + [(10, 11), (10, 8)]
+# Five bulbs along the top of the marquee.
+BULBS = [(13 + 5 * i, 5) for i in range(5)]
 BULB_ON = (255, 236, 150)
 BULB_ON_H = (255, 255, 230)
 BULB_OFF = (120, 70, 40)
@@ -504,9 +469,8 @@ def machine_body(c, lever_down):
     c.hline(9, 38, 3, G2)
     c.rect(9, 4, 38, 15, V2)
     c.rect(11, 6, 36, 13, V0)
-    # The sign in the marquee: three sevens.
-    for x in (16, 22, 28):
-        c.pattern(x, 7, ["ggg", "..g", ".g.", ".g.", ".g."], {"g": G3})
+    # The sign in the marquee: one gold coin.
+    c.pattern(21, 7, [".ggg.", "gGcGg", "gcGcg", "gGcGg", ".ggg."], {"g": G1, "G": G2, "c": G3})
     c.vline(8, 4, 44, G1)
     c.vline(39, 4, 44, G0)
     c.rect(9, 16, 38, 44, V2)
@@ -516,13 +480,6 @@ def machine_body(c, lever_down):
     c.rect(11, 15, 34, 28, G1)
     c.hline(11, 34, 15, G2)
     c.rect(12, 16, 33, 27, I0)
-    # A coin slot and the buttons under the reels.
-    c.rect(11, 30, 34, 32, V1)
-    c.hline(11, 34, 30, V3)
-    c.rect(29, 31, 30, 31, I0)
-    c.put(14, 31, (220, 60, 60))
-    c.put(17, 31, (70, 200, 90))
-    c.put(20, 31, (90, 150, 240))
     # The payout tray.
     c.rect(13, 35, 34, 40, G0)
     c.rect(14, 36, 33, 39, I0)
@@ -615,10 +572,6 @@ def win_frame(frame):
         lit = lambda i: True
     bulbs(c, lit)
     coins_in_tray(c, min(8, 2 + frame), frame)
-    if frame % 2 == 0:
-        # A sparkle over the marquee.
-        for x, y in ((6, 3), (41, 2), (24, 0)):
-            c.put(x, y, G4)
     return c
 
 

@@ -306,8 +306,9 @@ pub(crate) fn contact_phase(tick: &mut Tick, floor: &mut Floor) {
 /// How the player looks in the frame: the walk animation and the dodge's look and cooldown.
 /// Shared by the in-game frame and the lobby.
 pub(crate) fn player_look_phase(tick: &mut Tick) {
-    super::animate_player(tick.world, tick.input);
+    super::animate_player(tick.world, tick.input, tick.camera);
     super::show_dodge_visual(tick.world, &tick.assets.textures);
+    super::hold_gun(tick.world, tick.input, tick.camera, &tick.assets.textures, tick.dt);
     super::show_dodge_cooldown(tick.world);
 }
 

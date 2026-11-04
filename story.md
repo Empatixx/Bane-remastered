@@ -289,7 +289,7 @@ v kamenném sarkofágu, které se má probudit, až pečeť povolí. Kdo stráž
 že „přišel zdola a čeká“.
 
 Kněží řádu nosí bílá roucha s kapucí a zlatým lemem. Jsou kreslení v nízkém rozlišení
-(10×19 px, 4× zvětšené, `tools/make_priest.py`), stejně hrubě jako rekvizity v dungeonu.
+(chibi 20×26 px, 3× zvětšené, `tools/make_chibi_npcs.py`), stejně hrubě jako rekvizity v dungeonu.
 
 ### Akolyté (v cinematicu)
 | Jméno | Úloha v řádu | Osud |

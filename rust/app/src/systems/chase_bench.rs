@@ -87,7 +87,7 @@ fn run_room(dungeon: &Dungeon, cells: &[(usize, usize)], room: usize, rng: &mut 
     };
     let mut world = World::new();
     let mut physics = Physics::new();
-    physics.add_walls(cells, TILE_SIZE);
+    physics.add_walls(cells, |column, row| dungeon.grid.is_front_wall(column, row), TILE_SIZE);
     prefabs::player(&mut world, &mut physics, player_at, &Textures::default());
     let mut enemies = Vec::new();
     for kind in KINDS {

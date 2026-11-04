@@ -47,7 +47,7 @@ pub(crate) fn showcase(dungeon: &mut Dungeon) -> Option<Vec2> {
 pub(crate) fn start_at(dungeon: &Dungeon, mut start: Vec2, showcase: Option<Vec2>) -> Vec2 {
     // `BANE_AT=boss`, `normal`, `treasure`, `shop`, `sacrifice`, `overhead`, `hanging`, `track`,
     // `table`, `rug`, `vestibule`, `water`, `surface` (the thickest patch of lava, water, sand
-    // and such), `bowl`, `statue`, `shackles` or `pendulum` starts the floor there (by the first one of those), for working on the
+    // and such), `bowl`, `statue`, `shackles`, `pendulum`, `gauntlet` or `gauntlet-chest` starts the floor there (by the first one of those), for working on the
     // game.
     match std::env::var("BANE_AT").as_deref() {
         Ok("boss") => {
@@ -57,6 +57,30 @@ pub(crate) fn start_at(dungeon: &Dungeon, mut start: Vec2, showcase: Option<Vec2
                 .find(|room| room.kind == RoomKind::Boss)
             {
                 start = room.pixel_center() + Vec2::new(0.0, 160.0);
+            }
+        }
+        // Just inside the gauntlet's door, with its traps between the hero and the chest, or
+        // (`gauntlet-chest`) on the chest's platform, to see the whole room.
+        Ok(name @ ("gauntlet" | "gauntlet-chest")) => {
+            let found = dungeon
+                .rooms
+                .iter()
+                .filter(|room| room.kind == RoomKind::Gauntlet)
+                .find_map(|room| room.doors.first().map(|door| (room, door)));
+            match found {
+                Some((room, _)) => tracing::info!(columns = room.columns, rows = room.rows, "gauntlet"),
+                None => tracing::warn!("this floor has no gauntlet, try another BANE_SEED"),
+            }
+            if let Some((room, _)) = found.filter(|_| name == "gauntlet-chest") {
+                start = room.pixel_center() + Vec2::new(0.0, TILE_SIZE);
+            } else if let Some((room, door)) = found {
+                let door = door.tiles.iter().fold(Vec2::ZERO, |sum, &(c, r)| sum + Vec2::new(c as f32, r as f32)) / 2.0;
+                let middle = Vec2::new(
+                    room.origin.0 as f32 + room.columns as f32 / 2.0,
+                    room.origin.1 as f32 + room.rows as f32 / 2.0,
+                );
+                let inside = door + 0.5 + (middle - door).normalize_or_zero() * 1.5;
+                start = inside * TILE_SIZE;
             }
         }
         Ok(name @ ("normal" | "treasure" | "shop" | "sacrifice")) => {

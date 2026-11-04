@@ -464,3 +464,15 @@ mod tests {
         assert_eq!(loadout.current_slot(), 1);
     }
 }
+
+/// The hand that holds the hero's gun, floating beside him (no arms in his sheet).
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct HeldHand;
+
+/// The gun in the hero's hand, turned to the aim.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct HeldGun;
+
+/// How far the last shot threw the hero's gun back: 1 just after the shot, settling to 0.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct GunKick(pub(crate) f32);

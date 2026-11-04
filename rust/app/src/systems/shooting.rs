@@ -117,6 +117,7 @@ pub(crate) fn shoot(
     let target = input.mouse() + camera;
     let mut shots = Vec::new();
     let mut uncloaked = Vec::new();
+    let mut kicked = Vec::new();
     for (entity, position, loadout, perks, infinite, phantom) in world
         .query_mut::<(
             Entity,
@@ -152,8 +153,9 @@ pub(crate) fn shoot(
                     }
                     weapon.cooldown = spec.fire_interval;
                     let deadeye = loadout::count_shot(weapon);
+                    kicked.push(entity);
                     shots.push(Shot {
-                        origin: position.0,
+                        origin: super::shot_origin(physics, position.0, burst.aim, weapon.kind),
                         direction: burst.aim,
                         spec,
                         roll,
@@ -199,13 +201,19 @@ pub(crate) fn shoot(
             weapon.burst = (count > 1 && (infinite || weapon.clip > 0)).then_some(Burst {
                 left: count - 1,
                 timer: BURST_DELAY,
-                aim: to_target,
+                aim: target - super::shot_origin(physics, position.0, to_target, weapon.kind),
             });
         }
         let deadeye = loadout::count_shot(weapon);
+        kicked.push(entity);
+        // From the muzzle to the cursor, so rounds go where he points; a cursor nearer than the
+        // muzzle keeps the aim from his centre.
+        let origin = super::shot_origin(physics, position.0, to_target, weapon.kind);
+        let from_muzzle = target - origin;
+        let direction = if from_muzzle.dot(to_target) > 0.0 { from_muzzle } else { to_target };
         shots.push(Shot {
-            origin: position.0,
-            direction: to_target,
+            origin,
+            direction,
             spec,
             roll,
             pellets: spec.pellets,
@@ -219,6 +227,9 @@ pub(crate) fn shoot(
     }
     for entity in uncloaked {
         let _ = world.remove_one::<Phantom>(entity);
+    }
+    for entity in kicked {
+        super::kick_gun(world, entity);
     }
     let recoil: f32 = shots.iter().map(|shot| shot.spec.shake).sum();
     let fired: u32 = shots.iter().map(|shot| shot.pellets as u32).sum();
@@ -638,6 +649,13 @@ mod tests {
         );
     }
 
+    /// Which way a round leaves the hero's gun (at 100,100) for a cursor at `target`: from the
+    /// muzzle to the cursor.
+    fn muzzle_aim(kind: crate::guns::GunKind, target: Vec2) -> Vec2 {
+        let centre = Vec2::new(100.0, 100.0);
+        (target - crate::held::pose(centre, target - centre, kind, 0.0).muzzle).normalize()
+    }
+
     fn bullet_velocities(world: &World) -> Vec<Vec2> {
         world
             .query::<&Velocity>()
@@ -692,7 +710,8 @@ mod tests {
 
         let velocities = bullet_velocities(&world);
         assert_eq!(velocities.len(), 1);
-        assert!((velocities[0] - Vec2::new(700.0, 0.0)).length() < 0.01);
+        let aim = muzzle_aim(crate::guns::GunKind::Pistol, Vec2::new(150.0, 100.0));
+        assert!((velocities[0] - aim * 700.0).length() < 0.01, "{velocities:?}");
     }
 
     #[test]
@@ -712,7 +731,7 @@ mod tests {
     fn bullet_hitting_a_wall_loses_its_body_and_starts_the_impact_animation() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        physics.add_walls(&[(3, 0), (3, 1)], 64.0);
+        physics.add_walls(&[(3, 0), (3, 1)], |_, _| false, 64.0);
         let bullet = prefabs::bullet(
             &mut world,
             &mut physics,
@@ -840,7 +859,8 @@ mod tests {
 
         let velocities = bullet_velocities(&world);
         assert_eq!(velocities.len(), 4);
-        let angles: Vec<f32> = velocities.iter().map(|v| v.to_angle()).collect();
+        let aim = muzzle_aim(crate::guns::GunKind::Shotgun, Vec2::new(500.0, 100.0)).to_angle();
+        let angles: Vec<f32> = velocities.iter().map(|v| v.to_angle() - aim).collect();
         assert!(angles.iter().any(|a| a.abs() < 1e-4));
         assert!(angles.iter().any(|a| *a > 0.05) && angles.iter().any(|a| *a < -0.04));
         assert_eq!(current(&world).clip, 5);
@@ -919,8 +939,9 @@ mod tests {
         assert_eq!(bullet_velocities(&world).len(), 4);
         assert_eq!(current(&world).clip, 28);
         assert!(current(&world).burst.is_none());
-        for velocity in bullet_velocities(&world) {
-            assert!(velocity.y.abs() < 0.01, "{velocity:?}");
+        let velocities = bullet_velocities(&world);
+        for velocity in &velocities {
+            assert!(velocity.normalize().angle_to(velocities[0].normalize()).abs() < 1e-4, "{velocity:?}");
         }
     }
 
@@ -1125,7 +1146,7 @@ mod tests {
     fn a_ricochet_round_bounces_off_the_wall_once() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        physics.add_walls(&[(5, 0), (5, 1), (5, 2), (5, 3)], 64.0);
+        physics.add_walls(&[(5, 0), (5, 1), (5, 2), (5, 3)], |_, _| false, 64.0);
         let bullet = round(
             &mut world,
             &mut physics,
@@ -1145,7 +1166,7 @@ mod tests {
     fn a_plain_round_does_not_bounce() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        physics.add_walls(&[(5, 0), (5, 1), (5, 2), (5, 3)], 64.0);
+        physics.add_walls(&[(5, 0), (5, 1), (5, 2), (5, 3)], |_, _| false, 64.0);
         let bullet = prefabs::bullet(
             &mut world,
             &mut physics,
@@ -1419,7 +1440,7 @@ mod tests {
     fn a_rocket_bursts_on_the_wall_and_hurts_every_enemy_around_with_full_damage() {
         let mut world = World::new();
         let mut physics = Physics::new();
-        physics.add_walls(&[(5, 0), (5, 1), (5, 2)], 64.0);
+        physics.add_walls(&[(5, 0), (5, 1), (5, 2)], |_, _| false, 64.0);
         let near = prefabs::ready_enemy(
             &mut world,
             &mut physics,

@@ -52,6 +52,7 @@ mod perks;
 mod pet;
 mod player;
 mod player_animation;
+mod held_gun;
 mod portal;
 mod prison;
 mod rooms;
@@ -160,6 +161,7 @@ pub(crate) use perks::{
 pub(crate) use pet::{pet_bites, pick_pet_targets, plan_pet_paths, steer_pets};
 pub(crate) use player::player_at;
 pub(crate) use player_animation::animate_player;
+pub(crate) use held_gun::{hold_gun, kick_gun, shot_origin};
 pub(crate) use portal::{sign_portal, tint_portal};
 pub(crate) use rooms::{RoomContext, RoomEvent, RoomRuntime, chest_spot, update_rooms};
 pub(crate) use rules::toughen_enemies;

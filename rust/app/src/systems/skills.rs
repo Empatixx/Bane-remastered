@@ -549,7 +549,7 @@ mod tests {
     #[test]
     fn a_bullet_stops_at_a_wall() {
         let (mut world, mut physics, textures) = arena();
-        physics.add_walls(&[(5, 0)], 64.0);
+        physics.add_walls(&[(5, 0)], |_, _| false, 64.0);
         let bullet = prefabs::enemy_bullet(
             &mut world,
             &mut physics,

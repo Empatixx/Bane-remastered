@@ -263,6 +263,7 @@ pub(crate) fn buy(
     match shop.currency {
         Currency::Coins => {
             sounds.push(AudioCommand::Effect(SoundEffect::Buy));
+            rub_hands(world);
         }
         Currency::Health => {
             sounds.push(AudioCommand::Effect(SoundEffect::Sacrifice));
@@ -338,6 +339,25 @@ pub(crate) fn fit_price_boxes(world: &mut World, fonts: &crate::render::Fonts) {
         if let Some((_, width)) = widths.iter().find(|(owner, _)| *owner == price_box.0) {
             size.0.x = (width + PRICE_BOX_PAD).max(PRICE_BOX_MIN);
         }
+    }
+}
+
+/// The keeper's rows (tools/art/chibi_npcs.py): idle, and rubbing his hands.
+const KEEPER_IDLE: Clip = Clip { row: 0, frames: 6, frame_time: 0.2, looping: true, flipped: false };
+const KEEPER_RUBS: Clip = Clip { row: 1, frames: 6, frame_time: 0.12, looping: false, flipped: false };
+
+/// The merchant rubs his hands over a sale, then stands idle again.
+fn rub_hands(world: &mut World) {
+    let keepers: Vec<Entity> = world
+        .query::<Entity>()
+        .with::<&crate::components::Shopkeeper>()
+        .iter()
+        .collect();
+    for keeper in keepers {
+        if let Ok(mut animation) = world.get::<&mut Animation>(keeper) {
+            animation.play(KEEPER_RUBS);
+        }
+        let _ = world.insert_one(keeper, crate::components::ThenPlay(KEEPER_IDLE));
     }
 }
 

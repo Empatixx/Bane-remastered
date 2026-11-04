@@ -32,6 +32,10 @@ pub(crate) struct TrainingDummy {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Flame;
 
+/// The merchant behind the shop's counter: he rubs his hands after every sale.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Shopkeeper;
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct SlotMachine {
     pub(crate) spinning: Option<f32>,
@@ -50,7 +54,6 @@ pub(crate) struct PoisonPool {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PatchKind {
-    Ice,
     Web,
 }
 
