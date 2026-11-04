@@ -790,6 +790,14 @@ impl Drops {
         }
     }
 
+    /// Its fall drawn frame by frame (tools/art/*_fall.ase): the flash, the snap, two of falling.
+    fn sheet(self) -> crate::assets::Tex {
+        match self {
+            Self::Icicle => tex::ICICLE_FALL,
+            Self::Cocoon => tex::COCOON_FALL,
+        }
+    }
+
     /// How much it hurts, and how far round where it lands.
     fn blow(self) -> (i32, Vec2) {
         match self {
@@ -805,9 +813,11 @@ const COCOON_DAMAGE: i32 = 3;
 const FALL_GRAVITY: f32 = 1500.0;
 /// How long a thing shot down shudders on its chain before it drops, and how hard.
 const SHUDDER: f32 = 0.28;
-/// How far a falling thing stretches at most (narrower, taller), reached at this speed.
-const STRETCH: Vec2 = Vec2::new(0.18, 0.3);
-const STRETCH_SPEED: f32 = 700.0;
+/// The fall's frames: 32x32 pixels, at the hanging cell's own pixel scale.
+const FALL_FRAMES: usize = 4;
+const FALL_FRAME: Vec2 = Vec2::new(32.0, 32.0);
+/// World units to one of the hanging cell's pixels, before the nearer-the-camera scale.
+const HANGING_PIXEL: f32 = PIECE.x / 16.0;
 const SHUDDER_REACH: f32 = 3.0;
 const LANDING_SHAKE: f32 = 0.18;
 
@@ -858,6 +868,12 @@ pub(crate) fn drop_hanging(
         .map(|(entity, droppable, position, _)| (entity, *droppable, position.0))
         .collect();
     for (entity, droppable, at) in hit {
+        if let Ok(mut sprite) = world.get::<&mut Sprite>(entity) {
+            *sprite = Sprite::cell(textures.get(droppable.drops.sheet()), 0, 0, FALL_FRAMES, 1);
+        }
+        if let Ok(mut size) = world.get::<&mut Size>(entity) {
+            size.0 = FALL_FRAME * HANGING_PIXEL * THING_SCALE;
+        }
         // It no longer hangs: the swing lets go of it and no shot can bring it down again.
         let _ = world.remove_one::<Droppable>(entity);
         let _ = world.remove_one::<HangingPart>(entity);
@@ -867,7 +883,24 @@ pub(crate) fn drop_hanging(
         );
     }
     let mut landed = Vec::new();
-    for (entity, falling, position, size) in world.query_mut::<(Entity, &mut Falling, &mut Position, &mut Size)>() {
+    for (entity, falling, position, size, sprite) in
+        world.query_mut::<(Entity, &mut Falling, &mut Position, &mut Size, Option<&mut Sprite>)>()
+    {
+        // The flash where the shot struck, then the thread snapping (the ice cracking) while
+        // it shudders; then it falls, the cocoon tumbling over, as drawn.
+        let through = ((position.0.y - falling.from.y) / (falling.floor.y - falling.from.y).max(1.0)).clamp(0.0, 1.0);
+        let frame = if falling.shudder > SHUDDER / 2.0 {
+            0
+        } else if falling.shudder > 0.0 {
+            1
+        } else if through < 0.4 {
+            2
+        } else {
+            3
+        };
+        if let Some(sprite) = sprite {
+            sprite.uv = Sprite::cell_uv(frame, 0, FALL_FRAMES, 1);
+        }
         if falling.shudder > 0.0 {
             falling.shudder -= dt;
             let side = if ((falling.shudder / SHUDDER) * 9.0) as i32 % 2 == 0 { 1.0 } else { -1.0 };
@@ -877,13 +910,9 @@ pub(crate) fn drop_hanging(
         position.0.x = falling.from.x;
         falling.speed += FALL_GRAVITY * dt;
         position.0.y = (position.0.y + falling.speed * dt).min(falling.floor.y);
+        // Smaller as it drops away from the camera, the same shape all the way.
         let through = ((position.0.y - falling.from.y) / (falling.floor.y - falling.from.y).max(1.0)).clamp(0.0, 1.0);
-        // Its weight pulls it out of shape as it gathers speed: taller and narrower, the
-        // faster it drops.
-        let stretch = (falling.speed / STRETCH_SPEED).min(1.0);
-        size.0 = PIECE
-            * (THING_SCALE + (1.0 - THING_SCALE) * through)
-            * Vec2::new(1.0 - STRETCH.x * stretch, 1.0 + STRETCH.y * stretch);
+        size.0 = FALL_FRAME * HANGING_PIXEL * (THING_SCALE + (1.0 - THING_SCALE) * through);
         if position.0.y >= falling.floor.y {
             landed.push((entity, falling.drops, falling.floor));
         }
