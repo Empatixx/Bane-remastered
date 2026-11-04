@@ -473,6 +473,9 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                     Light::rgb(Vec2::new(0.0, -8.0), colour.x, colour.y, colour.z, reach, 1.0),
                 );
             }
+            if let Some(drops) = Drops::of(hanging.kind) {
+                let _ = world.insert_one(thing, Droppable { drops, floor });
+            }
             if hanging.kind == HangingKind::Crucible {
                 let _ = world.insert_one(
                     thing,
@@ -506,6 +509,7 @@ pub(crate) fn spawn_hanging(world: &mut World, dungeon: &Dungeon, textures: &Tex
                     Color(Vec4::new(0.0, 0.0, 0.0, HANGING_SHADOW_ALPHA)),
                     sprite,
                     Layer(SHADOW_LAYER),
+                    ShadowOf(thing),
                 ));
             }
         }
@@ -766,5 +770,204 @@ mod tests {
             tick_overheads(&mut world, 1.0 / 60.0);
         }
         assert!(piece_alpha(&world).iter().all(|alpha| *alpha > 0.98));
+    }
+}
+
+/// What a hanging thing does when a shot brings it down: icicles shatter on whatever is under
+/// them, a cocoon bursts on it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Drops {
+    Icicle,
+    Cocoon,
+}
+
+impl Drops {
+    fn of(kind: HangingKind) -> Option<Self> {
+        match kind {
+            HangingKind::BigIcicle | HangingKind::IceChandelier => Some(Self::Icicle),
+            HangingKind::Cocoon => Some(Self::Cocoon),
+            _ => None,
+        }
+    }
+
+    /// How much it hurts, and how far round where it lands.
+    fn blow(self) -> (i32, Vec2) {
+        match self {
+            Self::Icicle => (ICICLE_DAMAGE, Vec2::new(120.0, 90.0)),
+            Self::Cocoon => (COCOON_DAMAGE, Vec2::new(130.0, 100.0)),
+        }
+    }
+}
+
+const ICICLE_DAMAGE: i32 = 4;
+const COCOON_DAMAGE: i32 = 3;
+/// How fast a thing shot down falls, in world units per second per second.
+const FALL_GRAVITY: f32 = 2400.0;
+const LANDING_SHAKE: f32 = 0.18;
+
+/// A hanging thing a shot can bring down, and the floor under it.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Droppable {
+    drops: Drops,
+    floor: Vec2,
+}
+
+/// A thing shot down, on its way to the floor.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Falling {
+    drops: Drops,
+    from: Vec2,
+    floor: Vec2,
+    speed: f32,
+}
+
+/// A hanging thing's shadow on the floor, which goes with it when it falls.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ShadowOf(Entity);
+
+/// Shots bring droppable hanging things down: an icicle or a cocoon falls (smaller as it drops
+/// away from the camera) and on the floor hurts whoever stands under it, enemies and the hero.
+pub(crate) fn drop_hanging(
+    world: &mut World,
+    textures: &Textures,
+    sounds: &mut Vec<crate::audio::AudioCommand>,
+    fx: &mut super::Fx,
+    dt: f32,
+) {
+    // Where the shots are drawn: a shot flying at gun height meets a thing hanging there.
+    let shots: Vec<Vec2> = world
+        .query::<(&Position, Option<&crate::components::Elevation>)>()
+        .with::<&Bullet>()
+        .iter()
+        .map(|(position, elevation)| position.0 - Vec2::new(0.0, elevation.map_or(0.0, |e| e.0)))
+        .collect();
+    let hit: Vec<(Entity, Droppable, Vec2)> = world
+        .query::<(Entity, &Droppable, &Position, &Size)>()
+        .iter()
+        .filter(|(_, _, position, size)| {
+            shots.iter().any(|shot| (*shot - position.0).abs().cmple(size.0 / 2.0).all())
+        })
+        .map(|(entity, droppable, position, _)| (entity, *droppable, position.0))
+        .collect();
+    for (entity, droppable, at) in hit {
+        // It no longer hangs: the swing lets go of it and no shot can bring it down again.
+        let _ = world.remove_one::<Droppable>(entity);
+        let _ = world.remove_one::<HangingPart>(entity);
+        let _ = world.insert_one(
+            entity,
+            Falling { drops: droppable.drops, from: at, floor: droppable.floor, speed: 0.0 },
+        );
+    }
+    let mut landed = Vec::new();
+    for (entity, falling, position, size) in world.query_mut::<(Entity, &mut Falling, &mut Position, &mut Size)>() {
+        falling.speed += FALL_GRAVITY * dt;
+        position.0.y = (position.0.y + falling.speed * dt).min(falling.floor.y);
+        let through = ((position.0.y - falling.from.y) / (falling.floor.y - falling.from.y).max(1.0)).clamp(0.0, 1.0);
+        size.0 = PIECE * (THING_SCALE + (1.0 - THING_SCALE) * through);
+        if position.0.y >= falling.floor.y {
+            landed.push((entity, falling.drops, falling.floor));
+        }
+    }
+    for (entity, drops, floor) in landed {
+        let shadows: Vec<Entity> = world
+            .query::<(Entity, &ShadowOf)>()
+            .iter()
+            .filter(|(_, shadow)| shadow.0 == entity)
+            .map(|(shadow, _)| shadow)
+            .collect();
+        for shadow in shadows {
+            let _ = world.despawn(shadow);
+        }
+        let _ = world.despawn(entity);
+        land(world, drops, floor, textures, sounds, fx);
+    }
+}
+
+fn land(
+    world: &mut World,
+    drops: Drops,
+    floor: Vec2,
+    textures: &Textures,
+    sounds: &mut Vec<crate::audio::AudioCommand>,
+    fx: &mut super::Fx,
+) {
+    use crate::audio::{AudioCommand, SoundEffect};
+    use crate::systems::damage::{Damage, DamageSource, deal, hurt_player};
+    fx.shake(LANDING_SHAKE);
+    match drops {
+        Drops::Icicle => {
+            crate::prefabs::ice_shatter(world, floor, textures);
+            sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
+        }
+        Drops::Cocoon => sounds.push(AudioCommand::Effect(SoundEffect::SpiderHatch)),
+    }
+    let (amount, reach) = drops.blow();
+    let victims: Vec<(Entity, bool)> = world
+        .query::<(Entity, &Position, &Size, Option<&Player>)>()
+        .with::<&crate::components::Health>()
+        .without::<&crate::components::Expiring>()
+        .without::<&crate::components::Spawning>()
+        .iter()
+        .filter(|(entity, position, size, player)| {
+            (player.is_some() || world.get::<&crate::components::Enemy>(*entity).is_ok())
+                && crate::geometry::overlaps(floor, reach, position.0, size.0)
+        })
+        .map(|(entity, _, _, player)| (entity, player.is_some()))
+        .collect();
+    for (entity, player) in victims {
+        if player {
+            if world.get::<&crate::components::Invulnerable>(entity).is_err() {
+                hurt_player(world, entity, 1, sounds, fx);
+            }
+        } else {
+            deal(world, Damage { target: entity, amount, source: DamageSource::Trap });
+        }
+    }
+}
+
+#[cfg(test)]
+mod drop_tests {
+    use super::*;
+    use crate::components::{Enemy, Health};
+
+    #[test]
+    fn a_shot_brings_an_icicle_down_on_the_enemy_under_it() {
+        let mut world = World::new();
+        let textures = Textures::default();
+        let floor = Vec2::new(300.0, 400.0);
+        let at = floor - Vec2::new(0.0, HANG);
+        let icicle = world.spawn((
+            Droppable { drops: Drops::Icicle, floor },
+            Position(at),
+            Size(PIECE * THING_SCALE),
+        ));
+        let shadow = world.spawn((Position(floor), ShadowOf(icicle)));
+        let enemy = world.spawn((Enemy { death: Clip { row: 0, frames: 1, frame_time: 1.0, looping: false, flipped: false }, kind: crate::enemies::EnemyKind::Rat }, Position(floor), Size(Vec2::splat(40.0)), Health { current: 10, max: 10 }));
+        // A shot drawn across the icicle (its shadow far below it on the floor).
+        world.spawn((Bullet::plain(1), Position(at + Vec2::new(0.0, 40.0)), crate::components::Elevation(40.0)));
+        let (mut sounds, mut fx) = (Vec::new(), crate::systems::Fx::default());
+        for _ in 0..90 {
+            drop_hanging(&mut world, &textures, &mut sounds, &mut fx, 1.0 / 60.0);
+        }
+        assert!(!world.contains(icicle) && !world.contains(shadow), "it fell and shattered");
+        let health = world.get::<&Health>(enemy).map(|health| health.current).unwrap_or(0);
+        assert_eq!(health, 10 - ICICLE_DAMAGE);
+    }
+
+    #[test]
+    fn a_hanging_thing_no_shot_touches_stays_up() {
+        let mut world = World::new();
+        let floor = Vec2::new(300.0, 400.0);
+        let cocoon = world.spawn((
+            Droppable { drops: Drops::Cocoon, floor },
+            Position(floor - Vec2::new(0.0, HANG)),
+            Size(PIECE * THING_SCALE),
+        ));
+        world.spawn((Bullet::plain(1), Position(floor + Vec2::new(200.0, 0.0)), crate::components::Elevation(30.0)));
+        let (mut sounds, mut fx) = (Vec::new(), crate::systems::Fx::default());
+        for _ in 0..60 {
+            drop_hanging(&mut world, &Textures::default(), &mut sounds, &mut fx, 1.0 / 60.0);
+        }
+        assert!(world.get::<&Droppable>(cocoon).is_ok());
     }
 }

@@ -374,6 +374,7 @@ pub(crate) fn scenery_phase(tick: &mut Tick, floor: &mut Floor) {
     }
     super::tick_overheads(tick.world, dt);
     super::tick_hanging(tick.world, clock, dt);
+    super::drop_hanging(tick.world, textures, tick.sounds, tick.fx, dt);
     super::tick_drips(tick.world, textures, dt);
     super::tick_lightning(tick.world, dt);
     super::update_shadow(tick.world, dt);
