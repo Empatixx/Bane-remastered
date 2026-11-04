@@ -805,6 +805,9 @@ const COCOON_DAMAGE: i32 = 3;
 const FALL_GRAVITY: f32 = 1500.0;
 /// How long a thing shot down shudders on its chain before it drops, and how hard.
 const SHUDDER: f32 = 0.28;
+/// How far a falling thing stretches at most (narrower, taller), reached at this speed.
+const STRETCH: Vec2 = Vec2::new(0.18, 0.3);
+const STRETCH_SPEED: f32 = 700.0;
 const SHUDDER_REACH: f32 = 3.0;
 const LANDING_SHAKE: f32 = 0.18;
 
@@ -875,7 +878,12 @@ pub(crate) fn drop_hanging(
         falling.speed += FALL_GRAVITY * dt;
         position.0.y = (position.0.y + falling.speed * dt).min(falling.floor.y);
         let through = ((position.0.y - falling.from.y) / (falling.floor.y - falling.from.y).max(1.0)).clamp(0.0, 1.0);
-        size.0 = PIECE * (THING_SCALE + (1.0 - THING_SCALE) * through);
+        // Its weight pulls it out of shape as it gathers speed: taller and narrower, the
+        // faster it drops.
+        let stretch = (falling.speed / STRETCH_SPEED).min(1.0);
+        size.0 = PIECE
+            * (THING_SCALE + (1.0 - THING_SCALE) * through)
+            * Vec2::new(1.0 - STRETCH.x * stretch, 1.0 + STRETCH.y * stretch);
         if position.0.y >= falling.floor.y {
             landed.push((entity, falling.drops, falling.floor));
         }
