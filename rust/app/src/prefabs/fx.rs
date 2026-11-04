@@ -139,6 +139,41 @@ pub(crate) fn cocoon_remains(world: &mut World, floor: Vec2, textures: &Textures
     ));
 }
 
+/// A liquid's row in the splash and drop sheets (tools/make_splashes.py): water, lava, blood,
+/// bog. Ice and sand do not splash.
+pub(crate) fn splash_row(surface: crate::dungeon::Surface) -> Option<usize> {
+    use crate::dungeon::Surface;
+    match surface {
+        Surface::Water => Some(0),
+        Surface::Lava => Some(1),
+        Surface::Blood => Some(2),
+        Surface::Bog => Some(3),
+        Surface::Ice | Surface::Sand => None,
+    }
+}
+
+/// Something falling into a liquid: a crown, a column of it shooting up and falling back, the
+/// ring spreading (`big`, 32x32 pixels three times over), or a little crown and a ring for a
+/// drop (16x16). `at` is where it meets the surface.
+pub(crate) fn splash(world: &mut World, at: Vec2, row: usize, big: bool, textures: &Textures) {
+    let (texture, frames, side) = if big { (tex::SPLASH_BIG, 7, 32.0) } else { (tex::SPLASH_SMALL, 5, 16.0) };
+    let clip = Clip { row, frames, frame_time: 0.07, looping: false, flipped: false };
+    let size = Vec2::splat(side * 3.0);
+    // The pictures stand on the water line six pixels (three for the small one) above their
+    // bottom edge.
+    let line = if big { 26.0 } else { 12.0 };
+    world.spawn((
+        Expiring,
+        Position(at - Vec2::new(0.0, (line - side / 2.0) * 3.0)),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(texture), 0, row, frames, 4),
+        Animation::new(frames, 4, clip),
+        Layer(1),
+        Lit,
+    ));
+}
+
 pub(crate) fn frost_burst(world: &mut World, center: Vec2, textures: &Textures) {
     let clip = Clip {
         row: 0,

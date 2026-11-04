@@ -14,7 +14,7 @@ use crate::dungeon::{Dungeon, HangingKind, Overhead, OverheadKind};
 use crate::tilemap::TILE_SIZE;
 
 const COLUMNS: usize = 4;
-const ROWS: usize = 10;
+const ROWS: usize = 13;
 const LEFT_END: usize = 0;
 const MIDDLE: usize = 1;
 const RIGHT_END: usize = 2;
@@ -847,6 +847,7 @@ pub(crate) struct ShadowOf(Entity);
 /// away from the camera) and on the floor hurts whoever stands under it, enemies and the hero.
 pub(crate) fn drop_hanging(
     world: &mut World,
+    surfaces: &crate::dungeon::Surfaces,
     textures: &Textures,
     sounds: &mut Vec<crate::audio::AudioCommand>,
     fx: &mut super::Fx,
@@ -928,7 +929,9 @@ pub(crate) fn drop_hanging(
             let _ = world.despawn(shadow);
         }
         let _ = world.despawn(entity);
-        land(world, drops, floor, textures, sounds, fx);
+        // Into a pool it goes under with a big splash and leaves nothing on the floor.
+        let liquid = surfaces.at_point(floor).and_then(crate::prefabs::splash_row);
+        land(world, drops, floor, liquid, textures, sounds, fx);
     }
 }
 
@@ -936,6 +939,7 @@ fn land(
     world: &mut World,
     drops: Drops,
     floor: Vec2,
+    liquid: Option<usize>,
     textures: &Textures,
     sounds: &mut Vec<crate::audio::AudioCommand>,
     fx: &mut super::Fx,
@@ -943,7 +947,12 @@ fn land(
     use crate::audio::{AudioCommand, SoundEffect};
     use crate::systems::damage::{Damage, DamageSource, deal, hurt_player};
     fx.shake(LANDING_SHAKE);
+    if let Some(row) = liquid {
+        crate::prefabs::splash(world, floor, row, true, textures);
+        sounds.push(AudioCommand::Effect(SoundEffect::SlimeBurst));
+    }
     match drops {
+        _ if liquid.is_some() => {}
         Drops::Icicle => {
             crate::prefabs::icicle_crash(world, floor, textures);
             sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
@@ -1004,7 +1013,7 @@ mod drop_tests {
         world.spawn((Bullet::plain(1), Position(at + Vec2::new(0.0, 40.0)), crate::components::Elevation(40.0)));
         let (mut sounds, mut fx) = (Vec::new(), crate::systems::Fx::default());
         for _ in 0..90 {
-            drop_hanging(&mut world, &textures, &mut sounds, &mut fx, 1.0 / 60.0);
+            drop_hanging(&mut world, &crate::dungeon::Surfaces::default(), &textures, &mut sounds, &mut fx, 1.0 / 60.0);
         }
         assert!(!world.contains(icicle) && !world.contains(shadow), "it fell and shattered");
         let health = world.get::<&Health>(enemy).map(|health| health.current).unwrap_or(0);
@@ -1023,7 +1032,7 @@ mod drop_tests {
         world.spawn((Bullet::plain(1), Position(floor + Vec2::new(200.0, 0.0)), crate::components::Elevation(30.0)));
         let (mut sounds, mut fx) = (Vec::new(), crate::systems::Fx::default());
         for _ in 0..60 {
-            drop_hanging(&mut world, &Textures::default(), &mut sounds, &mut fx, 1.0 / 60.0);
+            drop_hanging(&mut world, &crate::dungeon::Surfaces::default(), &Textures::default(), &mut sounds, &mut fx, 1.0 / 60.0);
         }
         assert!(world.get::<&Droppable>(cocoon).is_ok());
     }

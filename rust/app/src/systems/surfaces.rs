@@ -692,3 +692,4 @@ mod tests {
         assert_eq!(world.query::<&Kicked>().iter().count(), 0);
     }
 }
+

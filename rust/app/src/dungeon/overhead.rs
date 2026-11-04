@@ -21,13 +21,11 @@ const ROW_GAP: usize = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum OverheadKind {
-    Grate,
     Beams,
     Chain,
     Pipes,
     Arch,
     Web,
-    Walkway,
     /// A liana slung between two blocks, sagging in the middle.
     Vines,
     /// A few strands of silk strung between two blocks.
@@ -36,24 +34,31 @@ pub(crate) enum OverheadKind {
     Pennants,
     /// A trough of molten metal across a gap over the lava; drawn from its own sheet, flowing.
     Trough,
+    /// A slab of blue ice with icicles hanging under it.
+    IceBridge,
+    /// A lumpy slab of obsidian with glowing cracks.
+    RockBridge,
+    /// A gnarled root, two strands twisting, moss on top and rootlets hanging.
+    Roots,
 }
 
 impl OverheadKind {
     /// The kind's row in the overhead sheet.
     pub(crate) fn row(self) -> usize {
         match self {
-            Self::Grate => 0,
             Self::Beams => 1,
             Self::Chain => 2,
             Self::Pipes => 3,
             Self::Arch => 4,
             Self::Web => 5,
-            Self::Walkway => 6,
             Self::Vines => 7,
             Self::Strands => 8,
             Self::Pennants => 9,
             // Drawn from lava_trough.tga instead; the walkway's row stands in for it elsewhere.
             Self::Trough => 6,
+            Self::IceBridge => 10,
+            Self::RockBridge => 11,
+            Self::Roots => 12,
         }
     }
 
@@ -75,13 +80,14 @@ impl Theme {
     pub(crate) fn overhead_kinds(self) -> &'static [OverheadKind] {
         use OverheadKind::*;
         match self {
-            Self::Stone => &[Grate, Beams, Chain],
-            Self::Temple => &[Arch, Arch, Chain, Pennants, Pennants],
-            Self::Moss => &[Vines, Vines, Chain],
-            Self::Sewer => &[Pipes, Pipes, Grate],
-            Self::Spider => &[Web, Strands, Strands, Beams],
-            Self::Ice => &[Chain, Grate],
-            Self::Lava => &[Walkway, Walkway, Chain],
+            // Each floor's own, nothing of iron between its walls.
+            Self::Stone => &[Beams],
+            Self::Temple => &[Arch, Arch, Pennants, Pennants],
+            Self::Moss => &[Vines, Roots, Roots],
+            Self::Sewer => &[Pipes],
+            Self::Spider => &[Web, Strands, Strands],
+            Self::Ice => &[IceBridge],
+            Self::Lava => &[RockBridge],
         }
     }
 }

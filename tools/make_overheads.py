@@ -2,7 +2,8 @@
 grate, wooden beams, a chain, pipes, a stone arch, a thick web, a metal walkway, a liana, a few strands of silk and a
 garland of red and gold pennants.
 
-overheads.tga has one row per kind (the pipes drawn by hand in tools/art/pipes.ase) in that order and four 16x24 cells per row: the left end
+overheads.tga has one row per kind (the pipes, the ice bridge, the obsidian bridge and the root
+drawn by hand in tools/art/*.ase) in that order and four 16x24 cells per row: the left end
 (meeting the side of the wall), a middle piece that repeats seamlessly, the right end, and a centre piece
 (the arch's keystone; for the others it is the plain middle again).
 
@@ -348,6 +349,9 @@ KINDS = [
     ("vines", VINES_MID, VINES_MID, LEAVES),
     ("strands", STRANDS_MID, STRANDS_MID, SILK_STRANDS),
     ("pennants", PENNANTS_MID, PENNANTS_MID, PENNANTS),
+    ("ice_bridge", [], [], None),
+    ("rock_bridge", [], [], None),
+    ("root_bridge", [], [], None),
 ]
 
 
@@ -416,7 +420,7 @@ def pieces(name, middle, centre):
 # `lsprite render tools/art/<name>.ase --scale 1 --out tools/art/<name>.png`): 16x24 pieces side
 # by side, the left end, the middle piece and, if there is a third, the centre piece (the pipes'
 # valve). Running down the screen the centre is the plain middle again.
-DRAWN = {"pipes"}
+DRAWN = {"pipes", "ice_bridge", "rock_bridge", "root_bridge"}
 ART = Path(__file__).resolve().parent / "art"
 
 
