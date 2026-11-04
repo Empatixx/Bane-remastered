@@ -896,10 +896,13 @@ fn land(
     fx.shake(LANDING_SHAKE);
     match drops {
         Drops::Icicle => {
-            crate::prefabs::ice_shatter(world, floor, textures);
+            crate::prefabs::icicle_crash(world, floor, textures);
             sounds.push(AudioCommand::Effect(SoundEffect::WallHit));
         }
-        Drops::Cocoon => sounds.push(AudioCommand::Effect(SoundEffect::SpiderHatch)),
+        Drops::Cocoon => {
+            crate::prefabs::cocoon_remains(world, floor, textures);
+            sounds.push(AudioCommand::Effect(SoundEffect::SpiderHatch));
+        }
     }
     let (amount, reach) = drops.blow();
     let victims: Vec<(Entity, bool)> = world

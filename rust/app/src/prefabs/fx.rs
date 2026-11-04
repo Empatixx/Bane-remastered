@@ -105,6 +105,39 @@ pub(crate) fn ice_shatter(world: &mut World, center: Vec2, textures: &Textures) 
     ));
 }
 
+/// An icicle shot down strikes the floor at `floor`: a flash, shards flying out and falling
+/// back, a frost puff, the shards melting (tools/art/icicle_crash.ase), 32x32 pixels three times
+/// over, standing on the floor.
+pub(crate) fn icicle_crash(world: &mut World, floor: Vec2, textures: &Textures) {
+    let clip = Clip { row: 0, frames: 6, frame_time: 0.07, looping: false, flipped: false };
+    let size = Vec2::splat(96.0);
+    world.spawn((
+        Expiring,
+        Position(floor - Vec2::new(0.0, size.y / 2.0 - 18.0)),
+        Size(size),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::ICICLE_CRASH), 0, 0, 6, 1),
+        Animation::new(6, 1, clip),
+        Layer(3),
+        Lit,
+    ));
+}
+
+/// A cocoon shot down lands at `floor`: squashed, split open with its goo splashing, and what
+/// stays there for good, its torn halves, silk and a puddle of goo (tools/art/cocoon_burst.ase).
+pub(crate) fn cocoon_remains(world: &mut World, floor: Vec2, textures: &Textures) {
+    let clip = Clip { row: 0, frames: 3, frame_time: 0.09, looping: false, flipped: false };
+    world.spawn((
+        Position(floor),
+        Size(Vec2::new(72.0, 48.0)),
+        Color(Vec4::ONE),
+        Sprite::cell(textures.get(tex::COCOON_BURST), 0, 0, 3, 1),
+        Animation::new(3, 1, clip),
+        Layer(-1),
+        Lit,
+    ));
+}
+
 pub(crate) fn frost_burst(world: &mut World, center: Vec2, textures: &Textures) {
     let clip = Clip {
         row: 0,
