@@ -802,7 +802,10 @@ impl Drops {
 const ICICLE_DAMAGE: i32 = 4;
 const COCOON_DAMAGE: i32 = 3;
 /// How fast a thing shot down falls, in world units per second per second.
-const FALL_GRAVITY: f32 = 2400.0;
+const FALL_GRAVITY: f32 = 1500.0;
+/// How long a thing shot down shudders on its chain before it drops, and how hard.
+const SHUDDER: f32 = 0.28;
+const SHUDDER_REACH: f32 = 3.0;
 const LANDING_SHAKE: f32 = 0.18;
 
 /// A hanging thing a shot can bring down, and the floor under it.
@@ -812,13 +815,15 @@ pub(crate) struct Droppable {
     floor: Vec2,
 }
 
-/// A thing shot down, on its way to the floor.
+/// A thing shot down, on its way to the floor: it first shudders on its snapping chain for
+/// `shudder` seconds, then drops.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Falling {
     drops: Drops,
     from: Vec2,
     floor: Vec2,
     speed: f32,
+    shudder: f32,
 }
 
 /// A hanging thing's shadow on the floor, which goes with it when it falls.
@@ -855,11 +860,18 @@ pub(crate) fn drop_hanging(
         let _ = world.remove_one::<HangingPart>(entity);
         let _ = world.insert_one(
             entity,
-            Falling { drops: droppable.drops, from: at, floor: droppable.floor, speed: 0.0 },
+            Falling { drops: droppable.drops, from: at, floor: droppable.floor, speed: 0.0, shudder: SHUDDER },
         );
     }
     let mut landed = Vec::new();
     for (entity, falling, position, size) in world.query_mut::<(Entity, &mut Falling, &mut Position, &mut Size)>() {
+        if falling.shudder > 0.0 {
+            falling.shudder -= dt;
+            let side = if ((falling.shudder / SHUDDER) * 9.0) as i32 % 2 == 0 { 1.0 } else { -1.0 };
+            position.0 = falling.from + Vec2::new(side * SHUDDER_REACH, 0.0);
+            continue;
+        }
+        position.0.x = falling.from.x;
         falling.speed += FALL_GRAVITY * dt;
         position.0.y = (position.0.y + falling.speed * dt).min(falling.floor.y);
         let through = ((position.0.y - falling.from.y) / (falling.floor.y - falling.from.y).max(1.0)).clamp(0.0, 1.0);
@@ -902,6 +914,11 @@ fn land(
         Drops::Cocoon => {
             crate::prefabs::cocoon_remains(world, floor, textures);
             sounds.push(AudioCommand::Effect(SoundEffect::SpiderHatch));
+            // Whatever the spiders wrapped up had something on it, as a broken barrel does.
+            let common = crate::items::ItemKind::COMMON;
+            let pick = common[(floor.x as usize / 7 + floor.y as usize / 3) % common.len()];
+            let item = crate::systems::items::common_drop(world, pick);
+            crate::prefabs::item(world, item, floor + Vec2::new(0.0, 20.0), true, Vec2::ZERO, textures);
         }
     }
     let (amount, reach) = drops.blow();

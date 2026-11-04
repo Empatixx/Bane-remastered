@@ -7,7 +7,7 @@ LibreSprite (tools/art, exported to PNG with
   of 32x32.
 - assets/textures/ingame/cocoon_burst.tga: a cocoon landing (tools/art/cocoon_burst.ase): squashed,
   split open with its goo splashing, and what stays on the floor, two torn halves, silk threads
-  and a puddle of goo; 3 frames of 24x16.
+  and a puddle of goo with the bones of whatever it held; 3 frames of 32x24.
 
     uv run -q --with pillow python tools/make_hanging_drops.py
 """
